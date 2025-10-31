@@ -68,3 +68,15 @@ This prompt helps you determine what documentation you should read based on the 
     - When working with reservation span configurations
     - When implementing real-time pricing calculations for rentals
     - When troubleshooting ListingImageGrid or ProposalMenu components
+
+- app_docs/feature-431d9cc3-footer-esm-react.md
+  - Conditions:
+    - When working with the Footer component
+    - When migrating components to ESM + React Islands architecture
+    - When implementing CSS Modules migration
+    - When adding Zod runtime validation to React components
+    - When setting up Vitest testing infrastructure
+    - When implementing comprehensive accessibility testing with jest-axe
+    - When extracting business logic into custom hooks
+    - When troubleshooting footer referral or import form functionality
+    - When implementing WCAG 2.1 AA accessibility compliance
