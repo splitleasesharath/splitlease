@@ -69,8 +69,8 @@ export default defineConfig({
   // Test configuration
   test: {
     globals: true,
-    environment: 'jsdom',
-    setupFiles: './tests/setup.ts',
+    environment: 'happy-dom',
+    setupFiles: resolve(__dirname, './tests/setup.ts'),
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html', 'lcov'],

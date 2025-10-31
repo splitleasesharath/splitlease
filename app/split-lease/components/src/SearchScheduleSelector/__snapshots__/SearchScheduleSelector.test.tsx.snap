@@ -1,0 +1,99 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SearchScheduleSelector > Component Rendering > matches snapshot for default state 1`] = `
+<div>
+  <div
+    aria-label="Weekly schedule selector"
+    class="_container_f45b2b"
+    role="region"
+  >
+    <div
+      class="_selectorRow_f45b2b"
+    >
+      <div
+        aria-hidden="true"
+        class="_calendarIcon_f45b2b"
+      >
+        📅
+      </div>
+      <div
+        class="_daysGrid_f45b2b"
+      >
+        <button
+          aria-label="Select Sunday"
+          aria-pressed="false"
+          class="_dayCell_f45b2b"
+          role="button"
+          tabindex="0"
+          type="button"
+        >
+          S
+        </button>
+        <button
+          aria-label="Select Monday"
+          aria-pressed="false"
+          class="_dayCell_f45b2b"
+          role="button"
+          tabindex="0"
+          type="button"
+        >
+          M
+        </button>
+        <button
+          aria-label="Select Tuesday"
+          aria-pressed="false"
+          class="_dayCell_f45b2b"
+          role="button"
+          tabindex="0"
+          type="button"
+        >
+          T
+        </button>
+        <button
+          aria-label="Select Wednesday"
+          aria-pressed="false"
+          class="_dayCell_f45b2b"
+          role="button"
+          tabindex="0"
+          type="button"
+        >
+          W
+        </button>
+        <button
+          aria-label="Select Thursday"
+          aria-pressed="false"
+          class="_dayCell_f45b2b"
+          role="button"
+          tabindex="0"
+          type="button"
+        >
+          T
+        </button>
+        <button
+          aria-label="Select Friday"
+          aria-pressed="false"
+          class="_dayCell_f45b2b"
+          role="button"
+          tabindex="0"
+          type="button"
+        >
+          F
+        </button>
+        <button
+          aria-label="Select Saturday"
+          aria-pressed="false"
+          class="_dayCell_f45b2b"
+          role="button"
+          tabindex="0"
+          type="button"
+        >
+          S
+        </button>
+      </div>
+    </div>
+    <div
+      class="_infoContainer_f45b2b"
+    />
+  </div>
+</div>
+`;
