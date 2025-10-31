@@ -1,0 +1,366 @@
+/**
+ * SearchScheduleSelector Component Styles
+ * CSS Modules implementation replacing styled-components
+ * Follows architectural standards for scoped, maintainable styling
+ */
+
+/* CSS Custom Properties for theming and consistency */
+:root {
+  --sss-primary-gradient-start: #667eea;
+  --sss-primary-gradient-end: #764ba2;
+  --sss-error-gradient-start: #f93a5a;
+  --sss-error-gradient-end: #d32f2f;
+  --sss-white: #ffffff;
+  --sss-text-dark: #333333;
+  --sss-error-color: #d32f2f;
+  --sss-shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+  --sss-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --sss-shadow-lg: 0 10px 40px rgba(0, 0, 0, 0.1);
+  --sss-shadow-primary: 0 4px 12px rgba(102, 126, 234, 0.4);
+  --sss-shadow-primary-hover: 0 6px 16px rgba(102, 126, 234, 0.6);
+  --sss-shadow-error: 0 4px 12px rgba(249, 58, 90, 0.4);
+  --sss-transition-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --sss-transition-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --sss-border-radius-sm: 10px;
+  --sss-border-radius-md: 12px;
+  --sss-border-radius-lg: 16px;
+  --sss-spacing-xs: 4px;
+  --sss-spacing-sm: 8px;
+  --sss-spacing-md: 16px;
+  --sss-spacing-lg: 24px;
+}
+
+/* Container - Main wrapper */
+.container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sss-spacing-md);
+  padding: var(--sss-spacing-lg);
+  background: linear-gradient(135deg, var(--sss-primary-gradient-start) 0%, var(--sss-primary-gradient-end) 100%);
+  border-radius: var(--sss-border-radius-lg);
+  box-shadow: var(--sss-shadow-lg);
+  user-select: none;
+}
+
+/* SelectorRow - Contains calendar icon and days grid */
+.selectorRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sss-spacing-md);
+}
+
+/* CalendarIcon - Emoji/icon display */
+.calendarIcon {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  flex-shrink: 0;
+}
+
+/* DaysGrid - 7-column grid for days */
+.daysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--sss-spacing-sm);
+  padding: var(--sss-spacing-sm);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: var(--sss-border-radius-md);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* DayCell - Individual day button */
+.dayCell {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  border-radius: var(--sss-border-radius-md);
+  cursor: pointer;
+  transition: all var(--sss-transition-normal);
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--sss-text-dark);
+  box-shadow: var(--sss-shadow-sm);
+}
+
+/* DayCell selected state */
+.dayCell[aria-pressed="true"] {
+  background: linear-gradient(135deg, var(--sss-primary-gradient-start) 0%, var(--sss-primary-gradient-end) 100%);
+  color: var(--sss-white);
+  box-shadow: var(--sss-shadow-primary);
+}
+
+/* DayCell hover state */
+.dayCell:hover {
+  transform: translateY(-2px);
+}
+
+.dayCell[aria-pressed="true"]:hover {
+  box-shadow: var(--sss-shadow-primary-hover);
+}
+
+.dayCell[aria-pressed="false"]:hover {
+  box-shadow: var(--sss-shadow-md);
+}
+
+/* DayCell active/pressed state */
+.dayCell:active {
+  transform: translateY(0);
+}
+
+/* DayCell focus state for accessibility */
+.dayCell:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+/* DayCell dragging cursor */
+.dayCell.dragging {
+  cursor: grabbing;
+}
+
+/* DayCell error states */
+.dayCell.hasError[aria-pressed="true"] {
+  background: linear-gradient(135deg, var(--sss-error-gradient-start) 0%, var(--sss-error-gradient-end) 100%);
+  color: var(--sss-white);
+  box-shadow: var(--sss-shadow-error);
+  animation: pulseError 1.5s ease-in-out infinite;
+}
+
+/* Keyframe animations */
+@keyframes pulseError {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-4px);
+  }
+  75% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fadeOutDown {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.8);
+  }
+}
+
+/* InfoContainer - Contains listing counts and reset button */
+.infoContainer {
+  min-height: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--sss-spacing-sm);
+}
+
+/* InfoText - Listing count display */
+.infoText {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+}
+
+/* ResetButton - Clear selection button */
+.resetButton {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: var(--sss-spacing-xs) var(--sss-spacing-sm);
+  transition: all var(--sss-transition-fast);
+}
+
+.resetButton:hover {
+  color: var(--sss-white);
+  text-decoration: none;
+}
+
+.resetButton:active {
+  transform: scale(0.98);
+}
+
+/* ErrorPopup - Validation error notification */
+.errorPopup {
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: var(--sss-spacing-md) var(--sss-spacing-lg);
+  background: var(--sss-white);
+  border-radius: var(--sss-border-radius-md);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  min-width: 280px;
+  animation: fadeInUp var(--sss-transition-normal) ease-out;
+}
+
+.errorPopup.hiding {
+  animation: fadeOutDown var(--sss-transition-normal) ease-in;
+}
+
+/* ErrorIcon - Warning emoji */
+.errorIcon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+/* ErrorMessage - Error text */
+.errorMessage {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--sss-error-color);
+  line-height: 1.4;
+}
+
+/* Responsive Design - Tablet */
+@media (max-width: 768px) {
+  .container {
+    padding: var(--sss-spacing-md);
+    border-radius: var(--sss-border-radius-md);
+  }
+
+  .daysGrid {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .dayCell {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+    border-radius: var(--sss-border-radius-sm);
+  }
+
+  .infoText {
+    font-size: 13px;
+  }
+
+  .errorPopup {
+    min-width: 240px;
+    padding: 12px 20px;
+  }
+}
+
+/* Responsive Design - Mobile */
+@media (max-width: 480px) {
+  .dayCell {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+  }
+
+  .calendarIcon {
+    font-size: 28px;
+  }
+
+  .errorPopup {
+    min-width: 200px;
+    padding: 10px 16px;
+    top: -70px;
+  }
+
+  .errorMessage {
+    font-size: 13px;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  .dayCell {
+    transition: none;
+  }
+
+  .errorPopup {
+    animation: none;
+  }
+
+  .dayCell.hasError[aria-pressed="true"] {
+    animation: none;
+  }
+
+  .dayCell:hover {
+    transform: none;
+  }
+
+  .dayCell:active {
+    transform: none;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  .dayCell {
+    border: 2px solid currentColor;
+  }
+
+  .dayCell[aria-pressed="true"] {
+    border-color: var(--sss-white);
+  }
+
+  .errorPopup {
+    border: 2px solid var(--sss-error-color);
+  }
+}
+
+/* Dark mode support (if needed in future) */
+@media (prefers-color-scheme: dark) {
+  /* Currently using explicit gradient background,
+     but this allows for future dark mode customization */
+}
+
+/* Print styles */
+@media print {
+  .container {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+
+  .errorPopup {
+    position: relative;
+    top: 0;
+    left: 0;
+    transform: none;
+    margin-top: var(--sss-spacing-md);
+  }
+}
