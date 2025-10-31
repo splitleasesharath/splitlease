@@ -4,7 +4,7 @@
       "name": "split-lease",
       "componentPath": "../split-lease/components",
       "distPath": "../split-lease/components/dist",
-      "bundleName": "split-lease-components.umd.cjs",
+      "bundleName": "split-lease-components.umd.js",
       "globalName": "SplitLeaseComponents",
       "reactVersion": "18",
       "components": [

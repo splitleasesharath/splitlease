@@ -123,7 +123,7 @@ export const Footer: React.FC<FooterProps> = memo(
     return (
       <>
         {/* Main Footer Section */}
-        <footer className={styles.mainFooter} role="contentinfo">
+        <footer className={styles.mainFooter} aria-label="Main footer navigation">
           <div className={styles.footerContainer}>
             {/* Dynamic Navigation Columns */}
             {footerColumns.map((column, index) => (
@@ -413,7 +413,7 @@ export const Footer: React.FC<FooterProps> = memo(
         )}
 
         {/* Footer Bottom */}
-        <div className={styles.footerBottom} role="contentinfo">
+        <div className={styles.footerBottom} aria-label="Copyright and legal information">
           <a href={termsUrl} aria-label="View terms of use">
             <svg
               width="12"
