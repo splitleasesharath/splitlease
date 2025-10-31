@@ -4,23 +4,65 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
+
+  resolve: {
+    alias: {
+      '@components': resolve(__dirname, './src'),
+      '@types': resolve(__dirname, '../types'),
+      '@api': resolve(__dirname, '../api'),
+      '@utils': resolve(__dirname, '../pages/shared/utils'),
+    },
+  },
+
+  css: {
+    modules: {
+      localsConvention: 'camelCase',
+      generateScopedName: '[name]__[local]___[hash:base64:5]',
+    },
+  },
+
   build: {
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       name: 'SplitLeaseComponents',
-      fileName: 'split-lease-components',
-      formats: ['umd'],
+      formats: ['es', 'umd'],
+      fileName: (format) => `split-lease-components.${format}.js`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: ['react', 'react-dom', 'styled-components', 'framer-motion'],
       output: {
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
+          'styled-components': 'styled',
+          'framer-motion': 'framerMotion',
         },
+        assetFileNames: 'assets/[name].[ext]',
+      },
+    },
+    // Bundle size budgets
+    chunkSizeWarningLimit: 500,
+    // Source maps for debugging
+    sourcemap: true,
+    // Minification
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true,
       },
     },
   },
+
+  // Development server configuration
+  server: {
+    port: 5173,
+    open: false,
+    cors: true,
+  },
+
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'styled-components', 'framer-motion'],
+  },
 });
-
-

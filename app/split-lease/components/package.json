@@ -1,9 +1,19 @@
 {
-  "name": "split-lease-components",
-  "version": "0.0.0",
+  "name": "@split-lease/components",
+  "version": "0.1.0",
   "private": true,
   "type": "module",
-  "main": "dist/split-lease-components.umd.js",
+  "description": "React component library for SplitLease application",
+  "main": "./dist/split-lease-components.umd.js",
+  "module": "./dist/split-lease-components.es.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/split-lease-components.es.js",
+      "require": "./dist/split-lease-components.umd.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "files": [
     "dist"
   ],
@@ -12,19 +22,18 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "styled-components": "^6.1.0",
-    "framer-motion": "^10.16.0"
+    "styled-components": "^6.1.13",
+    "framer-motion": "^11.11.17"
   },
   "peerDependencies": {
     "react": "^18",
     "react-dom": "^18"
   },
   "devDependencies": {
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "@vitejs/plugin-react": "^4",
-    "typescript": "^5",
-    "vite": "^5"
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.7.2",
+    "vite": "^5.4.11"
   }
 }
-
