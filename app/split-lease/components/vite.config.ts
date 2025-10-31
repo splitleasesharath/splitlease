@@ -65,4 +65,28 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'styled-components', 'framer-motion'],
   },
+
+  // Test configuration
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './tests/setup.ts',
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      exclude: [
+        'node_modules/',
+        'tests/',
+        '*.config.ts',
+        '**/*.d.ts',
+        '**/index.ts'
+      ],
+      thresholds: {
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90
+      }
+    }
+  }
 });
