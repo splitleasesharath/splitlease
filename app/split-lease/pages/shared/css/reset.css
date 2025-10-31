@@ -1,0 +1,123 @@
+/**
+ * CSS Reset
+ * Normalizes default browser styles for consistency
+ */
+
+/* Box sizing */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* Remove default margin and padding */
+* {
+  margin: 0;
+  padding: 0;
+}
+
+/* HTML and body */
+html {
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  line-height: 1.5;
+  font-family: var(--font-family-sans);
+  font-size: var(--font-size-base);
+  color: var(--color-neutral-900);
+  background-color: #ffffff;
+}
+
+/* Typography */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: var(--font-weight-bold);
+  line-height: var(--line-height-tight);
+}
+
+p {
+  margin-bottom: var(--spacing-md);
+}
+
+a {
+  color: var(--color-primary-600);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* Lists */
+ul,
+ol {
+  list-style: none;
+}
+
+/* Images */
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Forms */
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+/* Tables */
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* Accessibility */
+[hidden] {
+  display: none !important;
+}
+
+/* Focus styles */
+:focus-visible {
+  outline: 2px solid var(--color-primary-500);
+  outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

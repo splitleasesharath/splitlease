@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.output/
+*.tsbuildinfo
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Runtime
+.cache/
+.temp/
+.tmp/
+
+# OS
+Thumbs.db
+desktop.ini
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# Misc
+*.orig
+*.pid
+*.seed
+*.pid.lock

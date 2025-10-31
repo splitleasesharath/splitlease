@@ -1,0 +1,44 @@
+{
+  "name": "splitlease",
+  "version": "1.0.0",
+  "description": "SplitLease marketplace application - rent properties for specific days of the week",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "components"
+  ],
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "build": "npm run build:components && npm run build:pages",
+    "build:components": "node scripts/build-components.js",
+    "build:pages": "node scripts/build-pages.js",
+    "test": "cd components && npm run test",
+    "test:e2e": "cd tests && npx playwright test",
+    "lint": "eslint --ext .ts,.tsx .",
+    "lint:fix": "eslint --ext .ts,.tsx . --fix",
+    "format": "prettier --write \"**/*.{ts,tsx,css,html,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,css,html,json,md}\"",
+    "typecheck": "tsc --noEmit",
+    "validate": "node scripts/validate.js",
+    "deploy": "node scripts/deploy.js"
+  },
+  "dependencies": {
+    "zod": "^3.22.4",
+    "date-fns": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-react": "^7.33.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "prettier": "^3.1.1",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}
