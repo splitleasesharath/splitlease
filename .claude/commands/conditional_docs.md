@@ -68,3 +68,14 @@ This prompt helps you determine what documentation you should read based on the 
     - When working with reservation span configurations
     - When implementing real-time pricing calculations for rentals
     - When troubleshooting ListingImageGrid or ProposalMenu components
+
+- app_docs/feature-0bed8d36-header-esm-islands.md
+  - Conditions:
+    - When working with the Header navigation component
+    - When implementing or modifying ESM + React Islands architecture
+    - When migrating components to CSS Modules
+    - When setting up Vitest testing infrastructure
+    - When implementing island mount scripts for vanilla HTML integration
+    - When troubleshooting Header component styling, dropdowns, or mobile menu
+    - When implementing accessibility features (WCAG 2.1 AA compliance)
+    - When working with data attribute parsing for island mounting
