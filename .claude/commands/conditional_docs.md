@@ -68,3 +68,14 @@ This prompt helps you determine what documentation you should read based on the 
     - When working with reservation span configurations
     - When implementing real-time pricing calculations for rentals
     - When troubleshooting ListingImageGrid or ProposalMenu components
+
+- app_docs/feature-d860d575-search-schedule-selector-esm.md
+  - Conditions:
+    - When working with the SearchScheduleSelector component
+    - When migrating components from styled-components to CSS Modules
+    - When implementing ESM + React Islands architecture patterns
+    - When setting up Vitest testing infrastructure for React components
+    - When implementing week-wrapping contiguous selection logic
+    - When enhancing component accessibility with ARIA and keyboard navigation
+    - When adding Zod runtime validation to React components
+    - When troubleshooting SearchScheduleSelector rendering or validation issues
