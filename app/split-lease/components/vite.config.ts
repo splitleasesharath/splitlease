@@ -65,4 +65,32 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'styled-components', 'framer-motion'],
   },
+
+  // Test configuration with Vitest
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: [resolve(__dirname, 'tests/setup.ts')],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html', 'lcov'],
+      exclude: [
+        'node_modules/**',
+        'dist/**',
+        'tests/**',
+        '**/*.test.{ts,tsx}',
+        '**/*.spec.{ts,tsx}',
+        '**/index.ts',
+        'vite.config.ts',
+      ],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80,
+      },
+    },
+    include: ['src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}'],
+    testTimeout: 10000,
+  },
 });
