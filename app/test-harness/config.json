@@ -1,0 +1,124 @@
+{
+  "projects": [
+    {
+      "name": "split-lease",
+      "componentPath": "../split-lease/components",
+      "distPath": "../split-lease/components/dist",
+      "bundleName": "split-lease-components.umd.cjs",
+      "globalName": "SplitLeaseComponents",
+      "reactVersion": "18",
+      "components": [
+        {
+          "name": "Footer",
+          "exportName": "Footer",
+          "description": "Main footer component with columns, referral form, and import listing form",
+          "requiredProps": [],
+          "optionalProps": [
+            "columns",
+            "showReferral",
+            "showImport",
+            "onReferralSubmit",
+            "onImportSubmit",
+            "copyrightText",
+            "footerNote",
+            "termsUrl"
+          ],
+          "testCases": [
+            {
+              "name": "Renders default columns",
+              "description": "Footer should render 3 default columns: For Hosts, For Guests, Company"
+            },
+            {
+              "name": "Referral form interaction",
+              "description": "User can switch between text/email and submit referral"
+            },
+            {
+              "name": "Import form validation",
+              "description": "URL must start with http(s) and email must contain @ and ."
+            },
+            {
+              "name": "Import button loading state",
+              "description": "Button shows 'Importing...' when submitting"
+            },
+            {
+              "name": "Callbacks are triggered",
+              "description": "onReferralSubmit and onImportSubmit are called with correct data"
+            },
+            {
+              "name": "Footer bottom renders",
+              "description": "Terms link, footer note, and copyright text are visible"
+            }
+          ]
+        },
+        {
+          "name": "SearchScheduleSelector",
+          "exportName": "SearchScheduleSelector",
+          "description": "Day-of-week selector with drag selection, validation, and listing counts",
+          "requiredProps": [],
+          "optionalProps": [
+            "listing",
+            "onSelectionChange",
+            "onError",
+            "className",
+            "minDays",
+            "maxDays",
+            "requireContiguous",
+            "initialSelection"
+          ],
+          "testCases": [
+            {
+              "name": "Renders 7 day buttons",
+              "description": "Component should display S M T W T F S buttons"
+            },
+            {
+              "name": "Single day selection",
+              "description": "User can click a day to select it"
+            },
+            {
+              "name": "Multiple day selection",
+              "description": "User can select multiple days by clicking"
+            },
+            {
+              "name": "Drag to select range",
+              "description": "User can click and drag to select contiguous days"
+            },
+            {
+              "name": "Clear selection button",
+              "description": "Clear button resets all selections"
+            },
+            {
+              "name": "Min days validation",
+              "description": "Error shown if fewer than minDays selected (default 2)"
+            },
+            {
+              "name": "Max days validation",
+              "description": "Error shown if more than maxDays selected (default 5)"
+            },
+            {
+              "name": "Contiguous validation",
+              "description": "Error shown if non-contiguous days selected when requireContiguous=true"
+            },
+            {
+              "name": "Listing count display",
+              "description": "Shows exact and partial match counts when days selected"
+            },
+            {
+              "name": "Error popup animation",
+              "description": "Error popup appears with animation and auto-dismisses after 6s"
+            },
+            {
+              "name": "Callbacks triggered",
+              "description": "onSelectionChange and onError callbacks fire correctly"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "testOptions": {
+    "runBuildValidation": true,
+    "runUmdContract": true,
+    "runComponentSmoke": true,
+    "generatePreviews": true
+  }
+}

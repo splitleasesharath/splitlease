@@ -1,0 +1,78 @@
+/* Minimal base styles for local search page */
+:root {
+    --sl-purple: #31135D;
+    --sl-text: #1a1a1a;
+    --sl-bg: #f9fafb;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    color: var(--sl-text);
+    background: var(--sl-bg);
+}
+
+.sl-main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px 20px;
+}
+
+.sl-hero h1 {
+    margin: 0 0 8px 0;
+}
+
+.sl-footer {
+    padding: 24px 20px;
+    text-align: center;
+    color: #6b7280;
+}
+
+/* --- Search layout & Filters --- */
+.sl-search-layout { display: block; }
+
+.sl-search-sidebar {
+    background: #fff;
+    border: 1px solid #E5E7EB;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.filters-toggle {
+    display: none;
+    width: 100%;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid #E5E7EB;
+    background: #fff;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#sl-filters-root {
+    display: block;
+}
+
+
+
+.filter-group {
+    margin-bottom: 16px;
+}
+
+.filter-group label.filter-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.filters__drawer-overlay {
+    display: none;
+}
+
+

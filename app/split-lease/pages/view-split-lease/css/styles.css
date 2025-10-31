@@ -1,0 +1,85 @@
+/* View Split Lease Page Styles */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+.sl-main {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: calc(100vh - 200px);
+}
+
+.sl-view-split-lease-container {
+  display: grid;
+  grid-template-columns: 1fr 450px;
+  gap: 32px;
+  align-items: start;
+}
+
+.sl-content-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sl-sidebar-section {
+  position: sticky;
+  top: 24px;
+}
+
+/* Footer */
+.sl-footer {
+  background: #333;
+  color: white;
+  text-align: center;
+  padding: 24px;
+  margin-top: 48px;
+}
+
+.sl-footer p {
+  margin: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .sl-view-split-lease-container {
+    grid-template-columns: 1fr 400px;
+    gap: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sl-main {
+    padding: 16px;
+  }
+
+  .sl-view-split-lease-container {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .sl-sidebar-section {
+    position: static;
+  }
+}
+
+@media (max-width: 480px) {
+  .sl-main {
+    padding: 12px;
+  }
+
+  .sl-view-split-lease-container {
+    gap: 20px;
+  }
+}

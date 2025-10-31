@@ -1,0 +1,156 @@
+- Components: `cd components && npm install && npm run build`
+- Pages: open HTML files in `pages/` (no build step)
+- Global UMD: `window.SplitLeaseComponents`
+1. Copy an existing HTML file in `pages/`.
+2. Add islands as `<div id="...">`.
+3. Include React CDN and `../components/dist/split-lease-components.umd.js`.
+4. Mount components with `ReactDOM.createRoot(...).render(...)`.
+1. Add a folder under `components/src/YourComponent/` with `index.tsx` and `styles.css`.
+2. Export it from `components/src/index.ts`.
+3. From `components/`: run `npm install` (first time), then `npm run build`.
+4. Use it in pages via `window.SplitLeaseComponents.YourComponent`.
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Split Lease - Search</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+  
+  
+</head>
+<body>
+  <main>
+    <aside id="search-filters"></aside>
+    <section id="results-grid"></section>
+  </main>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="../components/dist/split-lease-components.umd.js"></script>
+  <script>
+    const { SearchScheduleSelector } = window.SplitLeaseComponents || {};
+    if (SearchScheduleSelector) {
+      ReactDOM.createRoot(document.getElementById('search-filters'))
+        .render(React.createElement(SearchScheduleSelector, {}));
+    }
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Split Lease - Home</title>
+  <link rel="stylesheet" href="./assets/styles.css" />
+  
+  
+</head>
+<body>
+  <header><nav>Static navigation</nav></header>
+  <main>
+    <section id="hero">Static HTML hero</section>
+    <section><div id="search-selector"></div></section>
+  </main>
+  <footer>Static footer</footer>
+
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="../components/dist/split-lease-components.umd.js"></script>
+  <script>
+    const { SearchScheduleSelector } = window.SplitLeaseComponents || {};
+    if (SearchScheduleSelector) {
+      ReactDOM.createRoot(document.getElementById('search-selector'))
+        .render(React.createElement(SearchScheduleSelector, {}));
+    }
+  </script>
+</body>
+</html>
+/* placeholder styles for SearchScheduleSelector */
+import React from 'react';
+import './styles.css';
+
+export interface SearchScheduleSelectorProps {
+  // placeholder props
+}
+
+export default function SearchScheduleSelector(_: SearchScheduleSelectorProps) {
+  return React.createElement('div', null, 'SearchScheduleSelector placeholder');
+}
+export { default as SearchScheduleSelector } from './SearchScheduleSelector';
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { resolve } from 'path';
+
+export default defineConfig({
+  plugins: [react()],
+  build: {
+    lib: {
+      entry: resolve(__dirname, 'src/index.ts'),
+      name: 'SplitLeaseComponents',
+      fileName: 'split-lease-components',
+      formats: ['umd'],
+    },
+    rollupOptions: {
+      external: ['react', 'react-dom'],
+      output: {
+        globals: {
+          react: 'React',
+          'react-dom': 'ReactDOM',
+        },
+      },
+    },
+  },
+});
+# split-lease-components (UMD)
+
+This package builds a UMD bundle exposing `window.SplitLeaseComponents`.
+
+Commands:
+
+```
+npm install
+npm run build
+```
+
+React and ReactDOM are peer dependencies and loaded on pages via CDN.
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM"],
+    "jsx": "react-jsx",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "isolatedModules": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "types": ["react", "react-dom"]
+  },
+  "include": ["src"]
+}
+{
+  "name": "split-lease-components",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/split-lease-components.umd.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@vitejs/plugin-react": "^4",
+    "typescript": "^5",
+    "vite": "^5"
+  }
+}
+/* placeholder global styles */
+

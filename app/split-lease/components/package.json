@@ -1,0 +1,30 @@
+{
+  "name": "split-lease-components",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/split-lease-components.umd.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "styled-components": "^6.1.0",
+    "framer-motion": "^10.16.0"
+  },
+  "peerDependencies": {
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@vitejs/plugin-react": "^4",
+    "typescript": "^5",
+    "vite": "^5"
+  }
+}
+

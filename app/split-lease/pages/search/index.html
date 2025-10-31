@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search | Split Lease</title>
+    <link rel="stylesheet" href="../../components/dist/style.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <meta name="description" content="Explore Split Lease rentals.">
+</head>
+<body>
+    <div id="site-header"></div>
+    <main class="sl-main">
+        <section class="sl-search-layout">
+            <div class="sl-search-sidebar">
+                <button id="sl-filters-open" class="filters-toggle" aria-controls="sl-filters-root" aria-expanded="false">Filters</button>
+                <div id="sl-filters-root" data-layout="sidebar"></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="sl-footer">
+        <p>© 2025 Split Lease</p>
+    </footer>
+    <!-- React and ReactDOM UMD from CDN (for the island) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Components UMD -->
+    <script defer src="../../components/dist/split-lease-components.umd.cjs"></script>
+    <!-- Header Island Mount -->
+    <script defer src="../shared/js/header.js"></script>
+    <!-- Filters Island -->
+    <script defer src="js/filters-island.umd.js"></script>
+</body>
+</html>
+
+
