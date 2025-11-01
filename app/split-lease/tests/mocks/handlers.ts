@@ -8,33 +8,49 @@
  */
 
 import { http, HttpResponse } from 'msw';
+import { createMockListings } from '../factories/homepage';
 
 // Mock API base URL
 const API_BASE = 'http://localhost:3000/api';
 
 export const handlers = [
-  // Example: Mock search listings endpoint
-  http.get(`${API_BASE}/listings/search`, () => {
+  // Homepage popular listings endpoint
+  http.get(`${API_BASE}/v1/listings/popular`, () => {
+    const listings = createMockListings(6);
+    return HttpResponse.json({
+      success: true,
+      data: { listings },
+      meta: {
+        timestamp: new Date().toISOString(),
+        version: '1.0.0',
+      },
+    });
+  }),
+
+  // Search listings endpoint
+  http.get(`${API_BASE}/listings/search`, ({ request }) => {
+    const url = new URL(request.url);
+    const limit = parseInt(url.searchParams.get('limit') || '10');
+    const listings = createMockListings(limit);
+
     return HttpResponse.json({
       success: true,
       data: {
-        results: [
-          {
-            id: '1',
-            title: 'Cozy 2BR in Downtown',
-            location: {
-              city: 'San Francisco',
-              state: 'CA',
-              country: 'USA',
-            },
-            price: 2500,
-            availableFrom: '2024-01-01',
-            availableTo: '2024-12-31',
+        results: listings.map(listing => ({
+          id: listing.id,
+          title: listing.title,
+          location: {
+            city: listing.location.split(',')[0],
+            state: 'NY',
+            country: 'USA',
           },
-        ],
-        total: 1,
+          price: listing.pricePerNight,
+          availableFrom: '2024-01-01',
+          availableTo: '2024-12-31',
+        })),
+        total: listings.length,
         page: 1,
-        limit: 10,
+        limit,
       },
     });
   }),
