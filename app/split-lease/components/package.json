@@ -27,7 +27,8 @@
   },
   "dependencies": {
     "framer-motion": "^11.11.17",
-    "styled-components": "^6.1.13"
+    "styled-components": "^6.1.13",
+    "zod": "^4.1.12"
   },
   "peerDependencies": {
     "react": "^18",
