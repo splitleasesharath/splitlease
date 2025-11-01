@@ -14,6 +14,15 @@ export { default as SearchScheduleSelector } from './SearchScheduleSelector';
 export { Footer } from './Footer';
 export { Header } from './Header';
 
+// SignupTrialHost Component (ESM + React Islands)
+export { SignupTrialHost } from './SignupTrialHost';
+export type {
+  SignupTrialHostProps,
+  FormData as SignupFormData,
+  ValidatedFormData,
+} from './SignupTrialHost';
+export { FormStep } from './SignupTrialHost';
+
 export { ListingImageGrid } from './ListingImageGrid';
 export type { ListingImage, ListingImageGridProps } from './ListingImageGrid';
 

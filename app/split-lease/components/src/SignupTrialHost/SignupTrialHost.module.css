@@ -1,0 +1,419 @@
+/* SignupTrialHost Component Styles - CSS Modules */
+
+/* Component-scoped custom properties */
+.signupForm {
+  --primary-color: #6d23cf;
+  --primary-hover: #5b21b6;
+  --primary-light: rgba(109, 35, 207, 0.1);
+  --error-color: #dc2626;
+  --error-bg: #fef2f2;
+  --success-color: #16a34a;
+  --success-bg: #f0fdf4;
+  --border-color: #e5e7eb;
+  --border-focus: #6d23cf;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --bg-white: #ffffff;
+  --bg-gray-50: #f9fafb;
+  --bg-gray-100: #f3f4f6;
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --spacing-unit: 1rem;
+  --transition-fast: 150ms ease;
+  --transition-normal: 200ms ease;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  max-width: 600px;
+  margin: 0 auto;
+  padding: var(--spacing-unit);
+  font-family: var(--font-family);
+}
+
+/* Form container */
+.formContainer {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: calc(var(--spacing-unit) * 2);
+}
+
+/* Progress indicator */
+.progressContainer {
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-gray-100);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: calc(var(--spacing-unit) * 0.5);
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
+  transition: width var(--transition-normal);
+}
+
+.progressText {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.progressStep {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+/* Step container */
+.stepContainer {
+  margin-bottom: calc(var(--spacing-unit) * 2);
+}
+
+.stepTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: calc(var(--spacing-unit) * 0.5);
+}
+
+.stepDescription {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: calc(var(--spacing-unit) * 1.5);
+}
+
+/* Form fields */
+.formGroup {
+  margin-bottom: calc(var(--spacing-unit) * 1.5);
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: calc(var(--spacing-unit) * 0.5);
+}
+
+.required {
+  color: var(--error-color);
+  margin-left: 0.25rem;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  padding: calc(var(--spacing-unit) * 0.75);
+  font-size: 1rem;
+  font-family: inherit;
+  color: var(--text-primary);
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.input:focus,
+.select:focus,
+.textarea:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.input[aria-invalid='true'],
+.select[aria-invalid='true'],
+.textarea[aria-invalid='true'] {
+  border-color: var(--error-color);
+}
+
+.input:disabled,
+.select:disabled,
+.textarea:disabled {
+  background: var(--bg-gray-50);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  background-position: right 0.5rem center;
+  background-repeat: no-repeat;
+  background-size: 1.5em 1.5em;
+  padding-right: 2.5rem;
+}
+
+/* Checkbox styling */
+.checkboxGroup {
+  display: flex;
+  align-items: flex-start;
+  gap: calc(var(--spacing-unit) * 0.75);
+  margin-bottom: calc(var(--spacing-unit) * 1.5);
+}
+
+.checkbox {
+  width: 1.25rem;
+  height: 1.25rem;
+  min-width: 1.25rem;
+  margin-top: 0.125rem;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  border-radius: 0.25rem;
+  accent-color: var(--primary-color);
+}
+
+.checkbox:focus {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.checkboxLabel {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.checkboxLabel a {
+  color: var(--primary-color);
+  text-decoration: underline;
+}
+
+/* Error message */
+.errorMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: calc(var(--spacing-unit) * 0.5);
+  padding: calc(var(--spacing-unit) * 0.5);
+  font-size: 0.875rem;
+  color: var(--error-color);
+  background: var(--error-bg);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--error-color);
+}
+
+.errorIcon {
+  flex-shrink: 0;
+}
+
+/* Success message */
+.successMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: calc(var(--spacing-unit) * 1);
+  margin-bottom: calc(var(--spacing-unit) * 1.5);
+  font-size: 0.875rem;
+  color: var(--success-color);
+  background: var(--success-bg);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--success-color);
+}
+
+.successIcon {
+  flex-shrink: 0;
+  font-size: 1.25rem;
+}
+
+/* Loading message */
+.loadingMessage {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: calc(var(--spacing-unit) * 1);
+  margin-bottom: calc(var(--spacing-unit) * 1.5);
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  background: var(--bg-gray-50);
+  border-radius: var(--radius-md);
+}
+
+.spinner {
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid var(--bg-gray-100);
+  border-top-color: var(--primary-color);
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Button container */
+.buttonContainer {
+  display: flex;
+  gap: calc(var(--spacing-unit) * 1);
+  margin-top: calc(var(--spacing-unit) * 2);
+}
+
+.button {
+  flex: 1;
+  padding: calc(var(--spacing-unit) * 0.75) calc(var(--spacing-unit) * 1.5);
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  min-height: 44px; /* WCAG AA touch target */
+}
+
+.buttonPrimary {
+  color: white;
+  background: var(--primary-color);
+}
+
+.buttonPrimary:hover:not(:disabled) {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.buttonPrimary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.buttonPrimary:focus {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.buttonPrimary:disabled {
+  background: var(--bg-gray-100);
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.buttonSecondary {
+  color: var(--text-primary);
+  background: var(--bg-white);
+  border: 1px solid var(--border-color);
+}
+
+.buttonSecondary:hover:not(:disabled) {
+  background: var(--bg-gray-50);
+  border-color: var(--text-secondary);
+}
+
+.buttonSecondary:focus {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.buttonSecondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Accessibility */
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+.liveRegion {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* Responsive breakpoints */
+@media (max-width: 640px) {
+  .signupForm {
+    padding: calc(var(--spacing-unit) * 0.5);
+  }
+
+  .formContainer {
+    padding: var(--spacing-unit);
+  }
+
+  .stepTitle {
+    font-size: 1.25rem;
+  }
+
+  .buttonContainer {
+    flex-direction: column-reverse;
+  }
+
+  .button {
+    width: 100%;
+  }
+}
+
+@media (min-width: 641px) and (max-width: 1024px) {
+  .signupForm {
+    max-width: 500px;
+  }
+}
+
+/* Focus visible polyfill */
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible,
+.checkbox:focus-visible,
+.button:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .input,
+  .select,
+  .textarea {
+    border-width: 2px;
+  }
+
+  .button {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print styles */
+@media print {
+  .signupForm {
+    max-width: 100%;
+    box-shadow: none;
+  }
+
+  .buttonContainer {
+    display: none;
+  }
+}
