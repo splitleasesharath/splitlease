@@ -79,3 +79,12 @@ This prompt helps you determine what documentation you should read based on the 
     - When troubleshooting Header component styling, dropdowns, or mobile menu
     - When implementing accessibility features (WCAG 2.1 AA compliance)
     - When working with data attribute parsing for island mounting
+
+- app_docs/feature-21ddfa87-package-conflict-resolution.md
+  - Conditions:
+    - When encountering merge conflicts in package.json or package-lock.json files
+    - When adding or updating npm dependencies in either the root app or components library
+    - When troubleshooting build failures after merging branches with dependency changes
+    - When implementing or modifying dependency management tooling
+    - When documenting the project's dual-package architecture
+    - When considering monorepo refactoring or restructuring the dependency architecture
