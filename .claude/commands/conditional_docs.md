@@ -79,3 +79,15 @@ This prompt helps you determine what documentation you should read based on the 
     - When troubleshooting Header component styling, dropdowns, or mobile menu
     - When implementing accessibility features (WCAG 2.1 AA compliance)
     - When working with data attribute parsing for island mounting
+
+- app_docs/feature-0fe2ed32-informational-text-esm.md
+  - Conditions:
+    - When working with the InformationalText component
+    - When displaying informational messages, notices, tips, or alerts
+    - When implementing message components with different severity levels (info, warning, success, error)
+    - When building dismissible notification components
+    - When adding action buttons to informational messages
+    - When implementing WCAG 2.1 AA compliant messaging components
+    - When working with ARIA roles for alerts and status messages
+    - When creating components with Zod runtime validation
+    - When troubleshooting InformationalText styling, icons, or accessibility
