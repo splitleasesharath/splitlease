@@ -6,8 +6,10 @@
   "description": "SplitLease marketplace application - AI-native rebuild",
   "scripts": {
     "build": "npm run type-check && node scripts/build.js",
-    "build:homepage": "npm run type-check && node scripts/build-homepage.js",
     "build:all": "npm run build:homepage && npm --prefix components run build",
+    "build:homepage": "npm run type-check && node scripts/build-homepage.js",
+    "deps:check": "node ../../scripts/pre-commit-deps.js",
+    "deps:sort": "node ../../scripts/sort-package-json.js",
     "preview": "vite preview",
     "test": "vitest",
     "test:coverage": "vitest --coverage",

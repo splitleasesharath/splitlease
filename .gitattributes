@@ -1,10 +1,10 @@
 # Git attributes for SplitLease repository
 # Helps manage merge conflicts for package files
 
-# Package lock files should use 'ours' strategy during merges
-# This forces lock files to be regenerated with npm install after merge
-# rather than attempting to manually merge machine-generated JSON
-**/package-lock.json merge=ours
+# Package lock files use custom merge driver that regenerates from package.json
+# This prevents manual merging of machine-generated JSON
+# Run: git config --local merge.npm-merge-driver.driver "node scripts/npm-merge-driver.js %O %A %B %P"
+**/package-lock.json merge=npm-merge-driver
 
 # Ensure consistent line endings
 * text=auto
