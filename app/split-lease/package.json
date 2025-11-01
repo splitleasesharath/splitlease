@@ -5,25 +5,25 @@
   "type": "module",
   "description": "SplitLease marketplace application - AI-native rebuild",
   "scripts": {
-    "dev": "vite",
     "build": "npm run type-check && node scripts/build.js",
+    "dev": "vite",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\"",
+    "lint": "eslint . --ext .ts,.tsx",
     "preview": "vite preview",
     "test": "vitest",
-    "test:watch": "vitest --watch",
     "test:coverage": "vitest --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "type-check": "tsc --noEmit",
-    "lint": "eslint . --ext .ts,.tsx",
-    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\"",
-    "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md}\""
+    "test:watch": "vitest --watch",
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "framer-motion": "^11.11.17",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "zod": "^3.23.8",
     "styled-components": "^6.1.13",
-    "framer-motion": "^11.11.17"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.2.0",
@@ -50,7 +50,7 @@
     "vitest": "^2.1.8"
   },
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=18.20.0 <19.0.0 || >=20.0.0",
     "npm": ">=9.0.0"
   }
 }

@@ -14,7 +14,7 @@ import { z } from 'zod';
 export const APIErrorSchema = z.object({
   code: z.string(),
   message: z.string(),
-  details: z.record(z.unknown()).optional(),
+  details: z.record(z.string(), z.unknown()).optional(),
   statusCode: z.number().optional(),
 });
 
@@ -79,7 +79,7 @@ export const SearchParamsSchema = z.object({
   limit: z.number().int().positive().max(100).default(10),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).default('asc').optional(),
-  filters: z.record(z.unknown()).optional(),
+  filters: z.record(z.string(), z.unknown()).optional(),
 });
 
 export type SearchParams = z.infer<typeof SearchParamsSchema>;
