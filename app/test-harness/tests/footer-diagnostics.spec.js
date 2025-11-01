@@ -446,7 +446,7 @@ test.describe('Footer Diagnostics - Problem Detection', () => {
     }
 
     // Check bundle size
-    const bundlePath = path.join(__dirname, '../../split-lease/components/dist/split-lease-components.umd.cjs');
+    const bundlePath = path.join(__dirname, '../../split-lease/components/dist/split-lease-components.umd.js');
     const fs = require('fs');
     const stats = fs.statSync(bundlePath);
     const sizeKB = stats.size / 1024;
