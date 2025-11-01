@@ -3,7 +3,7 @@
  * Manages authentication mode toggling between signup and login
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import type { AuthMode } from '../SignupLogin.types';
 
 /**
@@ -17,6 +17,11 @@ export function useAuthMode(
   onModeChange?: (mode: AuthMode) => void
 ) {
   const [mode, setModeState] = useState<AuthMode>(initialMode);
+
+  // Synchronize internal state with prop changes
+  useEffect(() => {
+    setModeState(initialMode);
+  }, [initialMode]);
 
   /**
    * Toggle between signup and login modes

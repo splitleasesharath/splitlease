@@ -46,7 +46,7 @@ describe('SignupLogin Component - Accessibility Tests', () => {
     render(<SignupLogin mode="login" />);
 
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password\s*\*$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/remember me/i)).toBeInTheDocument();
   });
 
@@ -122,7 +122,8 @@ describe('SignupLogin Component - Accessibility Tests', () => {
     render(<SignupLogin mode="login" />);
 
     const emailInput = screen.getByLabelText(/email/i);
-    const passwordInput = screen.getByLabelText(/password/i);
+    const passwordInput = screen.getByLabelText(/^password\s*\*$/i);
+    const passwordToggleButton = screen.getByRole('button', { name: /show password/i });
     const rememberMeCheckbox = screen.getByLabelText(/remember me/i);
     const submitButton = screen.getByRole('button', { name: /log in/i });
 
@@ -131,6 +132,9 @@ describe('SignupLogin Component - Accessibility Tests', () => {
 
     await user.tab();
     expect(document.activeElement).toBe(passwordInput);
+
+    await user.tab();
+    expect(document.activeElement).toBe(passwordToggleButton);
 
     await user.tab();
     expect(document.activeElement).toBe(rememberMeCheckbox);
@@ -145,7 +149,7 @@ describe('SignupLogin Component - Accessibility Tests', () => {
     render(<SignupLogin mode="login" onLoginSuccess={onLoginSuccess} />);
 
     await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.type(screen.getByLabelText(/^password\s*\*$/i), 'password123');
     await user.keyboard('{Enter}');
 
     await new Promise(resolve => setTimeout(resolve, 100));

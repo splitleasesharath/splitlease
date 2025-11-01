@@ -34,7 +34,7 @@ describe('SignupLogin Component - Rendering Tests', () => {
 
     expect(screen.getByRole('form')).toBeInTheDocument();
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password\s*\*$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/remember me/i)).toBeInTheDocument();
     expect(screen.queryByLabelText(/first name/i)).not.toBeInTheDocument();
   });
@@ -61,7 +61,7 @@ describe('SignupLogin Component - Rendering Tests', () => {
     render(<SignupLogin mode="login" />);
 
     expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password\s*\*$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/remember me/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /log in/i })).toBeInTheDocument();
   });
@@ -134,7 +134,7 @@ describe('SignupLogin Component - Interaction Tests', () => {
     const user = userEvent.setup();
     render(<SignupLogin mode="login" />);
 
-    const passwordInput = screen.getByLabelText(/password/i) as HTMLInputElement;
+    const passwordInput = screen.getByLabelText(/^password\s*\*$/i) as HTMLInputElement;
     await user.type(passwordInput, 'Password123!');
 
     expect(passwordInput.value).toBe('Password123!');
@@ -219,7 +219,7 @@ describe('SignupLogin Component - Interaction Tests', () => {
     render(<SignupLogin mode="login" onLoginSuccess={onLoginSuccess} />);
 
     await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.type(screen.getByLabelText(/^password\s*\*$/i), 'password123');
 
     const submitButton = screen.getByRole('button', { name: /log in/i });
     await user.click(submitButton);
@@ -257,7 +257,7 @@ describe('SignupLogin Component - Interaction Tests', () => {
     render(<SignupLogin mode="login" onLoginSuccess={onLoginSuccess} />);
 
     await user.type(screen.getByLabelText(/email/i), 'test@example.com');
-    await user.type(screen.getByLabelText(/password/i), 'password123');
+    await user.type(screen.getByLabelText(/^password\s*\*$/i), 'password123');
 
     const submitButton = screen.getByRole('button', { name: /log in/i });
     await user.click(submitButton);

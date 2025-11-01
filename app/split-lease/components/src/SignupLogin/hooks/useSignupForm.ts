@@ -4,7 +4,12 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { SignupFormDataSchema } from '../SignupLogin.schema';
+import {
+  SignupFormDataSchema,
+  EmailSchema,
+  PasswordSchema,
+  NameSchema,
+} from '../SignupLogin.schema';
 import { calculatePasswordStrength } from '../utils/passwordStrength';
 import type {
   SignupFormData,
@@ -32,6 +37,12 @@ export function useSignupForm(onSuccess?: (data: SignupFormData) => void | Promi
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [passwordStrength, setPasswordStrength] = useState<PasswordStrengthResult | null>(null);
   const isMountedRef = useRef(true);
+  const formDataRef = useRef(formData);
+
+  // Update ref whenever formData changes
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -56,9 +67,16 @@ export function useSignupForm(onSuccess?: (data: SignupFormData) => void | Promi
    */
   const handleFieldChange = useCallback(
     <K extends keyof SignupFormData>(field: K, value: SignupFormData[K]) => {
-      // Trim whitespace for text fields
+      // Trim whitespace for name fields and email
+      const shouldTrim = field === 'firstName' || field === 'lastName' || field === 'email';
       const processedValue =
-        typeof value === 'string' ? value.trim() : value;
+        shouldTrim && typeof value === 'string' ? value.trim() : value;
+
+      // Update the ref immediately so validateField can access the latest value
+      formDataRef.current = {
+        ...formDataRef.current,
+        [field]: processedValue,
+      };
 
       setFormData((prev) => ({
         ...prev,
@@ -84,37 +102,57 @@ export function useSignupForm(onSuccess?: (data: SignupFormData) => void | Promi
    */
   const validateField = useCallback(
     (field: keyof SignupFormData): string | undefined => {
-      try {
-        // For confirmPassword, need to validate passwords match
-        if (field === 'confirmPassword') {
-          if (!formData.confirmPassword) {
-            return 'Please confirm your password';
-          }
-          if (formData.password !== formData.confirmPassword) {
-            return 'Passwords do not match';
-          }
-          return undefined;
-        }
+      // Use formDataRef to get the latest value, even if state hasn't updated yet
+      const currentFormData = formDataRef.current;
+      const value = currentFormData[field];
 
-        // For termsAccepted, validate it's true
-        if (field === 'termsAccepted') {
-          if (!formData.termsAccepted) {
-            return 'You must accept the terms and conditions';
-          }
-          return undefined;
-        }
+      // Map fields to their schemas
+      const fieldSchemaMap: Record<string, any> = {
+        firstName: NameSchema,
+        lastName: NameSchema,
+        email: EmailSchema,
+        password: PasswordSchema,
+        confirmPassword: null, // Special case - needs full form validation
+        termsAccepted: null, // Special case - handled below
+      };
 
-        // Validate using Zod schema
-        const fieldSchema = SignupFormDataSchema.shape[field as keyof typeof SignupFormDataSchema.shape];
-        if (fieldSchema) {
-          fieldSchema.parse(formData[field]);
+      // For confirmPassword, validate the full form to check if passwords match
+      if (field === 'confirmPassword') {
+        try {
+          SignupFormDataSchema.parse(currentFormData);
+          return undefined;
+        } catch (error: any) {
+          const issues = error.issues || error.errors || [];
+          const fieldError = issues.find(
+            (err: any) => err.path && err.path[0] === 'confirmPassword'
+          );
+          return fieldError?.message;
+        }
+      }
+
+      // For termsAccepted, validate directly
+      if (field === 'termsAccepted') {
+        if (!currentFormData.termsAccepted) {
+          return 'You must accept the terms and conditions';
         }
         return undefined;
+      }
+
+      // For other fields, use the mapped schema
+      const fieldSchema = fieldSchemaMap[field];
+      if (!fieldSchema) {
+        return undefined;
+      }
+
+      try {
+        fieldSchema.parse(value);
+        return undefined;
       } catch (error: any) {
-        return error.errors?.[0]?.message || 'Invalid value';
+        const issues = error.issues || error.errors || [];
+        return issues[0]?.message || 'Invalid value';
       }
     },
-    [formData]
+    []
   );
 
   /**
@@ -139,35 +177,41 @@ export function useSignupForm(onSuccess?: (data: SignupFormData) => void | Promi
    * @returns True if form is valid, false otherwise
    */
   const validateForm = useCallback((): boolean => {
+    // Use formDataRef to ensure we validate the latest data
+    const currentFormData = formDataRef.current;
     try {
-      SignupFormDataSchema.parse(formData);
+      SignupFormDataSchema.parse(currentFormData);
       setErrors({});
       return true;
     } catch (error: any) {
       const newErrors: ValidationErrors<SignupFormData> = {};
-      error.errors?.forEach((err: any) => {
+      // Zod v4 uses `issues` instead of `errors`
+      const issues = error.issues || error.errors || [];
+      issues.forEach((err: any) => {
         const field = err.path[0] as keyof SignupFormData;
-        if (!newErrors[field]) {
+        if (field && !newErrors[field]) {
           newErrors[field] = err.message;
         }
       });
       setErrors(newErrors);
       return false;
     }
-  }, [formData]);
+  }, []);
 
   /**
    * Clear form after successful submission
    */
   const clearForm = useCallback(() => {
-    setFormData({
+    const emptyFormData: SignupFormData = {
       firstName: '',
       lastName: '',
       email: '',
       password: '',
       confirmPassword: '',
       termsAccepted: false,
-    });
+    };
+    formDataRef.current = emptyFormData;
+    setFormData(emptyFormData);
     setErrors({});
     setPasswordStrength(null);
   }, []);
@@ -186,9 +230,9 @@ export function useSignupForm(onSuccess?: (data: SignupFormData) => void | Promi
     setSubmissionError(null);
 
     try {
-      // Call success callback if provided
+      // Call success callback if provided (use latest formData from ref)
       if (onSuccess) {
-        await onSuccess(formData);
+        await onSuccess(formDataRef.current);
       }
 
       // Clear form after successful submission
@@ -204,7 +248,7 @@ export function useSignupForm(onSuccess?: (data: SignupFormData) => void | Promi
         setIsSubmitting(false);
       }
     }
-  }, [formData, validateForm, onSuccess, clearForm]);
+  }, [validateForm, onSuccess, clearForm]);
 
   return {
     formData,

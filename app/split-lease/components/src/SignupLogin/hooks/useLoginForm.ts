@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { LoginFormDataSchema } from '../SignupLogin.schema';
+import { LoginFormDataSchema, EmailSchema } from '../SignupLogin.schema';
 import type { LoginFormData, ValidationErrors } from '../SignupLogin.types';
 
 /**
@@ -23,6 +23,7 @@ export function useLoginForm(onSuccess?: (data: LoginFormData) => void | Promise
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionError, setSubmissionError] = useState<string | null>(null);
   const isMountedRef = useRef(true);
+  const formDataRef = useRef(formData);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -38,9 +39,15 @@ export function useLoginForm(onSuccess?: (data: LoginFormData) => void | Promise
    */
   const handleFieldChange = useCallback(
     <K extends keyof LoginFormData>(field: K, value: LoginFormData[K]) => {
-      // Trim whitespace for text fields
+      // Trim whitespace only for email field
       const processedValue =
-        typeof value === 'string' ? value.trim() : value;
+        field === 'email' && typeof value === 'string' ? value.trim() : value;
+
+      // Update the ref immediately so validateField can access the latest value
+      formDataRef.current = {
+        ...formDataRef.current,
+        [field]: processedValue,
+      };
 
       setFormData((prev) => ({
         ...prev,
@@ -66,15 +73,38 @@ export function useLoginForm(onSuccess?: (data: LoginFormData) => void | Promise
    */
   const validateField = useCallback(
     (field: keyof LoginFormData): string | undefined => {
+      // Use formDataRef to get the latest value
+      const currentFormData = formDataRef.current;
+      const value = currentFormData[field];
+
+      // Map fields to their schemas
+      const fieldSchemaMap: Record<string, any> = {
+        email: EmailSchema,
+        password: LoginFormDataSchema.shape.password,
+        rememberMe: null, // Boolean, always valid
+      };
+
+      // rememberMe is always valid (boolean)
+      if (field === 'rememberMe') {
+        return undefined;
+      }
+
+      // Validate using mapped schema
+      const fieldSchema = fieldSchemaMap[field];
+      if (!fieldSchema) {
+        return undefined;
+      }
+
       try {
-        const fieldSchema = LoginFormDataSchema.shape[field];
-        fieldSchema.parse(formData[field]);
+        fieldSchema.parse(value);
         return undefined;
       } catch (error: any) {
-        return error.errors?.[0]?.message || 'Invalid value';
+        // Zod v4 uses `issues` instead of `errors`
+        const issues = error.issues || error.errors || [];
+        return issues[0]?.message || 'Invalid value';
       }
     },
-    [formData]
+    []
   );
 
   /**
@@ -99,20 +129,26 @@ export function useLoginForm(onSuccess?: (data: LoginFormData) => void | Promise
    * @returns True if form is valid, false otherwise
    */
   const validateForm = useCallback((): boolean => {
+    // Use formDataRef to ensure we validate the latest data
+    const currentFormData = formDataRef.current;
     try {
-      LoginFormDataSchema.parse(formData);
+      LoginFormDataSchema.parse(currentFormData);
       setErrors({});
       return true;
     } catch (error: any) {
       const newErrors: ValidationErrors<LoginFormData> = {};
-      error.errors?.forEach((err: any) => {
+      // Zod v4 uses `issues` instead of `errors`
+      const issues = error.issues || error.errors || [];
+      issues.forEach((err: any) => {
         const field = err.path[0] as keyof LoginFormData;
-        newErrors[field] = err.message;
+        if (field) {
+          newErrors[field] = err.message;
+        }
       });
       setErrors(newErrors);
       return false;
     }
-  }, [formData]);
+  }, []);
 
   /**
    * Handle form submission
@@ -128,9 +164,9 @@ export function useLoginForm(onSuccess?: (data: LoginFormData) => void | Promise
     setSubmissionError(null);
 
     try {
-      // Call success callback if provided
+      // Call success callback if provided (use latest formData from ref)
       if (onSuccess) {
-        await onSuccess(formData);
+        await onSuccess(formDataRef.current);
       }
     } catch (error: any) {
       if (isMountedRef.current) {
@@ -141,7 +177,7 @@ export function useLoginForm(onSuccess?: (data: LoginFormData) => void | Promise
         setIsSubmitting(false);
       }
     }
-  }, [formData, validateForm, onSuccess]);
+  }, [validateForm, onSuccess]);
 
   return {
     formData,

@@ -22,8 +22,8 @@ export function calculatePasswordStrength(password: string): PasswordStrengthRes
   let score = 0;
   const feedback: string[] = [];
 
-  // Length scoring
-  if (password.length >= 8) score += 1;
+  // Length scoring - be more strict, don't award points for just meeting minimum
+  if (password.length >= 10) score += 1;
   if (password.length >= 12) score += 1;
   if (password.length >= 16) score += 1;
 
@@ -50,9 +50,12 @@ export function calculatePasswordStrength(password: string): PasswordStrengthRes
   // Ensure score is in valid range
   score = Math.max(0, Math.min(score, 10));
 
-  // Determine strength level
+  // Determine strength level - adjusted thresholds
+  // Weak: score <= 4 (8-9 chars with all requirements)
+  // Medium: score 5-6 (10-15 chars with variety)
+  // Strong: score >= 7 (16+ chars with high variety)
   let strength: PasswordStrength;
-  if (score <= 3) {
+  if (score <= 4) {
     strength = 'weak';
     feedback.push('Consider a longer password with more variety');
   } else if (score <= 6) {
