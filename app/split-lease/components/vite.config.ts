@@ -29,13 +29,14 @@ export default defineConfig({
       fileName: (format) => `split-lease-components.${format}.js`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom', 'styled-components', 'framer-motion'],
+      external: ['react', 'react-dom', 'styled-components', 'framer-motion', 'zod'],
       output: {
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
           'styled-components': 'styled',
           'framer-motion': 'framerMotion',
+          'zod': 'zod',
         },
         assetFileNames: 'assets/[name].[ext]',
       },
