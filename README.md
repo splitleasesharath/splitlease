@@ -17,8 +17,11 @@ Split Lease is a rental platform that enables users to rent properties for speci
 
 ## Prerequisites
 
-- Node.js 18+
+- Node.js 18.20.0+ (LTS versions 18.x or 20.x recommended)
+- npm 9.0.0+
 - Modern web browser (ES2020 support)
+
+> **Note:** This project contains two separate Node.js packages (root app and components). See [Dependency Management Guide](docs/dependency-management.md) for best practices on managing dependencies and resolving merge conflicts.
 
 ## Project Structure
 
@@ -221,6 +224,49 @@ interface SearchScheduleSelectorProps {
 - Search filters sidebar
 - Results grid placeholder
 - Map preview placeholder
+
+## Troubleshooting
+
+### Common Issues
+
+#### Merge Conflicts in package.json or package-lock.json
+
+This project contains two separate Node.js packages, which can lead to merge conflicts when multiple branches update dependencies.
+
+**Quick Fix:**
+```bash
+./scripts/resolve-package-conflicts.sh
+```
+
+**Manual Resolution:**
+1. For `package-lock.json` conflicts: Delete the file and run `npm install` in the affected directory
+2. For `package.json` conflicts: Manually resolve, then run `node scripts/sort-package-deps.mjs`
+
+See the [Dependency Management Guide](docs/dependency-management.md) for detailed instructions.
+
+#### Build Errors After npm install
+
+Ensure you're using the correct Node.js and npm versions:
+```bash
+node --version  # Should be 18.20.0+ or 20.x.x
+npm --version   # Should be 9.0.0+
+```
+
+Use nvm to switch versions:
+```bash
+nvm use  # Uses the version specified in .nvmrc
+```
+
+#### Components Not Building
+
+Make sure you run npm install in the correct directory:
+```bash
+cd app/split-lease/components
+npm install
+npm run build
+```
+
+For more troubleshooting help, see [docs/dependency-management.md](docs/dependency-management.md).
 
 ## Future Enhancements
 

@@ -1,0 +1,28 @@
+# Git attributes for SplitLease repository
+# Helps manage merge conflicts for package files
+
+# Package lock files should use 'ours' strategy during merges
+# This forces lock files to be regenerated with npm install after merge
+# rather than attempting to manually merge machine-generated JSON
+**/package-lock.json merge=ours
+
+# Ensure consistent line endings
+* text=auto
+*.js text eol=lf
+*.ts text eol=lf
+*.tsx text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+
+# Mark binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
