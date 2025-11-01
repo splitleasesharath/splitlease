@@ -238,9 +238,22 @@ This project contains two separate Node.js packages, which can lead to merge con
 ./scripts/resolve-package-conflicts.sh
 ```
 
+This automated script will:
+- Detect and resolve conflicts in both package.json and package-lock.json files
+- Sort dependencies alphabetically to minimize future conflicts
+- Regenerate lock files from package.json when needed
+- Validate all changes to ensure builds still work
+
 **Manual Resolution:**
 1. For `package-lock.json` conflicts: Delete the file and run `npm install` in the affected directory
 2. For `package.json` conflicts: Manually resolve, then run `node scripts/sort-package-deps.mjs`
+
+**Conflict Prevention Tools:**
+
+The project includes several tools to prevent and minimize package conflicts:
+- **Git merge driver** (`npm-merge-driver.js`) - Automatically regenerates package-lock.json during merges instead of creating conflicts
+- **Dependency sorting** (`sort-package-deps.mjs`) - Keeps package.json dependencies in alphabetical order
+- **Pre-commit validation** (`pre-commit-deps.js`) - Validates dependency changes before commits
 
 See the [Dependency Management Guide](docs/dependency-management.md) for detailed instructions.
 
