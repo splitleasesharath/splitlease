@@ -79,3 +79,16 @@ This prompt helps you determine what documentation you should read based on the 
     - When troubleshooting Header component styling, dropdowns, or mobile menu
     - When implementing accessibility features (WCAG 2.1 AA compliance)
     - When working with data attribute parsing for island mounting
+
+- app_docs/feature-9ebdffb5-signup-login-component.md
+  - Conditions:
+    - When working with authentication or user signup/login functionality
+    - When implementing form validation using Zod schemas
+    - When building components following ESM + React Islands architecture
+    - When implementing custom React hooks for form management
+    - When working with password validation or strength indicators
+    - When implementing WCAG 2.1 AA accessibility in forms
+    - When troubleshooting SignupLogin component
+    - When implementing Test-Driven Development (TDD) patterns
+    - When working with CSS Modules for scoped component styling
+    - When implementing email validation with typo detection
