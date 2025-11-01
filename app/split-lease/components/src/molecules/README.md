@@ -9,6 +9,30 @@ Simple combinations of atoms that work together as a functional unit. Molecules 
 - **Reusable**: Can be used in multiple contexts
 - **May Have Simple State**: Can manage basic UI state
 
+## Available Components
+
+### InformationalText
+A flexible, accessible component for displaying informational messages, notices, tips, or contextual help text with various severity levels.
+
+```tsx
+<InformationalText
+  variant="info"
+  title="Important Notice"
+  onDismiss={() => console.log('Dismissed')}
+>
+  This is an informational message
+</InformationalText>
+```
+
+Features:
+- Multiple variants (info, warning, success, error)
+- Three sizes (small, medium, large)
+- Optional title and dismiss functionality
+- Action buttons support
+- Full WCAG 2.1 AA accessibility compliance
+
+[See full documentation](./InformationalText/README.md)
+
 ## Examples
 
 ### SearchBar

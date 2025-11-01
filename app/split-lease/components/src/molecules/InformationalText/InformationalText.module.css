@@ -1,0 +1,252 @@
+/* Base container styles */
+.container {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid;
+  position: relative;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  line-height: 1.5;
+}
+
+/* Icon wrapper */
+.iconWrapper {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.125rem;
+}
+
+/* Content area */
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Title styles */
+.title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
+  color: inherit;
+}
+
+/* Body text */
+.body {
+  font-size: 0.875rem;
+  margin: 0;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Actions container */
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+/* Action button styles */
+.actionButton {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: 1px solid currentColor;
+  border-radius: 0.375rem;
+  background-color: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.actionButton:hover:not(:disabled) {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.actionButton:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.actionButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Dismiss button */
+.dismissButton {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.25rem;
+  border: none;
+  border-radius: 0.25rem;
+  background-color: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  margin-top: 0.125rem;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.dismissButton:hover {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.dismissButton:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+/* Variant styles */
+.info {
+  background-color: #e3f2fd;
+  border-color: #2196f3;
+  color: #0d47a1;
+}
+
+.info .iconWrapper {
+  color: #2196f3;
+}
+
+.warning {
+  background-color: #fff3e0;
+  border-color: #ff9800;
+  color: #e65100;
+}
+
+.warning .iconWrapper {
+  color: #ff9800;
+}
+
+.success {
+  background-color: #e8f5e9;
+  border-color: #4caf50;
+  color: #1b5e20;
+}
+
+.success .iconWrapper {
+  color: #4caf50;
+}
+
+.error {
+  background-color: #ffebee;
+  border-color: #f44336;
+  color: #b71c1c;
+}
+
+.error .iconWrapper {
+  color: #f44336;
+}
+
+/* Size variants */
+.small {
+  padding: 0.5rem;
+  font-size: 0.75rem;
+}
+
+.small .title {
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.small .body {
+  font-size: 0.75rem;
+}
+
+.small .iconWrapper svg {
+  width: 18px;
+  height: 18px;
+}
+
+.small .actions {
+  margin-top: 0.5rem;
+}
+
+.small .actionButton {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.medium {
+  /* Default size - uses base styles */
+}
+
+.large {
+  padding: 1.5rem;
+  font-size: 1rem;
+}
+
+.large .title {
+  font-size: 1.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.large .body {
+  font-size: 1rem;
+}
+
+.large .iconWrapper svg {
+  width: 32px;
+  height: 32px;
+}
+
+.large .actions {
+  margin-top: 1rem;
+}
+
+.large .actionButton {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
+  .container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .iconWrapper {
+    margin-top: 0;
+  }
+
+  .actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .actionButton {
+    width: 100%;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .container {
+    border-width: 2px;
+  }
+
+  .actionButton:focus-visible,
+  .dismissButton:focus-visible {
+    outline-width: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .actionButton,
+  .dismissButton {
+    transition: none;
+  }
+}

@@ -39,7 +39,8 @@ export type {
 // ============================================================================
 // Molecular Components
 // ============================================================================
-// TODO: Export molecular components as they are created
+export * from './molecules';
+// TODO: Export additional molecular components as they are created
 // export { SearchBar } from './molecules/SearchBar';
 // export { FormField } from './molecules/FormField';
 // export { ListingCard } from './molecules/ListingCard';
