@@ -1,0 +1,260 @@
+/* ========================================
+   CSS Variables - Split Lease Application
+   ======================================== */
+
+:root {
+  /* ========================================
+     COLOR VARIABLES
+     ======================================== */
+
+  /* Primary Colors */
+  --primary-purple: #31135D;
+  --primary-purple-hover: #251047;
+  --secondary-purple: rgb(109, 49, 194);
+  --accent-purple: rgb(140, 104, 238);
+  --selected-purple: rgb(79, 48, 151);
+  --text-purple: rgb(82, 31, 147);
+  --chat-purple: rgb(75, 71, 206);
+
+  /* Secondary Colors */
+  --accent-blue: #4A90E2;
+  --accent-blue-hover: #357ABD;
+
+  /* Status Colors */
+  --success-green: #22C55E;
+  --success-teal: #10B981;
+
+  /* Text Colors */
+  --text-dark: #1a1a1a;
+  --text-gray: #6b7280;
+  --text-light-gray: #9ca3af;
+  --text-medium-gray: #666666;
+  --text-description: #374151;
+
+  /* Background Colors */
+  --bg-white: #ffffff;
+  --bg-light: #f9fafb;
+  --bg-light-gray: #f3f4f6;
+  --bg-lighter-gray: #f5f5f5;
+  --bg-off-white: rgb(252, 250, 255);
+
+  /* Border Colors */
+  --border-color: #e5e7eb;
+  --border-light: #f3f4f6;
+  --border-gray: rgba(107, 107, 107, 0.7);
+  --border-gray-light: #e0e0e0;
+  --border-gray-lighter: #ddd;
+
+  /* Neutral Colors */
+  --white: rgb(255, 255, 255);
+  --black: rgb(0, 0, 0);
+  --off-white: rgb(252, 250, 255);
+
+  /* Info/Link Colors */
+  --info-blue: #2196F3;
+  --info-indigo: #6366F1;
+  --info-indigo-hover: #3b82f6;
+  --bg-info: #f0f7ff;
+
+  /* Subtle/Overlay Colors */
+  --overlay-dark: rgba(0, 0, 0, 0.7);
+  --overlay-light: rgba(255, 255, 255, 0.9);
+  --overlay-light-blur: rgba(255, 255, 255, 0.2);
+
+  /* Gradient Colors */
+  --gradient-purple-primary: linear-gradient(135deg, #31135D 0%, #5a2d8f 100%);
+  --gradient-purple-button: linear-gradient(135deg, #6D31C2 0%, #7C3AED 100%);
+  --gradient-purple-hover: linear-gradient(135deg, #5B2AA5 0%, #6D28D9 100%);
+  --gradient-purple-dark: linear-gradient(135deg, rgba(47, 20, 91, 0.85), rgba(109, 49, 194, 0.75));
+  --gradient-purple-dark-hover: linear-gradient(135deg, rgba(47, 20, 91, 0.9), rgba(109, 49, 194, 0.8));
+
+  /* ========================================
+     FONT VARIABLES
+     ======================================== */
+
+  /* Font Families */
+  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-dm: 'DM Sans', sans-serif;
+  --font-primary: 'Helvetica', Arial, sans-serif;
+  --font-heading: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Font Sizes */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-sm-md: 13px;
+  --text-base: 14px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 28px;
+  --text-3xl: 32px;
+  --text-4xl: 36px;
+
+  /* Font Weights */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Line Heights */
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.6;
+  --line-height-loose: 1.8;
+
+  /* Letter Spacing */
+  --letter-spacing-normal: normal;
+  --letter-spacing-small: 0.5px;
+  --letter-spacing-medium: 0.05em;
+
+  /* ========================================
+     SPACING VARIABLES
+     ======================================== */
+
+  /* Padding & Margin */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 16px;
+  --spacing-xl: 20px;
+  --spacing-2xl: 24px;
+  --spacing-3xl: 28px;
+  --spacing-4xl: 32px;
+  --spacing-5xl: 2rem;
+  --spacing-6xl: 2.5rem;
+  --spacing-7xl: 3rem;
+
+  /* Component Spacing */
+  --gap-sm: 0.5rem;
+  --gap-md: 0.75rem;
+  --gap-lg: 1rem;
+  --gap-xl: 1.5rem;
+  --gap-2xl: 2rem;
+  --gap-3xl: 2.5rem;
+
+  /* Padding */
+  --padding-sm: 0.5rem;
+  --padding-md: 0.75rem;
+  --padding-lg: 1rem;
+  --padding-xl: 1.5rem;
+  --padding-2xl: 2rem;
+
+  /* ========================================
+     BORDER RADIUS VARIABLES
+     ======================================== */
+
+  --rounded-sm: 4px;
+  --rounded-md: 6px;
+  --rounded-lg: 8px;
+  --rounded-xl: 12px;
+  --rounded-2xl: 16px;
+  --rounded-full: 50%;
+  --rounded-pill: 20px;
+
+  /* ========================================
+     BREAKPOINT VARIABLES
+     ======================================== */
+
+  --breakpoint-sm: 600px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1080px;
+  --breakpoint-2xl: 1200px;
+  --breakpoint-3xl: 1280px;
+  --breakpoint-max: 1440px;
+
+  /* ========================================
+     SHADOW VARIABLES
+     ======================================== */
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 4px 16px rgba(49, 19, 93, 0.35);
+  --shadow-2xl: 0 6px 24px rgba(49, 19, 93, 0.5);
+  --shadow-purple-sm: 0 2px 4px rgba(49, 19, 93, 0.2);
+  --shadow-purple-md: 0 4px 8px rgba(49, 19, 93, 0.15);
+  --shadow-purple-lg: 0 6px 20px rgba(109, 49, 194, 0.35);
+  --shadow-dark-sm: 0 2px 6px rgba(0, 0, 0, 0.2);
+  --shadow-dark-md: 0 4px 8px rgba(0, 0, 0, 0.25);
+
+  /* ========================================
+     TRANSITION & ANIMATION VARIABLES
+     ======================================== */
+
+  --transition-fast: 0.1s;
+  --transition-base: 0.2s;
+  --transition-slow: 0.3s;
+  --transition-slower: 0.4s;
+
+  --easing-ease: ease;
+  --easing-ease-in: ease-in;
+  --easing-ease-out: ease-out;
+  --easing-ease-in-out: ease-in-out;
+  --easing-linear: linear;
+
+  --animation-duration: 1.5s;
+
+  /* ========================================
+     SIZING VARIABLES
+     ======================================== */
+
+  /* Icon Sizes */
+  --icon-xs: 16px;
+  --icon-sm: 20px;
+  --icon-md: 24px;
+  --icon-lg: 28px;
+  --icon-xl: 32px;
+  --icon-2xl: 36px;
+  --icon-3xl: 60px;
+
+  /* Avatar Sizes */
+  --avatar-sm: 36px;
+  --avatar-md: 48px;
+  --avatar-lg: 80px;
+
+  /* Container Sizes */
+  --container-sm: 640px;
+  --container-md: 900px;
+  --container-lg: 1280px;
+  --container-max: 1440px;
+  --container-width: 95vw;
+
+  /* Form Input Sizes */
+  --input-height: 42px;
+  --input-height-lg: 48px;
+  --input-height-sm: 36px;
+
+  /* ========================================
+     Z-INDEX VARIABLES
+     ======================================== */
+
+  --z-dropdown: 100;
+  --z-sticky: 500;
+  --z-floating: 999;
+  --z-modal: 10000;
+
+  /* ========================================
+     OPACITY VARIABLES
+     ======================================== */
+
+  --opacity-disabled: 0.5;
+  --opacity-hover: 0.8;
+  --opacity-focus: 0.9;
+
+  /* ========================================
+     BORDER VARIABLES
+     ======================================== */
+
+  --border-width-thin: 1px;
+  --border-width-md: 1.5px;
+  --border-width-thick: 2px;
+
+  /* ========================================
+     MAX-WIDTH VARIABLES
+     ======================================== */
+
+  --max-width-sidebar: 380px;
+  --max-width-modal: 400px;
+  --max-width-map: 100%;
+}
