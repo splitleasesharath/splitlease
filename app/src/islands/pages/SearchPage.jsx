@@ -305,7 +305,7 @@ function PropertyCard({ listing, selectedDaysCount }) {
   return (
     <a
       className="listing-card"
-      href={`${VIEW_LISTING_URL}/${listing.id}`}
+      href={`/view-split-lease.html/${listing.id}`}
       target="_blank"
       rel="noopener noreferrer"
       style={{ textDecoration: 'none', color: 'inherit' }}
@@ -696,14 +696,14 @@ export default function SearchPage() {
         // Apply day filter client-side
         if (selectedDays.length === 0) return true;
 
-        const listingDays = listing.days_available || [];
+        const listingDays = Array.isArray(listing.days_available) ? listing.days_available : [];
         if (listingDays.length === 0) return true; // Empty means all days available
 
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const selectedDayNames = selectedDays.map(idx => dayNames[idx]);
 
         return selectedDayNames.every(day =>
-          listingDays.some(d => d.toLowerCase() === day.toLowerCase())
+          listingDays.some(d => typeof d === 'string' && d.toLowerCase() === day.toLowerCase())
         );
       });
 
@@ -754,7 +754,9 @@ export default function SearchPage() {
       images: [],
       description: `${dbListing['Features - Qty Bedrooms'] || 0} bedroom • ${dbListing['Features - Qty Bathrooms'] || 0} bathroom`,
       weeks_offered: dbListing['Weeks offered'] || 'Every week',
-      days_available: dbListing['Days Available (List of Days)'] || [],
+      days_available: Array.isArray(dbListing['Days Available (List of Days)'])
+        ? dbListing['Days Available (List of Days)']
+        : [],
       isNew: false
     };
   };
