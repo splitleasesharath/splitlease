@@ -1,0 +1,275 @@
+/* Hero Section */
+.hero-section {
+    position: relative;
+    min-height: 400px;
+    margin: 150px auto 3rem;
+    width: 80%;
+    max-width: none;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+    background: transparent;
+}
+
+/* Keep mobile break inline on desktop */
+.mobile-break {
+    display: inline;
+}
+
+/* Hide mobile Empire State on desktop */
+.mobile-empire-state {
+    display: none;
+}
+
+.hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.hero-illustration {
+    position: absolute;
+    opacity: 1;
+    object-fit: contain;
+    height: 500px;
+    width: auto;
+    z-index: 0;
+}
+
+.hero-illustration-left {
+    left: 7%;
+    bottom: 5%;
+    transform: rotate(-2deg);
+    height: 440px;
+    width: 380px;
+}
+
+.hero-illustration-right {
+    right: 7%;
+    bottom: 5%;
+    top: auto;
+    transform: none;
+    height: 440px;
+    width: 400px;
+}
+
+.bridge-illustration,
+.building-illustration {
+    width: 100%;
+    height: 100%;
+}
+
+.hero-content-wrapper {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: none;
+    background: linear-gradient(135deg, #E8E3F5 0%, #EDE9F7 50%, #F2EFF9 100%);
+    border-radius: 20px;
+    box-shadow: none;
+    padding: 0;
+    transform: none;
+    transform-origin: top center;
+    border: none;
+    min-height: 380px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow: visible;
+}
+
+/* Static waterfall/cascade effect - removed animations */
+/* Visual hierarchy maintained through layering and shadows */
+
+/* Waterfall cascade visual effect using pseudo-elements */
+.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    background: linear-gradient(180deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.1) 10%,
+        rgba(255, 255, 255, 0.2) 20%,
+        rgba(255, 255, 255, 0.1) 30%,
+        transparent 40%,
+        rgba(255, 255, 255, 0.05) 50%,
+        transparent 60%,
+        rgba(255, 255, 255, 0.1) 70%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+
+.hero-content {
+    text-align: center;
+    background: #f7f8f9;
+    border-radius: 0 0 20px 20px;
+    padding: 4rem 3rem 2rem;
+    margin-top: 0;
+    position: relative;
+    z-index: 2;
+    box-shadow: none;
+    width: 50%;
+    max-width: 600px;
+}
+
+.hero-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.5rem;
+    color: #000000;
+    letter-spacing: -0.01em;
+    width: 100%;
+    white-space: nowrap;
+}
+
+.hero-subtitle {
+    font-size: 0.9rem;
+    color: #4a4a4a;
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    font-weight: 400;
+    width: 100%;
+}
+
+.hero-tagline {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    color: var(--text-dark);
+}
+
+.hero-cta-button {
+    background: white;
+    color: #5B5FCF;
+    border: 2px solid #5B5FCF;
+    padding: 0.5rem 1.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-top: 0.25rem;
+    display: inline-block;
+}
+
+.hero-cta-button:hover {
+    background: #5B5FCF;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(91, 95, 207, 0.3);
+}
+
+.cta-button {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 1rem 2.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-md);
+}
+
+.cta-button:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+
+/* Day Selector */
+.day-selector {
+    display: flex;
+    gap: 0.4rem;
+    justify-content: center;
+    align-items: center;
+    margin: 0 0 0.75rem 0;
+    width: 100%;
+}
+
+.calendar-icon {
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+}
+
+.day-badge {
+    width: 35px !important;
+    height: 35px !important;
+    border-radius: 8px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Inter", Helvetica, Arial, sans-serif;
+    font-weight: 600;
+    font-size: 14px !important;
+    line-height: 16px;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out, background 0.2s ease-in-out;
+    background-color: #b2b2b2 !important;
+    color: #ffffff !important;
+    border: none;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.day-badge:hover {
+    transform: translateY(-2px);
+}
+
+.day-badge.active {
+    background-color: #4B47CE !important;
+    color: #ffffff !important;
+}
+
+.day-badge.active:hover {
+    background-color: #4B47CE !important;
+    color: #ffffff !important;
+}
+
+/* Check-in/Check-out Display */
+.checkin-checkout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    margin: 0.5rem 0 1rem 0;
+    padding: 0;
+    background: transparent;
+    border-radius: 0;
+    font-size: 1rem;
+    color: #000000;
+    box-shadow: none;
+    width: 100%;
+}
+
+.checkin-checkout .separator {
+    color: #999;
+    font-weight: normal;
+}
+
+.checkin-checkout strong {
+    font-weight: 600;
+}
+
+#checkinDay, #checkoutDay {
+    color: var(--bg-purple);
+    font-weight: 600;
+}

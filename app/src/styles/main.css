@@ -7,6 +7,22 @@
    ======================================== */
 
 @import url('variables.css');
+
+/* Component Styles */
+@import url('components/header.css');
+@import url('components/hero.css');
+@import url('components/value-props.css');
+@import url('components/schedule.css');
+@import url('components/benefits.css');
+@import url('components/listings.css');
+@import url('components/testimonials.css');
+@import url('components/support.css');
+@import url('components/footer.css');
+@import url('components/floating-badge.css');
+@import url('components/modal.css');
+@import url('components/mobile.css');
+@import url('components/utilities.css');
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 /* ========================================

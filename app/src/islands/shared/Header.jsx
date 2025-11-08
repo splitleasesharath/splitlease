@@ -259,7 +259,7 @@ export default function Header() {
             Explore Rentals
           </a>
           <a
-            href="javascript:void(0)"
+            href="#"
             className="nav-link"
             onClick={(e) => {
               e.preventDefault();
@@ -270,7 +270,7 @@ export default function Header() {
           </a>
           <span className="divider">|</span>
           <a
-            href="javascript:void(0)"
+            href="#"
             className="nav-link"
             onClick={(e) => {
               e.preventDefault();

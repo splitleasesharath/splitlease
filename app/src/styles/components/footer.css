@@ -1,0 +1,322 @@
+/* Footer */
+.main-footer {
+    background: #31135D;
+    color: rgba(255, 255, 255, 0.9);
+    padding: 2rem 1.5rem 1rem;
+    width: 100%;
+    margin: 0;
+}
+
+.footer-container {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2rem;
+    margin-bottom: 0;
+}
+
+.footer-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 280px;
+}
+
+.footer-column h4 {
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+}
+
+.footer-column a {
+    display: block;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    margin-bottom: 0.4rem;
+    transition: color 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.footer-column a:hover {
+    color: white;
+}
+
+/* Emergency Assistance Button */
+.emergency-assistance-btn {
+    display: block;
+    width: 100%;
+    background: #dc2626;
+    color: white;
+    border: none;
+    padding: 1.5rem 1rem;
+    margin-top: 0.75rem;
+    font-weight: bold;
+    font-size: 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+    min-height: 60px;
+}
+
+.emergency-assistance-btn:hover {
+    background: #b91c1c;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+}
+
+.emergency-assistance-btn:active {
+    transform: translateY(0);
+}
+
+
+.referral-text,
+.import-text {
+    font-size: 0.8rem;
+    margin-bottom: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.referral-options {
+    display: flex;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.referral-options label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+}
+
+.referral-input {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    color: white;
+    margin-bottom: 0.25rem;
+    height: 44px;
+    box-sizing: border-box;
+}
+
+.import-input {
+    width: 100%;
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--radius-md);
+    color: white;
+    margin-bottom: 0.25rem;
+    height: 44px;
+    box-sizing: border-box;
+}
+
+.import-input:last-of-type {
+    margin-bottom: 0.25rem;
+}
+
+.footer-column:nth-child(4),
+.footer-column:nth-child(5) {
+    justify-content: flex-start;
+}
+
+.footer-column:nth-child(4) > *:last-child,
+.footer-column:nth-child(5) > *:last-child {
+    margin-top: auto;
+}
+
+.share-btn,
+.import-btn {
+    width: 100%;
+    background: #5B21B6;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.share-btn:hover,
+.import-btn:hover {
+    background: #4C1D95;
+    transform: translateY(-2px);
+}
+
+
+/* App Download Section */
+.app-download-section {
+    background: #f5f5f5;
+    padding: 3rem 2rem;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4rem;
+}
+
+.app-card {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex: 1;
+    justify-content: center;
+    max-width: 600px;
+}
+
+.app-phone-image {
+    width: 150px;
+    height: auto;
+    object-fit: contain;
+}
+
+.app-content {
+    flex: 1;
+}
+
+.app-tagline {
+    font-size: 1.25rem;
+    color: #333;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+    font-weight: 500;
+}
+
+.app-tagline em {
+    font-style: italic;
+    color: #333;
+}
+
+.app-subtitle {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 0.5rem;
+}
+
+.app-store-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.75rem;
+    background: black;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+}
+
+.app-store-btn:hover {
+    transform: scale(1.05);
+}
+
+.app-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+/* Alexa Card */
+.alexa-card {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex: 1;
+    justify-content: center;
+    max-width: 600px;
+}
+
+.alexa-device-image {
+    width: 150px;
+    height: auto;
+    object-fit: contain;
+}
+
+.alexa-content {
+    flex: 1;
+}
+
+.alexa-tagline {
+    font-size: 1.25rem;
+    color: #333;
+    margin-bottom: 0.75rem;
+    line-height: 1.2;
+    font-weight: 500;
+}
+
+.alexa-btn {
+    display: inline-block;
+    background: #232f3e;
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    text-decoration: none;
+    transition: transform 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.alexa-btn:hover {
+    transform: scale(1.05);
+    background: #37475a;
+}
+
+.amazon-logo {
+    font-size: 0.85rem;
+    line-height: 1.2;
+}
+
+.amazon-logo strong {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+.alexa-command {
+    font-size: 0.95rem;
+    color: #666;
+    margin-top: 0.75rem;
+    font-style: italic;
+}
+
+.alexa-image {
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.footer-bottom {
+    text-align: center;
+    padding: 1.5rem 0;
+    margin: 0;
+    background: #f5f5f5;
+    border-top: 1px solid #e0e0e0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.footer-bottom a {
+    color: #666;
+    text-decoration: none;
+}
+
+.footer-bottom a:hover {
+    color: #333;
+}

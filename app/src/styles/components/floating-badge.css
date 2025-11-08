@@ -1,0 +1,81 @@
+/* Floating Badge */
+.floating-badge {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    transform: none;
+    z-index: 9999;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: block; /* Show the badge */
+}
+
+.badge-content {
+    background: #31135D;
+    color: white;
+    padding: 21px 17px; /* Reduced by 15% */
+    border-radius: 26px; /* Reduced by 15% */
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 80px;
+}
+
+.badge-text-top {
+    font-size: 0.6rem; /* Reduced by 15% from 0.7rem */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.badge-icon {
+    font-size: 8rem; /* Doubled again from 4rem for larger atom */
+    margin: 5px 0; /* Reduced margin to fit */
+    line-height: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.badge-icon lottie-player {
+    width: 102px !important; /* Reduced by 15% from 120px */
+    height: 102px !important; /* Reduced by 15% from 120px */
+}
+
+.badge-text-bottom {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.6rem; /* Reduced by 15% from 0.7rem */
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.badge-expanded {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background: var(--bg-purple);
+    color: white;
+    padding: 34px 51px; /* Reduced by 15% */
+    border-radius: 27px; /* Reduced by 15% */
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px);
+    font-size: 2rem; /* Reduced by 15% */
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2); /* Reduced by 15% */
+    margin-bottom: 10px;
+}
+
+.floating-badge:hover .badge-expanded {
+    opacity: 1;
+    transform: translateY(-20px); /* Doubled from -10px */
+}
+
+.floating-badge:hover {
+    transform: translateY(-5px) scale(1.05);
+}
