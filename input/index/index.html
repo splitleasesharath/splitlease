@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Split Lease - Ongoing Rentals for Repeat Stays. Pay only for the nights you need. Find flexible periodic tenancy solutions in NYC.">
+    <meta name="keywords" content="split lease, periodic tenancy, flexible rentals, NYC apartments, weeknight rentals, weekend stays, monthly rentals, furnished apartments">
+    <meta name="author" content="Split Lease">
+    <meta property="og:title" content="Split Lease - Periodic Tenancy Leader">
+    <meta property="og:description" content="Ongoing rentals for repeat stays. Pay only for the nights you need with flexible scheduling options.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://splitlease.app/">
+    <meta property="og:image" content="https://splitlease.app/og-image.jpg">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Split Lease - Periodic Tenancy Leader">
+    <meta name="twitter:description" content="Ongoing rentals for repeat stays. Pay only for the nights you need.">
+    <meta name="twitter:image" content="https://splitlease.app/twitter-card.jpg">
+    <link rel="canonical" href="https://splitlease.app/">
+    <meta name="robots" content="index, follow">
+    <title>Split Lease - Periodic Tenancy Leader | Flexible NYC Rentals</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header Navigation -->
+    <header class="main-header">
+        <nav class="nav-container">
+            <div class="nav-left">
+                <a href="https://splitlease.app" class="logo">
+                    <img src="assets/images/logo.png" alt="Split Lease" class="logo-image">
+                    <span class="logo-text">Split Lease</span>
+                </a>
+            </div>
+            <button class="hamburger-menu" aria-label="Toggle navigation menu" onclick="toggleMobileMenu()">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+            <div class="nav-center">
+                <div class="nav-dropdown">
+                    <a href="#host" class="nav-link dropdown-trigger" role="button" aria-expanded="false" aria-haspopup="true"><span class="mobile-text">Host</span><span class="desktop-text">Host with Us</span>
+                        <svg class="dropdown-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true">
+                            <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </a>
+                    <div class="dropdown-menu" role="menu" aria-label="Host with Us menu">
+                        <a href="https://app.split.lease/host-step-by-step-guide-to-list" class="dropdown-item" role="menuitem">
+                            <span class="dropdown-title">Why List with Us</span>
+                            <span class="dropdown-desc">New to Split Lease? Learn more about hosting</span>
+                        </a>
+                        <a href="https://app.split.lease/success-stories-guest" class="dropdown-item" role="menuitem">
+                            <span class="dropdown-title">Success Stories</span>
+                            <span class="dropdown-desc">Explore other hosts' feedback</span>
+                        </a>
+                        <a href="https://app.split.lease/signup-login" class="dropdown-item" role="menuitem">
+                            <span class="dropdown-title">List Property</span>
+                        </a>
+                        <a href="https://app.split.lease/policies/cancellation-and-refund-policy" class="dropdown-item" role="menuitem">
+                            <span class="dropdown-title">Legal Information</span>
+                            <span class="dropdown-desc">Review most important policies</span>
+                        </a>
+                        <a href="https://app.split.lease/faq" class="dropdown-item" role="menuitem">
+                            <span class="dropdown-title">FAQs</span>
+                            <span class="dropdown-desc">Frequently Asked Questions</span>
+                        </a>
+                        <a href="https://app.split.lease/signup-login" class="dropdown-item" role="menuitem">
+                            <span class="dropdown-title">Sign Up</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="nav-dropdown">
+                    <a href="#stay" class="nav-link dropdown-trigger" role="button" aria-expanded="false" aria-haspopup="true"><span class="mobile-text">Guest</span><span class="desktop-text">Stay with Us</span>
+                        <svg class="dropdown-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none" aria-hidden="true">
+                            <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        </svg>
+                    </a>
+                    <div class="dropdown-menu" role="menu" aria-label="Stay with Us menu">
+                        <a href="https://app.split.lease/search" class="dropdown-item" role="menuitem">
+                            <span class="dropdown-title">Explore Rentals</span>
+                            <span class="dropdown-desc">See available listings!</span>
+                        </a>
+                        <a href="https://app.split.lease/success-stories-guest" class="dropdown-item" role="menuitem">
+                            <span class="dropdown-title">Success Stories</span>
+                            <span class="dropdown-desc">Explore other guests' feedback</span>
+                        </a>
+                        <a href="https://app.split.lease/faq" class="dropdown-item" role="menuitem">
+                            <span class="dropdown-title">FAQs</span>
+                            <span class="dropdown-desc">Frequently Asked Questions</span>
+                        </a>
+                        <a href="https://app.split.lease/signup-login" class="dropdown-item" role="menuitem">
+                            <span class="dropdown-title">Sign Up</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-right">
+                <a href="https://app.split.lease/search" class="explore-rentals-btn">Explore Rentals</a>
+                <a href="javascript:void(0)" class="nav-link" onclick="openAuthModal(); return false;">Sign In</a>
+                <span class="divider">|</span>
+                <a href="javascript:void(0)" class="nav-link" onclick="openAuthModal(); return false;">Sign Up</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <!-- Mobile-only floating Empire State Building -->
+        <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=768,h=777,f=auto,dpr=1,fit=contain/f1754342803901x992060741248266000/ChatGPT_Image_Aug_4__2025__06_20_44_PM-removebg-preview.png" 
+             alt="Empire State Building" 
+             class="mobile-empire-state">
+        <div class="hero-content-wrapper">
+            <img src="assets/images/hero-left.png" alt="Brooklyn Bridge illustration" class="hero-illustration hero-illustration-left">
+            <img src="assets/images/hero-right.png" alt="Empire State Building illustration" class="hero-illustration hero-illustration-right">
+            <div class="hero-content">
+                <h1 class="hero-title">Ongoing Rentals <span class="mobile-break">for Repeat Stays</span></h1>
+                <p class="hero-subtitle">Select which days you'd like to stay in NYC and<br>only pay for the nights you need.</p>
+                
+                <!-- Day Selector -->
+                <div class="day-selector">
+                    <div class="calendar-icon">
+                        <img src="https://c.animaapp.com/meh6k861XoGXNn/img/calendar-minimalistic-svgrepo-com-202-svg.svg" alt="Calendar" width="35" height="35">
+                    </div>
+                    <div class="day-badge" data-day="0" onclick="toggleDay(0)">S</div>
+                    <div class="day-badge" data-day="1" onclick="toggleDay(1)">M</div>
+                    <div class="day-badge" data-day="2" onclick="toggleDay(2)">T</div>
+                    <div class="day-badge" data-day="3" onclick="toggleDay(3)">W</div>
+                    <div class="day-badge" data-day="4" onclick="toggleDay(4)">T</div>
+                    <div class="day-badge" data-day="5" onclick="toggleDay(5)">F</div>
+                    <div class="day-badge" data-day="6" onclick="toggleDay(6)">S</div>
+                </div>
+                
+                <!-- Check-in/Check-out Display -->
+                <div class="checkin-checkout" id="checkinCheckout" style="display: none;">
+                    <span><strong>Check-in:</strong> <span id="checkinDay"></span></span>
+                    <span class="separator">•</span>
+                    <span><strong>Check-out:</strong> <span id="checkoutDay"></span></span>
+                </div>
+                
+                <button class="hero-cta-button" onclick="exploreRentals()">Explore Rentals</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Value Propositions -->
+    <section class="value-props">
+        <div class="value-container">
+            <div class="value-card">
+                <div class="value-icon">
+                    <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=192,h=192,f=auto,dpr=1,fit=contain/f1621245433645x903943195219269100/Icon-OnlineSelect%201%20%281%29.png" alt="Online Select" />
+                </div>
+                <h3>100s of Split Leases, or source off market</h3>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">
+                    <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=192,h=192,f=auto,dpr=1,fit=contain/f1621245536528x133519290791932700/Icon-Skyline%20%281%29.png" alt="Skyline" />
+                </div>
+                <h3>Financially optimal. 45% less than Airbnb</h3>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">
+                    <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=192,h=192,f=auto,dpr=1,fit=contain/f1621245565680x203884400943151520/Icon-Backpack%20Hero_1%201%20%281%29.png" alt="Backpack" />
+                </div>
+                <h3>Safely store items while you're away.</h3>
+            </div>
+            <div class="value-card">
+                <div class="value-icon">
+                    <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=192,h=192,f=auto,dpr=1,fit=contain/f1621245591320x851695569344734000/Layer%209%20%281%29.png" alt="Same Room" />
+                </div>
+                <h3>Same room, same bed. Unlike a hotel.</h3>
+            </div>
+        </div>
+    </section>
+
+    <!-- Schedule Selection -->
+    <section class="schedule-section">
+        <div class="schedule-header">
+            <h2>Stop playing room roulette!</h2>
+            <h1>Choose Your Split Schedule</h1>
+        </div>
+
+        <div class="schedule-grid">
+            <!-- Weeknight Listings -->
+            <div class="schedule-card">
+            <div class="schedule-visual">
+                <div class="lottie-container">
+                    <lottie-player
+                        src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json"
+                        background="white"
+                        speed="1"
+                        style="width: 100%; height: auto; max-width: 650px;"
+                        loop
+                        autoplay>
+                    </lottie-player>
+                </div>
+                <div class="schedule-info">
+                </div>
+            </div>
+            <button class="explore-btn">Explore weeknight listings</button>
+        </div>
+
+        <!-- Weekend Listings -->
+        <div class="schedule-card">
+            <div class="schedule-visual">
+                <div class="lottie-container">
+                    <lottie-player
+                        src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json"
+                        background="white"
+                        speed="1"
+                        style="width: 100%; height: auto; max-width: 650px;"
+                        loop
+                        autoplay>
+                    </lottie-player>
+                </div>
+                <div class="schedule-info">
+                </div>
+            </div>
+            <button class="explore-btn">Explore weekend listings</button>
+        </div>
+
+        <!-- Monthly Listings -->
+        <div class="schedule-card">
+            <div class="schedule-visual">
+                <div class="lottie-container">
+                    <lottie-player
+                        src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json"
+                        background="white"
+                        speed="1"
+                        style="width: 100%; height: auto; max-width: 650px;"
+                        loop
+                        autoplay>
+                    </lottie-player>
+                </div>
+                <div class="schedule-info">
+                </div>
+            </div>
+            <button class="explore-btn">Explore monthly listings</button>
+        </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="benefits-section">
+        <div class="benefits-wrapper">
+            <h2>Choose when to be a local</h2>
+            <div class="benefits-list">
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="12" fill="#5B5FCF"/>
+                            <path d="M17 8L10 15L7 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <p>Fully-furnished spaces ensure move-in is a breeze.</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="12" fill="#5B5FCF"/>
+                            <path d="M17 8L10 15L7 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <p>Store items like toiletries, a second monitor, work attire, and anything else you may need to make yourself at home.</p>
+                </div>
+                <div class="benefit-item">
+                    <div class="benefit-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="12" fill="#5B5FCF"/>
+                            <path d="M17 8L10 15L7 12" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <p>Forget HOAs. Switch neighborhoods seasonally, discover amazing flexibility.</p>
+                </div>
+            </div>
+            <button class="cta-button benefits-cta" onclick="exploreRentals()">Explore Rentals</button>
+        </div>
+    </section>
+
+    <!-- Listings Preview -->
+    <section class="listings-section">
+        <h2>Check Out Some Listings</h2>
+        <div class="listings-container">
+            <div class="listings-grid">
+                <div class="listing-card" data-property-id="1">
+                    <div class="listing-image" style="background-image: url('https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1586448035769x259434561490871740/255489_1_6782895-650-570.jpg'); background-size: cover; background-position: center;"></div>
+                    <div class="listing-details">
+                        <h3>One Platt | Studio</h3>
+                        <p>Studio - 1 bed - 1 bathroom - Free Storage</p>
+                    </div>
+                </div>
+                <div class="listing-card" data-property-id="2">
+                    <div class="listing-image" style="background-image: url('https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102430270x309647360933492400/pied4.webp'); background-size: cover; background-position: center;"></div>
+                    <div class="listing-details">
+                        <h3>Pied-à-terre , Perfect 2 BR...</h3>
+                        <p>2 bedrooms - 2 bed(s) - 1 bathroom - Free Storage</p>
+                    </div>
+                </div>
+                <div class="listing-card" data-property-id="3">
+                    <div class="listing-image" style="background-image: url('https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102537155x544568166750526000/harlem4.webp'); background-size: cover; background-position: center;"></div>
+                    <div class="listing-details">
+                        <h3>Fully furnished 1bdr apartment in...</h3>
+                        <p>1 bedroom - 1 bed - 1 bathroom - Free Storage</p>
+                    </div>
+                </div>
+                <div class="listing-card" data-property-id="4">
+                    <div class="listing-image" style="background-image: url('https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1701198008563x119014198947512200/julia4.jpg'); background-size: cover; background-position: center;"></div>
+                    <div class="listing-details">
+                        <h3>Furnished Studio Apt for Rent</h3>
+                        <p>Studio - 1 bed - 1 bathroom - Free Storage</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Scroll indicators for mobile -->
+            <div class="scroll-indicators">
+                <span class="indicator active" data-slide="0"></span>
+                <span class="indicator" data-slide="1"></span>
+                <span class="indicator" data-slide="2"></span>
+                <span class="indicator" data-slide="3"></span>
+            </div>
+        </div>
+        <button class="show-more-btn">Show me more Rentals</button>
+    </section>
+
+    <!-- Support Section -->
+    <section class="support-section">
+        <h2>Get personal support</h2>
+        <div class="support-options">
+            <a href="https://app.split.lease/faq" target="_blank" class="support-card-link">
+                <div class="support-card">
+                    <div class="support-icon chat">
+                        <img src="https://s3.amazonaws.com/appforest_uf/f1612395570366x477803304486100100/COLOR" alt="Live Chat" />
+                    </div>
+                    <p>Instant Live-Chat</p>
+                </div>
+            </a>
+            <a href="https://app.split.lease/faq" target="_blank" class="support-card-link">
+                <div class="support-card">
+                    <div class="support-icon faq">
+                        <img src="https://s3.amazonaws.com/appforest_uf/f1612395570375x549911933429149100/COLOR" alt="FAQ" />
+                    </div>
+                    <p>Browse our FAQs</p>
+                </div>
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <div class="footer-column">
+                <h4>For Hosts</h4>
+                <a href="https://app.split.lease/signup-login">List Property Now</a>
+                <a href="https://app.split.lease/host-step-by-step-guide-to-list">How to List</a>
+                <a href="https://app.split.lease/policies/cancellation-and-refund-policy">Legal Section</a>
+                <a href="https://app.split.lease/host-guarantees">Guarantees</a>
+                <a href="https://app.split.lease/demo-house-manual">Free House Manual</a>
+            </div>
+            <div class="footer-column">
+                <h4>For Guests</h4>
+                <a href="https://app.split.lease/search">Explore Split Leases</a>
+                <a href="https://app.split.lease/success-stories-guest">Success Stories</a>
+                <a href="https://app.split.lease/signup-login">Speak to an Agent</a>
+                <a href="https://app.split.lease/faq">View FAQ</a>
+            </div>
+            <div class="footer-column">
+                <h4>Company</h4>
+                <a href="https://app.split.lease/periodic-tenancy">About Periodic Tenancy</a>
+                <a href="https://app.split.lease/team">About the Team</a>
+                <a href="https://app.split.lease/careers">Careers at Split Lease</a>
+                <a href="https://app.split.lease/blog">View Blog</a>
+            </div>
+            <div class="footer-column">
+                <h4>Refer a friend</h4>
+                <p class="referral-text">You get $50 and they get $50 *after their first booking</p>
+                <div class="referral-options">
+                    <label><input type="radio" name="referral" value="text"> Text</label>
+                    <label><input type="radio" name="referral" value="email"> Email</label>
+                </div>
+                <input type="text" placeholder="Your friend's" class="referral-input">
+                <button class="share-btn">Share now</button>
+            </div>
+            <div class="footer-column">
+                <h4>Import your listing from another site</h4>
+                <p class="import-text">No need to start from scratch</p>
+                <input type="text" placeholder="https://your-listing-link" class="import-input" id="importUrl">
+                <input type="email" placeholder="janedoe@your_email.com" class="import-input" id="importEmail">
+                <button class="import-btn" onclick="handleImportListing()">Submit</button>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- App Download Section (Outside Footer) -->
+    <div class="app-download-section">
+            <div class="app-card">
+                <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=256,h=330,f=auto,dpr=1,fit=contain/f1743107051105x956510081926083000/iphone-removebg-preview.png" alt="Split Lease App" class="app-phone-image" loading="lazy">
+                <div class="app-content">
+                    <p class="app-tagline">Now you can change<br>your nights<br><em>on the go.</em></p>
+                    <a href="https://apps.apple.com/app/split-lease" class="app-store-btn">
+                        <img src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg" alt="Download on the App Store" height="40">
+                    </a>
+                    <p class="app-subtitle">Download at the App Store</p>
+                </div>
+            </div>
+            
+            <div class="alexa-card">
+                <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=256,h=225,f=auto,dpr=1,fit=cover,q=75/f1625329487406x361063433051586300/402087-smart-speakers-amazon-echo-dot-4th-gen-10015594%201.png" alt="Amazon Alexa" class="alexa-device-image" loading="lazy">
+                <div class="alexa-content">
+                    <p class="alexa-tagline">Voice-controlled concierge,<br>at your service.</p>
+                    <a href="https://www.amazon.com/dp/B08XYZ123" class="alexa-btn">
+                        <span class="amazon-logo">Available on<br><strong>amazon.com</strong></span>
+                    </a>
+                    <p class="alexa-command">"Alexa, enable Split Lease"</p>
+                </div>
+            </div>
+    </div>
+    
+    <!-- Footer Bottom -->
+    <div class="footer-bottom">
+            <a href="https://app.split.lease/terms">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style="margin-right: 0.5rem;">
+                    <path d="M2 2h8v8H2z" stroke="currentColor" stroke-width="1" fill="none"/>
+                    <path d="M4 6h4M4 8h3"/>
+                </svg>
+                Terms of Use
+            </a>
+            <span>Made with love in New York City</span>
+            <span>© 2025 SplitLease</span>
+    </div>
+
+    <!-- Floating Free Market Research Badge -->
+    <div class="floating-badge" onclick="openMarketResearchModal()">
+        <div class="badge-content">
+            <span class="badge-text-top">Free</span>
+            <div class="badge-icon">
+                <lottie-player 
+                    src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1751640509056x731482311814151200/atom%20white.json"
+                    background="transparent"
+                    speed="1"
+                    style="width: 102px; height: 102px;"
+                    loop
+                    autoplay>
+                </lottie-player>
+            </div>
+            <div class="badge-text-bottom">
+                <span>Market</span>
+                <span>Research</span>
+            </div>
+        </div>
+        <div class="badge-expanded">Free Market Research</div>
+    </div>
+
+    <!-- Market Research Modal -->
+    <div id="marketResearchModal" class="market-research-modal">
+        <div class="market-research-modal-content">
+            <button class="market-research-modal-close" onclick="closeMarketResearchModal()">&times;</button>
+            <div class="market-research-iframe-container">
+                <div class="market-research-loader">
+                    <div class="spinner"></div>
+                    <p>Loading Market Research...</p>
+                </div>
+                <iframe id="marketResearchIframe" src="" frameborder="0" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth status handled via lightweight localStorage/cookie check - iframe removed for performance -->
+
+    <!-- Logging in popup (non-dismissible) -->
+    <div id="loggingInPopup" class="logging-popup">
+        <div class="logging-popup-content">
+            <div class="spinner"></div>
+            <p>Logging you in...</p>
+        </div>
+    </div>
+
+    <!-- Auth modal removed - using direct redirect to app.split.lease/signup-login -->
+
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

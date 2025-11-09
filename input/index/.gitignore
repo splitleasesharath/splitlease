@@ -1,0 +1,33 @@
+# IDE files
+.vscode/
+.idea/
+*.sublime-*
+
+# OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local environment
+.env
+.env.local
+*.local.json
+
+# Temporary files
+*.tmp
+*.temp
+nul
+
+# Logs
+*.log
+
+# Local development
+.playground/
+.playwright-mcp/
+node_modules/
+
+# Build output
+dist/
+
+# Project documentation
+major-milestones.txt

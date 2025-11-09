@@ -1,0 +1,12 @@
+{
+  "name": "split-lease-clone",
+  "version": "1.0.0",
+  "description": "Split Lease website clone",
+  "scripts": {
+    "build": "mkdir -p dist && cp index.html styles.css script.js _headers _redirects dist/ 2>/dev/null || true",
+    "build-windows": "if not exist dist mkdir dist && copy index.html dist\\ && copy styles.css dist\\ && copy script.js dist\\",
+    "deploy": "wrangler pages deploy dist --project-name=split-lease-clone"
+  },
+  "devDependencies": {},
+  "dependencies": {}
+}
