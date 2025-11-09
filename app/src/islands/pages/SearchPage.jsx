@@ -1,8 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Header from '../shared/Header.jsx';
 import DaySelector from '../shared/DaySelector.jsx';
+import GoogleMap from '../shared/GoogleMap.jsx';
+import InformationalText from '../shared/InformationalText.jsx';
+import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
+import AISignupModal from '../shared/AISignupModal.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL } from '../../lib/constants.js';
+import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
+import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
+import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities } from '../../lib/supabaseUtils.js';
 
 // ============================================================================
 // Internal Components
@@ -221,9 +228,11 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, selectedDaysCount }) {
+function PropertyCard({ listing, selectedDaysCount, onLocationClick }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const [showPriceInfo, setShowPriceInfo] = useState(false);
+  const [showContactHost, setShowContactHost] = useState(false);
 
   const hasImages = listing.images && listing.images.length > 0;
   const hasMultipleImages = listing.images && listing.images.length > 1;
@@ -348,7 +357,17 @@ function PropertyCard({ listing, selectedDaysCount }) {
 
       <div className="listing-content">
         <div className="listing-info">
-          <div className="listing-location">
+          <div
+            className="listing-location"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onLocationClick) {
+                onLocationClick(listing);
+              }
+            }}
+            style={{ cursor: onLocationClick ? 'pointer' : 'default' }}
+          >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
               <circle cx="12" cy="10" r="3" />
@@ -366,10 +385,15 @@ function PropertyCard({ listing, selectedDaysCount }) {
 
         <div className="listing-footer">
           <div className="host-info">
-            <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
+            {listing.host?.image && (
+              <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
+            )}
+            {!listing.host?.image && (
+              <div className="host-avatar-placeholder">?</div>
+            )}
             <div className="host-details">
               <span className="host-name">
-                {listing.host.name}
+                {listing.host?.name || 'Host'}
                 {listing.host.verified && <span className="verified-badge" title="Verified">✓</span>}
               </span>
               <button
@@ -377,7 +401,7 @@ function PropertyCard({ listing, selectedDaysCount }) {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log('Message host:', listing.id);
+                  setShowContactHost(true);
                 }}
               >
                 Message
@@ -388,13 +412,41 @@ function PropertyCard({ listing, selectedDaysCount }) {
           <div className="pricing-info">
             <div className="starting-price" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <span>Starting at ${parseFloat(startingPrice).toFixed(2)}/night</span>
-              <svg viewBox="0 0 24 24" width="14" height="14" style={{ color: '#3b82f6', fill: 'currentColor' }}>
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                style={{ color: '#3b82f6', fill: 'currentColor', cursor: 'pointer' }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowPriceInfo(true);
+                }}
+              >
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
               </svg>
             </div>
             <div className="full-price">${dynamicPrice.toFixed(2)}/night</div>
             <div className="availability-text">Message Split Lease for Availability</div>
           </div>
+
+          {showPriceInfo && (
+            <InformationalText
+              isOpen={showPriceInfo}
+              onClose={() => setShowPriceInfo(false)}
+              listing={listing}
+              selectedDaysCount={selectedDaysCount}
+            />
+          )}
+
+          {showContactHost && (
+            <ContactHostMessaging
+              isOpen={showContactHost}
+              onClose={() => setShowContactHost(false)}
+              listing={listing}
+              userEmail={null}
+            />
+          )}
         </div>
       </div>
     </a>
@@ -420,7 +472,7 @@ function AiSignupCard() {
       </div>
       <h3 className="ai-title">Free, AI Deep Research</h3>
       <p className="ai-subtitle">Save time & money with Insights from 100+ sources</p>
-      <button className="ai-btn" onClick={handleClick}>
+      <button className="ai-btn" onClick={() => setShowAiSignup(true)}>
         Your unique logistics
       </button>
     </div>
@@ -461,7 +513,18 @@ function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoad
   return (
     <div className="listings-container">
       {listings.map((listing, index) => {
-        const cards = [<PropertyCard key={listing.id} listing={listing} selectedDaysCount={selectedDaysCount} />];
+        const cards = [
+          <PropertyCard
+            key={listing.id}
+            listing={listing}
+            selectedDaysCount={selectedDaysCount}
+            onLocationClick={(listing) => {
+              if (mapRef.current) {
+                mapRef.current.zoomToListing(listing.id);
+              }
+            }}
+          />
+        ];
 
         // Insert AI signup cards at specific positions
         if (index === 3 || index === 7) {
@@ -554,21 +617,80 @@ export default function SearchPage() {
   const [allListings, setAllListings] = useState([]);
   const [displayedListings, setDisplayedListings] = useState([]);
   const [loadedCount, setLoadedCount] = useState(0);
+  const [showAiSignup, setShowAiSignup] = useState(false);
 
-  // Filter state
-  const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5]); // Monday-Friday default
+  // Refs
+  const mapRef = useRef(null);
+
+  // Parse URL parameters for initial filter state
+  const urlFilters = parseUrlToFilters();
+
+  // Filter state (initialized from URL if available)
+  const [selectedDays, setSelectedDays] = useState(urlFilters.selectedDays);
   const [boroughs, setBoroughs] = useState([]);
-  const [selectedBorough, setSelectedBorough] = useState('');
+  const [selectedBorough, setSelectedBorough] = useState(urlFilters.selectedBorough);
   const [neighborhoods, setNeighborhoods] = useState([]);
-  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState([]);
-  const [weekPattern, setWeekPattern] = useState('every-week');
-  const [priceTier, setPriceTier] = useState('all');
-  const [sortBy, setSortBy] = useState('recommended');
+  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState(urlFilters.selectedNeighborhoods);
+  const [weekPattern, setWeekPattern] = useState(urlFilters.weekPattern);
+  const [priceTier, setPriceTier] = useState(urlFilters.priceTier);
+  const [sortBy, setSortBy] = useState(urlFilters.sortBy);
   const [neighborhoodSearch, setNeighborhoodSearch] = useState('');
 
   // UI state
   const [filterPanelActive, setFilterPanelActive] = useState(false);
   const [mapSectionActive, setMapSectionActive] = useState(false);
+
+  // Flag to prevent URL update on initial load
+  const isInitialMount = useRef(true);
+
+  // Initialize data lookups on mount
+  useEffect(() => {
+    const init = async () => {
+      if (!isInitialized()) {
+        console.log('Initializing data lookups...');
+        await initializeLookups();
+      }
+    };
+    init();
+  }, []);
+
+  // Sync filter state to URL parameters
+  useEffect(() => {
+    // Skip URL update on initial mount (URL already parsed)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+
+    // Update URL with current filter state
+    const filters = {
+      selectedDays,
+      selectedBorough,
+      weekPattern,
+      priceTier,
+      sortBy,
+      selectedNeighborhoods
+    };
+
+    updateUrlParams(filters, false); // false = push new history entry
+  }, [selectedDays, selectedBorough, weekPattern, priceTier, sortBy, selectedNeighborhoods]);
+
+  // Watch for browser back/forward navigation
+  useEffect(() => {
+    const cleanup = watchUrlChanges((newFilters) => {
+      console.log('URL changed via browser navigation, updating filters:', newFilters);
+
+      // Update all filter states from URL
+      setSelectedDays(newFilters.selectedDays);
+      setSelectedBorough(newFilters.selectedBorough);
+      setWeekPattern(newFilters.weekPattern);
+      setPriceTier(newFilters.priceTier);
+      setSortBy(newFilters.sortBy);
+      setSelectedNeighborhoods(newFilters.selectedNeighborhoods);
+    });
+
+    return cleanup;
+  }, []);
 
   // Load boroughs on mount
   useEffect(() => {
@@ -593,10 +715,22 @@ export default function SearchPage() {
 
         setBoroughs(boroughList);
 
-        // Default to Manhattan
-        const manhattan = boroughList.find(b => b.value === 'manhattan');
-        if (manhattan) {
-          setSelectedBorough(manhattan.value);
+        // Only set default borough if not already set from URL
+        if (!selectedBorough) {
+          const manhattan = boroughList.find(b => b.value === 'manhattan');
+          if (manhattan) {
+            setSelectedBorough(manhattan.value);
+          }
+        } else {
+          // Validate borough from URL exists in list
+          const boroughExists = boroughList.find(b => b.value === selectedBorough);
+          if (!boroughExists) {
+            console.warn(`Borough "${selectedBorough}" from URL not found, defaulting to Manhattan`);
+            const manhattan = boroughList.find(b => b.value === 'manhattan');
+            if (manhattan) {
+              setSelectedBorough(manhattan.value);
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to load boroughs:', err);
@@ -691,8 +825,57 @@ export default function SearchPage() {
 
       if (error) throw error;
 
+      // Batch fetch photos for all listings
+      const allPhotoIds = new Set();
+      data.forEach(listing => {
+        const photosField = listing['Features - Photos'];
+        if (Array.isArray(photosField)) {
+          photosField.forEach(id => allPhotoIds.add(id));
+        } else if (typeof photosField === 'string') {
+          try {
+            const parsed = JSON.parse(photosField);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(id => allPhotoIds.add(id));
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      });
+
+      const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds));
+
+      // Extract photos per listing
+      const resolvedPhotos = {};
+      data.forEach(listing => {
+        resolvedPhotos[listing._id] = extractPhotos(
+          listing['Features - Photos'],
+          photoMap,
+          listing._id
+        );
+      });
+
+      // Batch fetch host data for all listings
+      const hostIds = new Set();
+      data.forEach(listing => {
+        if (listing['Host / Landlord']) {
+          hostIds.add(listing['Host / Landlord']);
+        }
+      });
+
+      const hostMap = await fetchHostData(Array.from(hostIds));
+
+      // Map host data to listings
+      const resolvedHosts = {};
+      data.forEach(listing => {
+        const hostId = listing['Host / Landlord'];
+        resolvedHosts[listing._id] = hostMap[hostId] || null;
+      });
+
       // Transform and filter data
-      const transformedListings = data.map(transformListing).filter(listing => {
+      const transformedListings = data.map(listing =>
+        transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
+      ).filter(listing => {
         // Apply day filter client-side
         if (selectedDays.length === 0) return true;
 
@@ -718,13 +901,24 @@ export default function SearchPage() {
   }, [boroughs, selectedBorough, selectedNeighborhoods, weekPattern, priceTier, sortBy, selectedDays]);
 
   // Transform raw listing data
-  const transformListing = (dbListing) => {
+  const transformListing = (dbListing, images, hostData) => {
+    // Resolve human-readable names from database IDs
+    const neighborhoodName = getNeighborhoodName(dbListing['Location - Hood']);
+    const boroughName = getBoroughName(dbListing['Location - Borough']);
+    const propertyType = getPropertyTypeLabel(dbListing['Features - Type of Space']);
+
+    // Build location string with proper formatting
+    const locationParts = [];
+    if (neighborhoodName) locationParts.push(neighborhoodName);
+    if (boroughName) locationParts.push(boroughName);
+    const location = locationParts.join(', ') || 'New York, NY';
+
     return {
       id: dbListing._id,
       title: dbListing.Name || 'Unnamed Listing',
-      location: `${dbListing['Location - Hood'] || ''}, ${dbListing['Location - Borough'] || ''}`,
-      neighborhood: dbListing['Location - Hood'] || '',
-      borough: dbListing['Location - Borough'] || '',
+      location: location,
+      neighborhood: neighborhoodName || '',
+      borough: boroughName || '',
       coordinates: {
         lat: dbListing.listing_address_latitude || 40.7580,
         lng: dbListing.listing_address_longitude || -73.9855
@@ -740,18 +934,19 @@ export default function SearchPage() {
       'Price 5 nights selected': dbListing['💰Nightly Host Rate for 5 nights'] || null,
       'Price 6 nights selected': null,
       'Price 7 nights selected': dbListing['💰Nightly Host Rate for 7 nights'] || null,
-      type: dbListing['Features - Type of Space'] || 'Entire Place',
+      type: propertyType,
       squareFeet: dbListing['Features - SQFT Area'] || null,
       maxGuests: dbListing['Features - Qty Guests'] || 1,
       bedrooms: dbListing['Features - Qty Bedrooms'] || 0,
       bathrooms: dbListing['Features - Qty Bathrooms'] || 0,
-      amenities: [],
-      host: {
-        name: 'Host',
-        image: '/assets/images/default-avatar.png',
+      amenities: parseAmenities(dbListing),
+      host: hostData || {
+        name: null,
+        image: null,
         verified: false
       },
-      images: [],
+      // Photos loaded via batch fetch BEFORE transformation
+      images: images || [],
       description: `${dbListing['Features - Qty Bedrooms'] || 0} bedroom • ${dbListing['Features - Qty Bathrooms'] || 0} bathroom`,
       weeks_offered: dbListing['Weeks offered'] || 'Every week',
       days_available: Array.isArray(dbListing['Days Available (List of Days)'])
@@ -865,7 +1060,60 @@ export default function SearchPage() {
             />
           )}
         </section>
+
+        <section className={`map-section ${mapSectionActive ? 'mobile-active' : ''}`}>
+          <GoogleMap
+            ref={mapRef}
+            listings={allListings}
+            filteredListings={displayedListings}
+            selectedListing={null}
+            onMarkerClick={(listing) => {
+              console.log('Marker clicked:', listing.title);
+              // Could open listing in new tab or show details
+            }}
+          />
+
+          {/* Deep Research Floating Button - PORTED FROM ORIGINAL */}
+          <button
+            className="deep-research-floating-btn"
+            onClick={() => setShowAiSignup(true)}
+          >
+            <div className="atom-animation" id="atomAnimation">
+              {/* Lottie animation will be loaded here via script */}
+              <svg width="31" height="31" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="3" fill="currentColor" />
+                <line x1="12" y1="2" x2="12" y2="6" />
+                <line x1="12" y1="18" x2="12" y2="22" />
+                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" />
+                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" />
+                <line x1="2" y1="12" x2="6" y2="12" />
+                <line x1="18" y1="12" x2="22" y2="12" />
+                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" />
+                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" />
+              </svg>
+            </div>
+            <span>Generate Market Report</span>
+          </button>
+        </section>
       </main>
+
+      {/* Chat Widget - PORTED FROM ORIGINAL */}
+      <button
+        className="chat-widget"
+        onClick={() => setShowAiSignup(true)}
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+        </svg>
+        <span className="chat-label">Get Market Research</span>
+      </button>
+
+      {/* AI Signup Modal */}
+      <AISignupModal
+        isOpen={showAiSignup}
+        onClose={() => setShowAiSignup(false)}
+      />
     </div>
   );
 }
