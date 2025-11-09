@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Footer Component Test</title>
+    <link rel="stylesheet" href="src/Footer.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+        .test-container {
+            min-height: 60vh;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        .test-content {
+            max-width: 800px;
+        }
+        .test-content h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .test-content p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <!-- Test Page Content -->
+    <div class="test-container">
+        <div class="test-content">
+            <h1>Footer Component Test</h1>
+            <p>This is a test page to preview the footer component.</p>
+            <p>Scroll down to see the footer in action!</p>
+        </div>
+    </div>
+
+    <!-- Footer Component (Vanilla HTML Version) -->
+    <footer class="main-footer">
+        <div class="footer-container">
+            <!-- For Hosts Column -->
+            <div class="footer-column">
+                <h4>For Hosts</h4>
+                <a href="https://app.split.lease/signup-login">List Property Now</a>
+                <a href="https://app.split.lease/host-step-by-step-guide-to-list">How to List</a>
+                <a href="https://app.split.lease/policies/cancellation-and-refund-policy">Legal Section</a>
+                <a href="https://app.split.lease/host-guarantee">Guarantees</a>
+                <a href="https://app.split.lease/demo-house-manual">Free House Manual</a>
+            </div>
+
+            <!-- For Guests Column -->
+            <div class="footer-column">
+                <h4>For Guests</h4>
+                <a href="https://app.split.lease/search">Explore Split Leases</a>
+                <a href="https://app.split.lease/success-stories-guest">Success Stories</a>
+                <a href="https://app.split.lease/signup-login">Speak to an Agent</a>
+                <a href="https://app.split.lease/faq">View FAQ</a>
+            </div>
+
+            <!-- Company Column -->
+            <div class="footer-column">
+                <h4>Company</h4>
+                <a href="https://app.split.lease/faq?question=Guest&answer=1692211080963x751695924087252700">About Periodic Tenancy</a>
+                <a href="https://app.split.lease/about-us">About the Team</a>
+                <a href="https://app.split.lease/careers">Careers at Split Lease</a>
+                <a href="https://app.split.lease/knowledge-base/1676496004548x830972865850585500">View Blog</a>
+            </div>
+
+            <!-- Referral Column -->
+            <div class="footer-column">
+                <h4>Refer a friend</h4>
+                <p class="referral-text">You get $50 and they get $50 *after their first booking</p>
+                <div class="referral-options">
+                    <label>
+                        <input type="radio" name="referral" value="text" checked>
+                        Text
+                    </label>
+                    <label>
+                        <input type="radio" name="referral" value="email">
+                        Email
+                    </label>
+                </div>
+                <input type="text" placeholder="Your friend's phone number" class="referral-input" id="referralInput">
+                <button class="share-btn" onclick="handleReferral()">Share now</button>
+            </div>
+
+            <!-- Import Column -->
+            <div class="footer-column">
+                <h4>Import your listing from another site</h4>
+                <p class="import-text">No need to start from scratch</p>
+                <input type="text" placeholder="https://your-listing-link" class="import-input" id="importUrl">
+                <input type="email" placeholder="janedoe@your_email.com" class="import-input" id="importEmail">
+                <button class="import-btn" onclick="handleImport()">Submit</button>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Footer Bottom -->
+    <div class="footer-bottom">
+        <a href="https://app.split.lease/terms">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="currentColor" style="margin-right: 0.5rem;">
+                <path d="M2 2h8v8H2z" stroke="currentColor" stroke-width="1" fill="none"/>
+                <path d="M4 6h4M4 8h3"/>
+            </svg>
+            Terms of Use
+        </a>
+        <span>Made with love in New York City</span>
+        <span>© 2025 SplitLease</span>
+    </div>
+
+    <script>
+        // Update placeholder based on referral method selection
+        document.querySelectorAll('input[name="referral"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const input = document.getElementById('referralInput');
+                if (this.value === 'text') {
+                    input.placeholder = "Your friend's phone number";
+                } else {
+                    input.placeholder = "Your friend's email";
+                }
+            });
+        });
+
+        // Handle referral submission
+        function handleReferral() {
+            const method = document.querySelector('input[name="referral"]:checked').value;
+            const contact = document.getElementById('referralInput').value;
+
+            if (!contact.trim()) {
+                alert('Please enter contact information');
+                return;
+            }
+
+            console.log(`Referral via ${method}:`, contact);
+            alert(`Referral submitted via ${method}: ${contact}`);
+            document.getElementById('referralInput').value = '';
+        }
+
+        // Handle import submission
+        function handleImport() {
+            const url = document.getElementById('importUrl').value;
+            const email = document.getElementById('importEmail').value;
+
+            if (!url.trim() || !email.trim()) {
+                alert('Please fill in both fields');
+                return;
+            }
+
+            if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                alert('Please enter a valid URL');
+                return;
+            }
+
+            if (!email.includes('@') || !email.includes('.')) {
+                alert('Please enter a valid email');
+                return;
+            }
+
+            const btn = event.target;
+            btn.textContent = 'Importing...';
+            btn.disabled = true;
+
+            console.log('Import listing:', { url, email });
+
+            setTimeout(() => {
+                btn.textContent = 'Submit';
+                btn.disabled = false;
+                alert('Listing imported successfully!');
+                document.getElementById('importUrl').value = '';
+                document.getElementById('importEmail').value = '';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

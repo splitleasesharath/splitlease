@@ -1,0 +1,40 @@
+{
+  "name": "@splitlease/footer-index",
+  "version": "1.0.0",
+  "description": "Reusable React footer component for Split Lease applications",
+  "main": "dist/index.js",
+  "module": "dist/index.esm.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "tsc && rollup -c",
+    "dev": "rollup -c -w",
+    "test": "jest",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "react",
+    "footer",
+    "component",
+    "split-lease",
+    "reusable"
+  ],
+  "author": "Split Lease",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "typescript": "^5.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/splitleasesharath/footer-index.git"
+  }
+}

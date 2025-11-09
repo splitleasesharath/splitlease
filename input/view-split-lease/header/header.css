@@ -1,0 +1,332 @@
+/* Split Lease Header Component Styles */
+
+/* CSS Variables for customization */
+:root {
+    --header-bg-color: #31135D;
+    --header-bg-hover: #251047;
+    --header-text-color: white;
+    --dropdown-bg: white;
+    --dropdown-text: #1a1a1a;
+    --dropdown-text-gray: #6b7280;
+    --dropdown-hover-bg: rgba(91, 33, 182, 0.05);
+    --button-bg: rgb(255, 255, 255);
+    --button-text: rgb(109, 35, 207);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 10px 40px rgba(0, 0, 0, 0.15);
+    --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --header-z-index: 9999;
+}
+
+/* Header Navigation */
+.main-header {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0;
+    right: 0;
+    background: var(--header-bg-color);
+    box-shadow: var(--shadow-sm);
+    z-index: var(--header-z-index);
+    transition: all 0.3s ease;
+    transform: none !important;
+}
+
+.nav-container {
+    max-width: 90%;
+    margin: 0 auto;
+    padding: 1rem 3rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    gap: 0.5rem;
+}
+
+.logo-image {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.logo-text {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--header-text-color);
+    line-height: 1.2;
+    white-space: nowrap;
+    font-family: var(--font-family);
+}
+
+/* Hide logo text on mobile */
+@media (max-width: 768px) {
+    .logo-text {
+        display: none;
+    }
+}
+
+.nav-center {
+    display: flex;
+    gap: 3rem;
+    flex: 1;
+    justify-content: center;
+    margin: 0 2rem;
+}
+
+/* Text visibility for mobile/desktop */
+.mobile-text {
+    display: none;
+}
+
+.desktop-text {
+    display: inline;
+}
+
+/* Dropdown Navigation */
+.nav-dropdown {
+    position: relative;
+}
+
+.dropdown-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dropdown-arrow {
+    transition: transform 0.3s ease;
+}
+
+.nav-dropdown:hover .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 1rem;
+    background: var(--dropdown-bg);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    min-width: 280px;
+    padding: 0.5rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.nav-dropdown:hover .dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    margin-top: 0.5rem;
+}
+
+.dropdown-item {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--dropdown-text);
+    text-decoration: none;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background: var(--dropdown-hover-bg);
+}
+
+.dropdown-title {
+    display: block;
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--dropdown-text);
+    margin-bottom: 0.25rem;
+}
+
+.dropdown-desc {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--dropdown-text-gray);
+    line-height: 1.3;
+}
+
+.nav-link {
+    text-decoration: none;
+    color: var(--header-text-color);
+    font-weight: 500;
+    transition: color 0.3s ease;
+    position: relative;
+    font-family: var(--font-family);
+}
+
+.nav-link:hover {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--header-text-color);
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    white-space: nowrap;
+}
+
+.explore-rentals-btn {
+    background-color: var(--button-bg);
+    color: var(--button-text);
+    padding: 0.75rem 2.5rem;
+    border: 2px solid var(--button-bg);
+    border-radius: 5px;
+    font-family: "DM Sans", sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.explore-rentals-btn:hover {
+    background-color: transparent;
+    color: var(--button-bg);
+}
+
+.divider {
+    color: var(--header-text-color);
+    opacity: 0.5;
+}
+
+/* Hamburger Menu */
+.hamburger-menu {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    gap: 4px;
+}
+
+.hamburger-line {
+    width: 24px;
+    height: 2px;
+    background: var(--header-text-color);
+    transition: all 0.3s ease;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger-menu.active .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .nav-container {
+        position: relative;
+        padding: 0.75rem 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .hamburger-menu {
+        display: none; /* Hide hamburger - using simplified nav instead */
+    }
+
+    /* Simplify navigation for mobile */
+    .nav-center {
+        display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
+        position: static;
+        background: transparent;
+        margin: 0;
+        flex: 1;
+        justify-content: center;
+    }
+
+    .nav-right {
+        gap: 0.75rem;
+    }
+
+    /* Show mobile text instead of desktop text */
+    .mobile-text {
+        display: inline;
+    }
+
+    .desktop-text {
+        display: none;
+    }
+
+    /* Hide explore button and divider on mobile */
+    .explore-rentals-btn,
+    .divider {
+        display: none;
+    }
+
+    /* Adjust dropdown positioning for mobile */
+    .dropdown-menu {
+        left: auto;
+        right: 0;
+        transform: none;
+        min-width: 250px;
+    }
+
+    .nav-dropdown:first-child .dropdown-menu {
+        left: 0;
+        right: auto;
+    }
+}
+
+/* Even smaller screens */
+@media (max-width: 480px) {
+    .nav-container {
+        padding: 0.5rem 0.75rem;
+    }
+
+    .nav-center {
+        gap: 0.25rem;
+    }
+
+    .nav-right {
+        gap: 0.5rem;
+    }
+
+    .nav-link {
+        font-size: 0.9rem;
+    }
+}

@@ -1,0 +1,22 @@
+# Documentation and non-deployment files
+Dump/
+
+# Playwright test artifacts
+.playwright-mcp/
+
+# Node modules (if added later)
+node_modules/
+
+# Environment variables (if added later)
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo

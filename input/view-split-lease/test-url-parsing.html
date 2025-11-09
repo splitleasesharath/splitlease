@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Parsing Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .test-case {
+            background: #f5f5f5;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+        }
+        .result {
+            background: #fff;
+            padding: 10px;
+            margin-top: 10px;
+            border-left: 4px solid #0066cc;
+        }
+        code {
+            background: #e8e8e8;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>URL Parsing Test for Listing IDs</h1>
+    <p>This page tests the <code>getListingIdFromUrl()</code> function with various URL formats.</p>
+
+    <div id="test-results"></div>
+
+    <script>
+        // Copy the function from supabase-loader.js
+        function getListingIdFromUrl() {
+            // Extract ID from path: /view-split-lease/<id> or /view-split-lease-1/<id> or /<id>
+            const pathSegments = window.location.pathname.split('/').filter(segment => segment);
+
+            // Find the index of 'view-split-lease' or 'view-split-lease-1' segment
+            const viewSegmentIndex = pathSegments.findIndex(segment =>
+                segment === 'view-split-lease' || segment === 'view-split-lease-1'
+            );
+
+            // If found and there's a next segment that's not a file, use it as the ID
+            if (viewSegmentIndex !== -1 && pathSegments[viewSegmentIndex + 1]) {
+                const nextSegment = pathSegments[viewSegmentIndex + 1];
+                // Make sure it's not a filename (doesn't end with .html, .php, etc.)
+                if (!nextSegment.includes('.')) {
+                    return nextSegment;
+                }
+            }
+
+            // Check if the first path segment looks like a listing ID (contains 'x' and numbers)
+            // Format: ################x################## (e.g., 1586447992720x748691103167545300)
+            if (pathSegments.length > 0) {
+                const firstSegment = pathSegments[0];
+                // Check if it matches the listing ID pattern and is not a filename
+                if (/^\d+x\d+$/.test(firstSegment)) {
+                    return firstSegment;
+                }
+            }
+
+            // Fallback: check query parameter for backward compatibility
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('id') || '1586447992720x748691103167545300'; // Default for testing
+        }
+
+        // Test cases
+        const testCases = [
+            {
+                name: 'Current URL',
+                pathname: window.location.pathname,
+                search: window.location.search,
+                description: 'The actual current URL'
+            },
+            {
+                name: 'Direct listing ID (Format 1)',
+                pathname: '/1701196985127x160157906679627780',
+                search: '',
+                description: 'URL: https://view-split-lease-1.pages.dev/1701196985127x160157906679627780'
+            },
+            {
+                name: 'Direct listing ID (Format 2)',
+                pathname: '/1586447992720x748691103167545300',
+                search: '',
+                description: 'URL: https://view-split-lease-1.pages.dev/1586447992720x748691103167545300'
+            },
+            {
+                name: 'With view-split-lease segment',
+                pathname: '/view-split-lease/1701196985127x160157906679627780',
+                search: '',
+                description: 'URL: https://app.split.lease/view-split-lease/1701196985127x160157906679627780'
+            },
+            {
+                name: 'With view-split-lease-1 segment',
+                pathname: '/view-split-lease-1/1586447992720x748691103167545300',
+                search: '',
+                description: 'URL: https://example.com/view-split-lease-1/1586447992720x748691103167545300'
+            },
+            {
+                name: 'Query parameter fallback',
+                pathname: '/',
+                search: '?id=1701196985127x160157906679627780',
+                description: 'URL: https://example.com/?id=1701196985127x160157906679627780'
+            },
+            {
+                name: 'Default fallback',
+                pathname: '/some/other/path',
+                search: '',
+                description: 'URL with no listing ID should return default'
+            }
+        ];
+
+        // Run tests
+        const resultsDiv = document.getElementById('test-results');
+
+        testCases.forEach(testCase => {
+            // Mock the window.location for testing
+            const originalPathname = window.location.pathname;
+            const originalSearch = window.location.search;
+
+            // Temporarily override location (for testing purposes)
+            Object.defineProperty(window, 'location', {
+                writable: true,
+                value: {
+                    ...window.location,
+                    pathname: testCase.pathname,
+                    search: testCase.search
+                }
+            });
+
+            const result = getListingIdFromUrl();
+
+            // Restore original location
+            Object.defineProperty(window, 'location', {
+                writable: true,
+                value: {
+                    ...window.location,
+                    pathname: originalPathname,
+                    search: originalSearch
+                }
+            });
+
+            // Display result
+            resultsDiv.innerHTML += `
+                <div class="test-case">
+                    <h3>${testCase.name}</h3>
+                    <p>${testCase.description}</p>
+                    <p><strong>Path:</strong> <code>${testCase.pathname}</code></p>
+                    <p><strong>Search:</strong> <code>${testCase.search || '(none)'}</code></p>
+                    <div class="result">
+                        <strong>Extracted ID:</strong> <code>${result}</code>
+                    </div>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>
