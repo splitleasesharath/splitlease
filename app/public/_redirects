@@ -2,7 +2,7 @@
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
 # Handle view-split-lease page with listing ID in path
-/view-split-lease.html/*  /view-split-lease.html  200
+/view-split-lease.html/*  /view-split-lease.html/:splat  200
 
 # Handle search page
 /search.html  /search.html  200
