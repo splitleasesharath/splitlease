@@ -1,14 +1,15 @@
 # Cloudflare Pages redirects and rewrites
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
-# Handle view-split-lease page with listing ID in path - must come before fallback
-/view-split-lease.html/*  /view-split-lease/:splat  200
+# Handle view-split-lease page with listing ID in path
+# Keep the URL as-is and serve the HTML file (JS will parse the ID from pathname)
+/view-split-lease.html/*  /view-split-lease.html  200
 
 # Handle search page
-/search.html  /search  200
+/search.html  /search.html  200
 
 # Handle FAQ page
-/faq.html  /faq  200
+/faq.html  /faq.html  200
 
 # Homepage
 /  /index.html  200
