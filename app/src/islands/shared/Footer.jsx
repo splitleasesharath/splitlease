@@ -120,7 +120,7 @@ export default function Footer() {
             <a href="https://app.split.lease/search">Explore Split Leases</a>
             <a href="https://app.split.lease/success-stories-guest">Success Stories</a>
             <a href={SIGNUP_LOGIN_URL}>Speak to an Agent</a>
-            <a href="https://app.split.lease/faq">View FAQ</a>
+            <a href="/faq.html">View FAQ</a>
           </div>
 
           {/* Company Column */}
