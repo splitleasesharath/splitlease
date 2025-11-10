@@ -12,19 +12,19 @@ export default defineConfig({
       name: 'multi-page-dev',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
-          // Map routes to their corresponding HTML files
-          const routeMap = {
-            '/search.html': '/public/search.html',
-            '/view-split-lease.html': '/public/view-split-lease.html'
-          };
+          const url = req.url || '';
 
-          const publicPath = routeMap[req.url?.split('?')[0]];
-
-          if (publicPath) {
-            const filePath = path.resolve(__dirname, publicPath.slice(1));
-            if (fs.existsSync(filePath)) {
-              req.url = publicPath;
-            }
+          // Handle view-split-lease with path segments (e.g., /view-split-lease.html/123?query=param)
+          if (url.startsWith('/view-split-lease.html')) {
+            // Extract query params if they exist
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            // Rewrite to serve the HTML file while preserving query params
+            req.url = '/public/view-split-lease.html' + queryString;
+          } else if (url.startsWith('/search.html')) {
+            req.url = '/public/search.html' + (url.substring('/search.html'.length) || '');
+          } else if (url.startsWith('/faq.html')) {
+            req.url = '/public/faq.html' + (url.substring('/faq.html'.length) || '');
           }
 
           next();
@@ -71,7 +71,8 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'public/index.html'),
         search: resolve(__dirname, 'public/search.html'),
-        'view-split-lease': resolve(__dirname, 'public/view-split-lease.html')
+        'view-split-lease': resolve(__dirname, 'public/view-split-lease.html'),
+        faq: resolve(__dirname, 'public/faq.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

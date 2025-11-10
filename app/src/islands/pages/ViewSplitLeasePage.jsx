@@ -441,12 +441,14 @@ function CommuteSection({ listing }) {
 // ============================================================================
 
 function AmenitiesSection({ listing }) {
-  const amenities = listing['Features - Amenities In-Unit']
-    ? listing['Features - Amenities In-Unit'].map(id => LOOKUP_CACHE.amenities[id]).filter(Boolean)
+  const amenitiesRaw = listing['Features - Amenities In-Unit'];
+  const amenities = Array.isArray(amenitiesRaw)
+    ? amenitiesRaw.map(id => LOOKUP_CACHE.amenities[id]).filter(Boolean)
     : [];
 
-  const safety = listing['Features - Safety']
-    ? listing['Features - Safety'].map(id => LOOKUP_CACHE.safety[id]).filter(Boolean)
+  const safetyRaw = listing['Features - Safety'];
+  const safety = Array.isArray(safetyRaw)
+    ? safetyRaw.map(id => LOOKUP_CACHE.safety[id]).filter(Boolean)
     : [];
 
   if (amenities.length === 0 && safety.length === 0) return null;
@@ -575,8 +577,9 @@ function AmenityIcon({ name }) {
 // ============================================================================
 
 function HouseRulesSection({ listing }) {
-  const rules = listing['Features - House Rules']
-    ? listing['Features - House Rules'].map(id => LOOKUP_CACHE.houseRules[id]).filter(Boolean)
+  const rulesRaw = listing['Features - House Rules'];
+  const rules = Array.isArray(rulesRaw)
+    ? rulesRaw.map(id => LOOKUP_CACHE.houseRules[id]).filter(Boolean)
     : [];
 
   if (rules.length === 0) return null;
@@ -1056,23 +1059,28 @@ export default function ViewSplitLeasePage() {
   }, []);
 
   const getListingIdFromUrl = () => {
+    // 1. Check query string: ?id=listingId
     const urlParams = new URLSearchParams(window.location.search);
     const idFromQuery = urlParams.get('id');
-
     if (idFromQuery) return idFromQuery;
 
+    // 2. Parse pathname for segment after 'view-split-lease.html' or 'view-split-lease'
     const pathSegments = window.location.pathname.split('/').filter(segment => segment);
     const viewSegmentIndex = pathSegments.findIndex(segment =>
-      segment === 'view-split-lease' || segment === 'view-split-lease-1'
+      segment === 'view-split-lease.html' ||
+      segment === 'view-split-lease' ||
+      segment === 'view-split-lease-1'
     );
 
     if (viewSegmentIndex !== -1 && pathSegments[viewSegmentIndex + 1]) {
       const nextSegment = pathSegments[viewSegmentIndex + 1];
+      // Return the next segment if it doesn't look like a file extension
       if (!nextSegment.includes('.')) {
         return nextSegment;
       }
     }
 
+    // 3. Fallback: Check if first segment matches listing ID pattern (digits and 'x')
     if (pathSegments.length > 0) {
       const firstSegment = pathSegments[0];
       if (/^\d+x\d+$/.test(firstSegment)) {
