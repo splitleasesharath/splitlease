@@ -11,6 +11,43 @@ import { supabase } from './supabase.js';
 import { DATABASE } from './constants.js';
 
 /**
+ * Parse a value that may be a native array or stringified JSON array
+ *
+ * Supabase JSONB fields can be returned as either:
+ * - Native JavaScript arrays: ["Monday", "Tuesday"]
+ * - Stringified JSON arrays: '["Monday", "Tuesday"]'
+ *
+ * This utility handles both cases robustly, following the NO FALLBACK principle.
+ *
+ * @param {any} value - Value from Supabase JSONB field
+ * @returns {Array} - Parsed array or empty array if parsing fails
+ */
+export function parseJsonArray(value) {
+  // Already a native array? Return as-is
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  // Stringified JSON? Try to parse
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      // Verify the parsed result is actually an array
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.warn('Failed to parse JSON array:', { value, error: error.message });
+      return []; // Return empty array - NO FALLBACK to hardcoded data
+    }
+  }
+
+  // Unexpected type (null, undefined, object, number, etc.)
+  if (value != null) {
+    console.warn('Unexpected type for JSONB array field:', { type: typeof value, value });
+  }
+  return []; // Return empty array - NO FALLBACK
+}
+
+/**
  * Fetch photo URLs in batch from database
  * @param {Array<string>} photoIds - Array of photo IDs to fetch
  * @returns {Promise<Object>} Map of photo ID to photo URL
@@ -145,26 +182,11 @@ export function extractPhotos(photosField, photoMap = {}, listingId = null) {
     photoMapSample: Object.keys(photoMap).slice(0, 3)
   });
 
-  // Handle double-encoded JSONB: Supabase stores "Features - Photos" as JSONB string containing JSON array
-  // Need to parse it to get the actual array
-  let photos = photosField;
-  if (typeof photosField === 'string') {
-    try {
-      photos = JSON.parse(photosField);
-      console.log(`🔧 Listing ${listingId}: Parsed double-encoded JSONB string to array`);
-    } catch (error) {
-      console.error(`❌ Listing ${listingId}: Failed to parse photos JSON string:`, error);
-      return []; // Return empty array - NO FALLBACK
-    }
-  }
-
-  if (!photos || !Array.isArray(photos)) {
-    console.error(`❌ Listing ${listingId}: No photos field or not an array after parsing`);
-    return []; // Return empty array - NO FALLBACK
-  }
+  // Handle double-encoded JSONB using the centralized parser
+  const photos = parseJsonArray(photosField);
 
   if (photos.length === 0) {
-    console.error(`❌ Listing ${listingId}: Photos array is empty`);
+    console.error(`❌ Listing ${listingId}: Photos array is empty or failed to parse`);
     return []; // Return empty array - NO FALLBACK
   }
 

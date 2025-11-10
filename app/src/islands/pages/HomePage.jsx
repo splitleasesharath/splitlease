@@ -277,7 +277,7 @@ function ScheduleSection() {
   ];
 
   const handleScheduleClick = (days) => {
-    const searchUrl = `${SEARCH_URL}?days-selected=${days}`;
+    const searchUrl = `/search.html?days-selected=${days}`;
     window.location.href = searchUrl;
   };
 
@@ -408,13 +408,13 @@ function ListingsPreview({ selectedDays }) {
 
   const handleListingClick = (propertyId) => {
     const daysParam = selectedDays.length > 0 ? selectedDays.map(d => d + 1).join(',') : '2,3,4,5,6';
-    const propertyUrl = `${VIEW_LISTING_URL}/${propertyId}?days-selected=${daysParam}&weekly-frequency=Every%20week`;
+    const propertyUrl = `/view-split-lease.html/${propertyId}?days-selected=${daysParam}&weekly-frequency=Every%20week`;
     window.location.href = propertyUrl;
   };
 
   const handleShowMore = () => {
     const daysParam = selectedDays.length > 0 ? selectedDays.map(d => d + 1).join(',') : '1,2,3,4,5,6';
-    const searchUrl = `${SEARCH_URL}?days-selected=${daysParam}`;
+    const searchUrl = `/search.html?days-selected=${daysParam}`;
     window.location.href = searchUrl;
   };
 
@@ -652,7 +652,7 @@ export default function HomePage() {
 
     // Convert to 1-based indexing for Bubble
     const bubbleDays = selectedDays.map((day) => day + 1);
-    const searchUrl = `${SEARCH_URL}?days-selected=${bubbleDays.join(',')}`;
+    const searchUrl = `/search.html?days-selected=${bubbleDays.join(',')}`;
     window.location.href = searchUrl;
   };
 

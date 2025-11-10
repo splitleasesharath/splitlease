@@ -6,6 +6,61 @@
   <title>Search Rentals - Split Lease</title>
   <meta name="description" content="Search for flexible rentals for repeat stays">
   <link rel="stylesheet" href="/src/styles/main.css">
+
+  <!-- Lottie for atom animation - PORTED FROM ORIGINAL -->
+  <script src="https://unpkg.com/lottie-web@5.12.2/build/player/lottie.min.js"></script>
+
+  <!-- Google Maps API -->
+  <script>
+    // Initialize callback function before loading API
+    window.initMap = function() {
+      console.log('Google Maps API loaded successfully');
+      window.dispatchEvent(new Event('google-maps-loaded'));
+    };
+
+    // Load Google Maps API dynamically
+    (function() {
+      const script = document.createElement('script');
+      // Use environment variable or fallback to constant
+      const apiKey = 'AIzaSyCFcO3jCTvR69iA4UAxPi-sWHJ7zWPMJWo';
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap`;
+      script.async = true;
+      script.defer = true;
+      script.onerror = function() {
+        console.error('Failed to load Google Maps API');
+      };
+      document.head.appendChild(script);
+    })();
+  </script>
+
+  <!-- Initialize Lottie atom animation - PORTED FROM ORIGINAL -->
+  <script>
+    window.addEventListener('load', function() {
+      // Wait a bit for React to render
+      setTimeout(function() {
+        const atomContainer = document.getElementById('atomAnimation');
+        if (atomContainer && window.lottie) {
+          // Clear the SVG placeholder
+          atomContainer.innerHTML = '';
+
+          // Load Lottie animation
+          try {
+            window.lottie.loadAnimation({
+              container: atomContainer,
+              renderer: 'svg',
+              loop: true,
+              autoplay: true,
+              path: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1760473171600x280130752685858750/atom%20animation.json',
+              speed: 0.25
+            });
+            console.log('✅ Lottie atom animation loaded successfully');
+          } catch (error) {
+            console.error('❌ Failed to load Lottie animation:', error);
+          }
+        }
+      }, 1000);
+    });
+  </script>
 </head>
 <body>
   <div id="search-page"></div>

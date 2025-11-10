@@ -4,6 +4,186 @@
    Based on: input/search/css/styles.css lines 467-482
    ======================================== */
 
+/* Filter Panel - PORTED FROM ORIGINAL (lines 177-256) */
+.filter-panel {
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1.5rem 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.filter-container {
+  max-width: 95vw;
+  width: 95vw;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.filter-group {
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+
+.filter-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-select:hover {
+  border-color: #9ca3af;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #5b21b6;
+  box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
+}
+
+/* Horizontal Filter Row */
+.horizontal-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.horizontal-filters .filter-group.compact {
+  flex: 1 1 220px;
+  min-width: 220px;
+  max-width: 220px;
+}
+
+.horizontal-filters .filter-group.compact .filter-select {
+  width: 100%;
+}
+
+/* Top Filter Row Layout */
+.top-filter-row {
+  display: block;
+  margin-bottom: 0;
+}
+
+.top-filter-row .calendar-group {
+  width: 100%;
+}
+
+.neighborhoods-group {
+  width: 220px;
+  min-width: 220px;
+  max-width: 220px;
+  position: relative; /* For absolute positioned dropdown */
+}
+
+.neighborhoods-group .neighborhood-search {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.neighborhoods-group .neighborhood-search:focus {
+  outline: none;
+  border-color: #5b21b6;
+  box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
+}
+
+/* Neighborhood checkboxes - PORTED FROM ORIGINAL (line 358) */
+.neighborhood-list {
+  display: none; /* Hidden by default - shows on focus/hover */
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  z-index: 100;
+  margin-top: 0.5rem;
+  min-width: 300px;
+}
+
+/* Show neighborhoods when search input is focused or when hovering over the list */
+.neighborhood-search:focus ~ .neighborhood-list,
+.neighborhood-list:hover {
+  display: flex;
+}
+
+.neighborhood-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.neighborhood-checkbox:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.neighborhood-checkbox input[type="checkbox"] {
+  cursor: pointer;
+  accent-color: #5b21b6;
+}
+
+/* Mobile responsive for horizontal filters */
+@media (max-width: 1024px) {
+  .neighborhoods-group {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
+
+  .horizontal-filters .filter-group.compact {
+    flex: 1 1 calc(50% - 0.75rem);
+    min-width: 150px;
+    max-width: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .filter-container {
+    padding: 0 1rem;
+  }
+
+  .horizontal-filters {
+    gap: 1rem;
+  }
+
+  .horizontal-filters .filter-group.compact {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+}
+
 /* Main Content Layout - Two Columns (45% listings, 55% map) */
 .search-page .main-content {
   max-width: 95vw;

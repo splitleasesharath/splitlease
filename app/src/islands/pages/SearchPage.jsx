@@ -9,7 +9,7 @@ import { supabase } from '../../lib/supabase.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
-import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities } from '../../lib/supabaseUtils.js';
+import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
 
 // ============================================================================
 // Internal Components
@@ -228,11 +228,9 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, selectedDaysCount, onLocationClick }) {
+function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenContactModal, onOpenInfoModal }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
-  const [showPriceInfo, setShowPriceInfo] = useState(false);
-  const [showContactHost, setShowContactHost] = useState(false);
 
   const hasImages = listing.images && listing.images.length > 0;
   const hasMultipleImages = listing.images && listing.images.length > 1;
@@ -401,7 +399,7 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick }) {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setShowContactHost(true);
+                  onOpenContactModal(listing);
                 }}
               >
                 Message
@@ -420,7 +418,7 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick }) {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  setShowPriceInfo(true);
+                  onOpenInfoModal(listing);
                 }}
               >
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
@@ -429,24 +427,6 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick }) {
             <div className="full-price">${dynamicPrice.toFixed(2)}/night</div>
             <div className="availability-text">Message Split Lease for Availability</div>
           </div>
-
-          {showPriceInfo && (
-            <InformationalText
-              isOpen={showPriceInfo}
-              onClose={() => setShowPriceInfo(false)}
-              listing={listing}
-              selectedDaysCount={selectedDaysCount}
-            />
-          )}
-
-          {showContactHost && (
-            <ContactHostMessaging
-              isOpen={showContactHost}
-              onClose={() => setShowContactHost(false)}
-              listing={listing}
-              userEmail={null}
-            />
-          )}
         </div>
       </div>
     </a>
@@ -482,7 +462,7 @@ function AiSignupCard() {
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoading }) {
+function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef }) {
   const sentinelRef = useRef(null);
 
   useEffect(() => {
@@ -523,6 +503,8 @@ function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoad
                 mapRef.current.zoomToListing(listing.id);
               }
             }}
+            onOpenContactModal={onOpenContactModal}
+            onOpenInfoModal={onOpenInfoModal}
           />
         ];
 
@@ -617,7 +599,12 @@ export default function SearchPage() {
   const [allListings, setAllListings] = useState([]);
   const [displayedListings, setDisplayedListings] = useState([]);
   const [loadedCount, setLoadedCount] = useState(0);
+
+  // Modal state management
   const [showAiSignup, setShowAiSignup] = useState(false);
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [selectedListing, setSelectedListing] = useState(null);
 
   // Refs
   const mapRef = useRef(null);
@@ -893,8 +880,22 @@ export default function SearchPage() {
       setAllListings(transformedListings);
       setLoadedCount(0);
     } catch (err) {
-      console.error('Failed to fetch listings:', err);
-      setError(err.message);
+      // Log technical details for debugging
+      console.error('Failed to fetch listings:', {
+        message: err.message,
+        stack: err.stack,
+        timestamp: new Date().toISOString(),
+        filters: {
+          borough: selectedBorough,
+          neighborhoods: selectedNeighborhoods,
+          weekPattern,
+          priceTier,
+          selectedDays
+        }
+      });
+
+      // Show user-friendly error message (NO FALLBACK - acknowledge the real problem)
+      setError('We had trouble loading listings. Please try refreshing the page or adjusting your filters.');
     } finally {
       setIsLoading(false);
     }
@@ -949,9 +950,8 @@ export default function SearchPage() {
       images: images || [],
       description: `${dbListing['Features - Qty Bedrooms'] || 0} bedroom • ${dbListing['Features - Qty Bathrooms'] || 0} bathroom`,
       weeks_offered: dbListing['Weeks offered'] || 'Every week',
-      days_available: Array.isArray(dbListing['Days Available (List of Days)'])
-        ? dbListing['Days Available (List of Days)']
-        : [],
+      // Parse JSONB field that may be stringified JSON or native array
+      days_available: parseJsonArray(dbListing['Days Available (List of Days)']),
       isNew: false
     };
   };
@@ -994,6 +994,35 @@ export default function SearchPage() {
     setPriceTier('all');
     setSortBy('recommended');
     setNeighborhoodSearch('');
+  };
+
+  // Modal handler functions
+  const handleOpenAIModal = () => {
+    setShowAiSignup(true);
+  };
+
+  const handleCloseAIModal = () => {
+    setShowAiSignup(false);
+  };
+
+  const handleOpenContactModal = (listing) => {
+    setSelectedListing(listing);
+    setIsContactModalOpen(true);
+  };
+
+  const handleCloseContactModal = () => {
+    setIsContactModalOpen(false);
+    setSelectedListing(null);
+  };
+
+  const handleOpenInfoModal = (listing) => {
+    setSelectedListing(listing);
+    setIsInfoModalOpen(true);
+  };
+
+  const handleCloseInfoModal = () => {
+    setIsInfoModalOpen(false);
+    setSelectedListing(null);
   };
 
   // Render
@@ -1057,6 +1086,9 @@ export default function SearchPage() {
               onLoadMore={handleLoadMore}
               hasMore={hasMore}
               isLoading={isLoading}
+              onOpenContactModal={handleOpenContactModal}
+              onOpenInfoModal={handleOpenInfoModal}
+              mapRef={mapRef}
             />
           )}
         </section>
@@ -1112,7 +1144,23 @@ export default function SearchPage() {
       {/* AI Signup Modal */}
       <AISignupModal
         isOpen={showAiSignup}
-        onClose={() => setShowAiSignup(false)}
+        onClose={handleCloseAIModal}
+      />
+
+      {/* Contact Host Messaging Modal */}
+      <ContactHostMessaging
+        isOpen={isContactModalOpen}
+        onClose={handleCloseContactModal}
+        listing={selectedListing}
+        userEmail={null}
+      />
+
+      {/* Informational Text Modal */}
+      <InformationalText
+        isOpen={isInfoModalOpen}
+        onClose={handleCloseInfoModal}
+        listing={selectedListing}
+        selectedDaysCount={selectedDays.length}
       />
     </div>
   );

@@ -99,7 +99,13 @@ const GoogleMap = forwardRef(({
   // Initialize Google Map when API is loaded
   useEffect(() => {
     const initMap = () => {
+      console.log('🗺️ GoogleMap: Initializing map...', {
+        mapRefExists: !!mapRef.current,
+        googleMapsLoaded: !!(window.google && window.google.maps)
+      });
+
       if (!mapRef.current || !window.google) {
+        console.warn('⚠️ GoogleMap: Cannot initialize - missing mapRef or Google Maps API');
         return;
       }
 
@@ -125,12 +131,15 @@ const GoogleMap = forwardRef(({
 
       googleMapRef.current = map;
       setMapLoaded(true);
+      console.log('✅ GoogleMap: Map initialized successfully');
     };
 
     // Wait for Google Maps API to load
     if (window.google && window.google.maps) {
+      console.log('✅ GoogleMap: Google Maps API already loaded, initializing...');
       initMap();
     } else {
+      console.log('⏳ GoogleMap: Waiting for Google Maps API to load...');
       window.addEventListener('google-maps-loaded', initMap);
       return () => window.removeEventListener('google-maps-loaded', initMap);
     }
@@ -138,11 +147,23 @@ const GoogleMap = forwardRef(({
 
   // Update markers when listings change
   useEffect(() => {
-    if (!mapLoaded || !googleMapRef.current) return;
+    console.log('🗺️ GoogleMap: Markers update triggered', {
+      mapLoaded,
+      googleMapExists: !!googleMapRef.current,
+      totalListings: listings.length,
+      filteredListings: filteredListings.length,
+      showAllListings
+    });
+
+    if (!mapLoaded || !googleMapRef.current) {
+      console.warn('⚠️ GoogleMap: Skipping marker update - map not ready');
+      return;
+    }
 
     // Clear existing markers
     markersRef.current.forEach(marker => marker.setMap(null));
     markersRef.current = [];
+    console.log('🗺️ GoogleMap: Cleared existing markers');
 
     const map = googleMapRef.current;
     const bounds = new window.google.maps.LatLngBounds();
@@ -150,6 +171,7 @@ const GoogleMap = forwardRef(({
 
     // Create markers for filtered listings (purple) - these are primary
     if (filteredListings && filteredListings.length > 0) {
+      console.log('🗺️ GoogleMap: Creating markers for filtered listings:', filteredListings.length);
       filteredListings.forEach(listing => {
         if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
           return;
@@ -208,6 +230,10 @@ const GoogleMap = forwardRef(({
 
     // Fit map to show all markers
     if (hasValidMarkers) {
+      console.log('✅ GoogleMap: Fitting bounds to markers', {
+        markerCount: markersRef.current.length,
+        bounds: bounds.toString()
+      });
       map.fitBounds(bounds);
 
       // Prevent over-zooming on single marker
@@ -215,6 +241,8 @@ const GoogleMap = forwardRef(({
         if (map.getZoom() > 16) map.setZoom(16);
         window.google.maps.event.removeListener(listener);
       });
+    } else {
+      console.warn('⚠️ GoogleMap: No valid markers to display');
     }
   }, [listings, filteredListings, mapLoaded, showAllListings]);
 

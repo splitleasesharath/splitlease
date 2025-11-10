@@ -1,14 +1,17 @@
-import { DAY_ABBREVIATIONS } from '../../lib/constants.js';
+import { DAY_ABBREVIATIONS, DAY_NAMES } from '../../lib/constants.js';
 
 /**
- * DaySelector - Interactive day of week selector component
+ * DaySelector - Interactive day of week selector component with gradient design
+ *
+ * PORTED FROM ORIGINAL: Matches the beautiful purple gradient card design
+ * from input/search/components/ScheduleSelector/SearchScheduleSelector.styles.ts
  *
  * Features:
+ * - Purple gradient card wrapper (135deg, #667eea to #764ba2)
  * - Interactive day badges (S M T W T F S)
- * - Toggle selection on click
- * - Support for multiple day selection
+ * - Check-in/Check-out display
+ * - Clear selection button
  * - Visual indication of selected/unselected state
- * - Controlled component pattern (value prop + onChange callback)
  *
  * Day numbering (matching constants.js):
  * - Sunday = 0, Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4, Friday = 5, Saturday = 6
@@ -40,44 +43,76 @@ export default function DaySelector(props) {
     onChange(newSelected);
   };
 
+  const handleClearSelection = () => {
+    if (onChange) {
+      onChange([]);
+    }
+  };
+
+  // Calculate check-in and check-out days
+  const getCheckInCheckOut = () => {
+    if (selected.length === 0) {
+      return { checkIn: null, checkOut: null };
+    }
+
+    const sortedDays = [...selected].sort((a, b) => a - b);
+    const checkIn = DAY_NAMES[sortedDays[0]];
+    const checkOut = DAY_NAMES[sortedDays[sortedDays.length - 1]];
+
+    return { checkIn, checkOut };
+  };
+
+  const { checkIn, checkOut } = getCheckInCheckOut();
+
   return (
-    <div className={`day-selector-container ${className}`}>
+    <div className={`day-selector-wrapper ${className}`}>
       {label && <label className="day-selector-label">{label}</label>}
 
-      <div className="day-selector">
-        <div className="calendar-icon">
-          <img
-            src="https://c.animaapp.com/meh6k861XoGXNn/img/calendar-minimalistic-svgrepo-com-202-svg.svg"
-            alt="Calendar"
-            width="35"
-            height="35"
-          />
+      {/* Purple Gradient Card - Ported from original */}
+      <div className="schedule-selector-card">
+        <div className="schedule-selector-row">
+          {/* Calendar Icon */}
+          <div className="calendar-icon">
+            📅
+          </div>
+
+          {/* Days Grid */}
+          <div className="days-grid">
+            {DAY_ABBREVIATIONS.map((dayAbbr, index) => {
+              const isActive = selected.includes(index);
+
+              return (
+                <button
+                  key={index}
+                  className={`day-cell ${isActive ? 'selected' : ''}`}
+                  data-day={index}
+                  onClick={() => handleDayClick(index)}
+                  type="button"
+                  aria-pressed={isActive}
+                  aria-label={DAY_NAMES[index]}
+                >
+                  {dayAbbr}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {DAY_ABBREVIATIONS.map((dayAbbr, index) => {
-          const isActive = selected.includes(index);
-
-          return (
-            <div
-              key={index}
-              className={`day-badge ${isActive ? 'active' : ''}`}
-              data-day={index}
-              onClick={() => handleDayClick(index)}
-              role="button"
-              tabIndex={0}
-              aria-pressed={isActive}
-              aria-label={`${['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][index]}`}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  handleDayClick(index);
-                }
-              }}
-            >
-              {dayAbbr}
+        {/* Check-in/Check-out Display - Ported from original */}
+        {selected.length > 0 && (
+          <div className="info-container">
+            <div className="info-text">
+              Check-in: <strong>{checkIn}</strong> • Check-out: <strong>{checkOut}</strong>
             </div>
-          );
-        })}
+            <button
+              className="reset-button"
+              onClick={handleClearSelection}
+              type="button"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

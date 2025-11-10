@@ -74,7 +74,7 @@ function ErrorState({ message }) {
         {message || 'The property you are looking for does not exist or has been removed.'}
       </p>
       <a
-        href="https://app.split.lease/search"
+        href="/search.html"
         style={{
           display: 'inline-block',
           padding: '1rem 2rem',
@@ -1275,7 +1275,7 @@ export default function ViewSplitLeasePage() {
           marginBottom: '1.5rem'
         }}>
           <a
-            href="https://app.split.lease/search"
+            href="/search.html"
             style={{
               display: 'inline-flex',
               alignItems: 'center',

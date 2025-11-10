@@ -1,0 +1,188 @@
+/* ========================================
+   Schedule Selector Gradient Card Styles
+   PORTED FROM: input/search/components/ScheduleSelector/SearchScheduleSelector.styles.ts
+   ======================================== */
+
+/* Wrapper - Constrained to match original compact layout */
+.day-selector-wrapper {
+  max-width: 600px; /* Limit width to make it more compact */
+  width: 100%;
+}
+
+.day-selector-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+/* Purple Gradient Card - EXACT PORT from original */
+.schedule-selector-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  user-select: none;
+}
+
+/* Selector Row */
+.schedule-selector-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Calendar Icon */
+.schedule-selector-card .calendar-icon {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  flex-shrink: 0;
+}
+
+/* Days Grid */
+.days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  flex: 1;
+}
+
+/* Day Cell Buttons */
+.day-cell {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Default state - unselected */
+  background: rgba(255, 255, 255, 0.9);
+  color: #333333;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Selected state */
+.day-cell.selected {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Hover states */
+.day-cell:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.day-cell.selected:hover {
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.6);
+}
+
+/* Active/Click state */
+.day-cell:active {
+  transform: translateY(0);
+}
+
+/* Focus state for accessibility */
+.day-cell:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.6);
+  outline-offset: 2px;
+}
+
+/* Info Container */
+.info-container {
+  min-height: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Info Text (Check-in/Check-out) */
+.info-text {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+}
+
+.info-text strong {
+  font-weight: 600;
+  color: #ffffff;
+}
+
+/* Reset/Clear Selection Button */
+.reset-button {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 500;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: all 0.2s ease;
+}
+
+.reset-button:hover {
+  color: #ffffff;
+  text-decoration: none;
+}
+
+.reset-button:active {
+  transform: scale(0.98);
+}
+
+/* ========================================
+   Responsive Styles
+   ======================================== */
+
+@media (max-width: 768px) {
+  .schedule-selector-card {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .days-grid {
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .day-cell {
+    width: 40px;
+    height: 40px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  .info-text {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .day-cell {
+    width: 36px;
+    height: 36px;
+    font-size: 12px;
+  }
+}
