@@ -232,6 +232,33 @@
     transform: scale(0.98);
 }
 
+/* Focus state for keyboard navigation */
+.listing-location[onclick]:focus {
+    outline: 2px solid var(--primary-purple, #31135d);
+    outline-offset: 2px;
+}
+
+/* Remove focus outline for mouse users */
+.listing-location[onclick]:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Subtle animation hint - PORTED FROM ORIGINAL (lines 787-800) */
+.listing-location[onclick]::after {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: 8px;
+    background: radial-gradient(circle at center, rgba(49, 19, 93, 0.1) 0%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.listing-location[onclick]:hover::after {
+    opacity: 1;
+}
+
 /* Title */
 .listing-title {
     font-size: 19px;

@@ -343,3 +343,92 @@ button.loading {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+/* ========================================
+   Toast Notification System - PORTED FROM ORIGINAL
+   Based on: input/search/css/styles.css lines 1317-1383
+   ======================================== */
+.toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    min-width: 250px;
+    max-width: 400px;
+    padding: 16px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: all 0.3s ease;
+    z-index: 10000;
+    pointer-events: auto;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast.fade-out {
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.toast-info {
+    background: #2196F3;
+    color: white;
+}
+
+.toast-success {
+    background: #4CAF50;
+    color: white;
+}
+
+.toast-warning {
+    background: #FF9800;
+    color: white;
+}
+
+.toast-error {
+    background: #F44336;
+    color: white;
+}
+
+/* Stack multiple toasts */
+.toast + .toast {
+    margin-top: 10px;
+}
+
+/* Mobile responsive for toast */
+@media (max-width: 768px) {
+    .toast {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        min-width: auto;
+    }
+}
+
+/* ========================================
+   Custom Scrollbar Styles - PORTED FROM ORIGINAL
+   Based on: input/search/css/styles.css lines 1262-1279
+   ======================================== */
+::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

@@ -12,6 +12,18 @@ import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } fr
 import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
 
 // ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Convert day number (1-7) to day name
+ */
+function getDayName(dayNumber) {
+  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  return days[dayNumber] || '';
+}
+
+// ============================================================================
 // Internal Components
 // ============================================================================
 
@@ -91,6 +103,15 @@ function FilterPanel({
             onChange={onDaysChange}
             label="Select Days"
           />
+
+          {/* Check-in/Check-out Display - PORTED FROM ORIGINAL */}
+          {selectedDays.length >= 2 && (
+            <div className="checkin-checkout">
+              <span>Check in: <span className="checkin-day">{getDayName(selectedDays[0])}</span></span>
+              <span className="separator">→</span>
+              <span>Check out: <span className="checkout-day">{getDayName(selectedDays[selectedDays.length - 1])}</span></span>
+            </div>
+          )}
         </div>
 
         {/* Horizontal Filter Row */}
