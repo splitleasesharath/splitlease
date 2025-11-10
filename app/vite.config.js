@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [
     react(),
     {
-      name: 'multi-page-dev',
+      name: 'multi-page-routing',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
           const url = req.url || '';
@@ -25,6 +25,26 @@ export default defineConfig({
             req.url = '/public/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/faq.html')) {
             req.url = '/public/faq.html' + (url.substring('/faq.html'.length) || '');
+          }
+
+          next();
+        });
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use((req, res, next) => {
+          const url = req.url || '';
+
+          // Handle view-split-lease with path segments (e.g., /view-split-lease.html/123?query=param)
+          if (url.startsWith('/view-split-lease.html/')) {
+            // Extract query params if they exist
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            // Rewrite to serve the HTML file while preserving query params
+            req.url = '/view-split-lease.html' + queryString;
+          } else if (url.startsWith('/search.html')) {
+            req.url = '/search.html' + (url.substring('/search.html'.length) || '');
+          } else if (url.startsWith('/faq.html')) {
+            req.url = '/faq.html' + (url.substring('/faq.html'.length) || '');
           }
 
           next();
