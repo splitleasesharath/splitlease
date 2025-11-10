@@ -8,7 +8,10 @@
  */
 
 import { useState, useEffect, useRef } from 'react';
-import { AI_SIGNUP_WORKFLOW_URL, AI_SIGNUP_BUBBLE_KEY, LOTTIE_ANIMATIONS } from '../../lib/constants.js';
+import { AI_SIGNUP_WORKFLOW_URL, LOTTIE_ANIMATIONS } from '../../lib/constants.js';
+
+// Access AI Signup Bubble key from environment variables
+const AI_SIGNUP_BUBBLE_KEY = import.meta.env.VITE_AI_SIGNUP_BUBBLE_KEY;
 
 export default function AISignupModal({ isOpen, onClose }) {
   const [section, setSection] = useState('freeform');

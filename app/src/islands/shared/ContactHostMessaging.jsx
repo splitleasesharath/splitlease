@@ -9,7 +9,10 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { BUBBLE_MESSAGING_ENDPOINT, BUBBLE_API_KEY } from '../../lib/constants.js';
+import { BUBBLE_MESSAGING_ENDPOINT } from '../../lib/constants.js';
+
+// Access Bubble API key from environment variables
+const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY;
 
 export default function ContactHostMessaging({ isOpen, onClose, listing, userEmail }) {
   const [formData, setFormData] = useState({
