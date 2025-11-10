@@ -1,0 +1,11 @@
+[build]
+  # Build command to run when deploying
+  command = "cd app && npm install && npm run build"
+
+  # Directory containing the built application
+  # This is relative to the repository root
+  publish = "app/dist"
+
+[build.environment]
+  # Node.js version to use during build
+  NODE_VERSION = "18"
