@@ -1,15 +1,19 @@
 # Cloudflare Pages redirects and rewrites
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
-# Handle view-split-lease page with listing ID in path
-# This is a rewrite (200) not a redirect - keeps original URL with ID intact
-/view-split-lease.html/:id  /view-split-lease.html  200
+# Handle view-split-lease page with sub-routing for listing IDs
+# Matches /view-split-lease.html/[any-listing-id] and serves view-split-lease.html
+# The 200 status makes this a rewrite, not a redirect, keeping the URL intact
+/view-split-lease.html/*  /view-split-lease.html  200!
 
 # Handle search page
 /search.html  /search.html  200
 
 # Handle FAQ page
 /faq.html  /faq.html  200
+
+# Handle policies page
+/policies.html  /policies.html  200
 
 # Homepage
 /  /index.html  200
