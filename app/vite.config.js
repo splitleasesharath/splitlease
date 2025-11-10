@@ -74,6 +74,40 @@ export default defineConfig({
           }
         }
 
+        // Copy assets directory to dist/assets preserving structure
+        const assetsSource = path.resolve(__dirname, 'public/assets');
+        const assetsDest = path.join(distDir, 'assets');
+
+        if (fs.existsSync(assetsSource)) {
+          // Create dist/assets if it doesn't exist
+          if (!fs.existsSync(assetsDest)) {
+            fs.mkdirSync(assetsDest, { recursive: true });
+          }
+
+          // Copy all subdirectories (images, fonts, lotties)
+          const copyDirectory = (src, dest) => {
+            if (!fs.existsSync(dest)) {
+              fs.mkdirSync(dest, { recursive: true });
+            }
+
+            const entries = fs.readdirSync(src, { withFileTypes: true });
+
+            for (const entry of entries) {
+              const srcPath = path.join(src, entry.name);
+              const destPath = path.join(dest, entry.name);
+
+              if (entry.isDirectory()) {
+                copyDirectory(srcPath, destPath);
+              } else {
+                fs.copyFileSync(srcPath, destPath);
+              }
+            }
+          };
+
+          copyDirectory(assetsSource, assetsDest);
+          console.log('Copied assets directory to dist/assets');
+        }
+
         // Copy _redirects file to dist root for Cloudflare Pages
         const redirectsSource = path.resolve(__dirname, 'public/_redirects');
         const redirectsDest = path.join(distDir, '_redirects');
@@ -84,7 +118,7 @@ export default defineConfig({
       }
     }
   ],
-  publicDir: 'public/assets',
+  publicDir: false, // Disable automatic public directory copying
   build: {
     outDir: 'dist',
     rollupOptions: {
