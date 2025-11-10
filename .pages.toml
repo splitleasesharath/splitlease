@@ -3,9 +3,9 @@
 # Dashboard settings take precedence over this file
 
 [build]
-command = "cd app && npm install && npm run build"
+command = "npm run build"
 cwd = ""
 publish = "app/dist"
 
 [build.environment]
-NODE_VERSION = "18"
+NODE_VERSION = "20"
