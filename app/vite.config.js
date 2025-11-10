@@ -53,6 +53,14 @@ export default defineConfig({
             fs.rmdirSync(publicDir);
           }
         }
+
+        // Copy _redirects file to dist root for Cloudflare Pages
+        const redirectsSource = path.resolve(__dirname, 'public/_redirects');
+        const redirectsDest = path.join(distDir, '_redirects');
+        if (fs.existsSync(redirectsSource)) {
+          fs.copyFileSync(redirectsSource, redirectsDest);
+          console.log('Copied _redirects to dist root');
+        }
       }
     }
   ],
