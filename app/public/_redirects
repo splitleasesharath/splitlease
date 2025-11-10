@@ -2,8 +2,8 @@
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
 # Handle view-split-lease page with listing ID in path
-# Keep the URL as-is and serve the HTML file (JS will parse the ID from pathname)
-/view-split-lease.html/*  /view-split-lease.html  200
+# This is a rewrite (200) not a redirect - keeps original URL with ID intact
+/view-split-lease.html/:id  /view-split-lease.html  200
 
 # Handle search page
 /search.html  /search.html  200
