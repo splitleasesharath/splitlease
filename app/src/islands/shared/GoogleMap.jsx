@@ -21,13 +21,14 @@
  */
 
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { DEFAULTS, COLORS } from '../../lib/constants.js';
+import { DEFAULTS, COLORS, getBoroughMapConfig } from '../../lib/constants.js';
 
 const GoogleMap = forwardRef(({
   listings = [],           // All listings to show as green markers
   filteredListings = [],   // Filtered subset to show as purple markers
   selectedListing = null,  // Currently selected/highlighted listing
-  onMarkerClick = null     // Callback when marker clicked: (listing) => void
+  onMarkerClick = null,    // Callback when marker clicked: (listing) => void
+  selectedBorough = null   // Current borough filter for map centering
 }, ref) => {
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
@@ -35,6 +36,7 @@ const GoogleMap = forwardRef(({
   const infoWindowRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showAllListings, setShowAllListings] = useState(true);
+  const lastMarkersUpdateRef = useRef(null); // Track last marker update to prevent duplicates
 
   // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
@@ -147,17 +149,34 @@ const GoogleMap = forwardRef(({
 
   // Update markers when listings change
   useEffect(() => {
-    console.log('🗺️ GoogleMap: Markers update triggered', {
-      mapLoaded,
-      googleMapExists: !!googleMapRef.current,
-      totalListings: listings.length,
-      filteredListings: filteredListings.length,
-      showAllListings
-    });
-
     if (!mapLoaded || !googleMapRef.current) {
-      console.warn('⚠️ GoogleMap: Skipping marker update - map not ready');
+      if (import.meta.env.DEV) {
+        console.warn('⚠️ GoogleMap: Skipping marker update - map not ready');
+      }
       return;
+    }
+
+    // Performance optimization: Prevent duplicate marker updates
+    const markerSignature = `${listings.map(l => l.id).join(',')}-${filteredListings.map(l => l.id).join(',')}-${showAllListings}`;
+    if (lastMarkersUpdateRef.current === markerSignature) {
+      if (import.meta.env.DEV) {
+        console.log('⏭️ GoogleMap: Skipping duplicate marker update - same listings');
+      }
+      return;
+    }
+
+    lastMarkersUpdateRef.current = markerSignature;
+
+    if (import.meta.env.DEV) {
+      console.log('🗺️ GoogleMap: Markers update triggered', {
+        mapLoaded,
+        googleMapExists: !!googleMapRef.current,
+        totalListings: listings.length,
+        filteredListings: filteredListings.length,
+        showAllListings,
+        allListingsPassedCorrectly: listings.length > 0,
+        backgroundLayerEnabled: showAllListings
+      });
     }
 
     // Clear existing markers
@@ -171,7 +190,9 @@ const GoogleMap = forwardRef(({
 
     // Create markers for filtered listings (purple) - these are primary
     if (filteredListings && filteredListings.length > 0) {
-      console.log('🗺️ GoogleMap: Creating markers for filtered listings:', filteredListings.length);
+      if (import.meta.env.DEV) {
+        console.log('🗺️ GoogleMap: Creating purple markers for filtered listings:', filteredListings.length);
+      }
       filteredListings.forEach(listing => {
         if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
           return;
@@ -199,6 +220,10 @@ const GoogleMap = forwardRef(({
 
     // Create markers for all listings (green) - background context
     if (showAllListings && listings && listings.length > 0) {
+      if (import.meta.env.DEV) {
+        console.log('🗺️ GoogleMap: Creating green markers for all listings (background layer):', listings.length);
+      }
+      let greenMarkersCreated = 0;
       listings.forEach(listing => {
         // Skip if already shown as filtered listing
         const isFiltered = filteredListings?.some(fl => fl.id === listing.id);
@@ -225,15 +250,22 @@ const GoogleMap = forwardRef(({
         markersRef.current.push(marker);
         bounds.extend(position);
         hasValidMarkers = true;
+        greenMarkersCreated++;
       });
+
+      if (import.meta.env.DEV) {
+        console.log(`✅ GoogleMap: Created ${greenMarkersCreated} green markers (skipped ${listings.length - greenMarkersCreated} already shown as purple)`);
+      }
     }
 
     // Fit map to show all markers
     if (hasValidMarkers) {
-      console.log('✅ GoogleMap: Fitting bounds to markers', {
-        markerCount: markersRef.current.length,
-        bounds: bounds.toString()
-      });
+      if (import.meta.env.DEV) {
+        console.log('✅ GoogleMap: Fitting bounds to markers', {
+          markerCount: markersRef.current.length,
+          bounds: bounds.toString()
+        });
+      }
       map.fitBounds(bounds);
 
       // Prevent over-zooming on single marker
@@ -245,6 +277,22 @@ const GoogleMap = forwardRef(({
       console.warn('⚠️ GoogleMap: No valid markers to display');
     }
   }, [listings, filteredListings, mapLoaded, showAllListings]);
+
+  // Recenter map when borough changes
+  useEffect(() => {
+    if (!mapLoaded || !googleMapRef.current || !selectedBorough) return;
+
+    console.log('🗺️ GoogleMap: Borough changed, recentering map:', selectedBorough);
+
+    const boroughConfig = getBoroughMapConfig(selectedBorough);
+    const map = googleMapRef.current;
+
+    // Smoothly pan to new borough center
+    map.panTo(boroughConfig.center);
+    map.setZoom(boroughConfig.zoom);
+
+    console.log(`✅ GoogleMap: Map recentered to ${boroughConfig.name}`);
+  }, [selectedBorough, mapLoaded]);
 
   // Highlight selected listing marker
   useEffect(() => {

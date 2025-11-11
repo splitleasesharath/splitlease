@@ -98,26 +98,17 @@ function FilterPanel({
   return (
     <div className={`filter-panel ${isActive ? 'active' : ''}`}>
       <div className="filter-container">
-        {/* Top Row: Day Selector */}
-        <div className="top-filter-row">
-          <DaySelector
-            selected={selectedDays}
-            onChange={onDaysChange}
-            label="Select Days"
-          />
-
-          {/* Check-in/Check-out Display - PORTED FROM ORIGINAL */}
-          {selectedDays.length >= 2 && (
-            <div className="checkin-checkout">
-              <span>Check in: <span className="checkin-day">{getDayName(selectedDays[0])}</span></span>
-              <span className="separator">→</span>
-              <span>Check out: <span className="checkout-day">{getDayName(selectedDays[selectedDays.length - 1])}</span></span>
-            </div>
-          )}
-        </div>
-
-        {/* Horizontal Filter Row */}
+        {/* Single Horizontal Filter Row - All filters inline */}
         <div className="horizontal-filters">
+          {/* Day Selector */}
+          <div className="filter-group compact day-selector-group">
+            <DaySelector
+              selected={selectedDays}
+              onChange={onDaysChange}
+              label="Select Days"
+            />
+          </div>
+
           {/* Borough Select */}
           <div className="filter-group compact">
             <label htmlFor="boroughSelect">Select Borough</label>
@@ -635,6 +626,8 @@ export default function SearchPage() {
 
   // Refs
   const mapRef = useRef(null);
+  const fetchInProgressRef = useRef(false); // Track if fetch is already in progress
+  const lastFetchParamsRef = useRef(null); // Track last fetch parameters to prevent duplicates
 
   // Parse URL parameters for initial filter state
   const urlFilters = parseUrlToFilters();
@@ -793,6 +786,31 @@ export default function SearchPage() {
   const fetchListings = useCallback(async () => {
     if (boroughs.length === 0 || !selectedBorough) return;
 
+    // Performance optimization: Prevent duplicate fetches
+    const fetchParams = `${selectedBorough}-${selectedNeighborhoods.join(',')}-${weekPattern}-${priceTier}-${sortBy}-${selectedDays.join(',')}`;
+
+    // Skip if same parameters are already being fetched or were just fetched
+    if (fetchInProgressRef.current) {
+      if (import.meta.env.DEV) {
+        console.log('⏭️ Skipping duplicate fetch - already in progress');
+      }
+      return;
+    }
+
+    if (lastFetchParamsRef.current === fetchParams) {
+      if (import.meta.env.DEV) {
+        console.log('⏭️ Skipping duplicate fetch - same parameters as last fetch');
+      }
+      return;
+    }
+
+    fetchInProgressRef.current = true;
+    lastFetchParamsRef.current = fetchParams;
+
+    if (import.meta.env.DEV) {
+      console.log('🔍 Starting fetch:', fetchParams);
+    }
+
     setIsLoading(true);
     setError(null);
 
@@ -889,22 +907,82 @@ export default function SearchPage() {
       // Transform and filter data
       const transformedListings = data.map(listing =>
         transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
-      ).filter(listing => {
-        // Apply day filter client-side
-        if (selectedDays.length === 0) return true;
+      );
+
+      // Apply day filter client-side
+      let filteredListings = transformedListings;
+      if (selectedDays.length > 0) {
+        if (import.meta.env.DEV) {
+          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const selectedDayNames = selectedDays.map(idx => dayNames[idx]);
+          console.log('📅 Applying schedule filter (client-side):', selectedDayNames);
+          console.log(`   → Required days: ${selectedDayNames.join(', ')}`);
+          console.log(`   → Logic: Show listings where listing days ⊇ selected days (superset or equal)`);
+          console.log(`   → Empty/null days = available ALL days = SHOW`);
+        }
+
+        filteredListings = transformedListings.filter(listing => {
+          if (selectedDays.length === 0) return true;
 
         const listingDays = Array.isArray(listing.days_available) ? listing.days_available : [];
-        if (listingDays.length === 0) return true; // Empty means all days available
+
+        // Empty/null days = available ALL days = ALWAYS SHOW
+        if (listingDays.length === 0) {
+          if (import.meta.env.DEV) {
+            console.log(`  ✅ PASS: "${listing.title}" - Empty days array (available ALL days)`);
+          }
+          return true;
+        }
 
         const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         const selectedDayNames = selectedDays.map(idx => dayNames[idx]);
 
-        return selectedDayNames.every(day =>
-          listingDays.some(d => typeof d === 'string' && d.toLowerCase() === day.toLowerCase())
-        );
-      });
+        // Normalize listing days for case-insensitive comparison
+        const normalizedListingDays = listingDays
+          .filter(d => d && typeof d === 'string')
+          .map(d => d.toLowerCase().trim());
 
-      setAllListings(transformedListings);
+        // SUPERSET CHECK: Listing must contain ALL required days
+        const missingDays = selectedDayNames.filter(requiredDay =>
+          !normalizedListingDays.some(listingDay => listingDay === requiredDay.toLowerCase())
+        );
+
+        const isMatch = missingDays.length === 0;
+
+        // Enhanced debugging in development mode
+        if (import.meta.env.DEV) {
+          if (isMatch) {
+            const extraDays = normalizedListingDays.filter(d =>
+              !selectedDayNames.some(sd => sd.toLowerCase() === d)
+            );
+            const reason = extraDays.length > 0
+              ? `Has ALL required days + ${extraDays.length} extra: [${extraDays.join(', ')}]`
+              : 'Has EXACTLY the required days';
+            console.log(`  ✅ PASS: "${listing.title}" - ${reason}`);
+          } else {
+            console.log(`  ❌ REJECT: "${listing.title}" - Missing ${missingDays.length} required day(s): [${missingDays.join(', ')}]`);
+            console.log(`     → Listing has: [${normalizedListingDays.join(', ')}]`);
+            console.log(`     → Required: [${selectedDayNames.map(d => d.toLowerCase()).join(', ')}]`);
+          }
+        }
+
+        return isMatch;
+        });
+
+        // Log summary in development mode
+        if (import.meta.env.DEV) {
+          const beforeCount = transformedListings.length;
+          const afterCount = filteredListings.length;
+          const rejectedCount = beforeCount - afterCount;
+          console.log(`📊 Schedule filter results: ${afterCount}/${beforeCount} listings match`);
+          if (rejectedCount > 0) {
+            console.log(`   ❌ Rejected ${rejectedCount} listings`);
+          }
+          console.log(`✅ Schedule filter complete: ${afterCount} listings pass filter`);
+        }
+      }
+
+      setAllListings(filteredListings);
       setLoadedCount(0);
     } catch (err) {
       // Log technical details for debugging
@@ -925,6 +1003,7 @@ export default function SearchPage() {
       setError('We had trouble loading listings. Please try refreshing the page or adjusting your filters.');
     } finally {
       setIsLoading(false);
+      fetchInProgressRef.current = false;
     }
   }, [boroughs, selectedBorough, selectedNeighborhoods, weekPattern, priceTier, sortBy, selectedDays]);
 
@@ -1126,6 +1205,7 @@ export default function SearchPage() {
             listings={allListings}
             filteredListings={displayedListings}
             selectedListing={null}
+            selectedBorough={selectedBorough}
             onMarkerClick={(listing) => {
               console.log('Marker clicked:', listing.title);
               // Could open listing in new tab or show details
