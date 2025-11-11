@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import Header from '../shared/Header.jsx';
-import DaySelector from '../shared/DaySelector.jsx';
+import { SearchScheduleSelector } from '../shared/SearchScheduleSelector/index.ts';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
@@ -102,10 +102,15 @@ function FilterPanel({
         <div className="horizontal-filters">
           {/* Day Selector */}
           <div className="filter-group compact day-selector-group">
-            <DaySelector
-              selected={selectedDays}
-              onChange={onDaysChange}
-              label="Select Days"
+            <SearchScheduleSelector
+              initialSelection={selectedDays}
+              onSelectionChange={(days) => {
+                // Convert Day objects to day indices
+                const dayIndices = days.map(day => day.index);
+                onDaysChange(dayIndices);
+              }}
+              minDays={2}
+              requireContiguous={true}
             />
           </div>
 
