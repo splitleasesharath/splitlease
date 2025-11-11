@@ -4,20 +4,21 @@
 # Handle view-split-lease page with clean URL structure
 # Maps /view-split-lease/[listing-id] to view-split-lease.html
 # The 200 status makes this a rewrite, not a redirect, keeping the URL intact
+# Force flag (!) prevents Cloudflare from overriding with SPA fallback
 /view-split-lease/*  /view-split-lease.html  200!
 
 # Legacy support for old URL structure (redirect to new clean URLs)
 /view-split-lease.html/:id  /view-split-lease/:id  301
 
 # Handle search page
-/search.html  /search.html  200
+/search.html  /search.html  200!
 
 # Handle FAQ page
-/faq.html  /faq.html  200
+/faq.html  /faq.html  200!
 
 # Handle policies page
-/policies.html  /policies.html  200
+/policies.html  /policies.html  200!
 
-# Homepage
-/  /index.html  200
-/index.html  /index.html  200
+# Homepage - must be last to avoid catching other routes
+/  /index.html  200!
+/index.html  /index.html  200!

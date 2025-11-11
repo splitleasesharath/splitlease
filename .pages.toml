@@ -4,8 +4,8 @@
 
 [build]
 command = "npm run build"
-cwd = ""
-publish = "app/dist"
+cwd = "app"
+publish = "dist"
 
 [build.environment]
 NODE_VERSION = "20"
