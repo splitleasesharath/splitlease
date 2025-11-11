@@ -133,7 +133,7 @@ export default function Header() {
               aria-label="Host with Us menu"
             >
               <a
-                href="https://app.split.lease/host-step-by-step-guide-to-list"
+                href="/list-with-us.html"
                 className="dropdown-item"
                 role="menuitem"
               >

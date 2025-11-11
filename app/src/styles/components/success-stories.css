@@ -1,0 +1,256 @@
+/* ========================================
+   Success Stories Page Styles
+   ======================================== */
+
+/* Success Hero Section */
+.success-hero {
+  background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);
+  color: var(--white);
+  padding: 4rem 2rem;
+}
+
+.success-hero-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+  align-items: center;
+}
+
+.success-hero-text h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+  color: var(--white);
+}
+
+.success-hero-text p {
+  font-size: 1.125rem;
+  margin-bottom: 2rem;
+  line-height: 1.8;
+  opacity: 0.95;
+}
+
+.success-hero-image {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.success-hero-image img {
+  max-width: 100%;
+  height: auto;
+  width: 300px;
+}
+
+.success-btn-primary {
+  background-color: var(--white);
+  color: var(--primary-purple);
+  border: none;
+  padding: 1rem 2rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.success-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Stories Section */
+.success-stories-section {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+}
+
+.success-stories-title {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 3rem;
+  color: var(--text-dark);
+}
+
+.success-story-card {
+  background-color: var(--white);
+  border-radius: 16px;
+  padding: 2.5rem;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.6s ease;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.success-story-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.success-story-card:hover {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+}
+
+.success-story-header {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.success-story-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary-purple);
+}
+
+.success-story-person h3 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--text-dark);
+}
+
+.success-story-person p {
+  font-size: 1rem;
+  color: var(--text-gray);
+  font-weight: 500;
+}
+
+.success-story-content h4 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+  color: var(--primary-purple);
+}
+
+.success-story-content p {
+  font-size: 1rem;
+  line-height: 1.8;
+  margin-bottom: 1rem;
+  color: var(--text-dark);
+}
+
+.success-story-cta {
+  background-color: var(--light-gray);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-top: 2rem;
+  text-align: center;
+}
+
+.success-story-cta p {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  color: var(--primary-purple);
+}
+
+.success-btn-secondary {
+  background-color: var(--primary-purple);
+  color: var(--white);
+  border: none;
+  padding: 0.875rem 2rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.success-btn-secondary:hover {
+  background-color: var(--primary-purple-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(61, 41, 130, 0.3);
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .success-hero-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .success-hero-text h1 {
+    font-size: 2.5rem;
+  }
+
+  .success-hero-image {
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .success-hero-text h1 {
+    font-size: 2rem;
+  }
+
+  .success-hero-text p {
+    font-size: 1rem;
+  }
+
+  .success-stories-title {
+    font-size: 2rem;
+  }
+
+  .success-story-card {
+    padding: 1.5rem;
+  }
+
+  .success-story-header {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .success-story-avatar {
+    width: 80px;
+    height: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  .success-hero {
+    padding: 2rem 1rem;
+  }
+
+  .success-hero-text h1 {
+    font-size: 1.75rem;
+  }
+
+  .success-stories-section {
+    padding: 2rem 1rem;
+  }
+
+  .success-story-content h4 {
+    font-size: 1.25rem;
+  }
+}
+
+/* Button Focus States */
+.success-btn-primary:focus,
+.success-btn-secondary:focus {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes successFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
