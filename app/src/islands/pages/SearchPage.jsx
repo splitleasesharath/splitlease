@@ -333,7 +333,7 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
   return (
     <a
       className="listing-card"
-      href={`/view-split-lease.html/${listing.id}`}
+      href={`/view-split-lease/${listing.id}`}
       target="_blank"
       rel="noopener noreferrer"
       style={{ textDecoration: 'none', color: 'inherit' }}

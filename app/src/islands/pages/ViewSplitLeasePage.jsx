@@ -1043,11 +1043,12 @@ export default function ViewSplitLeasePage() {
     const idFromQuery = urlParams.get('id');
     if (idFromQuery) return idFromQuery;
 
-    // 2. Parse pathname for segment after 'view-split-lease.html' or 'view-split-lease'
+    // 2. Parse pathname for segment after 'view-split-lease'
+    // Supports both clean URLs (/view-split-lease/[id]) and legacy URLs (/view-split-lease.html/[id])
     const pathSegments = window.location.pathname.split('/').filter(segment => segment);
     const viewSegmentIndex = pathSegments.findIndex(segment =>
-      segment === 'view-split-lease.html' ||
       segment === 'view-split-lease' ||
+      segment === 'view-split-lease.html' ||
       segment === 'view-split-lease-1'
     );
 
