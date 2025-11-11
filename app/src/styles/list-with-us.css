@@ -1,0 +1,654 @@
+/* ========================================
+   List With Us Page Styles
+   ======================================== */
+
+/* Premium Gradient Variables */
+:root {
+  --gradient-purple-blue: linear-gradient(135deg, #31135D 0%, #4A2F7C 50%, #5B21B6 100%);
+  --gradient-purple-pink: linear-gradient(135deg, #31135D 0%, #6B21A8 50%, #A855F7 100%);
+  --brand-purple: #31135D;
+}
+
+/* ========================================
+   Hero Section
+   ======================================== */
+.list-hero-section {
+  background: white;
+  padding: 100px 48px;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+  min-height: 500px;
+}
+
+.list-hero-section .floating-person {
+  position: absolute;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(49, 19, 93, 0.15);
+  border: 4px solid white;
+  transition: transform 0.3s ease;
+  z-index: 1;
+}
+
+.list-hero-section .floating-person:hover {
+  transform: scale(1.08);
+  box-shadow: 0 12px 32px rgba(49, 19, 93, 0.25);
+}
+
+.list-hero-section .floating-person img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.list-hero-section .hero-person-1 {
+  width: 120px;
+  height: 120px;
+  top: 10%;
+  right: 8%;
+  animation: hero-float-1 7s ease-in-out infinite;
+}
+
+.list-hero-section .hero-person-2 {
+  width: 90px;
+  height: 90px;
+  top: 60%;
+  left: 10%;
+  animation: hero-float-2 8s ease-in-out infinite;
+}
+
+.list-hero-section .hero-person-3 {
+  width: 110px;
+  height: 110px;
+  bottom: 15%;
+  right: 15%;
+  animation: hero-float-3 6.5s ease-in-out infinite;
+}
+
+@keyframes hero-float-1 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-18px) translateX(12px); }
+}
+
+@keyframes hero-float-2 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(20px) translateX(-10px); }
+}
+
+@keyframes hero-float-3 {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50% { transform: translateY(-22px) translateX(-8px); }
+}
+
+.list-hero-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+  text-align: center;
+}
+
+.list-hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: rgba(49, 19, 93, 0.08);
+  border: 1px solid rgba(49, 19, 93, 0.2);
+  border-radius: 500px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #31135D;
+  margin-bottom: 32px;
+}
+
+.list-hero-title {
+  font-size: 56px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.1;
+  margin-bottom: 24px;
+  letter-spacing: -1px;
+}
+
+.list-hero-title .highlight {
+  color: #31135D;
+}
+
+.list-hero-subtitle {
+  font-size: 20px;
+  color: #6B7280;
+  max-width: 700px;
+  margin: 0 auto 48px;
+  line-height: 1.7;
+  font-weight: 400;
+}
+
+.list-hero-cta {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.cta-button {
+  padding: 16px 40px;
+  border-radius: 500px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.cta-primary {
+  background: var(--gradient-purple-blue);
+  color: white;
+}
+
+.cta-primary:hover {
+  background: var(--gradient-purple-pink);
+  box-shadow: 0 8px 24px rgba(49, 19, 93, 0.4);
+  transform: translateY(-2px);
+}
+
+.cta-secondary {
+  background: white;
+  color: #31135D;
+  border: 2px solid #31135D;
+}
+
+.cta-secondary:hover {
+  background: #F9FAFB;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
+}
+
+/* ========================================
+   How It Works Section
+   ======================================== */
+.list-how-it-works {
+  background: #f7f8f9;
+  padding: 100px 32px;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.list-how-it-works .gradient-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+}
+
+.list-how-it-works .gradient-blob-1 {
+  width: 450px;
+  height: 450px;
+  background: linear-gradient(135deg, rgba(49, 19, 93, 0.12) 0%, rgba(74, 29, 133, 0.06) 100%);
+  top: -140px;
+  right: 12%;
+}
+
+.list-how-it-works .gradient-blob-2 {
+  width: 350px;
+  height: 350px;
+  background: linear-gradient(135deg, rgba(138, 92, 246, 0.1) 0%, rgba(49, 19, 93, 0.05) 100%);
+  bottom: -120px;
+  left: 8%;
+}
+
+.list-how-it-works-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.list-how-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.list-how-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.list-how-subtitle {
+  font-size: 18px;
+  color: #6B7280;
+}
+
+.list-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 48px;
+}
+
+.list-step-card {
+  text-align: center;
+  background: white;
+  border: 1px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 40px 32px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.list-step-card:hover {
+  border-color: #C4B5FD;
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(139, 92, 246, 0.12);
+}
+
+.list-step-number {
+  width: 72px;
+  height: 72px;
+  background: var(--gradient-purple-pink);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 auto 24px;
+  box-shadow: 0 4px 12px rgba(168, 85, 247, 0.2);
+}
+
+.list-step-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.list-step-description {
+  font-size: 15px;
+  color: #6B7280;
+  line-height: 1.7;
+}
+
+/* ========================================
+   Lease Styles Section
+   ======================================== */
+.list-lease-styles-section {
+  background: white;
+  padding: 100px 32px;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.list-lease-styles-section .outlined-bubble {
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid #31135D;
+  opacity: 0.12;
+}
+
+.list-lease-styles-section .outlined-bubble-1 {
+  width: 400px;
+  height: 400px;
+  top: -120px;
+  left: -120px;
+}
+
+.list-lease-styles-section .outlined-bubble-2 {
+  width: 280px;
+  height: 280px;
+  bottom: -90px;
+  right: 10%;
+}
+
+.list-lease-styles-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.list-lease-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.list-lease-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  color: #31135D;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+}
+
+.list-lease-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.list-lease-description {
+  font-size: 18px;
+  color: #6B7280;
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+.list-lease-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-top: 48px;
+}
+
+.list-lease-card {
+  background: white;
+  border: 2px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 40px 32px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.list-lease-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 32px rgba(49, 19, 93, 0.15);
+  border-color: #31135D;
+}
+
+.list-lease-card-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.list-lease-type {
+  font-size: 28px;
+  font-weight: 700;
+  color: #31135D;
+  margin-bottom: 8px;
+}
+
+.list-lease-pattern {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B7280;
+  margin-bottom: 16px;
+}
+
+.list-lease-example {
+  font-size: 13px;
+  color: #9CA3AF;
+  font-style: italic;
+  padding: 12px;
+  background: #F9FAFB;
+  border-radius: 8px;
+}
+
+.list-lease-separator {
+  width: 48px;
+  height: 3px;
+  background: var(--gradient-purple-blue);
+  margin: 24px auto;
+  border-radius: 2px;
+}
+
+.list-lease-features {
+  text-align: left;
+}
+
+.list-lease-feature {
+  font-size: 14px;
+  color: #4B5563;
+  line-height: 1.8;
+  margin-bottom: 12px;
+  padding-left: 24px;
+  position: relative;
+}
+
+.list-lease-feature:before {
+  content: "•";
+  position: absolute;
+  left: 8px;
+  color: #31135D;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+/* ========================================
+   Pricing Policy Section
+   ======================================== */
+.list-pricing-policy-section {
+  background: #f7f8f9;
+  padding: 100px 32px;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.list-pricing-policy-section .circle-accent {
+  position: absolute;
+  border-radius: 50%;
+  background: #31135D;
+}
+
+.list-pricing-policy-section .circle-accent-1 {
+  width: 320px;
+  height: 320px;
+  opacity: 0.05;
+  top: -80px;
+  right: 12%;
+}
+
+.list-pricing-policy-section .circle-accent-2 {
+  width: 200px;
+  height: 200px;
+  opacity: 0.07;
+  bottom: 60px;
+  left: 15%;
+}
+
+.list-pricing-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.list-pricing-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.list-pricing-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.list-pricing-formula {
+  font-size: 24px;
+  color: #31135D;
+  font-weight: 600;
+  margin-top: 24px;
+}
+
+.list-pricing-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin-bottom: 48px;
+}
+
+.list-pricing-card {
+  background: white;
+  border: 2px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 40px 32px;
+  text-align: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.list-pricing-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 20px rgba(49, 19, 93, 0.12);
+  border-color: #31135D;
+}
+
+.list-pricing-card-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--gradient-purple-blue);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  box-shadow: 0 8px 24px rgba(49, 19, 93, 0.25);
+}
+
+.list-pricing-card-icon svg {
+  width: 32px;
+  height: 32px;
+  stroke: white;
+  stroke-width: 2;
+}
+
+.list-pricing-card-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+}
+
+.list-pricing-card-content {
+  font-size: 15px;
+  color: #6B7280;
+  line-height: 1.7;
+}
+
+.list-pricing-highlight {
+  background: #ECFDF5;
+  border: 2px solid #10B981;
+  padding: 32px;
+  border-radius: 16px;
+  text-align: center;
+  margin-top: 32px;
+}
+
+.list-pricing-highlight-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #059669;
+  margin-bottom: 12px;
+}
+
+.list-pricing-highlight-text {
+  font-size: 15px;
+  color: #047857;
+  line-height: 1.7;
+}
+
+/* ========================================
+   CTA Section
+   ======================================== */
+.list-cta-section {
+  background: white;
+  padding: 100px 32px;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.list-cta-section .outlined-bubble {
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid #31135D;
+  opacity: 0.1;
+}
+
+.list-cta-section .outlined-bubble-1 {
+  width: 350px;
+  height: 350px;
+  top: -100px;
+  right: 10%;
+}
+
+.list-cta-section .outlined-bubble-2 {
+  width: 250px;
+  height: 250px;
+  bottom: -80px;
+  left: 12%;
+}
+
+.list-cta-container {
+  max-width: 800px;
+  margin: 0 auto;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.list-cta-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 24px;
+  letter-spacing: -0.5px;
+}
+
+.list-cta-subtitle {
+  font-size: 18px;
+  color: #6B7280;
+  margin-bottom: 40px;
+  line-height: 1.7;
+}
+
+.list-cta-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 32px;
+  flex-wrap: wrap;
+}
+
+.list-cta-note {
+  font-size: 14px;
+  color: #9CA3AF;
+  font-style: italic;
+}
+
+/* ========================================
+   Responsive Styles
+   ======================================== */
+@media (max-width: 768px) {
+  .list-hero-title {
+    font-size: 36px;
+  }
+
+  .list-steps-grid,
+  .list-lease-grid,
+  .list-pricing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .list-hero-section .floating-person {
+    display: none;
+  }
+}
