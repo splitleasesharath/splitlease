@@ -25,6 +25,8 @@ export default defineConfig({
             req.url = '/public/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/faq.html')) {
             req.url = '/public/faq.html' + (url.substring('/faq.html'.length) || '');
+          } else if (url.startsWith('/policies.html')) {
+            req.url = '/public/policies.html' + (url.substring('/policies.html'.length) || '');
           }
 
           next();
@@ -45,6 +47,8 @@ export default defineConfig({
             req.url = '/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/faq.html')) {
             req.url = '/faq.html' + (url.substring('/faq.html'.length) || '');
+          } else if (url.startsWith('/policies.html')) {
+            req.url = '/policies.html' + (url.substring('/policies.html'.length) || '');
           }
 
           next();
@@ -126,7 +130,8 @@ export default defineConfig({
         main: resolve(__dirname, 'public/index.html'),
         search: resolve(__dirname, 'public/search.html'),
         'view-split-lease': resolve(__dirname, 'public/view-split-lease.html'),
-        faq: resolve(__dirname, 'public/faq.html')
+        faq: resolve(__dirname, 'public/faq.html'),
+        policies: resolve(__dirname, 'public/policies.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

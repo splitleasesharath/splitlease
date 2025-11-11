@@ -26,13 +26,11 @@ export const BUBBLE_MESSAGING_ENDPOINT = 'https://app.split.lease/api/1.1/wf/cor
 export const AI_SIGNUP_WORKFLOW_URL = 'https://app.split.lease/version-test/api/1.1/wf/ai-signup-guest';
 
 // External API Keys and Configuration
-export const GOOGLE_MAPS_API_KEY = 'AIzaSyCFcO3jCTvR69iA4UAxPi-sWHJ7zWPMJWo';
-export const BUBBLE_API_KEY = '05a7a0d1d2400a0b574acd99748e07a0';
-export const AI_SIGNUP_BUBBLE_KEY = '5dbb448f9a6bbb043cb56ac16b8de109';
-
-// Supabase Configuration
-export const SUPABASE_URL = 'https://qcfifybkaddcoimjroca.supabase.co';
-export const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZmlmeWJrYWRkY29pbWpyb2NhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk0NzU0MDUsImV4cCI6MjA3NTA1MTQwNX0.glGwHxds0PzVLF1Y8VBGX0jYz3zrLsgE9KAWWwkYms8';
+// Note: API keys are configured as environment variables in Cloudflare
+// VITE_GOOGLE_MAPS_API_KEY - Google Maps API key
+// VITE_BUBBLE_API_KEY - Bubble API key
+// VITE_AI_SIGNUP_BUBBLE_KEY - AI Signup Bubble key
+// Supabase credentials are configured in supabase.js using VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 
 // ============================================================================
 // Lottie Animation URLs
@@ -85,12 +83,14 @@ export const BUBBLE_DAY_NUMBERS = {
 
 // ============================================================================
 // Schedule Patterns and Presets
+// IMPORTANT: All day arrays use 0-based indexing (0=Sunday, 1=Monday, ... 6=Saturday)
+// Convert to 1-based when sending to Bubble API using toBubbleDays() from dayUtils.js
 // ============================================================================
 
 export const SCHEDULE_PATTERNS = {
-  WEEKNIGHT: [1, 2, 3, 4, 5], // Monday-Friday (1-based for Bubble API)
-  WEEKEND: [6, 7, 1, 2],      // Friday-Sunday+Monday (1-based for Bubble API)
-  WEEKLY: [1, 2, 3, 4, 5, 6, 7], // All days (1-based for Bubble API)
+  WEEKNIGHT: [1, 2, 3, 4, 5], // Monday-Friday (0-based)
+  WEEKEND: [5, 6, 0, 1],      // Friday-Monday (0-based)
+  WEEKLY: [0, 1, 2, 3, 4, 5, 6], // All days (0-based)
   EVERY_WEEK: 'Every week',
   ONE_ON_OFF: 'One week on, one week off',
   TWO_ON_OFF: 'Two weeks on, two weeks off',
@@ -258,7 +258,11 @@ export const DATABASE = {
   TABLES: {
     BOROUGH: 'zat_geo_borough_toplevel',
     NEIGHBORHOOD: 'zat_geo_hood_mediumlevel',
-    LISTING_TYPE: 'zat_features_listingtype'
+    LISTING_TYPE: 'zat_features_listingtype',
+    AMENITY: 'zat_features_amenity',
+    SAFETY: 'zfut_safetyfeatures',
+    HOUSE_RULE: 'zat_features_houserule',
+    PARKING: 'zat_features_parkingoptions'
   },
   BOROUGH_FIELDS: {
     ID: '_id',
@@ -354,8 +358,8 @@ export const DEFAULTS = {
   DEFAULT_WEEK_PATTERN: 'every-week',
   DEFAULT_PRICE_TIER: 'all',
   DEFAULT_SORT_BY: 'recommended',
-  DEFAULT_SELECTED_DAYS: [1, 2, 3, 4, 5], // Monday-Friday (0-based)
-  DEFAULT_SELECTED_DAYS_BUBBLE: [2, 3, 4, 5, 6], // Monday-Friday (1-based for Bubble API)
+  // Monday-Friday in 0-based indexing (0=Sunday, 1=Monday, ... 6=Saturday)
+  DEFAULT_SELECTED_DAYS: [1, 2, 3, 4, 5],
   NYC_CENTER_LAT: 40.7580,
   NYC_CENTER_LNG: -73.9855,
   MAP_DEFAULT_ZOOM: 13,

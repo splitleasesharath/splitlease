@@ -2,32 +2,14 @@ import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { supabase } from '../../lib/supabase.js';
-import { VIEW_LISTING_URL, GOOGLE_MAPS_API_KEY, DAY_ABBREVIATIONS } from '../../lib/constants.js';
-
-// ============================================================================
-// LOOKUP DATA CACHE - Hardcoded amenities, safety features, and house rules
-// ============================================================================
-
-const LOOKUP_CACHE = {
-  amenities: {
-    "1558470368024x124705598302821140": { name: "Air Conditioned", icon: "wind" },
-    "1555340850683x868929351440588700": { name: "Gym", icon: "dumbbell" },
-    "1555340851282x193736739492841540": { name: "Hair Dryer", icon: "wind" },
-    "1555340855187x816189646717209200": { name: "Premium TV", icon: "tv" },
-    "1555340856469x472364328782922900": { name: "WiFi", icon: "wifi" }
-  },
-  safety: {
-    "1555343668134x731801591789591700": { name: "Carbon Monoxide Detector", icon: "shield-alert" },
-    "1555343669006x402120568105726100": { name: "Fire Extinguisher", icon: "flame" },
-    "1555343667837x829435456336909600": { name: "Smoke Detector", icon: "shield-check" }
-  },
-  houseRules: {
-    "1556151848468x314854653954062850": { name: "No Pets" }
-  },
-  parking: {
-    "1642428637379x970678957586007000": { label: "Street Parking" }
-  }
-};
+import { VIEW_LISTING_URL, DAY_ABBREVIATIONS } from '../../lib/constants.js';
+import {
+  initializeLookups,
+  getAmenities,
+  getSafetyFeatures,
+  getHouseRules,
+  getParkingOption
+} from '../../lib/dataLookups.js';
 
 // ============================================================================
 // INTERNAL COMPONENT: Loading State
@@ -412,7 +394,7 @@ function PropertyDetails({ listing }) {
 // ============================================================================
 
 function CommuteSection({ listing }) {
-  const parking = LOOKUP_CACHE.parking[listing['Features - Parking type']];
+  const parking = getParkingOption(listing['Features - Parking type']);
 
   if (!parking) return null;
 
@@ -442,14 +424,10 @@ function CommuteSection({ listing }) {
 
 function AmenitiesSection({ listing }) {
   const amenitiesRaw = listing['Features - Amenities In-Unit'];
-  const amenities = Array.isArray(amenitiesRaw)
-    ? amenitiesRaw.map(id => LOOKUP_CACHE.amenities[id]).filter(Boolean)
-    : [];
+  const amenities = getAmenities(amenitiesRaw);
 
   const safetyRaw = listing['Features - Safety'];
-  const safety = Array.isArray(safetyRaw)
-    ? safetyRaw.map(id => LOOKUP_CACHE.safety[id]).filter(Boolean)
-    : [];
+  const safety = getSafetyFeatures(safetyRaw);
 
   if (amenities.length === 0 && safety.length === 0) return null;
 
@@ -578,9 +556,7 @@ function AmenityIcon({ name }) {
 
 function HouseRulesSection({ listing }) {
   const rulesRaw = listing['Features - House Rules'];
-  const rules = Array.isArray(rulesRaw)
-    ? rulesRaw.map(id => LOOKUP_CACHE.houseRules[id]).filter(Boolean)
-    : [];
+  const rules = getHouseRules(rulesRaw);
 
   if (rules.length === 0) return null;
 
@@ -1055,6 +1031,9 @@ export default function ViewSplitLeasePage() {
   const [isFavorited, setIsFavorited] = useState(false);
 
   useEffect(() => {
+    // Initialize lookups from database
+    initializeLookups();
+    // Load listing data
     loadListing();
   }, []);
 
@@ -1363,7 +1342,7 @@ export default function ViewSplitLeasePage() {
               <strong>{listing['Cancellation Policy'] || 'Standard'}</strong>
               {' '}
               <a
-                href="https://app.split.lease/policies/cancellation-and-refund-policy"
+                href="/policies.html"
                 style={{ color: '#5B21B6', textDecoration: 'none' }}
               >
                 Read our Standard Policy

@@ -156,7 +156,7 @@ export default function Header() {
                 <span className="dropdown-title">List Property</span>
               </a>
               <a
-                href="https://app.split.lease/policies/cancellation-and-refund-policy"
+                href="/policies.html"
                 className="dropdown-item"
                 role="menuitem"
               >

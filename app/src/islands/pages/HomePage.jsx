@@ -14,6 +14,7 @@ import {
   REFERRAL_API_ENDPOINT,
   EMBED_AI_DRAWER_URL
 } from '../../lib/constants.js';
+import { toBubbleDays, fromBubbleDays } from '../../lib/dayUtils.js';
 
 // ============================================================================
 // INTERNAL COMPONENT: Hero Section
@@ -605,7 +606,7 @@ export default function HomePage() {
       const decoded = decodeURIComponent(daysParam);
       // Convert from 1-based (Bubble) to 0-based (JavaScript)
       const bubbleDays = decoded.split(',').map((d) => parseInt(d.trim()));
-      const jsDays = bubbleDays.map((day) => day - 1).filter((d) => d >= 0 && d <= 6);
+      const jsDays = fromBubbleDays(bubbleDays);
       setSelectedDays(jsDays);
     }
   };
@@ -617,7 +618,7 @@ export default function HomePage() {
       currentUrl.searchParams.delete('days-selected');
     } else {
       // Convert to 1-based indexing for Bubble
-      const bubbleDays = selectedDays.map((day) => day + 1);
+      const bubbleDays = toBubbleDays(selectedDays);
       currentUrl.searchParams.set('days-selected', bubbleDays.join(', '));
     }
 
@@ -651,7 +652,7 @@ export default function HomePage() {
     }
 
     // Convert to 1-based indexing for Bubble
-    const bubbleDays = selectedDays.map((day) => day + 1);
+    const bubbleDays = toBubbleDays(selectedDays);
     const searchUrl = `/search.html?days-selected=${bubbleDays.join(',')}`;
     window.location.href = searchUrl;
   };

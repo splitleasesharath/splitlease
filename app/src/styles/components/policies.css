@@ -1,0 +1,236 @@
+/* ========================================
+   POLICIES PAGE STYLES
+   ======================================== */
+
+/* Main Content Layout */
+.policies-page-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100vh;
+  margin-top: var(--header-height, 70px);
+  padding: 40px 0;
+}
+
+.policies-content-wrapper {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 70%;
+  margin: 0 auto;
+  gap: 40px;
+  padding: 0 24px;
+}
+
+/* Sidebar Styles */
+.policies-sidebar {
+  width: 25%;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color, #E6E6E6);
+  border-radius: var(--rounded-md, 8px);
+  padding: 30px;
+  height: fit-content;
+  position: sticky;
+  top: calc(var(--header-height, 70px) + 30px);
+}
+
+.policies-sidebar-title {
+  font-family: var(--font-heading);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-dark);
+  border-bottom: 2px solid var(--border-color, #E6E6E6);
+  padding-bottom: 10px;
+  margin-bottom: 24px;
+}
+
+/* Sidebar Navigation */
+.policies-sidebar-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.policies-nav-item {
+  font-family: var(--font-inter, 'Inter', sans-serif);
+  font-size: 18px;
+  color: #868E96;
+  letter-spacing: -1px;
+  line-height: 1.4;
+  padding: 12.5px 0;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.5s ease;
+  border-bottom: 1px solid transparent;
+}
+
+.policies-nav-item:hover {
+  color: var(--primary-purple, #4A2B6B);
+}
+
+.policies-nav-item.active {
+  color: var(--primary-purple, #4A2B6B);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+/* Main Content Styles */
+.policies-main-content {
+  width: 70%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color, #E6E6E6);
+  border-radius: var(--rounded-md, 8px);
+  padding: 40px;
+}
+
+.policies-content-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.policies-page-title {
+  font-family: var(--font-heading);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text-dark);
+  line-height: 1.3;
+  flex: 1;
+  text-align: center;
+}
+
+.policies-download-link {
+  color: var(--primary-purple, #4A2B6B);
+  font-size: 24px;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.policies-download-link:hover {
+  opacity: 0.7;
+}
+
+.policies-pdf-container {
+  width: 95%;
+  margin: 0 auto;
+  border-radius: var(--rounded-md, 8px);
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.policies-pdf-container iframe {
+  border: 1px solid var(--border-color, #E6E6E6);
+  border-radius: var(--rounded-md, 8px);
+  background: var(--bg-white);
+}
+
+/* Back to Top Button */
+.policies-back-to-top {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: var(--primary-purple, #4A2B6B);
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  margin: 40px auto;
+  padding: 24px;
+  transition: transform 0.3s ease;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.policies-back-to-top.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.policies-back-to-top:hover {
+  transform: translateY(-5px);
+}
+
+.policies-back-to-top i {
+  font-size: 24px;
+  color: var(--primary-purple, #4A2B6B);
+}
+
+/* Loading States */
+.policies-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: 18px;
+  color: var(--text-gray, #6B7280);
+}
+
+/* Error States */
+.policies-error {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+  font-size: 18px;
+  color: var(--error, #EF4444);
+  text-align: center;
+  padding: 40px;
+}
+
+/* Responsive Layout */
+@media (max-width: 1200px) {
+  .policies-content-wrapper {
+    width: 85%;
+  }
+}
+
+@media (max-width: 900px) {
+  .policies-content-wrapper {
+    flex-direction: column;
+    width: 95%;
+    gap: 24px;
+  }
+
+  .policies-sidebar {
+    position: static;
+    width: 100%;
+    margin-bottom: 24px;
+  }
+
+  .policies-main-content {
+    width: 100%;
+  }
+
+  .policies-page-title {
+    font-size: 28px;
+  }
+
+  .policies-pdf-container iframe {
+    height: 600px;
+  }
+}
+
+@media (max-width: 480px) {
+  .policies-main-content {
+    padding: 24px;
+  }
+
+  .policies-page-title {
+    font-size: 24px;
+  }
+
+  .policies-sidebar-title {
+    font-size: 20px;
+  }
+
+  .policies-nav-item {
+    font-size: 16px;
+  }
+}

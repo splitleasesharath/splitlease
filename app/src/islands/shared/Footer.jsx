@@ -109,7 +109,7 @@ export default function Footer() {
             <h4>For Hosts</h4>
             <a href={SIGNUP_LOGIN_URL}>List Property Now</a>
             <a href="https://app.split.lease/host-step-by-step-guide-to-list">How to List</a>
-            <a href="https://app.split.lease/policies/cancellation-and-refund-policy">Legal Section</a>
+            <a href="/policies.html">Legal Section</a>
             <a href="https://app.split.lease/host-guarantees">Guarantees</a>
             <a href="https://app.split.lease/demo-house-manual">Free House Manual</a>
           </div>

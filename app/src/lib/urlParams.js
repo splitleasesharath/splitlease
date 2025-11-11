@@ -27,7 +27,7 @@ export function parseUrlToFilters() {
   const params = new URLSearchParams(window.location.search);
 
   return {
-    selectedDays: parseDaysParam(params.get('days')),
+    selectedDays: parseDaysParam(params.get('days-selected')),
     selectedBorough: params.get('borough') || DEFAULTS.DEFAULT_BOROUGH,
     weekPattern: params.get('weekly-frequency') || DEFAULTS.DEFAULT_WEEK_PATTERN,
     priceTier: params.get('pricetier') || DEFAULTS.DEFAULT_PRICE_TIER,
@@ -92,12 +92,12 @@ function parseNeighborhoodsParam(neighborhoodsParam) {
 export function serializeFiltersToUrl(filters) {
   const params = new URLSearchParams();
 
-  // Add days parameter (only if not default)
+  // Add days-selected parameter (only if not default)
   if (filters.selectedDays && filters.selectedDays.length > 0) {
     const daysString = filters.selectedDays.join(',');
     const defaultDaysString = DEFAULTS.DEFAULT_SELECTED_DAYS.join(',');
     if (daysString !== defaultDaysString) {
-      params.set('days', daysString);
+      params.set('days-selected', daysString);
     }
   }
 
