@@ -10,6 +10,7 @@ import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
 import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
+import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
 
 // ============================================================================
 // Helper Functions
@@ -72,9 +73,10 @@ function FilterPanel({
   neighborhoodSearch,
   onNeighborhoodSearchChange
 }) {
-  const filteredNeighborhoods = neighborhoods.filter(n =>
-    n.name.toLowerCase().includes(neighborhoodSearch.toLowerCase())
-  );
+  const filteredNeighborhoods = neighborhoods.filter(n => {
+    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
+    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
+  });
 
   const handleNeighborhoodToggle = (neighborhoodId) => {
     const isSelected = selectedNeighborhoods.includes(neighborhoodId);
@@ -145,6 +147,7 @@ function FilterPanel({
               className="filter-select"
               value={weekPattern}
               onChange={(e) => onWeekPatternChange(e.target.value)}
+              aria-label="Filter by week pattern"
             >
               <option value="every-week">Every week</option>
               <option value="one-on-off">One week on, one week off</option>
@@ -161,6 +164,7 @@ function FilterPanel({
               className="filter-select"
               value={priceTier}
               onChange={(e) => onPriceTierChange(e.target.value)}
+              aria-label="Filter by price range"
             >
               <option value="under-200">&lt; $200/night</option>
               <option value="200-350">$200-$350/night</option>
@@ -178,6 +182,7 @@ function FilterPanel({
               className="filter-select"
               value={sortBy}
               onChange={(e) => onSortByChange(e.target.value)}
+              aria-label="Sort listings by"
             >
               <option value="recommended">Our Recommendations</option>
               <option value="price-low">Price-Lowest to Highest</option>
@@ -529,7 +534,8 @@ function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoad
           />
         ];
 
-        // Insert AI signup cards at specific positions
+        // Insert AI signup cards at specific positions (after 4th and 8th listings)
+        // PORTED FROM: input/search/js/app.js lines 237-240
         if (index === 3 || index === 7) {
           cards.push(<AiSignupCard key={`ai-${index}`} />);
         }

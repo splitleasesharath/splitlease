@@ -14,6 +14,7 @@
  */
 
 import { DEFAULTS } from './constants.js';
+import { sanitizeUrlParam } from './sanitize.js';
 
 /**
  * Parse URL query parameters into filter state object
@@ -28,10 +29,10 @@ export function parseUrlToFilters() {
 
   return {
     selectedDays: parseDaysParam(params.get('days-selected')),
-    selectedBorough: params.get('borough') || DEFAULTS.DEFAULT_BOROUGH,
-    weekPattern: params.get('weekly-frequency') || DEFAULTS.DEFAULT_WEEK_PATTERN,
-    priceTier: params.get('pricetier') || DEFAULTS.DEFAULT_PRICE_TIER,
-    sortBy: params.get('sort') || DEFAULTS.DEFAULT_SORT_BY,
+    selectedBorough: sanitizeUrlParam(params.get('borough'), 'string') || DEFAULTS.DEFAULT_BOROUGH,
+    weekPattern: sanitizeUrlParam(params.get('weekly-frequency'), 'string') || DEFAULTS.DEFAULT_WEEK_PATTERN,
+    priceTier: sanitizeUrlParam(params.get('pricetier'), 'string') || DEFAULTS.DEFAULT_PRICE_TIER,
+    sortBy: sanitizeUrlParam(params.get('sort'), 'string') || DEFAULTS.DEFAULT_SORT_BY,
     selectedNeighborhoods: parseNeighborhoodsParam(params.get('neighborhoods'))
   };
 }

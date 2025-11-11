@@ -399,7 +399,7 @@ const GoogleMap = forwardRef(({
             </div>
           </div>
           <a
-            href="/view-split-lease.html/${listing.id}"
+            href="/view-split-lease/${listing.id}"
             target="_blank"
             style="padding: 8px 16px; background: ${COLORS.PRIMARY}; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600;"
           >
