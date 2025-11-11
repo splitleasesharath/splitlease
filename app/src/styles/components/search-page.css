@@ -20,6 +20,8 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .filter-group {
@@ -68,6 +70,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 1.5rem;
+  margin-top: 1rem;
   align-items: flex-start;
 }
 
@@ -84,7 +87,7 @@
 /* Top Filter Row Layout */
 .top-filter-row {
   display: block;
-  margin-bottom: 0;
+  margin-bottom: 1.5rem;
 }
 
 .top-filter-row .calendar-group {
@@ -143,18 +146,16 @@
   box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
 }
 
-/* Neighborhood checkboxes - PORTED FROM ORIGINAL (line 358) */
+/* Neighborhood Multi-Select - PORTED FROM ORIGINAL (lines 352-385) */
 .neighborhood-list {
-  display: none; /* Hidden by default - shows on focus/hover */
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  max-height: 150px;
+  max-height: 180px;
   overflow-y: auto;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
   padding: 0.75rem;
+  display: none;
   background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   position: absolute;
   z-index: 100;
   margin-top: 0.5rem;
@@ -164,29 +165,27 @@
 /* Show neighborhoods when search input is focused or when hovering over the list */
 .neighborhood-search:focus ~ .neighborhood-list,
 .neighborhood-list:hover {
-  display: flex;
+  display: block;
 }
 
-.neighborhood-checkbox {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.75rem;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  font-size: 0.8125rem;
+.neighborhood-list label {
+  display: block;
+  padding: 0.4rem 0.5rem;
   cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
+  font-size: 0.875rem;
+  text-transform: none;
+  letter-spacing: normal;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+  font-weight: normal;
 }
 
-.neighborhood-checkbox:hover {
+.neighborhood-list label:hover {
   background: #f3f4f6;
-  border-color: #d1d5db;
 }
 
-.neighborhood-checkbox input[type="checkbox"] {
+.neighborhood-list input[type="checkbox"] {
+  margin-right: 0.5rem;
   cursor: pointer;
   accent-color: #5b21b6;
 }
