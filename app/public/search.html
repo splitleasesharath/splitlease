@@ -7,6 +7,9 @@
   <meta name="description" content="Search for flexible rentals for repeat stays">
   <link rel="stylesheet" href="/src/styles/main.css">
 
+  <!-- Load environment config FIRST - required for inline scripts -->
+  <script type="module" src="/src/lib/config.js"></script>
+
   <!-- Lottie for atom animation - PORTED FROM ORIGINAL -->
   <script src="https://unpkg.com/lottie-web@5.12.2/build/player/lottie.min.js"></script>
 
@@ -19,22 +22,45 @@
     };
 
     // Load Google Maps API dynamically
-    (function() {
-      const script = document.createElement('script');
-      // Use environment variable from Cloudflare
-      const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    function loadGoogleMaps() {
+      const apiKey = window.ENV?.GOOGLE_MAPS_API_KEY;
       if (!apiKey) {
-        console.error('Google Maps API key not configured');
+        console.error('❌ Google Maps API key not configured in window.ENV');
+        console.error('Available ENV keys:', Object.keys(window.ENV || {}));
         return;
       }
+
+      console.log('🗺️ Loading Google Maps API...');
+      const script = document.createElement('script');
       script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap`;
       script.async = true;
       script.defer = true;
       script.onerror = function() {
-        console.error('Failed to load Google Maps API');
+        console.error('❌ Failed to load Google Maps API');
       };
       document.head.appendChild(script);
-    })();
+    }
+
+    // Wait for config.js to load and set window.ENV
+    // Use event-based approach for reliability
+    if (window.ENV) {
+      // Config already loaded (rare, but possible)
+      loadGoogleMaps();
+    } else {
+      // Wait for the env-config-loaded event from config.js
+      window.addEventListener('env-config-loaded', loadGoogleMaps, { once: true });
+
+      // Fallback timeout in case event doesn't fire (e.g., config.js fails to load)
+      setTimeout(() => {
+        if (!window.ENV) {
+          console.error('❌ window.ENV not available after 2 seconds - config.js may have failed to load');
+        } else if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+          // ENV exists but script wasn't loaded - try one more time
+          console.warn('⚠️ Fallback: Attempting to load Google Maps after timeout');
+          loadGoogleMaps();
+        }
+      }, 2000);
+    }
   </script>
 
   <!-- Initialize Lottie atom animation - PORTED FROM ORIGINAL -->
