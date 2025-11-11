@@ -38,6 +38,8 @@ export default defineConfig({
             req.url = '/public/list-with-us.html' + (url.substring('/list-with-us.html'.length) || '');
           } else if (url.startsWith('/success-stories.html')) {
             req.url = '/public/success-stories.html' + (url.substring('/success-stories.html'.length) || '');
+          } else if (url.startsWith('/why-split-lease.html')) {
+            req.url = '/public/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
           }
 
           next();
@@ -71,6 +73,8 @@ export default defineConfig({
             req.url = '/list-with-us.html' + (url.substring('/list-with-us.html'.length) || '');
           } else if (url.startsWith('/success-stories.html')) {
             req.url = '/success-stories.html' + (url.substring('/success-stories.html'.length) || '');
+          } else if (url.startsWith('/why-split-lease.html')) {
+            req.url = '/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
           }
 
           next();
@@ -182,7 +186,8 @@ export default defineConfig({
         faq: resolve(__dirname, 'public/faq.html'),
         policies: resolve(__dirname, 'public/policies.html'),
         'list-with-us': resolve(__dirname, 'public/list-with-us.html'),
-        'success-stories': resolve(__dirname, 'public/success-stories.html')
+        'success-stories': resolve(__dirname, 'public/success-stories.html'),
+        'why-split-lease': resolve(__dirname, 'public/why-split-lease.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public
