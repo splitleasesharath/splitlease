@@ -34,6 +34,8 @@ export default defineConfig({
             req.url = '/public/faq.html' + (url.substring('/faq.html'.length) || '');
           } else if (url.startsWith('/policies.html')) {
             req.url = '/public/policies.html' + (url.substring('/policies.html'.length) || '');
+          } else if (url.startsWith('/why-split-lease.html')) {
+            req.url = '/public/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
           }
 
           next();
@@ -63,6 +65,8 @@ export default defineConfig({
             req.url = '/faq.html' + (url.substring('/faq.html'.length) || '');
           } else if (url.startsWith('/policies.html')) {
             req.url = '/policies.html' + (url.substring('/policies.html'.length) || '');
+          } else if (url.startsWith('/why-split-lease.html')) {
+            req.url = '/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
           }
 
           next();
@@ -145,7 +149,8 @@ export default defineConfig({
         search: resolve(__dirname, 'public/search.html'),
         'view-split-lease': resolve(__dirname, 'public/view-split-lease.html'),
         faq: resolve(__dirname, 'public/faq.html'),
-        policies: resolve(__dirname, 'public/policies.html')
+        policies: resolve(__dirname, 'public/policies.html'),
+        'why-split-lease': resolve(__dirname, 'public/why-split-lease.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public
