@@ -841,15 +841,16 @@ export default function SearchPage() {
       console.log('📍 SearchPage: First 3 raw listings from DB:', data.slice(0, 3).map(l => ({
         id: l._id,
         name: l.Name,
-        lat: l.listing_address_latitude,
-        lng: l.listing_address_longitude,
-        hasLat: l.listing_address_latitude !== undefined && l.listing_address_latitude !== null,
-        hasLng: l.listing_address_longitude !== undefined && l.listing_address_longitude !== null
+        locationAddress: l['Location - Address'],
+        lat: l['Location - Address']?.lat,
+        lng: l['Location - Address']?.lng,
+        hasLat: !!l['Location - Address']?.lat,
+        hasLng: !!l['Location - Address']?.lng
       })));
 
       // Check coordinate coverage
-      const listingsWithCoords = data.filter(l => l.listing_address_latitude && l.listing_address_longitude);
-      const listingsWithoutCoords = data.filter(l => !l.listing_address_latitude || !l.listing_address_longitude);
+      const listingsWithCoords = data.filter(l => l['Location - Address']?.lat && l['Location - Address']?.lng);
+      const listingsWithoutCoords = data.filter(l => !l['Location - Address']?.lat || !l['Location - Address']?.lng);
       console.log('📍 SearchPage: Coordinate coverage:', {
         total: data.length,
         withCoordinates: listingsWithCoords.length,
@@ -861,8 +862,9 @@ export default function SearchPage() {
         console.error('❌ SearchPage: Listings WITHOUT coordinates:', listingsWithoutCoords.map(l => ({
           id: l._id,
           name: l.Name,
-          lat: l.listing_address_latitude,
-          lng: l.listing_address_longitude
+          locationAddress: l['Location - Address'],
+          lat: l['Location - Address']?.lat,
+          lng: l['Location - Address']?.lng
         })));
       }
 
@@ -1057,17 +1059,6 @@ export default function SearchPage() {
 
   // Transform raw listing data
   const transformListing = (dbListing, images, hostData) => {
-    console.log('🔄 SearchPage: Transforming listing:', {
-      id: dbListing._id,
-      name: dbListing.Name,
-      rawLat: dbListing.listing_address_latitude,
-      rawLng: dbListing.listing_address_longitude,
-      hasLat: dbListing.listing_address_latitude !== undefined && dbListing.listing_address_latitude !== null,
-      hasLng: dbListing.listing_address_longitude !== undefined && dbListing.listing_address_longitude !== null,
-      latType: typeof dbListing.listing_address_latitude,
-      lngType: typeof dbListing.listing_address_longitude
-    });
-
     // Resolve human-readable names from database IDs
     const neighborhoodName = getNeighborhoodName(dbListing['Location - Hood']);
     const boroughName = getBoroughName(dbListing['Location - Borough']);
@@ -1079,16 +1070,27 @@ export default function SearchPage() {
     if (boroughName) locationParts.push(boroughName);
     const location = locationParts.join(', ') || 'New York, NY';
 
-    // Extract coordinates - return null if missing (no fallbacks)
-    const lat = dbListing.listing_address_latitude;
-    const lng = dbListing.listing_address_longitude;
+    // Extract coordinates from JSONB field "Location - Address"
+    // Format: { address: "...", lat: number, lng: number }
+    const locationAddress = dbListing['Location - Address'];
+    const lat = locationAddress?.lat;
+    const lng = locationAddress?.lng;
+
+    console.log('🔄 SearchPage: Transforming listing:', {
+      id: dbListing._id,
+      name: dbListing.Name,
+      hasLocationAddress: !!locationAddress,
+      locationAddress: locationAddress,
+      extractedLat: lat,
+      extractedLng: lng,
+      hasValidCoords: !!(lat && lng)
+    });
 
     if (!lat || !lng) {
       console.error('❌ SearchPage: Missing coordinates for listing - will be filtered out:', {
         id: dbListing._id,
         name: dbListing.Name,
-        rawLat: dbListing.listing_address_latitude,
-        rawLng: dbListing.listing_address_longitude
+        locationAddress: locationAddress
       });
     } else {
       console.log('✅ SearchPage: Valid coordinates found:', {
