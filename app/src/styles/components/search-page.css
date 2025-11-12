@@ -105,10 +105,12 @@
   min-width: 240px;
 }
 
-/* Desktop: Increase neighborhood width by 40% to push borough to next line */
+/* Desktop: Force neighborhood and borough to wrap by making neighborhood wider */
 @media (min-width: 769px) {
   .inline-filters .neighborhoods-group {
-    min-width: 470px; /* 336px * 1.4 = 470px (additional 40% increase) */
+    flex: 1 1 auto;
+    min-width: 600px; /* Force wrapping - schedule selector + neighborhood = ~900px, forcing borough to next line */
+    max-width: 800px;
   }
 }
 
