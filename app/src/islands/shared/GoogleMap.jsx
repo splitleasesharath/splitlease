@@ -20,7 +20,7 @@
  *   />
  */
 
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { DEFAULTS, COLORS, getBoroughMapConfig } from '../../lib/constants.js';
 import ListingCardForMap from './ListingCard/ListingCardForMap.jsx';
 import { supabase } from '../../lib/supabase.js';
@@ -129,19 +129,32 @@ const GoogleMap = forwardRef(({
    * Fetch detailed listing data from Supabase when a pin is clicked
    */
   const fetchDetailedListingData = async (listingId) => {
+    console.log('🔍 fetchDetailedListingData: Starting fetch for listing:', listingId);
     setIsLoadingListingDetails(true);
 
     try {
+      console.log('📊 fetchDetailedListingData: Querying Supabase...');
       const { data: listingData, error: listingError } = await supabase
         .from('listing')
         .select('*')
         .eq('_id', listingId)
         .single();
 
-      if (listingError) throw listingError;
+      if (listingError) {
+        console.error('❌ fetchDetailedListingData: Supabase error:', listingError);
+        throw listingError;
+      }
 
+      console.log('✅ fetchDetailedListingData: Listing data received:', {
+        id: listingData._id,
+        name: listingData.Name,
+        borough: listingData['Location - Borough']
+      });
+
+      console.log('📸 fetchDetailedListingData: Fetching photos...');
       const photoUrls = await fetchPhotoUrls([listingId]);
       const images = photoUrls[listingId] || [];
+      console.log('📸 fetchDetailedListingData: Photos received:', images.length, 'images');
 
       const detailedListing = {
         id: listingData._id,
@@ -158,14 +171,89 @@ const GoogleMap = forwardRef(({
         isAvailable: listingData.Active || false
       };
 
+      console.log('✅ fetchDetailedListingData: Detailed listing built:', detailedListing);
       return detailedListing;
     } catch (error) {
-      console.error('Failed to fetch listing details:', error);
+      console.error('❌ fetchDetailedListingData: Failed to fetch listing details:', error);
       return null;
     } finally {
       setIsLoadingListingDetails(false);
+      console.log('🏁 fetchDetailedListingData: Loading state set to false');
     }
   };
+
+  /**
+   * React callback to handle pin clicks properly within React's state management
+   * This ensures state updates trigger re-renders correctly
+   */
+  const handlePinClick = useCallback(async (listing, priceTag) => {
+    console.log('🖱️ handlePinClick (React callback): Pin clicked:', {
+      listingId: listing.id,
+      listingTitle: listing.title
+    });
+
+    // Calculate card position relative to map container
+    const mapContainer = mapRef.current;
+    if (!mapContainer) {
+      console.error('❌ handlePinClick: Map container ref not available');
+      return;
+    }
+
+    const mapRect = mapContainer.getBoundingClientRect();
+    const priceTagRect = priceTag.getBoundingClientRect();
+
+    // Calculate position relative to map container
+    const pinCenterX = priceTagRect.left - mapRect.left + (priceTagRect.width / 2);
+    const pinTop = priceTagRect.top - mapRect.top;
+
+    // Card dimensions (matching ListingCardForMap)
+    const cardWidth = 340;
+    const cardHeight = 340; // Approximate height
+    const arrowHeight = 10;
+    const gapFromPin = 5;
+    const margin = 20;
+
+    // Calculate card position - center on pin, above it
+    let cardLeft = pinCenterX;
+    let cardTop = pinTop - cardHeight - arrowHeight - gapFromPin;
+
+    // Keep card within map bounds horizontally
+    const minLeft = margin + (cardWidth / 2);
+    const maxLeft = mapRect.width - margin - (cardWidth / 2);
+    cardLeft = Math.max(minLeft, Math.min(maxLeft, cardLeft));
+
+    // Keep card within map bounds vertically
+    if (cardTop < margin) {
+      // If card would go above map, position it below the pin instead
+      cardTop = pinTop + priceTagRect.height + arrowHeight + gapFromPin;
+    }
+
+    console.log('📍 handlePinClick: Card position calculated:', { x: cardLeft, y: cardTop });
+
+    // Set position first
+    setCardPosition({ x: cardLeft, y: cardTop });
+    console.log('✅ handlePinClick: Card position state updated');
+
+    // Show card immediately
+    setCardVisible(true);
+    console.log('✅ handlePinClick: Card visibility state set to true');
+
+    // Fetch detailed listing data from Supabase
+    const detailedListing = await fetchDetailedListingData(listing.id);
+    if (detailedListing) {
+      console.log('✅ handlePinClick: Setting detailed listing to card:', detailedListing);
+      setSelectedListingForCard(detailedListing);
+    } else {
+      console.error('❌ handlePinClick: Failed to fetch listing details, not showing card');
+      setCardVisible(false);
+    }
+    console.log('✅ handlePinClick: Selected listing state updated');
+
+    // Call parent callback
+    if (onMarkerClick) {
+      onMarkerClick(listing);
+    }
+  }, [onMarkerClick]);
 
   // Initialize Google Map when API is loaded
   useEffect(() => {
@@ -513,77 +601,34 @@ const GoogleMap = forwardRef(({
         cursor: pointer;
         transition: background-color 0.2s ease;
         transform: translate(-50%, -50%);
-        z-index: ${color === '#31135D' ? '2' : '1'};
+        z-index: ${color === '#31135D' ? '1002' : '1001'};
         will-change: transform;
+        pointer-events: auto;
       `;
 
       // Use CSS hover for better performance
       priceTag.addEventListener('mouseenter', () => {
         priceTag.style.background = hoverColor;
         priceTag.style.transform = 'translate(-50%, -50%) scale(1.1)';
-        priceTag.style.zIndex = '10';
+        priceTag.style.zIndex = '1010';
       });
 
       priceTag.addEventListener('mouseleave', () => {
         priceTag.style.background = color;
         priceTag.style.transform = 'translate(-50%, -50%) scale(1)';
-        priceTag.style.zIndex = color === '#31135D' ? '2' : '1';
+        priceTag.style.zIndex = color === '#31135D' ? '1002' : '1001';
       });
 
-      priceTag.addEventListener('click', async () => {
-        // Calculate card position relative to map container
-        const mapContainer = mapRef.current;
-        if (mapContainer) {
-          const mapRect = mapContainer.getBoundingClientRect();
-          const priceTagRect = priceTag.getBoundingClientRect();
-
-          // Calculate position relative to map container
-          const pinCenterX = priceTagRect.left - mapRect.left + (priceTagRect.width / 2);
-          const pinTop = priceTagRect.top - mapRect.top;
-
-          // Card dimensions (matching ListingCardForMap)
-          const cardWidth = 340;
-          const cardHeight = 340; // Approximate height
-          const arrowHeight = 10;
-          const gapFromPin = 5;
-          const margin = 20;
-
-          // Calculate card position - center on pin, above it
-          let cardLeft = pinCenterX;
-          let cardTop = pinTop - cardHeight - arrowHeight - gapFromPin;
-
-          // Keep card within map bounds horizontally
-          const minLeft = margin + (cardWidth / 2);
-          const maxLeft = mapRect.width - margin - (cardWidth / 2);
-          cardLeft = Math.max(minLeft, Math.min(maxLeft, cardLeft));
-
-          // Keep card within map bounds vertically
-          if (cardTop < margin) {
-            // If card would go above map, position it below the pin instead
-            cardTop = pinTop + priceTagRect.height + arrowHeight + gapFromPin;
-          }
-
-          setCardPosition({ x: cardLeft, y: cardTop });
-          setCardVisible(true);
-
-          // Fetch detailed listing data from Supabase
-          const detailedListing = await fetchDetailedListingData(listing.id);
-          if (detailedListing) {
-            setSelectedListingForCard(detailedListing);
-          } else {
-            setSelectedListingForCard(listing);
-          }
-        }
-
-        // Call parent callback
-        if (onMarkerClick) {
-          onMarkerClick(listing);
-        }
+      // Use React callback for proper state management
+      priceTag.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent event from bubbling to map container
+        handlePinClick(listing, priceTag);
       });
 
       this.div = priceTag;
       const panes = this.getPanes();
-      panes.overlayLayer.appendChild(priceTag);
+      // Use overlayMouseTarget pane for clickable overlays (sits above map tiles)
+      panes.overlayMouseTarget.appendChild(priceTag);
     };
 
     markerOverlay.draw = function() {
@@ -716,6 +761,7 @@ const GoogleMap = forwardRef(({
 
   // Close card when clicking on map
   const handleMapClick = () => {
+    console.log('🗺️ handleMapClick: Map clicked, closing card');
     setCardVisible(false);
     setSelectedListingForCard(null);
   };
@@ -743,6 +789,17 @@ const GoogleMap = forwardRef(({
       )}
 
       {/* Listing Card Overlay */}
+      {(() => {
+        console.log('🎨 Rendering card overlay - State check:', {
+          mapLoaded,
+          cardVisible,
+          isLoadingListingDetails,
+          hasSelectedListing: !!selectedListingForCard,
+          selectedListing: selectedListingForCard,
+          cardPosition
+        });
+        return null;
+      })()}
       {mapLoaded && cardVisible && (
         <>
           {isLoadingListingDetails && (
