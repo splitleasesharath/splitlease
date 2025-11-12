@@ -9,7 +9,7 @@
 import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
-import CreateProposalFlow from '../shared/CreateProposalFlow.jsx';
+import CreateProposalFlow from './ViewSplitLeasePageComponents/CreateProposalFlow.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { fetchListingComplete, getListingIdFromUrl } from '../../lib/listingDataFetcher.js';
 import {
