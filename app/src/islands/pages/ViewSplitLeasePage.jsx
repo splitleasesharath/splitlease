@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
+import CreateProposalFlow from '../shared/CreateProposalFlow.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { VIEW_LISTING_URL, DAY_ABBREVIATIONS } from '../../lib/constants.js';
 import {
@@ -1029,6 +1030,7 @@ export default function ViewSplitLeasePage() {
   const [photos, setPhotos] = useState([]);
   const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5]); // Monday-Friday by default
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
 
   useEffect(() => {
     // Initialize lookups from database
@@ -1206,7 +1208,17 @@ export default function ViewSplitLeasePage() {
 
   const handleBook = () => {
     console.log('Create proposal clicked');
-    alert('Booking functionality will be implemented soon!');
+    setIsProposalModalOpen(true);
+  };
+
+  const handleProposalSubmit = (proposal) => {
+    console.log('Proposal submitted:', proposal);
+    // TODO: Send proposal to backend/Supabase
+    alert('Proposal submitted successfully! (Backend integration pending)');
+  };
+
+  const handleProposalClose = () => {
+    setIsProposalModalOpen(false);
   };
 
   const handleMessage = () => {
@@ -1362,6 +1374,15 @@ export default function ViewSplitLeasePage() {
         </div>
       </main>
       <Footer />
+
+      {/* Create Proposal Modal */}
+      <CreateProposalFlow
+        isOpen={isProposalModalOpen}
+        onClose={handleProposalClose}
+        listing={listing}
+        onSubmit={handleProposalSubmit}
+      />
+
       <style>{`
         @keyframes spin {
           to { transform: rotate(360deg); }
