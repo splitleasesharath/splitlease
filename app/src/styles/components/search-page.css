@@ -65,63 +65,42 @@
   box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
 }
 
-/* Horizontal Filter Row */
+/* Horizontal Filter Row - All filters in single row */
 .horizontal-filters {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-  margin-top: 1rem;
+  flex-wrap: nowrap;
+  gap: 1rem;
   align-items: flex-start;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+}
+
+.horizontal-filters::-webkit-scrollbar {
+  height: 6px;
+}
+
+.horizontal-filters::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.horizontal-filters::-webkit-scrollbar-thumb {
+  background-color: rgba(155, 155, 155, 0.5);
+  border-radius: 3px;
 }
 
 .horizontal-filters .filter-group.compact {
-  flex: 1 1 220px;
-  min-width: 220px;
-  max-width: 220px;
+  flex: 0 0 auto;
+  min-width: 180px;
 }
 
 .horizontal-filters .filter-group.compact .filter-select {
   width: 100%;
 }
 
-/* Top Filter Row Layout */
-.top-filter-row {
-  display: block;
-  margin-bottom: 1.5rem;
-}
-
-.top-filter-row .calendar-group {
-  width: 100%;
-}
-
-/* Check-in/Check-out Display - PORTED FROM ORIGINAL (lines 312-339) */
-.checkin-checkout {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 1rem;
-  margin: 0.75rem 0 0 0;
-  padding: 0.6rem 1rem;
-  background: #f3f4f6;
-  border-radius: 8px;
-  font-size: 14px;
-  color: #333;
-  border: 1px solid #e0e0e0;
-  width: 100%;
-}
-
-.checkin-checkout .separator {
-  color: #999;
-  font-weight: normal;
-}
-
-.checkin-checkout strong {
-  font-weight: 600;
-}
-
-.checkin-day, .checkout-day {
-  color: #31135D;
-  font-weight: 600;
+/* Day Selector inline styling */
+.horizontal-filters .day-selector-group {
+  min-width: fit-content;
 }
 
 .neighborhoods-group {
@@ -253,6 +232,10 @@
 
 /* Mobile responsive for horizontal filters */
 @media (max-width: 1024px) {
+  .horizontal-filters {
+    flex-wrap: wrap;
+  }
+
   .neighborhoods-group {
     width: 100%;
     max-width: none;
@@ -260,9 +243,13 @@
   }
 
   .horizontal-filters .filter-group.compact {
-    flex: 1 1 calc(50% - 0.75rem);
+    flex: 1 1 calc(50% - 0.5rem);
     min-width: 150px;
-    max-width: none;
+  }
+
+  .horizontal-filters .day-selector-group {
+    flex: 1 1 100%;
+    min-width: 100%;
   }
 }
 
@@ -273,11 +260,17 @@
 
   .horizontal-filters {
     gap: 1rem;
+    flex-wrap: wrap;
   }
 
   .horizontal-filters .filter-group.compact {
     flex: 1 1 100%;
-    max-width: none;
+    min-width: 0;
+  }
+
+  .horizontal-filters .day-selector-group {
+    flex: 1 1 100%;
+    min-width: 100%;
   }
 }
 

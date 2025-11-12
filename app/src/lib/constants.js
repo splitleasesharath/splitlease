@@ -367,6 +367,64 @@ export const DEFAULTS = {
 };
 
 // ============================================================================
+// Borough-Specific Map Configuration
+// Optimized map center and zoom for each borough
+// PORTED FROM: input/search/js/app.js lines 1114-1141
+// ============================================================================
+
+export const BOROUGH_MAP_CONFIG = {
+  'manhattan': {
+    center: { lat: 40.7580, lng: -73.9855 },
+    zoom: 13,
+    name: 'Manhattan'
+  },
+  'brooklyn': {
+    center: { lat: 40.6782, lng: -73.9442 },
+    zoom: 12,
+    name: 'Brooklyn'
+  },
+  'queens': {
+    center: { lat: 40.7282, lng: -73.7949 },
+    zoom: 11,
+    name: 'Queens'
+  },
+  'bronx': {
+    center: { lat: 40.8448, lng: -73.8648 },
+    zoom: 12,
+    name: 'Bronx'
+  },
+  'staten-island': {
+    center: { lat: 40.5795, lng: -74.1502 },
+    zoom: 11,
+    name: 'Staten Island'
+  },
+  'hudson': {
+    center: { lat: 40.7357, lng: -74.0339 },
+    zoom: 13,
+    name: 'Hudson County NJ'
+  },
+  'default': {
+    center: { lat: 40.7580, lng: -73.9855 },
+    zoom: 11,
+    name: 'New York City'
+  }
+};
+
+/**
+ * Get map configuration for a borough
+ * @param {string} boroughValue - Borough value (kebab-case: 'manhattan', 'staten-island', etc.)
+ * @returns {object} Map configuration with center and zoom
+ */
+export function getBoroughMapConfig(boroughValue) {
+  if (!boroughValue) {
+    return BOROUGH_MAP_CONFIG.default;
+  }
+
+  const config = BOROUGH_MAP_CONFIG[boroughValue.toLowerCase()];
+  return config || BOROUGH_MAP_CONFIG.default;
+}
+
+// ============================================================================
 // Sidebar and Navigation
 // ============================================================================
 

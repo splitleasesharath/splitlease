@@ -286,7 +286,7 @@ test('Listing loads', async () => {
 | **Dev Server** | http://localhost:5173 | Feature development | Navigation, UI changes, API integration |
 | **Preview Server** | http://localhost:4173 | Build verification | Routing, asset loading, performance |
 | **Cloudflare Preview** | https://[hash].split-lease.pages.dev | Pre-production validation | Full regression suite |
-| **Production** | https://split.lease | Post-deployment verification | Smoke tests only |
+| **Production** | https://splitlease.app | Post-deployment verification | Smoke tests only |
 
 ---
 
