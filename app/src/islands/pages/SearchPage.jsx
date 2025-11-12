@@ -1,13 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
-import Header from '../shared/Header.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import AISignupModal from '../shared/AISignupModal.jsx';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import { supabase } from '../../lib/supabase.js';
-import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL } from '../../lib/constants.js';
+import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
 import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
@@ -18,11 +17,29 @@ import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanit
 // ============================================================================
 
 /**
- * Convert day number (1-7) to day name
+ * FauxHeader - Minimal header without full navigation
+ * Simpler than the full Header component for search page
  */
-function getDayName(dayNumber) {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return days[dayNumber] || '';
+function FauxHeader() {
+  return (
+    <header className="faux-header">
+      <div className="faux-header-container">
+        <a href="https://splitlease.app" className="faux-logo">
+          <img src="/assets/images/logo.png" alt="Split Lease" className="logo-image" />
+          <span className="logo-text">Split Lease</span>
+        </a>
+
+        <div className="faux-header-actions">
+          <a href={SEARCH_URL} className="faux-btn explore-btn">
+            Explore Rentals
+          </a>
+          <a href={SIGNUP_LOGIN_URL} className="faux-btn signin-btn">
+            Sign In
+          </a>
+        </div>
+      </div>
+    </header>
+  );
 }
 
 // ============================================================================
@@ -1205,7 +1222,7 @@ export default function SearchPage() {
   // Render
   return (
     <div className="search-page">
-      <Header />
+      <FauxHeader />
 
       <MobileFilterBar
         onFilterClick={() => setFilterPanelActive(!filterPanelActive)}

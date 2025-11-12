@@ -4,12 +4,20 @@
    Based on: input/search/css/styles.css lines 467-482
    ======================================== */
 
+/* Add padding to account for fixed faux header */
+.search-page {
+  padding-top: 60px; /* Height of faux header */
+}
+
 /* Filter Panel - PORTED FROM ORIGINAL (lines 177-256) */
 .filter-panel {
   background: white;
   border-bottom: 1px solid #e5e7eb;
   padding: 1.5rem 0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 60px; /* Stick below the faux header */
+  z-index: 100;
 }
 
 .filter-container {
@@ -68,30 +76,16 @@
 /* Horizontal Filter Row - All filters in single row */
 .horizontal-filters {
   display: flex;
-  flex-wrap: nowrap;
-  gap: 1rem;
+  flex-wrap: wrap; /* Allow wrapping on smaller screens */
+  gap: 0.75rem;
   align-items: flex-start;
-  overflow-x: auto;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
-}
-
-.horizontal-filters::-webkit-scrollbar {
-  height: 6px;
-}
-
-.horizontal-filters::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.horizontal-filters::-webkit-scrollbar-thumb {
-  background-color: rgba(155, 155, 155, 0.5);
-  border-radius: 3px;
+  justify-content: flex-start;
 }
 
 .horizontal-filters .filter-group.compact {
-  flex: 0 0 auto;
-  min-width: 180px;
+  flex: 0 1 auto;
+  min-width: 160px;
+  max-width: 200px;
 }
 
 .horizontal-filters .filter-group.compact .filter-select {
@@ -104,9 +98,9 @@
 }
 
 .neighborhoods-group {
-  width: 220px;
-  min-width: 220px;
-  max-width: 220px;
+  flex: 1 1 220px;
+  min-width: 200px;
+  max-width: 300px;
   position: relative; /* For absolute positioned dropdown */
 }
 
@@ -231,46 +225,87 @@
 }
 
 /* Mobile responsive for horizontal filters */
-@media (max-width: 1024px) {
-  .horizontal-filters {
-    flex-wrap: wrap;
+@media (max-width: 1200px) {
+  .horizontal-filters .filter-group.compact {
+    flex: 1 1 calc(33.333% - 0.75rem);
+    min-width: 140px;
   }
 
   .neighborhoods-group {
-    width: 100%;
-    max-width: none;
-    min-width: 0;
+    flex: 1 1 calc(50% - 0.75rem);
+  }
+}
+
+@media (max-width: 1024px) {
+  .filter-container {
+    padding: 0 1.5rem;
   }
 
   .horizontal-filters .filter-group.compact {
-    flex: 1 1 calc(50% - 0.5rem);
-    min-width: 150px;
+    flex: 1 1 calc(50% - 0.75rem);
+    min-width: 140px;
   }
 
-  .horizontal-filters .day-selector-group {
+  .neighborhoods-group {
     flex: 1 1 100%;
-    min-width: 100%;
+    max-width: none;
   }
 }
 
 @media (max-width: 768px) {
+  .search-page {
+    padding-top: 55px; /* Smaller header on mobile */
+  }
+
+  .filter-panel {
+    top: 55px;
+    padding: 1rem 0;
+  }
+
   .filter-container {
     padding: 0 1rem;
   }
 
   .horizontal-filters {
-    gap: 1rem;
-    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 
   .horizontal-filters .filter-group.compact {
     flex: 1 1 100%;
     min-width: 0;
+    max-width: none;
   }
 
-  .horizontal-filters .day-selector-group {
+  .neighborhoods-group {
     flex: 1 1 100%;
-    min-width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-container {
+    padding: 0 0.75rem;
+  }
+}
+
+/* SearchScheduleSelector positioning in horizontal filters */
+#search-schedule-selector-mount {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 1024px) {
+  #search-schedule-selector-mount {
+    flex: 1 1 100%;
+    width: 100% !important;
+    margin-right: 0 !important;
+    margin-bottom: 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  #search-schedule-selector-mount {
+    flex: 1 1 100%;
+    width: 100% !important;
   }
 }
 
@@ -279,25 +314,26 @@
   max-width: 95vw;
   width: 95vw;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 1.5rem;
   display: grid;
   grid-template-columns: 45fr 55fr;
-  gap: 0.5rem;
+  gap: 1.5rem;
   min-height: calc(100vh - 200px);
 }
 
 /* Listings Section (Left Column) */
 .search-page .listings-section {
   overflow-y: auto;
-  max-height: calc(100vh - 250px);
+  max-height: calc(100vh - 200px);
+  padding-right: 0.5rem;
 }
 
 /* Map Section (Right Column) */
 .search-page .map-section {
   position: sticky;
-  top: 100px; /* Changed from 20px to account for header + filter bar */
-  height: calc(100vh - 250px);
-  min-height: 600px;
+  top: 150px; /* Account for header + filter bar */
+  height: calc(100vh - 200px);
+  min-height: 500px;
 }
 
 /* Google Map Container */
@@ -406,11 +442,17 @@
   cursor: pointer;
 }
 
-/* Responsive: Tablet */
+/* Responsive: Large tablets and below */
 @media (max-width: 1200px) {
   .search-page .main-content {
     grid-template-columns: 1fr;
-    gap: 16px;
+    gap: 1.5rem;
+    padding: 1.25rem;
+  }
+
+  .search-page .listings-section {
+    max-height: none;
+    padding-right: 0;
   }
 
   .search-page .map-section {
@@ -424,17 +466,18 @@
   .search-page .map-section.mobile-active {
     display: block;
   }
-
-  .search-page .listings-section {
-    max-height: none;
-  }
 }
 
 /* Responsive: Mobile */
 @media (max-width: 768px) {
   .search-page .main-content {
-    padding: 12px;
-    gap: 12px;
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .search-page .map-section {
+    height: 450px;
+    min-height: 450px;
   }
 
   .map-legend {
@@ -451,6 +494,13 @@
   .map-legend .legend-item,
   .map-legend .legend-toggle {
     font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .search-page .main-content {
+    padding: 0.75rem;
+    gap: 0.75rem;
   }
 
   .search-page .map-section {
