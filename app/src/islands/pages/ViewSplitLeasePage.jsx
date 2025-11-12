@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import CreateProposalFlow from './ViewSplitLeasePageComponents/CreateProposalFlow.jsx';
+import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { fetchListingComplete, getListingIdFromUrl } from '../../lib/listingDataFetcher.js';
 import {
@@ -25,6 +26,8 @@ import {
   calculateNightsFromDays
 } from '../../lib/availabilityValidation.js';
 import { DAY_ABBREVIATIONS, DEFAULTS, COLORS } from '../../lib/constants.js';
+import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
+import '../../styles/listing-schedule-selector.css';
 
 // ============================================================================
 // LOADING AND ERROR STATES
@@ -114,9 +117,12 @@ export default function ViewSplitLeasePage() {
   // Booking widget state
   const [moveInDate, setMoveInDate] = useState(null);
   const [strictMode, setStrictMode] = useState(false);
-  const [selectedDays, setSelectedDays] = useState(DEFAULTS.DEFAULT_SELECTED_DAYS); // Mon-Fri default
+  const [selectedDayObjects, setSelectedDayObjects] = useState([]); // Day objects from new component
   const [reservationSpan, setReservationSpan] = useState(13); // 13 weeks default
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+
+  // Convert Day objects to array of numbers for compatibility with existing code
+  const selectedDays = selectedDayObjects.map(day => day.dayOfWeek);
 
   // UI state
   const [showTutorialModal, setShowTutorialModal] = useState(false);
@@ -175,6 +181,51 @@ export default function ViewSplitLeasePage() {
   // COMPUTED VALUES
   // ============================================================================
 
+  // Prepare listing data for ListingScheduleSelector component
+  const scheduleSelectorListing = listing ? {
+    id: listing._id,
+    firstAvailable: new Date(listing['First Day Available']),
+    lastAvailable: new Date(listing['Last Day Available']),
+    numberOfNightsAvailable: listing['Number of Nights Available'] || 7,
+    active: listing.Active,
+    approved: listing.Approved,
+    datesBlocked: listing['Dates Blocked'] || [],
+    complete: listing.Complete,
+    confirmedAvailability: listing['Confirmed Availability'],
+    checkInTime: listing['Check-In Time'] || '3:00 pm',
+    checkOutTime: listing['Check-Out Time'] || '11:00 am',
+    nightsAvailableList: [],
+    nightsAvailableNumbers: listing['Nights Available Numbers'] || [0, 1, 2, 3, 4, 5, 6],
+    nightsNotAvailable: [],
+    pricingList: {
+      combinedMarkup: listing['Combined Markup'] || 15,
+      fullTimeDiscount: listing['Full-Time Discount'] || 10,
+      hostCompensation: [],
+      markupAndDiscountMultiplier: [1.0, 0.95, 0.9, 0.85, 0.8],
+      nightlyPrice: listing['Nightly Prices'] || [100, 95, 90, 85, 80, 75, 70],
+      numberSelectedNights: [1, 2, 3, 4, 5, 6, 7],
+      overallSiteMarkup: listing['Overall Site Markup'] || 5,
+      slope: 0,
+      startingNightlyPrice: listing['Starting Nightly Price'] || 100,
+      unitMarkup: listing['Unit Markup'] || 10,
+      unusedNights: [],
+      unusedNightsDiscount: [],
+      weeklyPriceAdjust: 0
+    },
+    minimumNights: listing['Minimum Nights'] || 2,
+    maximumNights: listing['Maximum Nights'] || 7,
+    daysAvailable: listing['Days Available Numbers'] || [0, 1, 2, 3, 4, 5, 6],
+    daysNotAvailable: []
+  } : null;
+
+  // Initialize with Monday-Friday (1-5) as default
+  useEffect(() => {
+    if (selectedDayObjects.length === 0) {
+      const defaultDays = DEFAULTS.DEFAULT_SELECTED_DAYS.map(dayNum => createDay(dayNum, true));
+      setSelectedDayObjects(defaultDays);
+    }
+  }, []);
+
   const scheduleValidation = listing ? validateScheduleSelection(selectedDays, listing) : null;
   const nightsSelected = calculateNightsFromDays(selectedDays);
   const { checkInName, checkOutName } = calculateCheckInOutDays(selectedDays);
@@ -191,15 +242,12 @@ export default function ViewSplitLeasePage() {
   // EVENT HANDLERS
   // ============================================================================
 
-  const handleDayToggle = (dayIndex) => {
-    const newSelection = selectedDays.includes(dayIndex)
-      ? selectedDays.filter(d => d !== dayIndex)
-      : [...selectedDays, dayIndex].sort((a, b) => a - b);
-
-    setSelectedDays(newSelection);
+  const handleScheduleChange = (newSelectedDays) => {
+    setSelectedDayObjects(newSelectedDays);
 
     // Check if non-contiguous (triggers tutorial)
-    if (newSelection.length > 0 && !isContiguousSelection(newSelection)) {
+    const dayNumbers = newSelectedDays.map(d => d.dayOfWeek);
+    if (dayNumbers.length > 0 && !isContiguousSelection(dayNumbers)) {
       setShowTutorialModal(true);
     }
   };
@@ -722,79 +770,18 @@ export default function ViewSplitLeasePage() {
             </label>
           </div>
 
-          {/* Weekly Schedule */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{
-              display: 'block',
-              fontWeight: '600',
-              marginBottom: '0.5rem',
-              fontSize: '0.875rem'
-            }}>
-              Weekly Schedule
-            </label>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(7, 1fr)',
-              gap: '0.5rem',
-              marginBottom: '0.75rem'
-            }}>
-              {DAY_ABBREVIATIONS.map((day, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleDayToggle(index)}
-                  style={{
-                    padding: '0.75rem 0.5rem',
-                    border: `2px solid ${selectedDays.includes(index) ? COLORS.PRIMARY : COLORS.BG_LIGHT}`,
-                    borderRadius: '8px',
-                    background: selectedDays.includes(index) ? COLORS.PRIMARY : 'white',
-                    color: selectedDays.includes(index) ? 'white' : COLORS.TEXT_DARK,
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s'
-                  }}
-                >
-                  {day}
-                </button>
-              ))}
+          {/* Weekly Schedule Selector */}
+          {scheduleSelectorListing && (
+            <div style={{ marginBottom: '1.5rem' }}>
+              <ListingScheduleSelector
+                listing={scheduleSelectorListing}
+                initialSelectedDays={selectedDayObjects}
+                limitToFiveNights={false}
+                onSelectionChange={handleScheduleChange}
+                showPricing={false}
+              />
             </div>
-
-            {/* Schedule Feedback */}
-            {selectedDays.length > 0 && (
-              <div style={{ fontSize: '0.875rem', color: COLORS.TEXT_LIGHT, marginTop: '0.5rem' }}>
-                <div>{selectedDays.length} days, {nightsSelected} nights Selected</div>
-                {checkInName && checkOutName && (
-                  <div>
-                    Check-in day is {checkInName}, Check-out day is {checkOutName}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Error Message */}
-            {scheduleValidation && !scheduleValidation.valid && (
-              <div style={{
-                marginTop: '0.75rem',
-                padding: '0.75rem',
-                background: '#FEE2E2',
-                color: COLORS.ERROR,
-                borderRadius: '8px',
-                fontSize: '0.875rem'
-              }}>
-                {scheduleValidation.errors[0]}
-              </div>
-            )}
-
-            {/* Host Preference */}
-            {listing['Minimum Nights'] && listing['Maximum Nights'] && (
-              <div style={{
-                marginTop: '0.75rem',
-                fontSize: '0.875rem',
-                color: COLORS.ERROR
-              }}>
-                Host's ideal # of nights / week: {listing['Minimum Nights']} - {listing['Maximum Nights']}
-              </div>
-            )}
-          </div>
+          )}
 
           {/* Reservation Span */}
           <div style={{ marginBottom: '1.5rem' }}>

@@ -200,7 +200,8 @@ export default defineConfig({
         'list-with-us': resolve(__dirname, 'public/list-with-us.html'),
         'success-stories': resolve(__dirname, 'public/success-stories.html'),
         'why-split-lease': resolve(__dirname, 'public/why-split-lease.html'),
-        'guest-proposals': resolve(__dirname, 'public/guest-proposals.html')
+        'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
+        'schedule-selector-demo': resolve(__dirname, 'public/schedule-selector-demo.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

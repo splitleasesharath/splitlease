@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Listing Schedule Selector - Demo</title>
+  <link rel="stylesheet" href="/src/styles/listing-schedule-selector.css">
+</head>
+<body>
+  <div style="padding: 40px; max-width: 1200px; margin: 0 auto;">
+    <h1 style="text-align: center; margin-bottom: 40px;">Listing Schedule Selector Demo</h1>
+
+    <!-- Island mount point -->
+    <div id="schedule-selector-root"></div>
+  </div>
+
+  <!-- Island hydration script -->
+  <script type="module">
+    import { createRoot } from 'react-dom/client';
+    import { createElement } from 'react';
+    import ListingScheduleSelector from '/src/islands/shared/ListingScheduleSelector.jsx';
+
+    // Mock listing data for demo
+    const mockListing = {
+      id: 'demo-listing-1',
+      firstAvailable: new Date('2025-01-01'),
+      lastAvailable: new Date('2025-12-31'),
+      numberOfNightsAvailable: 7,
+      active: true,
+      approved: true,
+      datesBlocked: [],
+      complete: true,
+      confirmedAvailability: true,
+      checkInTime: '3:00 pm',
+      checkOutTime: '11:00 am',
+      nightsAvailableList: [],
+      nightsAvailableNumbers: [0, 1, 2, 3, 4, 5, 6],
+      nightsNotAvailable: [],
+      pricingList: {
+        combinedMarkup: 15,
+        fullTimeDiscount: 10,
+        hostCompensation: [],
+        markupAndDiscountMultiplier: [1.0, 0.95, 0.9, 0.85, 0.8],
+        nightlyPrice: [100, 95, 90, 85, 80, 75, 70],
+        numberSelectedNights: [1, 2, 3, 4, 5, 6, 7],
+        overallSiteMarkup: 5,
+        slope: 0,
+        startingNightlyPrice: 100,
+        unitMarkup: 10,
+        unusedNights: [],
+        unusedNightsDiscount: [],
+        weeklyPriceAdjust: 0
+      },
+      minimumNights: 2,
+      maximumNights: 7,
+      daysAvailable: [0, 1, 2, 3, 4, 5, 6],
+      daysNotAvailable: []
+    };
+
+    // Initialize selected days (Monday-Friday as mentioned in git status)
+    const initialSelectedDays = [
+      {
+        id: 'day-1',
+        name: 'Monday',
+        dayOfWeek: 1,
+        singleLetter: 'M',
+        first3Letters: 'Mon',
+        bubbleNumber: 1,
+        bubbleNumberText: '1',
+        nextDay: 2,
+        previousNight: 0,
+        associatedNight: 1,
+        isAvailable: true
+      },
+      {
+        id: 'day-2',
+        name: 'Tuesday',
+        dayOfWeek: 2,
+        singleLetter: 'T',
+        first3Letters: 'Tue',
+        bubbleNumber: 2,
+        bubbleNumberText: '2',
+        nextDay: 3,
+        previousNight: 1,
+        associatedNight: 2,
+        isAvailable: true
+      },
+      {
+        id: 'day-3',
+        name: 'Wednesday',
+        dayOfWeek: 3,
+        singleLetter: 'W',
+        first3Letters: 'Wed',
+        bubbleNumber: 3,
+        bubbleNumberText: '3',
+        nextDay: 4,
+        previousNight: 2,
+        associatedNight: 3,
+        isAvailable: true
+      },
+      {
+        id: 'day-4',
+        name: 'Thursday',
+        dayOfWeek: 4,
+        singleLetter: 'T',
+        first3Letters: 'Thu',
+        bubbleNumber: 4,
+        bubbleNumberText: '4',
+        nextDay: 5,
+        previousNight: 3,
+        associatedNight: 4,
+        isAvailable: true
+      },
+      {
+        id: 'day-5',
+        name: 'Friday',
+        dayOfWeek: 5,
+        singleLetter: 'F',
+        first3Letters: 'Fri',
+        bubbleNumber: 5,
+        bubbleNumberText: '5',
+        nextDay: 6,
+        previousNight: 4,
+        associatedNight: 5,
+        isAvailable: true
+      }
+    ];
+
+    const handleScheduleSave = (selectedDays) => {
+      console.log('Schedule saved:', selectedDays);
+      alert(`Schedule saved! Selected days: ${selectedDays.map(d => d.name).join(', ')}`);
+    };
+
+    const root = document.getElementById('schedule-selector-root');
+    const reactRoot = createRoot(root);
+
+    reactRoot.render(
+      createElement(ListingScheduleSelector, {
+        listing: mockListing,
+        initialSelectedDays: initialSelectedDays,
+        limitToFiveNights: false,
+        onScheduleSave: handleScheduleSave,
+        showPricing: true
+      })
+    );
+  </script>
+</body>
+</html>
