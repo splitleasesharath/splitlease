@@ -174,6 +174,42 @@ const DAYS_OF_WEEK = [
 // ============================================================================
 
 /**
+ * Get initial selection from URL parameter or default to Monday-Friday
+ * URL parameter format: ?days-selected=2,3,4,5,6 (1-based, where 1=Sunday)
+ * Internal format: [1,2,3,4,5] (0-based, where 0=Sunday)
+ */
+const getInitialSelectionFromUrl = () => {
+  // Try to get from URL parameter first
+  const urlParams = new URLSearchParams(window.location.search);
+  const daysParam = urlParams.get('days-selected');
+
+  if (daysParam) {
+    try {
+      // Parse 1-based indices from URL and convert to 0-based
+      const oneBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+      const zeroBased = oneBased
+        .filter(d => d >= 1 && d <= 7) // Validate 1-based range
+        .map(d => d - 1); // Convert to 0-based (1→0, 2→1, etc.)
+
+      if (zeroBased.length > 0) {
+        console.log('📅 SearchScheduleSelector: Loaded selection from URL:', {
+          urlParam: daysParam,
+          oneBased,
+          zeroBased
+        });
+        return zeroBased;
+      }
+    } catch (e) {
+      console.warn('⚠️ Failed to parse days-selected URL parameter:', e);
+    }
+  }
+
+  // Default to Monday-Friday (0-based: [1,2,3,4,5])
+  console.log('📅 SearchScheduleSelector: Using default Monday-Friday selection');
+  return [1, 2, 3, 4, 5];
+};
+
+/**
  * SearchScheduleSelector Component
  *
  * A weekly schedule selector for split-lease arrangements.
@@ -185,7 +221,7 @@ const DAYS_OF_WEEK = [
  * @param {string} [props.className] - Custom styling class name
  * @param {number} [props.minDays=2] - Minimum number of days that can be selected
  * @param {boolean} [props.requireContiguous=true] - Whether to require contiguous day selection
- * @param {number[]} [props.initialSelection=[]] - Initial selected days (array of day indices 0-6)
+ * @param {number[]} [props.initialSelection] - Initial selected days (array of day indices 0-6). If not provided, reads from URL or defaults to Monday-Friday
  *
  * @example
  * ```jsx
@@ -201,9 +237,17 @@ export default function SearchScheduleSelector({
   className,
   minDays = 2,
   requireContiguous = true,
-  initialSelection = [],
+  initialSelection,
 }) {
-  const [selectedDays, setSelectedDays] = useState(new Set(initialSelection));
+  // Use initialSelection if provided, otherwise get from URL or use default
+  const getInitialState = () => {
+    if (initialSelection !== undefined && initialSelection !== null) {
+      return new Set(initialSelection);
+    }
+    return new Set(getInitialSelectionFromUrl());
+  };
+
+  const [selectedDays, setSelectedDays] = useState(getInitialState());
   const [isDragging, setIsDragging] = useState(false);
   const [mouseDownIndex, setMouseDownIndex] = useState(null);
   const [showError, setShowError] = useState(false);
@@ -517,6 +561,38 @@ export default function SearchScheduleSelector({
       setCheckoutDay(DAYS_OF_WEEK[sortedDays[sortedDays.length - 1]].fullName);
     }
   }, [isContiguous]);
+
+  /**
+   * Update URL parameter when selection changes
+   * Format: ?days-selected=2,3,4,5,6 (1-based, where 1=Sunday)
+   */
+  useEffect(() => {
+    const selectedDaysArray = Array.from(selectedDays).sort((a, b) => a - b);
+
+    if (selectedDaysArray.length > 0) {
+      // Convert 0-based indices to 1-based for URL (0→1, 1→2, etc.)
+      const oneBased = selectedDaysArray.map(idx => idx + 1);
+      const daysParam = oneBased.join(',');
+
+      // Update URL without reloading the page
+      const url = new URL(window.location);
+      url.searchParams.set('days-selected', daysParam);
+      window.history.replaceState({}, '', url);
+
+      console.log('📅 SearchScheduleSelector: Updated URL parameter:', {
+        zeroBased: selectedDaysArray,
+        oneBased,
+        urlParam: daysParam
+      });
+    } else {
+      // Remove parameter if no days selected
+      const url = new URL(window.location);
+      url.searchParams.delete('days-selected');
+      window.history.replaceState({}, '', url);
+
+      console.log('📅 SearchScheduleSelector: Removed URL parameter (no days selected)');
+    }
+  }, [selectedDays]);
 
   /**
    * Update parent component on selection change

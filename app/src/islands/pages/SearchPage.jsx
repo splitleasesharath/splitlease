@@ -642,6 +642,7 @@ export default function SearchPage() {
   }, []);
 
   // Sync filter state to URL parameters
+  // NOTE: selectedDays is managed by SearchScheduleSelector component internally
   useEffect(() => {
     // Skip URL update on initial mount (URL already parsed)
     if (isInitialMount.current) {
@@ -649,9 +650,8 @@ export default function SearchPage() {
       return;
     }
 
-    // Update URL with current filter state
+    // Update URL with current filter state (excluding selectedDays which is managed by component)
     const filters = {
-      selectedDays,
       selectedBorough,
       weekPattern,
       priceTier,
@@ -660,7 +660,7 @@ export default function SearchPage() {
     };
 
     updateUrlParams(filters, false); // false = push new history entry
-  }, [selectedDays, selectedBorough, weekPattern, priceTier, sortBy, selectedNeighborhoods]);
+  }, [selectedBorough, weekPattern, priceTier, sortBy, selectedNeighborhoods]);
 
   // Watch for browser back/forward navigation
   useEffect(() => {
@@ -1230,8 +1230,8 @@ export default function SearchPage() {
         const dayIndices = days.map(d => d.index);
         setSelectedDays(dayIndices);
       },
-      onError: (error) => console.error('SearchScheduleSelector error:', error),
-      initialSelection: selectedDays
+      onError: (error) => console.error('SearchScheduleSelector error:', error)
+      // NOTE: Not passing initialSelection - component will read from URL internally
     };
 
     if (mountPointDesktop) {

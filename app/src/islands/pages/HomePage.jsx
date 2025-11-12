@@ -474,8 +474,16 @@ export default function HomePage() {
   }, []);
 
   const handleExploreRentals = () => {
-    // Navigate to search page without day selection
-    window.location.href = '/search.html';
+    // Navigate to search page with current day selection
+    if (selectedDays.length > 0) {
+      // Convert 0-based indices to 1-based for URL (0→1, 1→2, etc.)
+      const oneBased = selectedDays.map(idx => idx + 1);
+      const daysParam = oneBased.join(',');
+      window.location.href = `/search.html?days-selected=${daysParam}`;
+    } else {
+      // No selection, navigate without parameter
+      window.location.href = '/search.html';
+    }
   };
 
   const handleOpenMarketResearch = () => {
