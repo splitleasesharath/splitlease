@@ -31,6 +31,24 @@ const GoogleMap = forwardRef(({
   onMarkerClick = null,    // Callback when marker clicked: (listing) => void
   selectedBorough = null   // Current borough filter for map centering
 }, ref) => {
+  console.log('🗺️ GoogleMap: Component rendered with props:', {
+    listingsCount: listings.length,
+    filteredListingsCount: filteredListings.length,
+    selectedBorough,
+    listingsSample: listings.slice(0, 2).map(l => ({
+      id: l.id,
+      title: l.title,
+      coordinates: l.coordinates,
+      hasValidCoords: !!(l.coordinates?.lat && l.coordinates?.lng)
+    })),
+    filteredListingsSample: filteredListings.slice(0, 2).map(l => ({
+      id: l.id,
+      title: l.title,
+      coordinates: l.coordinates,
+      hasValidCoords: !!(l.coordinates?.lat && l.coordinates?.lng)
+    }))
+  });
+
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
   const markersRef = useRef([]);
@@ -198,11 +216,43 @@ const GoogleMap = forwardRef(({
 
       // Create markers for filtered listings (purple) - these are primary
       if (filteredListings && filteredListings.length > 0) {
-        if (import.meta.env.DEV) {
-          console.log('🗺️ GoogleMap: Creating purple markers for filtered listings:', filteredListings.length);
-        }
-        filteredListings.forEach(listing => {
+        console.log('🗺️ GoogleMap: Starting purple marker creation for filtered listings:', filteredListings.length);
+        console.log('🗺️ GoogleMap: First 3 filtered listings:', filteredListings.slice(0, 3).map(l => ({
+          id: l.id,
+          title: l.title,
+          coordinates: l.coordinates,
+          hasCoordinates: !!(l.coordinates?.lat && l.coordinates?.lng)
+        })));
+
+        let purpleMarkersCreated = 0;
+        let skippedNoCoordinates = 0;
+        let skippedInvalidCoordinates = [];
+
+        filteredListings.forEach((listing, index) => {
+          console.log(`🗺️ GoogleMap: [${index + 1}/${filteredListings.length}] Processing filtered listing:`, {
+            id: listing.id,
+            title: listing.title,
+            coordinates: listing.coordinates,
+            hasCoordinatesObject: !!listing.coordinates,
+            hasLat: listing.coordinates?.lat !== undefined,
+            hasLng: listing.coordinates?.lng !== undefined,
+            lat: listing.coordinates?.lat,
+            lng: listing.coordinates?.lng
+          });
+
           if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
+            console.error(`❌ GoogleMap: Skipping filtered listing ${listing.id} - Missing or invalid coordinates:`, {
+              coordinates: listing.coordinates,
+              hasCoordinates: !!listing.coordinates,
+              lat: listing.coordinates?.lat,
+              lng: listing.coordinates?.lng
+            });
+            skippedNoCoordinates++;
+            skippedInvalidCoordinates.push({
+              id: listing.id,
+              title: listing.title,
+              coordinates: listing.coordinates
+            });
             return;
           }
 
@@ -210,6 +260,12 @@ const GoogleMap = forwardRef(({
             lat: listing.coordinates.lat,
             lng: listing.coordinates.lng
           };
+
+          console.log(`✅ GoogleMap: Creating purple marker for listing ${listing.id}:`, {
+            position,
+            price: listing.price?.starting || listing['Starting nightly price'],
+            title: listing.title
+          });
 
           // Create purple marker for filtered listings
           const marker = createPriceMarker(
@@ -223,21 +279,70 @@ const GoogleMap = forwardRef(({
           markersRef.current.push(marker);
           bounds.extend(position);
           hasValidMarkers = true;
+          purpleMarkersCreated++;
+
+          console.log(`✅ GoogleMap: Purple marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
         });
+
+        console.log('📊 GoogleMap: Purple marker creation summary:', {
+          totalFiltered: filteredListings.length,
+          markersCreated: purpleMarkersCreated,
+          skippedNoCoordinates,
+          skippedInvalidCoordinates: skippedInvalidCoordinates.length,
+          invalidListings: skippedInvalidCoordinates
+        });
+      } else {
+        console.log('⚠️ GoogleMap: No filtered listings to create purple markers for');
       }
 
       // Create markers for all listings (green) - background context
       if (showAllListings && listings && listings.length > 0) {
-        if (import.meta.env.DEV) {
-          console.log('🗺️ GoogleMap: Creating green markers for all listings (background layer):', listings.length);
-        }
+        console.log('🗺️ GoogleMap: Starting green marker creation for all listings (background layer):', listings.length);
+        console.log('🗺️ GoogleMap: First 3 all listings:', listings.slice(0, 3).map(l => ({
+          id: l.id,
+          title: l.title,
+          coordinates: l.coordinates,
+          hasCoordinates: !!(l.coordinates?.lat && l.coordinates?.lng)
+        })));
+
         let greenMarkersCreated = 0;
-        listings.forEach(listing => {
+        let skippedAlreadyFiltered = 0;
+        let skippedNoCoordinates = 0;
+        let skippedInvalidCoordinates = [];
+
+        listings.forEach((listing, index) => {
           // Skip if already shown as filtered listing
           const isFiltered = filteredListings?.some(fl => fl.id === listing.id);
-          if (isFiltered) return;
+          if (isFiltered) {
+            console.log(`⏭️ GoogleMap: [${index + 1}/${listings.length}] Skipping ${listing.id} - Already shown as purple marker`);
+            skippedAlreadyFiltered++;
+            return;
+          }
+
+          console.log(`🗺️ GoogleMap: [${index + 1}/${listings.length}] Processing all listing:`, {
+            id: listing.id,
+            title: listing.title,
+            coordinates: listing.coordinates,
+            hasCoordinatesObject: !!listing.coordinates,
+            hasLat: listing.coordinates?.lat !== undefined,
+            hasLng: listing.coordinates?.lng !== undefined,
+            lat: listing.coordinates?.lat,
+            lng: listing.coordinates?.lng
+          });
 
           if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
+            console.error(`❌ GoogleMap: Skipping all listing ${listing.id} - Missing or invalid coordinates:`, {
+              coordinates: listing.coordinates,
+              hasCoordinates: !!listing.coordinates,
+              lat: listing.coordinates?.lat,
+              lng: listing.coordinates?.lng
+            });
+            skippedNoCoordinates++;
+            skippedInvalidCoordinates.push({
+              id: listing.id,
+              title: listing.title,
+              coordinates: listing.coordinates
+            });
             return;
           }
 
@@ -245,6 +350,12 @@ const GoogleMap = forwardRef(({
             lat: listing.coordinates.lat,
             lng: listing.coordinates.lng
           };
+
+          console.log(`✅ GoogleMap: Creating green marker for listing ${listing.id}:`, {
+            position,
+            price: listing.price?.starting || listing['Starting nightly price'],
+            title: listing.title
+          });
 
           // Create green marker for all listings
           const marker = createPriceMarker(
@@ -259,11 +370,20 @@ const GoogleMap = forwardRef(({
           bounds.extend(position);
           hasValidMarkers = true;
           greenMarkersCreated++;
+
+          console.log(`✅ GoogleMap: Green marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
         });
 
-        if (import.meta.env.DEV) {
-          console.log(`✅ GoogleMap: Created ${greenMarkersCreated} green markers (skipped ${listings.length - greenMarkersCreated} already shown as purple)`);
-        }
+        console.log('📊 GoogleMap: Green marker creation summary:', {
+          totalAllListings: listings.length,
+          markersCreated: greenMarkersCreated,
+          skippedAlreadyFiltered,
+          skippedNoCoordinates,
+          skippedInvalidCoordinates: skippedInvalidCoordinates.length,
+          invalidListings: skippedInvalidCoordinates
+        });
+      } else {
+        console.log('⚠️ GoogleMap: No all listings to create green markers for (showAllListings:', showAllListings, ', listings.length:', listings?.length, ')');
       }
 
       // Fit map to show all markers

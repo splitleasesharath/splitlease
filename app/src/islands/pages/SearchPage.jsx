@@ -837,6 +837,35 @@ export default function SearchPage() {
 
       if (error) throw error;
 
+      console.log('📊 SearchPage: Supabase query returned', data.length, 'listings');
+      console.log('📍 SearchPage: First 3 raw listings from DB:', data.slice(0, 3).map(l => ({
+        id: l._id,
+        name: l.Name,
+        lat: l.listing_address_latitude,
+        lng: l.listing_address_longitude,
+        hasLat: l.listing_address_latitude !== undefined && l.listing_address_latitude !== null,
+        hasLng: l.listing_address_longitude !== undefined && l.listing_address_longitude !== null
+      })));
+
+      // Check coordinate coverage
+      const listingsWithCoords = data.filter(l => l.listing_address_latitude && l.listing_address_longitude);
+      const listingsWithoutCoords = data.filter(l => !l.listing_address_latitude || !l.listing_address_longitude);
+      console.log('📍 SearchPage: Coordinate coverage:', {
+        total: data.length,
+        withCoordinates: listingsWithCoords.length,
+        withoutCoordinates: listingsWithoutCoords.length,
+        percentageWithCoords: ((listingsWithCoords.length / data.length) * 100).toFixed(1) + '%'
+      });
+
+      if (listingsWithoutCoords.length > 0) {
+        console.error('❌ SearchPage: Listings WITHOUT coordinates:', listingsWithoutCoords.map(l => ({
+          id: l._id,
+          name: l.Name,
+          lat: l.listing_address_latitude,
+          lng: l.listing_address_longitude
+        })));
+      }
+
       // Batch fetch photos for all listings
       const allPhotoIds = new Set();
       data.forEach(listing => {
@@ -885,9 +914,17 @@ export default function SearchPage() {
       });
 
       // Transform and filter data
+      console.log('🔄 SearchPage: Starting transformation of', data.length, 'listings');
       const transformedListings = data.map(listing =>
         transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
       );
+      console.log('✅ SearchPage: Transformation complete. Transformed', transformedListings.length, 'listings');
+      console.log('📍 SearchPage: First 3 transformed listings:', transformedListings.slice(0, 3).map(l => ({
+        id: l.id,
+        title: l.title,
+        coordinates: l.coordinates,
+        hasValidCoords: !!(l.coordinates?.lat && l.coordinates?.lng)
+      })));
 
       // Apply day filter client-side
       let filteredListings = transformedListings;
@@ -962,8 +999,20 @@ export default function SearchPage() {
         }
       }
 
+      console.log('📊 SearchPage: Final filtered listings being set to state:', {
+        count: filteredListings.length,
+        firstThree: filteredListings.slice(0, 3).map(l => ({
+          id: l.id,
+          title: l.title,
+          coordinates: l.coordinates,
+          hasValidCoords: !!(l.coordinates?.lat && l.coordinates?.lng)
+        }))
+      });
+
       setAllListings(filteredListings);
       setLoadedCount(0);
+
+      console.log('✅ SearchPage: State updated with', filteredListings.length, 'filtered listings');
     } catch (err) {
       // Log technical details for debugging
       console.error('Failed to fetch listings:', {
@@ -989,6 +1038,17 @@ export default function SearchPage() {
 
   // Transform raw listing data
   const transformListing = (dbListing, images, hostData) => {
+    console.log('🔄 SearchPage: Transforming listing:', {
+      id: dbListing._id,
+      name: dbListing.Name,
+      rawLat: dbListing.listing_address_latitude,
+      rawLng: dbListing.listing_address_longitude,
+      hasLat: dbListing.listing_address_latitude !== undefined && dbListing.listing_address_latitude !== null,
+      hasLng: dbListing.listing_address_longitude !== undefined && dbListing.listing_address_longitude !== null,
+      latType: typeof dbListing.listing_address_latitude,
+      lngType: typeof dbListing.listing_address_longitude
+    });
+
     // Resolve human-readable names from database IDs
     const neighborhoodName = getNeighborhoodName(dbListing['Location - Hood']);
     const boroughName = getBoroughName(dbListing['Location - Borough']);
@@ -1000,16 +1060,47 @@ export default function SearchPage() {
     if (boroughName) locationParts.push(boroughName);
     const location = locationParts.join(', ') || 'New York, NY';
 
+    // Extract coordinates with extensive logging
+    const lat = dbListing.listing_address_latitude || 40.7580;
+    const lng = dbListing.listing_address_longitude || -73.9855;
+    const usedDefault = !dbListing.listing_address_latitude || !dbListing.listing_address_longitude;
+
+    if (usedDefault) {
+      console.error('❌ SearchPage: Missing coordinates for listing, using default:', {
+        id: dbListing._id,
+        name: dbListing.Name,
+        rawLat: dbListing.listing_address_latitude,
+        rawLng: dbListing.listing_address_longitude,
+        defaultLat: 40.7580,
+        defaultLng: -73.9855
+      });
+    } else {
+      console.log('✅ SearchPage: Valid coordinates found:', {
+        id: dbListing._id,
+        name: dbListing.Name,
+        lat,
+        lng
+      });
+    }
+
+    const coordinates = {
+      lat,
+      lng
+    };
+
+    console.log('📍 SearchPage: Final coordinates for listing:', {
+      id: dbListing._id,
+      coordinates,
+      usedDefault
+    });
+
     return {
       id: dbListing._id,
       title: dbListing.Name || 'Unnamed Listing',
       location: location,
       neighborhood: neighborhoodName || '',
       borough: boroughName || '',
-      coordinates: {
-        lat: dbListing.listing_address_latitude || 40.7580,
-        lng: dbListing.listing_address_longitude || -73.9855
-      },
+      coordinates,
       price: {
         starting: dbListing['Standarized Minimum Nightly Price (Filter)'] || 0,
         full: dbListing['💰Nightly Host Rate for 7 nights'] || 0
