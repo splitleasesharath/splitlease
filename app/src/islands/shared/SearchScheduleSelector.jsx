@@ -27,7 +27,7 @@ const SelectorRow = styled.div`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 0 0 12px 0;
+  margin: 0 0 8.4px 0;
 `;
 
 const CalendarIcon = styled.div`
@@ -118,7 +118,7 @@ const DayCell = styled(motion.button)`
 
 const InfoContainer = styled.div`
   min-height: 24px;
-  max-width: 320px;
+  max-width: 450px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -129,7 +129,7 @@ const InfoContainer = styled.div`
 
 const InfoText = styled.p`
   margin: 0;
-  font-size: 16px;
+  font-size: 14.7px;
   font-weight: 400;
   color: #000000;
   text-align: center;
