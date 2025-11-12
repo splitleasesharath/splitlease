@@ -251,7 +251,7 @@
     background: rgba(255, 255, 255, 0.2);
 }
 
-/* Hamburger Menu */
+/* Hamburger Menu - Hidden on desktop, shown on mobile */
 .hamburger-menu {
     display: none;
     flex-direction: column;
@@ -281,4 +281,164 @@
 
 .hamburger-menu.active .hamburger-line:nth-child(3) {
     transform: rotate(-45deg) translate(5px, -5px);
+}
+
+/* Show hamburger menu and hide desktop navigation on mobile */
+@media (max-width: 768px) {
+    .hamburger-menu {
+        display: flex;
+    }
+
+    .nav-center {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #31135D;
+        flex-direction: column;
+        gap: 0;
+        margin: 0;
+        padding: 1rem 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .nav-center.mobile-active {
+        display: flex;
+    }
+
+    .nav-right {
+        display: none;
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: #31135D;
+        flex-direction: column;
+        gap: 1rem;
+        margin: 0;
+        padding: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .nav-right.mobile-active {
+        display: flex;
+    }
+
+    .mobile-text {
+        display: inline;
+    }
+
+    .desktop-text {
+        display: none;
+    }
+}
+
+/* ========================================
+   Faux Header - Minimal header for search page
+   ======================================== */
+
+.faux-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #31135D;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 9999;
+  transition: all 0.3s ease;
+}
+
+.faux-header-container {
+  max-width: 95vw;
+  margin: 0 auto;
+  padding: 1rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.faux-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 0.75rem;
+}
+
+.faux-logo .logo-image {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.faux-logo .logo-text {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: white;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.faux-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.faux-btn {
+  padding: 0.625rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.faux-btn.explore-btn {
+  background: white;
+  color: #31135D;
+}
+
+.faux-btn.explore-btn:hover {
+  background: #f0f0f0;
+  transform: translateY(-1px);
+}
+
+.faux-btn.signin-btn {
+  background: transparent;
+  color: white;
+  border: 2px solid white;
+}
+
+.faux-btn.signin-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* Responsive adjustments for faux header */
+@media (max-width: 768px) {
+  .faux-header-container {
+    padding: 0.875rem 1rem;
+  }
+
+  .faux-logo .logo-text {
+    display: none;
+  }
+
+  .faux-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+  }
+
+  .faux-header-actions {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .faux-btn.explore-btn {
+    display: none; /* Hide on very small screens */
+  }
 }
