@@ -1111,30 +1111,38 @@ export default function SearchPage() {
     setSelectedListing(null);
   };
 
-  // Mount SearchScheduleSelector component at top of listings column
+  // Mount SearchScheduleSelector component in both mobile and desktop locations
   useEffect(() => {
-    const mountPoint = document.getElementById('schedule-selector-mount-point');
+    const mountPointDesktop = document.getElementById('schedule-selector-mount-point');
+    const mountPointMobile = document.getElementById('schedule-selector-mount-point-mobile');
+    const roots = [];
 
-    if (mountPoint) {
-      const root = createRoot(mountPoint);
+    const selectorProps = {
+      onSelectionChange: (days) => {
+        console.log('Selected days:', days);
+        // Convert day objects to indices
+        const dayIndices = days.map(d => d.index);
+        setSelectedDays(dayIndices);
+      },
+      onError: (error) => console.error('SearchScheduleSelector error:', error),
+      initialSelection: selectedDays
+    };
 
-      root.render(
-        <SearchScheduleSelector
-          onSelectionChange={(days) => {
-            console.log('Selected days:', days);
-            // Convert day objects to indices
-            const dayIndices = days.map(d => d.index);
-            setSelectedDays(dayIndices);
-          }}
-          onError={(error) => console.error('SearchScheduleSelector error:', error)}
-          initialSelection={selectedDays}
-        />
-      );
-
-      return () => {
-        root.unmount();
-      };
+    if (mountPointDesktop) {
+      const rootDesktop = createRoot(mountPointDesktop);
+      rootDesktop.render(<SearchScheduleSelector {...selectorProps} />);
+      roots.push(rootDesktop);
     }
+
+    if (mountPointMobile) {
+      const rootMobile = createRoot(mountPointMobile);
+      rootMobile.render(<SearchScheduleSelector {...selectorProps} />);
+      roots.push(rootMobile);
+    }
+
+    return () => {
+      roots.forEach(root => root.unmount());
+    };
   }, []);
 
   // Re-render SearchScheduleSelector when selectedDays changes (e.g., from URL)
@@ -1153,11 +1161,34 @@ export default function SearchPage() {
       <main className="two-column-layout">
         {/* LEFT COLUMN: Listings with filters */}
         <section className="listings-column">
+          {/* Mobile Filter Bar - Sticky at top on mobile */}
+          <MobileFilterBar
+            onFilterClick={() => setFilterPanelActive(!filterPanelActive)}
+            onMapClick={() => setMapSectionActive(!mapSectionActive)}
+          />
+
+          {/* Mobile Schedule Selector - Always visible on mobile */}
+          <div className="mobile-schedule-selector">
+            <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
+              {/* SearchScheduleSelector will be mounted here on mobile */}
+            </div>
+          </div>
+
           {/* All filters in single horizontal flexbox container */}
-          <div className="inline-filters">
-            {/* Schedule Selector - First item on left */}
+          <div className={`inline-filters ${filterPanelActive ? 'active' : ''}`}>
+            {/* Close button for mobile filter panel */}
+            {filterPanelActive && (
+              <button
+                className="mobile-filter-close-btn"
+                onClick={() => setFilterPanelActive(false)}
+              >
+                ✕ Close Filters
+              </button>
+            )}
+
+            {/* Schedule Selector - First item on left (desktop only) */}
             <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
-              {/* SearchScheduleSelector will be mounted here */}
+              {/* SearchScheduleSelector will be mounted here on desktop */}
             </div>
 
             {/* Neighborhood Multi-Select - Second item, beside schedule selector */}
@@ -1347,8 +1378,8 @@ export default function SearchPage() {
                 src="/assets/images/split-lease-purple-circle.png"
                 alt="Split Lease Logo"
                 className="logo-icon"
-                width="28"
-                height="28"
+                width="36"
+                height="36"
               />
               <span className="logo-text">Split Lease</span>
             </a>

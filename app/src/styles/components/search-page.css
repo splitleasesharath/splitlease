@@ -106,6 +106,13 @@
   min-width: 240px;
 }
 
+/* Desktop: Increase neighborhood width by 40% to push borough to next line */
+@media (min-width: 769px) {
+  .inline-filters .neighborhoods-group {
+    min-width: 336px; /* 240px * 1.4 = 336px */
+  }
+}
+
 .inline-filters .neighborhood-search {
   width: 100%;
   padding: 0.5rem 0.75rem;
@@ -287,11 +294,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.5rem 1.5rem;
+  padding: 0.75rem 1.5rem;
   background: white;
   border-bottom: 1px solid #e5e7eb;
   z-index: 20;
   position: relative;
+  height: 60px;
 }
 
 .map-logo {
@@ -310,8 +318,11 @@
 
 .map-logo .logo-icon {
   flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  aspect-ratio: 1 / 1;
   border-radius: 50%;
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .map-logo .logo-text {
@@ -390,7 +401,7 @@
   flex: 1;
   position: relative;
   width: 100%;
-  height: 100%;
+  height: calc(100vh - 60px);
   background: #f3f4f6;
   overflow: hidden;
 }
@@ -400,7 +411,7 @@
   height: 100%;
 }
 
-.map-column > div {
+.map-column > .google-map-container {
   flex: 1;
   height: 100% !important;
   width: 100% !important;
@@ -559,15 +570,137 @@
   }
 }
 
+/* Mobile Filter Bar - Sticky at top */
+.mobile-filter-bar {
+  display: none;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 0.75rem 1rem;
+  gap: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Mobile Schedule Selector - Hide on desktop */
+.mobile-schedule-selector {
+  display: none;
+}
+
+/* Mobile filter close button - Hide on desktop */
+.mobile-filter-close-btn {
+  display: none;
+}
+
+.filter-toggle-btn,
+.map-toggle-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-toggle-btn:hover,
+.map-toggle-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.filter-toggle-btn:active,
+.map-toggle-btn:active {
+  background: #f3f4f6;
+}
+
 @media (max-width: 768px) {
-  .inline-filters {
-    flex-direction: column;
-    gap: 0.5rem;
+  /* Show mobile filter bar */
+  .mobile-filter-bar {
+    display: flex;
   }
 
-  .inline-filters .filter-group {
+  /* Hide hamburger menu on mobile */
+  .hamburger-menu {
+    display: none;
+  }
+
+  /* Mobile schedule selector - always visible */
+  .mobile-schedule-selector {
+    display: block;
+    flex-shrink: 0;
+    padding: 0.75rem 1rem;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  /* Hide inline filters by default on mobile */
+  .inline-filters {
+    display: none;
+    flex-direction: column;
+    gap: 0.75rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: white;
+    z-index: 200;
+    padding: 1rem;
+    overflow-y: auto;
+  }
+
+  /* Show inline filters when filter panel is active */
+  .inline-filters.active {
+    display: flex;
+  }
+
+  /* Hide schedule selector in inline-filters on mobile (it's shown separately) */
+  .inline-filters .filter-group.schedule-selector-group {
+    display: none;
+  }
+
+  /* When filters are active, show all filter groups except schedule selector */
+  .inline-filters.active .filter-group:not(.schedule-selector-group) {
+    display: flex;
     width: 100%;
     min-width: 100%;
+  }
+
+  /* Mobile filter close button */
+  .mobile-filter-close-btn {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    background: #f9fafb;
+    border: none;
+    border-bottom: 1px solid #e5e7eb;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-align: center;
+    cursor: pointer;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    margin: -1rem -1rem 1rem -1rem;
+    color: #374151;
+    transition: background 0.2s;
+  }
+
+  .mobile-filter-close-btn:hover {
+    background: #f3f4f6;
+  }
+
+  .mobile-filter-close-btn:active {
+    background: #e5e7eb;
   }
 
   .map-header {
@@ -576,10 +709,6 @@
 
   .map-logo .logo-text {
     font-size: 1rem;
-  }
-
-  .hamburger-menu span {
-    display: none;
   }
 
   .deep-research-floating-btn {
