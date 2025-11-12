@@ -4,9 +4,40 @@
    Based on: input/search/css/styles.css lines 467-482
    ======================================== */
 
-/* Add padding to account for fixed faux header */
+/* Add padding to account for fixed production header */
 .search-page {
-  padding-top: 60px; /* Height of faux header */
+  padding-top: 110px; /* Height of production header with toggles */
+}
+
+/* Mobile Filter Bar - Hidden by default on desktop */
+.mobile-filter-bar {
+  display: none;
+  background: white;
+  padding: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+  gap: 1rem;
+  position: sticky;
+  top: 110px;
+  z-index: 999;
+}
+
+.filter-toggle-btn,
+.map-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.filter-toggle-btn:hover,
+.map-toggle-btn:hover {
+  background: #f5f5f5;
 }
 
 /* Filter Panel - PORTED FROM ORIGINAL (lines 177-256) */
@@ -16,20 +47,19 @@
   padding: 1.5rem 0;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
   position: sticky;
-  top: 60px; /* Stick below the faux header */
+  top: 110px; /* Stick below the production header */
   z-index: 100;
 }
 
 .filter-container {
-  max-width: 95vw;
-  width: 95vw;
+  max-width: 100%;
+  width: 100%;
   margin: 0 auto;
   padding: 0 2rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  overflow: visible; /* Changed from overflow-x: auto */
 }
 
 .filter-group {
@@ -75,17 +105,17 @@
 
 /* Horizontal Filter Row - All filters in single row */
 .horizontal-filters {
-  display: flex;
-  flex-wrap: wrap; /* Allow wrapping on smaller screens */
-  gap: 0.75rem;
-  align-items: flex-start;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  align-items: start;
+  width: 100%;
 }
 
 .horizontal-filters .filter-group.compact {
-  flex: 0 1 auto;
-  min-width: 160px;
-  max-width: 200px;
+  flex: none;
+  min-width: 0;
+  max-width: none;
 }
 
 .horizontal-filters .filter-group.compact .filter-select {
@@ -98,9 +128,8 @@
 }
 
 .neighborhoods-group {
-  flex: 1 1 220px;
-  min-width: 200px;
-  max-width: 300px;
+  grid-column: span 2; /* Take up 2 columns */
+  min-width: 0;
   position: relative; /* For absolute positioned dropdown */
 }
 
@@ -225,30 +254,17 @@
 }
 
 /* Mobile responsive for horizontal filters */
-@media (max-width: 1200px) {
-  .horizontal-filters .filter-group.compact {
-    flex: 1 1 calc(33.333% - 0.75rem);
-    min-width: 140px;
-  }
-
-  .neighborhoods-group {
-    flex: 1 1 calc(50% - 0.75rem);
-  }
-}
-
 @media (max-width: 1024px) {
   .filter-container {
     padding: 0 1.5rem;
   }
 
-  .horizontal-filters .filter-group.compact {
-    flex: 1 1 calc(50% - 0.75rem);
-    min-width: 140px;
+  .horizontal-filters {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   }
 
   .neighborhoods-group {
-    flex: 1 1 100%;
-    max-width: none;
+    grid-column: 1 / -1; /* Full width on tablets */
   }
 }
 
@@ -267,18 +283,12 @@
   }
 
   .horizontal-filters {
-    gap: 0.75rem;
-  }
-
-  .horizontal-filters .filter-group.compact {
-    flex: 1 1 100%;
-    min-width: 0;
-    max-width: none;
+    grid-template-columns: 1fr; /* Single column on mobile */
+    gap: 0.875rem;
   }
 
   .neighborhoods-group {
-    flex: 1 1 100%;
-    min-width: 0;
+    grid-column: 1;
   }
 }
 
@@ -286,27 +296,18 @@
   .filter-container {
     padding: 0 0.75rem;
   }
+
+  .horizontal-filters {
+    gap: 0.75rem;
+  }
 }
 
 /* SearchScheduleSelector positioning in horizontal filters */
 #search-schedule-selector-mount {
-  flex: 0 0 auto;
-}
-
-@media (max-width: 1024px) {
-  #search-schedule-selector-mount {
-    flex: 1 1 100%;
-    width: 100% !important;
-    margin-right: 0 !important;
-    margin-bottom: 0.75rem;
-  }
-}
-
-@media (max-width: 768px) {
-  #search-schedule-selector-mount {
-    flex: 1 1 100%;
-    width: 100% !important;
-  }
+  grid-column: 1 / -1; /* Full width - span all columns */
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
 }
 
 /* Main Content Layout - Two Columns (45% listings, 55% map) */
@@ -444,6 +445,29 @@
 
 /* Responsive: Large tablets and below */
 @media (max-width: 1200px) {
+  /* Show mobile filter bar on tablet and mobile */
+  .mobile-filter-bar {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  /* Filter panel becomes modal on mobile */
+  .filter-panel {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: white;
+    z-index: 2000;
+    overflow-y: auto;
+  }
+
+  .filter-panel.active {
+    display: block;
+  }
+
   .search-page .main-content {
     grid-template-columns: 1fr;
     gap: 1.5rem;

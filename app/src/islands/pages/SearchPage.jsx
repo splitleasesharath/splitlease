@@ -13,58 +13,6 @@ import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJson
 import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
 
 // ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * MinimalHeader - Simple header with logo (left) and hamburger menu (right)
- * Matches production app.split.lease/search design
- */
-function MinimalHeader() {
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  return (
-    <header className="minimal-header">
-      <div className="minimal-header-container">
-        {/* Logo on left */}
-        <a href="https://splitlease.app" className="minimal-logo">
-          <svg className="logo-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 8v8M8 12h8" />
-          </svg>
-          <span className="logo-text">Split Lease</span>
-        </a>
-
-        {/* Hamburger Menu on right */}
-        <button
-          className="hamburger-menu"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label="Toggle menu"
-        >
-          <span>Menu</span>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="3" y1="12" x2="21" y2="12" />
-            <line x1="3" y1="6" x2="21" y2="6" />
-            <line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
-
-        {/* Dropdown Menu */}
-        {menuOpen && (
-          <div className="header-dropdown">
-            <a href="https://splitlease.app/how-it-works">3 Easy Steps To Book</a>
-            <a href="https://splitlease.app/success-stories">Success Stories</a>
-            <a href={SIGNUP_LOGIN_URL}>Sign In / Sign Up</a>
-            <a href="https://splitlease.app/why-split-lease">Understand Split Lease</a>
-            <a href="https://splitlease.app/faq">Explore FAQs</a>
-          </div>
-        )}
-      </div>
-    </header>
-  );
-}
-
-// ============================================================================
 // Internal Components
 // ============================================================================
 
@@ -677,6 +625,7 @@ export default function SearchPage() {
   // UI state
   const [filterPanelActive, setFilterPanelActive] = useState(false);
   const [mapSectionActive, setMapSectionActive] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Flag to prevent URL update on initial load
   const isInitialMount = useRef(true);
@@ -1200,8 +1149,6 @@ export default function SearchPage() {
   // Render
   return (
     <div className="search-page">
-      <MinimalHeader />
-
       {/* Two-column layout: Listings (left) + Map (right) */}
       <main className="two-column-layout">
         {/* LEFT COLUMN: Listings with filters */}
@@ -1312,8 +1259,44 @@ export default function SearchPage() {
           </div>
         </section>
 
-        {/* RIGHT COLUMN: Map (fixed position) */}
+        {/* RIGHT COLUMN: Map with integrated header */}
         <section className="map-column">
+          {/* Integrated Logo and Hamburger Menu */}
+          <div className="map-header">
+            <a href="https://splitlease.app" className="map-logo">
+              <svg className="logo-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v8M8 12h8" />
+              </svg>
+              <span className="logo-text">Split Lease</span>
+            </a>
+
+            {/* Hamburger Menu */}
+            <button
+              className="hamburger-menu"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span>Menu</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu */}
+            {menuOpen && (
+              <div className="header-dropdown">
+                <a href="https://splitlease.app/how-it-works">3 Easy Steps To Book</a>
+                <a href="https://splitlease.app/success-stories">Success Stories</a>
+                <a href={SIGNUP_LOGIN_URL}>Sign In / Sign Up</a>
+                <a href="https://splitlease.app/why-split-lease">Understand Split Lease</a>
+                <a href="https://splitlease.app/faq">Explore FAQs</a>
+              </div>
+            )}
+          </div>
+
           <GoogleMap
             ref={mapRef}
             listings={allListings}

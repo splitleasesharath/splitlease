@@ -1,61 +1,81 @@
 /* ========================================
-   NEW Search Page Layout - Two Column Design
-   Matches production app.split.lease/search
+   FULL-SCREEN TWO-PANEL SEARCH PAGE
+   No header - Clean 45%-55% split layout
    ======================================== */
 
-/* Reset padding since we have minimal header now */
+/* Reset any existing padding from search-page */
 .search-page {
-  padding-top: 60px; /* Minimal header height */
-  min-height: 100vh;
-  background: #f9fafb;
-}
-
-/* Two-column layout container */
-.two-column-layout {
-  display: flex;
-  height: calc(100vh - 60px); /* Full height minus header */
+  padding-top: 0 !important;
+  margin: 0;
+  height: 100vh;
+  width: 100vw;
   overflow: hidden;
 }
 
-/* LEFT COLUMN: Listings (scrollable) */
+/* Two-Column Layout: 45% listings, 55% map */
+.two-column-layout {
+  display: flex;
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+  gap: 0;
+  max-width: 100%;
+}
+
+/* ========================================
+   LEFT COLUMN: Listings (45%)
+   ======================================== */
+
 .listings-column {
-  flex: 0 0 45%; /* Fixed 45% width */
+  flex: 0 0 45%;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: white;
-  padding: 1.5rem;
+  overflow: hidden;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
 }
 
-/* Schedule Selector at top */
+/* Schedule Selector Container */
 .schedule-selector-container {
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  background: #f9fafb;
-  border-radius: 8px;
+  flex-shrink: 0;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 10;
 }
 
-/* Inline horizontal filters */
+/* Inline Filters */
 .inline-filters {
+  flex-shrink: 0;
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
   flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  overflow-x: auto;
+}
+
+.inline-filters .filter-group {
+  flex: 0 0 auto;
+  min-width: 140px;
 }
 
 .inline-filters .filter-group.compact {
-  flex: 1 1 auto;
-  min-width: 150px;
+  flex: 0 0 auto;
+  min-width: 140px;
 }
 
-.inline-filters .filter-group.compact label {
+.inline-filters .filter-group label {
   display: block;
   font-size: 0.75rem;
   font-weight: 600;
   color: #6b7280;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
   text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
 .inline-filters .filter-select {
@@ -66,6 +86,7 @@
   font-size: 0.875rem;
   background: white;
   cursor: pointer;
+  transition: border-color 0.2s;
 }
 
 .inline-filters .filter-select:hover {
@@ -74,17 +95,18 @@
 
 .inline-filters .filter-select:focus {
   outline: none;
-  border-color: #6B46C1;
-  box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1);
+  border-color: #5b21b6;
+  box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
 }
 
-/* Listings count */
+/* Listings Count */
 .listings-count {
-  font-size: 0.9375rem;
-  margin-bottom: 1.5rem;
-  color: #374151;
-  padding-bottom: 1rem;
+  flex-shrink: 0;
+  padding: 0.75rem 1.5rem;
+  background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
+  font-size: 0.875rem;
+  color: #374151;
 }
 
 .listings-count strong {
@@ -92,80 +114,341 @@
   color: #111827;
 }
 
-/* Listings content area */
+/* Listings Content - Scrollable */
 .listings-content {
   flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 1rem 1.5rem;
+  background: #f9fafb;
 }
 
-/* RIGHT COLUMN: Map (fixed, fills remaining space) */
+/* Listings Container */
+.listings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+/* ========================================
+   RIGHT COLUMN: Map (55%)
+   ======================================== */
+
 .map-column {
-  flex: 1; /* Takes remaining space */
+  flex: 0 0 55%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   position: relative;
+  background: #f3f4f6;
+}
+
+/* Map Header - Logo and Hamburger Menu */
+.map-header {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  z-index: 20;
+  position: relative;
+}
+
+.map-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-decoration: none;
+  font-weight: 600;
+  color: #1f2937;
+  transition: opacity 0.2s;
+}
+
+.map-logo:hover {
+  opacity: 0.8;
+}
+
+.map-logo .logo-icon {
+  color: #5b21b6;
+  flex-shrink: 0;
+}
+
+.map-logo .logo-text {
+  font-size: 1.125rem;
+  white-space: nowrap;
+}
+
+/* Hamburger Menu Button */
+.hamburger-menu {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s;
+}
+
+.hamburger-menu:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.hamburger-menu svg {
+  color: #6b7280;
+}
+
+/* Header Dropdown Menu */
+.header-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 1.5rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  min-width: 220px;
+  padding: 0.5rem;
+  z-index: 30;
+  animation: dropdownFadeIn 0.2s ease-out;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.header-dropdown a {
+  display: block;
+  padding: 0.75rem 1rem;
+  color: #374151;
+  text-decoration: none;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.header-dropdown a:hover {
+  background: #f3f4f6;
+  color: #5b21b6;
+}
+
+/* Google Map Container */
+.google-map-container {
+  flex: 1;
+  position: relative;
+  width: 100%;
   height: 100%;
+  background: #f3f4f6;
   overflow: hidden;
 }
 
+.google-map {
+  width: 100%;
+  height: 100%;
+}
+
 .map-column > div {
+  flex: 1;
   height: 100% !important;
   width: 100% !important;
 }
 
-/* Deep Research Button on map */
+/* Deep Research Floating Button */
 .deep-research-floating-btn {
   position: absolute;
-  bottom: 2rem;
-  right: 2rem;
-  background: #6B46C1;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  padding: 0.75rem 1.25rem;
+  top: 80px;
+  right: 20px;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, #31135D 0%, #5a2d8f 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 0.95rem;
   font-weight: 600;
-  font-size: 0.9375rem;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(107, 70, 193, 0.3);
-  transition: all 0.2s;
-  z-index: 10;
+  box-shadow: 0 4px 16px rgba(49, 19, 93, 0.35);
+  transition: all 0.3s ease;
+  z-index: 15;
 }
 
 .deep-research-floating-btn:hover {
-  background: #5a3ba3;
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(107, 70, 193, 0.4);
+  box-shadow: 0 6px 24px rgba(49, 19, 93, 0.5);
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
+/* ========================================
+   LISTING CARDS - Styled in listings.css
+   No overrides needed here - using horizontal layout from listings.css
+   ======================================== */
+
+/* ========================================
+   LOADING & ERROR STATES
+   ======================================== */
+
+.loading-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.skeleton-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-image {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  background: #e5e7eb;
+}
+
+.skeleton-content {
+  padding: 1rem;
+}
+
+.skeleton-line {
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.error-message,
+.no-results-notice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.error-message svg,
+.no-results-notice svg {
+  color: #9ca3af;
+  margin-bottom: 1rem;
+}
+
+.error-message h3,
+.no-results-notice h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.error-message p,
+.no-results-notice p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0 0 1.5rem 0;
+}
+
+.retry-btn,
+.reset-filters-btn {
+  padding: 0.75rem 1.5rem;
+  background: #5b21b6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.retry-btn:hover,
+.reset-filters-btn:hover {
+  background: #4c1d95;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 1200px) {
   .listings-column {
+    flex: 0 0 50%;
+  }
+
+  .map-column {
     flex: 0 0 50%;
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .two-column-layout {
     flex-direction: column;
-    height: auto;
   }
 
   .listings-column {
-    flex: 1;
-    overflow-y: visible;
-    max-height: none;
+    flex: 0 0 100%;
+    height: 50vh;
   }
 
   .map-column {
-    height: 400px;
-    flex: 0 0 400px;
+    flex: 0 0 100%;
+    height: 50vh;
   }
+}
 
+@media (max-width: 768px) {
   .inline-filters {
     flex-direction: column;
+    gap: 0.5rem;
   }
 
-  .inline-filters .filter-group.compact {
+  .inline-filters .filter-group {
+    width: 100%;
     min-width: 100%;
+  }
+
+  .map-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .map-logo .logo-text {
+    font-size: 1rem;
+  }
+
+  .hamburger-menu span {
+    display: none;
+  }
+
+  .deep-research-floating-btn {
+    top: 60px;
+    right: 12px;
+    padding: 0.625rem 1rem;
+    font-size: 0.85rem;
   }
 }
