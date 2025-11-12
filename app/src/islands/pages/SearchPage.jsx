@@ -926,8 +926,27 @@ export default function SearchPage() {
         hasValidCoords: !!(l.coordinates?.lat && l.coordinates?.lng)
       })));
 
+      // Filter out listings without valid coordinates (NO FALLBACK - coordinates are required)
+      const listingsWithCoordinates = transformedListings.filter(listing => {
+        const hasValidCoords = listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
+        if (!hasValidCoords) {
+          console.warn('⚠️ SearchPage: Excluding listing without valid coordinates:', {
+            id: listing.id,
+            title: listing.title,
+            coordinates: listing.coordinates
+          });
+        }
+        return hasValidCoords;
+      });
+
+      console.log('📍 SearchPage: Coordinate filter results:', {
+        before: transformedListings.length,
+        after: listingsWithCoordinates.length,
+        excluded: transformedListings.length - listingsWithCoordinates.length
+      });
+
       // Apply day filter client-side
-      let filteredListings = transformedListings;
+      let filteredListings = listingsWithCoordinates;
       if (selectedDays.length > 0) {
         if (import.meta.env.DEV) {
           const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -1060,19 +1079,16 @@ export default function SearchPage() {
     if (boroughName) locationParts.push(boroughName);
     const location = locationParts.join(', ') || 'New York, NY';
 
-    // Extract coordinates with extensive logging
-    const lat = dbListing.listing_address_latitude || 40.7580;
-    const lng = dbListing.listing_address_longitude || -73.9855;
-    const usedDefault = !dbListing.listing_address_latitude || !dbListing.listing_address_longitude;
+    // Extract coordinates - return null if missing (no fallbacks)
+    const lat = dbListing.listing_address_latitude;
+    const lng = dbListing.listing_address_longitude;
 
-    if (usedDefault) {
-      console.error('❌ SearchPage: Missing coordinates for listing, using default:', {
+    if (!lat || !lng) {
+      console.error('❌ SearchPage: Missing coordinates for listing - will be filtered out:', {
         id: dbListing._id,
         name: dbListing.Name,
         rawLat: dbListing.listing_address_latitude,
-        rawLng: dbListing.listing_address_longitude,
-        defaultLat: 40.7580,
-        defaultLng: -73.9855
+        rawLng: dbListing.listing_address_longitude
       });
     } else {
       console.log('✅ SearchPage: Valid coordinates found:', {
@@ -1083,15 +1099,12 @@ export default function SearchPage() {
       });
     }
 
-    const coordinates = {
-      lat,
-      lng
-    };
+    const coordinates = (lat && lng) ? { lat, lng } : null;
 
     console.log('📍 SearchPage: Final coordinates for listing:', {
       id: dbListing._id,
       coordinates,
-      usedDefault
+      hasValidCoordinates: !!coordinates
     });
 
     return {

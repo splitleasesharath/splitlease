@@ -360,8 +360,6 @@ export const DEFAULTS = {
   DEFAULT_SORT_BY: 'recommended',
   // Monday-Friday in 0-based indexing (0=Sunday, 1=Monday, ... 6=Saturday)
   DEFAULT_SELECTED_DAYS: [1, 2, 3, 4, 5],
-  NYC_CENTER_LAT: 40.7580,
-  NYC_CENTER_LNG: -73.9855,
   MAP_DEFAULT_ZOOM: 13,
   MINUTES_PER_NIGHT: 24 * 60 // 1440 minutes
 };

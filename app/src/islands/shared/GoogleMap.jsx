@@ -135,13 +135,11 @@ const GoogleMap = forwardRef(({
         return;
       }
 
-      // Create map instance
+      // Create map instance with default Manhattan center (no fallback coordinates)
+      const defaultMapConfig = getBoroughMapConfig('default');
       const map = new window.google.maps.Map(mapRef.current, {
-        center: {
-          lat: DEFAULTS.NYC_CENTER_LAT,
-          lng: DEFAULTS.NYC_CENTER_LNG
-        },
-        zoom: DEFAULTS.MAP_DEFAULT_ZOOM,
+        center: defaultMapConfig.center,
+        zoom: defaultMapConfig.zoom,
         mapTypeControl: true,
         streetViewControl: true,
         fullscreenControl: true,

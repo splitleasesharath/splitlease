@@ -6,7 +6,7 @@
  *   import { fitBoundsToMarkers, calculateMapCenter } from './mapUtils.js';
  */
 
-import { DEFAULTS } from './constants.js';
+import { getBoroughMapConfig } from './constants.js';
 
 /**
  * Fit map bounds to show all markers
@@ -39,15 +39,13 @@ export function fitBoundsToMarkers(map, markers) {
 
 /**
  * Calculate center point from array of listings
+ * NO FALLBACK - Returns null if no valid coordinates found
  * @param {Array<object>} listings - Array of listings with coordinates
- * @returns {object} {lat, lng} center point
+ * @returns {object|null} {lat, lng} center point or null if no valid listings
  */
 export function calculateMapCenter(listings) {
   if (!listings || listings.length === 0) {
-    return {
-      lat: DEFAULTS.NYC_CENTER_LAT,
-      lng: DEFAULTS.NYC_CENTER_LNG
-    };
+    return null;
   }
 
   const validListings = listings.filter(l =>
@@ -55,10 +53,7 @@ export function calculateMapCenter(listings) {
   );
 
   if (validListings.length === 0) {
-    return {
-      lat: DEFAULTS.NYC_CENTER_LAT,
-      lng: DEFAULTS.NYC_CENTER_LNG
-    };
+    return null;
   }
 
   const sum = validListings.reduce(
