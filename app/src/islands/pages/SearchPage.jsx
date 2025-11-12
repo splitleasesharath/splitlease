@@ -1225,6 +1225,81 @@ export default function SearchPage() {
                 <option value="recent">Recently Added</option>
               </select>
             </div>
+
+            {/* Neighborhood Multi-Select */}
+            <div className="filter-group compact neighborhoods-group">
+              <label htmlFor="neighborhoodSearch">Refine Neighborhood(s)</label>
+              <input
+                type="text"
+                id="neighborhoodSearch"
+                placeholder="Search neighborhoods..."
+                className="neighborhood-search"
+                value={neighborhoodSearch}
+                onChange={(e) => setNeighborhoodSearch(e.target.value)}
+              />
+
+              {/* Selected neighborhood chips */}
+              {selectedNeighborhoods.length > 0 && (
+                <div className="selected-neighborhoods-chips">
+                  {selectedNeighborhoods.map(id => {
+                    const neighborhood = neighborhoods.find(n => n.id === id);
+                    if (!neighborhood) return null;
+
+                    return (
+                      <div key={id} className="neighborhood-chip">
+                        <span>{neighborhood.name}</span>
+                        <button
+                          className="neighborhood-chip-remove"
+                          onClick={() => {
+                            setSelectedNeighborhoods(selectedNeighborhoods.filter(nId => nId !== id));
+                          }}
+                          aria-label={`Remove ${neighborhood.name}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Neighborhood list */}
+              <div className="neighborhood-list">
+                {(() => {
+                  const filteredNeighborhoods = neighborhoods.filter(n => {
+                    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
+                    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
+                  });
+
+                  if (filteredNeighborhoods.length === 0) {
+                    return (
+                      <div style={{ padding: '10px', color: '#666' }}>
+                        {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
+                      </div>
+                    );
+                  }
+
+                  return filteredNeighborhoods.map(neighborhood => (
+                    <label key={neighborhood.id}>
+                      <input
+                        type="checkbox"
+                        value={neighborhood.id}
+                        checked={selectedNeighborhoods.includes(neighborhood.id)}
+                        onChange={() => {
+                          const isSelected = selectedNeighborhoods.includes(neighborhood.id);
+                          if (isSelected) {
+                            setSelectedNeighborhoods(selectedNeighborhoods.filter(id => id !== neighborhood.id));
+                          } else {
+                            setSelectedNeighborhoods([...selectedNeighborhoods, neighborhood.id]);
+                          }
+                        }}
+                      />
+                      {neighborhood.name}
+                    </label>
+                  ));
+                })()}
+              </div>
+            </div>
           </div>
 
           {/* Listings count */}
