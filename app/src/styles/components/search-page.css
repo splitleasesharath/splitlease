@@ -37,20 +37,12 @@
   border-right: 1px solid #e5e7eb;
 }
 
-/* Schedule Selector Container */
-.schedule-selector-container {
-  flex-shrink: 0;
-  padding: 1rem 1.5rem;
-  background: white;
-  border-bottom: 1px solid #e5e7eb;
-  z-index: 10;
-}
-
-/* Inline Filters */
+/* Inline Filters - All filters in single horizontal container */
 .inline-filters {
   flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: 0.75rem;
   padding: 1rem 1.5rem;
   background: white;
@@ -66,6 +58,14 @@
 .inline-filters .filter-group.compact {
   flex: 0 0 auto;
   min-width: 140px;
+}
+
+/* Schedule Selector Group - No overrides needed, component handles its own styling */
+.inline-filters .filter-group.schedule-selector-group {
+  flex: 0 0 auto;
+  min-width: auto;
+  display: flex;
+  align-items: center;
 }
 
 .inline-filters .filter-group label {

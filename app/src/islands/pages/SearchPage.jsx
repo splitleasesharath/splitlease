@@ -1153,80 +1153,14 @@ export default function SearchPage() {
       <main className="two-column-layout">
         {/* LEFT COLUMN: Listings with filters */}
         <section className="listings-column">
-          {/* Schedule Selector at very top */}
-          <div className="schedule-selector-container" id="schedule-selector-mount-point">
-            {/* SearchScheduleSelector will be mounted here */}
-          </div>
-
-          {/* Inline horizontal filters */}
+          {/* All filters in single horizontal flexbox container */}
           <div className="inline-filters">
-            <div className="filter-group compact">
-              <label htmlFor="boroughSelect">Borough</label>
-              <select
-                id="boroughSelect"
-                className="filter-select"
-                value={selectedBorough}
-                onChange={(e) => setSelectedBorough(e.target.value)}
-              >
-                {boroughs.length === 0 ? (
-                  <option value="">Loading...</option>
-                ) : (
-                  boroughs.map(borough => (
-                    <option key={borough.id} value={borough.value}>
-                      {borough.name}
-                    </option>
-                  ))
-                )}
-              </select>
+            {/* Schedule Selector - First item on left */}
+            <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
+              {/* SearchScheduleSelector will be mounted here */}
             </div>
 
-            <div className="filter-group compact">
-              <label htmlFor="weekPattern">Week Pattern</label>
-              <select
-                id="weekPattern"
-                className="filter-select"
-                value={weekPattern}
-                onChange={(e) => setWeekPattern(e.target.value)}
-              >
-                <option value="every-week">Every week</option>
-                <option value="one-on-off">One on, one off</option>
-                <option value="two-on-off">Two on, two off</option>
-                <option value="one-three-off">One on, three off</option>
-              </select>
-            </div>
-
-            <div className="filter-group compact">
-              <label htmlFor="priceTier">Price</label>
-              <select
-                id="priceTier"
-                className="filter-select"
-                value={priceTier}
-                onChange={(e) => setPriceTier(e.target.value)}
-              >
-                <option value="under-200">&lt; $200/night</option>
-                <option value="200-350">$200-$350/night</option>
-                <option value="350-500">$350-$500/night</option>
-                <option value="500-plus">$500+/night</option>
-                <option value="all">All Prices</option>
-              </select>
-            </div>
-
-            <div className="filter-group compact">
-              <label htmlFor="sortBy">Sort By</label>
-              <select
-                id="sortBy"
-                className="filter-select"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="recommended">Recommended</option>
-                <option value="price-low">Price: Low to High</option>
-                <option value="most-viewed">Most Viewed</option>
-                <option value="recent">Recently Added</option>
-              </select>
-            </div>
-
-            {/* Neighborhood Multi-Select */}
+            {/* Neighborhood Multi-Select - Second item, beside schedule selector */}
             <div className="filter-group compact neighborhoods-group">
               <label htmlFor="neighborhoodSearch">Refine Neighborhood(s)</label>
               <input
@@ -1299,6 +1233,76 @@ export default function SearchPage() {
                   ));
                 })()}
               </div>
+            </div>
+
+            {/* Borough Select */}
+            <div className="filter-group compact">
+              <label htmlFor="boroughSelect">Borough</label>
+              <select
+                id="boroughSelect"
+                className="filter-select"
+                value={selectedBorough}
+                onChange={(e) => setSelectedBorough(e.target.value)}
+              >
+                {boroughs.length === 0 ? (
+                  <option value="">Loading...</option>
+                ) : (
+                  boroughs.map(borough => (
+                    <option key={borough.id} value={borough.value}>
+                      {borough.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {/* Week Pattern */}
+            <div className="filter-group compact">
+              <label htmlFor="weekPattern">Week Pattern</label>
+              <select
+                id="weekPattern"
+                className="filter-select"
+                value={weekPattern}
+                onChange={(e) => setWeekPattern(e.target.value)}
+              >
+                <option value="every-week">Every week</option>
+                <option value="one-on-off">One on, one off</option>
+                <option value="two-on-off">Two on, two off</option>
+                <option value="one-three-off">One on, three off</option>
+              </select>
+            </div>
+
+            {/* Price Tier */}
+            <div className="filter-group compact">
+              <label htmlFor="priceTier">Price</label>
+              <select
+                id="priceTier"
+                className="filter-select"
+                value={priceTier}
+                onChange={(e) => setPriceTier(e.target.value)}
+              >
+                <option value="under-200">&lt; $200/night</option>
+                <option value="200-350">$200-$350/night</option>
+                <option value="350-500">$350-$500/night</option>
+                <option value="500-plus">$500+/night</option>
+                <option value="all">All Prices</option>
+              </select>
+            </div>
+
+            {/* Sort By */}
+            <div className="filter-group compact">
+              <label htmlFor="sortBy">Sort By</label>
+              <select
+                id="sortBy"
+                className="filter-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="recommended">Recommended</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="most-viewed">Most Viewed</option>
+                <option value="recent">Recently Added</option>
+              </select>
             </div>
           </div>
 

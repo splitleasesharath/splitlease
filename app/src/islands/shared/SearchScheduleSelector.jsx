@@ -31,30 +31,32 @@ const SelectorRow = styled.div`
 `;
 
 const CalendarIcon = styled.div`
-  width: 35px;
-  height: 35px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 35px;
+  font-size: 36px;
   margin-right: 8px;
   flex-shrink: 0;
 `;
 
 const DaysGrid = styled.div`
   display: flex;
-  gap: 6px;
+  gap: 4px;
   justify-content: center;
   align-items: center;
 
   @media (max-width: 768px) {
-    gap: 6px;
+    gap: 4px;
   }
 `;
 
 const DayCell = styled(motion.button)`
-  width: 35px;
-  height: 35px;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -63,10 +65,12 @@ const DayCell = styled(motion.button)`
   font-size: 14px;
   line-height: 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
+  padding: 0;
   cursor: ${props => props.$isDragging ? 'grabbing' : 'pointer'};
   transition: transform 0.2s ease-in-out, background 0.2s ease-in-out;
   box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 
   /* Error state styling */
   ${props => props.$hasError && props.$isSelected && `
@@ -100,8 +104,8 @@ const DayCell = styled(motion.button)`
   }
 
   @media (max-width: 768px) {
-    width: 35px;
-    height: 35px;
+    width: 36px;
+    height: 36px;
     font-size: 14px;
   }
 
@@ -552,8 +556,8 @@ export default function SearchScheduleSelector({
           <img
             src="https://c.animaapp.com/meh6k861XoGXNn/img/calendar-minimalistic-svgrepo-com-202-svg.svg"
             alt="Calendar"
-            width="35"
-            height="35"
+            width="36"
+            height="36"
           />
         </CalendarIcon>
 

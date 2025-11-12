@@ -446,30 +446,6 @@ export default function HomePage() {
     mountPoint.style.justifyContent = 'center';
     mountPoint.style.marginBottom = '20px';
 
-    // Override button sizes to maintain 1:1 aspect ratio (30px × 30px)
-    const style = document.createElement('style');
-    style.textContent = `
-      #home-schedule-selector-mount button {
-        width: 30px !important;
-        height: 30px !important;
-        min-width: 30px !important;
-        min-height: 30px !important;
-        max-width: 30px !important;
-        max-height: 30px !important;
-        padding: 0 !important;
-        border-radius: 10px !important;
-        font-size: 14px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-sizing: border-box !important;
-      }
-      #home-schedule-selector-mount .DaysGrid {
-        gap: 4px !important;
-      }
-    `;
-    document.head.appendChild(style);
-
     const heroContent = document.querySelector('.hero-content');
     const exploreButton = document.querySelector('.hero-cta-button');
 
