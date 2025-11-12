@@ -69,137 +69,111 @@ export default function GuestProposalsPage() {
   }
 
   /**
-   * Initialize page by loading user and their proposals
+   * Initialize page by loading proposals from URL parameter
    */
   async function initializePage() {
     try {
       setLoading(true);
 
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
+      // Get proposal ID from URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const proposalIdFromUrl = urlParams.get('proposal');
 
-      if (!user) {
-        setError('Please log in to view your proposals');
+      if (!proposalIdFromUrl) {
+        setError('No proposal specified in URL');
         setLoading(false);
         return;
       }
 
-      setCurrentUser(user);
-
-      // Load proposals for this user
-      await loadProposals(user.id);
+      // Load the specific proposal directly
+      await loadProposalById(proposalIdFromUrl);
 
     } catch (err) {
       console.error('Error initializing page:', err);
-      setError('Unable to load proposals. Please try again later.');
+      setError('Unable to load proposal. Please try again later.');
     } finally {
       setLoading(false);
     }
   }
 
   /**
-   * Load all proposals for the current user
-   * Note: Supabase query uses foreign key field names from schema
+   * Load a single proposal by ID without requiring authentication
    */
-  async function loadProposals(userId) {
+  async function loadProposalById(proposalId) {
     try {
-      // First get user's user._id from auth user id
-      const { data: userData, error: userDataError } = await supabase
-        .from('user')
-        .select('_id')
-        .eq('id', userId)
-        .single();
-
-      if (userDataError) throw userDataError;
-
-      const userTableId = userData._id;
-
-      // Now fetch proposals with all related data
-      const { data, error: fetchError } = await supabase
+      // Fetch the specific proposal
+      const { data: proposal, error: fetchError } = await supabase
         .from('proposal')
         .select('*')
-        .eq('Guest', userTableId)
+        .eq('_id', proposalId)
         .or('Deleted.is.null,Deleted.eq.false')
-        .order('Created Date', { ascending: false });
+        .single();
 
       if (fetchError) throw fetchError;
+      if (!proposal) {
+        throw new Error('Proposal not found');
+      }
 
-      // For each proposal, fetch related listing, host, and virtual meeting data
-      const proposalsWithDetails = await Promise.all(
-        (data || []).map(async (proposal) => {
-          let listing = null;
-          let hostUser = null;
-          let houseRules = [];
-          let virtualMeeting = null;
+      // Fetch related data
+      let listing = null;
+      let hostUser = null;
+      let houseRules = [];
+      let virtualMeeting = null;
 
-          // Fetch listing
-          if (proposal.Listing) {
-            const { data: listingData } = await supabase
-              .from('listing')
-              .select('*')
-              .eq('_id', proposal.Listing)
-              .single();
-            listing = listingData;
+      // Fetch listing
+      if (proposal.Listing) {
+        const { data: listingData } = await supabase
+          .from('listing')
+          .select('*')
+          .eq('_id', proposal.Listing)
+          .single();
+        listing = listingData;
 
-            // Fetch host user info from listing
-            if (listing && listing['Created By']) {
-              const { data: hostData } = await supabase
-                .from('user')
-                .select('_id, "Name - First", "Name - Full", "Profile Photo"')
-                .eq('_id', listing['Created By'])
-                .single();
-              hostUser = hostData;
-            }
+        // Fetch host user info from listing
+        if (listing && listing['Created By']) {
+          const { data: hostData } = await supabase
+            .from('user')
+            .select('_id, "Name - First", "Name - Full", "Profile Photo"')
+            .eq('_id', listing['Created By'])
+            .single();
+          hostUser = hostData;
+        }
 
-            // Fetch house rules if available
-            const houseRuleIds = listing?.['Features - House Rules'];
-            if (houseRuleIds && Array.isArray(houseRuleIds) && houseRuleIds.length > 0) {
-              const { data: rulesData } = await supabase
-                .from('zat_features_houserule')
-                .select('_id, Name, Icon')
-                .in('_id', houseRuleIds);
-              houseRules = rulesData || [];
-            }
-          }
-
-          // Fetch virtual meeting if exists
-          if (proposal['virtual meeting']) {
-            const { data: vmData } = await supabase
-              .from('virtualmeetingschedulesandlinks')
-              .select('*')
-              .eq('_id', proposal['virtual meeting'])
-              .single();
-            virtualMeeting = vmData;
-          }
-
-          return {
-            ...proposal,
-            listing,
-            hostUser,
-            houseRules,
-            virtualMeeting
-          };
-        })
-      );
-
-      setProposals(proposalsWithDetails);
-
-      // Auto-select first proposal or one from URL
-      if (proposalsWithDetails.length > 0) {
-        const urlParams = new URLSearchParams(window.location.search);
-        const proposalIdFromUrl = urlParams.get('proposal');
-
-        if (proposalIdFromUrl) {
-          const proposalFromUrl = proposalsWithDetails.find(p => p._id === proposalIdFromUrl);
-          setSelectedProposal(proposalFromUrl || proposalsWithDetails[0]);
-        } else {
-          setSelectedProposal(proposalsWithDetails[0]);
+        // Fetch house rules if available
+        const houseRuleIds = listing?.['Features - House Rules'];
+        if (houseRuleIds && Array.isArray(houseRuleIds) && houseRuleIds.length > 0) {
+          const { data: rulesData } = await supabase
+            .from('zat_features_houserule')
+            .select('_id, Name, Icon')
+            .in('_id', houseRuleIds);
+          houseRules = rulesData || [];
         }
       }
 
+      // Fetch virtual meeting if exists
+      if (proposal['virtual meeting']) {
+        const { data: vmData } = await supabase
+          .from('virtualmeetingschedulesandlinks')
+          .select('*')
+          .eq('_id', proposal['virtual meeting'])
+          .single();
+        virtualMeeting = vmData;
+      }
+
+      const proposalWithDetails = {
+        ...proposal,
+        listing,
+        hostUser,
+        houseRules,
+        virtualMeeting
+      };
+
+      // Set single proposal in array format for compatibility
+      setProposals([proposalWithDetails]);
+      setSelectedProposal(proposalWithDetails);
+
     } catch (err) {
-      console.error('Error loading proposals:', err);
+      console.error('Error loading proposal:', err);
       throw err;
     }
   }
