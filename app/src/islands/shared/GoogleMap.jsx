@@ -23,6 +23,8 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { DEFAULTS, COLORS, getBoroughMapConfig } from '../../lib/constants.js';
 import ListingCardForMap from './ListingCard/ListingCardForMap.jsx';
+import { supabase } from '../../lib/supabase.js';
+import { fetchPhotoUrls } from '../../lib/supabaseUtils.js';
 
 const GoogleMap = forwardRef(({
   listings = [],           // All listings to show as green markers
@@ -61,6 +63,7 @@ const GoogleMap = forwardRef(({
   const [selectedListingForCard, setSelectedListingForCard] = useState(null);
   const [cardVisible, setCardVisible] = useState(false);
   const [cardPosition, setCardPosition] = useState({ x: 0, y: 0 });
+  const [isLoadingListingDetails, setIsLoadingListingDetails] = useState(false);
 
   // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
@@ -121,6 +124,48 @@ const GoogleMap = forwardRef(({
       }, 600);
     }
   }));
+
+  /**
+   * Fetch detailed listing data from Supabase when a pin is clicked
+   */
+  const fetchDetailedListingData = async (listingId) => {
+    setIsLoadingListingDetails(true);
+
+    try {
+      const { data: listingData, error: listingError } = await supabase
+        .from('listing')
+        .select('*')
+        .eq('_id', listingId)
+        .single();
+
+      if (listingError) throw listingError;
+
+      const photoUrls = await fetchPhotoUrls([listingId]);
+      const images = photoUrls[listingId] || [];
+
+      const detailedListing = {
+        id: listingData._id,
+        title: listingData.Name,
+        images,
+        location: listingData['Location - Borough'],
+        bedrooms: listingData['Features - Qty Bedrooms'] || 0,
+        bathrooms: listingData['Features - Qty Bathrooms'] || 0,
+        squareFeet: listingData['Features - SQFT Area'] || 0,
+        price: {
+          starting: listingData['Standarized Minimum Nightly Price (Filter)'] || 0
+        },
+        isNew: false,
+        isAvailable: listingData.Active || false
+      };
+
+      return detailedListing;
+    } catch (error) {
+      console.error('Failed to fetch listing details:', error);
+      return null;
+    } finally {
+      setIsLoadingListingDetails(false);
+    }
+  };
 
   // Initialize Google Map when API is loaded
   useEffect(() => {
@@ -485,7 +530,7 @@ const GoogleMap = forwardRef(({
         priceTag.style.zIndex = color === '#31135D' ? '2' : '1';
       });
 
-      priceTag.addEventListener('click', () => {
+      priceTag.addEventListener('click', async () => {
         // Calculate card position relative to map container
         const mapContainer = mapRef.current;
         if (mapContainer) {
@@ -519,8 +564,15 @@ const GoogleMap = forwardRef(({
           }
 
           setCardPosition({ x: cardLeft, y: cardTop });
-          setSelectedListingForCard(listing);
           setCardVisible(true);
+
+          // Fetch detailed listing data from Supabase
+          const detailedListing = await fetchDetailedListingData(listing.id);
+          if (detailedListing) {
+            setSelectedListingForCard(detailedListing);
+          } else {
+            setSelectedListingForCard(listing);
+          }
         }
 
         // Call parent callback
@@ -691,16 +743,38 @@ const GoogleMap = forwardRef(({
       )}
 
       {/* Listing Card Overlay */}
-      {mapLoaded && cardVisible && selectedListingForCard && (
-        <ListingCardForMap
-          listing={selectedListingForCard}
-          onClose={() => {
-            setCardVisible(false);
-            setSelectedListingForCard(null);
-          }}
-          isVisible={cardVisible}
-          position={cardPosition}
-        />
+      {mapLoaded && cardVisible && (
+        <>
+          {isLoadingListingDetails && (
+            <div
+              style={{
+                position: 'absolute',
+                left: `${cardPosition.x}px`,
+                top: `${cardPosition.y}px`,
+                transform: 'translate(-50%, 0)',
+                background: 'white',
+                padding: '20px',
+                borderRadius: '12px',
+                boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+                zIndex: 1000,
+              }}
+            >
+              <div className="spinner" style={{ margin: '0 auto' }}></div>
+              <p style={{ margin: '10px 0 0 0', textAlign: 'center' }}>Loading listing details...</p>
+            </div>
+          )}
+          {!isLoadingListingDetails && selectedListingForCard && (
+            <ListingCardForMap
+              listing={selectedListingForCard}
+              onClose={() => {
+                setCardVisible(false);
+                setSelectedListingForCard(null);
+              }}
+              isVisible={cardVisible}
+              position={cardPosition}
+            />
+          )}
+        </>
       )}
     </div>
   );
