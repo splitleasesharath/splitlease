@@ -1123,20 +1123,45 @@ export default function SearchPage() {
     setSelectedListing(null);
   };
 
-  // Mount SearchScheduleSelector component above filters, left-aligned with listings
+  // Mount SearchScheduleSelector component as first item in horizontal filter row
   useEffect(() => {
     const mountPoint = document.createElement('div');
     mountPoint.id = 'search-schedule-selector-mount';
-    mountPoint.style.paddingTop = '20px';
-    mountPoint.style.paddingBottom = '10px';
-    mountPoint.style.paddingLeft = '0';
 
-    const listingsSection = document.querySelector('.listings-section');
-    const listingsHeader = document.querySelector('.listings-header');
+    // Style to match production: component as first item in horizontal row
+    mountPoint.style.width = '230px';
+    mountPoint.style.flexShrink = '0';
+    mountPoint.style.marginRight = '12px';
 
-    if (listingsSection && listingsHeader) {
-      // Insert at the top of the listings section, before the header
-      listingsSection.insertBefore(mountPoint, listingsHeader);
+    // Override button sizes to match production (30px × 30px, 1:1 ratio)
+    const style = document.createElement('style');
+    style.textContent = `
+      #search-schedule-selector-mount button {
+        width: 30px !important;
+        height: 30px !important;
+        min-width: 30px !important;
+        min-height: 30px !important;
+        max-width: 30px !important;
+        max-height: 30px !important;
+        padding: 0 !important;
+        border-radius: 10px !important;
+        font-size: 14px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-sizing: border-box !important;
+      }
+      #search-schedule-selector-mount .DaysGrid {
+        gap: 4px !important;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const horizontalFilters = document.querySelector('.horizontal-filters');
+
+    if (horizontalFilters) {
+      // Insert as the FIRST child of horizontal-filters (before borough select)
+      horizontalFilters.insertBefore(mountPoint, horizontalFilters.firstChild);
 
       const root = createRoot(mountPoint);
 
