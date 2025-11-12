@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
+import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import { checkAuthStatus } from '../../lib/auth.js';
 import {
   PROPERTY_IDS,
@@ -429,10 +431,52 @@ function MarketResearchModal({ isOpen, onClose }) {
 export default function HomePage() {
   // State management
   const [marketResearchModalOpen, setMarketResearchModalOpen] = useState(false);
+  const [selectedDays, setSelectedDays] = useState([]);
 
   // Check authentication status on mount
   useEffect(() => {
     checkAuthStatus();
+  }, []);
+
+  // Mount SearchScheduleSelector component
+  useEffect(() => {
+    const mountPoint = document.createElement('div');
+    mountPoint.id = 'home-schedule-selector-mount';
+    mountPoint.style.padding = '40px 20px';
+    mountPoint.style.maxWidth = '600px';
+    mountPoint.style.margin = '0 auto';
+    mountPoint.style.backgroundColor = '#f9f9f9';
+
+    const heroSection = document.querySelector('.hero-section');
+    const valuePropsSection = document.querySelector('.value-props');
+
+    if (heroSection && valuePropsSection) {
+      heroSection.parentNode.insertBefore(mountPoint, valuePropsSection);
+
+      const root = createRoot(mountPoint);
+      root.render(
+        <SearchScheduleSelector
+          onSelectionChange={(days) => {
+            console.log('Selected days on home page:', days);
+            setSelectedDays(days.map(d => d.index));
+
+            // Navigate to search with selected days
+            if (days.length > 0) {
+              const dayIndices = days.map(d => d.index + 1); // Convert to 1-based for URL
+              window.location.href = `/search.html?days-selected=${dayIndices.join(',')}`;
+            }
+          }}
+          onError={(error) => console.error('SearchScheduleSelector error:', error)}
+        />
+      );
+
+      return () => {
+        root.unmount();
+        if (mountPoint.parentNode) {
+          mountPoint.parentNode.removeChild(mountPoint);
+        }
+      };
+    }
   }, []);
 
   const handleExploreRentals = () => {

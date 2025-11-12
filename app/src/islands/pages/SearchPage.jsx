@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createRoot } from 'react-dom/client';
 import Header from '../shared/Header.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import AISignupModal from '../shared/AISignupModal.jsx';
+import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
@@ -1120,6 +1122,43 @@ export default function SearchPage() {
     setIsInfoModalOpen(false);
     setSelectedListing(null);
   };
+
+  // Mount SearchScheduleSelector component
+  useEffect(() => {
+    const mountPoint = document.createElement('div');
+    mountPoint.id = 'search-schedule-selector-mount';
+    mountPoint.style.padding = '20px';
+    mountPoint.style.maxWidth = '600px';
+    mountPoint.style.margin = '0 auto';
+
+    const searchPage = document.querySelector('.search-page');
+    const mobileFilterBar = document.querySelector('.mobile-filter-bar');
+
+    if (searchPage && mobileFilterBar) {
+      searchPage.insertBefore(mountPoint, mobileFilterBar.nextSibling);
+
+      const root = createRoot(mountPoint);
+      root.render(
+        <SearchScheduleSelector
+          onSelectionChange={(days) => {
+            console.log('Selected days:', days);
+            // Convert day objects to indices
+            const dayIndices = days.map(d => d.index);
+            setSelectedDays(dayIndices);
+          }}
+          onError={(error) => console.error('SearchScheduleSelector error:', error)}
+          initialSelection={selectedDays}
+        />
+      );
+
+      return () => {
+        root.unmount();
+        if (mountPoint.parentNode) {
+          mountPoint.parentNode.removeChild(mountPoint);
+        }
+      };
+    }
+  }, []);
 
   // Render
   return (
