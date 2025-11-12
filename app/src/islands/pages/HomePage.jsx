@@ -438,20 +438,19 @@ export default function HomePage() {
     checkAuthStatus();
   }, []);
 
-  // Mount SearchScheduleSelector component
+  // Mount SearchScheduleSelector component in hero section above Explore Rentals button
   useEffect(() => {
     const mountPoint = document.createElement('div');
     mountPoint.id = 'home-schedule-selector-mount';
-    mountPoint.style.padding = '40px 20px';
-    mountPoint.style.maxWidth = '600px';
-    mountPoint.style.margin = '0 auto';
-    mountPoint.style.backgroundColor = '#f9f9f9';
+    mountPoint.style.display = 'flex';
+    mountPoint.style.justifyContent = 'center';
+    mountPoint.style.marginBottom = '20px';
 
-    const heroSection = document.querySelector('.hero-section');
-    const valuePropsSection = document.querySelector('.value-props');
+    const heroContent = document.querySelector('.hero-content');
+    const exploreButton = document.querySelector('.hero-cta-button');
 
-    if (heroSection && valuePropsSection) {
-      heroSection.parentNode.insertBefore(mountPoint, valuePropsSection);
+    if (heroContent && exploreButton) {
+      heroContent.insertBefore(mountPoint, exploreButton);
 
       const root = createRoot(mountPoint);
       root.render(
@@ -460,9 +459,9 @@ export default function HomePage() {
             console.log('Selected days on home page:', days);
             setSelectedDays(days.map(d => d.index));
 
-            // Navigate to search with selected days
+            // Navigate to search with selected days (use 0-based indices for URL)
             if (days.length > 0) {
-              const dayIndices = days.map(d => d.index + 1); // Convert to 1-based for URL
+              const dayIndices = days.map(d => d.index); // 0-based indices (0=Sunday, 1=Monday, etc.)
               window.location.href = `/search.html?days-selected=${dayIndices.join(',')}`;
             }
           }}

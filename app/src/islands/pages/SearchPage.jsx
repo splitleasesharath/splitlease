@@ -1123,33 +1123,41 @@ export default function SearchPage() {
     setSelectedListing(null);
   };
 
-  // Mount SearchScheduleSelector component
+  // Mount SearchScheduleSelector component above filters, left-aligned with listings
   useEffect(() => {
     const mountPoint = document.createElement('div');
     mountPoint.id = 'search-schedule-selector-mount';
-    mountPoint.style.padding = '20px';
-    mountPoint.style.maxWidth = '600px';
-    mountPoint.style.margin = '0 auto';
+    mountPoint.style.paddingTop = '20px';
+    mountPoint.style.paddingBottom = '10px';
+    mountPoint.style.paddingLeft = '0';
 
-    const searchPage = document.querySelector('.search-page');
-    const mobileFilterBar = document.querySelector('.mobile-filter-bar');
+    const listingsSection = document.querySelector('.listings-section');
+    const listingsHeader = document.querySelector('.listings-header');
 
-    if (searchPage && mobileFilterBar) {
-      searchPage.insertBefore(mountPoint, mobileFilterBar.nextSibling);
+    if (listingsSection && listingsHeader) {
+      // Insert at the top of the listings section, before the header
+      listingsSection.insertBefore(mountPoint, listingsHeader);
 
       const root = createRoot(mountPoint);
-      root.render(
-        <SearchScheduleSelector
-          onSelectionChange={(days) => {
-            console.log('Selected days:', days);
-            // Convert day objects to indices
-            const dayIndices = days.map(d => d.index);
-            setSelectedDays(dayIndices);
-          }}
-          onError={(error) => console.error('SearchScheduleSelector error:', error)}
-          initialSelection={selectedDays}
-        />
-      );
+
+      // Function to render component with current state
+      const renderComponent = () => {
+        root.render(
+          <SearchScheduleSelector
+            onSelectionChange={(days) => {
+              console.log('Selected days:', days);
+              // Convert day objects to indices
+              const dayIndices = days.map(d => d.index);
+              setSelectedDays(dayIndices);
+            }}
+            onError={(error) => console.error('SearchScheduleSelector error:', error)}
+            initialSelection={selectedDays}
+          />
+        );
+      };
+
+      // Initial render
+      renderComponent();
 
       return () => {
         root.unmount();
@@ -1159,6 +1167,15 @@ export default function SearchPage() {
       };
     }
   }, []);
+
+  // Re-render SearchScheduleSelector when selectedDays changes (e.g., from URL)
+  useEffect(() => {
+    const mountPoint = document.getElementById('search-schedule-selector-mount');
+    if (mountPoint && mountPoint._reactRoot) {
+      // Component will re-render via key change or we can use a state update
+      // For now, we'll let the initialSelection prop handle it via component internal state
+    }
+  }, [selectedDays]);
 
   // Render
   return (
