@@ -1,0 +1,171 @@
+/* ========================================
+   NEW Search Page Layout - Two Column Design
+   Matches production app.split.lease/search
+   ======================================== */
+
+/* Reset padding since we have minimal header now */
+.search-page {
+  padding-top: 60px; /* Minimal header height */
+  min-height: 100vh;
+  background: #f9fafb;
+}
+
+/* Two-column layout container */
+.two-column-layout {
+  display: flex;
+  height: calc(100vh - 60px); /* Full height minus header */
+  overflow: hidden;
+}
+
+/* LEFT COLUMN: Listings (scrollable) */
+.listings-column {
+  flex: 0 0 45%; /* Fixed 45% width */
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: white;
+  padding: 1.5rem;
+}
+
+/* Schedule Selector at top */
+.schedule-selector-container {
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+/* Inline horizontal filters */
+.inline-filters {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.inline-filters .filter-group.compact {
+  flex: 1 1 auto;
+  min-width: 150px;
+}
+
+.inline-filters .filter-group.compact label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+}
+
+.inline-filters .filter-select {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  background: white;
+  cursor: pointer;
+}
+
+.inline-filters .filter-select:hover {
+  border-color: #9ca3af;
+}
+
+.inline-filters .filter-select:focus {
+  outline: none;
+  border-color: #6B46C1;
+  box-shadow: 0 0 0 3px rgba(107, 70, 193, 0.1);
+}
+
+/* Listings count */
+.listings-count {
+  font-size: 0.9375rem;
+  margin-bottom: 1.5rem;
+  color: #374151;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.listings-count strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Listings content area */
+.listings-content {
+  flex: 1;
+}
+
+/* RIGHT COLUMN: Map (fixed, fills remaining space) */
+.map-column {
+  flex: 1; /* Takes remaining space */
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+.map-column > div {
+  height: 100% !important;
+  width: 100% !important;
+}
+
+/* Deep Research Button on map */
+.deep-research-floating-btn {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  background: #6B46C1;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(107, 70, 193, 0.3);
+  transition: all 0.2s;
+  z-index: 10;
+}
+
+.deep-research-floating-btn:hover {
+  background: #5a3ba3;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(107, 70, 193, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .listings-column {
+    flex: 0 0 50%;
+  }
+}
+
+@media (max-width: 768px) {
+  .two-column-layout {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .listings-column {
+    flex: 1;
+    overflow-y: visible;
+    max-height: none;
+  }
+
+  .map-column {
+    height: 400px;
+    flex: 0 0 400px;
+  }
+
+  .inline-filters {
+    flex-direction: column;
+  }
+
+  .inline-filters .filter-group.compact {
+    min-width: 100%;
+  }
+}

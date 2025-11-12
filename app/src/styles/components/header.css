@@ -284,110 +284,125 @@
 }
 
 /* ========================================
-   Faux Header - Minimal header for search page
+   Minimal Header - Clean search page header
+   Logo left, hamburger menu right
    ======================================== */
 
-.faux-header {
+.minimal-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  background: #31135D;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
   z-index: 9999;
-  transition: all 0.3s ease;
+  height: 60px;
 }
 
-.faux-header-container {
-  max-width: 95vw;
-  margin: 0 auto;
-  padding: 1rem 2rem;
+.minimal-header-container {
+  max-width: 100%;
+  height: 100%;
+  padding: 0 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.faux-logo {
+/* Logo on left */
+.minimal-logo {
   display: flex;
   align-items: center;
   text-decoration: none;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
-.faux-logo .logo-image {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  object-fit: cover;
+.minimal-logo .logo-icon {
+  color: #6B46C1;
+  flex-shrink: 0;
 }
 
-.faux-logo .logo-text {
+.minimal-logo .logo-text {
   font-size: 1.125rem;
   font-weight: 600;
-  color: white;
-  line-height: 1.2;
+  color: #1f2937;
+  line-height: 1;
   white-space: nowrap;
 }
 
-.faux-header-actions {
+/* Hamburger menu on right */
+.hamburger-menu {
   display: flex;
   align-items: center;
-  gap: 1rem;
-}
-
-.faux-btn {
-  padding: 0.625rem 1.25rem;
-  border-radius: 8px;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.faux-btn.explore-btn {
-  background: white;
-  color: #31135D;
-}
-
-.faux-btn.explore-btn:hover {
-  background: #f0f0f0;
-  transform: translateY(-1px);
-}
-
-.faux-btn.signin-btn {
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
   background: transparent;
-  color: white;
-  border: 2px solid white;
+  border: none;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: #1f2937;
+  transition: all 0.2s ease;
+  border-radius: 6px;
 }
 
-.faux-btn.signin-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
+.hamburger-menu:hover {
+  background: #f3f4f6;
 }
 
-/* Responsive adjustments for faux header */
+/* Dropdown Menu */
+.header-dropdown {
+  position: absolute;
+  top: 60px;
+  right: 1.5rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  min-width: 220px;
+  overflow: hidden;
+  z-index: 10000;
+}
+
+.header-dropdown a {
+  display: block;
+  padding: 0.875rem 1.25rem;
+  color: #1f2937;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: background 0.2s ease;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.header-dropdown a:last-child {
+  border-bottom: none;
+}
+
+.header-dropdown a:hover {
+  background: #f9fafb;
+  color: #6B46C1;
+}
+
+/* Responsive */
 @media (max-width: 768px) {
-  .faux-header-container {
-    padding: 0.875rem 1rem;
+  .minimal-header-container {
+    padding: 0 1rem;
   }
 
-  .faux-logo .logo-text {
+  .minimal-logo .logo-text {
+    font-size: 1rem;
+  }
+
+  .hamburger-menu span {
     display: none;
   }
 
-  .faux-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.875rem;
-  }
-
-  .faux-header-actions {
-    gap: 0.5rem;
+  .header-dropdown {
+    right: 1rem;
   }
 }
 
 @media (max-width: 480px) {
-  .faux-btn.explore-btn {
-    display: none; /* Hide on very small screens */
+  .minimal-logo .logo-text {
+    display: none;
   }
 }

@@ -17,26 +17,48 @@ import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanit
 // ============================================================================
 
 /**
- * FauxHeader - Minimal header without full navigation
- * Simpler than the full Header component for search page
+ * MinimalHeader - Simple header with logo (left) and hamburger menu (right)
+ * Matches production app.split.lease/search design
  */
-function FauxHeader() {
+function MinimalHeader() {
+  const [menuOpen, setMenuOpen] = useState(false);
+
   return (
-    <header className="faux-header">
-      <div className="faux-header-container">
-        <a href="https://splitlease.app" className="faux-logo">
-          <img src="/assets/images/logo.png" alt="Split Lease" className="logo-image" />
+    <header className="minimal-header">
+      <div className="minimal-header-container">
+        {/* Logo on left */}
+        <a href="https://splitlease.app" className="minimal-logo">
+          <svg className="logo-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v8M8 12h8" />
+          </svg>
           <span className="logo-text">Split Lease</span>
         </a>
 
-        <div className="faux-header-actions">
-          <a href={SEARCH_URL} className="faux-btn explore-btn">
-            Explore Rentals
-          </a>
-          <a href={SIGNUP_LOGIN_URL} className="faux-btn signin-btn">
-            Sign In
-          </a>
-        </div>
+        {/* Hamburger Menu on right */}
+        <button
+          className="hamburger-menu"
+          onClick={() => setMenuOpen(!menuOpen)}
+          aria-label="Toggle menu"
+        >
+          <span>Menu</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+
+        {/* Dropdown Menu */}
+        {menuOpen && (
+          <div className="header-dropdown">
+            <a href="https://splitlease.app/how-it-works">3 Easy Steps To Book</a>
+            <a href="https://splitlease.app/success-stories">Success Stories</a>
+            <a href={SIGNUP_LOGIN_URL}>Sign In / Sign Up</a>
+            <a href="https://splitlease.app/why-split-lease">Understand Split Lease</a>
+            <a href="https://splitlease.app/faq">Explore FAQs</a>
+          </div>
+        )}
       </div>
     </header>
   );
@@ -1140,72 +1162,28 @@ export default function SearchPage() {
     setSelectedListing(null);
   };
 
-  // Mount SearchScheduleSelector component as first item in horizontal filter row
+  // Mount SearchScheduleSelector component at top of listings column
   useEffect(() => {
-    const mountPoint = document.createElement('div');
-    mountPoint.id = 'search-schedule-selector-mount';
+    const mountPoint = document.getElementById('schedule-selector-mount-point');
 
-    // Style to match production: component as first item in horizontal row
-    mountPoint.style.width = '230px';
-    mountPoint.style.flexShrink = '0';
-    mountPoint.style.marginRight = '12px';
-
-    // Override button sizes to match production (30px × 30px, 1:1 ratio)
-    const style = document.createElement('style');
-    style.textContent = `
-      #search-schedule-selector-mount button {
-        width: 30px !important;
-        height: 30px !important;
-        min-width: 30px !important;
-        min-height: 30px !important;
-        max-width: 30px !important;
-        max-height: 30px !important;
-        padding: 0 !important;
-        border-radius: 10px !important;
-        font-size: 14px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-sizing: border-box !important;
-      }
-      #search-schedule-selector-mount .DaysGrid {
-        gap: 4px !important;
-      }
-    `;
-    document.head.appendChild(style);
-
-    const horizontalFilters = document.querySelector('.horizontal-filters');
-
-    if (horizontalFilters) {
-      // Insert as the FIRST child of horizontal-filters (before borough select)
-      horizontalFilters.insertBefore(mountPoint, horizontalFilters.firstChild);
-
+    if (mountPoint) {
       const root = createRoot(mountPoint);
 
-      // Function to render component with current state
-      const renderComponent = () => {
-        root.render(
-          <SearchScheduleSelector
-            onSelectionChange={(days) => {
-              console.log('Selected days:', days);
-              // Convert day objects to indices
-              const dayIndices = days.map(d => d.index);
-              setSelectedDays(dayIndices);
-            }}
-            onError={(error) => console.error('SearchScheduleSelector error:', error)}
-            initialSelection={selectedDays}
-          />
-        );
-      };
-
-      // Initial render
-      renderComponent();
+      root.render(
+        <SearchScheduleSelector
+          onSelectionChange={(days) => {
+            console.log('Selected days:', days);
+            // Convert day objects to indices
+            const dayIndices = days.map(d => d.index);
+            setSelectedDays(dayIndices);
+          }}
+          onError={(error) => console.error('SearchScheduleSelector error:', error)}
+          initialSelection={selectedDays}
+        />
+      );
 
       return () => {
         root.unmount();
-        if (mountPoint.parentNode) {
-          mountPoint.parentNode.removeChild(mountPoint);
-        }
       };
     }
   }, []);
@@ -1222,72 +1200,120 @@ export default function SearchPage() {
   // Render
   return (
     <div className="search-page">
-      <FauxHeader />
+      <MinimalHeader />
 
-      <MobileFilterBar
-        onFilterClick={() => setFilterPanelActive(!filterPanelActive)}
-        onMapClick={() => setMapSectionActive(!mapSectionActive)}
-      />
+      {/* Two-column layout: Listings (left) + Map (right) */}
+      <main className="two-column-layout">
+        {/* LEFT COLUMN: Listings with filters */}
+        <section className="listings-column">
+          {/* Schedule Selector at very top */}
+          <div className="schedule-selector-container" id="schedule-selector-mount-point">
+            {/* SearchScheduleSelector will be mounted here */}
+          </div>
 
-      <FilterPanel
-        isActive={filterPanelActive}
-        selectedDays={selectedDays}
-        onDaysChange={setSelectedDays}
-        boroughs={boroughs}
-        selectedBorough={selectedBorough}
-        onBoroughChange={setSelectedBorough}
-        neighborhoods={neighborhoods}
-        selectedNeighborhoods={selectedNeighborhoods}
-        onNeighborhoodsChange={setSelectedNeighborhoods}
-        weekPattern={weekPattern}
-        onWeekPatternChange={setWeekPattern}
-        priceTier={priceTier}
-        onPriceTierChange={setPriceTier}
-        sortBy={sortBy}
-        onSortByChange={setSortBy}
-        neighborhoodSearch={neighborhoodSearch}
-        onNeighborhoodSearchChange={setNeighborhoodSearch}
-      />
-
-      <main className="main-content">
-        <section className="listings-section">
-          <div className="listings-header">
-            <div className="header-top">
-              <h1 className="search-title">Available Split Leases</h1>
+          {/* Inline horizontal filters */}
+          <div className="inline-filters">
+            <div className="filter-group compact">
+              <label htmlFor="boroughSelect">Borough</label>
+              <select
+                id="boroughSelect"
+                className="filter-select"
+                value={selectedBorough}
+                onChange={(e) => setSelectedBorough(e.target.value)}
+              >
+                {boroughs.length === 0 ? (
+                  <option value="">Loading...</option>
+                ) : (
+                  boroughs.map(borough => (
+                    <option key={borough.id} value={borough.value}>
+                      {borough.name}
+                    </option>
+                  ))
+                )}
+              </select>
             </div>
-            <div className="header-info">
-              <span className="results-count">{allListings.length} listings found</span>
-              <span className="location-tag">
-                in <strong>{boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}</strong>
-              </span>
+
+            <div className="filter-group compact">
+              <label htmlFor="weekPattern">Week Pattern</label>
+              <select
+                id="weekPattern"
+                className="filter-select"
+                value={weekPattern}
+                onChange={(e) => setWeekPattern(e.target.value)}
+              >
+                <option value="every-week">Every week</option>
+                <option value="one-on-off">One on, one off</option>
+                <option value="two-on-off">Two on, two off</option>
+                <option value="one-three-off">One on, three off</option>
+              </select>
+            </div>
+
+            <div className="filter-group compact">
+              <label htmlFor="priceTier">Price</label>
+              <select
+                id="priceTier"
+                className="filter-select"
+                value={priceTier}
+                onChange={(e) => setPriceTier(e.target.value)}
+              >
+                <option value="under-200">&lt; $200/night</option>
+                <option value="200-350">$200-$350/night</option>
+                <option value="350-500">$350-$500/night</option>
+                <option value="500-plus">$500+/night</option>
+                <option value="all">All Prices</option>
+              </select>
+            </div>
+
+            <div className="filter-group compact">
+              <label htmlFor="sortBy">Sort By</label>
+              <select
+                id="sortBy"
+                className="filter-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="recommended">Recommended</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="most-viewed">Most Viewed</option>
+                <option value="recent">Recently Added</option>
+              </select>
             </div>
           </div>
 
-          {isLoading && <LoadingState />}
+          {/* Listings count */}
+          <div className="listings-count">
+            <strong>{allListings.length} listings found</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
+          </div>
 
-          {!isLoading && error && (
-            <ErrorState message={error} onRetry={fetchListings} />
-          )}
+          {/* Listings content */}
+          <div className="listings-content">
+            {isLoading && <LoadingState />}
 
-          {!isLoading && !error && allListings.length === 0 && (
-            <EmptyState onResetFilters={handleResetFilters} />
-          )}
+            {!isLoading && error && (
+              <ErrorState message={error} onRetry={fetchListings} />
+            )}
 
-          {!isLoading && !error && allListings.length > 0 && (
-            <ListingsGrid
-              listings={displayedListings}
-              selectedDaysCount={selectedDays.length}
-              onLoadMore={handleLoadMore}
-              hasMore={hasMore}
-              isLoading={isLoading}
-              onOpenContactModal={handleOpenContactModal}
-              onOpenInfoModal={handleOpenInfoModal}
-              mapRef={mapRef}
-            />
-          )}
+            {!isLoading && !error && allListings.length === 0 && (
+              <EmptyState onResetFilters={handleResetFilters} />
+            )}
+
+            {!isLoading && !error && allListings.length > 0 && (
+              <ListingsGrid
+                listings={displayedListings}
+                selectedDaysCount={selectedDays.length}
+                onLoadMore={handleLoadMore}
+                hasMore={hasMore}
+                isLoading={isLoading}
+                onOpenContactModal={handleOpenContactModal}
+                onOpenInfoModal={handleOpenInfoModal}
+                mapRef={mapRef}
+              />
+            )}
+          </div>
         </section>
 
-        <section className={`map-section ${mapSectionActive ? 'mobile-active' : ''}`}>
+        {/* RIGHT COLUMN: Map (fixed position) */}
+        <section className="map-column">
           <GoogleMap
             ref={mapRef}
             listings={allListings}
@@ -1296,61 +1322,31 @@ export default function SearchPage() {
             selectedBorough={selectedBorough}
             onMarkerClick={(listing) => {
               console.log('Marker clicked:', listing.title);
-              // Could open listing in new tab or show details
             }}
           />
 
-          {/* Deep Research Floating Button - PORTED FROM ORIGINAL */}
+          {/* Deep Research Floating Button */}
           <button
             className="deep-research-floating-btn"
             onClick={() => setShowAiSignup(true)}
           >
-            <div className="atom-animation" id="atomAnimation">
-              {/* Lottie animation will be loaded here via script */}
-              <svg width="31" height="31" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <circle cx="12" cy="12" r="3" fill="currentColor" />
-                <line x1="12" y1="2" x2="12" y2="6" />
-                <line x1="12" y1="18" x2="12" y2="22" />
-                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" />
-                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" />
-                <line x1="2" y1="12" x2="6" y2="12" />
-                <line x1="18" y1="12" x2="22" y2="12" />
-                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" />
-                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" />
-              </svg>
-            </div>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="3" fill="currentColor" />
+            </svg>
             <span>Generate Market Report</span>
           </button>
         </section>
       </main>
 
-      {/* Chat Widget - PORTED FROM ORIGINAL */}
-      <button
-        className="chat-widget"
-        onClick={() => setShowAiSignup(true)}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-        </svg>
-        <span className="chat-label">Get Market Research</span>
-      </button>
-
-      {/* AI Signup Modal */}
-      <AISignupModal
-        isOpen={showAiSignup}
-        onClose={handleCloseAIModal}
-      />
-
-      {/* Contact Host Messaging Modal */}
+      {/* Modals */}
+      <AISignupModal isOpen={showAiSignup} onClose={handleCloseAIModal} />
       <ContactHostMessaging
         isOpen={isContactModalOpen}
         onClose={handleCloseContactModal}
         listing={selectedListing}
         userEmail={null}
       />
-
-      {/* Informational Text Modal */}
       <InformationalText
         isOpen={isInfoModalOpen}
         onClose={handleCloseInfoModal}
