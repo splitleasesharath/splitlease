@@ -1,0 +1,344 @@
+/**
+ * ListingCardForMap Styles
+ * Adapted from SL16/components/listing-card-for-map styled-components
+ */
+
+.listing-card-for-map-wrapper {
+  position: relative;
+  pointer-events: auto;
+}
+
+/* Pointer arrow pointing down to the pin */
+.listing-card-arrow {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #FFFFFF;
+  filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+  z-index: 1;
+}
+
+.listing-card-arrow-border {
+  position: absolute;
+  bottom: -11px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 11px solid transparent;
+  border-right: 11px solid transparent;
+  border-top: 11px solid #E0E0E0;
+  z-index: 0;
+}
+
+.listing-card-for-map-container {
+  position: relative;
+  width: 340px;
+  background-color: #FFFFFF;
+  border: 1px solid #E0E0E0;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  animation: cardFadeIn 0.2s ease-out;
+}
+
+@keyframes cardFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 768px) {
+  .listing-card-for-map-container {
+    width: 320px;
+  }
+}
+
+@media (max-width: 480px) {
+  .listing-card-for-map-container {
+    width: 280px;
+  }
+}
+
+/* Close Button */
+.listing-card-close-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.listing-card-close-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
+
+/* Favorite Button */
+.listing-card-favorite-btn {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  border: none;
+  cursor: pointer;
+  z-index: 10;
+  padding: 4px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.listing-card-favorite-btn:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: scale(1.1);
+}
+
+/* Image Container */
+.listing-card-image-container {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.listing-card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s;
+  cursor: pointer;
+}
+
+.listing-card-image:hover {
+  transform: scale(1.05);
+}
+
+.listing-card-new-badge {
+  position: absolute;
+  top: 8px;
+  right: 36px;
+  background: #FF6B6B;
+  color: white;
+  font-family: 'Lato', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 4px;
+  z-index: 5;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Gallery Controls */
+.listing-card-gallery-controls {
+  position: absolute;
+  bottom: 8px;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  z-index: 10;
+}
+
+.listing-card-gallery-btn {
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  min-width: 36px;
+  min-height: 36px;
+}
+
+.listing-card-gallery-btn:hover {
+  background: rgba(0, 0, 0, 0.85);
+  transform: scale(1.1);
+}
+
+.listing-card-gallery-btn:active {
+  transform: scale(0.95);
+}
+
+.listing-card-gallery-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Content Section */
+.listing-card-content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.listing-card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.listing-card-title {
+  font-family: 'Lato', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  margin: 0;
+  color: #000000;
+  cursor: pointer;
+  transition: color 0.2s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.listing-card-title:hover {
+  color: #6C63FF;
+}
+
+.listing-card-price-section {
+  flex-shrink: 0;
+  text-align: right;
+}
+
+.listing-card-price-highlight {
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: #000000;
+  white-space: nowrap;
+}
+
+.listing-card-price-subtext {
+  font-family: 'Lato', sans-serif;
+  font-weight: 300;
+  font-size: 11px;
+  color: #666;
+  margin-top: -2px;
+}
+
+.listing-card-location {
+  font-family: 'Lato', sans-serif;
+  font-weight: 300;
+  font-size: 12px;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  transition: color 0.2s;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.listing-card-location:hover {
+  color: #6C63FF;
+}
+
+.listing-card-features-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.listing-card-feature-item {
+  font-family: 'Lato', sans-serif;
+  font-weight: 400;
+  font-size: 12px;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.listing-card-divider {
+  height: 1px;
+  background: #E0E0E0;
+  margin: 8px 0;
+}
+
+.listing-card-action-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.listing-card-view-details-btn {
+  flex: 1;
+  background-color: transparent;
+  color: #6C63FF;
+  border: 1px solid #6C63FF;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: 'Lato', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.listing-card-view-details-btn:hover {
+  background-color: #6C63FF;
+  color: white;
+}
+
+.listing-card-send-message-btn {
+  flex: 1;
+  background-color: #6C63FF;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-family: 'Lato', sans-serif;
+  font-weight: 500;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.listing-card-send-message-btn:hover {
+  background-color: #5a52e0;
+}
+
+.listing-card-send-message-btn:active {
+  transform: scale(0.98);
+}

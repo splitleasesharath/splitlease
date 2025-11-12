@@ -22,6 +22,7 @@
 
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { DEFAULTS, COLORS, getBoroughMapConfig } from '../../lib/constants.js';
+import ListingCardForMap from './ListingCard/ListingCardForMap.jsx';
 
 const GoogleMap = forwardRef(({
   listings = [],           // All listings to show as green markers
@@ -37,6 +38,11 @@ const GoogleMap = forwardRef(({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showAllListings, setShowAllListings] = useState(true);
   const lastMarkersUpdateRef = useRef(null); // Track last marker update to prevent duplicates
+
+  // Listing card state
+  const [selectedListingForCard, setSelectedListingForCard] = useState(null);
+  const [cardVisible, setCardVisible] = useState(false);
+  const [cardPosition, setCardPosition] = useState({ x: 0, y: 0 });
 
   // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
@@ -167,115 +173,120 @@ const GoogleMap = forwardRef(({
 
     lastMarkersUpdateRef.current = markerSignature;
 
-    if (import.meta.env.DEV) {
-      console.log('🗺️ GoogleMap: Markers update triggered', {
-        mapLoaded,
-        googleMapExists: !!googleMapRef.current,
-        totalListings: listings.length,
-        filteredListings: filteredListings.length,
-        showAllListings,
-        allListingsPassedCorrectly: listings.length > 0,
-        backgroundLayerEnabled: showAllListings
-      });
-    }
-
-    // Clear existing markers
-    markersRef.current.forEach(marker => marker.setMap(null));
-    markersRef.current = [];
-    console.log('🗺️ GoogleMap: Cleared existing markers');
-
-    const map = googleMapRef.current;
-    const bounds = new window.google.maps.LatLngBounds();
-    let hasValidMarkers = false;
-
-    // Create markers for filtered listings (purple) - these are primary
-    if (filteredListings && filteredListings.length > 0) {
+    // Defer marker creation to next frame to prevent blocking render
+    function createMarkers() {
       if (import.meta.env.DEV) {
-        console.log('🗺️ GoogleMap: Creating purple markers for filtered listings:', filteredListings.length);
-      }
-      filteredListings.forEach(listing => {
-        if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
-          return;
-        }
-
-        const position = {
-          lat: listing.coordinates.lat,
-          lng: listing.coordinates.lng
-        };
-
-        // Create purple marker for filtered listings
-        const marker = createPriceMarker(
-          map,
-          position,
-          listing.price?.starting || listing['Starting nightly price'] || 0,
-          COLORS.SECONDARY, // Purple
-          listing
-        );
-
-        markersRef.current.push(marker);
-        bounds.extend(position);
-        hasValidMarkers = true;
-      });
-    }
-
-    // Create markers for all listings (green) - background context
-    if (showAllListings && listings && listings.length > 0) {
-      if (import.meta.env.DEV) {
-        console.log('🗺️ GoogleMap: Creating green markers for all listings (background layer):', listings.length);
-      }
-      let greenMarkersCreated = 0;
-      listings.forEach(listing => {
-        // Skip if already shown as filtered listing
-        const isFiltered = filteredListings?.some(fl => fl.id === listing.id);
-        if (isFiltered) return;
-
-        if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
-          return;
-        }
-
-        const position = {
-          lat: listing.coordinates.lat,
-          lng: listing.coordinates.lng
-        };
-
-        // Create green marker for all listings
-        const marker = createPriceMarker(
-          map,
-          position,
-          listing.price?.starting || listing['Starting nightly price'] || 0,
-          COLORS.SUCCESS, // Green
-          listing
-        );
-
-        markersRef.current.push(marker);
-        bounds.extend(position);
-        hasValidMarkers = true;
-        greenMarkersCreated++;
-      });
-
-      if (import.meta.env.DEV) {
-        console.log(`✅ GoogleMap: Created ${greenMarkersCreated} green markers (skipped ${listings.length - greenMarkersCreated} already shown as purple)`);
-      }
-    }
-
-    // Fit map to show all markers
-    if (hasValidMarkers) {
-      if (import.meta.env.DEV) {
-        console.log('✅ GoogleMap: Fitting bounds to markers', {
-          markerCount: markersRef.current.length,
-          bounds: bounds.toString()
+        console.log('🗺️ GoogleMap: Markers update triggered', {
+          mapLoaded,
+          googleMapExists: !!googleMapRef.current,
+          totalListings: listings.length,
+          filteredListings: filteredListings.length,
+          showAllListings,
+          allListingsPassedCorrectly: listings.length > 0,
+          backgroundLayerEnabled: showAllListings
         });
       }
-      map.fitBounds(bounds);
 
-      // Prevent over-zooming on single marker
-      const listener = window.google.maps.event.addListener(map, 'idle', () => {
-        if (map.getZoom() > 16) map.setZoom(16);
-        window.google.maps.event.removeListener(listener);
-      });
-    } else {
-      console.warn('⚠️ GoogleMap: No valid markers to display');
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current = [];
+      console.log('🗺️ GoogleMap: Cleared existing markers');
+
+      const map = googleMapRef.current;
+      const bounds = new window.google.maps.LatLngBounds();
+      let hasValidMarkers = false;
+
+      // Create markers for filtered listings (purple) - these are primary
+      if (filteredListings && filteredListings.length > 0) {
+        if (import.meta.env.DEV) {
+          console.log('🗺️ GoogleMap: Creating purple markers for filtered listings:', filteredListings.length);
+        }
+        filteredListings.forEach(listing => {
+          if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
+            return;
+          }
+
+          const position = {
+            lat: listing.coordinates.lat,
+            lng: listing.coordinates.lng
+          };
+
+          // Create purple marker for filtered listings
+          const marker = createPriceMarker(
+            map,
+            position,
+            listing.price?.starting || listing['Starting nightly price'] || 0,
+            COLORS.SECONDARY, // Purple
+            listing
+          );
+
+          markersRef.current.push(marker);
+          bounds.extend(position);
+          hasValidMarkers = true;
+        });
+      }
+
+      // Create markers for all listings (green) - background context
+      if (showAllListings && listings && listings.length > 0) {
+        if (import.meta.env.DEV) {
+          console.log('🗺️ GoogleMap: Creating green markers for all listings (background layer):', listings.length);
+        }
+        let greenMarkersCreated = 0;
+        listings.forEach(listing => {
+          // Skip if already shown as filtered listing
+          const isFiltered = filteredListings?.some(fl => fl.id === listing.id);
+          if (isFiltered) return;
+
+          if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
+            return;
+          }
+
+          const position = {
+            lat: listing.coordinates.lat,
+            lng: listing.coordinates.lng
+          };
+
+          // Create green marker for all listings
+          const marker = createPriceMarker(
+            map,
+            position,
+            listing.price?.starting || listing['Starting nightly price'] || 0,
+            COLORS.SUCCESS, // Green
+            listing
+          );
+
+          markersRef.current.push(marker);
+          bounds.extend(position);
+          hasValidMarkers = true;
+          greenMarkersCreated++;
+        });
+
+        if (import.meta.env.DEV) {
+          console.log(`✅ GoogleMap: Created ${greenMarkersCreated} green markers (skipped ${listings.length - greenMarkersCreated} already shown as purple)`);
+        }
+      }
+
+      // Fit map to show all markers
+      if (hasValidMarkers) {
+        if (import.meta.env.DEV) {
+          console.log('✅ GoogleMap: Fitting bounds to markers', {
+            markerCount: markersRef.current.length,
+            bounds: bounds.toString()
+          });
+        }
+        map.fitBounds(bounds);
+
+        // Prevent over-zooming on single marker
+        const listener = window.google.maps.event.addListener(map, 'idle', () => {
+          if (map.getZoom() > 16) map.setZoom(16);
+          window.google.maps.event.removeListener(listener);
+        });
+      } else {
+        console.warn('⚠️ GoogleMap: No valid markers to display');
+      }
     }
+
+    requestAnimationFrame(createMarkers);
   }, [listings, filteredListings, mapLoaded, showAllListings]);
 
   // Recenter map when borough changes
@@ -305,7 +316,7 @@ const GoogleMap = forwardRef(({
 
   /**
    * Create a custom price label marker using OverlayView
-   * PORTED FROM: input/search/js/app.js lines 1538-1635
+   * OPTIMIZED: Lazy-load InfoWindow, use event delegation, RAF for draw()
    * @param {google.maps.Map} map - The map instance
    * @param {object} coordinates - {lat, lng} coordinates
    * @param {number} price - Price to display
@@ -317,10 +328,14 @@ const GoogleMap = forwardRef(({
     const hoverColor = color === '#00C851' ? '#00A040' : '#522580';
 
     const markerOverlay = new window.google.maps.OverlayView();
+    let rafId = null;
 
     markerOverlay.onAdd = function() {
       const priceTag = document.createElement('div');
       priceTag.innerHTML = `$${parseFloat(price).toFixed(2)}`;
+      priceTag.className = 'map-price-marker';
+      priceTag.dataset.color = color;
+      priceTag.dataset.hoverColor = hoverColor;
       priceTag.style.cssText = `
         position: absolute;
         background: ${color};
@@ -336,11 +351,12 @@ const GoogleMap = forwardRef(({
         transition: background-color 0.2s ease;
         transform: translate(-50%, -50%);
         z-index: ${color === '#31135D' ? '2' : '1'};
+        will-change: transform;
       `;
 
+      // Use CSS hover for better performance
       priceTag.addEventListener('mouseenter', () => {
         priceTag.style.background = hoverColor;
-        priceTag.style.transition = 'background-color 0.2s ease, transform 0.2s ease';
         priceTag.style.transform = 'translate(-50%, -50%) scale(1.1)';
         priceTag.style.zIndex = '10';
       });
@@ -349,23 +365,45 @@ const GoogleMap = forwardRef(({
         priceTag.style.background = color;
         priceTag.style.transform = 'translate(-50%, -50%) scale(1)';
         priceTag.style.zIndex = color === '#31135D' ? '2' : '1';
-        setTimeout(() => {
-          priceTag.style.transition = 'background-color 0.2s ease';
-        }, 200);
-      });
-
-      const infoWindow = new window.google.maps.InfoWindow({
-        content: createInfoWindowContent(listing)
       });
 
       priceTag.addEventListener('click', () => {
-        // Close all other info windows
-        markersRef.current.forEach(m => {
-          if (m.infoWindow) m.infoWindow.close();
-        });
+        // Calculate card position relative to map container
+        const mapContainer = mapRef.current;
+        if (mapContainer) {
+          const mapRect = mapContainer.getBoundingClientRect();
+          const priceTagRect = priceTag.getBoundingClientRect();
 
-        infoWindow.open(map);
-        infoWindow.setPosition(coordinates);
+          // Calculate position relative to map container
+          const pinCenterX = priceTagRect.left - mapRect.left + (priceTagRect.width / 2);
+          const pinTop = priceTagRect.top - mapRect.top;
+
+          // Card dimensions (matching ListingCardForMap)
+          const cardWidth = 340;
+          const cardHeight = 340; // Approximate height
+          const arrowHeight = 10;
+          const gapFromPin = 5;
+          const margin = 20;
+
+          // Calculate card position - center on pin, above it
+          let cardLeft = pinCenterX;
+          let cardTop = pinTop - cardHeight - arrowHeight - gapFromPin;
+
+          // Keep card within map bounds horizontally
+          const minLeft = margin + (cardWidth / 2);
+          const maxLeft = mapRect.width - margin - (cardWidth / 2);
+          cardLeft = Math.max(minLeft, Math.min(maxLeft, cardLeft));
+
+          // Keep card within map bounds vertically
+          if (cardTop < margin) {
+            // If card would go above map, position it below the pin instead
+            cardTop = pinTop + priceTagRect.height + arrowHeight + gapFromPin;
+          }
+
+          setCardPosition({ x: cardLeft, y: cardTop });
+          setSelectedListingForCard(listing);
+          setCardVisible(true);
+        }
 
         // Call parent callback
         if (onMarkerClick) {
@@ -373,27 +411,40 @@ const GoogleMap = forwardRef(({
         }
       });
 
-      // Store info window reference
-      markerOverlay.infoWindow = infoWindow;
-
       this.div = priceTag;
       const panes = this.getPanes();
       panes.overlayLayer.appendChild(priceTag);
     };
 
     markerOverlay.draw = function() {
-      const projection = this.getProjection();
-      const position = projection.fromLatLngToDivPixel(
-        new window.google.maps.LatLng(coordinates.lat, coordinates.lng)
-      );
+      if (!this.div) return;
 
-      if (this.div) {
-        // Use transform3d for GPU acceleration
-        this.div.style.transform = `translate3d(${position.x}px, ${position.y}px, 0) translate(-50%, -50%)`;
+      // Cancel previous RAF if still pending
+      if (rafId) {
+        cancelAnimationFrame(rafId);
       }
+
+      // Use RAF to batch draw calls
+      rafId = requestAnimationFrame(() => {
+        const projection = this.getProjection();
+        if (!projection) return;
+
+        const position = projection.fromLatLngToDivPixel(
+          new window.google.maps.LatLng(coordinates.lat, coordinates.lng)
+        );
+
+        if (this.div) {
+          // Use transform3d for GPU acceleration
+          this.div.style.transform = `translate3d(${position.x}px, ${position.y}px, 0) translate(-50%, -50%)`;
+        }
+      });
     };
 
     markerOverlay.onRemove = function() {
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
+      }
       if (this.div) {
         this.div.parentNode.removeChild(this.div);
         this.div = null;
@@ -493,6 +544,12 @@ const GoogleMap = forwardRef(({
     </div>
   );
 
+  // Close card when clicking on map
+  const handleMapClick = () => {
+    setCardVisible(false);
+    setSelectedListingForCard(null);
+  };
+
   return (
     <div className="google-map-container">
       <div
@@ -505,6 +562,7 @@ const GoogleMap = forwardRef(({
           borderRadius: '12px',
           overflow: 'hidden'
         }}
+        onClick={handleMapClick}
       />
       {mapLoaded && <MapLegend />}
       {!mapLoaded && (
@@ -512,6 +570,19 @@ const GoogleMap = forwardRef(({
           <div className="spinner"></div>
           <p>Loading map...</p>
         </div>
+      )}
+
+      {/* Listing Card Overlay */}
+      {mapLoaded && cardVisible && selectedListingForCard && (
+        <ListingCardForMap
+          listing={selectedListingForCard}
+          onClose={() => {
+            setCardVisible(false);
+            setSelectedListingForCard(null);
+          }}
+          isVisible={cardVisible}
+          position={cardPosition}
+        />
       )}
     </div>
   );
