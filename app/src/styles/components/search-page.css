@@ -66,6 +66,7 @@
   min-width: auto;
   display: flex;
   align-items: center;
+  margin-right: 10px;
 }
 
 .inline-filters .filter-group label {
@@ -102,7 +103,7 @@
 /* Neighborhood Multi-Select Dropdown */
 .inline-filters .neighborhoods-group {
   position: relative;
-  min-width: 200px;
+  min-width: 240px;
 }
 
 .inline-filters .neighborhood-search {
@@ -286,7 +287,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 1rem 1.5rem;
+  padding: 0.5rem 1.5rem;
   background: white;
   border-bottom: 1px solid #e5e7eb;
   z-index: 20;
@@ -308,8 +309,9 @@
 }
 
 .map-logo .logo-icon {
-  color: #5b21b6;
   flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: contain;
 }
 
 .map-logo .logo-text {
@@ -407,7 +409,7 @@
 /* Deep Research Floating Button */
 .deep-research-floating-btn {
   position: absolute;
-  top: 80px;
+  top: 70px;
   right: 20px;
   display: flex;
   align-items: center;

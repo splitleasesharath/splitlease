@@ -118,6 +118,7 @@ const DayCell = styled(motion.button)`
 
 const InfoContainer = styled.div`
   min-height: 24px;
+  max-width: 320px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -132,6 +133,10 @@ const InfoText = styled.p`
   font-weight: 400;
   color: #000000;
   text-align: center;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  width: 100%;
 
   strong {
     font-weight: 600;

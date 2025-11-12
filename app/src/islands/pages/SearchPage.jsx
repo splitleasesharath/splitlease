@@ -1343,10 +1343,13 @@ export default function SearchPage() {
           {/* Integrated Logo and Hamburger Menu */}
           <div className="map-header">
             <a href="https://splitlease.app" className="map-logo">
-              <svg className="logo-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8v8M8 12h8" />
-              </svg>
+              <img
+                src="/assets/images/split-lease-purple-circle.png"
+                alt="Split Lease Logo"
+                className="logo-icon"
+                width="28"
+                height="28"
+              />
               <span className="logo-text">Split Lease</span>
             </a>
 
