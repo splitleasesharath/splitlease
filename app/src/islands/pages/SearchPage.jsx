@@ -1,28 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import Header from '../shared/Header.jsx';
-import { SearchScheduleSelector } from '../shared/SearchScheduleSelector/index.ts';
+import { createRoot } from 'react-dom/client';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import AISignupModal from '../shared/AISignupModal.jsx';
+import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import { supabase } from '../../lib/supabase.js';
-import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL } from '../../lib/constants.js';
+import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
 import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
 import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
-
-/**
- * Convert day number (1-7) to day name
- */
-function getDayName(dayNumber) {
-  const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  return days[dayNumber] || '';
-}
 
 // ============================================================================
 // Internal Components
@@ -100,20 +88,6 @@ function FilterPanel({
       <div className="filter-container">
         {/* Single Horizontal Filter Row - All filters inline */}
         <div className="horizontal-filters">
-          {/* Day Selector */}
-          <div className="filter-group compact day-selector-group">
-            <SearchScheduleSelector
-              initialSelection={selectedDays}
-              onSelectionChange={(days) => {
-                // Convert Day objects to day indices
-                const dayIndices = days.map(day => day.index);
-                onDaysChange(dayIndices);
-              }}
-              minDays={2}
-              requireContiguous={true}
-            />
-          </div>
-
           {/* Borough Select */}
           <div className="filter-group compact">
             <label htmlFor="boroughSelect">Select Borough</label>
@@ -651,6 +625,7 @@ export default function SearchPage() {
   // UI state
   const [filterPanelActive, setFilterPanelActive] = useState(false);
   const [mapSectionActive, setMapSectionActive] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Flag to prevent URL update on initial load
   const isInitialMount = useRef(true);
@@ -1136,75 +1111,305 @@ export default function SearchPage() {
     setSelectedListing(null);
   };
 
+  // Mount SearchScheduleSelector component in both mobile and desktop locations
+  useEffect(() => {
+    const mountPointDesktop = document.getElementById('schedule-selector-mount-point');
+    const mountPointMobile = document.getElementById('schedule-selector-mount-point-mobile');
+    const roots = [];
+
+    const selectorProps = {
+      onSelectionChange: (days) => {
+        console.log('Selected days:', days);
+        // Convert day objects to indices
+        const dayIndices = days.map(d => d.index);
+        setSelectedDays(dayIndices);
+      },
+      onError: (error) => console.error('SearchScheduleSelector error:', error),
+      initialSelection: selectedDays
+    };
+
+    if (mountPointDesktop) {
+      const rootDesktop = createRoot(mountPointDesktop);
+      rootDesktop.render(<SearchScheduleSelector {...selectorProps} />);
+      roots.push(rootDesktop);
+    }
+
+    if (mountPointMobile) {
+      const rootMobile = createRoot(mountPointMobile);
+      rootMobile.render(<SearchScheduleSelector {...selectorProps} />);
+      roots.push(rootMobile);
+    }
+
+    return () => {
+      roots.forEach(root => root.unmount());
+    };
+  }, []);
+
+  // Re-render SearchScheduleSelector when selectedDays changes (e.g., from URL)
+  useEffect(() => {
+    const mountPoint = document.getElementById('search-schedule-selector-mount');
+    if (mountPoint && mountPoint._reactRoot) {
+      // Component will re-render via key change or we can use a state update
+      // For now, we'll let the initialSelection prop handle it via component internal state
+    }
+  }, [selectedDays]);
+
   // Render
   return (
     <div className="search-page">
-      <Header />
+      {/* Two-column layout: Listings (left) + Map (right) */}
+      <main className="two-column-layout">
+        {/* LEFT COLUMN: Listings with filters */}
+        <section className="listings-column">
+          {/* Mobile Filter Bar - Sticky at top on mobile */}
+          <MobileFilterBar
+            onFilterClick={() => setFilterPanelActive(!filterPanelActive)}
+            onMapClick={() => setMapSectionActive(!mapSectionActive)}
+          />
 
-      <MobileFilterBar
-        onFilterClick={() => setFilterPanelActive(!filterPanelActive)}
-        onMapClick={() => setMapSectionActive(!mapSectionActive)}
-      />
-
-      <FilterPanel
-        isActive={filterPanelActive}
-        selectedDays={selectedDays}
-        onDaysChange={setSelectedDays}
-        boroughs={boroughs}
-        selectedBorough={selectedBorough}
-        onBoroughChange={setSelectedBorough}
-        neighborhoods={neighborhoods}
-        selectedNeighborhoods={selectedNeighborhoods}
-        onNeighborhoodsChange={setSelectedNeighborhoods}
-        weekPattern={weekPattern}
-        onWeekPatternChange={setWeekPattern}
-        priceTier={priceTier}
-        onPriceTierChange={setPriceTier}
-        sortBy={sortBy}
-        onSortByChange={setSortBy}
-        neighborhoodSearch={neighborhoodSearch}
-        onNeighborhoodSearchChange={setNeighborhoodSearch}
-      />
-
-      <main className="main-content">
-        <section className="listings-section">
-          <div className="listings-header">
-            <div className="header-top">
-              <h1 className="search-title">Available Split Leases</h1>
-            </div>
-            <div className="header-info">
-              <span className="results-count">{allListings.length} listings found</span>
-              <span className="location-tag">
-                in <strong>{boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}</strong>
-              </span>
+          {/* Mobile Schedule Selector - Always visible on mobile */}
+          <div className="mobile-schedule-selector">
+            <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
+              {/* SearchScheduleSelector will be mounted here on mobile */}
             </div>
           </div>
 
-          {isLoading && <LoadingState />}
+          {/* All filters in single horizontal flexbox container */}
+          <div className={`inline-filters ${filterPanelActive ? 'active' : ''}`}>
+            {/* Close button for mobile filter panel */}
+            {filterPanelActive && (
+              <button
+                className="mobile-filter-close-btn"
+                onClick={() => setFilterPanelActive(false)}
+              >
+                ✕ Close Filters
+              </button>
+            )}
 
-          {!isLoading && error && (
-            <ErrorState message={error} onRetry={fetchListings} />
-          )}
+            {/* Schedule Selector - First item on left (desktop only) */}
+            <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
+              {/* SearchScheduleSelector will be mounted here on desktop */}
+            </div>
 
-          {!isLoading && !error && allListings.length === 0 && (
-            <EmptyState onResetFilters={handleResetFilters} />
-          )}
+            {/* Neighborhood Multi-Select - Second item, beside schedule selector */}
+            <div className="filter-group compact neighborhoods-group">
+              <label htmlFor="neighborhoodSearch">Refine Neighborhood(s)</label>
+              <input
+                type="text"
+                id="neighborhoodSearch"
+                placeholder="Search neighborhoods..."
+                className="neighborhood-search"
+                value={neighborhoodSearch}
+                onChange={(e) => setNeighborhoodSearch(e.target.value)}
+              />
 
-          {!isLoading && !error && allListings.length > 0 && (
-            <ListingsGrid
-              listings={displayedListings}
-              selectedDaysCount={selectedDays.length}
-              onLoadMore={handleLoadMore}
-              hasMore={hasMore}
-              isLoading={isLoading}
-              onOpenContactModal={handleOpenContactModal}
-              onOpenInfoModal={handleOpenInfoModal}
-              mapRef={mapRef}
-            />
-          )}
+              {/* Selected neighborhood chips */}
+              {selectedNeighborhoods.length > 0 && (
+                <div className="selected-neighborhoods-chips">
+                  {selectedNeighborhoods.map(id => {
+                    const neighborhood = neighborhoods.find(n => n.id === id);
+                    if (!neighborhood) return null;
+
+                    return (
+                      <div key={id} className="neighborhood-chip">
+                        <span>{neighborhood.name}</span>
+                        <button
+                          className="neighborhood-chip-remove"
+                          onClick={() => {
+                            setSelectedNeighborhoods(selectedNeighborhoods.filter(nId => nId !== id));
+                          }}
+                          aria-label={`Remove ${neighborhood.name}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Neighborhood list */}
+              <div className="neighborhood-list">
+                {(() => {
+                  const filteredNeighborhoods = neighborhoods.filter(n => {
+                    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
+                    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
+                  });
+
+                  if (filteredNeighborhoods.length === 0) {
+                    return (
+                      <div style={{ padding: '10px', color: '#666' }}>
+                        {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
+                      </div>
+                    );
+                  }
+
+                  return filteredNeighborhoods.map(neighborhood => (
+                    <label key={neighborhood.id}>
+                      <input
+                        type="checkbox"
+                        value={neighborhood.id}
+                        checked={selectedNeighborhoods.includes(neighborhood.id)}
+                        onChange={() => {
+                          const isSelected = selectedNeighborhoods.includes(neighborhood.id);
+                          if (isSelected) {
+                            setSelectedNeighborhoods(selectedNeighborhoods.filter(id => id !== neighborhood.id));
+                          } else {
+                            setSelectedNeighborhoods([...selectedNeighborhoods, neighborhood.id]);
+                          }
+                        }}
+                      />
+                      {neighborhood.name}
+                    </label>
+                  ));
+                })()}
+              </div>
+            </div>
+
+            {/* Borough Select */}
+            <div className="filter-group compact">
+              <label htmlFor="boroughSelect">Borough</label>
+              <select
+                id="boroughSelect"
+                className="filter-select"
+                value={selectedBorough}
+                onChange={(e) => setSelectedBorough(e.target.value)}
+              >
+                {boroughs.length === 0 ? (
+                  <option value="">Loading...</option>
+                ) : (
+                  boroughs.map(borough => (
+                    <option key={borough.id} value={borough.value}>
+                      {borough.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {/* Week Pattern */}
+            <div className="filter-group compact">
+              <label htmlFor="weekPattern">Week Pattern</label>
+              <select
+                id="weekPattern"
+                className="filter-select"
+                value={weekPattern}
+                onChange={(e) => setWeekPattern(e.target.value)}
+              >
+                <option value="every-week">Every week</option>
+                <option value="one-on-off">One on, one off</option>
+                <option value="two-on-off">Two on, two off</option>
+                <option value="one-three-off">One on, three off</option>
+              </select>
+            </div>
+
+            {/* Price Tier */}
+            <div className="filter-group compact">
+              <label htmlFor="priceTier">Price</label>
+              <select
+                id="priceTier"
+                className="filter-select"
+                value={priceTier}
+                onChange={(e) => setPriceTier(e.target.value)}
+              >
+                <option value="under-200">&lt; $200/night</option>
+                <option value="200-350">$200-$350/night</option>
+                <option value="350-500">$350-$500/night</option>
+                <option value="500-plus">$500+/night</option>
+                <option value="all">All Prices</option>
+              </select>
+            </div>
+
+            {/* Sort By */}
+            <div className="filter-group compact">
+              <label htmlFor="sortBy">Sort By</label>
+              <select
+                id="sortBy"
+                className="filter-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="recommended">Recommended</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="most-viewed">Most Viewed</option>
+                <option value="recent">Recently Added</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Listings count */}
+          <div className="listings-count">
+            <strong>{allListings.length} listings found</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
+          </div>
+
+          {/* Listings content */}
+          <div className="listings-content">
+            {isLoading && <LoadingState />}
+
+            {!isLoading && error && (
+              <ErrorState message={error} onRetry={fetchListings} />
+            )}
+
+            {!isLoading && !error && allListings.length === 0 && (
+              <EmptyState onResetFilters={handleResetFilters} />
+            )}
+
+            {!isLoading && !error && allListings.length > 0 && (
+              <ListingsGrid
+                listings={displayedListings}
+                selectedDaysCount={selectedDays.length}
+                onLoadMore={handleLoadMore}
+                hasMore={hasMore}
+                isLoading={isLoading}
+                onOpenContactModal={handleOpenContactModal}
+                onOpenInfoModal={handleOpenInfoModal}
+                mapRef={mapRef}
+              />
+            )}
+          </div>
         </section>
 
-        <section className={`map-section ${mapSectionActive ? 'mobile-active' : ''}`}>
+        {/* RIGHT COLUMN: Map with integrated header */}
+        <section className="map-column">
+          {/* Integrated Logo and Hamburger Menu */}
+          <div className="map-header">
+            <a href="https://splitlease.app" className="map-logo">
+              <img
+                src="/assets/images/split-lease-purple-circle.png"
+                alt="Split Lease Logo"
+                className="logo-icon"
+                width="36"
+                height="36"
+              />
+              <span className="logo-text">Split Lease</span>
+            </a>
+
+            {/* Hamburger Menu */}
+            <button
+              className="hamburger-menu"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span>Menu</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu */}
+            {menuOpen && (
+              <div className="header-dropdown">
+                <a href="https://splitlease.app/how-it-works">3 Easy Steps To Book</a>
+                <a href="https://splitlease.app/success-stories">Success Stories</a>
+                <a href={SIGNUP_LOGIN_URL}>Sign In / Sign Up</a>
+                <a href="https://splitlease.app/why-split-lease">Understand Split Lease</a>
+                <a href="https://splitlease.app/faq">Explore FAQs</a>
+              </div>
+            )}
+          </div>
+
           <GoogleMap
             ref={mapRef}
             listings={allListings}
@@ -1213,61 +1418,31 @@ export default function SearchPage() {
             selectedBorough={selectedBorough}
             onMarkerClick={(listing) => {
               console.log('Marker clicked:', listing.title);
-              // Could open listing in new tab or show details
             }}
           />
 
-          {/* Deep Research Floating Button - PORTED FROM ORIGINAL */}
+          {/* Deep Research Floating Button */}
           <button
             className="deep-research-floating-btn"
             onClick={() => setShowAiSignup(true)}
           >
-            <div className="atom-animation" id="atomAnimation">
-              {/* Lottie animation will be loaded here via script */}
-              <svg width="31" height="31" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <circle cx="12" cy="12" r="3" fill="currentColor" />
-                <line x1="12" y1="2" x2="12" y2="6" />
-                <line x1="12" y1="18" x2="12" y2="22" />
-                <line x1="4.93" y1="4.93" x2="7.76" y2="7.76" />
-                <line x1="16.24" y1="16.24" x2="19.07" y2="19.07" />
-                <line x1="2" y1="12" x2="6" y2="12" />
-                <line x1="18" y1="12" x2="22" y2="12" />
-                <line x1="4.93" y1="19.07" x2="7.76" y2="16.24" />
-                <line x1="16.24" y1="7.76" x2="19.07" y2="4.93" />
-              </svg>
-            </div>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <circle cx="12" cy="12" r="3" fill="currentColor" />
+            </svg>
             <span>Generate Market Report</span>
           </button>
         </section>
       </main>
 
-      {/* Chat Widget - PORTED FROM ORIGINAL */}
-      <button
-        className="chat-widget"
-        onClick={() => setShowAiSignup(true)}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
-        </svg>
-        <span className="chat-label">Get Market Research</span>
-      </button>
-
-      {/* AI Signup Modal */}
-      <AISignupModal
-        isOpen={showAiSignup}
-        onClose={handleCloseAIModal}
-      />
-
-      {/* Contact Host Messaging Modal */}
+      {/* Modals */}
+      <AISignupModal isOpen={showAiSignup} onClose={handleCloseAIModal} />
       <ContactHostMessaging
         isOpen={isContactModalOpen}
         onClose={handleCloseContactModal}
         listing={selectedListing}
         userEmail={null}
       />
-
-      {/* Informational Text Modal */}
       <InformationalText
         isOpen={isInfoModalOpen}
         onClose={handleCloseInfoModal}

@@ -1,130 +1,20 @@
 import { useState, useEffect } from 'react';
+import { createRoot } from 'react-dom/client';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
+import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import { checkAuthStatus } from '../../lib/auth.js';
 import {
-  SEARCH_URL,
-  SIGNUP_LOGIN_URL,
-  VIEW_LISTING_URL,
   PROPERTY_IDS,
-  DAY_NAMES,
-  DAY_ABBREVIATIONS,
-  SCHEDULE_PATTERNS,
   FAQ_URL,
-  REFERRAL_API_ENDPOINT,
   EMBED_AI_DRAWER_URL
 } from '../../lib/constants.js';
-import { toBubbleDays, fromBubbleDays } from '../../lib/dayUtils.js';
 
 // ============================================================================
 // INTERNAL COMPONENT: Hero Section
 // ============================================================================
 
-function Hero({ selectedDays, onDayToggle, onExploreRentals }) {
-  const [checkinCheckout, setCheckinCheckout] = useState({ display: false, checkinDay: '', checkoutDay: '' });
-
-  useEffect(() => {
-    updateCheckinCheckout();
-  }, [selectedDays]);
-
-  const updateCheckinCheckout = () => {
-    if (selectedDays.length === 0) {
-      setCheckinCheckout({ display: false, checkinDay: '', checkoutDay: '' });
-      return;
-    }
-
-    // Check if days are continuous
-    if (!areDaysContinuous(selectedDays)) {
-      setCheckinCheckout({ display: true, error: true, checkinDay: '', checkoutDay: '' });
-      return;
-    }
-
-    // Calculate check-in and check-out days
-    let checkinDay, checkoutDay;
-
-    if (selectedDays.length === 1) {
-      checkinDay = DAY_NAMES[selectedDays[0]];
-      checkoutDay = DAY_NAMES[selectedDays[0]];
-    } else {
-      const sortedDays = [...selectedDays].sort((a, b) => a - b);
-      const hasSunday = sortedDays.includes(0);
-      const hasSaturday = sortedDays.includes(6);
-
-      if (hasSunday && hasSaturday && sortedDays.length < 7) {
-        // Wrap-around case
-        let gapStart = -1;
-        let gapEnd = -1;
-
-        for (let i = 0; i < sortedDays.length - 1; i++) {
-          if (sortedDays[i + 1] - sortedDays[i] > 1) {
-            gapStart = sortedDays[i] + 1;
-            gapEnd = sortedDays[i + 1] - 1;
-            break;
-          }
-        }
-
-        if (gapStart !== -1 && gapEnd !== -1) {
-          let checkinDayIndex;
-          if (sortedDays.some(day => day > gapEnd)) {
-            checkinDayIndex = sortedDays.find(day => day > gapEnd);
-          } else {
-            checkinDayIndex = 0;
-          }
-
-          let checkoutDayIndex;
-          if (sortedDays.some(day => day < gapStart)) {
-            checkoutDayIndex = sortedDays.filter(day => day < gapStart).pop();
-          } else {
-            checkoutDayIndex = 6;
-          }
-
-          checkinDay = DAY_NAMES[checkinDayIndex];
-          checkoutDay = DAY_NAMES[checkoutDayIndex];
-        } else {
-          checkinDay = DAY_NAMES[sortedDays[0]];
-          checkoutDay = DAY_NAMES[sortedDays[sortedDays.length - 1]];
-        }
-      } else {
-        checkinDay = DAY_NAMES[sortedDays[0]];
-        checkoutDay = DAY_NAMES[sortedDays[sortedDays.length - 1]];
-      }
-    }
-
-    setCheckinCheckout({ display: true, error: false, checkinDay, checkoutDay });
-  };
-
-  const areDaysContinuous = (days) => {
-    if (days.length <= 1) return true;
-    if (days.length >= 6) return true;
-
-    const sortedDays = [...days].sort((a, b) => a - b);
-
-    // Check regular continuous
-    let isRegularContinuous = true;
-    for (let i = 1; i < sortedDays.length; i++) {
-      if (sortedDays[i] !== sortedDays[i - 1] + 1) {
-        isRegularContinuous = false;
-        break;
-      }
-    }
-
-    if (isRegularContinuous) return true;
-
-    // Check wrap-around via unselected days
-    const allDays = [0, 1, 2, 3, 4, 5, 6];
-    const unselectedDays = allDays.filter(day => !sortedDays.includes(day));
-
-    if (unselectedDays.length === 0) return true;
-
-    const sortedUnselected = [...unselectedDays].sort((a, b) => a - b);
-    for (let i = 1; i < sortedUnselected.length; i++) {
-      if (sortedUnselected[i] !== sortedUnselected[i - 1] + 1) {
-        return false;
-      }
-    }
-
-    return true;
-  };
+function Hero({ onExploreRentals }) {
 
   return (
     <section className="hero-section">
@@ -150,51 +40,10 @@ function Hero({ selectedDays, onDayToggle, onExploreRentals }) {
             Ongoing Rentals <span className="mobile-break">for Repeat Stays</span>
           </h1>
           <p className="hero-subtitle">
-            Select which days you'd like to stay in NYC and
+            Discover flexible rental options in NYC.
             <br />
-            only pay for the nights you need.
+            Only pay for the nights you need.
           </p>
-
-          {/* Day Selector */}
-          <div className="day-selector">
-            <div className="calendar-icon">
-              <img
-                src="https://c.animaapp.com/meh6k861XoGXNn/img/calendar-minimalistic-svgrepo-com-202-svg.svg"
-                alt="Calendar"
-                width="35"
-                height="35"
-              />
-            </div>
-            {DAY_ABBREVIATIONS.map((dayAbbr, index) => (
-              <div
-                key={index}
-                className={`day-badge ${selectedDays.includes(index) ? 'active' : ''}`}
-                data-day={index}
-                onClick={() => onDayToggle(index)}
-              >
-                {dayAbbr}
-              </div>
-            ))}
-          </div>
-
-          {/* Check-in/Check-out Display */}
-          {checkinCheckout.display && (
-            <div className="checkin-checkout" id="checkinCheckout">
-              {checkinCheckout.error ? (
-                'Please select a continuous set of days'
-              ) : (
-                <>
-                  <span>
-                    <strong>Check-in:</strong> <span id="checkinDay">{checkinCheckout.checkinDay}</span>
-                  </span>
-                  <span className="separator">•</span>
-                  <span>
-                    <strong>Check-out:</strong> <span id="checkoutDay">{checkinCheckout.checkoutDay}</span>
-                  </span>
-                </>
-              )}
-            </div>
-          )}
 
           <button className="hero-cta-button" onClick={onExploreRentals}>
             Explore Rentals
@@ -375,7 +224,7 @@ function BenefitsSection({ onExploreRentals }) {
 // INTERNAL COMPONENT: Listings Preview
 // ============================================================================
 
-function ListingsPreview({ selectedDays }) {
+function ListingsPreview() {
   const listings = [
     {
       id: PROPERTY_IDS.ONE_PLATT_STUDIO,
@@ -408,15 +257,12 @@ function ListingsPreview({ selectedDays }) {
   ];
 
   const handleListingClick = (propertyId) => {
-    const daysParam = selectedDays.length > 0 ? selectedDays.map(d => d + 1).join(',') : '2,3,4,5,6';
-    const propertyUrl = `/view-split-lease.html/${propertyId}?days-selected=${daysParam}&weekly-frequency=Every%20week`;
+    const propertyUrl = `/view-split-lease.html/${propertyId}`;
     window.location.href = propertyUrl;
   };
 
   const handleShowMore = () => {
-    const daysParam = selectedDays.length > 0 ? selectedDays.map(d => d + 1).join(',') : '1,2,3,4,5,6';
-    const searchUrl = `/search.html?days-selected=${daysParam}`;
-    window.location.href = searchUrl;
+    window.location.href = '/search.html';
   };
 
   return (
@@ -584,110 +430,52 @@ function MarketResearchModal({ isOpen, onClose }) {
 
 export default function HomePage() {
   // State management
-  const [selectedDays, setSelectedDays] = useState([1, 2, 3, 4, 5]); // Default: Monday-Friday (0-based)
   const [marketResearchModalOpen, setMarketResearchModalOpen] = useState(false);
+  const [selectedDays, setSelectedDays] = useState([]);
 
-  // Load state from URL on mount
+  // Check authentication status on mount
   useEffect(() => {
-    loadStateFromURL();
-    checkAuthStatus(); // Check authentication status
+    checkAuthStatus();
   }, []);
 
-  // Update URL when selected days change
+  // Mount SearchScheduleSelector component in hero section above Explore Rentals button
   useEffect(() => {
-    updateURL();
-  }, [selectedDays]);
+    const mountPoint = document.createElement('div');
+    mountPoint.id = 'home-schedule-selector-mount';
+    mountPoint.style.display = 'flex';
+    mountPoint.style.justifyContent = 'center';
+    mountPoint.style.marginBottom = '20px';
 
-  const loadStateFromURL = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const daysParam = urlParams.get('days-selected');
+    const heroContent = document.querySelector('.hero-content');
+    const exploreButton = document.querySelector('.hero-cta-button');
 
-    if (daysParam) {
-      const decoded = decodeURIComponent(daysParam);
-      // Convert from 1-based (Bubble) to 0-based (JavaScript)
-      const bubbleDays = decoded.split(',').map((d) => parseInt(d.trim()));
-      const jsDays = fromBubbleDays(bubbleDays);
-      setSelectedDays(jsDays);
+    if (heroContent && exploreButton) {
+      heroContent.insertBefore(mountPoint, exploreButton);
+
+      const root = createRoot(mountPoint);
+      root.render(
+        <SearchScheduleSelector
+          onSelectionChange={(days) => {
+            console.log('Selected days on home page:', days);
+            // Just update state, don't auto-navigate
+            setSelectedDays(days.map(d => d.index));
+          }}
+          onError={(error) => console.error('SearchScheduleSelector error:', error)}
+        />
+      );
+
+      return () => {
+        root.unmount();
+        if (mountPoint.parentNode) {
+          mountPoint.parentNode.removeChild(mountPoint);
+        }
+      };
     }
-  };
-
-  const updateURL = () => {
-    const currentUrl = new URL(window.location);
-
-    if (selectedDays.length === 0) {
-      currentUrl.searchParams.delete('days-selected');
-    } else {
-      // Convert to 1-based indexing for Bubble
-      const bubbleDays = toBubbleDays(selectedDays);
-      currentUrl.searchParams.set('days-selected', bubbleDays.join(', '));
-    }
-
-    window.history.replaceState({}, '', currentUrl);
-  };
-
-  const handleDayToggle = (dayIndex) => {
-    if (selectedDays.includes(dayIndex)) {
-      // Prevent unselection if only 2 days are selected
-      if (selectedDays.length <= 2) {
-        console.log('Cannot unselect: Minimum 2 days must remain selected');
-        return;
-      }
-      setSelectedDays(selectedDays.filter((d) => d !== dayIndex));
-    } else {
-      const newSelectedDays = [...selectedDays, dayIndex].sort((a, b) => a - b);
-      setSelectedDays(newSelectedDays);
-    }
-  };
+  }, []);
 
   const handleExploreRentals = () => {
-    if (selectedDays.length === 0) {
-      console.log('Please select at least one day');
-      return;
-    }
-
-    // Check if days are continuous
-    if (!areDaysContinuous(selectedDays)) {
-      console.log('Please select a continuous set of days');
-      return;
-    }
-
-    // Convert to 1-based indexing for Bubble
-    const bubbleDays = toBubbleDays(selectedDays);
-    const searchUrl = `/search.html?days-selected=${bubbleDays.join(',')}`;
-    window.location.href = searchUrl;
-  };
-
-  const areDaysContinuous = (days) => {
-    if (days.length <= 1) return true;
-    if (days.length >= 6) return true;
-
-    const sortedDays = [...days].sort((a, b) => a - b);
-
-    // Check regular continuous
-    let isRegularContinuous = true;
-    for (let i = 1; i < sortedDays.length; i++) {
-      if (sortedDays[i] !== sortedDays[i - 1] + 1) {
-        isRegularContinuous = false;
-        break;
-      }
-    }
-
-    if (isRegularContinuous) return true;
-
-    // Check wrap-around via unselected days
-    const allDays = [0, 1, 2, 3, 4, 5, 6];
-    const unselectedDays = allDays.filter((day) => !sortedDays.includes(day));
-
-    if (unselectedDays.length === 0) return true;
-
-    const sortedUnselected = [...unselectedDays].sort((a, b) => a - b);
-    for (let i = 1; i < sortedUnselected.length; i++) {
-      if (sortedUnselected[i] !== sortedUnselected[i - 1] + 1) {
-        return false;
-      }
-    }
-
-    return true;
+    // Navigate to search page without day selection
+    window.location.href = '/search.html';
   };
 
   const handleOpenMarketResearch = () => {
@@ -702,11 +490,7 @@ export default function HomePage() {
     <>
       <Header />
 
-      <Hero
-        selectedDays={selectedDays}
-        onDayToggle={handleDayToggle}
-        onExploreRentals={handleExploreRentals}
-      />
+      <Hero onExploreRentals={handleExploreRentals} />
 
       <ValuePropositions />
 
@@ -714,7 +498,7 @@ export default function HomePage() {
 
       <BenefitsSection onExploreRentals={handleExploreRentals} />
 
-      <ListingsPreview selectedDays={selectedDays} />
+      <ListingsPreview />
 
       <SupportSection />
 

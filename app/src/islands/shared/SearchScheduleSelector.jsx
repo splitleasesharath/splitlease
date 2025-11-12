@@ -1,28 +1,165 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { AnimatePresence } from 'framer-motion';
-import {
-  Container,
-  SelectorRow,
-  CalendarIcon,
-  DaysGrid,
-  DayCell,
-  InfoContainer,
-  InfoText,
-  ResetButton,
-  ErrorPopup,
-  ErrorIcon,
-  ErrorMessage,
-} from './SearchScheduleSelector.styles';
-import type {
-  Day,
-  SearchScheduleSelectorProps,
-  ValidationResult,
-} from './types';
+import { useState, useEffect, useCallback } from 'react';
+import styled from 'styled-components';
+import { motion } from 'framer-motion';
+
+// ============================================================================
+// STYLED COMPONENTS
+// ============================================================================
+
+const Container = styled.div`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  user-select: none;
+
+  @media (max-width: 768px) {
+    padding: 0;
+  }
+`;
+
+const SelectorRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 0 0 8.4px 0;
+`;
+
+const CalendarIcon = styled.div`
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  margin-right: 8px;
+  flex-shrink: 0;
+`;
+
+const DaysGrid = styled.div`
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+
+  @media (max-width: 768px) {
+    gap: 4px;
+  }
+`;
+
+const DayCell = styled(motion.button)`
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Inter", Helvetica, Arial, sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 16px;
+  border: none;
+  border-radius: 10px;
+  padding: 0;
+  cursor: ${props => props.$isDragging ? 'grabbing' : 'pointer'};
+  transition: transform 0.2s ease-in-out, background 0.2s ease-in-out;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+
+  /* Error state styling */
+  ${props => props.$hasError && props.$isSelected && `
+    background-color: #d32f2f !important;
+    color: #ffffff !important;
+    animation: pulse-error 1.5s ease-in-out infinite;
+
+    @keyframes pulse-error {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+  `}
+
+  /* Normal selected/unselected state (no error) */
+  ${props => !props.$hasError && `
+    background-color: ${props.$isSelected ? '#4B47CE' : '#b2b2b2'};
+    color: #ffffff;
+  `}
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #4B47CE;
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 768px) {
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  @media (max-width: 480px) {
+    width: 32px;
+    height: 32px;
+    font-size: 13px;
+  }
+`;
+
+const InfoContainer = styled.div`
+  min-height: 24px;
+  max-width: 450px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 16px 0;
+`;
+
+const InfoText = styled.p`
+  margin: 0;
+  font-size: 14.7px;
+  font-weight: 400;
+  color: #000000;
+  text-align: center;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+  width: 100%;
+
+  strong {
+    font-weight: 600;
+  }
+
+  .day-name {
+    color: #31135D;
+    font-weight: 600;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 14px;
+  }
+`;
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 
 /**
  * Days of the week constant - Starting with Sunday (S, M, T, W, T, F, S)
  */
-const DAYS_OF_WEEK: Day[] = [
+const DAYS_OF_WEEK = [
   { id: '1', singleLetter: 'S', fullName: 'Sunday', index: 0 },
   { id: '2', singleLetter: 'M', fullName: 'Monday', index: 1 },
   { id: '3', singleLetter: 'T', fullName: 'Tuesday', index: 2 },
@@ -32,47 +169,57 @@ const DAYS_OF_WEEK: Day[] = [
   { id: '7', singleLetter: 'S', fullName: 'Saturday', index: 6 },
 ];
 
+// ============================================================================
+// COMPONENT
+// ============================================================================
+
 /**
  * SearchScheduleSelector Component
  *
  * A weekly schedule selector for split-lease arrangements.
  * Allows users to select 2-5 contiguous nights per week.
  *
+ * @param {Object} props - Component props
+ * @param {Function} [props.onSelectionChange] - Callback fired when the selection changes
+ * @param {Function} [props.onError] - Callback fired when a validation error occurs
+ * @param {string} [props.className] - Custom styling class name
+ * @param {number} [props.minDays=2] - Minimum number of days that can be selected
+ * @param {boolean} [props.requireContiguous=true] - Whether to require contiguous day selection
+ * @param {number[]} [props.initialSelection=[]] - Initial selected days (array of day indices 0-6)
+ *
  * @example
- * ```tsx
+ * ```jsx
  * <SearchScheduleSelector
  *   onSelectionChange={(days) => console.log(days)}
  *   onError={(error) => console.error(error)}
  * />
  * ```
  */
-export const SearchScheduleSelector: React.FC<SearchScheduleSelectorProps> = ({
+export default function SearchScheduleSelector({
   onSelectionChange,
   onError,
   className,
   minDays = 2,
   requireContiguous = true,
   initialSelection = [],
-}) => {
-  const [selectedDays, setSelectedDays] = useState<Set<number>>(
-    new Set(initialSelection)
-  );
+}) {
+  const [selectedDays, setSelectedDays] = useState(new Set(initialSelection));
   const [isDragging, setIsDragging] = useState(false);
-  const [mouseDownIndex, setMouseDownIndex] = useState<number | null>(null);
+  const [mouseDownIndex, setMouseDownIndex] = useState(null);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [hasContiguityError, setHasContiguityError] = useState(false);
-  const [validationTimeout, setValidationTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
-  const [errorTimeout, setErrorTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
-  const [checkinDay, setCheckinDay] = useState<string>('');
-  const [checkoutDay, setCheckoutDay] = useState<string>('');
+  const [validationTimeout, setValidationTimeout] = useState(null);
+  const [errorTimeout, setErrorTimeout] = useState(null);
+  const [checkinDay, setCheckinDay] = useState('');
+  const [checkoutDay, setCheckoutDay] = useState('');
 
   /**
    * Check if selected days are contiguous (handles wrap-around)
    * Uses the exact logic from index_lite page
    * Example: [5, 6, 0, 1, 2] (Fri, Sat, Sun, Mon, Tue) is contiguous
    */
-  const isContiguous = useCallback((days: Set<number>): boolean => {
+  const isContiguous = useCallback((days) => {
     const daysArray = Array.from(days);
 
     // Edge cases
@@ -126,7 +273,7 @@ export const SearchScheduleSelector: React.FC<SearchScheduleSelectorProps> = ({
    * NOTE: Nights = Days - 1 (last day is checkout, doesn't count as a night)
    */
   const validateSelection = useCallback(
-    (days: Set<number>): ValidationResult => {
+    (days) => {
       const dayCount = days.size;
       const nightCount = dayCount - 1; // Checkout day doesn't count as a night
 
@@ -159,7 +306,7 @@ export const SearchScheduleSelector: React.FC<SearchScheduleSelectorProps> = ({
    * Display error message
    */
   const displayError = useCallback(
-    (error: string) => {
+    (error) => {
       // Clear any existing error timeout
       if (errorTimeout) {
         clearTimeout(errorTimeout);
@@ -185,7 +332,7 @@ export const SearchScheduleSelector: React.FC<SearchScheduleSelectorProps> = ({
   /**
    * Handle mouse down - Start tracking for click vs drag
    */
-  const handleMouseDown = useCallback((dayIndex: number) => {
+  const handleMouseDown = useCallback((dayIndex) => {
     setMouseDownIndex(dayIndex);
   }, []);
 
@@ -193,12 +340,12 @@ export const SearchScheduleSelector: React.FC<SearchScheduleSelectorProps> = ({
    * Handle mouse enter - If dragging, fill range
    */
   const handleMouseEnter = useCallback(
-    (dayIndex: number) => {
+    (dayIndex) => {
       // Only drag if mouse is down and we moved to a different cell
       if (mouseDownIndex !== null && dayIndex !== mouseDownIndex) {
         setIsDragging(true);
 
-        const newSelection = new Set<number>();
+        const newSelection = new Set();
         const totalDays = 7;
         const start = mouseDownIndex;
 
@@ -226,7 +373,7 @@ export const SearchScheduleSelector: React.FC<SearchScheduleSelectorProps> = ({
    * Handle mouse up - Determine if click or drag, then act accordingly
    */
   const handleMouseUp = useCallback(
-    (dayIndex: number) => {
+    (dayIndex) => {
       if (mouseDownIndex === null) return;
 
       // Check if this was a click (same cell) or drag (different cell)
@@ -281,30 +428,14 @@ export const SearchScheduleSelector: React.FC<SearchScheduleSelectorProps> = ({
       setIsDragging(false);
       setMouseDownIndex(null);
     },
-    [isDragging, mouseDownIndex, selectedDays, validationTimeout, validateSelection, displayError]
+    [isDragging, mouseDownIndex, selectedDays, validationTimeout, validateSelection, displayError, minDays]
   );
-
-  /**
-   * Handle reset - clear all selections
-   */
-  const handleReset = useCallback(() => {
-    setSelectedDays(new Set());
-    if (validationTimeout) {
-      clearTimeout(validationTimeout);
-      setValidationTimeout(null);
-    }
-    if (errorTimeout) {
-      clearTimeout(errorTimeout);
-      setErrorTimeout(null);
-    }
-    setShowError(false);
-  }, [validationTimeout, errorTimeout]);
 
   /**
    * Calculate check-in and check-out days based on selection
    * Uses the exact logic from index_lite page
    */
-  const calculateCheckinCheckout = useCallback((days: Set<number>) => {
+  const calculateCheckinCheckout = useCallback((days) => {
     if (days.size === 0) {
       setCheckinDay('');
       setCheckoutDay('');
@@ -353,20 +484,20 @@ export const SearchScheduleSelector: React.FC<SearchScheduleSelectorProps> = ({
         // Check-out: Last selected day BEFORE the gap starts
 
         // Check-in is the smallest day after the gap (considering wrap)
-        let checkinDayIndex: number;
+        let checkinDayIndex;
         if (sortedDays.some(day => day > gapEnd)) {
           // There are days after the gap in the same week
-          checkinDayIndex = sortedDays.find(day => day > gapEnd)!;
+          checkinDayIndex = sortedDays.find(day => day > gapEnd);
         } else {
           // Wrap to Sunday
           checkinDayIndex = 0;
         }
 
         // Check-out is the largest day before the gap
-        let checkoutDayIndex: number;
+        let checkoutDayIndex;
         if (sortedDays.some(day => day < gapStart)) {
           // There are days before the gap
-          checkoutDayIndex = sortedDays.filter(day => day < gapStart).pop()!;
+          checkoutDayIndex = sortedDays.filter(day => day < gapStart).pop();
         } else {
           // Wrap to Saturday
           checkoutDayIndex = 6;
@@ -430,8 +561,8 @@ export const SearchScheduleSelector: React.FC<SearchScheduleSelectorProps> = ({
           <img
             src="https://c.animaapp.com/meh6k861XoGXNn/img/calendar-minimalistic-svgrepo-com-202-svg.svg"
             alt="Calendar"
-            width="35"
-            height="35"
+            width="36"
+            height="36"
           />
         </CalendarIcon>
 
@@ -465,7 +596,12 @@ export const SearchScheduleSelector: React.FC<SearchScheduleSelectorProps> = ({
       <InfoContainer>
         {selectedDays.size > 0 && (
           <InfoText>
-            {selectedDays.size === 7 ? (
+            {showError ? (
+              <span style={{ color: '#d32f2f', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>⚠️</span>
+                <span>{errorMessage}</span>
+              </span>
+            ) : selectedDays.size === 7 ? (
               <span className="day-name">Full Time</span>
             ) : (
               checkinDay && checkoutDay && (
@@ -477,22 +613,6 @@ export const SearchScheduleSelector: React.FC<SearchScheduleSelectorProps> = ({
           </InfoText>
         )}
       </InfoContainer>
-
-      <AnimatePresence>
-        {showError && (
-          <ErrorPopup
-            initial={{ opacity: 0, scale: 0.8, y: -20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            <ErrorIcon>⚠️</ErrorIcon>
-            <ErrorMessage>{errorMessage}</ErrorMessage>
-          </ErrorPopup>
-        )}
-      </AnimatePresence>
     </Container>
   );
-};
-
-export default SearchScheduleSelector;
+}
