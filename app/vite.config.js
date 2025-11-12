@@ -40,6 +40,12 @@ export default defineConfig({
             req.url = '/public/success-stories.html' + (url.substring('/success-stories.html'.length) || '');
           } else if (url.startsWith('/why-split-lease.html')) {
             req.url = '/public/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
+          } else if (url.startsWith('/guest-proposals.html')) {
+            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
+          } else if (url.startsWith('/guest-proposals')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/guest-proposals.html' + queryString;
           }
 
           next();
@@ -75,6 +81,12 @@ export default defineConfig({
             req.url = '/success-stories.html' + (url.substring('/success-stories.html'.length) || '');
           } else if (url.startsWith('/why-split-lease.html')) {
             req.url = '/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
+          } else if (url.startsWith('/guest-proposals.html')) {
+            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
+          } else if (url.startsWith('/guest-proposals')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/guest-proposals.html' + queryString;
           }
 
           next();
@@ -187,7 +199,8 @@ export default defineConfig({
         policies: resolve(__dirname, 'public/policies.html'),
         'list-with-us': resolve(__dirname, 'public/list-with-us.html'),
         'success-stories': resolve(__dirname, 'public/success-stories.html'),
-        'why-split-lease': resolve(__dirname, 'public/why-split-lease.html')
+        'why-split-lease': resolve(__dirname, 'public/why-split-lease.html'),
+        'guest-proposals': resolve(__dirname, 'public/guest-proposals.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public
