@@ -1071,8 +1071,25 @@ export default function SearchPage() {
     const location = locationParts.join(', ') || 'New York, NY';
 
     // Extract coordinates from JSONB field "Location - Address"
+    // Note: Supabase returns JSONB as a string, so we need to parse it
     // Format: { address: "...", lat: number, lng: number }
-    const locationAddress = dbListing['Location - Address'];
+    let locationAddress = dbListing['Location - Address'];
+
+    // Parse if it's a string
+    if (typeof locationAddress === 'string') {
+      try {
+        locationAddress = JSON.parse(locationAddress);
+      } catch (error) {
+        console.error('❌ SearchPage: Failed to parse Location - Address:', {
+          id: dbListing._id,
+          name: dbListing.Name,
+          rawValue: locationAddress,
+          error: error.message
+        });
+        locationAddress = null;
+      }
+    }
+
     const lat = locationAddress?.lat;
     const lng = locationAddress?.lng;
 
