@@ -128,7 +128,7 @@ export default function Footer() {
             <h4>Company</h4>
             <a href="https://app.split.lease/periodic-tenancy">About Periodic Tenancy</a>
             <a href="https://app.split.lease/team">About the Team</a>
-            <a href="https://app.split.lease/careers">Careers at Split Lease</a>
+            <a href="/careers.html">Careers at Split Lease</a>
             <a href="https://app.split.lease/blog">View Blog</a>
           </div>
 
