@@ -257,8 +257,8 @@ function ListingsPreview() {
   ];
 
   const handleListingClick = (propertyId) => {
-    // Redirect to local view-split-lease page with property ID in path
-    const propertyUrl = `/view-split-lease.html/${propertyId}`;
+    // Redirect to local view-split-lease page with property ID in path (clean URL)
+    const propertyUrl = `/view-split-lease/${propertyId}`;
     window.location.href = propertyUrl;
   };
 
