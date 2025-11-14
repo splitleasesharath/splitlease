@@ -140,9 +140,12 @@ export default function ViewSplitLeasePage() {
   // Responsive state
   const [isMobile, setIsMobile] = useState(false);
 
-  // Map reference
+  // Section references for navigation
   const mapRef = useRef(null);
   const mapSectionRef = useRef(null);
+  const commuteSectionRef = useRef(null);
+  const amenitiesSectionRef = useRef(null);
+  const houseRulesSectionRef = useRef(null);
 
   // ============================================================================
   // INITIALIZATION
@@ -166,6 +169,18 @@ export default function ViewSplitLeasePage() {
 
         // Fetch complete listing data
         const listingData = await fetchListingComplete(listingId);
+        console.log('📋 ViewSplitLeasePage: Listing data fetched:', {
+          id: listingData._id,
+          name: listingData.Name,
+          amenitiesInUnit: listingData.amenitiesInUnit,
+          safetyFeatures: listingData.safetyFeatures,
+          houseRules: listingData.houseRules,
+          coordinates: listingData.coordinates,
+          hasAmenitiesInUnit: listingData.amenitiesInUnit?.length > 0,
+          hasSafetyFeatures: listingData.safetyFeatures?.length > 0,
+          hasHouseRules: listingData.houseRules?.length > 0,
+          hasCoordinates: !!(listingData.coordinates?.lat && listingData.coordinates?.lng)
+        });
         setListing(listingData);
         setLoading(false);
 
@@ -316,18 +331,31 @@ export default function ViewSplitLeasePage() {
     setIsProposalModalOpen(true);
   };
 
-  const handleLocationClick = () => {
-    if (mapSectionRef.current) {
-      mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const scrollToSection = (sectionRef, shouldZoomMap = false) => {
+    if (sectionRef.current) {
+      // Scroll with offset to account for fixed header (80px height + some padding)
+      const yOffset = -100;
+      const element = sectionRef.current;
+      const y = element.getBoundingClientRect().top + window.pageYOffset + yOffset;
 
-      // After scrolling, center the map on the listing's location
-      setTimeout(() => {
-        if (mapRef.current && listing) {
-          mapRef.current.zoomToListing(listing._id);
-        }
-      }, 600);
+      window.scrollTo({ top: y, behavior: 'smooth' });
+
+      // After scrolling, center the map on the listing's location if needed
+      if (shouldZoomMap) {
+        setTimeout(() => {
+          if (mapRef.current && listing) {
+            mapRef.current.zoomToListing(listing._id);
+          }
+        }, 600);
+      }
     }
   };
+
+  const handleLocationClick = () => scrollToSection(mapSectionRef, true);
+  const handleCommuteClick = () => scrollToSection(commuteSectionRef);
+  const handleAmenitiesClick = () => scrollToSection(amenitiesSectionRef);
+  const handleHouseRulesClick = () => scrollToSection(houseRulesSectionRef);
+  const handleMapClick = () => scrollToSection(mapSectionRef, true);
 
   // ============================================================================
   // RENDER LOGIC
@@ -369,7 +397,7 @@ export default function ViewSplitLeasePage() {
         maxWidth: '1400px',
         margin: '0 auto',
         padding: '2rem',
-        paddingTop: 'calc(80px + 2rem)',
+        paddingTop: 'calc(100px + 2rem)', // Increased from 80px to prevent header overlap
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : '1fr 400px',
         gap: '2rem'
@@ -500,6 +528,79 @@ export default function ViewSplitLeasePage() {
                 </span>
               )}
             </div>
+
+            {/* Quick Navigation Links */}
+            <div style={{
+              display: 'flex',
+              gap: '1.5rem',
+              flexWrap: 'wrap',
+              marginTop: '1rem',
+              paddingTop: '1rem',
+              borderTop: `1px solid ${COLORS.BG_LIGHT}`
+            }}>
+              {(listing.parkingOption || listing['Time to Station (commute)']) && (
+                <span
+                  onClick={handleCommuteClick}
+                  style={{
+                    cursor: 'pointer',
+                    color: COLORS.TEXT_LIGHT,
+                    fontSize: '0.875rem',
+                    textDecoration: 'underline',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
+                  onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
+                >
+                  Commute
+                </span>
+              )}
+              {(listing.amenitiesInUnit?.length > 0 || listing.safetyFeatures?.length > 0) && (
+                <span
+                  onClick={handleAmenitiesClick}
+                  style={{
+                    cursor: 'pointer',
+                    color: COLORS.TEXT_LIGHT,
+                    fontSize: '0.875rem',
+                    textDecoration: 'underline',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
+                  onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
+                >
+                  Amenities
+                </span>
+              )}
+              {listing.houseRules?.length > 0 && (
+                <span
+                  onClick={handleHouseRulesClick}
+                  style={{
+                    cursor: 'pointer',
+                    color: COLORS.TEXT_LIGHT,
+                    fontSize: '0.875rem',
+                    textDecoration: 'underline',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
+                  onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
+                >
+                  House Rules
+                </span>
+              )}
+              <span
+                onClick={handleMapClick}
+                style={{
+                  cursor: 'pointer',
+                  color: COLORS.TEXT_LIGHT,
+                  fontSize: '0.875rem',
+                  textDecoration: 'underline',
+                  transition: 'color 0.2s'
+                }}
+                onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
+                onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
+              >
+                Map
+              </span>
+            </div>
           </section>
 
           {/* Features Grid */}
@@ -575,7 +676,7 @@ export default function ViewSplitLeasePage() {
 
           {/* Commute Section */}
           {(listing.parkingOption || listing['Time to Station (commute)']) && (
-            <section style={{ marginBottom: '2rem' }}>
+            <section ref={commuteSectionRef} style={{ marginBottom: '2rem' }}>
               <h2 style={{
                 fontSize: '1.5rem',
                 fontWeight: '700',
@@ -613,7 +714,7 @@ export default function ViewSplitLeasePage() {
 
           {/* Amenities Section */}
           {(listing.amenitiesInUnit?.length > 0 || listing.safetyFeatures?.length > 0) && (
-            <section style={{ marginBottom: '2rem' }}>
+            <section ref={amenitiesSectionRef} style={{ marginBottom: '2rem' }}>
               <h2 style={{
                 fontSize: '1.5rem',
                 fontWeight: '700',
@@ -683,7 +784,7 @@ export default function ViewSplitLeasePage() {
 
           {/* House Rules */}
           {listing.houseRules?.length > 0 && (
-            <section style={{ marginBottom: '2rem' }}>
+            <section ref={houseRulesSectionRef} style={{ marginBottom: '2rem' }}>
               <h2 style={{
                 fontSize: '1.5rem',
                 fontWeight: '700',
