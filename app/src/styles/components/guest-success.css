@@ -6,7 +6,7 @@
 .guest-success-hero {
   background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);
   color: var(--white);
-  padding: 4rem 2rem;
+  padding: 6rem 2rem 4rem 2rem;
 }
 
 .guest-success-hero-content {
@@ -219,8 +219,8 @@
 }
 
 @media (max-width: 480px) {
-  .success-hero {
-    padding: 2rem 1rem;
+  .guest-success-hero {
+    padding: 5rem 1rem 2rem 1rem;
   }
 
   .guest-success-hero-text h1 {

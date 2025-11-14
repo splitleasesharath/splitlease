@@ -6,7 +6,7 @@
 .host-success-hero {
   background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);
   color: var(--white);
-  padding: 4rem 2rem;
+  padding: 6rem 2rem 4rem 2rem;
 }
 
 .host-success-hero-content {
@@ -219,7 +219,7 @@
 
 @media (max-width: 480px) {
   .host-success-hero {
-    padding: 2rem 1rem;
+    padding: 5rem 1rem 2rem 1rem;
   }
 
   .host-success-hero-text h1 {
