@@ -504,9 +504,8 @@ function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoad
           />
         ];
 
-        // Insert AI signup cards at specific positions (after 4th and 8th listings)
-        // PORTED FROM: input/search/js/app.js lines 237-240
-        if (index === 3 || index === 7) {
+        // Insert AI signup card every 6 listings (after 6th, 12th, 18th, etc.)
+        if ((index + 1) % 6 === 0) {
           cards.push(<AiSignupCard key={`ai-${index}`} />);
         }
 
