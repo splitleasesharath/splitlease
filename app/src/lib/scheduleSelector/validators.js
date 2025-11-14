@@ -34,7 +34,7 @@ export const validateDaySelection = (day, selectedDays, listing) => {
   if (listing.maximumNights && selectedDays.length >= listing.maximumNights) {
     return {
       isValid: false,
-      error: `Maximum ${listing.maximumNights} nights allowed`
+      error: `Maximum ${listing.maximumNights} days allowed by host`
     };
   }
 
@@ -52,7 +52,7 @@ export const validateDayRemoval = (day, selectedDays, minimumNights) => {
   if (remainingNights < minimumNights) {
     return {
       isValid: false,
-      error: `Minimum ${minimumNights} nights required`
+      error: `Minimum ${minimumNights + 1} days required`
     };
   }
 
@@ -123,7 +123,7 @@ export const validateSchedule = (selectedDays, listing) => {
   if (nightsCount < listing.minimumNights) {
     return {
       isValid: false,
-      error: `Minimum ${listing.minimumNights} nights required`
+      error: `Minimum ${listing.minimumNights + 1} days required`
     };
   }
 
@@ -131,7 +131,7 @@ export const validateSchedule = (selectedDays, listing) => {
   if (listing.maximumNights && nightsCount > listing.maximumNights) {
     return {
       isValid: false,
-      error: `Maximum ${listing.maximumNights} nights allowed`
+      error: `Maximum ${listing.maximumNights + 1} days allowed`
     };
   }
 

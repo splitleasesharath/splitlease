@@ -45,6 +45,7 @@ export const useScheduleSelector = ({
   const [recalculateState, setRecalculateState] = useState(false);
   const [acceptableSchedule, setAcceptableSchedule] = useState(false);
   const [autobindListing, setAutobindListing] = useState(false);
+  const [maxNightsWarningShown, setMaxNightsWarningShown] = useState(false);
 
   // Create all days based on listing availability
   const allDays = useMemo(() => {
@@ -169,12 +170,33 @@ export const useScheduleSelector = ({
     const validation = validateDaySelection(day, selectedDays, listingWithLimit);
 
     if (!validation.isValid) {
-      setErrorState({
-        hasError: true,
-        errorType: 'availability',
-        errorMessage: validation.error || 'Cannot select this day'
-      });
-      return false;
+      // Check if this is a maximum nights error
+      const isMaxNightsError = validation.error && validation.error.includes('Maximum');
+
+      if (isMaxNightsError && !maxNightsWarningShown) {
+        // Show warning once, then allow future selections
+        setErrorState({
+          hasError: true,
+          errorType: 'maximum_nights_warning',
+          errorMessage: validation.error || 'Cannot select this day'
+        });
+        setMaxNightsWarningShown(true);
+        return false;
+      } else if (isMaxNightsError && maxNightsWarningShown) {
+        // Allow selection after warning has been shown
+        const newSelection = sortDays([...selectedDays, day]);
+        setSelectedDays(newSelection);
+        setRecalculateState(true);
+        return true;
+      } else {
+        // Other errors - show normally
+        setErrorState({
+          hasError: true,
+          errorType: 'availability',
+          errorMessage: validation.error || 'Cannot select this day'
+        });
+        return false;
+      }
     }
 
     // Add and sort
@@ -184,7 +206,7 @@ export const useScheduleSelector = ({
     setRecalculateState(true);
 
     return true;
-  }, [selectedDays, listing, isClickable, limitToFiveNights]);
+  }, [selectedDays, listing, isClickable, limitToFiveNights, maxNightsWarningShown]);
 
   // Handle day removal
   const handleDayRemove = useCallback((day) => {
@@ -225,6 +247,7 @@ export const useScheduleSelector = ({
     setSelectedDays([]);
     setErrorState({ hasError: false, errorType: null, errorMessage: '' });
     setRecalculateState(true);
+    setMaxNightsWarningShown(false);
   }, []);
 
   // Clear error

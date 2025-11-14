@@ -10,9 +10,11 @@ export function ErrorOverlay({
   const getErrorTitle = () => {
     switch (errorState.errorType) {
       case 'minimum_nights':
-        return 'Minimum Nights Required';
+        return 'Minimum Days Required';
       case 'maximum_nights':
-        return 'Maximum Nights Exceeded';
+        return 'Maximum Days Exceeded';
+      case 'maximum_nights_warning':
+        return 'Host Preference Notice';
       case 'contiguity':
         return 'Days Not Consecutive';
       case 'availability':
@@ -24,6 +26,13 @@ export function ErrorOverlay({
       default:
         return 'Error';
     }
+  };
+
+  const getAdditionalMessage = () => {
+    if (errorState.errorType === 'maximum_nights_warning') {
+      return 'You can continue selecting more days, but please note that exceeding the host\'s preferred maximum may reduce the likelihood of your reservation being approved.';
+    }
+    return null;
   };
 
   return (
@@ -41,6 +50,9 @@ export function ErrorOverlay({
         </div>
         <div className="error-content">
           <p>{errorState.errorMessage}</p>
+          {getAdditionalMessage() && (
+            <p className="error-additional-info">{getAdditionalMessage()}</p>
+          )}
         </div>
         <div className="error-actions">
           <button className="error-button" onClick={onClose}>
