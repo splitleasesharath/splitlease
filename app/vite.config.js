@@ -190,6 +190,14 @@ export default defineConfig({
           console.log('Copied _redirects to dist root');
         }
 
+        // Copy _headers file to dist root for Cloudflare Pages
+        const headersSource = path.resolve(__dirname, 'public/_headers');
+        const headersDest = path.join(distDir, '_headers');
+        if (fs.existsSync(headersSource)) {
+          fs.copyFileSync(headersSource, headersDest);
+          console.log('Copied _headers to dist root');
+        }
+
         // Copy functions directory to dist root for Cloudflare Pages Functions
         const functionsSource = path.resolve(__dirname, 'functions');
         const functionsDest = path.join(distDir, 'functions');
