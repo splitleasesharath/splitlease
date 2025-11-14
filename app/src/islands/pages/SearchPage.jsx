@@ -936,11 +936,12 @@ export default function SearchPage() {
       // Build query
       // CRITICAL FIX: Use Complete=true instead of Active=true to match Bubble's filter logic
       // Bubble shows listings where Complete=true AND (Active=true OR Active IS NULL)
+      // Note: The column name "Active" needs quotes in the .or() syntax
       let query = supabase
         .from('listing')
         .select('*')
         .eq('"Complete"', true)
-        .or('Active.eq.true,Active.is.null')
+        .or('"Active".eq.true,"Active".is.null')
         .eq('"Location - Borough"', borough.id);
 
       // Apply week pattern filter
