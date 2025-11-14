@@ -46,7 +46,7 @@ export default function FAQPage() {
 
       const { data, error: fetchError } = await supabase
         .from('zat_faq')
-        .select('Question, Answer, Category, sub-category')
+        .select('_id, Question, Answer, Category, sub-category')
         .order('Category', { ascending: true })
         .order('sub-category', { ascending: true });
 
@@ -184,8 +184,11 @@ function FAQContent({ faqs, openQuestionId }) {
   // Open specific question when openQuestionId is provided
   useEffect(() => {
     if (openQuestionId && faqs && faqs.length > 0) {
-      // Find the index of the question that matches the ID
+      // Find the index of the question that matches the ID or text
       const questionIndex = faqs.findIndex(faq =>
+        // First try to match by exact _id
+        (faq._id && faq._id.toString() === openQuestionId) ||
+        // Then try to match by question text
         faq.Question.toLowerCase().includes(openQuestionId) ||
         faq.Question.toLowerCase().replace(/[^a-z0-9]/g, '').includes(openQuestionId.replace(/[^a-z0-9]/g, ''))
       );

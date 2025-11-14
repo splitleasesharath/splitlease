@@ -127,7 +127,7 @@ export default function Footer() {
           {/* Company Column */}
           <div className="footer-column">
             <h4>Company</h4>
-            <a href="/faq.html?section=general&question=periodic">About Periodic Tenancy</a>
+            <a href="/faq.html?section=travelers&question=1692211080963x751695924087252700">About Periodic Tenancy</a>
             <a href="https://app.split.lease/team">About the Team</a>
             <a href="/careers.html">Careers at Split Lease</a>
             <a href="https://app.split.lease/blog">View Blog</a>
