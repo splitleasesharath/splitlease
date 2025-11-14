@@ -111,7 +111,7 @@ export default function Footer() {
             <a href="/list-with-us.html">How to List</a>
             <a href="/host-success">Success Stories</a>
             <a href="/policies.html">Legal Section</a>
-            <a href="https://app.split.lease/host-guarantees">Guarantees</a>
+            <a href="https://app.split.lease/host-guarantee">Guarantees</a>
             <a href="https://app.split.lease/demo-house-manual">Free House Manual</a>
           </div>
 
