@@ -6,13 +6,13 @@
  * IMPORTANT: This is a comprehensive rebuild based on documentation and original page inspection
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import CreateProposalFlow from './ViewSplitLeasePageComponents/CreateProposalFlow.jsx';
 import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
-import { fetchListingComplete, getListingIdFromUrl } from '../../lib/listingDataFetcher.js';
+import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
   calculatePricingBreakdown,
   formatPrice,
@@ -113,6 +113,7 @@ export default function ViewSplitLeasePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [listing, setListing] = useState(null);
+  const [zatConfig, setZatConfig] = useState(null);
 
   // Booking widget state
   const [moveInDate, setMoveInDate] = useState(null);
@@ -120,6 +121,7 @@ export default function ViewSplitLeasePage() {
   const [selectedDayObjects, setSelectedDayObjects] = useState([]); // Day objects from new component
   const [reservationSpan, setReservationSpan] = useState(13); // 13 weeks default
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
+  const [priceBreakdown, setPriceBreakdown] = useState(null);
 
   // Convert Day objects to array of numbers for compatibility with existing code
   const selectedDays = selectedDayObjects.map(day => day.dayOfWeek);
@@ -146,6 +148,10 @@ export default function ViewSplitLeasePage() {
       try {
         // Initialize lookup caches
         await initializeLookups();
+
+        // Fetch ZAT price configuration
+        const zatConfigData = await fetchZatPriceConfiguration();
+        setZatConfig(zatConfigData);
 
         // Get listing ID from URL
         const listingId = getListingIdFromUrl();
@@ -181,41 +187,53 @@ export default function ViewSplitLeasePage() {
   // COMPUTED VALUES
   // ============================================================================
 
+  // Convert day names to numbers helper
+  const convertDayNamesToNumbers = (dayNames) => {
+    if (!dayNames || !Array.isArray(dayNames)) return [0, 1, 2, 3, 4, 5, 6];
+
+    const dayNameMap = {
+      'Sunday': 0, 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3,
+      'Thursday': 4, 'Friday': 5, 'Saturday': 6
+    };
+
+    const numbers = dayNames.map(name => dayNameMap[name]).filter(num => num !== undefined);
+    return numbers.length > 0 ? numbers : [0, 1, 2, 3, 4, 5, 6];
+  };
+
   // Prepare listing data for ListingScheduleSelector component
   const scheduleSelectorListing = listing ? {
     id: listing._id,
-    firstAvailable: new Date(listing['First Day Available']),
-    lastAvailable: new Date(listing['Last Day Available']),
-    numberOfNightsAvailable: listing['Number of Nights Available'] || 7,
+    firstAvailable: new Date(listing[' First Available']),
+    lastAvailable: new Date(listing['Last Available']),
+    numberOfNightsAvailable: listing['# of nights available'] || 7,
     active: listing.Active,
     approved: listing.Approved,
-    datesBlocked: listing['Dates Blocked'] || [],
+    datesBlocked: listing['Dates - Blocked'] || [],
     complete: listing.Complete,
-    confirmedAvailability: listing['Confirmed Availability'],
-    checkInTime: listing['Check-In Time'] || '3:00 pm',
-    checkOutTime: listing['Check-Out Time'] || '11:00 am',
+    confirmedAvailability: listing.confirmedAvailability,
+    checkInTime: listing['NEW Date Check-in Time'] || '3:00 pm',
+    checkOutTime: listing['NEW Date Check-out Time'] || '11:00 am',
     nightsAvailableList: [],
-    nightsAvailableNumbers: listing['Nights Available Numbers'] || [0, 1, 2, 3, 4, 5, 6],
+    nightsAvailableNumbers: listing['Nights Available (numbers)'] || [0, 1, 2, 3, 4, 5, 6],
     nightsNotAvailable: [],
-    pricingList: {
-      combinedMarkup: listing['Combined Markup'] || 15,
-      fullTimeDiscount: listing['Full-Time Discount'] || 10,
-      hostCompensation: [],
-      markupAndDiscountMultiplier: [1.0, 0.95, 0.9, 0.85, 0.8],
-      nightlyPrice: listing['Nightly Prices'] || [100, 95, 90, 85, 80, 75, 70],
-      numberSelectedNights: [1, 2, 3, 4, 5, 6, 7],
-      overallSiteMarkup: listing['Overall Site Markup'] || 5,
-      slope: 0,
-      startingNightlyPrice: listing['Starting Nightly Price'] || 100,
-      unitMarkup: listing['Unit Markup'] || 10,
-      unusedNights: [],
-      unusedNightsDiscount: [],
-      weeklyPriceAdjust: 0
-    },
     minimumNights: listing['Minimum Nights'] || 2,
     maximumNights: listing['Maximum Nights'] || 7,
-    daysAvailable: listing['Days Available Numbers'] || [0, 1, 2, 3, 4, 5, 6],
-    daysNotAvailable: []
+    daysAvailable: convertDayNamesToNumbers(listing['Days Available (List of Days)']),
+    daysNotAvailable: [],
+    // Pricing fields for calculation
+    'rental type': listing['rental type'] || 'Nightly',
+    'Weeks offered': listing['Weeks offered'] || 'Every week',
+    '💰Unit Markup': listing['💰Unit Markup'] || 0,
+    '💰Nightly Host Rate for 2 nights': listing['💰Nightly Host Rate for 2 nights'],
+    '💰Nightly Host Rate for 3 nights': listing['💰Nightly Host Rate for 3 nights'],
+    '💰Nightly Host Rate for 4 nights': listing['💰Nightly Host Rate for 4 nights'],
+    '💰Nightly Host Rate for 5 nights': listing['💰Nightly Host Rate for 5 nights'],
+    '💰Nightly Host Rate for 7 nights': listing['💰Nightly Host Rate for 7 nights'],
+    '💰Weekly Host Rate': listing['💰Weekly Host Rate'],
+    '💰Monthly Host Rate': listing['💰Monthly Host Rate'],
+    '💰Price Override': listing['💰Price Override'],
+    '💰Cleaning Cost / Maintenance Fee': listing['💰Cleaning Cost / Maintenance Fee'],
+    '💰Damage Deposit': listing['💰Damage Deposit']
   } : null;
 
   // Initialize with Monday-Friday (1-5) as default
@@ -230,11 +248,10 @@ export default function ViewSplitLeasePage() {
   const nightsSelected = calculateNightsFromDays(selectedDays);
   const { checkInName, checkOutName } = calculateCheckInOutDays(selectedDays);
 
-  const pricingBreakdown = listing && scheduleValidation?.valid
-    ? calculatePricingBreakdown(listing, nightsSelected, reservationSpan)
-    : null;
+  // Use price breakdown from ListingScheduleSelector (calculated internally)
+  const pricingBreakdown = priceBreakdown;
 
-  const priceMessage = !scheduleValidation?.valid
+  const priceMessage = !scheduleValidation?.valid || !pricingBreakdown?.valid
     ? getPriceDisplayMessage(selectedDays.length)
     : null;
 
@@ -251,6 +268,21 @@ export default function ViewSplitLeasePage() {
       setShowTutorialModal(true);
     }
   };
+
+  const handlePriceChange = useCallback((newPriceBreakdown) => {
+    console.log('=== PRICE CHANGE CALLBACK ===');
+    console.log('Received price breakdown:', newPriceBreakdown);
+    // Only update if the values have actually changed to prevent infinite loops
+    setPriceBreakdown((prev) => {
+      if (!prev ||
+          prev.fourWeekRent !== newPriceBreakdown.fourWeekRent ||
+          prev.reservationTotal !== newPriceBreakdown.reservationTotal ||
+          prev.nightlyRate !== newPriceBreakdown.nightlyRate) {
+        return newPriceBreakdown;
+      }
+      return prev;
+    });
+  }, []);
 
   const handlePhotoClick = (index) => {
     setCurrentPhotoIndex(index);
@@ -777,7 +809,10 @@ export default function ViewSplitLeasePage() {
                 listing={scheduleSelectorListing}
                 initialSelectedDays={selectedDayObjects}
                 limitToFiveNights={false}
+                reservationSpan={reservationSpan}
+                zatConfig={zatConfig}
                 onSelectionChange={handleScheduleChange}
+                onPriceChange={handlePriceChange}
                 showPricing={false}
               />
             </div>
@@ -819,6 +854,7 @@ export default function ViewSplitLeasePage() {
             paddingTop: '1.5rem',
             borderTop: `1px solid ${COLORS.BG_LIGHT}`
           }}>
+            {console.log('Rendering prices - pricingBreakdown:', pricingBreakdown)}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -827,7 +863,7 @@ export default function ViewSplitLeasePage() {
             }}>
               <span>4-Week Rent:</span>
               <span style={{ fontWeight: '600' }}>
-                {pricingBreakdown?.valid
+                {pricingBreakdown?.valid && pricingBreakdown?.fourWeekRent
                   ? formatPrice(pricingBreakdown.fourWeekRent)
                   : priceMessage || 'Please Add More Days'}
               </span>
@@ -840,7 +876,7 @@ export default function ViewSplitLeasePage() {
             }}>
               <span>Reservation Estimated Total:</span>
               <span style={{ color: COLORS.PRIMARY }}>
-                {pricingBreakdown?.valid
+                {pricingBreakdown?.valid && pricingBreakdown?.reservationTotal
                   ? formatPrice(pricingBreakdown.reservationTotal)
                   : priceMessage || 'Please Add More Days'}
               </span>
@@ -876,8 +912,8 @@ export default function ViewSplitLeasePage() {
               }
             }}
           >
-            {pricingBreakdown?.valid
-              ? `Create Proposal at ${formatPrice(pricingBreakdown.nightlyPrice)}/night`
+            {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
+              ? `Create Proposal at ${formatPrice(pricingBreakdown.pricePerNight)}/night`
               : 'Update Split Schedule Above'}
           </button>
         </div>

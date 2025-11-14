@@ -26,6 +26,8 @@ export const useScheduleSelector = ({
   listing,
   initialSelectedDays = [],
   limitToFiveNights = false,
+  reservationSpan = 13,
+  zatConfig = null,
   onSelectionChange,
   onPriceChange,
   onScheduleChange
@@ -76,8 +78,8 @@ export const useScheduleSelector = ({
 
   // Calculate pricing
   const priceBreakdown = useMemo(() => {
-    return calculatePrice(selectedNights, listing);
-  }, [selectedNights, listing]);
+    return calculatePrice(selectedNights, listing, reservationSpan, zatConfig);
+  }, [selectedNights, listing, reservationSpan, zatConfig]);
 
   // Calculate unused nights
   const unusedNights = useMemo(() => {
@@ -141,15 +143,20 @@ export const useScheduleSelector = ({
   // Notify parent components of changes
   useEffect(() => {
     onSelectionChange?.(selectedDays);
-  }, [selectedDays, onSelectionChange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDays]);
 
   useEffect(() => {
+    console.log('useEffect onPriceChange - priceBreakdown:', priceBreakdown);
+    console.log('useEffect onPriceChange - callback exists:', !!onPriceChange);
     onPriceChange?.(priceBreakdown);
-  }, [priceBreakdown, onPriceChange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priceBreakdown]);
 
   useEffect(() => {
     onScheduleChange?.(scheduleState);
-  }, [scheduleState, onScheduleChange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheduleState]);
 
   // Handle day selection
   const handleDaySelect = useCallback((day) => {

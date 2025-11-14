@@ -10,16 +10,22 @@ import '../../styles/listing-schedule-selector.css';
  * @param {Object} listing - The listing object with availability and pricing
  * @param {Array} initialSelectedDays - Initially selected days
  * @param {boolean} limitToFiveNights - Whether to limit selection to 5 nights
+ * @param {number} reservationSpan - Number of weeks for the reservation (default: 13)
+ * @param {Object} zatConfig - ZAT price configuration object
  * @param {Function} onScheduleSave - Callback when schedule is saved
  * @param {Function} onSelectionChange - Callback when selection changes (fires immediately)
+ * @param {Function} onPriceChange - Callback when price changes (fires immediately)
  * @param {boolean} showPricing - Whether to show pricing information
  */
 export default function ListingScheduleSelector({
   listing,
   initialSelectedDays = [],
   limitToFiveNights = false,
+  reservationSpan = 13,
+  zatConfig = null,
   onScheduleSave,
   onSelectionChange,
+  onPriceChange,
   showPricing = true
 }) {
   const {
@@ -40,7 +46,10 @@ export default function ListingScheduleSelector({
     listing,
     initialSelectedDays,
     limitToFiveNights,
-    onSelectionChange
+    reservationSpan,
+    zatConfig,
+    onSelectionChange,
+    onPriceChange
   });
 
   const handleSave = () => {

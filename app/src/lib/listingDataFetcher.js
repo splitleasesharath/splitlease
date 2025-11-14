@@ -79,6 +79,8 @@ export async function fetchListingComplete(listingId) {
         "Minimum Months",
         "Maximum Months",
         "Weeks offered",
+        "rental type",
+        "💰Unit Markup",
         "NEW Date Check-in Time",
         "NEW Date Check-out Time",
         "Host / Landlord",
@@ -277,4 +279,61 @@ export function getNightlyPrice(listing, nightsSelected) {
 
   // Fallback: use 4-night rate as default
   return priceMap[4] || null;
+}
+
+/**
+ * Fetch ZAT price configuration (global pricing settings)
+ * Cached for performance since it's a single row table
+ * @returns {Promise<object>} ZAT price configuration object
+ */
+let zatConfigCache = null;
+export async function fetchZatPriceConfiguration() {
+  // Return cached version if available
+  if (zatConfigCache) {
+    return zatConfigCache;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('zat_priceconfiguration')
+      .select(`
+        "Overall Site Markup",
+        "Weekly Markup",
+        "full time (7 nights) Discount",
+        "Unused Nights Discount Multiplier",
+        "Avg days per month",
+        "Min Price per night",
+        "Max Price per night"
+      `)
+      .limit(1)
+      .single();
+
+    if (error) throw error;
+    if (!data) throw new Error('ZAT price configuration not found');
+
+    // Cache the result
+    zatConfigCache = {
+      overallSiteMarkup: parseFloat(data['Overall Site Markup']) || 0,
+      weeklyMarkup: parseFloat(data['Weekly Markup']) || 0,
+      fullTimeDiscount: parseFloat(data['full time (7 nights) Discount']) || 0,
+      unusedNightsDiscountMultiplier: parseFloat(data['Unused Nights Discount Multiplier']) || 0,
+      avgDaysPerMonth: parseInt(data['Avg days per month']) || 31,
+      minPricePerNight: parseFloat(data['Min Price per night']) || 0,
+      maxPricePerNight: parseFloat(data['Max Price per night']) || 0
+    };
+
+    return zatConfigCache;
+  } catch (error) {
+    console.error('Error fetching ZAT price configuration:', error);
+    // Return defaults if fetch fails
+    return {
+      overallSiteMarkup: 0.17,
+      weeklyMarkup: 0,
+      fullTimeDiscount: 0.13,
+      unusedNightsDiscountMultiplier: 0.03,
+      avgDaysPerMonth: 31,
+      minPricePerNight: 100,
+      maxPricePerNight: 1000
+    };
+  }
 }

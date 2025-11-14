@@ -231,6 +231,19 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
   const hasImages = listing.images && listing.images.length > 0;
   const hasMultipleImages = listing.images && listing.images.length > 1;
 
+  // Format host name to show "FirstName L."
+  const formatHostName = (fullName) => {
+    if (!fullName || fullName === 'Host') return 'Host';
+
+    const nameParts = fullName.trim().split(/\s+/);
+    if (nameParts.length === 1) return nameParts[0];
+
+    const firstName = nameParts[0];
+    const lastInitial = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+
+    return `${firstName} ${lastInitial}.`;
+  };
+
   const handlePrevImage = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -256,6 +269,7 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
   };
 
   // Calculate dynamic price based on selected days
+  // Uses the same formula as priceCalculations.js for Nightly rental type
   const calculateDynamicPrice = () => {
     const nightsCount = Math.max(selectedDaysCount - 1, 1);
 
@@ -268,14 +282,38 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
       7: 'Price 7 nights selected'
     };
 
+    // Get the host compensation rate for the selected nights
+    let nightlyHostRate = 0;
     if (nightsCount >= 2 && nightsCount <= 7) {
       const fieldName = priceFieldMap[nightsCount];
-      if (fieldName && listing[fieldName]) {
-        return listing[fieldName];
-      }
+      nightlyHostRate = listing[fieldName] || 0;
     }
 
-    return listing['Starting nightly price'] || listing.price?.starting || 0;
+    // Fallback to starting price if no specific rate found
+    if (!nightlyHostRate || nightlyHostRate === 0) {
+      nightlyHostRate = listing['Starting nightly price'] || listing.price?.starting || 0;
+    }
+
+    // Apply the same markup calculation as priceCalculations.js
+    // Step 1: Calculate base price (host rate × nights)
+    const basePrice = nightlyHostRate * nightsCount;
+
+    // Step 2: Apply full-time discount (only for 7 nights, 13% discount)
+    const fullTimeDiscount = nightsCount === 7 ? basePrice * 0.13 : 0;
+
+    // Step 3: Price after discounts
+    const priceAfterDiscounts = basePrice - fullTimeDiscount;
+
+    // Step 4: Apply site markup (17%)
+    const siteMarkup = priceAfterDiscounts * 0.17;
+
+    // Step 5: Calculate total price
+    const totalPrice = basePrice - fullTimeDiscount + siteMarkup;
+
+    // Step 6: Calculate price per night (guest-facing price)
+    const pricePerNight = totalPrice / nightsCount;
+
+    return pricePerNight;
   };
 
   const dynamicPrice = calculateDynamicPrice();
@@ -387,7 +425,7 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
             )}
             <div className="host-details">
               <span className="host-name">
-                {listing.host?.name || 'Host'}
+                {formatHostName(listing.host?.name)}
                 {listing.host.verified && <span className="verified-badge" title="Verified">✓</span>}
               </span>
               <button
@@ -1157,7 +1195,7 @@ export default function SearchPage() {
       },
       // Photos loaded via batch fetch BEFORE transformation
       images: images || [],
-      description: `${dbListing['Features - Qty Bedrooms'] || 0} bedroom • ${dbListing['Features - Qty Bathrooms'] || 0} bathroom`,
+      description: `${(dbListing['Features - Qty Bedrooms'] || 0) === 0 ? 'Studio' : `${dbListing['Features - Qty Bedrooms']} bedroom`} • ${dbListing['Features - Qty Bathrooms'] || 0} bathroom`,
       weeks_offered: dbListing['Weeks offered'] || 'Every week',
       // Parse JSONB field that may be stringified JSON or native array
       days_available: parseJsonArray(dbListing['Days Available (List of Days)']),

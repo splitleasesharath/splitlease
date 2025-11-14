@@ -2,12 +2,14 @@
 
 /* Main Container */
 .listing-schedule-selector {
-  max-width: 500px;
-  margin: 0 auto;
-  padding: 24px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 16px;
   border: 2px solid #6B6B6B;
   border-radius: 5px;
   background-color: #fff;
+  box-sizing: border-box;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -37,24 +39,28 @@
   gap: 4px;
   margin-bottom: 20px;
   justify-items: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Day Button */
 .day-button {
-  width: 40px;
-  height: 40px;
+  width: 100%;
+  max-width: 45px;
+  aspect-ratio: 1;
   border: 2px solid #6B6B6B;
   border-radius: 5px;
   background-color: white;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin: 0 2px;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 0;
+  box-sizing: border-box;
 }
 
 .day-button:hover:not(.disabled):not(.not-clickable) {
