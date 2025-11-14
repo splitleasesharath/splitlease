@@ -257,6 +257,7 @@ function ListingsPreview() {
   ];
 
   const handleListingClick = (propertyId) => {
+    // Redirect to local view-split-lease page with property ID in path
     const propertyUrl = `/view-split-lease.html/${propertyId}`;
     window.location.href = propertyUrl;
   };
@@ -495,7 +496,7 @@ export default function HomePage() {
   };
 
   return (
-    <>
+    <div className="home-page">
       <Header />
 
       <Hero onExploreRentals={handleExploreRentals} />
@@ -515,6 +516,6 @@ export default function HomePage() {
       <FloatingBadge onClick={handleOpenMarketResearch} />
 
       <MarketResearchModal isOpen={marketResearchModalOpen} onClose={handleCloseMarketResearch} />
-    </>
+    </div>
   );
 }
