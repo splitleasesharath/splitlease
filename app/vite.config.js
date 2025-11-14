@@ -242,7 +242,6 @@ export default defineConfig({
         'host-success': resolve(__dirname, 'public/host-success.html'),
         'why-split-lease': resolve(__dirname, 'public/why-split-lease.html'),
         'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
-        'schedule-selector-demo': resolve(__dirname, 'public/schedule-selector-demo.html'),
         careers: resolve(__dirname, 'public/careers.html')
       },
       output: {
