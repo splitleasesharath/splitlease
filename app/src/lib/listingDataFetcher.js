@@ -158,16 +158,35 @@ export async function fetchListingComplete(listingId) {
     // 8. Fetch host data
     let hostData = null;
     if (listingData['Host / Landlord']) {
-      const { data: host, error: hostError } = await supabase
+      // First get the account_host record to find the linked User
+      const { data: accountHost, error: accountHostError } = await supabase
         .from('account_host')
-        .select('_id, "Name - First", "Name - Last", "Profile Photo", Email')
+        .select('_id, User')
         .eq('_id', listingData['Host / Landlord'])
         .single();
 
-      if (hostError) {
-        console.error('Host fetch error:', hostError);
-      } else {
-        hostData = host;
+      if (accountHostError) {
+        console.error('Account host fetch error:', accountHostError);
+      } else if (accountHost?.User) {
+        // Then fetch the user data using the User foreign key
+        const { data: userData, error: userError } = await supabase
+          .from('user')
+          .select('"Name - First", "Name - Last", "Profile Photo", "email as text"')
+          .eq('_id', accountHost.User)
+          .single();
+
+        if (userError) {
+          console.error('User fetch error:', userError);
+        } else if (userData) {
+          // Combine the data for backward compatibility
+          hostData = {
+            _id: accountHost._id,
+            'Name - First': userData['Name - First'],
+            'Name - Last': userData['Name - Last'],
+            'Profile Photo': userData['Profile Photo'],
+            Email: userData['email as text']
+          };
+        }
       }
     }
 
