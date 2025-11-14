@@ -25,6 +25,7 @@
 @import url('components/utilities.css');
 @import url('components/policies.css');
 @import url('components/guest-success.css');
+@import url('components/host-success.css');
 
 /* Map Components */
 @import url('../islands/shared/ListingCard/ListingCardForMap.css');

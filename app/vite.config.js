@@ -56,6 +56,12 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/careers.html' + queryString;
+          } else if (url.startsWith('/host-success.html')) {
+            req.url = '/public/host-success.html' + (url.substring('/host-success.html'.length) || '');
+          } else if (url.startsWith('/host-success')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/host-success.html' + queryString;
           }
 
           next();
@@ -107,6 +113,12 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/careers.html' + queryString;
+          } else if (url.startsWith('/host-success.html')) {
+            req.url = '/host-success.html' + (url.substring('/host-success.html'.length) || '');
+          } else if (url.startsWith('/host-success')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/host-success.html' + queryString;
           }
 
           next();
@@ -219,6 +231,7 @@ export default defineConfig({
         policies: resolve(__dirname, 'public/policies.html'),
         'list-with-us': resolve(__dirname, 'public/list-with-us.html'),
         'guest-success': resolve(__dirname, 'public/guest-success.html'),
+        'host-success': resolve(__dirname, 'public/host-success.html'),
         'why-split-lease': resolve(__dirname, 'public/why-split-lease.html'),
         'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
         'schedule-selector-demo': resolve(__dirname, 'public/schedule-selector-demo.html'),
