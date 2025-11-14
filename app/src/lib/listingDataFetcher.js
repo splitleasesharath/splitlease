@@ -16,7 +16,8 @@ import {
   getAmenities,
   getSafetyFeatures,
   getHouseRules,
-  getParkingOption
+  getParkingOption,
+  getCancellationPolicy
 } from './dataLookups.js';
 
 /**
@@ -157,6 +158,11 @@ export async function fetchListingComplete(listingId) {
       ? getParkingOption(listingData['Features - Parking type'])
       : null;
 
+    // 7a. Resolve cancellation policy
+    const cancellationPolicy = listingData['Cancellation Policy']
+      ? getCancellationPolicy(listingData['Cancellation Policy'])
+      : null;
+
     // 8. Fetch host data
     let hostData = null;
     if (listingData['Host / Landlord']) {
@@ -243,6 +249,7 @@ export async function fetchListingComplete(listingId) {
       safetyFeatures,
       houseRules,
       parkingOption,
+      cancellationPolicy,
       host: hostData,
       reviews: reviewsData,
       coordinates

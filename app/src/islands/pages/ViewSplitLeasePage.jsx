@@ -907,13 +907,13 @@ export default function ViewSplitLeasePage() {
           )}
 
           {/* Cancellation Policy */}
-          {listing['Cancellation Policy'] && (
+          {listing.cancellationPolicy && (
             <section style={{ marginBottom: '2rem' }}>
               <div style={{ display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
                 <span style={{ fontSize: '1.25rem' }}>ℹ️</span>
                 <div>
                   <span style={{ fontWeight: '600' }}>Cancellation Policy: </span>
-                  <span>{listing['Cancellation Policy']}</span>
+                  <span>{listing.cancellationPolicy.display}</span>
                 </div>
               </div>
             </section>

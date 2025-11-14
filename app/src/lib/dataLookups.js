@@ -28,6 +28,7 @@ const lookupCache = {
   safety: new Map(),         // safetyId -> {name, icon}
   houseRules: new Map(),     // houseRuleId -> {name, icon}
   parking: new Map(),        // parkingId -> {label}
+  cancellationPolicies: new Map(), // cancellationPolicyId -> {display}
   initialized: false
 };
 
@@ -68,7 +69,8 @@ export async function initializeLookups() {
       initializeAmenityLookups(),
       initializeSafetyLookups(),
       initializeHouseRuleLookups(),
-      initializeParkingLookups()
+      initializeParkingLookups(),
+      initializeCancellationPolicyLookups()
     ]);
 
     lookupCache.initialized = true;
@@ -269,6 +271,31 @@ async function initializeParkingLookups() {
   }
 }
 
+/**
+ * Fetch and cache all cancellation policies
+ * @returns {Promise<void>}
+ */
+async function initializeCancellationPolicyLookups() {
+  try {
+    const { data, error } = await supabase
+      .from(DATABASE.TABLES.CANCELLATION_POLICY)
+      .select('_id, Display');
+
+    if (error) throw error;
+
+    if (data && Array.isArray(data)) {
+      data.forEach(policy => {
+        lookupCache.cancellationPolicies.set(policy._id, {
+          display: policy.Display || 'Unknown Policy'
+        });
+      });
+      console.log(`Cached ${lookupCache.cancellationPolicies.size} cancellation policies`);
+    }
+  } catch (error) {
+    console.error('Failed to initialize cancellation policy lookups:', error);
+  }
+}
+
 // ============================================================================
 // Lookup Functions (Synchronous - use cached data)
 // ============================================================================
@@ -429,6 +456,23 @@ export function getParkingOption(parkingId) {
   return parking;
 }
 
+/**
+ * Get cancellation policy data by ID (synchronous lookup from cache)
+ * @param {string} policyId - The cancellation policy ID
+ * @returns {object|null} The cancellation policy data {display} or null
+ */
+export function getCancellationPolicy(policyId) {
+  if (!policyId) return null;
+
+  const policy = lookupCache.cancellationPolicies.get(policyId);
+  if (!policy) {
+    console.warn(`Cancellation policy ID not found in cache: ${policyId}`);
+    return null;
+  }
+
+  return policy;
+}
+
 // ============================================================================
 // Async Lookup Functions (for individual queries if needed)
 // ============================================================================
@@ -513,6 +557,7 @@ export async function refreshLookups() {
   lookupCache.safety.clear();
   lookupCache.houseRules.clear();
   lookupCache.parking.clear();
+  lookupCache.cancellationPolicies.clear();
   lookupCache.initialized = false;
   await initializeLookups();
 }
@@ -530,6 +575,7 @@ export function getCacheStats() {
     safety: lookupCache.safety.size,
     houseRules: lookupCache.houseRules.size,
     parking: lookupCache.parking.size,
+    cancellationPolicies: lookupCache.cancellationPolicies.size,
     initialized: lookupCache.initialized
   };
 }
