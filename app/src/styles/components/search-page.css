@@ -331,8 +331,8 @@
   white-space: nowrap;
 }
 
-/* Hamburger Menu Button */
-.hamburger-menu {
+/* Hamburger Menu Button - Scoped to search page only */
+.search-page .hamburger-menu {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -347,12 +347,12 @@
   transition: all 0.2s;
 }
 
-.hamburger-menu:hover {
+.search-page .hamburger-menu:hover {
   background: #f9fafb;
   border-color: #9ca3af;
 }
 
-.hamburger-menu svg {
+.search-page .hamburger-menu svg {
   color: #6b7280;
 }
 
@@ -630,7 +630,7 @@
   }
 
   /* Hide hamburger menu on mobile */
-  .hamburger-menu {
+  .search-page .hamburger-menu {
     display: none;
   }
 

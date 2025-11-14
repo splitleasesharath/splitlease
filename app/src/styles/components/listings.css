@@ -254,6 +254,8 @@
     border: 1px solid rgba(0,0,0,0.1);
     width: 32px;
     height: 32px;
+    padding: 0;
+    box-sizing: border-box;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -313,18 +315,20 @@
     position: absolute;
     top: 12px;
     right: 12px;
-    background: rgba(255,255,255,0.95);
+    background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
     border: none;
     width: 36px;
     height: 36px;
+    padding: 0;
+    box-sizing: border-box;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
 
 .favorite-btn:hover {
@@ -338,7 +342,7 @@
 }
 
 .favorite-btn svg {
-    stroke: #666;
+    stroke: #ffffff;
     stroke-width: 2.5;
     fill: none;
     transition: all 0.2s ease;
@@ -832,15 +836,15 @@
 .ai-research-card {
     background: linear-gradient(135deg, #31135D 0%, #5a2d8f 100%);
     border-radius: 16px;
-    padding: 2.5rem 2rem;
+    padding: 1.625rem 2rem;
     color: white;
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1.5rem;
+    gap: 1rem;
     width: 100%;
-    min-height: 280px;
+    min-height: 182px;
     justify-content: center;
     box-shadow: 0 4px 16px rgba(49, 19, 93, 0.25);
     transition: all 0.3s ease;
@@ -852,46 +856,46 @@
 }
 
 .ai-icon-container {
-    width: 80px;
-    height: 80px;
+    width: 52px;
+    height: 52px;
     background: rgba(255, 255, 255, 0.15);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
 }
 
 .ai-icon {
-    width: 50px;
-    height: 50px;
+    width: 32px;
+    height: 32px;
 }
 
 .ai-title {
-    font-size: 22px;
+    font-size: 18px;
     font-weight: 600;
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.15rem;
     line-height: 1.3;
 }
 
 .ai-subtitle {
-    font-size: 15px;
+    font-size: 13px;
     opacity: 0.95;
-    line-height: 1.5;
+    line-height: 1.4;
     max-width: 400px;
 }
 
 .ai-cta-button {
     background: white;
     color: #31135D;
-    padding: 12px 32px;
+    padding: 8px 24px;
     border-radius: 8px;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 600;
     border: none;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-top: 0.5rem;
+    margin-top: 0.25rem;
 }
 
 .ai-cta-button:hover {

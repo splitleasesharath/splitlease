@@ -521,10 +521,10 @@ export default function ViewSplitLeasePage() {
             }}>
               {expandedSections.description
                 ? listing.Description
-                : listing.Description?.slice(0, 500)}
-              {listing.Description?.length > 500 && !expandedSections.description && '...'}
+                : listing.Description?.slice(0, 360)}
+              {listing.Description?.length > 360 && !expandedSections.description && '...'}
             </p>
-            {listing.Description?.length > 500 && (
+            {listing.Description?.length > 360 && (
               <button
                 onClick={() => toggleSection('description')}
                 style={{
