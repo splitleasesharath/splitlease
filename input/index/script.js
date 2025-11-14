@@ -481,7 +481,7 @@ function setupListings() {
     listingCards.forEach((card, index) => {
         card.addEventListener('click', function() {
             const title = this.querySelector('h3').textContent;
-            
+
             // Property IDs from the original site - matching each listing
             const propertyIds = [
                 '1586447992720x748691103167545300', // One Platt | Studio - no change
@@ -489,16 +489,17 @@ function setupListings() {
                 '1701115344294x620453327586984000', // Fully furnished 1bdr apartment
                 '1701196985127x160157906679627780'  // Furnished Studio Apt for Rent
             ];
-            
+
             const propertyId = propertyIds[index] || propertyIds[0];
-            
+
             // Use current day selection if available, otherwise default to weeknights
-            const daysParam = (typeof selectedDays !== 'undefined' && selectedDays.length > 0) 
-                ? selectedDays.join(',') 
+            const daysParam = (typeof selectedDays !== 'undefined' && selectedDays.length > 0)
+                ? selectedDays.join(',')
                 : '1,2,3,4,5';
-            
-            const propertyUrl = `https://app.split.lease/view-split-lease/${propertyId}?days-selected=${daysParam}&weekly-frequency=Every%20week`;
-            
+
+            // Redirect to local view-split-lease page with property ID in path
+            const propertyUrl = `../view-split-lease/${propertyId}?days-selected=${daysParam}&weekly-frequency=Every%20week`;
+
             window.location.href = propertyUrl;
         });
     });

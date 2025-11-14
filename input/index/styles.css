@@ -1160,13 +1160,16 @@ body {
 .listings-container {
     position: relative;
     margin-bottom: 2rem;
+    max-width: 1216px; /* 4 × 280px + 3 × 32px gap */
+    margin: 0 auto 2rem;
 }
 
 .listings-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 2rem;
+    grid-template-columns: repeat(4, 280px);
+    gap: 2rem; /* 32px */
     margin-bottom: 1rem;
+    justify-content: center;
 }
 
 /* Scroll indicators */
@@ -1194,12 +1197,13 @@ body {
 
 .listing-card {
     background: var(--bg-white);
-    border-radius: var(--radius-lg);
+    border-radius: 16px;
     overflow: hidden;
-    box-shadow: var(--shadow-md);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     transition: all 0.3s ease;
     cursor: pointer;
     position: relative;
+    width: 280px;
 }
 
 /* Compare Checkbox */
@@ -1295,8 +1299,8 @@ body {
 }
 
 .listing-image {
-    width: 100%;
-    aspect-ratio: 4 / 3;
+    width: 280px;
+    height: 210px;
     object-fit: cover;
     border-radius: 12px 12px 0 0;
 }
@@ -2641,6 +2645,24 @@ body {
     text-decoration: underline;
 }
 
+/* Tablet Breakpoint - 2 Column Layout */
+@media (min-width: 769px) and (max-width: 1023px) {
+    .listings-container {
+        max-width: 100%;
+        padding: 0 2rem;
+    }
+
+    .listings-grid {
+        grid-template-columns: repeat(2, 280px);
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .listing-card {
+        width: 280px;
+    }
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .nav-container {
@@ -2998,6 +3020,12 @@ body {
         color: white;
     }
 
+    /* Listings responsiveness for mobile */
+    .listings-container {
+        max-width: 100%;
+        padding: 0 1rem;
+    }
+
     /* Horizontal scroll for listings on mobile */
     .listings-grid {
         display: flex;
@@ -3014,9 +3042,16 @@ body {
     }
     
     .listing-card {
-        flex: 0 0 85%;
+        flex: 0 0 75%;
         scroll-snap-align: center;
-        max-width: 400px;
+        max-width: 280px;
+        width: auto;
+    }
+
+    .listing-image {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 280 / 210;
     }
     
     .scroll-indicators {
