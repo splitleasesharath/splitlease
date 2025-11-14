@@ -9,20 +9,20 @@ import { SEARCH_URL } from '../../lib/constants.js';
 
 function Hero({ onFindSplitLease }) {
   return (
-    <section className="success-hero">
-      <div className="success-hero-content">
-        <div className="success-hero-text">
+    <section className="guest-success-hero">
+      <div className="guest-success-hero-content">
+        <div className="guest-success-hero-text">
           <h1>Helping People Find the Ideal Housing Solution</h1>
           <p>
             Discover how Split Lease transforms travel by connecting you to affordable, private
             housing options. Explore stories of travelers like you who have found their perfect
             temporary home and enjoyed unique stays while saving money.
           </p>
-          <button className="success-btn-primary" onClick={onFindSplitLease}>
+          <button className="guest-success-btn-primary" onClick={onFindSplitLease}>
             Find Your Ideal Split Lease
           </button>
         </div>
-        <div className="success-hero-image">
+        <div className="guest-success-hero-image">
           <img
             src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1603247553911x165995697495644260/RentalRepeat-Graphic.svg"
             alt="Rental Repeat Graphic"
@@ -71,26 +71,26 @@ function StoryCard({ story, onFindSplitLease }) {
   return (
     <div
       ref={cardRef}
-      className={`success-story-card ${isVisible ? 'visible' : ''}`}
+      className={`guest-success-story-card ${isVisible ? 'visible' : ''}`}
     >
-      <div className="success-story-header">
+      <div className="guest-success-story-header">
         <img
           src={story.avatar}
           alt={story.name}
-          className="success-story-avatar"
+          className="guest-success-story-avatar"
           loading="lazy"
         />
-        <div className="success-story-person">
+        <div className="guest-success-story-person">
           <h3>{story.name}</h3>
           <p>{story.profession}</p>
         </div>
       </div>
-      <div className="success-story-content">
+      <div className="guest-success-story-content">
         <h4>{story.title}</h4>
         <p>{story.story}</p>
-        <div className="success-story-cta">
+        <div className="guest-success-story-cta">
           <p>Let's Find Your Perfect Solution, Too</p>
-          <button className="success-btn-secondary" onClick={onFindSplitLease}>
+          <button className="guest-success-btn-secondary" onClick={onFindSplitLease}>
             Find Your Split Lease
           </button>
         </div>
@@ -100,10 +100,10 @@ function StoryCard({ story, onFindSplitLease }) {
 }
 
 // ============================================================================
-// MAIN COMPONENT: SuccessStoriesPage
+// MAIN COMPONENT: GuestSuccessPage
 // ============================================================================
 
-export default function SuccessStoriesPage() {
+export default function GuestSuccessPage() {
   // Success stories data
   const stories = [
     {
@@ -165,8 +165,8 @@ export default function SuccessStoriesPage() {
 
       <Hero onFindSplitLease={handleFindSplitLease} />
 
-      <section className="success-stories-section">
-        <h2 className="success-stories-title">Our Guests' Success Stories</h2>
+      <section className="guest-success-section">
+        <h2 className="guest-success-title">Our Guests' Success Stories</h2>
 
         {stories.map((story, index) => (
           <StoryCard key={index} story={story} onFindSplitLease={handleFindSplitLease} />

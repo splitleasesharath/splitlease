@@ -36,8 +36,12 @@ export default defineConfig({
             req.url = '/public/policies.html' + (url.substring('/policies.html'.length) || '');
           } else if (url.startsWith('/list-with-us.html')) {
             req.url = '/public/list-with-us.html' + (url.substring('/list-with-us.html'.length) || '');
-          } else if (url.startsWith('/success-stories.html')) {
-            req.url = '/public/success-stories.html' + (url.substring('/success-stories.html'.length) || '');
+          } else if (url.startsWith('/guest-success.html')) {
+            req.url = '/public/guest-success.html' + (url.substring('/guest-success.html'.length) || '');
+          } else if (url.startsWith('/guest-success')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/guest-success.html' + queryString;
           } else if (url.startsWith('/why-split-lease.html')) {
             req.url = '/public/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
           } else if (url.startsWith('/guest-proposals.html')) {
@@ -83,8 +87,12 @@ export default defineConfig({
             req.url = '/policies.html' + (url.substring('/policies.html'.length) || '');
           } else if (url.startsWith('/list-with-us.html')) {
             req.url = '/list-with-us.html' + (url.substring('/list-with-us.html'.length) || '');
-          } else if (url.startsWith('/success-stories.html')) {
-            req.url = '/success-stories.html' + (url.substring('/success-stories.html'.length) || '');
+          } else if (url.startsWith('/guest-success.html')) {
+            req.url = '/guest-success.html' + (url.substring('/guest-success.html'.length) || '');
+          } else if (url.startsWith('/guest-success')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/guest-success.html' + queryString;
           } else if (url.startsWith('/why-split-lease.html')) {
             req.url = '/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
           } else if (url.startsWith('/guest-proposals.html')) {
@@ -210,7 +218,7 @@ export default defineConfig({
         faq: resolve(__dirname, 'public/faq.html'),
         policies: resolve(__dirname, 'public/policies.html'),
         'list-with-us': resolve(__dirname, 'public/list-with-us.html'),
-        'success-stories': resolve(__dirname, 'public/success-stories.html'),
+        'guest-success': resolve(__dirname, 'public/guest-success.html'),
         'why-split-lease': resolve(__dirname, 'public/why-split-lease.html'),
         'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
         'schedule-selector-demo': resolve(__dirname, 'public/schedule-selector-demo.html'),
