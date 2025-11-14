@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "build": "cd app && npm ci && npm run build",
-    "start": "cd app && npm ci && npm run build",
-    "dev": "cd app && npm install && npm run dev",
-    "preview": "cd app && npm run preview"
+    "build": "npm ci && npm run build",
+    "start": "npm ci && npm run build",
+    "dev": "npm install && npm run dev",
+    "preview": "npm run preview"
   },
   "description": "Split Lease application monorepo - Cloudflare Pages deployment"
 }
