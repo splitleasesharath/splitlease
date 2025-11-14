@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { REFERRAL_API_ENDPOINT, SIGNUP_LOGIN_URL } from '../../lib/constants.js';
+import { REFERRAL_API_ENDPOINT, SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 
 export default function Footer() {
   const [referralMethod, setReferralMethod] = useState('text');
@@ -118,7 +118,7 @@ export default function Footer() {
           {/* For Guests Column */}
           <div className="footer-column">
             <h4>For Guests</h4>
-            <a href="https://app.split.lease/search">Explore Split Leases</a>
+            <a href={SEARCH_URL}>Explore Split Leases</a>
             <a href="/guest-success">Success Stories</a>
             <a href={SIGNUP_LOGIN_URL}>Speak to an Agent</a>
             <a href="/faq.html">View FAQ</a>
