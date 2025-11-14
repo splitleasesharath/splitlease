@@ -141,7 +141,7 @@ export default function Header() {
                 <span className="dropdown-desc">New to Split Lease? Learn more about hosting</span>
               </a>
               <a
-                href="https://app.split.lease/success-stories-guest"
+                href="/host-success"
                 className="dropdown-item"
                 role="menuitem"
               >
@@ -227,7 +227,7 @@ export default function Header() {
                 <span className="dropdown-desc">See available listings!</span>
               </a>
               <a
-                href="https://app.split.lease/success-stories-guest"
+                href="/guest-success"
                 className="dropdown-item"
                 role="menuitem"
               >
