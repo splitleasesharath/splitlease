@@ -46,6 +46,12 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/guest-proposals.html' + queryString;
+          } else if (url.startsWith('/careers.html')) {
+            req.url = '/public/careers.html' + (url.substring('/careers.html'.length) || '');
+          } else if (url.startsWith('/careers')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/careers.html' + queryString;
           }
 
           next();
@@ -87,6 +93,12 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/guest-proposals.html' + queryString;
+          } else if (url.startsWith('/careers.html')) {
+            req.url = '/careers.html' + (url.substring('/careers.html'.length) || '');
+          } else if (url.startsWith('/careers')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/careers.html' + queryString;
           }
 
           next();
@@ -201,7 +213,8 @@ export default defineConfig({
         'success-stories': resolve(__dirname, 'public/success-stories.html'),
         'why-split-lease': resolve(__dirname, 'public/why-split-lease.html'),
         'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
-        'schedule-selector-demo': resolve(__dirname, 'public/schedule-selector-demo.html')
+        'schedule-selector-demo': resolve(__dirname, 'public/schedule-selector-demo.html'),
+        careers: resolve(__dirname, 'public/careers.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

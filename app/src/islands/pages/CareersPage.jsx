@@ -1,0 +1,451 @@
+import { useState, useEffect } from 'react';
+import Header from '../shared/Header.jsx';
+import Footer from '../shared/Footer.jsx';
+import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
+
+export default function CareersPage() {
+  const [typeformModalActive, setTypeformModalActive] = useState(false);
+
+  // Initialize Feather icons when component mounts
+  useEffect(() => {
+    if (window.feather) {
+      window.feather.replace();
+    }
+  }, []);
+
+  // Re-initialize feather icons when modal opens
+  useEffect(() => {
+    if (typeformModalActive && window.feather) {
+      setTimeout(() => window.feather.replace(), 100);
+    }
+  }, [typeformModalActive]);
+
+  const openTypeformModal = () => {
+    setTypeformModalActive(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeTypeformModal = () => {
+    setTypeformModalActive(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  // Handle ESC key to close modal
+  useEffect(() => {
+    const handleEscKey = (e) => {
+      if (e.key === 'Escape' && typeformModalActive) {
+        closeTypeformModal();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscKey);
+    return () => document.removeEventListener('keydown', handleEscKey);
+  }, [typeformModalActive]);
+
+  return (
+    <>
+      <Header />
+
+      {/* Hero Section */}
+      <section className="hero-section">
+        <video autoPlay muted loop playsInline className="hero-video-background" id="heroVideo">
+          <source src="/assets/videos/time-lapse.mp4" type="video/mp4" />
+        </video>
+        <div className="hero-overlay"></div>
+        <div className="hero-container">
+          <div className="hero-badge">
+            <i data-feather="zap"></i>
+            <span>WE'RE HIRING</span>
+          </div>
+          <h1 className="hero-title">
+            Split Lease Careers<br />
+            <span className="highlight">Start Here</span>
+          </h1>
+          <p className="hero-subtitle">
+            We're building a market network for multilocal living.<br /><br />
+            At Split Lease, we enable flexible part-time rentals with split schedules — empowering people to live in multiple cities, without paying for days they don't use.
+          </p>
+          <div className="hero-cta">
+            <a href="#roles" className="cta-primary">
+              Join our team
+              <i data-feather="arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Mission Section */}
+      <section className="content-section alt-bg">
+        <div className="section-container">
+          <div className="mission-grid">
+            <div className="mission-examples">
+              {/* Sarah Example */}
+              <div className="example-card">
+                <div className="example-header">
+                  <div className="example-avatar">
+                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces" alt="Sarah" />
+                  </div>
+                  <div className="example-name">Sarah</div>
+                </div>
+                <div className="example-content-wrapper">
+                  <p className="example-pattern">
+                    Lives in Philly, uses Split Lease in NYC Monday-Wednesday
+                  </p>
+                  <p className="example-review">
+                    "Before Split Lease, my life was a nightmare. I was either drowning in NYC rent or spending 4 hours a day commuting."
+                  </p>
+                </div>
+                <div className="example-timeline">
+                  <div className="day-block active"></div>
+                  <div className="day-block active"></div>
+                  <div className="day-block active"></div>
+                  <div className="day-block"></div>
+                  <div className="day-block"></div>
+                  <div className="day-block"></div>
+                  <div className="day-block"></div>
+                </div>
+                <div className="timeline-labels">
+                  <span className="timeline-label">Mon</span>
+                  <span className="timeline-label">Sun</span>
+                </div>
+              </div>
+
+              {/* Marcus Example */}
+              <div className="example-card">
+                <div className="example-header">
+                  <div className="example-avatar">
+                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces" alt="Marcus" />
+                  </div>
+                  <div className="example-name">Marcus</div>
+                </div>
+                <div className="example-content-wrapper">
+                  <p className="example-pattern">
+                    Lives in Boston, uses Split Lease in NYC Thursday-Sunday
+                  </p>
+                  <p className="example-review">
+                    "I was burning out from the weekly grind. Split Lease gave me back my time and sanity. I'm saving $2,000/month."
+                  </p>
+                </div>
+                <div className="example-timeline">
+                  <div className="day-block"></div>
+                  <div className="day-block"></div>
+                  <div className="day-block"></div>
+                  <div className="day-block active"></div>
+                  <div className="day-block active"></div>
+                  <div className="day-block active"></div>
+                  <div className="day-block active"></div>
+                </div>
+                <div className="timeline-labels">
+                  <span className="timeline-label">Mon</span>
+                  <span className="timeline-label">Sun</span>
+                </div>
+              </div>
+
+              {/* Jenna Example */}
+              <div className="example-card">
+                <div className="example-header">
+                  <div className="example-avatar">
+                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces" alt="Jenna" />
+                  </div>
+                  <div className="example-name">Jenna</div>
+                </div>
+                <div className="example-content-wrapper">
+                  <p className="example-pattern">
+                    Lives in DC, uses Split Lease in NYC Monday-Thursday
+                  </p>
+                  <p className="example-review">
+                    "I thought I had to choose between my career and quality of life. Split Lease gave me flexibility on my terms."
+                  </p>
+                </div>
+                <div className="example-timeline">
+                  <div className="day-block active"></div>
+                  <div className="day-block active"></div>
+                  <div className="day-block active"></div>
+                  <div className="day-block active"></div>
+                  <div className="day-block"></div>
+                  <div className="day-block"></div>
+                  <div className="day-block"></div>
+                </div>
+                <div className="timeline-labels">
+                  <span className="timeline-label">Mon</span>
+                  <span className="timeline-label">Sun</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mission-content">
+              <div className="section-label">MISSION</div>
+              <h2 className="section-title">Helping People Live Multilocally</h2>
+              <p className="section-description">
+                We're creating a new category where flexibility meets affordability in housing.
+              </p>
+              <p className="section-description">
+                Split Lease enables alternating arrangements where multiple guests use the same space on different days. You only pay for the nights you need — whether that's 3 days a week or 5. No traditional lease, no wasted rent, just flexible access.
+              </p>
+              <div className="section-links">
+                <a href="#" className="section-link">
+                  <i data-feather="play-circle" style={{width: '18px', height: '18px'}}></i>
+                  <span>Start with our interactive game</span>
+                  <i data-feather="arrow-right"></i>
+                </a>
+                <a href="#" className="section-link">
+                  <i data-feather="book-open" style={{width: '18px', height: '18px'}}></i>
+                  <span>Read the academic article on multilocal living</span>
+                  <i data-feather="arrow-right"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Company Journey Video Section */}
+      <section className="video-section" style={{background: 'white'}}>
+        <div className="video-container-wrapper">
+          <div className="video-content">
+            <div className="video-header">
+              <div className="section-label">COMPANY</div>
+              <h2 className="section-title">How We Got Here</h2>
+              <p className="section-description">
+                We started by testing one atomic network — an anchor listing, a hot deal, and active hosts. Today we're scaling that model to create a new category: multilocal living.
+              </p>
+            </div>
+
+            <div className="video-links">
+              <a href="#" className="section-link">
+                <i data-feather="edit-3" style={{width: '18px', height: '18px'}}></i>
+                <span>What it's like to work here — Read Michelle's take</span>
+                <i data-feather="arrow-right"></i>
+              </a>
+            </div>
+          </div>
+
+          <div>
+            <div className="video-player-container" id="videoPlayerContainer">
+              <video className="video-player" id="careerVideo" preload="metadata">
+                <source src="/assets/videos/time-lapse.mp4" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              <div className="play-button-overlay" id="playButtonOverlay" onClick={() => {
+                const video = document.getElementById('careerVideo');
+                if (video) {
+                  video.play();
+                  video.setAttribute('controls', 'controls');
+                  document.getElementById('playButtonOverlay').classList.add('hidden');
+                }
+              }}>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </div>
+            </div>
+            <p className="video-caption">
+              A time-lapse of Split Lease in motion
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Values Section */}
+      <section className="content-section alt-bg">
+        <div className="section-container">
+          <div className="section-header">
+            <div className="section-label">OUR VALUES</div>
+            <h2 className="section-title">What Drives Us</h2>
+          </div>
+          <div className="values-grid">
+            <div className="value-item">
+              <div className="value-icon">
+                <i data-feather="zap"></i>
+              </div>
+              <h3 className="value-title">Speed and iteration</h3>
+              <p className="value-description">We ship fast, test quickly, and improve daily.</p>
+            </div>
+            <div className="value-item">
+              <div className="value-icon">
+                <i data-feather="globe"></i>
+              </div>
+              <h3 className="value-title">Build what's needed</h3>
+              <p className="value-description">No skyscrapers in small towns — we stay balanced.</p>
+            </div>
+            <div className="value-item">
+              <div className="value-icon">
+                <i data-feather="users"></i>
+              </div>
+              <h3 className="value-title">Machine leverage</h3>
+              <p className="value-description">We automate busy work to focus on what matters most.</p>
+            </div>
+            <div className="value-item">
+              <div className="value-icon">
+                <i data-feather="book"></i>
+              </div>
+              <h3 className="value-title">Always upgrading</h3>
+              <p className="value-description">We delete the old to make space for the new ideas.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Why We'll Win Section */}
+      <section className="content-section" style={{background: 'white'}}>
+        <div className="section-container">
+          <div className="section-header">
+            <div className="section-label">WHY WE'LL WIN</div>
+            <h2 className="section-title">Built for the Future</h2>
+            <p className="section-description">
+              The world is changing fast — and so are the ways people live.<br /><br />
+              We're combining pretotyping, AI, and insights from consumer behavior research to design products that meet real human needs.<br /><br />
+              When flexibility becomes the new normal, we'll be ready.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* How We Work Section */}
+      <section className="content-section alt-bg">
+        <div className="section-container">
+          <div className="section-header">
+            <div className="section-label">HOW WE WORK</div>
+            <h2 className="section-title">Your Journey With Us</h2>
+            <p className="section-description">
+              Your journey with Split Lease is hands-on, transparent, and built for learning.
+            </p>
+          </div>
+          <div className="process-steps">
+            <div className="step-item">
+              <div className="step-number">1</div>
+              <div className="step-content">
+                <h3 className="step-title">Apply</h3>
+                <p className="step-description">Submit your application and answer a few quick questions.</p>
+              </div>
+            </div>
+            <div className="step-item">
+              <div className="step-number">2</div>
+              <div className="step-content">
+                <h3 className="step-title">Show us your thinking</h3>
+                <p className="step-description">Record a short usability test video.</p>
+              </div>
+            </div>
+            <div className="step-item">
+              <div className="step-number">3</div>
+              <div className="step-content">
+                <h3 className="step-title">Join the trial</h3>
+                <p className="step-description">Work with us for 3 weeks, collaborate on real projects, and see what life at Split Lease feels like.</p>
+              </div>
+            </div>
+          </div>
+          <p className="section-description" style={{marginTop: '40px'}}>
+            Everyone who completes a usability test gets access to our knowledge base — a library filled with product ideas, team resources, and ways to stay connected with us.
+          </p>
+        </div>
+      </section>
+
+      {/* What's Inside Section */}
+      <section className="content-section" style={{background: 'white'}}>
+        <div className="section-container">
+          <div className="section-header">
+            <div className="section-label">WHAT'S INSIDE</div>
+            <h2 className="section-title">We're Not Just Building a Company</h2>
+            <p className="section-description">
+              We're building a learning engine.
+            </p>
+          </div>
+          <div className="resources-list">
+            <div className="resource-item">
+              <div className="resource-icon">
+                <i data-feather="book-open"></i>
+              </div>
+              <div className="resource-text">Library of 100+ books</div>
+            </div>
+            <div className="resource-item">
+              <div className="resource-icon">
+                <i data-feather="cpu"></i>
+              </div>
+              <div className="resource-text">Typeform learning modules</div>
+            </div>
+            <div className="resource-item">
+              <div className="resource-icon">
+                <i data-feather="video"></i>
+              </div>
+              <div className="resource-text">10,000 hours of Loom recordings</div>
+            </div>
+            <div className="resource-item">
+              <div className="resource-icon">
+                <i data-feather="message-circle"></i>
+              </div>
+              <div className="resource-text">7 years of Slack knowledge</div>
+            </div>
+            <div className="resource-item">
+              <div className="resource-icon">
+                <i data-feather="settings"></i>
+              </div>
+              <div className="resource-text">Access to multiple machines, AI tools, and prototypes</div>
+            </div>
+            <div className="resource-item">
+              <div className="resource-icon">
+                <i data-feather="target"></i>
+              </div>
+              <div className="resource-text">Quiz to test your creative problem-solving skills</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Open Roles Section */}
+      <section id="roles" className="content-section alt-bg">
+        <div className="section-container">
+          <div className="section-header">
+            <div className="section-label">OPEN ROLES</div>
+            <h2 className="section-title">Join Our Team</h2>
+            <p className="section-description">
+              We're looking for talented individuals to help us build the future of flexible living.
+            </p>
+          </div>
+
+          <div className="roles-list">
+            <div className="role-card">
+              <div className="role-header">
+                <div>
+                  <h3 className="role-title">Executive Assistant</h3>
+                  <div className="role-meta">
+                    <span className="role-location">
+                      <i data-feather="map-pin"></i>
+                      Remote
+                    </span>
+                    <span className="role-type">
+                      <i data-feather="clock"></i>
+                      Full-time
+                    </span>
+                  </div>
+                </div>
+                <button className="apply-button" onClick={openTypeformModal}>
+                  Apply Now
+                  <i data-feather="arrow-right"></i>
+                </button>
+              </div>
+              <p className="role-description">
+                We're seeking a highly organized and proactive Executive Assistant to support our leadership team. You'll be the operational backbone, managing schedules, coordinating projects, and ensuring smooth day-to-day operations across our remote team.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <Footer />
+
+      {/* Modal for Typeform */}
+      <div className={`modal ${typeformModalActive ? 'active' : ''}`} onClick={(e) => {
+        if (e.target.className.includes('modal')) {
+          closeTypeformModal();
+        }
+      }}>
+        <div className="modal-content">
+          <button className="modal-close" onClick={closeTypeformModal}>
+            <i data-feather="x"></i>
+          </button>
+          <div data-tf-live="01JTV62WNGXMDX830477HVX7NZ"></div>
+        </div>
+      </div>
+    </>
+  );
+}
