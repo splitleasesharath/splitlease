@@ -617,6 +617,10 @@ const GoogleMap = forwardRef(({
         priceTag.style.background = color;
         priceTag.style.transform = 'translate(-50%, -50%) scale(1)';
         priceTag.style.zIndex = color === '#31135D' ? '1002' : '1001';
+        // Remove transition after hover ends to prevent reanimation during map interactions
+        setTimeout(() => {
+          priceTag.style.transition = 'background-color 0.2s ease';
+        }, 200);
       });
 
       // Use React callback for proper state management

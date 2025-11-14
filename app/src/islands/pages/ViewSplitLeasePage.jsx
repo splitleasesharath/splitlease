@@ -319,7 +319,7 @@ export default function ViewSplitLeasePage() {
     return (
       <>
         <Header />
-        <main style={{ minHeight: '70vh' }}>
+        <main style={{ minHeight: '70vh', paddingTop: 'calc(80px + 2rem)' }}>
           <LoadingState />
         </main>
         <Footer />
@@ -331,7 +331,7 @@ export default function ViewSplitLeasePage() {
     return (
       <>
         <Header />
-        <main style={{ minHeight: '70vh' }}>
+        <main style={{ minHeight: '70vh', paddingTop: 'calc(80px + 2rem)' }}>
           <ErrorState message={error} />
         </main>
         <Footer />
@@ -351,6 +351,7 @@ export default function ViewSplitLeasePage() {
         maxWidth: '1400px',
         margin: '0 auto',
         padding: '2rem',
+        paddingTop: 'calc(80px + 2rem)',
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : '1fr 400px',
         gap: '2rem'
@@ -751,13 +752,17 @@ export default function ViewSplitLeasePage() {
             boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
           }}
         >
+          {/* Price Display */}
           <div style={{
-            fontSize: '0.875rem',
+            fontSize: '2rem',
+            fontWeight: '700',
             color: COLORS.PRIMARY,
             marginBottom: '1.5rem',
-            fontWeight: '600'
+            textAlign: 'left'
           }}>
-            Please select or deselect days to see pricing
+            {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
+              ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}/night`
+              : 'Please select or deselect days to see pricing'}
           </div>
 
           {/* Move-in Date */}
@@ -913,7 +918,7 @@ export default function ViewSplitLeasePage() {
             }}
           >
             {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
-              ? `Create Proposal at ${formatPrice(pricingBreakdown.pricePerNight)}/night`
+              ? `Create Proposal at $${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}/night`
               : 'Update Split Schedule Above'}
           </button>
         </div>

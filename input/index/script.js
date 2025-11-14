@@ -433,19 +433,19 @@ function setupListings() {
     exploreButtons.forEach(button => {
         button.addEventListener('click', function() {
             const buttonText = this.textContent.toLowerCase();
-            
+
             if (buttonText.includes('weekend')) {
                 // Weekend schedule: Fri-Sun + Mon (days 6,7,1,2)
                 redirectToSearch('6,7,1,2', 'weekends');
-            } else if (buttonText.includes('weeks of the month')) {
-                // Weeks of the month: All days (1,2,3,4,5,6,7)
-                redirectToSearch('1,2,3,4,5,6,7', 'weeks');
+            } else if (buttonText.includes('monthly') || buttonText.includes('weeks of the month')) {
+                // Monthly schedule: All days (1,2,3,4,5,6,7)
+                redirectToSearch('1,2,3,4,5,6,7', 'monthly');
             } else if (buttonText.includes('weeknight')) {
-                // Weeknight schedule: Mon-Fri (days 2,3,4,5,6)  
+                // Weeknight schedule: Mon-Fri (days 2,3,4,5,6)
                 redirectToSearch('2,3,4,5,6', 'weeknights');
             } else {
-                // Default explore action (monthly)
-                redirectToSearch('1,2,3,4,5,6,7', 'monthly');
+                // Default explore action
+                redirectToSearch('1,2,3,4,5,6,7', 'default');
             }
         });
     });
@@ -1887,8 +1887,9 @@ function exploreRentals() {
 function redirectToSearch(daysSelected, preset) {
     // Note: daysSelected here is already a string like "2,3,4,5,6" for weeknight
     // These are already 1-based from the schedule section, so no conversion needed
-    const searchUrl = `https://app.split.lease/search?days-selected=${daysSelected}`;
-    
+    // Redirect to local search page
+    const searchUrl = `../search?days-selected=${daysSelected}`;
+
     window.location.href = searchUrl;
 }
 
