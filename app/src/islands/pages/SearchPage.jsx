@@ -227,6 +227,7 @@ function FilterPanel({
 function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenContactModal, onOpenInfoModal }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
+  const priceInfoTriggerRef = useRef(null);
 
   const hasImages = listing.images && listing.images.length > 0;
   const hasMultipleImages = listing.images && listing.images.length > 1;
@@ -442,18 +443,22 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
           </div>
 
           <div className="pricing-info">
-            <div className="starting-price" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <div
+              ref={priceInfoTriggerRef}
+              className="starting-price"
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onOpenInfoModal(listing, priceInfoTriggerRef);
+              }}
+            >
               <span>Starting at ${parseFloat(startingPrice).toFixed(2)}/night</span>
               <svg
                 viewBox="0 0 24 24"
                 width="14"
                 height="14"
                 style={{ color: '#3b82f6', fill: 'currentColor', cursor: 'pointer' }}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onOpenInfoModal(listing);
-                }}
               >
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
               </svg>
@@ -639,6 +644,7 @@ export default function SearchPage() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState(null);
+  const [infoModalTriggerRef, setInfoModalTriggerRef] = useState(null);
 
   // Refs
   const mapRef = useRef(null);
@@ -836,11 +842,13 @@ export default function SearchPage() {
       if (!borough) throw new Error('Borough not found');
 
       // Build query
+      // CRITICAL FIX: Use Complete=true instead of Active=true to match Bubble's filter logic
+      // Bubble shows listings where Complete=true AND (Active=true OR Active IS NULL)
       let query = supabase
         .from('listing')
         .select('*')
-        .eq('Active', true)
-        .eq('isForUsability', false)
+        .eq('"Complete"', true)
+        .or('Active.eq.true,Active.is.null')
         .eq('"Location - Borough"', borough.id);
 
       // Apply week pattern filter
@@ -1261,14 +1269,16 @@ export default function SearchPage() {
     setSelectedListing(null);
   };
 
-  const handleOpenInfoModal = (listing) => {
+  const handleOpenInfoModal = (listing, triggerRef) => {
     setSelectedListing(listing);
+    setInfoModalTriggerRef(triggerRef);
     setIsInfoModalOpen(true);
   };
 
   const handleCloseInfoModal = () => {
     setIsInfoModalOpen(false);
     setSelectedListing(null);
+    setInfoModalTriggerRef(null);
   };
 
   // Mount SearchScheduleSelector component in both mobile and desktop locations
@@ -1608,6 +1618,7 @@ export default function SearchPage() {
         onClose={handleCloseInfoModal}
         listing={selectedListing}
         selectedDaysCount={selectedDays.length}
+        triggerRef={infoModalTriggerRef}
       />
     </div>
   );
