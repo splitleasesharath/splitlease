@@ -6,11 +6,12 @@
  * IMPORTANT: This is a comprehensive rebuild based on documentation and original page inspection
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import CreateProposalFlow from './ViewSplitLeasePageComponents/CreateProposalFlow.jsx';
 import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
+import GoogleMap from '../shared/GoogleMap.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
@@ -138,6 +139,10 @@ export default function ViewSplitLeasePage() {
 
   // Responsive state
   const [isMobile, setIsMobile] = useState(false);
+
+  // Map reference
+  const mapRef = useRef(null);
+  const mapSectionRef = useRef(null);
 
   // ============================================================================
   // INITIALIZATION
@@ -311,6 +316,19 @@ export default function ViewSplitLeasePage() {
     setIsProposalModalOpen(true);
   };
 
+  const handleLocationClick = () => {
+    if (mapSectionRef.current) {
+      mapSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+      // After scrolling, center the map on the listing's location
+      setTimeout(() => {
+        if (mapRef.current && listing) {
+          mapRef.current.zoomToListing(listing._id);
+        }
+      }, 600);
+    }
+  };
+
   // ============================================================================
   // RENDER LOGIC
   // ============================================================================
@@ -460,7 +478,19 @@ export default function ViewSplitLeasePage() {
               color: COLORS.TEXT_LIGHT
             }}>
               {listing.resolvedNeighborhood && listing.resolvedBorough && (
-                <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span
+                  onClick={handleLocationClick}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    transition: 'color 0.2s'
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
+                  onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
+                >
                   📍 Located in {listing.resolvedNeighborhood}, {listing.resolvedBorough}
                 </span>
               )}
@@ -682,6 +712,57 @@ export default function ViewSplitLeasePage() {
               </div>
             </section>
           )}
+
+          {/* Map Section */}
+          <section ref={mapSectionRef} style={{ marginBottom: '2rem' }}>
+            <h2 style={{
+              fontSize: '1.5rem',
+              fontWeight: '700',
+              marginBottom: '1rem',
+              color: COLORS.TEXT_DARK
+            }}>
+              Map
+            </h2>
+            <div style={{
+              height: '400px',
+              borderRadius: '12px',
+              overflow: 'hidden',
+              border: `1px solid ${COLORS.BG_LIGHT}`
+            }}>
+              <GoogleMap
+                ref={mapRef}
+                listings={listing && listing.coordinates ? [{
+                  id: listing._id,
+                  title: listing.Name,
+                  coordinates: listing.coordinates,
+                  price: {
+                    starting: listing['Standarized Minimum Nightly Price (Filter)'] || 0
+                  },
+                  location: listing.resolvedBorough,
+                  type: listing.resolvedTypeOfSpace,
+                  bedrooms: listing['Features - Qty Bedrooms'] || 0,
+                  bathrooms: listing['Features - Qty Bathrooms'] || 0,
+                  images: listing.photos?.map(p => p.Photo) || [],
+                  borough: listing.resolvedBorough
+                }] : []}
+                filteredListings={listing && listing.coordinates ? [{
+                  id: listing._id,
+                  title: listing.Name,
+                  coordinates: listing.coordinates,
+                  price: {
+                    starting: listing['Standarized Minimum Nightly Price (Filter)'] || 0
+                  },
+                  location: listing.resolvedBorough,
+                  type: listing.resolvedTypeOfSpace,
+                  bedrooms: listing['Features - Qty Bedrooms'] || 0,
+                  bathrooms: listing['Features - Qty Bathrooms'] || 0,
+                  images: listing.photos?.map(p => p.Photo) || [],
+                  borough: listing.resolvedBorough
+                }] : []}
+                selectedBorough={listing.resolvedBorough}
+              />
+            </div>
+          </section>
 
           {/* Host Section */}
           {listing.host && (

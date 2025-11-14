@@ -209,7 +209,29 @@ export async function fetchListingComplete(listingId) {
       }
     }
 
-    // 10. Return enriched listing
+    // 10. Extract coordinates from "Location - Address" JSONB field
+    let coordinates = null;
+    let locationAddress = listingData['Location - Address'];
+
+    // Parse if it's a string
+    if (typeof locationAddress === 'string') {
+      try {
+        locationAddress = JSON.parse(locationAddress);
+      } catch (error) {
+        console.error('Failed to parse Location - Address:', error);
+        locationAddress = null;
+      }
+    }
+
+    // Extract lat/lng if available
+    if (locationAddress?.lat && locationAddress?.lng) {
+      coordinates = {
+        lat: locationAddress.lat,
+        lng: locationAddress.lng
+      };
+    }
+
+    // 11. Return enriched listing
     return {
       ...listingData,
       photos: sortedPhotos,
@@ -222,7 +244,8 @@ export async function fetchListingComplete(listingId) {
       houseRules,
       parkingOption,
       host: hostData,
-      reviews: reviewsData
+      reviews: reviewsData,
+      coordinates
     };
 
   } catch (error) {
