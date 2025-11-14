@@ -537,7 +537,8 @@ const GoogleMap = forwardRef(({
       }
     }
 
-    requestAnimationFrame(createMarkers);
+    // Render markers immediately without lazy loading
+    createMarkers();
   }, [listings, filteredListings, mapLoaded, showAllListings]);
 
   // Recenter map when borough changes
@@ -567,7 +568,7 @@ const GoogleMap = forwardRef(({
 
   /**
    * Create a custom price label marker using OverlayView
-   * OPTIMIZED: Lazy-load InfoWindow, use event delegation, RAF for draw()
+   * NO LAZY LOADING: Immediate rendering for all price pins
    * @param {google.maps.Map} map - The map instance
    * @param {object} coordinates - {lat, lng} coordinates
    * @param {number} price - Price to display
@@ -579,7 +580,6 @@ const GoogleMap = forwardRef(({
     const hoverColor = color === '#00C851' ? '#00A040' : '#522580';
 
     const markerOverlay = new window.google.maps.OverlayView();
-    let rafId = null;
 
     markerOverlay.onAdd = function() {
       const priceTag = document.createElement('div');
@@ -634,32 +634,21 @@ const GoogleMap = forwardRef(({
     markerOverlay.draw = function() {
       if (!this.div) return;
 
-      // Cancel previous RAF if still pending
-      if (rafId) {
-        cancelAnimationFrame(rafId);
+      // Immediate rendering without RAF - no lazy loading
+      const projection = this.getProjection();
+      if (!projection) return;
+
+      const position = projection.fromLatLngToDivPixel(
+        new window.google.maps.LatLng(coordinates.lat, coordinates.lng)
+      );
+
+      if (this.div) {
+        // Use transform3d for GPU acceleration
+        this.div.style.transform = `translate3d(${position.x}px, ${position.y}px, 0) translate(-50%, -50%)`;
       }
-
-      // Use RAF to batch draw calls
-      rafId = requestAnimationFrame(() => {
-        const projection = this.getProjection();
-        if (!projection) return;
-
-        const position = projection.fromLatLngToDivPixel(
-          new window.google.maps.LatLng(coordinates.lat, coordinates.lng)
-        );
-
-        if (this.div) {
-          // Use transform3d for GPU acceleration
-          this.div.style.transform = `translate3d(${position.x}px, ${position.y}px, 0) translate(-50%, -50%)`;
-        }
-      });
     };
 
     markerOverlay.onRemove = function() {
-      if (rafId) {
-        cancelAnimationFrame(rafId);
-        rafId = null;
-      }
       if (this.div) {
         this.div.parentNode.removeChild(this.div);
         this.div = null;
