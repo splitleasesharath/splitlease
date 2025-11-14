@@ -251,6 +251,8 @@
     border: 1px solid rgba(0,0,0,0.1);
     width: 32px;
     height: 32px;
+    padding: 0;
+    box-sizing: border-box;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -310,18 +312,20 @@
     position: absolute;
     top: 12px;
     right: 12px;
-    background: rgba(255,255,255,0.95);
+    background: rgba(0, 0, 0, 0.6);
     backdrop-filter: blur(8px);
     border: none;
     width: 36px;
     height: 36px;
+    padding: 0;
+    box-sizing: border-box;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.25);
 }
 
 .favorite-btn:hover {
@@ -335,7 +339,7 @@
 }
 
 .favorite-btn svg {
-    stroke: #666;
+    stroke: #ffffff;
     stroke-width: 2.5;
     fill: none;
     transition: all 0.2s ease;
