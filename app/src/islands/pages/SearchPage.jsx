@@ -504,8 +504,8 @@ function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoad
           />
         ];
 
-        // Insert AI signup card every 6 listings (after 6th, 12th, 18th, etc.)
-        if ((index + 1) % 6 === 0) {
+        // Insert AI signup card every 5 listings (after 5th, 10th, 15th, etc.)
+        if ((index + 1) % 5 === 0) {
           cards.push(<AiSignupCard key={`ai-${index}`} />);
         }
 
@@ -592,8 +592,9 @@ export default function SearchPage() {
   // State management
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [allListings, setAllListings] = useState([]);
-  const [displayedListings, setDisplayedListings] = useState([]);
+  const [allActiveListings, setAllActiveListings] = useState([]); // ALL active listings (green pins, no filters)
+  const [allListings, setAllListings] = useState([]); // Filtered listings (purple pins)
+  const [displayedListings, setDisplayedListings] = useState([]); // Lazy-loaded subset for cards
   const [loadedCount, setLoadedCount] = useState(0);
 
   // Modal state management
@@ -639,6 +640,97 @@ export default function SearchPage() {
     };
     init();
   }, []);
+
+  // Fetch ALL active listings for green markers (NO FILTERS - runs once on mount)
+  useEffect(() => {
+    const fetchAllActiveListings = async () => {
+      console.log('🌍 Fetching ALL active listings for map background (green pins)...');
+
+      try {
+        const { data, error } = await supabase
+          .from('listing')
+          .select('*')
+          .eq('Active', true)
+          .eq('isForUsability', false);
+
+        if (error) throw error;
+
+        console.log('📊 fetchAllActiveListings: Supabase returned', data.length, 'active listings');
+
+        // Batch fetch photos for all listings
+        const allPhotoIds = new Set();
+        data.forEach(listing => {
+          const photosField = listing['Features - Photos'];
+          if (Array.isArray(photosField)) {
+            photosField.forEach(id => allPhotoIds.add(id));
+          } else if (typeof photosField === 'string') {
+            try {
+              const parsed = JSON.parse(photosField);
+              if (Array.isArray(parsed)) {
+                parsed.forEach(id => allPhotoIds.add(id));
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
+        });
+
+        const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds));
+
+        // Extract photos per listing
+        const resolvedPhotos = {};
+        data.forEach(listing => {
+          resolvedPhotos[listing._id] = extractPhotos(
+            listing['Features - Photos'],
+            photoMap,
+            listing._id
+          );
+        });
+
+        // Batch fetch host data
+        const hostIds = new Set();
+        data.forEach(listing => {
+          if (listing['Host / Landlord']) {
+            hostIds.add(listing['Host / Landlord']);
+          }
+        });
+
+        const hostMap = await fetchHostData(Array.from(hostIds));
+
+        // Map host data to listings
+        const resolvedHosts = {};
+        data.forEach(listing => {
+          const hostId = listing['Host / Landlord'];
+          resolvedHosts[listing._id] = hostMap[hostId] || null;
+        });
+
+        // Transform listings
+        const transformedListings = data.map(listing =>
+          transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
+        );
+
+        // Filter to only listings with valid coordinates (NO FALLBACK)
+        const listingsWithCoordinates = transformedListings.filter(listing => {
+          const hasValidCoords = listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
+          if (!hasValidCoords) {
+            console.warn('⚠️ fetchAllActiveListings: Excluding listing without coordinates:', {
+              id: listing.id,
+              title: listing.title
+            });
+          }
+          return hasValidCoords;
+        });
+
+        console.log(`✅ Fetched ${listingsWithCoordinates.length} active listings with coordinates for green markers`);
+        setAllActiveListings(listingsWithCoordinates);
+      } catch (error) {
+        console.error('❌ Failed to fetch all active listings:', error);
+        // Don't set error state - this shouldn't block the page, filtered results will still work
+      }
+    };
+
+    fetchAllActiveListings();
+  }, []); // Run once on mount
 
   // Sync filter state to URL parameters
   // NOTE: selectedDays is managed by SearchScheduleSelector component internally
@@ -1534,8 +1626,8 @@ export default function SearchPage() {
 
           <GoogleMap
             ref={mapRef}
-            listings={allListings}
-            filteredListings={displayedListings}
+            listings={allActiveListings}
+            filteredListings={allListings}
             selectedListing={null}
             selectedBorough={selectedBorough}
             onMarkerClick={(listing) => {
