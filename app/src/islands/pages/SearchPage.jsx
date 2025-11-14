@@ -1097,7 +1097,8 @@ export default function SearchPage() {
           console.log(`   → Empty/null days = available ALL days = SHOW`);
         }
 
-        filteredListings = transformedListings.filter(listing => {
+        // CRITICAL FIX: Filter from listingsWithCoordinates, not transformedListings
+        filteredListings = listingsWithCoordinates.filter(listing => {
           if (selectedDays.length === 0) return true;
 
         const listingDays = Array.isArray(listing.days_available) ? listing.days_available : [];
