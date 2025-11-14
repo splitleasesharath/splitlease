@@ -164,7 +164,7 @@ export default function Header() {
                 <span className="dropdown-desc">Review most important policies</span>
               </a>
               <a
-                href="/faq.html"
+                href="/faq.html?section=hosts"
                 className="dropdown-item"
                 role="menuitem"
               >
@@ -235,7 +235,7 @@ export default function Header() {
                 <span className="dropdown-desc">Explore other guests' feedback</span>
               </a>
               <a
-                href="/faq.html"
+                href="/faq.html?section=travelers"
                 className="dropdown-item"
                 role="menuitem"
               >

@@ -8,8 +8,34 @@ export default function FAQPage() {
   const [faqs, setFaqs] = useState({ general: [], travelers: [], hosts: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [openQuestionId, setOpenQuestionId] = useState(null);
 
   useEffect(() => {
+    // Parse URL parameters
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    const question = params.get('question');
+
+    // Set active tab based on section parameter
+    if (section) {
+      const sectionMap = {
+        'travelers': 'travelers',
+        'hosts': 'hosts',
+        'general': 'general',
+        'guest': 'travelers', // Alias
+        'host': 'hosts' // Alias
+      };
+      const mappedSection = sectionMap[section.toLowerCase()];
+      if (mappedSection) {
+        setActiveTab(mappedSection);
+      }
+    }
+
+    // Store question ID to open after FAQs load
+    if (question) {
+      setOpenQuestionId(question.toLowerCase());
+    }
+
     loadFAQs();
   }, []);
 
@@ -129,13 +155,13 @@ export default function FAQPage() {
         {!loading && !error && (
           <>
             <div className={`tab-content ${activeTab === 'general' ? 'active' : ''}`}>
-              <FAQContent faqs={faqs.general} />
+              <FAQContent faqs={faqs.general} openQuestionId={activeTab === 'general' ? openQuestionId : null} />
             </div>
             <div className={`tab-content ${activeTab === 'travelers' ? 'active' : ''}`}>
-              <FAQContent faqs={faqs.travelers} />
+              <FAQContent faqs={faqs.travelers} openQuestionId={activeTab === 'travelers' ? openQuestionId : null} />
             </div>
             <div className={`tab-content ${activeTab === 'hosts' ? 'active' : ''}`}>
-              <FAQContent faqs={faqs.hosts} />
+              <FAQContent faqs={faqs.hosts} openQuestionId={activeTab === 'hosts' ? openQuestionId : null} />
             </div>
           </>
         )}
@@ -152,8 +178,30 @@ export default function FAQPage() {
 }
 
 // FAQ Content Component - Renders grouped FAQs with accordion
-function FAQContent({ faqs }) {
+function FAQContent({ faqs, openQuestionId }) {
   const [activeAccordion, setActiveAccordion] = useState(null);
+
+  // Open specific question when openQuestionId is provided
+  useEffect(() => {
+    if (openQuestionId && faqs && faqs.length > 0) {
+      // Find the index of the question that matches the ID
+      const questionIndex = faqs.findIndex(faq =>
+        faq.Question.toLowerCase().includes(openQuestionId) ||
+        faq.Question.toLowerCase().replace(/[^a-z0-9]/g, '').includes(openQuestionId.replace(/[^a-z0-9]/g, ''))
+      );
+
+      if (questionIndex !== -1) {
+        setActiveAccordion(questionIndex);
+        // Scroll to the question after a short delay
+        setTimeout(() => {
+          const element = document.querySelector(`[data-question-index="${questionIndex}"]`);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 300);
+      }
+    }
+  }, [openQuestionId, faqs]);
 
   if (!faqs || faqs.length === 0) {
     return <p style={{ textAlign: 'center', padding: '40px', color: '#666' }}>No FAQs available in this category.</p>;
@@ -195,6 +243,7 @@ function FAQContent({ faqs }) {
               <div
                 key={currentIndex}
                 className={`accordion-item ${isActive ? 'active' : ''}`}
+                data-question-index={currentIndex}
               >
                 <div
                   className="accordion-header"
