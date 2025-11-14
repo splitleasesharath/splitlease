@@ -1,6 +1,10 @@
 # Cloudflare Pages configuration
-# Note: This file may be ignored if build settings are configured in the dashboard
 # Dashboard settings take precedence over this file
+# Current dashboard settings (as of 2025-11-14):
+# - Root directory: app
+# - Build command: npm run build
+# - Build output: dist
+# - Build watch paths: **/*
 
 [build]
 command = "npm run build"
