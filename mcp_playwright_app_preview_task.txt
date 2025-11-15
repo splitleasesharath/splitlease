@@ -1,0 +1,72 @@
+MCP TOOL SPECIALIST TASK - PLAYWRIGHT APP PREVIEW
+=================================================
+
+TASK OBJECTIVE:
+Preview the multi-page app built in the /app directory using Playwright MCP browser automation.
+
+CONTEXT:
+- App location: C:\Users\Split Lease\splitleaseteam\!Agent Context and Tools\SL6\Split Lease\app
+- Index page location: C:\Users\Split Lease\splitleaseteam\!Agent Context and Tools\SL6\Split Lease\app\public\index.html
+- This is a multi-page app with changes applied from the index_lite repository
+- User wants to verify the "Choose when to be a local" section (local-living-section)
+
+SPECIFIC REQUIREMENTS:
+
+1. Navigate to the index.html file using file:/// protocol:
+   file:///C:/Users/Split%20Lease/splitleaseteam/!Agent%20Context%20and%20Tools/SL6/Split%20Lease/app/public/index.html
+
+2. Take a full-page screenshot showing the overall page structure
+   - Save as: C:\Users\Split Lease\splitleaseteam\!Agent Context and Tools\SL6\Split Lease\app_preview_full_page.png
+
+3. Scroll down to find the "Choose when to be a local" section (local-living-section)
+   - Take a detailed screenshot of this section
+   - Save as: C:\Users\Split Lease\splitleaseteam\!Agent Context and Tools\SL6\Split Lease\app_preview_local_living_section.png
+
+4. Verify button styling in the local-living-section:
+   - Check for padding: 0.75rem 1.5rem
+   - Check for font-size: 1rem
+   - Take a close-up screenshot of the buttons
+   - Save as: C:\Users\Split Lease\splitleaseteam\!Agent Context and Tools\SL6\Split Lease\app_preview_button_closeup.png
+
+5. Verify the two-column layout with numbered features (1, 2, 3):
+   - Take a screenshot showing this layout
+   - Save as: C:\Users\Split Lease\splitleaseteam\!Agent Context and Tools\SL6\Split Lease\app_preview_features_layout.png
+
+6. Check console for any errors:
+   - Capture all console messages
+   - Report any errors, warnings, or important logs
+
+7. Take accessibility snapshots:
+   - Full page accessibility snapshot
+   - Local living section accessibility snapshot
+   - Report on the structure and semantic HTML
+
+8. Take a screenshot of the overall page structure
+   - Save as: C:\Users\Split Lease\splitleaseteam\!Agent Context and Tools\SL6\Split Lease\app_preview_page_structure.png
+
+IMPORTANT CONSTRAINTS:
+- Only preview files in the /app directory, NOT the /input directory
+- Use absolute file paths for all screenshots
+- Close browser properly when done to prevent resource leaks
+- Wait for page to fully load before taking screenshots
+- Handle dynamic content and JavaScript rendering
+
+SUCCESS CRITERIA:
+- All screenshots saved successfully to the Split Lease directory
+- Console messages captured and analyzed
+- Button styling verified against specifications
+- Two-column layout with numbered features confirmed
+- Accessibility structure validated
+- No errors during browser automation
+
+EXPECTED DELIVERABLES:
+1. Full page screenshot (app_preview_full_page.png)
+2. Local living section screenshot (app_preview_local_living_section.png)
+3. Button close-up screenshot (app_preview_button_closeup.png)
+4. Features layout screenshot (app_preview_features_layout.png)
+5. Page structure screenshot (app_preview_page_structure.png)
+6. Console messages report
+7. Accessibility snapshots analysis
+8. Summary of findings including any issues or verification results
+
+Please execute this task using Playwright MCP and provide a comprehensive report of all findings.

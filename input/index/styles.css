@@ -321,7 +321,7 @@ body {
 /* Theme Toggle Button */
 .theme-toggle {
     background: transparent;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
     border-radius: 50%;
     width: 40px;
     height: 40px;
@@ -344,7 +344,7 @@ body {
 }
 
 [data-theme="dark"] .theme-toggle:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.4);
 }
 
 /* Hamburger Menu */
@@ -557,8 +557,8 @@ body {
     background: var(--primary-color);
     color: white;
     border: none;
-    padding: 1rem 2.5rem;
-    font-size: 1.125rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
     font-weight: 600;
     border-radius: var(--radius-lg);
     cursor: pointer;
@@ -706,7 +706,7 @@ body {
 }
 
 .value-card h3 {
-    font-size: 1.125rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-dark);
     line-height: 1.4;
@@ -1091,6 +1091,236 @@ body {
     background: #5B5FCF;
     color: white;
     transform: translateY(-1px);
+}
+
+
+/* Local Living Section (New Design) */
+.local-living-section {
+    padding: 3rem 1.25rem;
+    background: #f5f5f7;
+}
+
+.local-container {
+    background: linear-gradient(135deg, #e8e3f3 0%, #ddd6f0 100%);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    max-width: 1400px;
+    width: 100%;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    margin: 0 auto;
+}
+
+.local-content-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 450px;
+}
+
+.local-left-section {
+    padding: 50px 60px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.local-left-section h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin-bottom: 30px;
+    line-height: 1.1;
+}
+
+.local-description {
+    font-size: 18px;
+    line-height: 1.7;
+    color: #424245;
+    margin-bottom: 40px;
+}
+
+.local-cta-group {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.local-primary-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--primary-color);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-md);
+}
+
+.local-primary-button:hover {
+    background: var(--primary-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.local-secondary-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: white;
+    color: var(--primary-color);
+    padding: 0.75rem 1.5rem;
+    border: 2px solid var(--primary-color);
+    border-radius: var(--radius-lg);
+    font-size: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.local-secondary-button:hover {
+    background: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.local-right-section {
+    background: #E3DEF2;
+    padding: 50px 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 28px;
+    position: relative;
+    overflow: hidden;
+}
+
+.local-right-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&auto=format&fit=crop');
+    background-size: cover;
+    background-position: center;
+    opacity: 0.25;
+    z-index: 0;
+}
+
+.local-right-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg width="40" height="40" xmlns="http://www.w3.org/2000/svg"><circle cx="2" cy="2" r="1" fill="white" opacity="0.05"/></svg>');
+    background-size: 40px 40px;
+    z-index: 0;
+}
+
+.local-feature-item {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    position: relative;
+    z-index: 1;
+    opacity: 0;
+    transform: translateX(20px);
+    animation: slideIn 0.6s forwards;
+}
+
+.local-feature-item:nth-child(1) { animation-delay: 0.1s; }
+.local-feature-item:nth-child(2) { animation-delay: 0.2s; }
+.local-feature-item:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes slideIn {
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.local-feature-number {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 900;
+    color: #4A46CE;
+}
+
+.local-feature-content h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.local-feature-content p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: #424245;
+}
+
+@media (max-width: 968px) {
+    .local-content-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .local-left-section {
+        padding: 50px 40px;
+    }
+
+    .local-right-section {
+        padding: 50px 40px;
+        min-height: 500px;
+    }
+
+    .local-left-section h1 {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 640px) {
+    .local-left-section, .local-right-section {
+        padding: 40px 30px;
+    }
+
+    .local-left-section h1 {
+        font-size: 1.75rem;
+    }
+
+    .local-description {
+        font-size: 16px;
+    }
+
+    .local-cta-group {
+        flex-direction: column;
+    }
+
+    .local-primary-button, .local-secondary-button {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 /* Listings Section */
@@ -3572,7 +3802,7 @@ body {
     left: 50%;
     margin-left: -8px;
     margin-top: -8px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.5);
     border-top: 2px solid white;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;
