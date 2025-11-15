@@ -155,6 +155,7 @@ function ScheduleSection() {
       <div className="schedule-grid">
         {schedules.map((schedule, index) => (
           <div key={index} className="schedule-card">
+            <h3 className="schedule-title">{schedule.title}</h3>
             <div className="schedule-visual">
               <div className="lottie-container">
                 <lottie-player
