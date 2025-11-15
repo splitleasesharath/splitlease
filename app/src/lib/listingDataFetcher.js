@@ -17,8 +17,39 @@ import {
   getSafetyFeatures,
   getHouseRules,
   getParkingOption,
-  getCancellationPolicy
+  getCancellationPolicy,
+  getStorageOption
 } from './dataLookups.js';
+
+/**
+ * Parse JSONB field that may be double-encoded as JSON string
+ * Handles both native arrays and JSON-stringified arrays from Supabase
+ * @param {any} field - JSONB field value from Supabase
+ * @returns {Array} Parsed array or empty array
+ */
+function parseJsonField(field) {
+  // Already null/undefined
+  if (!field) return [];
+
+  // Already an array (direct JSONB array)
+  if (Array.isArray(field)) return field;
+
+  // String that needs parsing (double-encoded JSONB)
+  if (typeof field === 'string') {
+    try {
+      const parsed = JSON.parse(field);
+      // Ensure result is array
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error('Failed to parse JSONB field:', field, e);
+      return [];
+    }
+  }
+
+  // Unexpected type
+  console.warn('Unexpected JSONB field type:', typeof field, field);
+  return [];
+}
 
 /**
  * Fetch complete listing data with all enrichments
@@ -136,21 +167,21 @@ export async function fetchListingComplete(listingId) {
       ? getPropertyTypeLabel(listingData['Features - Type of Space'])
       : null;
 
-    // 6. Resolve amenities (JSONB arrays)
+    // 6. Resolve amenities (JSONB arrays) - with double-encoding fix
     const amenitiesInUnit = listingData['Features - Amenities In-Unit']
-      ? getAmenities(listingData['Features - Amenities In-Unit'])
+      ? getAmenities(parseJsonField(listingData['Features - Amenities In-Unit']))
       : [];
 
     const amenitiesInBuilding = listingData['Features - Amenities In-Building']
-      ? getAmenities(listingData['Features - Amenities In-Building'])
+      ? getAmenities(parseJsonField(listingData['Features - Amenities In-Building']))
       : [];
 
     const safetyFeatures = listingData['Features - Safety']
-      ? getSafetyFeatures(listingData['Features - Safety'])
+      ? getSafetyFeatures(parseJsonField(listingData['Features - Safety']))
       : [];
 
     const houseRules = listingData['Features - House Rules']
-      ? getHouseRules(listingData['Features - House Rules'])
+      ? getHouseRules(parseJsonField(listingData['Features - House Rules']))
       : [];
 
     // 7. Resolve parking option
@@ -161,6 +192,11 @@ export async function fetchListingComplete(listingId) {
     // 7a. Resolve cancellation policy
     const cancellationPolicy = listingData['Cancellation Policy']
       ? getCancellationPolicy(listingData['Cancellation Policy'])
+      : null;
+
+    // 7b. Resolve storage option
+    const storageOption = listingData['Features - Secure Storage Option']
+      ? getStorageOption(listingData['Features - Secure Storage Option'])
       : null;
 
     // 8. Fetch host data
@@ -198,13 +234,14 @@ export async function fetchListingComplete(listingId) {
       }
     }
 
-    // 9. Fetch reviews if any
+    // 9. Fetch reviews if any - with double-encoding fix
     let reviewsData = [];
-    if (listingData.Reviews && Array.isArray(listingData.Reviews) && listingData.Reviews.length > 0) {
+    const reviewIds = parseJsonField(listingData.Reviews);
+    if (reviewIds.length > 0) {
       const { data: reviews, error: reviewsError } = await supabase
         .from('mainreview')
         .select('_id, Comment, "Overall Score", Reviewer, "Created Date", "Is Published?"')
-        .in('_id', listingData.Reviews)
+        .in('_id', reviewIds)
         .eq('Is Published?', true)
         .order('"Created Date"', { ascending: false });
 
@@ -250,6 +287,7 @@ export async function fetchListingComplete(listingId) {
       houseRules,
       parkingOption,
       cancellationPolicy,
+      storageOption,
       host: hostData,
       reviews: reviewsData,
       coordinates
