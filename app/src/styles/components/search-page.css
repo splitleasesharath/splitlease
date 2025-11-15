@@ -764,12 +764,38 @@
     min-height: 44px;
   }
 
-  /* Neighborhood list improvements on mobile */
+  /* Neighborhood list improvements on mobile - COLLAPSIBLE */
   .inline-filters .neighborhood-list {
-    display: block;
+    display: none; /* Hidden by default - collapsible */
     max-height: 200px;
     border-radius: 8px;
     margin-top: 0.5rem;
+    overflow-y: auto;
+  }
+
+  /* Show neighborhood list when search input is focused or when hovering */
+  .inline-filters .neighborhood-search:focus ~ .neighborhood-list,
+  .inline-filters .neighborhood-list:hover {
+    display: block;
+  }
+
+  /* Improve neighborhood search input on mobile */
+  .inline-filters .neighborhood-search {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: white;
+    min-height: 44px;
+    cursor: text;
+    transition: border-color 0.2s;
+  }
+
+  .inline-filters .neighborhood-search:focus {
+    outline: none;
+    border-color: #5b21b6;
+    box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
   }
 
   .map-header {
