@@ -29,6 +29,7 @@ const lookupCache = {
   houseRules: new Map(),     // houseRuleId -> {name, icon}
   parking: new Map(),        // parkingId -> {label}
   cancellationPolicies: new Map(), // cancellationPolicyId -> {display}
+  storage: new Map(),        // storageId -> {title, summaryGuest}
   initialized: false
 };
 
@@ -70,7 +71,8 @@ export async function initializeLookups() {
       initializeSafetyLookups(),
       initializeHouseRuleLookups(),
       initializeParkingLookups(),
-      initializeCancellationPolicyLookups()
+      initializeCancellationPolicyLookups(),
+      initializeStorageLookups()
     ]);
 
     lookupCache.initialized = true;
@@ -300,6 +302,32 @@ async function initializeCancellationPolicyLookups() {
   }
 }
 
+/**
+ * Fetch and cache all storage options
+ * @returns {Promise<void>}
+ */
+async function initializeStorageLookups() {
+  try {
+    const { data, error } = await supabase
+      .from(DATABASE.TABLES.STORAGE)
+      .select('_id, Title, "Summary - Guest"');
+
+    if (error) throw error;
+
+    if (data && Array.isArray(data)) {
+      data.forEach(storage => {
+        lookupCache.storage.set(storage._id, {
+          title: storage.Title || 'Unknown Storage',
+          summaryGuest: storage['Summary - Guest'] || ''
+        });
+      });
+      console.log(`Cached ${lookupCache.storage.size} storage options`);
+    }
+  } catch (error) {
+    console.error('Failed to initialize storage lookups:', error);
+  }
+}
+
 // ============================================================================
 // Lookup Functions (Synchronous - use cached data)
 // ============================================================================
@@ -475,6 +503,23 @@ export function getCancellationPolicy(policyId) {
   }
 
   return policy;
+}
+
+/**
+ * Get storage option data by ID (synchronous lookup from cache)
+ * @param {string} storageId - The storage option ID
+ * @returns {object|null} The storage option data {title, summaryGuest} or null
+ */
+export function getStorageOption(storageId) {
+  if (!storageId) return null;
+
+  const storage = lookupCache.storage.get(storageId);
+  if (!storage) {
+    console.warn(`Storage option ID not found in cache: ${storageId}`);
+    return null;
+  }
+
+  return storage;
 }
 
 // ============================================================================

@@ -263,7 +263,8 @@ export const DATABASE = {
     SAFETY: 'zfut_safetyfeatures',
     HOUSE_RULE: 'zat_features_houserule',
     PARKING: 'zat_features_parkingoptions',
-    CANCELLATION_POLICY: 'zat_features_cancellationpolicy'
+    CANCELLATION_POLICY: 'zat_features_cancellationpolicy',
+    STORAGE: 'zat_features_storageoptions'
   },
   BOROUGH_FIELDS: {
     ID: '_id',

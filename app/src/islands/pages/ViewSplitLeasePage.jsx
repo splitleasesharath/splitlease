@@ -674,6 +674,83 @@ export default function ViewSplitLeasePage() {
             )}
           </section>
 
+          {/* Storage Section */}
+          {listing.storageOption && (
+            <section style={{ marginBottom: '2rem' }}>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                marginBottom: '1rem',
+                color: COLORS.TEXT_DARK
+              }}>
+                Storage
+              </h2>
+              <div style={{
+                padding: '1.5rem',
+                background: COLORS.BG_LIGHT,
+                borderRadius: '12px'
+              }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'start',
+                  gap: '1rem'
+                }}>
+                  <span style={{ fontSize: '1.5rem' }}>📦</span>
+                  <div>
+                    <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
+                      {listing.storageOption.title}
+                    </div>
+                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem' }}>
+                      {listing.storageOption.summaryGuest ||
+                       'Store your things between stays, ready when you return.'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* Neighborhood Description */}
+          {listing['Description - Neighborhood'] && (
+            <section style={{ marginBottom: '2rem' }}>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                marginBottom: '1rem',
+                color: COLORS.TEXT_DARK
+              }}>
+                Neighborhood
+              </h2>
+              <p style={{
+                lineHeight: '1.6',
+                color: COLORS.TEXT_LIGHT,
+                whiteSpace: 'pre-wrap'
+              }}>
+                {expandedSections.neighborhood
+                  ? listing['Description - Neighborhood']
+                  : listing['Description - Neighborhood']?.slice(0, 500)}
+                {listing['Description - Neighborhood']?.length > 500 &&
+                 !expandedSections.neighborhood && '...'}
+              </p>
+              {listing['Description - Neighborhood']?.length > 500 && (
+                <button
+                  onClick={() => toggleSection('neighborhood')}
+                  style={{
+                    marginTop: '0.5rem',
+                    background: 'none',
+                    border: 'none',
+                    color: COLORS.PRIMARY,
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    textDecoration: 'underline'
+                  }}
+                >
+                  {expandedSections.neighborhood ? 'Read Less' : 'Read More'}
+                </button>
+              )}
+            </section>
+          )}
+
           {/* Commute Section */}
           {(listing.parkingOption || listing['Time to Station (commute)']) && (
             <section ref={commuteSectionRef} style={{ marginBottom: '2rem' }}>
