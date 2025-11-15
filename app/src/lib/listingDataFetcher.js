@@ -82,6 +82,7 @@ export async function fetchListingComplete(listingId) {
         "Features - Trial Periods Allowed",
         "Features - Photos",
         "Location - Address",
+        "Location - slightly different address",
         "Location - Hood",
         "Location - Borough",
         "neighborhood (manual input by user)",
@@ -252,25 +253,25 @@ export async function fetchListingComplete(listingId) {
       }
     }
 
-    // 10. Extract coordinates from "Location - Address" JSONB field
+    // 10. Extract coordinates from "Location - slightly different address" JSONB field
     let coordinates = null;
-    let locationAddress = listingData['Location - Address'];
+    let locationSlightlyDifferent = listingData['Location - slightly different address'];
 
     // Parse if it's a string
-    if (typeof locationAddress === 'string') {
+    if (typeof locationSlightlyDifferent === 'string') {
       try {
-        locationAddress = JSON.parse(locationAddress);
+        locationSlightlyDifferent = JSON.parse(locationSlightlyDifferent);
       } catch (error) {
-        console.error('Failed to parse Location - Address:', error);
-        locationAddress = null;
+        console.error('Failed to parse Location - slightly different address:', error);
+        locationSlightlyDifferent = null;
       }
     }
 
     // Extract lat/lng if available
-    if (locationAddress?.lat && locationAddress?.lng) {
+    if (locationSlightlyDifferent?.lat && locationSlightlyDifferent?.lng) {
       coordinates = {
-        lat: locationAddress.lat,
-        lng: locationAddress.lng
+        lat: locationSlightlyDifferent.lat,
+        lng: locationSlightlyDifferent.lng
       };
     }
 
