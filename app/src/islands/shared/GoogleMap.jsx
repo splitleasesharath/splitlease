@@ -703,10 +703,35 @@ const GoogleMap = forwardRef(({
    * @returns {string} HTML string
    */
   const createInfoWindowContent = (listing) => {
+    // Simple mode: just show listing name (for view-split-lease page)
+    if (simpleMode) {
+      return `
+        <div style="
+          padding: 12px 16px;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          max-width: 280px;
+          min-width: 180px;
+          width: auto;
+        ">
+          <div style="
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a202c;
+            line-height: 1.4;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+          ">
+            ${listing.title}
+          </div>
+        </div>
+      `;
+    }
+
+    // Full mode: show complete card (for search page)
     const price = listing.price?.starting || listing['Starting nightly price'] || 0;
     const firstImage = listing.images && listing.images.length > 0
       ? listing.images[0]
-      : null; // No image available
+      : null;
 
     const imageHTML = firstImage
       ? `<img
