@@ -10,8 +10,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { AI_SIGNUP_WORKFLOW_URL, LOTTIE_ANIMATIONS } from '../../lib/constants.js';
 
-// Access AI Signup Bubble key from environment variables
-const AI_SIGNUP_BUBBLE_KEY = import.meta.env.VITE_AI_SIGNUP_BUBBLE_KEY;
+// Access Bubble API key from environment variables
+const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY;
+
+// Log API key availability on component load (without exposing the actual key)
+if (!BUBBLE_API_KEY) {
+  console.error('[AISignupModal] VITE_BUBBLE_API_KEY is not configured');
+} else {
+  console.log('[AISignupModal] Bubble API key loaded successfully');
+}
 
 export default function AISignupModal({ isOpen, onClose }) {
   const [section, setSection] = useState('freeform');
@@ -137,33 +144,57 @@ export default function AISignupModal({ isOpen, onClose }) {
       return;
     }
 
+    // Verify API key is available before attempting to send
+    if (!BUBBLE_API_KEY) {
+      console.error('[AISignupModal] Cannot submit: VITE_BUBBLE_API_KEY is missing');
+      setErrors({
+        submit: 'Configuration error. Please contact support.'
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setSection('loading');
+
+    console.log('[AISignupModal] Submitting AI signup to Bubble API', {
+      endpoint: AI_SIGNUP_WORKFLOW_URL,
+      email: formData.email,
+      hasPhone: !!formData.phone,
+      textLength: formData.marketResearchText.length
+    });
 
     try {
       const response = await fetch(AI_SIGNUP_WORKFLOW_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${AI_SIGNUP_BUBBLE_KEY}`
+          'Authorization': `Bearer ${BUBBLE_API_KEY}`
         },
         body: JSON.stringify({
           email: formData.email,
-          phone: formData.phone || '',
-          'text inputted': formData.marketResearchText
+          phone_number: formData.phone || '',
+          text_inputted: formData.marketResearchText
         })
       });
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[AISignupModal] Signup failed', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
         throw new Error(`Signup failed: ${response.status}`);
       }
 
-      console.log('✅ AI Signup submitted successfully');
+      console.log('[AISignupModal] AI Signup submitted successfully', {
+        status: response.status
+      });
       setTimeout(() => {
         setSection('final');
       }, 1500);
     } catch (error) {
-      console.error('❌ AI Signup error:', error);
+      console.error('[AISignupModal] Signup error:', error);
       setErrors({ submit: error.message || 'Signup failed. Please try again.' });
       setSection('contact');
     } finally {

@@ -23,13 +23,12 @@ export const EMBED_AI_DRAWER_URL = 'https://app.split.lease/embed-ai-drawer';
 // API Endpoints
 export const REFERRAL_API_ENDPOINT = 'https://app.split.lease/api/1.1/wf/referral-index-lite';
 export const BUBBLE_MESSAGING_ENDPOINT = 'https://app.split.lease/api/1.1/wf/core-contact-host-send-message';
-export const AI_SIGNUP_WORKFLOW_URL = 'https://app.split.lease/version-test/api/1.1/wf/ai-signup-guest';
+export const AI_SIGNUP_WORKFLOW_URL = 'https://app.split.lease/api/1.1/wf/ai-signup-guest';
 
 // External API Keys and Configuration
 // Note: API keys are configured as environment variables in Cloudflare
 // VITE_GOOGLE_MAPS_API_KEY - Google Maps API key
-// VITE_BUBBLE_API_KEY - Bubble API key
-// VITE_AI_SIGNUP_BUBBLE_KEY - AI Signup Bubble key
+// VITE_BUBBLE_API_KEY - Bubble API key (used for messaging and AI signup)
 // Supabase credentials are configured in supabase.js using VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
 
 // ============================================================================
