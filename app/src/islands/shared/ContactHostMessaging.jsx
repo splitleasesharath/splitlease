@@ -100,10 +100,10 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, userEma
 
     console.log('[ContactHostMessaging] Sending message to Bubble API', {
       endpoint: BUBBLE_MESSAGING_ENDPOINT,
-      listingId: listing.id,
-      hostId: listing.host?._id || null,
-      senderEmail: formData.email,
-      timestamp: new Date().toISOString()
+      listing_unique_id: listing.id,
+      sender_email: formData.email,
+      sender_name: formData.userName,
+      message_body_length: formData.message.length
     });
 
     try {
@@ -115,12 +115,10 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, userEma
           'Authorization': `Bearer ${BUBBLE_API_KEY}`
         },
         body: JSON.stringify({
-          listing_id: listing.id,
-          host_id: listing.host?._id || null,
+          listing_unique_id: listing.id,
           sender_name: formData.userName,
           sender_email: formData.email,
-          message: formData.message,
-          timestamp: new Date().toISOString()
+          message_body: formData.message
         })
       });
 
