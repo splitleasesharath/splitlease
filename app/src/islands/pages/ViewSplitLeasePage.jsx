@@ -325,6 +325,12 @@ export default function ViewSplitLeasePage() {
     if (dayNumbers.length > 0 && !isContiguousSelection(dayNumbers)) {
       setShowTutorialModal(true);
     }
+
+    // Automatically set smart default move-in date when days are selected
+    if (dayNumbers.length > 0) {
+      const smartDate = calculateSmartMoveInDate(dayNumbers);
+      setMoveInDate(smartDate);
+    }
   };
 
   const handlePriceChange = useCallback((newPriceBreakdown) => {
@@ -1162,6 +1168,7 @@ export default function ViewSplitLeasePage() {
             <input
               type="date"
               value={moveInDate || ''}
+              min={minMoveInDate}
               onChange={(e) => setMoveInDate(e.target.value)}
               style={{
                 width: '100%',
@@ -1171,6 +1178,14 @@ export default function ViewSplitLeasePage() {
                 fontSize: '1rem'
               }}
             />
+            <p style={{
+              fontSize: '0.75rem',
+              color: COLORS.TEXT_LIGHT,
+              marginTop: '0.25rem',
+              marginBottom: 0
+            }}>
+              Minimum 2 weeks from today. Date auto-updates based on selected days.
+            </p>
           </div>
 
           {/* Strict Mode */}
