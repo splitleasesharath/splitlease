@@ -473,32 +473,6 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
 }
 
 /**
- * AiSignupCard - AI signup promotional card
- */
-function AiSignupCard() {
-  const handleClick = () => {
-    console.log('Open AI Signup Modal');
-    // In production, this would open the AI signup modal
-  };
-
-  return (
-    <div className="ai-research-card">
-      <div className="ai-icon">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 8v8M8 12h8" />
-        </svg>
-      </div>
-      <h3 className="ai-title">Free, AI Deep Research</h3>
-      <p className="ai-subtitle">Save time & money with Insights from 100+ sources</p>
-      <button className="ai-btn" onClick={() => setShowAiSignup(true)}>
-        Your unique logistics
-      </button>
-    </div>
-  );
-}
-
-/**
  * ListingsGrid - Grid of property cards with lazy loading
  */
 function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef }) {
@@ -531,29 +505,20 @@ function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoad
 
   return (
     <div className="listings-container">
-      {listings.map((listing, index) => {
-        const cards = [
-          <PropertyCard
-            key={listing.id}
-            listing={listing}
-            selectedDaysCount={selectedDaysCount}
-            onLocationClick={(listing) => {
-              if (mapRef.current) {
-                mapRef.current.zoomToListing(listing.id);
-              }
-            }}
-            onOpenContactModal={onOpenContactModal}
-            onOpenInfoModal={onOpenInfoModal}
-          />
-        ];
-
-        // Insert AI signup card every 5 listings (after 5th, 10th, 15th, etc.)
-        if ((index + 1) % 5 === 0) {
-          cards.push(<AiSignupCard key={`ai-${index}`} />);
-        }
-
-        return cards;
-      })}
+      {listings.map((listing) => (
+        <PropertyCard
+          key={listing.id}
+          listing={listing}
+          selectedDaysCount={selectedDaysCount}
+          onLocationClick={(listing) => {
+            if (mapRef.current) {
+              mapRef.current.zoomToListing(listing.id);
+            }
+          }}
+          onOpenContactModal={onOpenContactModal}
+          onOpenInfoModal={onOpenInfoModal}
+        />
+      ))}
 
       {hasMore && (
         <div ref={sentinelRef} className="lazy-load-sentinel">
