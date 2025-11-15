@@ -391,8 +391,92 @@ export default function CareersPage() {
         </div>
       </section>
 
+      {/* Resources Section */}
+      <section className="content-section alt-bg">
+        <div className="section-container">
+          <div className="section-header">
+            <div className="section-label">RESOURCES</div>
+            <h2 className="section-title">Learn With Us</h2>
+            <p className="section-description">
+              Whether you're joining our team or just curious about the future of housing, these resources will help you understand our industry and approach to building great products.
+            </p>
+          </div>
+          <div className="resources-grid" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px', marginTop: '40px'}}>
+            <a href="/assets/resources/What-Is-MultiLocal.pdf" target="_blank" rel="noopener noreferrer" className="resource-card" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '32px',
+              background: 'white',
+              borderRadius: '12px',
+              border: '1px solid #e5e7eb',
+              transition: 'all 0.2s ease',
+              textDecoration: 'none',
+              color: 'inherit'
+            }}>
+              <div className="resource-icon" style={{
+                width: '48px',
+                height: '48px',
+                background: '#f3f4f6',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '20px'
+              }}>
+                <i data-feather="map" style={{width: '24px', height: '24px', color: '#6366f1'}}></i>
+              </div>
+              <h3 style={{fontSize: '20px', fontWeight: '600', marginBottom: '12px', color: '#111827'}}>
+                What is a MultiLocal?
+              </h3>
+              <p style={{fontSize: '15px', lineHeight: '1.6', color: '#6b7280', marginBottom: '16px', flex: '1'}}>
+                An introduction to multilocal living — what it means, who it's for, and the market insights driving this emerging lifestyle trend.
+              </p>
+              <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#6366f1', fontSize: '14px', fontWeight: '500'}}>
+                <span>Download PDF</span>
+                <i data-feather="download" style={{width: '16px', height: '16px'}}></i>
+              </div>
+            </a>
+
+            <a href="/assets/resources/Refactoring-UI.pdf" target="_blank" rel="noopener noreferrer" className="resource-card" style={{
+              display: 'flex',
+              flexDirection: 'column',
+              padding: '32px',
+              background: 'white',
+              borderRadius: '12px',
+              border: '1px solid #e5e7eb',
+              transition: 'all 0.2s ease',
+              textDecoration: 'none',
+              color: 'inherit'
+            }}>
+              <div className="resource-icon" style={{
+                width: '48px',
+                height: '48px',
+                background: '#f3f4f6',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginBottom: '20px'
+              }}>
+                <i data-feather="layers" style={{width: '24px', height: '24px', color: '#6366f1'}}></i>
+              </div>
+              <h3 style={{fontSize: '20px', fontWeight: '600', marginBottom: '12px', color: '#111827'}}>
+                Refactoring UI
+              </h3>
+              <p style={{fontSize: '15px', lineHeight: '1.6', color: '#6b7280', marginBottom: '16px', flex: '1'}}>
+                A practical guide to designing beautiful user interfaces. Learn the tactics we use to create clean, professional designs without needing years of experience.
+              </p>
+              <div style={{display: 'flex', alignItems: 'center', gap: '8px', color: '#6366f1', fontSize: '14px', fontWeight: '500'}}>
+                <span>Download PDF</span>
+                <i data-feather="download" style={{width: '16px', height: '16px'}}></i>
+              </div>
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* Open Roles Section */}
-      <section id="roles" className="content-section alt-bg">
+      <section id="roles" className="content-section" style={{background: 'white'}}>
         <div className="section-container">
           <div className="section-header">
             <div className="section-label">OPEN ROLES</div>

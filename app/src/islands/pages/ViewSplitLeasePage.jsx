@@ -1063,7 +1063,7 @@ export default function ViewSplitLeasePage() {
                 {/* Link to full policy page */}
                 <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid #e5e7eb` }}>
                   <a
-                    href="/policies.html?doc=1601442007743x882725773935937800"
+                    href="/policies.html#cancellation-policy"
                     style={{
                       color: COLORS.PRIMARY,
                       textDecoration: 'none',
