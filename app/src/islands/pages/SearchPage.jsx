@@ -3,7 +3,6 @@ import { createRoot } from 'react-dom/client';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
-import AISignupModal from '../shared/AISignupModal.jsx';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
@@ -473,32 +472,6 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
 }
 
 /**
- * AiSignupCard - AI signup promotional card
- */
-function AiSignupCard() {
-  const handleClick = () => {
-    console.log('Open AI Signup Modal');
-    // In production, this would open the AI signup modal
-  };
-
-  return (
-    <div className="ai-research-card">
-      <div className="ai-icon">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 8v8M8 12h8" />
-        </svg>
-      </div>
-      <h3 className="ai-title">Free, AI Deep Research</h3>
-      <p className="ai-subtitle">Save time & money with Insights from 100+ sources</p>
-      <button className="ai-btn" onClick={() => setShowAiSignup(true)}>
-        Your unique logistics
-      </button>
-    </div>
-  );
-}
-
-/**
  * ListingsGrid - Grid of property cards with lazy loading
  */
 function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef }) {
@@ -531,29 +504,20 @@ function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoad
 
   return (
     <div className="listings-container">
-      {listings.map((listing, index) => {
-        const cards = [
-          <PropertyCard
-            key={listing.id}
-            listing={listing}
-            selectedDaysCount={selectedDaysCount}
-            onLocationClick={(listing) => {
-              if (mapRef.current) {
-                mapRef.current.zoomToListing(listing.id);
-              }
-            }}
-            onOpenContactModal={onOpenContactModal}
-            onOpenInfoModal={onOpenInfoModal}
-          />
-        ];
-
-        // Insert AI signup card every 5 listings (after 5th, 10th, 15th, etc.)
-        if ((index + 1) % 5 === 0) {
-          cards.push(<AiSignupCard key={`ai-${index}`} />);
-        }
-
-        return cards;
-      })}
+      {listings.map((listing, index) => (
+        <PropertyCard
+          key={listing.id}
+          listing={listing}
+          selectedDaysCount={selectedDaysCount}
+          onLocationClick={(listing) => {
+            if (mapRef.current) {
+              mapRef.current.zoomToListing(listing.id);
+            }
+          }}
+          onOpenContactModal={onOpenContactModal}
+          onOpenInfoModal={onOpenInfoModal}
+        />
+      ))}
 
       {hasMore && (
         <div ref={sentinelRef} className="lazy-load-sentinel">
@@ -641,7 +605,6 @@ export default function SearchPage() {
   const [loadedCount, setLoadedCount] = useState(0);
 
   // Modal state management
-  const [showAiSignup, setShowAiSignup] = useState(false);
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState(null);
@@ -1345,14 +1308,6 @@ export default function SearchPage() {
   };
 
   // Modal handler functions
-  const handleOpenAIModal = () => {
-    setShowAiSignup(true);
-  };
-
-  const handleCloseAIModal = () => {
-    setShowAiSignup(false);
-  };
-
   const handleOpenContactModal = (listing) => {
     setSelectedListing(listing);
     setIsContactModalOpen(true);
@@ -1684,23 +1639,10 @@ export default function SearchPage() {
               console.log('Marker clicked:', listing.title);
             }}
           />
-
-          {/* Deep Research Floating Button */}
-          <button
-            className="deep-research-floating-btn"
-            onClick={() => setShowAiSignup(true)}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <circle cx="12" cy="12" r="3" fill="currentColor" />
-            </svg>
-            <span>Generate Market Report</span>
-          </button>
         </section>
       </main>
 
       {/* Modals */}
-      <AISignupModal isOpen={showAiSignup} onClose={handleCloseAIModal} />
       <ContactHostMessaging
         isOpen={isContactModalOpen}
         onClose={handleCloseContactModal}

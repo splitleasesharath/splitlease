@@ -234,8 +234,7 @@ export const LISTING_CONFIG = {
   LOAD_BATCH_SIZE: 6,         // Load 6 more listings per scroll
   LAZY_LOAD_MARGIN_PX: 100,   // Load 100px before sentinel becomes visible
   AMENITIES_MAX_VISIBLE: 6,   // Show max 6 amenities, rest in "+X more"
-  IMAGE_CAROUSEL_LOOP: true,  // Loop carousel images
-  AI_CARD_POSITIONS: [4, 8]   // Insert AI Research card after positions 4 and 8
+  IMAGE_CAROUSEL_LOOP: true   // Loop carousel images
 };
 
 // ============================================================================

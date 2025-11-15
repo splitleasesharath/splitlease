@@ -418,32 +418,6 @@
   width: 100% !important;
 }
 
-/* Deep Research Floating Button */
-.deep-research-floating-btn {
-  position: absolute;
-  top: 70px;
-  right: 20px;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, #31135D 0%, #5a2d8f 100%);
-  color: white;
-  border: none;
-  border-radius: 12px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 16px rgba(49, 19, 93, 0.35);
-  transition: all 0.3s ease;
-  z-index: 15;
-}
-
-.deep-research-floating-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(49, 19, 93, 0.5);
-}
-
 /* ========================================
    LISTING CARDS - Styled in listings.css
    No overrides needed here - using horizontal layout from listings.css
