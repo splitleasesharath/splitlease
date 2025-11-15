@@ -44,6 +44,9 @@
     border-radius: var(--radius-lg);
     padding: 1.5rem;
     box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    position: relative;
 }
 
 .schedule-card h3 {
@@ -133,6 +136,9 @@
     border-radius: var(--radius-lg);
     cursor: pointer;
     transition: all 0.3s ease;
+    position: relative;
+    z-index: 10; /* Ensure button stays above lottie animations */
+    pointer-events: auto; /* Ensure button is always clickable */
 }
 
 .explore-btn:hover {
@@ -155,6 +161,7 @@
     padding: 1rem;
     background: white;
     border-radius: 12px;
+    pointer-events: none; /* Let pointer events pass through to children */
 }
 
 .calendar-grid {
@@ -173,6 +180,7 @@
     padding: 0.5rem;
     background-color: white !important;
     border-radius: 12px;
+    pointer-events: none; /* Prevent lottie from blocking button interactions */
 }
 
 .lottie-container lottie-player {
