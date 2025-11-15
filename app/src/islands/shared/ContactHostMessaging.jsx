@@ -14,6 +14,13 @@ import { BUBBLE_MESSAGING_ENDPOINT } from '../../lib/constants.js';
 // Access Bubble API key from environment variables
 const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY;
 
+// Log API key availability on component load (without exposing the actual key)
+if (!BUBBLE_API_KEY) {
+  console.error('[ContactHostMessaging] VITE_BUBBLE_API_KEY is not configured');
+} else {
+  console.log('[ContactHostMessaging] Bubble API key loaded successfully');
+}
+
 export default function ContactHostMessaging({ isOpen, onClose, listing, userEmail }) {
   const [formData, setFormData] = useState({
     userName: '',
@@ -79,8 +86,25 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, userEma
   const handleSubmit = async () => {
     if (!validate()) return;
 
+    // Verify API key is available before attempting to send
+    if (!BUBBLE_API_KEY) {
+      console.error('[ContactHostMessaging] Cannot send message: VITE_BUBBLE_API_KEY is missing');
+      setErrors({
+        submit: 'Configuration error. Please contact support.'
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setErrors({});
+
+    console.log('[ContactHostMessaging] Sending message to Bubble API', {
+      endpoint: BUBBLE_MESSAGING_ENDPOINT,
+      listing_unique_id: listing.id,
+      sender_email: formData.email,
+      sender_name: formData.userName,
+      message_body_length: formData.message.length
+    });
 
     try {
       // Send message via Bubble API
@@ -91,28 +115,35 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, userEma
           'Authorization': `Bearer ${BUBBLE_API_KEY}`
         },
         body: JSON.stringify({
-          listing_id: listing.id,
-          host_id: listing.host?._id || null,
+          listing_unique_id: listing.id,
           sender_name: formData.userName,
           sender_email: formData.email,
-          message: formData.message,
-          timestamp: new Date().toISOString()
+          message_body: formData.message
         })
       });
 
       if (response.ok) {
+        console.log('[ContactHostMessaging] Message sent successfully', {
+          listingId: listing.id,
+          status: response.status
+        });
         setMessageSent(true);
         setTimeout(() => {
           handleClose();
         }, 2000);
       } else {
         const errorData = await response.json().catch(() => ({}));
+        console.error('[ContactHostMessaging] Message send failed', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        });
         setErrors({
           submit: errorData.message || 'Failed to send message. Please try again.'
         });
       }
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('[ContactHostMessaging] Network error sending message:', error);
       setErrors({
         submit: 'Network error. Please check your connection and try again.'
       });
