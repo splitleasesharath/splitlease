@@ -70,8 +70,8 @@ export default function PoliciesPage() {
           }
         }
 
-        // Load first policy by default
-        if (transformedPolicies.length > 0) {
+        // Load first policy by default ONLY if no hash was provided
+        if (!hash && transformedPolicies.length > 0) {
           setCurrentPolicy(transformedPolicies[0]);
           window.location.hash = transformedPolicies[0].slug;
         }
