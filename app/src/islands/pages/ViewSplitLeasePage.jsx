@@ -909,11 +909,97 @@ export default function ViewSplitLeasePage() {
           {/* Cancellation Policy */}
           {listing.cancellationPolicy && (
             <section style={{ marginBottom: '2rem' }}>
-              <div style={{ display: 'flex', alignItems: 'start', gap: '0.5rem' }}>
-                <span style={{ fontSize: '1.25rem' }}>ℹ️</span>
-                <div>
-                  <span style={{ fontWeight: '600' }}>Cancellation Policy: </span>
-                  <span>{listing.cancellationPolicy.display}</span>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                marginBottom: '1rem',
+                color: COLORS.TEXT_DARK
+              }}>
+                Cancellation Policy
+              </h2>
+              <div style={{
+                padding: '1.5rem',
+                background: COLORS.BG_LIGHT,
+                borderRadius: '12px',
+                border: `1px solid ${COLORS.BG_LIGHT}`
+              }}>
+                <div style={{
+                  fontSize: '1.125rem',
+                  fontWeight: '600',
+                  marginBottom: '1rem',
+                  color: COLORS.PRIMARY
+                }}>
+                  {listing.cancellationPolicy.display}
+                </div>
+
+                {/* Best Case */}
+                {listing.cancellationPolicy.bestCaseText && (
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ fontWeight: '600', color: '#16a34a', marginBottom: '0.25rem' }}>
+                      ✓ Best Case
+                    </div>
+                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem', lineHeight: '1.6' }}>
+                      {listing.cancellationPolicy.bestCaseText}
+                    </div>
+                  </div>
+                )}
+
+                {/* Medium Case */}
+                {listing.cancellationPolicy.mediumCaseText && (
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ fontWeight: '600', color: '#ea580c', marginBottom: '0.25rem' }}>
+                      ⚠ Medium Case
+                    </div>
+                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem', lineHeight: '1.6' }}>
+                      {listing.cancellationPolicy.mediumCaseText}
+                    </div>
+                  </div>
+                )}
+
+                {/* Worst Case */}
+                {listing.cancellationPolicy.worstCaseText && (
+                  <div style={{ marginBottom: '0.75rem' }}>
+                    <div style={{ fontWeight: '600', color: '#dc2626', marginBottom: '0.25rem' }}>
+                      ✕ Worst Case
+                    </div>
+                    <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.9375rem', lineHeight: '1.6' }}>
+                      {listing.cancellationPolicy.worstCaseText}
+                    </div>
+                  </div>
+                )}
+
+                {/* Summary Texts */}
+                {listing.cancellationPolicy.summaryTexts && Array.isArray(listing.cancellationPolicy.summaryTexts) && listing.cancellationPolicy.summaryTexts.length > 0 && (
+                  <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid #e5e7eb` }}>
+                    <div style={{ fontWeight: '600', marginBottom: '0.5rem', fontSize: '0.875rem' }}>
+                      Summary:
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: '1.25rem', color: COLORS.TEXT_LIGHT, fontSize: '0.875rem', lineHeight: '1.6' }}>
+                      {listing.cancellationPolicy.summaryTexts.map((text, idx) => (
+                        <li key={idx} style={{ marginBottom: '0.25rem' }}>{text}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/* Link to full policy page */}
+                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: `1px solid #e5e7eb` }}>
+                  <a
+                    href="/policies.html"
+                    style={{
+                      color: COLORS.PRIMARY,
+                      textDecoration: 'none',
+                      fontSize: '0.875rem',
+                      fontWeight: '600',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}
+                    onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
+                    onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
+                  >
+                    View full cancellation policy →
+                  </a>
                 </div>
               </div>
             </section>

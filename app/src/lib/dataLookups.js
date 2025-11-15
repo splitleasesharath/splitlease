@@ -279,14 +279,18 @@ async function initializeCancellationPolicyLookups() {
   try {
     const { data, error } = await supabase
       .from(DATABASE.TABLES.CANCELLATION_POLICY)
-      .select('_id, Display');
+      .select('_id, Display, "Best Case Text", "Medium Case Text", "Worst Case Text", "Summary Texts"');
 
     if (error) throw error;
 
     if (data && Array.isArray(data)) {
       data.forEach(policy => {
         lookupCache.cancellationPolicies.set(policy._id, {
-          display: policy.Display || 'Unknown Policy'
+          display: policy.Display || 'Unknown Policy',
+          bestCaseText: policy['Best Case Text'] || null,
+          mediumCaseText: policy['Medium Case Text'] || null,
+          worstCaseText: policy['Worst Case Text'] || null,
+          summaryTexts: policy['Summary Texts'] || null
         });
       });
       console.log(`Cached ${lookupCache.cancellationPolicies.size} cancellation policies`);
