@@ -861,6 +861,7 @@ export default function ViewSplitLeasePage() {
                   borough: listing.resolvedBorough
                 }] : []}
                 selectedBorough={listing.resolvedBorough}
+                simpleMode={true}
               />
             </div>
           </section>

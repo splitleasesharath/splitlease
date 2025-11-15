@@ -31,7 +31,8 @@ const GoogleMap = forwardRef(({
   filteredListings = [],   // Filtered subset to show as purple markers
   selectedListing = null,  // Currently selected/highlighted listing
   onMarkerClick = null,    // Callback when marker clicked: (listing) => void
-  selectedBorough = null   // Current borough filter for map centering
+  selectedBorough = null,  // Current borough filter for map centering
+  simpleMode = false       // If true, show simple marker without price/card (for view-split-lease page)
 }, ref) => {
   console.log('🗺️ GoogleMap: Component rendered with props:', {
     listingsCount: listings.length,
@@ -345,9 +346,9 @@ const GoogleMap = forwardRef(({
       const bounds = new window.google.maps.LatLngBounds();
       let hasValidMarkers = false;
 
-      // Create markers for filtered listings (purple) - these are primary
+      // Create markers for filtered listings (simple or purple depending on mode)
       if (filteredListings && filteredListings.length > 0) {
-        console.log('🗺️ GoogleMap: Starting purple marker creation for filtered listings:', filteredListings.length);
+        console.log(`🗺️ GoogleMap: Starting ${simpleMode ? 'simple' : 'purple'} marker creation for filtered listings:`, filteredListings.length);
         console.log('🗺️ GoogleMap: First 3 filtered listings:', filteredListings.slice(0, 3).map(l => ({
           id: l.id,
           title: l.title,
@@ -355,7 +356,7 @@ const GoogleMap = forwardRef(({
           hasCoordinates: !!(l.coordinates?.lat && l.coordinates?.lng)
         })));
 
-        let purpleMarkersCreated = 0;
+        let markersCreated = 0;
         let skippedNoCoordinates = 0;
         let skippedInvalidCoordinates = [];
 
@@ -392,32 +393,35 @@ const GoogleMap = forwardRef(({
             lng: listing.coordinates.lng
           };
 
-          console.log(`✅ GoogleMap: Creating purple marker for listing ${listing.id}:`, {
+          console.log(`✅ GoogleMap: Creating ${simpleMode ? 'simple' : 'purple'} marker for listing ${listing.id}:`, {
             position,
             price: listing.price?.starting || listing['Starting nightly price'],
-            title: listing.title
+            title: listing.title,
+            simpleMode
           });
 
-          // Create purple marker for filtered listings
-          const marker = createPriceMarker(
-            map,
-            position,
-            listing.price?.starting || listing['Starting nightly price'] || 0,
-            COLORS.SECONDARY, // Purple
-            listing
-          );
+          // Create marker based on mode
+          const marker = simpleMode
+            ? createSimpleMarker(map, position, listing)
+            : createPriceMarker(
+                map,
+                position,
+                listing.price?.starting || listing['Starting nightly price'] || 0,
+                COLORS.SECONDARY, // Purple
+                listing
+              );
 
           markersRef.current.push(marker);
           bounds.extend(position);
           hasValidMarkers = true;
-          purpleMarkersCreated++;
+          markersCreated++;
 
-          console.log(`✅ GoogleMap: Purple marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
+          console.log(`✅ GoogleMap: ${simpleMode ? 'Simple' : 'Purple'} marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
         });
 
-        console.log('📊 GoogleMap: Purple marker creation summary:', {
+        console.log(`📊 GoogleMap: ${simpleMode ? 'Simple' : 'Purple'} marker creation summary:`, {
           totalFiltered: filteredListings.length,
-          markersCreated: purpleMarkersCreated,
+          markersCreated: markersCreated,
           skippedNoCoordinates,
           skippedInvalidCoordinates: skippedInvalidCoordinates.length,
           invalidListings: skippedInvalidCoordinates
@@ -565,6 +569,34 @@ const GoogleMap = forwardRef(({
     // This could pulse the marker or change its appearance
     // Implementation depends on requirements
   }, [selectedListing, mapLoaded]);
+
+  /**
+   * Create a simple standard Google Maps marker (for view-split-lease page)
+   * @param {google.maps.Map} map - The map instance
+   * @param {object} coordinates - {lat, lng} coordinates
+   * @param {object} listing - Full listing data
+   * @returns {google.maps.Marker} The created marker
+   */
+  const createSimpleMarker = (map, coordinates, listing) => {
+    const marker = new window.google.maps.Marker({
+      position: { lat: coordinates.lat, lng: coordinates.lng },
+      map: map,
+      title: listing.title,
+      animation: window.google.maps.Animation.DROP,
+      // Use default red marker (no icon property = default marker)
+    });
+
+    // Store listing ID for reference
+    marker.listingId = listing.id;
+
+    console.log('✅ GoogleMap: Simple marker created successfully for listing:', {
+      id: listing.id,
+      title: listing.title,
+      position: { lat: coordinates.lat, lng: coordinates.lng }
+    });
+
+    return marker;
+  };
 
   /**
    * Create a custom price label marker using OverlayView
@@ -773,7 +805,7 @@ const GoogleMap = forwardRef(({
         }}
         onClick={handleMapClick}
       />
-      {mapLoaded && <MapLegend />}
+      {mapLoaded && !simpleMode && <MapLegend />}
       {!mapLoaded && (
         <div className="map-loading">
           <div className="spinner"></div>
@@ -781,7 +813,7 @@ const GoogleMap = forwardRef(({
         </div>
       )}
 
-      {/* Listing Card Overlay */}
+      {/* Listing Card Overlay - Only in normal mode, not in simple mode */}
       {(() => {
         console.log('🎨 Rendering card overlay - State check:', {
           mapLoaded,
@@ -789,11 +821,12 @@ const GoogleMap = forwardRef(({
           isLoadingListingDetails,
           hasSelectedListing: !!selectedListingForCard,
           selectedListing: selectedListingForCard,
-          cardPosition
+          cardPosition,
+          simpleMode
         });
         return null;
       })()}
-      {mapLoaded && cardVisible && (
+      {mapLoaded && cardVisible && !simpleMode && (
         <>
           {isLoadingListingDetails && (
             <div
