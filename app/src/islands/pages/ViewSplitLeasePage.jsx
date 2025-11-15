@@ -6,7 +6,7 @@
  * IMPORTANT: This is a comprehensive rebuild based on documentation and original page inspection
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import CreateProposalFlow from './ViewSplitLeasePageComponents/CreateProposalFlow.jsx';
@@ -124,8 +124,46 @@ export default function ViewSplitLeasePage() {
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [priceBreakdown, setPriceBreakdown] = useState(null);
 
+  // Calculate minimum move-in date (2 weeks from today)
+  const minMoveInDate = useMemo(() => {
+    const today = new Date();
+    const twoWeeksFromNow = new Date(today);
+    twoWeeksFromNow.setDate(today.getDate() + 14);
+    return twoWeeksFromNow.toISOString().split('T')[0];
+  }, []);
+
   // Convert Day objects to array of numbers for compatibility with existing code
   const selectedDays = selectedDayObjects.map(day => day.dayOfWeek);
+
+  // Calculate smart default move-in date based on selected days
+  // If user selects Wed-Sat, default to next Wednesday after 2 weeks
+  const calculateSmartMoveInDate = useCallback((selectedDayNumbers) => {
+    if (!selectedDayNumbers || selectedDayNumbers.length === 0) {
+      return minMoveInDate;
+    }
+
+    // Get the first selected day (check-in day)
+    const sortedDays = [...selectedDayNumbers].sort((a, b) => a - b);
+    const firstDayOfWeek = sortedDays[0];
+
+    // Start from the minimum date (2 weeks from today)
+    const minDate = new Date(minMoveInDate);
+    const minDayOfWeek = minDate.getDay();
+
+    // Calculate days to add to get to the next occurrence of the first selected day
+    let daysToAdd = (firstDayOfWeek - minDayOfWeek + 7) % 7;
+
+    // If it's the same day, we're already on the right day
+    if (daysToAdd === 0) {
+      return minMoveInDate;
+    }
+
+    // Add the days to get to the next occurrence of the selected day
+    const smartDate = new Date(minDate);
+    smartDate.setDate(minDate.getDate() + daysToAdd);
+
+    return smartDate.toISOString().split('T')[0];
+  }, [minMoveInDate]);
 
   // UI state
   const [showTutorialModal, setShowTutorialModal] = useState(false);
