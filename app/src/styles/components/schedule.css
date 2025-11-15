@@ -55,6 +55,13 @@
     transform: translateY(-2px);
 }
 
+/* Ensure button maintains its default style when card is hovered (not the button itself) */
+.schedule-card:hover .explore-btn:not(:hover) {
+    background: transparent;
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
 .schedule-title {
     font-size: 1.75rem;
     font-weight: 700;
