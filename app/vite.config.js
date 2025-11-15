@@ -30,6 +30,8 @@ export default defineConfig({
           }
           else if (url.startsWith('/search.html')) {
             req.url = '/public/search.html' + (url.substring('/search.html'.length) || '');
+          } else if (url.startsWith('/search-test.html')) {
+            req.url = '/public/search-test.html' + (url.substring('/search-test.html'.length) || '');
           } else if (url.startsWith('/faq.html')) {
             req.url = '/public/faq.html' + (url.substring('/faq.html'.length) || '');
           } else if (url.startsWith('/policies.html')) {
@@ -234,6 +236,7 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, 'public/index.html'),
         search: resolve(__dirname, 'public/search.html'),
+        'search-test': resolve(__dirname, 'public/search-test.html'),
         'view-split-lease': resolve(__dirname, 'public/view-split-lease.html'),
         faq: resolve(__dirname, 'public/faq.html'),
         policies: resolve(__dirname, 'public/policies.html'),
