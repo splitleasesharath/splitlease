@@ -163,14 +163,14 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.explore-btn:hover {
+.schedule-card .explore-btn:hover {
     background: var(--primary-color) !important;
     color: white !important;
     box-shadow: 0 6px 16px rgba(91, 95, 207, 0.4);
     transform: translateY(-2px);
 }
 
-.explore-btn:active {
+.schedule-card .explore-btn:active {
     transform: translateY(0);
     box-shadow: 0 2px 8px rgba(91, 95, 207, 0.3);
 }
