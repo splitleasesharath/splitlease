@@ -40,7 +40,6 @@ export default function ListingScheduleSelector({
     checkInDay,
     checkOutDay,
     handleDayClick,
-    clearSelection,
     clearError
   } = useScheduleSelector({
     listing,
@@ -51,14 +50,6 @@ export default function ListingScheduleSelector({
     onSelectionChange,
     onPriceChange
   });
-
-  const handleSave = () => {
-    if (!acceptableSchedule) {
-      return;
-    }
-
-    onScheduleSave?.(selectedDays);
-  };
 
   return (
     <div className="listing-schedule-selector">
@@ -122,23 +113,6 @@ export default function ListingScheduleSelector({
       {showPricing && nightsCount > 0 && (
         <PriceDisplay priceBreakdown={priceBreakdown} />
       )}
-
-      <div className="selector-actions">
-        <button
-          className="btn-secondary"
-          onClick={clearSelection}
-          disabled={selectedDays.length === 0}
-        >
-          Clear Selection
-        </button>
-        <button
-          className="btn-primary"
-          onClick={handleSave}
-          disabled={!acceptableSchedule}
-        >
-          Save Schedule
-        </button>
-      </div>
 
       <ErrorOverlay errorState={errorState} onClose={clearError} />
     </div>
