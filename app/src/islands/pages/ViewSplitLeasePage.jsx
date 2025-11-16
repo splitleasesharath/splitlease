@@ -215,6 +215,7 @@ export default function ViewSplitLeasePage() {
           safetyFeatures: listingData.safetyFeatures,
           houseRules: listingData.houseRules,
           coordinates: listingData.coordinates,
+          slightlyDifferentAddress: listingData['Location - slightly different address'],
           hasAmenitiesInUnit: listingData.amenitiesInUnit?.length > 0,
           hasSafetyFeatures: listingData.safetyFeatures?.length > 0,
           hasHouseRules: listingData.houseRules?.length > 0,
