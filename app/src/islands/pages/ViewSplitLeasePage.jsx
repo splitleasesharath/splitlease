@@ -178,6 +178,7 @@ export default function ViewSplitLeasePage() {
 
   // Responsive state
   const [isMobile, setIsMobile] = useState(false);
+  const [shouldLoadMap, setShouldLoadMap] = useState(false);
 
   // Section references for navigation
   const mapRef = useRef(null);
@@ -242,6 +243,37 @@ export default function ViewSplitLeasePage() {
 
     return () => mediaQuery.removeEventListener('change', handleResize);
   }, []);
+
+  // ============================================================================
+  // LAZY LOADING FOR MAP
+  // ============================================================================
+
+  useEffect(() => {
+    // Set up Intersection Observer to lazy load the map when user scrolls near it
+    if (!mapSectionRef.current) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          // Load map when section is within 200px of viewport
+          if (entry.isIntersecting || entry.intersectionRatio > 0) {
+            setShouldLoadMap(true);
+            // Once loaded, we can stop observing
+            observer.disconnect();
+          }
+        });
+      },
+      {
+        // Start loading when map section is 200px away from viewport
+        rootMargin: '200px',
+        threshold: 0
+      }
+    );
+
+    observer.observe(mapSectionRef.current);
+
+    return () => observer.disconnect();
+  }, [listing]); // Re-run when listing data is available
 
   // ============================================================================
   // COMPUTED VALUES
@@ -408,6 +440,11 @@ export default function ViewSplitLeasePage() {
 
   const scrollToSection = (sectionRef, shouldZoomMap = false) => {
     if (sectionRef.current) {
+      // If scrolling to map section, ensure map is loaded
+      if (shouldZoomMap && !shouldLoadMap) {
+        setShouldLoadMap(true);
+      }
+
       // Scroll with offset to account for fixed header (80px height + some padding)
       const yOffset = -100;
       const element = sectionRef.current;
@@ -908,43 +945,57 @@ export default function ViewSplitLeasePage() {
               borderRadius: '12px',
               overflow: 'hidden',
               border: `1px solid ${COLORS.BG_LIGHT}`,
-              position: 'relative'
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: COLORS.BG_LIGHT
             }}>
-              <GoogleMap
-                ref={mapRef}
-                listings={listing && listing.coordinates ? [{
-                  id: listing._id,
-                  title: listing.Name,
-                  coordinates: listing.coordinates,
-                  price: {
-                    starting: listing['Standarized Minimum Nightly Price (Filter)'] || 0
-                  },
-                  location: listing.resolvedBorough,
-                  type: listing.resolvedTypeOfSpace,
-                  bedrooms: listing['Features - Qty Bedrooms'] || 0,
-                  bathrooms: listing['Features - Qty Bathrooms'] || 0,
-                  images: listing.photos?.map(p => p.Photo) || [],
-                  borough: listing.resolvedBorough
-                }] : []}
-                filteredListings={listing && listing.coordinates ? [{
-                  id: listing._id,
-                  title: listing.Name,
-                  coordinates: listing.coordinates,
-                  price: {
-                    starting: listing['Standarized Minimum Nightly Price (Filter)'] || 0
-                  },
-                  location: listing.resolvedBorough,
-                  type: listing.resolvedTypeOfSpace,
-                  bedrooms: listing['Features - Qty Bedrooms'] || 0,
-                  bathrooms: listing['Features - Qty Bathrooms'] || 0,
-                  images: listing.photos?.map(p => p.Photo) || [],
-                  borough: listing.resolvedBorough
-                }] : []}
-                selectedBorough={listing.resolvedBorough}
-                simpleMode={true}
-                initialZoom={17}
-                disableAutoZoom={false}
-              />
+              {shouldLoadMap ? (
+                <GoogleMap
+                  ref={mapRef}
+                  listings={listing && listing.coordinates ? [{
+                    id: listing._id,
+                    title: listing.Name,
+                    coordinates: listing.coordinates,
+                    price: {
+                      starting: listing['Standarized Minimum Nightly Price (Filter)'] || 0
+                    },
+                    location: listing.resolvedBorough,
+                    type: listing.resolvedTypeOfSpace,
+                    bedrooms: listing['Features - Qty Bedrooms'] || 0,
+                    bathrooms: listing['Features - Qty Bathrooms'] || 0,
+                    images: listing.photos?.map(p => p.Photo) || [],
+                    borough: listing.resolvedBorough
+                  }] : []}
+                  filteredListings={listing && listing.coordinates ? [{
+                    id: listing._id,
+                    title: listing.Name,
+                    coordinates: listing.coordinates,
+                    price: {
+                      starting: listing['Standarized Minimum Nightly Price (Filter)'] || 0
+                    },
+                    location: listing.resolvedBorough,
+                    type: listing.resolvedTypeOfSpace,
+                    bedrooms: listing['Features - Qty Bedrooms'] || 0,
+                    bathrooms: listing['Features - Qty Bathrooms'] || 0,
+                    images: listing.photos?.map(p => p.Photo) || [],
+                    borough: listing.resolvedBorough
+                  }] : []}
+                  selectedBorough={listing.resolvedBorough}
+                  simpleMode={true}
+                  initialZoom={17}
+                  disableAutoZoom={false}
+                />
+              ) : (
+                <div style={{
+                  color: COLORS.TEXT_LIGHT,
+                  fontSize: '0.9rem',
+                  textAlign: 'center'
+                }}>
+                  Loading map...
+                </div>
+              )}
             </div>
           </section>
 

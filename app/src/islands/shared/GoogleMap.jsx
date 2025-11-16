@@ -110,14 +110,24 @@ const GoogleMap = forwardRef(({
       const mapContainer = mapRef.current;
       const containerHeight = mapContainer ? mapContainer.offsetHeight : 400;
 
-      // Calculate vertical offset to account for the map container height
-      // This ensures the marker appears centered vertically within the visible map area
-      const verticalPadding = Math.floor(containerHeight * 0.15); // 15% padding from top/bottom
+      // Calculate padding to center the pin in the VISIBLE viewport
+      // When scrolling to the map, the header (80px) + padding (20px) = ~100px overlap
+      // This means the top ~100px of the map container is hidden by the fixed header
+      //
+      // Visible area: from 100px to 400px (300px tall)
+      // To center the pin in the visible 300px area, it should be at 250px from container top
+      //
+      // With fitBounds padding:
+      // - top: 150px (header offset 100px + centering adjustment 50px)
+      // - bottom: 50px (balances to center pin at 250px)
+      // This centers the pin at: 150px + (200px / 2) = 250px, which is the midpoint of 100-400px
+      const topPadding = 150; // Accounts for header overlap + centering
+      const bottomPadding = 50; // Balances for proper centering
 
-      // Smooth pan and zoom with bounds that account for container dimensions
+      // Smooth pan and zoom with bounds that account for container dimensions and header offset
       map.fitBounds(bounds, {
-        top: verticalPadding,
-        bottom: verticalPadding,
+        top: topPadding,
+        bottom: bottomPadding,
         left: 50,
         right: 50
       });
