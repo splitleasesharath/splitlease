@@ -980,7 +980,8 @@ export default function ViewSplitLeasePage() {
               height: '400px',
               borderRadius: '12px',
               overflow: 'hidden',
-              border: `1px solid ${COLORS.BG_LIGHT}`
+              border: `1px solid ${COLORS.BG_LIGHT}`,
+              position: 'relative'
             }}>
               <GoogleMap
                 ref={mapRef}

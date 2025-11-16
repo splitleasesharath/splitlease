@@ -264,7 +264,10 @@ const GoogleMap = forwardRef(({
     const initMap = () => {
       console.log('🗺️ GoogleMap: Initializing map...', {
         mapRefExists: !!mapRef.current,
-        googleMapsLoaded: !!(window.google && window.google.maps)
+        googleMapsLoaded: !!(window.google && window.google.maps),
+        simpleMode,
+        hasFilteredListings: filteredListings.length > 0,
+        hasListings: listings.length > 0
       });
 
       if (!mapRef.current || !window.google) {
@@ -272,15 +275,39 @@ const GoogleMap = forwardRef(({
         return;
       }
 
-      // Create map instance with default Manhattan center (no fallback coordinates)
-      const defaultMapConfig = getBoroughMapConfig('default');
+      // Determine initial center and zoom based on mode and available data
+      let initialCenter;
+      let initialZoomLevel;
+
+      // For simple mode with a single listing, use that listing's coordinates
+      if (simpleMode && (filteredListings.length === 1 || listings.length === 1)) {
+        const listing = filteredListings[0] || listings[0];
+        if (listing?.coordinates?.lat && listing?.coordinates?.lng) {
+          initialCenter = { lat: listing.coordinates.lat, lng: listing.coordinates.lng };
+          initialZoomLevel = initialZoom || 17;
+          console.log('🗺️ GoogleMap: Using listing coordinates for initial center:', initialCenter);
+        }
+      }
+
+      // Fallback to default
+      if (!initialCenter) {
+        const defaultMapConfig = getBoroughMapConfig('default');
+        initialCenter = defaultMapConfig.center;
+        initialZoomLevel = defaultMapConfig.zoom;
+        console.log('🗺️ GoogleMap: Using default center');
+      }
+
+      // Create map instance
       const map = new window.google.maps.Map(mapRef.current, {
-        center: defaultMapConfig.center,
-        zoom: defaultMapConfig.zoom,
+        center: initialCenter,
+        zoom: initialZoomLevel,
         mapTypeControl: true,
         streetViewControl: true,
         fullscreenControl: true,
         zoomControl: true,
+        zoomControlOptions: {
+          position: window.google.maps.ControlPosition.RIGHT_CENTER
+        },
         styles: [
           {
             featureType: 'poi',
@@ -292,7 +319,7 @@ const GoogleMap = forwardRef(({
 
       googleMapRef.current = map;
       setMapLoaded(true);
-      console.log('✅ GoogleMap: Map initialized successfully');
+      console.log('✅ GoogleMap: Map initialized successfully with zoom controls enabled');
     };
 
     // Wait for Google Maps API to load
@@ -304,7 +331,7 @@ const GoogleMap = forwardRef(({
       window.addEventListener('google-maps-loaded', initMap);
       return () => window.removeEventListener('google-maps-loaded', initMap);
     }
-  }, []);
+  }, [filteredListings, listings, simpleMode, initialZoom]);
 
   // Update markers when listings change
   useEffect(() => {
@@ -877,8 +904,7 @@ const GoogleMap = forwardRef(({
           width: '100%',
           height: '100%',
           minHeight: '500px',
-          borderRadius: '12px',
-          overflow: 'hidden'
+          borderRadius: '12px'
         }}
         onClick={handleMapClick}
       />
