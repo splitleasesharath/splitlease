@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
@@ -59,12 +59,10 @@ function FilterPanel({
   sortBy,
   onSortByChange,
   neighborhoodSearch,
-  onNeighborhoodSearchChange
+  onNeighborhoodSearchChange,
+  filteredNeighborhoods // Receive memoized filtered neighborhoods from parent
 }) {
-  const filteredNeighborhoods = neighborhoods.filter(n => {
-    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
-    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
-  });
+  // filteredNeighborhoods now passed from parent (memoized for performance)
 
   const handleNeighborhoodToggle = (neighborhoodId) => {
     const isSelected = selectedNeighborhoods.includes(neighborhoodId);
@@ -222,9 +220,9 @@ function FilterPanel({
 }
 
 /**
- * PropertyCard - Individual listing card
+ * PropertyCard - Individual listing card (memoized for performance)
  */
-function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenContactModal, onOpenInfoModal }) {
+const PropertyCard = React.memo(function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenContactModal, onOpenInfoModal }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const priceInfoTriggerRef = useRef(null);
@@ -269,9 +267,9 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
     setIsFavorite(!isFavorite);
   };
 
-  // Calculate dynamic price based on selected days
+  // Calculate dynamic price based on selected days (memoized for performance)
   // Uses the same formula as priceCalculations.js for Nightly rental type
-  const calculateDynamicPrice = () => {
+  const dynamicPrice = useMemo(() => {
     const nightsCount = Math.max(selectedDaysCount - 1, 1);
 
     const priceFieldMap = {
@@ -315,9 +313,8 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
     const pricePerNight = totalPrice / nightsCount;
 
     return pricePerNight;
-  };
+  }, [selectedDaysCount, listing]); // Only recalculate when days or listing changes
 
-  const dynamicPrice = calculateDynamicPrice();
   const startingPrice = listing['Starting nightly price'] || listing.price?.starting || 0;
 
   // Render amenity icons
@@ -470,7 +467,14 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
       </div>
     </a>
   );
-}
+}, (prevProps, nextProps) => {
+  // Custom comparison - only re-render if listing ID or selected days changed
+  // Ignore function prop changes (they should be stable via useCallback)
+  return (
+    prevProps.listing.id === nextProps.listing.id &&
+    prevProps.selectedDaysCount === nextProps.selectedDaysCount
+  );
+});
 
 /**
  * ListingsGrid - Grid of property cards with lazy loading
@@ -510,11 +514,7 @@ function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoad
           key={listing.id}
           listing={listing}
           selectedDaysCount={selectedDaysCount}
-          onLocationClick={(listing) => {
-            if (mapRef.current) {
-              mapRef.current.zoomToListing(listing.id);
-            }
-          }}
+          onLocationClick={handleLocationClick}
           onOpenContactModal={onOpenContactModal}
           onOpenInfoModal={onOpenInfoModal}
         />
@@ -1295,8 +1295,8 @@ export default function SearchPage() {
 
   const hasMore = loadedCount < allListings.length;
 
-  // Reset all filters
-  const handleResetFilters = () => {
+  // Reset all filters - wrapped in useCallback for stability
+  const handleResetFilters = useCallback(() => {
     setSelectedDays([1, 2, 3, 4, 5]);
     const manhattan = boroughs.find(b => b.value === 'manhattan');
     if (manhattan) {
@@ -1307,38 +1307,59 @@ export default function SearchPage() {
     setPriceTier('all');
     setSortBy('recommended');
     setNeighborhoodSearch('');
-  };
+  }, [boroughs]); // boroughs is stable after initial load
 
-  // Modal handler functions
-  const handleOpenContactModal = (listing) => {
+  // Modal handler functions - all wrapped in useCallback for stable references
+  const handleOpenContactModal = useCallback((listing) => {
     setSelectedListing(listing);
     setIsContactModalOpen(true);
-  };
+  }, []); // setState functions are stable
 
-  const handleCloseContactModal = () => {
+  const handleCloseContactModal = useCallback(() => {
     setIsContactModalOpen(false);
     setSelectedListing(null);
-  };
+  }, []);
 
-  const handleOpenInfoModal = (listing, triggerRef) => {
+  const handleOpenInfoModal = useCallback((listing, triggerRef) => {
     setSelectedListing(listing);
     setInfoModalTriggerRef(triggerRef);
     setIsInfoModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseInfoModal = () => {
+  const handleCloseInfoModal = useCallback(() => {
     setIsInfoModalOpen(false);
     setSelectedListing(null);
     setInfoModalTriggerRef(null);
-  };
+  }, []);
 
-  const handleOpenAIResearchModal = () => {
+  const handleOpenAIResearchModal = useCallback(() => {
     setIsAIResearchModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseAIResearchModal = () => {
+  const handleCloseAIResearchModal = useCallback(() => {
     setIsAIResearchModalOpen(false);
-  };
+  }, []);
+
+  // Location click handler - zoom map to listing (stable reference)
+  const handleLocationClick = useCallback((listing) => {
+    if (mapRef.current) {
+      mapRef.current.zoomToListing(listing.id);
+    }
+  }, []); // mapRef is stable
+
+  // Memoize filtered neighborhoods to prevent recalculation on every render
+  const filteredNeighborhoods = useMemo(() => {
+    if (!neighborhoodSearch || neighborhoodSearch.trim() === '') {
+      return neighborhoods;
+    }
+
+    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
+    const lowerSearch = sanitizedSearch.toLowerCase();
+
+    return neighborhoods.filter(n =>
+      n.name.toLowerCase().includes(lowerSearch)
+    );
+  }, [neighborhoods, neighborhoodSearch]);
 
   // Mount SearchScheduleSelector component in both mobile and desktop locations
   useEffect(() => {
@@ -1460,10 +1481,7 @@ export default function SearchPage() {
               {/* Neighborhood list */}
               <div className="neighborhood-list">
                 {(() => {
-                  const filteredNeighborhoods = neighborhoods.filter(n => {
-                    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
-                    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
-                  });
+                  // Use memoized filteredNeighborhoods from parent scope (no recalculation)
 
                   if (filteredNeighborhoods.length === 0) {
                     return (
@@ -1645,9 +1663,6 @@ export default function SearchPage() {
             filteredListings={allListings}
             selectedListing={null}
             selectedBorough={selectedBorough}
-            onMarkerClick={(listing) => {
-              console.log('Marker clicked:', listing.title);
-            }}
             onAIResearchClick={handleOpenAIResearchModal}
           />
         </section>
