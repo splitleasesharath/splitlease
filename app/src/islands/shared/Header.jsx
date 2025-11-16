@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { redirectToLogin, loginUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
+import { redirectToLogin, loginUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 
 export default function Header() {
@@ -158,6 +158,22 @@ export default function Header() {
       toggleDropdown(dropdownName);
     } else if (e.key === 'Escape') {
       setActiveDropdown(null);
+    }
+  };
+
+  // Handle logout
+  const handleLogout = async () => {
+    console.log('🔓 Logging out...');
+
+    // Call logout API
+    const result = await logoutUser();
+
+    if (result.success) {
+      console.log('✅ Logout successful - reloading page');
+      // Reload page to reset state and show logged-out view
+      window.location.reload();
+    } else {
+      console.error('❌ Logout failed:', result.error);
     }
   };
 
@@ -360,10 +376,101 @@ export default function Header() {
           </a>
 
           {currentUser && currentUser.firstName ? (
-            /* User is logged in - show greeting */
-            <span className="nav-link" style={{ fontWeight: '500', color: '#5B21B6' }}>
-              Hello, {currentUser.firstName}
-            </span>
+            /* User is logged in - show dropdown with avatar and name */
+            <div className="nav-dropdown">
+              <a
+                href="#user"
+                className="nav-link dropdown-trigger"
+                role="button"
+                aria-expanded={activeDropdown === 'user'}
+                aria-haspopup="true"
+                onClick={(e) => {
+                  e.preventDefault();
+                  toggleDropdown('user');
+                }}
+                onKeyDown={(e) => handleDropdownKeyDown(e, 'user')}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px',
+                  textDecoration: 'none'
+                }}
+              >
+                {currentUser.profilePhoto ? (
+                  <img
+                    src={currentUser.profilePhoto.startsWith('//') ? `https:${currentUser.profilePhoto}` : currentUser.profilePhoto}
+                    alt={currentUser.firstName}
+                    className="user-avatar"
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid #5B21B6'
+                    }}
+                  />
+                ) : (
+                  <div className="user-avatar-placeholder" style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    backgroundColor: '#5B21B6',
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: '600',
+                    fontSize: '16px'
+                  }}>
+                    {currentUser.firstName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span style={{
+                  fontSize: '12px',
+                  fontWeight: '500',
+                  color: 'white',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}>
+                  Hello, {currentUser.firstName}
+                  <svg
+                    className="dropdown-arrow"
+                    width="12"
+                    height="8"
+                    viewBox="0 0 12 8"
+                    fill="none"
+                    aria-hidden="true"
+                    style={{ marginTop: '1px' }}
+                  >
+                    <path
+                      d="M1 1.5L6 6.5L11 1.5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+              </a>
+              <div
+                className={`dropdown-menu ${activeDropdown === 'user' ? 'active' : ''}`}
+                role="menu"
+                aria-label="User menu"
+              >
+                <a
+                  href="#"
+                  className="dropdown-item"
+                  role="menuitem"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    await handleLogout();
+                  }}
+                >
+                  <span className="dropdown-title">Log Out</span>
+                </a>
+              </div>
+            </div>
           ) : (
             /* User is not logged in - show auth buttons */
             <>

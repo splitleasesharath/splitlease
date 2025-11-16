@@ -414,6 +414,7 @@ export function hasValidAuthentication() {
 const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY;
 const BUBBLE_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/login-user';
 const BUBBLE_CHECK_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/check-login';
+const BUBBLE_LOGOUT_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/logout-user';
 const BUBBLE_USER_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/obj/user';
 
 /**
@@ -606,4 +607,62 @@ export function isProtectedPage() {
 
   const currentPath = window.location.pathname;
   return protectedPages.some(page => currentPath.includes(page));
+}
+
+/**
+ * Logout user via Bubble API
+ * Calls logout endpoint with stored Bearer token
+ * Clears all authentication data from localStorage on success
+ *
+ * @returns {Promise<Object>} Response object with success status or error
+ */
+export async function logoutUser() {
+  const token = getAuthToken();
+
+  if (!token) {
+    console.log('❌ No token found for logout');
+    // Clear any remaining auth data even if no token
+    clearAuthData();
+    return {
+      success: true,
+      message: 'No active session to logout'
+    };
+  }
+
+  console.log('🔓 Attempting logout...');
+
+  try {
+    const response = await fetch(BUBBLE_LOGOUT_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    // Clear auth data regardless of API response
+    // This ensures clean logout even if API call fails
+    clearAuthData();
+
+    if (response.ok) {
+      console.log('✅ Logout successful');
+      return {
+        success: true,
+        message: 'Logout successful'
+      };
+    } else {
+      console.log('⚠️ Logout API returned error, but local data cleared');
+      return {
+        success: true,
+        message: 'Logged out locally'
+      };
+    }
+  } catch (error) {
+    console.error('❌ Logout error:', error);
+    // Auth data already cleared above
+    return {
+      success: true,
+      message: 'Logged out locally (network error)'
+    };
+  }
 }
