@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
+import AIResearchSignupModal from '../shared/AIResearchSignupModal.jsx';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
@@ -607,6 +608,7 @@ export default function SearchPage() {
   // Modal state management
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState(null);
   const [infoModalTriggerRef, setInfoModalTriggerRef] = useState(null);
 
@@ -1330,6 +1332,14 @@ export default function SearchPage() {
     setInfoModalTriggerRef(null);
   };
 
+  const handleOpenAIResearchModal = () => {
+    setIsAIResearchModalOpen(true);
+  };
+
+  const handleCloseAIResearchModal = () => {
+    setIsAIResearchModalOpen(false);
+  };
+
   // Mount SearchScheduleSelector component in both mobile and desktop locations
   useEffect(() => {
     const mountPointDesktop = document.getElementById('schedule-selector-mount-point');
@@ -1638,6 +1648,7 @@ export default function SearchPage() {
             onMarkerClick={(listing) => {
               console.log('Marker clicked:', listing.title);
             }}
+            onAIResearchClick={handleOpenAIResearchModal}
           />
         </section>
       </main>
@@ -1655,6 +1666,10 @@ export default function SearchPage() {
         listing={selectedListing}
         selectedDaysCount={selectedDays.length}
         triggerRef={infoModalTriggerRef}
+      />
+      <AIResearchSignupModal
+        isOpen={isAIResearchModalOpen}
+        onClose={handleCloseAIResearchModal}
       />
     </div>
   );
