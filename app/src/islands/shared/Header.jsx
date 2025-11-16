@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { redirectToLogin, loginUser, validateTokenAndFetchUser, isProtectedPage } from '../../lib/auth.js';
+import { redirectToLogin, loginUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 
 export default function Header() {
@@ -19,9 +19,18 @@ export default function Header() {
   const [authChecked, setAuthChecked] = useState(false);
 
   // Lazy-load token validation after page is completely loaded
+  // Only runs if a token exists in localStorage
   useEffect(() => {
     const validateAuth = async () => {
-      // Wait for page to be completely loaded before validating
+      // Check if token exists first - skip validation if no token
+      const token = getAuthToken();
+      if (!token) {
+        console.log('[Header] No token found - skipping validation');
+        setAuthChecked(true);
+        return;
+      }
+
+      // Token exists - wait for page to be completely loaded before validating
       if (document.readyState !== 'complete') {
         window.addEventListener('load', () => {
           performAuthValidation();
