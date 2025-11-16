@@ -103,7 +103,7 @@ export default function Header() {
   // Possible values from database:
   // - "A Host (I have a space available to rent)"
   // - "Trial Host"
-  // - "Split Lease"
+  // - "Split Lease" (internal users - show both dropdowns)
   const isHost = () => {
     if (!userType) return false;
     return userType.includes('Host') || userType === 'Split Lease';
@@ -112,9 +112,10 @@ export default function Header() {
   // Helper function to determine if user is a Guest based on Supabase user type values
   // Possible values from database:
   // - "A Guest (I would like to rent a space)"
+  // - "Split Lease" (internal users - show both dropdowns)
   const isGuest = () => {
     if (!userType) return false;
-    return userType.includes('Guest');
+    return userType.includes('Guest') || userType === 'Split Lease';
   };
 
   // Handle scroll behavior - hide header on scroll down, show on scroll up
