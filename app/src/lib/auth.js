@@ -192,12 +192,13 @@ export function getSessionAge() {
 
 /**
  * Clear authentication data from storage
- * Removes all auth tokens, session IDs, and timestamps
+ * Removes all auth tokens, session IDs, timestamps, and user type
  */
 export function clearAuthData() {
   localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
   localStorage.removeItem(AUTH_STORAGE_KEYS.SESSION_ID);
   localStorage.removeItem(AUTH_STORAGE_KEYS.LAST_AUTH);
+  localStorage.removeItem(AUTH_STORAGE_KEYS.USER_TYPE);
   isUserLoggedInState = false;
   console.log('🗑️ Authentication data cleared');
 }
@@ -242,6 +243,26 @@ export function getSessionId() {
 export function setSessionId(sessionId) {
   localStorage.setItem(AUTH_STORAGE_KEYS.SESSION_ID, sessionId);
   localStorage.setItem(AUTH_STORAGE_KEYS.LAST_AUTH, Date.now().toString());
+}
+
+/**
+ * Get user type from storage
+ *
+ * @returns {string|null} User type ('Host' or 'Guest') if exists, null otherwise
+ */
+export function getUserType() {
+  return localStorage.getItem(AUTH_STORAGE_KEYS.USER_TYPE);
+}
+
+/**
+ * Store user type
+ *
+ * @param {string} userType - User type to store ('Host' or 'Guest')
+ */
+export function setUserType(userType) {
+  if (userType) {
+    localStorage.setItem(AUTH_STORAGE_KEYS.USER_TYPE, userType);
+  }
 }
 
 // ============================================================================
@@ -533,11 +554,12 @@ export async function checkLoginSession() {
 
 /**
  * Validate token via Bubble API and fetch user data from Supabase
- * Two-step process:
+ * Three-step process:
  * 1. Validate token via Bubble API (authentication check)
  * 2. Fetch user display data directly from Supabase (following SearchPage pattern)
+ * 3. Fetch and cache user type if not already stored
  *
- * @returns {Promise<Object|null>} User data object with firstName, profilePhoto, etc. or null if invalid
+ * @returns {Promise<Object|null>} User data object with firstName, profilePhoto, userType, etc. or null if invalid
  */
 export async function validateTokenAndFetchUser() {
   const token = getAuthToken();
@@ -574,7 +596,7 @@ export async function validateTokenAndFetchUser() {
     // Step 2: Query Supabase directly for user data (same pattern as SearchPage)
     const { data: userData, error: userError } = await supabase
       .from('user')
-      .select('_id, "Name - First", "Name - Full", "Profile Photo"')
+      .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current"')
       .eq('_id', userId)
       .single();
 
@@ -598,14 +620,27 @@ export async function validateTokenAndFetchUser() {
       profilePhoto = 'https:' + profilePhoto;
     }
 
+    // Step 3: Check and store user type if not already cached
+    let userType = getUserType();
+    if (!userType || userType === '') {
+      userType = userData['Type - User Current'] || null;
+      if (userType) {
+        setUserType(userType);
+        console.log('✅ User type fetched and cached:', userType);
+      }
+    } else {
+      console.log('✅ User type loaded from cache:', userType);
+    }
+
     const userDataObject = {
       userId: userData._id,
       firstName: userData['Name - First'] || null,
       fullName: userData['Name - Full'] || null,
-      profilePhoto: profilePhoto || null
+      profilePhoto: profilePhoto || null,
+      userType: userType
     };
 
-    console.log('✅ User data fetched from Supabase:', userDataObject.firstName);
+    console.log('✅ User data fetched from Supabase:', userDataObject.firstName, '- Type:', userDataObject.userType);
     isUserLoggedInState = true;
 
     return userDataObject;

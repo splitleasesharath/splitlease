@@ -102,9 +102,30 @@ const GoogleMap = forwardRef(({
         zoomLevel = 15;
       }
 
-      // Smooth pan and zoom
-      map.setZoom(zoomLevel);
-      map.panTo({ lat: coords.lat, lng: coords.lng });
+      // Create a LatLngBounds and extend it with the listing coordinates
+      const bounds = new window.google.maps.LatLngBounds();
+      bounds.extend({ lat: coords.lat, lng: coords.lng });
+
+      // Get the map container's height to calculate appropriate padding
+      const mapContainer = mapRef.current;
+      const containerHeight = mapContainer ? mapContainer.offsetHeight : 400;
+
+      // Calculate vertical offset to account for the map container height
+      // This ensures the marker appears centered vertically within the visible map area
+      const verticalPadding = Math.floor(containerHeight * 0.15); // 15% padding from top/bottom
+
+      // Smooth pan and zoom with bounds that account for container dimensions
+      map.fitBounds(bounds, {
+        top: verticalPadding,
+        bottom: verticalPadding,
+        left: 50,
+        right: 50
+      });
+
+      // Set zoom level after fitBounds completes
+      window.google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
+        map.setZoom(zoomLevel);
+      });
 
       // Find and highlight the marker
       const marker = markersRef.current.find(m => m.listingId === listingId);

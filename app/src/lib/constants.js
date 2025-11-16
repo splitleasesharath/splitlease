@@ -182,6 +182,7 @@ export const AUTH_STORAGE_KEYS = {
   TOKEN: 'splitlease_auth_token',
   SESSION_ID: 'splitlease_session_id',
   LAST_AUTH: 'splitlease_last_auth',
+  USER_TYPE: 'splitlease_user_type',
   USERNAME: 'username',
   LOGGED_IN: 'loggedIn'
 };
