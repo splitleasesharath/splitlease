@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { redirectToLogin, loginUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
-import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
+import { SIGNUP_LOGIN_URL, SEARCH_URL, AUTH_STORAGE_KEYS } from '../../lib/constants.js';
 
 export default function Header() {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -17,6 +17,7 @@ export default function Header() {
   // User Authentication State
   const [currentUser, setCurrentUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [userType, setUserType] = useState(null);
 
   // Lazy-load token validation after page is completely loaded
   // Only runs if a token exists in localStorage
@@ -68,6 +69,35 @@ export default function Header() {
 
     validateAuth();
   }, []);
+
+  // Monitor user type from localStorage for conditional header visibility
+  useEffect(() => {
+    // Function to read user type from localStorage
+    const updateUserType = () => {
+      const storedUserType = localStorage.getItem(AUTH_STORAGE_KEYS.USER_TYPE);
+      setUserType(storedUserType);
+    };
+
+    // Check immediately on mount and when page loads
+    if (document.readyState === 'complete') {
+      updateUserType();
+    } else {
+      window.addEventListener('load', updateUserType);
+    }
+
+    // Update when currentUser changes (after auth validation)
+    if (currentUser) {
+      updateUserType();
+    }
+
+    // Listen for storage changes (in case user logs in/out in another tab)
+    window.addEventListener('storage', updateUserType);
+
+    return () => {
+      window.removeEventListener('load', updateUserType);
+      window.removeEventListener('storage', updateUserType);
+    };
+  }, [currentUser]);
 
   // Handle scroll behavior - hide header on scroll down, show on scroll up
   useEffect(() => {
@@ -201,7 +231,8 @@ export default function Header() {
 
         {/* Center Navigation with Dropdowns */}
         <div className={`nav-center ${mobileMenuActive ? 'mobile-active' : ''}`}>
-          {/* Host with Us Dropdown */}
+          {/* Host with Us Dropdown - Only show if not logged in OR if logged in as Host */}
+          {(!currentUser || userType === 'Host') && (
           <div className="nav-dropdown">
             <a
               href="#host"
@@ -286,8 +317,10 @@ export default function Header() {
               </a>
             </div>
           </div>
+          )}
 
-          {/* Stay with Us Dropdown */}
+          {/* Stay with Us Dropdown - Only show if not logged in OR if logged in as Guest */}
+          {(!currentUser || userType === 'Guest') && (
           <div className="nav-dropdown">
             <a
               href="#stay"
@@ -367,6 +400,7 @@ export default function Header() {
               </a>
             </div>
           </div>
+          )}
         </div>
 
         {/* Right Navigation - Auth Buttons */}
