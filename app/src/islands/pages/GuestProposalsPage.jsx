@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { supabase } from '../../lib/supabase.js';
+import { checkLoginSession, getAuthToken } from '../../lib/auth.js';
 
 /**
  * GuestProposalsPage - Dashboard for guests to view and manage their rental proposals
@@ -74,6 +75,24 @@ export default function GuestProposalsPage() {
   async function initializePage() {
     try {
       setLoading(true);
+
+      // Check authentication - redirect to home if not logged in
+      const token = getAuthToken();
+      if (!token) {
+        console.log('❌ No auth token found - redirecting to home');
+        window.location.href = 'https://splitlease.app';
+        return;
+      }
+
+      // Validate session with Bubble API
+      const sessionValid = await checkLoginSession();
+      if (!sessionValid) {
+        console.log('❌ Session invalid - redirecting to home');
+        window.location.href = 'https://splitlease.app';
+        return;
+      }
+
+      console.log('✅ User authenticated - loading proposals');
 
       // Get proposal ID from URL
       const urlParams = new URLSearchParams(window.location.search);
