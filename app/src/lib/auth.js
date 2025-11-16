@@ -406,3 +406,124 @@ export function hasValidAuthentication() {
 
   return false;
 }
+
+// ============================================================================
+// Bubble Authentication API
+// ============================================================================
+
+const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY;
+const BUBBLE_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/login-user';
+const BUBBLE_CHECK_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/check-login';
+
+/**
+ * Login user via Bubble API
+ * Stores token and user_id in localStorage on success
+ *
+ * @param {string} email - User email
+ * @param {string} password - User password
+ * @returns {Promise<Object>} Response object with status, token, user_id, or error
+ */
+export async function loginUser(email, password) {
+  console.log('🔐 Attempting login for:', email);
+
+  if (!BUBBLE_API_KEY) {
+    console.error('[Auth] VITE_BUBBLE_API_KEY is not configured');
+    return {
+      success: false,
+      error: 'Configuration error. Please contact support.'
+    };
+  }
+
+  try {
+    const response = await fetch(BUBBLE_LOGIN_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${BUBBLE_API_KEY}`
+      },
+      body: JSON.stringify({
+        email,
+        password
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.status === 'success') {
+      // Store token and user_id in localStorage
+      localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, data.response.token);
+      localStorage.setItem(AUTH_STORAGE_KEYS.SESSION_ID, data.response.user_id);
+      localStorage.setItem(AUTH_STORAGE_KEYS.LAST_AUTH, Date.now().toString());
+
+      // Update login state
+      isUserLoggedInState = true;
+
+      console.log('✅ Login successful');
+      console.log('   User ID:', data.response.user_id);
+      console.log('   Token expires in:', data.response.expires, 'seconds');
+
+      return {
+        success: true,
+        token: data.response.token,
+        user_id: data.response.user_id,
+        expires: data.response.expires
+      };
+    } else {
+      // Handle error response from Bubble
+      console.error('❌ Login failed:', data.reason || data.message);
+
+      return {
+        success: false,
+        error: data.message || 'Login failed. Please try again.',
+        reason: data.reason
+      };
+    }
+  } catch (error) {
+    console.error('❌ Login error:', error);
+    return {
+      success: false,
+      error: 'Network error. Please check your connection and try again.'
+    };
+  }
+}
+
+/**
+ * Check login session validity via Bubble API
+ * Uses stored token as Bearer token to validate session
+ *
+ * @returns {Promise<boolean>} True if session is valid, false otherwise
+ */
+export async function checkLoginSession() {
+  const token = getAuthToken();
+
+  if (!token) {
+    console.log('❌ No token found for session check');
+    return false;
+  }
+
+  console.log('🔍 Checking login session...');
+
+  try {
+    const response = await fetch(BUBBLE_CHECK_LOGIN_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      console.log('✅ Session is valid');
+      isUserLoggedInState = true;
+      return true;
+    } else {
+      console.log('❌ Session is invalid');
+      clearAuthData();
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Session check error:', error);
+    clearAuthData();
+    return false;
+  }
+}
