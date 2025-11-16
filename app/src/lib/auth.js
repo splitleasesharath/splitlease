@@ -21,6 +21,7 @@ import {
   SIGNUP_LOGIN_URL,
   ACCOUNT_PROFILE_URL
 } from './constants.js';
+import { supabase } from './supabase.js';
 
 // ============================================================================
 // Auth State Management
@@ -531,11 +532,12 @@ export async function checkLoginSession() {
 }
 
 /**
- * Validate token and fetch user data from Bubble API
- * Lazy-loaded validation that checks if stored token is still valid
- * and retrieves user information including first name
+ * Validate token via Bubble API and fetch user data from Supabase
+ * Two-step process:
+ * 1. Validate token via Bubble API (authentication check)
+ * 2. Fetch user display data directly from Supabase (following SearchPage pattern)
  *
- * @returns {Promise<Object|null>} User data object with firstName, userId, etc. or null if invalid
+ * @returns {Promise<Object|null>} User data object with firstName, profilePhoto, etc. or null if invalid
  */
 export async function validateTokenAndFetchUser() {
   const token = getAuthToken();
@@ -546,9 +548,10 @@ export async function validateTokenAndFetchUser() {
     return null;
   }
 
-  console.log('🔍 Validating token and fetching user data...');
+  console.log('🔍 Step 1: Validating token via Bubble API...');
 
   try {
+    // Step 1: Validate token via Bubble API
     const response = await fetch(`${BUBBLE_USER_ENDPOINT}/${userId}`, {
       method: 'GET',
       headers: {
@@ -557,35 +560,58 @@ export async function validateTokenAndFetchUser() {
       }
     });
 
-    if (response.ok) {
-      const data = await response.json();
-
-      if (data.response) {
-        // Token is valid, extract user information
-        const userData = {
-          userId: data.response._id,
-          firstName: data.response['Name - First'] || null,
-          lastName: data.response['Name - Last'] || null,
-          fullName: data.response['Name - Full'] || null,
-          email: data.response['email as text'] || null,
-          profilePhoto: data.response['Profile Photo'] || null
-        };
-
-        console.log('✅ Token valid - User:', userData.firstName);
-        isUserLoggedInState = true;
-
-        return userData;
-      }
+    if (!response.ok) {
+      // Token is invalid
+      console.log('❌ Token validation failed - clearing auth data');
+      clearAuthData();
+      isUserLoggedInState = false;
+      return null;
     }
 
-    // Token is invalid or user not found
-    console.log('❌ Token invalid or user not found');
-    clearAuthData();
-    isUserLoggedInState = false;
-    return null;
+    // Token is valid, now fetch user data from Supabase
+    console.log('✅ Token valid - Step 2: Fetching user data from Supabase...');
+
+    // Step 2: Query Supabase directly for user data (same pattern as SearchPage)
+    const { data: userData, error: userError } = await supabase
+      .from('user')
+      .select('_id, "Name - First", "Name - Full", "Profile Photo"')
+      .eq('_id', userId)
+      .single();
+
+    if (userError) {
+      console.error('❌ Supabase query error:', userError);
+      clearAuthData();
+      isUserLoggedInState = false;
+      return null;
+    }
+
+    if (!userData) {
+      console.log('❌ User not found in Supabase');
+      clearAuthData();
+      isUserLoggedInState = false;
+      return null;
+    }
+
+    // Handle protocol-relative URLs for profile photos (same as SearchPage)
+    let profilePhoto = userData['Profile Photo'];
+    if (profilePhoto && profilePhoto.startsWith('//')) {
+      profilePhoto = 'https:' + profilePhoto;
+    }
+
+    const userDataObject = {
+      userId: userData._id,
+      firstName: userData['Name - First'] || null,
+      fullName: userData['Name - Full'] || null,
+      profilePhoto: profilePhoto || null
+    };
+
+    console.log('✅ User data fetched from Supabase:', userDataObject.firstName);
+    isUserLoggedInState = true;
+
+    return userDataObject;
 
   } catch (error) {
-    console.error('❌ Token validation error:', error);
+    console.error('❌ Token validation or Supabase fetch error:', error);
     clearAuthData();
     isUserLoggedInState = false;
     return null;
