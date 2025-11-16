@@ -429,10 +429,10 @@ export default function Header() {
 
           {currentUser && currentUser.firstName ? (
             /* User is logged in - show dropdown with avatar and name */
-            <div className="nav-dropdown">
+            <div className="nav-dropdown user-dropdown">
               <a
                 href="#user"
-                className="nav-link dropdown-trigger"
+                className="nav-link dropdown-trigger user-trigger"
                 role="button"
                 aria-expanded={activeDropdown === 'user'}
                 aria-haspopup="true"
@@ -441,52 +441,20 @@ export default function Header() {
                   toggleDropdown('user');
                 }}
                 onKeyDown={(e) => handleDropdownKeyDown(e, 'user')}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '4px',
-                  textDecoration: 'none'
-                }}
               >
                 {currentUser.profilePhoto ? (
                   <img
                     src={currentUser.profilePhoto.startsWith('//') ? `https:${currentUser.profilePhoto}` : currentUser.profilePhoto}
                     alt={currentUser.firstName}
                     className="user-avatar"
-                    style={{
-                      width: '40px',
-                      height: '40px',
-                      borderRadius: '50%',
-                      objectFit: 'cover',
-                      border: '2px solid #5B21B6'
-                    }}
                   />
                 ) : (
-                  <div className="user-avatar-placeholder" style={{
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    backgroundColor: '#5B21B6',
-                    color: 'white',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontWeight: '600',
-                    fontSize: '16px'
-                  }}>
+                  <div className="user-avatar-placeholder">
                     {currentUser.firstName.charAt(0).toUpperCase()}
                   </div>
                 )}
-                <span style={{
-                  fontSize: '12px',
-                  fontWeight: '500',
-                  color: 'white',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px'
-                }}>
-                  Hello, {currentUser.firstName}
+                <span className="user-name-wrapper">
+                  {currentUser.firstName}
                   <svg
                     className="dropdown-arrow"
                     width="12"
@@ -494,7 +462,6 @@ export default function Header() {
                     viewBox="0 0 12 8"
                     fill="none"
                     aria-hidden="true"
-                    style={{ marginTop: '1px' }}
                   >
                     <path
                       d="M1 1.5L6 6.5L11 1.5"
