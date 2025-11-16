@@ -232,7 +232,7 @@ export default function Header() {
         {/* Center Navigation with Dropdowns */}
         <div className={`nav-center ${mobileMenuActive ? 'mobile-active' : ''}`}>
           {/* Host with Us Dropdown - Only show if not logged in OR if logged in as Host */}
-          {(!currentUser || userType === 'Host') && (
+          {(!currentUser || (userType && userType.includes('Host'))) && (
           <div className="nav-dropdown">
             <a
               href="#host"
@@ -320,7 +320,7 @@ export default function Header() {
           )}
 
           {/* Stay with Us Dropdown - Only show if not logged in OR if logged in as Guest */}
-          {(!currentUser || userType === 'Guest') && (
+          {(!currentUser || (userType && userType.includes('Guest'))) && (
           <div className="nav-dropdown">
             <a
               href="#stay"
