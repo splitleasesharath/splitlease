@@ -563,15 +563,23 @@ const GoogleMap = forwardRef(({
         }
 
         // For simple mode or when initialZoom is specified, center and zoom differently
-        if (simpleMode && initialZoom && markersRef.current.length === 1) {
+        if (simpleMode && markersRef.current.length === 1) {
           // Get the first marker's position
           const firstListing = filteredListings[0] || listings[0];
-          if (firstListing?.coordinates) {
+          if (firstListing?.coordinates?.lat && firstListing?.coordinates?.lng) {
+            const targetZoom = initialZoom || 17;
             map.setCenter({ lat: firstListing.coordinates.lat, lng: firstListing.coordinates.lng });
-            map.setZoom(initialZoom);
-            console.log('✅ GoogleMap: Simple mode - set center and zoom:', {
-              center: firstListing.coordinates,
-              zoom: initialZoom
+            map.setZoom(targetZoom);
+            console.log('✅ GoogleMap: Simple mode - FORCING center and zoom:', {
+              center: { lat: firstListing.coordinates.lat, lng: firstListing.coordinates.lng },
+              zoom: targetZoom,
+              listing: firstListing.id || firstListing.title
+            });
+          } else {
+            console.error('❌ GoogleMap: Simple mode but no valid coordinates found:', {
+              hasCoordinates: !!firstListing?.coordinates,
+              coordinates: firstListing?.coordinates,
+              listing: firstListing
             });
           }
         } else if (!disableAutoZoom) {

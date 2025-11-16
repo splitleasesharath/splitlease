@@ -288,12 +288,22 @@ export async function fetchListingComplete(listingId) {
       };
       console.log('📍 Using "Location - slightly different address" for coordinates:', coordinates);
     } else if (locationAddress?.lat && locationAddress?.lng) {
+      // Generate slightly offset coordinates from the main address
+      // Offset by ~50-100 meters (approximately 0.0005 to 0.001 degrees)
+      const latOffset = (Math.random() - 0.5) * 0.001;
+      const lngOffset = (Math.random() - 0.5) * 0.001;
+
       coordinates = {
-        lat: locationAddress.lat,
-        lng: locationAddress.lng,
-        address: locationAddress.address || null
+        lat: locationAddress.lat + latOffset,
+        lng: locationAddress.lng + lngOffset,
+        address: locationAddress.address || null,
+        isGenerated: true
       };
-      console.log('📍 Using "Location - Address" for coordinates (fallback):', coordinates);
+      console.log('📍 Generated slightly different coordinates from "Location - Address":', {
+        original: { lat: locationAddress.lat, lng: locationAddress.lng },
+        offset: { lat: latOffset, lng: lngOffset },
+        generated: coordinates
+      });
     } else {
       console.warn('⚠️ No valid coordinates found in listing data');
     }
