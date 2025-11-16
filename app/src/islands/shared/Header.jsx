@@ -227,6 +227,16 @@ export default function Header() {
                 <span className="dropdown-desc">See available listings!</span>
               </a>
               <a
+                href="https://splitleasesharath.github.io/Guest-sales-why-split-lease"
+                className="dropdown-item"
+                role="menuitem"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <span className="dropdown-title">Why Split Lease</span>
+                <span className="dropdown-desc">Learn why guests choose Split Lease</span>
+              </a>
+              <a
                 href="/guest-success"
                 className="dropdown-item"
                 role="menuitem"
