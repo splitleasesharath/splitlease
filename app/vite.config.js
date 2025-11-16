@@ -28,6 +28,14 @@ export default defineConfig({
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/view-split-lease.html' + queryString;
           }
+          // Handle guest-proposals with clean URL structure (e.g., /guest-proposals/[user-id]?query=param)
+          else if (url.startsWith('/guest-proposals/')) {
+            // Extract query params if they exist
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            // Rewrite to serve the HTML file while preserving query params
+            req.url = '/public/guest-proposals.html' + queryString;
+          }
           else if (url.startsWith('/search.html')) {
             req.url = '/public/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/search-test.html')) {
@@ -50,12 +58,6 @@ export default defineConfig({
             req.url = '/public/guest-success.html' + queryString;
           } else if (url.startsWith('/why-split-lease.html')) {
             req.url = '/public/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
-          } else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
-          } else if (url.startsWith('/guest-proposals')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/guest-proposals.html' + queryString;
           } else if (url.startsWith('/careers.html')) {
             req.url = '/public/careers.html' + (url.substring('/careers.html'.length) || '');
           } else if (url.startsWith('/careers')) {
@@ -91,6 +93,14 @@ export default defineConfig({
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/view-split-lease.html' + queryString;
           }
+          // Handle guest-proposals with clean URL structure (e.g., /guest-proposals/[user-id]?query=param)
+          else if (url.startsWith('/guest-proposals/')) {
+            // Extract query params if they exist
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            // Rewrite to serve the HTML file while preserving query params
+            req.url = '/guest-proposals.html' + queryString;
+          }
           else if (url.startsWith('/search.html')) {
             req.url = '/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/search-test.html')) {
@@ -113,12 +123,6 @@ export default defineConfig({
             req.url = '/guest-success.html' + queryString;
           } else if (url.startsWith('/why-split-lease.html')) {
             req.url = '/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
-          } else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
-          } else if (url.startsWith('/guest-proposals')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/guest-proposals.html' + queryString;
           } else if (url.startsWith('/careers.html')) {
             req.url = '/careers.html' + (url.substring('/careers.html'.length) || '');
           } else if (url.startsWith('/careers')) {
