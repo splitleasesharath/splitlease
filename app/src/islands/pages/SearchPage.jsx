@@ -514,7 +514,7 @@ function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoad
           key={listing.id}
           listing={listing}
           selectedDaysCount={selectedDaysCount}
-          onLocationClick={handleLocationClick}
+          onLocationClick={onLocationClick}
           onOpenContactModal={onOpenContactModal}
           onOpenInfoModal={onOpenInfoModal}
         />
