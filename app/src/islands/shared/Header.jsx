@@ -99,6 +99,24 @@ export default function Header() {
     };
   }, [currentUser]);
 
+  // Helper function to determine if user is a Host based on Supabase user type values
+  // Possible values from database:
+  // - "A Host (I have a space available to rent)"
+  // - "Trial Host"
+  // - "Split Lease"
+  const isHost = () => {
+    if (!userType) return false;
+    return userType.includes('Host') || userType === 'Split Lease';
+  };
+
+  // Helper function to determine if user is a Guest based on Supabase user type values
+  // Possible values from database:
+  // - "A Guest (I would like to rent a space)"
+  const isGuest = () => {
+    if (!userType) return false;
+    return userType.includes('Guest');
+  };
+
   // Handle scroll behavior - hide header on scroll down, show on scroll up
   useEffect(() => {
     const handleScroll = () => {
@@ -232,7 +250,7 @@ export default function Header() {
         {/* Center Navigation with Dropdowns */}
         <div className={`nav-center ${mobileMenuActive ? 'mobile-active' : ''}`}>
           {/* Host with Us Dropdown - Only show if not logged in OR if logged in as Host */}
-          {(!currentUser || (userType && userType.includes('Host'))) && (
+          {(!currentUser || isHost()) && (
           <div className="nav-dropdown">
             <a
               href="#host"
@@ -320,7 +338,7 @@ export default function Header() {
           )}
 
           {/* Stay with Us Dropdown - Only show if not logged in OR if logged in as Guest */}
-          {(!currentUser || (userType && userType.includes('Guest'))) && (
+          {(!currentUser || isGuest()) && (
           <div className="nav-dropdown">
             <a
               href="#stay"
