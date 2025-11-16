@@ -1014,7 +1014,7 @@ export default function ViewSplitLeasePage() {
                 }] : []}
                 selectedBorough={listing.resolvedBorough}
                 simpleMode={true}
-                initialZoom={15}
+                initialZoom={17}
                 disableAutoZoom={false}
               />
             </div>
