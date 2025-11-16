@@ -1,249 +1,793 @@
-/**
- * SearchPageTest - Implementing cascading filter architecture
- * Based on the 4-layer filtering system described in the markdown
- */
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { createRoot } from 'react-dom/client';
+import GoogleMap from '../shared/GoogleMap.jsx';
+import InformationalText from '../shared/InformationalText.jsx';
+import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
+import AIResearchSignupModal from '../shared/AIResearchSignupModal.jsx';
+import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import { supabase } from '../../lib/supabase.js';
+import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
+import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
+import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
+import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
+import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
 
-export default function SearchPageTest() {
-  // ============================================================================
-  // STATE MANAGEMENT
-  // ============================================================================
+// ============================================================================
+// Internal Components
+// ============================================================================
 
-  // Filter states
-  const [boroughs, setBoroughs] = useState([]);
-  const [selectedBorough, setSelectedBorough] = useState('manhattan');
-  const [neighborhoods, setNeighborhoods] = useState([]);
-  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState([]);
-  const [weekPattern, setWeekPattern] = useState('every-week');
-  const [priceTier, setPriceTier] = useState('all');
-  const [sortBy, setSortBy] = useState('recommended');
+/**
+ * MobileFilterBar - Sticky filter button for mobile
+ */
+function MobileFilterBar({ onFilterClick, onMapClick }) {
+  return (
+    <div className="mobile-filter-bar">
+      <button className="filter-toggle-btn" onClick={onFilterClick}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+        <span>Filters</span>
+      </button>
+      <button className="map-toggle-btn" onClick={onMapClick}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+          <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
+          <path d="M9 3v18M15 3v18M3 9h18M3 15h18" strokeWidth="2" />
+        </svg>
+        <span>Map</span>
+      </button>
+    </div>
+  );
+}
 
-  // Data layers (following the cascading architecture)
-  const [primaryFilteredListings, setPrimaryFilteredListings] = useState([]);
-  const [secondaryFilteredListings, setSecondaryFilteredListings] = useState([]);
-  const [tertiaryFilteredListings, setTertiaryFilteredListings] = useState([]);
-  const [displayListings, setDisplayListings] = useState([]);
-
-  // UI states
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [stats, setStats] = useState({
-    primary: 0,
-    secondary: 0,
-    tertiary: 0,
-    display: 0
+/**
+ * FilterPanel - Left sidebar with filters
+ */
+function FilterPanel({
+  isActive,
+  selectedDays,
+  onDaysChange,
+  boroughs,
+  selectedBorough,
+  onBoroughChange,
+  neighborhoods,
+  selectedNeighborhoods,
+  onNeighborhoodsChange,
+  weekPattern,
+  onWeekPatternChange,
+  priceTier,
+  onPriceTierChange,
+  sortBy,
+  onSortByChange,
+  neighborhoodSearch,
+  onNeighborhoodSearchChange
+}) {
+  const filteredNeighborhoods = neighborhoods.filter(n => {
+    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
+    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
   });
 
-  // ============================================================================
-  // CONSTANTS
-  // ============================================================================
+  const handleNeighborhoodToggle = (neighborhoodId) => {
+    const isSelected = selectedNeighborhoods.includes(neighborhoodId);
+    let newSelected;
 
-  const WEEK_PATTERNS = {
-    'every-week': 'Every week',
-    'one-on-off': 'One week on, one week off',
-    'two-on-off': 'Two weeks on, two weeks off',
-    'one-three-off': 'One week on, three weeks off'
+    if (isSelected) {
+      newSelected = selectedNeighborhoods.filter(id => id !== neighborhoodId);
+    } else {
+      newSelected = [...selectedNeighborhoods, neighborhoodId];
+    }
+
+    onNeighborhoodsChange(newSelected);
   };
 
-  const PRICE_TIERS = {
-    'under-200': { min: 0, max: 200 },
-    '200-350': { min: 200, max: 350 },
-    '350-500': { min: 350, max: 500 },
-    '500-plus': { min: 500, max: 999999 },
-    'all': { min: 0, max: 999999 }
+  const handleRemoveNeighborhood = (neighborhoodId) => {
+    onNeighborhoodsChange(selectedNeighborhoods.filter(id => id !== neighborhoodId));
   };
 
-  const SORT_OPTIONS = {
-    'recommended': { field: '"Created Date"', ascending: false },
-    'price-low': { field: '"Standarized Minimum Nightly Price (Filter)"', ascending: true },
-    'most-viewed': { field: '"Metrics - Click Counter"', ascending: false },
-    'recent': { field: '"Created Date"', ascending: false }
+  return (
+    <div className={`filter-panel ${isActive ? 'active' : ''}`}>
+      <div className="filter-container">
+        {/* Single Horizontal Filter Row - All filters inline */}
+        <div className="horizontal-filters">
+          {/* Borough Select */}
+          <div className="filter-group compact">
+            <label htmlFor="boroughSelect">Select Borough</label>
+            <select
+              id="boroughSelect"
+              className="filter-select"
+              value={selectedBorough}
+              onChange={(e) => onBoroughChange(e.target.value)}
+            >
+              {boroughs.length === 0 ? (
+                <option value="">Loading boroughs...</option>
+              ) : (
+                boroughs.map(borough => (
+                  <option key={borough.id} value={borough.value}>
+                    {borough.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
+          {/* Week Pattern */}
+          <div className="filter-group compact">
+            <label htmlFor="weekPattern">Select Week Pattern</label>
+            <select
+              id="weekPattern"
+              className="filter-select"
+              value={weekPattern}
+              onChange={(e) => onWeekPatternChange(e.target.value)}
+              aria-label="Filter by week pattern"
+            >
+              <option value="every-week">Every week</option>
+              <option value="one-on-off">One week on, one week off</option>
+              <option value="two-on-off">Two weeks on, two weeks off</option>
+              <option value="one-three-off">One week on, three weeks off</option>
+            </select>
+          </div>
+
+          {/* Price Tier */}
+          <div className="filter-group compact">
+            <label htmlFor="priceTier">Select Price Tier</label>
+            <select
+              id="priceTier"
+              className="filter-select"
+              value={priceTier}
+              onChange={(e) => onPriceTierChange(e.target.value)}
+              aria-label="Filter by price range"
+            >
+              <option value="under-200">&lt; $200/night</option>
+              <option value="200-350">$200-$350/night</option>
+              <option value="350-500">$350-$500/night</option>
+              <option value="500-plus">$500+/night</option>
+              <option value="all">All Prices</option>
+            </select>
+          </div>
+
+          {/* Sort By */}
+          <div className="filter-group compact">
+            <label htmlFor="sortBy">Sort By</label>
+            <select
+              id="sortBy"
+              className="filter-select"
+              value={sortBy}
+              onChange={(e) => onSortByChange(e.target.value)}
+              aria-label="Sort listings by"
+            >
+              <option value="recommended">Our Recommendations</option>
+              <option value="price-low">Price-Lowest to Highest</option>
+              <option value="most-viewed">Most Viewed</option>
+              <option value="recent">Recently Added</option>
+            </select>
+          </div>
+
+          {/* Neighborhood Multi-Select */}
+          <div className="filter-group compact neighborhoods-group">
+            <label htmlFor="neighborhoodSearch">Refine Neighborhood(s)</label>
+            <input
+              type="text"
+              id="neighborhoodSearch"
+              placeholder="Search neighborhoods..."
+              className="neighborhood-search"
+              value={neighborhoodSearch}
+              onChange={(e) => onNeighborhoodSearchChange(e.target.value)}
+            />
+
+            {/* Selected neighborhood chips */}
+            <div className="selected-neighborhoods-chips">
+              {selectedNeighborhoods.map(id => {
+                const neighborhood = neighborhoods.find(n => n.id === id);
+                if (!neighborhood) return null;
+
+                return (
+                  <div key={id} className="neighborhood-chip">
+                    <span>{neighborhood.name}</span>
+                    <button
+                      className="neighborhood-chip-remove"
+                      onClick={() => handleRemoveNeighborhood(id)}
+                      aria-label={`Remove ${neighborhood.name}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Neighborhood list */}
+            <div className="neighborhood-list">
+              {filteredNeighborhoods.length === 0 ? (
+                <div style={{ padding: '10px', color: '#666' }}>
+                  {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
+                </div>
+              ) : (
+                filteredNeighborhoods.map(neighborhood => (
+                  <label key={neighborhood.id}>
+                    <input
+                      type="checkbox"
+                      value={neighborhood.id}
+                      checked={selectedNeighborhoods.includes(neighborhood.id)}
+                      onChange={() => handleNeighborhoodToggle(neighborhood.id)}
+                    />
+                    {neighborhood.name}
+                  </label>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * PropertyCard - Individual listing card
+ */
+function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenContactModal, onOpenInfoModal }) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const priceInfoTriggerRef = useRef(null);
+
+  const hasImages = listing.images && listing.images.length > 0;
+  const hasMultipleImages = listing.images && listing.images.length > 1;
+
+  // Format host name to show "FirstName L."
+  const formatHostName = (fullName) => {
+    if (!fullName || fullName === 'Host') return 'Host';
+
+    const nameParts = fullName.trim().split(/\s+/);
+    if (nameParts.length === 1) return nameParts[0];
+
+    const firstName = nameParts[0];
+    const lastInitial = nameParts[nameParts.length - 1].charAt(0).toUpperCase();
+
+    return `${firstName} ${lastInitial}.`;
   };
 
-  // ============================================================================
-  // LAYER 1: PRIMARY FILTER
-  // Borough, Week Pattern, and Sorting
-  // ============================================================================
+  const handlePrevImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!hasMultipleImages) return;
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? listing.images.length - 1 : prev - 1
+    );
+  };
+
+  const handleNextImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!hasMultipleImages) return;
+    setCurrentImageIndex((prev) =>
+      prev === listing.images.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const handleFavoriteClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsFavorite(!isFavorite);
+  };
+
+  // Calculate dynamic price based on selected days
+  // Uses the same formula as priceCalculations.js for Nightly rental type
+  const calculateDynamicPrice = () => {
+    const nightsCount = Math.max(selectedDaysCount - 1, 1);
+
+    const priceFieldMap = {
+      2: 'Price 2 nights selected',
+      3: 'Price 3 nights selected',
+      4: 'Price 4 nights selected',
+      5: 'Price 5 nights selected',
+      6: 'Price 6 nights selected',
+      7: 'Price 7 nights selected'
+    };
+
+    // Get the host compensation rate for the selected nights
+    let nightlyHostRate = 0;
+    if (nightsCount >= 2 && nightsCount <= 7) {
+      const fieldName = priceFieldMap[nightsCount];
+      nightlyHostRate = listing[fieldName] || 0;
+    }
+
+    // Fallback to starting price if no specific rate found
+    if (!nightlyHostRate || nightlyHostRate === 0) {
+      nightlyHostRate = listing['Starting nightly price'] || listing.price?.starting || 0;
+    }
+
+    // Apply the same markup calculation as priceCalculations.js
+    // Step 1: Calculate base price (host rate × nights)
+    const basePrice = nightlyHostRate * nightsCount;
+
+    // Step 2: Apply full-time discount (only for 7 nights, 13% discount)
+    const fullTimeDiscount = nightsCount === 7 ? basePrice * 0.13 : 0;
+
+    // Step 3: Price after discounts
+    const priceAfterDiscounts = basePrice - fullTimeDiscount;
+
+    // Step 4: Apply site markup (17%)
+    const siteMarkup = priceAfterDiscounts * 0.17;
+
+    // Step 5: Calculate total price
+    const totalPrice = basePrice - fullTimeDiscount + siteMarkup;
+
+    // Step 6: Calculate price per night (guest-facing price)
+    const pricePerNight = totalPrice / nightsCount;
+
+    return pricePerNight;
+  };
+
+  const dynamicPrice = calculateDynamicPrice();
+  const startingPrice = listing['Starting nightly price'] || listing.price?.starting || 0;
+
+  // Render amenity icons
+  const renderAmenityIcons = () => {
+    if (!listing.amenities || listing.amenities.length === 0) return null;
+
+    const maxVisible = 6;
+    const visibleAmenities = listing.amenities.slice(0, maxVisible);
+    const hiddenCount = Math.max(0, listing.amenities.length - maxVisible);
+
+    return (
+      <div className="listing-amenities">
+        {visibleAmenities.map((amenity, idx) => (
+          <span key={idx} className="amenity-icon" data-tooltip={amenity.name}>
+            {amenity.icon}
+          </span>
+        ))}
+        {hiddenCount > 0 && (
+          <span className="amenity-more-count" title="Show all amenities">
+            +{hiddenCount} more
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  return (
+    <a
+      className="listing-card"
+      href={`/view-split-lease/${listing.id}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{ textDecoration: 'none', color: 'inherit' }}
+    >
+      {hasImages && (
+        <div className="listing-images">
+          <img
+            src={listing.images[currentImageIndex]}
+            alt={listing.title}
+          />
+          {hasMultipleImages && (
+            <>
+              <button className="image-nav prev-btn" onClick={handlePrevImage}>
+                ‹
+              </button>
+              <button className="image-nav next-btn" onClick={handleNextImage}>
+                ›
+              </button>
+              <div className="image-counter">
+                <span className="current-image">{currentImageIndex + 1}</span> /{' '}
+                <span className="total-images">{listing.images.length}</span>
+              </div>
+            </>
+          )}
+          <button className="favorite-btn" onClick={handleFavoriteClick}>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill={isFavorite ? 'red' : 'none'}
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </button>
+          {listing.isNew && <span className="new-badge">New Listing</span>}
+        </div>
+      )}
+
+      <div className="listing-content">
+        <div className="listing-info">
+          <div
+            className="listing-location"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onLocationClick) {
+                onLocationClick(listing);
+              }
+            }}
+            style={{ cursor: onLocationClick ? 'pointer' : 'default' }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+              <circle cx="12" cy="10" r="3" />
+            </svg>
+            <span className="location-text">{listing.location}</span>
+          </div>
+          <h3 className="listing-title">{listing.title}</h3>
+          <p className="listing-type">
+            {listing.type}
+            {listing.squareFeet ? ` (${listing.squareFeet} SQFT)` : ''} - {listing.maxGuests} guests max
+          </p>
+          {renderAmenityIcons()}
+          <p className="listing-details">{listing.description}</p>
+        </div>
+
+        <div className="listing-footer">
+          <div className="host-info">
+            {listing.host?.image && (
+              <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
+            )}
+            {!listing.host?.image && (
+              <div className="host-avatar-placeholder">?</div>
+            )}
+            <div className="host-details">
+              <span className="host-name">
+                {formatHostName(listing.host?.name)}
+                {listing.host.verified && <span className="verified-badge" title="Verified">✓</span>}
+              </span>
+              <button
+                className="message-btn"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenContactModal(listing);
+                }}
+              >
+                Message
+              </button>
+            </div>
+          </div>
+
+          <div className="pricing-info">
+            <div
+              ref={priceInfoTriggerRef}
+              className="starting-price"
+              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onOpenInfoModal(listing, priceInfoTriggerRef);
+              }}
+            >
+              <span>Starting at ${parseFloat(startingPrice).toFixed(2)}/night</span>
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                style={{ color: '#3b82f6', fill: 'currentColor', cursor: 'pointer' }}
+              >
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+              </svg>
+            </div>
+            <div className="full-price">${dynamicPrice.toFixed(2)}/night</div>
+            <div className="availability-text">Message Split Lease for Availability</div>
+          </div>
+        </div>
+      </div>
+    </a>
+  );
+}
+
+/**
+ * ListingsGrid - Grid of property cards with lazy loading
+ */
+function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef }) {
+  const sentinelRef = useRef(null);
 
   useEffect(() => {
-    async function fetchPrimaryFilter() {
-      if (!selectedBorough || boroughs.length === 0) return;
+    if (!sentinelRef.current || !hasMore || isLoading) return;
 
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        console.log('🔵 LAYER 1: PRIMARY FILTER - Applying borough, week pattern, and sorting');
-
-        // Find borough ID
-        const borough = boroughs.find(b => b.value === selectedBorough);
-        if (!borough) {
-          throw new Error('Borough not found');
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          onLoadMore();
         }
-
-        // Build base query
-        let query = supabase
-          .from('listing')
-          .select('_id, Name, "Location - Borough", "Location - Hood", Active, Complete, isForUsability, "Standarized Minimum Nightly Price (Filter)", "Weeks offered", "Metrics - Click Counter", "Created Date"')
-          .eq('Active', true)
-          .eq('"Location - Borough"', borough.id);
-
-        // Apply week pattern filter
-        if (weekPattern !== 'every-week') {
-          const weekPatternText = WEEK_PATTERNS[weekPattern];
-          if (weekPatternText) {
-            query = query.eq('"Weeks offered"', weekPatternText);
-          }
-        }
-
-        // Apply sorting
-        const sortConfig = SORT_OPTIONS[sortBy] || SORT_OPTIONS.recommended;
-        query = query.order(sortConfig.field, { ascending: sortConfig.ascending });
-
-        const { data, error: queryError } = await query;
-
-        if (queryError) throw queryError;
-
-        console.log(`✅ PRIMARY FILTER: ${data.length} listings (Borough: ${borough.name}, Week: ${weekPattern}, Sort: ${sortBy})`);
-        setPrimaryFilteredListings(data);
-        setStats(prev => ({ ...prev, primary: data.length }));
-
-      } catch (err) {
-        console.error('❌ PRIMARY FILTER ERROR:', err);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
+      },
+      {
+        root: null,
+        rootMargin: '100px',
+        threshold: 0.1
       }
-    }
-
-    fetchPrimaryFilter();
-  }, [selectedBorough, boroughs, weekPattern, sortBy]);
-
-  // ============================================================================
-  // LAYER 2: SECONDARY FILTER
-  // Neighborhood filtering
-  // ============================================================================
-
-  useEffect(() => {
-    console.log('🟢 LAYER 2: SECONDARY FILTER - Applying neighborhood filter');
-
-    if (primaryFilteredListings.length === 0) {
-      setSecondaryFilteredListings([]);
-      setStats(prev => ({ ...prev, secondary: 0 }));
-      return;
-    }
-
-    // If no neighborhoods selected, pass through all primary listings
-    if (selectedNeighborhoods.length === 0) {
-      console.log('   → No neighborhoods selected, passing through all listings');
-      setSecondaryFilteredListings(primaryFilteredListings);
-      setStats(prev => ({ ...prev, secondary: primaryFilteredListings.length }));
-      return;
-    }
-
-    // Filter by selected neighborhoods
-    const filtered = primaryFilteredListings.filter(listing =>
-      selectedNeighborhoods.includes(listing['Location - Hood'])
     );
 
-    console.log(`✅ SECONDARY FILTER: ${filtered.length}/${primaryFilteredListings.length} listings (Neighborhoods: ${selectedNeighborhoods.length} selected)`);
-    setSecondaryFilteredListings(filtered);
-    setStats(prev => ({ ...prev, secondary: filtered.length }));
+    observer.observe(sentinelRef.current);
 
-  }, [primaryFilteredListings, selectedNeighborhoods]);
+    return () => {
+      if (sentinelRef.current) {
+        observer.unobserve(sentinelRef.current);
+      }
+    };
+  }, [hasMore, isLoading, onLoadMore]);
 
-  // ============================================================================
-  // LAYER 3: TERTIARY FILTER
-  // Price filtering
-  // ============================================================================
+  return (
+    <div className="listings-container">
+      {listings.map((listing, index) => (
+        <PropertyCard
+          key={listing.id}
+          listing={listing}
+          selectedDaysCount={selectedDaysCount}
+          onLocationClick={(listing) => {
+            if (mapRef.current) {
+              mapRef.current.zoomToListing(listing.id);
+            }
+          }}
+          onOpenContactModal={onOpenContactModal}
+          onOpenInfoModal={onOpenInfoModal}
+        />
+      ))}
 
+      {hasMore && (
+        <div ref={sentinelRef} className="lazy-load-sentinel">
+          <div className="loading-more">
+            <div className="spinner"></div>
+            <span>Loading more listings...</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * LoadingState - Loading spinner
+ */
+function LoadingState() {
+  return (
+    <div className="loading-skeleton active">
+      {[1, 2].map(i => (
+        <div key={i} className="skeleton-card">
+          <div className="skeleton-image"></div>
+          <div className="skeleton-content">
+            <div className="skeleton-line" style={{ width: '60%' }}></div>
+            <div className="skeleton-line" style={{ width: '80%' }}></div>
+            <div className="skeleton-line" style={{ width: '40%' }}></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * ErrorState - Error message component
+ */
+function ErrorState({ message, onRetry }) {
+  return (
+    <div className="error-message">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 8v4M12 16h.01" />
+      </svg>
+      <h3>Unable to Load Listings</h3>
+      <p>{message || 'Failed to load listings. Please try again.'}</p>
+      {onRetry && (
+        <button className="retry-btn" onClick={onRetry}>
+          Retry
+        </button>
+      )}
+    </div>
+  );
+}
+
+/**
+ * EmptyState - No results found message
+ */
+function EmptyState({ onResetFilters }) {
+  return (
+    <div className="no-results-notice">
+      <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="11" cy="11" r="8" />
+        <path d="m21 21-4.35-4.35" />
+      </svg>
+      <h3>No Listings Found</h3>
+      <p>No listings match your current filters. Try adjusting your selection.</p>
+      <button className="reset-filters-btn" onClick={onResetFilters}>
+        Reset Filters
+      </button>
+    </div>
+  );
+}
+
+// ============================================================================
+// Main SearchPage Component
+// ============================================================================
+
+export default function SearchPage() {
+  // State management
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [allActiveListings, setAllActiveListings] = useState([]); // ALL active listings (green pins, no filters)
+  const [allListings, setAllListings] = useState([]); // Filtered listings (purple pins)
+  const [displayedListings, setDisplayedListings] = useState([]); // Lazy-loaded subset for cards
+  const [loadedCount, setLoadedCount] = useState(0);
+
+  // Cascading filter layers (implementing the 4-layer architecture from markdown)
+  const [primaryFilteredListings, setPrimaryFilteredListings] = useState([]); // Layer 1: Borough + Week + Sort
+  const [secondaryFilteredListings, setSecondaryFilteredListings] = useState([]); // Layer 2: + Neighborhoods
+  const [tertiaryFilteredListings, setTertiaryFilteredListings] = useState([]); // Layer 3: + Price
+  // Layer 4 (Display) routes to one of the above based on active filters
+
+  // Modal state management
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+  const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
+  const [selectedListing, setSelectedListing] = useState(null);
+  const [infoModalTriggerRef, setInfoModalTriggerRef] = useState(null);
+
+  // Refs
+  const mapRef = useRef(null);
+  const fetchInProgressRef = useRef(false); // Track if fetch is already in progress
+  const lastFetchParamsRef = useRef(null); // Track last fetch parameters to prevent duplicates
+
+  // Parse URL parameters for initial filter state
+  const urlFilters = parseUrlToFilters();
+
+  // Filter state (initialized from URL if available)
+  const [selectedDays, setSelectedDays] = useState(urlFilters.selectedDays);
+  const [boroughs, setBoroughs] = useState([]);
+  const [selectedBorough, setSelectedBorough] = useState(urlFilters.selectedBorough);
+  const [neighborhoods, setNeighborhoods] = useState([]);
+  const [selectedNeighborhoods, setSelectedNeighborhoods] = useState(urlFilters.selectedNeighborhoods);
+  const [weekPattern, setWeekPattern] = useState(urlFilters.weekPattern);
+  const [priceTier, setPriceTier] = useState(urlFilters.priceTier);
+  const [sortBy, setSortBy] = useState(urlFilters.sortBy);
+  const [neighborhoodSearch, setNeighborhoodSearch] = useState('');
+
+  // UI state
+  const [filterPanelActive, setFilterPanelActive] = useState(false);
+  const [mapSectionActive, setMapSectionActive] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  // Flag to prevent URL update on initial load
+  const isInitialMount = useRef(true);
+
+  // Initialize data lookups on mount
   useEffect(() => {
-    console.log('🟡 LAYER 3: TERTIARY FILTER - Applying price filter');
+    const init = async () => {
+      if (!isInitialized()) {
+        console.log('Initializing data lookups...');
+        await initializeLookups();
+      }
+    };
+    init();
+  }, []);
 
-    if (secondaryFilteredListings.length === 0) {
-      setTertiaryFilteredListings([]);
-      setStats(prev => ({ ...prev, tertiary: 0 }));
+  // Fetch ALL active listings for green markers (NO FILTERS - runs once on mount)
+  useEffect(() => {
+    const fetchAllActiveListings = async () => {
+      console.log('🌍 Fetching ALL active listings for map background (green pins)...');
+
+      try {
+        const { data, error } = await supabase
+          .from('listing')
+          .select('*')
+          .eq('Active', true)
+          .eq('isForUsability', false);
+
+        if (error) throw error;
+
+        console.log('📊 fetchAllActiveListings: Supabase returned', data.length, 'active listings');
+
+        // Batch fetch photos for all listings
+        const allPhotoIds = new Set();
+        data.forEach(listing => {
+          const photosField = listing['Features - Photos'];
+          if (Array.isArray(photosField)) {
+            photosField.forEach(id => allPhotoIds.add(id));
+          } else if (typeof photosField === 'string') {
+            try {
+              const parsed = JSON.parse(photosField);
+              if (Array.isArray(parsed)) {
+                parsed.forEach(id => allPhotoIds.add(id));
+              }
+            } catch (e) {
+              // Ignore parse errors
+            }
+          }
+        });
+
+        const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds));
+
+        // Extract photos per listing
+        const resolvedPhotos = {};
+        data.forEach(listing => {
+          resolvedPhotos[listing._id] = extractPhotos(
+            listing['Features - Photos'],
+            photoMap,
+            listing._id
+          );
+        });
+
+        // Batch fetch host data
+        const hostIds = new Set();
+        data.forEach(listing => {
+          if (listing['Host / Landlord']) {
+            hostIds.add(listing['Host / Landlord']);
+          }
+        });
+
+        const hostMap = await fetchHostData(Array.from(hostIds));
+
+        // Map host data to listings
+        const resolvedHosts = {};
+        data.forEach(listing => {
+          const hostId = listing['Host / Landlord'];
+          resolvedHosts[listing._id] = hostMap[hostId] || null;
+        });
+
+        // Transform listings
+        const transformedListings = data.map(listing =>
+          transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
+        );
+
+        // Filter to only listings with valid coordinates (NO FALLBACK)
+        const listingsWithCoordinates = transformedListings.filter(listing => {
+          const hasValidCoords = listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
+          if (!hasValidCoords) {
+            console.warn('⚠️ fetchAllActiveListings: Excluding listing without coordinates:', {
+              id: listing.id,
+              title: listing.title
+            });
+          }
+          return hasValidCoords;
+        });
+
+        console.log(`✅ Fetched ${listingsWithCoordinates.length} active listings with coordinates for green markers`);
+        setAllActiveListings(listingsWithCoordinates);
+      } catch (error) {
+        console.error('❌ Failed to fetch all active listings:', error);
+        // Don't set error state - this shouldn't block the page, filtered results will still work
+      }
+    };
+
+    fetchAllActiveListings();
+  }, []); // Run once on mount
+
+  // Sync filter state to URL parameters
+  // NOTE: selectedDays is managed by SearchScheduleSelector component internally
+  useEffect(() => {
+    // Skip URL update on initial mount (URL already parsed)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
       return;
     }
 
-    // If no price filter, pass through all secondary listings
-    if (priceTier === 'all') {
-      console.log('   → No price filter, passing through all listings');
-      setTertiaryFilteredListings(secondaryFilteredListings);
-      setStats(prev => ({ ...prev, tertiary: secondaryFilteredListings.length }));
-      return;
-    }
+    // Update URL with current filter state (excluding selectedDays which is managed by component)
+    const filters = {
+      selectedBorough,
+      weekPattern,
+      priceTier,
+      sortBy,
+      selectedNeighborhoods
+    };
 
-    // Apply price filter
-    const priceRange = PRICE_TIERS[priceTier];
-    if (!priceRange) {
-      console.log('   → Invalid price tier, passing through all listings');
-      setTertiaryFilteredListings(secondaryFilteredListings);
-      setStats(prev => ({ ...prev, tertiary: secondaryFilteredListings.length }));
-      return;
-    }
+    updateUrlParams(filters, false); // false = push new history entry
+  }, [selectedBorough, weekPattern, priceTier, sortBy, selectedNeighborhoods]);
 
-    const filtered = secondaryFilteredListings.filter(listing => {
-      const price = listing['Standarized Minimum Nightly Price (Filter)'] || 0;
-      return price >= priceRange.min && price <= priceRange.max;
+  // Watch for browser back/forward navigation
+  useEffect(() => {
+    const cleanup = watchUrlChanges((newFilters) => {
+      console.log('URL changed via browser navigation, updating filters:', newFilters);
+
+      // Update all filter states from URL
+      setSelectedDays(newFilters.selectedDays);
+      setSelectedBorough(newFilters.selectedBorough);
+      setWeekPattern(newFilters.weekPattern);
+      setPriceTier(newFilters.priceTier);
+      setSortBy(newFilters.sortBy);
+      setSelectedNeighborhoods(newFilters.selectedNeighborhoods);
     });
 
-    console.log(`✅ TERTIARY FILTER: ${filtered.length}/${secondaryFilteredListings.length} listings (Price: ${priceTier})`);
-    setTertiaryFilteredListings(filtered);
-    setStats(prev => ({ ...prev, tertiary: filtered.length }));
-
-  }, [secondaryFilteredListings, priceTier]);
-
-  // ============================================================================
-  // LAYER 4: DISPLAY LAYER with CONDITIONAL ROUTING
-  // Decides which data source to display based on active filters
-  // ============================================================================
-
-  useEffect(() => {
-    console.log('🔴 LAYER 4: DISPLAY LAYER - Routing to correct data source');
-
-    // CONDITIONAL LOGIC (matches the markdown's decision tree)
-
-    // CONDITIONAL 4: Full filtering (Neighborhood + Price)
-    if (selectedNeighborhoods.length >= 1 && priceTier !== 'all') {
-      console.log('   → CONDITIONAL 4: Neighborhood + Price active → Using TERTIARY filter');
-      setDisplayListings(tertiaryFilteredListings);
-      setStats(prev => ({ ...prev, display: tertiaryFilteredListings.length }));
-      return;
-    }
-
-    // CONDITIONAL 3: Price only (no neighborhoods)
-    if (priceTier !== 'all' && selectedNeighborhoods.length === 0) {
-      console.log('   → CONDITIONAL 3: Price only → Using TERTIARY filter');
-      setDisplayListings(tertiaryFilteredListings);
-      setStats(prev => ({ ...prev, display: tertiaryFilteredListings.length }));
-      return;
-    }
-
-    // CONDITIONAL 1/2: Neighborhood only (no price)
-    if (selectedNeighborhoods.length >= 1 && priceTier === 'all') {
-      console.log('   → CONDITIONAL 1/2: Neighborhood only → Using SECONDARY filter');
-      setDisplayListings(secondaryFilteredListings);
-      setStats(prev => ({ ...prev, display: secondaryFilteredListings.length }));
-      return;
-    }
-
-    // DEFAULT: No filters active
-    console.log('   → DEFAULT: No filters → Using PRIMARY filter');
-    setDisplayListings(primaryFilteredListings);
-    setStats(prev => ({ ...prev, display: primaryFilteredListings.length }));
-
-  }, [primaryFilteredListings, secondaryFilteredListings, tertiaryFilteredListings, selectedNeighborhoods, priceTier]);
-
-  // ============================================================================
-  // INITIAL SETUP
-  // ============================================================================
+    return cleanup;
+  }, []);
 
   // Load boroughs on mount
   useEffect(() => {
-    async function loadBoroughs() {
+    const loadBoroughs = async () => {
       try {
         const { data, error } = await supabase
           .from('zat_geo_borough_toplevel')
@@ -264,22 +808,34 @@ export default function SearchPageTest() {
 
         setBoroughs(boroughList);
 
-        // Set default to Manhattan
-        const manhattan = boroughList.find(b => b.value === 'manhattan');
-        if (manhattan) {
-          setSelectedBorough(manhattan.value);
+        // Only set default borough if not already set from URL
+        if (!selectedBorough) {
+          const manhattan = boroughList.find(b => b.value === 'manhattan');
+          if (manhattan) {
+            setSelectedBorough(manhattan.value);
+          }
+        } else {
+          // Validate borough from URL exists in list
+          const boroughExists = boroughList.find(b => b.value === selectedBorough);
+          if (!boroughExists) {
+            console.warn(`Borough "${selectedBorough}" from URL not found, defaulting to Manhattan`);
+            const manhattan = boroughList.find(b => b.value === 'manhattan');
+            if (manhattan) {
+              setSelectedBorough(manhattan.value);
+            }
+          }
         }
       } catch (err) {
         console.error('Failed to load boroughs:', err);
       }
-    }
+    };
 
     loadBoroughs();
   }, []);
 
   // Load neighborhoods when borough changes
   useEffect(() => {
-    async function loadNeighborhoods() {
+    const loadNeighborhoods = async () => {
       if (!selectedBorough || boroughs.length === 0) return;
 
       const borough = boroughs.find(b => b.value === selectedBorough);
@@ -307,534 +863,724 @@ export default function SearchPageTest() {
       } catch (err) {
         console.error('Failed to load neighborhoods:', err);
       }
-    }
+    };
 
     loadNeighborhoods();
   }, [selectedBorough, boroughs]);
 
-  // ============================================================================
-  // EVENT HANDLERS
-  // ============================================================================
+  // Fetch listings with 4-layer cascading filter architecture
+  const fetchListings = useCallback(async () => {
+    if (boroughs.length === 0 || !selectedBorough) return;
 
-  const handleNeighborhoodToggle = (neighborhoodId) => {
-    const isSelected = selectedNeighborhoods.includes(neighborhoodId);
-    if (isSelected) {
-      setSelectedNeighborhoods(prev => prev.filter(id => id !== neighborhoodId));
-    } else {
-      setSelectedNeighborhoods(prev => [...prev, neighborhoodId]);
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const borough = boroughs.find(b => b.value === selectedBorough);
+      if (!borough) throw new Error('Borough not found');
+
+      console.log('\n🔍 ===== STARTING 4-LAYER CASCADE =====');
+      console.log('Filters:', { borough: borough.name, weekPattern, selectedNeighborhoods: selectedNeighborhoods.length, priceTier, selectedDays: selectedDays.length });
+
+      // ========================================================================
+      // LAYER 1 (PRIMARY): Borough + Week Pattern + Sorting ONLY
+      // ========================================================================
+      console.log('\n🔵 LAYER 1 (PRIMARY): Fetching listings with Borough + Week + Sort');
+
+      let query = supabase
+        .from('listing')
+        .select('*')
+        .eq('"Complete"', true)
+        .or('"Active".eq.true,"Active".is.null')
+        .eq('"Location - Borough"', borough.id);
+
+      // Apply week pattern filter (part of Layer 1)
+      if (weekPattern !== 'every-week') {
+        const weekPatternText = WEEK_PATTERNS[weekPattern];
+        if (weekPatternText) {
+          query = query.eq('"Weeks offered"', weekPatternText);
+          console.log('   Applying week pattern:', weekPatternText);
+        }
+      }
+
+      // Apply sorting (part of Layer 1)
+      const sortConfig = SORT_OPTIONS[sortBy] || SORT_OPTIONS.recommended;
+      query = query.order(sortConfig.field, { ascending: sortConfig.ascending });
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      console.log('   Supabase returned:', data.length, 'raw listings');
+
+      // Batch fetch photos
+      const allPhotoIds = new Set();
+      data.forEach(listing => {
+        const photosField = listing['Features - Photos'];
+        if (Array.isArray(photosField)) {
+          photosField.forEach(id => allPhotoIds.add(id));
+        } else if (typeof photosField === 'string') {
+          try {
+            const parsed = JSON.parse(photosField);
+            if (Array.isArray(parsed)) parsed.forEach(id => allPhotoIds.add(id));
+          } catch (e) {}
+        }
+      });
+      const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds));
+
+      const resolvedPhotos = {};
+      data.forEach(listing => {
+        resolvedPhotos[listing._id] = extractPhotos(listing['Features - Photos'], photoMap, listing._id);
+      });
+
+      // Batch fetch host data
+      const hostIds = new Set();
+      data.forEach(listing => {
+        if (listing['Host / Landlord']) hostIds.add(listing['Host / Landlord']);
+      });
+      const hostMap = await fetchHostData(Array.from(hostIds));
+
+      const resolvedHosts = {};
+      data.forEach(listing => {
+        const hostId = listing['Host / Landlord'];
+        resolvedHosts[listing._id] = hostMap[hostId] || null;
+      });
+
+      // Transform listings
+      const transformedListings = data.map(listing =>
+        transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
+      );
+
+      // Filter out listings without coordinates (required for map)
+      const layer1Results = transformedListings.filter(listing => {
+        return listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
+      });
+
+      setPrimaryFilteredListings(layer1Results);
+      console.log('✅ LAYER 1 COMPLETE:', layer1Results.length, 'listings');
+
+      // ========================================================================
+      // LAYER 2 (SECONDARY): + Neighborhoods
+      // ========================================================================
+      console.log('\n🟢 LAYER 2 (SECONDARY): Filtering by neighborhoods');
+
+      let layer2Results = layer1Results;
+      if (selectedNeighborhoods.length > 0) {
+        layer2Results = layer1Results.filter(listing => {
+          return selectedNeighborhoods.includes(listing.neighborhoodId);
+        });
+        console.log('   Filtered to', selectedNeighborhoods.length, 'neighborhoods');
+      } else {
+        console.log('   No neighborhood filter - passing through');
+      }
+
+      setSecondaryFilteredListings(layer2Results);
+      console.log('✅ LAYER 2 COMPLETE:', layer2Results.length, 'listings');
+
+      // ========================================================================
+      // LAYER 3 (TERTIARY): + Price
+      // ========================================================================
+      console.log('\n🟡 LAYER 3 (TERTIARY): Filtering by price');
+
+      let layer3Results = layer2Results;
+      if (priceTier !== 'all') {
+        const priceRange = PRICE_TIERS[priceTier];
+        if (priceRange) {
+          layer3Results = layer2Results.filter(listing => {
+            const price = listing.price?.starting || listing['Starting nightly price'] || 0;
+            return price >= priceRange.min && price <= priceRange.max;
+          });
+          console.log('   Filtered to price range:', `$${priceRange.min}-$${priceRange.max}`);
+        }
+      } else {
+        console.log('   No price filter - passing through');
+      }
+
+      setTertiaryFilteredListings(layer3Results);
+      console.log('✅ LAYER 3 COMPLETE:', layer3Results.length, 'listings');
+
+      // ========================================================================
+      // LAYER 4 (DISPLAY): Conditional Routing
+      // ========================================================================
+      console.log('\n🟣 LAYER 4 (DISPLAY): Determining which layer to display');
+
+      const hasNeighborhoods = selectedNeighborhoods.length > 0;
+      const hasPrice = priceTier !== 'all';
+
+      let displaySource;
+      let displayListings;
+
+      if (hasNeighborhoods && hasPrice) {
+        displaySource = 'TERTIARY (Neighborhoods + Price)';
+        displayListings = layer3Results;
+      } else if (hasPrice && !hasNeighborhoods) {
+        displaySource = 'TERTIARY (Price only)';
+        displayListings = layer3Results;
+      } else if (hasNeighborhoods && !hasPrice) {
+        displaySource = 'SECONDARY (Neighborhoods only)';
+        displayListings = layer2Results;
+      } else {
+        displaySource = 'PRIMARY (No optional filters)';
+        displayListings = layer1Results;
+      }
+
+      console.log('   Using:', displaySource, '→', displayListings.length, 'listings');
+
+      // ========================================================================
+      // FINAL FILTER: Schedule/Days (applied AFTER all 4 layers)
+      // ========================================================================
+      let finalListings = displayListings;
+      if (selectedDays.length > 0) {
+        console.log('\n📅 FINAL FILTER: Applying schedule/days filter');
+        finalListings = displayListings.filter(listing => {
+          const listingDays = Array.isArray(listing.days_available) ? listing.days_available : [];
+
+          // Empty/null days = available ALL days
+          if (listingDays.length === 0) return true;
+
+          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+          const selectedDayNames = selectedDays.map(idx => dayNames[idx]);
+          const normalizedListingDays = listingDays.filter(d => d && typeof d === 'string').map(d => d.toLowerCase().trim());
+
+          const missingDays = selectedDayNames.filter(requiredDay =>
+            !normalizedListingDays.some(listingDay => listingDay === requiredDay.toLowerCase())
+          );
+
+          return missingDays.length === 0;
+        });
+        console.log('   After days filter:', finalListings.length, 'listings');
+      }
+
+      console.log('\n📊 ===== CASCADE SUMMARY =====');
+      console.log('🔵 Layer 1 (Primary):', layer1Results.length);
+      console.log('🟢 Layer 2 (Secondary):', layer2Results.length);
+      console.log('🟡 Layer 3 (Tertiary):', layer3Results.length);
+      console.log('🟣 Layer 4 (Display):', displayListings.length);
+      console.log('📅 Final (After days):', finalListings.length);
+      console.log('✅ Displaying source:', displaySource);
+      console.log('================================\n');
+
+      setAllListings(finalListings);
+      setLoadedCount(0);
+
+    } catch (err) {
+      console.error('❌ Failed to fetch listings:', err);
+      setError('We had trouble loading listings. Please try refreshing the page or adjusting your filters.');
+    } finally {
+      setIsLoading(false);
     }
+  }, [boroughs, selectedBorough, selectedNeighborhoods, weekPattern, priceTier, sortBy, selectedDays]);
+
+  // Transform raw listing data
+  const transformListing = (dbListing, images, hostData) => {
+    // Resolve human-readable names from database IDs
+    const neighborhoodName = getNeighborhoodName(dbListing['Location - Hood']);
+    const boroughName = getBoroughName(dbListing['Location - Borough']);
+    const propertyType = getPropertyTypeLabel(dbListing['Features - Type of Space']);
+
+    // Build location string with proper formatting
+    const locationParts = [];
+    if (neighborhoodName) locationParts.push(neighborhoodName);
+    if (boroughName) locationParts.push(boroughName);
+    const location = locationParts.join(', ') || 'New York, NY';
+
+    // Extract coordinates from JSONB field "Location - Address"
+    // Note: Supabase returns JSONB as a string, so we need to parse it
+    // Format: { address: "...", lat: number, lng: number }
+    let locationAddress = dbListing['Location - Address'];
+
+    // Parse if it's a string
+    if (typeof locationAddress === 'string') {
+      try {
+        locationAddress = JSON.parse(locationAddress);
+      } catch (error) {
+        console.error('❌ SearchPage: Failed to parse Location - Address:', {
+          id: dbListing._id,
+          name: dbListing.Name,
+          rawValue: locationAddress,
+          error: error.message
+        });
+        locationAddress = null;
+      }
+    }
+
+    const lat = locationAddress?.lat;
+    const lng = locationAddress?.lng;
+
+    console.log('🔄 SearchPage: Transforming listing:', {
+      id: dbListing._id,
+      name: dbListing.Name,
+      hasLocationAddress: !!locationAddress,
+      locationAddress: locationAddress,
+      extractedLat: lat,
+      extractedLng: lng,
+      hasValidCoords: !!(lat && lng)
+    });
+
+    if (!lat || !lng) {
+      console.error('❌ SearchPage: Missing coordinates for listing - will be filtered out:', {
+        id: dbListing._id,
+        name: dbListing.Name,
+        locationAddress: locationAddress
+      });
+    } else {
+      console.log('✅ SearchPage: Valid coordinates found:', {
+        id: dbListing._id,
+        name: dbListing.Name,
+        lat,
+        lng
+      });
+    }
+
+    const coordinates = (lat && lng) ? { lat, lng } : null;
+
+    console.log('📍 SearchPage: Final coordinates for listing:', {
+      id: dbListing._id,
+      coordinates,
+      hasValidCoordinates: !!coordinates
+    });
+
+    return {
+      id: dbListing._id,
+      title: dbListing.Name || 'Unnamed Listing',
+      location: location,
+      neighborhood: neighborhoodName || '',
+      neighborhoodId: dbListing['Location - Hood'], // Store neighborhood ID for filtering
+      borough: boroughName || '',
+      coordinates,
+      price: {
+        starting: dbListing['Standarized Minimum Nightly Price (Filter)'] || 0,
+        full: dbListing['💰Nightly Host Rate for 7 nights'] || 0
+      },
+      'Starting nightly price': dbListing['Standarized Minimum Nightly Price (Filter)'] || 0,
+      'Price 2 nights selected': dbListing['💰Nightly Host Rate for 2 nights'] || null,
+      'Price 3 nights selected': dbListing['💰Nightly Host Rate for 3 nights'] || null,
+      'Price 4 nights selected': dbListing['💰Nightly Host Rate for 4 nights'] || null,
+      'Price 5 nights selected': dbListing['💰Nightly Host Rate for 5 nights'] || null,
+      'Price 6 nights selected': null,
+      'Price 7 nights selected': dbListing['💰Nightly Host Rate for 7 nights'] || null,
+      type: propertyType,
+      squareFeet: dbListing['Features - SQFT Area'] || null,
+      maxGuests: dbListing['Features - Qty Guests'] || 1,
+      bedrooms: dbListing['Features - Qty Bedrooms'] || 0,
+      bathrooms: dbListing['Features - Qty Bathrooms'] || 0,
+      amenities: parseAmenities(dbListing),
+      host: hostData || {
+        name: null,
+        image: null,
+        verified: false
+      },
+      // Photos loaded via batch fetch BEFORE transformation
+      images: images || [],
+      description: `${(dbListing['Features - Qty Bedrooms'] || 0) === 0 ? 'Studio' : `${dbListing['Features - Qty Bedrooms']} bedroom`} • ${dbListing['Features - Qty Bathrooms'] || 0} bathroom`,
+      weeks_offered: dbListing['Weeks offered'] || 'Every week',
+      // Parse JSONB field that may be stringified JSON or native array
+      days_available: parseJsonArray(dbListing['Days Available (List of Days)']),
+      isNew: false
+    };
   };
 
+  // Fetch listings when filters change
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
+
+  // Lazy load listings
+  useEffect(() => {
+    if (allListings.length === 0) {
+      setDisplayedListings([]);
+      return;
+    }
+
+    const initialCount = LISTING_CONFIG.INITIAL_LOAD_COUNT;
+    setDisplayedListings(allListings.slice(0, initialCount));
+    setLoadedCount(initialCount);
+  }, [allListings]);
+
+  const handleLoadMore = useCallback(() => {
+    const batchSize = LISTING_CONFIG.LOAD_BATCH_SIZE;
+    const nextCount = Math.min(loadedCount + batchSize, allListings.length);
+    setDisplayedListings(allListings.slice(0, nextCount));
+    setLoadedCount(nextCount);
+  }, [loadedCount, allListings]);
+
+  const hasMore = loadedCount < allListings.length;
+
+  // Reset all filters
   const handleResetFilters = () => {
+    setSelectedDays([1, 2, 3, 4, 5]);
+    const manhattan = boroughs.find(b => b.value === 'manhattan');
+    if (manhattan) {
+      setSelectedBorough(manhattan.value);
+    }
     setSelectedNeighborhoods([]);
+    setWeekPattern('every-week');
     setPriceTier('all');
     setSortBy('recommended');
-    setWeekPattern('every-week');
+    setNeighborhoodSearch('');
   };
 
-  // ============================================================================
-  // RENDER
-  // ============================================================================
+  // Modal handler functions
+  const handleOpenContactModal = (listing) => {
+    setSelectedListing(listing);
+    setIsContactModalOpen(true);
+  };
 
+  const handleCloseContactModal = () => {
+    setIsContactModalOpen(false);
+    setSelectedListing(null);
+  };
+
+  const handleOpenInfoModal = (listing, triggerRef) => {
+    setSelectedListing(listing);
+    setInfoModalTriggerRef(triggerRef);
+    setIsInfoModalOpen(true);
+  };
+
+  const handleCloseInfoModal = () => {
+    setIsInfoModalOpen(false);
+    setSelectedListing(null);
+    setInfoModalTriggerRef(null);
+  };
+
+  const handleOpenAIResearchModal = () => {
+    setIsAIResearchModalOpen(true);
+  };
+
+  const handleCloseAIResearchModal = () => {
+    setIsAIResearchModalOpen(false);
+  };
+
+  // Mount SearchScheduleSelector component in both mobile and desktop locations
+  useEffect(() => {
+    const mountPointDesktop = document.getElementById('schedule-selector-mount-point');
+    const mountPointMobile = document.getElementById('schedule-selector-mount-point-mobile');
+    const roots = [];
+
+    const selectorProps = {
+      onSelectionChange: (days) => {
+        console.log('Selected days:', days);
+        // Convert day objects to indices
+        const dayIndices = days.map(d => d.index);
+        setSelectedDays(dayIndices);
+      },
+      onError: (error) => console.error('SearchScheduleSelector error:', error)
+      // NOTE: Not passing initialSelection - component will read from URL internally
+    };
+
+    if (mountPointDesktop) {
+      const rootDesktop = createRoot(mountPointDesktop);
+      rootDesktop.render(<SearchScheduleSelector {...selectorProps} />);
+      roots.push(rootDesktop);
+    }
+
+    if (mountPointMobile) {
+      const rootMobile = createRoot(mountPointMobile);
+      rootMobile.render(<SearchScheduleSelector {...selectorProps} />);
+      roots.push(rootMobile);
+    }
+
+    return () => {
+      roots.forEach(root => root.unmount());
+    };
+  }, []);
+
+  // Re-render SearchScheduleSelector when selectedDays changes (e.g., from URL)
+  useEffect(() => {
+    const mountPoint = document.getElementById('search-schedule-selector-mount');
+    if (mountPoint && mountPoint._reactRoot) {
+      // Component will re-render via key change or we can use a state update
+      // For now, we'll let the initialSelection prop handle it via component internal state
+    }
+  }, [selectedDays]);
+
+  // Render
   return (
-    <div style={{
-      padding: '40px',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-      maxWidth: '1400px',
-      margin: '0 auto'
-    }}>
-      <header style={{ marginBottom: '40px' }}>
-        <h1 style={{
-          color: '#5B21B6',
-          fontSize: '32px',
-          marginBottom: '10px'
-        }}>
-          🧪 Cascading Filter Architecture Test
-        </h1>
-        <p style={{ color: '#666', fontSize: '16px' }}>
-          Testing the 4-layer filtering system: Primary → Secondary → Tertiary → Display
-        </p>
-      </header>
+    <div className="search-page">
+      {/* Two-column layout: Listings (left) + Map (right) */}
+      <main className="two-column-layout">
+        {/* LEFT COLUMN: Listings with filters */}
+        <section className="listings-column">
+          {/* Mobile Filter Bar - Sticky at top on mobile */}
+          <MobileFilterBar
+            onFilterClick={() => setFilterPanelActive(!filterPanelActive)}
+            onMapClick={() => setMapSectionActive(!mapSectionActive)}
+          />
 
-      {/* FILTER CONTROLS */}
-      <div style={{
-        background: '#f9fafb',
-        padding: '24px',
-        borderRadius: '12px',
-        marginBottom: '24px',
-        border: '1px solid #e5e7eb'
-      }}>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px'
-        }}>
-          {/* Borough Select */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontWeight: '600',
-              marginBottom: '8px',
-              fontSize: '14px',
-              color: '#374151'
-            }}>
-              🏙️ Borough
-            </label>
-            <select
-              value={selectedBorough}
-              onChange={(e) => setSelectedBorough(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                border: '1px solid #d1d5db',
-                fontSize: '14px',
-                background: 'white'
-              }}
-            >
-              {boroughs.map(borough => (
-                <option key={borough.id} value={borough.value}>
-                  {borough.name}
-                </option>
-              ))}
-            </select>
+          {/* Mobile Schedule Selector - Always visible on mobile */}
+          <div className="mobile-schedule-selector">
+            <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
+              {/* SearchScheduleSelector will be mounted here on mobile */}
+            </div>
           </div>
 
-          {/* Week Pattern */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontWeight: '600',
-              marginBottom: '8px',
-              fontSize: '14px',
-              color: '#374151'
-            }}>
-              📅 Week Pattern
-            </label>
-            <select
-              value={weekPattern}
-              onChange={(e) => setWeekPattern(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                border: '1px solid #d1d5db',
-                fontSize: '14px',
-                background: 'white'
-              }}
-            >
-              <option value="every-week">Every week</option>
-              <option value="one-on-off">One on, one off</option>
-              <option value="two-on-off">Two on, two off</option>
-              <option value="one-three-off">One on, three off</option>
-            </select>
-          </div>
+          {/* All filters in single horizontal flexbox container */}
+          <div className={`inline-filters ${filterPanelActive ? 'active' : ''}`}>
+            {/* Close button for mobile filter panel */}
+            {filterPanelActive && (
+              <button
+                className="mobile-filter-close-btn"
+                onClick={() => setFilterPanelActive(false)}
+              >
+                ✕ Close Filters
+              </button>
+            )}
 
-          {/* Price Tier */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontWeight: '600',
-              marginBottom: '8px',
-              fontSize: '14px',
-              color: '#374151'
-            }}>
-              💰 Price Tier
-            </label>
-            <select
-              value={priceTier}
-              onChange={(e) => setPriceTier(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                border: '1px solid #d1d5db',
-                fontSize: '14px',
-                background: 'white'
-              }}
-            >
-              <option value="all">All Prices</option>
-              <option value="under-200">&lt; $200/night</option>
-              <option value="200-350">$200-$350/night</option>
-              <option value="350-500">$350-$500/night</option>
-              <option value="500-plus">$500+/night</option>
-            </select>
-          </div>
+            {/* Schedule Selector - First item on left (desktop only) */}
+            <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
+              {/* SearchScheduleSelector will be mounted here on desktop */}
+            </div>
 
-          {/* Sort By */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontWeight: '600',
-              marginBottom: '8px',
-              fontSize: '14px',
-              color: '#374151'
-            }}>
-              🔢 Sort By
-            </label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '8px',
-                border: '1px solid #d1d5db',
-                fontSize: '14px',
-                background: 'white'
-              }}
-            >
-              <option value="recommended">Recommended</option>
-              <option value="price-low">Price: Low to High</option>
-              <option value="most-viewed">Most Viewed</option>
-              <option value="recent">Recently Added</option>
-            </select>
-          </div>
-        </div>
+            {/* Neighborhood Multi-Select - Second item, beside schedule selector */}
+            <div className="filter-group compact neighborhoods-group">
+              <label htmlFor="neighborhoodSearch">Refine Neighborhood(s)</label>
+              <input
+                type="text"
+                id="neighborhoodSearch"
+                placeholder="Search neighborhoods..."
+                className="neighborhood-search"
+                value={neighborhoodSearch}
+                onChange={(e) => setNeighborhoodSearch(e.target.value)}
+              />
 
-        {/* Neighborhood Multi-Select */}
-        <div style={{ marginTop: '16px' }}>
-          <label style={{
-            display: 'block',
-            fontWeight: '600',
-            marginBottom: '8px',
-            fontSize: '14px',
-            color: '#374151'
-          }}>
-            🏘️ Neighborhoods ({selectedNeighborhoods.length} selected)
-          </label>
-          <div style={{
-            maxHeight: '150px',
-            overflowY: 'auto',
-            border: '1px solid #d1d5db',
-            borderRadius: '8px',
-            padding: '12px',
-            background: 'white'
-          }}>
-            {neighborhoods.length === 0 ? (
-              <div style={{ color: '#9ca3af', fontSize: '14px' }}>
-                Loading neighborhoods...
+              {/* Selected neighborhood chips */}
+              {selectedNeighborhoods.length > 0 && (
+                <div className="selected-neighborhoods-chips">
+                  {selectedNeighborhoods.map(id => {
+                    const neighborhood = neighborhoods.find(n => n.id === id);
+                    if (!neighborhood) return null;
+
+                    return (
+                      <div key={id} className="neighborhood-chip">
+                        <span>{neighborhood.name}</span>
+                        <button
+                          className="neighborhood-chip-remove"
+                          onClick={() => {
+                            setSelectedNeighborhoods(selectedNeighborhoods.filter(nId => nId !== id));
+                          }}
+                          aria-label={`Remove ${neighborhood.name}`}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Neighborhood list */}
+              <div className="neighborhood-list">
+                {(() => {
+                  const filteredNeighborhoods = neighborhoods.filter(n => {
+                    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
+                    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
+                  });
+
+                  if (filteredNeighborhoods.length === 0) {
+                    return (
+                      <div style={{ padding: '10px', color: '#666' }}>
+                        {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
+                      </div>
+                    );
+                  }
+
+                  return filteredNeighborhoods.map(neighborhood => (
+                    <label key={neighborhood.id}>
+                      <input
+                        type="checkbox"
+                        value={neighborhood.id}
+                        checked={selectedNeighborhoods.includes(neighborhood.id)}
+                        onChange={() => {
+                          const isSelected = selectedNeighborhoods.includes(neighborhood.id);
+                          if (isSelected) {
+                            setSelectedNeighborhoods(selectedNeighborhoods.filter(id => id !== neighborhood.id));
+                          } else {
+                            setSelectedNeighborhoods([...selectedNeighborhoods, neighborhood.id]);
+                          }
+                        }}
+                      />
+                      {neighborhood.name}
+                    </label>
+                  ));
+                })()}
               </div>
-            ) : (
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                gap: '8px'
-              }}>
-                {neighborhoods.map(neighborhood => (
-                  <label
-                    key={neighborhood.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      padding: '4px'
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedNeighborhoods.includes(neighborhood.id)}
-                      onChange={() => handleNeighborhoodToggle(neighborhood.id)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span>{neighborhood.name}</span>
-                  </label>
-                ))}
+            </div>
+
+            {/* Borough Select */}
+            <div className="filter-group compact">
+              <label htmlFor="boroughSelect">Borough</label>
+              <select
+                id="boroughSelect"
+                className="filter-select"
+                value={selectedBorough}
+                onChange={(e) => setSelectedBorough(e.target.value)}
+              >
+                {boroughs.length === 0 ? (
+                  <option value="">Loading...</option>
+                ) : (
+                  boroughs.map(borough => (
+                    <option key={borough.id} value={borough.value}>
+                      {borough.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+
+            {/* Week Pattern */}
+            <div className="filter-group compact">
+              <label htmlFor="weekPattern">Week Pattern</label>
+              <select
+                id="weekPattern"
+                className="filter-select"
+                value={weekPattern}
+                onChange={(e) => setWeekPattern(e.target.value)}
+              >
+                <option value="every-week">Every week</option>
+                <option value="one-on-off">One on, one off</option>
+                <option value="two-on-off">Two on, two off</option>
+                <option value="one-three-off">One on, three off</option>
+              </select>
+            </div>
+
+            {/* Price Tier */}
+            <div className="filter-group compact">
+              <label htmlFor="priceTier">Price</label>
+              <select
+                id="priceTier"
+                className="filter-select"
+                value={priceTier}
+                onChange={(e) => setPriceTier(e.target.value)}
+              >
+                <option value="under-200">&lt; $200/night</option>
+                <option value="200-350">$200-$350/night</option>
+                <option value="350-500">$350-$500/night</option>
+                <option value="500-plus">$500+/night</option>
+                <option value="all">All Prices</option>
+              </select>
+            </div>
+
+            {/* Sort By */}
+            <div className="filter-group compact">
+              <label htmlFor="sortBy">Sort By</label>
+              <select
+                id="sortBy"
+                className="filter-select"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="recommended">Recommended</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="most-viewed">Most Viewed</option>
+                <option value="recent">Recently Added</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Listings count */}
+          <div className="listings-count">
+            <strong>{allListings.length} listings found</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
+          </div>
+
+          {/* Listings content */}
+          <div className="listings-content">
+            {isLoading && <LoadingState />}
+
+            {!isLoading && error && (
+              <ErrorState message={error} onRetry={fetchListings} />
+            )}
+
+            {!isLoading && !error && allListings.length === 0 && (
+              <EmptyState onResetFilters={handleResetFilters} />
+            )}
+
+            {!isLoading && !error && allListings.length > 0 && (
+              <ListingsGrid
+                listings={displayedListings}
+                selectedDaysCount={selectedDays.length}
+                onLoadMore={handleLoadMore}
+                hasMore={hasMore}
+                isLoading={isLoading}
+                onOpenContactModal={handleOpenContactModal}
+                onOpenInfoModal={handleOpenInfoModal}
+                mapRef={mapRef}
+              />
+            )}
+          </div>
+        </section>
+
+        {/* RIGHT COLUMN: Map with integrated header */}
+        <section className="map-column">
+          {/* Integrated Logo and Hamburger Menu */}
+          <div className="map-header">
+            <a href="https://splitlease.app" className="map-logo">
+              <img
+                src="/assets/images/split-lease-purple-circle.png"
+                alt="Split Lease Logo"
+                className="logo-icon"
+                width="36"
+                height="36"
+              />
+              <span className="logo-text">Split Lease</span>
+            </a>
+
+            {/* Hamburger Menu */}
+            <button
+              className="hamburger-menu"
+              onClick={() => setMenuOpen(!menuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span>Menu</span>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu */}
+            {menuOpen && (
+              <div className="header-dropdown">
+                <a href="https://splitlease.app/how-it-works">3 Easy Steps To Book</a>
+                <a href="/guest-success">Success Stories</a>
+                <a href={SIGNUP_LOGIN_URL}>Sign In / Sign Up</a>
+                <a href="https://splitlease.app/why-split-lease">Understand Split Lease</a>
+                <a href="https://splitlease.app/faq">Explore FAQs</a>
               </div>
             )}
           </div>
-        </div>
 
-        {/* Reset Button */}
-        <button
-          onClick={handleResetFilters}
-          style={{
-            marginTop: '16px',
-            padding: '10px 20px',
-            background: '#ef4444',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}
-        >
-          🔄 Reset All Filters
-        </button>
-      </div>
-
-      {/* FILTER FLOW VISUALIZATION */}
-      <div style={{
-        background: '#ffffff',
-        padding: '24px',
-        borderRadius: '12px',
-        marginBottom: '24px',
-        border: '2px solid #5B21B6'
-      }}>
-        <h2 style={{
-          fontSize: '20px',
-          fontWeight: '700',
-          marginBottom: '20px',
-          color: '#5B21B6'
-        }}>
-          📊 Filter Flow Visualization
-        </h2>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: '16px'
-        }}>
-          {/* Layer 1: Primary */}
-          <div style={{
-            background: '#dbeafe',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '2px solid #3b82f6'
-          }}>
-            <div style={{ fontWeight: '700', marginBottom: '8px', color: '#1e40af' }}>
-              🔵 Layer 1: Primary
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#1e40af' }}>
-              {stats.primary}
-            </div>
-            <div style={{ fontSize: '12px', color: '#1e40af', marginTop: '4px' }}>
-              Borough + Week + Sort
-            </div>
-          </div>
-
-          {/* Layer 2: Secondary */}
-          <div style={{
-            background: '#d1fae5',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '2px solid #10b981'
-          }}>
-            <div style={{ fontWeight: '700', marginBottom: '8px', color: '#065f46' }}>
-              🟢 Layer 2: Secondary
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#065f46' }}>
-              {stats.secondary}
-            </div>
-            <div style={{ fontSize: '12px', color: '#065f46', marginTop: '4px' }}>
-              + Neighborhoods
-            </div>
-          </div>
-
-          {/* Layer 3: Tertiary */}
-          <div style={{
-            background: '#fef3c7',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '2px solid #f59e0b'
-          }}>
-            <div style={{ fontWeight: '700', marginBottom: '8px', color: '#92400e' }}>
-              🟡 Layer 3: Tertiary
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#92400e' }}>
-              {stats.tertiary}
-            </div>
-            <div style={{ fontSize: '12px', color: '#92400e', marginTop: '4px' }}>
-              + Price
-            </div>
-          </div>
-
-          {/* Layer 4: Display */}
-          <div style={{
-            background: '#fee2e2',
-            padding: '16px',
-            borderRadius: '8px',
-            border: '2px solid #ef4444'
-          }}>
-            <div style={{ fontWeight: '700', marginBottom: '8px', color: '#991b1b' }}>
-              🔴 Layer 4: Display
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: '700', color: '#991b1b' }}>
-              {stats.display}
-            </div>
-            <div style={{ fontSize: '12px', color: '#991b1b', marginTop: '4px' }}>
-              Final Output
-            </div>
-          </div>
-        </div>
-
-        {/* Active Conditional Indicator */}
-        <div style={{
-          marginTop: '20px',
-          padding: '16px',
-          background: '#f3f4f6',
-          borderRadius: '8px',
-          border: '1px solid #d1d5db'
-        }}>
-          <div style={{ fontWeight: '700', marginBottom: '8px', fontSize: '14px' }}>
-            🎯 Active Conditional:
-          </div>
-          <div style={{ fontSize: '16px', color: '#374151' }}>
-            {selectedNeighborhoods.length >= 1 && priceTier !== 'all' && (
-              <span>✅ CONDITIONAL 4: Neighborhood + Price → Using TERTIARY filter</span>
-            )}
-            {priceTier !== 'all' && selectedNeighborhoods.length === 0 && (
-              <span>✅ CONDITIONAL 3: Price only → Using TERTIARY filter</span>
-            )}
-            {selectedNeighborhoods.length >= 1 && priceTier === 'all' && (
-              <span>✅ CONDITIONAL 1/2: Neighborhood only → Using SECONDARY filter</span>
-            )}
-            {selectedNeighborhoods.length === 0 && priceTier === 'all' && (
-              <span>✅ DEFAULT: No filters → Using PRIMARY filter</span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* LISTINGS TABLE */}
-      {isLoading && (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#9ca3af' }}>
-          Loading...
-        </div>
-      )}
-
-      {error && (
-        <div style={{
-          background: '#fee2e2',
-          padding: '20px',
-          borderRadius: '8px',
-          color: '#991b1b',
-          marginBottom: '24px'
-        }}>
-          <strong>Error:</strong> {error}
-        </div>
-      )}
-
-      {!isLoading && !error && displayListings.length === 0 && (
-        <div style={{
-          background: '#f3f4f6',
-          padding: '40px',
-          borderRadius: '12px',
-          textAlign: 'center',
-          color: '#6b7280'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔍</div>
-          <h3 style={{ fontSize: '20px', marginBottom: '8px' }}>No Listings Found</h3>
-          <p>Try adjusting your filters</p>
-          <button
-            onClick={handleResetFilters}
-            style={{
-              marginTop: '16px',
-              padding: '10px 20px',
-              background: '#5B21B6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer'
+          <GoogleMap
+            ref={mapRef}
+            listings={allActiveListings}
+            filteredListings={allListings}
+            selectedListing={null}
+            selectedBorough={selectedBorough}
+            onMarkerClick={(listing) => {
+              console.log('Marker clicked:', listing.title);
             }}
-          >
-            Reset Filters
-          </button>
-        </div>
-      )}
+            onAIResearchClick={handleOpenAIResearchModal}
+          />
+        </section>
+      </main>
 
-      {!isLoading && !error && displayListings.length > 0 && (
-        <div>
-          <h2 style={{
-            fontSize: '20px',
-            fontWeight: '700',
-            marginBottom: '16px',
-            color: '#111827'
-          }}>
-            📋 Listings (showing {displayListings.length})
-          </h2>
-
-          <div style={{
-            background: 'white',
-            borderRadius: '12px',
-            overflow: 'hidden',
-            border: '1px solid #e5e7eb'
-          }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse'
-            }}>
-              <thead>
-                <tr style={{ background: '#f9fafb', borderBottom: '2px solid #e5e7eb' }}>
-                  <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#374151' }}>#</th>
-                  <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Name</th>
-                  <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Price</th>
-                  <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Week Pattern</th>
-                  <th style={{ padding: '12px', textAlign: 'left', fontSize: '14px', fontWeight: '600', color: '#374151' }}>Active</th>
-                </tr>
-              </thead>
-              <tbody>
-                {displayListings.slice(0, 50).map((listing, i) => (
-                  <tr
-                    key={listing._id}
-                    style={{
-                      borderBottom: '1px solid #f3f4f6',
-                      transition: 'background 0.2s'
-                    }}
-                  >
-                    <td style={{ padding: '12px', fontSize: '14px', color: '#6b7280' }}>{i + 1}</td>
-                    <td style={{ padding: '12px', fontSize: '14px', color: '#111827', fontWeight: '500' }}>
-                      {listing.Name}
-                    </td>
-                    <td style={{ padding: '12px', fontSize: '14px', color: '#059669', fontWeight: '600' }}>
-                      ${listing['Standarized Minimum Nightly Price (Filter)'] || 'N/A'}
-                    </td>
-                    <td style={{ padding: '12px', fontSize: '14px', color: '#6b7280' }}>
-                      {listing['Weeks offered'] || 'Every week'}
-                    </td>
-                    <td style={{ padding: '12px', fontSize: '14px' }}>
-                      {listing.Active ? (
-                        <span style={{ color: '#059669', fontWeight: '600' }}>✅ Yes</span>
-                      ) : (
-                        <span style={{ color: '#dc2626', fontWeight: '600' }}>❌ No</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {displayListings.length > 50 && (
-            <div style={{
-              marginTop: '16px',
-              padding: '12px',
-              background: '#f9fafb',
-              borderRadius: '8px',
-              textAlign: 'center',
-              color: '#6b7280',
-              fontSize: '14px'
-            }}>
-              Showing first 50 of {displayListings.length} total listings
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* CONSOLE INSTRUCTIONS */}
-      <div style={{
-        marginTop: '40px',
-        padding: '20px',
-        background: '#eff6ff',
-        borderRadius: '8px',
-        border: '1px solid #bfdbfe'
-      }}>
-        <h3 style={{ fontSize: '16px', fontWeight: '700', marginBottom: '12px', color: '#1e40af' }}>
-          ℹ️ How to Test the Cascading Filters
-        </h3>
-        <ol style={{ margin: 0, paddingLeft: '20px', color: '#1e40af', lineHeight: '1.8' }}>
-          <li>Open browser DevTools (F12) and check the Console tab</li>
-          <li>Change filters and watch the cascading flow in console logs</li>
-          <li>Observe how each layer builds on the previous layer</li>
-          <li>See which conditional is active in the "Active Conditional" box</li>
-          <li>Notice how the filter counts change through each layer</li>
-        </ol>
-      </div>
+      {/* Modals */}
+      <ContactHostMessaging
+        isOpen={isContactModalOpen}
+        onClose={handleCloseContactModal}
+        listing={selectedListing}
+        userEmail={null}
+      />
+      <InformationalText
+        isOpen={isInfoModalOpen}
+        onClose={handleCloseInfoModal}
+        listing={selectedListing}
+        selectedDaysCount={selectedDays.length}
+        triggerRef={infoModalTriggerRef}
+      />
+      <AIResearchSignupModal
+        isOpen={isAIResearchModalOpen}
+        onClose={handleCloseAIResearchModal}
+      />
     </div>
   );
 }

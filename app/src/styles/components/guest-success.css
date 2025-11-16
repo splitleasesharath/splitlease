@@ -4,8 +4,8 @@
 
 /* Guest Success Hero Section */
 .guest-success-hero {
-  background: linear-gradient(135deg, var(--primary-purple) 0%, var(--primary-purple-dark) 100%);
-  color: var(--white);
+  background: white;
+  color: var(--text-dark);
   padding: 6rem 2rem 4rem 2rem;
 }
 
@@ -23,7 +23,7 @@
   font-weight: 700;
   margin-bottom: 1.5rem;
   line-height: 1.2;
-  color: #000000;
+  color: #111827;
 }
 
 .guest-success-hero-text p {
