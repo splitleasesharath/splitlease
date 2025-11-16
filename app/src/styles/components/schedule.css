@@ -40,26 +40,12 @@
 
 .schedule-card {
     background: var(--bg-white);
-    border: 2px solid var(--border-color);
-    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
     padding: 1.5rem;
-    box-shadow: var(--shadow-sm);
     display: flex;
     flex-direction: column;
     position: relative;
-    transition: all 0.3s ease;
-}
-
-.schedule-card:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
-}
-
-/* Ensure button maintains its default style when card is hovered (not the button itself) */
-.schedule-card:hover .explore-btn:not(:hover) {
-    background: transparent !important;
-    color: var(--primary-color) !important;
-    border-color: var(--primary-color) !important;
 }
 
 .schedule-title {
@@ -148,31 +134,17 @@
 .schedule-card .explore-btn {
     display: block;
     margin: 0 auto;
-    background: transparent !important;
-    color: var(--primary-color) !important;
-    border: 2px solid var(--primary-color) !important;
+    background: transparent;
+    color: var(--primary-color);
+    border: 1px solid var(--primary-color);
     padding: 0.75rem 2rem;
     font-size: 1rem;
     font-weight: 600;
-    border-radius: var(--radius-lg);
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
     position: relative;
-    z-index: 10; /* Ensure button stays above lottie animations */
-    pointer-events: auto; /* Ensure button is always clickable */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.schedule-card .explore-btn:hover {
-    background: var(--primary-color) !important;
-    color: white !important;
-    box-shadow: 0 6px 16px rgba(91, 95, 207, 0.4);
-    transform: translateY(-2px);
-}
-
-.schedule-card .explore-btn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(91, 95, 207, 0.3);
+    z-index: 10;
+    pointer-events: auto;
 }
 
 .explore-btn.primary {

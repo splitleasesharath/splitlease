@@ -406,3 +406,204 @@ export function hasValidAuthentication() {
 
   return false;
 }
+
+// ============================================================================
+// Bubble Authentication API
+// ============================================================================
+
+const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY;
+const BUBBLE_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/login-user';
+const BUBBLE_CHECK_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/check-login';
+const BUBBLE_USER_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/obj/user';
+
+/**
+ * Login user via Bubble API
+ * Stores token and user_id in localStorage on success
+ *
+ * @param {string} email - User email
+ * @param {string} password - User password
+ * @returns {Promise<Object>} Response object with status, token, user_id, or error
+ */
+export async function loginUser(email, password) {
+  console.log('🔐 Attempting login for:', email);
+
+  if (!BUBBLE_API_KEY) {
+    console.error('[Auth] VITE_BUBBLE_API_KEY is not configured');
+    return {
+      success: false,
+      error: 'Configuration error. Please contact support.'
+    };
+  }
+
+  try {
+    const response = await fetch(BUBBLE_LOGIN_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${BUBBLE_API_KEY}`
+      },
+      body: JSON.stringify({
+        email,
+        password
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.status === 'success') {
+      // Store token and user_id in localStorage
+      localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, data.response.token);
+      localStorage.setItem(AUTH_STORAGE_KEYS.SESSION_ID, data.response.user_id);
+      localStorage.setItem(AUTH_STORAGE_KEYS.LAST_AUTH, Date.now().toString());
+
+      // Update login state
+      isUserLoggedInState = true;
+
+      console.log('✅ Login successful');
+      console.log('   User ID:', data.response.user_id);
+      console.log('   Token expires in:', data.response.expires, 'seconds');
+
+      return {
+        success: true,
+        token: data.response.token,
+        user_id: data.response.user_id,
+        expires: data.response.expires
+      };
+    } else {
+      // Handle error response from Bubble
+      console.error('❌ Login failed:', data.reason || data.message);
+
+      return {
+        success: false,
+        error: data.message || 'Login failed. Please try again.',
+        reason: data.reason
+      };
+    }
+  } catch (error) {
+    console.error('❌ Login error:', error);
+    return {
+      success: false,
+      error: 'Network error. Please check your connection and try again.'
+    };
+  }
+}
+
+/**
+ * Check login session validity via Bubble API
+ * Uses stored token as Bearer token to validate session
+ *
+ * @returns {Promise<boolean>} True if session is valid, false otherwise
+ */
+export async function checkLoginSession() {
+  const token = getAuthToken();
+
+  if (!token) {
+    console.log('❌ No token found for session check');
+    return false;
+  }
+
+  console.log('🔍 Checking login session...');
+
+  try {
+    const response = await fetch(BUBBLE_CHECK_LOGIN_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      console.log('✅ Session is valid');
+      isUserLoggedInState = true;
+      return true;
+    } else {
+      console.log('❌ Session is invalid');
+      clearAuthData();
+      return false;
+    }
+  } catch (error) {
+    console.error('❌ Session check error:', error);
+    clearAuthData();
+    return false;
+  }
+}
+
+/**
+ * Validate token and fetch user data from Bubble API
+ * Lazy-loaded validation that checks if stored token is still valid
+ * and retrieves user information including first name
+ *
+ * @returns {Promise<Object|null>} User data object with firstName, userId, etc. or null if invalid
+ */
+export async function validateTokenAndFetchUser() {
+  const token = getAuthToken();
+  const userId = getSessionId();
+
+  if (!token || !userId) {
+    console.log('[Auth] No token or user ID found - user not logged in');
+    return null;
+  }
+
+  console.log('🔍 Validating token and fetching user data...');
+
+  try {
+    const response = await fetch(`${BUBBLE_USER_ENDPOINT}/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data.response) {
+        // Token is valid, extract user information
+        const userData = {
+          userId: data.response._id,
+          firstName: data.response['Name - First'] || null,
+          lastName: data.response['Name - Last'] || null,
+          fullName: data.response['Name - Full'] || null,
+          email: data.response['email as text'] || null,
+          profilePhoto: data.response['Profile Photo'] || null
+        };
+
+        console.log('✅ Token valid - User:', userData.firstName);
+        isUserLoggedInState = true;
+
+        return userData;
+      }
+    }
+
+    // Token is invalid or user not found
+    console.log('❌ Token invalid or user not found');
+    clearAuthData();
+    isUserLoggedInState = false;
+    return null;
+
+  } catch (error) {
+    console.error('❌ Token validation error:', error);
+    clearAuthData();
+    isUserLoggedInState = false;
+    return null;
+  }
+}
+
+/**
+ * Check if current page is a protected page requiring authentication
+ * Protected pages redirect to home if user is not logged in
+ *
+ * @returns {boolean} True if current page requires authentication
+ */
+export function isProtectedPage() {
+  const protectedPages = [
+    '/guest-proposals.html',
+    '/account-profile.html',
+    '/host-dashboard.html'
+  ];
+
+  const currentPath = window.location.pathname;
+  return protectedPages.some(page => currentPath.includes(page));
+}

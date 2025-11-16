@@ -594,7 +594,7 @@ export default function ViewSplitLeasePage() {
                   onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
                   onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
                 >
-                  📍 Located in {listing.resolvedNeighborhood}, {listing.resolvedBorough}
+                  Located in {listing.resolvedNeighborhood}, {listing.resolvedBorough}
                 </span>
               )}
               {listing.resolvedTypeOfSpace && (
@@ -602,79 +602,6 @@ export default function ViewSplitLeasePage() {
                   {listing.resolvedTypeOfSpace} - {listing['Features - Qty Guests']} guests max
                 </span>
               )}
-            </div>
-
-            {/* Quick Navigation Links */}
-            <div style={{
-              display: 'flex',
-              gap: '1.5rem',
-              flexWrap: 'wrap',
-              marginTop: '1rem',
-              paddingTop: '1rem',
-              borderTop: `1px solid ${COLORS.BG_LIGHT}`
-            }}>
-              {(listing.parkingOption || listing['Time to Station (commute)']) && (
-                <span
-                  onClick={handleCommuteClick}
-                  style={{
-                    cursor: 'pointer',
-                    color: COLORS.TEXT_LIGHT,
-                    fontSize: '0.875rem',
-                    textDecoration: 'underline',
-                    transition: 'color 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
-                  onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
-                >
-                  Commute
-                </span>
-              )}
-              {(listing.amenitiesInUnit?.length > 0 || listing.safetyFeatures?.length > 0) && (
-                <span
-                  onClick={handleAmenitiesClick}
-                  style={{
-                    cursor: 'pointer',
-                    color: COLORS.TEXT_LIGHT,
-                    fontSize: '0.875rem',
-                    textDecoration: 'underline',
-                    transition: 'color 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
-                  onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
-                >
-                  Amenities
-                </span>
-              )}
-              {listing.houseRules?.length > 0 && (
-                <span
-                  onClick={handleHouseRulesClick}
-                  style={{
-                    cursor: 'pointer',
-                    color: COLORS.TEXT_LIGHT,
-                    fontSize: '0.875rem',
-                    textDecoration: 'underline',
-                    transition: 'color 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
-                  onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
-                >
-                  House Rules
-                </span>
-              )}
-              <span
-                onClick={handleMapClick}
-                style={{
-                  cursor: 'pointer',
-                  color: COLORS.TEXT_LIGHT,
-                  fontSize: '0.875rem',
-                  textDecoration: 'underline',
-                  transition: 'color 0.2s'
-                }}
-                onMouseEnter={(e) => e.target.style.color = COLORS.PRIMARY}
-                onMouseLeave={(e) => e.target.style.color = COLORS.TEXT_LIGHT}
-              >
-                Map
-              </span>
             </div>
           </section>
 

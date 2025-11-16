@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { redirectToLogin } from '../../lib/auth.js';
+import { redirectToLogin, loginUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 
 export default function Header() {
@@ -7,6 +7,67 @@ export default function Header() {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [headerVisible, setHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Login Modal State
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Lazy-load token validation after page is completely loaded
+  // Only runs if a token exists in localStorage
+  useEffect(() => {
+    const validateAuth = async () => {
+      // Check if token exists first - skip validation if no token
+      const token = getAuthToken();
+      if (!token) {
+        console.log('[Header] No token found - skipping validation');
+        setAuthChecked(true);
+        return;
+      }
+
+      // Token exists - wait for page to be completely loaded before validating
+      if (document.readyState !== 'complete') {
+        window.addEventListener('load', () => {
+          performAuthValidation();
+        });
+      } else {
+        // Page already loaded, validate immediately
+        performAuthValidation();
+      }
+    };
+
+    const performAuthValidation = async () => {
+      try {
+        const userData = await validateTokenAndFetchUser();
+
+        if (userData) {
+          // Token is valid, user is logged in
+          setCurrentUser(userData);
+        } else {
+          // Token is invalid or not present
+          setCurrentUser(null);
+
+          // If on a protected page, redirect to home
+          if (isProtectedPage()) {
+            console.log('⚠️ Invalid token on protected page - redirecting to home');
+            window.location.href = 'https://splitlease.app';
+          }
+        }
+      } catch (error) {
+        console.error('Auth validation error:', error);
+        setCurrentUser(null);
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+
+    validateAuth();
+  }, []);
 
   // Handle scroll behavior - hide header on scroll down, show on scroll up
   useEffect(() => {
@@ -56,9 +117,38 @@ export default function Header() {
     setActiveDropdown(activeDropdown === dropdownName ? null : dropdownName);
   };
 
-  // Handle auth modal (redirect to Split Lease login)
+  // Handle auth modal - open login popup
   const handleAuthClick = () => {
-    window.location.href = SIGNUP_LOGIN_URL;
+    setShowLoginModal(true);
+    setLoginError('');
+    setLoginForm({ email: '', password: '' });
+  };
+
+  // Handle login form submission
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    setIsLoggingIn(true);
+
+    const result = await loginUser(loginForm.email, loginForm.password);
+
+    setIsLoggingIn(false);
+
+    if (result.success) {
+      // Login successful - close modal and reload page
+      setShowLoginModal(false);
+      window.location.reload();
+    } else {
+      // Show error message
+      setLoginError(result.error || 'Login failed. Please try again.');
+    }
+  };
+
+  // Close modal when clicking outside
+  const handleModalOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      setShowLoginModal(false);
+    }
   };
 
   // Handle keyboard navigation for dropdowns
@@ -268,29 +358,218 @@ export default function Header() {
           <a href={SEARCH_URL} className="explore-rentals-btn">
             Explore Rentals
           </a>
-          <a
-            href="#"
-            className="nav-link"
-            onClick={(e) => {
-              e.preventDefault();
-              handleAuthClick();
-            }}
-          >
-            Sign In
-          </a>
-          <span className="divider">|</span>
-          <a
-            href="#"
-            className="nav-link"
-            onClick={(e) => {
-              e.preventDefault();
-              handleAuthClick();
-            }}
-          >
-            Sign Up
-          </a>
+
+          {currentUser && currentUser.firstName ? (
+            /* User is logged in - show greeting */
+            <span className="nav-link" style={{ fontWeight: '500', color: '#5B21B6' }}>
+              Hello, {currentUser.firstName}
+            </span>
+          ) : (
+            /* User is not logged in - show auth buttons */
+            <>
+              <a
+                href="#"
+                className="nav-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleAuthClick();
+                }}
+              >
+                Sign In
+              </a>
+              <span className="divider">|</span>
+              <a
+                href="#"
+                className="nav-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleAuthClick();
+                }}
+              >
+                Sign Up
+              </a>
+            </>
+          )}
         </div>
       </nav>
+
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000
+          }}
+          onClick={handleModalOverlayClick}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '2rem',
+              maxWidth: '400px',
+              width: '90%',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: '#1a202c',
+                margin: 0
+              }}>
+                Sign In
+              </h2>
+              <p style={{
+                fontSize: '0.875rem',
+                color: '#6b7280',
+                marginTop: '0.5rem',
+                marginBottom: 0
+              }}>
+                Enter your credentials to access your account
+              </p>
+            </div>
+
+            {/* Login Form */}
+            <form onSubmit={handleLoginSubmit}>
+              {/* Email Field */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={loginForm.email}
+                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                  required
+                  placeholder="your@email.com"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
+                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                />
+              </div>
+
+              {/* Password Field */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
+                  Password
+                </label>
+                <input
+                  type="password"
+                  value={loginForm.password}
+                  onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                  required
+                  placeholder="Enter your password"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
+                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                />
+              </div>
+
+              {/* Error Message */}
+              {loginError && (
+                <div style={{
+                  padding: '0.75rem',
+                  backgroundColor: '#fee2e2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '6px',
+                  marginBottom: '1rem'
+                }}>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#dc2626',
+                    margin: 0
+                  }}>
+                    {loginError}
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                marginTop: '1.5rem'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setShowLoginModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    backgroundColor: 'white',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    backgroundColor: isLoggingIn ? '#9333ea' : '#5B21B6',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    color: 'white',
+                    cursor: isLoggingIn ? 'not-allowed' : 'pointer',
+                    opacity: isLoggingIn ? 0.7 : 1
+                  }}
+                >
+                  {isLoggingIn ? 'Signing In...' : 'Sign In'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
