@@ -414,6 +414,7 @@ export function hasValidAuthentication() {
 const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY;
 const BUBBLE_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/login-user';
 const BUBBLE_CHECK_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/check-login';
+const BUBBLE_USER_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/obj/user';
 
 /**
  * Login user via Bubble API
@@ -526,4 +527,83 @@ export async function checkLoginSession() {
     clearAuthData();
     return false;
   }
+}
+
+/**
+ * Validate token and fetch user data from Bubble API
+ * Lazy-loaded validation that checks if stored token is still valid
+ * and retrieves user information including first name
+ *
+ * @returns {Promise<Object|null>} User data object with firstName, userId, etc. or null if invalid
+ */
+export async function validateTokenAndFetchUser() {
+  const token = getAuthToken();
+  const userId = getSessionId();
+
+  if (!token || !userId) {
+    console.log('[Auth] No token or user ID found - user not logged in');
+    return null;
+  }
+
+  console.log('🔍 Validating token and fetching user data...');
+
+  try {
+    const response = await fetch(`${BUBBLE_USER_ENDPOINT}/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+
+      if (data.response) {
+        // Token is valid, extract user information
+        const userData = {
+          userId: data.response._id,
+          firstName: data.response['Name - First'] || null,
+          lastName: data.response['Name - Last'] || null,
+          fullName: data.response['Name - Full'] || null,
+          email: data.response['email as text'] || null,
+          profilePhoto: data.response['Profile Photo'] || null
+        };
+
+        console.log('✅ Token valid - User:', userData.firstName);
+        isUserLoggedInState = true;
+
+        return userData;
+      }
+    }
+
+    // Token is invalid or user not found
+    console.log('❌ Token invalid or user not found');
+    clearAuthData();
+    isUserLoggedInState = false;
+    return null;
+
+  } catch (error) {
+    console.error('❌ Token validation error:', error);
+    clearAuthData();
+    isUserLoggedInState = false;
+    return null;
+  }
+}
+
+/**
+ * Check if current page is a protected page requiring authentication
+ * Protected pages redirect to home if user is not logged in
+ *
+ * @returns {boolean} True if current page requires authentication
+ */
+export function isProtectedPage() {
+  const protectedPages = [
+    '/guest-proposals.html',
+    '/account-profile.html',
+    '/host-dashboard.html'
+  ];
+
+  const currentPath = window.location.pathname;
+  return protectedPages.some(page => currentPath.includes(page));
 }

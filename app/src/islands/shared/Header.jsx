@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { redirectToLogin, loginUser } from '../../lib/auth.js';
+import { redirectToLogin, loginUser, validateTokenAndFetchUser, isProtectedPage } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 
 export default function Header() {
@@ -13,6 +13,52 @@ export default function Header() {
   const [loginForm, setLoginForm] = useState({ email: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Lazy-load token validation after page is completely loaded
+  useEffect(() => {
+    const validateAuth = async () => {
+      // Wait for page to be completely loaded before validating
+      if (document.readyState !== 'complete') {
+        window.addEventListener('load', () => {
+          performAuthValidation();
+        });
+      } else {
+        // Page already loaded, validate immediately
+        performAuthValidation();
+      }
+    };
+
+    const performAuthValidation = async () => {
+      try {
+        const userData = await validateTokenAndFetchUser();
+
+        if (userData) {
+          // Token is valid, user is logged in
+          setCurrentUser(userData);
+        } else {
+          // Token is invalid or not present
+          setCurrentUser(null);
+
+          // If on a protected page, redirect to home
+          if (isProtectedPage()) {
+            console.log('⚠️ Invalid token on protected page - redirecting to home');
+            window.location.href = 'https://splitlease.app';
+          }
+        }
+      } catch (error) {
+        console.error('Auth validation error:', error);
+        setCurrentUser(null);
+      } finally {
+        setAuthChecked(true);
+      }
+    };
+
+    validateAuth();
+  }, []);
 
   // Handle scroll behavior - hide header on scroll down, show on scroll up
   useEffect(() => {
@@ -303,27 +349,38 @@ export default function Header() {
           <a href={SEARCH_URL} className="explore-rentals-btn">
             Explore Rentals
           </a>
-          <a
-            href="#"
-            className="nav-link"
-            onClick={(e) => {
-              e.preventDefault();
-              handleAuthClick();
-            }}
-          >
-            Sign In
-          </a>
-          <span className="divider">|</span>
-          <a
-            href="#"
-            className="nav-link"
-            onClick={(e) => {
-              e.preventDefault();
-              handleAuthClick();
-            }}
-          >
-            Sign Up
-          </a>
+
+          {currentUser && currentUser.firstName ? (
+            /* User is logged in - show greeting */
+            <span className="nav-link" style={{ fontWeight: '500', color: '#5B21B6' }}>
+              Hello, {currentUser.firstName}
+            </span>
+          ) : (
+            /* User is not logged in - show auth buttons */
+            <>
+              <a
+                href="#"
+                className="nav-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleAuthClick();
+                }}
+              >
+                Sign In
+              </a>
+              <span className="divider">|</span>
+              <a
+                href="#"
+                className="nav-link"
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleAuthClick();
+                }}
+              >
+                Sign Up
+              </a>
+            </>
+          )}
         </div>
       </nav>
 
