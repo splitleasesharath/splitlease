@@ -618,11 +618,20 @@ export default function SearchScheduleSelector({
       // Show contiguity error immediately only if it's a NEW error (wasn't already showing)
       if (!isValid && !wasContiguousError && !showError) {
         displayError('Please select contiguous days (e.g., Mon-Tue-Wed, not Mon-Wed-Fri)');
+      } else if (isValid && showError && wasContiguousError) {
+        // Selection became contiguous, clear the error immediately
+        if (errorTimeout) {
+          clearTimeout(errorTimeout);
+        }
+        setShowError(false);
       }
     } else {
       setHasContiguityError(false);
       // Hide error if selection becomes valid
       if (showError) {
+        if (errorTimeout) {
+          clearTimeout(errorTimeout);
+        }
         setShowError(false);
       }
     }
@@ -673,9 +682,8 @@ export default function SearchScheduleSelector({
         {selectedDays.size > 0 && (
           <InfoText>
             {showError ? (
-              <span style={{ color: '#d32f2f', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>⚠️</span>
-                <span>{errorMessage}</span>
+              <span style={{ color: '#d32f2f' }}>
+                {errorMessage}
               </span>
             ) : selectedDays.size === 7 ? (
               <span className="day-name">Full Time</span>
