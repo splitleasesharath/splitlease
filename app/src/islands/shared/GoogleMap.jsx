@@ -32,7 +32,9 @@ const GoogleMap = forwardRef(({
   selectedListing = null,  // Currently selected/highlighted listing
   onMarkerClick = null,    // Callback when marker clicked: (listing) => void
   selectedBorough = null,  // Current borough filter for map centering
-  simpleMode = false       // If true, show simple marker without price/card (for view-split-lease page)
+  simpleMode = false,      // If true, show simple marker without price/card (for view-split-lease page)
+  initialZoom = null,      // Optional initial zoom level (defaults to auto-fit)
+  disableAutoZoom = false  // If true, don't auto-fit bounds or restrict zoom
 }, ref) => {
   console.log('🗺️ GoogleMap: Component rendered with props:', {
     listingsCount: listings.length,
@@ -521,8 +523,8 @@ const GoogleMap = forwardRef(({
         console.log('⚠️ GoogleMap: No all listings to create green markers for (showAllListings:', showAllListings, ', listings.length:', listings?.length, ')');
       }
 
-      // Fit map to show all markers
-      if (hasValidMarkers) {
+      // Fit map to show all markers (unless auto-zoom is disabled)
+      if (hasValidMarkers && !disableAutoZoom) {
         if (import.meta.env.DEV) {
           console.log('✅ GoogleMap: Fitting bounds to markers', {
             markerCount: markersRef.current.length,
@@ -531,12 +533,17 @@ const GoogleMap = forwardRef(({
         }
         map.fitBounds(bounds);
 
-        // Prevent over-zooming on single marker
-        const listener = window.google.maps.event.addListener(map, 'idle', () => {
-          if (map.getZoom() > 16) map.setZoom(16);
-          window.google.maps.event.removeListener(listener);
-        });
-      } else {
+        // Prevent over-zooming on single marker (unless initial zoom is specified)
+        if (!initialZoom) {
+          const listener = window.google.maps.event.addListener(map, 'idle', () => {
+            if (map.getZoom() > 16) map.setZoom(16);
+            window.google.maps.event.removeListener(listener);
+          });
+        }
+      } else if (hasValidMarkers && initialZoom) {
+        // If initial zoom is specified, use it
+        map.setZoom(initialZoom);
+      } else if (!hasValidMarkers) {
         console.warn('⚠️ GoogleMap: No valid markers to display');
       }
     }
