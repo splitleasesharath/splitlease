@@ -32,6 +32,10 @@ export default defineConfig({
             req.url = '/public/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/search-test.html')) {
             req.url = '/public/search-test.html' + (url.substring('/search-test.html'.length) || '');
+          } else if (url.startsWith('/search-test')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/search-test.html' + queryString;
           } else if (url.startsWith('/faq.html')) {
             req.url = '/public/faq.html' + (url.substring('/faq.html'.length) || '');
           } else if (url.startsWith('/policies.html')) {
@@ -89,6 +93,12 @@ export default defineConfig({
           }
           else if (url.startsWith('/search.html')) {
             req.url = '/search.html' + (url.substring('/search.html'.length) || '');
+          } else if (url.startsWith('/search-test.html')) {
+            req.url = '/search-test.html' + (url.substring('/search-test.html'.length) || '');
+          } else if (url.startsWith('/search-test')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/search-test.html' + queryString;
           } else if (url.startsWith('/faq.html')) {
             req.url = '/faq.html' + (url.substring('/faq.html'.length) || '');
           } else if (url.startsWith('/policies.html')) {

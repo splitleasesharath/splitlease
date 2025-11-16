@@ -32,7 +32,10 @@ const GoogleMap = forwardRef(({
   selectedListing = null,  // Currently selected/highlighted listing
   onMarkerClick = null,    // Callback when marker clicked: (listing) => void
   selectedBorough = null,  // Current borough filter for map centering
-  simpleMode = false       // If true, show simple marker without price/card (for view-split-lease page)
+  simpleMode = false,      // If true, show simple marker without price/card (for view-split-lease page)
+  initialZoom = null,      // Optional initial zoom level (defaults to auto-fit)
+  disableAutoZoom = false, // If true, don't auto-fit bounds or restrict zoom
+  onAIResearchClick = null // Callback when AI research button is clicked
 }, ref) => {
   console.log('🗺️ GoogleMap: Component rendered with props:', {
     listingsCount: listings.length,
@@ -261,7 +264,10 @@ const GoogleMap = forwardRef(({
     const initMap = () => {
       console.log('🗺️ GoogleMap: Initializing map...', {
         mapRefExists: !!mapRef.current,
-        googleMapsLoaded: !!(window.google && window.google.maps)
+        googleMapsLoaded: !!(window.google && window.google.maps),
+        simpleMode,
+        hasFilteredListings: filteredListings.length > 0,
+        hasListings: listings.length > 0
       });
 
       if (!mapRef.current || !window.google) {
@@ -269,15 +275,39 @@ const GoogleMap = forwardRef(({
         return;
       }
 
-      // Create map instance with default Manhattan center (no fallback coordinates)
-      const defaultMapConfig = getBoroughMapConfig('default');
+      // Determine initial center and zoom based on mode and available data
+      let initialCenter;
+      let initialZoomLevel;
+
+      // For simple mode with a single listing, use that listing's coordinates
+      if (simpleMode && (filteredListings.length === 1 || listings.length === 1)) {
+        const listing = filteredListings[0] || listings[0];
+        if (listing?.coordinates?.lat && listing?.coordinates?.lng) {
+          initialCenter = { lat: listing.coordinates.lat, lng: listing.coordinates.lng };
+          initialZoomLevel = initialZoom || 17;
+          console.log('🗺️ GoogleMap: Using listing coordinates for initial center:', initialCenter);
+        }
+      }
+
+      // Fallback to default
+      if (!initialCenter) {
+        const defaultMapConfig = getBoroughMapConfig('default');
+        initialCenter = defaultMapConfig.center;
+        initialZoomLevel = defaultMapConfig.zoom;
+        console.log('🗺️ GoogleMap: Using default center');
+      }
+
+      // Create map instance
       const map = new window.google.maps.Map(mapRef.current, {
-        center: defaultMapConfig.center,
-        zoom: defaultMapConfig.zoom,
+        center: initialCenter,
+        zoom: initialZoomLevel,
         mapTypeControl: true,
         streetViewControl: true,
         fullscreenControl: true,
         zoomControl: true,
+        zoomControlOptions: {
+          position: window.google.maps.ControlPosition.RIGHT_CENTER
+        },
         styles: [
           {
             featureType: 'poi',
@@ -289,7 +319,7 @@ const GoogleMap = forwardRef(({
 
       googleMapRef.current = map;
       setMapLoaded(true);
-      console.log('✅ GoogleMap: Map initialized successfully');
+      console.log('✅ GoogleMap: Map initialized successfully with zoom controls enabled');
     };
 
     // Wait for Google Maps API to load
@@ -301,7 +331,7 @@ const GoogleMap = forwardRef(({
       window.addEventListener('google-maps-loaded', initMap);
       return () => window.removeEventListener('google-maps-loaded', initMap);
     }
-  }, []);
+  }, [filteredListings, listings, simpleMode, initialZoom]);
 
   // Update markers when listings change
   useEffect(() => {
@@ -526,16 +556,36 @@ const GoogleMap = forwardRef(({
         if (import.meta.env.DEV) {
           console.log('✅ GoogleMap: Fitting bounds to markers', {
             markerCount: markersRef.current.length,
-            bounds: bounds.toString()
+            bounds: bounds.toString(),
+            disableAutoZoom,
+            initialZoom
           });
         }
-        map.fitBounds(bounds);
 
-        // Prevent over-zooming on single marker
-        const listener = window.google.maps.event.addListener(map, 'idle', () => {
-          if (map.getZoom() > 16) map.setZoom(16);
-          window.google.maps.event.removeListener(listener);
-        });
+        // For simple mode or when initialZoom is specified, center and zoom differently
+        if (simpleMode && initialZoom && markersRef.current.length === 1) {
+          // Get the first marker's position
+          const firstListing = filteredListings[0] || listings[0];
+          if (firstListing?.coordinates) {
+            map.setCenter({ lat: firstListing.coordinates.lat, lng: firstListing.coordinates.lng });
+            map.setZoom(initialZoom);
+            console.log('✅ GoogleMap: Simple mode - set center and zoom:', {
+              center: firstListing.coordinates,
+              zoom: initialZoom
+            });
+          }
+        } else if (!disableAutoZoom) {
+          // Normal auto-fit behavior
+          map.fitBounds(bounds);
+
+          // Prevent over-zooming on single marker (unless initial zoom is specified)
+          if (!initialZoom) {
+            const listener = window.google.maps.event.addListener(map, 'idle', () => {
+              if (map.getZoom() > 16) map.setZoom(16);
+              window.google.maps.event.removeListener(listener);
+            });
+          }
+        }
       } else {
         console.warn('⚠️ GoogleMap: No valid markers to display');
       }
@@ -809,6 +859,35 @@ const GoogleMap = forwardRef(({
     </div>
   );
 
+  /**
+   * AIResearchButton - Button to trigger AI Research Report signup
+   */
+  const AIResearchButton = () => {
+    if (simpleMode || !onAIResearchClick) return null;
+
+    return (
+      <button
+        className="ai-research-button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onAIResearchClick();
+        }}
+        aria-label="Generate Market Report"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+        </svg>
+        <span>Generate Market Report</span>
+      </button>
+    );
+  };
+
   // Close card when clicking on map
   const handleMapClick = () => {
     console.log('🗺️ handleMapClick: Map clicked, closing card');
@@ -825,12 +904,12 @@ const GoogleMap = forwardRef(({
           width: '100%',
           height: '100%',
           minHeight: '500px',
-          borderRadius: '12px',
-          overflow: 'hidden'
+          borderRadius: '12px'
         }}
         onClick={handleMapClick}
       />
       {mapLoaded && !simpleMode && <MapLegend />}
+      {mapLoaded && !simpleMode && <AIResearchButton />}
       {!mapLoaded && (
         <div className="map-loading">
           <div className="spinner"></div>

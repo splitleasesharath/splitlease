@@ -873,6 +873,47 @@
   user-select: none;
 }
 
+/* AI Research Button - Generate Market Report */
+.ai-research-button {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #5B21B6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(91, 33, 182, 0.3);
+  z-index: 10;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.ai-research-button:hover {
+  background: #6D28D9;
+  box-shadow: 0 4px 12px rgba(91, 33, 182, 0.4);
+  transform: translateX(-50%) translateY(-1px);
+}
+
+.ai-research-button:active {
+  transform: translateX(-50%) translateY(0);
+  box-shadow: 0 2px 6px rgba(91, 33, 182, 0.3);
+}
+
+.ai-research-button svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+}
+
 /* Map Loading State */
 .map-loading {
   position: absolute;

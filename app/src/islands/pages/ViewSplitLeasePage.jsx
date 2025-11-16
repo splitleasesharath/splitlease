@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import CreateProposalFlow from './ViewSplitLeasePageComponents/CreateProposalFlow.jsx';
+import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
 import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
@@ -214,6 +215,7 @@ export default function ViewSplitLeasePage() {
           safetyFeatures: listingData.safetyFeatures,
           houseRules: listingData.houseRules,
           coordinates: listingData.coordinates,
+          slightlyDifferentAddress: listingData['Location - slightly different address'],
           hasAmenitiesInUnit: listingData.amenitiesInUnit?.length > 0,
           hasSafetyFeatures: listingData.safetyFeatures?.length > 0,
           hasHouseRules: listingData.houseRules?.length > 0,
@@ -373,6 +375,35 @@ export default function ViewSplitLeasePage() {
     }
 
     setIsProposalModalOpen(true);
+  };
+
+  const handleProposalSubmit = async (proposalData) => {
+    console.log('Proposal submitted:', proposalData);
+
+    // TODO: Integrate with your backend API to submit the proposal
+    // Example:
+    // try {
+    //   const response = await fetch('/api/proposals', {
+    //     method: 'POST',
+    //     headers: { 'Content-Type': 'application/json' },
+    //     body: JSON.stringify(proposalData)
+    //   });
+    //
+    //   if (response.ok) {
+    //     alert('Proposal submitted successfully!');
+    //     setIsProposalModalOpen(false);
+    //     // Redirect to success page or proposals page
+    //   } else {
+    //     alert('Failed to submit proposal. Please try again.');
+    //   }
+    // } catch (error) {
+    //   console.error('Error submitting proposal:', error);
+    //   alert('An error occurred. Please try again.');
+    // }
+
+    // For now, just show success and close modal
+    alert('Proposal submitted successfully! (Backend integration pending)');
+    setIsProposalModalOpen(false);
   };
 
   const scrollToSection = (sectionRef, shouldZoomMap = false) => {
@@ -876,7 +907,8 @@ export default function ViewSplitLeasePage() {
               height: '400px',
               borderRadius: '12px',
               overflow: 'hidden',
-              border: `1px solid ${COLORS.BG_LIGHT}`
+              border: `1px solid ${COLORS.BG_LIGHT}`,
+              position: 'relative'
             }}>
               <GoogleMap
                 ref={mapRef}
@@ -910,6 +942,8 @@ export default function ViewSplitLeasePage() {
                 }] : []}
                 selectedBorough={listing.resolvedBorough}
                 simpleMode={true}
+                initialZoom={17}
+                disableAutoZoom={false}
               />
             </div>
           </section>
@@ -1474,16 +1508,19 @@ export default function ViewSplitLeasePage() {
         </div>
       )}
 
-      {/* Create Proposal Modal */}
+      {/* Create Proposal Modal - V2 */}
       {isProposalModalOpen && (
-        <CreateProposalFlow
+        <CreateProposalFlowV2
           listing={listing}
           moveInDate={moveInDate}
-          selectedDays={selectedDays}
+          daysSelected={selectedDayObjects}
+          nightsSelected={nightsSelected}
           reservationSpan={reservationSpan}
-          strictMode={strictMode}
-          pricingBreakdown={pricingBreakdown}
+          pricingBreakdown={priceBreakdown}
+          hasExistingUserData={false}
+          existingUserData={null}
           onClose={() => setIsProposalModalOpen(false)}
+          onSubmit={handleProposalSubmit}
         />
       )}
 

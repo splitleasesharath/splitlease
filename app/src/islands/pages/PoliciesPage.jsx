@@ -212,7 +212,7 @@ export default function PoliciesPage() {
                 <iframe
                   src={currentPolicy.pdfUrl}
                   width="100%"
-                  height="1000px"
+                  height="700px"
                   frameBorder="0"
                   title={`${currentPolicy.name} - Policy Document Viewer`}
                 />

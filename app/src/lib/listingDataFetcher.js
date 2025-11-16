@@ -254,10 +254,12 @@ export async function fetchListingComplete(listingId) {
     }
 
     // 10. Extract coordinates from "Location - slightly different address" JSONB field
+    // Fallback to "Location - Address" if slightly different is not available
     let coordinates = null;
     let locationSlightlyDifferent = listingData['Location - slightly different address'];
+    let locationAddress = listingData['Location - Address'];
 
-    // Parse if it's a string
+    // Parse slightly different address if it's a string
     if (typeof locationSlightlyDifferent === 'string') {
       try {
         locationSlightlyDifferent = JSON.parse(locationSlightlyDifferent);
@@ -267,12 +269,33 @@ export async function fetchListingComplete(listingId) {
       }
     }
 
-    // Extract lat/lng if available
+    // Parse regular address if it's a string
+    if (typeof locationAddress === 'string') {
+      try {
+        locationAddress = JSON.parse(locationAddress);
+      } catch (error) {
+        console.error('Failed to parse Location - Address:', error);
+        locationAddress = null;
+      }
+    }
+
+    // Extract lat/lng - prefer slightly different address, fallback to regular address
     if (locationSlightlyDifferent?.lat && locationSlightlyDifferent?.lng) {
       coordinates = {
         lat: locationSlightlyDifferent.lat,
-        lng: locationSlightlyDifferent.lng
+        lng: locationSlightlyDifferent.lng,
+        address: locationSlightlyDifferent.address || null
       };
+      console.log('📍 Using "Location - slightly different address" for coordinates:', coordinates);
+    } else if (locationAddress?.lat && locationAddress?.lng) {
+      coordinates = {
+        lat: locationAddress.lat,
+        lng: locationAddress.lng,
+        address: locationAddress.address || null
+      };
+      console.log('📍 Using "Location - Address" for coordinates (fallback):', coordinates);
+    } else {
+      console.warn('⚠️ No valid coordinates found in listing data');
     }
 
     // 11. Return enriched listing
