@@ -479,7 +479,7 @@ const PropertyCard = React.memo(function PropertyCard({ listing, selectedDaysCou
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef }) {
+function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, onLocationClick }) {
   const sentinelRef = useRef(null);
 
   useEffect(() => {
@@ -1610,7 +1610,7 @@ export default function SearchPage() {
                 isLoading={isLoading}
                 onOpenContactModal={handleOpenContactModal}
                 onOpenInfoModal={handleOpenInfoModal}
-                mapRef={mapRef}
+                onLocationClick={handleLocationClick}
               />
             )}
           </div>
