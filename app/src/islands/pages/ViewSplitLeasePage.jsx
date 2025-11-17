@@ -651,25 +651,33 @@ export default function ViewSplitLeasePage() {
           }}>
             {listing['Kitchen Type'] && (
               <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🍳</div>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
+                  <img src="/assets/images/fridge.svg" alt="Kitchen" style={{ width: '2rem', height: '2rem' }} />
+                </div>
                 <div>{listing['Kitchen Type']}</div>
               </div>
             )}
             {listing['Features - Qty Bathrooms'] !== null && (
               <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🚿</div>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
+                  <img src="/assets/images/bath.svg" alt="Bathroom" style={{ width: '2rem', height: '2rem' }} />
+                </div>
                 <div>{listing['Features - Qty Bathrooms']} Bathroom(s)</div>
               </div>
             )}
             {listing['Features - Qty Bedrooms'] !== null && (
               <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🛏️</div>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
+                  <img src="/assets/images/sleeping.svg" alt="Bedroom" style={{ width: '2rem', height: '2rem' }} />
+                </div>
                 <div>{listing.resolvedTypeOfSpace === 'Studio' ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedrooms`}</div>
               </div>
             )}
             {listing['Features - Qty Beds'] !== null && (
               <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>🛌</div>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
+                  <img src="/assets/images/bed.svg" alt="Bed" style={{ width: '2rem', height: '2rem' }} />
+                </div>
                 <div>{listing['Features - Qty Beds']} Bed(s)</div>
               </div>
             )}
