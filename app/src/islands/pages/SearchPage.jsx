@@ -1174,12 +1174,28 @@ export default function SearchPage() {
     if (boroughName) locationParts.push(boroughName);
     const location = locationParts.join(', ') || 'New York, NY';
 
-    // Extract coordinates from JSONB field "Location - Address"
-    // Note: Supabase returns JSONB as a string, so we need to parse it
+    // Extract coordinates from JSONB fields
+    // Priority: "Location - slightly different address" (for privacy/pin separation)
+    // Fallback: "Location - Address" (main address)
     // Format: { address: "...", lat: number, lng: number }
+    let locationSlightlyDifferent = dbListing['Location - slightly different address'];
     let locationAddress = dbListing['Location - Address'];
 
-    // Parse if it's a string
+    // Parse if they're strings (Supabase may return JSONB as strings)
+    if (typeof locationSlightlyDifferent === 'string') {
+      try {
+        locationSlightlyDifferent = JSON.parse(locationSlightlyDifferent);
+      } catch (error) {
+        console.error('❌ SearchPage: Failed to parse Location - slightly different address:', {
+          id: dbListing._id,
+          name: dbListing.Name,
+          rawValue: locationSlightlyDifferent,
+          error: error.message
+        });
+        locationSlightlyDifferent = null;
+      }
+    }
+
     if (typeof locationAddress === 'string') {
       try {
         locationAddress = JSON.parse(locationAddress);
@@ -1194,35 +1210,49 @@ export default function SearchPage() {
       }
     }
 
-    const lat = locationAddress?.lat;
-    const lng = locationAddress?.lng;
+    // Use slightly different address if available, otherwise fallback to main address
+    let coordinates = null;
+    let coordinateSource = null;
+
+    if (locationSlightlyDifferent?.lat && locationSlightlyDifferent?.lng) {
+      coordinates = {
+        lat: locationSlightlyDifferent.lat,
+        lng: locationSlightlyDifferent.lng
+      };
+      coordinateSource = 'slightly-different-address';
+    } else if (locationAddress?.lat && locationAddress?.lng) {
+      coordinates = {
+        lat: locationAddress.lat,
+        lng: locationAddress.lng
+      };
+      coordinateSource = 'main-address';
+    }
 
     console.log('🔄 SearchPage: Transforming listing:', {
       id: dbListing._id,
       name: dbListing.Name,
-      hasLocationAddress: !!locationAddress,
-      locationAddress: locationAddress,
-      extractedLat: lat,
-      extractedLng: lng,
-      hasValidCoords: !!(lat && lng)
+      hasSlightlyDifferentAddress: !!locationSlightlyDifferent,
+      hasMainAddress: !!locationAddress,
+      coordinateSource: coordinateSource,
+      coordinates: coordinates,
+      hasValidCoords: !!coordinates
     });
 
-    if (!lat || !lng) {
+    if (!coordinates) {
       console.error('❌ SearchPage: Missing coordinates for listing - will be filtered out:', {
         id: dbListing._id,
         name: dbListing.Name,
+        locationSlightlyDifferent: locationSlightlyDifferent,
         locationAddress: locationAddress
       });
     } else {
-      console.log('✅ SearchPage: Valid coordinates found:', {
+      console.log('✅ SearchPage: Valid coordinates found from', coordinateSource, ':', {
         id: dbListing._id,
         name: dbListing.Name,
-        lat,
-        lng
+        lat: coordinates.lat,
+        lng: coordinates.lng
       });
     }
-
-    const coordinates = (lat && lng) ? { lat, lng } : null;
 
     console.log('📍 SearchPage: Final coordinates for listing:', {
       id: dbListing._id,

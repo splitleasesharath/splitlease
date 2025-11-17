@@ -703,8 +703,6 @@ const GoogleMap = forwardRef(({
    * @returns {google.maps.OverlayView} The created overlay marker
    */
   const createPriceMarker = (map, coordinates, price, color, listing) => {
-    const hoverColor = color === '#00C851' ? '#00A040' : '#522580';
-
     const markerOverlay = new window.google.maps.OverlayView();
 
     markerOverlay.onAdd = function() {
@@ -712,7 +710,6 @@ const GoogleMap = forwardRef(({
       priceTag.innerHTML = `$${parseFloat(price).toFixed(2)}`;
       priceTag.className = 'map-price-marker';
       priceTag.dataset.color = color;
-      priceTag.dataset.hoverColor = hoverColor;
       priceTag.style.cssText = `
         position: absolute;
         background: ${color};
@@ -732,22 +729,9 @@ const GoogleMap = forwardRef(({
         pointer-events: auto;
       `;
 
-      // Use CSS hover for better performance
-      priceTag.addEventListener('mouseenter', () => {
-        priceTag.style.background = hoverColor;
-        priceTag.style.transform = 'translate(-50%, -50%) scale(1.1)';
-        priceTag.style.zIndex = '1010';
-      });
-
-      priceTag.addEventListener('mouseleave', () => {
-        priceTag.style.background = color;
-        priceTag.style.transform = 'translate(-50%, -50%) scale(1)';
-        priceTag.style.zIndex = color === '#31135D' ? '1002' : '1001';
-        // Remove transition after hover ends to prevent reanimation during map interactions
-        setTimeout(() => {
-          priceTag.style.transition = 'background-color 0.2s ease';
-        }, 200);
-      });
+      // HOVER EFFECTS TEMPORARILY REMOVED TO ISOLATE BUNCHING BUG
+      // TODO: Re-implement hover effects after fixing positioning bug
+      // Previous implementation was overwriting transform position from draw()
 
       // Use React callback for proper state management
       priceTag.addEventListener('click', (e) => {
