@@ -150,11 +150,16 @@ const GoogleMap = forwardRef(({
       // Show info window after pan completes
       setTimeout(() => {
         if (!infoWindowRef.current) {
-          infoWindowRef.current = new window.google.maps.InfoWindow();
+          infoWindowRef.current = new window.google.maps.InfoWindow({
+            disableAutoPan: false, // Allow auto-pan to keep info window in view
+          });
         }
 
         infoWindowRef.current.setContent(createInfoWindowContent(listing));
         infoWindowRef.current.setPosition({ lat: coords.lat, lng: coords.lng });
+        infoWindowRef.current.setOptions({
+          disableAutoPan: false,
+        });
         infoWindowRef.current.open(map);
       }, 600);
     }
@@ -690,23 +695,44 @@ const GoogleMap = forwardRef(({
   const createInfoWindowContent = (listing) => {
     // Simple mode: just show listing name (for view-split-lease page)
     if (simpleMode) {
+      // Truncate title to 15 characters max
+      const truncatedTitle = listing.title && listing.title.length > 15
+        ? listing.title.substring(0, 15) + '...'
+        : listing.title;
+
       return `
+        <style>
+          /* Hide the close button for non-dismissable info window */
+          .gm-style-iw-d {
+            overflow: visible !important;
+          }
+          .gm-style-iw-t::after {
+            display: none;
+          }
+          .gm-ui-hover-effect {
+            display: none !important;
+          }
+          /* Make info window responsive */
+          .gm-style-iw {
+            max-width: 90vw !important;
+          }
+        </style>
         <div style="
-          padding: 12px 16px;
+          padding: 8px 12px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          max-width: 280px;
-          min-width: 180px;
+          max-width: min(180px, 90vw);
           width: auto;
         ">
           <div style="
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             color: #1a202c;
-            line-height: 1.4;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
+            line-height: 1.3;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
           ">
-            ${listing.title}
+            ${truncatedTitle}
           </div>
         </div>
       `;
