@@ -20,7 +20,7 @@
  *   />
  */
 
-import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
 import { DEFAULTS, COLORS, getBoroughMapConfig } from '../../lib/constants.js';
 import ListingCardForMap from './ListingCard/ListingCardForMap.jsx';
 import { supabase } from '../../lib/supabase.js';
@@ -225,15 +225,12 @@ const GoogleMap = forwardRef(({
   /**
    * React callback to handle pin clicks properly within React's state management
    * This ensures state updates trigger re-renders correctly
-   * Stable callback with no dependencies to prevent marker recreation
    */
   const handlePinClick = useCallback(async (listing, priceTag) => {
-    if (import.meta.env.DEV) {
-      console.log('🖱️ handlePinClick: Pin clicked:', {
-        listingId: listing.id,
-        listingTitle: listing.title
-      });
-    }
+    console.log('🖱️ handlePinClick (React callback): Pin clicked:', {
+      listingId: listing.id,
+      listingTitle: listing.title
+    });
 
     // Calculate card position relative to map container
     const mapContainer = mapRef.current;
@@ -271,31 +268,32 @@ const GoogleMap = forwardRef(({
       cardTop = pinTop + priceTagRect.height + arrowHeight + gapFromPin;
     }
 
-    if (import.meta.env.DEV) {
-      console.log('📍 handlePinClick: Card position calculated:', { x: cardLeft, y: cardTop });
-    }
+    console.log('📍 handlePinClick: Card position calculated:', { x: cardLeft, y: cardTop });
 
     // Set position first
     setCardPosition({ x: cardLeft, y: cardTop });
+    console.log('✅ handlePinClick: Card position state updated');
 
     // Show card immediately
     setCardVisible(true);
+    console.log('✅ handlePinClick: Card visibility state set to true');
 
     // Fetch detailed listing data from Supabase
     const detailedListing = await fetchDetailedListingData(listing.id);
     if (detailedListing) {
-      if (import.meta.env.DEV) {
-        console.log('✅ handlePinClick: Setting detailed listing to card');
-      }
+      console.log('✅ handlePinClick: Setting detailed listing to card:', detailedListing);
       setSelectedListingForCard(detailedListing);
     } else {
-      console.error('❌ handlePinClick: Failed to fetch listing details');
+      console.error('❌ handlePinClick: Failed to fetch listing details, not showing card');
       setCardVisible(false);
     }
+    console.log('✅ handlePinClick: Selected listing state updated');
 
-    // Note: onMarkerClick prop removed from dependencies to prevent re-creation
-    // Parent can handle marker clicks via other mechanisms if needed
-  }, []); // No dependencies - stable function using only refs and setState
+    // Call parent callback
+    if (onMarkerClick) {
+      onMarkerClick(listing);
+    }
+  }, [onMarkerClick]);
 
   // Initialize Google Map when API is loaded
   useEffect(() => {
@@ -369,9 +367,9 @@ const GoogleMap = forwardRef(({
       window.addEventListener('google-maps-loaded', initMap);
       return () => window.removeEventListener('google-maps-loaded', initMap);
     }
-  }, [simpleMode, initialZoom]); // Removed listings dependencies - map initializes once, markers handle updates
+  }, [filteredListings, listings, simpleMode, initialZoom]);
 
-  // Update markers when listings change - OPTIMIZED: Only add/remove/update changed markers
+  // Update markers when listings change
   useEffect(() => {
     if (!mapLoaded || !googleMapRef.current) {
       if (import.meta.env.DEV) {
@@ -380,7 +378,7 @@ const GoogleMap = forwardRef(({
       return;
     }
 
-    // Performance optimization: Check if we need to update at all
+    // Performance optimization: Prevent duplicate marker updates
     const markerSignature = `${listings.map(l => l.id).join(',')}-${filteredListings.map(l => l.id).join(',')}-${showAllListings}`;
     if (lastMarkersUpdateRef.current === markerSignature) {
       if (import.meta.env.DEV) {
@@ -391,149 +389,255 @@ const GoogleMap = forwardRef(({
 
     lastMarkersUpdateRef.current = markerSignature;
 
-    if (import.meta.env.DEV) {
-      console.log('🗺️ GoogleMap: Marker update triggered', {
-        totalListings: listings.length,
-        filteredListings: filteredListings.length,
-        showAllListings
-      });
-    }
+    // Defer marker creation to next frame to prevent blocking render
+    function createMarkers() {
+      if (import.meta.env.DEV) {
+        console.log('🗺️ GoogleMap: Markers update triggered', {
+          mapLoaded,
+          googleMapExists: !!googleMapRef.current,
+          totalListings: listings.length,
+          filteredListings: filteredListings.length,
+          showAllListings,
+          allListingsPassedCorrectly: listings.length > 0,
+          backgroundLayerEnabled: showAllListings
+        });
+      }
 
-    const map = googleMapRef.current;
+      // Clear existing markers
+      markersRef.current.forEach(marker => marker.setMap(null));
+      markersRef.current = [];
+      console.log('🗺️ GoogleMap: Cleared existing markers');
 
-    // Create a Map of existing markers for quick lookup by listing ID
-    const existingMarkers = new Map(
-      markersRef.current.map(marker => [marker.listingId, marker])
-    );
+      const map = googleMapRef.current;
+      const bounds = new window.google.maps.LatLngBounds();
+      let hasValidMarkers = false;
 
-    // Determine which markers should be displayed
-    const markersToShow = new Map();
+      // Create markers for filtered listings (simple or purple depending on mode)
+      if (filteredListings && filteredListings.length > 0) {
+        console.log(`🗺️ GoogleMap: Starting ${simpleMode ? 'simple' : 'purple'} marker creation for filtered listings:`, filteredListings.length);
+        console.log('🗺️ GoogleMap: First 3 filtered listings:', filteredListings.slice(0, 3).map(l => ({
+          id: l.id,
+          title: l.title,
+          coordinates: l.coordinates,
+          hasCoordinates: !!(l.coordinates?.lat && l.coordinates?.lng)
+        })));
 
-    // Add filtered listings (purple/simple markers - higher priority)
-    if (filteredListings && filteredListings.length > 0) {
-      filteredListings.forEach(listing => {
-        if (listing.coordinates?.lat && listing.coordinates?.lng) {
-          markersToShow.set(listing.id, {
-            listing,
-            color: COLORS.SECONDARY, // Purple
-            zIndex: 1002,
-            isSimple: simpleMode
+        let markersCreated = 0;
+        let skippedNoCoordinates = 0;
+        let skippedInvalidCoordinates = [];
+
+        filteredListings.forEach((listing, index) => {
+          console.log(`🗺️ GoogleMap: [${index + 1}/${filteredListings.length}] Processing filtered listing:`, {
+            id: listing.id,
+            title: listing.title,
+            coordinates: listing.coordinates,
+            hasCoordinatesObject: !!listing.coordinates,
+            hasLat: listing.coordinates?.lat !== undefined,
+            hasLng: listing.coordinates?.lng !== undefined,
+            lat: listing.coordinates?.lat,
+            lng: listing.coordinates?.lng
+          });
+
+          if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
+            console.error(`❌ GoogleMap: Skipping filtered listing ${listing.id} - Missing or invalid coordinates:`, {
+              coordinates: listing.coordinates,
+              hasCoordinates: !!listing.coordinates,
+              lat: listing.coordinates?.lat,
+              lng: listing.coordinates?.lng
+            });
+            skippedNoCoordinates++;
+            skippedInvalidCoordinates.push({
+              id: listing.id,
+              title: listing.title,
+              coordinates: listing.coordinates
+            });
+            return;
+          }
+
+          const position = {
+            lat: listing.coordinates.lat,
+            lng: listing.coordinates.lng
+          };
+
+          console.log(`✅ GoogleMap: Creating ${simpleMode ? 'simple' : 'purple'} marker for listing ${listing.id}:`, {
+            position,
+            price: listing.price?.starting || listing['Starting nightly price'],
+            title: listing.title,
+            simpleMode
+          });
+
+          // Create marker based on mode
+          const marker = simpleMode
+            ? createSimpleMarker(map, position, listing)
+            : createPriceMarker(
+                map,
+                position,
+                listing.price?.starting || listing['Starting nightly price'] || 0,
+                COLORS.SECONDARY, // Purple
+                listing
+              );
+
+          markersRef.current.push(marker);
+          bounds.extend(position);
+          hasValidMarkers = true;
+          markersCreated++;
+
+          console.log(`✅ GoogleMap: ${simpleMode ? 'Simple' : 'Purple'} marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
+        });
+
+        console.log(`📊 GoogleMap: ${simpleMode ? 'Simple' : 'Purple'} marker creation summary:`, {
+          totalFiltered: filteredListings.length,
+          markersCreated: markersCreated,
+          skippedNoCoordinates,
+          skippedInvalidCoordinates: skippedInvalidCoordinates.length,
+          invalidListings: skippedInvalidCoordinates
+        });
+      } else {
+        console.log('⚠️ GoogleMap: No filtered listings to create purple markers for');
+      }
+
+      // Create markers for all listings (green) - background context
+      if (showAllListings && listings && listings.length > 0) {
+        console.log('🗺️ GoogleMap: Starting green marker creation for all listings (background layer):', listings.length);
+        console.log('🗺️ GoogleMap: First 3 all listings:', listings.slice(0, 3).map(l => ({
+          id: l.id,
+          title: l.title,
+          coordinates: l.coordinates,
+          hasCoordinates: !!(l.coordinates?.lat && l.coordinates?.lng)
+        })));
+
+        let greenMarkersCreated = 0;
+        let skippedAlreadyFiltered = 0;
+        let skippedNoCoordinates = 0;
+        let skippedInvalidCoordinates = [];
+
+        listings.forEach((listing, index) => {
+          // Skip if already shown as filtered listing
+          const isFiltered = filteredListings?.some(fl => fl.id === listing.id);
+          if (isFiltered) {
+            console.log(`⏭️ GoogleMap: [${index + 1}/${listings.length}] Skipping ${listing.id} - Already shown as purple marker`);
+            skippedAlreadyFiltered++;
+            return;
+          }
+
+          console.log(`🗺️ GoogleMap: [${index + 1}/${listings.length}] Processing all listing:`, {
+            id: listing.id,
+            title: listing.title,
+            coordinates: listing.coordinates,
+            hasCoordinatesObject: !!listing.coordinates,
+            hasLat: listing.coordinates?.lat !== undefined,
+            hasLng: listing.coordinates?.lng !== undefined,
+            lat: listing.coordinates?.lat,
+            lng: listing.coordinates?.lng
+          });
+
+          if (!listing.coordinates || !listing.coordinates.lat || !listing.coordinates.lng) {
+            console.error(`❌ GoogleMap: Skipping all listing ${listing.id} - Missing or invalid coordinates:`, {
+              coordinates: listing.coordinates,
+              hasCoordinates: !!listing.coordinates,
+              lat: listing.coordinates?.lat,
+              lng: listing.coordinates?.lng
+            });
+            skippedNoCoordinates++;
+            skippedInvalidCoordinates.push({
+              id: listing.id,
+              title: listing.title,
+              coordinates: listing.coordinates
+            });
+            return;
+          }
+
+          const position = {
+            lat: listing.coordinates.lat,
+            lng: listing.coordinates.lng
+          };
+
+          console.log(`✅ GoogleMap: Creating green marker for listing ${listing.id}:`, {
+            position,
+            price: listing.price?.starting || listing['Starting nightly price'],
+            title: listing.title
+          });
+
+          // Create green marker for all listings
+          const marker = createPriceMarker(
+            map,
+            position,
+            listing.price?.starting || listing['Starting nightly price'] || 0,
+            COLORS.SUCCESS, // Green
+            listing
+          );
+
+          markersRef.current.push(marker);
+          bounds.extend(position);
+          hasValidMarkers = true;
+          greenMarkersCreated++;
+
+          console.log(`✅ GoogleMap: Green marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
+        });
+
+        console.log('📊 GoogleMap: Green marker creation summary:', {
+          totalAllListings: listings.length,
+          markersCreated: greenMarkersCreated,
+          skippedAlreadyFiltered,
+          skippedNoCoordinates,
+          skippedInvalidCoordinates: skippedInvalidCoordinates.length,
+          invalidListings: skippedInvalidCoordinates
+        });
+      } else {
+        console.log('⚠️ GoogleMap: No all listings to create green markers for (showAllListings:', showAllListings, ', listings.length:', listings?.length, ')');
+      }
+
+      // Fit map to show all markers
+      if (hasValidMarkers) {
+        if (import.meta.env.DEV) {
+          console.log('✅ GoogleMap: Fitting bounds to markers', {
+            markerCount: markersRef.current.length,
+            bounds: bounds.toString(),
+            disableAutoZoom,
+            initialZoom
           });
         }
-      });
-    }
 
-    // Add all listings (green markers - background layer)
-    if (showAllListings && listings && listings.length > 0) {
-      listings.forEach(listing => {
-        if (listing.coordinates?.lat && listing.coordinates?.lng) {
-          // Skip if already shown as filtered listing (purple takes priority)
-          if (!markersToShow.has(listing.id)) {
-            markersToShow.set(listing.id, {
-              listing,
-              color: COLORS.SUCCESS, // Green
-              zIndex: 1001,
-              isSimple: false
+        // For simple mode or when initialZoom is specified, center and zoom differently
+        if (simpleMode && markersRef.current.length === 1) {
+          // Get the first marker's position
+          const firstListing = filteredListings[0] || listings[0];
+          if (firstListing?.coordinates?.lat && firstListing?.coordinates?.lng) {
+            const targetZoom = initialZoom || 17;
+            map.setCenter({ lat: firstListing.coordinates.lat, lng: firstListing.coordinates.lng });
+            map.setZoom(targetZoom);
+            console.log('✅ GoogleMap: Simple mode - FORCING center and zoom:', {
+              center: { lat: firstListing.coordinates.lat, lng: firstListing.coordinates.lng },
+              zoom: targetZoom,
+              listing: firstListing.id || firstListing.title
+            });
+          } else {
+            console.error('❌ GoogleMap: Simple mode but no valid coordinates found:', {
+              hasCoordinates: !!firstListing?.coordinates,
+              coordinates: firstListing?.coordinates,
+              listing: firstListing
+            });
+          }
+        } else if (!disableAutoZoom) {
+          // Normal auto-fit behavior
+          map.fitBounds(bounds);
+
+          // Prevent over-zooming on single marker (unless initial zoom is specified)
+          if (!initialZoom) {
+            const listener = window.google.maps.event.addListener(map, 'idle', () => {
+              if (map.getZoom() > 16) map.setZoom(16);
+              window.google.maps.event.removeListener(listener);
             });
           }
         }
-      });
-    }
-
-    // REMOVE markers that should no longer exist
-    const markersToRemove = [];
-    existingMarkers.forEach((marker, listingId) => {
-      if (!markersToShow.has(listingId)) {
-        marker.setMap(null); // Remove from map
-        markersToRemove.push(listingId);
-        if (import.meta.env.DEV) {
-          console.log(`🗑️ GoogleMap: Removed marker for listing ${listingId}`);
-        }
-      }
-    });
-
-    // Update markersRef to remove deleted markers
-    markersRef.current = markersRef.current.filter(m => !markersToRemove.includes(m.listingId));
-
-    // Prepare bounds for auto-fit
-    const bounds = new window.google.maps.LatLngBounds();
-    let hasValidMarkers = false;
-
-    // ADD new markers or UPDATE existing ones
-    markersToShow.forEach(({ listing, color, zIndex, isSimple }, listingId) => {
-      const position = {
-        lat: listing.coordinates.lat,
-        lng: listing.coordinates.lng
-      };
-
-      bounds.extend(position);
-      hasValidMarkers = true;
-
-      const existingMarker = existingMarkers.get(listingId);
-
-      if (existingMarker) {
-        // Marker exists - check if we need to UPDATE it
-        const priceTag = existingMarker.div;
-        if (priceTag) {
-          const currentColor = priceTag.dataset.color;
-
-          // Update if color changed (purple ↔ green transition)
-          if (currentColor !== color) {
-            const hoverColor = color === COLORS.SUCCESS ? '#00A040' : '#522580';
-            priceTag.style.background = color;
-            priceTag.style.zIndex = zIndex;
-            priceTag.dataset.color = color;
-            priceTag.dataset.hoverColor = hoverColor;
-
-            if (import.meta.env.DEV) {
-              console.log(`🔄 GoogleMap: Updated marker color for listing ${listingId}: ${currentColor} → ${color}`);
-            }
-          }
-        }
       } else {
-        // Marker doesn't exist - CREATE new marker
-        const price = listing.price?.starting || listing['Starting nightly price'] || 0;
-
-        const marker = isSimple
-          ? createSimpleMarker(map, position, listing)
-          : createPriceMarker(map, position, price, color, listing);
-
-        markersRef.current.push(marker);
-
-        if (import.meta.env.DEV) {
-          console.log(`➕ GoogleMap: Added new ${color === COLORS.SECONDARY ? 'purple' : 'green'} marker for listing ${listingId}`);
-        }
-      }
-    });
-
-    if (import.meta.env.DEV) {
-      console.log(`📊 GoogleMap: Marker update complete - Total: ${markersRef.current.length}, Added: ${markersToShow.size - existingMarkers.size + markersToRemove.length}, Removed: ${markersToRemove.length}`);
-    }
-
-    // Auto-fit bounds to show all markers
-    if (hasValidMarkers) {
-      // For simple mode with single marker, center directly
-      if (simpleMode && markersRef.current.length === 1) {
-        const firstListing = filteredListings[0] || listings[0];
-        if (firstListing?.coordinates?.lat && firstListing?.coordinates?.lng) {
-          const targetZoom = initialZoom || 17;
-          map.setCenter({ lat: firstListing.coordinates.lat, lng: firstListing.coordinates.lng });
-          map.setZoom(targetZoom);
-        }
-      } else if (!disableAutoZoom) {
-        // Normal auto-fit behavior for search page
-        map.fitBounds(bounds);
-
-        // Prevent over-zooming on single marker
-        if (!initialZoom) {
-          const listener = window.google.maps.event.addListener(map, 'idle', () => {
-            if (map.getZoom() > 16) map.setZoom(16);
-            window.google.maps.event.removeListener(listener);
-          });
-        }
+        console.warn('⚠️ GoogleMap: No valid markers to display');
       }
     }
-  }, [listings, filteredListings, mapLoaded, showAllListings, simpleMode, disableAutoZoom, initialZoom]);
+
+    // Render markers immediately without lazy loading
+    createMarkers();
+  }, [listings, filteredListings, mapLoaded, showAllListings]);
 
   // Recenter map when borough changes
   useEffect(() => {
@@ -930,33 +1034,4 @@ const GoogleMap = forwardRef(({
 
 GoogleMap.displayName = 'GoogleMap';
 
-/**
- * Custom comparison function for React.memo
- * Only re-render if actual listing data or critical props changed
- * Ignores unstable function references (onMarkerClick, onAIResearchClick)
- */
-const arePropsEqual = (prevProps, nextProps) => {
-  // Compare array contents by listing IDs, not array references
-  const listingsEqual =
-    prevProps.listings.length === nextProps.listings.length &&
-    prevProps.listings.every((listing, i) => listing.id === nextProps.listings[i]?.id);
-
-  const filteredListingsEqual =
-    prevProps.filteredListings.length === nextProps.filteredListings.length &&
-    prevProps.filteredListings.every((listing, i) => listing.id === nextProps.filteredListings[i]?.id);
-
-  // Compare other critical props
-  const criticalPropsEqual =
-    prevProps.selectedBorough === nextProps.selectedBorough &&
-    prevProps.simpleMode === nextProps.simpleMode &&
-    prevProps.disableAutoZoom === nextProps.disableAutoZoom &&
-    prevProps.initialZoom === nextProps.initialZoom &&
-    prevProps.selectedListing === nextProps.selectedListing;
-
-  // Ignore function prop changes (onMarkerClick, onAIResearchClick)
-  // These should be stable via useCallback in parent, but we ignore them anyway
-
-  return listingsEqual && filteredListingsEqual && criticalPropsEqual;
-};
-
-export default React.memo(GoogleMap, arePropsEqual);
+export default GoogleMap;
