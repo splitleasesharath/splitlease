@@ -79,25 +79,12 @@ export default function ListingScheduleSelector({
         {selectedDays.length > 0 && (
           <>
             <div className="info-row">
-              <span className="info-label">Days Selected:</span>
               <span className="info-value">
                 {selectedDays.length === 7
                   ? 'Full-time'
-                  : `${selectedDays.length} days, ${nightsCount} nights`}
+                  : `${checkInDay?.name || ''} - ${checkOutDay?.name || ''} (${selectedDays.length} days, ${nightsCount} nights)`}
               </span>
             </div>
-            {selectedDays.length < 7 && checkInDay && (
-              <div className="info-row">
-                <span className="info-label">Check-in Day:</span>
-                <span className="info-value">{checkInDay.name}</span>
-              </div>
-            )}
-            {selectedDays.length < 7 && selectedDays.length > 0 && (
-              <div className="info-row">
-                <span className="info-label">Check-out Day:</span>
-                <span className="info-value">{selectedDays[selectedDays.length - 1].name}</span>
-              </div>
-            )}
             {!isContiguous && (
               <div className="info-row">
                 <span className="info-label"></span>
