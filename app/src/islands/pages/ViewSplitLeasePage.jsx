@@ -1465,7 +1465,8 @@ export default function ViewSplitLeasePage() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            zIndex: 1000
+            zIndex: 1000,
+            padding: isMobile ? '1rem' : '2rem'
           }}
           onClick={() => setShowPhotoModal(false)}
         >
@@ -1473,8 +1474,8 @@ export default function ViewSplitLeasePage() {
             onClick={() => setShowPhotoModal(false)}
             style={{
               position: 'absolute',
-              top: '2rem',
-              right: '2rem',
+              top: isMobile ? '1rem' : '2rem',
+              right: isMobile ? '1rem' : '2rem',
               background: 'rgba(255,255,255,0.2)',
               border: 'none',
               color: 'white',
@@ -1485,7 +1486,8 @@ export default function ViewSplitLeasePage() {
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              zIndex: 1002
             }}
           >
             ×
@@ -1495,19 +1497,24 @@ export default function ViewSplitLeasePage() {
             src={listing.photos[currentPhotoIndex]?.Photo}
             alt={`${listing.Name} - photo ${currentPhotoIndex + 1}`}
             style={{
-              maxWidth: '90vw',
-              maxHeight: '80vh',
-              objectFit: 'contain'
+              maxWidth: isMobile ? '90vw' : '85vw',
+              maxHeight: isMobile ? '60vh' : '70vh',
+              objectFit: 'contain',
+              marginBottom: isMobile ? '8rem' : '6rem'
             }}
             onClick={(e) => e.stopPropagation()}
           />
 
           <div style={{
             position: 'absolute',
-            bottom: '2rem',
+            bottom: isMobile ? '5rem' : '6rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
             display: 'flex',
-            gap: '1rem',
-            alignItems: 'center'
+            gap: isMobile ? '0.5rem' : '1.5rem',
+            alignItems: 'center',
+            flexWrap: isMobile ? 'nowrap' : 'nowrap',
+            zIndex: 1001
           }}>
             <button
               onClick={(e) => {
@@ -1518,16 +1525,24 @@ export default function ViewSplitLeasePage() {
                 background: 'rgba(255,255,255,0.2)',
                 border: 'none',
                 color: 'white',
-                padding: '0.75rem 1.5rem',
+                padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                fontWeight: '600'
+                fontWeight: '600',
+                fontSize: isMobile ? '0.875rem' : '1rem',
+                whiteSpace: 'nowrap'
               }}
             >
               ← Previous
             </button>
 
-            <span style={{ color: 'white', fontSize: '0.875rem' }}>
+            <span style={{
+              color: 'white',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              whiteSpace: 'nowrap',
+              minWidth: isMobile ? '60px' : '80px',
+              textAlign: 'center'
+            }}>
               {currentPhotoIndex + 1} / {listing.photos.length}
             </span>
 
@@ -1540,10 +1555,12 @@ export default function ViewSplitLeasePage() {
                 background: 'rgba(255,255,255,0.2)',
                 border: 'none',
                 color: 'white',
-                padding: '0.75rem 1.5rem',
+                padding: isMobile ? '0.5rem 1rem' : '0.75rem 1.5rem',
                 borderRadius: '8px',
                 cursor: 'pointer',
-                fontWeight: '600'
+                fontWeight: '600',
+                fontSize: isMobile ? '0.875rem' : '1rem',
+                whiteSpace: 'nowrap'
               }}
             >
               Next →
@@ -1554,15 +1571,18 @@ export default function ViewSplitLeasePage() {
             onClick={() => setShowPhotoModal(false)}
             style={{
               position: 'absolute',
-              bottom: '2rem',
+              bottom: isMobile ? '1.5rem' : '2rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
               background: 'white',
               border: 'none',
               color: COLORS.TEXT_DARK,
-              padding: '0.75rem 1.5rem',
+              padding: isMobile ? '0.5rem 2rem' : '0.75rem 2.5rem',
               borderRadius: '8px',
               cursor: 'pointer',
               fontWeight: '600',
-              marginTop: '1rem'
+              fontSize: isMobile ? '0.875rem' : '1rem',
+              zIndex: 1001
             }}
           >
             Close
