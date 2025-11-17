@@ -276,6 +276,17 @@ export default function ViewSplitLeasePage() {
   }, [listing]); // Re-run when listing data is available
 
   // ============================================================================
+  // UPDATE DOCUMENT TITLE
+  // ============================================================================
+
+  useEffect(() => {
+    // Update the browser tab title with the listing name
+    if (listing?.Name) {
+      document.title = `${listing.Name} | Split Lease`;
+    }
+  }, [listing]);
+
+  // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
 
