@@ -35,23 +35,11 @@ export function ErrorOverlay({
     return null;
   };
 
-  // Determine if X button should be shown (hide for warning dialogs)
-  const showCloseButton = errorState.errorType !== 'maximum_nights_warning';
-
   return (
-    <div className="error-overlay-backdrop" onClick={showCloseButton ? onClose : undefined}>
+    <div className="error-overlay-backdrop">
       <div className="error-overlay" onClick={(e) => e.stopPropagation()}>
         <div className="error-header">
           <h3>{getErrorTitle()}</h3>
-          {showCloseButton && (
-            <button
-              className="error-close"
-              onClick={onClose}
-              aria-label="Close error"
-            >
-              ×
-            </button>
-          )}
         </div>
         <div className="error-content">
           <p>{errorState.errorMessage}</p>
