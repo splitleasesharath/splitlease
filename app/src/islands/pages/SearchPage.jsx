@@ -658,7 +658,8 @@ export default function SearchPage() {
           .from('listing')
           .select('*')
           .eq('Active', true)
-          .eq('isForUsability', false);
+          .eq('isForUsability', false)
+          .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null');
 
         if (error) throw error;
 
@@ -903,7 +904,8 @@ export default function SearchPage() {
         .select('*')
         .eq('"Complete"', true)
         .or('"Active".eq.true,"Active".is.null')
-        .eq('"Location - Borough"', borough.id);
+        .eq('"Location - Borough"', borough.id)
+        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null');
 
       // Apply week pattern filter
       if (weekPattern !== 'every-week') {
