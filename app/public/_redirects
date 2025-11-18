@@ -26,6 +26,9 @@
 # Handle why-split-lease page
 /why-split-lease.html  /why-split-lease.html  200
 
-# Homepage - must be last to avoid catching other routes
+# Homepage
 /  /index.html  200
 /index.html  /index.html  200
+
+# Catch-all 404 - MUST be last rule
+/*  /404.html  404
