@@ -625,12 +625,38 @@ const GoogleMap = forwardRef(({
           // Get the first marker's position
           const firstListing = filteredListings[0] || listings[0];
           if (firstListing?.coordinates?.lat && firstListing?.coordinates?.lng) {
-            const targetZoom = initialZoom || 17;
-            map.setCenter({ lat: firstListing.coordinates.lat, lng: firstListing.coordinates.lng });
-            map.setZoom(targetZoom);
-            console.log('✅ GoogleMap: Simple mode - FORCING center and zoom:', {
+            // Determine zoom level based on borough (matching zoomToListing behavior)
+            let targetZoom = 16;
+            if (firstListing.borough === 'Manhattan') {
+              targetZoom = 17;
+            } else if (firstListing.borough === 'Staten Island' || firstListing.borough === 'Queens') {
+              targetZoom = 15;
+            }
+            // Override with initialZoom if provided
+            if (initialZoom) {
+              targetZoom = initialZoom;
+            }
+
+            // Use fitBounds with padding (matching zoomToListing behavior)
+            const listingBounds = new window.google.maps.LatLngBounds();
+            listingBounds.extend({ lat: firstListing.coordinates.lat, lng: firstListing.coordinates.lng });
+
+            map.fitBounds(listingBounds, {
+              top: 150,  // Accounts for header overlap + centering
+              bottom: 50, // Balances for proper centering
+              left: 50,
+              right: 50
+            });
+
+            // Set zoom level after fitBounds completes
+            window.google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
+              map.setZoom(targetZoom);
+            });
+
+            console.log('✅ GoogleMap: Simple mode - Center and zoom with fitBounds:', {
               center: { lat: firstListing.coordinates.lat, lng: firstListing.coordinates.lng },
               zoom: targetZoom,
+              borough: firstListing.borough,
               listing: firstListing.id || firstListing.title
             });
           } else {
