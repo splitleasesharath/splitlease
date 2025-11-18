@@ -35,7 +35,8 @@ const GoogleMap = forwardRef(({
   simpleMode = false,      // If true, show simple marker without price/card (for view-split-lease page)
   initialZoom = null,      // Optional initial zoom level (defaults to auto-fit)
   disableAutoZoom = false, // If true, don't auto-fit bounds or restrict zoom
-  onAIResearchClick = null // Callback when AI research button is clicked
+  onAIResearchClick = null, // Callback when AI research button is clicked
+  onMessageClick = null    // Callback when message button is clicked on map card
 }, ref) => {
   console.log('🗺️ GoogleMap: Component rendered with props:', {
     listingsCount: listings.length,
@@ -925,6 +926,7 @@ const GoogleMap = forwardRef(({
               }}
               isVisible={cardVisible}
               position={cardPosition}
+              onMessageClick={onMessageClick}
             />
           )}
         </>

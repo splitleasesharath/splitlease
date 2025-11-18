@@ -21,12 +21,14 @@ import './ListingCardForMap.css';
  * @param {Function} props.onClose - Close card callback
  * @param {boolean} props.isVisible - Visibility state
  * @param {Object} props.position - Position {x, y} relative to map container
+ * @param {Function} props.onMessageClick - Callback when message button is clicked
  */
 export default function ListingCardForMap({
   listing,
   onClose,
   isVisible,
-  position = { x: 0, y: 0 }
+  position = { x: 0, y: 0 },
+  onMessageClick
 }) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -57,8 +59,11 @@ export default function ListingCardForMap({
   };
 
   const handleMessage = () => {
-    // Could open contact modal or navigate to messaging
-    console.log('Message clicked for listing:', listing.id);
+    if (onMessageClick) {
+      onMessageClick(listing);
+    } else {
+      console.log('Message clicked for listing:', listing.id);
+    }
   };
 
   const formatPrice = (price) => {

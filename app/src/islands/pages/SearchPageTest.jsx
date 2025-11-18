@@ -667,7 +667,7 @@ export default function SearchPage() {
           .select('*')
           .eq('Active', true)
           .eq('isForUsability', false)
-          .filter('"Location - Address"', 'not.is', null);
+          .not('"Location - Address"', 'is', null);
 
         if (error) throw error;
 
@@ -1598,6 +1598,7 @@ export default function SearchPage() {
               console.log('Marker clicked:', listing.title);
             }}
             onAIResearchClick={handleOpenAIResearchModal}
+            onMessageClick={handleOpenContactModal}
           />
         </section>
       </main>
