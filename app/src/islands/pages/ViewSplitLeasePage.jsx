@@ -545,7 +545,7 @@ export default function ViewSplitLeasePage() {
         padding: '2rem',
         paddingTop: 'calc(100px + 2rem)', // Increased from 80px to prevent header overlap
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 440px',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 396px',
         gap: '2rem'
       }}>
 
