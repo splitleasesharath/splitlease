@@ -1302,7 +1302,7 @@ export default function ViewSplitLeasePage() {
             <div style={{
               fontSize: '36px',
               fontWeight: '800',
-              background: 'linear-gradient(135deg, #6B46C1 0%, #9333ea 100%)',
+              background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
@@ -1327,7 +1327,7 @@ export default function ViewSplitLeasePage() {
             <label style={{
               fontSize: '12px',
               fontWeight: '700',
-              color: '#6B46C1',
+              color: '#31135d',
               marginBottom: '8px',
               display: 'flex',
               alignItems: 'center',
@@ -1365,8 +1365,8 @@ export default function ViewSplitLeasePage() {
                   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#6B46C1';
-                  e.target.style.boxShadow = '0 4px 6px rgba(107, 70, 193, 0.1)';
+                  e.target.style.borderColor = '#31135d';
+                  e.target.style.boxShadow = '0 4px 6px rgba(49, 19, 93, 0.1)';
                 }}
                 onMouseLeave={(e) => {
                   if (document.activeElement !== e.target) {
@@ -1375,8 +1375,8 @@ export default function ViewSplitLeasePage() {
                   }
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#6B46C1';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(107, 70, 193, 0.15)';
+                  e.target.style.borderColor = '#31135d';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(49, 19, 93, 0.15)';
                   e.target.style.transform = 'translateY(-1px)';
                 }}
                 onBlur={(e) => {
@@ -1431,7 +1431,7 @@ export default function ViewSplitLeasePage() {
                 width: '18px',
                 height: '18px',
                 cursor: 'pointer',
-                accentColor: '#6B46C1',
+                accentColor: '#31135d',
                 marginTop: '2px',
                 flexShrink: 0
               }}
@@ -1490,7 +1490,7 @@ export default function ViewSplitLeasePage() {
             <label style={{
               fontSize: '12px',
               fontWeight: '700',
-              color: '#6B46C1',
+              color: '#31135d',
               marginBottom: '8px',
               display: 'flex',
               alignItems: 'center',
@@ -1528,8 +1528,8 @@ export default function ViewSplitLeasePage() {
                   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#6B46C1';
-                  e.target.style.boxShadow = '0 4px 6px rgba(107, 70, 193, 0.1)';
+                  e.target.style.borderColor = '#31135d';
+                  e.target.style.boxShadow = '0 4px 6px rgba(49, 19, 93, 0.1)';
                 }}
                 onMouseLeave={(e) => {
                   if (document.activeElement !== e.target) {
@@ -1538,8 +1538,8 @@ export default function ViewSplitLeasePage() {
                   }
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#6B46C1';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(107, 70, 193, 0.15)';
+                  e.target.style.borderColor = '#31135d';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(49, 19, 93, 0.15)';
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = '#E5E7EB';
@@ -1561,7 +1561,7 @@ export default function ViewSplitLeasePage() {
                 height: '0',
                 borderLeft: '5px solid transparent',
                 borderRight: '5px solid transparent',
-                borderTop: '5px solid #6B46C1',
+                borderTop: '5px solid #31135d',
                 pointerEvents: 'none'
               }}></div>
             </div>
@@ -1609,7 +1609,7 @@ export default function ViewSplitLeasePage() {
             <span style={{
               fontSize: '28px',
               fontWeight: '800',
-              background: 'linear-gradient(135deg, #6B46C1 0%, #9333ea 100%)',
+              background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'
@@ -1636,7 +1636,7 @@ export default function ViewSplitLeasePage() {
               width: '100%',
               padding: '14px',
               background: scheduleValidation?.valid && pricingBreakdown?.valid
-                ? 'linear-gradient(135deg, #6B46C1 0%, #9333ea 100%)'
+                ? 'linear-gradient(135deg, #31135d 0%, #31135d 100%)'
                 : '#D1D5DB',
               color: 'white',
               border: 'none',
@@ -1646,7 +1646,7 @@ export default function ViewSplitLeasePage() {
               cursor: scheduleValidation?.valid && pricingBreakdown?.valid ? 'pointer' : 'not-allowed',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               boxShadow: scheduleValidation?.valid && pricingBreakdown?.valid
-                ? '0 4px 14px rgba(107, 70, 193, 0.4)'
+                ? '0 4px 14px rgba(49, 19, 93, 0.4)'
                 : 'none',
               position: 'relative',
               overflow: 'hidden'
@@ -1654,13 +1654,13 @@ export default function ViewSplitLeasePage() {
             onMouseEnter={(e) => {
               if (scheduleValidation?.valid && pricingBreakdown?.valid) {
                 e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 8px 24px rgba(107, 70, 193, 0.5)';
+                e.target.style.boxShadow = '0 8px 24px rgba(49, 19, 93, 0.5)';
               }
             }}
             onMouseLeave={(e) => {
               if (scheduleValidation?.valid && pricingBreakdown?.valid) {
                 e.target.style.transform = '';
-                e.target.style.boxShadow = '0 4px 14px rgba(107, 70, 193, 0.4)';
+                e.target.style.boxShadow = '0 4px 14px rgba(49, 19, 93, 0.4)';
               }
             }}
           >
