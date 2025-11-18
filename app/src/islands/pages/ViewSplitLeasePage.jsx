@@ -1265,9 +1265,9 @@ export default function ViewSplitLeasePage() {
           className="booking-widget"
           style={{
             position: isMobile ? 'static' : 'sticky',
-            top: isMobile ? 'auto' : '20px',
+            top: isMobile ? 'auto' : 'calc(80px + 20px)',
             alignSelf: 'flex-start',
-            maxHeight: 'calc(100vh - 40px)',
+            maxHeight: 'calc(100vh - 80px - 40px)',
             overflowY: 'auto',
             height: 'fit-content',
             border: '1px solid rgba(255, 255, 255, 0.2)',
