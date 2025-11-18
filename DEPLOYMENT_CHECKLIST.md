@@ -23,11 +23,11 @@
 - [x] Proper error handling on all database operations
 
 ### ✅ Authentication & Security
-- [x] Auth guard prevents unauthorized access
-- [x] Redirects non-guests to homepage
+- [x] Auth guard prevents unauthorized access (login required)
+- [x] Natural access control via email-based proposal filtering
 - [x] Cookie-based authentication working
 - [x] User email extracted from auth token
-- [x] RLS handled at application layer
+- [x] Proposals filtered by logged-in user's email
 
 ### ✅ Routing & URLs
 - [x] Fixed routing: `/guest-proposals` → `/guest-proposals.html`
