@@ -62,10 +62,12 @@ export default function Header() {
           // Token is invalid or not present
           setCurrentUser(null);
 
-          // If on a protected page, redirect to home
+          // If on a protected page and token validation failed, redirect to home
+          // Don't reload - just redirect, since clearAuthData() was already called
           if (isProtectedPage()) {
             console.log('⚠️ Invalid token on protected page - redirecting to home');
-            window.location.href = '/';
+            // Use replace() to avoid adding to browser history and prevent back button loops
+            window.location.replace('/');
           }
         }
       } catch (error) {

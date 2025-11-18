@@ -192,15 +192,22 @@ export function getSessionAge() {
 
 /**
  * Clear authentication data from storage
- * Removes all auth tokens, session IDs, timestamps, and user type
+ * Removes all auth tokens, session IDs, timestamps, user type, and cookies
  */
 export function clearAuthData() {
+  // Clear localStorage
   localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
   localStorage.removeItem(AUTH_STORAGE_KEYS.SESSION_ID);
   localStorage.removeItem(AUTH_STORAGE_KEYS.LAST_AUTH);
   localStorage.removeItem(AUTH_STORAGE_KEYS.USER_TYPE);
+
+  // Clear cookies to prevent checkAuthStatus from returning true after localStorage is cleared
+  document.cookie = 'loggedIn=false; path=/; max-age=0';
+  document.cookie = 'username=; path=/; max-age=0';
+  document.cookie = 'splitlease_auth=; path=/; max-age=0';
+
   isUserLoggedInState = false;
-  console.log('🗑️ Authentication data cleared');
+  console.log('🗑️ Authentication data cleared (localStorage and cookies)');
 }
 
 // ============================================================================
