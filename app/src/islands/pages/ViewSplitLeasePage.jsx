@@ -552,73 +552,109 @@ export default function ViewSplitLeasePage() {
         {/* LEFT COLUMN - CONTENT */}
         <div className="left-column">
 
-          {/* Photo Gallery */}
+          {/* Photo Gallery - Magazine Editorial Style */}
           <section style={{ marginBottom: '2rem' }}>
             {listing.photos && listing.photos.length > 0 ? (
-              <>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '2fr 1fr 1fr',
+                gridTemplateRows: '200px 200px',
+                gap: '10px'
+              }}>
+                {/* Large image spanning 2 rows on the left */}
                 <div
                   onClick={() => handlePhotoClick(0)}
                   style={{
+                    gridRow: '1 / 3',
                     cursor: 'pointer',
                     borderRadius: '12px',
                     overflow: 'hidden',
-                    marginBottom: '1rem'
+                    position: 'relative'
                   }}
                 >
                   <img
                     src={listing.photos[0].Photo}
                     alt={`${listing.Name} - main`}
-                    style={{ width: '100%', height: 'auto', display: 'block' }}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: 'block'
+                    }}
                   />
                 </div>
 
-                {listing.photos.length > 1 && (
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '0.75rem'
-                  }}>
-                    {listing.photos.slice(1, 4).map((photo, idx) => (
-                      <div
-                        key={photo._id}
-                        onClick={() => handlePhotoClick(idx + 1)}
+                {/* Four smaller images on the right (2x2 grid) */}
+                {listing.photos.slice(1, 5).map((photo, idx) => (
+                  <div
+                    key={photo._id}
+                    onClick={() => handlePhotoClick(idx + 1)}
+                    style={{
+                      cursor: 'pointer',
+                      borderRadius: '12px',
+                      overflow: 'hidden',
+                      position: 'relative'
+                    }}
+                  >
+                    <img
+                      src={photo['Photo (thumbnail)'] || photo.Photo}
+                      alt={`${listing.Name} - ${idx + 2}`}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        display: 'block'
+                      }}
+                    />
+                    {/* Show "Show All Photos" button on the last image if there are more photos */}
+                    {idx === 3 && listing.photos.length > 5 && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePhotoClick(0);
+                        }}
                         style={{
-                          cursor: 'pointer',
+                          position: 'absolute',
+                          bottom: '12px',
+                          right: '12px',
+                          background: 'white',
+                          border: 'none',
+                          padding: '8px 12px',
                           borderRadius: '8px',
-                          overflow: 'hidden',
-                          position: 'relative'
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                          cursor: 'pointer',
+                          fontWeight: '600',
+                          fontSize: '0.875rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '4px'
                         }}
                       >
-                        <img
-                          src={photo['Photo (thumbnail)'] || photo.Photo}
-                          alt={`${listing.Name} - ${idx + 2}`}
-                          style={{
-                            width: '100%',
-                            height: '120px',
-                            objectFit: 'cover',
-                            display: 'block'
-                          }}
-                        />
-                        {idx === 2 && listing.photos.length > 4 && (
-                          <div style={{
-                            position: 'absolute',
-                            inset: 0,
-                            background: 'rgba(0,0,0,0.5)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontSize: '1.25rem',
-                            fontWeight: '700'
-                          }}>
-                            +{listing.photos.length - 4}
-                          </div>
-                        )}
-                      </div>
-                    ))}
+                        <span>📷</span>
+                        <span>Show All Photos</span>
+                      </button>
+                    )}
                   </div>
-                )}
-              </>
+                ))}
+
+                {/* Fill empty slots if less than 5 photos */}
+                {listing.photos.length < 5 && Array.from({ length: 5 - listing.photos.length }).map((_, idx) => (
+                  <div
+                    key={`empty-${idx}`}
+                    style={{
+                      borderRadius: '12px',
+                      background: COLORS.BG_LIGHT,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: COLORS.TEXT_LIGHT,
+                      fontSize: '0.875rem'
+                    }}
+                  >
+                    {/* Empty slot */}
+                  </div>
+                ))}
+              </div>
             ) : (
               <div style={{
                 width: '100%',
