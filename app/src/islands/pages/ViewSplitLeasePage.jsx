@@ -545,7 +545,7 @@ export default function ViewSplitLeasePage() {
         padding: '2rem',
         paddingTop: 'calc(100px + 2rem)', // Increased from 80px to prevent header overlap
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 396px',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 440px',
         gap: '2rem'
       }}>
 
@@ -558,7 +558,7 @@ export default function ViewSplitLeasePage() {
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '2fr 1fr 1fr',
-                gridTemplateRows: '200px 200px',
+                gridTemplateRows: '180px 180px',
                 gap: '10px'
               }}>
                 {/* Large image spanning 2 rows on the left */}
