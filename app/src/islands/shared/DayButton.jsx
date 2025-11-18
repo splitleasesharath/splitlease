@@ -32,7 +32,7 @@ export function DayButton({
       aria-pressed={isSelected}
       type="button"
     >
-      {day.singleLetter}
+      <span>{day.singleLetter}</span>
     </button>
   );
 }

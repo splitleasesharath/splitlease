@@ -54,7 +54,7 @@ export default function ListingScheduleSelector({
   return (
     <div className="listing-schedule-selector">
       <div className="selector-header">
-        <h3>Select Your Days</h3>
+        <h3>Weekly Schedule</h3>
         <p className="selector-description">
           Choose consecutive days for your stay
         </p>
@@ -80,14 +80,21 @@ export default function ListingScheduleSelector({
           <>
             <div className="info-row">
               <span className="info-value">
-                {selectedDays.length === 7
-                  ? 'Full-time'
-                  : `${checkInDay?.name || ''} - ${checkOutDay?.name || ''} (${selectedDays.length} days, ${nightsCount} nights)`}
+                <strong>{selectedDays.length} days, {nightsCount} nights</strong> Selected
               </span>
+            </div>
+            <div className="check-dates" style={{
+              fontSize: '12px',
+              color: '#6B7280',
+              fontWeight: 400,
+              lineHeight: '1.6'
+            }}>
+              {selectedDays.length === 7
+                ? 'Full-time stay'
+                : `Check-in day is ${checkInDay?.name || ''}\nCheck-out day is ${checkOutDay?.name || ''}`}
             </div>
             {!isContiguous && (
               <div className="info-row">
-                <span className="info-label"></span>
                 <span className="info-value error">
                   Days must be consecutive
                 </span>
