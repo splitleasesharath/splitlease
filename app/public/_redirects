@@ -30,5 +30,5 @@
 /  /index.html  200
 /index.html  /index.html  200
 
-# Catch-all 404 - MUST be last rule
-/*  /404.html  404
+# Note: Cloudflare Pages automatically serves /404.html for not found routes
+# No explicit catch-all rule needed - native 404.html support handles this
