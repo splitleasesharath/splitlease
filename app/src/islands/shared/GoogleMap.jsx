@@ -24,7 +24,7 @@ import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallba
 import { DEFAULTS, COLORS, getBoroughMapConfig } from '../../lib/constants.js';
 import ListingCardForMap from './ListingCard/ListingCardForMap.jsx';
 import { supabase } from '../../lib/supabase.js';
-import { fetchPhotoUrls } from '../../lib/supabaseUtils.js';
+import { fetchPhotoUrls, extractPhotos } from '../../lib/supabaseUtils.js';
 
 const GoogleMap = forwardRef(({
   listings = [],           // All listings to show as green markers
@@ -58,7 +58,6 @@ const GoogleMap = forwardRef(({
   const mapRef = useRef(null);
   const googleMapRef = useRef(null);
   const markersRef = useRef([]);
-  const infoWindowRef = useRef(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showAllListings, setShowAllListings] = useState(true);
   const lastMarkersUpdateRef = useRef(null); // Track last marker update to prevent duplicates
@@ -145,23 +144,12 @@ const GoogleMap = forwardRef(({
         setTimeout(() => {
           marker.div.classList.remove('pulse');
         }, 3000);
+
+        // Show listing card after pan completes
+        setTimeout(() => {
+          handlePinClick(listing, marker.div);
+        }, 600);
       }
-
-      // Show info window after pan completes
-      setTimeout(() => {
-        if (!infoWindowRef.current) {
-          infoWindowRef.current = new window.google.maps.InfoWindow({
-            disableAutoPan: false, // Allow auto-pan to keep info window in view
-          });
-        }
-
-        infoWindowRef.current.setContent(createInfoWindowContent(listing));
-        infoWindowRef.current.setPosition({ lat: coords.lat, lng: coords.lng });
-        infoWindowRef.current.setOptions({
-          disableAutoPan: false,
-        });
-        infoWindowRef.current.open(map);
-      }, 600);
     }
   }));
 
@@ -192,8 +180,30 @@ const GoogleMap = forwardRef(({
       });
 
       console.log('📸 fetchDetailedListingData: Fetching photos...');
-      const photoUrls = await fetchPhotoUrls([listingId]);
-      const images = photoUrls[listingId] || [];
+      // Extract photo IDs from the Features - Photos field
+      const photosField = listingData['Features - Photos'];
+      const photoIds = [];
+
+      if (Array.isArray(photosField)) {
+        photoIds.push(...photosField);
+      } else if (typeof photosField === 'string') {
+        try {
+          const parsed = JSON.parse(photosField);
+          if (Array.isArray(parsed)) {
+            photoIds.push(...parsed);
+          }
+        } catch (e) {
+          console.error('📸 fetchDetailedListingData: Failed to parse photos field:', e);
+        }
+      }
+
+      console.log('📸 fetchDetailedListingData: Extracted photo IDs:', photoIds);
+
+      // Fetch URLs for the photo IDs
+      const photoMap = await fetchPhotoUrls(photoIds);
+
+      // Convert photo IDs to URLs using extractPhotos
+      const images = extractPhotos(photosField, photoMap, listingId);
       console.log('📸 fetchDetailedListingData: Photos received:', images.length, 'images');
 
       const detailedListing = {
@@ -278,13 +288,25 @@ const GoogleMap = forwardRef(({
     setCardVisible(true);
     console.log('✅ handlePinClick: Card visibility state set to true');
 
-    // Fetch detailed listing data from Supabase
-    const detailedListing = await fetchDetailedListingData(listing.id);
-    if (detailedListing) {
+    // Check if listing already has images (e.g., from filteredListings)
+    // If so, use it directly instead of fetching from database
+    let detailedListing;
+    if (listing.images && listing.images.length > 0) {
+      console.log('✅ handlePinClick: Listing already has images, using existing data:', {
+        id: listing.id,
+        imageCount: listing.images.length
+      });
+      detailedListing = listing;
+    } else {
+      console.log('🔍 handlePinClick: Listing has no images, fetching from database...');
+      detailedListing = await fetchDetailedListingData(listing.id);
+    }
+
+    if (detailedListing && detailedListing.images && detailedListing.images.length > 0) {
       console.log('✅ handlePinClick: Setting detailed listing to card:', detailedListing);
       setSelectedListingForCard(detailedListing);
     } else {
-      console.error('❌ handlePinClick: Failed to fetch listing details, not showing card');
+      console.error('❌ handlePinClick: Failed to get listing details or no images available, not showing card');
       setCardVisible(false);
     }
     console.log('✅ handlePinClick: Selected listing state updated');
@@ -773,104 +795,6 @@ const GoogleMap = forwardRef(({
     markerOverlay.listingId = listing.id;
 
     return markerOverlay;
-  };
-
-  /**
-   * Create HTML content for info window
-   * @param {object} listing - Listing data
-   * @returns {string} HTML string
-   */
-  const createInfoWindowContent = (listing) => {
-    // Simple mode: just show listing name (for view-split-lease page)
-    if (simpleMode) {
-      // Truncate title to 15 characters max
-      const truncatedTitle = listing.title && listing.title.length > 15
-        ? listing.title.substring(0, 15) + '...'
-        : listing.title;
-
-      return `
-        <style>
-          /* Hide the close button for non-dismissable info window */
-          .gm-style-iw-d {
-            overflow: visible !important;
-          }
-          .gm-style-iw-t::after {
-            display: none;
-          }
-          .gm-ui-hover-effect {
-            display: none !important;
-          }
-          /* Make info window responsive */
-          .gm-style-iw {
-            max-width: 90vw !important;
-          }
-        </style>
-        <div style="
-          padding: 8px 12px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          max-width: min(180px, 90vw);
-          width: auto;
-        ">
-          <div style="
-            font-size: 14px;
-            font-weight: 600;
-            color: #1a202c;
-            line-height: 1.3;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            overflow: hidden;
-          ">
-            ${truncatedTitle}
-          </div>
-        </div>
-      `;
-    }
-
-    // Full mode: show complete card (for search page)
-    const price = listing.price?.starting || listing['Starting nightly price'] || 0;
-    const firstImage = listing.images && listing.images.length > 0
-      ? listing.images[0]
-      : null;
-
-    const imageHTML = firstImage
-      ? `<img
-          src="${firstImage}"
-          alt="${listing.title}"
-          style="width: 100%; height: 150px; object-fit: cover; border-radius: 8px; margin-bottom: 8px;"
-        />`
-      : `<div style="width: 100%; height: 150px; background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; color: #9ca3af; font-size: 14px; font-weight: 500;">
-          No Photo Available
-        </div>`;
-
-    return `
-      <div style="max-width: 250px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-        ${imageHTML}
-        <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600; color: #1a202c;">
-          ${listing.title}
-        </h3>
-        <p style="margin: 0 0 8px 0; font-size: 14px; color: #718096;">
-          ${listing.location}
-        </p>
-        <p style="margin: 0 0 8px 0; font-size: 14px; color: #4a5568;">
-          ${listing.type} • ${listing.bedrooms} bed • ${listing.bathrooms} bath
-        </p>
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;">
-          <div>
-            <div style="font-size: 12px; color: #718096;">Starting at</div>
-            <div style="font-size: 18px; font-weight: 700; color: ${COLORS.PRIMARY};">
-              $${price.toFixed(2)}/night
-            </div>
-          </div>
-          <a
-            href="/view-split-lease/${listing.id}"
-            target="_blank"
-            style="padding: 8px 16px; background: ${COLORS.PRIMARY}; color: white; text-decoration: none; border-radius: 6px; font-size: 14px; font-weight: 600;"
-          >
-            View Details
-          </a>
-        </div>
-      </div>
-    `;
   };
 
   /**

@@ -69,9 +69,7 @@ export default function ListingCardForMap({
     }).format(price);
   };
 
-  const currentPhoto = listing.images && listing.images.length > 0
-    ? listing.images[currentPhotoIndex]
-    : 'https://via.placeholder.com/588x200?text=No+Image';
+  const currentPhoto = listing.images?.[currentPhotoIndex];
 
   const nightlyPrice = listing.price?.starting || listing['Starting nightly price'] || 0;
   const bedrooms = listing.bedrooms || 0;
