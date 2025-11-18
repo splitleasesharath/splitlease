@@ -9,10 +9,10 @@
 # Legacy support for old URL structure (redirect to new clean URLs)
 /view-split-lease.html/:id  /view-split-lease/:id  301
 
-# Handle guest-proposals page with clean URL structure
-# Maps /guest-proposals/[user-id] to guest-proposals.html
+# Handle guest-proposals page - loads proposals by logged-in user
+# Uses query param ?proposal=id for proposal selection
 # The 200 status makes this a rewrite, not a redirect, keeping the URL intact
-/guest-proposals/*  /guest-proposals.html  200
+/guest-proposals  /guest-proposals.html  200
 
 # Handle search page
 /search.html  /search.html  200
