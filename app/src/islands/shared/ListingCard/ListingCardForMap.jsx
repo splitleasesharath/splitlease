@@ -58,11 +58,18 @@ export default function ListingCardForMap({
     window.open(`/view-split-lease/${listing.id}`, '_blank');
   };
 
-  const handleMessage = () => {
+  const handleMessage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('[ListingCardForMap] Message button clicked', {
+      listingId: listing.id,
+      listingTitle: listing.title,
+      hasCallback: !!onMessageClick
+    });
     if (onMessageClick) {
       onMessageClick(listing);
     } else {
-      console.log('Message clicked for listing:', listing.id);
+      console.warn('[ListingCardForMap] No onMessageClick callback provided');
     }
   };
 

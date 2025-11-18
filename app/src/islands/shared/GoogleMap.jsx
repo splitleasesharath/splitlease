@@ -42,6 +42,7 @@ const GoogleMap = forwardRef(({
     listingsCount: listings.length,
     filteredListingsCount: filteredListings.length,
     selectedBorough,
+    hasMessageCallback: !!onMessageClick,
     listingsSample: listings.slice(0, 2).map(l => ({
       id: l.id,
       title: l.title,
@@ -917,18 +918,24 @@ const GoogleMap = forwardRef(({
               <p style={{ margin: '10px 0 0 0', textAlign: 'center' }}>Loading listing details...</p>
             </div>
           )}
-          {!isLoadingListingDetails && selectedListingForCard && (
-            <ListingCardForMap
-              listing={selectedListingForCard}
-              onClose={() => {
-                setCardVisible(false);
-                setSelectedListingForCard(null);
-              }}
-              isVisible={cardVisible}
-              position={cardPosition}
-              onMessageClick={onMessageClick}
-            />
-          )}
+          {!isLoadingListingDetails && selectedListingForCard && (() => {
+            console.log('[GoogleMap] Rendering ListingCardForMap', {
+              listingId: selectedListingForCard.id,
+              hasMessageCallback: !!onMessageClick
+            });
+            return (
+              <ListingCardForMap
+                listing={selectedListingForCard}
+                onClose={() => {
+                  setCardVisible(false);
+                  setSelectedListingForCard(null);
+                }}
+                isVisible={cardVisible}
+                position={cardPosition}
+                onMessageClick={onMessageClick}
+              />
+            );
+          })()}
         </>
       )}
     </div>

@@ -1260,6 +1260,10 @@ export default function SearchPage() {
 
   // Modal handler functions
   const handleOpenContactModal = (listing) => {
+    console.log('[SearchPageTest] handleOpenContactModal called', {
+      listingId: listing?.id,
+      listingTitle: listing?.title
+    });
     setSelectedListing(listing);
     setIsContactModalOpen(true);
   };
