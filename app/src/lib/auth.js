@@ -200,6 +200,7 @@ export function clearAuthData() {
   localStorage.removeItem(AUTH_STORAGE_KEYS.SESSION_ID);
   localStorage.removeItem(AUTH_STORAGE_KEYS.LAST_AUTH);
   localStorage.removeItem(AUTH_STORAGE_KEYS.USER_TYPE);
+  localStorage.removeItem('userEmail'); // Clear user email
 
   // Clear cookies to prevent checkAuthStatus from returning true after localStorage is cleared
   // Clear on current domain
@@ -493,11 +494,15 @@ export async function loginUser(email, password) {
       localStorage.setItem(AUTH_STORAGE_KEYS.SESSION_ID, data.response.user_id);
       localStorage.setItem(AUTH_STORAGE_KEYS.LAST_AUTH, Date.now().toString());
 
+      // Store user email for convenience (useful for guest-proposals page)
+      localStorage.setItem('userEmail', email);
+
       // Update login state
       isUserLoggedInState = true;
 
       console.log('✅ Login successful');
       console.log('   User ID:', data.response.user_id);
+      console.log('   User Email:', email);
       console.log('   Token expires in:', data.response.expires, 'seconds');
 
       return {
@@ -590,11 +595,15 @@ export async function signupUser(email, password, retype) {
       localStorage.setItem(AUTH_STORAGE_KEYS.SESSION_ID, data.response.user_id);
       localStorage.setItem(AUTH_STORAGE_KEYS.LAST_AUTH, Date.now().toString());
 
+      // Store user email for convenience (useful for guest-proposals page)
+      localStorage.setItem('userEmail', email);
+
       // Update login state
       isUserLoggedInState = true;
 
       console.log('✅ Signup successful');
       console.log('   User ID:', data.response.user_id);
+      console.log('   User Email:', email);
       console.log('   Token expires in:', data.response.expires, 'seconds');
 
       return {

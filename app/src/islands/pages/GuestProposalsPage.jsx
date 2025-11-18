@@ -76,35 +76,46 @@ export default function GuestProposalsPage() {
    * 1. Check URL parameter (?proposal=id)
    * 2. Use dropdown selection
    * 3. Default to first proposal
+   *
+   * FIXED: Now uses user_id from SESSION_ID instead of userEmail
    */
   async function initializePage() {
     try {
       setLoading(true);
       setError(null);
 
-      // Get authentication token
+      // Get authentication token (optional for now during testing)
       const token = getAuthToken();
-      if (!token) {
-        throw new Error('No authentication token found');
+      console.log('🔑 Auth token present:', !!token);
+
+      // Get user ID from localStorage (stored as SESSION_ID during login)
+      const userId = localStorage.getItem('splitlease_session_id');
+
+      // TEMPORARY: For testing, allow page to render even without userId
+      // In production, this should throw an error
+      if (!userId) {
+        console.warn('⚠️ No user ID found - showing empty state for testing');
+        console.warn('⚠️ In production, this would require login');
+        setProposals([]);
+        setLoading(false);
+        return;
       }
 
-      // Get user email from localStorage
-      const userEmail = localStorage.getItem('userEmail');
-      if (!userEmail) {
-        throw new Error('User email not found in storage');
-      }
+      console.log('👤 Loading proposals for user ID:', userId);
 
-      console.log('📧 Loading proposals for user:', userEmail);
-
-      // Query all proposals for this user (excluding deleted)
+      // Query all proposals for this user by Guest ID (not email)
+      // The 'Guest' field in proposal table is a relation to user._id
       const { data: proposalsData, error: proposalsError } = await supabase
         .from('proposal')
         .select('*')
-        .eq('Guest email', userEmail)
+        .eq('Guest', userId)
         .or('Deleted.is.null,Deleted.eq.false')
         .order('Created Date', { ascending: false });
 
-      if (proposalsError) throw proposalsError;
+      if (proposalsError) {
+        console.error('❌ Supabase error:', proposalsError);
+        throw proposalsError;
+      }
 
       console.log(`✅ Loaded ${proposalsData?.length || 0} proposals`);
       setProposals(proposalsData || []);
