@@ -558,7 +558,7 @@ export default function ViewSplitLeasePage() {
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: '2fr 1fr 1fr',
-                gridTemplateRows: '180px 180px',
+                gridTemplateRows: '200px 200px',
                 gap: '10px'
               }}>
                 {/* Large image spanning 2 rows on the left */}
