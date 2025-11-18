@@ -62,13 +62,16 @@ export default function Header() {
           // Token is invalid or not present
           setCurrentUser(null);
 
-          // If on a protected page and token validation failed, redirect to home
-          // Don't reload - just redirect, since clearAuthData() was already called
-          if (isProtectedPage()) {
-            console.log('⚠️ Invalid token on protected page - redirecting to home');
-            // Use replace() to avoid adding to browser history and prevent back button loops
-            window.location.replace('/');
-          }
+          // NOTE: We do NOT redirect here to avoid conflicts with page-level auth guards.
+          // Protected pages (like guest-proposals.jsx) have their own auth checks that
+          // will handle redirection. Having both Header and page-level redirects creates
+          // infinite loops because:
+          // 1. checkAuthStatus() in page checks cookies (which persist across domains)
+          // 2. validateTokenAndFetchUser() in Header validates API token (which may be expired)
+          // 3. If Header redirects when token is invalid, but cookies still show logged in,
+          //    the page will render again and Header will redirect again -> infinite loop
+          //
+          // Solution: Let page-level guards handle authentication and redirection.
         }
       } catch (error) {
         console.error('Auth validation error:', error);
