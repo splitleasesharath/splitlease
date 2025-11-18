@@ -667,7 +667,7 @@ export default function SearchPage() {
           .select('*')
           .eq('Active', true)
           .eq('isForUsability', false)
-          .not('"Location - Address"', 'is', null);
+          .filter('"Location - Address"', 'not.is', null);
 
         if (error) throw error;
 
@@ -894,7 +894,7 @@ export default function SearchPage() {
         .eq('"Complete"', true)
         .or('"Active".eq.true,"Active".is.null')
         .eq('"Location - Borough"', borough.id)
-        .not('"Location - Address"', 'is', null);
+        .filter('"Location - Address"', 'not.is', null);
 
       // Apply week pattern filter (part of Layer 1)
       if (weekPattern !== 'every-week') {
