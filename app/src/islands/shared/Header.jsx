@@ -65,7 +65,7 @@ export default function Header() {
           // If on a protected page, redirect to home
           if (isProtectedPage()) {
             console.log('⚠️ Invalid token on protected page - redirecting to home');
-            window.location.href = 'https://splitlease.app';
+            window.location.href = '/';
           }
         }
       } catch (error) {
