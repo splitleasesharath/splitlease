@@ -435,6 +435,7 @@ export function hasValidAuthentication() {
 
 const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY;
 const BUBBLE_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/login-user';
+const BUBBLE_SIGNUP_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/signup-user';
 const BUBBLE_CHECK_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/check-login';
 const BUBBLE_LOGOUT_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/logout-user';
 const BUBBLE_USER_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/obj/user';
@@ -504,6 +505,114 @@ export async function loginUser(email, password) {
     }
   } catch (error) {
     console.error('❌ Login error:', error);
+    return {
+      success: false,
+      error: 'Network error. Please check your connection and try again.'
+    };
+  }
+}
+
+/**
+ * Sign up new user via Bubble API
+ * Stores token and user_id in localStorage on success
+ * Automatically logs in the user after successful signup
+ *
+ * @param {string} email - User email
+ * @param {string} password - User password
+ * @param {string} retype - Password confirmation
+ * @returns {Promise<Object>} Response object with status, token, user_id, or error
+ */
+export async function signupUser(email, password, retype) {
+  console.log('📝 Attempting signup for:', email);
+
+  if (!BUBBLE_API_KEY) {
+    console.error('[Auth] VITE_BUBBLE_API_KEY is not configured');
+    return {
+      success: false,
+      error: 'Configuration error. Please contact support.'
+    };
+  }
+
+  // Client-side validation
+  if (!email || !password || !retype) {
+    return {
+      success: false,
+      error: 'All fields are required.'
+    };
+  }
+
+  if (password.length < 4) {
+    return {
+      success: false,
+      error: 'Password must be at least 4 characters long.'
+    };
+  }
+
+  if (password !== retype) {
+    return {
+      success: false,
+      error: 'The two passwords do not match!'
+    };
+  }
+
+  try {
+    const response = await fetch(BUBBLE_SIGNUP_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${BUBBLE_API_KEY}`
+      },
+      body: JSON.stringify({
+        email,
+        password,
+        retype
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.status === 'success') {
+      // Store token and user_id in localStorage
+      localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, data.response.token);
+      localStorage.setItem(AUTH_STORAGE_KEYS.SESSION_ID, data.response.user_id);
+      localStorage.setItem(AUTH_STORAGE_KEYS.LAST_AUTH, Date.now().toString());
+
+      // Update login state
+      isUserLoggedInState = true;
+
+      console.log('✅ Signup successful');
+      console.log('   User ID:', data.response.user_id);
+      console.log('   Token expires in:', data.response.expires, 'seconds');
+
+      return {
+        success: true,
+        token: data.response.token,
+        user_id: data.response.user_id,
+        expires: data.response.expires
+      };
+    } else {
+      // Handle error response from Bubble
+      console.error('❌ Signup failed:', data.reason || data.message);
+
+      // Map error reasons to user-friendly messages
+      let errorMessage = data.message || 'Signup failed. Please try again.';
+
+      if (data.reason === 'NOT_VALID_EMAIL') {
+        errorMessage = data.message || 'Please enter a valid email address.';
+      } else if (data.reason === 'USED_EMAIL') {
+        errorMessage = data.message || 'This email is already in use.';
+      } else if (data.reason === 'DO_NOT_MATCH') {
+        errorMessage = data.message || 'The two passwords do not match!';
+      }
+
+      return {
+        success: false,
+        error: errorMessage,
+        reason: data.reason
+      };
+    }
+  } catch (error) {
+    console.error('❌ Signup error:', error);
     return {
       success: false,
       error: 'Network error. Please check your connection and try again.'
