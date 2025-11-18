@@ -1294,13 +1294,13 @@ export default function ViewSplitLeasePage() {
           {/* Price Display */}
           <div style={{
             background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
-            padding: '16px',
+            padding: '14px',
             borderRadius: '12px',
-            marginBottom: '22px',
+            marginBottom: '20px',
             border: '1px solid #e9d5ff'
           }}>
             <div style={{
-              fontSize: '36px',
+              fontSize: '32px',
               fontWeight: '800',
               background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
               WebkitBackgroundClip: 'text',
@@ -1313,7 +1313,7 @@ export default function ViewSplitLeasePage() {
                 ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                 : 'Select Days'}
               <span style={{
-                fontSize: '18px',
+                fontSize: '16px',
                 color: '#6B7280',
                 fontWeight: '500',
                 background: 'none',
