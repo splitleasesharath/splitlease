@@ -130,7 +130,7 @@ export default function Footer() {
             <a href="/faq.html?section=travelers&question=1692211080963x751695924087252700">About Periodic Tenancy</a>
             <a href="https://app.split.lease/team">About the Team</a>
             <a href="/careers.html">Careers at Split Lease</a>
-            <a href="https://app.split.lease/blog">View Blog</a>
+            <a href="https://app.split.lease/knowledge-base/1676496004548x830972865850585500">Blog</a>
           </div>
 
           {/* Referral Column */}

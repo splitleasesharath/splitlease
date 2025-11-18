@@ -147,21 +147,23 @@ const GoogleMap = forwardRef(({
         }, 3000);
       }
 
-      // Show info window after pan completes
-      setTimeout(() => {
-        if (!infoWindowRef.current) {
-          infoWindowRef.current = new window.google.maps.InfoWindow({
-            disableAutoPan: false, // Allow auto-pan to keep info window in view
-          });
-        }
+      // Only show info window in normal mode (not in simple mode)
+      if (!simpleMode) {
+        setTimeout(() => {
+          if (!infoWindowRef.current) {
+            infoWindowRef.current = new window.google.maps.InfoWindow({
+              disableAutoPan: false, // Allow auto-pan to keep info window in view
+            });
+          }
 
-        infoWindowRef.current.setContent(createInfoWindowContent(listing));
-        infoWindowRef.current.setPosition({ lat: coords.lat, lng: coords.lng });
-        infoWindowRef.current.setOptions({
-          disableAutoPan: false,
-        });
-        infoWindowRef.current.open(map);
-      }, 600);
+          infoWindowRef.current.setContent(createInfoWindowContent(listing));
+          infoWindowRef.current.setPosition({ lat: coords.lat, lng: coords.lng });
+          infoWindowRef.current.setOptions({
+            disableAutoPan: false,
+          });
+          infoWindowRef.current.open(map);
+        }, 600);
+      }
     }
   }));
 
@@ -666,6 +668,7 @@ const GoogleMap = forwardRef(({
 
   /**
    * Create a simple standard Google Maps marker (for view-split-lease page)
+   * No label or info window - just the pin
    * @param {google.maps.Map} map - The map instance
    * @param {object} coordinates - {lat, lng} coordinates
    * @param {object} listing - Full listing data
@@ -675,7 +678,7 @@ const GoogleMap = forwardRef(({
     const marker = new window.google.maps.Marker({
       position: { lat: coordinates.lat, lng: coordinates.lng },
       map: map,
-      title: listing.title,
+      title: '', // Remove title to prevent label on hover
       animation: window.google.maps.Animation.DROP,
       // Use default red marker (no icon property = default marker)
     });
