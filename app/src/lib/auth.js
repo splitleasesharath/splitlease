@@ -202,9 +202,15 @@ export function clearAuthData() {
   localStorage.removeItem(AUTH_STORAGE_KEYS.USER_TYPE);
 
   // Clear cookies to prevent checkAuthStatus from returning true after localStorage is cleared
+  // Clear on current domain
   document.cookie = 'loggedIn=false; path=/; max-age=0';
   document.cookie = 'username=; path=/; max-age=0';
   document.cookie = 'splitlease_auth=; path=/; max-age=0';
+
+  // Clear on .split.lease domain (cross-domain cookies)
+  document.cookie = 'loggedIn=false; path=/; max-age=0; domain=.split.lease';
+  document.cookie = 'username=; path=/; max-age=0; domain=.split.lease';
+  document.cookie = 'splitlease_auth=; path=/; max-age=0; domain=.split.lease';
 
   isUserLoggedInState = false;
   console.log('🗑️ Authentication data cleared (localStorage and cookies)');

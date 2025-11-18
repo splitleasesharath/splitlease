@@ -14,8 +14,24 @@ export default defineConfig({
         server.middlewares.use((req, res, next) => {
           const url = req.url || '';
 
+          // Handle root path and index.html
+          if (url === '/' || url.startsWith('/index.html')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/index.html' + queryString;
+          }
+          // Handle guest-proposals (no ID) - direct access to /guest-proposals
+          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/guest-proposals.html' + queryString;
+          }
+          // Handle guest-proposals.html - direct HTML access
+          else if (url.startsWith('/guest-proposals.html')) {
+            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
+          }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
-          if (url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
+          else if (url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
             // Extract query params if they exist
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
@@ -79,8 +95,24 @@ export default defineConfig({
         server.middlewares.use((req, res, next) => {
           const url = req.url || '';
 
+          // Handle root path and index.html (preview mode - files in dist root)
+          if (url === '/' || url.startsWith('/index.html')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/index.html' + queryString;
+          }
+          // Handle guest-proposals (no ID) - direct access to /guest-proposals
+          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/guest-proposals.html' + queryString;
+          }
+          // Handle guest-proposals.html - direct HTML access
+          else if (url.startsWith('/guest-proposals.html')) {
+            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
+          }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
-          if (url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
+          else if (url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
             // Extract query params if they exist
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
