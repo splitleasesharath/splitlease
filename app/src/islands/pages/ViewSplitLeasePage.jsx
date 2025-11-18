@@ -1223,85 +1223,213 @@ export default function ViewSplitLeasePage() {
           className="booking-widget"
           style={{
             position: isMobile ? 'static' : 'sticky',
-            top: isMobile ? 'auto' : 'calc(80px + 2rem)', // Account for fixed header (80px) + 2rem padding
-            alignSelf: 'flex-start', // Ensures sticky positioning works correctly
-            maxHeight: 'calc(100vh - 80px - 4rem)', // Prevent overflow beyond viewport
-            overflowY: 'auto', // Allow scrolling if content is too tall
+            top: isMobile ? 'auto' : '20px',
+            alignSelf: 'flex-start',
+            maxHeight: 'calc(100vh - 40px)',
+            overflowY: 'auto',
             height: 'fit-content',
-            border: `1px solid ${COLORS.BG_LIGHT}`,
-            borderRadius: '12px',
-            padding: '1.5rem',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '16px',
+            padding: '28px',
             background: 'white',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.05)',
+            backdropFilter: 'blur(10px)',
+            transition: 'transform 0.3s ease, box-shadow 0.3s ease'
+          }}
+          onMouseEnter={(e) => {
+            if (!isMobile) {
+              e.currentTarget.style.transform = 'translateY(-4px)';
+              e.currentTarget.style.boxShadow = '0 24px 70px rgba(0, 0, 0, 0.35), 0 0 1px rgba(0, 0, 0, 0.05)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (!isMobile) {
+              e.currentTarget.style.transform = '';
+              e.currentTarget.style.boxShadow = '0 20px 60px rgba(0, 0, 0, 0.3), 0 0 1px rgba(0, 0, 0, 0.05)';
+            }
           }}
         >
           {/* Price Display */}
           <div style={{
-            fontSize: '2rem',
-            fontWeight: '700',
-            color: COLORS.PRIMARY,
-            marginBottom: '1.5rem',
-            textAlign: 'left'
+            background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
+            padding: '16px',
+            borderRadius: '12px',
+            marginBottom: '22px',
+            border: '1px solid #e9d5ff'
           }}>
-            {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
-              ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}/night`
-              : 'Please select or deselect days to see pricing'}
+            <div style={{
+              fontSize: '36px',
+              fontWeight: '800',
+              background: 'linear-gradient(135deg, #6B46C1 0%, #9333ea 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              letterSpacing: '-1px',
+              display: 'inline-block'
+            }}>
+              {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
+                ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
+                : 'Select Days'}
+              <span style={{
+                fontSize: '18px',
+                color: '#6B7280',
+                fontWeight: '500',
+                background: 'none',
+                WebkitTextFillColor: '#6B7280'
+              }}>/night</span>
+            </div>
           </div>
 
           {/* Move-in Date */}
-          <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ marginBottom: '14px' }}>
             <label style={{
-              display: 'block',
-              fontWeight: '600',
-              marginBottom: '0.5rem',
-              fontSize: '0.875rem'
+              fontSize: '12px',
+              fontWeight: '700',
+              color: '#6B46C1',
+              marginBottom: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
             }}>
               Ideal Move-In
+              <svg
+                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'help' }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
             </label>
-            <input
-              type="date"
-              value={moveInDate || ''}
-              min={minMoveInDate}
-              onChange={(e) => setMoveInDate(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: `1px solid ${COLORS.BG_LIGHT}`,
-                borderRadius: '8px',
-                fontSize: '1rem'
-              }}
-            />
-            <p style={{
-              fontSize: '0.75rem',
-              color: COLORS.TEXT_LIGHT,
-              marginTop: '0.25rem',
-              marginBottom: 0
+            <div style={{ position: 'relative', marginBottom: '8px' }}>
+              <input
+                type="date"
+                value={moveInDate || ''}
+                min={minMoveInDate}
+                onChange={(e) => setMoveInDate(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  border: '2px solid #E5E7EB',
+                  borderRadius: '10px',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  color: '#111827',
+                  transition: 'all 0.2s ease',
+                  cursor: 'pointer',
+                  background: 'white',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.borderColor = '#6B46C1';
+                  e.target.style.boxShadow = '0 4px 6px rgba(107, 70, 193, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  if (document.activeElement !== e.target) {
+                    e.target.style.borderColor = '#E5E7EB';
+                    e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+                  }
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#6B46C1';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(107, 70, 193, 0.15)';
+                  e.target.style.transform = 'translateY(-1px)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#E5E7EB';
+                  e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+                  e.target.style.transform = '';
+                }}
+              />
+            </div>
+            <div style={{
+              fontSize: '12px',
+              color: '#6B7280',
+              lineHeight: '1.4',
+              marginBottom: '14px',
+              fontWeight: '400',
+              paddingLeft: '4px'
             }}>
               Minimum 2 weeks from today. Date auto-updates based on selected days.
-            </p>
+            </div>
           </div>
 
           {/* Strict Mode */}
-          <div style={{ marginBottom: '1.5rem' }}>
-            <label style={{
+          <div
+            style={{
               display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
+              alignItems: 'flex-start',
+              gap: '10px',
+              marginBottom: '20px',
+              padding: '12px',
+              background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
+              borderRadius: '10px',
+              border: '1px solid #e9d5ff',
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
+            }}
+            onClick={() => setStrictMode(!strictMode)}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%)';
+              e.currentTarget.style.borderColor = '#d8b4fe';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)';
+              e.currentTarget.style.borderColor = '#e9d5ff';
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={strictMode}
+              onChange={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: '18px',
+                height: '18px',
+                cursor: 'pointer',
+                accentColor: '#6B46C1',
+                marginTop: '2px',
+                flexShrink: 0
+              }}
+            />
+            <label style={{
+              fontSize: '14px',
+              color: '#111827',
               cursor: 'pointer',
-              fontSize: '0.875rem'
+              userSelect: 'none',
+              lineHeight: '1.5',
+              fontWeight: '500'
             }}>
-              <input
-                type="checkbox"
-                checked={strictMode}
-                onChange={(e) => setStrictMode(e.target.checked)}
-              />
-              <span>Strict (no negotiation on exact move in)</span>
+              Strict (no negotiation on exact move in)
+              <svg
+                style={{
+                  display: 'inline-block',
+                  width: '14px',
+                  height: '14px',
+                  verticalAlign: 'middle',
+                  marginLeft: '2px',
+                  opacity: 0.6
+                }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
             </label>
           </div>
 
           {/* Weekly Schedule Selector */}
           {scheduleSelectorListing && (
-            <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{
+              marginBottom: '20px',
+              padding: '16px',
+              background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
+              borderRadius: '12px',
+              border: '1px solid #E5E7EB'
+            }}>
               <ListingScheduleSelector
                 listing={scheduleSelectorListing}
                 initialSelectedDays={selectedDayObjects}
@@ -1316,96 +1444,181 @@ export default function ViewSplitLeasePage() {
           )}
 
           {/* Reservation Span */}
-          <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ marginBottom: '18px' }}>
             <label style={{
-              display: 'block',
-              fontWeight: '600',
-              marginBottom: '0.5rem',
-              fontSize: '0.875rem'
+              fontSize: '12px',
+              fontWeight: '700',
+              color: '#6B46C1',
+              marginBottom: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
             }}>
               Reservation Span
+              <svg
+                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'help' }}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
             </label>
-            <select
-              value={reservationSpan}
-              onChange={(e) => setReservationSpan(Number(e.target.value))}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                border: `1px solid ${COLORS.BG_LIGHT}`,
-                borderRadius: '8px',
-                fontSize: '1rem',
-                background: 'white'
-              }}
-            >
-              {[6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26].map(weeks => (
-                <option key={weeks} value={weeks}>
-                  {weeks} weeks {weeks >= 12 ? `(${Math.floor(weeks / 4)} months)` : ''}
-                </option>
-              ))}
-            </select>
+            <div style={{ position: 'relative' }}>
+              <select
+                value={reservationSpan}
+                onChange={(e) => setReservationSpan(Number(e.target.value))}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  paddingRight: '40px',
+                  border: '2px solid #E5E7EB',
+                  borderRadius: '10px',
+                  fontSize: '15px',
+                  fontWeight: '500',
+                  color: '#111827',
+                  background: 'white',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  appearance: 'none',
+                  boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.borderColor = '#6B46C1';
+                  e.target.style.boxShadow = '0 4px 6px rgba(107, 70, 193, 0.1)';
+                }}
+                onMouseLeave={(e) => {
+                  if (document.activeElement !== e.target) {
+                    e.target.style.borderColor = '#E5E7EB';
+                    e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+                  }
+                }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#6B46C1';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(107, 70, 193, 0.15)';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#E5E7EB';
+                  e.target.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.05)';
+                }}
+              >
+                {[6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26].map(weeks => (
+                  <option key={weeks} value={weeks}>
+                    {weeks} weeks {weeks >= 12 ? `(${Math.floor(weeks / 4)} months)` : ''}
+                  </option>
+                ))}
+              </select>
+              <div style={{
+                position: 'absolute',
+                right: '14px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                width: '0',
+                height: '0',
+                borderLeft: '5px solid transparent',
+                borderRight: '5px solid transparent',
+                borderTop: '5px solid #6B46C1',
+                pointerEvents: 'none'
+              }}></div>
+            </div>
           </div>
 
           {/* Price Breakdown */}
           <div style={{
-            marginBottom: '1.5rem',
-            paddingTop: '1.5rem',
-            borderTop: `1px solid ${COLORS.BG_LIGHT}`
+            marginBottom: '20px',
+            padding: '14px',
+            background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)',
+            borderRadius: '10px',
+            border: '1px solid #E5E7EB'
           }}>
             {console.log('Rendering prices - pricingBreakdown:', pricingBreakdown)}
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
-              marginBottom: '0.5rem',
-              fontSize: '0.875rem'
+              alignItems: 'center',
+              marginBottom: '0',
+              fontSize: '15px'
             }}>
-              <span>4-Week Rent:</span>
-              <span style={{ fontWeight: '600' }}>
+              <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Rent</span>
+              <span style={{ color: '#111827', fontWeight: '700', fontSize: '16px' }}>
                 {pricingBreakdown?.valid && pricingBreakdown?.fourWeekRent
                   ? formatPrice(pricingBreakdown.fourWeekRent)
                   : priceMessage || 'Please Add More Days'}
               </span>
             </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              fontSize: '1rem',
-              fontWeight: '700'
+          </div>
+
+          {/* Total Row */}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            padding: '20px 0',
+            borderTop: '2px solid #E5E7EB',
+            marginBottom: '20px'
+          }}>
+            <span style={{
+              fontSize: '16px',
+              fontWeight: '700',
+              color: '#111827'
+            }}>Reservation Estimated Total</span>
+            <span style={{
+              fontSize: '28px',
+              fontWeight: '800',
+              background: 'linear-gradient(135deg, #6B46C1 0%, #9333ea 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
             }}>
-              <span>Reservation Estimated Total:</span>
-              <span style={{ color: COLORS.PRIMARY }}>
-                {pricingBreakdown?.valid && pricingBreakdown?.reservationTotal
-                  ? formatPrice(pricingBreakdown.reservationTotal)
-                  : priceMessage || 'Please Add More Days'}
-              </span>
-            </div>
+              {pricingBreakdown?.valid && pricingBreakdown?.reservationTotal
+                ? formatPrice(pricingBreakdown.reservationTotal)
+                : priceMessage || 'Please Add More Days'}
+            </span>
           </div>
 
           {/* Create Proposal Button */}
           <button
-            onClick={handleCreateProposal}
+            onClick={(e) => {
+              if (scheduleValidation?.valid && pricingBreakdown?.valid) {
+                e.target.style.transform = 'scale(0.98)';
+                setTimeout(() => {
+                  e.target.style.transform = '';
+                }, 150);
+                handleCreateProposal();
+              }
+            }}
             disabled={!scheduleValidation?.valid || !pricingBreakdown?.valid}
             style={{
               width: '100%',
-              padding: '1rem',
+              padding: '14px',
               background: scheduleValidation?.valid && pricingBreakdown?.valid
-                ? COLORS.PRIMARY
-                : COLORS.TEXT_LIGHT,
+                ? 'linear-gradient(135deg, #6B46C1 0%, #9333ea 100%)'
+                : '#D1D5DB',
               color: 'white',
               border: 'none',
-              borderRadius: '8px',
-              fontSize: '1rem',
-              fontWeight: '600',
+              borderRadius: '10px',
+              fontSize: '16px',
+              fontWeight: '700',
               cursor: scheduleValidation?.valid && pricingBreakdown?.valid ? 'pointer' : 'not-allowed',
-              transition: 'background 0.2s'
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              boxShadow: scheduleValidation?.valid && pricingBreakdown?.valid
+                ? '0 4px 14px rgba(107, 70, 193, 0.4)'
+                : 'none',
+              position: 'relative',
+              overflow: 'hidden'
             }}
             onMouseEnter={(e) => {
               if (scheduleValidation?.valid && pricingBreakdown?.valid) {
-                e.target.style.background = COLORS.PRIMARY_HOVER;
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = '0 8px 24px rgba(107, 70, 193, 0.5)';
               }
             }}
             onMouseLeave={(e) => {
               if (scheduleValidation?.valid && pricingBreakdown?.valid) {
-                e.target.style.background = COLORS.PRIMARY;
+                e.target.style.transform = '';
+                e.target.style.boxShadow = '0 4px 14px rgba(107, 70, 193, 0.4)';
               }
             }}
           >
