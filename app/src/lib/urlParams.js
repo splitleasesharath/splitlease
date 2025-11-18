@@ -28,39 +28,12 @@ export function parseUrlToFilters() {
   const params = new URLSearchParams(window.location.search);
 
   return {
-    selectedDays: parseDaysParam(params.get('days-selected')),
     selectedBorough: sanitizeUrlParam(params.get('borough'), 'string') || DEFAULTS.DEFAULT_BOROUGH,
     weekPattern: sanitizeUrlParam(params.get('weekly-frequency'), 'string') || DEFAULTS.DEFAULT_WEEK_PATTERN,
     priceTier: sanitizeUrlParam(params.get('pricetier'), 'string') || DEFAULTS.DEFAULT_PRICE_TIER,
     sortBy: sanitizeUrlParam(params.get('sort'), 'string') || DEFAULTS.DEFAULT_SORT_BY,
     selectedNeighborhoods: parseNeighborhoodsParam(params.get('neighborhoods'))
   };
-}
-
-/**
- * Parse days parameter from URL
- * Format: "2,3,4,5,6" (comma-separated 1-based day indices, where 1=Sunday)
- * @param {string|null} daysParam - The days parameter from URL (1-based)
- * @returns {Array<number>} Array of day indices (0-based, where 0=Sunday)
- */
-function parseDaysParam(daysParam) {
-  if (!daysParam) {
-    return DEFAULTS.DEFAULT_SELECTED_DAYS;
-  }
-
-  try {
-    // Parse 1-based indices from URL and convert to 0-based
-    const days = daysParam
-      .split(',')
-      .map(d => parseInt(d.trim(), 10))
-      .filter(d => !isNaN(d) && d >= 1 && d <= 7) // Validate 1-based range
-      .map(d => d - 1); // Convert to 0-based (1→0, 2→1, etc.)
-
-    return days.length > 0 ? days : DEFAULTS.DEFAULT_SELECTED_DAYS;
-  } catch (error) {
-    console.error('Failed to parse days parameter:', error);
-    return DEFAULTS.DEFAULT_SELECTED_DAYS;
-  }
 }
 
 /**
@@ -89,31 +62,11 @@ function parseNeighborhoodsParam(neighborhoodsParam) {
 
 /**
  * Serialize filter state to URL query string
- * @param {object} filters - Filter state object (0-based day indices)
+ * @param {object} filters - Filter state object
  * @returns {string} URL query string (without leading ?)
  */
 export function serializeFiltersToUrl(filters) {
   const params = new URLSearchParams();
-
-  // Preserve existing days-selected parameter if present (managed by SearchScheduleSelector component)
-  const existingParams = new URLSearchParams(window.location.search);
-  const existingDays = existingParams.get('days-selected');
-  if (existingDays) {
-    params.set('days-selected', existingDays);
-  }
-
-  // Add days-selected parameter (only if explicitly provided and not default)
-  // Convert 0-based to 1-based for URL (0→1, 1→2, etc.)
-  // NOTE: This is typically managed by SearchScheduleSelector component
-  if (filters.selectedDays !== undefined && filters.selectedDays.length > 0) {
-    const oneBased = filters.selectedDays.map(idx => idx + 1);
-    const daysString = oneBased.join(',');
-    const defaultOneBased = DEFAULTS.DEFAULT_SELECTED_DAYS.map(idx => idx + 1);
-    const defaultDaysString = defaultOneBased.join(',');
-    if (daysString !== defaultDaysString) {
-      params.set('days-selected', daysString);
-    }
-  }
 
   // Add borough parameter (only if not default)
   if (filters.selectedBorough && filters.selectedBorough !== DEFAULTS.DEFAULT_BOROUGH) {
@@ -191,7 +144,6 @@ export function watchUrlChanges(callback) {
  */
 function getDefaultFilters() {
   return {
-    selectedDays: DEFAULTS.DEFAULT_SELECTED_DAYS,
     selectedBorough: DEFAULTS.DEFAULT_BOROUGH,
     weekPattern: DEFAULTS.DEFAULT_WEEK_PATTERN,
     priceTier: DEFAULTS.DEFAULT_PRICE_TIER,

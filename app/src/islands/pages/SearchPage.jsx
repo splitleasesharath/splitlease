@@ -224,7 +224,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenContactModal, onOpenInfoModal }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const priceInfoTriggerRef = useRef(null);
@@ -269,10 +269,10 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
     setIsFavorite(!isFavorite);
   };
 
-  // Calculate dynamic price based on selected days
+  // Calculate dynamic price using default 5 nights (Monday-Friday pattern)
   // Uses the same formula as priceCalculations.js for Nightly rental type
   const calculateDynamicPrice = () => {
-    const nightsCount = Math.max(selectedDaysCount - 1, 1);
+    const nightsCount = 5; // Default to 5 nights (Mon-Fri)
 
     const priceFieldMap = {
       2: 'Price 2 nights selected',
@@ -475,7 +475,7 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef }) {
   const sentinelRef = useRef(null);
 
   useEffect(() => {
@@ -509,7 +509,6 @@ function ListingsGrid({ listings, selectedDaysCount, onLoadMore, hasMore, isLoad
         <PropertyCard
           key={listing.id}
           listing={listing}
-          selectedDaysCount={selectedDaysCount}
           onLocationClick={(listing) => {
             if (mapRef.current) {
               mapRef.current.zoomToListing(listing.id);
@@ -621,7 +620,6 @@ export default function SearchPage() {
   const urlFilters = parseUrlToFilters();
 
   // Filter state (initialized from URL if available)
-  const [selectedDays, setSelectedDays] = useState(urlFilters.selectedDays);
   const [boroughs, setBoroughs] = useState([]);
   const [selectedBorough, setSelectedBorough] = useState(urlFilters.selectedBorough);
   const [neighborhoods, setNeighborhoods] = useState([]);
@@ -742,7 +740,6 @@ export default function SearchPage() {
   }, []); // Run once on mount
 
   // Sync filter state to URL parameters
-  // NOTE: selectedDays is managed by SearchScheduleSelector component internally
   useEffect(() => {
     // Skip URL update on initial mount (URL already parsed)
     if (isInitialMount.current) {
@@ -750,7 +747,7 @@ export default function SearchPage() {
       return;
     }
 
-    // Update URL with current filter state (excluding selectedDays which is managed by component)
+    // Update URL with current filter state
     const filters = {
       selectedBorough,
       weekPattern,
@@ -768,7 +765,6 @@ export default function SearchPage() {
       console.log('URL changed via browser navigation, updating filters:', newFilters);
 
       // Update all filter states from URL
-      setSelectedDays(newFilters.selectedDays);
       setSelectedBorough(newFilters.selectedBorough);
       setWeekPattern(newFilters.weekPattern);
       setPriceTier(newFilters.priceTier);
@@ -867,7 +863,7 @@ export default function SearchPage() {
     if (boroughs.length === 0 || !selectedBorough) return;
 
     // Performance optimization: Prevent duplicate fetches
-    const fetchParams = `${selectedBorough}-${selectedNeighborhoods.join(',')}-${weekPattern}-${priceTier}-${sortBy}-${selectedDays.join(',')}`;
+    const fetchParams = `${selectedBorough}-${selectedNeighborhoods.join(',')}-${weekPattern}-${priceTier}-${sortBy}`;
 
     // Skip if same parameters are already being fetched or were just fetched
     if (fetchInProgressRef.current) {
@@ -1050,79 +1046,8 @@ export default function SearchPage() {
         excluded: transformedListings.length - listingsWithCoordinates.length
       });
 
-      // Apply day filter client-side
-      let filteredListings = listingsWithCoordinates;
-      if (selectedDays.length > 0) {
-        if (import.meta.env.DEV) {
-          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-          const selectedDayNames = selectedDays.map(idx => dayNames[idx]);
-          console.log('📅 Applying schedule filter (client-side):', selectedDayNames);
-          console.log(`   → Required days: ${selectedDayNames.join(', ')}`);
-          console.log(`   → Logic: Show listings where listing days ⊇ selected days (superset or equal)`);
-          console.log(`   → Empty/null days = available ALL days = SHOW`);
-        }
-
-        // CRITICAL FIX: Filter from listingsWithCoordinates, not transformedListings
-        filteredListings = listingsWithCoordinates.filter(listing => {
-          if (selectedDays.length === 0) return true;
-
-        const listingDays = Array.isArray(listing.days_available) ? listing.days_available : [];
-
-        // Empty/null days = available ALL days = ALWAYS SHOW
-        if (listingDays.length === 0) {
-          if (import.meta.env.DEV) {
-            console.log(`  ✅ PASS: "${listing.title}" - Empty days array (available ALL days)`);
-          }
-          return true;
-        }
-
-        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-        const selectedDayNames = selectedDays.map(idx => dayNames[idx]);
-
-        // Normalize listing days for case-insensitive comparison
-        const normalizedListingDays = listingDays
-          .filter(d => d && typeof d === 'string')
-          .map(d => d.toLowerCase().trim());
-
-        // SUPERSET CHECK: Listing must contain ALL required days
-        const missingDays = selectedDayNames.filter(requiredDay =>
-          !normalizedListingDays.some(listingDay => listingDay === requiredDay.toLowerCase())
-        );
-
-        const isMatch = missingDays.length === 0;
-
-        // Enhanced debugging in development mode
-        if (import.meta.env.DEV) {
-          if (isMatch) {
-            const extraDays = normalizedListingDays.filter(d =>
-              !selectedDayNames.some(sd => sd.toLowerCase() === d)
-            );
-            const reason = extraDays.length > 0
-              ? `Has ALL required days + ${extraDays.length} extra: [${extraDays.join(', ')}]`
-              : 'Has EXACTLY the required days';
-            console.log(`  ✅ PASS: "${listing.title}" - ${reason}`);
-          } else {
-            console.log(`  ❌ REJECT: "${listing.title}" - Missing ${missingDays.length} required day(s): [${missingDays.join(', ')}]`);
-            console.log(`     → Listing has: [${normalizedListingDays.join(', ')}]`);
-            console.log(`     → Required: [${selectedDayNames.map(d => d.toLowerCase()).join(', ')}]`);
-          }
-        }
-
-        return isMatch;
-        });
-
-        // Log summary in development mode
-        if (import.meta.env.DEV) {
-          const beforeCount = transformedListings.length;
-          const afterCount = filteredListings.length;
-          const rejectedCount = beforeCount - afterCount;
-          console.log(`📊 Schedule filter results: ${afterCount}/${beforeCount} listings match`);
-          if (rejectedCount > 0) {
-            console.log(`   ❌ Rejected ${rejectedCount} listings`);
-          }
-          console.log(`✅ Schedule filter complete: ${afterCount} listings pass filter`);
-        }
-      }
+      // No day filtering applied - show all listings with valid coordinates
+      const filteredListings = listingsWithCoordinates;
 
       console.log('📊 SearchPage: Final filtered listings being set to state:', {
         count: filteredListings.length,
@@ -1148,8 +1073,7 @@ export default function SearchPage() {
           borough: selectedBorough,
           neighborhoods: selectedNeighborhoods,
           weekPattern,
-          priceTier,
-          selectedDays
+          priceTier
         }
       });
 
@@ -1159,7 +1083,7 @@ export default function SearchPage() {
       setIsLoading(false);
       fetchInProgressRef.current = false;
     }
-  }, [boroughs, selectedBorough, selectedNeighborhoods, weekPattern, priceTier, sortBy, selectedDays]);
+  }, [boroughs, selectedBorough, selectedNeighborhoods, weekPattern, priceTier, sortBy]);
 
   // Transform raw listing data
   const transformListing = (dbListing, images, hostData) => {
@@ -1327,7 +1251,6 @@ export default function SearchPage() {
 
   // Reset all filters
   const handleResetFilters = () => {
-    setSelectedDays([1, 2, 3, 4, 5]);
     const manhattan = boroughs.find(b => b.value === 'manhattan');
     if (manhattan) {
       setSelectedBorough(manhattan.value);
@@ -1371,6 +1294,7 @@ export default function SearchPage() {
   };
 
   // Mount SearchScheduleSelector component in both mobile and desktop locations
+  // Note: Schedule selector is now display-only and does not affect filtering
   useEffect(() => {
     const mountPointDesktop = document.getElementById('schedule-selector-mount-point');
     const mountPointMobile = document.getElementById('schedule-selector-mount-point-mobile');
@@ -1378,13 +1302,10 @@ export default function SearchPage() {
 
     const selectorProps = {
       onSelectionChange: (days) => {
-        console.log('Selected days:', days);
-        // Convert day objects to indices
-        const dayIndices = days.map(d => d.index);
-        setSelectedDays(dayIndices);
+        console.log('Schedule selector changed (display only, not used for filtering):', days);
+        // No state update - schedule selection is for display purposes only
       },
       onError: (error) => console.error('SearchScheduleSelector error:', error)
-      // NOTE: Not passing initialSelection - component will read from URL internally
     };
 
     if (mountPointDesktop) {
@@ -1403,15 +1324,6 @@ export default function SearchPage() {
       roots.forEach(root => root.unmount());
     };
   }, []);
-
-  // Re-render SearchScheduleSelector when selectedDays changes (e.g., from URL)
-  useEffect(() => {
-    const mountPoint = document.getElementById('search-schedule-selector-mount');
-    if (mountPoint && mountPoint._reactRoot) {
-      // Component will re-render via key change or we can use a state update
-      // For now, we'll let the initialSelection prop handle it via component internal state
-    }
-  }, [selectedDays]);
 
   // Render
   return (
@@ -1616,7 +1528,6 @@ export default function SearchPage() {
             {!isLoading && !error && allListings.length > 0 && (
               <ListingsGrid
                 listings={displayedListings}
-                selectedDaysCount={selectedDays.length}
                 onLoadMore={handleLoadMore}
                 hasMore={hasMore}
                 isLoading={isLoading}
@@ -1694,7 +1605,6 @@ export default function SearchPage() {
         isOpen={isInfoModalOpen}
         onClose={handleCloseInfoModal}
         listing={selectedListing}
-        selectedDaysCount={selectedDays.length}
         triggerRef={infoModalTriggerRef}
       />
       <AIResearchSignupModal
