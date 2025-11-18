@@ -1294,9 +1294,9 @@ export default function ViewSplitLeasePage() {
           {/* Price Display */}
           <div style={{
             background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
-            padding: '14px',
+            padding: '12px',
             borderRadius: '12px',
-            marginBottom: '20px',
+            marginBottom: '16px',
             border: '1px solid #e9d5ff'
           }}>
             <div style={{
@@ -1323,7 +1323,7 @@ export default function ViewSplitLeasePage() {
           </div>
 
           {/* Move-in Date */}
-          <div style={{ marginBottom: '14px' }}>
+          <div style={{ marginBottom: '10px' }}>
             <label style={{
               fontSize: '12px',
               fontWeight: '700',
@@ -1390,7 +1390,7 @@ export default function ViewSplitLeasePage() {
               fontSize: '12px',
               color: '#6B7280',
               lineHeight: '1.4',
-              marginBottom: '14px',
+              marginBottom: '10px',
               fontWeight: '400',
               paddingLeft: '4px'
             }}>
@@ -1404,7 +1404,7 @@ export default function ViewSplitLeasePage() {
               display: 'flex',
               alignItems: 'flex-start',
               gap: '10px',
-              marginBottom: '20px',
+              marginBottom: '14px',
               padding: '12px',
               background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
               borderRadius: '10px',
@@ -1466,8 +1466,8 @@ export default function ViewSplitLeasePage() {
           {/* Weekly Schedule Selector */}
           {scheduleSelectorListing && (
             <div style={{
-              marginBottom: '20px',
-              padding: '16px',
+              marginBottom: '14px',
+              padding: '12px',
               background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
               borderRadius: '12px',
               border: '1px solid #E5E7EB'
@@ -1486,7 +1486,7 @@ export default function ViewSplitLeasePage() {
           )}
 
           {/* Reservation Span */}
-          <div style={{ marginBottom: '18px' }}>
+          <div style={{ marginBottom: '12px' }}>
             <label style={{
               fontSize: '12px',
               fontWeight: '700',
@@ -1569,8 +1569,8 @@ export default function ViewSplitLeasePage() {
 
           {/* Price Breakdown */}
           <div style={{
-            marginBottom: '20px',
-            padding: '14px',
+            marginBottom: '12px',
+            padding: '12px',
             background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)',
             borderRadius: '10px',
             border: '1px solid #E5E7EB'
@@ -1597,9 +1597,9 @@ export default function ViewSplitLeasePage() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '20px 0',
+            padding: '12px 0',
             borderTop: '2px solid #E5E7EB',
-            marginBottom: '20px'
+            marginBottom: '10px'
           }}>
             <span style={{
               fontSize: '16px',
