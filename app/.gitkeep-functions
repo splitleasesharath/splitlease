@@ -1,0 +1,13 @@
+# Functions Directory Structure
+
+This directory contains Cloudflare Pages Functions for dynamic routing.
+
+## Current Functions:
+
+- `view-split-lease/[id].js` - Handles dynamic listing ID routes for /view-split-lease/[id]
+
+## Note on guest-proposals:
+
+The `/guest-proposals` route does NOT use a Cloudflare Function because it relies on
+client-side authentication to determine which user's proposals to display.
+It uses the _redirects file rule instead: `/guest-proposals  /guest-proposals.html  200`
