@@ -616,56 +616,16 @@ const GoogleMap = forwardRef(({
             markerCount: markersRef.current.length,
             bounds: bounds.toString(),
             disableAutoZoom,
-            initialZoom
+            initialZoom,
+            simpleMode
           });
         }
 
-        // For simple mode or when initialZoom is specified, center and zoom differently
+        // In simple mode, skip auto-centering here because parent will call zoomToListing explicitly
+        // This prevents double-zooming and ensures exact same behavior as clicking "Located in" link
         if (simpleMode && markersRef.current.length === 1) {
-          // Get the first marker's position
-          const firstListing = filteredListings[0] || listings[0];
-          if (firstListing?.coordinates?.lat && firstListing?.coordinates?.lng) {
-            // Determine zoom level based on borough (matching zoomToListing behavior)
-            let targetZoom = 16;
-            if (firstListing.borough === 'Manhattan') {
-              targetZoom = 17;
-            } else if (firstListing.borough === 'Staten Island' || firstListing.borough === 'Queens') {
-              targetZoom = 15;
-            }
-            // Override with initialZoom if provided
-            if (initialZoom) {
-              targetZoom = initialZoom;
-            }
-
-            // Use fitBounds with padding (matching zoomToListing behavior)
-            const listingBounds = new window.google.maps.LatLngBounds();
-            listingBounds.extend({ lat: firstListing.coordinates.lat, lng: firstListing.coordinates.lng });
-
-            map.fitBounds(listingBounds, {
-              top: 150,  // Accounts for header overlap + centering
-              bottom: 50, // Balances for proper centering
-              left: 50,
-              right: 50
-            });
-
-            // Set zoom level after fitBounds completes
-            window.google.maps.event.addListenerOnce(map, 'bounds_changed', () => {
-              map.setZoom(targetZoom);
-            });
-
-            console.log('✅ GoogleMap: Simple mode - Center and zoom with fitBounds:', {
-              center: { lat: firstListing.coordinates.lat, lng: firstListing.coordinates.lng },
-              zoom: targetZoom,
-              borough: firstListing.borough,
-              listing: firstListing.id || firstListing.title
-            });
-          } else {
-            console.error('❌ GoogleMap: Simple mode but no valid coordinates found:', {
-              hasCoordinates: !!firstListing?.coordinates,
-              coordinates: firstListing?.coordinates,
-              listing: firstListing
-            });
-          }
+          console.log('🗺️ GoogleMap: Simple mode - Skipping auto-center, parent will call zoomToListing');
+          // Do nothing - parent component will call zoomToListing to center the map
         } else if (!disableAutoZoom) {
           // Normal auto-fit behavior
           map.fitBounds(bounds);

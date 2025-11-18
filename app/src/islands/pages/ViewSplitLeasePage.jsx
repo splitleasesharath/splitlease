@@ -186,6 +186,7 @@ export default function ViewSplitLeasePage() {
   const commuteSectionRef = useRef(null);
   const amenitiesSectionRef = useRef(null);
   const houseRulesSectionRef = useRef(null);
+  const hasAutoZoomedRef = useRef(false); // Track if we've auto-zoomed on initial load
 
   // ============================================================================
   // INITIALIZATION
@@ -274,6 +275,28 @@ export default function ViewSplitLeasePage() {
 
     return () => observer.disconnect();
   }, [listing]); // Re-run when listing data is available
+
+  // ============================================================================
+  // AUTO-ZOOM MAP ON INITIAL LOAD
+  // ============================================================================
+
+  useEffect(() => {
+    // Automatically center and zoom the map when it loads for the first time
+    // This replicates the behavior of clicking "Located in" link, but without scrolling
+    if (shouldLoadMap && mapRef.current && listing && !hasAutoZoomedRef.current) {
+      console.log('🗺️ ViewSplitLeasePage: Auto-zooming map on initial load');
+
+      // Wait for map to fully initialize before calling zoomToListing
+      // Same 600ms timeout as handleLocationClick
+      setTimeout(() => {
+        if (mapRef.current && listing) {
+          console.log('🗺️ ViewSplitLeasePage: Calling zoomToListing for initial auto-zoom');
+          mapRef.current.zoomToListing(listing._id);
+          hasAutoZoomedRef.current = true;
+        }
+      }, 600);
+    }
+  }, [shouldLoadMap, listing]);
 
   // ============================================================================
   // UPDATE DOCUMENT TITLE
