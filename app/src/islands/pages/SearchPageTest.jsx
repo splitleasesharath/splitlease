@@ -1031,22 +1031,59 @@ export default function SearchPage() {
       let finalListings = displayListings;
       if (selectedDays.length > 0) {
         console.log('\n📅 FINAL FILTER: Applying schedule/days filter');
+        console.log('   Selected day indices:', selectedDays);
+
+        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        const selectedDayNames = selectedDays.map(idx => dayNames[idx]);
+        console.log('   Selected day names:', selectedDayNames);
+
+        let passCount = 0;
+        let failCount = 0;
+
         finalListings = displayListings.filter(listing => {
           const listingDays = Array.isArray(listing.days_available) ? listing.days_available : [];
 
-          // Empty/null days = available ALL days
-          if (listingDays.length === 0) return true;
+          // Debug log for first 3 listings
+          if (passCount + failCount < 3) {
+            console.log(`\n   📋 Listing: "${listing.title}"`);
+            console.log(`      Raw days_available:`, listing.days_available);
+            console.log(`      Is array:`, Array.isArray(listing.days_available));
+            console.log(`      Parsed days:`, listingDays);
+          }
 
-          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-          const selectedDayNames = selectedDays.map(idx => dayNames[idx]);
+          // Empty/null days = available ALL days
+          if (listingDays.length === 0) {
+            if (passCount + failCount < 3) {
+              console.log(`      ✅ PASS (empty = all days available)`);
+            }
+            passCount++;
+            return true;
+          }
+
           const normalizedListingDays = listingDays.filter(d => d && typeof d === 'string').map(d => d.toLowerCase().trim());
+
+          if (passCount + failCount < 3) {
+            console.log(`      Normalized listing days:`, normalizedListingDays);
+            console.log(`      Required days (lowercase):`, selectedDayNames.map(d => d.toLowerCase()));
+          }
 
           const missingDays = selectedDayNames.filter(requiredDay =>
             !normalizedListingDays.some(listingDay => listingDay === requiredDay.toLowerCase())
           );
 
-          return missingDays.length === 0;
+          const passes = missingDays.length === 0;
+
+          if (passCount + failCount < 3) {
+            console.log(`      Missing days:`, missingDays);
+            console.log(`      ${passes ? '✅ PASS' : '❌ FAIL'}`);
+          }
+
+          if (passes) passCount++;
+          else failCount++;
+
+          return passes;
         });
+        console.log(`   Filter results: ${passCount} passed, ${failCount} failed`);
         console.log('   After days filter:', finalListings.length, 'listings');
       }
 
