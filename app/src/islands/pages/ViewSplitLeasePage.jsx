@@ -812,7 +812,21 @@ export default function ViewSplitLeasePage() {
                   alignItems: 'start',
                   gap: '1rem'
                 }}>
-                  <span style={{ fontSize: '1.5rem' }}>📦</span>
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                  >
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                  </svg>
                   <div>
                     <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
                       {listing.storageOption.title}
@@ -882,7 +896,21 @@ export default function ViewSplitLeasePage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {listing.parkingOption && (
                   <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
-                    <span style={{ fontSize: '1.5rem' }}>🚗</span>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                    >
+                      <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"></path>
+                      <circle cx="6.5" cy="16.5" r="2.5"></circle>
+                      <circle cx="16.5" cy="16.5" r="2.5"></circle>
+                    </svg>
                     <div>
                       <div style={{ fontWeight: '600' }}>{listing.parkingOption.label}</div>
                       <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.875rem' }}>
@@ -893,7 +921,21 @@ export default function ViewSplitLeasePage() {
                 )}
                 {listing['Time to Station (commute)'] && (
                   <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
-                    <span style={{ fontSize: '1.5rem' }}>🚇</span>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                    >
+                      <rect x="3" y="6" width="18" height="11" rx="2"></rect>
+                      <path d="M7 15h.01M17 15h.01M8 6v5M16 6v5"></path>
+                      <path d="M3 12h18"></path>
+                    </svg>
                     <div>
                       <div style={{ fontWeight: '600' }}>{listing['Time to Station (commute)']} to Metro</div>
                       <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.875rem' }}>
