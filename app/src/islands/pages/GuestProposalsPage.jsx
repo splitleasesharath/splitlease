@@ -187,12 +187,12 @@ export default function GuestProposalsPage() {
             "Name - Full",
             "Profile Photo",
             "About Me / Bio",
-            "Email - Address",
-            "Phone Number",
-            "linkedIn verification",
-            "Phone Number Verified",
-            "Email - Verified",
-            "Identity Verified"
+            "email as text",
+            "Phone Number (as text)",
+            "Verify - Linked In ID",
+            "Verify - Phone",
+            "is email confirmed",
+            "user verified?"
           `)
           .eq('_id', enrichedProposal._listing['Created By'])
           .single();
