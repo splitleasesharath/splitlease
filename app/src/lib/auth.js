@@ -788,17 +788,25 @@ export async function validateTokenAndFetchUser() {
  * Check if current page is a protected page requiring authentication
  * Protected pages redirect to home if user is not logged in
  *
+ * Handles both clean URLs (/guest-proposals) and .html URLs (/guest-proposals.html)
+ * by normalizing the path before comparison
+ *
  * @returns {boolean} True if current page requires authentication
  */
 export function isProtectedPage() {
-  const protectedPages = [
-    '/guest-proposals.html',
-    '/account-profile.html',
-    '/host-dashboard.html'
+  const protectedPaths = [
+    '/guest-proposals',
+    '/account-profile',
+    '/host-dashboard'
   ];
 
-  const currentPath = window.location.pathname;
-  return protectedPages.some(page => currentPath.includes(page));
+  // Normalize path by removing .html extension for consistent matching
+  const currentPath = window.location.pathname.replace(/\.html$/, '');
+
+  // Check if current path matches any protected path exactly or starts with it
+  return protectedPaths.some(path =>
+    currentPath === path || currentPath.startsWith(path + '/')
+  );
 }
 
 /**

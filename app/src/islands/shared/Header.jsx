@@ -63,18 +63,9 @@ export default function Header() {
           setCurrentUser(null);
 
           // If on a protected page and token validation failed, redirect to home
-          // Use sessionStorage flag to prevent infinite loops
           if (isProtectedPage()) {
-            const redirectAttemptKey = 'auth_redirect_attempted';
-            const hasAttemptedRedirect = sessionStorage.getItem(redirectAttemptKey);
-
-            if (!hasAttemptedRedirect) {
-              sessionStorage.setItem(redirectAttemptKey, 'true');
-              console.log('⚠️ Invalid token on protected page - redirecting to home (one-time)');
-              window.location.replace('/');
-            } else {
-              console.log('⚠️ Redirect loop prevented - staying on page');
-            }
+            console.log('⚠️ Invalid token on protected page - redirecting to home');
+            window.location.replace('/');
           }
         }
       } catch (error) {
