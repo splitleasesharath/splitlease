@@ -838,10 +838,16 @@ const GoogleMap = forwardRef(({
           width="18"
           height="18"
           viewBox="0 0 24 24"
-          fill="currentColor"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
           xmlns="http://www.w3.org/2000/svg"
         >
-          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+          <path d="M12 3v18M3 12h18" />
+          <path d="M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4" />
+          <circle cx="12" cy="12" r="2" fill="currentColor" />
         </svg>
         <span>Generate Market Report</span>
       </button>

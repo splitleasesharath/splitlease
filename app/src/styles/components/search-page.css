@@ -879,7 +879,7 @@
   top: 16px;
   left: 50%;
   transform: translateX(-50%);
-  background: #5B21B6;
+  background: #31135D;
   color: white;
   border: none;
   border-radius: 8px;
@@ -891,21 +891,21 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 2px 8px rgba(91, 33, 182, 0.3);
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.3);
   z-index: 10;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .ai-research-button:hover {
-  background: #6D28D9;
-  box-shadow: 0 4px 12px rgba(91, 33, 182, 0.4);
-  transform: translateX(-50%) translateY(-1px);
+  background: #522580;
+  box-shadow: 0 6px 16px rgba(49, 19, 93, 0.4);
+  transform: translateX(-50%) translateY(-2px);
 }
 
 .ai-research-button:active {
   transform: translateX(-50%) translateY(0);
-  box-shadow: 0 2px 6px rgba(91, 33, 182, 0.3);
+  box-shadow: 0 2px 8px rgba(49, 19, 93, 0.3);
 }
 
 .ai-research-button svg {
