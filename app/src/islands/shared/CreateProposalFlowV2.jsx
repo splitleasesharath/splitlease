@@ -22,6 +22,8 @@ import '../../styles/create-proposal-flow-v2.css';
  * @param {number} nightsSelected - Number of nights selected (INITIAL ONLY)
  * @param {number} reservationSpan - Number of weeks for reservation
  * @param {Object} pricingBreakdown - Pricing breakdown from parent (INITIAL ONLY)
+ * @param {string} checkInDay - Check-in day name from parent (e.g., "Friday")
+ * @param {string} checkOutDay - Check-out day name from parent (e.g., "Tuesday")
  * @param {Object} zatConfig - ZAT price configuration object
  * @param {boolean} hasExistingUserData - Whether user has previously entered data
  * @param {Object} existingUserData - Previously saved user data
@@ -35,6 +37,8 @@ export default function CreateProposalFlowV2({
   nightsSelected = 0,
   reservationSpan = 13,
   pricingBreakdown = null,
+  checkInDay = null,
+  checkOutDay = null,
   zatConfig = null,
   hasExistingUserData = false,
   existingUserData = null,
@@ -56,6 +60,8 @@ export default function CreateProposalFlowV2({
       daysSelected,
       nightsSelected,
       reservationSpan,
+      checkInDay,
+      checkOutDay,
       pricingBreakdown: {
         pricePerNight: pricingBreakdown?.pricePerNight,
         fourWeekRent: pricingBreakdown?.fourWeekRent,
@@ -85,14 +91,21 @@ export default function CreateProposalFlowV2({
     });
   };
 
-  // Calculate check-in and check-out days from selected days
-  const calculateCheckInCheckOut = (dayObjs) => {
-    if (!dayObjs || dayObjs.length === 0) return { checkIn: 'Monday', checkOut: 'Friday' };
+  // Use check-in/check-out directly from parent (already calculated by ListingScheduleSelector)
+  // Fallback to calculation only if not provided
+  const getInitialCheckInCheckOut = () => {
+    // If passed from parent, use those values (they're already correct from ListingScheduleSelector)
+    if (checkInDay && checkOutDay) {
+      return { checkIn: checkInDay, checkOut: checkOutDay };
+    }
+
+    // Fallback: calculate from daysSelected if needed
+    if (!daysSelected || daysSelected.length === 0) {
+      return { checkIn: 'Monday', checkOut: 'Friday' };
+    }
 
     const dayMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayNames = dayObjs.map(dayObj => dayMap[dayObj.dayOfWeek]);
-
-    // Sort day names by their day of week number
+    const dayNames = daysSelected.map(dayObj => dayMap[dayObj.dayOfWeek]);
     const sortedDays = [...dayNames].sort((a, b) => dayMap.indexOf(a) - dayMap.indexOf(b));
 
     return {
@@ -101,7 +114,16 @@ export default function CreateProposalFlowV2({
     };
   };
 
-  const { checkIn: initialCheckIn, checkOut: initialCheckOut } = calculateCheckInCheckOut(daysSelected);
+  const { checkIn: initialCheckIn, checkOut: initialCheckOut } = getInitialCheckInCheckOut();
+
+  // Log which source was used for check-in/check-out
+  console.log('✅ Check-in/Check-out source:', {
+    usedPassedValues: !!(checkInDay && checkOutDay),
+    checkInDay: initialCheckIn,
+    checkOutDay: initialCheckOut,
+    passedCheckIn: checkInDay,
+    passedCheckOut: checkOutDay
+  });
 
   // Calculate first 4 weeks total from pricing breakdown
   const calculateFirstFourWeeks = (breakdown) => {

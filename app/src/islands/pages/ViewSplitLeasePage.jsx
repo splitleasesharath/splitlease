@@ -2039,6 +2039,8 @@ export default function ViewSplitLeasePage() {
           nightsSelected={nightsSelected}
           reservationSpan={reservationSpan}
           pricingBreakdown={priceBreakdown}
+          checkInDay={checkInName}
+          checkOutDay={checkOutName}
           zatConfig={zatConfig}
           hasExistingUserData={false}
           existingUserData={null}
