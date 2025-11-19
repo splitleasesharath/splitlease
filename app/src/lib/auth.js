@@ -12,7 +12,7 @@
  * No fallback mechanisms - returns null or throws error on auth failure
  *
  * Usage:
- *   import { checkAuthStatus, getUsernameFromCookies, isUserLoggedIn } from './auth.js'
+ *   import { checkAuthStatus, getUsernameFromCookies } from './auth.js'
  */
 
 import {
@@ -127,26 +127,6 @@ export function checkAuthStatus() {
     isUserLoggedInState = false;
     return false;
   }
-}
-
-/**
- * Check if user is currently logged in
- * Returns cached authentication state from last check
- *
- * @returns {boolean} True if user is logged in, false otherwise
- */
-export function isUserLoggedIn() {
-  return isUserLoggedInState;
-}
-
-/**
- * Set the logged in state explicitly
- * Useful for handling authentication events
- *
- * @param {boolean} state - Whether user is logged in
- */
-export function setUserLoggedInState(state) {
-  isUserLoggedInState = state;
 }
 
 // ============================================================================
@@ -396,54 +376,6 @@ export function resetAuthCheckAttempts() {
 }
 
 // ============================================================================
-// Auth State Query Utilities
-// ============================================================================
-
-/**
- * Get complete authentication state object
- * Useful for debugging or state inspection
- *
- * @returns {Object} Auth state including status, username, tokens, and session info
- */
-export function getAuthState() {
-  return {
-    isLoggedIn: isUserLoggedInState,
-    username: getCurrentUsername(),
-    authToken: getAuthToken(),
-    sessionId: getSessionId(),
-    sessionValid: isSessionValid(),
-    sessionAge: getSessionAge(),
-    lastAuth: getLastAuthTime(),
-    checkAttempts: getAuthCheckAttempts()
-  };
-}
-
-/**
- * Check if user has any valid authentication
- * Returns true if ANY form of authentication is present and valid
- *
- * @returns {boolean} True if user has valid auth, false otherwise
- */
-export function hasValidAuthentication() {
-  // Check cookies
-  const cookieAuth = checkSplitLeaseCookies();
-  if (cookieAuth.isLoggedIn) {
-    return true;
-  }
-
-  // Check localStorage tokens
-  const authToken = getAuthToken();
-  const sessionId = getSessionId();
-  const sessionValid = isSessionValid();
-
-  if ((authToken || sessionId) && sessionValid) {
-    return true;
-  }
-
-  return false;
-}
-
-// ============================================================================
 // Bubble Authentication API
 // ============================================================================
 
@@ -639,47 +571,6 @@ export async function signupUser(email, password, retype) {
       success: false,
       error: 'Network error. Please check your connection and try again.'
     };
-  }
-}
-
-/**
- * Check login session validity via Bubble API
- * Uses stored token as Bearer token to validate session
- *
- * @returns {Promise<boolean>} True if session is valid, false otherwise
- */
-export async function checkLoginSession() {
-  const token = getAuthToken();
-
-  if (!token) {
-    console.log('❌ No token found for session check');
-    return false;
-  }
-
-  console.log('🔍 Checking login session...');
-
-  try {
-    const response = await fetch(BUBBLE_CHECK_LOGIN_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    if (response.ok) {
-      console.log('✅ Session is valid');
-      isUserLoggedInState = true;
-      return true;
-    } else {
-      console.log('❌ Session is invalid');
-      clearAuthData();
-      return false;
-    }
-  } catch (error) {
-    console.error('❌ Session check error:', error);
-    clearAuthData();
-    return false;
   }
 }
 

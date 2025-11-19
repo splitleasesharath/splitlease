@@ -1056,7 +1056,6 @@ console.log(getNeighborhoodName('some-id'));
 
 // Check auth
 console.log(checkAuthStatus());
-console.log(getAuthState());
 ```
 
 **Playwright E2E Testing** (optional):
