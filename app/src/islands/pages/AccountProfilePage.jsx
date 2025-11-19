@@ -99,17 +99,18 @@ export default function AccountProfilePage({ requireAuth = false, isAuthenticate
       setLoading(true);
       setError(null);
 
-      // Get authentication status
-      const authStatus = checkAuthStatus();
+      // Get authentication status - checkAuthStatus() returns boolean
+      const isAuthenticated = checkAuthStatus();
 
-      if (!authStatus.isAuthenticated) {
+      if (!isAuthenticated) {
         // Don't redirect - Header will show auth modal via autoShowLogin prop
         console.warn('⚠️ User not authenticated - auth modal will be shown by Header');
         setLoading(false);
         return;
       }
 
-      const userId = authStatus.userId;
+      // Get user ID from session storage
+      const userId = localStorage.getItem('splitlease_session_id');
 
       // Step 1: Check URL parameters for payout view
       const urlParams = new URLSearchParams(window.location.search);

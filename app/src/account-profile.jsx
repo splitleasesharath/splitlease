@@ -9,9 +9,8 @@ import { createRoot } from 'react-dom/client';
 import AccountProfilePage from './islands/pages/AccountProfilePage.jsx';
 import { checkAuthStatus } from './lib/auth.js';
 
-// Check authentication status
-const authStatus = checkAuthStatus();
-const isLoggedIn = authStatus.isAuthenticated;
+// Check authentication status - checkAuthStatus() returns a boolean
+const isLoggedIn = checkAuthStatus();
 
 console.log('🔒 Account Profile Auth Check:', { isLoggedIn });
 
