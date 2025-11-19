@@ -1415,30 +1415,22 @@ export default function ViewSplitLeasePage() {
 
           {/* Move-in Date */}
           <div style={{ marginBottom: '10px' }}>
-            <label
-              onClick={() => {
-                console.log('Move-In label clicked!');
-                console.log('Current activeInfoTooltip:', activeInfoTooltip);
-                console.log('Informational texts:', informationalTexts);
-                setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
-              }}
-              style={{
-                fontSize: '12px',
-                fontWeight: '700',
-                color: '#31135d',
-                marginBottom: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                cursor: 'pointer'
-              }}
-            >
+            <label style={{
+              fontSize: '12px',
+              fontWeight: '700',
+              color: '#31135d',
+              marginBottom: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
               Ideal Move-In
               <svg
                 ref={moveInInfoRef}
-                style={{ width: '16px', height: '16px', color: '#9CA3AF' }}
+                onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn')}
+                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1510,8 +1502,10 @@ export default function ViewSplitLeasePage() {
               background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
               borderRadius: '10px',
               border: '1px solid #e9d5ff',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              cursor: 'pointer'
             }}
+            onClick={() => setStrictMode(!strictMode)}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%)';
               e.currentTarget.style.borderColor = '#d8b4fe';
@@ -1523,11 +1517,9 @@ export default function ViewSplitLeasePage() {
           >
             <input
               type="checkbox"
-              id="strict-mode-checkbox"
               checked={strictMode}
-              onChange={(e) => {
-                setStrictMode(e.target.checked);
-              }}
+              onChange={(e) => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
               style={{
                 width: '18px',
                 height: '18px',
@@ -1537,24 +1529,21 @@ export default function ViewSplitLeasePage() {
                 flexShrink: 0
               }}
             />
-            <div style={{ flex: 1 }}>
-              <label
-                htmlFor="strict-mode-checkbox"
-                style={{
-                  fontSize: '14px',
-                  color: '#111827',
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  lineHeight: '1.5',
-                  fontWeight: '500',
-                  display: 'inline'
-                }}
-              >
-                Strict (no negotiation on exact move in)
-              </label>
+            <label style={{
+              fontSize: '14px',
+              color: '#111827',
+              cursor: 'pointer',
+              userSelect: 'none',
+              lineHeight: '1.5',
+              fontWeight: '500'
+            }}>
+              Strict (no negotiation on exact move in)
               <svg
                 ref={flexibilityInfoRef}
-                onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
+                }}
                 style={{
                   display: 'inline-block',
                   width: '14px',
@@ -1570,7 +1559,7 @@ export default function ViewSplitLeasePage() {
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-            </div>
+            </label>
           </div>
 
           {/* Weekly Schedule Selector */}
@@ -1597,25 +1586,22 @@ export default function ViewSplitLeasePage() {
 
           {/* Reservation Span */}
           <div style={{ marginBottom: '12px' }}>
-            <label
-              onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan')}
-              style={{
-                fontSize: '12px',
-                fontWeight: '700',
-                color: '#31135d',
-                marginBottom: '8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                cursor: 'pointer'
-              }}
-            >
+            <label style={{
+              fontSize: '12px',
+              fontWeight: '700',
+              color: '#31135d',
+              marginBottom: '8px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
               Reservation Span
               <svg
                 ref={reservationSpanInfoRef}
-                style={{ width: '16px', height: '16px', color: '#9CA3AF' }}
+                onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan')}
+                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -2039,8 +2025,6 @@ export default function ViewSplitLeasePage() {
           nightsSelected={nightsSelected}
           reservationSpan={reservationSpan}
           pricingBreakdown={priceBreakdown}
-          checkInDay={checkInName}
-          checkOutDay={checkOutName}
           zatConfig={zatConfig}
           hasExistingUserData={false}
           existingUserData={null}
@@ -2066,50 +2050,50 @@ export default function ViewSplitLeasePage() {
       )}
 
       {/* Informational Text Tooltips */}
-      <InformationalText
-        isOpen={activeInfoTooltip === 'moveIn'}
-        onClose={() => setActiveInfoTooltip(null)}
-        triggerRef={moveInInfoRef}
-        title="Move-In Date"
-        content={informationalTexts['aligned schedule with move-in']
-          ? (isMobile
+      {informationalTexts['aligned schedule with move-in'] && (
+        <InformationalText
+          isOpen={activeInfoTooltip === 'moveIn'}
+          onClose={() => setActiveInfoTooltip(null)}
+          triggerRef={moveInInfoRef}
+          title="Move-In Date"
+          content={isMobile
             ? informationalTexts['aligned schedule with move-in'].mobile || informationalTexts['aligned schedule with move-in'].desktop
-            : informationalTexts['aligned schedule with move-in'].desktop)
-          : 'To make your move-in process as seamless as possible, we suggest that you align your estimated move-in date with the day of the week on which you intend to check in.'
-        }
-        expandedContent={informationalTexts['aligned schedule with move-in']?.desktopPlus}
-        showMoreAvailable={informationalTexts['aligned schedule with move-in']?.showMore || false}
-      />
+            : informationalTexts['aligned schedule with move-in'].desktop
+          }
+          expandedContent={informationalTexts['aligned schedule with move-in'].desktopPlus}
+          showMoreAvailable={informationalTexts['aligned schedule with move-in'].showMore}
+        />
+      )}
 
-      <InformationalText
-        isOpen={activeInfoTooltip === 'flexibility'}
-        onClose={() => setActiveInfoTooltip(null)}
-        triggerRef={flexibilityInfoRef}
-        title="Move-In Flexibility"
-        content={informationalTexts['move-in flexibility']
-          ? (isMobile
+      {informationalTexts['move-in flexibility'] && (
+        <InformationalText
+          isOpen={activeInfoTooltip === 'flexibility'}
+          onClose={() => setActiveInfoTooltip(null)}
+          triggerRef={flexibilityInfoRef}
+          title="Move-In Flexibility"
+          content={isMobile
             ? informationalTexts['move-in flexibility'].mobile || informationalTexts['move-in flexibility'].desktop
-            : informationalTexts['move-in flexibility'].desktop)
-          : 'Please let us know if you have any flexibility with your move-in date. We can adjust to fit alternative schedules to make your transition smoother.'
-        }
-        expandedContent={informationalTexts['move-in flexibility']?.desktopPlus}
-        showMoreAvailable={informationalTexts['move-in flexibility']?.showMore || false}
-      />
+            : informationalTexts['move-in flexibility'].desktop
+          }
+          expandedContent={informationalTexts['move-in flexibility'].desktopPlus}
+          showMoreAvailable={informationalTexts['move-in flexibility'].showMore}
+        />
+      )}
 
-      <InformationalText
-        isOpen={activeInfoTooltip === 'reservationSpan'}
-        onClose={() => setActiveInfoTooltip(null)}
-        triggerRef={reservationSpanInfoRef}
-        title="Reservation Span"
-        content={informationalTexts['Reservation Span']
-          ? (isMobile
+      {informationalTexts['Reservation Span'] && (
+        <InformationalText
+          isOpen={activeInfoTooltip === 'reservationSpan'}
+          onClose={() => setActiveInfoTooltip(null)}
+          triggerRef={reservationSpanInfoRef}
+          title="Reservation Span"
+          content={isMobile
             ? informationalTexts['Reservation Span'].mobile || informationalTexts['Reservation Span'].desktop
-            : informationalTexts['Reservation Span'].desktop)
-          : 'A reservation span is the total period a property is reserved. For example, if you lease every week for 26 weeks, it\'s 26 usable weeks.'
-        }
-        expandedContent={informationalTexts['Reservation Span']?.desktopPlus}
-        showMoreAvailable={informationalTexts['Reservation Span']?.showMore || false}
-      />
+            : informationalTexts['Reservation Span'].desktop
+          }
+          expandedContent={informationalTexts['Reservation Span'].desktopPlus}
+          showMoreAvailable={informationalTexts['Reservation Span'].showMore}
+        />
+      )}
 
       <Footer />
     </>

@@ -193,11 +193,6 @@
     white-space: nowrap;
 }
 
-/* Disable underline effect for auth links in nav-right */
-.nav-right .nav-link::after {
-    display: none !important;
-}
-
 .explore-rentals-btn {
     background-color: rgb(255, 255, 255);
     color: rgb(109, 35, 207);
@@ -223,16 +218,8 @@
     color: rgb(91, 33, 182);
 }
 
-.nav-right .divider {
+.divider {
     color: rgba(255, 255, 255, 0.5);
-    position: static;
-    border: none !important;
-    border-top: none !important;
-    margin: 0 !important;
-}
-
-.nav-right .divider::after {
-    display: none !important;
 }
 
 /* Theme Toggle Button */

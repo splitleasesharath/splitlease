@@ -20,75 +20,19 @@ export const calculateNightsFromDays = (days) => {
 
 /**
  * Calculate check-in and check-out days
- * Based on SearchScheduleSelector logic for wrap-around handling
  */
 export const calculateCheckInCheckOut = (days) => {
   if (days.length === 0) {
     return { checkIn: null, checkOut: null };
   }
 
-  if (days.length === 1) {
-    return { checkIn: days[0], checkOut: days[0] };
-  }
-
   const sorted = sortDays(days);
-  const dayNumbers = sorted.map(d => d.dayOfWeek);
-  const hasSunday = dayNumbers.includes(0);
-  const hasSaturday = dayNumbers.includes(6);
+  const checkIn = sorted[0];
 
-  // Check if this is a wrap-around case
-  if (hasSunday && hasSaturday && sorted.length < 7) {
-    // Find the gap (unselected days) in the week
-    let gapStart = -1;
-    let gapEnd = -1;
+  // Check-out is the last selected day
+  const checkOut = sorted[sorted.length - 1];
 
-    // Look for the gap in the sorted days
-    for (let i = 0; i < dayNumbers.length - 1; i++) {
-      if (dayNumbers[i + 1] - dayNumbers[i] > 1) {
-        // Found the gap
-        gapStart = dayNumbers[i] + 1;  // First unselected day
-        gapEnd = dayNumbers[i + 1] - 1;  // Last unselected day
-        break;
-      }
-    }
-
-    if (gapStart !== -1 && gapEnd !== -1) {
-      // Wrap-around case with a gap in the middle
-      // Check-in: First selected day AFTER the gap ends
-      // Check-out: Last selected day BEFORE the gap starts
-
-      // Check-in is the smallest day after the gap
-      let checkInDay = null;
-      for (const day of sorted) {
-        if (day.dayOfWeek > gapEnd) {
-          checkInDay = day;
-          break;
-        }
-      }
-      if (!checkInDay) {
-        // Wrap to Sunday
-        checkInDay = sorted[0];
-      }
-
-      // Check-out is the largest day before the gap
-      let checkOutDay = null;
-      for (let i = sorted.length - 1; i >= 0; i--) {
-        if (sorted[i].dayOfWeek < gapStart) {
-          checkOutDay = sorted[i];
-          break;
-        }
-      }
-      if (!checkOutDay) {
-        // Wrap to Saturday
-        checkOutDay = sorted[sorted.length - 1];
-      }
-
-      return { checkIn: checkInDay, checkOut: checkOutDay };
-    }
-  }
-
-  // Non-wrap-around case: use first and last in sorted order
-  return { checkIn: sorted[0], checkOut: sorted[sorted.length - 1] };
+  return { checkIn, checkOut };
 };
 
 /**

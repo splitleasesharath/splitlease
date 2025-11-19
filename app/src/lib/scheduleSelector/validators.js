@@ -69,7 +69,6 @@ export const validateDayRemoval = (day, selectedDays, minimumNights) => {
 
 /**
  * Check if days are contiguous (consecutive)
- * Based on Bubble implementation that handles week wrap-around cases
  */
 export const isContiguous = (days) => {
   if (days.length <= 1) return true;
@@ -77,39 +76,7 @@ export const isContiguous = (days) => {
   const sorted = sortDays(days);
   const dayNumbers = sorted.map(d => d.dayOfWeek);
 
-  // If 6 or more days selected, it's contiguous
-  if (dayNumbers.length >= 6) return true;
-
-  // Check if selection includes both Sunday (0) and Saturday (6) - wrap-around case
-  const hasSunday = dayNumbers.includes(0);
-  const hasSaturday = dayNumbers.includes(6);
-
-  if (hasSunday && hasSaturday) {
-    // Week wrap-around case: use inverse logic (check not-selected days)
-    // If the NOT selected days are contiguous, then selected days wrap around and are contiguous
-    const allDays = [0, 1, 2, 3, 4, 5, 6];
-    const notSelectedDays = allDays.filter(d => !dayNumbers.includes(d));
-
-    if (notSelectedDays.length === 0) return true; // All days selected
-
-    // Check if not-selected days form a contiguous block
-    const minNotSelected = Math.min(...notSelectedDays);
-    const maxNotSelected = Math.max(...notSelectedDays);
-
-    // Generate expected contiguous range for not-selected days
-    const expectedNotSelected = [];
-    for (let i = minNotSelected; i <= maxNotSelected; i++) {
-      expectedNotSelected.push(i);
-    }
-
-    // If not-selected days are contiguous, then selected days wrap around properly
-    const notSelectedContiguous = notSelectedDays.length === expectedNotSelected.length &&
-      notSelectedDays.every((day, index) => day === expectedNotSelected[index]);
-
-    return notSelectedContiguous;
-  }
-
-  // Normal case: no wrap-around, check standard contiguity
+  // Check for normal contiguity (no week wrap)
   let normallyContiguous = true;
   for (let i = 0; i < dayNumbers.length - 1; i++) {
     if (dayNumbers[i + 1] - dayNumbers[i] !== 1) {
@@ -118,7 +85,32 @@ export const isContiguous = (days) => {
     }
   }
 
-  return normallyContiguous;
+  if (normallyContiguous) return true;
+
+  // Check for week wrap (Saturday to Sunday)
+  if (dayNumbers.includes(0) && dayNumbers.includes(6)) {
+    // Check if days form a contiguous sequence wrapping around the week
+    const sundayIndex = dayNumbers.indexOf(0);
+
+    // Days before Sunday should be at the end
+    if (sundayIndex === 0) {
+      // Sunday is first - check if remaining days are consecutive and end at Saturday
+      const afterSunday = dayNumbers.slice(1);
+      let consecutive = true;
+
+      for (let i = 0; i < afterSunday.length - 1; i++) {
+        if (afterSunday[i + 1] - afterSunday[i] !== 1) {
+          consecutive = false;
+          break;
+        }
+      }
+
+      // Check if last day is Saturday (6)
+      return consecutive && afterSunday[afterSunday.length - 1] === 6;
+    }
+  }
+
+  return false;
 };
 
 /**

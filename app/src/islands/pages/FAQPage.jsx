@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { supabase } from '../../lib/supabase.js';
-// FAQ Page with inquiry modal
 
 export default function FAQPage() {
   const [activeTab, setActiveTab] = useState('general');
@@ -10,11 +9,6 @@ export default function FAQPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [openQuestionId, setOpenQuestionId] = useState(null);
-  const [showInquiryModal, setShowInquiryModal] = useState(false);
-  const [inquiryForm, setInquiryForm] = useState({ name: '', email: '', inquiry: '' });
-  const [submitting, setSubmitting] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
 
   useEffect(() => {
     // Parse URL parameters
@@ -99,76 +93,6 @@ export default function FAQPage() {
     }
   };
 
-  const handleInquirySubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setSubmitError(null);
-
-    const { name, email, inquiry } = inquiryForm;
-
-    // Validate form
-    if (!name || !email || !inquiry) {
-      setSubmitError('Please fill in all fields');
-      setSubmitting(false);
-      return;
-    }
-
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setSubmitError('Please enter a valid email address');
-      setSubmitting(false);
-      return;
-    }
-
-    try {
-      // Send inquiry to serverless function
-      const response = await fetch('/api/faq-inquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, inquiry })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to send inquiry');
-      }
-
-      setSubmitSuccess(true);
-      setInquiryForm({ name: '', email: '', inquiry: '' });
-
-      // Close modal after 2 seconds
-      setTimeout(() => {
-        setShowInquiryModal(false);
-        setSubmitSuccess(false);
-      }, 2000);
-    } catch (err) {
-      console.error('Error sending inquiry:', err);
-      setSubmitError(err.message || 'Failed to send inquiry. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleFormChange = (field, value) => {
-    setInquiryForm(prev => ({ ...prev, [field]: value }));
-  };
-
-  const openInquiryModal = (e) => {
-    e.preventDefault();
-    setShowInquiryModal(true);
-    setSubmitSuccess(false);
-    setSubmitError(null);
-  };
-
-  const closeInquiryModal = () => {
-    setShowInquiryModal(false);
-    setInquiryForm({ name: '', email: '', inquiry: '' });
-    setSubmitError(null);
-    setSubmitSuccess(false);
-  };
-
   return (
     <>
       <Header />
@@ -245,84 +169,8 @@ export default function FAQPage() {
 
       {/* Bottom CTA */}
       <section className="bottom-cta">
-        <a href="#" className="cta-link" onClick={openInquiryModal}>
-          Can't find the answer to your question?
-        </a>
+        <a href="#" className="cta-link">Can't find the answer to your question?</a>
       </section>
-
-      {/* Inquiry Modal */}
-      {showInquiryModal && (
-        <div className="modal-overlay" onClick={closeInquiryModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={closeInquiryModal} aria-label="Close modal">
-              &times;
-            </button>
-
-            <h2 className="modal-title">Ask Us a Question</h2>
-            <p className="modal-subtitle">We'll get back to you as soon as possible</p>
-
-            {submitSuccess ? (
-              <div className="success-message">
-                <div className="success-icon">✓</div>
-                <p>Thank you! Your inquiry has been sent successfully.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleInquirySubmit} className="inquiry-form">
-                <div className="form-group">
-                  <label htmlFor="inquiry-name">Name *</label>
-                  <input
-                    type="text"
-                    id="inquiry-name"
-                    value={inquiryForm.name}
-                    onChange={(e) => handleFormChange('name', e.target.value)}
-                    placeholder="Enter your name"
-                    required
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="inquiry-email">Email *</label>
-                  <input
-                    type="email"
-                    id="inquiry-email"
-                    value={inquiryForm.email}
-                    onChange={(e) => handleFormChange('email', e.target.value)}
-                    placeholder="Enter your email"
-                    required
-                    disabled={submitting}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="inquiry-text">Your Question *</label>
-                  <textarea
-                    id="inquiry-text"
-                    value={inquiryForm.inquiry}
-                    onChange={(e) => handleFormChange('inquiry', e.target.value)}
-                    placeholder="Tell us what you'd like to know..."
-                    rows="5"
-                    required
-                    disabled={submitting}
-                  />
-                </div>
-
-                {submitError && (
-                  <div className="error-message-form">{submitError}</div>
-                )}
-
-                <button
-                  type="submit"
-                  className="submit-btn"
-                  disabled={submitting}
-                >
-                  {submitting ? 'Sending...' : 'Send'}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
 
       <Footer />
     </>

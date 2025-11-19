@@ -25,16 +25,6 @@ export default function InformationalText({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Debug logging
-  console.log('🎯 InformationalText rendered with props:', {
-    isOpen,
-    title,
-    content,
-    contentLength: content?.length,
-    listing: listing?.id,
-    selectedDaysCount
-  });
-
   // Calculate position based on trigger element
   useEffect(() => {
     if (!isOpen || !triggerRef?.current || !tooltipRef.current) return;
@@ -105,8 +95,6 @@ export default function InformationalText({
 
   if (!isOpen) return null;
 
-  console.log('🎨 Rendering tooltip with state:', { isOpen, content, title });
-
   // Legacy pricing content logic (for backwards compatibility)
   let displayContent = content;
   let hasExpandedContent = showMoreAvailable;
@@ -114,7 +102,6 @@ export default function InformationalText({
 
   if (listing && selectedDaysCount !== null) {
     // Legacy pricing tooltip mode
-    console.log('💰 Pricing tooltip mode activated');
     const priceTiers = [
       { nights: 2, price: listing['Price 2 nights selected'] },
       { nights: 3, price: listing['Price 3 nights selected'] },
@@ -125,39 +112,19 @@ export default function InformationalText({
 
     const startingPrice = listing['Starting nightly price'] || listing.price?.starting || 0;
 
-    // Use database content for the main message
-    const mainContent = content || `Rates change with the number of nights booked. Generally, the nightly cost decreases with longer stays. For exact pricing details, check each listing.`;
-
+    const mainContent = `The starting nightly price is $${startingPrice.toFixed(2)}. Pricing varies based on how many nights per week you select.`;
     const expandedContentText = priceTiers.length > 0
-      ? `Price breakdown:\n\n${priceTiers.map(tier => `${tier.nights} nights/week: $${tier.price.toFixed(2)}/night`).join('\n')}\n\nStarting price: $${startingPrice.toFixed(2)}/night`
-      : `Starting price: $${startingPrice.toFixed(2)}/night\n\nNo additional pricing tiers available for this listing.`;
+      ? priceTiers.map(tier => `${tier.nights} nights/week: $${tier.price.toFixed(2)}/night`).join('\n')
+      : 'No pricing tiers available for this listing.';
 
     displayContent = isExpanded ? expandedContentText : mainContent;
     hasExpandedContent = priceTiers.length > 0;
-    tooltipTitle = title || 'Pricing Information';
-
-    console.log('📋 Display content:', {
-      mainContent,
-      expandedContentText,
-      displayContent,
-      hasExpandedContent,
-      isExpanded,
-      priceTiersCount: priceTiers.length
-    });
+    tooltipTitle = 'Pricing Information';
   } else {
     // New generic mode
-    console.log('📝 Generic tooltip mode');
     displayContent = isExpanded ? (expandedContent || content) : content;
     hasExpandedContent = showMoreAvailable && expandedContent;
   }
-
-  // Failsafe: ensure displayContent is never empty
-  if (!displayContent || displayContent.length === 0) {
-    console.warn('⚠️ displayContent is empty! Using failsafe fallback.');
-    displayContent = 'Rates change with the number of nights booked. Generally, the nightly cost decreases with longer stays. For exact pricing details, check each listing.';
-  }
-
-  console.log('✅ Final displayContent:', displayContent);
 
   return (
     <div
@@ -221,13 +188,7 @@ export default function InformationalText({
 
       {/* Content */}
       <div style={{ color: '#374151', fontSize: '0.875rem', lineHeight: '1.5' }}>
-        {displayContent && displayContent.length > 0 ? (
-          <p style={{ marginBottom: '0.5rem', whiteSpace: 'pre-line' }}>{displayContent}</p>
-        ) : (
-          <p style={{ marginBottom: '0.5rem', whiteSpace: 'pre-line', color: 'red' }}>
-            [DEBUG] No content to display. Props: content={JSON.stringify(content)}, listing={listing?.id}, selectedDaysCount={selectedDaysCount}
-          </p>
-        )}
+        <p style={{ marginBottom: '0.5rem', whiteSpace: 'pre-line' }}>{displayContent}</p>
       </div>
 
       {/* Show More/Less Button */}

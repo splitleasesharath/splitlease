@@ -3,8 +3,7 @@
  * Complete proposal creation flow with user details, move-in, and days selection
  * Architecture: ESM + React Islands pattern
  *
- * This component embeds ListingScheduleSelector to handle ALL pricing calculations.
- * No price calculations should happen outside of ListingScheduleSelector.
+ * This is adapted from the create-proposal-flow-v2 component in SL16
  */
 
 import { useState, useEffect } from 'react';
@@ -18,12 +17,10 @@ import '../../styles/create-proposal-flow-v2.css';
  * CreateProposalFlowV2 Component
  * @param {Object} listing - The listing object
  * @param {string} moveInDate - Pre-selected move-in date from parent
- * @param {Array} daysSelected - Array of selected day objects from ListingScheduleSelector (INITIAL ONLY)
- * @param {number} nightsSelected - Number of nights selected (INITIAL ONLY)
+ * @param {Array} daysSelected - Array of selected day objects from ListingScheduleSelector
+ * @param {number} nightsSelected - Number of nights selected
  * @param {number} reservationSpan - Number of weeks for reservation
- * @param {Object} pricingBreakdown - Pricing breakdown from parent (INITIAL ONLY)
- * @param {string} checkInDay - Check-in day name from parent (e.g., "Friday")
- * @param {string} checkOutDay - Check-out day name from parent (e.g., "Tuesday")
+ * @param {Object} pricingBreakdown - Pricing breakdown from parent
  * @param {Object} zatConfig - ZAT price configuration object
  * @param {boolean} hasExistingUserData - Whether user has previously entered data
  * @param {Object} existingUserData - Previously saved user data
@@ -37,8 +34,6 @@ export default function CreateProposalFlowV2({
   nightsSelected = 0,
   reservationSpan = 13,
   pricingBreakdown = null,
-  checkInDay = null,
-  checkOutDay = null,
   zatConfig = null,
   hasExistingUserData = false,
   existingUserData = null,
@@ -47,29 +42,6 @@ export default function CreateProposalFlowV2({
 }) {
   // Section flow: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
   const [currentSection, setCurrentSection] = useState(hasExistingUserData ? 1 : 2);
-
-  // Internal state for pricing (managed by ListingScheduleSelector in DaysSelectionSection)
-  const [internalPricingBreakdown, setInternalPricingBreakdown] = useState(pricingBreakdown);
-  const [internalDaysSelected, setInternalDaysSelected] = useState(daysSelected);
-  const [internalNightsSelected, setInternalNightsSelected] = useState(nightsSelected);
-
-  // Log initial data received from parent
-  useEffect(() => {
-    console.log('📋 CreateProposalFlowV2 initialized with data from View page:', {
-      moveInDate,
-      daysSelected,
-      nightsSelected,
-      reservationSpan,
-      checkInDay,
-      checkOutDay,
-      pricingBreakdown: {
-        pricePerNight: pricingBreakdown?.pricePerNight,
-        fourWeekRent: pricingBreakdown?.fourWeekRent,
-        reservationTotal: pricingBreakdown?.reservationTotal,
-        valid: pricingBreakdown?.valid
-      }
-    });
-  }, []);
 
   // Convert day objects to day names for compatibility
   const dayObjectsToNames = (dayObjects) => {
@@ -91,55 +63,13 @@ export default function CreateProposalFlowV2({
     });
   };
 
-  // Use check-in/check-out directly from parent (already calculated by ListingScheduleSelector)
-  // Fallback to calculation only if not provided
-  const getInitialCheckInCheckOut = () => {
-    // If passed from parent, use those values (they're already correct from ListingScheduleSelector)
-    if (checkInDay && checkOutDay) {
-      return { checkIn: checkInDay, checkOut: checkOutDay };
-    }
-
-    // Fallback: calculate from daysSelected if needed
-    if (!daysSelected || daysSelected.length === 0) {
-      return { checkIn: 'Monday', checkOut: 'Friday' };
-    }
-
-    const dayMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayNames = daysSelected.map(dayObj => dayMap[dayObj.dayOfWeek]);
-    const sortedDays = [...dayNames].sort((a, b) => dayMap.indexOf(a) - dayMap.indexOf(b));
-
-    return {
-      checkIn: sortedDays[0],
-      checkOut: sortedDays[sortedDays.length - 1]
-    };
-  };
-
-  const { checkIn: initialCheckIn, checkOut: initialCheckOut } = getInitialCheckInCheckOut();
-
-  // Log which source was used for check-in/check-out
-  console.log('✅ Check-in/Check-out source:', {
-    usedPassedValues: !!(checkInDay && checkOutDay),
-    checkInDay: initialCheckIn,
-    checkOutDay: initialCheckOut,
-    passedCheckIn: checkInDay,
-    passedCheckOut: checkOutDay
-  });
-
-  // Calculate first 4 weeks total from pricing breakdown
-  const calculateFirstFourWeeks = (breakdown) => {
-    const fourWeekRent = breakdown?.fourWeekRent || 0;
-    const damageDeposit = listing?.['💰Damage Deposit'] || 0;
-    const maintenanceFee = listing?.['💰Cleaning Cost / Maintenance Fee'] || 0;
-    return fourWeekRent + damageDeposit + maintenanceFee;
-  };
-
   const [proposalData, setProposalData] = useState({
     // Pre-filled from listing page
     moveInDate: moveInDate || '',
     daysSelected: dayObjectsToNames(daysSelected),
     reservationSpan: reservationSpan || 13,
-    checkInDay: initialCheckIn,
-    checkOutDay: initialCheckOut,
+    checkInDay: daysSelected.length > 0 ? dayObjectsToNames(daysSelected)[0] : 'Monday',
+    checkOutDay: daysSelected.length > 0 ? dayObjectsToNames(daysSelected)[daysSelected.length - 1] : 'Friday',
 
     // User information (pre-filled if exists)
     needForSpace: existingUserData?.needForSpace || '',
@@ -150,33 +80,44 @@ export default function CreateProposalFlowV2({
     // Optional move-in flexibility
     moveInRange: '',
 
-    // Pricing (ONLY from ListingScheduleSelector - initialized from parent)
-    pricePerNight: pricingBreakdown?.pricePerNight || 0,
+    // Pricing (from parent or calculate)
+    pricePerNight: pricingBreakdown?.pricePerNight || listing?.['💰Nightly Host Rate for 2 nights'] || 0,
     numberOfNights: nightsSelected * reservationSpan,
     totalPrice: pricingBreakdown?.reservationTotal || 0,
     pricePerFourWeeks: pricingBreakdown?.fourWeekRent || 0,
     damageDeposit: listing?.['💰Damage Deposit'] || 0,
     maintenanceFee: listing?.['💰Cleaning Cost / Maintenance Fee'] || 0,
-    firstFourWeeksTotal: calculateFirstFourWeeks(pricingBreakdown),
+    firstFourWeeksTotal: 0,
 
     // Listing reference
     listingId: listing?._id,
     listingAddress: listing?.Name || listing?.address
   });
 
-  // Update pricing when internal pricing breakdown changes (from ListingScheduleSelector)
+  // Calculate pricing whenever relevant fields change
   useEffect(() => {
-    if (internalPricingBreakdown && internalPricingBreakdown.valid) {
-      setProposalData(prev => ({
-        ...prev,
-        pricePerNight: internalPricingBreakdown.pricePerNight,
-        numberOfNights: internalNightsSelected * (prev.reservationSpan || reservationSpan),
-        totalPrice: internalPricingBreakdown.reservationTotal,
-        pricePerFourWeeks: internalPricingBreakdown.fourWeekRent,
-        firstFourWeeksTotal: calculateFirstFourWeeks(internalPricingBreakdown)
-      }));
-    }
-  }, [internalPricingBreakdown, internalNightsSelected, reservationSpan]);
+    calculatePricing();
+  }, [
+    proposalData.daysSelected,
+    proposalData.reservationSpan,
+    proposalData.pricePerNight
+  ]);
+
+  const calculatePricing = () => {
+    const nightsPerWeek = proposalData.daysSelected.length;
+    const totalNights = nightsPerWeek * proposalData.reservationSpan;
+    const totalPrice = totalNights * proposalData.pricePerNight;
+    const pricePerFourWeeks = nightsPerWeek * 4 * proposalData.pricePerNight;
+    const firstFourWeeksTotal = pricePerFourWeeks + proposalData.damageDeposit + proposalData.maintenanceFee;
+
+    setProposalData(prev => ({
+      ...prev,
+      numberOfNights: totalNights,
+      totalPrice: totalPrice,
+      pricePerFourWeeks: pricePerFourWeeks,
+      firstFourWeeksTotal: firstFourWeeksTotal
+    }));
+  };
 
   const updateProposalData = (field, value) => {
     setProposalData(prev => ({
@@ -287,11 +228,6 @@ export default function CreateProposalFlowV2({
             updateData={updateProposalData}
             listing={listing}
             zatConfig={zatConfig}
-            onPricingChange={(breakdown) => setInternalPricingBreakdown(breakdown)}
-            onDaysChange={(dayObjects, nightsCount) => {
-              setInternalDaysSelected(dayObjects);
-              setInternalNightsSelected(nightsCount);
-            }}
           />
         );
       default:

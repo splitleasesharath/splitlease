@@ -555,7 +555,6 @@ export default function Header({ autoShowLogin = false }) {
               >
                 Sign In
               </a>
-              <span className="divider">|</span>
               <a
                 href="#"
                 className="nav-link"
