@@ -46,7 +46,7 @@ import VirtualMeetingModal from '../modals/VirtualMeetingModal.jsx';
 import CompareTermsModal from '../modals/CompareTermsModal.jsx';
 import EditProposalModal from '../modals/EditProposalModal.jsx';
 
-export default function GuestProposalsPage() {
+export default function GuestProposalsPage({ requireAuth = false, isAuthenticated = true }) {
   // ============================================================================
   // STATE MANAGEMENT
   // ============================================================================
@@ -522,7 +522,7 @@ export default function GuestProposalsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      <Header autoShowLogin={requireAuth && !isAuthenticated} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Empty State: No proposals */}
