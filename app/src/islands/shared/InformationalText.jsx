@@ -9,7 +9,18 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-export default function InformationalText({ isOpen, onClose, listing, selectedDaysCount, triggerRef }) {
+export default function InformationalText({
+  isOpen,
+  onClose,
+  triggerRef,
+  title = 'Information',
+  content = '',
+  expandedContent = null,
+  showMoreAvailable = false,
+  // Legacy props for backwards compatibility with pricing tooltip
+  listing = null,
+  selectedDaysCount = null
+}) {
   const tooltipRef = useRef(null);
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [isExpanded, setIsExpanded] = useState(false);
@@ -82,28 +93,38 @@ export default function InformationalText({ isOpen, onClose, listing, selectedDa
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen, onClose, triggerRef]);
 
-  if (!isOpen || !listing) return null;
+  if (!isOpen) return null;
 
-  // Get pricing info
-  const priceTiers = [
-    { nights: 2, price: listing['Price 2 nights selected'] },
-    { nights: 3, price: listing['Price 3 nights selected'] },
-    { nights: 4, price: listing['Price 4 nights selected'] },
-    { nights: 5, price: listing['Price 5 nights selected'] },
-    { nights: 7, price: listing['Price 7 nights selected'] }
-  ].filter(tier => tier.price !== null && tier.price !== undefined);
+  // Legacy pricing content logic (for backwards compatibility)
+  let displayContent = content;
+  let hasExpandedContent = showMoreAvailable;
+  let tooltipTitle = title;
 
-  const startingPrice = listing['Starting nightly price'] || listing.price?.starting || 0;
+  if (listing && selectedDaysCount !== null) {
+    // Legacy pricing tooltip mode
+    const priceTiers = [
+      { nights: 2, price: listing['Price 2 nights selected'] },
+      { nights: 3, price: listing['Price 3 nights selected'] },
+      { nights: 4, price: listing['Price 4 nights selected'] },
+      { nights: 5, price: listing['Price 5 nights selected'] },
+      { nights: 7, price: listing['Price 7 nights selected'] }
+    ].filter(tier => tier.price !== null && tier.price !== undefined);
 
-  // Build content strings
-  const mainContent = `The starting nightly price is $${startingPrice.toFixed(2)}. Pricing varies based on how many nights per week you select.`;
+    const startingPrice = listing['Starting nightly price'] || listing.price?.starting || 0;
 
-  const expandedContent = priceTiers.length > 0
-    ? priceTiers.map(tier => `${tier.nights} nights/week: $${tier.price.toFixed(2)}/night`).join('\n')
-    : 'No pricing tiers available for this listing.';
+    const mainContent = `The starting nightly price is $${startingPrice.toFixed(2)}. Pricing varies based on how many nights per week you select.`;
+    const expandedContentText = priceTiers.length > 0
+      ? priceTiers.map(tier => `${tier.nights} nights/week: $${tier.price.toFixed(2)}/night`).join('\n')
+      : 'No pricing tiers available for this listing.';
 
-  const displayContent = isExpanded ? expandedContent : mainContent;
-  const hasExpandedContent = priceTiers.length > 0;
+    displayContent = isExpanded ? expandedContentText : mainContent;
+    hasExpandedContent = priceTiers.length > 0;
+    tooltipTitle = 'Pricing Information';
+  } else {
+    // New generic mode
+    displayContent = isExpanded ? (expandedContent || content) : content;
+    hasExpandedContent = showMoreAvailable && expandedContent;
+  }
 
   return (
     <div
@@ -131,7 +152,7 @@ export default function InformationalText({ isOpen, onClose, listing, selectedDa
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" />
           </svg>
           <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#111827', margin: 0 }}>
-            Pricing Information
+            {tooltipTitle}
           </h3>
         </div>
         <button

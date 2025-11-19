@@ -14,6 +14,7 @@ import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
 import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
+import InformationalText from '../shared/InformationalText.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
@@ -31,6 +32,57 @@ import {
 import { DAY_ABBREVIATIONS, DEFAULTS, COLORS } from '../../lib/constants.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import '../../styles/listing-schedule-selector.css';
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Fetch informational texts from Supabase
+ */
+async function fetchInformationalTexts() {
+  const SUPABASE_URL = 'https://pjbvcbaannjvzsbbjkcy.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqYnZjYmFhbm5qdnpzYmJqa2N5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY3OTk3MTQsImV4cCI6MjA1MjM3NTcxNH0.5K7H7I3k-w6DXcQsLo-y6JI5FKxBwPEk4cR3FjnI0AM';
+
+  try {
+    const response = await fetch(
+      `${SUPABASE_URL}/rest/v1/informationaltexts?select=_id,Information Tag-Title,Desktop copy,Mobile copy,Desktop%2B copy,show more available%3F`,
+      {
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Failed to fetch informational texts:', response.statusText);
+      return {};
+    }
+
+    const data = await response.json();
+
+    // Create a lookup object by tag-title
+    const textsByTag = {};
+    data.forEach(item => {
+      const tag = item['Information Tag-Title'];
+      textsByTag[tag] = {
+        id: item._id,
+        title: tag,
+        desktop: item['Desktop copy'],
+        mobile: item['Mobile copy'],
+        desktopPlus: item['Desktop+ copy'],
+        showMore: item['show more available?']
+      };
+    });
+
+    console.log('📚 Fetched informational texts:', Object.keys(textsByTag));
+    return textsByTag;
+  } catch (error) {
+    console.error('Error fetching informational texts:', error);
+    return {};
+  }
+}
 
 // ============================================================================
 // LOADING AND ERROR STATES
@@ -117,6 +169,7 @@ export default function ViewSplitLeasePage() {
   const [error, setError] = useState(null);
   const [listing, setListing] = useState(null);
   const [zatConfig, setZatConfig] = useState(null);
+  const [informationalTexts, setInformationalTexts] = useState({});
 
   // Booking widget state
   const [moveInDate, setMoveInDate] = useState(null);
@@ -178,6 +231,12 @@ export default function ViewSplitLeasePage() {
     blockedDates: false
   });
 
+  // Informational text state
+  const [activeInfoTooltip, setActiveInfoTooltip] = useState(null);
+  const moveInInfoRef = useRef(null);
+  const reservationSpanInfoRef = useRef(null);
+  const flexibilityInfoRef = useRef(null);
+
   // Responsive state
   const [isMobile, setIsMobile] = useState(false);
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
@@ -203,6 +262,10 @@ export default function ViewSplitLeasePage() {
         // Fetch ZAT price configuration
         const zatConfigData = await fetchZatPriceConfiguration();
         setZatConfig(zatConfigData);
+
+        // Fetch informational texts
+        const infoTexts = await fetchInformationalTexts();
+        setInformationalTexts(infoTexts);
 
         // Get listing ID from URL
         const listingId = getListingIdFromUrl();
@@ -1365,7 +1428,9 @@ export default function ViewSplitLeasePage() {
             }}>
               Ideal Move-In
               <svg
-                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'help' }}
+                ref={moveInInfoRef}
+                onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn')}
+                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1474,13 +1539,19 @@ export default function ViewSplitLeasePage() {
             }}>
               Strict (no negotiation on exact move in)
               <svg
+                ref={flexibilityInfoRef}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
+                }}
                 style={{
                   display: 'inline-block',
                   width: '14px',
                   height: '14px',
                   verticalAlign: 'middle',
                   marginLeft: '2px',
-                  opacity: 0.6
+                  opacity: 0.6,
+                  cursor: 'pointer'
                 }}
                 fill="none"
                 stroke="currentColor"
@@ -1528,7 +1599,9 @@ export default function ViewSplitLeasePage() {
             }}>
               Reservation Span
               <svg
-                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'help' }}
+                ref={reservationSpanInfoRef}
+                onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan')}
+                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1973,6 +2046,52 @@ export default function ViewSplitLeasePage() {
             }
           }}
           userEmail=""
+        />
+      )}
+
+      {/* Informational Text Tooltips */}
+      {informationalTexts['aligned schedule with move-in'] && (
+        <InformationalText
+          isOpen={activeInfoTooltip === 'moveIn'}
+          onClose={() => setActiveInfoTooltip(null)}
+          triggerRef={moveInInfoRef}
+          title="Move-In Date"
+          content={isMobile
+            ? informationalTexts['aligned schedule with move-in'].mobile || informationalTexts['aligned schedule with move-in'].desktop
+            : informationalTexts['aligned schedule with move-in'].desktop
+          }
+          expandedContent={informationalTexts['aligned schedule with move-in'].desktopPlus}
+          showMoreAvailable={informationalTexts['aligned schedule with move-in'].showMore}
+        />
+      )}
+
+      {informationalTexts['move-in flexibility'] && (
+        <InformationalText
+          isOpen={activeInfoTooltip === 'flexibility'}
+          onClose={() => setActiveInfoTooltip(null)}
+          triggerRef={flexibilityInfoRef}
+          title="Move-In Flexibility"
+          content={isMobile
+            ? informationalTexts['move-in flexibility'].mobile || informationalTexts['move-in flexibility'].desktop
+            : informationalTexts['move-in flexibility'].desktop
+          }
+          expandedContent={informationalTexts['move-in flexibility'].desktopPlus}
+          showMoreAvailable={informationalTexts['move-in flexibility'].showMore}
+        />
+      )}
+
+      {informationalTexts['Reservation Span'] && (
+        <InformationalText
+          isOpen={activeInfoTooltip === 'reservationSpan'}
+          onClose={() => setActiveInfoTooltip(null)}
+          triggerRef={reservationSpanInfoRef}
+          title="Reservation Span"
+          content={isMobile
+            ? informationalTexts['Reservation Span'].mobile || informationalTexts['Reservation Span'].desktop
+            : informationalTexts['Reservation Span'].desktop
+          }
+          expandedContent={informationalTexts['Reservation Span'].desktopPlus}
+          showMoreAvailable={informationalTexts['Reservation Span'].showMore}
         />
       )}
 

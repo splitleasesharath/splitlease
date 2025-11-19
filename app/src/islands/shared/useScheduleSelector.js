@@ -46,6 +46,7 @@ export const useScheduleSelector = ({
   const [acceptableSchedule, setAcceptableSchedule] = useState(false);
   const [autobindListing, setAutobindListing] = useState(false);
   const [maxNightsWarningShown, setMaxNightsWarningShown] = useState(false);
+  const [minNightsWarningShown, setMinNightsWarningShown] = useState(false);
 
   // Create all days based on listing availability
   const allDays = useMemo(() => {
@@ -212,15 +213,52 @@ export const useScheduleSelector = ({
   const handleDayRemove = useCallback((day) => {
     if (!isClickable) return false;
 
+    const remainingDays = selectedDays.filter(d => d.dayOfWeek !== day.dayOfWeek);
+    const remainingNights = remainingDays.length - 1;
+
+    // Hardcoded absolute minimum is 2 nights (3 days)
+    const ABSOLUTE_MIN_NIGHTS = 2;
+
+    // Check absolute minimum first (always enforce)
+    if (remainingNights < ABSOLUTE_MIN_NIGHTS) {
+      setErrorState({
+        hasError: true,
+        errorType: 'absolute_minimum',
+        errorMessage: `Minimum ${ABSOLUTE_MIN_NIGHTS} nights (${ABSOLUTE_MIN_NIGHTS + 1} days) required`
+      });
+      return false;
+    }
+
+    // Check host's minimum nights
     const validation = validateDayRemoval(day, selectedDays, listing.minimumNights);
 
     if (!validation.isValid) {
-      setErrorState({
-        hasError: true,
-        errorType: 'minimum_nights',
-        errorMessage: validation.error || 'Cannot remove this day'
-      });
-      return false;
+      const isMinNightsError = validation.error && validation.error.toLowerCase().includes('minimum');
+
+      if (isMinNightsError && !minNightsWarningShown) {
+        // Show warning once, then allow future removals
+        setErrorState({
+          hasError: true,
+          errorType: 'minimum_nights_warning',
+          errorMessage: validation.error || 'Cannot remove this day'
+        });
+        setMinNightsWarningShown(true);
+        return false;
+      } else if (isMinNightsError && minNightsWarningShown) {
+        // Allow removal after warning has been shown (as long as above absolute minimum)
+        const newSelection = selectedDays.filter(d => d.dayOfWeek !== day.dayOfWeek);
+        setSelectedDays(newSelection);
+        setRecalculateState(true);
+        return true;
+      } else {
+        // Other errors (like contiguity) - show normally
+        setErrorState({
+          hasError: true,
+          errorType: 'validation',
+          errorMessage: validation.error || 'Cannot remove this day'
+        });
+        return false;
+      }
     }
 
     const newSelection = selectedDays.filter(d => d.dayOfWeek !== day.dayOfWeek);
@@ -229,7 +267,7 @@ export const useScheduleSelector = ({
     setRecalculateState(true);
 
     return true;
-  }, [selectedDays, listing.minimumNights, isClickable]);
+  }, [selectedDays, listing.minimumNights, isClickable, minNightsWarningShown]);
 
   // Handle day click (toggle selection)
   const handleDayClick = useCallback((day) => {
@@ -248,6 +286,7 @@ export const useScheduleSelector = ({
     setErrorState({ hasError: false, errorType: null, errorMessage: '' });
     setRecalculateState(true);
     setMaxNightsWarningShown(false);
+    setMinNightsWarningShown(false);
   }, []);
 
   // Clear error
