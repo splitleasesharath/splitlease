@@ -193,6 +193,11 @@
     white-space: nowrap;
 }
 
+/* Disable underline effect for auth links in nav-right */
+.nav-right .nav-link::after {
+    display: none !important;
+}
+
 .explore-rentals-btn {
     background-color: rgb(255, 255, 255);
     color: rgb(109, 35, 207);

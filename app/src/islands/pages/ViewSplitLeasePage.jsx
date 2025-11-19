@@ -1429,7 +1429,12 @@ export default function ViewSplitLeasePage() {
               Ideal Move-In
               <svg
                 ref={moveInInfoRef}
-                onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn')}
+                onClick={() => {
+                  console.log('Move-In info icon clicked!');
+                  console.log('Current activeInfoTooltip:', activeInfoTooltip);
+                  console.log('Informational texts:', informationalTexts);
+                  setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
+                }}
                 style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
                 fill="none"
                 stroke="currentColor"
@@ -2050,50 +2055,50 @@ export default function ViewSplitLeasePage() {
       )}
 
       {/* Informational Text Tooltips */}
-      {informationalTexts['aligned schedule with move-in'] && (
-        <InformationalText
-          isOpen={activeInfoTooltip === 'moveIn'}
-          onClose={() => setActiveInfoTooltip(null)}
-          triggerRef={moveInInfoRef}
-          title="Move-In Date"
-          content={isMobile
+      <InformationalText
+        isOpen={activeInfoTooltip === 'moveIn'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={moveInInfoRef}
+        title="Move-In Date"
+        content={informationalTexts['aligned schedule with move-in']
+          ? (isMobile
             ? informationalTexts['aligned schedule with move-in'].mobile || informationalTexts['aligned schedule with move-in'].desktop
-            : informationalTexts['aligned schedule with move-in'].desktop
-          }
-          expandedContent={informationalTexts['aligned schedule with move-in'].desktopPlus}
-          showMoreAvailable={informationalTexts['aligned schedule with move-in'].showMore}
-        />
-      )}
+            : informationalTexts['aligned schedule with move-in'].desktop)
+          : 'To make your move-in process as seamless as possible, we suggest that you align your estimated move-in date with the day of the week on which you intend to check in.'
+        }
+        expandedContent={informationalTexts['aligned schedule with move-in']?.desktopPlus}
+        showMoreAvailable={informationalTexts['aligned schedule with move-in']?.showMore || false}
+      />
 
-      {informationalTexts['move-in flexibility'] && (
-        <InformationalText
-          isOpen={activeInfoTooltip === 'flexibility'}
-          onClose={() => setActiveInfoTooltip(null)}
-          triggerRef={flexibilityInfoRef}
-          title="Move-In Flexibility"
-          content={isMobile
+      <InformationalText
+        isOpen={activeInfoTooltip === 'flexibility'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={flexibilityInfoRef}
+        title="Move-In Flexibility"
+        content={informationalTexts['move-in flexibility']
+          ? (isMobile
             ? informationalTexts['move-in flexibility'].mobile || informationalTexts['move-in flexibility'].desktop
-            : informationalTexts['move-in flexibility'].desktop
-          }
-          expandedContent={informationalTexts['move-in flexibility'].desktopPlus}
-          showMoreAvailable={informationalTexts['move-in flexibility'].showMore}
-        />
-      )}
+            : informationalTexts['move-in flexibility'].desktop)
+          : 'Please let us know if you have any flexibility with your move-in date. We can adjust to fit alternative schedules to make your transition smoother.'
+        }
+        expandedContent={informationalTexts['move-in flexibility']?.desktopPlus}
+        showMoreAvailable={informationalTexts['move-in flexibility']?.showMore || false}
+      />
 
-      {informationalTexts['Reservation Span'] && (
-        <InformationalText
-          isOpen={activeInfoTooltip === 'reservationSpan'}
-          onClose={() => setActiveInfoTooltip(null)}
-          triggerRef={reservationSpanInfoRef}
-          title="Reservation Span"
-          content={isMobile
+      <InformationalText
+        isOpen={activeInfoTooltip === 'reservationSpan'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={reservationSpanInfoRef}
+        title="Reservation Span"
+        content={informationalTexts['Reservation Span']
+          ? (isMobile
             ? informationalTexts['Reservation Span'].mobile || informationalTexts['Reservation Span'].desktop
-            : informationalTexts['Reservation Span'].desktop
-          }
-          expandedContent={informationalTexts['Reservation Span'].desktopPlus}
-          showMoreAvailable={informationalTexts['Reservation Span'].showMore}
-        />
-      )}
+            : informationalTexts['Reservation Span'].desktop)
+          : 'A reservation span is the total period a property is reserved. For example, if you lease every week for 26 weeks, it\'s 26 usable weeks.'
+        }
+        expandedContent={informationalTexts['Reservation Span']?.desktopPlus}
+        showMoreAvailable={informationalTexts['Reservation Span']?.showMore || false}
+      />
 
       <Footer />
     </>
