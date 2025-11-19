@@ -1,13 +1,13 @@
 # Playwright MCP Task: Console Error Check for Production Listings
 
 ## Objective
-Use Playwright MCP to systematically check console errors for all 4 hardcoded listings on https://splitlease.app/
+Use Playwright MCP to systematically check console errors for all 4 hardcoded listings
 
 ## Listings to Check
-1. **One Platt Studio**: https://splitlease.app/view-split-lease/1586447992720x748691103167545300
-2. **Pied-à-Terre**: https://splitlease.app/view-split-lease/1701107772942x447054126943830000
-3. **Furnished 1BR**: https://splitlease.app/view-split-lease/1701115344294x620453327586984000
-4. **Furnished Studio**: https://splitlease.app/view-split-lease/1701196985127x160157906679627780
+1. **One Platt Studio**: /view-split-lease/1586447992720x748691103167545300
+2. **Pied-à-Terre**: /view-split-lease/1701107772942x447054126943830000
+3. **Furnished 1BR**: /view-split-lease/1701115344294x620453327586984000
+4. **Furnished Studio**: /view-split-lease/1701196985127x160157906679627780
 
 ## Required Actions for EACH Listing
 

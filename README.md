@@ -1204,7 +1204,7 @@ export async function onRequest(context) {
 
 **1. Add Custom Domain** (in Cloudflare dashboard):
 - Go to project → Custom domains
-- Add `splitlease.app` or desired domain
+- Add your desired domain
 - Cloudflare auto-configures DNS if domain on Cloudflare
 
 **2. SSL**:
@@ -1342,7 +1342,7 @@ VITE_BUBBLE_API_KEY=your_bubble_api_key_here
 
 **4. Restrict Key** (recommended):
 - **Application restrictions**: HTTP referrers
-- Add your domain(s): `splitlease.app/*`, `*.pages.dev/*`
+- Add your domain(s): `yourdomain.com/*`, `*.pages.dev/*`
 - **API restrictions**: Select only Maps JavaScript API and Places API
 
 **5. Billing**:
@@ -1663,7 +1663,6 @@ Adds a new AI market research signup modal that allows users to request personal
 
 **Split Lease**
 - Website: [app.split.lease](https://app.split.lease)
-- Platform: [splitlease.app](https://splitlease.app)
 
 **For Developers**:
 - Check GitHub Issues for known bugs and feature requests

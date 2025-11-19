@@ -95,7 +95,7 @@ git push origin SL18
 - Output directory: `dist`
 
 ### 4. Post-Deployment Verification
-- [ ] Visit https://splitlease.app/guest-proposals
+- [ ] Visit /guest-proposals
 - [ ] Verify auth redirect for non-logged-in users
 - [ ] Login as guest: splitleasesharath+2641@gmail.com
 - [ ] Verify proposals load correctly

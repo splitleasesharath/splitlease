@@ -1,4 +1,4 @@
-# Task: Investigate Hamburger Menu on splitlease.app
+# Task: Investigate Hamburger Menu
 
 ## Objective
 Use Playwright MCP to investigate why the hamburger menu might be visible on desktop when it should be hidden.
@@ -6,7 +6,7 @@ Use Playwright MCP to investigate why the hamburger menu might be visible on des
 ## Required Steps
 
 1. **Initial Setup**
-   - Navigate to https://splitlease.app
+   - Navigate to the application homepage
    - Set browser viewport to desktop width (1920x1080)
    - Take screenshot of header area
 

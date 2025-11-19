@@ -133,10 +133,10 @@ No change in bundle size - only logic fix.
 
 After Cloudflare deployment completes:
 
-1. ✅ Visit https://splitlease.app/guest-proposals while not logged in
+1. ✅ Visit /guest-proposals while not logged in
    - Should redirect to index page
 
-2. ✅ Login and visit https://splitlease.app/guest-proposals
+2. ✅ Login and visit /guest-proposals
    - Should show proposals page
    - Should load proposals for logged-in user's email
 

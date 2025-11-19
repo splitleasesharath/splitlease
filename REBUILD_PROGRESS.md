@@ -500,7 +500,7 @@ setModals({ ...modals, hostProfile: true });
 
 **Email:** splitleasesharath+2641@gmail.com
 **Password:** splitleasesharath
-**Login URL:** https://splitlease.app (redirects to proposals page)
+**Login URL:** / (redirects to proposals page)
 
 ---
 
@@ -568,7 +568,7 @@ setModals({ ...modals, hostProfile: true });
 - RLS: Disabled (handle auth in app layer)
 
 ### Live Page
-- URL: https://splitlease.app/guest-proposals
+- URL: /guest-proposals
 - Screenshots: `input/guest-proposals/.playwright-mcp/live/`
 
 ---
