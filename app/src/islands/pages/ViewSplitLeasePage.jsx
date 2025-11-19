@@ -13,6 +13,7 @@ import CreateProposalFlow from './ViewSplitLeasePageComponents/CreateProposalFlo
 import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
 import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
+import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
@@ -170,6 +171,7 @@ export default function ViewSplitLeasePage() {
   const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [showContactHostModal, setShowContactHostModal] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     description: false,
     neighborhood: false,
@@ -545,7 +547,7 @@ export default function ViewSplitLeasePage() {
         padding: '2rem',
         paddingTop: 'calc(100px + 2rem)', // Increased from 80px to prevent header overlap
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 400px',
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 440px',
         gap: '2rem'
       }}>
 
@@ -740,7 +742,7 @@ export default function ViewSplitLeasePage() {
                 <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
                   <img src="/assets/images/sleeping.svg" alt="Bedroom" style={{ width: '2rem', height: '2rem' }} />
                 </div>
-                <div>{listing.resolvedTypeOfSpace === 'Studio' ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedrooms`}</div>
+                <div>{listing['Features - Qty Bedrooms'] === 0 ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedroom${listing['Features - Qty Bedrooms'] === 1 ? '' : 's'}`}</div>
               </div>
             )}
             {listing['Features - Qty Beds'] !== null && (
@@ -812,7 +814,21 @@ export default function ViewSplitLeasePage() {
                   alignItems: 'start',
                   gap: '1rem'
                 }}>
-                  <span style={{ fontSize: '1.5rem' }}>📦</span>
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                  >
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                  </svg>
                   <div>
                     <div style={{ fontWeight: '600', marginBottom: '0.5rem' }}>
                       {listing.storageOption.title}
@@ -882,7 +898,21 @@ export default function ViewSplitLeasePage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {listing.parkingOption && (
                   <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
-                    <span style={{ fontSize: '1.5rem' }}>🚗</span>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                    >
+                      <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"></path>
+                      <circle cx="6.5" cy="16.5" r="2.5"></circle>
+                      <circle cx="16.5" cy="16.5" r="2.5"></circle>
+                    </svg>
                     <div>
                       <div style={{ fontWeight: '600' }}>{listing.parkingOption.label}</div>
                       <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.875rem' }}>
@@ -893,7 +923,21 @@ export default function ViewSplitLeasePage() {
                 )}
                 {listing['Time to Station (commute)'] && (
                   <div style={{ display: 'flex', alignItems: 'start', gap: '1rem' }}>
-                    <span style={{ fontSize: '1.5rem' }}>🚇</span>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      style={{ minWidth: '24px', minHeight: '24px', color: COLORS.PRIMARY }}
+                    >
+                      <rect x="3" y="6" width="18" height="11" rx="2"></rect>
+                      <path d="M7 15h.01M17 15h.01M8 6v5M16 6v5"></path>
+                      <path d="M3 12h18"></path>
+                    </svg>
                     <div>
                       <div style={{ fontWeight: '600' }}>{listing['Time to Station (commute)']} to Metro</div>
                       <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.875rem' }}>
@@ -1108,12 +1152,43 @@ export default function ViewSplitLeasePage() {
                     }}
                   />
                 )}
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.25rem' }}>
                     {listing.host['Name - First']} {listing.host['Name - Last']?.charAt(0)}.
                   </div>
                   <div style={{ color: COLORS.TEXT_LIGHT }}>Host</div>
                 </div>
+                <button
+                  onClick={() => setShowContactHostModal(true)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: COLORS.PRIMARY,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 2px 8px rgba(49, 19, 93, 0.2)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = COLORS.PRIMARY_HOVER;
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(49, 19, 93, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = COLORS.PRIMARY;
+                    e.target.style.transform = '';
+                    e.target.style.boxShadow = '0 2px 8px rgba(49, 19, 93, 0.2)';
+                  }}
+                >
+                  <span style={{ fontSize: '1.25rem' }}>💬</span>
+                  <span>Message</span>
+                </button>
               </div>
             </section>
           )}
@@ -1223,9 +1298,9 @@ export default function ViewSplitLeasePage() {
           className="booking-widget"
           style={{
             position: isMobile ? 'static' : 'sticky',
-            top: isMobile ? 'auto' : '20px',
+            top: isMobile ? 'auto' : 'calc(80px + 20px)',
             alignSelf: 'flex-start',
-            maxHeight: 'calc(100vh - 40px)',
+            maxHeight: 'calc(100vh - 80px - 40px)',
             overflowY: 'auto',
             height: 'fit-content',
             border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -1252,15 +1327,15 @@ export default function ViewSplitLeasePage() {
           {/* Price Display */}
           <div style={{
             background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
-            padding: '16px',
+            padding: '12px',
             borderRadius: '12px',
-            marginBottom: '22px',
+            marginBottom: '16px',
             border: '1px solid #e9d5ff'
           }}>
             <div style={{
-              fontSize: '36px',
+              fontSize: '32px',
               fontWeight: '800',
-              background: 'linear-gradient(135deg, #6B46C1 0%, #9333ea 100%)',
+              background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text',
@@ -1271,7 +1346,7 @@ export default function ViewSplitLeasePage() {
                 ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
                 : 'Select Days'}
               <span style={{
-                fontSize: '18px',
+                fontSize: '16px',
                 color: '#6B7280',
                 fontWeight: '500',
                 background: 'none',
@@ -1281,11 +1356,11 @@ export default function ViewSplitLeasePage() {
           </div>
 
           {/* Move-in Date */}
-          <div style={{ marginBottom: '14px' }}>
+          <div style={{ marginBottom: '10px' }}>
             <label style={{
               fontSize: '12px',
               fontWeight: '700',
-              color: '#6B46C1',
+              color: '#31135d',
               marginBottom: '8px',
               display: 'flex',
               alignItems: 'center',
@@ -1323,8 +1398,8 @@ export default function ViewSplitLeasePage() {
                   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#6B46C1';
-                  e.target.style.boxShadow = '0 4px 6px rgba(107, 70, 193, 0.1)';
+                  e.target.style.borderColor = '#31135d';
+                  e.target.style.boxShadow = '0 4px 6px rgba(49, 19, 93, 0.1)';
                 }}
                 onMouseLeave={(e) => {
                   if (document.activeElement !== e.target) {
@@ -1333,8 +1408,8 @@ export default function ViewSplitLeasePage() {
                   }
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#6B46C1';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(107, 70, 193, 0.15)';
+                  e.target.style.borderColor = '#31135d';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(49, 19, 93, 0.15)';
                   e.target.style.transform = 'translateY(-1px)';
                 }}
                 onBlur={(e) => {
@@ -1348,7 +1423,7 @@ export default function ViewSplitLeasePage() {
               fontSize: '12px',
               color: '#6B7280',
               lineHeight: '1.4',
-              marginBottom: '14px',
+              marginBottom: '10px',
               fontWeight: '400',
               paddingLeft: '4px'
             }}>
@@ -1362,7 +1437,7 @@ export default function ViewSplitLeasePage() {
               display: 'flex',
               alignItems: 'flex-start',
               gap: '10px',
-              marginBottom: '20px',
+              marginBottom: '14px',
               padding: '12px',
               background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
               borderRadius: '10px',
@@ -1389,7 +1464,7 @@ export default function ViewSplitLeasePage() {
                 width: '18px',
                 height: '18px',
                 cursor: 'pointer',
-                accentColor: '#6B46C1',
+                accentColor: '#31135d',
                 marginTop: '2px',
                 flexShrink: 0
               }}
@@ -1424,8 +1499,8 @@ export default function ViewSplitLeasePage() {
           {/* Weekly Schedule Selector */}
           {scheduleSelectorListing && (
             <div style={{
-              marginBottom: '20px',
-              padding: '16px',
+              marginBottom: '14px',
+              padding: '12px',
               background: 'linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)',
               borderRadius: '12px',
               border: '1px solid #E5E7EB'
@@ -1444,11 +1519,11 @@ export default function ViewSplitLeasePage() {
           )}
 
           {/* Reservation Span */}
-          <div style={{ marginBottom: '18px' }}>
+          <div style={{ marginBottom: '12px' }}>
             <label style={{
               fontSize: '12px',
               fontWeight: '700',
-              color: '#6B46C1',
+              color: '#31135d',
               marginBottom: '8px',
               display: 'flex',
               alignItems: 'center',
@@ -1486,8 +1561,8 @@ export default function ViewSplitLeasePage() {
                   boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
                 }}
                 onMouseEnter={(e) => {
-                  e.target.style.borderColor = '#6B46C1';
-                  e.target.style.boxShadow = '0 4px 6px rgba(107, 70, 193, 0.1)';
+                  e.target.style.borderColor = '#31135d';
+                  e.target.style.boxShadow = '0 4px 6px rgba(49, 19, 93, 0.1)';
                 }}
                 onMouseLeave={(e) => {
                   if (document.activeElement !== e.target) {
@@ -1496,8 +1571,8 @@ export default function ViewSplitLeasePage() {
                   }
                 }}
                 onFocus={(e) => {
-                  e.target.style.borderColor = '#6B46C1';
-                  e.target.style.boxShadow = '0 0 0 4px rgba(107, 70, 193, 0.15)';
+                  e.target.style.borderColor = '#31135d';
+                  e.target.style.boxShadow = '0 0 0 4px rgba(49, 19, 93, 0.15)';
                 }}
                 onBlur={(e) => {
                   e.target.style.borderColor = '#E5E7EB';
@@ -1519,7 +1594,7 @@ export default function ViewSplitLeasePage() {
                 height: '0',
                 borderLeft: '5px solid transparent',
                 borderRight: '5px solid transparent',
-                borderTop: '5px solid #6B46C1',
+                borderTop: '5px solid #31135d',
                 pointerEvents: 'none'
               }}></div>
             </div>
@@ -1527,8 +1602,8 @@ export default function ViewSplitLeasePage() {
 
           {/* Price Breakdown */}
           <div style={{
-            marginBottom: '20px',
-            padding: '14px',
+            marginBottom: '12px',
+            padding: '12px',
             background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)',
             borderRadius: '10px',
             border: '1px solid #E5E7EB'
@@ -1555,9 +1630,9 @@ export default function ViewSplitLeasePage() {
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            padding: '20px 0',
+            padding: '12px 0',
             borderTop: '2px solid #E5E7EB',
-            marginBottom: '20px'
+            marginBottom: '10px'
           }}>
             <span style={{
               fontSize: '16px',
@@ -1567,7 +1642,7 @@ export default function ViewSplitLeasePage() {
             <span style={{
               fontSize: '28px',
               fontWeight: '800',
-              background: 'linear-gradient(135deg, #6B46C1 0%, #9333ea 100%)',
+              background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               backgroundClip: 'text'
@@ -1594,7 +1669,7 @@ export default function ViewSplitLeasePage() {
               width: '100%',
               padding: '14px',
               background: scheduleValidation?.valid && pricingBreakdown?.valid
-                ? 'linear-gradient(135deg, #6B46C1 0%, #9333ea 100%)'
+                ? 'linear-gradient(135deg, #31135d 0%, #31135d 100%)'
                 : '#D1D5DB',
               color: 'white',
               border: 'none',
@@ -1604,7 +1679,7 @@ export default function ViewSplitLeasePage() {
               cursor: scheduleValidation?.valid && pricingBreakdown?.valid ? 'pointer' : 'not-allowed',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
               boxShadow: scheduleValidation?.valid && pricingBreakdown?.valid
-                ? '0 4px 14px rgba(107, 70, 193, 0.4)'
+                ? '0 4px 14px rgba(49, 19, 93, 0.4)'
                 : 'none',
               position: 'relative',
               overflow: 'hidden'
@@ -1612,13 +1687,13 @@ export default function ViewSplitLeasePage() {
             onMouseEnter={(e) => {
               if (scheduleValidation?.valid && pricingBreakdown?.valid) {
                 e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 8px 24px rgba(107, 70, 193, 0.5)';
+                e.target.style.boxShadow = '0 8px 24px rgba(49, 19, 93, 0.5)';
               }
             }}
             onMouseLeave={(e) => {
               if (scheduleValidation?.valid && pricingBreakdown?.valid) {
                 e.target.style.transform = '';
-                e.target.style.boxShadow = '0 4px 14px rgba(107, 70, 193, 0.4)';
+                e.target.style.boxShadow = '0 4px 14px rgba(49, 19, 93, 0.4)';
               }
             }}
           >
@@ -1882,10 +1957,27 @@ export default function ViewSplitLeasePage() {
           nightsSelected={nightsSelected}
           reservationSpan={reservationSpan}
           pricingBreakdown={priceBreakdown}
+          zatConfig={zatConfig}
           hasExistingUserData={false}
           existingUserData={null}
           onClose={() => setIsProposalModalOpen(false)}
           onSubmit={handleProposalSubmit}
+        />
+      )}
+
+      {/* Contact Host Messaging Modal */}
+      {showContactHostModal && listing && (
+        <ContactHostMessaging
+          isOpen={showContactHostModal}
+          onClose={() => setShowContactHostModal(false)}
+          listing={{
+            id: listing._id,
+            title: listing.Name,
+            host: {
+              name: listing.host ? `${listing.host['Name - First']} ${listing.host['Name - Last']?.charAt(0)}.` : 'Host'
+            }
+          }}
+          userEmail=""
         />
       )}
 

@@ -283,9 +283,9 @@ export const DATABASE = {
 // ============================================================================
 
 export const COLORS = {
-  PRIMARY: '#5B21B6',      // Purple
-  PRIMARY_HOVER: '#4c1d95', // Darker purple
-  SECONDARY: '#31135D',     // Deep purple
+  PRIMARY: '#31135d',      // Deep purple
+  PRIMARY_HOVER: '#1f0b38', // Darker purple
+  SECONDARY: '#5B21B6',     // Purple
   SUCCESS: '#00C851',       // Green
   WARNING: '#FFA500',       // Orange
   ERROR: '#EF4444',         // Red

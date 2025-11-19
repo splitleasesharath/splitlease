@@ -1573,7 +1573,6 @@ export default function SearchPage() {
             {/* Dropdown Menu */}
             {menuOpen && (
               <div className="header-dropdown">
-                <a href="https://splitlease.app/how-it-works">3 Easy Steps To Book</a>
                 <a href="/guest-success">Success Stories</a>
                 <a href={SIGNUP_LOGIN_URL}>Sign In / Sign Up</a>
                 <a href="https://splitlease.app/why-split-lease">Understand Split Lease</a>
@@ -1590,6 +1589,10 @@ export default function SearchPage() {
             selectedBorough={selectedBorough}
             onMarkerClick={(listing) => {
               console.log('Marker clicked:', listing.title);
+            }}
+            onMessageClick={(listing) => {
+              console.log('[SearchPage] Map card message clicked for:', listing?.id);
+              handleOpenContactModal(listing);
             }}
             onAIResearchClick={handleOpenAIResearchModal}
           />
