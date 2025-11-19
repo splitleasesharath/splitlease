@@ -1590,6 +1590,10 @@ export default function SearchPage() {
             onMarkerClick={(listing) => {
               console.log('Marker clicked:', listing.title);
             }}
+            onMessageClick={(listing) => {
+              console.log('[SearchPage] Map card message clicked for:', listing?.id);
+              handleOpenContactModal(listing);
+            }}
             onAIResearchClick={handleOpenAIResearchModal}
           />
         </section>
