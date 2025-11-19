@@ -47,7 +47,7 @@ import EditPhoneModal from '../modals/EditPhoneModal.jsx';
 import AccountDeletionModal from '../modals/AccountDeletionModal.jsx';
 import NotificationSettingsModal from '../modals/NotificationSettingsModal.jsx';
 
-export default function AccountProfilePage() {
+export default function AccountProfilePage({ requireAuth = false, isAuthenticated = true }) {
   // ============================================================================
   // STATE MANAGEMENT
   // ============================================================================
@@ -103,8 +103,9 @@ export default function AccountProfilePage() {
       const authStatus = checkAuthStatus();
 
       if (!authStatus.isAuthenticated) {
-        // Redirect to login if not authenticated
-        window.location.href = '/';
+        // Don't redirect - Header will show auth modal via autoShowLogin prop
+        console.warn('⚠️ User not authenticated - auth modal will be shown by Header');
+        setLoading(false);
         return;
       }
 
@@ -431,7 +432,7 @@ export default function AccountProfilePage() {
   if (loading) {
     return (
       <div className="account-profile-page loading">
-        <Header />
+        <Header autoShowLogin={requireAuth && !isAuthenticated} />
         <div className="loading-spinner">Loading your profile...</div>
         <Footer />
       </div>
@@ -441,7 +442,7 @@ export default function AccountProfilePage() {
   if (error) {
     return (
       <div className="account-profile-page error">
-        <Header />
+        <Header autoShowLogin={requireAuth && !isAuthenticated} />
         <div className="error-message">
           <h2>Error Loading Profile</h2>
           <p>{error}</p>
@@ -454,7 +455,7 @@ export default function AccountProfilePage() {
 
   return (
     <div className="account-profile-page">
-      <Header />
+      <Header autoShowLogin={requireAuth && !isAuthenticated} />
 
       <main className="account-profile-content">
         {/* Profile Completeness Bar */}

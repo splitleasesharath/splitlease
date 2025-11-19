@@ -62,10 +62,14 @@ export default function Header({ autoShowLogin = false }) {
           // Token is invalid or not present
           setCurrentUser(null);
 
-          // If on a protected page and token validation failed, redirect to home
-          if (isProtectedPage()) {
+          // If on a protected page and token validation failed:
+          // - If autoShowLogin is true, show the modal (don't redirect)
+          // - Otherwise, redirect to home
+          if (isProtectedPage() && !autoShowLogin) {
             console.log('⚠️ Invalid token on protected page - redirecting to home');
             window.location.replace('/');
+          } else if (isProtectedPage() && autoShowLogin) {
+            console.log('⚠️ Invalid token on protected page - auth modal will be shown');
           }
         }
       } catch (error) {
