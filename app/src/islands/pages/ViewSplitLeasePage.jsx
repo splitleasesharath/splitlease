@@ -329,7 +329,8 @@ export default function ViewSplitLeasePage() {
   };
 
   // Prepare listing data for ListingScheduleSelector component
-  const scheduleSelectorListing = listing ? {
+  // Memoize to prevent unnecessary re-renders and map resets
+  const scheduleSelectorListing = useMemo(() => listing ? {
     id: listing._id,
     firstAvailable: new Date(listing[' First Available']),
     lastAvailable: new Date(listing['Last Available']),
@@ -362,7 +363,7 @@ export default function ViewSplitLeasePage() {
     '💰Price Override': listing['💰Price Override'],
     '💰Cleaning Cost / Maintenance Fee': listing['💰Cleaning Cost / Maintenance Fee'],
     '💰Damage Deposit': listing['💰Damage Deposit']
-  } : null;
+  } : null, [listing]);
 
   // Initialize with Monday-Friday (1-5) as default
   useEffect(() => {
@@ -382,6 +383,26 @@ export default function ViewSplitLeasePage() {
   const priceMessage = !scheduleValidation?.valid || !pricingBreakdown?.valid
     ? getPriceDisplayMessage(selectedDays.length)
     : null;
+
+  // Memoize map listings to prevent unnecessary GoogleMap re-renders
+  // This prevents the map from resetting when modals open/close
+  const mapListings = useMemo(() => {
+    if (!listing || !listing.coordinates) return [];
+    return [{
+      id: listing._id,
+      title: listing.Name,
+      coordinates: listing.coordinates,
+      price: {
+        starting: listing['Standarized Minimum Nightly Price (Filter)'] || 0
+      },
+      location: listing.resolvedBorough,
+      type: listing.resolvedTypeOfSpace,
+      bedrooms: listing['Features - Qty Bedrooms'] || 0,
+      bathrooms: listing['Features - Qty Bathrooms'] || 0,
+      images: listing.photos?.map(p => p.Photo) || [],
+      borough: listing.resolvedBorough
+    }];
+  }, [listing]);
 
   // ============================================================================
   // EVENT HANDLERS
@@ -1076,34 +1097,8 @@ export default function ViewSplitLeasePage() {
               {shouldLoadMap ? (
                 <GoogleMap
                   ref={mapRef}
-                  listings={listing && listing.coordinates ? [{
-                    id: listing._id,
-                    title: listing.Name,
-                    coordinates: listing.coordinates,
-                    price: {
-                      starting: listing['Standarized Minimum Nightly Price (Filter)'] || 0
-                    },
-                    location: listing.resolvedBorough,
-                    type: listing.resolvedTypeOfSpace,
-                    bedrooms: listing['Features - Qty Bedrooms'] || 0,
-                    bathrooms: listing['Features - Qty Bathrooms'] || 0,
-                    images: listing.photos?.map(p => p.Photo) || [],
-                    borough: listing.resolvedBorough
-                  }] : []}
-                  filteredListings={listing && listing.coordinates ? [{
-                    id: listing._id,
-                    title: listing.Name,
-                    coordinates: listing.coordinates,
-                    price: {
-                      starting: listing['Standarized Minimum Nightly Price (Filter)'] || 0
-                    },
-                    location: listing.resolvedBorough,
-                    type: listing.resolvedTypeOfSpace,
-                    bedrooms: listing['Features - Qty Bedrooms'] || 0,
-                    bathrooms: listing['Features - Qty Bathrooms'] || 0,
-                    images: listing.photos?.map(p => p.Photo) || [],
-                    borough: listing.resolvedBorough
-                  }] : []}
+                  listings={mapListings}
+                  filteredListings={mapListings}
                   selectedBorough={listing.resolvedBorough}
                   simpleMode={true}
                   initialZoom={17}
