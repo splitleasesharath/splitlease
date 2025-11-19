@@ -278,7 +278,7 @@ export default function Header() {
       <nav className="nav-container">
         {/* Logo Section */}
         <div className="nav-left">
-          <a href="https://splitlease.app" className="logo">
+          <a href="/" className="logo">
             <img src="/assets/images/logo.png" alt="Split Lease" className="logo-image" />
             <span className="logo-text">Split Lease</span>
           </a>

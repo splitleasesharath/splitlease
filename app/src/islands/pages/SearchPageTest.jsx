@@ -1555,7 +1555,7 @@ export default function SearchPage() {
         <section className="map-column">
           {/* Integrated Logo and Hamburger Menu */}
           <div className="map-header">
-            <a href="https://splitlease.app" className="map-logo">
+            <a href="/" className="map-logo">
               <img
                 src="/assets/images/split-lease-purple-circle.png"
                 alt="Split Lease Logo"
@@ -1585,8 +1585,8 @@ export default function SearchPage() {
               <div className="header-dropdown">
                 <a href="/guest-success">Success Stories</a>
                 <a href={SIGNUP_LOGIN_URL}>Sign In / Sign Up</a>
-                <a href="https://splitlease.app/why-split-lease">Understand Split Lease</a>
-                <a href="https://splitlease.app/faq">Explore FAQs</a>
+                <a href="/why-split-lease">Understand Split Lease</a>
+                <a href="/faq">Explore FAQs</a>
               </div>
             )}
           </div>
