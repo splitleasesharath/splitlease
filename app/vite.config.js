@@ -44,15 +44,9 @@ export default defineConfig({
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/view-split-lease.html' + queryString;
           }
-          // Handle guest-proposals with clean URL structure (e.g., /guest-proposals/[user-id]?query=param)
-          else if (url.startsWith('/guest-proposals/')) {
-            // Extract query params if they exist
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            // Rewrite to serve the HTML file while preserving query params
-            req.url = '/public/guest-proposals.html' + queryString;
-          }
-          else if (url.startsWith('/search.html')) {
+          else if (url.startsWith('/guest-proposals.html')) {
+            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
+          } else if (url.startsWith('/search.html')) {
             req.url = '/public/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/search-test.html')) {
             req.url = '/public/search-test.html' + (url.substring('/search-test.html'.length) || '');
@@ -131,15 +125,9 @@ export default defineConfig({
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/view-split-lease.html' + queryString;
           }
-          // Handle guest-proposals with clean URL structure (e.g., /guest-proposals/[user-id]?query=param)
-          else if (url.startsWith('/guest-proposals/')) {
-            // Extract query params if they exist
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            // Rewrite to serve the HTML file while preserving query params
-            req.url = '/guest-proposals.html' + queryString;
-          }
-          else if (url.startsWith('/search.html')) {
+          else if (url.startsWith('/guest-proposals.html')) {
+            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
+          } else if (url.startsWith('/search.html')) {
             req.url = '/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/search-test.html')) {
             req.url = '/search-test.html' + (url.substring('/search-test.html'.length) || '');
