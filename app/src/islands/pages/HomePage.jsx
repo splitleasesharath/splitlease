@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
-import AIResearchSignupModal from '../shared/AIResearchSignupModal.jsx';
+import AiSignupMarketReport from '../shared/AiSignupMarketReport';
 import { checkAuthStatus } from '../../lib/auth.js';
 import {
   PROPERTY_IDS,
@@ -474,7 +474,7 @@ export default function HomePage() {
 
       <FloatingBadge onClick={handleOpenAIResearchModal} />
 
-      <AIResearchSignupModal
+      <AiSignupMarketReport
         isOpen={isAIResearchModalOpen}
         onClose={handleCloseAIResearchModal}
       />

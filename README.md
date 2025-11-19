@@ -486,7 +486,7 @@ SL18/
     │   │       │   ├── MoveInSection.jsx
     │   │       │   └── ReviewSection.jsx
     │   │       ├── ContactHostMessaging.jsx         # Contact host modal
-    │   │       ├── AIResearchSignupModal.jsx        # AI signup modal
+    │   │       ├── AiSignupMarketReport/            # Advanced AI signup modal
     │   │       ├── PriceDisplay.jsx                 # Price display component
     │   │       ├── InformationalText.jsx            # Info callouts
     │   │       ├── ErrorOverlay.jsx                 # Error display
@@ -1634,10 +1634,10 @@ feat: Add AI market research signup modal
 Adds a new AI market research signup modal that allows users to request personalized market reports.
 
 ## Changes
-- Created AIResearchSignupModal component
+- Created AiSignupMarketReport component (advanced modal with AI parsing)
 - Added Bubble.io API integration for AI workflow
 - Implemented email validation and sanitization
-- Added Lottie animation for loading state
+- Added Lottie animations for loading states
 
 ## Testing
 - Tested modal open/close

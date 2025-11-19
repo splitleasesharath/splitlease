@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
-import AIResearchSignupModal from '../shared/AIResearchSignupModal.jsx';
+import AiSignupMarketReport from '../shared/AiSignupMarketReport';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
@@ -1623,7 +1623,7 @@ export default function SearchPage() {
         selectedDaysCount={selectedDays.length}
         triggerRef={infoModalTriggerRef}
       />
-      <AIResearchSignupModal
+      <AiSignupMarketReport
         isOpen={isAIResearchModalOpen}
         onClose={handleCloseAIResearchModal}
       />
