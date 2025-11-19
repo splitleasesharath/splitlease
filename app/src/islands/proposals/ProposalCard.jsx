@@ -29,6 +29,7 @@ export default function ProposalCard({
   onSubmitRentalApplication,
   onReviewDocuments,
   onGoToLeases,
+  onSeeDetails, // NEW: See Details button handler
 }) {
   const [showAllRules, setShowAllRules] = useState(false);
 
@@ -43,7 +44,7 @@ export default function ProposalCard({
   const hasCounteroffer = proposal['counter offer happened'];
   const moveInDate = hasCounteroffer && proposal['hc move in date']
     ? new Date(proposal['hc move in date']).toLocaleDateString()
-    : proposal['Move in range start'];
+    : (proposal['Move in range start'] ? new Date(proposal['Move in range start']).toLocaleDateString() : 'Not specified');
   const reservationWeeks = hasCounteroffer && proposal['hc reservation span (weeks)']
     ? proposal['hc reservation span (weeks)']
     : proposal['Reservation Span (Weeks)'];
@@ -173,6 +174,13 @@ export default function ProposalCard({
 
     // Additional action buttons based on status (per screenshot)
     if (!status?.includes('Rejected') && !status?.includes('Cancelled')) {
+      // Add "See Details" button - appears for most statuses
+      buttons.push({
+        label: 'See Details',
+        onClick: onSeeDetails,
+        variant: 'secondary',
+      });
+
       buttons.push({
         label: 'Request Virtual Meeting',
         onClick: onRequestVirtualMeeting,

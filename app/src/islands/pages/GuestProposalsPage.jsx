@@ -45,6 +45,7 @@ import MapModal from '../modals/MapModal.jsx';
 import VirtualMeetingModal from '../modals/VirtualMeetingModal.jsx';
 import CompareTermsModal from '../modals/CompareTermsModal.jsx';
 import EditProposalModal from '../modals/EditProposalModal.jsx';
+import ProposalDetailsModal from '../modals/ProposalDetailsModal.jsx';
 
 export default function GuestProposalsPage({ requireAuth = false, isAuthenticated = true }) {
   // ============================================================================
@@ -65,6 +66,7 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
   const [vmModalView, setVmModalView] = useState('request'); // VM 5-state workflow
   const [showCompareTermsModal, setShowCompareTermsModal] = useState(false);
   const [showEditProposalModal, setShowEditProposalModal] = useState(false);
+  const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false);
 
   // ============================================================================
   // DATA LOADING FUNCTIONS
@@ -608,6 +610,14 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
     window.location.href = '/leases';
   }
 
+  /**
+   * See Details
+   * Opens proposal details modal with complete pricing breakdown
+   */
+  function handleSeeDetails() {
+    setShowProposalDetailsModal(true);
+  }
+
   // ============================================================================
   // LIFECYCLE HOOKS
   // ============================================================================
@@ -704,6 +714,7 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
                   onSubmitRentalApplication={handleSubmitRentalApplication}
                   onReviewDocuments={handleReviewDocuments}
                   onGoToLeases={handleGoToLeases}
+                  onSeeDetails={handleSeeDetails}
                 />
 
                 {/* Progress Tracker */}
@@ -782,6 +793,15 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
             // Reload proposal after editing
             loadProposalDetails(selectedProposal);
           }}
+        />
+      )}
+
+      {/* Proposal Details Modal */}
+      {showProposalDetailsModal && selectedProposal && (
+        <ProposalDetailsModal
+          proposal={selectedProposal}
+          listing={selectedProposal._listing}
+          onClose={() => setShowProposalDetailsModal(false)}
         />
       )}
     </div>
