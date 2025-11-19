@@ -18,7 +18,6 @@ export const SEARCH_URL = '/search.html';
 export const VIEW_LISTING_URL = 'https://app.split.lease/view-split-lease';
 export const ACCOUNT_PROFILE_URL = 'https://app.split.lease/account-profile';
 export const FAQ_URL = '/faq.html';
-export const EMBED_AI_DRAWER_URL = 'https://app.split.lease/embed-ai-drawer';
 
 // API Endpoints
 export const REFERRAL_API_ENDPOINT = 'https://app.split.lease/api/1.1/wf/referral-index-lite';

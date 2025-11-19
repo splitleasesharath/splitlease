@@ -3,11 +3,11 @@ import { createRoot } from 'react-dom/client';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
+import AIResearchSignupModal from '../shared/AIResearchSignupModal.jsx';
 import { checkAuthStatus } from '../../lib/auth.js';
 import {
   PROPERTY_IDS,
-  FAQ_URL,
-  EMBED_AI_DRAWER_URL
+  FAQ_URL
 } from '../../lib/constants.js';
 
 // ============================================================================
@@ -383,57 +383,6 @@ function FloatingBadge({ onClick }) {
   );
 }
 
-// ============================================================================
-// INTERNAL COMPONENT: Market Research Modal
-// ============================================================================
-
-function MarketResearchModal({ isOpen, onClose }) {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (isOpen) {
-      // Prevent body scroll when modal is open
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  const handleIframeLoad = () => {
-    setLoading(false);
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className={`market-research-modal ${isOpen ? 'active' : ''}`}>
-      <div className="market-research-modal-content">
-        <button className="market-research-modal-close" onClick={onClose}>
-          &times;
-        </button>
-        <div className="market-research-iframe-container">
-          {loading && (
-            <div className="market-research-loader">
-              <div className="spinner"></div>
-              <p>Loading Market Research...</p>
-            </div>
-          )}
-          <iframe
-            id="marketResearchIframe"
-            src={isOpen ? EMBED_AI_DRAWER_URL : ''}
-            frameBorder="0"
-            allowFullScreen
-            onLoad={handleIframeLoad}
-          ></iframe>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ============================================================================
 // MAIN COMPONENT: HomePage
@@ -441,7 +390,7 @@ function MarketResearchModal({ isOpen, onClose }) {
 
 export default function HomePage() {
   // State management
-  const [marketResearchModalOpen, setMarketResearchModalOpen] = useState(false);
+  const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]);
 
   // Check authentication status on mount
@@ -497,12 +446,12 @@ export default function HomePage() {
     }
   };
 
-  const handleOpenMarketResearch = () => {
-    setMarketResearchModalOpen(true);
+  const handleOpenAIResearchModal = () => {
+    setIsAIResearchModalOpen(true);
   };
 
-  const handleCloseMarketResearch = () => {
-    setMarketResearchModalOpen(false);
+  const handleCloseAIResearchModal = () => {
+    setIsAIResearchModalOpen(false);
   };
 
   return (
@@ -523,9 +472,12 @@ export default function HomePage() {
 
       <Footer />
 
-      <FloatingBadge onClick={handleOpenMarketResearch} />
+      <FloatingBadge onClick={handleOpenAIResearchModal} />
 
-      <MarketResearchModal isOpen={marketResearchModalOpen} onClose={handleCloseMarketResearch} />
+      <AIResearchSignupModal
+        isOpen={isAIResearchModalOpen}
+        onClose={handleCloseAIResearchModal}
+      />
     </div>
   );
 }
