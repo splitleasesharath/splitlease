@@ -146,9 +146,18 @@ export default function InformationalText({
     });
   } else {
     // New generic mode
+    console.log('📝 Generic tooltip mode');
     displayContent = isExpanded ? (expandedContent || content) : content;
     hasExpandedContent = showMoreAvailable && expandedContent;
   }
+
+  // Failsafe: ensure displayContent is never empty
+  if (!displayContent || displayContent.length === 0) {
+    console.warn('⚠️ displayContent is empty! Using failsafe fallback.');
+    displayContent = 'Rates change with the number of nights booked. Generally, the nightly cost decreases with longer stays. For exact pricing details, check each listing.';
+  }
+
+  console.log('✅ Final displayContent:', displayContent);
 
   return (
     <div
@@ -212,7 +221,13 @@ export default function InformationalText({
 
       {/* Content */}
       <div style={{ color: '#374151', fontSize: '0.875rem', lineHeight: '1.5' }}>
-        <p style={{ marginBottom: '0.5rem', whiteSpace: 'pre-line' }}>{displayContent}</p>
+        {displayContent && displayContent.length > 0 ? (
+          <p style={{ marginBottom: '0.5rem', whiteSpace: 'pre-line' }}>{displayContent}</p>
+        ) : (
+          <p style={{ marginBottom: '0.5rem', whiteSpace: 'pre-line', color: 'red' }}>
+            [DEBUG] No content to display. Props: content={JSON.stringify(content)}, listing={listing?.id}, selectedDaysCount={selectedDaysCount}
+          </p>
+        )}
       </div>
 
       {/* Show More/Less Button */}
