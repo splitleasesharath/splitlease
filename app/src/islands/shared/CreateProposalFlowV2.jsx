@@ -21,6 +21,7 @@ import '../../styles/create-proposal-flow-v2.css';
  * @param {number} nightsSelected - Number of nights selected
  * @param {number} reservationSpan - Number of weeks for reservation
  * @param {Object} pricingBreakdown - Pricing breakdown from parent
+ * @param {Object} zatConfig - ZAT price configuration object
  * @param {boolean} hasExistingUserData - Whether user has previously entered data
  * @param {Object} existingUserData - Previously saved user data
  * @param {Function} onClose - Callback when modal closes
@@ -33,6 +34,7 @@ export default function CreateProposalFlowV2({
   nightsSelected = 0,
   reservationSpan = 13,
   pricingBreakdown = null,
+  zatConfig = null,
   hasExistingUserData = false,
   existingUserData = null,
   onClose,
@@ -225,6 +227,7 @@ export default function CreateProposalFlowV2({
             data={proposalData}
             updateData={updateProposalData}
             listing={listing}
+            zatConfig={zatConfig}
           />
         );
       default:

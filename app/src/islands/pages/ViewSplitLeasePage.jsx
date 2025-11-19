@@ -13,6 +13,7 @@ import CreateProposalFlow from './ViewSplitLeasePageComponents/CreateProposalFlo
 import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
 import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
+import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
@@ -170,6 +171,7 @@ export default function ViewSplitLeasePage() {
   const [showTutorialModal, setShowTutorialModal] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [showContactHostModal, setShowContactHostModal] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
     description: false,
     neighborhood: false,
@@ -1150,12 +1152,43 @@ export default function ViewSplitLeasePage() {
                     }}
                   />
                 )}
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.25rem' }}>
                     {listing.host['Name - First']} {listing.host['Name - Last']?.charAt(0)}.
                   </div>
                   <div style={{ color: COLORS.TEXT_LIGHT }}>Host</div>
                 </div>
+                <button
+                  onClick={() => setShowContactHostModal(true)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: COLORS.PRIMARY,
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    boxShadow: '0 2px 8px rgba(49, 19, 93, 0.2)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = COLORS.PRIMARY_HOVER;
+                    e.target.style.transform = 'translateY(-2px)';
+                    e.target.style.boxShadow = '0 4px 12px rgba(49, 19, 93, 0.3)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = COLORS.PRIMARY;
+                    e.target.style.transform = '';
+                    e.target.style.boxShadow = '0 2px 8px rgba(49, 19, 93, 0.2)';
+                  }}
+                >
+                  <span style={{ fontSize: '1.25rem' }}>💬</span>
+                  <span>Message</span>
+                </button>
               </div>
             </section>
           )}
@@ -1929,6 +1962,22 @@ export default function ViewSplitLeasePage() {
           existingUserData={null}
           onClose={() => setIsProposalModalOpen(false)}
           onSubmit={handleProposalSubmit}
+        />
+      )}
+
+      {/* Contact Host Messaging Modal */}
+      {showContactHostModal && listing && (
+        <ContactHostMessaging
+          isOpen={showContactHostModal}
+          onClose={() => setShowContactHostModal(false)}
+          listing={{
+            id: listing._id,
+            title: listing.Name,
+            host: {
+              name: listing.host ? `${listing.host['Name - First']} ${listing.host['Name - Last']?.charAt(0)}.` : 'Host'
+            }
+          }}
+          userEmail=""
         />
       )}
 
