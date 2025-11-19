@@ -78,7 +78,7 @@ export function isContiguousSelection(selectedDays) {
 
 /**
  * Calculate check-in and check-out days from selected days
- * Check-in is the first selected day, check-out is the last selected day
+ * Based on SearchScheduleSelector logic for wrap-around handling
  *
  * @param {number[]} selectedDays - Array of day indices (0-based)
  * @returns {object} { checkInDay: number, checkOutDay: number, checkInName: string, checkOutName: string }
@@ -93,26 +93,66 @@ export function calculateCheckInOutDays(selectedDays) {
     };
   }
 
+  if (selectedDays.length === 1) {
+    const day = selectedDays[0];
+    return {
+      checkInDay: day,
+      checkOutDay: day,
+      checkInName: DAY_NAMES[day],
+      checkOutName: DAY_NAMES[day]
+    };
+  }
+
   const sorted = [...selectedDays].sort((a, b) => a - b);
+  const hasSunday = sorted.includes(0);
+  const hasSaturday = sorted.includes(6);
 
-  // Handle wrap-around case (e.g., Sat, Sun, Mon, Tue)
-  const hasZero = sorted.includes(0);
-  const hasSix = sorted.includes(6);
+  // Check if this is a wrap-around case
+  if (hasSunday && hasSaturday && sorted.length < 7) {
+    // Find the gap (unselected days) in the week
+    let gapStart = -1;
+    let gapEnd = -1;
 
-  if (hasZero && hasSix) {
-    // Find gap to determine actual start/end
-    let gapIndex = -1;
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i] !== sorted[i - 1] + 1) {
-        gapIndex = i;
+    // Look for the gap in the sorted days
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (sorted[i + 1] - sorted[i] > 1) {
+        // Found the gap
+        gapStart = sorted[i] + 1;  // First unselected day
+        gapEnd = sorted[i + 1] - 1;  // Last unselected day
         break;
       }
     }
 
-    if (gapIndex !== -1) {
-      // Wrapped selection: check-in is after the gap (first day in wrap), check-out is before gap (last day in wrap)
-      const checkInDay = sorted[gapIndex]; // First day after gap (e.g., Sunday = 0)
-      const checkOutDay = sorted[gapIndex - 1]; // Last day before gap (e.g., Saturday = 6)
+    if (gapStart !== -1 && gapEnd !== -1) {
+      // Wrap-around case with a gap in the middle
+      // Check-in: First selected day AFTER the gap ends
+      // Check-out: Last selected day BEFORE the gap starts
+
+      // Check-in is the smallest day after the gap
+      let checkInDay = null;
+      for (const day of sorted) {
+        if (day > gapEnd) {
+          checkInDay = day;
+          break;
+        }
+      }
+      if (checkInDay === null) {
+        // Wrap to Sunday
+        checkInDay = sorted[0];
+      }
+
+      // Check-out is the largest day before the gap
+      let checkOutDay = null;
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        if (sorted[i] < gapStart) {
+          checkOutDay = sorted[i];
+          break;
+        }
+      }
+      if (checkOutDay === null) {
+        // Wrap to Saturday
+        checkOutDay = sorted[sorted.length - 1];
+      }
 
       return {
         checkInDay,
@@ -123,7 +163,7 @@ export function calculateCheckInOutDays(selectedDays) {
     }
   }
 
-  // Standard case: first to last
+  // Non-wrap-around case: use first and last in sorted order
   const checkInDay = sorted[0];
   const checkOutDay = sorted[sorted.length - 1];
 
