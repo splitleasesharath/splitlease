@@ -223,12 +223,15 @@
     color: rgb(91, 33, 182);
 }
 
-.divider {
+.nav-right .divider {
     color: rgba(255, 255, 255, 0.5);
     position: static;
+    border: none !important;
+    border-top: none !important;
+    margin: 0 !important;
 }
 
-.divider::after {
+.nav-right .divider::after {
     display: none !important;
 }
 
