@@ -1415,27 +1415,30 @@ export default function ViewSplitLeasePage() {
 
           {/* Move-in Date */}
           <div style={{ marginBottom: '10px' }}>
-            <label style={{
-              fontSize: '12px',
-              fontWeight: '700',
-              color: '#31135d',
-              marginBottom: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+            <label
+              onClick={() => {
+                console.log('Move-In label clicked!');
+                console.log('Current activeInfoTooltip:', activeInfoTooltip);
+                console.log('Informational texts:', informationalTexts);
+                setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
+              }}
+              style={{
+                fontSize: '12px',
+                fontWeight: '700',
+                color: '#31135d',
+                marginBottom: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                cursor: 'pointer'
+              }}
+            >
               Ideal Move-In
               <svg
                 ref={moveInInfoRef}
-                onClick={() => {
-                  console.log('Move-In info icon clicked!');
-                  console.log('Current activeInfoTooltip:', activeInfoTooltip);
-                  console.log('Informational texts:', informationalTexts);
-                  setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
-                }}
-                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
+                style={{ width: '16px', height: '16px', color: '#9CA3AF' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -1510,7 +1513,6 @@ export default function ViewSplitLeasePage() {
               transition: 'all 0.2s ease',
               cursor: 'pointer'
             }}
-            onClick={() => setStrictMode(!strictMode)}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%)';
               e.currentTarget.style.borderColor = '#d8b4fe';
@@ -1523,7 +1525,10 @@ export default function ViewSplitLeasePage() {
             <input
               type="checkbox"
               checked={strictMode}
-              onChange={(e) => e.stopPropagation()}
+              onChange={(e) => {
+                e.stopPropagation();
+                setStrictMode(!strictMode);
+              }}
               onClick={(e) => e.stopPropagation()}
               style={{
                 width: '18px',
@@ -1534,29 +1539,30 @@ export default function ViewSplitLeasePage() {
                 flexShrink: 0
               }}
             />
-            <label style={{
-              fontSize: '14px',
-              color: '#111827',
-              cursor: 'pointer',
-              userSelect: 'none',
-              lineHeight: '1.5',
-              fontWeight: '500'
-            }}>
+            <label
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
+              }}
+              style={{
+                fontSize: '14px',
+                color: '#111827',
+                cursor: 'pointer',
+                userSelect: 'none',
+                lineHeight: '1.5',
+                fontWeight: '500'
+              }}
+            >
               Strict (no negotiation on exact move in)
               <svg
                 ref={flexibilityInfoRef}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
-                }}
                 style={{
                   display: 'inline-block',
                   width: '14px',
                   height: '14px',
                   verticalAlign: 'middle',
                   marginLeft: '2px',
-                  opacity: 0.6,
-                  cursor: 'pointer'
+                  opacity: 0.6
                 }}
                 fill="none"
                 stroke="currentColor"
@@ -1591,22 +1597,25 @@ export default function ViewSplitLeasePage() {
 
           {/* Reservation Span */}
           <div style={{ marginBottom: '12px' }}>
-            <label style={{
-              fontSize: '12px',
-              fontWeight: '700',
-              color: '#31135d',
-              marginBottom: '8px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>
+            <label
+              onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan')}
+              style={{
+                fontSize: '12px',
+                fontWeight: '700',
+                color: '#31135d',
+                marginBottom: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.5px',
+                cursor: 'pointer'
+              }}
+            >
               Reservation Span
               <svg
                 ref={reservationSpanInfoRef}
-                onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan')}
-                style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
+                style={{ width: '16px', height: '16px', color: '#9CA3AF' }}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
