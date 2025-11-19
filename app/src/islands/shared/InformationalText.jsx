@@ -112,14 +112,16 @@ export default function InformationalText({
 
     const startingPrice = listing['Starting nightly price'] || listing.price?.starting || 0;
 
-    const mainContent = `The starting nightly price is $${startingPrice.toFixed(2)}. Pricing varies based on how many nights per week you select.`;
+    // Use database content for the main message
+    const mainContent = content || `Rates change with the number of nights booked. Generally, the nightly cost decreases with longer stays. For exact pricing details, check each listing.`;
+
     const expandedContentText = priceTiers.length > 0
-      ? priceTiers.map(tier => `${tier.nights} nights/week: $${tier.price.toFixed(2)}/night`).join('\n')
-      : 'No pricing tiers available for this listing.';
+      ? `Price breakdown:\n\n${priceTiers.map(tier => `${tier.nights} nights/week: $${tier.price.toFixed(2)}/night`).join('\n')}\n\nStarting price: $${startingPrice.toFixed(2)}/night`
+      : `Starting price: $${startingPrice.toFixed(2)}/night\n\nNo additional pricing tiers available for this listing.`;
 
     displayContent = isExpanded ? expandedContentText : mainContent;
     hasExpandedContent = priceTiers.length > 0;
-    tooltipTitle = 'Pricing Information';
+    tooltipTitle = title || 'Pricing Information';
   } else {
     // New generic mode
     displayContent = isExpanded ? (expandedContent || content) : content;

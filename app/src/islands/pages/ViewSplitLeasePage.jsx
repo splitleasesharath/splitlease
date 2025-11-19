@@ -1510,8 +1510,7 @@ export default function ViewSplitLeasePage() {
               background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
               borderRadius: '10px',
               border: '1px solid #e9d5ff',
-              transition: 'all 0.2s ease',
-              cursor: 'pointer'
+              transition: 'all 0.2s ease'
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%)';
@@ -1524,12 +1523,11 @@ export default function ViewSplitLeasePage() {
           >
             <input
               type="checkbox"
+              id="strict-mode-checkbox"
               checked={strictMode}
               onChange={(e) => {
-                e.stopPropagation();
-                setStrictMode(!strictMode);
+                setStrictMode(e.target.checked);
               }}
-              onClick={(e) => e.stopPropagation()}
               style={{
                 width: '18px',
                 height: '18px',
@@ -1539,30 +1537,32 @@ export default function ViewSplitLeasePage() {
                 flexShrink: 0
               }}
             />
-            <label
-              onClick={(e) => {
-                e.stopPropagation();
-                setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
-              }}
-              style={{
-                fontSize: '14px',
-                color: '#111827',
-                cursor: 'pointer',
-                userSelect: 'none',
-                lineHeight: '1.5',
-                fontWeight: '500'
-              }}
-            >
-              Strict (no negotiation on exact move in)
+            <div style={{ flex: 1 }}>
+              <label
+                htmlFor="strict-mode-checkbox"
+                style={{
+                  fontSize: '14px',
+                  color: '#111827',
+                  cursor: 'pointer',
+                  userSelect: 'none',
+                  lineHeight: '1.5',
+                  fontWeight: '500',
+                  display: 'inline'
+                }}
+              >
+                Strict (no negotiation on exact move in)
+              </label>
               <svg
                 ref={flexibilityInfoRef}
+                onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility')}
                 style={{
                   display: 'inline-block',
                   width: '14px',
                   height: '14px',
                   verticalAlign: 'middle',
                   marginLeft: '2px',
-                  opacity: 0.6
+                  opacity: 0.6,
+                  cursor: 'pointer'
                 }}
                 fill="none"
                 stroke="currentColor"
@@ -1570,7 +1570,7 @@ export default function ViewSplitLeasePage() {
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               </svg>
-            </label>
+            </div>
           </div>
 
           {/* Weekly Schedule Selector */}
