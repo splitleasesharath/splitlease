@@ -50,9 +50,25 @@ export default function ProposalCard({
   const nightsPerWeek = hasCounteroffer && proposal['hc nights per week']
     ? proposal['hc nights per week']
     : proposal['nights per week (num)'];
-  const daysSelected = hasCounteroffer && proposal['hc days selected']
+  // Parse Days Selected - it's stored as JSON string in database
+  let daysSelected = hasCounteroffer && proposal['hc days selected']
     ? proposal['hc days selected']
     : proposal['Days Selected'];
+
+  // Parse JSON string if needed
+  if (typeof daysSelected === 'string') {
+    try {
+      daysSelected = JSON.parse(daysSelected);
+    } catch (e) {
+      console.error('Error parsing Days Selected:', e);
+      daysSelected = [];
+    }
+  }
+
+  // Ensure it's an array
+  if (!Array.isArray(daysSelected)) {
+    daysSelected = [];
+  }
 
   // Pricing
   const totalPrice = hasCounteroffer && proposal['hc total price']
