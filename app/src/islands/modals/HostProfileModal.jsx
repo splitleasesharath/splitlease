@@ -5,6 +5,8 @@
  * Based on screenshot: pass1-host-profile-modal.png
  */
 
+import ExternalReviews from '../shared/ExternalReviews.jsx';
+
 export default function HostProfileModal({ host, listing, onClose }) {
   if (!host) return null;
 
@@ -84,6 +86,9 @@ export default function HostProfileModal({ host, listing, onClose }) {
                     </div>
                   </div>
                 )}
+
+                {/* External Reviews */}
+                {listing && <ExternalReviews listingId={listing._id} />}
               </div>
             </div>
           </div>
