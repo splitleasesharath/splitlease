@@ -29,9 +29,8 @@ export const calculateCheckInCheckOut = (days) => {
   const sorted = sortDays(days);
   const checkIn = sorted[0];
 
-  // Check-out is the day after the last selected day
-  const lastDay = sorted[sorted.length - 1];
-  const checkOut = getNextDay(lastDay);
+  // Check-out is the last selected day
+  const checkOut = sorted[sorted.length - 1];
 
   return { checkIn, checkOut };
 };
@@ -42,14 +41,13 @@ export const calculateCheckInCheckOut = (days) => {
 export const handleSundayTransition = (days) => {
   const sorted = sortDays(days);
   const checkInDay = sorted[0];
-  const lastDay = sorted[sorted.length - 1];
-  const checkOutDay = getNextDay(lastDay);
+  const checkOutDay = sorted[sorted.length - 1];
 
   // Start night is the first selected day's night
   const startNight = checkInDay.dayOfWeek;
 
   // End night is the last night before checkout
-  const endNight = lastDay.dayOfWeek;
+  const endNight = checkOutDay.dayOfWeek;
 
   return {
     checkInDay,
