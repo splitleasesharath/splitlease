@@ -740,7 +740,7 @@ export default function ViewSplitLeasePage() {
                 <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
                   <img src="/assets/images/sleeping.svg" alt="Bedroom" style={{ width: '2rem', height: '2rem' }} />
                 </div>
-                <div>{listing.resolvedTypeOfSpace === 'Studio' ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedrooms`}</div>
+                <div>{listing['Features - Qty Bedrooms'] === 0 ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedroom${listing['Features - Qty Bedrooms'] === 1 ? '' : 's'}`}</div>
               </div>
             )}
             {listing['Features - Qty Beds'] !== null && (
@@ -1924,6 +1924,7 @@ export default function ViewSplitLeasePage() {
           nightsSelected={nightsSelected}
           reservationSpan={reservationSpan}
           pricingBreakdown={priceBreakdown}
+          zatConfig={zatConfig}
           hasExistingUserData={false}
           existingUserData={null}
           onClose={() => setIsProposalModalOpen(false)}
