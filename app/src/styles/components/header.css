@@ -220,6 +220,11 @@
 
 .divider {
     color: rgba(255, 255, 255, 0.5);
+    position: static;
+}
+
+.divider::after {
+    display: none !important;
 }
 
 /* Theme Toggle Button */
