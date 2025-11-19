@@ -661,6 +661,7 @@ export default function SearchPage() {
   useEffect(() => {
     const fetchPriceInfoText = async () => {
       try {
+        console.log('🔍 Fetching price informational text from database...');
         const { data, error } = await supabase
           .from('informationaltexts')
           .select('"Information Tag-Title", "Desktop copy", "Mobile copy"')
@@ -668,22 +669,29 @@ export default function SearchPage() {
           .single();
 
         if (error) {
-          console.error('Failed to fetch price informational text:', error);
+          console.error('❌ Failed to fetch price informational text:', error);
           return;
         }
+
+        console.log('✅ Fetched price informational text:', data);
 
         if (data) {
           // Determine if we're on mobile based on viewport width
           const isMobile = window.innerWidth < 768;
           const content = isMobile ? data['Mobile copy'] : data['Desktop copy'];
 
+          console.log('📱 Is mobile?', isMobile);
+          console.log('📝 Selected content:', content);
+
           setPriceInfoText({
             title: 'Pricing Information',
             content: content || 'Rates change with the number of nights booked. Generally, the nightly cost decreases with longer stays.'
           });
+
+          console.log('✅ Price info text state updated');
         }
       } catch (err) {
-        console.error('Error fetching price informational text:', err);
+        console.error('❌ Error fetching price informational text:', err);
       }
     };
 

@@ -25,6 +25,16 @@ export default function InformationalText({
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Debug logging
+  console.log('🎯 InformationalText rendered with props:', {
+    isOpen,
+    title,
+    content,
+    contentLength: content?.length,
+    listing: listing?.id,
+    selectedDaysCount
+  });
+
   // Calculate position based on trigger element
   useEffect(() => {
     if (!isOpen || !triggerRef?.current || !tooltipRef.current) return;
@@ -95,6 +105,8 @@ export default function InformationalText({
 
   if (!isOpen) return null;
 
+  console.log('🎨 Rendering tooltip with state:', { isOpen, content, title });
+
   // Legacy pricing content logic (for backwards compatibility)
   let displayContent = content;
   let hasExpandedContent = showMoreAvailable;
@@ -102,6 +114,7 @@ export default function InformationalText({
 
   if (listing && selectedDaysCount !== null) {
     // Legacy pricing tooltip mode
+    console.log('💰 Pricing tooltip mode activated');
     const priceTiers = [
       { nights: 2, price: listing['Price 2 nights selected'] },
       { nights: 3, price: listing['Price 3 nights selected'] },
@@ -122,6 +135,15 @@ export default function InformationalText({
     displayContent = isExpanded ? expandedContentText : mainContent;
     hasExpandedContent = priceTiers.length > 0;
     tooltipTitle = title || 'Pricing Information';
+
+    console.log('📋 Display content:', {
+      mainContent,
+      expandedContentText,
+      displayContent,
+      hasExpandedContent,
+      isExpanded,
+      priceTiersCount: priceTiers.length
+    });
   } else {
     // New generic mode
     displayContent = isExpanded ? (expandedContent || content) : content;
