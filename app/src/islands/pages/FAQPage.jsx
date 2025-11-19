@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { supabase } from '../../lib/supabase.js';
+// FAQ Page with inquiry modal
 
 export default function FAQPage() {
   const [activeTab, setActiveTab] = useState('general');

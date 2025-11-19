@@ -81,4 +81,4 @@ Context/
 # Agent Context and Tools directories
 input/
 .playwright-mcp/
-dump/
+dump/app/.wrangler/
