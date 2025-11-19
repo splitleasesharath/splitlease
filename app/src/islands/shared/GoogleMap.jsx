@@ -43,6 +43,7 @@ const GoogleMap = forwardRef(({
     filteredListingsCount: filteredListings.length,
     selectedBorough,
     hasMessageCallback: !!onMessageClick,
+    messageCallbackType: typeof onMessageClick,
     listingsSample: listings.slice(0, 2).map(l => ({
       id: l.id,
       title: l.title,
