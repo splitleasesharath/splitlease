@@ -12,6 +12,7 @@ import { DAY_NAMES } from './constants.js';
 /**
  * Check if selected days form a contiguous block
  * CRITICAL FUNCTION: Must be consecutive days (Mon-Fri ✓, Mon+Wed ✗)
+ * Based on Bubble implementation that handles week wrap-around cases
  *
  * @param {number[]} selectedDays - Array of day indices (0=Sunday, 1=Monday, ... 6=Saturday)
  * @returns {boolean} True if days are contiguous
@@ -20,6 +21,7 @@ import { DAY_NAMES } from './constants.js';
  * isContiguousSelection([1, 2, 3, 4, 5]) // true (Mon-Fri)
  * isContiguousSelection([1, 3, 5]) // false (Mon, Wed, Fri - not contiguous)
  * isContiguousSelection([5, 6, 0]) // true (Fri-Sun, wraps around week)
+ * isContiguousSelection([6, 0, 1, 2]) // true (Sat-Tue, wraps around week)
  */
 export function isContiguousSelection(selectedDays) {
   if (!selectedDays || selectedDays.length === 0) return false;
@@ -27,6 +29,9 @@ export function isContiguousSelection(selectedDays) {
 
   // Sort the selected days
   const sorted = [...selectedDays].sort((a, b) => a - b);
+
+  // If 6 or more days selected, it's contiguous
+  if (sorted.length >= 6) return true;
 
   // Check for standard contiguous sequence (no wrap around)
   let isStandardContiguous = true;
@@ -39,41 +44,33 @@ export function isContiguousSelection(selectedDays) {
 
   if (isStandardContiguous) return true;
 
-  // Check for wrap-around contiguous sequence (e.g., Fri-Sat-Sun)
-  // Pattern: [0, 1, ..., n, ..., 5, 6] where there's a gap in the middle
+  // Check if selection includes both Sunday (0) and Saturday (6) - wrap-around case
   const hasZero = sorted.includes(0);
   const hasSix = sorted.includes(6);
 
   if (hasZero && hasSix) {
-    // Find the gap
-    let gapStart = -1;
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i] !== sorted[i - 1] + 1) {
-        gapStart = i;
-        break;
-      }
+    // Week wrap-around case: use inverse logic (check not-selected days)
+    // If the NOT selected days are contiguous, then selected days wrap around and are contiguous
+    const allDays = [0, 1, 2, 3, 4, 5, 6];
+    const notSelectedDays = allDays.filter(d => !sorted.includes(d));
+
+    if (notSelectedDays.length === 0) return true; // All days selected
+
+    // Check if not-selected days form a contiguous block
+    const minNotSelected = Math.min(...notSelectedDays);
+    const maxNotSelected = Math.max(...notSelectedDays);
+
+    // Generate expected contiguous range for not-selected days
+    const expectedNotSelected = [];
+    for (let i = minNotSelected; i <= maxNotSelected; i++) {
+      expectedNotSelected.push(i);
     }
 
-    if (gapStart === -1) return false;
+    // If not-selected days are contiguous, then selected days wrap around properly
+    const notSelectedContiguous = notSelectedDays.length === expectedNotSelected.length &&
+      notSelectedDays.every((day, index) => day === expectedNotSelected[index]);
 
-    // Check if the sequence wraps properly
-    // Left side should end at a day close to 6, right side should start at 0
-    const leftSide = sorted.slice(0, gapStart);
-    const rightSide = sorted.slice(gapStart);
-
-    // Right side should start from 0 and be contiguous
-    if (rightSide[0] !== 0) return false;
-    for (let i = 1; i < rightSide.length; i++) {
-      if (rightSide[i] !== rightSide[i - 1] + 1) return false;
-    }
-
-    // Left side should end at 6 and be contiguous
-    if (leftSide[leftSide.length - 1] !== 6) return false;
-    for (let i = 1; i < leftSide.length; i++) {
-      if (leftSide[i] !== leftSide[i - 1] + 1) return false;
-    }
-
-    return true;
+    return notSelectedContiguous;
   }
 
   return false;
@@ -81,7 +78,7 @@ export function isContiguousSelection(selectedDays) {
 
 /**
  * Calculate check-in and check-out days from selected days
- * Check-in is the first day, check-out is the day after the last day
+ * Check-in is the first selected day, check-out is the last selected day
  *
  * @param {number[]} selectedDays - Array of day indices (0-based)
  * @returns {object} { checkInDay: number, checkOutDay: number, checkInName: string, checkOutName: string }
@@ -98,7 +95,7 @@ export function calculateCheckInOutDays(selectedDays) {
 
   const sorted = [...selectedDays].sort((a, b) => a - b);
 
-  // Handle wrap-around case
+  // Handle wrap-around case (e.g., Sat, Sun, Mon, Tue)
   const hasZero = sorted.includes(0);
   const hasSix = sorted.includes(6);
 
@@ -113,9 +110,9 @@ export function calculateCheckInOutDays(selectedDays) {
     }
 
     if (gapIndex !== -1) {
-      // Wrapped selection: check-in is after the gap, check-out is before
-      const checkInDay = sorted[gapIndex]; // First day after gap (should be 0)
-      const checkOutDay = (sorted[gapIndex - 1] + 1) % 7; // Day after last day before gap
+      // Wrapped selection: check-in is after the gap (first day in wrap), check-out is before gap (last day in wrap)
+      const checkInDay = sorted[gapIndex]; // First day after gap (e.g., Sunday = 0)
+      const checkOutDay = sorted[gapIndex - 1]; // Last day before gap (e.g., Saturday = 6)
 
       return {
         checkInDay,
@@ -126,9 +123,9 @@ export function calculateCheckInOutDays(selectedDays) {
     }
   }
 
-  // Standard case: first to last + 1
+  // Standard case: first to last
   const checkInDay = sorted[0];
-  const checkOutDay = (sorted[sorted.length - 1] + 1) % 7;
+  const checkOutDay = sorted[sorted.length - 1];
 
   return {
     checkInDay,
