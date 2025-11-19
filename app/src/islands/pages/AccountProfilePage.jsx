@@ -47,10 +47,13 @@ import EditPhoneModal from '../modals/EditPhoneModal.jsx';
 import AccountDeletionModal from '../modals/AccountDeletionModal.jsx';
 import NotificationSettingsModal from '../modals/NotificationSettingsModal.jsx';
 
-export default function AccountProfilePage({ requireAuth = false, isAuthenticated = true }) {
+export default function AccountProfilePage({ requireAuth = false }) {
   // ============================================================================
   // STATE MANAGEMENT
   // ============================================================================
+
+  // Auth state (checked after mount)
+  const [isAuthenticated, setIsAuthenticated] = useState(null); // null = checking, true/false = checked
 
   // Core data
   const [userData, setUserData] = useState(null);
@@ -81,7 +84,17 @@ export default function AccountProfilePage({ requireAuth = false, isAuthenticate
   // ============================================================================
 
   /**
-   * Initialize page on mount
+   * Check authentication FIRST after mount (before data loading)
+   * Ensures localStorage/cookies are ready
+   */
+  useEffect(() => {
+    const authResult = checkAuthStatus();
+    console.log('🔒 Account Profile Auth Check (after mount):', authResult);
+    setIsAuthenticated(authResult);
+  }, []);
+
+  /**
+   * Initialize page data after authentication is confirmed
    * Implements Workflow 48: Page is loaded (13 steps)
    * Handles URL parameter callbacks for:
    * - payout=yes → Set page view to payout
@@ -91,26 +104,33 @@ export default function AccountProfilePage({ requireAuth = false, isAuthenticate
    * - notifications=show → Show notifications panel
    */
   useEffect(() => {
+    // Wait for auth check to complete
+    if (isAuthenticated === null) return; // Still checking
+    if (isAuthenticated === false) {
+      // Not authenticated - don't load data, Header will show modal
+      console.warn('⚠️ User not authenticated - auth modal will be shown by Header');
+      setLoading(false);
+      return;
+    }
+
+    // Authenticated - proceed with page initialization
     initializePage();
-  }, []);
+  }, [isAuthenticated]);
 
   async function initializePage() {
     try {
       setLoading(true);
       setError(null);
 
-      // Get authentication status - checkAuthStatus() returns boolean
-      const isAuthenticated = checkAuthStatus();
+      // Get user ID from session storage
+      const userId = localStorage.getItem('splitlease_session_id');
 
-      if (!isAuthenticated) {
-        // Don't redirect - Header will show auth modal via autoShowLogin prop
-        console.warn('⚠️ User not authenticated - auth modal will be shown by Header');
+      if (!userId) {
+        console.error('❌ No user ID found in session storage');
+        setError('Unable to load profile - please log in again');
         setLoading(false);
         return;
       }
-
-      // Get user ID from session storage
-      const userId = localStorage.getItem('splitlease_session_id');
 
       // Step 1: Check URL parameters for payout view
       const urlParams = new URLSearchParams(window.location.search);

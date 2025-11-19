@@ -2,27 +2,15 @@
  * Account Profile Page - Entry Point
  *
  * Mounts the AccountProfilePage island component
- * Checks authentication and passes props to show auth modal if needed
+ * Auth check happens INSIDE the component after mount to ensure storage APIs are ready
  */
 
 import { createRoot } from 'react-dom/client';
 import AccountProfilePage from './islands/pages/AccountProfilePage.jsx';
-import { checkAuthStatus } from './lib/auth.js';
 
-// Check authentication status - checkAuthStatus() returns a boolean
-const isLoggedIn = checkAuthStatus();
-
-console.log('🔒 Account Profile Auth Check:', { isLoggedIn });
-
-if (!isLoggedIn) {
-  console.log('❌ User not authenticated - will show auth modal');
-} else {
-  console.log('✅ User authenticated - rendering Account Profile page');
-}
-
-// Always render the page - Header will show auth modal if not logged in
+// Always render immediately - auth check will happen after component mounts
 const container = document.getElementById('account-profile-page');
 if (container) {
   const root = createRoot(container);
-  root.render(<AccountProfilePage requireAuth={true} isAuthenticated={isLoggedIn} />);
+  root.render(<AccountProfilePage requireAuth={true} />);
 }
