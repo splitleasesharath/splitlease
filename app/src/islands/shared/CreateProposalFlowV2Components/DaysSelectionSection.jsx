@@ -1,12 +1,20 @@
 /**
  * DaysSelectionSection - Adjust weekly schedule selection
  * Now uses the reusable ListingScheduleSelector component with full price calculation
+ * ALL pricing is calculated by ListingScheduleSelector - no calculations here
  */
 
 import { useState, useEffect, useMemo } from 'react';
 import ListingScheduleSelector from '../ListingScheduleSelector.jsx';
 
-export default function DaysSelectionSection({ data, updateData, listing, zatConfig }) {
+export default function DaysSelectionSection({
+  data,
+  updateData,
+  listing,
+  zatConfig,
+  onPricingChange,
+  onDaysChange
+}) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   // Convert day names to day objects for ListingScheduleSelector
@@ -89,25 +97,35 @@ export default function DaysSelectionSection({ data, updateData, listing, zatCon
   // Handle schedule selection change
   const handleScheduleChange = (newSelectedDayObjects) => {
     const dayNames = dayObjectsToNames(newSelectedDayObjects);
-    updateData('daysSelected', dayNames);
 
-    // Update check-in and check-out days
-    if (dayNames.length > 0) {
-      const sortedDays = [...dayNames].sort((a, b) => days.indexOf(a) - days.indexOf(b));
-      updateData('checkInDay', sortedDays[0]);
-      updateData('checkOutDay', sortedDays[sortedDays.length - 1]);
+    // Sort days properly by day of week order
+    const sortedDayNames = [...dayNames].sort((a, b) => days.indexOf(a) - days.indexOf(b));
+
+    updateData('daysSelected', sortedDayNames);
+
+    // Update check-in and check-out days based on sorted selection
+    if (sortedDayNames.length > 0) {
+      updateData('checkInDay', sortedDayNames[0]);
+      updateData('checkOutDay', sortedDayNames[sortedDayNames.length - 1]);
+    }
+
+    // Notify parent of day changes with night count
+    const nightsCount = Math.max(newSelectedDayObjects.length - 1, 0);
+    if (onDaysChange) {
+      onDaysChange(newSelectedDayObjects, nightsCount);
     }
   };
 
   // Handle price change from ListingScheduleSelector
   const handlePriceChange = (priceBreakdown) => {
-    if (priceBreakdown && priceBreakdown.valid) {
-      // Update the price per night in the proposal data
-      updateData('pricePerNight', priceBreakdown.pricePerNight);
+    console.log('DaysSelectionSection: Price change from ListingScheduleSelector:', priceBreakdown);
 
-      // Also update the totals if needed
-      updateData('pricePerFourWeeks', priceBreakdown.fourWeekRent);
-      updateData('totalPrice', priceBreakdown.reservationTotal);
+    if (priceBreakdown && priceBreakdown.valid) {
+      // Pass pricing breakdown to parent (CreateProposalFlowV2)
+      // Parent will update all price fields in proposalData
+      if (onPricingChange) {
+        onPricingChange(priceBreakdown);
+      }
     }
   };
 
@@ -139,8 +157,8 @@ export default function DaysSelectionSection({ data, updateData, listing, zatCon
         showPricing={true}
       />
 
-      <div className="pricing-display" style={{ marginTop: '16px' }}>
-        <p><strong>Price per Night:</strong> ${data.pricePerNight?.toFixed(2) || '0.00'}</p>
+      <div className="helper-text" style={{ marginTop: '16px', fontSize: '13px', color: '#666' }}>
+        <p>💡 Prices are calculated automatically based on your selection. Review the pricing details above.</p>
       </div>
     </div>
   );
