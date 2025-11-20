@@ -45,41 +45,27 @@ async function fetchInformationalTexts() {
   const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqYnZjYmFhbm5qdnpzYmJqa2N5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY3OTk3MTQsImV4cCI6MjA1MjM3NTcxNH0.5K7H7I3k-w6DXcQsLo-y6JI5FKxBwPEk4cR3FjnI0AM';
 
   try {
-    console.log('🔍 Fetching informational texts from Supabase...');
-
-    // Use select=* to get all columns (safer with special characters in column names)
     const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/informationaltexts?select=*`,
+      `${SUPABASE_URL}/rest/v1/informationaltexts?select=_id,Information Tag-Title,Desktop copy,Mobile copy,Desktop%2B copy,show more available%3F`,
       {
         headers: {
           'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json'
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
         }
       }
     );
 
-    console.log('📡 Response status:', response.status, response.statusText);
-
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Failed to fetch informational texts:', response.statusText, errorText);
+      console.error('Failed to fetch informational texts:', response.statusText);
       return {};
     }
 
     const data = await response.json();
-    console.log('📦 Raw data received:', data?.length, 'items');
-    console.log('📦 First item structure:', data?.[0] ? Object.keys(data[0]) : 'No items');
 
     // Create a lookup object by tag-title
     const textsByTag = {};
-    data.forEach((item, index) => {
+    data.forEach(item => {
       const tag = item['Information Tag-Title'];
-      if (!tag) {
-        console.warn(`⚠️ Item ${index} has no Information Tag-Title:`, item);
-        return;
-      }
-
       textsByTag[tag] = {
         id: item._id,
         title: tag,
@@ -88,29 +74,12 @@ async function fetchInformationalTexts() {
         desktopPlus: item['Desktop+ copy'],
         showMore: item['show more available?']
       };
-
-      // Debug the specific tags we need
-      if (tag === 'aligned schedule with move-in' ||
-          tag === 'move-in flexibility' ||
-          tag === 'Reservation Span') {
-        console.log(`✅ Found "${tag}":`, {
-          desktop: item['Desktop copy']?.substring(0, 50) + '...',
-          mobile: item['Mobile copy']?.substring(0, 50) + '...',
-          showMore: item['show more available?']
-        });
-      }
     });
 
-    console.log('📚 Fetched informational texts:', Object.keys(textsByTag).length, 'total');
-    console.log('🎯 Required tags present:', {
-      'aligned schedule with move-in': !!textsByTag['aligned schedule with move-in'],
-      'move-in flexibility': !!textsByTag['move-in flexibility'],
-      'Reservation Span': !!textsByTag['Reservation Span']
-    });
-
+    console.log('📚 Fetched informational texts:', Object.keys(textsByTag));
     return textsByTag;
   } catch (error) {
-    console.error('❌ Error fetching informational texts:', error);
+    console.error('Error fetching informational texts:', error);
     return {};
   }
 }
@@ -267,28 +236,6 @@ export default function ViewSplitLeasePage() {
   const moveInInfoRef = useRef(null);
   const reservationSpanInfoRef = useRef(null);
   const flexibilityInfoRef = useRef(null);
-
-  // Debug: Log when activeInfoTooltip changes
-  useEffect(() => {
-    console.log('🎯 activeInfoTooltip changed to:', activeInfoTooltip);
-    console.log('🔗 Refs status:', {
-      moveInInfoRef: !!moveInInfoRef.current,
-      reservationSpanInfoRef: !!reservationSpanInfoRef.current,
-      flexibilityInfoRef: !!flexibilityInfoRef.current
-    });
-  }, [activeInfoTooltip]);
-
-  // Debug: Log when informationalTexts are loaded
-  useEffect(() => {
-    if (Object.keys(informationalTexts).length > 0) {
-      console.log('📚 informationalTexts loaded with', Object.keys(informationalTexts).length, 'entries');
-      console.log('🎯 Specific tags:', {
-        'aligned schedule with move-in': informationalTexts['aligned schedule with move-in'],
-        'move-in flexibility': informationalTexts['move-in flexibility'],
-        'Reservation Span': informationalTexts['Reservation Span']
-      });
-    }
-  }, [informationalTexts]);
 
   // Responsive state
   const [isMobile, setIsMobile] = useState(false);

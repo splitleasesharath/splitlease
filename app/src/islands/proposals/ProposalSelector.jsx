@@ -18,13 +18,12 @@ export default function ProposalSelector({ proposals, selectedProposal, onPropos
 
   /**
    * Get display label for a proposal
-   * Format: "Guest Name - Listing Title"
-   * Shows the guest who made the proposal, not the host
+   * Format: "Host Name - Listing Title"
    */
   function getProposalLabel(proposal) {
-    const guestName = proposal._guest?.['Name - First'] || proposal._guest?.['Name - Full'] || 'Guest';
+    const hostName = proposal._host?.['Name - First'] || 'Host';
     const listingName = proposal._listing?.Name || 'Property';
-    return `${guestName} - ${listingName}`;
+    return `${hostName} - ${listingName}`;
   }
 
   function handleSelect(proposalId) {

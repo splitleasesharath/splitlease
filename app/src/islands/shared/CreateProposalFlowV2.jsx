@@ -90,14 +90,21 @@ export default function CreateProposalFlowV2({
     if (!dayObjs || dayObjs.length === 0) return { checkIn: 'Monday', checkOut: 'Friday' };
 
     const dayMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const dayNames = dayObjs.map(dayObj => dayMap[dayObj.dayOfWeek]);
+    const dayNumbers = dayObjs.map(dayObj => dayObj.dayOfWeek);
 
-    // Sort day names by their day of week number
-    const sortedDays = [...dayNames].sort((a, b) => dayMap.indexOf(a) - dayMap.indexOf(b));
+    // Sort day numbers
+    const sortedDayNumbers = [...dayNumbers].sort((a, b) => a - b);
+
+    // Check-in is the first selected day
+    const checkInDay = sortedDayNumbers[0];
+    const lastSelectedDay = sortedDayNumbers[sortedDayNumbers.length - 1];
+
+    // Check-out is the day AFTER the last selected day
+    const checkOutDay = (lastSelectedDay + 1) % 7;
 
     return {
-      checkIn: sortedDays[0],
-      checkOut: sortedDays[sortedDays.length - 1]
+      checkIn: dayMap[checkInDay],
+      checkOut: dayMap[checkOutDay]
     };
   };
 
