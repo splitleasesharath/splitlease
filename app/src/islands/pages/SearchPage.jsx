@@ -13,6 +13,39 @@ import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJson
 import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
 
 // ============================================================================
+// Utility Functions
+// ============================================================================
+
+/**
+ * Fetch informational texts from Supabase
+ */
+async function fetchInformationalTexts() {
+  try {
+    const { data, error } = await supabase
+      .from('informationaltexts')
+      .select('_id, "Information Tag-Title", "Desktop copy", "Mobile copy", "Desktop+ copy", "show more available?"');
+
+    if (error) throw error;
+
+    // Transform data into a map keyed by tag title
+    const textsMap = {};
+    data.forEach(item => {
+      textsMap[item['Information Tag-Title']] = {
+        desktop: item['Desktop copy'],
+        mobile: item['Mobile copy'],
+        desktopPlus: item['Desktop+ copy'],
+        showMore: item['show more available?']
+      };
+    });
+
+    return textsMap;
+  } catch (error) {
+    console.error('Failed to fetch informational texts:', error);
+    return {};
+  }
+}
+
+// ============================================================================
 // Internal Components
 // ============================================================================
 
@@ -610,6 +643,7 @@ export default function SearchPage() {
   const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
   const [selectedListing, setSelectedListing] = useState(null);
   const [infoModalTriggerRef, setInfoModalTriggerRef] = useState(null);
+  const [informationalTexts, setInformationalTexts] = useState({});
 
   // Refs
   const mapRef = useRef(null);
@@ -646,6 +680,15 @@ export default function SearchPage() {
       }
     };
     init();
+  }, []);
+
+  // Fetch informational texts on mount
+  useEffect(() => {
+    const loadInformationalTexts = async () => {
+      const texts = await fetchInformationalTexts();
+      setInformationalTexts(texts);
+    };
+    loadInformationalTexts();
   }, []);
 
   // Fetch ALL active listings for green markers (NO FILTERS - runs once on mount)
@@ -1611,6 +1654,10 @@ export default function SearchPage() {
         onClose={handleCloseInfoModal}
         listing={selectedListing}
         triggerRef={infoModalTriggerRef}
+        title="Pricing Information"
+        content={informationalTexts['Price Starts']?.desktop || ''}
+        expandedContent={informationalTexts['Price Starts']?.desktopPlus}
+        showMoreAvailable={informationalTexts['Price Starts']?.showMore}
       />
       <AiSignupMarketReport
         isOpen={isAIResearchModalOpen}

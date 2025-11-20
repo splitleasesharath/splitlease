@@ -105,11 +105,18 @@ export default function InformationalText({
     hasListing: !!listing,
     selectedDaysCount,
     content: content?.substring(0, 50),
-    contentLength: content?.length
+    contentLength: content?.length,
+    hasExplicitContent: !!content
   });
 
-  if (listing && selectedDaysCount !== null) {
-    // Legacy pricing tooltip mode
+  // Priority: If explicit content is provided, use it (even if listing is also provided)
+  // Only fall back to legacy pricing logic if no explicit content AND listing is provided
+  if (content && content.trim() !== '') {
+    // Use explicit content (generic mode)
+    displayContent = isExpanded ? (expandedContent || content) : content;
+    hasExpandedContent = showMoreAvailable && expandedContent;
+  } else if (listing && selectedDaysCount !== null) {
+    // Legacy pricing tooltip mode (only if no explicit content)
     const priceTiers = [
       { nights: 2, price: listing['Price 2 nights selected'] },
       { nights: 3, price: listing['Price 3 nights selected'] },
@@ -128,10 +135,6 @@ export default function InformationalText({
     displayContent = isExpanded ? expandedContentText : mainContent;
     hasExpandedContent = priceTiers.length > 0;
     tooltipTitle = 'Pricing Information';
-  } else {
-    // New generic mode
-    displayContent = isExpanded ? (expandedContent || content) : content;
-    hasExpandedContent = showMoreAvailable && expandedContent;
   }
 
   // FAILSAFE: Ensure displayContent is NEVER empty
