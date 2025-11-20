@@ -207,7 +207,6 @@ function InvertedScheduleCards() {
               </div>
             </div>
             <div className="content-section">
-              <h3>{schedule.title}</h3>
               <div className="card-footer">
                 <button
                   className="btn-primary"
