@@ -1426,10 +1426,14 @@ export default function ViewSplitLeasePage() {
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              Ideal Move-In
+              <span>Ideal Move-In</span>
               <svg
                 ref={moveInInfoRef}
-                onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('Move-in info icon clicked, current state:', activeInfoTooltip);
+                  setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
+                }}
                 style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
                 fill="none"
                 stroke="currentColor"
@@ -1502,10 +1506,8 @@ export default function ViewSplitLeasePage() {
               background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
               borderRadius: '10px',
               border: '1px solid #e9d5ff',
-              transition: 'all 0.2s ease',
-              cursor: 'pointer'
+              transition: 'all 0.2s ease'
             }}
-            onClick={() => setStrictMode(!strictMode)}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%)';
               e.currentTarget.style.borderColor = '#d8b4fe';
@@ -1518,8 +1520,7 @@ export default function ViewSplitLeasePage() {
             <input
               type="checkbox"
               checked={strictMode}
-              onChange={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
+              onChange={() => setStrictMode(!strictMode)}
               style={{
                 width: '18px',
                 height: '18px',
@@ -1532,7 +1533,6 @@ export default function ViewSplitLeasePage() {
             <label style={{
               fontSize: '14px',
               color: '#111827',
-              cursor: 'pointer',
               userSelect: 'none',
               lineHeight: '1.5',
               fontWeight: '500'
@@ -1597,10 +1597,14 @@ export default function ViewSplitLeasePage() {
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              Reservation Span
+              <span>Reservation Span</span>
               <svg
                 ref={reservationSpanInfoRef}
-                onClick={() => setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan')}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('Reservation span info icon clicked, current state:', activeInfoTooltip);
+                  setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan');
+                }}
                 style={{ width: '16px', height: '16px', color: '#9CA3AF', cursor: 'pointer' }}
                 fill="none"
                 stroke="currentColor"
@@ -2050,12 +2054,25 @@ export default function ViewSplitLeasePage() {
       )}
 
       {/* Informational Text Tooltips */}
+      {(() => {
+        console.log('📚 Rendering InformationalText components:', {
+          hasAlignedSchedule: !!informationalTexts['aligned schedule with move-in'],
+          hasMoveInFlexibility: !!informationalTexts['move-in flexibility'],
+          hasReservationSpan: !!informationalTexts['Reservation Span'],
+          activeTooltip: activeInfoTooltip,
+          alignedScheduleContent: informationalTexts['aligned schedule with move-in']?.desktop,
+          moveInFlexibilityContent: informationalTexts['move-in flexibility']?.desktop,
+          reservationSpanContent: informationalTexts['Reservation Span']?.desktop
+        });
+        return null;
+      })()}
+
       {informationalTexts['aligned schedule with move-in'] && (
         <InformationalText
           isOpen={activeInfoTooltip === 'moveIn'}
           onClose={() => setActiveInfoTooltip(null)}
           triggerRef={moveInInfoRef}
-          title="Move-In Date"
+          title="Ideal Move-In"
           content={isMobile
             ? informationalTexts['aligned schedule with move-in'].mobile || informationalTexts['aligned schedule with move-in'].desktop
             : informationalTexts['aligned schedule with move-in'].desktop
