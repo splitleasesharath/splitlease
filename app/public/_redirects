@@ -15,8 +15,7 @@
 # Handle search page
 /search.html  /search.html  200
 
-# Handle FAQ page with clean URLs
-/faq  /faq.html  200
+# Handle FAQ page
 /faq.html  /faq.html  200
 
 # Handle policies page
