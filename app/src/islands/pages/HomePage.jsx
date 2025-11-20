@@ -126,16 +126,40 @@ function InvertedScheduleCards() {
   };
 
   const handleMouseEnter = (e) => {
-    const player = e.currentTarget.querySelector('lottie-player');
-    if (player) {
+    const card = e.currentTarget;
+    const player = card.querySelector('lottie-player');
+    const progressLine = card.querySelector('.lottie-progress-line');
+
+    if (player && progressLine) {
       player.play();
+
+      // Animate progress line
+      const updateProgress = () => {
+        if (player.getLottie) {
+          const lottieInstance = player.getLottie();
+          if (lottieInstance) {
+            const progress = (lottieInstance.currentFrame / lottieInstance.totalFrames) * 100;
+            progressLine.style.width = `${progress}%`;
+          }
+        }
+        if (!player.paused) {
+          requestAnimationFrame(updateProgress);
+        }
+      };
+      updateProgress();
     }
   };
 
   const handleMouseLeave = (e) => {
-    const player = e.currentTarget.querySelector('lottie-player');
+    const card = e.currentTarget;
+    const player = card.querySelector('lottie-player');
+    const progressLine = card.querySelector('.lottie-progress-line');
+
     if (player) {
       player.stop();
+    }
+    if (progressLine) {
+      progressLine.style.width = '0%';
     }
   };
 
@@ -177,6 +201,9 @@ function InvertedScheduleCards() {
                   style={{ width: '100%', maxWidth: '240px', height: '160px' }}
                   loop
                 ></lottie-player>
+                <div className="lottie-progress-bar">
+                  <div className="lottie-progress-line"></div>
+                </div>
               </div>
             </div>
             <div className="content-section">
