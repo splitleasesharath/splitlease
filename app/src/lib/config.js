@@ -32,6 +32,9 @@ window.ENV = {
   SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
   SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY,
 
+  // Hotjar
+  HOTJAR_SITE_ID: import.meta.env.VITE_HOTJAR_SITE_ID,
+
   // Environment detection
   ENVIRONMENT: (function() {
     if (window.location.hostname === 'localhost' ||
