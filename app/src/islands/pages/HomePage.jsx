@@ -198,7 +198,7 @@ function InvertedScheduleCards() {
                   src={schedule.lottieUrl}
                   background="white"
                   speed="1"
-                  style={{ width: '100%', maxWidth: '240px', height: '160px' }}
+                  style={{ width: '100%', maxWidth: '240px', height: '160px', transform: 'scale(1.15)' }}
                   loop
                 ></lottie-player>
               </div>
