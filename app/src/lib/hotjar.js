@@ -1,6 +1,7 @@
 /**
  * Initialize Hotjar Tracking
  * Uses window.ENV.HOTJAR_SITE_ID exposed by config.js
+ * Loads asynchronously after environment configuration is ready
  */
 
 function loadHotjar() {
