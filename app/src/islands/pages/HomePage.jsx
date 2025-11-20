@@ -103,21 +103,18 @@ function InvertedScheduleCards() {
     {
       id: 'weeknight',
       title: 'Weeknight Listings',
-      description: 'Find your perfect weeknight space. Book Monday through Friday and enjoy flexible living.',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json',
       days: '2,3,4,5,6', // Monday-Friday
     },
     {
       id: 'weekend',
       title: 'Weekend Listings',
-      description: 'Escape for the weekend. Book Saturday and Sunday stays at your favorite locations.',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json',
       days: '6,7,1,2', // Fri-Sun+Mon
     },
     {
       id: 'monthly',
       title: 'Monthly Listings',
-      description: 'Commit to a full month. Secure your space with monthly booking options.',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
       days: '1,2,3,4,5,6,7', // All days
     },
@@ -166,7 +163,6 @@ function InvertedScheduleCards() {
             </div>
             <div className="content-section">
               <h3>{schedule.title}</h3>
-              <p className="description">{schedule.description}</p>
               <div className="card-footer">
                 <button
                   className="btn-primary"
