@@ -320,10 +320,10 @@ export function redirectToLogin(returnUrl = null) {
 }
 
 /**
- * Redirect to account profile page
- * Only redirect if user is logged in
+ * Redirect to account profile page with user ID
+ * Only redirect if user is logged in and has a valid session ID
  *
- * @returns {boolean} True if redirect initiated, false if not logged in
+ * @returns {boolean} True if redirect initiated, false if not logged in or no user ID
  */
 export function redirectToAccountProfile() {
   if (!isUserLoggedInState) {
@@ -331,7 +331,13 @@ export function redirectToAccountProfile() {
     return false;
   }
 
-  window.location.href = ACCOUNT_PROFILE_URL;
+  const userId = getSessionId();
+  if (!userId) {
+    console.error('No user ID found in session, cannot redirect to account profile');
+    return false;
+  }
+
+  window.location.href = `${ACCOUNT_PROFILE_URL}/${userId}`;
   return true;
 }
 
