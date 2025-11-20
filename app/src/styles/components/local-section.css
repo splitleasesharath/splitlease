@@ -7,7 +7,7 @@
 
 .local-container {
     background: linear-gradient(135deg, #e8e3f3 0%, #ddd6f0 100%);
-    border-radius: 40px;
+    border-radius: 16px;
     max-width: 1400px;
     width: 100%;
     margin: 0 auto;
