@@ -383,8 +383,7 @@
 
 .lottie-card-v11 .content-section {
     background: linear-gradient(180deg, #F0F0F5 0%, #F8F7FA 100%);
-    padding: 0.5rem 2rem;
-    flex: 1;
+    padding: 0.5rem 2rem 0.5rem 2rem;
     display: flex;
     flex-direction: column;
 }
