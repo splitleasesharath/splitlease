@@ -28,6 +28,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { getAuthToken } from '../../lib/auth.js';
+import {
+  getUserIdFromUrl,
+  fetchUserById,
+  fetchProposalsByGuest,
+  loadProposalDetails as loadProposalDetailsUtil
+} from '../../lib/proposalDataFetcher.js';
 
 // Shared components
 import Header from '../shared/Header.jsx';
@@ -79,7 +85,8 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
    * 2. Use dropdown selection
    * 3. Default to first proposal
    *
-   * FIXED: Now uses user_id from SESSION_ID instead of userEmail
+   * NEW: Extracts user ID from URL path (/guest-proposals/[userId])
+   * Following the same pattern as view-split-lease page
    */
   async function initializePage() {
     try {
@@ -90,40 +97,33 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
       const token = getAuthToken();
       console.log('🔑 Auth token present:', !!token);
 
-      // Get user ID from localStorage (stored as SESSION_ID during login)
-      const userId = localStorage.getItem('splitlease_session_id');
+      // Extract user ID from URL path
+      const userId = getUserIdFromUrl();
 
-      // TEMPORARY: For testing, allow page to render even without userId
-      // In production, this should throw an error
       if (!userId) {
-        console.warn('⚠️ No user ID found - showing empty state for testing');
-        console.warn('⚠️ In production, this would require login');
-        setProposals([]);
-        setLoading(false);
-        return;
+        throw new Error('No user ID provided in URL. Please access this page via /guest-proposals/[userId]');
       }
 
-      console.log('👤 Loading proposals for user ID:', userId);
+      console.log('👤 Loading user and proposals for user ID:', userId);
 
-      // Query all proposals for this user by Guest ID (not email)
-      // The 'Guest' field in proposal table is a relation to user._id
-      const { data: proposalsData, error: proposalsError } = await supabase
-        .from('proposal')
-        .select('*')
-        .eq('Guest', userId)
-        .or('Deleted.is.null,Deleted.eq.false')
-        .order('Created Date', { ascending: false });
+      // Fetch user data from Supabase
+      const userData = await fetchUserById(userId);
 
-      if (proposalsError) {
-        console.error('❌ Supabase error:', proposalsError);
-        throw proposalsError;
+      if (!userData) {
+        throw new Error('User not found. Please check the user ID in the URL.');
       }
 
-      console.log(`✅ Loaded ${proposalsData?.length || 0} proposals`);
-      setProposals(proposalsData || []);
+      setCurrentUser(userData);
+      console.log('✅ User loaded:', userData['Name - Full']);
+
+      // Fetch all proposals for this user (where they are the guest)
+      const proposalsData = await fetchProposalsByGuest(userId);
+
+      console.log(`✅ Loaded ${proposalsData.length} proposals`);
+      setProposals(proposalsData);
 
       // Implement loading strategy
-      if (proposalsData && proposalsData.length > 0) {
+      if (proposalsData.length > 0) {
         const urlParams = new URLSearchParams(window.location.search);
         const proposalIdFromURL = urlParams.get('proposal');
 
@@ -159,75 +159,14 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
    * - Host user data
    * - House rules
    * - Virtual meeting data
+   *
+   * Uses the utility function from proposalDataFetcher.js
    */
   async function loadProposalDetails(proposal) {
     try {
       console.log('🔍 Loading details for proposal:', proposal._id);
 
-      const enrichedProposal = { ...proposal };
-
-      // Load listing
-      if (proposal.Listing) {
-        const { data: listingData, error: listingError } = await supabase
-          .from('listing')
-          .select('*')
-          .eq('_id', proposal.Listing)
-          .single();
-
-        if (!listingError && listingData) {
-          enrichedProposal._listing = listingData;
-        }
-      }
-
-      // Load host user (from listing creator)
-      if (enrichedProposal._listing?.['Created By']) {
-        const { data: hostData, error: hostError } = await supabase
-          .from('user')
-          .select(`
-            _id,
-            "Name - First",
-            "Name - Full",
-            "Profile Photo",
-            "About Me / Bio",
-            "email as text",
-            "Phone Number (as text)",
-            "Verify - Linked In ID",
-            "Verify - Phone",
-            "is email confirmed",
-            "user verified?"
-          `)
-          .eq('_id', enrichedProposal._listing['Created By'])
-          .single();
-
-        if (!hostError && hostData) {
-          enrichedProposal._host = hostData;
-        }
-      }
-
-      // Load house rules
-      if (proposal['House Rules'] && Array.isArray(proposal['House Rules']) && proposal['House Rules'].length > 0) {
-        const { data: rulesData, error: rulesError } = await supabase
-          .from('zat_features_houserule')
-          .select('_id, Name, Icon')
-          .in('_id', proposal['House Rules']);
-
-        if (!rulesError && rulesData) {
-          enrichedProposal._houseRules = rulesData;
-        }
-      }
-
-      // Load virtual meeting
-      if (proposal['virtual meeting']) {
-        const { data: vmData, error: vmError } = await supabase
-          .from('virtualmeetingschedulesandlinks')
-          .select('*')
-          .eq('_id', proposal['virtual meeting'])
-          .single();
-
-        if (!vmError && vmData) {
-          enrichedProposal._virtualMeeting = vmData;
-        }
-      }
+      const enrichedProposal = await loadProposalDetailsUtil(proposal);
 
       setSelectedProposal(enrichedProposal);
       console.log('✅ Proposal details loaded successfully');
