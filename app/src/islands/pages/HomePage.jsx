@@ -95,92 +95,7 @@ function ValuePropositions() {
 }
 
 // ============================================================================
-// INTERNAL COMPONENT: Schedule Section
-// ============================================================================
-
-function ScheduleSection() {
-  const schedules = [
-    {
-      type: 'weeknight',
-      title: 'Weeknight Listings',
-      lottieUrl:
-        'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json',
-      buttonText: 'Explore weeknight listings',
-      days: '2,3,4,5,6', // Monday-Friday (1-based)
-    },
-    {
-      type: 'weekend',
-      title: 'Weekend Listings',
-      lottieUrl:
-        'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json',
-      buttonText: 'Explore weekend listings',
-      days: '6,7,1,2', // Fri-Sun+Mon (1-based)
-    },
-    {
-      type: 'monthly',
-      title: 'Monthly Listings',
-      lottieUrl:
-        'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
-      buttonText: 'Explore monthly listings',
-      days: '1,2,3,4,5,6,7', // All days (1-based)
-    },
-  ];
-
-  const handleScheduleClick = (days) => {
-    const searchUrl = `/search.html?days-selected=${days}`;
-    window.location.href = searchUrl;
-  };
-
-  // Load Lottie player script
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
-
-  return (
-    <section className="schedule-section">
-      <div className="schedule-header">
-        <h2>Stop playing room roulette!</h2>
-        <h1>Choose Your Split Schedule</h1>
-      </div>
-
-      <div className="schedule-grid">
-        {schedules.map((schedule, index) => (
-          <div key={index} className="schedule-card">
-            <h3 className="schedule-title">{schedule.title}</h3>
-            <div className="schedule-visual">
-              <div className="lottie-container">
-                <lottie-player
-                  src={schedule.lottieUrl}
-                  background="white"
-                  speed="1"
-                  style={{ width: '100%', height: 'auto', maxWidth: '650px' }}
-                  loop
-                  autoplay
-                ></lottie-player>
-              </div>
-              <div className="schedule-info"></div>
-            </div>
-            <button className="explore-btn" onClick={() => handleScheduleClick(schedule.days)}>
-              {schedule.buttonText}
-            </button>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ============================================================================
-// INTERNAL COMPONENT: Inverted Delivery Card Style Schedule Cards
+// INTERNAL COMPONENT: Schedule Cards (Inverted Delivery Card Style)
 // ============================================================================
 
 function InvertedScheduleCards() {
@@ -213,8 +128,27 @@ function InvertedScheduleCards() {
     window.location.href = searchUrl;
   };
 
+  // Load Lottie player script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
   return (
     <section className="inverted-schedule-section">
+      <div className="schedule-header">
+        <h2>Stop playing room roulette!</h2>
+        <h1>Choose Your Split Schedule</h1>
+      </div>
+
       <div className="inverted-schedule-grid">
         {schedules.map((schedule) => (
           <div key={schedule.id} className="lottie-card-v11">
@@ -540,8 +474,6 @@ export default function HomePage() {
       <Hero onExploreRentals={handleExploreRentals} />
 
       <ValuePropositions />
-
-      <ScheduleSection />
 
       <InvertedScheduleCards />
 
