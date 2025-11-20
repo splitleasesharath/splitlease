@@ -347,43 +347,6 @@
             margin-bottom: 30px;
         }
 
-        .schedule-week {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 15px;
-        }
-
-        .schedule-week .icon {
-            font-size: 24px;
-        }
-
-        .day-button {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            border: none;
-            background-color: #D3D3D3;
-            color: var(--color-text-gray);
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .day-button:hover {
-            background-color: #C0C0C0;
-        }
-
-        .day-button.active {
-            background-color: var(--color-primary-purple);
-            color: white;
-        }
-
-        .day-button.active:hover {
-            background-color: #4A2E75;
-        }
-
         /* Checkbox Grid Sections */
         .checkbox-grid {
             display: grid;
@@ -1019,16 +982,8 @@
                 <!-- Recent Days Selected (from database) -->
                 <div class="profile-card schedule-section">
                     <h3 class="section-title">Recent Days Selected</h3>
-                    <div class="schedule-week">
-                        <span class="icon">📅</span>
-                        <button class="day-button" data-day="Sunday">S</button>
-                        <button class="day-button" data-day="Monday">M</button>
-                        <button class="day-button" data-day="Tuesday">T</button>
-                        <button class="day-button" data-day="Wednesday">W</button>
-                        <button class="day-button" data-day="Thursday">T</button>
-                        <button class="day-button" data-day="Friday">F</button>
-                        <button class="day-button" data-day="Saturday">S</button>
-                    </div>
+                    <!-- React Island: SearchScheduleSelector -->
+                    <div id="schedule-selector-root"></div>
                 </div>
 
                 <!-- About - Commonly Stored Items (Phase 3.2 - from zat_storage table, stored as jsonb array) -->
@@ -1224,6 +1179,15 @@
             }
         }
 
+        // Store recent days for React component access
+        let recentDaysSelectedData = [];
+
+        // Callback for React component to update recent days
+        window.updateRecentDaysSelected = function(dayNames) {
+            recentDaysSelectedData = dayNames;
+            console.log('Recent days updated from React component:', dayNames);
+        };
+
         // Populate the page with user data
         function populateUserProfile(data) {
             const { user, host, guest, listings, reviews } = data;
@@ -1232,6 +1196,9 @@
             const userType = getUserType(user);
             console.log('User type detected:', userType);
             applyUserTypeVisibility(userType);
+
+            // Expose user data to React components
+            window.userProfileData = user;
 
             // Update profile name
             if (user['Name - Full']) {
@@ -1294,15 +1261,9 @@
             const selectedReasonIds = Array.isArray(userReasons) ? userReasons : [];
             populateGoodGuestReasonsCheckboxes(selectedReasonIds);
 
-            // Update Recent Days Selected - populate day buttons
+            // Initialize recent days data for React component
             if (user['Recent Days Selected'] && Array.isArray(user['Recent Days Selected'])) {
-                const selectedDays = user['Recent Days Selected'];
-                document.querySelectorAll('.day-button').forEach(btn => {
-                    const dayName = btn.getAttribute('data-day');
-                    if (selectedDays.includes(dayName)) {
-                        btn.classList.add('active');
-                    }
-                });
+                recentDaysSelectedData = user['Recent Days Selected'];
             }
 
             // Update profile completeness (horizontal progress bar)
@@ -1660,11 +1621,8 @@
                         selectedReasons.push(cb.value);
                     });
 
-                    // Collect Recent Days Selected (day buttons)
-                    const recentDaysSelected = [];
-                    document.querySelectorAll('.day-button.active').forEach(btn => {
-                        recentDaysSelected.push(btn.getAttribute('data-day'));
-                    });
+                    // Get Recent Days Selected from React component
+                    const recentDaysSelected = recentDaysSelectedData;
 
                     // Update user table with actual database fields
                     const { error: userError } = await supabase
@@ -1768,13 +1726,6 @@
         // Go back button
         document.querySelector('.btn-back')?.addEventListener('click', () => {
             window.history.back();
-        });
-
-        // Day button interactivity
-        document.querySelectorAll('.day-button').forEach(button => {
-            button.addEventListener('click', () => {
-                button.classList.toggle('active');
-            });
         });
     </script>
 </body>

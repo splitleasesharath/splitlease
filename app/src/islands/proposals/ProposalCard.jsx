@@ -14,6 +14,7 @@
  */
 
 import { useState } from 'react';
+import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 
 export default function ProposalCard({
   proposal,
@@ -93,8 +94,7 @@ export default function ProposalCard({
     ? proposal['hc check out day']
     : proposal['check out day'];
 
-  // Schedule day circles (S M T W T F S)
-  const dayLetters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  // Schedule day mapping for SearchScheduleSelector
   const dayMap = {
     'Sunday': 0,
     'Monday': 1,
@@ -254,31 +254,20 @@ export default function ProposalCard({
 
             {/* Schedule */}
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                {checkInDay} to {checkOutDay}
-              </h3>
               <p className="text-lg font-medium text-gray-900 mb-3">
                 Duration: {reservationWeeks} Weeks
               </p>
 
-              {/* Day Circles */}
-              <div className="flex gap-2">
-                {dayLetters.map((letter, index) => {
-                  const isSelected = selectedDayIndices.includes(index);
-                  return (
-                    <div
-                      key={index}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium ${
-                        isSelected
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-gray-200 text-gray-600'
-                      }`}
-                    >
-                      {letter}
-                    </div>
-                  );
-                })}
-              </div>
+              {/* Day Selector - Using SearchScheduleSelector */}
+              <SearchScheduleSelector
+                initialSelection={selectedDayIndices}
+                onSelectionChange={(days) => {
+                  // Read-only in proposal card - no changes allowed
+                  console.log('Schedule selector clicked (read-only in proposal view)');
+                }}
+                minDays={2}
+                requireContiguous={true}
+              />
             </div>
 
             {/* Check-in/out Details */}
