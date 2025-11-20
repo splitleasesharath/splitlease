@@ -1056,18 +1056,31 @@
         // Following Split Lease convention: /account-profile/{user_id}
         // Same pattern as /view-split-lease/{listing_id}
         function getUserIdFromPath() {
-            const pathParts = window.location.pathname.split('/').filter(part => part);
-
-            // Pattern: /account-profile/{user_id}
-            // pathParts[0] = 'account-profile'
-            // pathParts[1] = user_id
-            if (pathParts.length >= 2 && pathParts[0] === 'account-profile') {
-                const userId = pathParts[1];
-                console.log('✅ User ID extracted from URL path:', userId);
-                return userId;
+            // 1. Check query string: ?id=userId
+            const urlParams = new URLSearchParams(window.location.search);
+            const idFromQuery = urlParams.get('id');
+            if (idFromQuery) {
+                console.log('✅ User ID extracted from query string:', idFromQuery);
+                return idFromQuery;
             }
 
-            // Fallback for local dev: support hash-based URLs for testing
+            // 2. Parse pathname for segment after 'account-profile'
+            const pathSegments = window.location.pathname.split('/').filter(segment => segment);
+            const accountSegmentIndex = pathSegments.findIndex(segment =>
+                segment === 'account-profile' ||
+                segment === 'account-profile.html'
+            );
+
+            if (accountSegmentIndex !== -1 && pathSegments[accountSegmentIndex + 1]) {
+                const nextSegment = pathSegments[accountSegmentIndex + 1];
+                // Ensure it's not a file extension
+                if (!nextSegment.includes('.')) {
+                    console.log('✅ User ID extracted from URL path:', nextSegment);
+                    return nextSegment;
+                }
+            }
+
+            // 3. Fallback for local dev: support hash-based URLs for testing
             const hash = window.location.hash.replace('#', '');
             if (hash) {
                 console.log('⚠️  User ID from hash (dev only):', hash);
@@ -1077,6 +1090,7 @@
             console.error('❌ No user ID found in URL path');
             console.log('   Expected URL format: /account-profile/USER_ID');
             console.log('   Current URL:', window.location.href);
+            console.log('   Parsed segments:', pathSegments);
             return null;
         }
 
