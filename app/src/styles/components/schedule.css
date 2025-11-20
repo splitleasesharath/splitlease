@@ -415,22 +415,29 @@
 }
 
 .lottie-card-v11 .btn-primary {
-    background: var(--bg-white, #FFFFFF);
-    border: 2px solid var(--border-color, #CCCCDD);
-    color: var(--text-dark, #2A1548);
+    background: #2d1b4e;
+    border: 2px solid #2d1b4e;
+    color: white;
     font-size: 0.875rem;
-    font-weight: 500;
+    font-weight: 700;
     padding: 0.75rem 1.25rem;
-    border-radius: 4px;
+    border-radius: 12px;
     text-decoration: none;
-    transition: all 0.3s ease;
+    transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
     display: inline-block;
     cursor: pointer;
+    box-shadow: 0 4px 12px rgba(45, 27, 78, 0.3);
 }
 
 .lottie-card-v11 .btn-primary:hover {
-    border-color: var(--primary-color, #31135D);
-    background: var(--bg-light, #F8F7FA);
+    background: #23083D;
+    border-color: #23083D;
+    transform: translateY(-2px);
+    box-shadow: 0 -2px 6px rgba(255, 255, 255, 0.06), 0 4px 12px rgba(49, 19, 93, 0.18);
+}
+
+.lottie-card-v11 .btn-primary:active {
+    transform: translateY(0);
 }
 
 .lottie-card-v11 .status-indicator {
