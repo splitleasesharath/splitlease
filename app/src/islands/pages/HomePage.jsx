@@ -125,6 +125,20 @@ function InvertedScheduleCards() {
     window.location.href = searchUrl;
   };
 
+  const handleMouseEnter = (e) => {
+    const player = e.currentTarget.querySelector('lottie-player');
+    if (player) {
+      player.play();
+    }
+  };
+
+  const handleMouseLeave = (e) => {
+    const player = e.currentTarget.querySelector('lottie-player');
+    if (player) {
+      player.stop();
+    }
+  };
+
   // Load Lottie player script
   useEffect(() => {
     const script = document.createElement('script');
@@ -148,7 +162,12 @@ function InvertedScheduleCards() {
 
       <div className="inverted-schedule-grid">
         {schedules.map((schedule) => (
-          <div key={schedule.id} className="lottie-card-v11">
+          <div
+            key={schedule.id}
+            className="lottie-card-v11"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
             <div className="visual-section">
               <div className="lottie-animation">
                 <lottie-player
@@ -157,7 +176,6 @@ function InvertedScheduleCards() {
                   speed="1"
                   style={{ width: '100%', maxWidth: '240px', height: '160px' }}
                   loop
-                  autoplay
                 ></lottie-player>
               </div>
             </div>
