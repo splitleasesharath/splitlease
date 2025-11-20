@@ -284,7 +284,7 @@ function ListingsPreview({ selectedDays = [] }) {
       id: PROPERTY_IDS.PIED_A_TERRE,
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102430270x309647360933492400/pied4.webp',
-      title: 'Pied-à-terre , Perfect 2 BR...',
+      title: 'Perfect 2 BR Apartment',
       location: 'Upper East Side, Manhattan',
       description: '2 bedrooms - 2 bed(s) - 1 bathroom - Free Storage',
     },
