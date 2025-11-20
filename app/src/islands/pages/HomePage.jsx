@@ -180,6 +180,85 @@ function ScheduleSection() {
 }
 
 // ============================================================================
+// INTERNAL COMPONENT: Inverted Delivery Card Style Schedule Cards
+// ============================================================================
+
+function InvertedScheduleCards() {
+  const schedules = [
+    {
+      id: 'weeknight',
+      title: 'Weeknight Listings',
+      description: 'Find your perfect weeknight space. Book Monday through Friday and enjoy flexible living.',
+      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json',
+      days: '2,3,4,5,6', // Monday-Friday
+    },
+    {
+      id: 'weekend',
+      title: 'Weekend Listings',
+      description: 'Escape for the weekend. Book Saturday and Sunday stays at your favorite locations.',
+      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json',
+      days: '6,7,1,2', // Fri-Sun+Mon
+    },
+    {
+      id: 'monthly',
+      title: 'Monthly Listings',
+      description: 'Commit to a full month. Secure your space with monthly booking options.',
+      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
+      days: '1,2,3,4,5,6,7', // All days
+    },
+  ];
+
+  const handleExploreClick = (days) => {
+    const searchUrl = `/search.html?days-selected=${days}`;
+    window.location.href = searchUrl;
+  };
+
+  return (
+    <section className="inverted-schedule-section">
+      <div className="inverted-schedule-grid">
+        {schedules.map((schedule) => (
+          <div key={schedule.id} className="lottie-card-v11">
+            <div className="visual-section">
+              <div className="lottie-animation">
+                <lottie-player
+                  src={schedule.lottieUrl}
+                  background="white"
+                  speed="1"
+                  style={{ width: '100%', maxWidth: '240px', height: '160px' }}
+                  loop
+                  autoplay
+                ></lottie-player>
+              </div>
+            </div>
+            <div className="content-section">
+              <h3>{schedule.title}</h3>
+              <p className="description">{schedule.description}</p>
+              <div className="card-footer">
+                <button
+                  className="btn-primary"
+                  onClick={() => handleExploreClick(schedule.days)}
+                >
+                  Explore listings
+                </button>
+                <div className="status-indicator">
+                  <svg className="status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                  </svg>
+                  Available now
+                </div>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ============================================================================
 // INTERNAL COMPONENT: Benefits Section
 // ============================================================================
 
@@ -463,6 +542,8 @@ export default function HomePage() {
       <ValuePropositions />
 
       <ScheduleSection />
+
+      <InvertedScheduleCards />
 
       <BenefitsSection onExploreRentals={handleExploreRentals} />
 

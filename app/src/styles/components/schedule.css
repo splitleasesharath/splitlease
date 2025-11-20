@@ -296,3 +296,147 @@
         margin-top: 1rem !important;
     }
 }
+
+/* ============================================
+   INVERTED DELIVERY CARD STYLE (V11)
+   ============================================ */
+
+.inverted-schedule-section {
+    padding: 4rem 2rem;
+    max-width: var(--max-width);
+    margin: 0 auto;
+    background: var(--bg-light, #F8F7FA);
+}
+
+.inverted-schedule-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+    .inverted-schedule-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .inverted-schedule-grid {
+        grid-template-columns: repeat(3, 1fr);
+        max-width: 1200px;
+    }
+}
+
+.lottie-card-v11 {
+    background: var(--bg-light, #F8F7FA);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    min-height: 460px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.lottie-card-v11:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.lottie-card-v11 .visual-section {
+    background: var(--bg-white, #FFFFFF);
+    padding: 2.5rem 1.5rem 2rem;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+.lottie-card-v11 .lottie-animation {
+    width: 100%;
+    max-width: 240px;
+    height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lottie-card-v11 .content-section {
+    background: linear-gradient(180deg, #F0F0F5 0%, #F8F7FA 100%);
+    padding: 2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.lottie-card-v11 h3 {
+    font-size: 1.563rem;
+    font-weight: 700;
+    color: var(--text-dark, #2A1548);
+    margin: 0 0 0.75rem 0;
+    line-height: 1.2;
+}
+
+.lottie-card-v11 .description {
+    font-size: 0.875rem;
+    color: var(--text-gray, #6B5B7B);
+    line-height: 1.75;
+    margin: 0 0 1.5rem 0;
+}
+
+.lottie-card-v11 .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color, #E0E0E8);
+    margin-top: auto;
+}
+
+.lottie-card-v11 .btn-primary {
+    background: var(--bg-white, #FFFFFF);
+    border: 2px solid var(--border-color, #CCCCDD);
+    color: var(--text-dark, #2A1548);
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.lottie-card-v11 .btn-primary:hover {
+    border-color: var(--primary-color, #31135D);
+    background: var(--bg-light, #F8F7FA);
+}
+
+.lottie-card-v11 .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-gray, #6B5B7B);
+}
+
+.lottie-card-v11 .status-icon {
+    width: 20px;
+    height: 20px;
+    color: var(--text-gray, #8B7B9B);
+}
+
+@media (max-width: 768px) {
+    .lottie-card-v11 .card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .lottie-card-v11 .btn-primary {
+        width: 100%;
+        text-align: center;
+    }
+}
