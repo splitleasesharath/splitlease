@@ -100,6 +100,14 @@ export default function InformationalText({
   let hasExpandedContent = showMoreAvailable;
   let tooltipTitle = title;
 
+  console.log('🔍 InformationalText rendering:', {
+    isOpen,
+    hasListing: !!listing,
+    selectedDaysCount,
+    content: content?.substring(0, 50),
+    contentLength: content?.length
+  });
+
   if (listing && selectedDaysCount !== null) {
     // Legacy pricing tooltip mode
     const priceTiers = [
@@ -125,6 +133,17 @@ export default function InformationalText({
     displayContent = isExpanded ? (expandedContent || content) : content;
     hasExpandedContent = showMoreAvailable && expandedContent;
   }
+
+  // FAILSAFE: Ensure displayContent is NEVER empty
+  if (!displayContent || displayContent.trim() === '') {
+    console.warn('⚠️ InformationalText: Empty content detected, using fallback');
+    displayContent = 'Information not available at this time. Please contact support for details.';
+  }
+
+  console.log('📊 Final displayContent:', {
+    length: displayContent?.length,
+    preview: displayContent?.substring(0, 50)
+  });
 
   return (
     <div
