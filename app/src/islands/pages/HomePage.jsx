@@ -225,42 +225,59 @@ function InvertedScheduleCards() {
 }
 
 // ============================================================================
-// INTERNAL COMPONENT: Benefits Section
+// INTERNAL COMPONENT: Local Section (V5 Design)
 // ============================================================================
 
-function BenefitsSection({ onExploreRentals }) {
-  const benefits = [
-    'Fully-furnished spaces ensure move-in is a breeze.',
-    'Store items like toiletries, a second monitor, work attire, and anything else you may need to make yourself at home.',
-    'Forget HOAs. Switch neighborhoods seasonally, discover amazing flexibility.',
+function LocalSection({ onExploreRentals }) {
+  const features = [
+    {
+      number: '1',
+      title: 'Move-in Ready',
+      description: 'Fully-furnished spaces ensure move-in is a breeze.',
+    },
+    {
+      number: '2',
+      title: 'Everything You Need',
+      description: 'Store items like toiletries, a second monitor, work attire, and anything else you may need to make yourself at home.',
+    },
+    {
+      number: '3',
+      title: 'Total Flexibility',
+      description: 'Forget HOAs. Switch neighborhoods seasonally, discover amazing flexibility.',
+    },
   ];
 
   return (
-    <section className="benefits-section">
-      <div className="benefits-wrapper">
-        <h2>Choose when to be a local</h2>
-        <div className="benefits-list">
-          {benefits.map((benefit, index) => (
-            <div key={index} className="benefit-item">
-              <div className="benefit-icon">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <circle cx="12" cy="12" r="12" fill="#5B5FCF" />
-                  <path
-                    d="M17 8L10 15L7 12"
-                    stroke="white"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <p>{benefit}</p>
+    <section className="local-section">
+      <div className="local-container">
+        <div className="local-content-wrapper">
+          <div className="local-left-section">
+            <h1>Choose when to be a local</h1>
+            <p className="local-description">
+              Experience the freedom of flexible living. Move seamlessly between neighborhoods, enjoy fully-furnished spaces, and embrace a lifestyle without compromise.
+            </p>
+            <div className="local-cta-group">
+              <button className="local-primary-button" onClick={onExploreRentals}>
+                Explore Rentals
+              </button>
+              <a href="/why-split-lease.html" className="local-secondary-button">
+                Learn More
+              </a>
             </div>
-          ))}
+          </div>
+
+          <div className="local-right-section">
+            {features.map((feature, index) => (
+              <div key={index} className="local-feature-item">
+                <div className="local-feature-number">{feature.number}</div>
+                <div className="local-feature-content">
+                  <h3>{feature.title}</h3>
+                  <p>{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <button className="cta-button benefits-cta" onClick={onExploreRentals}>
-          Explore Rentals
-        </button>
       </div>
     </section>
   );
@@ -569,7 +586,7 @@ export default function HomePage() {
 
       <InvertedScheduleCards />
 
-      <BenefitsSection onExploreRentals={handleExploreRentals} />
+      <LocalSection onExploreRentals={handleExploreRentals} />
 
       <ListingsPreview selectedDays={selectedDays} />
 
