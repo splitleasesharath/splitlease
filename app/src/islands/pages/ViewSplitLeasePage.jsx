@@ -1486,7 +1486,16 @@ export default function ViewSplitLeasePage() {
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              <span>Ideal Move-In</span>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('Move-in text clicked, current state:', activeInfoTooltip);
+                  setActiveInfoTooltip(activeInfoTooltip === 'moveIn' ? null : 'moveIn');
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                Ideal Move-In
+              </span>
               <svg
                 ref={moveInInfoRef}
                 onClick={(e) => {
@@ -1597,7 +1606,15 @@ export default function ViewSplitLeasePage() {
               lineHeight: '1.5',
               fontWeight: '500'
             }}>
-              Strict (no negotiation on exact move in)
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveInfoTooltip(activeInfoTooltip === 'flexibility' ? null : 'flexibility');
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                Strict (no negotiation on exact move in)
+              </span>
               <svg
                 ref={flexibilityInfoRef}
                 onClick={(e) => {
@@ -1657,7 +1674,16 @@ export default function ViewSplitLeasePage() {
               textTransform: 'uppercase',
               letterSpacing: '0.5px'
             }}>
-              <span>Reservation Span</span>
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  console.log('Reservation span text clicked, current state:', activeInfoTooltip);
+                  setActiveInfoTooltip(activeInfoTooltip === 'reservationSpan' ? null : 'reservationSpan');
+                }}
+                style={{ cursor: 'pointer' }}
+              >
+                Reservation Span
+              </span>
               <svg
                 ref={reservationSpanInfoRef}
                 onClick={(e) => {
