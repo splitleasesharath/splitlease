@@ -530,6 +530,13 @@ export default function Header({ autoShowLogin = false }) {
                 aria-label="User menu"
               >
                 <a
+                  href={`/account-profile/${currentUser.userId}`}
+                  className="dropdown-item"
+                  role="menuitem"
+                >
+                  <span className="dropdown-title">My Profile</span>
+                </a>
+                <a
                   href="#"
                   className="dropdown-item"
                   role="menuitem"
