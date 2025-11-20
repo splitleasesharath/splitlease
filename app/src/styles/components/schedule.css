@@ -429,8 +429,6 @@
 }
 
 .lottie-card-v11 .btn-primary:hover {
-    background: #5B5FCF;
-    color: white;
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(91, 95, 207, 0.3);
 }
