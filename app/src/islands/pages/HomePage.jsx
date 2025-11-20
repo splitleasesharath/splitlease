@@ -201,9 +201,9 @@ function InvertedScheduleCards() {
                   style={{ width: '100%', maxWidth: '240px', height: '160px' }}
                   loop
                 ></lottie-player>
-                <div className="lottie-progress-bar">
-                  <div className="lottie-progress-line"></div>
-                </div>
+              </div>
+              <div className="lottie-progress-bar">
+                <div className="lottie-progress-line"></div>
               </div>
             </div>
             <div className="content-section">
