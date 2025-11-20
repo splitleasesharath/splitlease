@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Split Lease - DEV VERSION - Ongoing Rentals for Repeat Stays</title>
+  <meta name="description" content="Find flexible rentals for repeat stays in NYC">
+  <link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png">
+  <link rel="stylesheet" href="/src/styles/main.css">
+  <style>
+    /* Dev-only overrides for value cards - Variation 16: Ultra-Minimal with Breathing Glow */
+    .value-props {
+      padding: 3rem 2rem;
+    }
+
+    .value-container {
+      gap: 1rem;
+      grid-template-columns: repeat(4, 1fr);
+    }
+
+    @media (max-width: 768px) {
+      .value-container {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .value-card {
+      background: transparent !important;
+      padding: 1.5rem;
+      text-align: center;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: none !important;
+      border-radius: 0 !important;
+      border: none !important;
+    }
+
+    .value-icon {
+      width: 72px;
+      height: 72px;
+      margin: 0 auto 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .value-icon::before {
+      content: '';
+      position: absolute;
+      inset: -20px;
+      border-radius: 50%;
+      background: radial-gradient(circle,
+          rgba(49, 19, 93, 0.4) 0%,
+          rgba(74, 29, 127, 0.2) 40%,
+          transparent 70%);
+      opacity: 0;
+      animation: breathe 3s ease-in-out infinite;
+      animation-play-state: paused;
+      filter: blur(8px);
+      z-index: -1;
+    }
+
+    @keyframes breathe {
+      0%, 100% {
+        transform: scale(0.85);
+        opacity: 0.3;
+      }
+      50% {
+        transform: scale(1.15);
+        opacity: 0.6;
+      }
+    }
+
+    .value-card:hover .value-icon::before {
+      animation-play-state: running;
+    }
+
+    .value-card:hover .value-icon {
+      transform: translateY(-10px) scale(1.05);
+    }
+
+    .value-icon img {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      filter: grayscale(0.4) opacity(0.7);
+      transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .value-card:hover .value-icon img {
+      filter: grayscale(0) opacity(1) drop-shadow(0 6px 16px rgba(49, 19, 93, 0.4));
+    }
+
+    .value-card h3 {
+      font-size: 0.875rem;
+      font-weight: 400;
+      color: #6b7280;
+      margin: 0;
+      line-height: 1.5;
+      transition: all 0.4s ease;
+    }
+
+    .value-card:hover h3 {
+      color: #111827;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+  <div id="home-page"></div>
+
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
