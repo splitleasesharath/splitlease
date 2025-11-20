@@ -425,10 +425,10 @@
 }
 
 .lottie-card-v11 .btn-primary:hover {
-    background: #5B5FCF;
+    background: #3b82f6;
     color: white;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(91, 95, 207, 0.3);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .lottie-card-v11 .status-indicator {
