@@ -20,6 +20,10 @@ export default defineConfig({
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/index.html' + queryString;
           }
+          // Handle index-dev.html
+          else if (url.startsWith('/index-dev.html')) {
+            req.url = '/public/index-dev.html' + (url.substring('/index-dev.html'.length) || '');
+          }
           // Handle guest-proposals (no ID) - direct access to /guest-proposals
           else if (url === '/guest-proposals' || url.startsWith('/guest-proposals?')) {
             const queryStart = url.indexOf('?');
