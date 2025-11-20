@@ -343,7 +343,56 @@ function ListingsPreview({ selectedDays = [] }) {
               ></div>
               <div className="listing-details">
                 <h3>{listing.title}</h3>
-                <p>{listing.description}</p>
+                <div className="listing-meta">
+                  {listing.description.split(' - ').map((item, idx) => {
+                    const trimmed = item.trim();
+                    let icon = null;
+
+                    // Determine icon based on content
+                    if (trimmed.toLowerCase().includes('bedroom') || trimmed.toLowerCase() === 'studio') {
+                      icon = (
+                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                      );
+                    } else if (trimmed.toLowerCase().includes('bed')) {
+                      icon = (
+                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M2 4v16"></path>
+                          <path d="M2 8h18a2 2 0 0 1 2 2v10"></path>
+                          <path d="M2 17h20"></path>
+                          <path d="M6 8V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"></path>
+                        </svg>
+                      );
+                    } else if (trimmed.toLowerCase().includes('bathroom')) {
+                      icon = (
+                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"></path>
+                          <line x1="10" y1="5" x2="8" y2="7"></line>
+                          <line x1="2" y1="12" x2="22" y2="12"></line>
+                          <line x1="7" y1="19" x2="7" y2="22"></line>
+                          <line x1="17" y1="19" x2="17" y2="22"></line>
+                        </svg>
+                      );
+                    } else if (trimmed.toLowerCase().includes('storage')) {
+                      icon = (
+                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                      );
+                    }
+
+                    return icon ? (
+                      <span key={idx} className="meta-item">
+                        {icon}
+                        <span>{trimmed}</span>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
               </div>
             </div>
           ))}
