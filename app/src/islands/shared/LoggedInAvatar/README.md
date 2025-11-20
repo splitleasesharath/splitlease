@@ -17,8 +17,11 @@ A fully-featured React dropdown menu component for authenticated users in the Sp
 
 The component is already available in the shared islands directory:
 ```
-app/src/islands/shared/LoggedInAvatar.jsx
-app/src/islands/shared/LoggedInAvatar.css
+app/src/islands/shared/LoggedInAvatar/
+├── LoggedInAvatar.jsx    # Main component
+├── LoggedInAvatar.css    # Styles
+├── README.md             # This file
+└── index.js              # Export file
 ```
 
 ## Usage
