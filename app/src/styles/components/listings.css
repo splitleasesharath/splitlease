@@ -62,7 +62,7 @@
 }
 
 .home-page .listing-details {
-    padding: 1.25rem 1rem;
+    padding: 1.25rem 1rem 1.5rem 1rem;
 }
 
 .home-page .listing-details h3 {
@@ -75,7 +75,7 @@
 .home-page .listing-details p {
     color: var(--text-gray, #6b7280);
     font-size: 0.9rem;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
 .home-page .show-more-btn {
