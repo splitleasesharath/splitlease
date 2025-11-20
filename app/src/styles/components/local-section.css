@@ -65,14 +65,18 @@
     font-family: var(--font-inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
     text-decoration: none;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 4px 12px rgba(45, 27, 78, 0.3);
 }
 
 .local-primary-button:hover {
-    background: #3d2861;
+    background: #23083D;
     transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(45, 27, 78, 0.4);
+    box-shadow: 0 -2px 6px rgba(255, 255, 255, 0.06), 0 4px 12px rgba(49, 19, 93, 0.18);
+}
+
+.local-primary-button:active {
+    transform: translateY(0);
 }
 
 .local-secondary-button {
@@ -89,12 +93,12 @@
     font-family: var(--font-inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
     text-decoration: none;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .local-secondary-button:hover {
-    background: #f9fafb;
-    border-color: #d1d5db;
+    background: #ECE8F7;
+    border-color: #23083D;
     color: #2d1b4e;
 }
 
