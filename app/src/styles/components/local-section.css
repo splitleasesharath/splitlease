@@ -55,7 +55,7 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    background: #6366f1;
+    background: #2d1b4e;
     color: white;
     padding: 16px 32px;
     border: none;
@@ -66,13 +66,13 @@
     text-decoration: none;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 4px 12px rgba(45, 27, 78, 0.3);
 }
 
 .local-primary-button:hover {
-    background: #5558e3;
+    background: #3d2861;
     transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(99, 102, 241, 0.5);
+    box-shadow: 0 6px 16px rgba(45, 27, 78, 0.4);
 }
 
 .local-secondary-button {
@@ -80,9 +80,9 @@
     align-items: center;
     gap: 10px;
     background: white;
-    color: #6366f1;
+    color: #2d1b4e;
     padding: 16px 32px;
-    border: 2px solid white;
+    border: 2px solid #e5e7eb;
     border-radius: 12px;
     font-size: 0.875rem;
     font-weight: 700;
@@ -93,9 +93,9 @@
 }
 
 .local-secondary-button:hover {
-    background: transparent;
-    border-color: white;
-    color: white;
+    background: #f9fafb;
+    border-color: #d1d5db;
+    color: #2d1b4e;
 }
 
 .local-right-section {

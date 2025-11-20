@@ -254,7 +254,7 @@ function LocalSection({ onExploreRentals }) {
           <div className="local-left-section">
             <h1>Choose when to be a local</h1>
             <p className="local-description">
-              Experience the freedom of flexible living. Move seamlessly between neighborhoods, enjoy fully-furnished spaces, and embrace a lifestyle without compromise.
+              Enjoy a second-home lifestyle on your schedule. Stay in the city on the days you need, relax in fully-set spaces, and experience NYC living with long-term comfort and total flexibility.
             </p>
             <div className="local-cta-group">
               <button className="local-primary-button" onClick={onExploreRentals}>
