@@ -1274,6 +1274,12 @@ export default function SearchPage() {
   };
 
   const handleOpenInfoModal = (listing, triggerRef) => {
+    console.log('[SearchPageTest] Opening info modal for listing:', {
+      listingId: listing?.id,
+      listingTitle: listing?.title,
+      hasListing: !!listing,
+      selectedDaysLength: selectedDays?.length
+    });
     setSelectedListing(listing);
     setInfoModalTriggerRef(triggerRef);
     setIsInfoModalOpen(true);

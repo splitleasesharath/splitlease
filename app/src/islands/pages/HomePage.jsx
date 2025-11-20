@@ -125,6 +125,44 @@ function InvertedScheduleCards() {
     window.location.href = searchUrl;
   };
 
+  const handleMouseEnter = (e) => {
+    const card = e.currentTarget;
+    const player = card.querySelector('lottie-player');
+    const progressLine = card.querySelector('.lottie-progress-line');
+
+    if (player && progressLine) {
+      player.play();
+
+      // Animate progress line
+      const updateProgress = () => {
+        if (player.getLottie) {
+          const lottieInstance = player.getLottie();
+          if (lottieInstance) {
+            const progress = (lottieInstance.currentFrame / lottieInstance.totalFrames) * 100;
+            progressLine.style.width = `${progress}%`;
+          }
+        }
+        if (!player.paused) {
+          requestAnimationFrame(updateProgress);
+        }
+      };
+      updateProgress();
+    }
+  };
+
+  const handleMouseLeave = (e) => {
+    const card = e.currentTarget;
+    const player = card.querySelector('lottie-player');
+    const progressLine = card.querySelector('.lottie-progress-line');
+
+    if (player) {
+      player.stop();
+    }
+    if (progressLine) {
+      progressLine.style.width = '0%';
+    }
+  };
+
   // Load Lottie player script
   useEffect(() => {
     const script = document.createElement('script');
@@ -148,7 +186,12 @@ function InvertedScheduleCards() {
 
       <div className="inverted-schedule-grid">
         {schedules.map((schedule) => (
-          <div key={schedule.id} className="lottie-card-v11">
+          <div
+            key={schedule.id}
+            className="lottie-card-v11"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
             <div className="visual-section">
               <div className="lottie-animation">
                 <lottie-player
@@ -157,8 +200,10 @@ function InvertedScheduleCards() {
                   speed="1"
                   style={{ width: '100%', maxWidth: '240px', height: '160px' }}
                   loop
-                  autoplay
                 ></lottie-player>
+              </div>
+              <div className="lottie-progress-bar">
+                <div className="lottie-progress-line"></div>
               </div>
             </div>
             <div className="content-section">
@@ -232,20 +277,23 @@ function ListingsPreview({ selectedDays = [] }) {
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1586448035769x259434561490871740/255489_1_6782895-650-570.jpg',
       title: 'One Platt | Studio',
+      location: 'Financial District, Manhattan',
       description: 'Studio - 1 bed - 1 bathroom - Free Storage',
     },
     {
       id: PROPERTY_IDS.PIED_A_TERRE,
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102430270x309647360933492400/pied4.webp',
-      title: 'Pied-à-terre , Perfect 2 BR...',
+      title: 'Perfect 2 BR Apartment',
+      location: 'Upper East Side, Manhattan',
       description: '2 bedrooms - 2 bed(s) - 1 bathroom - Free Storage',
     },
     {
       id: PROPERTY_IDS.FURNISHED_1BR,
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102537155x544568166750526000/harlem4.webp',
-      title: 'Fully furnished 1bdr apartment in...',
+      title: 'Fully furnished 1bdr apartment',
+      location: 'Harlem, Manhattan',
       description: '1 bedroom - 1 bed - 1 bathroom - Free Storage',
     },
     {
@@ -253,6 +301,7 @@ function ListingsPreview({ selectedDays = [] }) {
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1701198008563x119014198947512200/julia4.jpg',
       title: 'Furnished Studio Apt for Rent',
+      location: 'Hell\'s Kitchen, Manhattan',
       description: 'Studio - 1 bed - 1 bathroom - Free Storage',
     },
   ];
@@ -297,8 +346,64 @@ function ListingsPreview({ selectedDays = [] }) {
                 }}
               ></div>
               <div className="listing-details">
+                <div className="listing-location">
+                  <svg className="location-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <span>{listing.location}</span>
+                </div>
                 <h3>{listing.title}</h3>
-                <p>{listing.description}</p>
+                <div className="listing-meta">
+                  {listing.description.split(' - ').map((item, idx) => {
+                    const trimmed = item.trim();
+                    let icon = null;
+
+                    // Determine icon based on content
+                    if (trimmed.toLowerCase().includes('bedroom') || trimmed.toLowerCase() === 'studio') {
+                      icon = (
+                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                          <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
+                      );
+                    } else if (trimmed.toLowerCase().includes('bed')) {
+                      icon = (
+                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M2 4v16"></path>
+                          <path d="M2 8h18a2 2 0 0 1 2 2v10"></path>
+                          <path d="M2 17h20"></path>
+                          <path d="M6 8V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"></path>
+                        </svg>
+                      );
+                    } else if (trimmed.toLowerCase().includes('bathroom')) {
+                      icon = (
+                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"></path>
+                          <line x1="10" y1="5" x2="8" y2="7"></line>
+                          <line x1="2" y1="12" x2="22" y2="12"></line>
+                          <line x1="7" y1="19" x2="7" y2="22"></line>
+                          <line x1="17" y1="19" x2="17" y2="22"></line>
+                        </svg>
+                      );
+                    } else if (trimmed.toLowerCase().includes('storage')) {
+                      icon = (
+                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                        </svg>
+                      );
+                    }
+
+                    return icon ? (
+                      <span key={idx} className="meta-item">
+                        {icon}
+                        <span>{trimmed}</span>
+                      </span>
+                    ) : null;
+                  })}
+                </div>
               </div>
             </div>
           ))}
