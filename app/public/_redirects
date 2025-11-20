@@ -9,6 +9,10 @@
 # Legacy support for old URL structure (redirect to new clean URLs)
 /view-split-lease.html/:id  /view-split-lease/:id  301
 
+# Handle account-profile page with clean URL structure
+# Maps /account-profile/[user-id] to account-profile.html
+/account-profile/*  /account-profile.html  200
+
 # Handle guest-proposals page
 /guest-proposals.html  /guest-proposals.html  200
 
