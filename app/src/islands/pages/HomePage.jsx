@@ -277,6 +277,7 @@ function ListingsPreview({ selectedDays = [] }) {
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1586448035769x259434561490871740/255489_1_6782895-650-570.jpg',
       title: 'One Platt | Studio',
+      location: 'Financial District, Manhattan',
       description: 'Studio - 1 bed - 1 bathroom - Free Storage',
     },
     {
@@ -284,6 +285,7 @@ function ListingsPreview({ selectedDays = [] }) {
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102430270x309647360933492400/pied4.webp',
       title: 'Pied-à-terre , Perfect 2 BR...',
+      location: 'Upper East Side, Manhattan',
       description: '2 bedrooms - 2 bed(s) - 1 bathroom - Free Storage',
     },
     {
@@ -291,6 +293,7 @@ function ListingsPreview({ selectedDays = [] }) {
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102537155x544568166750526000/harlem4.webp',
       title: 'Fully furnished 1bdr apartment in...',
+      location: 'Harlem, Manhattan',
       description: '1 bedroom - 1 bed - 1 bathroom - Free Storage',
     },
     {
@@ -298,6 +301,7 @@ function ListingsPreview({ selectedDays = [] }) {
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1701198008563x119014198947512200/julia4.jpg',
       title: 'Furnished Studio Apt for Rent',
+      location: 'Hell\'s Kitchen, Manhattan',
       description: 'Studio - 1 bed - 1 bathroom - Free Storage',
     },
   ];
@@ -342,6 +346,13 @@ function ListingsPreview({ selectedDays = [] }) {
                 }}
               ></div>
               <div className="listing-details">
+                <div className="listing-location">
+                  <svg className="location-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  <span>{listing.location}</span>
+                </div>
                 <h3>{listing.title}</h3>
                 <div className="listing-meta">
                   {listing.description.split(' - ').map((item, idx) => {
