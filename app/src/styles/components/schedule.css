@@ -383,7 +383,7 @@
 
 .lottie-card-v11 .content-section {
     background: linear-gradient(180deg, #F0F0F5 0%, #F8F7FA 100%);
-    padding: 0.5rem 2rem 0.5rem 2rem;
+    padding: 0.5rem 1.5rem;
     display: flex;
     flex-direction: column;
 }
@@ -406,11 +406,10 @@
 .lottie-card-v11 .card-footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 1rem;
-    padding-top: 0.25rem;
-    border-top: 1px solid var(--border-color, #E0E0E8);
-    margin-top: auto;
+    padding: 0;
+    border-top: none;
 }
 
 .lottie-card-v11 .btn-primary {
