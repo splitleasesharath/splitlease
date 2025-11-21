@@ -701,226 +701,29 @@ export default function ViewSplitLeasePage() {
           {/* Photo Gallery - Magazine Editorial Style */}
           <section style={{ marginBottom: '2rem' }}>
             {listing.photos && listing.photos.length > 0 ? (
-              (() => {
-                const photoCount = listing.photos.length;
-                let gridStyle = {};
-
-                // Adaptive grid based on photo count
-                if (photoCount === 1) {
-                  // Single large image
-                  gridStyle = {
-                    display: 'grid',
-                    gridTemplateColumns: '1fr',
-                    gridTemplateRows: '400px',
-                    gap: '10px'
-                  };
-                } else if (photoCount === 2) {
-                  // Two equal images side by side
-                  gridStyle = {
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gridTemplateRows: '400px',
-                    gap: '10px'
-                  };
-                } else if (photoCount === 3) {
-                  // One large left, two stacked right
-                  gridStyle = {
-                    display: 'grid',
-                    gridTemplateColumns: '2fr 1fr',
-                    gridTemplateRows: '200px 200px',
-                    gap: '10px'
-                  };
-                } else if (photoCount === 4) {
-                  // 2x2 grid
-                  gridStyle = {
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr',
-                    gridTemplateRows: '200px 200px',
-                    gap: '10px'
-                  };
-                } else {
-                  // 5+ photos: Classic layout with large left image
-                  gridStyle = {
-                    display: 'grid',
-                    gridTemplateColumns: '2fr 1fr 1fr',
-                    gridTemplateRows: '200px 200px',
-                    gap: '10px'
-                  };
-                }
-
-                return (
-              <div style={gridStyle}>
-                {/* Render photos based on count */}
-                {photoCount === 1 && (
-                  // Single image
-                  <div
-                    onClick={() => handlePhotoClick(0)}
-                    style={{
-                      cursor: 'pointer',
-                      borderRadius: '12px',
-                      overflow: 'hidden',
-                      position: 'relative'
-                    }}
-                  >
-                    <img
-                      src={listing.photos[0].Photo}
-                      alt={`${listing.Name} - main`}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        display: 'block'
-                      }}
-                    />
-                  </div>
-                )}
-
-                {photoCount === 2 && (
-                  // Two images side by side
-                  <>
-                    {listing.photos.map((photo, idx) => (
-                      <div
-                        key={photo._id}
-                        onClick={() => handlePhotoClick(idx)}
-                        style={{
-                          cursor: 'pointer',
-                          borderRadius: '12px',
-                          overflow: 'hidden',
-                          position: 'relative'
-                        }}
-                      >
-                        <img
-                          src={photo.Photo}
-                          alt={`${listing.Name} - ${idx + 1}`}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            display: 'block'
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {photoCount === 3 && (
-                  // One large left, two stacked right
-                  <>
-                    <div
-                      onClick={() => handlePhotoClick(0)}
-                      style={{
-                        gridRow: '1 / 3',
-                        cursor: 'pointer',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        position: 'relative'
-                      }}
-                    >
-                      <img
-                        src={listing.photos[0].Photo}
-                        alt={`${listing.Name} - main`}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          display: 'block'
-                        }}
-                      />
-                    </div>
-                    {listing.photos.slice(1, 3).map((photo, idx) => (
-                      <div
-                        key={photo._id}
-                        onClick={() => handlePhotoClick(idx + 1)}
-                        style={{
-                          cursor: 'pointer',
-                          borderRadius: '12px',
-                          overflow: 'hidden',
-                          position: 'relative'
-                        }}
-                      >
-                        <img
-                          src={photo['Photo (thumbnail)'] || photo.Photo}
-                          alt={`${listing.Name} - ${idx + 2}`}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            display: 'block'
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {photoCount === 4 && (
-                  // 2x2 grid
-                  <>
-                    {listing.photos.map((photo, idx) => (
-                      <div
-                        key={photo._id}
-                        onClick={() => handlePhotoClick(idx)}
-                        style={{
-                          cursor: 'pointer',
-                          borderRadius: '12px',
-                          overflow: 'hidden',
-                          position: 'relative'
-                        }}
-                      >
-                        <img
-                          src={photo['Photo (thumbnail)'] || photo.Photo}
-                          alt={`${listing.Name} - ${idx + 1}`}
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover',
-                            display: 'block'
-                          }}
-                        />
-                      </div>
-                    ))}
-                  </>
-                )}
-
-                {photoCount >= 5 && (
-                  // 5+ photos: Large image on left, 4 smaller on right
-                  <>
-                    <div
-                      onClick={() => handlePhotoClick(0)}
-                      style={{
-                        gridRow: '1 / 3',
-                        cursor: 'pointer',
-                        borderRadius: '12px',
-                        overflow: 'hidden',
-                        position: 'relative'
-                      }}
-                    >
-                      <img
-                        src={listing.photos[0].Photo}
-                        alt={`${listing.Name} - main`}
-                        style={{
-                          width: '100%',
-                          height: '100%',
-                          objectFit: 'cover',
-                          display: 'block'
-                        }}
-                      />
-                    </div>
-                    {listing.photos.slice(1, 5).map((photo, idx) => (
+              <div style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '10px',
+                height: '410px'
+              }}>
+                {listing.photos.slice(0, 5).map((photo, idx) => (
                   <div
                     key={photo._id}
-                    onClick={() => handlePhotoClick(idx + 1)}
+                    onClick={() => handlePhotoClick(idx)}
                     style={{
                       cursor: 'pointer',
                       borderRadius: '12px',
                       overflow: 'hidden',
-                      position: 'relative'
+                      position: 'relative',
+                      flex: idx === 0 && listing.photos.length >= 3 ? '2 1 60%' : '1 1 calc(50% - 5px)',
+                      minHeight: listing.photos.length <= 2 ? '400px' : '200px',
+                      maxHeight: listing.photos.length <= 2 ? '400px' : '200px'
                     }}
                   >
                     <img
                       src={photo['Photo (thumbnail)'] || photo.Photo}
-                      alt={`${listing.Name} - ${idx + 2}`}
+                      alt={`${listing.Name} - ${idx + 1}`}
                       style={{
                         width: '100%',
                         height: '100%',
@@ -928,13 +731,9 @@ export default function ViewSplitLeasePage() {
                         display: 'block'
                       }}
                     />
-                    {/* Show "Show All Photos" button on the last image if there are more photos */}
-                    {idx === 3 && listing.photos.length > 5 && (
+                    {idx === 4 && listing.photos.length > 5 && (
                       <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePhotoClick(0);
-                        }}
+                        onClick={(e) => { e.stopPropagation(); handlePhotoClick(0); }}
                         style={{
                           position: 'absolute',
                           bottom: '12px',
@@ -956,24 +755,6 @@ export default function ViewSplitLeasePage() {
                         <span>Show All Photos</span>
                       </button>
                     )}
-                  </div>
-                ))}
-
-                {/* Fill empty slots if less than 5 photos */}
-                {listing.photos.length < 5 && Array.from({ length: 5 - listing.photos.length }).map((_, idx) => (
-                  <div
-                    key={`empty-${idx}`}
-                    style={{
-                      borderRadius: '12px',
-                      background: COLORS.BG_LIGHT,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color: COLORS.TEXT_LIGHT,
-                      fontSize: '0.875rem'
-                    }}
-                  >
-                    {/* Empty slot */}
                   </div>
                 ))}
               </div>
