@@ -7,48 +7,61 @@
 
 /* Avatar Button */
 .avatar-button {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   border: none;
   cursor: pointer;
   padding: 0;
   background: none;
-  overflow: hidden;
-  transition: transform 0.2s ease;
+  transition: opacity 0.2s ease;
 }
 
 .avatar-button:hover {
-  transform: scale(1.05);
+  opacity: 0.9;
 }
 
 .avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #5B21B6;
+  flex-shrink: 0;
 }
 
 .avatar-placeholder {
-  width: 100%;
-  height: 100%;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #5B21B6;
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 18px;
   font-weight: 600;
-  border-radius: 50%;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-name-wrapper {
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dropdown-arrow {
+  transition: transform 0.2s ease;
 }
 
 /* Dropdown Menu Container */
 .dropdown-menu {
   position: absolute;
-  top: 51px;
+  top: calc(100% + 8px);
   right: 0;
-  transform: translateX(200px);
   width: 300px;
   max-height: 600px;
   background-color: #FFFFFF;
@@ -63,11 +76,11 @@
 @keyframes dropdownFadeIn {
   from {
     opacity: 0;
-    transform: translateX(200px) translateY(-10px);
+    transform: translateY(-10px);
   }
   to {
     opacity: 1;
-    transform: translateX(200px) translateY(0);
+    transform: translateY(0);
   }
 }
 
@@ -165,7 +178,6 @@
     top: 60px;
     right: 10px;
     left: auto;
-    transform: translateX(0);
     width: calc(100vw - 20px);
     max-width: 300px;
   }
@@ -179,6 +191,11 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* Hide user name on mobile, show only avatar */
+  .user-name-wrapper {
+    display: none;
   }
 }
 

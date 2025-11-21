@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL, AUTH_STORAGE_KEYS } from '../../lib/constants.js';
+import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -301,8 +302,8 @@ export default function Header({ autoShowLogin = false }) {
 
         {/* Center Navigation with Dropdowns */}
         <div className={`nav-center ${mobileMenuActive ? 'mobile-active' : ''}`}>
-          {/* Host with Us Dropdown - Only show if not logged in OR if logged in as Host */}
-          {(!currentUser || isHost()) && (
+          {/* Host with Us Dropdown - Only show if not logged in OR if logged in as Host/Trial Host/Split Lease */}
+          {(!currentUser || !userType || isHost()) && (
           <div className="nav-dropdown">
             <a
               href="#host"
@@ -389,8 +390,8 @@ export default function Header({ autoShowLogin = false }) {
           </div>
           )}
 
-          {/* Stay with Us Dropdown - Only show if not logged in OR if logged in as Guest */}
-          {(!currentUser || isGuest()) && (
+          {/* Stay with Us Dropdown - Only show if not logged in OR if logged in as Guest/Split Lease */}
+          {(!currentUser || !userType || isGuest()) && (
           <div className="nav-dropdown">
             <a
               href="#stay"
@@ -480,75 +481,33 @@ export default function Header({ autoShowLogin = false }) {
           </a>
 
           {currentUser && currentUser.firstName ? (
-            /* User is logged in - show dropdown with avatar and name */
-            <div className="nav-dropdown user-dropdown">
-              <a
-                href="#user"
-                className="nav-link dropdown-trigger user-trigger"
-                role="button"
-                aria-expanded={activeDropdown === 'user'}
-                aria-haspopup="true"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown('user');
-                }}
-                onKeyDown={(e) => handleDropdownKeyDown(e, 'user')}
-              >
-                {currentUser.profilePhoto ? (
-                  <img
-                    src={currentUser.profilePhoto.startsWith('//') ? `https:${currentUser.profilePhoto}` : currentUser.profilePhoto}
-                    alt={currentUser.firstName}
-                    className="user-avatar"
-                  />
-                ) : (
-                  <div className="user-avatar-placeholder">
-                    {currentUser.firstName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="user-name-wrapper">
-                  {currentUser.firstName}
-                  <svg
-                    className="dropdown-arrow"
-                    width="12"
-                    height="8"
-                    viewBox="0 0 12 8"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M1 1.5L6 6.5L11 1.5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </span>
-              </a>
-              <div
-                className={`dropdown-menu ${activeDropdown === 'user' ? 'active' : ''}`}
-                role="menu"
-                aria-label="User menu"
-              >
-                <a
-                  href="/account-profile"
-                  className="dropdown-item"
-                  role="menuitem"
-                >
-                  <span className="dropdown-title">My Profile</span>
-                </a>
-                <a
-                  href="#"
-                  className="dropdown-item"
-                  role="menuitem"
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    await handleLogout();
-                  }}
-                >
-                  <span className="dropdown-title">Log Out</span>
-                </a>
-              </div>
-            </div>
+            /* User is logged in - show LoggedInAvatar component */
+            <LoggedInAvatar
+              user={{
+                id: currentUser.id || '',
+                name: `${currentUser.firstName} ${currentUser.lastName || ''}`.trim(),
+                email: currentUser.email || '',
+                userType: userType === 'A Host (I have a space available to rent)' ? 'HOST'
+                  : userType === 'Trial Host' ? 'TRIAL_HOST'
+                  : userType === 'A Guest (I would like to rent a space)' ? 'GUEST'
+                  : 'HOST',
+                avatarUrl: currentUser.profilePhoto?.startsWith('//')
+                  ? `https:${currentUser.profilePhoto}`
+                  : currentUser.profilePhoto,
+                proposalsCount: currentUser.proposalsCount || 0,
+                listingsCount: currentUser.listingsCount || 0,
+                virtualMeetingsCount: currentUser.virtualMeetingsCount || 0,
+                houseManualsCount: currentUser.houseManualsCount || 0,
+                leasesCount: currentUser.leasesCount || 0,
+                favoritesCount: currentUser.favoritesCount || 0,
+                unreadMessagesCount: currentUser.unreadMessagesCount || 0,
+              }}
+              currentPath={window.location.pathname}
+              onNavigate={(path) => {
+                window.location.href = path;
+              }}
+              onLogout={handleLogout}
+            />
           ) : (
             /* User is not logged in - show auth buttons */
             <>

@@ -190,6 +190,9 @@ export default function LoggedInAvatar({
 
   const menuItems = getMenuItems();
 
+  // Extract first name from full name
+  const firstName = user.name.split(' ')[0];
+
   return (
     <div className="logged-in-avatar" ref={dropdownRef}>
       <button
@@ -205,6 +208,24 @@ export default function LoggedInAvatar({
             {user.name.charAt(0).toUpperCase()}
           </div>
         )}
+        <span className="user-name-wrapper">
+          {firstName}
+          <svg
+            className="dropdown-arrow"
+            width="12"
+            height="8"
+            viewBox="0 0 12 8"
+            fill="none"
+            aria-hidden="true"
+          >
+            <path
+              d="M1 1.5L6 6.5L11 1.5"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </span>
       </button>
 
       {isOpen && (
