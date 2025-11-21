@@ -15,8 +15,8 @@
  */
 
 import { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase.js';
-import { showToast } from './Toast.jsx';
+import { supabase } from '../../../lib/supabase.js';
+import { showToast } from '../Toast.jsx';
 
 export default function CreateDuplicateListingModal({
   isVisible,
