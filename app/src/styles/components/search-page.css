@@ -53,11 +53,15 @@
 .inline-filters .filter-group {
   flex: 0 0 auto;
   min-width: 140px;
+  position: relative;
+  padding-top: 0.5rem;
 }
 
 .inline-filters .filter-group.compact {
   flex: 0 0 auto;
   min-width: 140px;
+  position: relative;
+  padding-top: 0.5rem;
 }
 
 /* Schedule Selector Group - No overrides needed, component handles its own styling */
@@ -66,27 +70,35 @@
   min-width: auto;
   display: flex;
   align-items: center;
+  padding-top: 0;
 }
 
 .inline-filters .filter-group label {
-  display: block;
-  font-size: 0.75rem;
+  position: absolute;
+  top: 0;
+  left: 0.75rem;
+  background: white;
+  padding: 0 0.375rem;
+  font-size: 0.675rem;
   font-weight: 600;
   color: #6b7280;
-  margin-bottom: 0.375rem;
   text-transform: uppercase;
   letter-spacing: 0.025em;
+  z-index: 1;
+  pointer-events: none;
 }
 
 .inline-filters .filter-select {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.75rem;
+  padding-top: 0.65rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 0.875rem;
   background: white;
   cursor: pointer;
   transition: border-color 0.2s;
+  min-height: 44px;
 }
 
 .inline-filters .filter-select:hover {
@@ -116,13 +128,15 @@
 
 .inline-filters .neighborhood-search {
   width: 100%;
-  padding: 0.5rem 0.75rem;
+  padding: 0.55rem 0.75rem;
+  padding-top: 0.65rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 0.875rem;
   background: white;
   cursor: text;
   transition: border-color 0.2s;
+  min-height: 44px;
 }
 
 .inline-filters .neighborhood-search:hover {
@@ -716,26 +730,33 @@
     padding-top: 4rem;
   }
 
-  /* Improve filter group labels on mobile */
+  /* Improve filter group labels on mobile - maintain floating label design */
   .inline-filters .filter-group label {
-    font-size: 0.75rem;
+    position: absolute;
+    top: 0;
+    left: 1rem;
+    background: white;
+    padding: 0 0.375rem;
+    font-size: 0.675rem;
     font-weight: 600;
     color: #6b7280;
-    margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.025em;
+    z-index: 1;
+    pointer-events: none;
   }
 
   /* Improve select boxes on mobile */
   .inline-filters .filter-select {
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: 0.825rem 1rem;
+    padding-top: 0.95rem;
     font-size: 1rem;
     border: 1px solid #d1d5db;
     border-radius: 8px;
     background: white;
     height: auto;
-    min-height: 44px;
+    min-height: 48px;
   }
 
   /* Neighborhood list improvements on mobile - COLLAPSIBLE */
@@ -756,12 +777,13 @@
   /* Improve neighborhood search input on mobile */
   .inline-filters .neighborhood-search {
     width: 100%;
-    padding: 0.75rem 1rem;
+    padding: 0.825rem 1rem;
+    padding-top: 0.95rem;
     font-size: 1rem;
     border: 1px solid #d1d5db;
     border-radius: 8px;
     background: white;
-    min-height: 44px;
+    min-height: 48px;
     cursor: text;
     transition: border-color 0.2s;
   }
