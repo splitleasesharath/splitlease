@@ -58,21 +58,45 @@ function MyComponent() {
 
 ## Implementation Notes
 
-- Currently uses simulated upload API - replace with actual Supabase storage integration
+- Integrated with Bubble API workflow for photo uploads
 - File validation happens on client side before upload
 - Preview images are generated using FileReader API
 - Modal overlays use z-index 1000 and 2000 to ensure proper layering
+- Uses FormData to send multiple images in a single request
 
 ## API Integration
 
-To integrate with Supabase storage, replace the simulated upload in `handleUpload()` with:
+### Bubble Workflow Setup
 
-```javascript
-// Upload to Supabase Storage
-const { data, error } = await supabase.storage
-  .from('listing-photos')
-  .upload(`${listingId}/${Date.now()}-${fileData.file.name}`, fileData.file);
+The component calls the Bubble API workflow: `create-listing-photos-bulk`
+
+**Endpoint:** `https://app.split.lease/api/1.1/wf/create-listing-photos-bulk`
+
+**Required Bubble Workflow Parameters:**
+- `listing_id` (text) - The ID of the listing
+- `photos` (list of images) - Array of image files
+
+**Expected Bubble Workflow Steps:**
+1. Get Listing by `listing_id`
+2. Loop through `photos` list
+3. For each photo, create a "Listing - Photo" entry with:
+   - Photo = Current photo
+   - Listing = Listing from step 1
+   - Sort Order = Current index
+   - Any other required fields
+
+**Response Format:**
+```json
+{
+  "status": "success",
+  "count": 5,
+  "message": "Photos uploaded successfully"
+}
 ```
+
+### Environment Variables
+
+Requires `VITE_BUBBLE_API_KEY` to be set in `.env` file (already configured).
 
 ## Repository
 

@@ -65,18 +65,37 @@ const SubmitListingPhotos = ({ listingId, onClose, onSuccess }) => {
     setIsUploading(true)
 
     try {
-      // Simulate upload - replace with actual API call
+      const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY
+      const UPLOAD_ENDPOINT = 'https://app.split.lease/api/1.1/wf/create-listing-photos-bulk'
+
+      if (!BUBBLE_API_KEY) {
+        throw new Error('API key not configured')
+      }
+
       const formData = new FormData()
       formData.append('listing_id', listingId)
 
       uploadedFiles.forEach((fileData, index) => {
-        formData.append(`file${index}`, fileData.file)
+        formData.append(`photos`, fileData.file)
       })
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      console.log('Uploading', uploadedFiles.length, 'files to Bubble...')
 
-      console.log('Uploading files:', uploadedFiles)
+      const response = await fetch(UPLOAD_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${BUBBLE_API_KEY}`
+        },
+        body: formData
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Upload failed')
+      }
+
+      console.log('Upload successful:', data)
       alert(`${uploadedFiles.length} file(s) uploaded successfully!`)
 
       // Reset state
@@ -90,7 +109,7 @@ const SubmitListingPhotos = ({ listingId, onClose, onSuccess }) => {
       if (onClose) onClose()
     } catch (error) {
       console.error('Upload failed:', error)
-      alert('Failed to upload images')
+      alert(`Failed to upload images: ${error.message}`)
     } finally {
       setIsUploading(false)
     }
