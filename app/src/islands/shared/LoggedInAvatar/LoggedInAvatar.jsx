@@ -40,6 +40,15 @@ export default function LoggedInAvatar({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  // Debug logging
+  useEffect(() => {
+    console.log('🎭 LoggedInAvatar mounted with user:', user);
+  }, []);
+
+  useEffect(() => {
+    console.log('🔄 LoggedInAvatar dropdown state changed:', isOpen);
+  }, [isOpen]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -197,7 +206,10 @@ export default function LoggedInAvatar({
     <div className="logged-in-avatar" ref={dropdownRef}>
       <button
         className="avatar-button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          console.log('👆 Avatar button clicked! Current state:', isOpen, '→ New state:', !isOpen);
+          setIsOpen(!isOpen);
+        }}
         aria-label="Toggle user menu"
         aria-expanded={isOpen}
       >
@@ -230,6 +242,7 @@ export default function LoggedInAvatar({
 
       {isOpen && (
         <div className="dropdown-menu">
+          {console.log('✨ Dropdown menu is rendering! Menu items count:', menuItems.length)}
           <div className="menu-container">
             {menuItems.map((item) => (
               <button
