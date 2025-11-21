@@ -615,6 +615,11 @@
   /* Show mobile filter bar */
   .mobile-filter-bar {
     display: flex;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
   }
 
   /* Hide hamburger menu on mobile */
@@ -622,13 +627,36 @@
     display: none;
   }
 
-  /* Mobile schedule selector - always visible */
+  /* Mobile schedule selector - always visible, fixed below filter bar */
   .mobile-schedule-selector {
     display: block;
     flex-shrink: 0;
     padding: 0.75rem 1rem;
     background: white;
     border-bottom: 1px solid #e5e7eb;
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    z-index: 100;
+  }
+
+  /* Listings column on mobile - adjust for fixed headers */
+  .listings-column {
+    padding-top: 140px; /* Filter bar (60px) + Schedule selector (80px) */
+  }
+
+  /* Listings count - account for fixed headers */
+  .listings-count {
+    position: sticky;
+    top: 140px;
+    z-index: 50;
+    background: #f9fafb;
+  }
+
+  /* Listings content takes remaining space */
+  .listings-content {
+    min-height: calc(100vh - 140px - 50px); /* Full height minus headers and count */
   }
 
   /* Hide inline filters by default on mobile - IMPROVED MOBILE DESIGN */
@@ -1063,21 +1091,9 @@
     font-size: 13px;
   }
 
-  /* Ensure filter bar and schedule selector stay on top when map is visible */
-  .mobile-filter-bar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
+  /* When map is visible, increase z-index to stay above map */
+  body:has(.mobile-map-overlay) .mobile-filter-bar,
+  body:has(.mobile-map-overlay) .mobile-schedule-selector {
     z-index: 2600;
-  }
-
-  .mobile-schedule-selector {
-    position: fixed;
-    top: 60px;
-    left: 0;
-    right: 0;
-    z-index: 2600;
-    background: white;
   }
 }
