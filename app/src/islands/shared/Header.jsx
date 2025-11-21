@@ -33,7 +33,7 @@ export default function Header({ autoShowLogin = false }) {
   useEffect(() => {
     const validateAuth = async () => {
       // Check if token exists first - skip validation if no token
-      const token = getAuthToken();
+      const token = await getAuthToken();
       if (!token) {
         console.log('[Header] No token found - skipping validation');
         setAuthChecked(true);
