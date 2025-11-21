@@ -162,7 +162,8 @@ export default function Header({ autoShowLogin = false }) {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (!e.target.closest('.nav-dropdown')) {
+      // Don't close if clicking inside nav-dropdown or logged-in-avatar
+      if (!e.target.closest('.nav-dropdown') && !e.target.closest('.logged-in-avatar')) {
         setActiveDropdown(null);
       }
     };

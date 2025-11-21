@@ -52,26 +52,26 @@ export default function LoggedInAvatar({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      // Use closest() like the header does - check if click is inside the avatar component
+      if (!event.target.closest('.logged-in-avatar')) {
         console.log('🚫 Clicked outside - closing dropdown');
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      // Add a small delay before attaching the listener to prevent immediate closure
-      const timeoutId = setTimeout(() => {
-        document.addEventListener('mousedown', handleClickOutside);
-      }, 100);
+      // Use click event (not mousedown) and add listener on next tick
+      setTimeout(() => {
+        document.addEventListener('click', handleClickOutside);
+      }, 0);
 
       return () => {
-        clearTimeout(timeoutId);
-        document.removeEventListener('mousedown', handleClickOutside);
+        document.removeEventListener('click', handleClickOutside);
       };
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, [isOpen]);
 
