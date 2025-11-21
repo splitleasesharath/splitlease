@@ -80,6 +80,7 @@ function ScheduleSelectorWrapper() {
       onSelectionChange={handleSelectionChange}
       minDays={2}
       requireContiguous={true}
+      updateUrl={false}
     />
   );
 }
