@@ -94,7 +94,7 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
       setError(null);
 
       // Get authentication token (optional for now during testing)
-      const token = getAuthToken();
+      const token = await getAuthToken();
       console.log('🔑 Auth token present:', !!token);
 
       // Extract user ID from URL path
