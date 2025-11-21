@@ -10,11 +10,14 @@ import { useState, useEffect } from 'react';
 import Header from './islands/shared/Header.jsx';
 import Footer from './islands/shared/Footer.jsx';
 import SearchScheduleSelector from './islands/shared/SearchScheduleSelector.jsx';
+import { getAuthToken } from './lib/auth.js';
 
-// Mount Header island
+// Mount Header island with autoShowLogin if user is not authenticated
 const headerRoot = document.getElementById('header-root');
 if (headerRoot) {
-  createRoot(headerRoot).render(<Header />);
+  const token = getAuthToken();
+  const showLoginModal = !token; // Show login modal if no token
+  createRoot(headerRoot).render(<Header autoShowLogin={showLoginModal} />);
 }
 
 // Mount Footer island
