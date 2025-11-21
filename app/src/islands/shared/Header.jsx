@@ -302,8 +302,8 @@ export default function Header({ autoShowLogin = false }) {
 
         {/* Center Navigation with Dropdowns */}
         <div className={`nav-center ${mobileMenuActive ? 'mobile-active' : ''}`}>
-          {/* Host with Us Dropdown - Only show if not logged in OR if logged in as Host */}
-          {(!currentUser || isHost()) && (
+          {/* Host with Us Dropdown - Only show if not logged in OR if logged in as Host/Trial Host/Split Lease */}
+          {(!currentUser || !userType || isHost()) && (
           <div className="nav-dropdown">
             <a
               href="#host"
@@ -390,8 +390,8 @@ export default function Header({ autoShowLogin = false }) {
           </div>
           )}
 
-          {/* Stay with Us Dropdown - Only show if not logged in OR if logged in as Guest */}
-          {(!currentUser || isGuest()) && (
+          {/* Stay with Us Dropdown - Only show if not logged in OR if logged in as Guest/Split Lease */}
+          {(!currentUser || !userType || isGuest()) && (
           <div className="nav-dropdown">
             <a
               href="#stay"
