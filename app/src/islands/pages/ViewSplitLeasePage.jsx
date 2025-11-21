@@ -976,8 +976,9 @@ export default function ViewSplitLeasePage() {
                     {/* Empty slot */}
                   </div>
                 ))}
-              </>
-            ) : (
+              </div>
+            );
+          })() : (
               <div style={{
                 width: '100%',
                 height: '400px',
