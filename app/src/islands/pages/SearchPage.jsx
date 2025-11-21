@@ -1381,7 +1381,7 @@ export default function SearchPage() {
           {/* Mobile Filter Bar - Sticky at top on mobile */}
           <MobileFilterBar
             onFilterClick={() => setFilterPanelActive(!filterPanelActive)}
-            onMapClick={() => setMobileMapVisible(!mobileMapVisible)}
+            onMapClick={() => setMobileMapVisible(true)}
             isMapVisible={mobileMapVisible}
           />
 
@@ -1666,24 +1666,36 @@ export default function SearchPage() {
         onClose={handleCloseAIResearchModal}
       />
 
-      {/* Mobile Map View - Appears below filters, not fullscreen */}
+      {/* Mobile Map Modal - Fullscreen map view for mobile devices */}
       {mobileMapVisible && (
-        <div className="mobile-map-overlay">
-          <GoogleMap
-            ref={mapRef}
-            listings={allActiveListings}
-            filteredListings={allListings}
-            selectedListing={null}
-            selectedBorough={selectedBorough}
-            onMarkerClick={(listing) => {
-              console.log('Marker clicked:', listing.title);
-            }}
-            onMessageClick={(listing) => {
-              console.log('[SearchPage] Mobile map card message clicked for:', listing?.id);
-              handleOpenContactModal(listing);
-            }}
-            onAIResearchClick={handleOpenAIResearchModal}
-          />
+        <div className="mobile-map-modal">
+          <div className="mobile-map-header">
+            <button
+              className="mobile-map-close-btn"
+              onClick={() => setMobileMapVisible(false)}
+              aria-label="Close map"
+            >
+              ✕
+            </button>
+            <h2>Map View</h2>
+          </div>
+          <div className="mobile-map-content">
+            <GoogleMap
+              ref={mapRef}
+              listings={allActiveListings}
+              filteredListings={allListings}
+              selectedListing={null}
+              selectedBorough={selectedBorough}
+              onMarkerClick={(listing) => {
+                console.log('Marker clicked:', listing.title);
+              }}
+              onMessageClick={(listing) => {
+                console.log('[SearchPage] Mobile map card message clicked for:', listing?.id);
+                handleOpenContactModal(listing);
+              }}
+              onAIResearchClick={handleOpenAIResearchModal}
+            />
+          </div>
         </div>
       )}
     </div>
