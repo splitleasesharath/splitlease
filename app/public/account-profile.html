@@ -1549,8 +1549,8 @@
 
             if (!userId) {
                 // User not authenticated - Header will show login modal via autoShowLogin prop
-                console.log('⚠️ User not authenticated - waiting for login');
-                showLoading();
+                // Don't show loading state, just wait for user to log in
+                console.log('⚠️ User not authenticated - login modal will be shown');
                 return;
             }
 
