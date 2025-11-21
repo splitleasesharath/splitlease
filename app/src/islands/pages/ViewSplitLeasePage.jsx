@@ -238,8 +238,8 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
     } else if (photoCount === 4) {
       return {
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gridTemplateRows: '200px 200px',
+        gridTemplateColumns: '2fr 1fr',
+        gridTemplateRows: '133px 133px 133px',
         gap: '10px'
       };
     } else {
@@ -327,11 +327,21 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
   if (photoCount === 4) {
     return (
       <div style={getGridStyle()}>
-        {photos.map((photo, idx) => (
-          <div key={photo._id} onClick={() => onPhotoClick(idx)} style={imageStyle}>
+        <div
+          onClick={() => onPhotoClick(0)}
+          style={{ ...imageStyle, gridRow: '1 / 4' }}
+        >
+          <img
+            src={photos[0].Photo}
+            alt={`${listingName} - main`}
+            style={imgStyle}
+          />
+        </div>
+        {photos.slice(1, 4).map((photo, idx) => (
+          <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} style={imageStyle}>
             <img
               src={photo['Photo (thumbnail)'] || photo.Photo}
-              alt={`${listingName} - ${idx + 1}`}
+              alt={`${listingName} - ${idx + 2}`}
               style={imgStyle}
             />
           </div>
