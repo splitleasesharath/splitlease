@@ -858,7 +858,7 @@
                 <!-- Settings Navigation -->
                 <div class="settings-nav">
                     <a href="#" class="settings-link">Payout Settings</a>
-                    <a href="#" class="settings-link">Notification Settings</a>
+                    <a href="#" class="settings-link" id="notification-settings-link">Notification Settings</a>
                     <a href="#" class="settings-link">Change Password</a>
                 </div>
 
@@ -1019,6 +1019,9 @@
 
     <!-- React Island: Footer -->
     <div id="footer-root"></div>
+
+    <!-- React Island: Notification Settings Modal -->
+    <div id="notification-settings-root"></div>
 
     <!-- React Islands Hydration Script -->
     <script type="module" src="/src/account-profile.jsx"></script>
@@ -1710,6 +1713,16 @@
         // Go back button
         document.querySelector('.btn-back')?.addEventListener('click', () => {
             window.history.back();
+        });
+
+        // Notification Settings link handler
+        document.getElementById('notification-settings-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (window.openNotificationSettings) {
+                window.openNotificationSettings();
+            } else {
+                console.error('Notification settings modal not yet loaded');
+            }
         });
     </script>
 </body>
