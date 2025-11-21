@@ -66,32 +66,29 @@ function MyComponent() {
 
 ## API Integration
 
-### Bubble Workflow Setup
+### Bubble Workflow
 
-The component calls the Bubble API workflow: `create-listing-photos-bulk`
+The component calls the existing Bubble API workflow: `listing_photos_section_in_code`
 
-**Endpoint:** `https://app.split.lease/api/1.1/wf/create-listing-photos-bulk`
+**Endpoint:** `https://app.split.lease/api/1.1/wf/listing_photos_section_in_code`
 
-**Required Bubble Workflow Parameters:**
-- `listing_id` (text) - The ID of the listing
-- `photos` (list of images) - Array of image files
+**Method:** POST
 
-**Expected Bubble Workflow Steps:**
-1. Get Listing by `listing_id`
-2. Loop through `photos` list
-3. For each photo, create a "Listing - Photo" entry with:
-   - Photo = Current photo
-   - Listing = Listing from step 1
-   - Sort Order = Current index
-   - Any other required fields
+**API Parameters:**
+- `Listing_id` (text, querystring) - The ID of the listing
+- `Photos` (image, list/array, querystring) - Array of image files to upload
 
-**Response Format:**
-```json
-{
-  "status": "success",
-  "count": 5,
-  "message": "Photos uploaded successfully"
-}
+**Workflow Actions:**
+1. Makes changes to Listing - Search for the listing by `Listing_id`
+2. Schedule API Workflow: `create-each-listing-photo` (handles individual photo creation)
+3. Schedule API Workflow: `l2-submit-listing` (finalizes listing submission)
+
+**FormData Structure:**
+```javascript
+formData.append('Listing_id', listingId);
+uploadedFiles.forEach((fileData) => {
+  formData.append('Photos', fileData.file);
+});
 ```
 
 ### Environment Variables

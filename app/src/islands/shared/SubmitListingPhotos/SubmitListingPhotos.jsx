@@ -66,17 +66,17 @@ const SubmitListingPhotos = ({ listingId, onClose, onSuccess }) => {
 
     try {
       const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY
-      const UPLOAD_ENDPOINT = 'https://app.split.lease/api/1.1/wf/create-listing-photos-bulk'
+      const UPLOAD_ENDPOINT = 'https://app.split.lease/api/1.1/wf/listing_photos_section_in_code'
 
       if (!BUBBLE_API_KEY) {
         throw new Error('API key not configured')
       }
 
       const formData = new FormData()
-      formData.append('listing_id', listingId)
+      formData.append('Listing_id', listingId)
 
-      uploadedFiles.forEach((fileData, index) => {
-        formData.append(`photos`, fileData.file)
+      uploadedFiles.forEach((fileData) => {
+        formData.append('Photos', fileData.file)
       })
 
       console.log('Uploading', uploadedFiles.length, 'files to Bubble...')
