@@ -858,7 +858,7 @@
                 <!-- Settings Navigation -->
                 <div class="settings-nav">
                     <a href="#" class="settings-link">Payout Settings</a>
-                    <a href="#" class="settings-link">Notification Settings</a>
+                    <a href="#" class="settings-link" id="notification-settings-link">Notification Settings</a>
                     <a href="#" class="settings-link">Change Password</a>
                 </div>
 
@@ -1020,15 +1020,21 @@
     <!-- React Island: Footer -->
     <div id="footer-root"></div>
 
+    <!-- React Island: Notification Settings Modal -->
+    <div id="notification-settings-root"></div>
+
     <!-- React Islands Hydration Script -->
     <script type="module" src="/src/account-profile.jsx"></script>
 
     <!-- Supabase Client (Legacy - can be removed once fully migrated) -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-    <script>
+    <script type="module">
         // Pass 3: Complete functionality with error handling and polish
         console.log('Account Profile Page - Pass 3: Complete Implementation');
+
+        // Import auth utilities
+        import { getSessionId } from '/src/lib/auth.js';
 
         // Supabase Configuration
         const SUPABASE_URL = 'https://qcfifybkaddcoimjroca.supabase.co';
@@ -1052,45 +1058,17 @@
             }, 3000);
         }
 
-        // Extract user ID from URL path
-        // Following Split Lease convention: /account-profile/{user_id}
-        // Same pattern as /view-split-lease/{listing_id}
-        function getUserIdFromPath() {
-            // 1. Check query string: ?id=userId
-            const urlParams = new URLSearchParams(window.location.search);
-            const idFromQuery = urlParams.get('id');
-            if (idFromQuery) {
-                console.log('✅ User ID extracted from query string:', idFromQuery);
-                return idFromQuery;
+        // Get current user ID from authentication state
+        // Uses the session ID stored when user logged in
+        function getCurrentUserId() {
+            const userId = getSessionId();
+
+            if (userId) {
+                console.log('✅ User ID retrieved from auth state:', userId);
+                return userId;
             }
 
-            // 2. Parse pathname for segment after 'account-profile'
-            const pathSegments = window.location.pathname.split('/').filter(segment => segment);
-            const accountSegmentIndex = pathSegments.findIndex(segment =>
-                segment === 'account-profile' ||
-                segment === 'account-profile.html'
-            );
-
-            if (accountSegmentIndex !== -1 && pathSegments[accountSegmentIndex + 1]) {
-                const nextSegment = pathSegments[accountSegmentIndex + 1];
-                // Ensure it's not a file extension
-                if (!nextSegment.includes('.')) {
-                    console.log('✅ User ID extracted from URL path:', nextSegment);
-                    return nextSegment;
-                }
-            }
-
-            // 3. Fallback for local dev: support hash-based URLs for testing
-            const hash = window.location.hash.replace('#', '');
-            if (hash) {
-                console.log('⚠️  User ID from hash (dev only):', hash);
-                return hash;
-            }
-
-            console.error('❌ No user ID found in URL path');
-            console.log('   Expected URL format: /account-profile/USER_ID');
-            console.log('   Current URL:', window.location.href);
-            console.log('   Parsed segments:', pathSegments);
+            console.log('❌ No user ID found - user not authenticated');
             return null;
         }
 
@@ -1431,11 +1409,7 @@
                 <div class="error">
                     <strong>Error:</strong> ${message}
                     <br><br>
-                    <small>Please check the URL and try again.</small>
-                    <br>
-                    <small><strong>Expected format:</strong> /account-profile/{user_id}</small>
-                    <br>
-                    <small><strong>Example:</strong> /account-profile/1751052526471x730004712227235700</small>
+                    <small>Please try refreshing the page or logging in again.</small>
                 </div>
             `;
             container.innerHTML = errorHTML;
@@ -1574,13 +1548,12 @@
 
         // Initialize page
         async function initPage() {
-            const userId = getUserIdFromPath();
+            const userId = getCurrentUserId();
 
             if (!userId) {
-                showError('No user ID found in URL path.');
-                console.log('URL parsing help: Current URL is', window.location.href);
-                console.log('Expected format: /account-profile/{user_id}');
-                console.log('Example: /account-profile/1751052526471x730004712227235700');
+                // User not authenticated - Header will show login modal via autoShowLogin prop
+                // Don't show loading state, just wait for user to log in
+                console.log('⚠️ User not authenticated - login modal will be shown');
                 return;
             }
 
@@ -1604,7 +1577,7 @@
         document.addEventListener('click', async (e) => {
             // Save functionality
             if (e.target.classList.contains('btn-save')) {
-                const userId = getUserIdFromPath();
+                const userId = getCurrentUserId();
                 if (!userId) return;
 
                 const saveBtn = e.target;
@@ -1675,7 +1648,7 @@
             const file = e.target.files[0];
             if (!file) return;
 
-            const userId = getUserIdFromPath();
+            const userId = getCurrentUserId();
             if (!userId) return;
 
             // Validate file type
@@ -1740,6 +1713,16 @@
         // Go back button
         document.querySelector('.btn-back')?.addEventListener('click', () => {
             window.history.back();
+        });
+
+        // Notification Settings link handler
+        document.getElementById('notification-settings-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (window.openNotificationSettings) {
+                window.openNotificationSettings();
+            } else {
+                console.error('Notification settings modal not yet loaded');
+            }
         });
     </script>
 </body>

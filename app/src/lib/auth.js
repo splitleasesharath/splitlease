@@ -22,6 +22,22 @@ import {
   ACCOUNT_PROFILE_URL
 } from './constants.js';
 import { supabase } from './supabase.js';
+import {
+  setAuthToken as setSecureAuthToken,
+  getAuthToken as getSecureAuthToken,
+  setSessionId as setSecureSessionId,
+  getSessionId as getSecureSessionId,
+  setAuthState,
+  getAuthState,
+  getUserId as getPublicUserId,
+  setUserType as setSecureUserType,
+  getUserType as getSecureUserType,
+  updateLastActivity,
+  isSessionExpired,
+  clearAllAuthData,
+  hasValidTokens,
+  migrateFromLegacyStorage
+} from './secureStorage.js';
 
 // ============================================================================
 // Auth State Management
@@ -86,47 +102,52 @@ export function checkSplitLeaseCookies() {
 
 /**
  * Lightweight authentication status check
- * Checks cross-domain cookies first, then falls back to localStorage/legacy cookies
+ * Checks auth state (not tokens) and validates session
  *
  * No fallback mechanisms - returns boolean directly
  * On failure: returns false without fallback logic
  *
- * @returns {boolean} True if user is authenticated, false otherwise
+ * @returns {Promise<boolean>} True if user is authenticated, false otherwise
  */
-export function checkAuthStatus() {
+export async function checkAuthStatus() {
   console.log('🔍 Checking authentication status...');
 
-  // First check cross-domain cookies from .split.lease
+  // Try to migrate from legacy storage first
+  const migrated = await migrateFromLegacyStorage();
+  if (migrated) {
+    console.log('✅ Migrated from legacy storage');
+  }
+
+  // First check cross-domain cookies from .split.lease (for compatibility)
   const splitLeaseAuth = checkSplitLeaseCookies();
 
   if (splitLeaseAuth.isLoggedIn) {
     console.log('✅ User authenticated via Split Lease cookies');
     console.log('   Username:', splitLeaseAuth.username);
     isUserLoggedInState = true;
+    setAuthState(true);
     return true;
   }
 
-  // Check for localStorage authentication tokens
-  const authToken = localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN);
-  const sessionId = localStorage.getItem(AUTH_STORAGE_KEYS.SESSION_ID);
-  const lastAuthTime = localStorage.getItem(AUTH_STORAGE_KEYS.LAST_AUTH);
+  // Check auth state (not tokens directly)
+  const authState = getAuthState();
 
-  // Check for legacy auth cookie
-  const authCookie = document.cookie.split('; ').find(row => row.startsWith('splitlease_auth='));
+  if (authState) {
+    // Verify we actually have tokens
+    const hasTokens = await hasValidTokens();
 
-  // Validate session age (24 hours)
-  const sessionValid = lastAuthTime &&
-    (Date.now() - parseInt(lastAuthTime)) < SESSION_VALIDATION.MAX_AGE_MS;
-
-  if ((authToken || sessionId || authCookie) && sessionValid) {
-    console.log('✅ User authenticated via localStorage/legacy cookies');
-    isUserLoggedInState = true;
-    return true;
-  } else {
-    console.log('❌ User not authenticated');
-    isUserLoggedInState = false;
-    return false;
+    if (hasTokens) {
+      console.log('✅ User authenticated via secure storage');
+      isUserLoggedInState = true;
+      updateLastActivity();
+      return true;
+    }
   }
+
+  console.log('❌ User not authenticated');
+  isUserLoggedInState = false;
+  setAuthState(false);
+  return false;
 }
 
 // ============================================================================
@@ -134,20 +155,15 @@ export function checkAuthStatus() {
 // ============================================================================
 
 /**
- * Validate session by checking expiry time
- * Ensures session is not older than 24 hours
+ * Validate session by checking if tokens exist
+ * Bubble API handles actual token expiry - we validate on each request
  *
  * @returns {boolean} True if session is valid, false if expired or missing
  */
 export function isSessionValid() {
-  const lastAuthTime = localStorage.getItem(AUTH_STORAGE_KEYS.LAST_AUTH);
-
-  if (!lastAuthTime) {
-    return false;
-  }
-
-  const sessionAge = Date.now() - parseInt(lastAuthTime);
-  return sessionAge < SESSION_VALIDATION.MAX_AGE_MS;
+  // Simply check if auth state is set
+  // Bubble will reject expired tokens on API calls
+  return getAuthState();
 }
 
 /**
@@ -156,8 +172,7 @@ export function isSessionValid() {
  * @returns {number|null} Timestamp in milliseconds, or null if no auth recorded
  */
 export function getLastAuthTime() {
-  const lastAuth = localStorage.getItem(AUTH_STORAGE_KEYS.LAST_AUTH);
-  return lastAuth ? parseInt(lastAuth) : null;
+  return getLastActivity();
 }
 
 /**
@@ -175,26 +190,11 @@ export function getSessionAge() {
  * Removes all auth tokens, session IDs, timestamps, user type, and cookies
  */
 export function clearAuthData() {
-  // Clear localStorage
-  localStorage.removeItem(AUTH_STORAGE_KEYS.TOKEN);
-  localStorage.removeItem(AUTH_STORAGE_KEYS.SESSION_ID);
-  localStorage.removeItem(AUTH_STORAGE_KEYS.LAST_AUTH);
-  localStorage.removeItem(AUTH_STORAGE_KEYS.USER_TYPE);
-  localStorage.removeItem('userEmail'); // Clear user email
-
-  // Clear cookies to prevent checkAuthStatus from returning true after localStorage is cleared
-  // Clear on current domain
-  document.cookie = 'loggedIn=false; path=/; max-age=0';
-  document.cookie = 'username=; path=/; max-age=0';
-  document.cookie = 'splitlease_auth=; path=/; max-age=0';
-
-  // Clear on .split.lease domain (cross-domain cookies)
-  document.cookie = 'loggedIn=false; path=/; max-age=0; domain=.split.lease';
-  document.cookie = 'username=; path=/; max-age=0; domain=.split.lease';
-  document.cookie = 'splitlease_auth=; path=/; max-age=0; domain=.split.lease';
+  // Use secure storage clear (handles both secure tokens and state)
+  clearAllAuthData();
 
   isUserLoggedInState = false;
-  console.log('🗑️ Authentication data cleared (localStorage and cookies)');
+  console.log('🗑️ Authentication data cleared (secure storage and cookies)');
 }
 
 // ============================================================================
@@ -202,60 +202,76 @@ export function clearAuthData() {
 // ============================================================================
 
 /**
- * Get authentication token from storage
+ * Get authentication token from secure storage
+ * NOTE: This should only be used internally for API calls
+ * External code should not access tokens directly
  *
  * @returns {string|null} Auth token if exists, null otherwise
  */
 export function getAuthToken() {
-  return localStorage.getItem(AUTH_STORAGE_KEYS.TOKEN);
+  return getSecureAuthToken();
 }
 
 /**
- * Store authentication token
+ * Store authentication token in secure storage
+ * Automatically updates last activity timestamp
  *
  * @param {string} token - Authentication token to store
  */
 export function setAuthToken(token) {
-  localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, token);
-  localStorage.setItem(AUTH_STORAGE_KEYS.LAST_AUTH, Date.now().toString());
+  setSecureAuthToken(token);
+  updateLastActivity();
 }
 
 /**
- * Get session ID from storage
+ * Get session ID from secure storage
+ * NOTE: This should only be used internally
+ * External code should not access session IDs directly
  *
  * @returns {string|null} Session ID if exists, null otherwise
  */
 export function getSessionId() {
-  return localStorage.getItem(AUTH_STORAGE_KEYS.SESSION_ID);
+  return getSecureSessionId();
 }
 
 /**
- * Store session ID
+ * Store session ID in secure storage
+ * Automatically updates last activity timestamp
  *
  * @param {string} sessionId - Session ID to store
  */
 export function setSessionId(sessionId) {
-  localStorage.setItem(AUTH_STORAGE_KEYS.SESSION_ID, sessionId);
-  localStorage.setItem(AUTH_STORAGE_KEYS.LAST_AUTH, Date.now().toString());
+  setSecureSessionId(sessionId);
+  updateLastActivity();
 }
 
 /**
- * Get user type from storage
+ * Get user ID from public state (non-sensitive identifier)
+ * NOTE: This is public state, not the encrypted session ID
+ *
+ * @returns {string|null} User ID if exists, null otherwise
+ */
+export function getUserId() {
+  return getPublicUserId();
+}
+
+/**
+ * Get user type from storage (public state)
  *
  * @returns {string|null} User type ('Host' or 'Guest') if exists, null otherwise
  */
 export function getUserType() {
-  return localStorage.getItem(AUTH_STORAGE_KEYS.USER_TYPE);
+  return getSecureUserType();
 }
 
 /**
- * Store user type
+ * Store user type (public state)
  *
  * @param {string} userType - User type to store ('Host' or 'Guest')
  */
 export function setUserType(userType) {
   if (userType) {
-    localStorage.setItem(AUTH_STORAGE_KEYS.USER_TYPE, userType);
+    setSecureUserType(userType);
   }
 }
 
@@ -320,18 +336,24 @@ export function redirectToLogin(returnUrl = null) {
 }
 
 /**
- * Redirect to account profile page
- * Only redirect if user is logged in
+ * Redirect to account profile page with user ID
+ * Only redirect if user is logged in and has a valid session ID
  *
- * @returns {boolean} True if redirect initiated, false if not logged in
+ * @returns {Promise<boolean>} True if redirect initiated, false if not logged in or no user ID
  */
-export function redirectToAccountProfile() {
+export async function redirectToAccountProfile() {
   if (!isUserLoggedInState) {
     console.warn('User is not logged in, cannot redirect to account profile');
     return false;
   }
 
-  window.location.href = ACCOUNT_PROFILE_URL;
+  const userId = getSessionId();
+  if (!userId) {
+    console.error('No user ID found in session, cannot redirect to account profile');
+    return false;
+  }
+
+  window.location.href = `${ACCOUNT_PROFILE_URL}/${userId}`;
   return true;
 }
 
@@ -421,13 +443,12 @@ export async function loginUser(email, password) {
     const data = await response.json();
 
     if (response.ok && data.status === 'success') {
-      // Store token and user_id in localStorage
-      localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, data.response.token);
-      localStorage.setItem(AUTH_STORAGE_KEYS.SESSION_ID, data.response.user_id);
-      localStorage.setItem(AUTH_STORAGE_KEYS.LAST_AUTH, Date.now().toString());
+      // Store token and user_id in secure storage
+      setAuthToken(data.response.token);
+      setSessionId(data.response.user_id);
 
-      // Store user email for convenience (useful for guest-proposals page)
-      localStorage.setItem('userEmail', email);
+      // Set auth state with user ID (public, non-sensitive)
+      setAuthState(true, data.response.user_id);
 
       // Update login state
       isUserLoggedInState = true;
@@ -439,7 +460,6 @@ export async function loginUser(email, password) {
 
       return {
         success: true,
-        token: data.response.token,
         user_id: data.response.user_id,
         expires: data.response.expires
       };
@@ -522,13 +542,12 @@ export async function signupUser(email, password, retype) {
     const data = await response.json();
 
     if (response.ok && data.status === 'success') {
-      // Store token and user_id in localStorage
-      localStorage.setItem(AUTH_STORAGE_KEYS.TOKEN, data.response.token);
-      localStorage.setItem(AUTH_STORAGE_KEYS.SESSION_ID, data.response.user_id);
-      localStorage.setItem(AUTH_STORAGE_KEYS.LAST_AUTH, Date.now().toString());
+      // Store token and user_id in secure storage
+      setAuthToken(data.response.token);
+      setSessionId(data.response.user_id);
 
-      // Store user email for convenience (useful for guest-proposals page)
-      localStorage.setItem('userEmail', email);
+      // Set auth state with user ID (public, non-sensitive)
+      setAuthState(true, data.response.user_id);
 
       // Update login state
       isUserLoggedInState = true;
@@ -540,7 +559,6 @@ export async function signupUser(email, password, retype) {
 
       return {
         success: true,
-        token: data.response.token,
         user_id: data.response.user_id,
         expires: data.response.expires
       };
@@ -611,6 +629,9 @@ export async function validateTokenAndFetchUser() {
       isUserLoggedInState = false;
       return null;
     }
+
+    // Token is valid, update last activity
+    updateLastActivity();
 
     // Token is valid, now fetch user data from Supabase
     console.log('✅ Token valid - Step 2: Fetching user data from Supabase...');

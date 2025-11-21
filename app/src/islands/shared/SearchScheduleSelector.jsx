@@ -27,7 +27,7 @@ const SelectorRow = styled.div`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 0 0 8.4px 0;
+  margin: 0 0 5px 0;
 `;
 
 const CalendarIcon = styled.div`
@@ -124,7 +124,7 @@ const InfoContainer = styled.div`
   justify-content: center;
   align-items: center;
   gap: 8px;
-  margin: 8px 0 16px 0;
+  margin: 5px 0 16px 0;
 `;
 
 const InfoText = styled.p`
@@ -238,6 +238,7 @@ export default function SearchScheduleSelector({
   minDays = 2,
   requireContiguous = true,
   initialSelection,
+  updateUrl = true,
 }) {
   // Use initialSelection if provided, otherwise get from URL or use default
   const getInitialState = () => {
@@ -565,8 +566,14 @@ export default function SearchScheduleSelector({
   /**
    * Update URL parameter when selection changes
    * Format: ?days-selected=2,3,4,5,6 (1-based, where 1=Sunday)
+   * Only updates URL if updateUrl prop is true
    */
   useEffect(() => {
+    if (!updateUrl) {
+      console.log('📅 SearchScheduleSelector: URL updates disabled');
+      return;
+    }
+
     const selectedDaysArray = Array.from(selectedDays).sort((a, b) => a - b);
 
     if (selectedDaysArray.length > 0) {
@@ -592,7 +599,7 @@ export default function SearchScheduleSelector({
 
       console.log('📅 SearchScheduleSelector: Removed URL parameter (no days selected)');
     }
-  }, [selectedDays]);
+  }, [selectedDays, updateUrl]);
 
   /**
    * Update parent component on selection change

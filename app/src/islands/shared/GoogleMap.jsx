@@ -20,11 +20,87 @@
  *   />
  */
 
-import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle, useCallback, memo } from 'react';
 import { DEFAULTS, COLORS, getBoroughMapConfig } from '../../lib/constants.js';
 import ListingCardForMap from './ListingCard/ListingCardForMap.jsx';
 import { supabase } from '../../lib/supabase.js';
 import { fetchPhotoUrls, extractPhotos } from '../../lib/supabaseUtils.js';
+
+/**
+ * MapLegend - Shows marker color meanings and toggle
+ * Memoized to prevent unnecessary re-renders
+ */
+const MapLegend = memo(({ showAllListings, onToggle }) => (
+  <div className="map-legend">
+    <div className="legend-header">
+      <h4>Map Legend</h4>
+    </div>
+    <div className="legend-items">
+      <div className="legend-item">
+        <span
+          className="legend-marker"
+          style={{ backgroundColor: COLORS.SECONDARY }}
+        ></span>
+        <span>Search Results</span>
+      </div>
+      <div className="legend-item">
+        <span
+          className="legend-marker"
+          style={{ backgroundColor: COLORS.SUCCESS }}
+        ></span>
+        <span>All Active Listings</span>
+      </div>
+    </div>
+    <label className="legend-toggle">
+      <input
+        type="checkbox"
+        checked={showAllListings}
+        onChange={(e) => onToggle(e.target.checked)}
+      />
+      <span>Show all listings</span>
+    </label>
+  </div>
+));
+
+MapLegend.displayName = 'MapLegend';
+
+/**
+ * AIResearchButton - Button to trigger AI Research Report signup
+ * Memoized to prevent unnecessary re-renders
+ */
+const AIResearchButton = memo(({ onAIResearchClick }) => {
+  if (!onAIResearchClick) return null;
+
+  return (
+    <button
+      className="ai-research-button"
+      onClick={(e) => {
+        e.stopPropagation();
+        onAIResearchClick();
+      }}
+      aria-label="Generate Market Report"
+    >
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path d="M12 3v18M3 12h18" />
+        <path d="M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4" />
+        <circle cx="12" cy="12" r="2" fill="currentColor" />
+      </svg>
+      <span>Generate Market Report</span>
+    </button>
+  );
+});
+
+AIResearchButton.displayName = 'AIResearchButton';
 
 const GoogleMap = forwardRef(({
   listings = [],           // All listings to show as green markers
@@ -787,82 +863,17 @@ const GoogleMap = forwardRef(({
     return markerOverlay;
   };
 
-  /**
-   * MapLegend - Shows marker color meanings and toggle
-   */
-  const MapLegend = () => (
-    <div className="map-legend">
-      <div className="legend-header">
-        <h4>Map Legend</h4>
-      </div>
-      <div className="legend-items">
-        <div className="legend-item">
-          <span
-            className="legend-marker"
-            style={{ backgroundColor: COLORS.SECONDARY }}
-          ></span>
-          <span>Search Results</span>
-        </div>
-        <div className="legend-item">
-          <span
-            className="legend-marker"
-            style={{ backgroundColor: COLORS.SUCCESS }}
-          ></span>
-          <span>All Active Listings</span>
-        </div>
-      </div>
-      <label className="legend-toggle">
-        <input
-          type="checkbox"
-          checked={showAllListings}
-          onChange={(e) => setShowAllListings(e.target.checked)}
-        />
-        <span>Show all listings</span>
-      </label>
-    </div>
-  );
-
-  /**
-   * AIResearchButton - Button to trigger AI Research Report signup
-   */
-  const AIResearchButton = () => {
-    if (simpleMode || !onAIResearchClick) return null;
-
-    return (
-      <button
-        className="ai-research-button"
-        onClick={(e) => {
-          e.stopPropagation();
-          onAIResearchClick();
-        }}
-        aria-label="Generate Market Report"
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path d="M12 3v18M3 12h18" />
-          <path d="M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4" />
-          <circle cx="12" cy="12" r="2" fill="currentColor" />
-        </svg>
-        <span>Generate Market Report</span>
-      </button>
-    );
-  };
-
   // Close card when clicking on map
   const handleMapClick = () => {
     console.log('🗺️ handleMapClick: Map clicked, closing card');
     setCardVisible(false);
     setSelectedListingForCard(null);
   };
+
+  // Memoized callback for legend toggle to prevent re-renders
+  const handleLegendToggle = useCallback((checked) => {
+    setShowAllListings(checked);
+  }, []);
 
   return (
     <div className="google-map-container">
@@ -877,8 +888,15 @@ const GoogleMap = forwardRef(({
         }}
         onClick={handleMapClick}
       />
-      {mapLoaded && !simpleMode && <MapLegend />}
-      {mapLoaded && !simpleMode && <AIResearchButton />}
+      {mapLoaded && !simpleMode && (
+        <MapLegend
+          showAllListings={showAllListings}
+          onToggle={handleLegendToggle}
+        />
+      )}
+      {mapLoaded && !simpleMode && (
+        <AIResearchButton onAIResearchClick={onAIResearchClick} />
+      )}
       {!mapLoaded && (
         <div className="map-loading">
           <div className="spinner"></div>
