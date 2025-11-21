@@ -27,7 +27,7 @@ const SelectorRow = styled.div`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 0 0 8.4px 0;
+  margin: 0 0 5px 0;
 `;
 
 const CalendarIcon = styled.div`
@@ -124,7 +124,7 @@ const InfoContainer = styled.div`
   justify-content: center;
   align-items: center;
   gap: 8px;
-  margin: 8px 0 16px 0;
+  margin: 5px 0 16px 0;
 `;
 
 const InfoText = styled.p`
