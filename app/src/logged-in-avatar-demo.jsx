@@ -1,7 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import LoggedInAvatar from './islands/shared/LoggedInAvatar';
-import './styles/global.css';
 
 /**
  * Demo page for LoggedInAvatar component
