@@ -1056,7 +1056,9 @@ export default function Header({ autoShowLogin = false }) {
       {/* CreateDuplicateListingModal */}
       {showListPropertyModal && (
         <CreateDuplicateListingModal
+          isVisible={showListPropertyModal}
           onClose={() => setShowListPropertyModal(false)}
+          currentUser={currentUser}
         />
       )}
     </header>
