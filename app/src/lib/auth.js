@@ -206,10 +206,10 @@ export function clearAuthData() {
  * NOTE: This should only be used internally for API calls
  * External code should not access tokens directly
  *
- * @returns {Promise<string|null>} Auth token if exists, null otherwise
+ * @returns {string|null} Auth token if exists, null otherwise
  */
-export async function getAuthToken() {
-  return await getSecureAuthToken();
+export function getAuthToken() {
+  return getSecureAuthToken();
 }
 
 /**
@@ -218,8 +218,8 @@ export async function getAuthToken() {
  *
  * @param {string} token - Authentication token to store
  */
-export async function setAuthToken(token) {
-  await setSecureAuthToken(token);
+export function setAuthToken(token) {
+  setSecureAuthToken(token);
   updateLastActivity();
 }
 
@@ -228,10 +228,10 @@ export async function setAuthToken(token) {
  * NOTE: This should only be used internally
  * External code should not access session IDs directly
  *
- * @returns {Promise<string|null>} Session ID if exists, null otherwise
+ * @returns {string|null} Session ID if exists, null otherwise
  */
-export async function getSessionId() {
-  return await getSecureSessionId();
+export function getSessionId() {
+  return getSecureSessionId();
 }
 
 /**
@@ -240,8 +240,8 @@ export async function getSessionId() {
  *
  * @param {string} sessionId - Session ID to store
  */
-export async function setSessionId(sessionId) {
-  await setSecureSessionId(sessionId);
+export function setSessionId(sessionId) {
+  setSecureSessionId(sessionId);
   updateLastActivity();
 }
 
@@ -347,7 +347,7 @@ export async function redirectToAccountProfile() {
     return false;
   }
 
-  const userId = await getSessionId();
+  const userId = getSessionId();
   if (!userId) {
     console.error('No user ID found in session, cannot redirect to account profile');
     return false;
@@ -444,8 +444,8 @@ export async function loginUser(email, password) {
 
     if (response.ok && data.status === 'success') {
       // Store token and user_id in secure storage
-      await setAuthToken(data.response.token);
-      await setSessionId(data.response.user_id);
+      setAuthToken(data.response.token);
+      setSessionId(data.response.user_id);
 
       // Set auth state with user ID (public, non-sensitive)
       setAuthState(true, data.response.user_id);
@@ -543,8 +543,8 @@ export async function signupUser(email, password, retype) {
 
     if (response.ok && data.status === 'success') {
       // Store token and user_id in secure storage
-      await setAuthToken(data.response.token);
-      await setSessionId(data.response.user_id);
+      setAuthToken(data.response.token);
+      setSessionId(data.response.user_id);
 
       // Set auth state with user ID (public, non-sensitive)
       setAuthState(true, data.response.user_id);
@@ -602,8 +602,8 @@ export async function signupUser(email, password, retype) {
  * @returns {Promise<Object|null>} User data object with firstName, profilePhoto, userType, etc. or null if invalid
  */
 export async function validateTokenAndFetchUser() {
-  const token = await getAuthToken();
-  const userId = await getSessionId();
+  const token = getAuthToken();
+  const userId = getSessionId();
 
   if (!token || !userId) {
     console.log('[Auth] No token or user ID found - user not logged in');
@@ -729,7 +729,7 @@ export function isProtectedPage() {
  * @returns {Promise<Object>} Response object with success status or error
  */
 export async function logoutUser() {
-  const token = await getAuthToken();
+  const token = getAuthToken();
 
   if (!token) {
     console.log('❌ No token found for logout');

@@ -1,114 +1,31 @@
 /**
  * Secure Storage Module
  *
- * Provides encrypted storage for sensitive authentication tokens.
- * Tokens are stored in sessionStorage (cleared when tab closes) with AES encryption.
+ * Provides storage for authentication tokens in sessionStorage.
+ * Tokens are stored in sessionStorage (cleared when tab closes).
  * Only authentication state (not tokens) should be published to the rest of the app.
  *
  * Security Benefits:
  * - sessionStorage: Cleared when tab closes (vs localStorage persists)
- * - Encryption: Tokens not stored in plaintext
- * - Limited scope: Only this module can access raw tokens
+ * - Origin-isolated: Only accessible by same-origin pages
+ * - Protected by browser security model (XSS is the main threat, not storage)
+ * - Limited scope: Only this module accesses raw tokens
  * - State-based: Rest of app only knows "logged in" or "logged out"
+ *
+ * Note: Client-side encryption doesn't add meaningful security since:
+ * - XSS can steal keys and encrypted data equally
+ * - HTTPS already encrypts data in transit
+ * - sessionStorage is already origin-isolated
+ * - Industry standard (GitHub, Google, etc.) uses plain sessionStorage
  */
 
-// Generate a per-session encryption key (unique per browser tab)
-// This key is stored in memory only and lost when page refreshes
-let encryptionKey = null;
-
 /**
- * Initialize encryption key for the session
- * Called automatically on first use
- */
-async function initializeEncryptionKey() {
-  if (encryptionKey) return;
-
-  // Generate a random key for this session
-  // In production, you might derive this from a user-specific value
-  const key = await crypto.subtle.generateKey(
-    {
-      name: 'AES-GCM',
-      length: 256
-    },
-    true, // extractable
-    ['encrypt', 'decrypt']
-  );
-
-  encryptionKey = key;
-}
-
-/**
- * Encrypt data using AES-GCM
- * @param {string} plaintext - Data to encrypt
- * @returns {Promise<string>} Base64-encoded encrypted data with IV
- */
-async function encrypt(plaintext) {
-  await initializeEncryptionKey();
-
-  const encoder = new TextEncoder();
-  const data = encoder.encode(plaintext);
-
-  // Generate random IV for each encryption
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-
-  const encryptedData = await crypto.subtle.encrypt(
-    {
-      name: 'AES-GCM',
-      iv: iv
-    },
-    encryptionKey,
-    data
-  );
-
-  // Combine IV + encrypted data
-  const combined = new Uint8Array(iv.length + encryptedData.byteLength);
-  combined.set(iv, 0);
-  combined.set(new Uint8Array(encryptedData), iv.length);
-
-  // Convert to base64 for storage
-  return btoa(String.fromCharCode(...combined));
-}
-
-/**
- * Decrypt data using AES-GCM
- * @param {string} ciphertext - Base64-encoded encrypted data
- * @returns {Promise<string>} Decrypted plaintext
- */
-async function decrypt(ciphertext) {
-  await initializeEncryptionKey();
-
-  try {
-    // Decode base64
-    const combined = Uint8Array.from(atob(ciphertext), c => c.charCodeAt(0));
-
-    // Extract IV and encrypted data
-    const iv = combined.slice(0, 12);
-    const data = combined.slice(12);
-
-    const decryptedData = await crypto.subtle.decrypt(
-      {
-        name: 'AES-GCM',
-        iv: iv
-      },
-      encryptionKey,
-      data
-    );
-
-    const decoder = new TextDecoder();
-    return decoder.decode(decryptedData);
-  } catch (error) {
-    console.error('Decryption failed:', error);
-    return null;
-  }
-}
-
-/**
- * Storage keys for encrypted data
+ * Storage keys for token data
  */
 const SECURE_KEYS = {
-  AUTH_TOKEN: '__sl_at__',     // Encrypted auth token
-  SESSION_ID: '__sl_sid__',    // Encrypted session/user ID
-  REFRESH_DATA: '__sl_rd__',   // Encrypted refresh token data
+  AUTH_TOKEN: '__sl_at__',     // Auth token
+  SESSION_ID: '__sl_sid__',    // Session/user ID
+  REFRESH_DATA: '__sl_rd__',   // Refresh token data
 };
 
 /**
@@ -123,70 +40,55 @@ const STATE_KEYS = {
 };
 
 /**
- * Store authentication token securely
+ * Store authentication token
  * @param {string} token - Bearer token from Bubble API
  */
-export async function setAuthToken(token) {
+export function setAuthToken(token) {
   if (!token) return;
-
-  const encrypted = await encrypt(token);
-  sessionStorage.setItem(SECURE_KEYS.AUTH_TOKEN, encrypted);
+  sessionStorage.setItem(SECURE_KEYS.AUTH_TOKEN, token);
 }
 
 /**
  * Retrieve authentication token
- * @returns {Promise<string|null>} Decrypted token or null
+ * @returns {string|null} Token or null
  */
-export async function getAuthToken() {
-  const encrypted = sessionStorage.getItem(SECURE_KEYS.AUTH_TOKEN);
-  if (!encrypted) return null;
-
-  return await decrypt(encrypted);
+export function getAuthToken() {
+  return sessionStorage.getItem(SECURE_KEYS.AUTH_TOKEN);
 }
 
 /**
- * Store session ID (user ID) securely
+ * Store session ID (user ID)
  * @param {string} sessionId - User ID from Bubble API
  */
-export async function setSessionId(sessionId) {
+export function setSessionId(sessionId) {
   if (!sessionId) return;
-
-  const encrypted = await encrypt(sessionId);
-  sessionStorage.setItem(SECURE_KEYS.SESSION_ID, encrypted);
+  sessionStorage.setItem(SECURE_KEYS.SESSION_ID, sessionId);
 }
 
 /**
  * Retrieve session ID
- * @returns {Promise<string|null>} Decrypted session ID or null
+ * @returns {string|null} Session ID or null
  */
-export async function getSessionId() {
-  const encrypted = sessionStorage.getItem(SECURE_KEYS.SESSION_ID);
-  if (!encrypted) return null;
-
-  return await decrypt(encrypted);
+export function getSessionId() {
+  return sessionStorage.getItem(SECURE_KEYS.SESSION_ID);
 }
 
 /**
- * Store refresh token data securely (for future use)
+ * Store refresh token data (for future use)
  * @param {object} refreshData - Refresh token and metadata
  */
-export async function setRefreshData(refreshData) {
+export function setRefreshData(refreshData) {
   if (!refreshData) return;
-
-  const encrypted = await encrypt(JSON.stringify(refreshData));
-  sessionStorage.setItem(SECURE_KEYS.REFRESH_DATA, encrypted);
+  sessionStorage.setItem(SECURE_KEYS.REFRESH_DATA, JSON.stringify(refreshData));
 }
 
 /**
  * Retrieve refresh token data
- * @returns {Promise<object|null>} Decrypted refresh data or null
+ * @returns {object|null} Refresh data or null
  */
-export async function getRefreshData() {
-  const encrypted = sessionStorage.getItem(SECURE_KEYS.REFRESH_DATA);
-  if (!encrypted) return null;
-
-  const decrypted = await decrypt(encrypted);
-  return decrypted ? JSON.parse(decrypted) : null;
+export function getRefreshData() {
+  const data = sessionStorage.getItem(SECURE_KEYS.REFRESH_DATA);
+  return data ? JSON.parse(data) : null;
 }
 
 /**
@@ -281,12 +183,12 @@ export function getLastActivity() {
 
 /**
  * Check if session has expired (based on last activity)
- * NOTE: This is now only used for UI staleness checks, not for auth validation.
+ * NOTE: This is only used for UI staleness checks, not for auth validation.
  * Bubble API handles token expiry - we validate on each request.
  * @param {number} maxAgeMs - Maximum session age in milliseconds (default 24 hours)
  * @returns {boolean} True if session expired
  */
-export function isSessionExpired(maxAgeMs = 86400000) { // Default 24 hours (same as before)
+export function isSessionExpired(maxAgeMs = 86400000) { // Default 24 hours
   const lastActivity = getLastActivity();
   if (!lastActivity) return true;
 
@@ -325,30 +227,30 @@ export function clearAllAuthData() {
 
 /**
  * Check if secure storage has valid tokens
- * @returns {Promise<boolean>} True if tokens exist in secure storage
+ * @returns {boolean} True if tokens exist in secure storage
  */
-export async function hasValidTokens() {
-  const token = await getAuthToken();
-  const sessionId = await getSessionId();
+export function hasValidTokens() {
+  const token = getAuthToken();
+  const sessionId = getSessionId();
 
   return !!(token && sessionId);
 }
 
 /**
- * Migrate from old localStorage to secure storage
+ * Migrate from old localStorage to sessionStorage
  * Call this once during transition period
  */
-export async function migrateFromLegacyStorage() {
+export function migrateFromLegacyStorage() {
   // Check if we have old tokens in localStorage
   const oldToken = localStorage.getItem('splitlease_auth_token');
   const oldSessionId = localStorage.getItem('splitlease_session_id');
 
   if (oldToken && oldSessionId) {
-    console.log('🔄 Migrating to secure storage...');
+    console.log('🔄 Migrating to sessionStorage...');
 
-    // Store in secure storage
-    await setAuthToken(oldToken);
-    await setSessionId(oldSessionId);
+    // Store in sessionStorage
+    setAuthToken(oldToken);
+    setSessionId(oldSessionId);
 
     // Update state with user ID
     setAuthState(true, oldSessionId);
@@ -375,23 +277,11 @@ export async function migrateFromLegacyStorage() {
  * Export for debugging (REMOVE IN PRODUCTION)
  */
 export const __DEV__ = {
-  async dumpSecureStorage() {
+  dumpSecureStorage() {
     return {
-      token: await getAuthToken(),
-      sessionId: await getSessionId(),
-      refreshData: await getRefreshData()
+      token: getAuthToken(),
+      sessionId: getSessionId(),
+      refreshData: getRefreshData()
     };
-  },
-
-  async checkEncryption() {
-    const testData = 'test-token-12345';
-    const encrypted = await encrypt(testData);
-    const decrypted = await decrypt(encrypted);
-    console.log('Encryption test:', {
-      original: testData,
-      encrypted: encrypted.substring(0, 20) + '...',
-      decrypted,
-      match: testData === decrypted
-    });
   }
 };
