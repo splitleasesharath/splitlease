@@ -52,7 +52,7 @@ async function fetchInformationalTexts() {
 /**
  * MobileFilterBar - Sticky filter button for mobile
  */
-function MobileFilterBar({ onFilterClick, onMapClick }) {
+function MobileFilterBar({ onFilterClick, onMapClick, isMapVisible }) {
   return (
     <div className="mobile-filter-bar">
       <button className="filter-toggle-btn" onClick={onFilterClick}>
@@ -66,7 +66,7 @@ function MobileFilterBar({ onFilterClick, onMapClick }) {
           <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
           <path d="M9 3v18M15 3v18M3 9h18M3 15h18" strokeWidth="2" />
         </svg>
-        <span>Map</span>
+        <span>{isMapVisible ? 'Show Listings' : 'Map'}</span>
       </button>
     </div>
   );
@@ -667,6 +667,7 @@ export default function SearchPage() {
   const [filterPanelActive, setFilterPanelActive] = useState(false);
   const [mapSectionActive, setMapSectionActive] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mobileMapVisible, setMobileMapVisible] = useState(false);
 
   // Flag to prevent URL update on initial load
   const isInitialMount = useRef(true);
@@ -1380,7 +1381,8 @@ export default function SearchPage() {
           {/* Mobile Filter Bar - Sticky at top on mobile */}
           <MobileFilterBar
             onFilterClick={() => setFilterPanelActive(!filterPanelActive)}
-            onMapClick={() => setMapSectionActive(!mapSectionActive)}
+            onMapClick={() => setMobileMapVisible(true)}
+            isMapVisible={mobileMapVisible}
           />
 
           {/* Mobile Schedule Selector - Always visible on mobile */}
@@ -1663,6 +1665,39 @@ export default function SearchPage() {
         isOpen={isAIResearchModalOpen}
         onClose={handleCloseAIResearchModal}
       />
+
+      {/* Mobile Map Modal - Fullscreen map view for mobile devices */}
+      {mobileMapVisible && (
+        <div className="mobile-map-modal">
+          <div className="mobile-map-header">
+            <button
+              className="mobile-map-close-btn"
+              onClick={() => setMobileMapVisible(false)}
+              aria-label="Close map"
+            >
+              ✕
+            </button>
+            <h2>Map View</h2>
+          </div>
+          <div className="mobile-map-content">
+            <GoogleMap
+              ref={mapRef}
+              listings={allActiveListings}
+              filteredListings={allListings}
+              selectedListing={null}
+              selectedBorough={selectedBorough}
+              onMarkerClick={(listing) => {
+                console.log('Marker clicked:', listing.title);
+              }}
+              onMessageClick={(listing) => {
+                console.log('[SearchPage] Mobile map card message clicked for:', listing?.id);
+                handleOpenContactModal(listing);
+              }}
+              onAIResearchClick={handleOpenAIResearchModal}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

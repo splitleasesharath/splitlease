@@ -10,11 +10,15 @@ import { useState, useEffect } from 'react';
 import Header from './islands/shared/Header.jsx';
 import Footer from './islands/shared/Footer.jsx';
 import SearchScheduleSelector from './islands/shared/SearchScheduleSelector.jsx';
+import NotificationSettingsModal from './islands/modals/NotificationSettingsModal.jsx';
+import { getAuthToken, getSessionId } from './lib/auth.js';
 
-// Mount Header island
+// Mount Header island with autoShowLogin if user is not authenticated
 const headerRoot = document.getElementById('header-root');
 if (headerRoot) {
-  createRoot(headerRoot).render(<Header />);
+  const token = getAuthToken();
+  const showLoginModal = !token; // Show login modal if no token
+  createRoot(headerRoot).render(<Header autoShowLogin={showLoginModal} />);
 }
 
 // Mount Footer island
@@ -89,4 +93,35 @@ function ScheduleSelectorWrapper() {
 const scheduleSelectorRoot = document.getElementById('schedule-selector-root');
 if (scheduleSelectorRoot) {
   createRoot(scheduleSelectorRoot).render(<ScheduleSelectorWrapper />);
+}
+
+// Notification Settings Modal wrapper component
+function NotificationSettingsWrapper() {
+  const [isOpen, setIsOpen] = useState(false);
+  const userId = getSessionId();
+
+  useEffect(() => {
+    // Expose function to open modal from HTML page
+    window.openNotificationSettings = () => {
+      setIsOpen(true);
+    };
+
+    return () => {
+      delete window.openNotificationSettings;
+    };
+  }, []);
+
+  return (
+    <NotificationSettingsModal
+      isOpen={isOpen}
+      userId={userId}
+      onClose={() => setIsOpen(false)}
+    />
+  );
+}
+
+// Mount Notification Settings Modal island
+const notificationSettingsRoot = document.getElementById('notification-settings-root');
+if (notificationSettingsRoot) {
+  createRoot(notificationSettingsRoot).render(<NotificationSettingsWrapper />);
 }
