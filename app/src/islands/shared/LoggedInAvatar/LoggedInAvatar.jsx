@@ -53,12 +53,21 @@ export default function LoggedInAvatar({
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        console.log('🚫 Clicked outside - closing dropdown');
         setIsOpen(false);
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      // Add a small delay before attaching the listener to prevent immediate closure
+      const timeoutId = setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 100);
+
+      return () => {
+        clearTimeout(timeoutId);
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
     }
 
     return () => {
@@ -206,7 +215,9 @@ export default function LoggedInAvatar({
     <div className="logged-in-avatar" ref={dropdownRef}>
       <button
         className="avatar-button"
-        onClick={() => {
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
           console.log('👆 Avatar button clicked! Current state:', isOpen, '→ New state:', !isOpen);
           setIsOpen(!isOpen);
         }}
