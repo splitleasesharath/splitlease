@@ -646,12 +646,13 @@
     padding-top: 140px; /* Filter bar (60px) + Schedule selector (80px) */
   }
 
-  /* Listings count - account for fixed headers */
+  /* Listings count - directly below schedule selector, not sticky */
   .listings-count {
-    position: sticky;
-    top: 140px;
-    z-index: 50;
+    position: relative;
+    top: 0;
+    z-index: 10;
     background: #f9fafb;
+    margin-top: 0;
   }
 
   /* Listings content takes remaining space */
@@ -1049,20 +1050,18 @@
   .mobile-map-overlay {
     display: block;
     position: fixed;
-    top: 0;
+    top: 140px; /* Start below filter bar (60px) + schedule selector (80px) */
     left: 0;
     right: 0;
     bottom: 0;
     width: 100vw;
-    height: 100vh;
+    height: calc(100vh - 140px); /* Take remaining height below headers */
     background: white;
     z-index: 2500;
     overflow: hidden;
-    /* Add padding-top to account for filter bar (60px) + schedule selector (~80px) */
-    padding-top: 140px;
   }
 
-  /* Ensure map container takes remaining height below filters */
+  /* Ensure map container takes full available height */
   .mobile-map-overlay .google-map-container {
     width: 100%;
     height: 100%;
