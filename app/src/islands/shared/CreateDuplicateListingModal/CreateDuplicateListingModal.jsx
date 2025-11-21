@@ -36,6 +36,7 @@ export default function CreateDuplicateListingModal({
   // Reset state when modal opens
   useEffect(() => {
     if (isVisible) {
+      console.log('🏠 CreateDuplicateListingModal: Modal opened');
       setViewMode('create');
       setListingName('');
       setSelectedListingId('');

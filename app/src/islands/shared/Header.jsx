@@ -367,8 +367,9 @@ export default function Header({ autoShowLogin = false }) {
                 role="menuitem"
                 onClick={(e) => {
                   e.preventDefault();
-                  setShowListPropertyModal(true);
                   setActiveDropdown(null);
+                  setMobileMenuActive(false);
+                  setShowListPropertyModal(true);
                 }}
               >
                 <span className="dropdown-title">List Property</span>

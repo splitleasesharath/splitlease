@@ -60,10 +60,12 @@ export default function LoggedInAvatar({
     };
 
     if (isOpen) {
-      // Use click event (not mousedown) and add listener on next tick
-      setTimeout(() => {
-        document.addEventListener('click', handleClickOutside);
-      }, 0);
+      // Use requestAnimationFrame to ensure we attach AFTER current click event completes
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.addEventListener('click', handleClickOutside);
+        });
+      });
 
       return () => {
         document.removeEventListener('click', handleClickOutside);
