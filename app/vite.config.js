@@ -87,9 +87,10 @@ export default defineConfig({
           } else if (url.startsWith('/account-profile.html')) {
             req.url = '/public/account-profile.html' + (url.substring('/account-profile.html'.length) || '');
           } else if (url.startsWith('/account-profile')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/account-profile.html' + queryString;
+            // Preserve the full path including user ID
+            // e.g., /account-profile/USER_ID or /account-profile/USER_ID?query=value
+            const pathAfterPrefix = url.substring('/account-profile'.length);
+            req.url = '/public/account-profile.html' + pathAfterPrefix;
           }
 
           next();
@@ -168,9 +169,10 @@ export default defineConfig({
           } else if (url.startsWith('/account-profile.html')) {
             req.url = '/account-profile.html' + (url.substring('/account-profile.html'.length) || '');
           } else if (url.startsWith('/account-profile')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryString) : '';
-            req.url = '/account-profile.html' + queryString;
+            // Preserve the full path including user ID
+            // e.g., /account-profile/USER_ID or /account-profile/USER_ID?query=value
+            const pathAfterPrefix = url.substring('/account-profile'.length);
+            req.url = '/account-profile.html' + pathAfterPrefix;
           }
 
           next();

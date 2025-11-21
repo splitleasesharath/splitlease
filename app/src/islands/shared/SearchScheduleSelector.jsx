@@ -238,6 +238,7 @@ export default function SearchScheduleSelector({
   minDays = 2,
   requireContiguous = true,
   initialSelection,
+  updateUrl = true,
 }) {
   // Use initialSelection if provided, otherwise get from URL or use default
   const getInitialState = () => {
@@ -565,8 +566,14 @@ export default function SearchScheduleSelector({
   /**
    * Update URL parameter when selection changes
    * Format: ?days-selected=2,3,4,5,6 (1-based, where 1=Sunday)
+   * Only updates URL if updateUrl prop is true
    */
   useEffect(() => {
+    if (!updateUrl) {
+      console.log('📅 SearchScheduleSelector: URL updates disabled');
+      return;
+    }
+
     const selectedDaysArray = Array.from(selectedDays).sort((a, b) => a - b);
 
     if (selectedDaysArray.length > 0) {
@@ -592,7 +599,7 @@ export default function SearchScheduleSelector({
 
       console.log('📅 SearchScheduleSelector: Removed URL parameter (no days selected)');
     }
-  }, [selectedDays]);
+  }, [selectedDays, updateUrl]);
 
   /**
    * Update parent component on selection change

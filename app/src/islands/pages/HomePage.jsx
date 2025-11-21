@@ -516,7 +516,7 @@ export default function HomePage() {
 
   // Check authentication status on mount
   useEffect(() => {
-    checkAuthStatus();
+    checkAuthStatus(); // Async function, but we don't need to wait for it
   }, []);
 
   // Mount SearchScheduleSelector component in hero section above Explore Rentals button

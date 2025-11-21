@@ -29,7 +29,7 @@ export default function Header({ autoShowLogin = false }) {
   const [userType, setUserType] = useState(null);
 
   // Lazy-load token validation after page is completely loaded
-  // Only runs if a token exists in localStorage
+  // Only runs if a token exists in sessionStorage
   useEffect(() => {
     const validateAuth = async () => {
       // Check if token exists first - skip validation if no token
