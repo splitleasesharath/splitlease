@@ -440,6 +440,446 @@ if (!authChecked) {
 )}
 ```
 
+---
+
+## Logged-In Avatar & Dropdown UI
+
+### Visual Appearance
+
+When a user is logged in, the Header displays a **user avatar with name and dropdown menu** in the top-right corner.
+
+#### **Desktop View:**
+```
+┌──────────────────────────────────────────────────────────┐
+│  [Logo]    Stay with Us ▼   List with Us ▼   [🔍 Explore Rentals]  [(Avatar) John ▼] │
+└──────────────────────────────────────────────────────────┘
+```
+
+#### **Mobile View:**
+```
+┌──────────────────────────────────────┐
+│  [Logo]                  [☰]  [(Avatar)] │
+└──────────────────────────────────────┘
+```
+
+### Avatar Component Structure
+
+**Location:** `Header.jsx:482-551`
+
+```jsx
+{currentUser && currentUser.firstName ? (
+  /* User is logged in - show dropdown with avatar and name */
+  <div className="nav-dropdown user-dropdown">
+    <a
+      href="#user"
+      className="nav-link dropdown-trigger user-trigger"
+      role="button"
+      aria-expanded={activeDropdown === 'user'}
+      aria-haspopup="true"
+      onClick={(e) => {
+        e.preventDefault();
+        toggleDropdown('user');
+      }}
+      onKeyDown={(e) => handleDropdownKeyDown(e, 'user')}
+    >
+      {/* Avatar Image or Placeholder */}
+      {currentUser.profilePhoto ? (
+        <img
+          src={currentUser.profilePhoto.startsWith('//') ? `https:${currentUser.profilePhoto}` : currentUser.profilePhoto}
+          alt={currentUser.firstName}
+          className="user-avatar"
+        />
+      ) : (
+        <div className="user-avatar-placeholder">
+          {currentUser.firstName.charAt(0).toUpperCase()}
+        </div>
+      )}
+
+      {/* User Name (Hidden on Mobile) */}
+      <span className="user-name-wrapper">
+        {currentUser.firstName}
+        <svg
+          className="dropdown-arrow"
+          width="12"
+          height="8"
+          viewBox="0 0 12 8"
+          fill="none"
+          aria-hidden="true"
+        >
+          <path
+            d="M1 1.5L6 6.5L11 1.5"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          />
+        </svg>
+      </span>
+    </a>
+
+    {/* Dropdown Menu */}
+    <div
+      className={`dropdown-menu ${activeDropdown === 'user' ? 'active' : ''}`}
+      role="menu"
+      aria-label="User menu"
+    >
+      <a
+        href="/account-profile"
+        className="dropdown-item"
+        role="menuitem"
+      >
+        <span className="dropdown-title">My Profile</span>
+      </a>
+      <a
+        href="#"
+        className="dropdown-item"
+        role="menuitem"
+        onClick={async (e) => {
+          e.preventDefault();
+          await handleLogout();
+        }}
+      >
+        <span className="dropdown-title">Log Out</span>
+      </a>
+    </div>
+  </div>
+) : (
+  /* User is not logged in - show auth buttons */
+  <>
+    <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); handleLoginClick(); }}>
+      Sign In
+    </a>
+    <a href="#" className="nav-link" onClick={(e) => { e.preventDefault(); handleSignupClick(); }}>
+      Sign Up
+    </a>
+  </>
+)}
+```
+
+### Avatar Display Logic
+
+#### **1. Profile Photo Available**
+
+When `currentUser.profilePhoto` exists:
+
+```jsx
+<img
+  src={currentUser.profilePhoto.startsWith('//') ? `https:${currentUser.profilePhoto}` : currentUser.profilePhoto}
+  alt={currentUser.firstName}
+  className="user-avatar"
+/>
+```
+
+**Processing:**
+- Checks if URL starts with `//` (protocol-relative URL)
+- Prepends `https:` if necessary
+- Otherwise uses URL as-is
+
+**Styling** (`header.css:294-301`):
+```css
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;           /* Circular avatar */
+    object-fit: cover;            /* Crop to fit circle */
+    border: 2px solid #5B21B6;   /* Purple border */
+    flex-shrink: 0;              /* Don't shrink on mobile */
+}
+```
+
+#### **2. No Profile Photo (Placeholder)**
+
+When `currentUser.profilePhoto` is null or empty:
+
+```jsx
+<div className="user-avatar-placeholder">
+  {currentUser.firstName.charAt(0).toUpperCase()}
+</div>
+```
+
+**Displays:** First letter of user's first name (e.g., "J" for "John")
+
+**Styling** (`header.css:303-315`):
+```css
+.user-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #5B21B6;    /* Purple background */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+```
+
+### User Name Display
+
+```jsx
+<span className="user-name-wrapper">
+  {currentUser.firstName}
+  <svg className="dropdown-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
+    <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+  </svg>
+</span>
+```
+
+**Styling** (`header.css:317-324`):
+```css
+.user-name-wrapper {
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 4px;               /* Space between name and arrow */
+}
+```
+
+**Mobile Behavior** (`header.css:377-379`):
+```css
+@media (max-width: 768px) {
+    .user-name-wrapper {
+        display: none;      /* Hide name on mobile, show only avatar */
+    }
+}
+```
+
+### Dropdown Menu
+
+#### **Structure**
+
+The dropdown appears below the avatar when clicked:
+
+```jsx
+<div
+  className={`dropdown-menu ${activeDropdown === 'user' ? 'active' : ''}`}
+  role="menu"
+  aria-label="User menu"
+>
+  <a href="/account-profile" className="dropdown-item" role="menuitem">
+    <span className="dropdown-title">My Profile</span>
+  </a>
+  <a href="#" className="dropdown-item" role="menuitem" onClick={handleLogout}>
+    <span className="dropdown-title">Log Out</span>
+  </a>
+</div>
+```
+
+#### **Menu Items**
+
+| Menu Item | Link | Action | Icon |
+|-----------|------|--------|------|
+| **My Profile** | `/account-profile` | Navigate to user's profile page | None |
+| **Log Out** | `#` (preventDefault) | Call `handleLogout()` | None |
+
+#### **Dropdown Toggle Logic**
+
+**State Management** (`Header.jsx:8`):
+```javascript
+const [activeDropdown, setActiveDropdown] = useState(null)
+```
+
+**Toggle Function** (`Header.jsx:127-137`):
+```javascript
+const toggleDropdown = (dropdownName) => {
+  if (activeDropdown === dropdownName) {
+    setActiveDropdown(null);  // Close if already open
+  } else {
+    setActiveDropdown(dropdownName);  // Open this dropdown
+  }
+};
+```
+
+**Click Handler** (`Header.jsx:491-494`):
+```javascript
+onClick={(e) => {
+  e.preventDefault();
+  toggleDropdown('user');
+}}
+```
+
+**Keyboard Handler** (`Header.jsx:254-262`):
+```javascript
+const handleDropdownKeyDown = (e, dropdownName) => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    toggleDropdown(dropdownName);
+  } else if (e.key === 'Escape') {
+    setActiveDropdown(null);  // Close on Escape
+  }
+};
+```
+
+#### **Active State Styling**
+
+The `active` class is conditionally applied:
+
+```jsx
+className={`dropdown-menu ${activeDropdown === 'user' ? 'active' : ''}`}
+```
+
+When `activeDropdown === 'user'`, the dropdown menu becomes visible via CSS.
+
+### Logout Functionality
+
+**Handler Function** (`Header.jsx:265-278`):
+
+```javascript
+const handleLogout = async () => {
+  console.log('🔓 Logging out...');
+
+  // Call logout API
+  const result = await logoutUser();
+
+  if (result.success) {
+    console.log('✅ Logout successful - reloading page');
+    // Reload page to reset state and show logged-out view
+    window.location.reload();
+  } else {
+    console.error('❌ Logout failed:', result.error);
+  }
+};
+```
+
+**Logout Flow:**
+1. User clicks "Log Out" in dropdown
+2. `handleLogout()` is called
+3. Calls `logoutUser()` from `auth.js`
+4. Clears all auth data (sessionStorage + localStorage)
+5. Reloads page to reset application state
+6. Header re-renders showing "Sign In" / "Sign Up" buttons
+
+**Backend API Call** (Optional):
+
+The `logoutUser()` function in `auth.js:715-751` optionally calls the Bubble logout endpoint:
+
+```javascript
+POST https://upgradefromstr.bubbleapps.io/api/1.1/wf/logout-user
+Headers:
+  Authorization: Bearer ${token}
+```
+
+**Storage Cleanup:**
+```javascript
+clearAllAuthData()  // From secureStorage.js
+```
+
+This removes:
+- `sessionStorage`: `__sl_at__`, `__sl_sid__`, `__sl_rd__`
+- `localStorage`: `sl_auth_state`, `sl_user_id`, `sl_user_type`, `sl_last_activity`
+
+### Responsive Behavior
+
+| Screen Size | Avatar | Name | Dropdown |
+|-------------|--------|------|----------|
+| **Desktop (>768px)** | ✓ 40px circle | ✓ Visible next to avatar | ✓ Below avatar |
+| **Mobile (≤768px)** | ✓ 40px circle | ✗ Hidden | ✓ Full-width below avatar |
+
+### Accessibility Features
+
+1. **ARIA Attributes:**
+   ```jsx
+   role="button"
+   aria-expanded={activeDropdown === 'user'}
+   aria-haspopup="true"
+   ```
+
+2. **Keyboard Navigation:**
+   - `Enter` / `Space`: Toggle dropdown
+   - `Escape`: Close dropdown
+
+3. **Alt Text:**
+   ```jsx
+   alt={currentUser.firstName}
+   ```
+
+4. **Menu Roles:**
+   ```jsx
+   role="menu"
+   role="menuitem"
+   ```
+
+### CSS Class Reference
+
+| Class Name | Element | Purpose |
+|------------|---------|---------|
+| `.user-dropdown` | Container | Wraps entire avatar + dropdown |
+| `.user-trigger` | Anchor | Clickable trigger for dropdown |
+| `.user-avatar` | Image | Profile photo (when available) |
+| `.user-avatar-placeholder` | Div | First initial fallback |
+| `.user-name-wrapper` | Span | Contains name + dropdown arrow |
+| `.dropdown-arrow` | SVG | Chevron icon (▼) |
+| `.dropdown-menu` | Div | Menu container |
+| `.dropdown-item` | Anchor | Individual menu link |
+| `.dropdown-title` | Span | Menu item text |
+
+### Visual States
+
+#### **Default State (Desktop)**
+```
+┌─────────────────────────┐
+│  (👤 Avatar) John ▼     │
+└─────────────────────────┘
+```
+
+#### **Hover State**
+- Subtle opacity change on trigger
+- Cursor changes to pointer
+
+#### **Active/Open State**
+```
+┌─────────────────────────┐
+│  (👤 Avatar) John ▼     │
+├─────────────────────────┤
+│  My Profile             │
+│  Log Out                │
+└─────────────────────────┘
+```
+
+#### **Mobile State**
+```
+┌─────────┐
+│ (Avatar)│
+└─────────┘
+    ⬇️
+┌─────────┐
+│My Profile│
+│Log Out  │
+└─────────┘
+```
+
+### Color Palette
+
+| Element | Color | Hex Code |
+|---------|-------|----------|
+| Avatar Border | Purple | `#5B21B6` |
+| Placeholder Background | Purple | `#5B21B6` |
+| Placeholder Text | White | `#FFFFFF` |
+| User Name | White | `#FFFFFF` |
+| Dropdown Background | Dark Purple | `#31135D` |
+| Dropdown Text | White | `#FFFFFF` |
+
+### Example Screenshots Description
+
+**Logged-In Header (Desktop):**
+- Logo on far left
+- Navigation links in center
+- "Explore Rentals" button
+- Avatar (circular, 40px) with purple border
+- User's first name "John" next to avatar
+- Downward chevron (▼) indicating dropdown
+- On click: White dropdown box appears with "My Profile" and "Log Out"
+
+**Logged-In Header (Mobile):**
+- Logo on left
+- Hamburger menu icon on right
+- Avatar (circular, 40px) on far right
+- Name is hidden
+- On click: Dropdown appears full-width below header
+
 ### How Pages Access Auth State
 
 **Option 1: Via Header Component (Recommended)**
