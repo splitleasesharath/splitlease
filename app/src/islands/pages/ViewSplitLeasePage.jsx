@@ -976,7 +976,7 @@ export default function ViewSplitLeasePage() {
                     {/* Empty slot */}
                   </div>
                 ))}
-              </div>
+              </>
             ) : (
               <div style={{
                 width: '100%',
