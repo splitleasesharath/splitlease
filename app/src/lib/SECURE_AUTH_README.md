@@ -18,6 +18,7 @@ Split Lease now uses a **secure, encrypted storage system** for authentication t
 │                                                         │
 │  Can Access:                                           │
 │  ✅ getAuthState() → boolean                           │
+│  ✅ getUserId() → string (user ID)                     │
 │  ✅ getUserType() → 'Host' | 'Guest'                   │
 │  ✅ isSessionValid() → boolean                         │
 │  ✅ getLastActivity() → timestamp                      │
@@ -58,6 +59,7 @@ Split Lease now uses a **secure, encrypted storage system** for authentication t
 │                                                         │
 │  localStorage (public state, non-sensitive):           │
 │  - sl_auth_state     → 'true' | 'false'                │
+│  - sl_user_id        → user ID (public identifier)     │
 │  - sl_user_type      → 'Host' | 'Guest'                │
 │  - sl_last_activity  → timestamp                       │
 │  - sl_session_valid  → 'true' | 'false'                │
@@ -85,11 +87,12 @@ const sessionValid = (Date.now() - lastAuth) < 86400000;
 const token = await getAuthToken(); // Returns decrypted token only when needed
 const sessionId = await getSessionId(); // Encrypted at rest
 
-// ✅ NEW: 1-hour sessions
-const expired = isSessionExpired(3600000); // Force re-validation
+// ✅ NEW: Bubble manages token expiry
+// Client validates on every API request - Bubble rejects expired tokens
 
 // ✅ NEW: Only state exposed to app
 const isAuthenticated = getAuthState(); // Returns boolean, no tokens
+const userId = getUserId(); // Returns user ID (public identifier)
 const userType = getUserType(); // Returns 'Host' or 'Guest', no sensitive data
 ```
 
@@ -122,20 +125,23 @@ const encrypted = await crypto.subtle.encrypt(
 |-----------|---------|------------|----------|
 | Auth Token | sessionStorage (encrypted) | Internal only | Tab session |
 | Session ID | sessionStorage (encrypted) | Internal only | Tab session |
-| Auth State | localStorage (plaintext) | Public | 1 hour |
-| User Type | localStorage (plaintext) | Public | Until logout |
+| Auth State | localStorage (plaintext) | Public | Until logout or Bubble token expiry |
+| User ID | localStorage (plaintext) | **Public** | Until logout |
+| User Type | localStorage (plaintext) | **Public** | Until logout |
 | Last Activity | localStorage (plaintext) | Public | Until logout |
 
-### 3. **Session Expiry**
+### 3. **Session Management**
 
-Sessions now expire after **1 hour** of inactivity:
+Sessions are managed by **Bubble API token expiry**:
 
 ```javascript
 // Auto-updated on each authenticated action
 updateLastActivity();
 
-// Check if expired
-if (isSessionExpired(3600000)) { // 1 hour = 3600000ms
+// Bubble handles token expiry - we validate on each request
+const userData = await validateTokenAndFetchUser();
+if (!userData) {
+  // Token expired or invalid - Bubble rejected it
   clearAuthData();
   redirectToLogin();
 }
@@ -148,10 +154,13 @@ if (isSessionExpired(3600000)) { // 1 hour = 3600000ms
 **✅ DO:**
 
 ```javascript
-import { getAuthState, getUserType } from './lib/auth.js';
+import { getAuthState, getUserId, getUserType } from './lib/auth.js';
 
 // Check if user is authenticated
 const isAuthenticated = getAuthState();
+
+// Get user ID (public, non-sensitive identifier)
+const userId = getUserId(); // e.g., '1234567890'
 
 // Get user type for UI rendering
 const userType = getUserType(); // 'Host' or 'Guest'
@@ -237,16 +246,17 @@ async function handleLogout() {
 - Even if XSS reads storage, gets encrypted gibberish
 - Encryption key exists only in memory (not stored)
 
-### 2. **Session Duration (Reduced)**
+### 2. **Token Expiry (Managed by Bubble)**
 
 **Before:**
-- 24-hour sessions
-- Stolen token valid for a full day
+- Client-side 24-hour expiry check
+- No server validation on expiry
 
 **After:**
-- 1-hour sessions
-- Auto-expiry forces re-validation
-- Reduces window of vulnerability
+- **Bubble API manages token expiry**
+- Client validates tokens on every request
+- Invalid/expired tokens immediately rejected
+- Forces re-authentication when Bubble says token is invalid
 
 ### 3. **Storage Isolation**
 
@@ -334,12 +344,13 @@ if (migrated) {
 ### Issue: User keeps getting logged out
 
 **Check:**
-1. Session expiry (1 hour) - is user idle?
+1. Bubble token expiry - is the token actually expired?
 2. Browser privacy settings - blocking sessionStorage?
 3. Tab close/refresh - sessionStorage cleared?
+4. Validate token with Bubble API to check if it's still valid
 
 **Solution:**
-Implement token refresh mechanism (see Future Enhancements).
+If tokens are clearing on refresh, this is expected (sessionStorage behavior). User needs to log in again. Consider implementing HttpOnly cookies for persistence across page refreshes.
 
 ### Issue: Migration not working
 

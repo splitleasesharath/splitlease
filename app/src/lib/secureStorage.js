@@ -116,6 +116,7 @@ const SECURE_KEYS = {
  */
 const STATE_KEYS = {
   IS_AUTHENTICATED: 'sl_auth_state',
+  USER_ID: 'sl_user_id',
   USER_TYPE: 'sl_user_type',
   LAST_ACTIVITY: 'sl_last_activity',
   SESSION_VALID: 'sl_session_valid'
@@ -200,10 +201,16 @@ export function clearSecureStorage() {
 /**
  * Set authentication state (public, non-sensitive)
  * @param {boolean} isAuthenticated - Whether user is authenticated
+ * @param {string} userId - User ID (optional, non-sensitive identifier)
  */
-export function setAuthState(isAuthenticated) {
+export function setAuthState(isAuthenticated, userId = null) {
   localStorage.setItem(STATE_KEYS.IS_AUTHENTICATED, isAuthenticated ? 'true' : 'false');
   localStorage.setItem(STATE_KEYS.LAST_ACTIVITY, Date.now().toString());
+
+  // Store user ID in public state (non-sensitive identifier)
+  if (userId) {
+    localStorage.setItem(STATE_KEYS.USER_ID, userId);
+  }
 }
 
 /**
@@ -212,6 +219,14 @@ export function setAuthState(isAuthenticated) {
  */
 export function getAuthState() {
   return localStorage.getItem(STATE_KEYS.IS_AUTHENTICATED) === 'true';
+}
+
+/**
+ * Get user ID from public state
+ * @returns {string|null} User ID or null
+ */
+export function getUserId() {
+  return localStorage.getItem(STATE_KEYS.USER_ID);
 }
 
 /**
@@ -266,10 +281,12 @@ export function getLastActivity() {
 
 /**
  * Check if session has expired (based on last activity)
- * @param {number} maxAgeMs - Maximum session age in milliseconds
+ * NOTE: This is now only used for UI staleness checks, not for auth validation.
+ * Bubble API handles token expiry - we validate on each request.
+ * @param {number} maxAgeMs - Maximum session age in milliseconds (default 24 hours)
  * @returns {boolean} True if session expired
  */
-export function isSessionExpired(maxAgeMs = 3600000) { // Default 1 hour
+export function isSessionExpired(maxAgeMs = 86400000) { // Default 24 hours (same as before)
   const lastActivity = getLastActivity();
   if (!lastActivity) return true;
 
@@ -285,6 +302,7 @@ export function clearAllAuthData() {
 
   // Clear public state
   localStorage.removeItem(STATE_KEYS.IS_AUTHENTICATED);
+  localStorage.removeItem(STATE_KEYS.USER_ID);
   localStorage.removeItem(STATE_KEYS.USER_TYPE);
   localStorage.removeItem(STATE_KEYS.LAST_ACTIVITY);
   localStorage.removeItem(STATE_KEYS.SESSION_VALID);
@@ -332,8 +350,8 @@ export async function migrateFromLegacyStorage() {
     await setAuthToken(oldToken);
     await setSessionId(oldSessionId);
 
-    // Update state
-    setAuthState(true);
+    // Update state with user ID
+    setAuthState(true, oldSessionId);
 
     // Get user type if available
     const userType = localStorage.getItem('splitlease_user_type');

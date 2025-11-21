@@ -29,6 +29,7 @@ import {
   getSessionId as getSecureSessionId,
   setAuthState,
   getAuthState,
+  getUserId as getPublicUserId,
   setUserType as setSecureUserType,
   getUserType as getSecureUserType,
   updateLastActivity,
@@ -131,10 +132,7 @@ export async function checkAuthStatus() {
   // Check auth state (not tokens directly)
   const authState = getAuthState();
 
-  // Check if session has expired (1 hour by default)
-  const expired = isSessionExpired(3600000); // 1 hour
-
-  if (authState && !expired) {
+  if (authState) {
     // Verify we actually have tokens
     const hasTokens = await hasValidTokens();
 
@@ -157,13 +155,15 @@ export async function checkAuthStatus() {
 // ============================================================================
 
 /**
- * Validate session by checking expiry time
- * Ensures session is not older than 1 hour (changed from 24 hours)
+ * Validate session by checking if tokens exist
+ * Bubble API handles actual token expiry - we validate on each request
  *
  * @returns {boolean} True if session is valid, false if expired or missing
  */
 export function isSessionValid() {
-  return !isSessionExpired(3600000); // 1 hour
+  // Simply check if auth state is set
+  // Bubble will reject expired tokens on API calls
+  return getAuthState();
 }
 
 /**
@@ -243,6 +243,16 @@ export async function getSessionId() {
 export async function setSessionId(sessionId) {
   await setSecureSessionId(sessionId);
   updateLastActivity();
+}
+
+/**
+ * Get user ID from public state (non-sensitive identifier)
+ * NOTE: This is public state, not the encrypted session ID
+ *
+ * @returns {string|null} User ID if exists, null otherwise
+ */
+export function getUserId() {
+  return getPublicUserId();
 }
 
 /**
@@ -437,8 +447,8 @@ export async function loginUser(email, password) {
       await setAuthToken(data.response.token);
       await setSessionId(data.response.user_id);
 
-      // Set auth state (public, non-sensitive)
-      setAuthState(true);
+      // Set auth state with user ID (public, non-sensitive)
+      setAuthState(true, data.response.user_id);
 
       // Update login state
       isUserLoggedInState = true;
@@ -536,8 +546,8 @@ export async function signupUser(email, password, retype) {
       await setAuthToken(data.response.token);
       await setSessionId(data.response.user_id);
 
-      // Set auth state (public, non-sensitive)
-      setAuthState(true);
+      // Set auth state with user ID (public, non-sensitive)
+      setAuthState(true, data.response.user_id);
 
       // Update login state
       isUserLoggedInState = true;
