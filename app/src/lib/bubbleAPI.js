@@ -70,9 +70,17 @@ export async function triggerBubbleWorkflow(workflowName, parameters = {}) {
     }
 
     const data = await response.json();
-    console.log('[Bubble API] Workflow response:', data);
+    console.log('[Bubble API] Full workflow response:', data);
+    console.log('[Bubble API] Response type:', typeof data);
+    console.log('[Bubble API] Response keys:', Object.keys(data));
 
-    return data.response || data;
+    // Log nested response if it exists
+    if (data.response) {
+      console.log('[Bubble API] Nested response:', data.response);
+      console.log('[Bubble API] Nested response keys:', Object.keys(data.response));
+    }
+
+    return data;
   } catch (error) {
     console.error('[Bubble API] Failed to trigger workflow:', error);
     throw error;

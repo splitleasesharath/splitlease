@@ -78,35 +78,21 @@ export default function CreateDuplicateListingModal({
       );
 
       console.log('✅ Bubble workflow response:', workflowResponse);
+      console.log('Response structure:', JSON.stringify(workflowResponse, null, 2));
 
-      // Extract listing ID from workflow response
-      let listingId = workflowResponse?.listing_id || workflowResponse?.id;
+      // Extract listing ID from various possible response formats
+      // Bubble can return: {response: {listing_id: "..."}} or {listing_id: "..."} or {response: {id: "..."}}
+      const listingId =
+        workflowResponse?.response?.listing_id ||
+        workflowResponse?.response?.id ||
+        workflowResponse?.listing_id ||
+        workflowResponse?.id;
 
-      // Fallback: If Bubble doesn't return listing ID, query Supabase for the most recent listing
+      console.log('📋 Extracted listing ID:', listingId);
+
       if (!listingId) {
-        console.log('⚠️ Listing ID not in workflow response, querying Supabase for newly created listing...');
-
-        try {
-          const { data: recentListings, error } = await supabase
-            .from('zat_listings')
-            .select('_id, Name, Created Date')
-            .eq('Name', listingName.trim())
-            .order('Created Date', { ascending: false })
-            .limit(1);
-
-          if (error) throw error;
-
-          if (recentListings && recentListings.length > 0) {
-            listingId = recentListings[0]._id;
-            console.log('✅ Found newly created listing in Supabase:', listingId);
-          } else {
-            console.warn('⚠️ Could not find listing in Supabase');
-            throw new Error('Listing was created but ID could not be retrieved');
-          }
-        } catch (supabaseError) {
-          console.error('❌ Error querying Supabase for listing:', supabaseError);
-          throw new Error('Listing was created but ID could not be retrieved');
-        }
+        console.error('❌ No listing ID found in response. Response was:', workflowResponse);
+        throw new Error('Bubble workflow did not return a listing ID. Please check the workflow configuration to ensure it returns "listing_id" or "id" in the response.');
       }
 
       // Step 2: Hide modal
