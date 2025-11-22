@@ -125,7 +125,7 @@
     z-index: 1000;
 }
 
-.nav-dropdown:hover .dropdown-menu,
+/* Only show dropdown when active class is present (click-based, not hover) */
 .dropdown-menu.active {
     opacity: 1;
     visibility: visible;
