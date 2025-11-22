@@ -42,11 +42,45 @@ export default function LoggedInAvatar({
 
   // Debug logging
   useEffect(() => {
-    console.log('🎭 LoggedInAvatar mounted with user:', user);
+    const instanceId = Math.random().toString(36).substring(7);
+    console.log('🎭 LoggedInAvatar mounted with user:', user, 'Instance ID:', instanceId);
+
+    // Track ALL clicks globally to detect double-clicks
+    let lastClickTime = 0;
+    const globalClickHandler = (e) => {
+      const now = e.timeStamp;
+      const timeSinceLastClick = now - lastClickTime;
+      if (e.target.closest('.logged-in-avatar')) {
+        console.log('🌍 Global click on avatar:', {
+          timeSinceLastClick: timeSinceLastClick.toFixed(2) + 'ms',
+          target: e.target.tagName,
+          className: e.target.className,
+        });
+      }
+      lastClickTime = now;
+    };
+    document.addEventListener('click', globalClickHandler, true);
+
+    return () => {
+      document.removeEventListener('click', globalClickHandler, true);
+    };
   }, []);
 
   useEffect(() => {
     console.log('🔄 LoggedInAvatar dropdown state changed:', isOpen);
+
+    // Check if dropdown is actually in DOM
+    if (isOpen) {
+      setTimeout(() => {
+        const dropdown = document.querySelector('.logged-in-avatar .dropdown-menu');
+        console.log('🔍 Dropdown DOM check:', {
+          exists: !!dropdown,
+          visible: dropdown ? window.getComputedStyle(dropdown).display : 'N/A',
+          position: dropdown ? window.getComputedStyle(dropdown).position : 'N/A',
+          zIndex: dropdown ? window.getComputedStyle(dropdown).zIndex : 'N/A',
+        });
+      }, 10);
+    }
   }, [isOpen]);
 
   // Close dropdown when clicking outside
@@ -231,7 +265,16 @@ export default function LoggedInAvatar({
         onClick={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('👆 Avatar button clicked! Current state:', isOpen, '→ New state:', !isOpen);
+          console.log('👆 Avatar button clicked!', {
+            currentState: isOpen,
+            newState: !isOpen,
+            eventType: e.type,
+            isTrusted: e.isTrusted,
+            timeStamp: e.timeStamp,
+            target: e.target.tagName,
+            currentTarget: e.currentTarget.tagName,
+            eventPhase: e.eventPhase,
+          });
           setIsOpen(!isOpen);
         }}
         aria-label="Toggle user menu"
