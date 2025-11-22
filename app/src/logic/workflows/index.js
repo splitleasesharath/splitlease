@@ -11,3 +11,8 @@ export { validateMoveInDateWorkflow } from './scheduling/validateMoveInDateWorkf
 // Auth Workflows
 export { checkAuthStatusWorkflow } from './auth/checkAuthStatusWorkflow.js'
 export { validateTokenWorkflow } from './auth/validateTokenWorkflow.js'
+
+// Booking Workflows
+export { loadProposalDetailsWorkflow } from './booking/loadProposalDetailsWorkflow.js'
+export { cancelProposalWorkflow } from './booking/cancelProposalWorkflow.js'
+export { acceptProposalWorkflow } from './booking/acceptProposalWorkflow.js'

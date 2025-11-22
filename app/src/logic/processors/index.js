@@ -17,3 +17,9 @@ export { extractListingCoordinates } from './listing/extractListingCoordinates.j
 
 // Display Processors
 export { formatHostName } from './display/formatHostName.js'
+
+// User Processors
+export { processUserData } from './user/processUserData.js'
+
+// Proposal Processors
+export { processProposalData } from './proposal/processProposalData.js'
