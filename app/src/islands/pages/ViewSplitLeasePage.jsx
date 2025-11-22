@@ -9,7 +9,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
-import CreateProposalFlow from './ViewSplitLeasePageComponents/CreateProposalFlow.jsx';
 import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
 import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
