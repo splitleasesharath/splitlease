@@ -1131,9 +1131,10 @@
     min-width: 180px;
   }
 
-  /* Adjust AI research button for mobile map modal */
+  /* Adjust AI research button for mobile map modal - bottom-center placement */
   .mobile-map-content .ai-research-button {
-    top: 12px;
+    top: auto;
+    bottom: 180px; /* Above the legend */
     left: 50%;
     transform: translateX(-50%);
     padding: 8px 14px;

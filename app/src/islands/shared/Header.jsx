@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL, AUTH_STORAGE_KEYS } from '../../lib/constants.js';
-import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
+import LoggedInHeaderAvatar2 from './LoggedInHeaderAvatar2';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -162,8 +162,7 @@ export default function Header({ autoShowLogin = false }) {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      // Don't close if clicking inside nav-dropdown or logged-in-avatar
-      if (!e.target.closest('.nav-dropdown') && !e.target.closest('.logged-in-avatar')) {
+      if (!e.target.closest('.nav-dropdown')) {
         setActiveDropdown(null);
       }
     };
@@ -492,31 +491,9 @@ export default function Header({ autoShowLogin = false }) {
           </a>
 
           {currentUser && currentUser.firstName ? (
-            /* User is logged in - show LoggedInAvatar component */
-            <LoggedInAvatar
-              user={{
-                id: currentUser.id || '',
-                name: `${currentUser.firstName} ${currentUser.lastName || ''}`.trim(),
-                email: currentUser.email || '',
-                userType: userType === 'A Host (I have a space available to rent)' ? 'HOST'
-                  : userType === 'Trial Host' ? 'TRIAL_HOST'
-                  : userType === 'A Guest (I would like to rent a space)' ? 'GUEST'
-                  : 'HOST',
-                avatarUrl: currentUser.profilePhoto?.startsWith('//')
-                  ? `https:${currentUser.profilePhoto}`
-                  : currentUser.profilePhoto,
-                proposalsCount: currentUser.proposalsCount || 0,
-                listingsCount: currentUser.listingsCount || 0,
-                virtualMeetingsCount: currentUser.virtualMeetingsCount || 0,
-                houseManualsCount: currentUser.houseManualsCount || 0,
-                leasesCount: currentUser.leasesCount || 0,
-                favoritesCount: currentUser.favoritesCount || 0,
-                unreadMessagesCount: currentUser.unreadMessagesCount || 0,
-              }}
-              currentPath={window.location.pathname}
-              onNavigate={(path) => {
-                window.location.href = path;
-              }}
+            /* User is logged in - show LoggedInHeaderAvatar2 island */
+            <LoggedInHeaderAvatar2
+              user={currentUser}
               onLogout={handleLogout}
             />
           ) : (

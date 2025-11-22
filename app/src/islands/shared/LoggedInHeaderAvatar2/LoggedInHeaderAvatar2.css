@@ -1,0 +1,83 @@
+/* ========================================
+   LoggedInHeaderAvatar2 Component Styles
+   Self-contained styles for user avatar dropdown
+   ======================================== */
+
+/* Component Root - Ensures proper stacking context */
+.logged-in-header-avatar-2 {
+  position: relative;
+  z-index: 100;
+}
+
+/* User Dropdown Trigger Button Styles */
+.logged-in-header-avatar-2 .user-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+/* User Avatar - Profile Photo */
+.logged-in-header-avatar-2 .user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #5B21B6; /* Purple brand color */
+  flex-shrink: 0;
+}
+
+/* User Avatar - Placeholder Circle with Initials */
+.logged-in-header-avatar-2 .user-avatar-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #5B21B6; /* Purple brand color */
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* User Name + Arrow Wrapper */
+.logged-in-header-avatar-2 .user-name-wrapper {
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ========================================
+   Mobile Responsive Styles
+   ======================================== */
+
+/* Hide user name on mobile - show only avatar */
+@media (max-width: 768px) {
+  .logged-in-header-avatar-2 .user-name-wrapper {
+    display: none;
+  }
+}
+
+/* ========================================
+   Shared Dropdown Classes
+   Note: The following classes are defined in
+   app/src/styles/components/header.css and
+   shared across all header dropdowns:
+
+   - .nav-dropdown
+   - .dropdown-menu
+   - .dropdown-menu.active
+   - .dropdown-item
+   - .dropdown-item:hover
+   - .dropdown-title
+   - .dropdown-arrow
+
+   This component inherits those styles
+   through className combinations.
+   ======================================== */
