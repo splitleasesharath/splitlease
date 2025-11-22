@@ -80,10 +80,33 @@ export default function CreateDuplicateListingModal({
       console.log('✅ Bubble workflow response:', workflowResponse);
 
       // Extract listing ID from workflow response
-      const listingId = workflowResponse?.listing_id || workflowResponse?.id;
+      let listingId = workflowResponse?.listing_id || workflowResponse?.id;
 
+      // Fallback: If Bubble doesn't return listing ID, query Supabase for the most recent listing
       if (!listingId) {
-        throw new Error('Listing ID not returned from Bubble workflow');
+        console.log('⚠️ Listing ID not in workflow response, querying Supabase for newly created listing...');
+
+        try {
+          const { data: recentListings, error } = await supabase
+            .from('zat_listings')
+            .select('_id, Name, Created Date')
+            .eq('Name', listingName.trim())
+            .order('Created Date', { ascending: false })
+            .limit(1);
+
+          if (error) throw error;
+
+          if (recentListings && recentListings.length > 0) {
+            listingId = recentListings[0]._id;
+            console.log('✅ Found newly created listing in Supabase:', listingId);
+          } else {
+            console.warn('⚠️ Could not find listing in Supabase');
+            throw new Error('Listing was created but ID could not be retrieved');
+          }
+        } catch (supabaseError) {
+          console.error('❌ Error querying Supabase for listing:', supabaseError);
+          throw new Error('Listing was created but ID could not be retrieved');
+        }
       }
 
       // Step 2: Hide modal
