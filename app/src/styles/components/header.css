@@ -125,7 +125,8 @@
     z-index: 1000;
 }
 
-.nav-dropdown:hover .dropdown-menu {
+.nav-dropdown:hover .dropdown-menu,
+.dropdown-menu.active {
     opacity: 1;
     visibility: visible;
     margin-top: 0.5rem;

@@ -65,16 +65,15 @@
   right: 0;
   width: 300px;
   max-height: 600px;
-  background-color: #FF0000 !important; /* TEMP: Red background to make it super visible */
-  border: 5px solid #00FF00 !important; /* TEMP: Green border */
+  background-color: #FFFFFF;
+  border: 1px solid #6B6B6B;
   border-radius: 10px;
   box-shadow: 0px 10px 20px 0px rgba(0, 0, 0, 0.1);
   overflow: visible;
   z-index: 10000 !important;
-  animation: none !important; /* TEMP: Disable animation */
   display: block !important;
   visibility: visible !important;
-  opacity: 1 !important; /* TEMP: Force full opacity */
+  opacity: 1 !important;
 }
 
 @keyframes dropdownFadeIn {
@@ -105,14 +104,14 @@
   gap: 12px;
   height: 46px;
   padding: 0 15px;
-  background-color: #FFFF00 !important; /* TEMP: Yellow background */
+  background-color: #FFFFFF;
   border: none;
   cursor: pointer;
   transition: background-color 0.2s ease;
   font-family: 'DM Sans', sans-serif;
-  font-size: 18px !important; /* TEMP: Larger text */
-  font-weight: 700 !important; /* TEMP: Bold */
-  color: #000000 !important;
+  font-size: 15px;
+  font-weight: 500;
+  color: #000000;
   text-align: left;
   width: 100%;
   position: relative;
