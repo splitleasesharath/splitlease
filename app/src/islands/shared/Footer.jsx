@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { REFERRAL_API_ENDPOINT, SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
+import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
+import ImportListingModal from './ImportListingModal/ImportListingModal.jsx';
 
 export default function Footer() {
   const [referralMethod, setReferralMethod] = useState('text');
@@ -8,6 +10,8 @@ export default function Footer() {
   const [importEmail, setImportEmail] = useState('');
   const [isSubmittingReferral, setIsSubmittingReferral] = useState(false);
   const [isSubmittingImport, setIsSubmittingImport] = useState(false);
+  const [showCreateListingModal, setShowCreateListingModal] = useState(false);
+  const [showImportListingModal, setShowImportListingModal] = useState(false);
 
   // Handle referral method change
   const handleReferralMethodChange = (method) => {
@@ -107,7 +111,15 @@ export default function Footer() {
           {/* For Hosts Column */}
           <div className="footer-column">
             <h4>For Hosts</h4>
-            <a href={SIGNUP_LOGIN_URL}>List Property Now</a>
+            <a
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setShowCreateListingModal(true);
+              }}
+            >
+              List Property Now
+            </a>
             <a href="/list-with-us.html">How to List</a>
             <a href="/host-success">Success Stories</a>
             <a href="/policies.html">Legal Section</a>
@@ -277,6 +289,43 @@ export default function Footer() {
         <span>Made with love in New York City</span>
         <span>© 2025 SplitLease</span>
       </div>
+
+      {/* Create Listing Modal */}
+      <CreateDuplicateListingModal
+        isVisible={showCreateListingModal}
+        onClose={() => setShowCreateListingModal(false)}
+        onSuccess={(newListing) => {
+          console.log('New listing created:', newListing);
+        }}
+        currentUser={null}
+        existingListings={[]}
+        onNavigateToListing={(listingId) => {
+          window.location.href = `https://app.split.lease/listing/${listingId}`;
+        }}
+      />
+
+      {/* Import Listing Modal */}
+      <ImportListingModal
+        isOpen={showImportListingModal}
+        onClose={() => setShowImportListingModal(false)}
+        onSubmit={async (data) => {
+          setIsSubmittingImport(true);
+          try {
+            // TODO: Implement actual import API call
+            console.log('Importing listing:', data);
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            alert('Listing import request submitted! We will email you when it is ready.');
+            setShowImportListingModal(false);
+          } catch (error) {
+            console.error('Import error:', error);
+            alert('Failed to import listing. Please try again later.');
+          } finally {
+            setIsSubmittingImport(false);
+          }
+        }}
+        currentUserEmail=""
+        isLoading={isSubmittingImport}
+      />
     </>
   );
 }

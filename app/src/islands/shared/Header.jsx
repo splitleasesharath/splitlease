@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL, AUTH_STORAGE_KEYS } from '../../lib/constants.js';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
+import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -28,6 +29,9 @@ export default function Header({ autoShowLogin = false }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [userType, setUserType] = useState(null);
+
+  // CreateDuplicateListingModal State
+  const [showListPropertyModal, setShowListPropertyModal] = useState(false);
 
   // Lazy-load token validation after page is completely loaded
   // Only runs if a token exists in sessionStorage
@@ -158,7 +162,8 @@ export default function Header({ autoShowLogin = false }) {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (!e.target.closest('.nav-dropdown')) {
+      // Don't close if clicking inside nav-dropdown or logged-in-avatar
+      if (!e.target.closest('.nav-dropdown') && !e.target.closest('.logged-in-avatar')) {
         setActiveDropdown(null);
       }
     };
@@ -357,9 +362,15 @@ export default function Header({ autoShowLogin = false }) {
                 <span className="dropdown-desc">Explore other hosts' feedback</span>
               </a>
               <a
-                href={SIGNUP_LOGIN_URL}
+                href="#"
                 className="dropdown-item"
                 role="menuitem"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveDropdown(null);
+                  setMobileMenuActive(false);
+                  setShowListPropertyModal(true);
+                }}
               >
                 <span className="dropdown-title">List Property</span>
               </a>
@@ -1042,6 +1053,15 @@ export default function Header({ autoShowLogin = false }) {
             </form>
           </div>
         </div>
+      )}
+
+      {/* CreateDuplicateListingModal */}
+      {showListPropertyModal && (
+        <CreateDuplicateListingModal
+          isVisible={showListPropertyModal}
+          onClose={() => setShowListPropertyModal(false)}
+          currentUser={currentUser}
+        />
       )}
     </header>
   );

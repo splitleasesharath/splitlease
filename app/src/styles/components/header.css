@@ -125,7 +125,8 @@
     z-index: 1000;
 }
 
-.nav-dropdown:hover .dropdown-menu {
+/* Only show dropdown when active class is present (click-based, not hover) */
+.dropdown-menu.active {
     opacity: 1;
     visibility: visible;
     margin-top: 0.5rem;
@@ -137,11 +138,13 @@
     color: var(--text-dark);
     text-decoration: none;
     border-radius: 8px;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .dropdown-item:hover {
-    background: rgba(91, 33, 182, 0.05);
+    background: rgba(91, 33, 182, 0.08);
+    box-shadow: 0 4px 12px rgba(91, 33, 182, 0.15);
+    transform: translateY(-2px);
 }
 
 .dropdown-title {

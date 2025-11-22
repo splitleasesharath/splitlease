@@ -40,20 +40,85 @@ export default function LoggedInAvatar({
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
+  // Debug logging
+  useEffect(() => {
+    const instanceId = Math.random().toString(36).substring(7);
+    console.log('🎭 LoggedInAvatar mounted with user:', user, 'Instance ID:', instanceId);
+
+    // Track ALL clicks globally to detect double-clicks
+    let lastClickTime = 0;
+    const globalClickHandler = (e) => {
+      const now = e.timeStamp;
+      const timeSinceLastClick = now - lastClickTime;
+      if (e.target.closest('.logged-in-avatar')) {
+        console.log('🌍 Global click on avatar:', {
+          timeSinceLastClick: timeSinceLastClick.toFixed(2) + 'ms',
+          target: e.target.tagName,
+          className: e.target.className,
+        });
+      }
+      lastClickTime = now;
+    };
+    document.addEventListener('click', globalClickHandler, true);
+
+    return () => {
+      document.removeEventListener('click', globalClickHandler, true);
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('🔄 LoggedInAvatar dropdown state changed:', isOpen);
+
+    // Check if dropdown is actually in DOM
+    if (isOpen) {
+      setTimeout(() => {
+        const dropdown = document.querySelector('.logged-in-avatar .dropdown-menu');
+        console.log('🔍 Dropdown DOM check:', {
+          exists: !!dropdown,
+          visible: dropdown ? window.getComputedStyle(dropdown).display : 'N/A',
+          position: dropdown ? window.getComputedStyle(dropdown).position : 'N/A',
+          zIndex: dropdown ? window.getComputedStyle(dropdown).zIndex : 'N/A',
+        });
+      }, 10);
+    }
+  }, [isOpen]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      const clickedElement = event.target;
+      const avatarContainer = clickedElement.closest('.logged-in-avatar');
+
+      console.log('🔍 Click detected:', {
+        target: clickedElement.tagName,
+        className: clickedElement.className,
+        foundAvatarContainer: !!avatarContainer,
+      });
+
+      // Use closest() like the header does - check if click is inside the avatar component
+      if (!avatarContainer) {
+        console.log('🚫 Clicked outside - closing dropdown');
         setIsOpen(false);
+      } else {
+        console.log('✅ Clicked inside avatar - keeping dropdown open');
       }
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      // Use requestAnimationFrame to ensure we attach AFTER current click event completes
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          document.addEventListener('click', handleClickOutside);
+        });
+      });
+
+      return () => {
+        document.removeEventListener('click', handleClickOutside);
+      };
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
     };
   }, [isOpen]);
 
@@ -62,8 +127,8 @@ export default function LoggedInAvatar({
       {
         id: 'profile',
         label: 'My Profile',
-        icon: '/icons/User.svg',
-        path: '/profile',
+        icon: '👤',
+        path: '/account-profile',
       },
     ];
 
@@ -72,7 +137,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'proposals',
         label: 'My Proposals',
-        icon: '/icons/Proposals-purple.svg',
+        icon: '📋',
         path: '/proposals',
         badgeCount: user.proposalsCount,
         badgeColor: 'purple',
@@ -84,7 +149,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'suggested-proposal',
         label: 'Suggested Proposal',
-        icon: '/icons/Proposals-purple.svg',
+        icon: '📋',
         path: '/guest-dashboard',
       });
     }
@@ -93,7 +158,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'listings',
       label: 'My Listings',
-      icon: '/icons/Listing.svg',
+      icon: '🏠',
       path: user.listingsCount > 1 ? '/host-overview' : user.listingsCount === 1 ? '/host-dashboard' : '/host-overview',
       badgeCount: user.listingsCount,
       badgeColor: 'purple',
@@ -103,7 +168,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'virtual-meetings',
       label: 'Virtual Meetings',
-      icon: '/icons/virtual meeting.svg',
+      icon: '📹',
       path: user.userType === 'GUEST' ? '/guest-dashboard' : '/host-overview',
       badgeCount: user.virtualMeetingsCount,
       badgeColor: 'purple',
@@ -113,7 +178,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'house-manuals',
       label: 'House manuals & Visits',
-      icon: '/icons/House Manual 1.svg',
+      icon: '📖',
       path: user.userType === 'GUEST' ? '/guest-house-manual' : user.houseManualsCount === 1 ? '/host-house-manual' : '/host-overview',
     });
 
@@ -121,7 +186,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'leases',
       label: 'My Leases',
-      icon: '/icons/Leases-purple.svg',
+      icon: '📝',
       path: user.userType === 'GUEST' ? '/guest-leases' : '/host-leases',
       badgeCount: user.leasesCount,
       badgeColor: 'purple',
@@ -131,7 +196,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'favorites',
       label: 'My Favorite Listings',
-      icon: '/icons/Favorite.svg',
+      icon: '⭐',
       path: '/favorite-listings',
       badgeCount: user.favoritesCount,
       badgeColor: 'purple',
@@ -141,7 +206,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'messages',
       label: 'Messages',
-      icon: '/icons/Message.svg',
+      icon: '💬',
       path: '/messaging',
       badgeCount: user.unreadMessagesCount,
       badgeColor: 'red',
@@ -151,7 +216,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'rental-application',
       label: 'Rental Application',
-      icon: '/icons/suitcase-svgrepo-com 1.svg',
+      icon: '💼',
       path: user.userType === 'HOST' ? '/account' : '/rental-application',
     });
 
@@ -159,7 +224,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'reviews',
       label: 'Reviews Manager',
-      icon: '/icons/check green.svg',
+      icon: '✅',
       path: '/reviews-overview',
     });
 
@@ -167,7 +232,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'referral',
       label: 'Referral',
-      icon: '/icons/Referral.svg',
+      icon: '🎁',
       path: '/referral',
     });
 
@@ -197,7 +262,21 @@ export default function LoggedInAvatar({
     <div className="logged-in-avatar" ref={dropdownRef}>
       <button
         className="avatar-button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('👆 Avatar button clicked!', {
+            currentState: isOpen,
+            newState: !isOpen,
+            eventType: e.type,
+            isTrusted: e.isTrusted,
+            timeStamp: e.timeStamp,
+            target: e.target.tagName,
+            currentTarget: e.currentTarget.tagName,
+            eventPhase: e.eventPhase,
+          });
+          setIsOpen(!isOpen);
+        }}
         aria-label="Toggle user menu"
         aria-expanded={isOpen}
       >
@@ -230,6 +309,7 @@ export default function LoggedInAvatar({
 
       {isOpen && (
         <div className="dropdown-menu">
+          {console.log('✨ Dropdown menu is rendering! Menu items count:', menuItems.length)}
           <div className="menu-container">
             {menuItems.map((item) => (
               <button
@@ -237,7 +317,7 @@ export default function LoggedInAvatar({
                 className={`menu-item ${isActivePath(item.path) ? 'active' : ''}`}
                 onClick={() => handleMenuItemClick(item)}
               >
-                <img src={item.icon} alt="" className="menu-icon" />
+                <span className="menu-icon-emoji">{item.icon}</span>
                 <span className="menu-label">{item.label}</span>
                 {item.badgeCount !== undefined && item.badgeCount > 0 && (
                   <span className={`notification-badge ${item.badgeColor}`}>
@@ -248,7 +328,7 @@ export default function LoggedInAvatar({
             ))}
 
             <button className="menu-item sign-out" onClick={handleSignOut}>
-              <img src="/icons/Log out.svg" alt="" className="menu-icon" />
+              <span className="menu-icon-emoji">🚪</span>
               <span className="menu-label">Sign Out</span>
             </button>
           </div>

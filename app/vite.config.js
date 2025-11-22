@@ -91,6 +91,12 @@ export default defineConfig({
             // e.g., /account-profile/USER_ID or /account-profile/USER_ID?query=value
             const pathAfterPrefix = url.substring('/account-profile'.length);
             req.url = '/public/account-profile.html' + pathAfterPrefix;
+          } else if (url.startsWith('/self-listing.html')) {
+            req.url = '/public/self-listing.html' + (url.substring('/self-listing.html'.length) || '');
+          } else if (url.startsWith('/self-listing')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/self-listing.html' + queryString;
           }
 
           next();
@@ -173,6 +179,12 @@ export default defineConfig({
             // e.g., /account-profile/USER_ID or /account-profile/USER_ID?query=value
             const pathAfterPrefix = url.substring('/account-profile'.length);
             req.url = '/account-profile.html' + pathAfterPrefix;
+          } else if (url.startsWith('/self-listing.html')) {
+            req.url = '/self-listing.html' + (url.substring('/self-listing.html'.length) || '');
+          } else if (url.startsWith('/self-listing')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/self-listing.html' + queryString;
           }
 
           next();
@@ -300,7 +312,8 @@ export default defineConfig({
         'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
         careers: resolve(__dirname, 'public/careers.html'),
         'account-profile': resolve(__dirname, 'public/account-profile.html'),
-        'logged-in-avatar-demo': resolve(__dirname, 'public/logged-in-avatar-demo.html')
+        'logged-in-avatar-demo': resolve(__dirname, 'public/logged-in-avatar-demo.html'),
+        'self-listing': resolve(__dirname, 'public/self-listing.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

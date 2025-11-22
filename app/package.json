@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 8000",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --port 8000"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
