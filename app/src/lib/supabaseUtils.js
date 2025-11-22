@@ -220,7 +220,7 @@ export function extractPhotos(photosField, photoMap = {}, listingId = null) {
     console.log(`✅ Listing ${listingId}: Resolved ${photoUrls.length} photo URLs`);
   }
 
-  return photoUrls.slice(0, 5); // Return actual photos only, limit to 5
+  return photoUrls; // Return all actual photos
 }
 
 /**
