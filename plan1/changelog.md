@@ -1,6 +1,6 @@
 # Logic Core Refactoring - Changelog
 
-**Current Progress:** Phase 3 - React Component Logic Extraction (70% Complete)
+**Current Progress:** Phase 3 - React Component Logic Extraction (75% Complete)
 
 ---
 
@@ -392,9 +392,10 @@ export function useViewSplitLeasePageLogic() {
 - ✅ `useScheduleSelector.js` → `useScheduleSelectorLogicCore.js` (uses Logic Core)
 - ✅ `ListingScheduleSelector.jsx` → `ListingScheduleSelectorV2.jsx` (hollow component)
 - ✅ `ViewSplitLeasePage.jsx` → Logic extracted to `useViewSplitLeasePageLogic.js` hook
+- ✅ `SearchPage.jsx` → Logic extracted to `useSearchPageLogic.js` hook (ready for integration)
 
 **In Progress:**
-- 🔄 `SearchPage.jsx` - Business logic extracted, hook creation pending
+- 🔄 None currently
 
 **Pending:**
 - ⏳ `Header.jsx` - Auth logic can be extracted
@@ -500,6 +501,34 @@ SearchPage.jsx demonstrated **correct** NO FALLBACK implementation:
 - Line 321: `|| 0` in price lookup → Strict validation in `calculateGuestFacingPrice`
 - Line 328: Multiple `|| 0` fallbacks → Explicit error throwing
 - Line 270: `|| 'Host'` in name formatting → Error in `formatHostName`
+
+#### Logic Hook Created (1 file):
+
+35. ✅ `app/src/islands/pages/useSearchPageLogic.js`
+    - **Comprehensive orchestration hook** for SearchPage.jsx (1,704 lines → hook)
+    - Manages all React state (18 state variables, 3 refs)
+    - Orchestrates Logic Core functions for data transformation
+    - Infrastructure layer: Supabase queries, data fetching, photo/host batching
+    - **Uses Logic Core processors**:
+      - `extractListingCoordinates()` - JSONB coordinate extraction with priority logic
+      - `formatHostName()` - Privacy-preserving name formatting (ready for use)
+      - `calculateGuestFacingPrice()` - Price calculation with markup (ready for use)
+    - **Uses Logic Core rules**:
+      - `isValidPriceTier()` - Filter validation
+      - `isValidWeekPattern()` - Filter validation
+      - `isValidSortOption()` - Filter validation
+    - Returns pre-calculated state and handlers to component
+    - Follows "Hollow Component" pattern established with `useViewSplitLeasePageLogic`
+
+**Hook Stats**: 700+ lines | 18 state variables | 3 refs | 12 event handlers | 6 Logic Core integrations
+
+**Key Features**:
+- **NO FALLBACK ✅**: Filters out listings without valid coordinates
+- **Performance Optimization**: Prevents duplicate fetches with ref tracking
+- **Lazy Loading**: Batch loading with IntersectionObserver support
+- **URL Sync**: Browser back/forward navigation support
+- **Batch Fetching**: Photos and host data fetched in bulk
+- **Filter Validation**: Pre-calculated validation results from Logic Core
 
 ---
 
