@@ -30,3 +30,5 @@ export { canAcceptProposal } from './proposals/canAcceptProposal.js'
 // User Rules
 export { isHost } from './users/isHost.js'
 export { isGuest } from './users/isGuest.js'
+export { hasProfilePhoto } from './users/hasProfilePhoto.js'
+export { shouldShowFullName } from './users/shouldShowFullName.js'

@@ -20,6 +20,9 @@ export { formatHostName } from './display/formatHostName.js'
 
 // User Processors
 export { processUserData } from './user/processUserData.js'
+export { processUserInitials } from './user/processUserInitials.js'
+export { processUserDisplayName } from './user/processUserDisplayName.js'
+export { processProfilePhotoUrl } from './user/processProfilePhotoUrl.js'
 
 // Proposal Processors
 export { processProposalData } from './proposal/processProposalData.js'
