@@ -52,10 +52,21 @@ export default function LoggedInAvatar({
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
+      const clickedElement = event.target;
+      const avatarContainer = clickedElement.closest('.logged-in-avatar');
+
+      console.log('🔍 Click detected:', {
+        target: clickedElement.tagName,
+        className: clickedElement.className,
+        foundAvatarContainer: !!avatarContainer,
+      });
+
       // Use closest() like the header does - check if click is inside the avatar component
-      if (!event.target.closest('.logged-in-avatar')) {
+      if (!avatarContainer) {
         console.log('🚫 Clicked outside - closing dropdown');
         setIsOpen(false);
+      } else {
+        console.log('✅ Clicked inside avatar - keeping dropdown open');
       }
     };
 
