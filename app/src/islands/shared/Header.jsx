@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL, AUTH_STORAGE_KEYS } from '../../lib/constants.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
+import LoggedInHeaderAvatar2 from './LoggedInHeaderAvatar2';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -490,75 +491,11 @@ export default function Header({ autoShowLogin = false }) {
           </a>
 
           {currentUser && currentUser.firstName ? (
-            /* User is logged in - show dropdown with avatar and name */
-            <div className="nav-dropdown user-dropdown">
-              <a
-                href="#user"
-                className="nav-link dropdown-trigger user-trigger"
-                role="button"
-                aria-expanded={activeDropdown === 'user'}
-                aria-haspopup="true"
-                onClick={(e) => {
-                  e.preventDefault();
-                  toggleDropdown('user');
-                }}
-                onKeyDown={(e) => handleDropdownKeyDown(e, 'user')}
-              >
-                {currentUser.profilePhoto ? (
-                  <img
-                    src={currentUser.profilePhoto.startsWith('//') ? `https:${currentUser.profilePhoto}` : currentUser.profilePhoto}
-                    alt={currentUser.firstName}
-                    className="user-avatar"
-                  />
-                ) : (
-                  <div className="user-avatar-placeholder">
-                    {currentUser.firstName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="user-name-wrapper">
-                  {currentUser.firstName}
-                  <svg
-                    className="dropdown-arrow"
-                    width="12"
-                    height="8"
-                    viewBox="0 0 12 8"
-                    fill="none"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M1 1.5L6 6.5L11 1.5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </span>
-              </a>
-              <div
-                className={`dropdown-menu ${activeDropdown === 'user' ? 'active' : ''}`}
-                role="menu"
-                aria-label="User menu"
-              >
-                <a
-                  href="/account-profile"
-                  className="dropdown-item"
-                  role="menuitem"
-                >
-                  <span className="dropdown-title">My Profile</span>
-                </a>
-                <a
-                  href="#"
-                  className="dropdown-item"
-                  role="menuitem"
-                  onClick={async (e) => {
-                    e.preventDefault();
-                    await handleLogout();
-                  }}
-                >
-                  <span className="dropdown-title">Log Out</span>
-                </a>
-              </div>
-            </div>
+            /* User is logged in - show LoggedInHeaderAvatar2 island */
+            <LoggedInHeaderAvatar2
+              user={currentUser}
+              onLogout={handleLogout}
+            />
           ) : (
             /* User is not logged in - show auth buttons */
             <>
