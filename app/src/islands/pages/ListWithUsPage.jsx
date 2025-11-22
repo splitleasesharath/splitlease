@@ -2,10 +2,13 @@ import { useState } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import CreateDuplicateListingModal from '../shared/CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
+import ImportListingModal from '../shared/ImportListingModal/ImportListingModal.jsx';
 import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 
 export default function ListWithUsPage() {
   const [showCreateListingModal, setShowCreateListingModal] = useState(false);
+  const [showImportListingModal, setShowImportListingModal] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   return (
     <>
@@ -43,7 +46,7 @@ export default function ListWithUsPage() {
               Start New Listing
             </button>
             <button
-              onClick={() => setShowCreateListingModal(true)}
+              onClick={() => setShowImportListingModal(true)}
               className="cta-button cta-secondary"
             >
               Import My Listing
@@ -228,6 +231,29 @@ export default function ListWithUsPage() {
         onNavigateToListing={(listingId) => {
           window.location.href = `https://app.split.lease/listing/${listingId}`;
         }}
+      />
+
+      {/* Import Listing Modal */}
+      <ImportListingModal
+        isOpen={showImportListingModal}
+        onClose={() => setShowImportListingModal(false)}
+        onSubmit={async (data) => {
+          setIsImporting(true);
+          try {
+            // TODO: Implement actual import API call
+            console.log('Importing listing:', data);
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            alert('Listing import request submitted! We will email you when it is ready.');
+            setShowImportListingModal(false);
+          } catch (error) {
+            console.error('Import error:', error);
+            alert('Failed to import listing. Please try again later.');
+          } finally {
+            setIsImporting(false);
+          }
+        }}
+        currentUserEmail=""
+        isLoading={isImporting}
       />
     </>
   );
