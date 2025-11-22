@@ -17,6 +17,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase.js';
 import { showToast } from '../Toast.jsx';
+import { createListingInCode } from '../../../lib/bubbleAPI.js';
 import '../../../styles/components/create-listing-modal.css';
 
 export default function CreateDuplicateListingModal({
@@ -66,49 +67,39 @@ export default function CreateDuplicateListingModal({
     setIsLoading(true);
 
     try {
-      // Step 1: Create new listing with default values
-      const { data: newListing, error } = await supabase
-        .from('zat_listings')
-        .insert({
-          Name: listingName.trim(),
-          active: false,
-          'Default Extension Setting': false,
-          '💰Damage Deposit': 500,
-          'Host / Landlord': currentUser?.['Account - Host / Landlord']?._id || null,
-          'HOST name': currentUser?.['Name - Full'] || currentUser?.firstName || '',
-          'Host email': currentUser?.email || '',
-          'Operator Last Updated AUT': new Date().toISOString(),
-          isForUsability: currentUser?.['is usability tester'] || false,
-          'Features - Qty Beds': 1,
-          // Nights and Days Available will be set to all options via separate inserts if needed
-        })
-        .select()
-        .single();
+      console.log('🏠 CreateDuplicateListingModal: Creating new listing');
+      console.log('Listing name:', listingName.trim());
+      console.log('User email:', currentUser?.email || 'Not logged in');
 
-      if (error) throw error;
+      // Step 1: Trigger Bubble backend workflow
+      const workflowResponse = await createListingInCode(
+        listingName.trim(),
+        currentUser?.email || null
+      );
 
-      // Step 4: Trigger profile completeness update (only if logged in and first listing)
-      if (currentUser && !currentUser.tasksCompleted?.includes('listing')) {
-        await updateProfileCompleteness(currentUser._id, 'listing');
+      console.log('✅ Bubble workflow response:', workflowResponse);
+
+      // Extract listing ID from workflow response
+      const listingId = workflowResponse?.listing_id || workflowResponse?.id;
+
+      if (!listingId) {
+        throw new Error('Listing ID not returned from Bubble workflow');
       }
 
-      // Step 5: Hide modal
+      // Step 2: Hide modal
       onClose();
 
-      // Step 6: Show success alert
-      showToast('Listing created successfully!', 'success', 3000);
+      // Step 3: Show success alert
+      showToast('Listing created successfully! Redirecting...', 'success', 2000);
 
-      // Callback for parent component
-      if (onSuccess) {
-        onSuccess(newListing);
-      }
+      // Step 4: Redirect to self-listing page with listing ID
+      console.log('🔄 Redirecting to self-listing page with ID:', listingId);
+      setTimeout(() => {
+        window.location.href = `/self-listing.html?listing_id=${listingId}`;
+      }, 500);
 
-      // Step 7: Navigate to listing page
-      if (onNavigateToListing) {
-        onNavigateToListing(newListing._id);
-      }
     } catch (error) {
-      console.error('Error creating listing:', error);
+      console.error('❌ Error creating listing:', error);
       showToast('Failed to create listing. Please try again.', 'error', 3000);
     } finally {
       setIsLoading(false);
