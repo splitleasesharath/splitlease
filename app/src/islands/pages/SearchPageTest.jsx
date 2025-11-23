@@ -344,13 +344,21 @@ function PropertyCard({ listing, selectedDaysCount, onLocationClick, onOpenConta
     );
   };
 
+  const listingId = listing.id || listing._id;
+
   return (
     <a
       className="listing-card"
-      href={`/view-split-lease/${listing.id}`}
+      href={listingId ? `/view-split-lease/${listingId}` : '#'}
       target="_blank"
       rel="noopener noreferrer"
       style={{ textDecoration: 'none', color: 'inherit' }}
+      onClick={(e) => {
+        if (!listingId) {
+          e.preventDefault();
+          console.error('[PropertyCard] No listing ID found', { listing });
+        }
+      }}
     >
       {hasImages && (
         <div className="listing-images">
