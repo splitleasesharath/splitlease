@@ -10,17 +10,54 @@ import type { ListingFormData } from './types/listing.types';
 import { DEFAULT_LISTING_DATA } from './types/listing.types';
 import LoggedInHeaderAvatar2 from '../../shared/LoggedInHeaderAvatar2/LoggedInHeaderAvatar2';
 import Footer from '../../shared/Footer';
+import { fetchListingBasic } from '../../../lib/listingDataFetcher';
 import './styles/SelfListingPage.css';
 
 export const SelfListingPage: React.FC = () => {
   const [formData, setFormData] = useState<ListingFormData>(DEFAULT_LISTING_DATA);
   const [currentSection, setCurrentSection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingListing, setIsLoadingListing] = useState(false);
   const [user, setUser] = useState({
     firstName: 'John',
     lastName: 'Doe',
     profilePhoto: ''
   });
+
+  // Fetch listing data from URL parameter if present
+  useEffect(() => {
+    const fetchListingFromUrl = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const listingId = urlParams.get('listing_id');
+
+      if (listingId) {
+        setIsLoadingListing(true);
+        try {
+          console.log('📋 Fetching listing data for ID:', listingId);
+          const listingData = await fetchListingBasic(listingId);
+
+          // Preload the listing name into the form
+          if (listingData?.Name) {
+            console.log('✅ Preloading listing name:', listingData.Name);
+            setFormData(prevData => ({
+              ...prevData,
+              spaceSnapshot: {
+                ...prevData.spaceSnapshot,
+                listingName: listingData.Name
+              }
+            }));
+          }
+        } catch (error) {
+          console.error('❌ Error fetching listing data:', error);
+          // Don't show error to user, just continue with empty form
+        } finally {
+          setIsLoadingListing(false);
+        }
+      }
+    };
+
+    fetchListingFromUrl();
+  }, []);
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -188,6 +225,7 @@ export const SelfListingPage: React.FC = () => {
               data={formData.spaceSnapshot}
               onChange={(data) => setFormData({ ...formData, spaceSnapshot: data })}
               onNext={handleNext}
+              isLoadingInitialData={isLoadingListing}
             />
           )}
 

@@ -403,6 +403,29 @@ export function getNightlyPrice(listing, nightsSelected) {
 }
 
 /**
+ * Fetch basic listing data by ID (minimal data for quick loading)
+ * @param {string} listingId - The listing _id
+ * @returns {Promise<object>} Basic listing object with Name and other essential fields
+ */
+export async function fetchListingBasic(listingId) {
+  try {
+    const { data: listingData, error: listingError } = await supabase
+      .from('listing')
+      .select('_id, Name, Description, Active')
+      .eq('_id', listingId)
+      .single();
+
+    if (listingError) throw listingError;
+    if (!listingData) throw new Error('Listing not found');
+
+    return listingData;
+  } catch (error) {
+    console.error('Error fetching basic listing data:', error);
+    throw error;
+  }
+}
+
+/**
  * Fetch ZAT price configuration (global pricing settings)
  * Cached for performance since it's a single row table
  * @returns {Promise<object>} ZAT price configuration object

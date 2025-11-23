@@ -10,6 +10,7 @@ interface Section1Props {
   data: SpaceSnapshot;
   onChange: (data: SpaceSnapshot) => void;
   onNext: () => void;
+  isLoadingInitialData?: boolean;
 }
 
 // Extend window interface for Google Maps
@@ -22,7 +23,8 @@ declare global {
 export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
   data,
   onChange,
-  onNext
+  onNext,
+  isLoadingInitialData = false
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [addressError, setAddressError] = useState<string>('');
@@ -344,11 +346,12 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
         <input
           type="text"
           id="listingName"
-          placeholder="Listing Name (35 character max)"
+          placeholder={isLoadingInitialData ? "Loading listing name..." : "Listing Name (35 character max)"}
           maxLength={35}
           value={data.listingName}
           onChange={(e) => handleChange('listingName', e.target.value)}
           className={errors.listingName ? 'input-error' : ''}
+          disabled={isLoadingInitialData}
         />
         {errors.listingName && (
           <span className="error-message">{errors.listingName}</span>
