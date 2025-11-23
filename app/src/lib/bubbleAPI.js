@@ -2,26 +2,38 @@
  * Bubble.io API Service
  *
  * Handles communication with Bubble.io backend workflows
+ *
+ * Configuration:
+ * - VITE_BUBBLE_API_BASE_URL: Base URL for Bubble API (e.g., https://app.split.lease/version-test/api/1.1)
+ * - VITE_BUBBLE_API_KEY: API key for authentication
+ *
+ * IMPORTANT: No fallbacks or hardcoded values. Environment variables are required.
+ * The service will fail if these are not configured properly.
  */
-
-const BUBBLE_CONFIG = {
-  appDomain: 'app.split.lease',
-  apiVersion: '1.1',
-};
 
 /**
- * Get Bubble API configuration
+ * Get Bubble API configuration from environment variables
+ * NO FALLBACKS - Will return undefined if env vars are missing, causing requests to fail explicitly
  */
 const getBubbleConfig = () => {
-  // Try to get API key from environment variable
+  // Get base URL and API key from environment variables
+  const baseUrl = import.meta.env.VITE_BUBBLE_API_BASE_URL;
   const apiKey = import.meta.env.VITE_BUBBLE_API_KEY;
 
-  if (!apiKey) {
-    console.error('[Bubble API] API key not found in environment variables');
+  if (!baseUrl) {
+    console.error('[Bubble API] ❌ Base URL not found in environment variables');
+    console.error('[Bubble API] Please set VITE_BUBBLE_API_BASE_URL in your .env file');
+    console.error('[Bubble API] Example: VITE_BUBBLE_API_BASE_URL=https://app.split.lease/version-test/api/1.1');
   }
 
+  if (!apiKey) {
+    console.error('[Bubble API] ❌ API key not found in environment variables');
+    console.error('[Bubble API] Please set VITE_BUBBLE_API_KEY in your .env file');
+  }
+
+  // Return config even if missing - let it fail explicitly when used
   return {
-    baseUrl: `https://${BUBBLE_CONFIG.appDomain}/version-test/api/${BUBBLE_CONFIG.apiVersion}`,
+    baseUrl,
     apiKey,
   };
 };
