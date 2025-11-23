@@ -13,9 +13,8 @@
 # Maps /account-profile/[user-id] to account-profile.html
 /account-profile/*  /account-profile.html  200
 
-# Handle self-listing page with query parameters
+# Handle self-listing page
 /self-listing  /self-listing.html  200
-/self-listing/*  /self-listing.html  200
 
 # Handle guest-proposals page
 /guest-proposals.html  /guest-proposals.html  200
