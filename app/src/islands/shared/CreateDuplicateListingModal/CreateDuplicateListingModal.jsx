@@ -104,7 +104,7 @@ export default function CreateDuplicateListingModal({
       // Step 4: Redirect to self-listing page with listing ID
       console.log('🔄 Redirecting to self-listing page with ID:', listingId);
       setTimeout(() => {
-        window.location.href = `/self-listing?listing_id=${listingId}`;
+        window.location.href = `/self-listing.html?listing_id=${listingId}`;
       }, 500);
 
     } catch (error) {
