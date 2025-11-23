@@ -219,7 +219,7 @@
   left: 0;
   right: 0;
   margin-top: 0.25rem;
-  max-height: 250px;
+  max-height: 400px;
   overflow-y: auto;
   background: white;
   border: 1px solid #e5e7eb;
@@ -791,7 +791,7 @@
   /* Neighborhood list improvements on mobile - COLLAPSIBLE */
   .inline-filters .neighborhood-list {
     display: none; /* Hidden by default - collapsible */
-    max-height: 200px;
+    max-height: 350px;
     border-radius: 8px;
     margin-top: 0.5rem;
     overflow-y: auto;

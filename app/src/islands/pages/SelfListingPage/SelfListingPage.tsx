@@ -8,7 +8,7 @@ import { Section6Photos } from './sections/Section6Photos';
 import { Section7Review } from './sections/Section7Review';
 import type { ListingFormData } from './types/listing.types';
 import { DEFAULT_LISTING_DATA } from './types/listing.types';
-import LoggedInHeaderAvatar2 from '../../shared/LoggedInHeaderAvatar2/LoggedInHeaderAvatar2';
+import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import { fetchListingBasic } from '../../../lib/listingDataFetcher';
 import './styles/SelfListingPage.css';
@@ -18,11 +18,6 @@ export const SelfListingPage: React.FC = () => {
   const [currentSection, setCurrentSection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingListing, setIsLoadingListing] = useState(false);
-  const [user, setUser] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    profilePhoto: ''
-  });
 
   // Fetch listing data from URL parameter if present
   useEffect(() => {
@@ -129,18 +124,6 @@ export const SelfListingPage: React.FC = () => {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      // TODO: Implement actual logout logic
-      console.log('Logging out...');
-      // Clear any session data
-      localStorage.removeItem('selfListingDraft');
-      // Redirect to login page
-      window.location.href = '/login';
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-  };
 
   const sections = [
     { number: 1, title: 'Address', icon: '📍' },
@@ -161,7 +144,7 @@ export const SelfListingPage: React.FC = () => {
   return (
     <>
       {/* Shared Header Island */}
-      <LoggedInHeaderAvatar2 user={user} onLogout={handleLogout} />
+      <Header />
 
       <div className="self-listing-page">
         {/* Page Header */}
