@@ -21,7 +21,7 @@ const getBubbleConfig = () => {
   }
 
   return {
-    baseUrl: `https://${BUBBLE_CONFIG.appDomain}/version-test/api/${BUBBLE_CONFIG.apiVersion}`,
+    baseUrl: `https://${BUBBLE_CONFIG.appDomain}/api/${BUBBLE_CONFIG.apiVersion}`,
     apiKey,
   };
 };

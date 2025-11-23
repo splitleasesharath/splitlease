@@ -311,9 +311,7 @@ export default defineConfig({
         'why-split-lease': resolve(__dirname, 'public/why-split-lease.html'),
         'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
         careers: resolve(__dirname, 'public/careers.html'),
-        'account-profile': resolve(__dirname, 'public/account-profile.html'),
-        'logged-in-avatar-demo': resolve(__dirname, 'public/logged-in-avatar-demo.html'),
-        'self-listing': resolve(__dirname, 'public/self-listing.html')
+        'account-profile': resolve(__dirname, 'public/account-profile.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public
