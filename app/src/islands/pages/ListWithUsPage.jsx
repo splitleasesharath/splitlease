@@ -1,9 +1,15 @@
 import { useState } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
+import CreateDuplicateListingModal from '../shared/CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
+import ImportListingModal from '../shared/ImportListingModal/ImportListingModal.jsx';
 import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 
 export default function ListWithUsPage() {
+  const [showCreateListingModal, setShowCreateListingModal] = useState(false);
+  const [showImportListingModal, setShowImportListingModal] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+
   return (
     <>
       <Header />
@@ -33,8 +39,18 @@ export default function ListWithUsPage() {
             Join Split Lease and transform your unused property into a reliable income stream. Flexible lease terms, transparent pricing, and comprehensive support.
           </p>
           <div className="list-hero-cta">
-            <a href={SIGNUP_LOGIN_URL} className="cta-button cta-primary">Start New Listing</a>
-            <a href={SIGNUP_LOGIN_URL} className="cta-button cta-secondary">Import My Listing</a>
+            <button
+              onClick={() => setShowCreateListingModal(true)}
+              className="cta-button cta-primary"
+            >
+              Start New Listing
+            </button>
+            <button
+              onClick={() => setShowImportListingModal(true)}
+              className="cta-button cta-secondary"
+            >
+              Import My Listing
+            </button>
           </div>
         </div>
       </section>
@@ -189,7 +205,12 @@ export default function ListWithUsPage() {
           <h2 className="list-cta-title">Start New Listing</h2>
           <p className="list-cta-subtitle">Takes less than a minute to do!</p>
           <div className="list-cta-buttons">
-            <a href={SIGNUP_LOGIN_URL} className="cta-button cta-primary">Create Your Listing</a>
+            <button
+              onClick={() => setShowCreateListingModal(true)}
+              className="cta-button cta-primary"
+            >
+              Create Your Listing
+            </button>
             <a href="/faq.html" className="cta-button cta-secondary">General Questions</a>
           </div>
           <p className="list-cta-note">Need help? Our support team is here to assist you every step of the way.</p>
@@ -197,6 +218,43 @@ export default function ListWithUsPage() {
       </section>
 
       <Footer />
+
+      {/* Create Listing Modal */}
+      <CreateDuplicateListingModal
+        isVisible={showCreateListingModal}
+        onClose={() => setShowCreateListingModal(false)}
+        onSuccess={(newListing) => {
+          console.log('New listing created:', newListing);
+        }}
+        currentUser={null}
+        existingListings={[]}
+        onNavigateToListing={(listingId) => {
+          window.location.href = `https://app.split.lease/listing/${listingId}`;
+        }}
+      />
+
+      {/* Import Listing Modal */}
+      <ImportListingModal
+        isOpen={showImportListingModal}
+        onClose={() => setShowImportListingModal(false)}
+        onSubmit={async (data) => {
+          setIsImporting(true);
+          try {
+            // TODO: Implement actual import API call
+            console.log('Importing listing:', data);
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            alert('Listing import request submitted! We will email you when it is ready.');
+            setShowImportListingModal(false);
+          } catch (error) {
+            console.error('Import error:', error);
+            alert('Failed to import listing. Please try again later.');
+          } finally {
+            setIsImporting(false);
+          }
+        }}
+        currentUserEmail=""
+        isLoading={isImporting}
+      />
     </>
   );
 }
