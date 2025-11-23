@@ -219,6 +219,7 @@
   left: 0;
   right: 0;
   margin-top: 0.25rem;
+  min-height: 200px;
   max-height: 400px;
   overflow-y: auto;
   background: white;
@@ -791,6 +792,7 @@
   /* Neighborhood list improvements on mobile - COLLAPSIBLE */
   .inline-filters .neighborhood-list {
     display: none; /* Hidden by default - collapsible */
+    min-height: 200px;
     max-height: 350px;
     border-radius: 8px;
     margin-top: 0.5rem;
