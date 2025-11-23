@@ -159,7 +159,17 @@ export const SelfListingPage: React.FC = () => {
 
   const handleNext = () => {
     if (currentSection < 7) {
-      const completedSections = [...new Set([...formData.completedSections, currentSection])];
+      // Only mark section as completed if validation passes
+      let completedSections = formData.completedSections;
+
+      if (isSectionComplete(currentSection)) {
+        completedSections = [...new Set([...formData.completedSections, currentSection])];
+      } else {
+        // Section is not complete, show alert
+        alert(`Please complete all required fields in Section ${currentSection} before proceeding.`);
+        return;
+      }
+
       const nextSection = currentSection + 1;
       setFormData({ ...formData, completedSections, currentSection: nextSection });
       setCurrentSection(nextSection);
@@ -215,6 +225,7 @@ export const SelfListingPage: React.FC = () => {
   const getSectionStatus = (sectionNum: number) => {
     if (formData.completedSections.includes(sectionNum)) return 'completed';
     if (sectionNum === currentSection) return 'active';
+    if (isSectionLocked(sectionNum)) return 'locked';
     return 'pending';
   };
 
@@ -264,22 +275,32 @@ export const SelfListingPage: React.FC = () => {
           </div>
 
           <nav className="section-nav">
-            {sections.map((section) => (
-              <button
-                key={section.number}
-                className={`nav-item ${getSectionStatus(section.number)}`}
-                onClick={() => handleSectionChange(section.number)}
-              >
-                <div className="nav-icon">{section.icon}</div>
-                <div className="nav-content">
-                  <div className="nav-number">Section {section.number}</div>
-                  <div className="nav-title">{section.title}</div>
-                </div>
-                {formData.completedSections.includes(section.number) && (
-                  <div className="nav-check">✓</div>
-                )}
-              </button>
-            ))}
+            {sections.map((section) => {
+              const status = getSectionStatus(section.number);
+              const isLocked = status === 'locked';
+
+              return (
+                <button
+                  key={section.number}
+                  className={`nav-item ${status}`}
+                  onClick={() => handleSectionChange(section.number)}
+                  disabled={isLocked}
+                  title={isLocked ? 'Complete previous section to unlock' : ''}
+                >
+                  <div className="nav-icon">{section.icon}</div>
+                  <div className="nav-content">
+                    <div className="nav-number">Section {section.number}</div>
+                    <div className="nav-title">{section.title}</div>
+                  </div>
+                  {formData.completedSections.includes(section.number) && (
+                    <div className="nav-check">✓</div>
+                  )}
+                  {isLocked && (
+                    <div className="nav-lock">🔒</div>
+                  )}
+                </button>
+              );
+            })}
           </nav>
         </aside>
 
