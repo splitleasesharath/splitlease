@@ -8,12 +8,19 @@ import { Section6Photos } from './sections/Section6Photos';
 import { Section7Review } from './sections/Section7Review';
 import type { ListingFormData } from './types/listing.types';
 import { DEFAULT_LISTING_DATA } from './types/listing.types';
+import LoggedInHeaderAvatar2 from '../../shared/LoggedInHeaderAvatar2/LoggedInHeaderAvatar2';
+import Footer from '../../shared/Footer';
 import './styles/SelfListingPage.css';
 
 export const SelfListingPage: React.FC = () => {
   const [formData, setFormData] = useState<ListingFormData>(DEFAULT_LISTING_DATA);
   const [currentSection, setCurrentSection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [user, setUser] = useState({
+    firstName: 'John',
+    lastName: 'Doe',
+    profilePhoto: ''
+  });
 
   // Auto-save to localStorage
   useEffect(() => {
@@ -85,6 +92,19 @@ export const SelfListingPage: React.FC = () => {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      // TODO: Implement actual logout logic
+      console.log('Logging out...');
+      // Clear any session data
+      localStorage.removeItem('selfListingDraft');
+      // Redirect to login page
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+  };
+
   const sections = [
     { number: 1, title: 'Address', icon: '📍' },
     { number: 2, title: 'Features', icon: '✨' },
@@ -102,17 +122,21 @@ export const SelfListingPage: React.FC = () => {
   };
 
   return (
-    <div className="self-listing-page">
-      {/* Header */}
-      <header className="listing-header">
-        <div className="header-content">
-          <h1>Create Your Listing</h1>
-          <div className="header-actions">
-            <button className="btn-save-draft">Save Draft</button>
-            <button className="btn-help">Need Help?</button>
+    <>
+      {/* Shared Header Island */}
+      <LoggedInHeaderAvatar2 user={user} onLogout={handleLogout} />
+
+      <div className="self-listing-page">
+        {/* Page Header */}
+        <header className="listing-header">
+          <div className="header-content">
+            <h1>Create Your Listing</h1>
+            <div className="header-actions">
+              <button className="btn-save-draft">Save Draft</button>
+              <button className="btn-help">Need Help?</button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       <div className="listing-container">
         {/* Navigation Sidebar */}
@@ -227,6 +251,10 @@ export const SelfListingPage: React.FC = () => {
           )}
         </main>
       </div>
-    </div>
+      </div>
+
+      {/* Shared Footer Island */}
+      <Footer />
+    </>
   );
 };
