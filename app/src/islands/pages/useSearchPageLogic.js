@@ -45,6 +45,7 @@ import {
   parseJsonArray
 } from '../../lib/supabaseUtils.js'
 import { sanitizeNeighborhoodSearch } from '../../lib/sanitize.js'
+import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js'
 
 // Logic Core imports
 import {
@@ -55,38 +56,6 @@ import {
   isValidWeekPattern,
   isValidSortOption
 } from '../../logic/index.js'
-
-/**
- * Fetch informational texts from Supabase.
- * Infrastructure layer - not business logic.
- */
-async function fetchInformationalTexts() {
-  try {
-    const { data, error } = await supabase
-      .from('informationaltexts')
-      .select(
-        '_id, "Information Tag-Title", "Desktop copy", "Mobile copy", "Desktop+ copy", "show more available?"'
-      )
-
-    if (error) throw error
-
-    // Transform data into a map keyed by tag title
-    const textsMap = {}
-    data.forEach((item) => {
-      textsMap[item['Information Tag-Title']] = {
-        desktop: item['Desktop copy'],
-        mobile: item['Mobile copy'],
-        desktopPlus: item['Desktop+ copy'],
-        showMore: item['show more available?']
-      }
-    })
-
-    return textsMap
-  } catch (error) {
-    console.error('Failed to fetch informational texts:', error)
-    return {}
-  }
-}
 
 /**
  * Main SearchPage logic hook.

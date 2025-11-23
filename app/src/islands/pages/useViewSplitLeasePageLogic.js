@@ -12,6 +12,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { initializeLookups } from '../../lib/dataLookups.js'
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js'
+import { fetchInformationalTexts } from '../../lib/informationalTextsFetcher.js'
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js'
 import { validateScheduleWorkflow } from '../../logic/workflows/scheduling/validateScheduleWorkflow.js'
 import { validateMoveInDateWorkflow } from '../../logic/workflows/scheduling/validateMoveInDateWorkflow.js'
@@ -150,8 +151,7 @@ export function useViewSplitLeasePageLogic() {
         const zatConfigData = await fetchZatPriceConfiguration()
         setZatConfig(zatConfigData)
 
-        // Fetch informational texts (keep existing implementation)
-        // TODO: Move to Logic Core processor if needed
+        // Fetch informational texts
         const infoTexts = await fetchInformationalTexts()
         setInformationalTexts(infoTexts)
 
@@ -301,56 +301,5 @@ export function useViewSplitLeasePageLogic() {
     setShowPhotoModal,
     setShowContactHostModal,
     setShouldLoadMap
-  }
-}
-
-// Helper function for informational texts (keep existing implementation)
-async function fetchInformationalTexts() {
-  const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL
-  const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-    console.error('❌ Missing Supabase environment variables')
-    return {}
-  }
-
-  try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/informationaltexts?select=*`,
-      {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    )
-
-    if (!response.ok) {
-      console.error('❌ Failed to fetch informational texts:', response.statusText)
-      return {}
-    }
-
-    const data = await response.json()
-    const textsByTag = {}
-
-    data.forEach((item) => {
-      const tag = item['Information Tag-Title']
-      if (!tag) return
-
-      textsByTag[tag] = {
-        id: item._id,
-        title: tag,
-        desktop: item['Desktop copy'],
-        mobile: item['Mobile copy'],
-        desktopPlus: item['Desktop+ copy'],
-        showMore: item['show more available?']
-      }
-    })
-
-    return textsByTag
-  } catch (error) {
-    console.error('Error fetching informational texts:', error)
-    return {}
   }
 }
