@@ -14,58 +14,75 @@ import { fetchListingBasic } from '../../../lib/listingDataFetcher';
 import './styles/SelfListingPage.css';
 
 export const SelfListingPage: React.FC = () => {
+  console.log('🏠 SelfListingPage: Component mounting');
+
   const [formData, setFormData] = useState<ListingFormData>(DEFAULT_LISTING_DATA);
   const [currentSection, setCurrentSection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingListing, setIsLoadingListing] = useState(false);
 
-  // Fetch listing data from URL parameter if present
+  // Initialize data: Check URL for listing_id, then load from localStorage or fetch from database
   useEffect(() => {
-    const fetchListingFromUrl = async () => {
+    const initializeData = async () => {
+      console.log('🔄 SelfListingPage: Initializing data...');
+
       const urlParams = new URLSearchParams(window.location.search);
       const listingId = urlParams.get('listing_id');
+      console.log('🏠 SelfListingPage: Listing ID from URL:', listingId);
 
       if (listingId) {
+        // If there's a listing ID in the URL, fetch it from the database
         setIsLoadingListing(true);
         try {
+          console.log('📡 Fetching listing data from Supabase...');
           console.log('📋 Fetching listing data for ID:', listingId);
           const listingData = await fetchListingBasic(listingId);
+          console.log('✅ Listing data fetched:', listingData);
 
           // Preload the listing name into the form
           if (listingData?.Name) {
             console.log('✅ Preloading listing name:', listingData.Name);
-            setFormData(prevData => ({
-              ...prevData,
-              spaceSnapshot: {
-                ...prevData.spaceSnapshot,
-                listingName: listingData.Name
-              }
-            }));
+            setFormData(prevData => {
+              const newData = {
+                ...prevData,
+                spaceSnapshot: {
+                  ...prevData.spaceSnapshot,
+                  listingName: listingData.Name
+                }
+              };
+              console.log('📝 Updated form data with listing name:', newData.spaceSnapshot.listingName);
+              return newData;
+            });
+          } else {
+            console.warn('⚠️ No listing name found in fetched data');
           }
         } catch (error) {
-          console.error('❌ Error fetching listing data:', error);
+          console.error('❌ Error fetching listing:', error);
           // Don't show error to user, just continue with empty form
         } finally {
           setIsLoadingListing(false);
+          console.log('✅ Loading complete');
+        }
+      } else {
+        // No listing ID in URL, try to load from localStorage draft
+        console.log('📂 No listing ID in URL, checking localStorage for draft...');
+        const savedData = localStorage.getItem('selfListingDraft');
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData);
+            console.log('📂 Loaded draft from localStorage:', parsed);
+            setFormData(parsed);
+            setCurrentSection(parsed.currentSection || 1);
+          } catch (error) {
+            console.error('❌ Error loading saved draft:', error);
+          }
+        } else {
+          console.log('📂 No draft found in localStorage');
         }
       }
     };
 
-    fetchListingFromUrl();
-  }, []);
-
-  // Auto-save to localStorage
-  useEffect(() => {
-    const savedData = localStorage.getItem('selfListingDraft');
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        setFormData(parsed);
-        setCurrentSection(parsed.currentSection || 1);
-      } catch (error) {
-        console.error('Error loading saved draft:', error);
-      }
-    }
+    initializeData();
   }, []);
 
   useEffect(() => {
@@ -74,7 +91,67 @@ export const SelfListingPage: React.FC = () => {
     localStorage.setItem('selfListingDraft', JSON.stringify(dataToSave));
   }, [formData, currentSection]);
 
+  // Validation functions for each section
+  const isSectionComplete = (sectionNum: number): boolean => {
+    switch (sectionNum) {
+      case 1: // Space Snapshot
+        return !!(
+          formData.spaceSnapshot.listingName &&
+          formData.spaceSnapshot.typeOfSpace &&
+          formData.spaceSnapshot.typeOfKitchen &&
+          formData.spaceSnapshot.typeOfParking &&
+          formData.spaceSnapshot.address.fullAddress &&
+          formData.spaceSnapshot.address.validated
+        );
+      case 2: // Features
+        return !!(
+          formData.features.amenitiesInsideUnit.length > 0 &&
+          formData.features.descriptionOfLodging
+        );
+      case 3: // Lease Styles
+        return !!(
+          formData.leaseStyles.rentalType &&
+          (formData.leaseStyles.rentalType !== 'Nightly' ||
+            (formData.leaseStyles.availableNights &&
+             Object.values(formData.leaseStyles.availableNights).some(v => v))) &&
+          (formData.leaseStyles.rentalType !== 'Weekly' || formData.leaseStyles.weeklyPattern)
+        );
+      case 4: // Pricing
+        return !!(
+          (formData.leaseStyles.rentalType === 'Monthly' && formData.pricing.monthlyCompensation) ||
+          (formData.leaseStyles.rentalType === 'Weekly' && formData.pricing.weeklyCompensation) ||
+          (formData.leaseStyles.rentalType === 'Nightly' && formData.pricing.nightlyPricing?.oneNightPrice)
+        );
+      case 5: // Rules
+        return !!(
+          formData.rules.cancellationPolicy &&
+          formData.rules.checkInTime &&
+          formData.rules.checkOutTime
+        );
+      case 6: // Photos
+        return formData.photos.photos.length >= formData.photos.minRequired;
+      case 7: // Review - always accessible once section 6 is complete
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  const isSectionLocked = (sectionNum: number): boolean => {
+    // Section 1 is always unlocked
+    if (sectionNum === 1) return false;
+
+    // Check if the previous section is completed
+    const previousSection = sectionNum - 1;
+    return !formData.completedSections.includes(previousSection);
+  };
+
   const handleSectionChange = (section: number) => {
+    // Prevent navigation to locked sections
+    if (isSectionLocked(section)) {
+      return;
+    }
+
     setCurrentSection(section);
     setFormData({ ...formData, currentSection: section });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -141,9 +218,14 @@ export const SelfListingPage: React.FC = () => {
     return 'pending';
   };
 
+  console.log('🎨 SelfListingPage: Rendering component');
+  console.log('🎨 Current form data:', formData);
+  console.log('🎨 Listing name in form:', formData.spaceSnapshot.listingName);
+
   return (
     <>
       {/* Shared Header Island */}
+      {console.log('🎨 Rendering Header component')}
       <Header />
 
       <div className="self-listing-page">
@@ -275,6 +357,7 @@ export const SelfListingPage: React.FC = () => {
       </div>
 
       {/* Shared Footer Island */}
+      {console.log('🎨 Rendering Footer component')}
       <Footer />
     </>
   );

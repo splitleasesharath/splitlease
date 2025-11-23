@@ -408,19 +408,37 @@ export function getNightlyPrice(listing, nightsSelected) {
  * @returns {Promise<object>} Basic listing object with Name and other essential fields
  */
 export async function fetchListingBasic(listingId) {
+  console.log('📊 fetchListingBasic: Starting fetch for listing ID:', listingId);
+  console.log('📊 Table to query: listing');
+
   try {
+    console.log('📊 Calling Supabase...');
     const { data: listingData, error: listingError } = await supabase
       .from('listing')
       .select('_id, Name, Description, Active')
       .eq('_id', listingId)
       .single();
 
-    if (listingError) throw listingError;
-    if (!listingData) throw new Error('Listing not found');
+    console.log('📊 Supabase response - data:', listingData);
+    console.log('📊 Supabase response - error:', listingError);
 
+    if (listingError) {
+      console.error('❌ Supabase error details:', JSON.stringify(listingError, null, 2));
+      throw listingError;
+    }
+    if (!listingData) {
+      console.error('❌ No listing data returned');
+      throw new Error('Listing not found');
+    }
+
+    console.log('✅ fetchListingBasic: Successfully fetched listing');
+    console.log('✅ Listing Name:', listingData.Name);
     return listingData;
   } catch (error) {
-    console.error('Error fetching basic listing data:', error);
+    console.error('❌ Error in fetchListingBasic:', error);
+    console.error('❌ Error type:', error.constructor.name);
+    console.error('❌ Error message:', error.message);
+    console.error('❌ Full error:', JSON.stringify(error, null, 2));
     throw error;
   }
 }
