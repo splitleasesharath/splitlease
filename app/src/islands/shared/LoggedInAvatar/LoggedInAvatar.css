@@ -58,8 +58,8 @@
   transition: transform 0.2s ease;
 }
 
-/* Dropdown Menu Container */
-.dropdown-menu {
+/* Dropdown Menu Container - Scoped to LoggedInAvatar only */
+.logged-in-avatar .dropdown-menu {
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
@@ -87,8 +87,8 @@
   }
 }
 
-/* Menu Container */
-.menu-container {
+/* Menu Container - Scoped to LoggedInAvatar only */
+.logged-in-avatar .menu-container {
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -97,8 +97,8 @@
   z-index: 10001;
 }
 
-/* Menu Item */
-.menu-item {
+/* Menu Item - Scoped to LoggedInAvatar only */
+.logged-in-avatar .menu-item {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -117,18 +117,18 @@
   position: relative;
 }
 
-.menu-item:hover {
+.logged-in-avatar .menu-item:hover {
   background-color: #CAC8C8;
 }
 
 /* Active menu item (current page) */
-.menu-item.active {
+.logged-in-avatar .menu-item.active {
   border-left: 3px solid #FF6B35;
   padding-left: 12px;
 }
 
-/* Menu Icon (Emoji) */
-.menu-icon-emoji {
+/* Menu Icon (Emoji) - Scoped to LoggedInAvatar only */
+.logged-in-avatar .menu-icon-emoji {
   width: 24px;
   height: 24px;
   flex-shrink: 0;
@@ -139,16 +139,16 @@
   line-height: 1;
 }
 
-/* Menu Label */
-.menu-label {
+/* Menu Label - Scoped to LoggedInAvatar only */
+.logged-in-avatar .menu-label {
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Notification Badge */
-.notification-badge {
+/* Notification Badge - Scoped to LoggedInAvatar only */
+.logged-in-avatar .notification-badge {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -163,26 +163,26 @@
   flex-shrink: 0;
 }
 
-.notification-badge.purple {
+.logged-in-avatar .notification-badge.purple {
   background-color: #31135D;
 }
 
-.notification-badge.red {
+.logged-in-avatar .notification-badge.red {
   background-color: #FF0000;
 }
 
-/* Sign Out Special Styling */
-.menu-item.sign-out {
+/* Sign Out Special Styling - Scoped to LoggedInAvatar only */
+.logged-in-avatar .menu-item.sign-out {
   margin-top: 8px;
 }
 
-.menu-item.sign-out:hover {
+.logged-in-avatar .menu-item.sign-out:hover {
   background-color: #CAC8C8;
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments - Scoped to LoggedInAvatar only */
 @media (max-width: 768px) {
-  .dropdown-menu {
+  .logged-in-avatar .dropdown-menu {
     position: fixed;
     top: 60px;
     right: 10px;
@@ -203,38 +203,38 @@
   }
 
   /* Hide user name on mobile, show only avatar */
-  .user-name-wrapper {
+  .logged-in-avatar .user-name-wrapper {
     display: none;
   }
 }
 
-/* Accessibility */
-.menu-item:focus,
-.avatar-button:focus {
+/* Accessibility - Scoped to LoggedInAvatar only */
+.logged-in-avatar .menu-item:focus,
+.logged-in-avatar .avatar-button:focus {
   outline: 2px solid #667eea;
   outline-offset: 2px;
 }
 
-/* Smooth scrolling for overflow */
-.menu-container {
+/* Smooth scrolling for overflow - Scoped to LoggedInAvatar only */
+.logged-in-avatar .menu-container {
   overflow-y: auto;
   max-height: 600px;
 }
 
-.menu-container::-webkit-scrollbar {
+.logged-in-avatar .menu-container::-webkit-scrollbar {
   width: 6px;
 }
 
-.menu-container::-webkit-scrollbar-track {
+.logged-in-avatar .menu-container::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 10px;
 }
 
-.menu-container::-webkit-scrollbar-thumb {
+.logged-in-avatar .menu-container::-webkit-scrollbar-thumb {
   background: #888;
   border-radius: 10px;
 }
 
-.menu-container::-webkit-scrollbar-thumb:hover {
+.logged-in-avatar .menu-container::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
