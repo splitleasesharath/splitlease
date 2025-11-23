@@ -8,15 +8,91 @@ import { Section6Photos } from './sections/Section6Photos';
 import { Section7Review } from './sections/Section7Review';
 import type { ListingFormData } from './types/listing.types';
 import { DEFAULT_LISTING_DATA } from './types/listing.types';
+import { supabase } from '../../../lib/supabase';
 import './styles/SelfListingPage.css';
 
 export const SelfListingPage: React.FC = () => {
   const [formData, setFormData] = useState<ListingFormData>(DEFAULT_LISTING_DATA);
   const [currentSection, setCurrentSection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [listingId, setListingId] = useState<string | null>(null);
+
+  // Fetch listing data from URL parameter and Supabase
+  useEffect(() => {
+    const fetchListingData = async () => {
+      try {
+        // Get listing_id from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const id = urlParams.get('listing_id');
+
+        console.log('🏠 SelfListingPage: Listing ID from URL:', id);
+
+        if (!id) {
+          console.warn('⚠️ No listing_id in URL, using default data');
+          setIsLoading(false);
+          return;
+        }
+
+        setListingId(id);
+
+        // Fetch listing data from Supabase
+        console.log('📡 Fetching listing data from Supabase...');
+        const { data: listing, error } = await supabase
+          .from('zat_listings')
+          .select('*')
+          .eq('_id', id)
+          .single();
+
+        if (error) {
+          console.error('❌ Error fetching listing:', error);
+          setIsLoading(false);
+          return;
+        }
+
+        if (!listing) {
+          console.warn('⚠️ Listing not found in database');
+          setIsLoading(false);
+          return;
+        }
+
+        console.log('✅ Listing data fetched:', listing);
+
+        // Map Bubble/Supabase data to our form structure
+        const mappedData: ListingFormData = {
+          ...DEFAULT_LISTING_DATA,
+          id: listing._id,
+          spaceSnapshot: {
+            ...DEFAULT_LISTING_DATA.spaceSnapshot,
+            listingName: listing.Name || '',
+            beds: listing['Features - Qty Beds'] || 1,
+            bedrooms: listing['Features - Qty Bedrooms'] || 1,
+            bathrooms: listing['Features - Qty Bathrooms'] || 1,
+          },
+          pricing: {
+            ...DEFAULT_LISTING_DATA.pricing,
+            damageDeposit: listing['💰Damage Deposit'] || 500,
+          }
+        };
+
+        console.log('📋 Mapped form data:', mappedData);
+        setFormData(mappedData);
+
+      } catch (error) {
+        console.error('❌ Error in fetchListingData:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchListingData();
+  }, []);
 
   // Auto-save to localStorage
   useEffect(() => {
+    // Don't load from localStorage if we have a listing ID (we fetched from DB instead)
+    if (listingId || isLoading) return;
+
     const savedData = localStorage.getItem('selfListingDraft');
     if (savedData) {
       try {
@@ -27,7 +103,7 @@ export const SelfListingPage: React.FC = () => {
         console.error('Error loading saved draft:', error);
       }
     }
-  }, []);
+  }, [listingId, isLoading]);
 
   useEffect(() => {
     // Save draft every time formData changes
@@ -100,6 +176,32 @@ export const SelfListingPage: React.FC = () => {
     if (sectionNum === currentSection) return 'active';
     return 'pending';
   };
+
+  // Show loading state while fetching data
+  if (isLoading) {
+    return (
+      <div className="self-listing-page">
+        <div className="loading-container" style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          flexDirection: 'column',
+          gap: '20px'
+        }}>
+          <div className="spinner" style={{
+            border: '4px solid #f3f3f3',
+            borderTop: '4px solid #3D2463',
+            borderRadius: '50%',
+            width: '50px',
+            height: '50px',
+            animation: 'spin 1s linear infinite'
+          }} />
+          <p style={{ fontSize: '18px', color: '#666' }}>Loading listing data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="self-listing-page">
