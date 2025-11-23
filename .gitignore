@@ -82,3 +82,7 @@ Context/
 input/
 .playwright-mcp/
 dump/
+
+# Planning and documentation (not tracked)
+plan/
+!plan/README.md
