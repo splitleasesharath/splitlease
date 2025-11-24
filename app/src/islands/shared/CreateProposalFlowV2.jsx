@@ -165,16 +165,12 @@ export default function CreateProposalFlowV2({
   }, [internalPricingBreakdown, internalDaysSelected, proposalData.reservationSpan]);
 
   const updateProposalData = (field, value) => {
-    // Handle special cases for pricing fields - these should come from ListingScheduleSelector
-    if (field === 'pricePerNight' || field === 'pricePerFourWeeks' || field === 'totalPrice') {
-      // Update both internal state and proposal data for pricing fields
-      console.log(`💰 Pricing field '${field}' updated to:`, value);
-
-      // If we receive a full pricing breakdown, update internal state
-      if (field === 'pricePerNight' && typeof value === 'object') {
-        setInternalPricingBreakdown(value);
-        return;
-      }
+    // Handle pricing breakdown updates from ListingScheduleSelector
+    if (field === 'pricingBreakdown' && typeof value === 'object') {
+      console.log('💰 Updating pricing breakdown:', value);
+      setInternalPricingBreakdown(value);
+      // The useEffect at line 153 will handle updating proposalData
+      return;
     }
 
     // Handle days selection updates
