@@ -101,9 +101,14 @@ function autoCorrectEmail(email) {
   return `${localPart}@${correctedDomain}`;
 }
 
+/**
+ * Submit AI signup via Supabase Edge Function
+ * ✅ MIGRATED: No more hardcoded API key!
+ * API key is now stored server-side in Supabase Secrets
+ */
 async function submitSignup(data) {
-  const url = 'https://app.split.lease/version-test/api/1.1/wf/ai-signup-guest';
-  const apiKey = '5dbb448f9a6bbb043cb56ac16b8de109';
+  // Import supabase client
+  const { supabase } = await import('../../../lib/supabase.js');
 
   // Validate required fields
   if (!data.email) {
@@ -116,67 +121,45 @@ async function submitSignup(data) {
     throw new Error('Market research description is required');
   }
 
-  // Build payload
-  const payload = {
-    email: data.email,
-    phone: data.phone || '',
-    'text inputted': data.marketResearchText,
-  };
-
-  console.log('[AiSignupMarketReport] ========== SIGNUP REQUEST ==========');
-  console.log('[AiSignupMarketReport] URL:', url);
-  console.log('[AiSignupMarketReport] Payload:', JSON.stringify(payload, null, 2));
-  console.log('[AiSignupMarketReport] =====================================');
+  console.log('[AiSignupMarketReport] ========== SIGNUP REQUEST (VIA EDGE FUNCTION) ==========');
+  console.log('[AiSignupMarketReport] Email:', data.email);
+  console.log('[AiSignupMarketReport] Phone:', data.phone || 'Not provided');
+  console.log('[AiSignupMarketReport] Text length:', data.marketResearchText.length);
+  console.log('[AiSignupMarketReport] ===========================================================');
 
   try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+    const { data: result, error } = await supabase.functions.invoke('bubble-proxy', {
+      body: {
+        action: 'signup_ai',
+        payload: {
+          email: data.email,
+          phone: data.phone || '',
+          text_inputted: data.marketResearchText,
+        },
       },
-      body: JSON.stringify(payload),
     });
 
-    console.log('[AiSignupMarketReport] Response status:', response.status, response.statusText);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[AiSignupMarketReport] ========== ERROR RESPONSE ==========');
-      console.error('[AiSignupMarketReport] Status:', response.status);
-      console.error('[AiSignupMarketReport] Status Text:', response.statusText);
-      console.error('[AiSignupMarketReport] Response Body:', errorText);
-      console.error('[AiSignupMarketReport] ====================================');
-
-      // Try to parse as JSON for more details
-      let errorMessage = 'Signup failed';
-      try {
-        const errorJson = JSON.parse(errorText);
-        console.error('[AiSignupMarketReport] Parsed error:', errorJson);
-        errorMessage = errorJson.message || errorJson.error || errorJson.body?.message || `Signup failed with status ${response.status}`;
-      } catch (e) {
-        errorMessage = errorText || `Signup failed with status ${response.status}`;
-      }
-
-      throw new Error(errorMessage);
+    if (error) {
+      console.error('[AiSignupMarketReport] ========== EDGE FUNCTION ERROR ==========');
+      console.error('[AiSignupMarketReport] Error:', error);
+      console.error('[AiSignupMarketReport] ==============================================');
+      throw new Error(error.message || 'Failed to submit signup');
     }
 
-    // Handle 204 No Content response
-    if (response.status === 204) {
-      console.log('[AiSignupMarketReport] ✅ Signup successful (204 No Content)');
-      return { success: true };
+    if (!result.success) {
+      throw new Error(result.error || 'Unknown error');
     }
 
-    const result = await response.json();
-    console.log('[AiSignupMarketReport] ========== SUCCESS RESPONSE ==========');
-    console.log('[AiSignupMarketReport] Full response:', JSON.stringify(result, null, 2));
-    console.log('[AiSignupMarketReport] =====================================');
-    return result;
+    console.log('[AiSignupMarketReport] ========== SUCCESS ==========');
+    console.log('[AiSignupMarketReport] Signup completed and synced');
+    console.log('[AiSignupMarketReport] User ID:', result.data._id);
+    console.log('[AiSignupMarketReport] ================================');
+
+    return { success: true, data: result.data };
   } catch (error) {
     console.error('[AiSignupMarketReport] ========== EXCEPTION ==========');
     console.error('[AiSignupMarketReport] Error:', error);
     console.error('[AiSignupMarketReport] Error message:', error.message);
-    console.error('[AiSignupMarketReport] Error stack:', error.stack);
     console.error('[AiSignupMarketReport] ==================================');
     throw error;
   }
