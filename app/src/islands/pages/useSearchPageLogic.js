@@ -547,7 +547,16 @@ export function useSearchPageLogic() {
       if (!selectedBorough || boroughs.length === 0) return
 
       const borough = boroughs.find((b) => b.value === selectedBorough)
-      if (!borough) return
+      if (!borough) {
+        console.warn('Borough not found for value:', selectedBorough)
+        return
+      }
+
+      console.log('Loading neighborhoods for borough:', {
+        boroughName: borough.name,
+        boroughId: borough.id,
+        boroughValue: borough.value
+      })
 
       try {
         const { data, error } = await supabase
@@ -557,6 +566,10 @@ export function useSearchPageLogic() {
           .order('Display', { ascending: true })
 
         if (error) throw error
+
+        console.log(`Found ${data.length} neighborhoods for ${borough.name}:`,
+          data.slice(0, 5).map(n => ({ id: n._id, name: n.Display, boroughRef: n['Geo-Borough'] }))
+        )
 
         const neighborhoodList = data
           .filter((n) => n.Display && n.Display.trim())
