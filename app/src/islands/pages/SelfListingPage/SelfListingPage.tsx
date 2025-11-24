@@ -10,7 +10,7 @@ import type { ListingFormData } from './types/listing.types';
 import { DEFAULT_LISTING_DATA } from './types/listing.types';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
-import { fetchListingBasic } from '../../../lib/listingDataFetcher';
+import { getListingById } from '../../../lib/bubbleAPI';
 import './styles/SelfListingPage.css';
 
 export const SelfListingPage: React.FC = () => {
@@ -31,13 +31,13 @@ export const SelfListingPage: React.FC = () => {
       console.log('🏠 SelfListingPage: Listing ID from URL:', listingId);
 
       if (listingId) {
-        // If there's a listing ID in the URL, fetch it from the database
+        // If there's a listing ID in the URL, fetch it from Bubble API
         setIsLoadingListing(true);
         try {
-          console.log('📡 Fetching listing data from Supabase...');
+          console.log('📡 Fetching listing data from Bubble API...');
           console.log('📋 Fetching listing data for ID:', listingId);
-          const listingData = await fetchListingBasic(listingId);
-          console.log('✅ Listing data fetched:', listingData);
+          const listingData = await getListingById(listingId);
+          console.log('✅ Listing data fetched from Bubble:', listingData);
 
           // Preload the listing name into the form
           if (listingData?.Name) {
@@ -57,7 +57,7 @@ export const SelfListingPage: React.FC = () => {
             console.warn('⚠️ No listing name found in fetched data');
           }
         } catch (error) {
-          console.error('❌ Error fetching listing:', error);
+          console.error('❌ Error fetching listing from Bubble:', error);
           // Don't show error to user, just continue with empty form
         } finally {
           setIsLoadingListing(false);

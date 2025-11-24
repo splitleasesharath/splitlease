@@ -100,6 +100,51 @@ export async function triggerBubbleWorkflow(workflowName, parameters = {}) {
 }
 
 /**
+ * Fetch a listing object from Bubble Data API by ID
+ * @param {string} listingId - The unique ID of the listing
+ * @returns {Promise<Object>} - Listing data from Bubble
+ */
+export async function getListingById(listingId) {
+  const config = getBubbleConfig();
+
+  if (!config.apiKey) {
+    throw new Error('Bubble API key is not configured');
+  }
+
+  // Bubble Data API endpoint: /obj/<data_type>/<unique_id>
+  const url = `${config.baseUrl}/obj/listing/${listingId}`;
+
+  console.log('[Bubble API] Fetching listing by ID:', listingId);
+  console.log('[Bubble API] URL:', url);
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${config.apiKey}`,
+      },
+    });
+
+    console.log('[Bubble API] Response status:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Bubble API] Error response:', errorText);
+      throw new Error(`Failed to fetch listing: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log('[Bubble API] Listing data:', data);
+    console.log('[Bubble API] Listing name:', data.response?.Name);
+
+    return data.response || data;
+  } catch (error) {
+    console.error('[Bubble API] Failed to fetch listing:', error);
+    throw error;
+  }
+}
+
+/**
  * Create a new listing via Bubble backend workflow
  * @param {string} listingName - Name of the listing to create
  * @param {string} [userEmail] - Email of the logged-in user (optional)
