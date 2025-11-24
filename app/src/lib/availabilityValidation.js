@@ -78,8 +78,7 @@ export function isContiguousSelection(selectedDays) {
 
 /**
  * Calculate check-in and check-out days from selected days
- * Check-in is the first selected day, check-out is the LAST selected day
- * Selected days represent the days you occupy the space (e.g., Sat-Sun-Mon = check-in Sat, check-out Mon)
+ * Check-in is the first selected day, check-out is the day AFTER the last selected day
  * Based on SearchScheduleSelector logic for wrap-around handling
  *
  * @param {number[]} selectedDays - Array of day indices (0-based)
@@ -113,8 +112,11 @@ export function calculateCheckInOutDays(selectedDays) {
 
     if (gapIndex !== -1) {
       // Wrapped selection: check-in is after the gap (first day in wrap)
-      const checkInDay = sorted[gapIndex]; // First day after gap (e.g., Sat = 6 for Sat-Sun-Mon)
-      const checkOutDay = sorted[gapIndex - 1]; // Last day before gap (e.g., Mon = 1 for Sat-Sun-Mon)
+      const checkInDay = sorted[gapIndex]; // First day after gap (e.g., Sunday = 0 or Friday = 5)
+      const lastSelectedDay = sorted[gapIndex - 1]; // Last day before gap (e.g., Saturday = 6 or Monday = 1)
+
+      // Check-out is the day AFTER the last selected day
+      const checkOutDay = (lastSelectedDay + 1) % 7;
 
       return {
         checkInDay,
@@ -125,9 +127,12 @@ export function calculateCheckInOutDays(selectedDays) {
     }
   }
 
-  // Standard case: first selected day to last selected day
+  // Standard case: first selected day to day after last selected day
   const checkInDay = sorted[0];
-  const checkOutDay = sorted[sorted.length - 1];
+  const lastSelectedDay = sorted[sorted.length - 1];
+
+  // Check-out is the day AFTER the last selected day (wraps around the week if needed)
+  const checkOutDay = (lastSelectedDay + 1) % 7;
 
   return {
     checkInDay,

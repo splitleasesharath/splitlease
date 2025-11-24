@@ -102,93 +102,25 @@ function autoCorrectEmail(email) {
 }
 
 async function submitSignup(data) {
-  // Get API configuration from environment variables
-  // Fallback to hardcoded values for backward compatibility during migration
-  const baseUrl = import.meta.env.VITE_BUBBLE_API_BASE_URL || 'https://app.split.lease/version-test/api/1.1';
-  const apiKey = import.meta.env.VITE_BUBBLE_API_KEY || '5dbb448f9a6bbb043cb56ac16b8de109';
-
-  const url = `${baseUrl}/wf/ai-signup-guest`;
-
-  // Validate required fields
-  if (!data.email) {
-    console.error('[AiSignupMarketReport] Error: Missing email');
-    throw new Error('Email is required');
-  }
-
-  if (!data.marketResearchText) {
-    console.error('[AiSignupMarketReport] Error: Missing market research text');
-    throw new Error('Market research description is required');
-  }
-
-  // Build payload exactly as Bubble expects
-  const payload = {
-    email: data.email,
-    phone: data.phone || '',
-    'text inputted': data.marketResearchText,
-  };
-
-  console.log('[AiSignupMarketReport] =====  SIGNUP REQUEST =====');
-  console.log('[AiSignupMarketReport] URL:', url);
-  console.log('[AiSignupMarketReport] Using env vars:', {
-    hasBaseUrl: !!import.meta.env.VITE_BUBBLE_API_BASE_URL,
-    hasApiKey: !!import.meta.env.VITE_BUBBLE_API_KEY
+  const response = await fetch('https://app.split.lease/version-test/api/1.1/wf/ai-signup-guest', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer 5dbb448f9a6bbb043cb56ac16b8de109',
+    },
+    body: JSON.stringify({
+      email: data.email,
+      phone: data.phone || '',
+      'text inputted': data.marketResearchText,
+    }),
   });
-  console.log('[AiSignupMarketReport] Payload:', JSON.stringify(payload, null, 2));
-  console.log('[AiSignupMarketReport] ============================');
 
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    console.log('[AiSignupMarketReport] Response status:', response.status, response.statusText);
-    console.log('[AiSignupMarketReport] Response headers:', Object.fromEntries(response.headers.entries()));
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[AiSignupMarketReport] ===== ERROR RESPONSE =====');
-      console.error('[AiSignupMarketReport] Status:', response.status);
-      console.error('[AiSignupMarketReport] Status Text:', response.statusText);
-      console.error('[AiSignupMarketReport] Response Body:', errorText);
-      console.error('[AiSignupMarketReport] ===========================');
-
-      // Try to parse as JSON for more details
-      let errorMessage = 'Signup failed';
-      try {
-        const errorJson = JSON.parse(errorText);
-        console.error('[AiSignupMarketReport] Parsed error:', errorJson);
-        errorMessage = errorJson.message || errorJson.error || errorJson.body?.message || 'Signup failed';
-      } catch (e) {
-        errorMessage = errorText || `Signup failed with status ${response.status}`;
-      }
-
-      throw new Error(errorMessage);
-    }
-
-    // Handle 204 No Content response
-    if (response.status === 204) {
-      console.log('[AiSignupMarketReport] ✅ Signup successful (204 No Content)');
-      return { success: true };
-    }
-
-    const result = await response.json();
-    console.log('[AiSignupMarketReport] ===== SUCCESS RESPONSE =====');
-    console.log('[AiSignupMarketReport] Full response:', JSON.stringify(result, null, 2));
-    console.log('[AiSignupMarketReport] ============================');
-    return result;
-  } catch (error) {
-    console.error('[AiSignupMarketReport] ===== EXCEPTION =====');
-    console.error('[AiSignupMarketReport] Error:', error);
-    console.error('[AiSignupMarketReport] Error message:', error.message);
-    console.error('[AiSignupMarketReport] Error stack:', error.stack);
-    console.error('[AiSignupMarketReport] ======================');
-    throw error;
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Signup failed' }));
+    throw new Error(error.message || 'Signup failed');
   }
+
+  return response.json();
 }
 
 // ============ LOTTIE ANIMATION COMPONENT ============

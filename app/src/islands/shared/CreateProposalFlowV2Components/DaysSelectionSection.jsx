@@ -108,9 +108,12 @@ export default function DaysSelectionSection({ data, updateData, listing, zatCon
   // Handle price change from ListingScheduleSelector
   const handlePriceChange = (priceBreakdown) => {
     if (priceBreakdown && priceBreakdown.valid) {
-      // Pass the entire pricing breakdown object to trigger internal state update
-      // This ensures the pricing is properly synced when navigating back to review
-      updateData('pricingBreakdown', priceBreakdown);
+      // Update the price per night in the proposal data
+      updateData('pricePerNight', priceBreakdown.pricePerNight);
+
+      // Also update the totals if needed
+      updateData('pricePerFourWeeks', priceBreakdown.fourWeekRent);
+      updateData('totalPrice', priceBreakdown.reservationTotal);
     }
   };
 
