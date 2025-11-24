@@ -36,11 +36,10 @@ export default defineConfig({
           }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
           else if (url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
-            // Extract query params if they exist
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            // Rewrite to serve the HTML file while preserving query params
-            req.url = '/public/view-split-lease.html' + queryString;
+            // Preserve the full path including listing ID
+            // e.g., /view-split-lease/LISTING_ID or /view-split-lease/LISTING_ID?query=value
+            const pathAfterPrefix = url.substring('/view-split-lease'.length);
+            req.url = '/public/view-split-lease.html' + pathAfterPrefix;
           }
           // Legacy support for old URL structure
           else if (url.startsWith('/view-split-lease.html')) {
@@ -124,11 +123,10 @@ export default defineConfig({
           }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
           else if (url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
-            // Extract query params if they exist
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            // Rewrite to serve the HTML file while preserving query params
-            req.url = '/view-split-lease.html' + queryString;
+            // Preserve the full path including listing ID
+            // e.g., /view-split-lease/LISTING_ID or /view-split-lease/LISTING_ID?query=value
+            const pathAfterPrefix = url.substring('/view-split-lease'.length);
+            req.url = '/view-split-lease.html' + pathAfterPrefix;
           }
           // Legacy support for old URL structure
           else if (url.startsWith('/view-split-lease.html')) {

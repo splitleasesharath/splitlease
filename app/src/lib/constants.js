@@ -12,7 +12,6 @@
 
 export const AUTHORIZED_DOMAIN = 'app.split.lease';
 export const BUBBLE_API_URL = 'https://app.split.lease';
-export const BUBBLE_API_BASE_URL = 'https://upgradefromstr.bubbleapps.io/version-test/api/1.1';
 export const SIGNUP_LOGIN_URL = 'https://app.split.lease/signup-login';
 export const SEARCH_URL = '/search.html';
 export const VIEW_LISTING_URL = 'https://app.split.lease/view-split-lease';
@@ -25,10 +24,12 @@ export const BUBBLE_MESSAGING_ENDPOINT = 'https://app.split.lease/api/1.1/wf/cor
 export const AI_SIGNUP_WORKFLOW_URL = 'https://app.split.lease/api/1.1/wf/ai-signup-guest';
 
 // External API Keys and Configuration
-// Note: API keys are configured as environment variables in Cloudflare
+// Note: API keys and base URLs are configured as environment variables
 // VITE_GOOGLE_MAPS_API_KEY - Google Maps API key
-// VITE_BUBBLE_API_KEY - Bubble API key (used for messaging and AI signup)
+// VITE_BUBBLE_API_KEY - Bubble API key (used for workflows)
+// VITE_BUBBLE_API_BASE_URL - Bubble API base URL (used in bubbleAPI.js)
 // Supabase credentials are configured in supabase.js using VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
+// Auth endpoints use a separate base URL and are configured in auth.js
 
 // ============================================================================
 // Lottie Animation URLs

@@ -5,11 +5,13 @@ import type {
   KitchenType,
   ParkingType
 } from '../types/listing.types';
+import { isNYCZipCode, getBoroughForZipCode, NYC_BOUNDS } from '../../../../lib/nycZipCodes';
 
 interface Section1Props {
   data: SpaceSnapshot;
   onChange: (data: SpaceSnapshot) => void;
   onNext: () => void;
+  isLoadingInitialData?: boolean;
 }
 
 // Extend window interface for Google Maps
@@ -22,7 +24,8 @@ declare global {
 export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
   data,
   onChange,
-  onNext
+  onNext,
+  isLoadingInitialData = false
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [addressError, setAddressError] = useState<string>('');
@@ -73,14 +76,11 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
       try {
         console.log('Initializing Google Maps Autocomplete...');
 
-        // Manhattan coordinates (more central to the borough)
-        const manhattanCenter = new window.google.maps.LatLng(40.7831, -73.9712);
-
-        // Create circle bounds for 100km radius around Manhattan
-        const circleBounds = new window.google.maps.Circle({
-          center: manhattanCenter,
-          radius: 100000 // 100,000 meters = 100km
-        }).getBounds();
+        // Create bounding box that encompasses all 5 boroughs of NYC
+        const nycBounds = new window.google.maps.LatLngBounds(
+          new window.google.maps.LatLng(NYC_BOUNDS.south, NYC_BOUNDS.west), // SW corner
+          new window.google.maps.LatLng(NYC_BOUNDS.north, NYC_BOUNDS.east)  // NE corner
+        );
 
         // Create autocomplete with strict bounds restriction
         const autocomplete = new window.google.maps.places.Autocomplete(
@@ -88,14 +88,14 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
           {
             types: ['address'], // Restrict to addresses only (no establishments)
             componentRestrictions: { country: 'us' },
-            // Strictly restrict results to 100km radius around Manhattan
-            bounds: circleBounds,
+            // Strictly restrict results to NYC 5 boroughs bounding box
+            bounds: nycBounds,
             strictBounds: true, // Only return results within bounds
             fields: ['address_components', 'formatted_address', 'geometry', 'name', 'place_id']
           }
         );
 
-        console.log('Google Maps Autocomplete initialized successfully');
+        console.log('Google Maps Autocomplete initialized successfully (NYC 5 boroughs only)');
 
         // IMPORTANT: Prevent autocomplete from selecting on Enter key
         // This allows users to type freely without autocomplete interfering
@@ -157,6 +157,21 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
               neighborhood = component.long_name;
             }
           });
+
+          // Validate that the zip code is within NYC's 5 boroughs
+          if (!isNYCZipCode(zip)) {
+            const borough = getBoroughForZipCode(zip);
+            const errorMsg = borough
+              ? `This address appears to be outside NYC's 5 boroughs. Zip code ${zip} is in ${borough}, but we only accept listings in Manhattan, Brooklyn, Queens, Bronx, and Staten Island.`
+              : `This address is outside NYC's 5 boroughs (zip: ${zip}). We only accept listings in Manhattan, Brooklyn, Queens, Bronx, and Staten Island.`;
+
+            console.warn('Invalid NYC zip code selected:', zip);
+            setAddressError(errorMsg);
+            setIsAddressValid(false);
+            return;
+          }
+
+          console.log('Valid NYC zip code:', zip, '- Borough:', getBoroughForZipCode(zip));
 
           // Update form data with validated address
           const parsedAddress = {
@@ -332,7 +347,7 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
       <div className="info-alert">
         <span className="info-icon">ℹ️</span>
         <p>
-          Start typing your address and select from the dropdown. We will automatically verify addresses in the New York area.
+          Start typing your address and select from the dropdown. We only accept listings in NYC's 5 boroughs: Manhattan, Brooklyn, Queens, Bronx, and Staten Island.
         </p>
       </div>
 
@@ -344,11 +359,12 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
         <input
           type="text"
           id="listingName"
-          placeholder="Listing Name (35 character max)"
+          placeholder={isLoadingInitialData ? "Loading listing name..." : "Listing Name (35 character max)"}
           maxLength={35}
           value={data.listingName}
           onChange={(e) => handleChange('listingName', e.target.value)}
           className={errors.listingName ? 'input-error' : ''}
+          disabled={isLoadingInitialData}
         />
         {errors.listingName && (
           <span className="error-message">{errors.listingName}</span>

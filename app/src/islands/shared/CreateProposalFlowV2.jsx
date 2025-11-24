@@ -12,6 +12,7 @@ import ReviewSection from './CreateProposalFlowV2Components/ReviewSection.jsx';
 import UserDetailsSection from './CreateProposalFlowV2Components/UserDetailsSection.jsx';
 import MoveInSection from './CreateProposalFlowV2Components/MoveInSection.jsx';
 import DaysSelectionSection from './CreateProposalFlowV2Components/DaysSelectionSection.jsx';
+import { calculateCheckInOutDays } from '../../lib/availabilityValidation.js';
 import '../../styles/create-proposal-flow-v2.css';
 
 /**
@@ -89,22 +90,15 @@ export default function CreateProposalFlowV2({
   const calculateCheckInCheckOut = (dayObjs) => {
     if (!dayObjs || dayObjs.length === 0) return { checkIn: 'Monday', checkOut: 'Friday' };
 
-    const dayMap = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    // Convert day objects to day numbers
     const dayNumbers = dayObjs.map(dayObj => dayObj.dayOfWeek);
 
-    // Sort day numbers
-    const sortedDayNumbers = [...dayNumbers].sort((a, b) => a - b);
-
-    // Check-in is the first selected day
-    const checkInDay = sortedDayNumbers[0];
-    const lastSelectedDay = sortedDayNumbers[sortedDayNumbers.length - 1];
-
-    // Check-out is the day AFTER the last selected day
-    const checkOutDay = (lastSelectedDay + 1) % 7;
+    // Use the imported function that properly handles week wrap-around
+    const { checkInName, checkOutName } = calculateCheckInOutDays(dayNumbers);
 
     return {
-      checkIn: dayMap[checkInDay],
-      checkOut: dayMap[checkOutDay]
+      checkIn: checkInName || 'Monday',
+      checkOut: checkOutName || 'Friday'
     };
   };
 

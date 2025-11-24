@@ -9,6 +9,7 @@ Deploy the application to production on Cloudflare Pages while ensuring:
 - Build succeeds (with automatic fix attempts if it fails)
 - Application is successfully deployed to Cloudflare
 - All changes (including fixes) are pushed to GitHub
+- When a build fails, DO NOT PUSH STALE/Outdated Builds. Fix and run build again
 
 ## Variables
 

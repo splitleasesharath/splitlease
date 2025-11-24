@@ -8,102 +8,82 @@ import { Section6Photos } from './sections/Section6Photos';
 import { Section7Review } from './sections/Section7Review';
 import type { ListingFormData } from './types/listing.types';
 import { DEFAULT_LISTING_DATA } from './types/listing.types';
-import { supabase } from '../../../lib/supabase';
+import Header from '../../shared/Header';
+import Footer from '../../shared/Footer';
+import { fetchListingBasic } from '../../../lib/listingDataFetcher';
 import './styles/SelfListingPage.css';
 
 export const SelfListingPage: React.FC = () => {
+  console.log('🏠 SelfListingPage: Component mounting');
+
   const [formData, setFormData] = useState<ListingFormData>(DEFAULT_LISTING_DATA);
   const [currentSection, setCurrentSection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [listingId, setListingId] = useState<string | null>(null);
+  const [isLoadingListing, setIsLoadingListing] = useState(false);
 
-  // Fetch listing data from URL parameter and Supabase
+  // Initialize data: Check URL for listing_id, then load from localStorage or fetch from database
   useEffect(() => {
-    const fetchListingData = async () => {
-      try {
-        // Get listing_id from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const id = urlParams.get('listing_id');
+    const initializeData = async () => {
+      console.log('🔄 SelfListingPage: Initializing data...');
 
-        console.log('🏠 SelfListingPage: Listing ID from URL:', id);
+      const urlParams = new URLSearchParams(window.location.search);
+      const listingId = urlParams.get('listing_id');
+      console.log('🏠 SelfListingPage: Listing ID from URL:', listingId);
 
-        if (!id) {
-          console.warn('⚠️ No listing_id in URL, using default data');
-          setIsLoading(false);
-          return;
-        }
+      if (listingId) {
+        // If there's a listing ID in the URL, fetch it from the database
+        setIsLoadingListing(true);
+        try {
+          console.log('📡 Fetching listing data from Supabase...');
+          console.log('📋 Fetching listing data for ID:', listingId);
+          const listingData = await fetchListingBasic(listingId);
+          console.log('✅ Listing data fetched:', listingData);
 
-        setListingId(id);
-
-        // Fetch listing data from Supabase
-        console.log('📡 Fetching listing data from Supabase...');
-        const { data: listing, error } = await supabase
-          .from('zat_listings')
-          .select('*')
-          .eq('_id', id)
-          .single();
-
-        if (error) {
-          console.error('❌ Error fetching listing:', error);
-          setIsLoading(false);
-          return;
-        }
-
-        if (!listing) {
-          console.warn('⚠️ Listing not found in database');
-          setIsLoading(false);
-          return;
-        }
-
-        console.log('✅ Listing data fetched:', listing);
-
-        // Map Bubble/Supabase data to our form structure
-        const mappedData: ListingFormData = {
-          ...DEFAULT_LISTING_DATA,
-          id: listing._id,
-          spaceSnapshot: {
-            ...DEFAULT_LISTING_DATA.spaceSnapshot,
-            listingName: listing.Name || '',
-            beds: listing['Features - Qty Beds'] || 1,
-            bedrooms: listing['Features - Qty Bedrooms'] || 1,
-            bathrooms: listing['Features - Qty Bathrooms'] || 1,
-          },
-          pricing: {
-            ...DEFAULT_LISTING_DATA.pricing,
-            damageDeposit: listing['💰Damage Deposit'] || 500,
+          // Preload the listing name into the form
+          if (listingData?.Name) {
+            console.log('✅ Preloading listing name:', listingData.Name);
+            setFormData(prevData => {
+              const newData = {
+                ...prevData,
+                spaceSnapshot: {
+                  ...prevData.spaceSnapshot,
+                  listingName: listingData.Name
+                }
+              };
+              console.log('📝 Updated form data with listing name:', newData.spaceSnapshot.listingName);
+              return newData;
+            });
+          } else {
+            console.warn('⚠️ No listing name found in fetched data');
           }
-        };
-
-        console.log('📋 Mapped form data:', mappedData);
-        setFormData(mappedData);
-
-      } catch (error) {
-        console.error('❌ Error in fetchListingData:', error);
-      } finally {
-        setIsLoading(false);
+        } catch (error) {
+          console.error('❌ Error fetching listing:', error);
+          // Don't show error to user, just continue with empty form
+        } finally {
+          setIsLoadingListing(false);
+          console.log('✅ Loading complete');
+        }
+      } else {
+        // No listing ID in URL, try to load from localStorage draft
+        console.log('📂 No listing ID in URL, checking localStorage for draft...');
+        const savedData = localStorage.getItem('selfListingDraft');
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData);
+            console.log('📂 Loaded draft from localStorage:', parsed);
+            setFormData(parsed);
+            setCurrentSection(parsed.currentSection || 1);
+          } catch (error) {
+            console.error('❌ Error loading saved draft:', error);
+          }
+        } else {
+          console.log('📂 No draft found in localStorage');
+        }
       }
     };
 
-    fetchListingData();
+    initializeData();
   }, []);
-
-  // Auto-save to localStorage
-  useEffect(() => {
-    // Don't load from localStorage if we have a listing ID (we fetched from DB instead)
-    if (listingId || isLoading) return;
-
-    const savedData = localStorage.getItem('selfListingDraft');
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        setFormData(parsed);
-        setCurrentSection(parsed.currentSection || 1);
-      } catch (error) {
-        console.error('Error loading saved draft:', error);
-      }
-    }
-  }, [listingId, isLoading]);
 
   useEffect(() => {
     // Save draft every time formData changes
@@ -111,7 +91,67 @@ export const SelfListingPage: React.FC = () => {
     localStorage.setItem('selfListingDraft', JSON.stringify(dataToSave));
   }, [formData, currentSection]);
 
+  // Validation functions for each section
+  const isSectionComplete = (sectionNum: number): boolean => {
+    switch (sectionNum) {
+      case 1: // Space Snapshot
+        return !!(
+          formData.spaceSnapshot.listingName &&
+          formData.spaceSnapshot.typeOfSpace &&
+          formData.spaceSnapshot.typeOfKitchen &&
+          formData.spaceSnapshot.typeOfParking &&
+          formData.spaceSnapshot.address.fullAddress &&
+          formData.spaceSnapshot.address.validated
+        );
+      case 2: // Features
+        return !!(
+          formData.features.amenitiesInsideUnit.length > 0 &&
+          formData.features.descriptionOfLodging
+        );
+      case 3: // Lease Styles
+        return !!(
+          formData.leaseStyles.rentalType &&
+          (formData.leaseStyles.rentalType !== 'Nightly' ||
+            (formData.leaseStyles.availableNights &&
+             Object.values(formData.leaseStyles.availableNights).some(v => v))) &&
+          (formData.leaseStyles.rentalType !== 'Weekly' || formData.leaseStyles.weeklyPattern)
+        );
+      case 4: // Pricing
+        return !!(
+          (formData.leaseStyles.rentalType === 'Monthly' && formData.pricing.monthlyCompensation) ||
+          (formData.leaseStyles.rentalType === 'Weekly' && formData.pricing.weeklyCompensation) ||
+          (formData.leaseStyles.rentalType === 'Nightly' && formData.pricing.nightlyPricing?.oneNightPrice)
+        );
+      case 5: // Rules
+        return !!(
+          formData.rules.cancellationPolicy &&
+          formData.rules.checkInTime &&
+          formData.rules.checkOutTime
+        );
+      case 6: // Photos
+        return formData.photos.photos.length >= formData.photos.minRequired;
+      case 7: // Review - always accessible once section 6 is complete
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  const isSectionLocked = (sectionNum: number): boolean => {
+    // Section 1 is always unlocked
+    if (sectionNum === 1) return false;
+
+    // Check if the previous section is completed
+    const previousSection = sectionNum - 1;
+    return !formData.completedSections.includes(previousSection);
+  };
+
   const handleSectionChange = (section: number) => {
+    // Prevent navigation to locked sections
+    if (isSectionLocked(section)) {
+      return;
+    }
+
     setCurrentSection(section);
     setFormData({ ...formData, currentSection: section });
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -119,7 +159,17 @@ export const SelfListingPage: React.FC = () => {
 
   const handleNext = () => {
     if (currentSection < 7) {
-      const completedSections = [...new Set([...formData.completedSections, currentSection])];
+      // Only mark section as completed if validation passes
+      let completedSections = formData.completedSections;
+
+      if (isSectionComplete(currentSection)) {
+        completedSections = [...new Set([...formData.completedSections, currentSection])];
+      } else {
+        // Section is not complete, show alert
+        alert(`Please complete all required fields in Section ${currentSection} before proceeding.`);
+        return;
+      }
+
       const nextSection = currentSection + 1;
       setFormData({ ...formData, completedSections, currentSection: nextSection });
       setCurrentSection(nextSection);
@@ -161,6 +211,7 @@ export const SelfListingPage: React.FC = () => {
     }
   };
 
+
   const sections = [
     { number: 1, title: 'Address', icon: '📍' },
     { number: 2, title: 'Features', icon: '✨' },
@@ -174,47 +225,31 @@ export const SelfListingPage: React.FC = () => {
   const getSectionStatus = (sectionNum: number) => {
     if (formData.completedSections.includes(sectionNum)) return 'completed';
     if (sectionNum === currentSection) return 'active';
+    if (isSectionLocked(sectionNum)) return 'locked';
     return 'pending';
   };
 
-  // Show loading state while fetching data
-  if (isLoading) {
-    return (
-      <div className="self-listing-page">
-        <div className="loading-container" style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-          flexDirection: 'column',
-          gap: '20px'
-        }}>
-          <div className="spinner" style={{
-            border: '4px solid #f3f3f3',
-            borderTop: '4px solid #3D2463',
-            borderRadius: '50%',
-            width: '50px',
-            height: '50px',
-            animation: 'spin 1s linear infinite'
-          }} />
-          <p style={{ fontSize: '18px', color: '#666' }}>Loading listing data...</p>
-        </div>
-      </div>
-    );
-  }
+  console.log('🎨 SelfListingPage: Rendering component');
+  console.log('🎨 Current form data:', formData);
+  console.log('🎨 Listing name in form:', formData.spaceSnapshot.listingName);
 
   return (
-    <div className="self-listing-page">
-      {/* Header */}
-      <header className="listing-header">
-        <div className="header-content">
-          <h1>Create Your Listing</h1>
-          <div className="header-actions">
-            <button className="btn-save-draft">Save Draft</button>
-            <button className="btn-help">Need Help?</button>
+    <>
+      {/* Shared Header Island */}
+      {console.log('🎨 Rendering Header component')}
+      <Header />
+
+      <div className="self-listing-page">
+        {/* Page Header */}
+        <header className="listing-header">
+          <div className="header-content">
+            <h1>Create Your Listing</h1>
+            <div className="header-actions">
+              <button className="btn-save-draft">Save Draft</button>
+              <button className="btn-help">Need Help?</button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
       <div className="listing-container">
         {/* Navigation Sidebar */}
@@ -240,22 +275,32 @@ export const SelfListingPage: React.FC = () => {
           </div>
 
           <nav className="section-nav">
-            {sections.map((section) => (
-              <button
-                key={section.number}
-                className={`nav-item ${getSectionStatus(section.number)}`}
-                onClick={() => handleSectionChange(section.number)}
-              >
-                <div className="nav-icon">{section.icon}</div>
-                <div className="nav-content">
-                  <div className="nav-number">Section {section.number}</div>
-                  <div className="nav-title">{section.title}</div>
-                </div>
-                {formData.completedSections.includes(section.number) && (
-                  <div className="nav-check">✓</div>
-                )}
-              </button>
-            ))}
+            {sections.map((section) => {
+              const status = getSectionStatus(section.number);
+              const isLocked = status === 'locked';
+
+              return (
+                <button
+                  key={section.number}
+                  className={`nav-item ${status}`}
+                  onClick={() => handleSectionChange(section.number)}
+                  disabled={isLocked}
+                  title={isLocked ? 'Complete previous section to unlock' : ''}
+                >
+                  <div className="nav-icon">{section.icon}</div>
+                  <div className="nav-content">
+                    <div className="nav-number">Section {section.number}</div>
+                    <div className="nav-title">{section.title}</div>
+                  </div>
+                  {formData.completedSections.includes(section.number) && (
+                    <div className="nav-check">✓</div>
+                  )}
+                  {isLocked && (
+                    <div className="nav-lock">🔒</div>
+                  )}
+                </button>
+              );
+            })}
           </nav>
         </aside>
 
@@ -266,6 +311,7 @@ export const SelfListingPage: React.FC = () => {
               data={formData.spaceSnapshot}
               onChange={(data) => setFormData({ ...formData, spaceSnapshot: data })}
               onNext={handleNext}
+              isLoadingInitialData={isLoadingListing}
             />
           )}
 
@@ -329,6 +375,11 @@ export const SelfListingPage: React.FC = () => {
           )}
         </main>
       </div>
-    </div>
+      </div>
+
+      {/* Shared Footer Island */}
+      {console.log('🎨 Rendering Footer component')}
+      <Footer />
+    </>
   );
 };

@@ -55,7 +55,13 @@ export default function ListingCardForMap({
   };
 
   const handleViewDetails = () => {
-    window.open(`/view-split-lease/${listing.id}`, '_blank');
+    const listingId = listing.id || listing._id;
+    if (!listingId) {
+      console.error('[ListingCardForMap] No listing ID found', { listing });
+      return;
+    }
+    console.log('[ListingCardForMap] Opening listing:', listingId);
+    window.open(`/view-split-lease/${listingId}`, '_blank');
   };
 
   const handleMessage = (e) => {

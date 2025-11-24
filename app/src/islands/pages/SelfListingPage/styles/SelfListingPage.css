@@ -170,6 +170,22 @@
   border-color: #3b82f6;
 }
 
+.nav-item.locked {
+  background: #f5f5f5;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.nav-item.locked .nav-icon {
+  opacity: 0.5;
+}
+
+.nav-item.locked:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 .nav-item:disabled {
   opacity: 0.5;
   cursor: not-allowed;
@@ -209,6 +225,12 @@
 
 .nav-item.active .nav-check {
   color: #ffffff;
+}
+
+.nav-lock {
+  color: #9ca3af;
+  font-size: 1rem;
+  opacity: 0.7;
 }
 
 /* Main Content */

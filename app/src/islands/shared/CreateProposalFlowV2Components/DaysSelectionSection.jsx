@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import ListingScheduleSelector from '../ListingScheduleSelector.jsx';
+import { calculateCheckInOutDays } from '../../../lib/availabilityValidation.js';
 
 export default function DaysSelectionSection({ data, updateData, listing, zatConfig }) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -91,11 +92,16 @@ export default function DaysSelectionSection({ data, updateData, listing, zatCon
     const dayNames = dayObjectsToNames(newSelectedDayObjects);
     updateData('daysSelected', dayNames);
 
-    // Update check-in and check-out days
+    // Update check-in and check-out days using the correct calculation
     if (dayNames.length > 0) {
-      const sortedDays = [...dayNames].sort((a, b) => days.indexOf(a) - days.indexOf(b));
-      updateData('checkInDay', sortedDays[0]);
-      updateData('checkOutDay', sortedDays[sortedDays.length - 1]);
+      // Convert day names to numbers for the calculation
+      const dayNumbers = newSelectedDayObjects.map(dayObj => dayObj.dayOfWeek);
+
+      // Use the imported function that properly handles week wrap-around
+      const { checkInName, checkOutName } = calculateCheckInOutDays(dayNumbers);
+
+      updateData('checkInDay', checkInName);
+      updateData('checkOutDay', checkOutName);
     }
   };
 

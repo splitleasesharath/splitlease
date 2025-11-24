@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 8000",
-    "build": "vite build",
-    "preview": "vite preview --port 8000"
+    "dev": "npx --no vite --port 8000",
+    "build": "npx --no vite build",
+    "preview": "npx --no vite preview --port 8000"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -15,6 +15,7 @@
     "framer-motion": "^12.23.24",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.553.0",
+    "motion-utils": "^12.23.6",
     "react": "^18.2.0",
     "react-datepicker": "^8.9.0",
     "react-dom": "^18.2.0",
