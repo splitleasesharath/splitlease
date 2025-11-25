@@ -262,6 +262,14 @@ export default defineConfig({
           console.log('Copied _headers to dist root');
         }
 
+        // Copy _routes.json file to dist root for Cloudflare Pages Functions routing
+        const routesSource = path.resolve(__dirname, 'public/_routes.json');
+        const routesDest = path.join(distDir, '_routes.json');
+        if (fs.existsSync(routesSource)) {
+          fs.copyFileSync(routesSource, routesDest);
+          console.log('Copied _routes.json to dist root');
+        }
+
         // Copy functions directory to dist root for Cloudflare Pages Functions
         const functionsSource = path.resolve(__dirname, 'functions');
         const functionsDest = path.join(distDir, 'functions');

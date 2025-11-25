@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "include": [
+    "/api/*",
+    "/view-split-lease/*",
+    "/guest-proposals/*",
+    "/account-profile/*"
+  ],
+  "exclude": [
+    "/assets/*",
+    "/*.html",
+    "/*.js",
+    "/*.css",
+    "/*.png",
+    "/*.jpg",
+    "/*.svg",
+    "/*.ico",
+    "/*.json",
+    "/*.woff",
+    "/*.woff2"
+  ]
+}
