@@ -92,6 +92,8 @@ body {
   line-height: 1.2;
   margin-bottom: 24px;
   letter-spacing: -1px;
+  text-align: center;
+  width: 100%;
 }
 
 .hero-title .highlight {
@@ -105,10 +107,16 @@ body {
   margin: 0 auto 48px;
   line-height: 1.7;
   font-weight: 400;
+  text-align: center;
+  width: 100%;
 }
 
 .hero-cta {
   margin-top: 40px;
+  text-align: center;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .cta-primary {
