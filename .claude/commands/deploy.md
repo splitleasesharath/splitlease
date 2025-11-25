@@ -31,6 +31,7 @@ MAX_BUILD_ATTEMPTS: 3
      - Generate a descriptive commit message based on the staged changes
      - Run `git commit -m "<commit_message>"`
      - Use present tense (e.g., "update", "fix", "add")
+     - git pull changes from remote. Proceed further only when pull is run successfully
    - If no changes, skip this step
 
 ### Build Phase: Build with Auto-Fix

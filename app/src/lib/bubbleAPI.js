@@ -71,3 +71,46 @@ export async function createListingInCode(listingName, userEmail = null) {
     throw error;
   }
 }
+
+/**
+ * Get a listing by ID via Supabase Edge Function
+ * Fetches listing data from Bubble via Edge Function proxy
+ * NO FALLBACK - Throws if Edge Function fails
+ *
+ * @param {string} listingId - Bubble ID of the listing to fetch
+ * @returns {Promise<Object>} - Listing data from Bubble
+ */
+export async function getListingById(listingId) {
+  console.log('[Bubble API] Fetching listing via Edge Function');
+  console.log('[Bubble API] Listing ID:', listingId);
+
+  if (!listingId?.trim()) {
+    throw new Error('Listing ID is required');
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('bubble-proxy', {
+      body: {
+        action: 'get_listing',
+        payload: {
+          listing_id: listingId.trim(),
+        },
+      },
+    });
+
+    if (error) {
+      console.error('[Bubble API] Edge Function error:', error);
+      throw new Error(error.message || 'Failed to fetch listing');
+    }
+
+    if (!data.success) {
+      throw new Error(data.error || 'Unknown error');
+    }
+
+    console.log('[Bubble API] ✅ Listing fetched:', data.data);
+    return data.data;
+  } catch (error) {
+    console.error('[Bubble API] Failed to fetch listing:', error);
+    throw error;
+  }
+}

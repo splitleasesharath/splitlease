@@ -342,22 +342,35 @@ export async function fetchListingComplete(listingId) {
  * @returns {string|null} Listing ID or null
  */
 export function getListingIdFromUrl() {
+  // Debug logging
+  console.log('🔍 [getListingIdFromUrl] Current URL:', window.location.href);
+  console.log('🔍 [getListingIdFromUrl] Pathname:', window.location.pathname);
+  console.log('🔍 [getListingIdFromUrl] Search:', window.location.search);
+
   // 1. Check query string: ?id=listingId
   const urlParams = new URLSearchParams(window.location.search);
   const idFromQuery = urlParams.get('id');
-  if (idFromQuery) return idFromQuery;
+  if (idFromQuery) {
+    console.log('✅ [getListingIdFromUrl] Found ID in query string:', idFromQuery);
+    return idFromQuery;
+  }
 
   // 2. Parse pathname for segment after 'view-split-lease'
   const pathSegments = window.location.pathname.split('/').filter(segment => segment);
+  console.log('🔍 [getListingIdFromUrl] Path segments:', pathSegments);
+
   const viewSegmentIndex = pathSegments.findIndex(segment =>
     segment === 'view-split-lease' ||
     segment === 'view-split-lease.html' ||
     segment === 'view-split-lease-1'
   );
+  console.log('🔍 [getListingIdFromUrl] View segment index:', viewSegmentIndex);
 
   if (viewSegmentIndex !== -1 && pathSegments[viewSegmentIndex + 1]) {
     const nextSegment = pathSegments[viewSegmentIndex + 1];
+    console.log('🔍 [getListingIdFromUrl] Next segment after view-split-lease:', nextSegment);
     if (!nextSegment.includes('.')) {
+      console.log('✅ [getListingIdFromUrl] Found ID in path:', nextSegment);
       return nextSegment;
     }
   }
@@ -366,10 +379,12 @@ export function getListingIdFromUrl() {
   if (pathSegments.length > 0) {
     const firstSegment = pathSegments[0];
     if (/^\d+x\d+$/.test(firstSegment)) {
+      console.log('✅ [getListingIdFromUrl] Found ID as first segment:', firstSegment);
       return firstSegment;
     }
   }
 
+  console.error('❌ [getListingIdFromUrl] No listing ID found in URL');
   return null;
 }
 

@@ -2,6 +2,9 @@ import { createRoot } from 'react-dom/client';
 import GuestProposalsPage from './islands/pages/GuestProposalsPage.jsx';
 import { checkAuthStatus } from './lib/auth.js';
 
+// Import CSS for the redesigned guest-proposals page
+import './styles/components/guest-proposals.css';
+
 // Check authentication status (async)
 (async () => {
   const isLoggedIn = await checkAuthStatus();

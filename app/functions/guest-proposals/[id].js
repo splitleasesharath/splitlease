@@ -18,8 +18,10 @@ export async function onRequest(context) {
   // Clone the response so we can modify headers
   const newResponse = new Response(response.body, response);
 
-  // Set cache headers for better performance
-  newResponse.headers.set('Cache-Control', 'public, max-age=3600');
+  // Disable caching completely
+  newResponse.headers.set('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+  newResponse.headers.set('Pragma', 'no-cache');
+  newResponse.headers.set('Expires', '0');
 
   return newResponse;
 }
