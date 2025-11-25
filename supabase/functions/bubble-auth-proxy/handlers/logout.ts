@@ -4,7 +4,7 @@
  *
  * Flow:
  * 1. Get token from payload
- * 2. Call Bubble logout workflow (BUBBLE_AUTH_BASE_URL/wf/logout-user)
+ * 2. Call Bubble logout workflow (BUBBLE_API_BASE_URL/wf/logout-user)
  * 3. Return success (always succeeds locally even if Bubble API fails)
  *
  * EXCEPTION TO NO FALLBACK:

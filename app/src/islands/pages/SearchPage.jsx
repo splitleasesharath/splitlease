@@ -835,12 +835,15 @@ export default function SearchPage() {
   useEffect(() => {
     const loadBoroughs = async () => {
       try {
+        console.log('[DEBUG] Loading boroughs from zat_geo_borough_toplevel...');
         const { data, error } = await supabase
           .from('zat_geo_borough_toplevel')
           .select('_id, "Display Borough"')
           .order('"Display Borough"', { ascending: true });
 
         if (error) throw error;
+
+        console.log('[DEBUG] Raw borough data from Supabase:', data);
 
         const boroughList = data
           .filter(b => b['Display Borough'] && b['Display Borough'].trim())
@@ -851,6 +854,12 @@ export default function SearchPage() {
               .replace(/\s+county\s+nj/i, '')
               .replace(/\s+/g, '-')
           }));
+
+        console.log('[DEBUG] Processed borough list:', boroughList.map(b => ({
+          id: b.id,
+          name: b.name,
+          value: b.value
+        })));
 
         setBoroughs(boroughList);
 
@@ -882,21 +891,42 @@ export default function SearchPage() {
   // Load neighborhoods when borough changes
   useEffect(() => {
     const loadNeighborhoods = async () => {
-      if (!selectedBorough || boroughs.length === 0) return;
+      console.log('[DEBUG] loadNeighborhoods called - selectedBorough:', selectedBorough, 'boroughs.length:', boroughs.length);
 
-      const borough = boroughs.find(b => b.value === selectedBorough);
-      if (!borough) {
-        console.warn('Borough not found for value:', selectedBorough);
+      if (!selectedBorough || boroughs.length === 0) {
+        console.log('[DEBUG] Skipping neighborhood load - missing selectedBorough or boroughs');
         return;
       }
 
-      console.log('Loading neighborhoods for borough:', {
+      const borough = boroughs.find(b => b.value === selectedBorough);
+      if (!borough) {
+        console.warn('[DEBUG] Borough not found for value:', selectedBorough);
+        console.log('[DEBUG] Available borough values:', boroughs.map(b => b.value));
+        return;
+      }
+
+      console.log('[DEBUG] Loading neighborhoods for borough:', {
         boroughName: borough.name,
         boroughId: borough.id,
+        boroughIdType: typeof borough.id,
         boroughValue: borough.value
       });
 
       try {
+        // First, let's see what neighborhoods exist without filtering
+        const { data: allNeighborhoods, error: allError } = await supabase
+          .from('zat_geo_hood_mediumlevel')
+          .select('_id, Display, "Geo-Borough"')
+          .limit(5);
+
+        console.log('[DEBUG] Sample neighborhoods (first 5):', allNeighborhoods?.map(n => ({
+          id: n._id,
+          name: n.Display,
+          geoBoroughValue: n['Geo-Borough'],
+          geoBoroughType: typeof n['Geo-Borough']
+        })));
+
+        // Now query with the filter
         const { data, error } = await supabase
           .from('zat_geo_hood_mediumlevel')
           .select('_id, Display, "Geo-Borough"')
@@ -905,9 +935,17 @@ export default function SearchPage() {
 
         if (error) throw error;
 
-        console.log(`Found ${data.length} neighborhoods for ${borough.name}:`,
+        console.log(`[DEBUG] Found ${data.length} neighborhoods for ${borough.name}:`,
           data.slice(0, 5).map(n => ({ id: n._id, name: n.Display, boroughRef: n['Geo-Borough'] }))
         );
+
+        // Debug: Check if borough.id matches any Geo-Borough values
+        if (data.length === 0 && allNeighborhoods && allNeighborhoods.length > 0) {
+          console.warn('[DEBUG] No neighborhoods found! Comparing IDs:');
+          console.log('[DEBUG] Looking for borough.id:', borough.id);
+          console.log('[DEBUG] Sample Geo-Borough values:', allNeighborhoods.map(n => n['Geo-Borough']));
+          console.log('[DEBUG] ID match check:', allNeighborhoods.some(n => n['Geo-Borough'] === borough.id));
+        }
 
         const neighborhoodList = data
           .filter(n => n.Display && n.Display.trim())

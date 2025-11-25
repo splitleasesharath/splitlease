@@ -69,13 +69,13 @@ Deno.serve(async (req) => {
     console.log(`[bubble-auth-proxy] Action: ${action}`);
 
     // Get Bubble auth configuration from secrets
-    const bubbleAuthBaseUrl = Deno.env.get('BUBBLE_AUTH_BASE_URL');
+    const bubbleAuthBaseUrl = Deno.env.get('BUBBLE_API_BASE_URL');
     const bubbleApiKey = Deno.env.get('BUBBLE_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!bubbleAuthBaseUrl || !bubbleApiKey) {
-      throw new Error('Bubble auth configuration missing in secrets');
+      throw new Error('Bubble API configuration missing in secrets');
     }
 
     if (!supabaseUrl || !supabaseServiceKey) {
