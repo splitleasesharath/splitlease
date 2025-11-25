@@ -100,6 +100,16 @@ function FilterPanel({
     return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
   });
 
+  // Debug logging for neighborhood filtering
+  console.log('🔍 Neighborhood Filtering Debug:', {
+    totalLoaded: neighborhoods.length,
+    searchTerm: neighborhoodSearch,
+    sanitizedSearch: sanitizeNeighborhoodSearch(neighborhoodSearch),
+    filteredCount: filteredNeighborhoods.length,
+    sampleNeighborhoods: neighborhoods.slice(0, 5).map(n => n.name),
+    filteredNeighborhoods: filteredNeighborhoods.map(n => n.name)
+  });
+
   const handleNeighborhoodToggle = (neighborhoodId) => {
     const isSelected = selectedNeighborhoods.includes(neighborhoodId);
     let newSelected;

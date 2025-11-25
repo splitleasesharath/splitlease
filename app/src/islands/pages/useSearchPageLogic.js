@@ -701,10 +701,22 @@ export function useSearchPageLogic() {
   const hasMore = loadedCount < allListings.length
 
   const filteredNeighborhoods = useMemo(() => {
-    return neighborhoods.filter((n) => {
+    const filtered = neighborhoods.filter((n) => {
       const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch)
       return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase())
     })
+
+    // Debug logging for neighborhood filtering
+    console.log('🔍 [useSearchPageLogic] Neighborhood Filtering Debug:', {
+      totalLoaded: neighborhoods.length,
+      searchTerm: neighborhoodSearch,
+      sanitizedSearch: sanitizeNeighborhoodSearch(neighborhoodSearch),
+      filteredCount: filtered.length,
+      sampleNeighborhoods: neighborhoods.slice(0, 5).map(n => n.name),
+      filteredNeighborhoods: filtered.map(n => n.name)
+    })
+
+    return filtered
   }, [neighborhoods, neighborhoodSearch])
 
   // ============================================================================
