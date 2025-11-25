@@ -2,24 +2,37 @@
  * useLoggedInAvatarData Hook
  *
  * Fetches user-specific data from Supabase to determine menu item visibility.
- * Based on the conditional logic from the Bubble.io menu system:
+ * Based on the conditional logic from the Bubble.io menu system.
  *
- * Data Dependencies:
- * - User Type: user."Type - User Current" (GUEST, HOST, TRIAL_HOST)
- * - Proposals Count: user."Proposals List" (array of proposal IDs)
- * - Visits Count: Search for visits where Guest = userId
- * - House Manuals Count: account_host."House manuals" (array of manual IDs)
- * - Listings Count: listing where "Created By" = userId
+ * MENU VISIBILITY BY USER TYPE:
  *
- * Menu Visibility Rules:
- * 1. My Profile - ALWAYS visible (all users)
- * 2. My Proposals - HOST and TRIAL_HOST only
- * 3. My Proposals Suggested - HOST and TRIAL_HOST only (when proposals > 0)
- * 4. My Listings - ALL users (context-dependent)
- * 5. Virtual Meetings - When proposals count = 0
- * 6. House Manuals & Visits -
- *    - GUEST: When visits < 1
- *    - HOST/TRIAL_HOST: When house manuals = 0
+ * GUEST (wants to rent a space):
+ *   ✓ My Profile - ALWAYS
+ *   ✓ My Proposals - ALWAYS (their proposals as guest)
+ *   ✗ My Proposals Suggested - HIDDEN
+ *   ✗ My Listings - HIDDEN
+ *   ✓ Virtual Meetings - Conditional (proposals = 0)
+ *   ✓ House Manuals & Visits - Conditional (visits < 1)
+ *   ✓ My Leases - ALWAYS
+ *   ✓ My Favorite Listings - ALWAYS
+ *   ✓ Messages - ALWAYS
+ *   ✓ Rental Application - ALWAYS
+ *   ✓ Reviews Manager - ALWAYS
+ *   ✓ Referral - ALWAYS
+ *
+ * HOST / TRIAL HOST (has space to rent):
+ *   ✓ My Profile - ALWAYS
+ *   ✓ My Proposals - ALWAYS (proposals received from guests)
+ *   ✗ My Proposals Suggested - HIDDEN
+ *   ✓ My Listings - ALWAYS
+ *   ✓ Virtual Meetings - Conditional (proposals = 0)
+ *   ✓ House Manuals & Visits - Conditional (house manuals = 0)
+ *   ✓ My Leases - ALWAYS
+ *   ✗ My Favorite Listings - HIDDEN
+ *   ✓ Messages - ALWAYS
+ *   ✗ Rental Application - HIDDEN
+ *   ✓ Reviews Manager - ALWAYS
+ *   ✓ Referral - ALWAYS
  */
 
 import { useState, useEffect, useCallback } from 'react';
@@ -52,7 +65,7 @@ export const NORMALIZED_USER_TYPES = {
 export function normalizeUserType(rawUserType) {
   if (!rawUserType) return NORMALIZED_USER_TYPES.GUEST;
 
-  if (rawUserType === USER_TYPES.HOST || rawUserType.includes('Host') && !rawUserType.includes('Trial')) {
+  if (rawUserType === USER_TYPES.HOST || (rawUserType.includes('Host') && !rawUserType.includes('Trial'))) {
     return NORMALIZED_USER_TYPES.HOST;
   }
   if (rawUserType === USER_TYPES.TRIAL_HOST || rawUserType.includes('Trial')) {
@@ -105,7 +118,6 @@ export function useLoggedInAvatarData(userId) {
         visitsResult,
         virtualMeetingsResult,
         leasesResult,
-        favoritesResult,
         messagesResult
       ] = await Promise.all([
         // 1. Fetch user data (type, proposals list, account host reference)
@@ -145,10 +157,7 @@ export function useLoggedInAvatarData(userId) {
           .select('_id', { count: 'exact', head: true })
           .or(`Guest.eq.${userId},"Created By".eq.${userId}`),
 
-        // 6. Count favorites (from user's favorites list)
-        // This will be extracted from user data instead
-
-        // 7. Count unread messages
+        // 6. Count unread messages
         supabase
           .from('message')
           .select('_id', { count: 'exact', head: true })
@@ -238,31 +247,25 @@ export function getMenuVisibility(data, currentPath = '') {
   const isTrialHost = userType === NORMALIZED_USER_TYPES.TRIAL_HOST;
   const isHostOrTrial = isHost || isTrialHost;
 
-  // URL-based conditionals
-  const isOnHostOverview = currentPath.includes('host-overview');
-  const isOnProfile = currentPath.includes('profile');
-  const isOnGuestDashboard = currentPath.includes('guest-dashboard');
-
   return {
     // 1. My Profile - ALWAYS visible for all users
     myProfile: true,
 
-    // 2. My Proposals - HOST and TRIAL_HOST only
-    // Hidden on guest-dashboard page
-    myProposals: isHostOrTrial && !isOnGuestDashboard,
+    // 2. My Proposals - ALWAYS visible for all users
+    //    - Guests see their submitted proposals
+    //    - Hosts see proposals received from guests
+    myProposals: true,
 
-    // 3. My Proposals Suggested - HOST and TRIAL_HOST only when they have proposals
-    myProposalsSuggested: isHostOrTrial && proposalsCount > 0,
+    // 3. My Proposals Suggested - HIDDEN for all users
+    //    (This feature is not shown in the menu)
+    myProposalsSuggested: false,
 
-    // 4. My Listings - Visible for:
-    //    - All host types (HOST, TRIAL_HOST)
-    //    - Guests (can view listings)
-    //    - When on host-overview page (context-specific)
-    myListings: true, // Simplified: visible for all, as per original component
+    // 4. My Listings - HOST and TRIAL_HOST only
+    //    Guests don't see this option
+    myListings: isHostOrTrial,
 
     // 5. Virtual Meetings - Conditional based on proposals:
-    //    - GUEST: When proposals count = 0
-    //    - HOST/TRIAL_HOST: When proposals count = 0
+    //    Shows when user has no active proposals (proposals = 0)
     virtualMeetings: proposalsCount === 0,
 
     // 6. House Manuals & Visits - Context-aware:
@@ -272,12 +275,24 @@ export function getMenuVisibility(data, currentPath = '') {
       ? visitsCount < 1
       : houseManualsCount === 0,
 
-    // Additional menu items (always visible)
+    // 7. My Leases - ALWAYS visible for all users
     myLeases: true,
-    myFavoriteListings: true,
+
+    // 8. My Favorite Listings - GUEST only
+    //    Hosts don't see favorite listings
+    myFavoriteListings: isGuest,
+
+    // 9. Messages - ALWAYS visible for all users
     messages: true,
-    rentalApplication: true,
+
+    // 10. Rental Application - GUEST only
+    //     Hosts don't need rental applications
+    rentalApplication: isGuest,
+
+    // 11. Reviews Manager - ALWAYS visible for all users
     reviewsManager: true,
+
+    // 12. Referral - ALWAYS visible for all users
     referral: true
   };
 }
