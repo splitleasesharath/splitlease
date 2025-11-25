@@ -27,14 +27,24 @@ export default function CareersPage() {
       // Clear any previous content
       typeformContainerRef.current.innerHTML = '';
 
-      // Create an iframe directly for the live embed
-      const iframe = document.createElement('iframe');
-      iframe.src = 'https://form.typeform.com/to/01JTV62WNGXMDX830477HVX7NZ';
-      iframe.style.width = '100%';
-      iframe.style.height = '100%';
-      iframe.style.border = 'none';
-      iframe.allow = 'camera; microphone; autoplay; encrypted-media;';
-      typeformContainerRef.current.appendChild(iframe);
+      // Create the data-tf-live div for Typeform live embed
+      const tfDiv = document.createElement('div');
+      tfDiv.setAttribute('data-tf-live', '01JTV62WNGXMDX830477HVX7NZ');
+      tfDiv.style.width = '100%';
+      tfDiv.style.height = '100%';
+      typeformContainerRef.current.appendChild(tfDiv);
+
+      // Load the Typeform embed script if not already loaded
+      if (!document.querySelector('script[src*="embed.typeform.com"]')) {
+        const script = document.createElement('script');
+        script.src = '//embed.typeform.com/next/embed.js';
+        document.body.appendChild(script);
+      } else {
+        // If script is already loaded, trigger a re-scan
+        if (window.tf && window.tf.load) {
+          window.tf.load();
+        }
+      }
     }
   }, [typeformModalActive]);
 
