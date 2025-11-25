@@ -127,7 +127,7 @@ export default function LoggedInAvatar({
       {
         id: 'profile',
         label: 'My Profile',
-        icon: '👤',
+        icon: '/assets/icons/user.svg',
         path: '/account-profile',
       },
     ];
@@ -137,7 +137,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'proposals',
         label: 'My Proposals',
-        icon: '📋',
+        icon: '/assets/icons/proposals.svg',
         path: '/guest-proposals',
         badgeCount: user.proposalsCount,
         badgeColor: 'purple',
@@ -149,7 +149,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'guest-proposals',
         label: 'My Proposals',
-        icon: '📋',
+        icon: '/assets/icons/proposals.svg',
         path: '/guest-proposals',
         badgeCount: user.proposalsCount,
         badgeColor: 'purple',
@@ -160,7 +160,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'listings',
       label: 'My Listings',
-      icon: '🏠',
+      icon: '/assets/icons/listing.svg',
       path: user.listingsCount > 1 ? '/host-overview' : user.listingsCount === 1 ? '/host-dashboard' : '/host-overview',
       badgeCount: user.listingsCount,
       badgeColor: 'purple',
@@ -170,7 +170,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'virtual-meetings',
       label: 'Virtual Meetings',
-      icon: '📹',
+      icon: '/assets/icons/virtual-meeting.svg',
       path: user.userType === 'GUEST' ? '/guest-dashboard' : '/host-overview',
       badgeCount: user.virtualMeetingsCount,
       badgeColor: 'purple',
@@ -180,7 +180,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'house-manuals',
       label: 'House manuals & Visits',
-      icon: '📖',
+      icon: '/assets/icons/house-manual.svg',
       path: user.userType === 'GUEST' ? '/guest-house-manual' : user.houseManualsCount === 1 ? '/host-house-manual' : '/host-overview',
     });
 
@@ -188,7 +188,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'leases',
       label: 'My Leases',
-      icon: '📝',
+      icon: '/assets/icons/leases.svg',
       path: user.userType === 'GUEST' ? '/guest-leases' : '/host-leases',
       badgeCount: user.leasesCount,
       badgeColor: 'purple',
@@ -198,7 +198,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'favorites',
       label: 'My Favorite Listings',
-      icon: '⭐',
+      icon: '/assets/icons/favorite.svg',
       path: '/favorite-listings',
       badgeCount: user.favoritesCount,
       badgeColor: 'purple',
@@ -208,7 +208,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'messages',
       label: 'Messages',
-      icon: '💬',
+      icon: '/assets/icons/message.svg',
       path: '/messaging',
       badgeCount: user.unreadMessagesCount,
       badgeColor: 'red',
@@ -218,7 +218,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'rental-application',
       label: 'Rental Application',
-      icon: '💼',
+      icon: '/assets/icons/rental-application.svg',
       path: user.userType === 'HOST' ? '/account' : '/rental-application',
     });
 
@@ -226,7 +226,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'reviews',
       label: 'Reviews Manager',
-      icon: '✅',
+      icon: '/assets/icons/reviews.svg',
       path: '/reviews-overview',
     });
 
@@ -234,7 +234,7 @@ export default function LoggedInAvatar({
     items.push({
       id: 'referral',
       label: 'Referral',
-      icon: '🎁',
+      icon: '/assets/icons/referral.svg',
       path: '/referral',
     });
 
@@ -319,7 +319,7 @@ export default function LoggedInAvatar({
                 className={`menu-item ${isActivePath(item.path) ? 'active' : ''}`}
                 onClick={() => handleMenuItemClick(item)}
               >
-                <span className="menu-icon-emoji">{item.icon}</span>
+                <img src={item.icon} alt="" className="menu-icon" />
                 <span className="menu-label">{item.label}</span>
                 {item.badgeCount !== undefined && item.badgeCount > 0 && (
                   <span className={`notification-badge ${item.badgeColor}`}>
@@ -330,7 +330,7 @@ export default function LoggedInAvatar({
             ))}
 
             <button className="menu-item sign-out" onClick={handleSignOut}>
-              <span className="menu-icon-emoji">🚪</span>
+              <img src="/assets/icons/logout.svg" alt="" className="menu-icon" />
               <span className="menu-label">Sign Out</span>
             </button>
           </div>
