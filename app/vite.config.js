@@ -262,6 +262,27 @@ export default defineConfig({
           console.log('Copied _headers to dist root');
         }
 
+        // Copy _routes.json file to dist root for Cloudflare Pages routing control
+        const routesSource = path.resolve(__dirname, 'public/_routes.json');
+        const routesDest = path.join(distDir, '_routes.json');
+        if (fs.existsSync(routesSource)) {
+          fs.copyFileSync(routesSource, routesDest);
+          console.log('Copied _routes.json to dist root');
+        }
+
+        // Create _internal directory and copy view-split-lease.html as listing-view (no .html extension)
+        // This avoids Cloudflare's "pretty URL" normalization which causes 308 redirects
+        const internalDir = path.join(distDir, '_internal');
+        if (!fs.existsSync(internalDir)) {
+          fs.mkdirSync(internalDir, { recursive: true });
+        }
+        const viewSplitLeaseSource = path.join(distDir, 'view-split-lease.html');
+        const listingViewDest = path.join(internalDir, 'listing-view');
+        if (fs.existsSync(viewSplitLeaseSource)) {
+          fs.copyFileSync(viewSplitLeaseSource, listingViewDest);
+          console.log('Created _internal/listing-view for Cloudflare routing');
+        }
+
         // Copy functions directory to dist root for Cloudflare Pages Functions
         const functionsSource = path.resolve(__dirname, 'functions');
         const functionsDest = path.join(distDir, 'functions');

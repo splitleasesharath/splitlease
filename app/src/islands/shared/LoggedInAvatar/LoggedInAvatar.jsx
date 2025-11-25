@@ -163,19 +163,29 @@ export default function LoggedInAvatar({
 
   const getMenuItems = () => {
     const items = [];
+<<<<<<< HEAD
     const isGuest = effectiveUserType === NORMALIZED_USER_TYPES.GUEST;
     const isHostOrTrial = effectiveUserType === NORMALIZED_USER_TYPES.HOST || effectiveUserType === NORMALIZED_USER_TYPES.TRIAL_HOST;
 
     // 1. My Profile - ALWAYS visible
+=======
+
+    // 1. My Profile - ALWAYS visible (menuVisibility.myProfile)
+>>>>>>> 2cf2461b2d7933d560e875189bfec08f447020be
     if (menuVisibility.myProfile) {
       items.push({
         id: 'profile',
         label: 'My Profile',
+<<<<<<< HEAD
         icon: '/assets/icons/user.svg',
+=======
+        icon: '/assets/icons/user-purple.svg',
+>>>>>>> 2cf2461b2d7933d560e875189bfec08f447020be
         path: '/account-profile',
       });
     }
 
+<<<<<<< HEAD
     // 2. My Proposals - Visible for all users
     //    - Guests: their submitted proposals
     //    - Hosts: proposals received from guests
@@ -184,12 +194,21 @@ export default function LoggedInAvatar({
         id: 'proposals',
         label: 'My Proposals',
         icon: '/assets/icons/proposals.svg',
+=======
+    // 2. My Proposals - HOST and TRIAL_HOST only
+    if (menuVisibility.myProposals && (effectiveUserType === NORMALIZED_USER_TYPES.HOST || effectiveUserType === NORMALIZED_USER_TYPES.TRIAL_HOST)) {
+      items.push({
+        id: 'proposals',
+        label: 'My Proposals',
+        icon: '/assets/icons/file-text-purple.svg',
+>>>>>>> 2cf2461b2d7933d560e875189bfec08f447020be
         path: '/guest-proposals',
         badgeCount: effectiveProposalsCount,
         badgeColor: 'purple',
       });
     }
 
+<<<<<<< HEAD
     // 3. My Listings - HOST and TRIAL_HOST only (guests don't see this)
     if (menuVisibility.myListings) {
       items.push({
@@ -202,10 +221,21 @@ export default function LoggedInAvatar({
             ? '/host-dashboard'
             : '/host-overview',
         badgeCount: effectiveListingsCount,
+=======
+    // For GUEST users, show their proposals
+    if (effectiveUserType === NORMALIZED_USER_TYPES.GUEST) {
+      items.push({
+        id: 'guest-proposals',
+        label: 'My Proposals',
+        icon: '/assets/icons/file-text-purple.svg',
+        path: '/guest-proposals',
+        badgeCount: effectiveProposalsCount,
+>>>>>>> 2cf2461b2d7933d560e875189bfec08f447020be
         badgeColor: 'purple',
       });
     }
 
+<<<<<<< HEAD
     // 4. Virtual Meetings - Conditional (when proposals = 0)
     if (menuVisibility.virtualMeetings) {
       items.push({
@@ -214,10 +244,21 @@ export default function LoggedInAvatar({
         icon: '/assets/icons/virtual-meeting.svg',
         path: isGuest ? '/guest-dashboard' : '/host-overview',
         badgeCount: effectiveVirtualMeetingsCount,
+=======
+    // 3. My Proposals Suggested - HOST and TRIAL_HOST only (when proposals > 0)
+    if (menuVisibility.myProposalsSuggested) {
+      items.push({
+        id: 'proposals-suggested',
+        label: 'Proposals Suggested',
+        icon: '/assets/icons/file-text-purple.svg',
+        path: '/proposals-suggested',
+        badgeCount: effectiveProposalsCount > 0 ? effectiveProposalsCount : undefined,
+>>>>>>> 2cf2461b2d7933d560e875189bfec08f447020be
         badgeColor: 'purple',
       });
     }
 
+<<<<<<< HEAD
     // 5. House Manuals & Visits - Conditional
     //    - Guest: when visits < 1
     //    - Host: when house manuals = 0
@@ -242,10 +283,39 @@ export default function LoggedInAvatar({
         icon: '/assets/icons/leases.svg',
         path: isGuest ? '/guest-leases' : '/host-leases',
         badgeCount: effectiveLeasesCount,
+=======
+    // 4. My Listings - Visible for all (menuVisibility.myListings)
+    if (menuVisibility.myListings) {
+      items.push({
+        id: 'listings',
+        label: 'My Listings',
+        icon: '/assets/icons/list-purple.svg',
+        path: effectiveListingsCount > 1
+          ? '/host-overview'
+          : effectiveListingsCount === 1
+            ? '/host-dashboard'
+            : '/host-overview',
+        badgeCount: effectiveListingsCount,
         badgeColor: 'purple',
       });
     }
 
+    // 5. Virtual Meetings - When proposals count = 0
+    if (menuVisibility.virtualMeetings) {
+      items.push({
+        id: 'virtual-meetings',
+        label: 'Virtual Meetings',
+        icon: '/assets/icons/video-purple.svg',
+        path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
+          ? '/guest-dashboard'
+          : '/host-overview',
+        badgeCount: effectiveVirtualMeetingsCount,
+>>>>>>> 2cf2461b2d7933d560e875189bfec08f447020be
+        badgeColor: 'purple',
+      });
+    }
+
+<<<<<<< HEAD
     // 7. My Favorite Listings - GUEST only (hosts don't see this)
     if (menuVisibility.myFavoriteListings) {
       items.push({
@@ -291,11 +361,92 @@ export default function LoggedInAvatar({
     }
 
     // 11. Referral - ALWAYS visible for all users
+=======
+    // 6. House Manuals & Visits - Context-aware visibility
+    if (menuVisibility.houseManualsAndVisits) {
+      items.push({
+        id: 'house-manuals',
+        label: 'House manuals & Visits',
+        icon: '/assets/icons/book-open-purple.svg',
+        path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
+          ? '/guest-house-manual'
+          : effectiveHouseManualsCount === 1
+            ? '/host-house-manual'
+            : '/host-overview',
+      });
+    }
+
+    // 7. My Leases - Always visible
+    if (menuVisibility.myLeases) {
+      items.push({
+        id: 'leases',
+        label: 'My Leases',
+        icon: '/assets/icons/key-purple.svg',
+        path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
+          ? '/guest-leases'
+          : '/host-leases',
+        badgeCount: effectiveLeasesCount,
+        badgeColor: 'purple',
+      });
+    }
+
+    // 8. My Favorite Listings - Always visible
+    if (menuVisibility.myFavoriteListings) {
+      items.push({
+        id: 'favorites',
+        label: 'My Favorite Listings',
+        icon: '/assets/icons/heart-purple.svg',
+        path: '/favorite-listings',
+        badgeCount: effectiveFavoritesCount,
+        badgeColor: 'purple',
+      });
+    }
+
+    // 9. Messages - Always visible, with RED badge for urgency
+    if (menuVisibility.messages) {
+      items.push({
+        id: 'messages',
+        label: 'Messages',
+        icon: '/assets/icons/message-circle-purple.svg',
+        path: '/messaging',
+        badgeCount: effectiveUnreadMessagesCount,
+        badgeColor: 'red',
+      });
+    }
+
+    // 10. Rental Application - Always visible
+    if (menuVisibility.rentalApplication) {
+      items.push({
+        id: 'rental-application',
+        label: 'Rental Application',
+        icon: '/assets/icons/clipboard-purple.svg',
+        path: effectiveUserType === NORMALIZED_USER_TYPES.HOST
+          ? '/account'
+          : '/rental-application',
+      });
+    }
+
+    // 11. Reviews Manager - Always visible
+    if (menuVisibility.reviewsManager) {
+      items.push({
+        id: 'reviews',
+        label: 'Reviews Manager',
+        icon: '/assets/icons/star-purple.svg',
+        path: '/reviews-overview',
+      });
+    }
+
+    // 12. Referral - Always visible
+>>>>>>> 2cf2461b2d7933d560e875189bfec08f447020be
     if (menuVisibility.referral) {
       items.push({
         id: 'referral',
         label: 'Referral',
+<<<<<<< HEAD
         icon: '/assets/icons/referral.svg',
+=======
+        icon: '/assets/icons/gift-purple.svg',
+>>>>>>> 2cf2461b2d7933d560e875189bfec08f447020be
         path: '/referral',
       });
     }
@@ -397,7 +548,11 @@ export default function LoggedInAvatar({
             ))}
 
             <button className="menu-item sign-out" onClick={handleSignOut}>
+<<<<<<< HEAD
               <img src="/assets/icons/logout.svg" alt="" className="menu-icon" />
+=======
+              <img src="/assets/icons/log-out-purple.svg" alt="" className="menu-icon" />
+>>>>>>> 2cf2461b2d7933d560e875189bfec08f447020be
               <span className="menu-label">Sign Out</span>
             </button>
           </div>
