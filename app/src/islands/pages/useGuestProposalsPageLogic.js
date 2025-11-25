@@ -21,9 +21,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase.js'
-import { getAuthToken } from '../../lib/auth.js'
+import { getAuthToken, getSessionId } from '../../lib/auth.js'
 import {
-  getUserIdFromUrl,
   fetchUserById,
   fetchProposalsByGuest,
   loadProposalDetails as loadProposalDetailsUtil
@@ -81,26 +80,26 @@ export function useGuestProposalsPageLogic() {
       setLoading(true)
       setError(null)
 
-      // Get authentication token (optional for now during testing)
+      // Get authentication token
       const token = getAuthToken()
       console.log('🔑 Auth token present:', !!token)
 
-      // Extract user ID from URL path
-      const userId = getUserIdFromUrl()
+      // Get user ID from logged-in session (same pattern as account-profile)
+      const userId = getSessionId()
 
       if (!userId) {
         throw new Error(
-          'No user ID provided in URL. Please access this page via /guest-proposals/[userId]'
+          'You must be logged in to view your proposals. Please sign in.'
         )
       }
 
-      console.log('👤 Loading user and proposals for user ID:', userId)
+      console.log('👤 Loading user and proposals for logged-in user ID:', userId)
 
       // Fetch user data from Supabase
       const userData = await fetchUserById(userId)
 
       if (!userData) {
-        throw new Error('User not found. Please check the user ID in the URL.')
+        throw new Error('Unable to load your profile. Please try logging in again.')
       }
 
       // Process user data through Logic Core
