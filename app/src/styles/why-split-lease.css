@@ -25,6 +25,7 @@ body {
 .hero-identity {
     background: white;
     padding: 100px 48px;
+    padding-top: 180px; /* 80px for fixed header + 100px spacing */
     margin: 0;
     position: relative;
     overflow: hidden;
@@ -1535,6 +1536,7 @@ body {
 @media (max-width: 968px) {
     .hero-identity {
         padding: 60px 32px;
+        padding-top: 140px; /* 80px for fixed header + 60px spacing */
     }
 
     .hero-identity .floating-person {
