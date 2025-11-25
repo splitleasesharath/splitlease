@@ -5,9 +5,10 @@
  * Based on live screenshots: pass1-lyla-proposal.png, pass2-william-with-action-buttons.png
  *
  * HOLLOW COMPONENT PATTERN:
- * - Receives all data and handlers as props
- * - Uses Logic Core rules for business logic decisions
- * - No direct database calls
+ * - Receives ALL pre-computed state and handlers as props
+ * - NO internal business logic calculations
+ * - NO direct database calls
+ * - Uses props from parent hook (useGuestProposalsPageLogic)
  *
  * Layout:
  * - Left section: Listing info, schedule, dates, host info
@@ -21,15 +22,21 @@
 import { useState } from 'react'
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx'
 
-// Import Logic Core rules for action button logic
-import {
-  canEditProposal,
-  canCancelProposal,
-  canAcceptProposal
-} from '../../logic/index.js'
-
 export default function ProposalCard({
   proposal,
+  currentUser,
+  // Pre-computed values from Logic Core (via hook)
+  statusConfig,
+  canEdit,
+  canCancel,
+  canAccept,
+  canSubmitApp,
+  canRequestVM,
+  vmStateInfo,
+  cancelButtonText,
+  formatPrice: formatPriceProp,
+  formatDate: formatDateProp,
+  // Event handlers
   onViewListing,
   onViewMap,
   onViewHostProfile,
@@ -144,32 +151,13 @@ export default function ProposalCard({
   }
 
   /**
-   * Determine which action buttons to show using Logic Core rules
+   * Build action buttons using pre-computed props from Logic Core
+   * NO internal business logic - all decisions made by parent hook
    */
   function getActionButtons() {
     const buttons = []
 
-    // Use Logic Core rules to determine permissions
-    let canEdit = false
-    let canCancel = false
-
-    try {
-      canEdit = canEditProposal({ proposalStatus: status, deleted })
-    } catch {
-      // Fallback if Logic Core fails
-      canEdit = ['Draft', 'Pending', 'Host Countered', 'Awaiting Host Review', 'Under Review'].some(
-        (s) => status?.includes(s)
-      )
-    }
-
-    try {
-      canCancel = canCancelProposal({ proposalStatus: status, deleted })
-    } catch {
-      // Fallback if Logic Core fails
-      canCancel = !status?.includes('Cancelled') && !status?.includes('Rejected') && !status?.includes('Completed')
-    }
-
-    // Status-based primary action buttons
+    // Status-based primary action buttons (using pre-computed props)
     if (status === 'Awaiting Host Review' || status === 'Under Review') {
       if (canEdit) {
         buttons.push({
@@ -191,12 +179,12 @@ export default function ProposalCard({
       })
       if (canCancel) {
         buttons.push({
-          label: 'Cancel Proposal',
+          label: cancelButtonText || 'Decline Counteroffer',
           onClick: onCancelProposal,
           variant: 'danger',
         })
       }
-    } else if (status === 'Awaiting Rental Application' || status?.includes('Awaiting Rental')) {
+    } else if (canSubmitApp) {
       buttons.push({
         label: 'Submit Rental Application',
         onClick: onSubmitRentalApplication,
@@ -230,15 +218,20 @@ export default function ProposalCard({
         variant: 'secondary',
       })
 
-      buttons.push({
-        label: 'Request Virtual Meeting',
-        onClick: onRequestVirtualMeeting,
-        variant: 'secondary',
-      })
+      // Virtual Meeting button - use vmStateInfo for dynamic label
+      if (canRequestVM) {
+        const vmLabel = vmStateInfo?.buttonText || 'Request Virtual Meeting'
+        buttons.push({
+          label: vmLabel,
+          onClick: onRequestVirtualMeeting,
+          variant: 'secondary',
+        })
+      }
 
+      // Cancel button - use cancelButtonText for dynamic label
       if (canCancel) {
         buttons.push({
-          label: 'Cancel Proposal',
+          label: cancelButtonText || 'Cancel Proposal',
           onClick: onCancelProposal,
           variant: 'danger',
         })

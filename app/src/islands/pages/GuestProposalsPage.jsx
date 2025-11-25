@@ -29,6 +29,7 @@ import ProposalSelector from '../proposals/ProposalSelector.jsx'
 import ProposalCard from '../proposals/ProposalCard.jsx'
 import ProgressTracker from '../proposals/ProgressTracker.jsx'
 import EmptyState from '../proposals/EmptyState.jsx'
+import VirtualMeetingsSection from '../proposals/VirtualMeetingsSection.jsx'
 
 // Modals
 import HostProfileModal from '../modals/HostProfileModal.jsx'
@@ -37,6 +38,7 @@ import VirtualMeetingModal from '../modals/VirtualMeetingModal.jsx'
 import CompareTermsModal from '../modals/CompareTermsModal.jsx'
 import EditProposalModal from '../modals/EditProposalModal.jsx'
 import ProposalDetailsModal from '../modals/ProposalDetailsModal.jsx'
+import CancelProposalModal from '../modals/CancelProposalModal.jsx'
 
 // Logic Hook - ALL business logic lives here
 import { useGuestProposalsPageLogic } from './useGuestProposalsPageLogic.js'
@@ -56,9 +58,16 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
 
     // Computed values (from Logic Core)
     currentStage,
+    statusConfig,
     canEdit,
     canCancel,
     canAccept,
+    canSubmitApp,
+    canRequestVM,
+    canModify,
+    vmStateInfo,
+    termsComparison,
+    cancelButtonText,
 
     // Proposal selection
     handleProposalChange,
@@ -107,7 +116,20 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
 
     // Modal state - Proposal Details
     showProposalDetailsModal,
-    closeProposalDetailsModal
+    closeProposalDetailsModal,
+
+    // Modal state - Cancel Proposal
+    showCancelProposalModal,
+    closeCancelProposalModal,
+    handleConfirmCancelProposal,
+
+    // Utilities
+    formatPrice,
+    formatDate,
+    getProposalDisplayText,
+
+    // Refresh
+    refreshProposals
   } = useGuestProposalsPageLogic()
 
   // ============================================================================
@@ -174,6 +196,17 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
               <div className="mt-6">
                 <ProposalCard
                   proposal={selectedProposal}
+                  currentUser={currentUser}
+                  statusConfig={statusConfig}
+                  canEdit={canEdit}
+                  canCancel={canCancel}
+                  canAccept={canAccept}
+                  canSubmitApp={canSubmitApp}
+                  canRequestVM={canRequestVM}
+                  vmStateInfo={vmStateInfo}
+                  cancelButtonText={cancelButtonText}
+                  formatPrice={formatPrice}
+                  formatDate={formatDate}
                   onViewListing={handleViewListing}
                   onViewMap={handleViewMap}
                   onViewHostProfile={handleViewHostProfile}
@@ -189,12 +222,23 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
                   onSeeDetails={handleSeeDetails}
                 />
 
+                {/* Virtual Meetings Section */}
+                {selectedProposal._virtualMeeting && (
+                  <VirtualMeetingsSection
+                    proposal={selectedProposal}
+                    currentUser={currentUser}
+                    onUpdate={refreshProposals}
+                  />
+                )}
+
                 {/* Progress Tracker */}
                 <div className="mt-8">
                   <ProgressTracker
                     status={selectedProposal.Status || selectedProposal.status}
+                    currentStage={currentStage}
                     proposalId={selectedProposal._id || selectedProposal.id}
                     createdDate={selectedProposal['Created Date'] || selectedProposal.createdDate}
+                    formatDate={formatDate}
                   />
                 </div>
               </div>
@@ -266,6 +310,17 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
           proposal={selectedProposal}
           listing={selectedProposal._listing}
           onClose={closeProposalDetailsModal}
+        />
+      )}
+
+      {/* Cancel Proposal Modal */}
+      {showCancelProposalModal && selectedProposal && (
+        <CancelProposalModal
+          isOpen={showCancelProposalModal}
+          proposal={selectedProposal}
+          buttonText={cancelButtonText}
+          onClose={closeCancelProposalModal}
+          onConfirm={handleConfirmCancelProposal}
         />
       )}
     </div>

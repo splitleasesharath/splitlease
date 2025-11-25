@@ -21,25 +21,64 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase.js'
-import { getAuthToken, getSessionId } from '../../lib/auth.js'
+import { getAuthToken } from '../../lib/auth.js'
+import { getSessionId } from '../../lib/sessionId.js'
 import {
   fetchUserById,
   fetchProposalsByGuest,
   loadProposalDetails as loadProposalDetailsUtil
 } from '../../lib/proposalDataFetcher.js'
 
-// Logic Core imports
+// Logic Core imports - Rules
+import {
+  determineProposalStage,
+  canEditProposal,
+  canCancelProposal,
+  canAcceptProposal,
+  canModifyProposal,
+  hasReviewableCounteroffer,
+  canSubmitRentalApplication,
+  canRequestVirtualMeeting,
+  getCancelButtonText as getCancelBtnText,
+  VM_STATES,
+  getVMStateInfo
+} from '../../logic/index.js'
+
+// Logic Core imports - Workflows
 import {
   loadProposalDetailsWorkflow,
   cancelProposalWorkflow,
   acceptProposalWorkflow,
+  executeCancelProposal,
+  requestVirtualMeeting,
+  requestAlternativeMeeting,
+  respondToVirtualMeeting,
+  declineVirtualMeeting,
+  cancelVirtualMeetingRequest,
+  acceptCounteroffer as acceptCounterOfferWorkflow,
+  declineCounteroffer as declineCounterOfferWorkflow,
+  getTermsComparison,
+  navigateToListing as navToListing,
+  navigateToMessaging as navToMessaging,
+  navigateToRentalApplication as navToRentalApp,
+  navigateToDocumentReview as navToDocReview,
+  navigateToLeaseDocuments as navToLeases,
+  updateUrlWithProposal,
+  getProposalIdFromUrl
+} from '../../logic/index.js'
+
+// Logic Core imports - Processors
+import {
   processProposalData,
   processUserData,
-  determineProposalStage,
-  canEditProposal,
-  canCancelProposal,
-  canAcceptProposal
+  getProposalDisplayText,
+  formatPrice,
+  formatDate,
+  processFullProposalData
 } from '../../logic/index.js'
+
+// Constants
+import { getStatusConfig, getStageFromStatus } from '../../lib/constants/proposalStatuses.js'
 
 /**
  * Main GuestProposalsPage logic hook.
@@ -66,6 +105,7 @@ export function useGuestProposalsPageLogic() {
   const [showCompareTermsModal, setShowCompareTermsModal] = useState(false)
   const [showEditProposalModal, setShowEditProposalModal] = useState(false)
   const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false)
+  const [showCancelProposalModal, setShowCancelProposalModal] = useState(false)
 
   // ============================================================================
   // Initialization - Load user and proposals
@@ -252,19 +292,30 @@ export function useGuestProposalsPageLogic() {
   }
 
   /**
-   * Cancel Proposal using Logic Core workflow.
+   * Cancel Proposal - Opens the cancel modal.
+   * The actual cancellation happens in handleConfirmCancelProposal.
+   */
+  function handleCancelProposal() {
+    if (!selectedProposal) return
+    setShowCancelProposalModal(true)
+  }
+
+  /**
+   * Close cancel proposal modal
+   */
+  function closeCancelProposalModal() {
+    setShowCancelProposalModal(false)
+  }
+
+  /**
+   * Confirm Cancel Proposal using Logic Core workflow.
+   * Called when user confirms cancellation in the modal.
    * Implements complex decision tree (7 variations).
    *
-   * @param {string} source - 'main' | 'compare-modal' | 'other'
+   * @param {string} reason - Cancellation reason from the modal
    */
-  async function handleCancelProposal(source = 'main') {
+  async function handleConfirmCancelProposal(reason = '') {
     if (!selectedProposal) return
-
-    const confirmed = window.confirm(
-      'Are you sure you want to cancel this proposal? This may affect your booking.'
-    )
-
-    if (!confirmed) return
 
     try {
       // Prepare proposal object for Logic Core workflow
@@ -281,18 +332,21 @@ export function useGuestProposalsPageLogic() {
       const result = await cancelProposalWorkflow({
         supabase,
         proposal: proposalForWorkflow,
-        source,
-        canCancelProposal
+        source: 'main',
+        canCancelProposal,
+        reason
       })
 
       if (result.success) {
         if (result.updated) {
           console.log('✅ Proposal cancelled successfully')
+          setShowCancelProposalModal(false)
           alert(result.message)
           // Reload proposals list
           await initializePage()
         } else if (result.requiresPhoneCall) {
           // Show alert to call
+          setShowCancelProposalModal(false)
           alert(result.message)
         }
       } else {
@@ -669,6 +723,29 @@ export function useGuestProposalsPageLogic() {
   }, [proposals, selectedProposal])
 
   // ============================================================================
+  // Computed Values (from Logic Core)
+  // ============================================================================
+
+  // Use logic core rules to derive computed state
+  const statusConfig = selectedProposal ? getStatusConfig(getProposalStatus()) : null
+  const canSubmitApp = selectedProposal ? canSubmitRentalApplication(selectedProposal) : false
+  const canRequestVM = selectedProposal ? canRequestVirtualMeeting(selectedProposal) : false
+  const canModify = getCanEdit()
+
+  // Virtual meeting state info
+  const vmStateInfo = selectedProposal?._virtualMeeting
+    ? getVMStateInfo(selectedProposal._virtualMeeting, currentUser?._id || currentUser?.id)
+    : { state: VM_STATES.NO_MEETING, showButton: true, buttonText: 'Request Virtual Meeting', buttonDisabled: false }
+
+  // Terms comparison for counteroffer
+  const termsComparison = selectedProposal?.['counter offer happened']
+    ? getTermsComparison(selectedProposal)
+    : null
+
+  // Cancel button text
+  const cancelButtonText = selectedProposal ? getCancelBtnText(selectedProposal) : 'Cancel Proposal'
+
+  // ============================================================================
   // Return Hook API
   // ============================================================================
 
@@ -682,9 +759,16 @@ export function useGuestProposalsPageLogic() {
 
     // Computed values (using Logic Core)
     currentStage: getCurrentStage(),
+    statusConfig,
     canEdit: getCanEdit(),
     canCancel: getCanCancel(),
     canAccept: getCanAccept(),
+    canSubmitApp,
+    canRequestVM,
+    canModify,
+    vmStateInfo,
+    termsComparison,
+    cancelButtonText,
 
     // Proposal selection
     handleProposalChange,
@@ -739,6 +823,19 @@ export function useGuestProposalsPageLogic() {
     // Modal state - Proposal Details
     showProposalDetailsModal,
     openProposalDetailsModal,
-    closeProposalDetailsModal
+    closeProposalDetailsModal,
+
+    // Modal state - Cancel Proposal
+    showCancelProposalModal,
+    closeCancelProposalModal,
+    handleConfirmCancelProposal,
+
+    // Utilities (from Logic Core)
+    formatPrice,
+    formatDate,
+    getProposalDisplayText,
+
+    // Refresh function
+    refreshProposals: initializePage
   }
 }
