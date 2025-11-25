@@ -5,7 +5,57 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import ListingScheduleSelector from '../ListingScheduleSelector.jsx';
-import { calculateCheckInOutDays } from '../../../lib/availabilityValidation.js';
+
+// Day name constants for check-in/check-out calculation
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/**
+ * Calculate check-in and check-out days from selected day numbers
+ * Check-in = first selected day, Check-out = last selected day (NOT day after)
+ * This matches the ListingScheduleSelector behavior
+ */
+const calculateCheckInCheckOutFromNumbers = (dayNumbers) => {
+  if (!dayNumbers || dayNumbers.length === 0) {
+    return { checkInName: null, checkOutName: null };
+  }
+
+  const sorted = [...dayNumbers].sort((a, b) => a - b);
+
+  // Check for wrap-around case (both Saturday and Sunday present)
+  const hasSaturday = sorted.includes(6);
+  const hasSunday = sorted.includes(0);
+
+  if (hasSaturday && hasSunday && dayNumbers.length < 7) {
+    // Find the gap in the selection to determine wrap-around
+    let gapIndex = -1;
+    for (let i = 0; i < sorted.length - 1; i++) {
+      if (sorted[i + 1] - sorted[i] > 1) {
+        gapIndex = i + 1;
+        break;
+      }
+    }
+
+    if (gapIndex !== -1) {
+      // Wrap-around case: check-in is the first day after the gap
+      // check-out is the last day before the gap
+      const checkInDayNumber = sorted[gapIndex];
+      const checkOutDayNumber = sorted[gapIndex - 1];
+      return {
+        checkInName: DAY_NAMES[checkInDayNumber],
+        checkOutName: DAY_NAMES[checkOutDayNumber]
+      };
+    }
+  }
+
+  // Standard case: check-in = first day, check-out = last selected day
+  const checkInDayNumber = sorted[0];
+  const checkOutDayNumber = sorted[sorted.length - 1];
+
+  return {
+    checkInName: DAY_NAMES[checkInDayNumber],
+    checkOutName: DAY_NAMES[checkOutDayNumber]
+  };
+};
 
 export default function DaysSelectionSection({ data, updateData, listing, zatConfig }) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -93,12 +143,13 @@ export default function DaysSelectionSection({ data, updateData, listing, zatCon
     updateData('daysSelected', dayNames);
 
     // Update check-in and check-out days using the correct calculation
+    // Check-out = last selected day (NOT day after) to match ListingScheduleSelector
     if (dayNames.length > 0) {
       // Convert day names to numbers for the calculation
       const dayNumbers = newSelectedDayObjects.map(dayObj => dayObj.dayOfWeek);
 
-      // Use the imported function that properly handles week wrap-around
-      const { checkInName, checkOutName } = calculateCheckInOutDays(dayNumbers);
+      // Use the local function that correctly sets checkout to last selected day
+      const { checkInName, checkOutName } = calculateCheckInCheckOutFromNumbers(dayNumbers);
 
       updateData('checkInDay', checkInName);
       updateData('checkOutDay', checkOutName);
@@ -108,10 +159,12 @@ export default function DaysSelectionSection({ data, updateData, listing, zatCon
   // Handle price change from ListingScheduleSelector
   const handlePriceChange = (priceBreakdown) => {
     if (priceBreakdown && priceBreakdown.valid) {
-      // Update the price per night in the proposal data
-      updateData('pricePerNight', priceBreakdown.pricePerNight);
+      // Pass the full pricing breakdown object to trigger proper updates
+      // This allows CreateProposalFlowV2 to recalculate numberOfNights and firstFourWeeksTotal
+      updateData('pricingBreakdown', priceBreakdown);
 
-      // Also update the totals if needed
+      // Also update individual fields for direct display
+      updateData('pricePerNight', priceBreakdown.pricePerNight);
       updateData('pricePerFourWeeks', priceBreakdown.fourWeekRent);
       updateData('totalPrice', priceBreakdown.reservationTotal);
     }

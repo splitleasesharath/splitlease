@@ -12,8 +12,10 @@ import ReviewSection from './CreateProposalFlowV2Components/ReviewSection.jsx';
 import UserDetailsSection from './CreateProposalFlowV2Components/UserDetailsSection.jsx';
 import MoveInSection from './CreateProposalFlowV2Components/MoveInSection.jsx';
 import DaysSelectionSection from './CreateProposalFlowV2Components/DaysSelectionSection.jsx';
-import { calculateCheckInOutDays } from '../../lib/availabilityValidation.js';
 import '../../styles/create-proposal-flow-v2.css';
+
+// Day name constants for check-in/check-out calculation
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
  * CreateProposalFlowV2 Component
@@ -87,18 +89,48 @@ export default function CreateProposalFlowV2({
   };
 
   // Calculate check-in and check-out days from selected days
+  // Check-in = first selected day, Check-out = last selected day (NOT day after)
+  // This matches the ListingScheduleSelector behavior on ViewSplitLeasePage
   const calculateCheckInCheckOut = (dayObjs) => {
     if (!dayObjs || dayObjs.length === 0) return { checkIn: 'Monday', checkOut: 'Friday' };
 
-    // Convert day objects to day numbers
-    const dayNumbers = dayObjs.map(dayObj => dayObj.dayOfWeek);
+    // Sort day objects by dayOfWeek
+    const sorted = [...dayObjs].sort((a, b) => a.dayOfWeek - b.dayOfWeek);
+    const dayNumbers = sorted.map(d => d.dayOfWeek);
 
-    // Use the imported function that properly handles week wrap-around
-    const { checkInName, checkOutName } = calculateCheckInOutDays(dayNumbers);
+    // Check for wrap-around case (both Saturday and Sunday present)
+    const hasSaturday = dayNumbers.includes(6);
+    const hasSunday = dayNumbers.includes(0);
+
+    if (hasSaturday && hasSunday && dayObjs.length < 7) {
+      // Find the gap in the selection to determine wrap-around
+      let gapIndex = -1;
+      for (let i = 0; i < dayNumbers.length - 1; i++) {
+        if (dayNumbers[i + 1] - dayNumbers[i] > 1) {
+          gapIndex = i + 1;
+          break;
+        }
+      }
+
+      if (gapIndex !== -1) {
+        // Wrap-around case: check-in is the first day after the gap
+        // check-out is the last day before the gap
+        const checkInDayNumber = dayNumbers[gapIndex];
+        const checkOutDayNumber = dayNumbers[gapIndex - 1];
+        return {
+          checkIn: DAY_NAMES[checkInDayNumber],
+          checkOut: DAY_NAMES[checkOutDayNumber]
+        };
+      }
+    }
+
+    // Standard case: check-in = first day, check-out = last selected day
+    const checkInDayNumber = dayNumbers[0];
+    const checkOutDayNumber = dayNumbers[dayNumbers.length - 1];
 
     return {
-      checkIn: checkInName || 'Monday',
-      checkOut: checkOutName || 'Friday'
+      checkIn: DAY_NAMES[checkInDayNumber],
+      checkOut: DAY_NAMES[checkOutDayNumber]
     };
   };
 
@@ -165,6 +197,13 @@ export default function CreateProposalFlowV2({
   }, [internalPricingBreakdown, internalDaysSelected, proposalData.reservationSpan]);
 
   const updateProposalData = (field, value) => {
+    // Handle full pricing breakdown object from DaysSelectionSection
+    if (field === 'pricingBreakdown' && value && typeof value === 'object') {
+      console.log('💰 Received full pricing breakdown from DaysSelectionSection:', value);
+      setInternalPricingBreakdown(value);
+      return;
+    }
+
     // Handle special cases for pricing fields - these should come from ListingScheduleSelector
     if (field === 'pricePerNight' || field === 'pricePerFourWeeks' || field === 'totalPrice') {
       // Update both internal state and proposal data for pricing fields
