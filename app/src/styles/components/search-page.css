@@ -112,159 +112,31 @@
   box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
 }
 
-/* Neighborhood Multi-Select Dropdown */
-.inline-filters .neighborhoods-group {
-  position: relative;
-  min-width: 240px;
-}
-
-/* Desktop: Force neighborhood and borough to wrap by making neighborhood wider */
-@media (min-width: 769px) {
-  .inline-filters .neighborhoods-group {
-    flex: 1 1 auto;
-    min-width: 600px; /* Force wrapping - schedule selector + neighborhood = ~900px, forcing borough to next line */
-    max-width: 800px;
-  }
-}
-
-.inline-filters .neighborhood-search {
+/* Multi-select styling for neighborhood dropdown */
+.filter-select[multiple] {
   width: 100%;
-  padding: 0.55rem 0.75rem;
-  padding-top: 0.65rem;
+  padding: 0.5rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 0.875rem;
   background: white;
-  cursor: text;
-  transition: border-color 0.2s;
-  min-height: 44px;
+  cursor: pointer;
 }
 
-.inline-filters .neighborhood-search:hover {
-  border-color: #9ca3af;
-}
-
-.inline-filters .neighborhood-search:focus {
+.filter-select[multiple]:focus {
   outline: none;
   border-color: #5b21b6;
   box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
 }
 
-/* Selected Neighborhood Chips */
-.selected-neighborhoods-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-
-.neighborhood-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.75rem;
-  background: #31135D;
-  color: white;
-  border-radius: 6px;
-  font-size: 0.8125rem;
-  font-weight: 500;
-  line-height: 1.2;
-  transition: all 0.2s ease;
-  animation: chipFadeIn 0.2s ease;
-}
-
-@keyframes chipFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.neighborhood-chip:hover {
-  background: #251047;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(49, 19, 93, 0.2);
-}
-
-.neighborhood-chip-remove {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 16px;
-  height: 16px;
-  background: rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  font-size: 12px;
-  line-height: 1;
-  padding: 0;
-  border: none;
-  color: white;
-}
-
-.neighborhood-chip-remove:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* Neighborhood Dropdown List */
-.neighborhood-list {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  margin-top: 0.25rem;
-  min-height: 200px;
-  max-height: 400px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  padding: 0.5rem;
-  min-width: 250px;
-}
-
-/* Show dropdown when search input is focused, when hovering over the list, or when parent has focus-within */
-.neighborhood-search:focus ~ .neighborhood-list,
-.neighborhood-list:hover,
-.neighborhoods-group:focus-within .neighborhood-list {
-  display: block;
-}
-
-.neighborhood-list label {
-  display: flex;
-  align-items: center;
+.filter-select[multiple] option {
   padding: 0.5rem;
   cursor: pointer;
-  font-size: 0.875rem;
-  border-radius: 4px;
-  transition: background 0.15s ease;
-  font-weight: normal;
-  text-transform: none;
-  letter-spacing: normal;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
 }
 
-.neighborhood-list label:hover {
-  background: #f3f4f6;
-}
-
-.neighborhood-list input[type="checkbox"] {
-  margin-right: 0.5rem;
-  cursor: pointer;
-  accent-color: #5b21b6;
+.filter-select[multiple] option:checked {
+  background: linear-gradient(0deg, #5b21b6 0%, #5b21b6 100%);
+  color: white;
 }
 
 /* Listings Count */
@@ -705,12 +577,6 @@
     margin-bottom: 1.5rem;
   }
 
-  /* Ensure neighborhood group gets proper spacing too */
-  .inline-filters.active .neighborhoods-group {
-    width: 100%;
-    margin-bottom: 1.5rem;
-  }
-
   /* Mobile filter close button - IMPROVED CIRCULAR DESIGN */
   .mobile-filter-close-btn {
     /* Transform to circular × button */
@@ -798,41 +664,10 @@
     min-height: 48px;
   }
 
-  /* Neighborhood list improvements on mobile - COLLAPSIBLE */
-  .inline-filters .neighborhood-list {
-    display: none; /* Hidden by default - collapsible */
-    min-height: 200px;
-    max-height: 350px;
-    border-radius: 8px;
-    margin-top: 0.5rem;
-    overflow-y: auto;
-  }
-
-  /* Show neighborhood list when search input is focused, when hovering, or when parent has focus-within */
-  .inline-filters .neighborhood-search:focus ~ .neighborhood-list,
-  .inline-filters .neighborhood-list:hover,
-  .inline-filters .neighborhoods-group:focus-within .neighborhood-list {
-    display: block;
-  }
-
-  /* Improve neighborhood search input on mobile */
-  .inline-filters .neighborhood-search {
-    width: 100%;
-    padding: 0.825rem 1rem;
-    padding-top: 0.95rem;
+  /* Multi-select improvements on mobile */
+  .inline-filters .filter-select[multiple] {
+    min-height: 150px;
     font-size: 1rem;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    background: white;
-    min-height: 48px;
-    cursor: text;
-    transition: border-color 0.2s;
-  }
-
-  .inline-filters .neighborhood-search:focus {
-    outline: none;
-    border-color: #5b21b6;
-    box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
   }
 
   .map-header {

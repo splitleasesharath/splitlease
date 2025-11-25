@@ -91,32 +91,8 @@ function FilterPanel({
   priceTier,
   onPriceTierChange,
   sortBy,
-  onSortByChange,
-  neighborhoodSearch,
-  onNeighborhoodSearchChange
+  onSortByChange
 }) {
-  const filteredNeighborhoods = neighborhoods.filter(n => {
-    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
-    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
-  });
-
-  const handleNeighborhoodToggle = (neighborhoodId) => {
-    const isSelected = selectedNeighborhoods.includes(neighborhoodId);
-    let newSelected;
-
-    if (isSelected) {
-      newSelected = selectedNeighborhoods.filter(id => id !== neighborhoodId);
-    } else {
-      newSelected = [...selectedNeighborhoods, neighborhoodId];
-    }
-
-    onNeighborhoodsChange(newSelected);
-  };
-
-  const handleRemoveNeighborhood = (neighborhoodId) => {
-    onNeighborhoodsChange(selectedNeighborhoods.filter(id => id !== neighborhoodId));
-  };
-
   return (
     <div className={`filter-panel ${isActive ? 'active' : ''}`}>
       <div className="filter-container">
@@ -195,59 +171,36 @@ function FilterPanel({
             </select>
           </div>
 
-          {/* Neighborhood Multi-Select */}
-          <div className="filter-group compact neighborhoods-group">
-            <label htmlFor="neighborhoodSearch">Refine Neighborhood(s)</label>
-            <input
-              type="text"
-              id="neighborhoodSearch"
-              placeholder="Search neighborhoods..."
-              className="neighborhood-search"
-              value={neighborhoodSearch}
-              onChange={(e) => onNeighborhoodSearchChange(e.target.value)}
-            />
-
-            {/* Selected neighborhood chips */}
-            <div className="selected-neighborhoods-chips">
-              {selectedNeighborhoods.map(id => {
-                const neighborhood = neighborhoods.find(n => n.id === id);
-                if (!neighborhood) return null;
-
-                return (
-                  <div key={id} className="neighborhood-chip">
-                    <span>{neighborhood.name}</span>
-                    <button
-                      className="neighborhood-chip-remove"
-                      onClick={() => handleRemoveNeighborhood(id)}
-                      aria-label={`Remove ${neighborhood.name}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Neighborhood list */}
-            <div className="neighborhood-list">
-              {filteredNeighborhoods.length === 0 ? (
-                <div style={{ padding: '10px', color: '#666' }}>
-                  {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
-                </div>
+          {/* Neighborhood Multi-Select - Simple native select */}
+          <div className="filter-group compact">
+            <label htmlFor="neighborhoodSelectMobile">Refine Neighborhood(s)</label>
+            <select
+              id="neighborhoodSelectMobile"
+              className="filter-select"
+              multiple
+              size={6}
+              value={selectedNeighborhoods}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions, option => option.value);
+                onNeighborhoodsChange(selected);
+              }}
+              style={{ minHeight: '150px' }}
+            >
+              {neighborhoods.length === 0 ? (
+                <option value="" disabled>Loading neighborhoods...</option>
               ) : (
-                filteredNeighborhoods.map(neighborhood => (
-                  <label key={neighborhood.id}>
-                    <input
-                      type="checkbox"
-                      value={neighborhood.id}
-                      checked={selectedNeighborhoods.includes(neighborhood.id)}
-                      onChange={() => handleNeighborhoodToggle(neighborhood.id)}
-                    />
+                neighborhoods.map(neighborhood => (
+                  <option key={neighborhood.id} value={neighborhood.id}>
                     {neighborhood.name}
-                  </label>
+                  </option>
                 ))
               )}
-            </div>
+            </select>
+            {selectedNeighborhoods.length > 0 && (
+              <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+                {selectedNeighborhoods.length} selected (Ctrl+click to select multiple)
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -1471,87 +1424,36 @@ export default function SearchPage() {
               {/* SearchScheduleSelector will be mounted here on desktop */}
             </div>
 
-            {/* Neighborhood Multi-Select - Second item, beside schedule selector */}
-            <div className="filter-group compact neighborhoods-group">
-              <label htmlFor="neighborhoodSearch">Refine Neighborhood(s)</label>
-              <input
-                type="text"
-                id="neighborhoodSearch"
-                placeholder="Search neighborhoods..."
-                className="neighborhood-search"
-                value={neighborhoodSearch}
-                onChange={(e) => setNeighborhoodSearch(e.target.value)}
-              />
-
-              {/* Selected neighborhood chips */}
+            {/* Neighborhood Multi-Select - Simple native select */}
+            <div className="filter-group compact">
+              <label htmlFor="neighborhoodSelect">Refine Neighborhood(s)</label>
+              <select
+                id="neighborhoodSelect"
+                className="filter-select"
+                multiple
+                size={6}
+                value={selectedNeighborhoods}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions, option => option.value);
+                  setSelectedNeighborhoods(selected);
+                }}
+                style={{ minHeight: '150px' }}
+              >
+                {neighborhoods.length === 0 ? (
+                  <option value="" disabled>Loading neighborhoods...</option>
+                ) : (
+                  neighborhoods.map(neighborhood => (
+                    <option key={neighborhood.id} value={neighborhood.id}>
+                      {neighborhood.name}
+                    </option>
+                  ))
+                )}
+              </select>
               {selectedNeighborhoods.length > 0 && (
-                <div className="selected-neighborhoods-chips">
-                  {selectedNeighborhoods.map(id => {
-                    const neighborhood = neighborhoods.find(n => n.id === id);
-                    if (!neighborhood) return null;
-
-                    return (
-                      <div key={id} className="neighborhood-chip">
-                        <span>{neighborhood.name}</span>
-                        <button
-                          className="neighborhood-chip-remove"
-                          onClick={() => {
-                            setSelectedNeighborhoods(selectedNeighborhoods.filter(nId => nId !== id));
-                          }}
-                          aria-label={`Remove ${neighborhood.name}`}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    );
-                  })}
+                <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+                  {selectedNeighborhoods.length} selected (Ctrl+click to select multiple)
                 </div>
               )}
-
-              {/* Neighborhood list */}
-              <div className="neighborhood-list">
-                {(() => {
-                  const filteredNeighborhoods = neighborhoods.filter(n => {
-                    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
-                    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
-                  });
-
-                  // Debug: Log what's being rendered
-                  console.log('[DEBUG] Rendering neighborhood list:', {
-                    totalNeighborhoods: neighborhoods.length,
-                    filteredCount: filteredNeighborhoods.length,
-                    searchTerm: neighborhoodSearch,
-                    first5: filteredNeighborhoods.slice(0, 5).map(n => n.name)
-                  });
-
-                  if (filteredNeighborhoods.length === 0) {
-                    return (
-                      <div style={{ padding: '10px', color: '#666' }}>
-                        {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
-                      </div>
-                    );
-                  }
-
-                  return filteredNeighborhoods.map(neighborhood => (
-                    <label key={neighborhood.id}>
-                      <input
-                        type="checkbox"
-                        value={neighborhood.id}
-                        checked={selectedNeighborhoods.includes(neighborhood.id)}
-                        onChange={() => {
-                          const isSelected = selectedNeighborhoods.includes(neighborhood.id);
-                          if (isSelected) {
-                            setSelectedNeighborhoods(selectedNeighborhoods.filter(id => id !== neighborhood.id));
-                          } else {
-                            setSelectedNeighborhoods([...selectedNeighborhoods, neighborhood.id]);
-                          }
-                        }}
-                      />
-                      {neighborhood.name}
-                    </label>
-                  ));
-                })()}
-              </div>
             </div>
 
             {/* Borough Select */}
