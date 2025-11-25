@@ -3,10 +3,11 @@
  * Split Lease - Edge Function
  *
  * Routes client requests to appropriate Bubble workflow handlers
- * All requests require authentication via Supabase Auth
+ * Authentication is OPTIONAL for create_listing (allows guest users)
+ * Other actions require authentication via Supabase Auth
  *
  * Supported Actions:
- * - create_listing: Create new listing (atomic sync)
+ * - create_listing: Create new listing (atomic sync) - NO AUTH REQUIRED
  * - upload_photos: Upload listing photos (atomic sync)
  * - send_message: Send message to host (no sync)
  * - submit_referral: Submit referral (atomic sync)
@@ -30,6 +31,9 @@ import { handleAiSignup } from './handlers/signup.ts';
 
 console.log('[bubble-proxy] Edge Function started');
 
+// Actions that don't require authentication
+const PUBLIC_ACTIONS = ['create_listing'];
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -49,34 +53,7 @@ Deno.serve(async (req) => {
       throw new Error('Method not allowed. Use POST.');
     }
 
-    // 1. Authenticate user via Supabase Auth
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new AuthenticationError('Missing authorization header');
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
-
-    if (!supabaseUrl || !supabaseAnonKey) {
-      throw new Error('Supabase configuration missing');
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { persistSession: false },
-    });
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !user) {
-      console.error('[bubble-proxy] Auth error:', authError);
-      throw new AuthenticationError('Invalid or expired authentication token');
-    }
-
-    console.log(`[bubble-proxy] ✅ Authenticated user: ${user.email} (${user.id})`);
-
-    // 2. Parse and validate request body
+    // Parse request body first to check action
     const body = await req.json() as EdgeFunctionRequest;
     console.log(`[bubble-proxy] Request body:`, JSON.stringify(body, null, 2));
 
@@ -94,6 +71,48 @@ Deno.serve(async (req) => {
     validateAction(action, allowedActions);
 
     console.log(`[bubble-proxy] Action: ${action}`);
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      throw new Error('Supabase configuration missing');
+    }
+
+    // Check if action requires authentication
+    const isPublicAction = PUBLIC_ACTIONS.includes(action);
+    let user = null;
+
+    // Try to authenticate user (optional for public actions)
+    const authHeader = req.headers.get('Authorization');
+
+    if (authHeader) {
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false },
+      });
+
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+
+      if (!authError && authUser) {
+        user = authUser;
+        console.log(`[bubble-proxy] ✅ Authenticated user: ${user.email} (${user.id})`);
+      } else {
+        console.log(`[bubble-proxy] Auth header present but invalid:`, authError?.message);
+      }
+    }
+
+    // Require auth for non-public actions
+    if (!isPublicAction && !user) {
+      console.error('[bubble-proxy] Auth required for action:', action);
+      throw new AuthenticationError('Authentication required for this action');
+    }
+
+    if (!user) {
+      console.log(`[bubble-proxy] 👤 Guest user (no authentication)`);
+      // Create a guest user object for handlers
+      user = { id: 'guest', email: null };
+    }
 
     // 3. Initialize BubbleSyncService
     const bubbleBaseUrl = Deno.env.get('BUBBLE_API_BASE_URL');
