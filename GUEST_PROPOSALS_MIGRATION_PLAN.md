@@ -52,56 +52,6 @@ This document outlines a comprehensive plan to migrate the guest-proposals page 
 ### Objective
 Remove ALL existing guest-proposals related code to ensure clean slate migration with no residual conflicts.
 
-### Files to Delete
-
-#### 1. Entry Points
-```
-DELETE: app/public/guest-proposals.html
-DELETE: app/src/guest-proposals.jsx
-```
-
-#### 2. Main Page Components
-```
-DELETE: app/src/islands/pages/GuestProposalsPage.jsx (748 lines)
-DELETE: app/src/islands/pages/useGuestProposalsPageLogic.js (451 lines)
-```
-
-#### 3. Proposal Components
-```
-DELETE: app/src/islands/proposals/ProposalCard.jsx (433 lines)
-DELETE: app/src/islands/proposals/ProposalSelector.jsx (94 lines)
-DELETE: app/src/islands/proposals/ProgressTracker.jsx (100 lines)
-DELETE: app/src/islands/proposals/EmptyState.jsx (45 lines)
-```
-
-#### 4. Modal Components
-```
-DELETE: app/src/islands/modals/ProposalDetailsModal.jsx (272 lines)
-DELETE: app/src/islands/modals/ProposalDetailsModal (1).jsx (duplicate)
-DELETE: app/src/islands/modals/EditProposalModal.jsx (415 lines)
-DELETE: app/src/islands/modals/CompareTermsModal.jsx (228 lines)
-DELETE: app/src/islands/modals/VirtualMeetingModal.jsx (391 lines)
-DELETE: app/src/islands/modals/HostProfileModal.jsx (109 lines)
-DELETE: app/src/islands/modals/MapModal.jsx (175 lines)
-```
-
-#### 5. Data Fetchers and Utilities
-```
-DELETE: app/src/lib/proposalDataFetcher.js (242 lines)
-```
-
-#### 6. Logic Core - Proposal Related
-```
-DELETE: app/src/logic/processors/proposal/processProposalData.js (142 lines)
-DELETE: app/src/logic/workflows/booking/loadProposalDetailsWorkflow.js (216 lines)
-DELETE: app/src/logic/workflows/booking/acceptProposalWorkflow.js (84 lines)
-DELETE: app/src/logic/workflows/booking/cancelProposalWorkflow.js (141 lines)
-DELETE: app/src/logic/rules/proposals/canAcceptProposal.js
-DELETE: app/src/logic/rules/proposals/canCancelProposal.js
-DELETE: app/src/logic/rules/proposals/canEditProposal.js
-DELETE: app/src/logic/rules/proposals/determineProposalStage.js
-```
-
 #### 7. Styles (Partial - proposal-specific only)
 ```
 REVIEW: app/src/styles/create-proposal-flow-v2.css (check if used elsewhere)
@@ -125,61 +75,6 @@ REVIEW: app/src/logic/rules/index.js
 #### 3. Routing Files
 ```
 REVIEW: app/public/_redirects (remove guest-proposals routes)
-```
-
-### Purge Execution Script
-
-```bash
-# Phase 1: Purge Script (run from app/ directory)
-
-# 1. Entry points
-rm -f public/guest-proposals.html
-rm -f src/guest-proposals.jsx
-
-# 2. Main page components
-rm -f src/islands/pages/GuestProposalsPage.jsx
-rm -f src/islands/pages/useGuestProposalsPageLogic.js
-
-# 3. Proposal components (remove entire directory)
-rm -rf src/islands/proposals/
-
-# 4. Modal components
-rm -f "src/islands/modals/ProposalDetailsModal.jsx"
-rm -f "src/islands/modals/ProposalDetailsModal (1).jsx"
-rm -f src/islands/modals/EditProposalModal.jsx
-rm -f src/islands/modals/CompareTermsModal.jsx
-rm -f src/islands/modals/VirtualMeetingModal.jsx
-rm -f src/islands/modals/HostProfileModal.jsx
-rm -f src/islands/modals/MapModal.jsx
-
-# 5. Data fetchers
-rm -f src/lib/proposalDataFetcher.js
-
-# 6. Logic Core - Proposal related
-rm -f src/logic/processors/proposal/processProposalData.js
-rm -f src/logic/workflows/booking/loadProposalDetailsWorkflow.js
-rm -f src/logic/workflows/booking/acceptProposalWorkflow.js
-rm -f src/logic/workflows/booking/cancelProposalWorkflow.js
-rm -f src/logic/rules/proposals/canAcceptProposal.js
-rm -f src/logic/rules/proposals/canCancelProposal.js
-rm -f src/logic/rules/proposals/canEditProposal.js
-rm -f src/logic/rules/proposals/determineProposalStage.js
-
-# 7. Remove empty directories
-rmdir src/logic/rules/proposals/ 2>/dev/null || true
-rmdir src/logic/processors/proposal/ 2>/dev/null || true
-```
-
-### Post-Purge Verification Checklist
-
-- [ ] No references to `GuestProposalsPage` in any import statements
-- [ ] No references to `proposalDataFetcher` in any import statements
-- [ ] No broken imports in remaining files
-- [ ] Vite build succeeds without guest-proposals entry
-- [ ] No TypeScript/ESLint errors related to missing modules
-- [ ] Git status shows only deletions (no unexpected modifications)
-
----
 
 ## Phase 2: Foundation Setup
 
