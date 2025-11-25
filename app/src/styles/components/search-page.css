@@ -45,9 +45,10 @@
   align-items: flex-start;
   gap: 0.5rem;
   padding: 1rem 1.5rem;
+  padding-bottom: 1.5rem;
   background: white;
   border-bottom: 1px solid #e5e7eb;
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .inline-filters .filter-group {

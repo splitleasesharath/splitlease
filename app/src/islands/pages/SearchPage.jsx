@@ -5,8 +5,9 @@ import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import AiSignupMarketReport from '../shared/AiSignupMarketReport';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
+import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import { supabase } from '../../lib/supabase.js';
-import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
+import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
 import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
@@ -649,6 +650,8 @@ export default function SearchPage() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalView, setAuthModalView] = useState('login');
   const [selectedListing, setSelectedListing] = useState(null);
   const [infoModalTriggerRef, setInfoModalTriggerRef] = useState(null);
   const [informationalTexts, setInformationalTexts] = useState({});
@@ -1640,7 +1643,17 @@ export default function SearchPage() {
             {menuOpen && (
               <div className="header-dropdown">
                 <a href="/guest-success">Success Stories</a>
-                <a href={SIGNUP_LOGIN_URL}>Sign In / Sign Up</a>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMenuOpen(false);
+                    setAuthModalView('login');
+                    setIsAuthModalOpen(true);
+                  }}
+                >
+                  Sign In / Sign Up
+                </a>
                 <a href="/why-split-lease">Understand Split Lease</a>
                 <a href="/faq">Explore FAQs</a>
               </div>
@@ -1685,6 +1698,14 @@ export default function SearchPage() {
       <AiSignupMarketReport
         isOpen={isAIResearchModalOpen}
         onClose={handleCloseAIResearchModal}
+      />
+      <SignUpLoginModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialView={authModalView}
+        onAuthSuccess={() => {
+          console.log('Auth successful from SearchPage');
+        }}
       />
 
       {/* Mobile Map Modal - Fullscreen map view for mobile devices */}
