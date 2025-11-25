@@ -139,6 +139,14 @@
   line-height: 1;
 }
 
+/* Menu Icon (SVG Image) - Scoped to LoggedInAvatar only */
+.logged-in-avatar .menu-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
 /* Menu Label - Scoped to LoggedInAvatar only */
 .logged-in-avatar .menu-label {
   flex: 1;

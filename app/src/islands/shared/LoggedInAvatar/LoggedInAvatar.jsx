@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import './LoggedInAvatar.css';
+import { useLoggedInAvatarData, getMenuVisibility, NORMALIZED_USER_TYPES } from './useLoggedInAvatarData.js';
 
 /**
  * Logged In Avatar Dropdown Component
@@ -10,22 +11,31 @@ import './LoggedInAvatar.css';
  * - Notification badges (purple for most items, red for urgent Messages)
  * - Active page highlighting
  * - Click outside to close functionality
+ * - Dynamic menu visibility based on Supabase data
+ *
+ * Menu Visibility Rules (from Bubble.io conditionals):
+ * 1. My Profile - ALWAYS visible
+ * 2. My Proposals - HOST and TRIAL_HOST only
+ * 3. My Proposals Suggested - HOST and TRIAL_HOST only (when proposals > 0)
+ * 4. My Listings - ALL users
+ * 5. Virtual Meetings - When proposals count = 0
+ * 6. House Manuals & Visits - GUEST: visits < 1, HOST: house manuals = 0
  *
  * @component
  * @param {Object} props - Component props
  * @param {Object} props.user - Current user object
- * @param {string} props.user.id - User ID
+ * @param {string} props.user.id - User ID (Bubble _id)
  * @param {string} props.user.name - User's full name
  * @param {string} props.user.email - User's email
- * @param {'HOST' | 'GUEST' | 'TRIAL_HOST'} props.user.userType - User type
+ * @param {'HOST' | 'GUEST' | 'TRIAL_HOST'} props.user.userType - User type (fallback if data not loaded)
  * @param {string} [props.user.avatarUrl] - Optional avatar image URL
- * @param {number} props.user.proposalsCount - Count of proposals
- * @param {number} props.user.listingsCount - Count of listings
- * @param {number} props.user.virtualMeetingsCount - Count of virtual meetings
- * @param {number} props.user.houseManualsCount - Count of house manuals
- * @param {number} props.user.leasesCount - Count of leases
- * @param {number} props.user.favoritesCount - Count of favorite listings
- * @param {number} props.user.unreadMessagesCount - Count of unread messages
+ * @param {number} props.user.proposalsCount - Count of proposals (fallback)
+ * @param {number} props.user.listingsCount - Count of listings (fallback)
+ * @param {number} props.user.virtualMeetingsCount - Count of virtual meetings (fallback)
+ * @param {number} props.user.houseManualsCount - Count of house manuals (fallback)
+ * @param {number} props.user.leasesCount - Count of leases (fallback)
+ * @param {number} props.user.favoritesCount - Count of favorite listings (fallback)
+ * @param {number} props.user.unreadMessagesCount - Count of unread messages (fallback)
  * @param {string} props.currentPath - Current page path for active highlighting
  * @param {Function} props.onNavigate - Callback when user clicks menu item (receives path)
  * @param {Function} props.onLogout - Callback when user clicks Sign Out
@@ -39,6 +49,22 @@ export default function LoggedInAvatar({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Fetch user data from Supabase for menu conditionals
+  const { data: supabaseData, loading: dataLoading } = useLoggedInAvatarData(user.id);
+
+  // Get menu visibility based on Supabase data
+  const menuVisibility = getMenuVisibility(supabaseData, currentPath);
+
+  // Use Supabase data if loaded, otherwise fall back to props
+  const effectiveUserType = dataLoading ? user.userType : supabaseData.userType;
+  const effectiveProposalsCount = dataLoading ? (user.proposalsCount || 0) : supabaseData.proposalsCount;
+  const effectiveListingsCount = dataLoading ? (user.listingsCount || 0) : supabaseData.listingsCount;
+  const effectiveVirtualMeetingsCount = dataLoading ? (user.virtualMeetingsCount || 0) : supabaseData.virtualMeetingsCount;
+  const effectiveHouseManualsCount = dataLoading ? (user.houseManualsCount || 0) : supabaseData.houseManualsCount;
+  const effectiveLeasesCount = dataLoading ? (user.leasesCount || 0) : supabaseData.leasesCount;
+  const effectiveFavoritesCount = dataLoading ? (user.favoritesCount || 0) : supabaseData.favoritesCount;
+  const effectiveUnreadMessagesCount = dataLoading ? (user.unreadMessagesCount || 0) : supabaseData.unreadMessagesCount;
 
   // Debug logging
   useEffect(() => {
@@ -83,6 +109,19 @@ export default function LoggedInAvatar({
     }
   }, [isOpen]);
 
+  // Log menu visibility when data loads
+  useEffect(() => {
+    if (!dataLoading) {
+      console.log('📋 Menu visibility based on Supabase data:', {
+        userType: supabaseData.userType,
+        proposalsCount: supabaseData.proposalsCount,
+        visitsCount: supabaseData.visitsCount,
+        houseManualsCount: supabaseData.houseManualsCount,
+        visibility: menuVisibility
+      });
+    }
+  }, [dataLoading, supabaseData, menuVisibility]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -123,120 +162,167 @@ export default function LoggedInAvatar({
   }, [isOpen]);
 
   const getMenuItems = () => {
-    const items = [
-      {
+    const items = [];
+
+    // 1. My Profile - ALWAYS visible (menuVisibility.myProfile)
+    if (menuVisibility.myProfile) {
+      items.push({
         id: 'profile',
         label: 'My Profile',
-        icon: '👤',
+        icon: '/assets/icons/user.svg',
         path: '/account-profile',
-      },
-    ];
+      });
+    }
 
-    // My Proposals - visible for HOST and TRIAL_HOST
-    if (user.userType === 'HOST' || user.userType === 'TRIAL_HOST') {
+    // 2. My Proposals - HOST and TRIAL_HOST only
+    if (menuVisibility.myProposals && (effectiveUserType === NORMALIZED_USER_TYPES.HOST || effectiveUserType === NORMALIZED_USER_TYPES.TRIAL_HOST)) {
       items.push({
         id: 'proposals',
         label: 'My Proposals',
-        icon: '📋',
+        icon: '/assets/icons/proposals.svg',
         path: '/guest-proposals',
-        badgeCount: user.proposalsCount,
+        badgeCount: effectiveProposalsCount,
         badgeColor: 'purple',
       });
     }
 
-    // My Proposals - visible for GUEST
-    if (user.userType === 'GUEST') {
+    // For GUEST users, show their proposals
+    if (effectiveUserType === NORMALIZED_USER_TYPES.GUEST) {
       items.push({
         id: 'guest-proposals',
         label: 'My Proposals',
-        icon: '📋',
+        icon: '/assets/icons/proposals.svg',
         path: '/guest-proposals',
-        badgeCount: user.proposalsCount,
+        badgeCount: effectiveProposalsCount,
         badgeColor: 'purple',
       });
     }
 
-    // My Listings - visible for all
-    items.push({
-      id: 'listings',
-      label: 'My Listings',
-      icon: '🏠',
-      path: user.listingsCount > 1 ? '/host-overview' : user.listingsCount === 1 ? '/host-dashboard' : '/host-overview',
-      badgeCount: user.listingsCount,
-      badgeColor: 'purple',
-    });
+    // 3. My Proposals Suggested - HOST and TRIAL_HOST only (when proposals > 0)
+    if (menuVisibility.myProposalsSuggested) {
+      items.push({
+        id: 'proposals-suggested',
+        label: 'Proposals Suggested',
+        icon: '/assets/icons/proposals.svg',
+        path: '/proposals-suggested',
+        badgeCount: effectiveProposalsCount > 0 ? effectiveProposalsCount : undefined,
+        badgeColor: 'purple',
+      });
+    }
 
-    // Virtual Meetings
-    items.push({
-      id: 'virtual-meetings',
-      label: 'Virtual Meetings',
-      icon: '📹',
-      path: user.userType === 'GUEST' ? '/guest-dashboard' : '/host-overview',
-      badgeCount: user.virtualMeetingsCount,
-      badgeColor: 'purple',
-    });
+    // 4. My Listings - Visible for all (menuVisibility.myListings)
+    if (menuVisibility.myListings) {
+      items.push({
+        id: 'listings',
+        label: 'My Listings',
+        icon: '/assets/icons/listing.svg',
+        path: effectiveListingsCount > 1
+          ? '/host-overview'
+          : effectiveListingsCount === 1
+            ? '/host-dashboard'
+            : '/host-overview',
+        badgeCount: effectiveListingsCount,
+        badgeColor: 'purple',
+      });
+    }
 
-    // House manuals & Visits
-    items.push({
-      id: 'house-manuals',
-      label: 'House manuals & Visits',
-      icon: '📖',
-      path: user.userType === 'GUEST' ? '/guest-house-manual' : user.houseManualsCount === 1 ? '/host-house-manual' : '/host-overview',
-    });
+    // 5. Virtual Meetings - When proposals count = 0
+    if (menuVisibility.virtualMeetings) {
+      items.push({
+        id: 'virtual-meetings',
+        label: 'Virtual Meetings',
+        icon: '/assets/icons/virtual-meeting.svg',
+        path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
+          ? '/guest-dashboard'
+          : '/host-overview',
+        badgeCount: effectiveVirtualMeetingsCount,
+        badgeColor: 'purple',
+      });
+    }
 
-    // My Leases
-    items.push({
-      id: 'leases',
-      label: 'My Leases',
-      icon: '📝',
-      path: user.userType === 'GUEST' ? '/guest-leases' : '/host-leases',
-      badgeCount: user.leasesCount,
-      badgeColor: 'purple',
-    });
+    // 6. House Manuals & Visits - Context-aware visibility
+    if (menuVisibility.houseManualsAndVisits) {
+      items.push({
+        id: 'house-manuals',
+        label: 'House manuals & Visits',
+        icon: '/assets/icons/house-manual.svg',
+        path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
+          ? '/guest-house-manual'
+          : effectiveHouseManualsCount === 1
+            ? '/host-house-manual'
+            : '/host-overview',
+      });
+    }
 
-    // My Favorite Listings
-    items.push({
-      id: 'favorites',
-      label: 'My Favorite Listings',
-      icon: '⭐',
-      path: '/favorite-listings',
-      badgeCount: user.favoritesCount,
-      badgeColor: 'purple',
-    });
+    // 7. My Leases - Always visible
+    if (menuVisibility.myLeases) {
+      items.push({
+        id: 'leases',
+        label: 'My Leases',
+        icon: '/assets/icons/leases.svg',
+        path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
+          ? '/guest-leases'
+          : '/host-leases',
+        badgeCount: effectiveLeasesCount,
+        badgeColor: 'purple',
+      });
+    }
 
-    // Messages - with RED badge for urgency
-    items.push({
-      id: 'messages',
-      label: 'Messages',
-      icon: '💬',
-      path: '/messaging',
-      badgeCount: user.unreadMessagesCount,
-      badgeColor: 'red',
-    });
+    // 8. My Favorite Listings - Always visible
+    if (menuVisibility.myFavoriteListings) {
+      items.push({
+        id: 'favorites',
+        label: 'My Favorite Listings',
+        icon: '/assets/icons/favorite.svg',
+        path: '/favorite-listings',
+        badgeCount: effectiveFavoritesCount,
+        badgeColor: 'purple',
+      });
+    }
 
-    // Rental Application
-    items.push({
-      id: 'rental-application',
-      label: 'Rental Application',
-      icon: '💼',
-      path: user.userType === 'HOST' ? '/account' : '/rental-application',
-    });
+    // 9. Messages - Always visible, with RED badge for urgency
+    if (menuVisibility.messages) {
+      items.push({
+        id: 'messages',
+        label: 'Messages',
+        icon: '/assets/icons/message.svg',
+        path: '/messaging',
+        badgeCount: effectiveUnreadMessagesCount,
+        badgeColor: 'red',
+      });
+    }
 
-    // Reviews Manager
-    items.push({
-      id: 'reviews',
-      label: 'Reviews Manager',
-      icon: '✅',
-      path: '/reviews-overview',
-    });
+    // 10. Rental Application - Always visible
+    if (menuVisibility.rentalApplication) {
+      items.push({
+        id: 'rental-application',
+        label: 'Rental Application',
+        icon: '/assets/icons/rental-application.svg',
+        path: effectiveUserType === NORMALIZED_USER_TYPES.HOST
+          ? '/account'
+          : '/rental-application',
+      });
+    }
 
-    // Referral
-    items.push({
-      id: 'referral',
-      label: 'Referral',
-      icon: '🎁',
-      path: '/referral',
-    });
+    // 11. Reviews Manager - Always visible
+    if (menuVisibility.reviewsManager) {
+      items.push({
+        id: 'reviews',
+        label: 'Reviews Manager',
+        icon: '/assets/icons/reviews.svg',
+        path: '/reviews-overview',
+      });
+    }
+
+    // 12. Referral - Always visible
+    if (menuVisibility.referral) {
+      items.push({
+        id: 'referral',
+        label: 'Referral',
+        icon: '/assets/icons/referral.svg',
+        path: '/referral',
+      });
+    }
 
     return items;
   };
@@ -313,13 +399,18 @@ export default function LoggedInAvatar({
         <div className="dropdown-menu">
           {console.log('✨ Dropdown menu is rendering! Menu items count:', menuItems.length)}
           <div className="menu-container">
+            {dataLoading && (
+              <div className="menu-loading" style={{ padding: '8px 15px', fontSize: '14px', color: '#6b7280' }}>
+                Loading menu...
+              </div>
+            )}
             {menuItems.map((item) => (
               <button
                 key={item.id}
                 className={`menu-item ${isActivePath(item.path) ? 'active' : ''}`}
                 onClick={() => handleMenuItemClick(item)}
               >
-                <span className="menu-icon-emoji">{item.icon}</span>
+                <img src={item.icon} alt="" className="menu-icon" />
                 <span className="menu-label">{item.label}</span>
                 {item.badgeCount !== undefined && item.badgeCount > 0 && (
                   <span className={`notification-badge ${item.badgeColor}`}>
@@ -330,7 +421,7 @@ export default function LoggedInAvatar({
             ))}
 
             <button className="menu-item sign-out" onClick={handleSignOut}>
-              <span className="menu-icon-emoji">🚪</span>
+              <img src="/assets/icons/logout.svg" alt="" className="menu-icon" />
               <span className="menu-label">Sign Out</span>
             </button>
           </div>
