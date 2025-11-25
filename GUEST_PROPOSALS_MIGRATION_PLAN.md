@@ -47,7 +47,7 @@ This document outlines a comprehensive plan to migrate the guest-proposals page 
 
 ---
 
-## Phase 1: Complete Purge (FIRST PRIORITY)
+## Phase 1
 
 ### Objective
 Remove ALL existing guest-proposals related code to ensure clean slate migration with no residual conflicts.
