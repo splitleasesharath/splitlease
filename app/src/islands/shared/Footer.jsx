@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { REFERRAL_API_ENDPOINT, SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
+import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
+import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import ImportListingModal from './ImportListingModal/ImportListingModal.jsx';
 
@@ -26,7 +27,8 @@ export default function Footer() {
       : "Your friend's email";
   };
 
-  // Handle referral submission
+  // Handle referral submission via Edge Function
+  // ✅ MIGRATED: Now uses Supabase Edge Functions
   const handleReferralSubmit = async () => {
     if (!referralContact.trim()) {
       alert('Please enter contact information');
@@ -41,27 +43,37 @@ export default function Footer() {
 
     setIsSubmittingReferral(true);
 
+    console.log('[Footer] Submitting referral via Edge Function', {
+      method: referralMethod,
+      contact: referralContact
+    });
+
     try {
-      // Submit referral to API
-      const response = await fetch(REFERRAL_API_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      // Submit referral via Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('bubble-proxy', {
+        body: {
+          action: 'submit_referral',
+          payload: {
+            method: referralMethod,
+            contact: referralContact,
+          },
         },
-        body: JSON.stringify({
-          method: referralMethod,
-          contact: referralContact,
-        }),
       });
 
-      if (response.ok) {
-        alert(`Referral sent successfully via ${referralMethod}!`);
-        setReferralContact('');
-      } else {
-        throw new Error('Failed to send referral');
+      if (error) {
+        console.error('[Footer] Edge Function error:', error);
+        throw new Error(error.message || 'Failed to send referral');
       }
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to send referral');
+      }
+
+      console.log('[Footer] ✅ Referral submitted successfully');
+      alert(`Referral sent successfully via ${referralMethod}!`);
+      setReferralContact('');
     } catch (error) {
-      console.error('Referral error:', error);
+      console.error('[Footer] Referral error:', error);
       alert('Failed to send referral. Please try again later.');
     } finally {
       setIsSubmittingReferral(false);
