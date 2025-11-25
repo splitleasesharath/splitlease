@@ -21,8 +21,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase.js'
-import { getAuthToken } from '../../lib/auth.js'
-import { getSessionId } from '../../lib/sessionId.js'
+import { getAuthToken, getSessionId } from '../../lib/auth.js'
 import {
   fetchUserById,
   fetchProposalsByGuest,
