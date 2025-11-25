@@ -30,6 +30,8 @@ body {
   overflow: hidden;
   min-height: 500px;
   text-align: center;
+  width: 100%;
+  display: block !important;
 }
 
 .hero-video-background {
