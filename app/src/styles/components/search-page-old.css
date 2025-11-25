@@ -159,7 +159,7 @@
   background: white;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   position: absolute;
-  z-index: 100;
+  z-index: 1000;
   margin-top: 0.5rem;
   min-width: 300px;
 }

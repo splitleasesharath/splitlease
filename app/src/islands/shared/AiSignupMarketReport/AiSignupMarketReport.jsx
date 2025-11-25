@@ -102,45 +102,122 @@ function autoCorrectEmail(email) {
 }
 
 async function submitSignup(data) {
-  const response = await fetch('https://app.split.lease/version-test/api/1.1/wf/ai-signup-guest', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer 5dbb448f9a6bbb043cb56ac16b8de109',
-    },
-    body: JSON.stringify({
-      email: data.email,
-      phone: data.phone || '',
-      'text inputted': data.marketResearchText,
-    }),
-  });
+  const url = 'https://app.split.lease/version-test/api/1.1/wf/ai-signup-guest';
+  const apiKey = '5dbb448f9a6bbb043cb56ac16b8de109';
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Signup failed' }));
-    throw new Error(error.message || 'Signup failed');
+  // Validate required fields
+  if (!data.email) {
+    console.error('[AiSignupMarketReport] ❌ Error: Missing email');
+    throw new Error('Email is required');
   }
 
-  return response.json();
+  if (!data.marketResearchText) {
+    console.error('[AiSignupMarketReport] ❌ Error: Missing market research text');
+    throw new Error('Market research description is required');
+  }
+
+  // Build payload
+  const payload = {
+    email: data.email,
+    phone: data.phone || '',
+    'text inputted': data.marketResearchText,
+  };
+
+  console.log('[AiSignupMarketReport] ========== SIGNUP REQUEST ==========');
+  console.log('[AiSignupMarketReport] URL:', url);
+  console.log('[AiSignupMarketReport] Payload:', JSON.stringify(payload, null, 2));
+  console.log('[AiSignupMarketReport] =====================================');
+
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    console.log('[AiSignupMarketReport] Response status:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AiSignupMarketReport] ========== ERROR RESPONSE ==========');
+      console.error('[AiSignupMarketReport] Status:', response.status);
+      console.error('[AiSignupMarketReport] Status Text:', response.statusText);
+      console.error('[AiSignupMarketReport] Response Body:', errorText);
+      console.error('[AiSignupMarketReport] ====================================');
+
+      // Try to parse as JSON for more details
+      let errorMessage = 'Signup failed';
+      try {
+        const errorJson = JSON.parse(errorText);
+        console.error('[AiSignupMarketReport] Parsed error:', errorJson);
+        errorMessage = errorJson.message || errorJson.error || errorJson.body?.message || `Signup failed with status ${response.status}`;
+      } catch (e) {
+        errorMessage = errorText || `Signup failed with status ${response.status}`;
+      }
+
+      throw new Error(errorMessage);
+    }
+
+    // Handle 204 No Content response
+    if (response.status === 204) {
+      console.log('[AiSignupMarketReport] ✅ Signup successful (204 No Content)');
+      return { success: true };
+    }
+
+    const result = await response.json();
+    console.log('[AiSignupMarketReport] ========== SUCCESS RESPONSE ==========');
+    console.log('[AiSignupMarketReport] Full response:', JSON.stringify(result, null, 2));
+    console.log('[AiSignupMarketReport] =====================================');
+    return result;
+  } catch (error) {
+    console.error('[AiSignupMarketReport] ========== EXCEPTION ==========');
+    console.error('[AiSignupMarketReport] Error:', error);
+    console.error('[AiSignupMarketReport] Error message:', error.message);
+    console.error('[AiSignupMarketReport] Error stack:', error.stack);
+    console.error('[AiSignupMarketReport] ==================================');
+    throw error;
+  }
 }
 
 // ============ LOTTIE ANIMATION COMPONENT ============
 
 function LottieAnimation({ src, loop = true, autoplay = true, className = '' }) {
   const [animationData, setAnimationData] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
 
     const loadAnimationData = async () => {
       try {
+        console.log('[LottieAnimation] Loading animation from:', src);
         const response = await fetch(src);
+
+        // Check if this is a .lottie file (dotLottie format) which is a ZIP container
+        if (src.endsWith('.lottie')) {
+          console.warn('[LottieAnimation] .lottie format detected - this needs special handling');
+          // For now, skip .lottie files - they need @lottiefiles/dotlottie-react
+          if (isMounted) {
+            setError('Unsupported .lottie format');
+          }
+          return;
+        }
+
         const data = await response.json();
+        console.log('[LottieAnimation] Animation loaded successfully');
 
         if (isMounted) {
           setAnimationData(data);
         }
       } catch (error) {
-        console.error('Failed to load Lottie animation:', error);
+        console.error('[LottieAnimation] Failed to load Lottie animation:', error);
+        console.error('[LottieAnimation] URL:', src);
+        if (isMounted) {
+          setError(error.message);
+        }
       }
     };
 
@@ -150,6 +227,11 @@ function LottieAnimation({ src, loop = true, autoplay = true, className = '' }) 
       isMounted = false;
     };
   }, [src]);
+
+  if (error) {
+    console.warn('[LottieAnimation] Rendering placeholder due to error:', error);
+    return <div className={className} style={{ minHeight: '200px' }} />;
+  }
 
   if (!animationData) {
     return <div className={className} style={{ minHeight: '200px' }} />;
