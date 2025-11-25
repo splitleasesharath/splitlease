@@ -138,11 +138,13 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-16 w-16 border-b-4 border-purple-600 mb-4"></div>
-          <p className="text-lg text-gray-700 font-medium">Loading your proposals...</p>
+      <div className="min-h-screen bg-gray-50">
+        <Header autoShowLogin={requireAuth && !isAuthenticated} />
+        <div className="loading-state">
+          <div className="spinner"></div>
+          <p>Loading your proposals...</p>
         </div>
+        <Footer />
       </div>
     )
   }
@@ -153,18 +155,17 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center max-w-md px-4">
-          <div className="text-6xl mb-4">&#9888;&#65039;</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">Unable to Load Proposals</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
-          >
+      <div className="min-h-screen bg-gray-50">
+        <Header autoShowLogin={requireAuth && !isAuthenticated} />
+        <div className="error-state">
+          <div className="error-icon">&#9888;&#65039;</div>
+          <h2>Unable to Load Proposals</h2>
+          <p className="error-message">{error}</p>
+          <button onClick={() => window.location.reload()} className="retry-button">
             Reload Page
           </button>
         </div>
+        <Footer />
       </div>
     )
   }
@@ -174,10 +175,10 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
   // ============================================================================
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: 'rgb(244, 244, 248)' }}>
       <Header autoShowLogin={requireAuth && !isAuthenticated} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="proposals-page">
         {/* Empty State: No proposals */}
         {proposals.length === 0 && <EmptyState />}
 
@@ -193,7 +194,7 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
 
             {/* Selected Proposal Display */}
             {selectedProposal && (
-              <div className="mt-6">
+              <>
                 <ProposalCard
                   proposal={selectedProposal}
                   currentUser={currentUser}
@@ -232,7 +233,7 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
                 )}
 
                 {/* Progress Tracker */}
-                <div className="mt-8">
+                <div className="progress-tracker-container">
                   <ProgressTracker
                     status={selectedProposal.Status || selectedProposal.status}
                     currentStage={currentStage}
@@ -241,7 +242,7 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
                     formatDate={formatDate}
                   />
                 </div>
-              </div>
+              </>
             )}
           </>
         )}
