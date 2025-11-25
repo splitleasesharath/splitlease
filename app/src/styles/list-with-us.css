@@ -15,6 +15,7 @@
 .list-hero-section {
   background: white;
   padding: 100px 48px;
+  padding-top: 180px; /* 80px for fixed header + 100px spacing */
   margin: 0;
   position: relative;
   overflow: hidden;
@@ -638,6 +639,11 @@
    Responsive Styles
    ======================================== */
 @media (max-width: 768px) {
+  .list-hero-section {
+    padding: 60px 32px;
+    padding-top: 140px; /* 80px for fixed header + 60px spacing */
+  }
+
   .list-hero-title {
     font-size: 36px;
   }
