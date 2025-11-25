@@ -1,22 +1,21 @@
 /**
  * Secure Storage Module
  *
- * Provides storage for authentication tokens in sessionStorage.
- * Tokens are stored in sessionStorage (cleared when tab closes).
+ * Provides storage for authentication tokens in localStorage.
+ * Tokens persist across browser sessions for better UX.
  * Only authentication state (not tokens) should be published to the rest of the app.
  *
- * Security Benefits:
- * - sessionStorage: Cleared when tab closes (vs localStorage persists)
+ * Security Considerations:
+ * - localStorage: Persists until manually cleared (survives browser restart)
  * - Origin-isolated: Only accessible by same-origin pages
  * - Protected by browser security model (XSS is the main threat, not storage)
  * - Limited scope: Only this module accesses raw tokens
  * - State-based: Rest of app only knows "logged in" or "logged out"
  *
- * Note: Client-side encryption doesn't add meaningful security since:
- * - XSS can steal keys and encrypted data equally
- * - HTTPS already encrypts data in transit
- * - sessionStorage is already origin-isolated
- * - Industry standard (GitHub, Google, etc.) uses plain sessionStorage
+ * Tradeoffs vs sessionStorage:
+ * - Pro: User stays logged in across browser restarts
+ * - Con: Token persists if user forgets to log out on shared computer
+ * - Mitigation: Bubble API handles token expiration server-side
  */
 
 /**
@@ -45,7 +44,7 @@ const STATE_KEYS = {
  */
 export function setAuthToken(token) {
   if (!token) return;
-  sessionStorage.setItem(SECURE_KEYS.AUTH_TOKEN, token);
+  localStorage.setItem(SECURE_KEYS.AUTH_TOKEN, token);
 }
 
 /**
@@ -53,7 +52,7 @@ export function setAuthToken(token) {
  * @returns {string|null} Token or null
  */
 export function getAuthToken() {
-  return sessionStorage.getItem(SECURE_KEYS.AUTH_TOKEN);
+  return localStorage.getItem(SECURE_KEYS.AUTH_TOKEN);
 }
 
 /**
@@ -62,7 +61,7 @@ export function getAuthToken() {
  */
 export function setSessionId(sessionId) {
   if (!sessionId) return;
-  sessionStorage.setItem(SECURE_KEYS.SESSION_ID, sessionId);
+  localStorage.setItem(SECURE_KEYS.SESSION_ID, sessionId);
 }
 
 /**
@@ -70,7 +69,7 @@ export function setSessionId(sessionId) {
  * @returns {string|null} Session ID or null
  */
 export function getSessionId() {
-  return sessionStorage.getItem(SECURE_KEYS.SESSION_ID);
+  return localStorage.getItem(SECURE_KEYS.SESSION_ID);
 }
 
 /**
@@ -79,7 +78,7 @@ export function getSessionId() {
  */
 export function setRefreshData(refreshData) {
   if (!refreshData) return;
-  sessionStorage.setItem(SECURE_KEYS.REFRESH_DATA, JSON.stringify(refreshData));
+  localStorage.setItem(SECURE_KEYS.REFRESH_DATA, JSON.stringify(refreshData));
 }
 
 /**
@@ -87,7 +86,7 @@ export function setRefreshData(refreshData) {
  * @returns {object|null} Refresh data or null
  */
 export function getRefreshData() {
-  const data = sessionStorage.getItem(SECURE_KEYS.REFRESH_DATA);
+  const data = localStorage.getItem(SECURE_KEYS.REFRESH_DATA);
   return data ? JSON.parse(data) : null;
 }
 
@@ -95,9 +94,9 @@ export function getRefreshData() {
  * Clear all secure storage (tokens)
  */
 export function clearSecureStorage() {
-  sessionStorage.removeItem(SECURE_KEYS.AUTH_TOKEN);
-  sessionStorage.removeItem(SECURE_KEYS.SESSION_ID);
-  sessionStorage.removeItem(SECURE_KEYS.REFRESH_DATA);
+  localStorage.removeItem(SECURE_KEYS.AUTH_TOKEN);
+  localStorage.removeItem(SECURE_KEYS.SESSION_ID);
+  localStorage.removeItem(SECURE_KEYS.REFRESH_DATA);
 }
 
 /**
@@ -237,18 +236,18 @@ export function hasValidTokens() {
 }
 
 /**
- * Migrate from old localStorage to sessionStorage
+ * Migrate from old legacy localStorage keys to new key format
  * Call this once during transition period
  */
 export function migrateFromLegacyStorage() {
-  // Check if we have old tokens in localStorage
+  // Check if we have old tokens in legacy localStorage keys
   const oldToken = localStorage.getItem('splitlease_auth_token');
   const oldSessionId = localStorage.getItem('splitlease_session_id');
 
   if (oldToken && oldSessionId) {
-    console.log('🔄 Migrating to sessionStorage...');
+    console.log('🔄 Migrating legacy keys to new format...');
 
-    // Store in sessionStorage
+    // Store with new keys
     setAuthToken(oldToken);
     setSessionId(oldSessionId);
 
