@@ -40,6 +40,148 @@ function MobileFilterBar({ onFilterClick, onMapClick }) {
 }
 
 /**
+ * NeighborhoodDropdown - Custom multi-select dropdown for neighborhoods
+ * Shows as a standard dropdown button, opens to reveal search + checkboxes
+ */
+function NeighborhoodDropdown({
+  neighborhoods,
+  selectedNeighborhoods,
+  onNeighborhoodsChange,
+  neighborhoodSearch,
+  onNeighborhoodSearchChange
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
+  const filteredNeighborhoods = neighborhoods.filter(n => {
+    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
+    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
+  });
+
+  const handleNeighborhoodToggle = (neighborhoodId) => {
+    const isSelected = selectedNeighborhoods.includes(neighborhoodId);
+    if (isSelected) {
+      onNeighborhoodsChange(selectedNeighborhoods.filter(id => id !== neighborhoodId));
+    } else {
+      onNeighborhoodsChange([...selectedNeighborhoods, neighborhoodId]);
+    }
+  };
+
+  const getDisplayText = () => {
+    if (selectedNeighborhoods.length === 0) {
+      return 'All Neighborhoods';
+    } else if (selectedNeighborhoods.length === 1) {
+      const neighborhood = neighborhoods.find(n => n.id === selectedNeighborhoods[0]);
+      return neighborhood?.name || '1 selected';
+    } else {
+      return `${selectedNeighborhoods.length} selected`;
+    }
+  };
+
+  return (
+    <div className="filter-group compact neighborhoods-dropdown-group" ref={dropdownRef}>
+      <label>Neighborhood(s)</label>
+      <button
+        type="button"
+        className="neighborhood-dropdown-trigger filter-select"
+        onClick={() => setIsOpen(!isOpen)}
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
+      >
+        <span className="dropdown-text">{getDisplayText()}</span>
+        <svg
+          className={`dropdown-arrow ${isOpen ? 'open' : ''}`}
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <div className="neighborhood-dropdown-panel">
+          <input
+            type="text"
+            placeholder="Search neighborhoods..."
+            className="neighborhood-dropdown-search"
+            value={neighborhoodSearch}
+            onChange={(e) => onNeighborhoodSearchChange(e.target.value)}
+            autoFocus
+          />
+
+          {/* Selected neighborhood chips */}
+          {selectedNeighborhoods.length > 0 && (
+            <div className="neighborhood-dropdown-chips">
+              {selectedNeighborhoods.map(id => {
+                const neighborhood = neighborhoods.find(n => n.id === id);
+                if (!neighborhood) return null;
+
+                return (
+                  <div key={id} className="neighborhood-chip">
+                    <span>{neighborhood.name}</span>
+                    <button
+                      type="button"
+                      className="neighborhood-chip-remove"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onNeighborhoodsChange(selectedNeighborhoods.filter(nId => nId !== id));
+                      }}
+                      aria-label={`Remove ${neighborhood.name}`}
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="neighborhood-dropdown-list">
+            {filteredNeighborhoods.length === 0 ? (
+              <div className="neighborhood-dropdown-empty">
+                {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
+              </div>
+            ) : (
+              filteredNeighborhoods.map(neighborhood => (
+                <label key={neighborhood.id} className="neighborhood-dropdown-item">
+                  <input
+                    type="checkbox"
+                    checked={selectedNeighborhoods.includes(neighborhood.id)}
+                    onChange={() => handleNeighborhoodToggle(neighborhood.id)}
+                  />
+                  <span>{neighborhood.name}</span>
+                </label>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
  * FilterPanel - Left sidebar with filters
  */
 function FilterPanel({
@@ -1387,80 +1529,14 @@ export default function SearchPage() {
               {/* SearchScheduleSelector will be mounted here on desktop */}
             </div>
 
-            {/* Neighborhood Multi-Select - Second item, beside schedule selector */}
-            <div className="filter-group compact neighborhoods-group">
-              <label htmlFor="neighborhoodSearch">Refine Neighborhood(s)</label>
-              <input
-                type="text"
-                id="neighborhoodSearch"
-                placeholder="Search neighborhoods..."
-                className="neighborhood-search"
-                value={neighborhoodSearch}
-                onChange={(e) => setNeighborhoodSearch(e.target.value)}
-              />
-
-              {/* Selected neighborhood chips */}
-              {selectedNeighborhoods.length > 0 && (
-                <div className="selected-neighborhoods-chips">
-                  {selectedNeighborhoods.map(id => {
-                    const neighborhood = neighborhoods.find(n => n.id === id);
-                    if (!neighborhood) return null;
-
-                    return (
-                      <div key={id} className="neighborhood-chip">
-                        <span>{neighborhood.name}</span>
-                        <button
-                          className="neighborhood-chip-remove"
-                          onClick={() => {
-                            setSelectedNeighborhoods(selectedNeighborhoods.filter(nId => nId !== id));
-                          }}
-                          aria-label={`Remove ${neighborhood.name}`}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Neighborhood list */}
-              <div className="neighborhood-list">
-                {(() => {
-                  const filteredNeighborhoods = neighborhoods.filter(n => {
-                    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
-                    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
-                  });
-
-                  if (filteredNeighborhoods.length === 0) {
-                    return (
-                      <div style={{ padding: '10px', color: '#666' }}>
-                        {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
-                      </div>
-                    );
-                  }
-
-                  return filteredNeighborhoods.map(neighborhood => (
-                    <label key={neighborhood.id}>
-                      <input
-                        type="checkbox"
-                        value={neighborhood.id}
-                        checked={selectedNeighborhoods.includes(neighborhood.id)}
-                        onChange={() => {
-                          const isSelected = selectedNeighborhoods.includes(neighborhood.id);
-                          if (isSelected) {
-                            setSelectedNeighborhoods(selectedNeighborhoods.filter(id => id !== neighborhood.id));
-                          } else {
-                            setSelectedNeighborhoods([...selectedNeighborhoods, neighborhood.id]);
-                          }
-                        }}
-                      />
-                      {neighborhood.name}
-                    </label>
-                  ));
-                })()}
-              </div>
-            </div>
+            {/* Neighborhood Multi-Select Dropdown - Second item, beside schedule selector */}
+            <NeighborhoodDropdown
+              neighborhoods={neighborhoods}
+              selectedNeighborhoods={selectedNeighborhoods}
+              onNeighborhoodsChange={setSelectedNeighborhoods}
+              neighborhoodSearch={neighborhoodSearch}
+              onNeighborhoodSearchChange={setNeighborhoodSearch}
+            />
 
             {/* Borough Select */}
             <div className="filter-group compact">

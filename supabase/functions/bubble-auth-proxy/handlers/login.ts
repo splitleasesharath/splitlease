@@ -4,7 +4,7 @@
  *
  * Flow:
  * 1. Validate email/password in payload
- * 2. Call Bubble login workflow (BUBBLE_AUTH_BASE_URL/wf/login-user)
+ * 2. Call Bubble login workflow (BUBBLE_API_BASE_URL/wf/login-user)
  * 3. If successful, Bubble returns {token, user_id, expires}
  * 4. Return token and user data to client
  *

@@ -5,7 +5,7 @@
  * Flow:
  * 1. Validate email/password/retype in payload
  * 2. Client-side validation (password length, match)
- * 3. Call Bubble signup workflow (BUBBLE_AUTH_BASE_URL/wf/signup-user)
+ * 3. Call Bubble signup workflow (BUBBLE_API_BASE_URL/wf/signup-user)
  * 4. If successful, Bubble creates user and returns {token, user_id, expires}
  * 5. Auto-login user (return token and user data)
  *

@@ -5,8 +5,9 @@ import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import AiSignupMarketReport from '../shared/AiSignupMarketReport';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
+import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import { supabase } from '../../lib/supabase.js';
-import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
+import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
 import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
@@ -90,32 +91,8 @@ function FilterPanel({
   priceTier,
   onPriceTierChange,
   sortBy,
-  onSortByChange,
-  neighborhoodSearch,
-  onNeighborhoodSearchChange
+  onSortByChange
 }) {
-  const filteredNeighborhoods = neighborhoods.filter(n => {
-    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
-    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
-  });
-
-  const handleNeighborhoodToggle = (neighborhoodId) => {
-    const isSelected = selectedNeighborhoods.includes(neighborhoodId);
-    let newSelected;
-
-    if (isSelected) {
-      newSelected = selectedNeighborhoods.filter(id => id !== neighborhoodId);
-    } else {
-      newSelected = [...selectedNeighborhoods, neighborhoodId];
-    }
-
-    onNeighborhoodsChange(newSelected);
-  };
-
-  const handleRemoveNeighborhood = (neighborhoodId) => {
-    onNeighborhoodsChange(selectedNeighborhoods.filter(id => id !== neighborhoodId));
-  };
-
   return (
     <div className={`filter-panel ${isActive ? 'active' : ''}`}>
       <div className="filter-container">
@@ -194,59 +171,36 @@ function FilterPanel({
             </select>
           </div>
 
-          {/* Neighborhood Multi-Select */}
-          <div className="filter-group compact neighborhoods-group">
-            <label htmlFor="neighborhoodSearch">Refine Neighborhood(s)</label>
-            <input
-              type="text"
-              id="neighborhoodSearch"
-              placeholder="Search neighborhoods..."
-              className="neighborhood-search"
-              value={neighborhoodSearch}
-              onChange={(e) => onNeighborhoodSearchChange(e.target.value)}
-            />
-
-            {/* Selected neighborhood chips */}
-            <div className="selected-neighborhoods-chips">
-              {selectedNeighborhoods.map(id => {
-                const neighborhood = neighborhoods.find(n => n.id === id);
-                if (!neighborhood) return null;
-
-                return (
-                  <div key={id} className="neighborhood-chip">
-                    <span>{neighborhood.name}</span>
-                    <button
-                      className="neighborhood-chip-remove"
-                      onClick={() => handleRemoveNeighborhood(id)}
-                      aria-label={`Remove ${neighborhood.name}`}
-                    >
-                      ×
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Neighborhood list */}
-            <div className="neighborhood-list">
-              {filteredNeighborhoods.length === 0 ? (
-                <div style={{ padding: '10px', color: '#666' }}>
-                  {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
-                </div>
+          {/* Neighborhood Multi-Select - Simple native select */}
+          <div className="filter-group compact">
+            <label htmlFor="neighborhoodSelectMobile">Refine Neighborhood(s)</label>
+            <select
+              id="neighborhoodSelectMobile"
+              className="filter-select"
+              multiple
+              size={6}
+              value={selectedNeighborhoods}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions, option => option.value);
+                onNeighborhoodsChange(selected);
+              }}
+              style={{ minHeight: '150px' }}
+            >
+              {neighborhoods.length === 0 ? (
+                <option value="" disabled>Loading neighborhoods...</option>
               ) : (
-                filteredNeighborhoods.map(neighborhood => (
-                  <label key={neighborhood.id}>
-                    <input
-                      type="checkbox"
-                      value={neighborhood.id}
-                      checked={selectedNeighborhoods.includes(neighborhood.id)}
-                      onChange={() => handleNeighborhoodToggle(neighborhood.id)}
-                    />
+                neighborhoods.map(neighborhood => (
+                  <option key={neighborhood.id} value={neighborhood.id}>
                     {neighborhood.name}
-                  </label>
+                  </option>
                 ))
               )}
-            </div>
+            </select>
+            {selectedNeighborhoods.length > 0 && (
+              <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+                {selectedNeighborhoods.length} selected (Ctrl+click to select multiple)
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -649,6 +603,8 @@ export default function SearchPage() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalView, setAuthModalView] = useState('login');
   const [selectedListing, setSelectedListing] = useState(null);
   const [infoModalTriggerRef, setInfoModalTriggerRef] = useState(null);
   const [informationalTexts, setInformationalTexts] = useState({});
@@ -832,12 +788,15 @@ export default function SearchPage() {
   useEffect(() => {
     const loadBoroughs = async () => {
       try {
+        console.log('[DEBUG] Loading boroughs from zat_geo_borough_toplevel...');
         const { data, error } = await supabase
           .from('zat_geo_borough_toplevel')
           .select('_id, "Display Borough"')
           .order('"Display Borough"', { ascending: true });
 
         if (error) throw error;
+
+        console.log('[DEBUG] Raw borough data from Supabase:', data);
 
         const boroughList = data
           .filter(b => b['Display Borough'] && b['Display Borough'].trim())
@@ -848,6 +807,12 @@ export default function SearchPage() {
               .replace(/\s+county\s+nj/i, '')
               .replace(/\s+/g, '-')
           }));
+
+        console.log('[DEBUG] Processed borough list:', boroughList.map(b => ({
+          id: b.id,
+          name: b.name,
+          value: b.value
+        })));
 
         setBoroughs(boroughList);
 
@@ -879,21 +844,42 @@ export default function SearchPage() {
   // Load neighborhoods when borough changes
   useEffect(() => {
     const loadNeighborhoods = async () => {
-      if (!selectedBorough || boroughs.length === 0) return;
+      console.log('[DEBUG] loadNeighborhoods called - selectedBorough:', selectedBorough, 'boroughs.length:', boroughs.length);
 
-      const borough = boroughs.find(b => b.value === selectedBorough);
-      if (!borough) {
-        console.warn('Borough not found for value:', selectedBorough);
+      if (!selectedBorough || boroughs.length === 0) {
+        console.log('[DEBUG] Skipping neighborhood load - missing selectedBorough or boroughs');
         return;
       }
 
-      console.log('Loading neighborhoods for borough:', {
+      const borough = boroughs.find(b => b.value === selectedBorough);
+      if (!borough) {
+        console.warn('[DEBUG] Borough not found for value:', selectedBorough);
+        console.log('[DEBUG] Available borough values:', boroughs.map(b => b.value));
+        return;
+      }
+
+      console.log('[DEBUG] Loading neighborhoods for borough:', {
         boroughName: borough.name,
         boroughId: borough.id,
+        boroughIdType: typeof borough.id,
         boroughValue: borough.value
       });
 
       try {
+        // First, let's see what neighborhoods exist without filtering
+        const { data: allNeighborhoods, error: allError } = await supabase
+          .from('zat_geo_hood_mediumlevel')
+          .select('_id, Display, "Geo-Borough"')
+          .limit(5);
+
+        console.log('[DEBUG] Sample neighborhoods (first 5):', allNeighborhoods?.map(n => ({
+          id: n._id,
+          name: n.Display,
+          geoBoroughValue: n['Geo-Borough'],
+          geoBoroughType: typeof n['Geo-Borough']
+        })));
+
+        // Now query with the filter
         const { data, error } = await supabase
           .from('zat_geo_hood_mediumlevel')
           .select('_id, Display, "Geo-Borough"')
@@ -902,9 +888,17 @@ export default function SearchPage() {
 
         if (error) throw error;
 
-        console.log(`Found ${data.length} neighborhoods for ${borough.name}:`,
+        console.log(`[DEBUG] Found ${data.length} neighborhoods for ${borough.name}:`,
           data.slice(0, 5).map(n => ({ id: n._id, name: n.Display, boroughRef: n['Geo-Borough'] }))
         );
+
+        // Debug: Check if borough.id matches any Geo-Borough values
+        if (data.length === 0 && allNeighborhoods && allNeighborhoods.length > 0) {
+          console.warn('[DEBUG] No neighborhoods found! Comparing IDs:');
+          console.log('[DEBUG] Looking for borough.id:', borough.id);
+          console.log('[DEBUG] Sample Geo-Borough values:', allNeighborhoods.map(n => n['Geo-Borough']));
+          console.log('[DEBUG] ID match check:', allNeighborhoods.some(n => n['Geo-Borough'] === borough.id));
+        }
 
         const neighborhoodList = data
           .filter(n => n.Display && n.Display.trim())
@@ -1430,79 +1424,36 @@ export default function SearchPage() {
               {/* SearchScheduleSelector will be mounted here on desktop */}
             </div>
 
-            {/* Neighborhood Multi-Select - Second item, beside schedule selector */}
-            <div className="filter-group compact neighborhoods-group">
-              <label htmlFor="neighborhoodSearch">Refine Neighborhood(s)</label>
-              <input
-                type="text"
-                id="neighborhoodSearch"
-                placeholder="Search neighborhoods..."
-                className="neighborhood-search"
-                value={neighborhoodSearch}
-                onChange={(e) => setNeighborhoodSearch(e.target.value)}
-              />
-
-              {/* Selected neighborhood chips */}
+            {/* Neighborhood Multi-Select - Simple native select */}
+            <div className="filter-group compact">
+              <label htmlFor="neighborhoodSelect">Refine Neighborhood(s)</label>
+              <select
+                id="neighborhoodSelect"
+                className="filter-select"
+                multiple
+                size={6}
+                value={selectedNeighborhoods}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions, option => option.value);
+                  setSelectedNeighborhoods(selected);
+                }}
+                style={{ minHeight: '150px' }}
+              >
+                {neighborhoods.length === 0 ? (
+                  <option value="" disabled>Loading neighborhoods...</option>
+                ) : (
+                  neighborhoods.map(neighborhood => (
+                    <option key={neighborhood.id} value={neighborhood.id}>
+                      {neighborhood.name}
+                    </option>
+                  ))
+                )}
+              </select>
               {selectedNeighborhoods.length > 0 && (
-                <div className="selected-neighborhoods-chips">
-                  {selectedNeighborhoods.map(id => {
-                    const neighborhood = neighborhoods.find(n => n.id === id);
-                    if (!neighborhood) return null;
-
-                    return (
-                      <div key={id} className="neighborhood-chip">
-                        <span>{neighborhood.name}</span>
-                        <button
-                          className="neighborhood-chip-remove"
-                          onClick={() => {
-                            setSelectedNeighborhoods(selectedNeighborhoods.filter(nId => nId !== id));
-                          }}
-                          aria-label={`Remove ${neighborhood.name}`}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    );
-                  })}
+                <div style={{ fontSize: '0.75rem', color: '#666', marginTop: '0.25rem' }}>
+                  {selectedNeighborhoods.length} selected (Ctrl+click to select multiple)
                 </div>
               )}
-
-              {/* Neighborhood list */}
-              <div className="neighborhood-list">
-                {(() => {
-                  const filteredNeighborhoods = neighborhoods.filter(n => {
-                    const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch);
-                    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
-                  });
-
-                  if (filteredNeighborhoods.length === 0) {
-                    return (
-                      <div style={{ padding: '10px', color: '#666' }}>
-                        {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
-                      </div>
-                    );
-                  }
-
-                  return filteredNeighborhoods.map(neighborhood => (
-                    <label key={neighborhood.id}>
-                      <input
-                        type="checkbox"
-                        value={neighborhood.id}
-                        checked={selectedNeighborhoods.includes(neighborhood.id)}
-                        onChange={() => {
-                          const isSelected = selectedNeighborhoods.includes(neighborhood.id);
-                          if (isSelected) {
-                            setSelectedNeighborhoods(selectedNeighborhoods.filter(id => id !== neighborhood.id));
-                          } else {
-                            setSelectedNeighborhoods([...selectedNeighborhoods, neighborhood.id]);
-                          }
-                        }}
-                      />
-                      {neighborhood.name}
-                    </label>
-                  ));
-                })()}
-              </div>
             </div>
 
             {/* Borough Select */}
@@ -1640,7 +1591,17 @@ export default function SearchPage() {
             {menuOpen && (
               <div className="header-dropdown">
                 <a href="/guest-success">Success Stories</a>
-                <a href={SIGNUP_LOGIN_URL}>Sign In / Sign Up</a>
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setMenuOpen(false);
+                    setAuthModalView('login');
+                    setIsAuthModalOpen(true);
+                  }}
+                >
+                  Sign In / Sign Up
+                </a>
                 <a href="/why-split-lease">Understand Split Lease</a>
                 <a href="/faq">Explore FAQs</a>
               </div>
@@ -1685,6 +1646,14 @@ export default function SearchPage() {
       <AiSignupMarketReport
         isOpen={isAIResearchModalOpen}
         onClose={handleCloseAIResearchModal}
+      />
+      <SignUpLoginModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        initialView={authModalView}
+        onAuthSuccess={() => {
+          console.log('Auth successful from SearchPage');
+        }}
       />
 
       {/* Mobile Map Modal - Fullscreen map view for mobile devices */}

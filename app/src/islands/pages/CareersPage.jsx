@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 
 export default function CareersPage() {
   const [typeformModalActive, setTypeformModalActive] = useState(false);
+  const typeformContainerRef = useRef(null);
 
   // Initialize Feather icons when component mounts
   useEffect(() => {
@@ -17,6 +18,33 @@ export default function CareersPage() {
   useEffect(() => {
     if (typeformModalActive && window.feather) {
       setTimeout(() => window.feather.replace(), 100);
+    }
+  }, [typeformModalActive]);
+
+  // Initialize Typeform when modal opens
+  useEffect(() => {
+    if (typeformModalActive && typeformContainerRef.current) {
+      // Clear any previous content
+      typeformContainerRef.current.innerHTML = '';
+
+      // Create the data-tf-live div for Typeform live embed
+      const tfDiv = document.createElement('div');
+      tfDiv.setAttribute('data-tf-live', '01JTV62WNGXMDX830477HVX7NZ');
+      tfDiv.style.width = '100%';
+      tfDiv.style.height = '100%';
+      typeformContainerRef.current.appendChild(tfDiv);
+
+      // Load the Typeform embed script if not already loaded
+      if (!document.querySelector('script[src*="embed.typeform.com"]')) {
+        const script = document.createElement('script');
+        script.src = '//embed.typeform.com/next/embed.js';
+        document.body.appendChild(script);
+      } else {
+        // If script is already loaded, trigger a re-scan
+        if (window.tf && window.tf.load) {
+          window.tf.load();
+        }
+      }
     }
   }, [typeformModalActive]);
 
@@ -527,7 +555,7 @@ export default function CareersPage() {
           <button className="modal-close" onClick={closeTypeformModal}>
             <i data-feather="x"></i>
           </button>
-          <div data-tf-live="01JTV62WNGXMDX830477HVX7NZ"></div>
+          <div ref={typeformContainerRef} style={{ width: '100%', height: '100%' }}></div>
         </div>
       </div>
     </>
