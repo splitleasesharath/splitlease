@@ -169,7 +169,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'profile',
         label: 'My Profile',
-        icon: '/assets/icons/user.svg',
+        icon: '/assets/icons/user-purple.svg',
         path: '/account-profile',
       });
     }
@@ -179,7 +179,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'proposals',
         label: 'My Proposals',
-        icon: '/assets/icons/proposals.svg',
+        icon: '/assets/icons/file-text-purple.svg',
         path: '/guest-proposals',
         badgeCount: effectiveProposalsCount,
         badgeColor: 'purple',
@@ -191,7 +191,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'guest-proposals',
         label: 'My Proposals',
-        icon: '/assets/icons/proposals.svg',
+        icon: '/assets/icons/file-text-purple.svg',
         path: '/guest-proposals',
         badgeCount: effectiveProposalsCount,
         badgeColor: 'purple',
@@ -203,7 +203,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'proposals-suggested',
         label: 'Proposals Suggested',
-        icon: '/assets/icons/proposals.svg',
+        icon: '/assets/icons/file-text-purple.svg',
         path: '/proposals-suggested',
         badgeCount: effectiveProposalsCount > 0 ? effectiveProposalsCount : undefined,
         badgeColor: 'purple',
@@ -215,7 +215,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'listings',
         label: 'My Listings',
-        icon: '/assets/icons/listing.svg',
+        icon: '/assets/icons/list-purple.svg',
         path: effectiveListingsCount > 1
           ? '/host-overview'
           : effectiveListingsCount === 1
@@ -231,7 +231,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'virtual-meetings',
         label: 'Virtual Meetings',
-        icon: '/assets/icons/virtual-meeting.svg',
+        icon: '/assets/icons/video-purple.svg',
         path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
           ? '/guest-dashboard'
           : '/host-overview',
@@ -245,7 +245,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'house-manuals',
         label: 'House manuals & Visits',
-        icon: '/assets/icons/house-manual.svg',
+        icon: '/assets/icons/book-open-purple.svg',
         path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
           ? '/guest-house-manual'
           : effectiveHouseManualsCount === 1
@@ -259,7 +259,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'leases',
         label: 'My Leases',
-        icon: '/assets/icons/leases.svg',
+        icon: '/assets/icons/key-purple.svg',
         path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
           ? '/guest-leases'
           : '/host-leases',
@@ -273,7 +273,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'favorites',
         label: 'My Favorite Listings',
-        icon: '/assets/icons/favorite.svg',
+        icon: '/assets/icons/heart-purple.svg',
         path: '/favorite-listings',
         badgeCount: effectiveFavoritesCount,
         badgeColor: 'purple',
@@ -285,7 +285,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'messages',
         label: 'Messages',
-        icon: '/assets/icons/message.svg',
+        icon: '/assets/icons/message-circle-purple.svg',
         path: '/messaging',
         badgeCount: effectiveUnreadMessagesCount,
         badgeColor: 'red',
@@ -297,7 +297,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'rental-application',
         label: 'Rental Application',
-        icon: '/assets/icons/rental-application.svg',
+        icon: '/assets/icons/clipboard-purple.svg',
         path: effectiveUserType === NORMALIZED_USER_TYPES.HOST
           ? '/account'
           : '/rental-application',
@@ -309,7 +309,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'reviews',
         label: 'Reviews Manager',
-        icon: '/assets/icons/reviews.svg',
+        icon: '/assets/icons/star-purple.svg',
         path: '/reviews-overview',
       });
     }
@@ -319,7 +319,7 @@ export default function LoggedInAvatar({
       items.push({
         id: 'referral',
         label: 'Referral',
-        icon: '/assets/icons/referral.svg',
+        icon: '/assets/icons/gift-purple.svg',
         path: '/referral',
       });
     }
@@ -421,7 +421,7 @@ export default function LoggedInAvatar({
             ))}
 
             <button className="menu-item sign-out" onClick={handleSignOut}>
-              <img src="/assets/icons/logout.svg" alt="" className="menu-icon" />
+              <img src="/assets/icons/log-out-purple.svg" alt="" className="menu-icon" />
               <span className="menu-label">Sign Out</span>
             </button>
           </div>
