@@ -231,9 +231,10 @@
   padding: 0.5rem;
 }
 
-/* Show dropdown when search input is focused or when hovering over the list */
+/* Show dropdown when search input is focused, when hovering over the list, or when parent has focus-within */
 .neighborhood-search:focus ~ .neighborhood-list,
-.neighborhood-list:hover {
+.neighborhood-list:hover,
+.neighborhoods-group:focus-within .neighborhood-list {
   display: block;
 }
 
@@ -800,9 +801,10 @@
     overflow-y: auto;
   }
 
-  /* Show neighborhood list when search input is focused or when hovering */
+  /* Show neighborhood list when search input is focused, when hovering, or when parent has focus-within */
   .inline-filters .neighborhood-search:focus ~ .neighborhood-list,
-  .inline-filters .neighborhood-list:hover {
+  .inline-filters .neighborhood-list:hover,
+  .inline-filters .neighborhoods-group:focus-within .neighborhood-list {
     display: block;
   }
 
