@@ -310,7 +310,6 @@ export default defineConfig({
         'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
         careers: resolve(__dirname, 'public/careers.html'),
         'account-profile': resolve(__dirname, 'public/account-profile.html'),
-        'logged-in-avatar-demo': resolve(__dirname, 'public/logged-in-avatar-demo.html'),
         'self-listing': resolve(__dirname, 'public/self-listing.html')
       },
       output: {

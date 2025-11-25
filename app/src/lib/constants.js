@@ -18,7 +18,9 @@ export const VIEW_LISTING_URL = 'https://app.split.lease/view-split-lease';
 export const ACCOUNT_PROFILE_URL = 'https://app.split.lease/account-profile';
 export const FAQ_URL = '/faq.html';
 
-// API Endpoints
+// API Endpoints (DEPRECATED - Now proxied through Edge Functions)
+// These constants are kept for reference only
+// All API calls now route through Supabase Edge Functions
 export const REFERRAL_API_ENDPOINT = 'https://app.split.lease/api/1.1/wf/referral-index-lite';
 export const BUBBLE_MESSAGING_ENDPOINT = 'https://app.split.lease/api/1.1/wf/core-contact-host-send-message';
 export const AI_SIGNUP_WORKFLOW_URL = 'https://app.split.lease/api/1.1/wf/ai-signup-guest';
@@ -26,10 +28,10 @@ export const AI_SIGNUP_WORKFLOW_URL = 'https://app.split.lease/api/1.1/wf/ai-sig
 // External API Keys and Configuration
 // Note: API keys and base URLs are configured as environment variables
 // VITE_GOOGLE_MAPS_API_KEY - Google Maps API key
-// VITE_BUBBLE_API_KEY - Bubble API key (used for workflows)
-// VITE_BUBBLE_API_BASE_URL - Bubble API base URL (used in bubbleAPI.js)
+// REMOVED: VITE_BUBBLE_API_KEY - Now stored server-side in Supabase Secrets
+// REMOVED: VITE_BUBBLE_API_BASE_URL - Now stored server-side in Supabase Secrets
 // Supabase credentials are configured in supabase.js using VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
-// Auth endpoints use a separate base URL and are configured in auth.js
+// All Bubble workflows now proxied through bubble-proxy and bubble-auth-proxy Edge Functions
 
 // ============================================================================
 // Lottie Animation URLs

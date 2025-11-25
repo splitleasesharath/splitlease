@@ -1,7 +1,8 @@
 /**
  * ContactHostMessaging Component - Modal for contacting listing hosts
  *
- * Allows users to send messages to property hosts via email or Supabase.
+ * ✅ MIGRATED: Now uses Supabase Edge Functions instead of direct Bubble API calls
+ * API key is stored server-side in Supabase Secrets
  * Follows NO FALLBACK principle - real data or nothing.
  *
  * @module ContactHostMessaging
@@ -9,17 +10,6 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { BUBBLE_MESSAGING_ENDPOINT } from '../../lib/constants.js';
-
-// Access Bubble API key from environment variables
-const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY;
-
-// Log API key availability on component load (without exposing the actual key)
-if (!BUBBLE_API_KEY) {
-  console.error('[ContactHostMessaging] VITE_BUBBLE_API_KEY is not configured');
-} else {
-  console.log('[ContactHostMessaging] Bubble API key loaded successfully');
-}
 
 export default function ContactHostMessaging({ isOpen, onClose, listing, userEmail }) {
   const [formData, setFormData] = useState({
@@ -82,24 +72,14 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, userEma
     return Object.keys(newErrors).length === 0;
   };
 
-  // Submit message
+  // Submit message via Edge Function
   const handleSubmit = async () => {
     if (!validate()) return;
-
-    // Verify API key is available before attempting to send
-    if (!BUBBLE_API_KEY) {
-      console.error('[ContactHostMessaging] Cannot send message: VITE_BUBBLE_API_KEY is missing');
-      setErrors({
-        submit: 'Configuration error. Please contact support.'
-      });
-      return;
-    }
 
     setIsSubmitting(true);
     setErrors({});
 
-    console.log('[ContactHostMessaging] Sending message to Bubble API', {
-      endpoint: BUBBLE_MESSAGING_ENDPOINT,
+    console.log('[ContactHostMessaging] Sending message via Edge Function', {
       listing_unique_id: listing.id,
       sender_email: formData.email,
       sender_name: formData.userName,
@@ -107,43 +87,44 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, userEma
     });
 
     try {
-      // Send message via Bubble API
-      const response = await fetch(BUBBLE_MESSAGING_ENDPOINT, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${BUBBLE_API_KEY}`
-        },
-        body: JSON.stringify({
-          listing_unique_id: listing.id,
-          sender_name: formData.userName,
-          sender_email: formData.email,
-          message_body: formData.message
-        })
+      // Send message via Supabase Edge Function
+      const { data, error } = await supabase.functions.invoke('bubble-proxy', {
+        body: {
+          action: 'send_message',
+          payload: {
+            listing_unique_id: listing.id,
+            sender_name: formData.userName,
+            sender_email: formData.email,
+            message_body: formData.message
+          }
+        }
       });
 
-      if (response.ok) {
-        console.log('[ContactHostMessaging] Message sent successfully', {
-          listingId: listing.id,
-          status: response.status
-        });
-        setMessageSent(true);
-        setTimeout(() => {
-          handleClose();
-        }, 2000);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        console.error('[ContactHostMessaging] Message send failed', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        });
+      if (error) {
+        console.error('[ContactHostMessaging] Edge Function error:', error);
         setErrors({
-          submit: errorData.message || 'Failed to send message. Please try again.'
+          submit: error.message || 'Failed to send message. Please try again.'
         });
+        return;
       }
+
+      if (!data.success) {
+        console.error('[ContactHostMessaging] Message send failed:', data.error);
+        setErrors({
+          submit: data.error || 'Failed to send message. Please try again.'
+        });
+        return;
+      }
+
+      console.log('[ContactHostMessaging] ✅ Message sent successfully', {
+        listingId: listing.id
+      });
+      setMessageSent(true);
+      setTimeout(() => {
+        handleClose();
+      }, 2000);
     } catch (error) {
-      console.error('[ContactHostMessaging] Network error sending message:', error);
+      console.error('[ContactHostMessaging] Exception sending message:', error);
       setErrors({
         submit: 'Network error. Please check your connection and try again.'
       });

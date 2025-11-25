@@ -26,3 +26,17 @@ export { processProfilePhotoUrl } from './user/processProfilePhotoUrl.js'
 
 // Proposal Processors
 export { processProposalData } from './proposal/processProposalData.js'
+
+// Proposal Processors - Extended (from new implementation)
+export {
+  processUserData as processProposalUserData,
+  processListingData,
+  processHostData,
+  processVirtualMeetingData,
+  processProposalData as processFullProposalData,
+  getProposalDisplayText,
+  formatPrice,
+  formatDate,
+  formatDateTime,
+  getEffectiveTerms
+} from './proposals/processProposalData.js'

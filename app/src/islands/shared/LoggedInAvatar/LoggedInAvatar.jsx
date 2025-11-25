@@ -138,19 +138,21 @@ export default function LoggedInAvatar({
         id: 'proposals',
         label: 'My Proposals',
         icon: '📋',
-        path: '/proposals',
+        path: '/guest-proposals',
         badgeCount: user.proposalsCount,
         badgeColor: 'purple',
       });
     }
 
-    // Suggested Proposal - visible for GUEST
+    // My Proposals - visible for GUEST
     if (user.userType === 'GUEST') {
       items.push({
-        id: 'suggested-proposal',
-        label: 'Suggested Proposal',
+        id: 'guest-proposals',
+        label: 'My Proposals',
         icon: '📋',
-        path: '/guest-dashboard',
+        path: '/guest-proposals',
+        badgeCount: user.proposalsCount,
+        badgeColor: 'purple',
       });
     }
 

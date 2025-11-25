@@ -398,81 +398,71 @@ export function resetAuthCheckAttempts() {
 }
 
 // ============================================================================
-// Bubble Authentication API
+// Bubble Authentication API - Edge Function Proxy
 // ============================================================================
 
-const BUBBLE_API_KEY = import.meta.env.VITE_BUBBLE_API_KEY;
-const BUBBLE_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/login-user';
-const BUBBLE_SIGNUP_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/signup-user';
-const BUBBLE_CHECK_LOGIN_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/check-login';
-const BUBBLE_LOGOUT_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/wf/logout-user';
-const BUBBLE_USER_ENDPOINT = 'https://upgradefromstr.bubbleapps.io/api/1.1/obj/user';
-
 /**
- * Login user via Bubble API
+ * Login user via Supabase Edge Function (bubble-auth-proxy)
  * Stores token and user_id in localStorage on success
+ *
+ * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
+ * API key is stored server-side in Supabase Secrets
  *
  * @param {string} email - User email
  * @param {string} password - User password
  * @returns {Promise<Object>} Response object with status, token, user_id, or error
  */
 export async function loginUser(email, password) {
-  console.log('🔐 Attempting login for:', email);
-
-  if (!BUBBLE_API_KEY) {
-    console.error('[Auth] VITE_BUBBLE_API_KEY is not configured');
-    return {
-      success: false,
-      error: 'Configuration error. Please contact support.'
-    };
-  }
+  console.log('🔐 Attempting login via Edge Function for:', email);
 
   try {
-    const response = await fetch(BUBBLE_LOGIN_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${BUBBLE_API_KEY}`
-      },
-      body: JSON.stringify({
-        email,
-        password
-      })
+    const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+      body: {
+        action: 'login',
+        payload: {
+          email,
+          password
+        }
+      }
     });
 
-    const data = await response.json();
-
-    if (response.ok && data.status === 'success') {
-      // Store token and user_id in secure storage
-      setAuthToken(data.response.token);
-      setSessionId(data.response.user_id);
-
-      // Set auth state with user ID (public, non-sensitive)
-      setAuthState(true, data.response.user_id);
-
-      // Update login state
-      isUserLoggedInState = true;
-
-      console.log('✅ Login successful');
-      console.log('   User ID:', data.response.user_id);
-      console.log('   User Email:', email);
-      console.log('   Token expires in:', data.response.expires, 'seconds');
-
-      return {
-        success: true,
-        user_id: data.response.user_id,
-        expires: data.response.expires
-      };
-    } else {
-      // Handle error response from Bubble
-      console.error('❌ Login failed:', data.reason || data.message);
-
+    if (error) {
+      console.error('❌ Edge Function error:', error);
       return {
         success: false,
-        error: data.message || 'Login failed. Please try again.',
-        reason: data.reason
+        error: error.message || 'Failed to authenticate. Please try again.'
       };
     }
+
+    if (!data.success) {
+      console.error('❌ Login failed:', data.error);
+      return {
+        success: false,
+        error: data.error || 'Login failed. Please try again.'
+      };
+    }
+
+    // Store token and user_id in secure storage
+    setAuthToken(data.data.token);
+    setSessionId(data.data.user_id);
+
+    // Set auth state with user ID (public, non-sensitive)
+    setAuthState(true, data.data.user_id);
+
+    // Update login state
+    isUserLoggedInState = true;
+
+    console.log('✅ Login successful');
+    console.log('   User ID:', data.data.user_id);
+    console.log('   User Email:', email);
+    console.log('   Token expires in:', data.data.expires, 'seconds');
+
+    return {
+      success: true,
+      user_id: data.data.user_id,
+      expires: data.data.expires
+    };
+
   } catch (error) {
     console.error('❌ Login error:', error);
     return {
@@ -483,9 +473,12 @@ export async function loginUser(email, password) {
 }
 
 /**
- * Sign up new user via Bubble API
+ * Sign up new user via Supabase Edge Function (bubble-auth-proxy)
  * Stores token and user_id in localStorage on success
  * Automatically logs in the user after successful signup
+ *
+ * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
+ * API key is stored server-side in Supabase Secrets
  *
  * @param {string} email - User email
  * @param {string} password - User password
@@ -493,15 +486,7 @@ export async function loginUser(email, password) {
  * @returns {Promise<Object>} Response object with status, token, user_id, or error
  */
 export async function signupUser(email, password, retype) {
-  console.log('📝 Attempting signup for:', email);
-
-  if (!BUBBLE_API_KEY) {
-    console.error('[Auth] VITE_BUBBLE_API_KEY is not configured');
-    return {
-      success: false,
-      error: 'Configuration error. Please contact support.'
-    };
-  }
+  console.log('📝 Attempting signup via Edge Function for:', email);
 
   // Client-side validation
   if (!email || !password || !retype) {
@@ -526,63 +511,54 @@ export async function signupUser(email, password, retype) {
   }
 
   try {
-    const response = await fetch(BUBBLE_SIGNUP_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${BUBBLE_API_KEY}`
-      },
-      body: JSON.stringify({
-        email,
-        password,
-        retype
-      })
+    const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+      body: {
+        action: 'signup',
+        payload: {
+          email,
+          password,
+          retype
+        }
+      }
     });
 
-    const data = await response.json();
-
-    if (response.ok && data.status === 'success') {
-      // Store token and user_id in secure storage
-      setAuthToken(data.response.token);
-      setSessionId(data.response.user_id);
-
-      // Set auth state with user ID (public, non-sensitive)
-      setAuthState(true, data.response.user_id);
-
-      // Update login state
-      isUserLoggedInState = true;
-
-      console.log('✅ Signup successful');
-      console.log('   User ID:', data.response.user_id);
-      console.log('   User Email:', email);
-      console.log('   Token expires in:', data.response.expires, 'seconds');
-
-      return {
-        success: true,
-        user_id: data.response.user_id,
-        expires: data.response.expires
-      };
-    } else {
-      // Handle error response from Bubble
-      console.error('❌ Signup failed:', data.reason || data.message);
-
-      // Map error reasons to user-friendly messages
-      let errorMessage = data.message || 'Signup failed. Please try again.';
-
-      if (data.reason === 'NOT_VALID_EMAIL') {
-        errorMessage = data.message || 'Please enter a valid email address.';
-      } else if (data.reason === 'USED_EMAIL') {
-        errorMessage = data.message || 'This email is already in use.';
-      } else if (data.reason === 'DO_NOT_MATCH') {
-        errorMessage = data.message || 'The two passwords do not match!';
-      }
-
+    if (error) {
+      console.error('❌ Edge Function error:', error);
       return {
         success: false,
-        error: errorMessage,
-        reason: data.reason
+        error: error.message || 'Failed to create account. Please try again.'
       };
     }
+
+    if (!data.success) {
+      console.error('❌ Signup failed:', data.error);
+      return {
+        success: false,
+        error: data.error || 'Signup failed. Please try again.'
+      };
+    }
+
+    // Store token and user_id in secure storage
+    setAuthToken(data.data.token);
+    setSessionId(data.data.user_id);
+
+    // Set auth state with user ID (public, non-sensitive)
+    setAuthState(true, data.data.user_id);
+
+    // Update login state
+    isUserLoggedInState = true;
+
+    console.log('✅ Signup successful');
+    console.log('   User ID:', data.data.user_id);
+    console.log('   User Email:', email);
+    console.log('   Token expires in:', data.data.expires, 'seconds');
+
+    return {
+      success: true,
+      user_id: data.data.user_id,
+      expires: data.data.expires
+    };
+
   } catch (error) {
     console.error('❌ Signup error:', error);
     return {
@@ -593,11 +569,13 @@ export async function signupUser(email, password, retype) {
 }
 
 /**
- * Validate token via Bubble API and fetch user data from Supabase
- * Three-step process:
- * 1. Validate token via Bubble API (authentication check)
- * 2. Fetch user display data directly from Supabase (following SearchPage pattern)
- * 3. Fetch and cache user type if not already stored
+ * Validate token via Supabase Edge Function (bubble-auth-proxy) and fetch user data
+ * Two-step process:
+ * 1. Validate token via Edge Function (validates with Bubble + fetches from Supabase)
+ * 2. Cache user type locally
+ *
+ * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
+ * API key is stored server-side in Supabase Secrets
  *
  * @returns {Promise<Object|null>} User data object with firstName, profilePhoto, userType, etc. or null if invalid
  */
@@ -610,20 +588,27 @@ export async function validateTokenAndFetchUser() {
     return null;
   }
 
-  console.log('🔍 Step 1: Validating token via Bubble API...');
+  console.log('🔍 Validating token and fetching user data via Edge Function...');
 
   try {
-    // Step 1: Validate token via Bubble API
-    const response = await fetch(`${BUBBLE_USER_ENDPOINT}/${userId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+    const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+      body: {
+        action: 'validate',
+        payload: {
+          token,
+          user_id: userId
+        }
       }
     });
 
-    if (!response.ok) {
-      // Token is invalid
+    if (error) {
+      console.error('❌ Edge Function error:', error);
+      clearAuthData();
+      isUserLoggedInState = false;
+      return null;
+    }
+
+    if (!data.success) {
       console.log('❌ Token validation failed - clearing auth data');
       clearAuthData();
       isUserLoggedInState = false;
@@ -633,40 +618,13 @@ export async function validateTokenAndFetchUser() {
     // Token is valid, update last activity
     updateLastActivity();
 
-    // Token is valid, now fetch user data from Supabase
-    console.log('✅ Token valid - Step 2: Fetching user data from Supabase...');
+    // Extract user data from Edge Function response
+    const userData = data.data;
 
-    // Step 2: Query Supabase directly for user data (same pattern as SearchPage)
-    const { data: userData, error: userError } = await supabase
-      .from('user')
-      .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current"')
-      .eq('_id', userId)
-      .single();
-
-    if (userError) {
-      console.error('❌ Supabase query error:', userError);
-      clearAuthData();
-      isUserLoggedInState = false;
-      return null;
-    }
-
-    if (!userData) {
-      console.log('❌ User not found in Supabase');
-      clearAuthData();
-      isUserLoggedInState = false;
-      return null;
-    }
-
-    // Handle protocol-relative URLs for profile photos (same as SearchPage)
-    let profilePhoto = userData['Profile Photo'];
-    if (profilePhoto && profilePhoto.startsWith('//')) {
-      profilePhoto = 'https:' + profilePhoto;
-    }
-
-    // Step 3: Check and store user type if not already cached
+    // Cache user type if provided
     let userType = getUserType();
     if (!userType || userType === '') {
-      userType = userData['Type - User Current'] || null;
+      userType = userData.userType || null;
       if (userType) {
         setUserType(userType);
         console.log('✅ User type fetched and cached:', userType);
@@ -676,20 +634,20 @@ export async function validateTokenAndFetchUser() {
     }
 
     const userDataObject = {
-      userId: userData._id,
-      firstName: userData['Name - First'] || null,
-      fullName: userData['Name - Full'] || null,
-      profilePhoto: profilePhoto || null,
+      userId: userData.userId,
+      firstName: userData.firstName || null,
+      fullName: userData.fullName || null,
+      profilePhoto: userData.profilePhoto || null,
       userType: userType
     };
 
-    console.log('✅ User data fetched from Supabase:', userDataObject.firstName, '- Type:', userDataObject.userType);
+    console.log('✅ User data validated:', userDataObject.firstName, '- Type:', userDataObject.userType);
     isUserLoggedInState = true;
 
     return userDataObject;
 
   } catch (error) {
-    console.error('❌ Token validation or Supabase fetch error:', error);
+    console.error('❌ Token validation error:', error);
     clearAuthData();
     isUserLoggedInState = false;
     return null;
@@ -722,9 +680,12 @@ export function isProtectedPage() {
 }
 
 /**
- * Logout user via Bubble API
+ * Logout user via Supabase Edge Function (bubble-auth-proxy)
  * Calls logout endpoint with stored Bearer token
- * Clears all authentication data from localStorage on success
+ * Clears all authentication data from localStorage
+ *
+ * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
+ * API key is stored server-side in Supabase Secrets
  *
  * @returns {Promise<Object>} Response object with success status or error
  */
@@ -741,14 +702,15 @@ export async function logoutUser() {
     };
   }
 
-  console.log('🔓 Attempting logout...');
+  console.log('🔓 Attempting logout via Edge Function...');
 
   try {
-    const response = await fetch(BUBBLE_LOGOUT_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+    const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+      body: {
+        action: 'logout',
+        payload: {
+          token
+        }
       }
     });
 
@@ -756,22 +718,24 @@ export async function logoutUser() {
     // This ensures clean logout even if API call fails
     clearAuthData();
 
-    if (response.ok) {
-      console.log('✅ Logout successful');
-      return {
-        success: true,
-        message: 'Logout successful'
-      };
-    } else {
+    if (error || !data.success) {
       console.log('⚠️ Logout API returned error, but local data cleared');
       return {
         success: true,
         message: 'Logged out locally'
       };
     }
+
+    console.log('✅ Logout successful');
+    return {
+      success: true,
+      message: data.data.message || 'Logout successful'
+    };
+
   } catch (error) {
     console.error('❌ Logout error:', error);
     // Auth data already cleared above
+    clearAuthData();
     return {
       success: true,
       message: 'Logged out locally (network error)'

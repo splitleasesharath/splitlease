@@ -27,6 +27,40 @@ export { canEditProposal } from './proposals/canEditProposal.js'
 export { canCancelProposal } from './proposals/canCancelProposal.js'
 export { canAcceptProposal } from './proposals/canAcceptProposal.js'
 
+// Proposal Rules - Extended (from new implementation)
+export {
+  canModifyProposal,
+  hasReviewableCounteroffer,
+  canAcceptCounteroffer,
+  canDeclineCounteroffer,
+  canSubmitRentalApplication,
+  canReviewDocuments,
+  canRequestVirtualMeeting,
+  canSendMessage,
+  isProposalActive,
+  isProposalCancelled,
+  isProposalRejected,
+  isLeaseActivated,
+  requiresSpecialCancellationConfirmation,
+  getCancelButtonText,
+  getCancellationReasonOptions
+} from './proposals/proposalRules.js'
+
+// Virtual Meeting Rules
+export {
+  VM_STATES,
+  getVirtualMeetingState,
+  canRequestNewMeeting,
+  canRespondToMeeting,
+  isVMButtonDisabled,
+  canJoinMeeting,
+  canViewMeetingDetails,
+  canCancelVMRequest,
+  getVMButtonText,
+  getVMButtonStyle,
+  getVMStateInfo
+} from './proposals/virtualMeetingRules.js'
+
 // User Rules
 export { isHost } from './users/isHost.js'
 export { isGuest } from './users/isGuest.js'
