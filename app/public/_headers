@@ -1,6 +1,12 @@
 # Cloudflare Pages Headers Configuration
 # https://developers.cloudflare.com/pages/configuration/headers/
 
+# View Split Lease pages - serve as HTML
+/view-split-lease
+  Content-Type: text/html; charset=utf-8
+/view-split-lease/*
+  Content-Type: text/html; charset=utf-8
+
 # COMPLETELY DISABLE ALL CACHING
 
 # All routes - no cache

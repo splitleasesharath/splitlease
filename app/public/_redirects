@@ -6,10 +6,11 @@
 # The 200 status makes this a rewrite, not a redirect, keeping the URL intact
 # IMPORTANT: Do NOT create a Cloudflare Function for this route!
 # Functions conflict with _redirects and cause the listing ID to be lost.
-/view-split-lease/*  /view-split-lease.html  200
-
-# Legacy support for old URL structure (redirect to new clean URLs)
-/view-split-lease.html/:id  /view-split-lease/:id  301
+# Route all view-split-lease requests to listing-page.html
+# Using a differently named file to avoid Cloudflare's "smart" URL normalization
+/view-split-lease  /_internal/listing-view  200
+/view-split-lease/  /_internal/listing-view  200
+/view-split-lease/*  /_internal/listing-view  200
 
 # Handle account-profile page with clean URL structure
 # Maps /account-profile/[user-id] to account-profile.html
