@@ -23,15 +23,18 @@ export default function CareersPage() {
 
   // Initialize Typeform when modal opens
   useEffect(() => {
-    if (typeformModalActive && typeformContainerRef.current && window.tf) {
+    if (typeformModalActive && typeformContainerRef.current) {
       // Clear any previous content
       typeformContainerRef.current.innerHTML = '';
-      // Create the widget
-      window.tf.createWidget('01JTV62WNGXMDX830477HVX7NZ', {
-        container: typeformContainerRef.current,
-        width: '100%',
-        height: '100%'
-      });
+
+      // Create an iframe directly for the live embed
+      const iframe = document.createElement('iframe');
+      iframe.src = 'https://form.typeform.com/to/01JTV62WNGXMDX830477HVX7NZ';
+      iframe.style.width = '100%';
+      iframe.style.height = '100%';
+      iframe.style.border = 'none';
+      iframe.allow = 'camera; microphone; autoplay; encrypted-media;';
+      typeformContainerRef.current.appendChild(iframe);
     }
   }, [typeformModalActive]);
 
