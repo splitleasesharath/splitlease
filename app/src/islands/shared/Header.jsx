@@ -502,9 +502,11 @@ export default function Header({ autoShowLogin = false }) {
 
           {currentUser && currentUser.firstName ? (
             /* User is logged in - show LoggedInAvatar component with full menu */
+            /* Note: currentUser.userId comes from validateTokenAndFetchUser() in auth.js */
+            /* The hook useLoggedInAvatarData will fetch fresh data from Supabase using this ID */
             <LoggedInAvatar
               user={{
-                id: currentUser.id || '',
+                id: currentUser.userId || currentUser.id || '',
                 name: `${currentUser.firstName} ${currentUser.lastName || ''}`.trim(),
                 email: currentUser.email || '',
                 userType: userType === 'A Host (I have a space available to rent)' ? 'HOST'
