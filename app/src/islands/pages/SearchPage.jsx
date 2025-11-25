@@ -1516,6 +1516,14 @@ export default function SearchPage() {
                     return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
                   });
 
+                  // Debug: Log what's being rendered
+                  console.log('[DEBUG] Rendering neighborhood list:', {
+                    totalNeighborhoods: neighborhoods.length,
+                    filteredCount: filteredNeighborhoods.length,
+                    searchTerm: neighborhoodSearch,
+                    first5: filteredNeighborhoods.slice(0, 5).map(n => n.name)
+                  });
+
                   if (filteredNeighborhoods.length === 0) {
                     return (
                       <div style={{ padding: '10px', color: '#666' }}>
