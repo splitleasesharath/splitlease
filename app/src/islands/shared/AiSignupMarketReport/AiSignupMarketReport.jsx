@@ -102,14 +102,12 @@ function autoCorrectEmail(email) {
 }
 
 /**
- * Submit AI signup via Supabase Edge Function
+ * Submit AI signup via Supabase Edge Function (GUEST endpoint)
  * ✅ MIGRATED: No more hardcoded API key!
+ * ✅ UNAUTHENTICATED: Works for guest users without login
  * API key is now stored server-side in Supabase Secrets
  */
 async function submitSignup(data) {
-  // Import supabase client
-  const { supabase } = await import('../../../lib/supabase.js');
-
   // Validate required fields
   if (!data.email) {
     console.error('[AiSignupMarketReport] ❌ Error: Missing email');
@@ -121,38 +119,55 @@ async function submitSignup(data) {
     throw new Error('Market research description is required');
   }
 
-  console.log('[AiSignupMarketReport] ========== SIGNUP REQUEST (VIA EDGE FUNCTION) ==========');
+  console.log('[AiSignupMarketReport] ========== SIGNUP REQUEST (GUEST ENDPOINT) ==========');
   console.log('[AiSignupMarketReport] Email:', data.email);
   console.log('[AiSignupMarketReport] Phone:', data.phone || 'Not provided');
   console.log('[AiSignupMarketReport] Text length:', data.marketResearchText.length);
-  console.log('[AiSignupMarketReport] ===========================================================');
+  console.log('[AiSignupMarketReport] ================================================================');
+
+  // Get Supabase URL from environment
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/ai-signup-guest`;
+
+  console.log('[AiSignupMarketReport] Edge Function URL:', edgeFunctionUrl);
 
   try {
-    const { data: result, error } = await supabase.functions.invoke('bubble-proxy', {
-      body: {
-        action: 'signup_ai',
-        payload: {
-          email: data.email,
-          phone: data.phone || '',
-          text_inputted: data.marketResearchText,
-        },
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        email: data.email,
+        phone: data.phone || '',
+        text_inputted: data.marketResearchText,
+      }),
     });
 
-    if (error) {
-      console.error('[AiSignupMarketReport] ========== EDGE FUNCTION ERROR ==========');
-      console.error('[AiSignupMarketReport] Error:', error);
-      console.error('[AiSignupMarketReport] ==============================================');
-      throw new Error(error.message || 'Failed to submit signup');
+    console.log('[AiSignupMarketReport] Response status:', response.status, response.statusText);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AiSignupMarketReport] ========== ERROR RESPONSE ==========');
+      console.error('[AiSignupMarketReport] Status:', response.status);
+      console.error('[AiSignupMarketReport] Response Body:', errorText);
+      console.error('[AiSignupMarketReport] ===========================================');
+
+      let errorMessage = 'Failed to submit signup';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.error || errorJson.message || errorMessage;
+      } catch (e) {
+        errorMessage = errorText || errorMessage;
+      }
+
+      throw new Error(errorMessage);
     }
 
-    if (!result.success) {
-      throw new Error(result.error || 'Unknown error');
-    }
-
+    const result = await response.json();
     console.log('[AiSignupMarketReport] ========== SUCCESS ==========');
-    console.log('[AiSignupMarketReport] Signup completed and synced');
-    console.log('[AiSignupMarketReport] User ID:', result.data._id);
+    console.log('[AiSignupMarketReport] Signup completed successfully');
+    console.log('[AiSignupMarketReport] Result:', JSON.stringify(result, null, 2));
     console.log('[AiSignupMarketReport] ================================');
 
     return { success: true, data: result.data };
