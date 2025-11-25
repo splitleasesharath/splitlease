@@ -134,7 +134,7 @@ body {
     50% { transform: translateY(18px) translateX(8px); }
 }
 
-.hero-container {
+.hero-identity .hero-container {
     max-width: 1200px;
     margin: 0 auto;
     position: relative;
@@ -142,9 +142,16 @@ body {
     text-align: center;
 }
 
-.hero-content {
+.hero-identity .hero-content {
     position: relative;
     z-index: 2;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    margin-top: 0;
+    box-shadow: none;
+    width: 100%;
+    max-width: none;
 }
 
 .hero-badge {
@@ -161,54 +168,57 @@ body {
     margin-bottom: 32px;
 }
 
-.hero-title {
+.hero-identity .hero-title {
     font-size: 56px;
     font-weight: 700;
     color: #111827;
     line-height: 1.1;
     margin-bottom: 24px;
     letter-spacing: -1px;
+    white-space: normal;
+    width: auto;
 }
 
-.hero-title .highlight {
+.hero-identity .hero-title .highlight {
     color: #31135D;
     display: block;
 }
 
-.hero-line-1,
-.hero-line-2 {
+.hero-identity .hero-line-1,
+.hero-identity .hero-line-2 {
     display: block;
 }
 
-.dynamic-text {
+.hero-identity .dynamic-text {
     display: inline-block;
     color: #31135D;
     font-weight: 700;
     transition: opacity 0.3s ease;
 }
 
-#cityText {
+.hero-identity #cityText {
     min-width: 150px;
 }
 
-#purposeText {
+.hero-identity #purposeText {
     min-width: 80px;
 }
 
-.dynamic-text.fade-out {
+.hero-identity .dynamic-text.fade-out {
     opacity: 0;
 }
 
-.hero-subtitle {
+.hero-identity .hero-subtitle {
     font-size: 20px;
     color: #6B7280;
     max-width: 700px;
     margin: 0 auto 56px;
     line-height: 1.7;
     font-weight: 400;
+    width: auto;
 }
 
-.hero-stats {
+.hero-identity .hero-stats {
     display: flex;
     justify-content: center;
     gap: 64px;
@@ -216,18 +226,18 @@ body {
     flex-wrap: wrap;
 }
 
-.stat-item {
+.hero-identity .stat-item {
     text-align: center;
 }
 
-.stat-value {
+.hero-identity .stat-value {
     font-size: 40px;
     font-weight: 700;
     color: #31135D;
     margin-bottom: 8px;
 }
 
-.stat-label {
+.hero-identity .stat-label {
     font-size: 13px;
     color: #9CA3AF;
     font-weight: 500;
@@ -235,7 +245,7 @@ body {
     letter-spacing: 0.5px;
 }
 
-.hero-cta {
+.hero-identity .hero-cta {
     display: flex;
     justify-content: center;
     gap: 16px;
@@ -494,15 +504,17 @@ body {
     gap: 8px;
 }
 
-.day-selector {
+.schedule-section .day-selector {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     margin-bottom: 32px;
+    margin-top: 0;
+    width: auto;
 }
 
-.calendar-icon {
+.schedule-section .calendar-icon {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -511,39 +523,48 @@ body {
     background: white;
     border-radius: 12px;
     border: 1px solid #E5E7EB;
+    margin-right: 0;
 }
 
-.day-badge {
-    width: 52px;
-    height: 52px;
+.schedule-section .day-badge {
+    width: 52px !important;
+    height: 52px !important;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
-    font-size: 16px;
+    border-radius: 12px !important;
+    font-size: 16px !important;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
-    background: white;
-    border: 2px solid #E5E7EB;
-    color: #6B7280;
+    background: white !important;
+    border: 2px solid #E5E7EB !important;
+    color: #6B7280 !important;
     user-select: none;
+    box-shadow: none;
 }
 
-.day-badge:hover {
-    border-color: #31135D;
+.schedule-section .day-badge:hover {
+    border-color: #31135D !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(49, 19, 93, 0.15);
+    background: white !important;
+    color: #6B7280 !important;
 }
 
-.day-badge.active {
-    background: #31135D;
-    border-color: #31135D;
-    color: white;
+.schedule-section .day-badge.active {
+    background: #31135D !important;
+    border-color: #31135D !important;
+    color: white !important;
     box-shadow: 0 4px 12px rgba(49, 19, 93, 0.3);
 }
 
-.checkin-checkout {
+.schedule-section .day-badge.active:hover {
+    background: #31135D !important;
+    color: white !important;
+}
+
+.schedule-section .checkin-checkout {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -551,17 +572,20 @@ body {
     font-size: 15px;
     color: #4B5563;
     margin-bottom: 32px;
+    margin-top: 0;
     padding: 16px;
     background: white;
     border-radius: 12px;
     border: 1px solid #E5E7EB;
+    box-shadow: none;
+    width: auto;
 }
 
-.checkin-checkout span {
+.schedule-section .checkin-checkout span {
     white-space: nowrap;
 }
 
-.checkin-checkout strong {
+.schedule-section .checkin-checkout strong {
     color: #111827;
 }
 
@@ -1523,7 +1547,7 @@ body {
         display: block;
     }
 
-    .hero-title {
+    .hero-identity .hero-title {
         font-size: 36px;
     }
 
@@ -1551,22 +1575,22 @@ body {
         padding: 32px 24px;
     }
 
-    .day-selector {
+    .schedule-section .day-selector {
         gap: 8px;
     }
 
-    .day-badge {
-        width: 44px;
-        height: 44px;
-        font-size: 14px;
+    .schedule-section .day-badge {
+        width: 44px !important;
+        height: 44px !important;
+        font-size: 14px !important;
     }
 
-    .calendar-icon {
+    .schedule-section .calendar-icon {
         width: 44px;
         height: 44px;
     }
 
-    .checkin-checkout {
+    .schedule-section .checkin-checkout {
         flex-direction: column;
         gap: 8px;
         font-size: 14px;
@@ -1626,7 +1650,7 @@ body {
         gap: 24px;
     }
 
-    .hero-stats {
+    .hero-identity .hero-stats {
         gap: 32px;
     }
 
