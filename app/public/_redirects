@@ -4,6 +4,8 @@
 # Handle view-split-lease page with clean URL structure
 # Maps /view-split-lease/[listing-id] to view-split-lease.html
 # The 200 status makes this a rewrite, not a redirect, keeping the URL intact
+# IMPORTANT: Do NOT create a Cloudflare Function for this route!
+# Functions conflict with _redirects and cause the listing ID to be lost.
 /view-split-lease/*  /view-split-lease.html  200
 
 # Legacy support for old URL structure (redirect to new clean URLs)
