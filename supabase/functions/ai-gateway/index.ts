@@ -1,0 +1,144 @@
+/**
+ * AI Gateway Edge Function
+ * Split Lease - Supabase Edge Functions
+ *
+ * Routes AI requests to appropriate handlers
+ * Supports dynamic prompts with variable interpolation
+ *
+ * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
+ *
+ * Supported Actions:
+ * - complete: Non-streaming completion
+ * - stream: SSE streaming completion
+ */
+
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders } from "../_shared/cors.ts";
+import { AIGatewayRequest } from "../_shared/aiTypes.ts";
+import {
+  ValidationError,
+  formatErrorResponse,
+  getStatusCodeFromError,
+} from "../_shared/errors.ts";
+import { validateRequired, validateAction } from "../_shared/validation.ts";
+
+import { handleComplete } from "./handlers/complete.ts";
+import { handleStream } from "./handlers/stream.ts";
+
+// Import prompt registry to register all prompts
+import "./prompts/_registry.ts";
+
+// ─────────────────────────────────────────────────────────────
+// Allowed actions
+// ─────────────────────────────────────────────────────────────
+
+const ALLOWED_ACTIONS = ["complete", "stream"];
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
+console.log("[ai-gateway] Edge Function started");
+
+Deno.serve(async (req: Request) => {
+  console.log(`[ai-gateway] ========== REQUEST ==========`);
+  console.log(`[ai-gateway] Method: ${req.method}`);
+
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  // Only POST allowed
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ success: false, error: "Method not allowed" }),
+      {
+        status: 405,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
+  }
+
+  try {
+    // ─────────────────────────────────────────────────────────
+    // 1. Authenticate user
+    // ─────────────────────────────────────────────────────────
+
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      throw new ValidationError("Missing Authorization header");
+    }
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Client for auth validation
+    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const {
+      data: { user },
+      error: authError,
+    } = await authClient.auth.getUser();
+
+    if (authError || !user) {
+      console.error(`[ai-gateway] Auth failed:`, authError?.message);
+      throw new ValidationError("Invalid or expired token");
+    }
+
+    console.log(`[ai-gateway] Authenticated: ${user.email}`);
+
+    // Service client for data operations (bypasses RLS)
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
+
+    // ─────────────────────────────────────────────────────────
+    // 2. Parse and validate request
+    // ─────────────────────────────────────────────────────────
+
+    const body: AIGatewayRequest = await req.json();
+
+    validateRequired(body.action, "action");
+    validateRequired(body.payload, "payload");
+    validateRequired(body.payload.prompt_key, "payload.prompt_key");
+    validateAction(body.action, ALLOWED_ACTIONS);
+
+    console.log(`[ai-gateway] Action: ${body.action}`);
+    console.log(`[ai-gateway] Prompt: ${body.payload.prompt_key}`);
+
+    // ─────────────────────────────────────────────────────────
+    // 3. Route to handler
+    // ─────────────────────────────────────────────────────────
+
+    const context = {
+      user,
+      serviceClient,
+      request: body,
+    };
+
+    switch (body.action) {
+      case "complete":
+        return await handleComplete(context);
+
+      case "stream":
+        return await handleStream(context);
+
+      default:
+        throw new ValidationError(`Unhandled action: ${body.action}`);
+    }
+  } catch (error) {
+    console.error(`[ai-gateway] ========== ERROR ==========`);
+    console.error(`[ai-gateway]`, error);
+
+    const statusCode = getStatusCodeFromError(error as Error);
+    const errorResponse = formatErrorResponse(error as Error);
+
+    return new Response(JSON.stringify(errorResponse), {
+      status: statusCode,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});

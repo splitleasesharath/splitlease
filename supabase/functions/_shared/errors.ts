@@ -40,6 +40,17 @@ export class AuthenticationError extends Error {
   }
 }
 
+export class OpenAIError extends Error {
+  constructor(
+    message: string,
+    public statusCode: number = 500,
+    public openaiResponse?: unknown
+  ) {
+    super(message);
+    this.name = 'OpenAIError';
+  }
+}
+
 /**
  * Format error for client response
  * NO FALLBACK: Returns actual error message without hiding details
@@ -65,6 +76,9 @@ export function getStatusCodeFromError(error: Error): number {
   }
   if (error instanceof ValidationError) {
     return 400;
+  }
+  if (error instanceof OpenAIError) {
+    return error.statusCode;
   }
   return 500;
 }
