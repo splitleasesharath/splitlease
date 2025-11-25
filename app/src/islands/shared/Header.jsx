@@ -390,9 +390,15 @@ export default function Header({ autoShowLogin = false }) {
                 <span className="dropdown-desc">Frequently Asked Questions</span>
               </a>
               <a
-                href={SIGNUP_LOGIN_URL}
+                href="#"
                 className="dropdown-item"
                 role="menuitem"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveDropdown(null);
+                  setMobileMenuActive(false);
+                  handleSignupClick();
+                }}
               >
                 <span className="dropdown-title">Sign Up</span>
               </a>
@@ -471,9 +477,15 @@ export default function Header({ autoShowLogin = false }) {
                 <span className="dropdown-desc">Frequently Asked Questions</span>
               </a>
               <a
-                href={SIGNUP_LOGIN_URL}
+                href="#"
                 className="dropdown-item"
                 role="menuitem"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setActiveDropdown(null);
+                  setMobileMenuActive(false);
+                  handleSignupClick();
+                }}
               >
                 <span className="dropdown-title">Sign Up</span>
               </a>

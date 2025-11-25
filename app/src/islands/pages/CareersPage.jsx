@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 
 export default function CareersPage() {
   const [typeformModalActive, setTypeformModalActive] = useState(false);
+  const typeformContainerRef = useRef(null);
 
   // Initialize Feather icons when component mounts
   useEffect(() => {
@@ -17,6 +18,20 @@ export default function CareersPage() {
   useEffect(() => {
     if (typeformModalActive && window.feather) {
       setTimeout(() => window.feather.replace(), 100);
+    }
+  }, [typeformModalActive]);
+
+  // Initialize Typeform when modal opens
+  useEffect(() => {
+    if (typeformModalActive && typeformContainerRef.current && window.tf) {
+      // Clear any previous content
+      typeformContainerRef.current.innerHTML = '';
+      // Create the widget
+      window.tf.createWidget('01JTV62WNGXMDX830477HVX7NZ', {
+        container: typeformContainerRef.current,
+        width: '100%',
+        height: '100%'
+      });
     }
   }, [typeformModalActive]);
 
@@ -527,7 +542,7 @@ export default function CareersPage() {
           <button className="modal-close" onClick={closeTypeformModal}>
             <i data-feather="x"></i>
           </button>
-          <div data-tf-live="01JTV62WNGXMDX830477HVX7NZ"></div>
+          <div ref={typeformContainerRef} style={{ width: '100%', height: '100%' }}></div>
         </div>
       </div>
     </>
