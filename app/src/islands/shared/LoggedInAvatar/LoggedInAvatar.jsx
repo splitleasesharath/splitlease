@@ -138,7 +138,7 @@ export default function LoggedInAvatar({
         id: 'proposals',
         label: 'My Proposals',
         icon: '📋',
-        path: '/proposals',
+        path: '/guest-proposals',
         badgeCount: user.proposalsCount,
         badgeColor: 'purple',
       });
