@@ -38,10 +38,25 @@ export function processUserData({ rawUser, requireVerification = false }) {
     throw new Error('processUserData: User missing critical _id field')
   }
 
-  // Validate required name field
-  const fullName = rawUser['Name - Full']
+  // Name handling - derive from available fields
+  // Some users may not have "Name - Full" populated yet
+  let fullName = rawUser['Name - Full']
+  const firstName = rawUser['Name - First']
+  const lastName = rawUser['Name - Last']
+
+  // Build fullName from parts if not directly available
   if (!fullName || typeof fullName !== 'string' || fullName.trim().length === 0) {
-    throw new Error(`processUserData: User ${rawUser._id} missing required "Name - Full" field`)
+    if (firstName && lastName) {
+      fullName = `${firstName} ${lastName}`
+    } else if (firstName) {
+      fullName = firstName
+    } else if (lastName) {
+      fullName = lastName
+    } else {
+      // Use a default for users without any name fields
+      fullName = 'Guest User'
+      console.warn(`processUserData: User ${rawUser._id} has no name fields, using default`)
+    }
   }
 
   // Verification enforcement (if required)
@@ -51,13 +66,13 @@ export function processUserData({ rawUser, requireVerification = false }) {
     )
   }
 
-  // Extract and normalize fields
-  const firstName = rawUser['Name - First'] || fullName.split(' ')[0]
+  // Derive display firstName if not already set
+  const displayFirstName = firstName || fullName.split(' ')[0]
 
   return {
     id: rawUser._id,
     fullName: fullName.trim(),
-    firstName: firstName.trim(),
+    firstName: (displayFirstName || '').trim(),
 
     // Profile information
     profilePhoto: rawUser['Profile Photo'] || null,
@@ -74,6 +89,6 @@ export function processUserData({ rawUser, requireVerification = false }) {
     linkedInId: rawUser['Verify - Linked In ID'] || null,
 
     // Privacy: First name only for display
-    displayName: firstName.trim()
+    displayName: (displayFirstName || 'Guest').trim()
   }
 }
