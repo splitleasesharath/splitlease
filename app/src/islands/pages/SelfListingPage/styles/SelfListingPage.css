@@ -55,9 +55,21 @@
   color: #333;
 }
 
-.btn-save-draft:hover,
+.btn-save-draft:hover:not(:disabled),
 .btn-help:hover {
   background: #f8f8f8;
+}
+
+.btn-save-draft:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Last saved indicator */
+.last-saved-indicator {
+  font-size: 0.75rem;
+  color: #666;
+  margin-left: 1rem;
 }
 
 /* Main Container */
