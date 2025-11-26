@@ -29,6 +29,9 @@
 /faq.html  /faq.html  200
 
 # Handle Help Center pages
+# Direct .html access - serve the file directly
+/help-center.html  /help-center.html  200
+# Clean URL rewrites
 /help-center  /help-center.html  200
 /help-center/  /help-center.html  200
 /help-center/*  /help-center-category.html  200
