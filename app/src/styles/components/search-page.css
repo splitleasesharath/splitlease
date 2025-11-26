@@ -78,7 +78,7 @@
   padding-top: 0;
 }
 
-.inline-filters .filter-group label {
+.inline-filters .filter-group > label {
   position: absolute;
   top: 0;
   left: 0.75rem;
@@ -828,7 +828,7 @@
   }
 
   /* Improve filter group labels on mobile - maintain floating label design */
-  .inline-filters .filter-group label {
+  .inline-filters .filter-group > label {
     position: absolute;
     top: 0;
     left: 1rem;
