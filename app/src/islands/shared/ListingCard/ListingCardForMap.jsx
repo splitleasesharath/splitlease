@@ -22,13 +22,15 @@ import './ListingCardForMap.css';
  * @param {boolean} props.isVisible - Visibility state
  * @param {Object} props.position - Position {x, y} relative to map container
  * @param {Function} props.onMessageClick - Callback when message button is clicked
+ * @param {boolean} props.isLoggedIn - Whether user is logged in (for showing favorite button)
  */
 export default function ListingCardForMap({
   listing,
   onClose,
   isVisible,
   position = { x: 0, y: 0 },
-  onMessageClick
+  onMessageClick,
+  isLoggedIn = false
 }) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isFavorited, setIsFavorited] = useState(false);
@@ -116,18 +118,20 @@ export default function ListingCardForMap({
           <X size={16} color="#4D4D4D" />
         </button>
 
-        {/* Favorite Button */}
-        <button
-          className="listing-card-favorite-btn"
-          onClick={handleToggleFavorite}
-          aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-        >
-          <Heart
-            size={16}
-            color={isFavorited ? "#FF0000" : "#4D4D4D"}
-            fill={isFavorited ? "#FF0000" : "none"}
-          />
-        </button>
+        {/* Favorite Button - Only visible when logged in */}
+        {isLoggedIn && (
+          <button
+            className="listing-card-favorite-btn"
+            onClick={handleToggleFavorite}
+            aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart
+              size={16}
+              color={isFavorited ? "#FF0000" : "#4D4D4D"}
+              fill={isFavorited ? "#FF0000" : "none"}
+            />
+          </button>
+        )}
 
         {/* Image Section */}
         <div className="listing-card-image-container">

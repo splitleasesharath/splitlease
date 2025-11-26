@@ -46,10 +46,11 @@ export async function handleListingCreate(
 
   try {
     // Atomic create-and-sync operation
+    // NOTE: Bubble Data API uses 'Listing' (the Bubble type name), not 'zat_listings'
     const syncedListing = await syncService.createAndSync(
       'listing_creation_in_code',  // Bubble workflow name
       params,                      // Workflow parameters
-      'zat_listings',              // Bubble object type
+      'Listing',                   // Bubble object type (must match Bubble's type name)
       'zat_listings'               // Supabase table
     );
 

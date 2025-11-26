@@ -348,9 +348,14 @@ export class BubbleSyncService {
    */
   private extractId(response: BubbleWorkflowResponse): string {
     // Try multiple possible locations for ID
-    const id = response?.response?.listing_id
+    // NOTE: Bubble workflows return different field names based on what they create
+    // - listing_creation_in_code returns: { response: { listing: "id" } }
+    // - other workflows may use: listing_id, id, user_id
+    const id = response?.response?.listing
+      || response?.response?.listing_id
       || response?.response?.id
       || response?.response?.user_id
+      || response?.listing
       || response?.listing_id
       || response?.id
       || response?.user_id;
