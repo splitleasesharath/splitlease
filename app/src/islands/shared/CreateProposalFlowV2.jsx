@@ -17,6 +17,52 @@ import '../../styles/create-proposal-flow-v2.css';
 // Day name constants for check-in/check-out calculation
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+// localStorage key prefix for proposal draft data
+const PROPOSAL_DRAFT_KEY_PREFIX = 'splitlease_proposal_draft_';
+
+/**
+ * Get saved proposal draft from localStorage
+ * @param {string} listingId - The listing ID
+ * @returns {Object|null} Saved user details or null
+ */
+const getSavedProposalDraft = (listingId) => {
+  if (!listingId) return null;
+  try {
+    const saved = localStorage.getItem(`${PROPOSAL_DRAFT_KEY_PREFIX}${listingId}`);
+    return saved ? JSON.parse(saved) : null;
+  } catch (e) {
+    console.warn('Failed to load proposal draft:', e);
+    return null;
+  }
+};
+
+/**
+ * Save proposal draft to localStorage
+ * @param {string} listingId - The listing ID
+ * @param {Object} data - User details to save
+ */
+const saveProposalDraft = (listingId, data) => {
+  if (!listingId) return;
+  try {
+    localStorage.setItem(`${PROPOSAL_DRAFT_KEY_PREFIX}${listingId}`, JSON.stringify(data));
+  } catch (e) {
+    console.warn('Failed to save proposal draft:', e);
+  }
+};
+
+/**
+ * Clear proposal draft from localStorage
+ * @param {string} listingId - The listing ID
+ */
+const clearProposalDraft = (listingId) => {
+  if (!listingId) return;
+  try {
+    localStorage.removeItem(`${PROPOSAL_DRAFT_KEY_PREFIX}${listingId}`);
+  } catch (e) {
+    console.warn('Failed to clear proposal draft:', e);
+  }
+};
+
 /**
  * CreateProposalFlowV2 Component
  * @param {Object} listing - The listing object
@@ -44,8 +90,18 @@ export default function CreateProposalFlowV2({
   onClose,
   onSubmit
 }) {
+  // Get listing ID for localStorage key
+  const listingId = listing?._id;
+
+  // Load saved draft from localStorage on mount
+  const savedDraft = getSavedProposalDraft(listingId);
+  const hasSavedDraft = savedDraft && (savedDraft.needForSpace || savedDraft.aboutYourself);
+
   // Section flow: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
-  const [currentSection, setCurrentSection] = useState(hasExistingUserData ? 1 : 2);
+  // Start at Review if we have existing data OR saved draft with content
+  const [currentSection, setCurrentSection] = useState(
+    (hasExistingUserData || hasSavedDraft) ? 1 : 2
+  );
 
   // Internal state for pricing (managed by ListingScheduleSelector in DaysSelectionSection)
   const [internalPricingBreakdown, setInternalPricingBreakdown] = useState(pricingBreakdown);
@@ -66,6 +122,10 @@ export default function CreateProposalFlowV2({
         valid: pricingBreakdown?.valid
       }
     });
+
+    if (hasSavedDraft) {
+      console.log('📂 Loaded saved proposal draft from localStorage:', savedDraft);
+    }
   }, []);
 
   // Convert day objects to day names for compatibility
@@ -144,6 +204,14 @@ export default function CreateProposalFlowV2({
     return fourWeekRent + damageDeposit + maintenanceFee;
   };
 
+  // Merge existing user data with saved draft (props take priority over localStorage)
+  const mergedUserData = {
+    needForSpace: existingUserData?.needForSpace || savedDraft?.needForSpace || '',
+    aboutYourself: existingUserData?.aboutYourself || savedDraft?.aboutYourself || '',
+    hasUniqueRequirements: existingUserData?.hasUniqueRequirements ?? savedDraft?.hasUniqueRequirements ?? false,
+    uniqueRequirements: existingUserData?.uniqueRequirements || savedDraft?.uniqueRequirements || ''
+  };
+
   const [proposalData, setProposalData] = useState({
     // Pre-filled from listing page
     moveInDate: moveInDate || '',
@@ -152,11 +220,11 @@ export default function CreateProposalFlowV2({
     checkInDay: initialCheckIn,
     checkOutDay: initialCheckOut,
 
-    // User information (pre-filled if exists)
-    needForSpace: existingUserData?.needForSpace || '',
-    aboutYourself: existingUserData?.aboutYourself || '',
-    hasUniqueRequirements: existingUserData?.hasUniqueRequirements || false,
-    uniqueRequirements: existingUserData?.uniqueRequirements || '',
+    // User information (pre-filled from props or localStorage draft)
+    needForSpace: mergedUserData.needForSpace,
+    aboutYourself: mergedUserData.aboutYourself,
+    hasUniqueRequirements: mergedUserData.hasUniqueRequirements,
+    uniqueRequirements: mergedUserData.uniqueRequirements,
 
     // Optional move-in flexibility
     moveInRange: '',
@@ -195,6 +263,30 @@ export default function CreateProposalFlowV2({
       }));
     }
   }, [internalPricingBreakdown, internalDaysSelected, proposalData.reservationSpan]);
+
+  // Save user details to localStorage when they change
+  useEffect(() => {
+    if (!listingId) return;
+
+    const userDetailsToSave = {
+      needForSpace: proposalData.needForSpace,
+      aboutYourself: proposalData.aboutYourself,
+      hasUniqueRequirements: proposalData.hasUniqueRequirements,
+      uniqueRequirements: proposalData.uniqueRequirements
+    };
+
+    // Only save if there's actual content to save
+    if (userDetailsToSave.needForSpace || userDetailsToSave.aboutYourself) {
+      saveProposalDraft(listingId, userDetailsToSave);
+      console.log('💾 Saved proposal draft to localStorage');
+    }
+  }, [
+    listingId,
+    proposalData.needForSpace,
+    proposalData.aboutYourself,
+    proposalData.hasUniqueRequirements,
+    proposalData.uniqueRequirements
+  ]);
 
   const updateProposalData = (field, value) => {
     // Handle full pricing breakdown object from DaysSelectionSection
@@ -305,6 +397,11 @@ export default function CreateProposalFlowV2({
       ...proposalData,
       daysSelectedObjects: dayNamesToObjects(proposalData.daysSelected)
     };
+
+    // Clear draft from localStorage on successful submission
+    clearProposalDraft(listingId);
+    console.log('🗑️ Cleared proposal draft from localStorage');
+
     onSubmit(submissionData);
   };
 

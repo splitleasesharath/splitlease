@@ -46,6 +46,8 @@ export class BubbleSyncService {
     );
 
     console.log('[BubbleSync] Initialized with base URL:', bubbleBaseUrl);
+    console.log('[BubbleSync] Supabase URL:', supabaseUrl);
+    console.log('[BubbleSync] API Key present:', bubbleApiKey ? 'Yes (length: ' + bubbleApiKey.length + ')' : 'NO');
   }
 
   /**
@@ -77,9 +79,10 @@ export class BubbleSyncService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[BubbleSync] Workflow failed:`, errorText);
+        console.error(`[BubbleSync] Workflow failed at URL: ${url}`);
+        console.error(`[BubbleSync] Error response:`, errorText);
         throw new BubbleApiError(
-          `Bubble workflow failed: ${response.status} ${response.statusText}`,
+          `Bubble workflow failed: ${response.status} ${response.statusText} - URL: ${url} - Response: ${errorText}`,
           response.status,
           errorText
         );
@@ -143,9 +146,10 @@ export class BubbleSyncService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[BubbleSync] Fetch failed:`, errorText);
+        console.error(`[BubbleSync] Fetch failed at URL: ${url}`);
+        console.error(`[BubbleSync] Error response:`, errorText);
         throw new BubbleApiError(
-          `Failed to fetch Bubble object: ${response.status} ${response.statusText}`,
+          `Failed to fetch Bubble object: ${response.status} ${response.statusText} - URL: ${url} - Response: ${errorText}`,
           response.status,
           errorText
         );

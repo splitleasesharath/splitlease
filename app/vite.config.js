@@ -14,8 +14,8 @@ export default defineConfig({
         server.middlewares.use((req, res, next) => {
           const url = req.url || '';
 
-          // Handle root path and index.html
-          if (url === '/' || url.startsWith('/index.html')) {
+          // Handle root path, /index, and index.html
+          if (url === '/' || url === '/index' || url.startsWith('/index?') || url.startsWith('/index.html')) {
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/index.html' + queryString;
@@ -115,8 +115,8 @@ export default defineConfig({
         server.middlewares.use((req, res, next) => {
           const url = req.url || '';
 
-          // Handle root path and index.html (preview mode - files in dist root)
-          if (url === '/' || url.startsWith('/index.html')) {
+          // Handle root path, /index, and index.html (preview mode - files in dist root)
+          if (url === '/' || url === '/index' || url.startsWith('/index?') || url.startsWith('/index.html')) {
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/index.html' + queryString;
