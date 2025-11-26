@@ -40,7 +40,7 @@
    SEARCH BANNER
    =================================== */
 .hc-search-banner {
-  background: linear-gradient(135deg, var(--hc-brand-primary) 0%, var(--hc-brand-primary-light) 100%);
+  background: #31135d;
   padding: 32px 16px 40px;
   padding-top: calc(70px + 32px);
   text-align: center;
@@ -54,17 +54,6 @@
     padding: 40px 16px 48px;
     padding-top: calc(70px + 40px);
   }
-}
-
-.hc-search-banner::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.1) 0%, transparent 50%);
-  pointer-events: none;
 }
 
 .hc-search-banner h1 {
