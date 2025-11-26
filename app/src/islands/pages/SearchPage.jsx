@@ -180,22 +180,18 @@ function FilterPanel({
             <select
               id="neighborhoodSelectMobile"
               className="filter-select"
-              multiple
-              value={selectedNeighborhoods}
+              value={selectedNeighborhoods[0] || ''}
               onChange={(e) => {
-                const selected = Array.from(e.target.selectedOptions, option => option.value);
-                onNeighborhoodsChange(selected);
+                const value = e.target.value;
+                onNeighborhoodsChange(value ? [value] : []);
               }}
             >
-              {neighborhoods.length === 0 ? (
-                <option value="">Loading...</option>
-              ) : (
-                neighborhoods.map(neighborhood => (
-                  <option key={neighborhood.id} value={neighborhood.id}>
-                    {neighborhood.name}
-                  </option>
-                ))
-              )}
+              <option value="">All Neighborhoods</option>
+              {neighborhoods.map(neighborhood => (
+                <option key={neighborhood.id} value={neighborhood.id}>
+                  {neighborhood.name}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -1494,22 +1490,18 @@ export default function SearchPage() {
               <select
                 id="neighborhoodSelect"
                 className="filter-select"
-                multiple
-                value={selectedNeighborhoods}
+                value={selectedNeighborhoods[0] || ''}
                 onChange={(e) => {
-                  const selected = Array.from(e.target.selectedOptions, option => option.value);
-                  setSelectedNeighborhoods(selected);
+                  const value = e.target.value;
+                  setSelectedNeighborhoods(value ? [value] : []);
                 }}
               >
-                {neighborhoods.length === 0 ? (
-                  <option value="">Loading...</option>
-                ) : (
-                  neighborhoods.map(neighborhood => (
-                    <option key={neighborhood.id} value={neighborhood.id}>
-                      {neighborhood.name}
-                    </option>
-                  ))
-                )}
+                <option value="">All Neighborhoods</option>
+                {neighborhoods.map(neighborhood => (
+                  <option key={neighborhood.id} value={neighborhood.id}>
+                    {neighborhood.name}
+                  </option>
+                ))}
               </select>
             </div>
 
