@@ -137,49 +137,73 @@
   }
 }
 
-.inline-filters .neighborhood-search {
-  width: 100%;
-  padding: 0.55rem 0.75rem;
-  padding-top: 0.65rem;
+/* Neighborhood Dropdown Container - wraps input and chips */
+.neighborhood-dropdown-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.375rem;
+  padding: 0.375rem;
   border: 1px solid #d1d5db;
   border-radius: 6px;
-  font-size: 0.875rem;
   background: white;
+  min-height: 44px;
+  max-height: 110px; /* 2.5x normal height (44px * 2.5) */
+  max-width: 360px; /* 1.5x normal width (240px * 1.5) */
+  overflow-y: auto;
+  overflow-x: hidden;
   cursor: text;
   transition: border-color 0.2s;
-  min-height: 44px;
 }
 
-.inline-filters .neighborhood-search:hover {
+.neighborhood-dropdown-container:hover {
   border-color: #9ca3af;
 }
 
-.inline-filters .neighborhood-search:focus {
-  outline: none;
+.neighborhood-dropdown-container:focus-within {
   border-color: #5b21b6;
   box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
 }
 
-/* Selected Neighborhood Chips */
+.inline-filters .neighborhood-search {
+  flex: 1 1 auto;
+  min-width: 100px;
+  padding: 0.25rem 0.375rem;
+  border: none;
+  border-radius: 0;
+  font-size: 0.875rem;
+  background: transparent;
+  cursor: text;
+  outline: none;
+}
+
+.inline-filters .neighborhood-search:hover {
+  border-color: transparent;
+}
+
+.inline-filters .neighborhood-search:focus {
+  outline: none;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+/* Selected Neighborhood Chips - inside container */
 .selected-neighborhoods-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
+  display: contents;
 }
 
 .neighborhood-chip {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.375rem 0.75rem;
+  gap: 0.25rem;
+  padding: 0.25rem 0.5rem;
   background: #31135D;
   color: white;
-  border-radius: 6px;
-  font-size: 0.8125rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
   font-weight: 500;
-  line-height: 1.2;
+  line-height: 1;
+  white-space: nowrap;
   transition: all 0.2s ease;
   animation: chipFadeIn 0.2s ease;
 }
@@ -205,17 +229,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   background: rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   cursor: pointer;
   transition: background 0.2s ease;
-  font-size: 12px;
+  font-size: 10px;
   line-height: 1;
   padding: 0;
   border: none;
   color: white;
+  flex-shrink: 0;
 }
 
 .neighborhood-chip-remove:hover {
@@ -240,8 +265,8 @@
   padding: 0.5rem;
 }
 
-/* Show dropdown when search input is focused, hovering over list, or parent has focus-within */
-.neighborhood-search:focus ~ .neighborhood-list,
+/* Show dropdown when container has focus, hovering over list, or parent has focus-within */
+.neighborhood-dropdown-container:focus-within ~ .neighborhood-list,
 .neighborhood-list:hover,
 .neighborhoods-group:focus-within .neighborhood-list {
   display: block;
@@ -867,30 +892,45 @@
     z-index: 500;
   }
 
-  /* Show neighborhood list when search input is focused, hovering, or parent has focus-within */
-  .inline-filters .neighborhood-search:focus ~ .neighborhood-list,
+  /* Show neighborhood list when container has focus, hovering, or parent has focus-within */
+  .inline-filters .neighborhood-dropdown-container:focus-within ~ .neighborhood-list,
   .inline-filters .neighborhood-list:hover,
   .inline-filters .neighborhoods-group:focus-within .neighborhood-list {
     display: block;
   }
 
-  /* Improve neighborhood search input on mobile */
-  .inline-filters .neighborhood-search {
+  /* Neighborhood dropdown container on mobile */
+  .inline-filters .neighborhood-dropdown-container {
     width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
+    max-width: 100%; /* Full width on mobile */
+    max-height: 110px;
+    padding: 0.5rem;
     border: 1px solid #d1d5db;
     border-radius: 8px;
     background: white;
     min-height: 44px;
+  }
+
+  .inline-filters .neighborhood-dropdown-container:focus-within {
+    border-color: #5b21b6;
+    box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
+  }
+
+  /* Improve neighborhood search input on mobile */
+  .inline-filters .neighborhood-search {
+    flex: 1 1 auto;
+    min-width: 80px;
+    padding: 0.25rem 0.5rem;
+    font-size: 1rem;
+    border: none;
+    background: transparent;
     cursor: text;
-    transition: border-color 0.2s;
   }
 
   .inline-filters .neighborhood-search:focus {
     outline: none;
-    border-color: #5b21b6;
-    box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
+    border-color: transparent;
+    box-shadow: none;
   }
 
   .map-header {

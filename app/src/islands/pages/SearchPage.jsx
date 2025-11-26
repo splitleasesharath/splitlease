@@ -159,33 +159,40 @@ function NeighborhoodDropdownFilter({
   return (
     <div className="filter-group compact neighborhoods-group">
       <label htmlFor={inputId}>Refine Neighborhood(s)</label>
-      <input
-        type="text"
-        id={inputId}
-        placeholder="Search neighborhoods..."
-        className="neighborhood-search"
-        value={neighborhoodSearch}
-        onChange={(e) => onNeighborhoodSearchChange(e.target.value)}
-      />
+      <div className="neighborhood-dropdown-container">
+        <input
+          type="text"
+          id={inputId}
+          placeholder={selectedNeighborhoods.length > 0 ? "" : "Search neighborhoods..."}
+          className="neighborhood-search"
+          value={neighborhoodSearch}
+          onChange={(e) => onNeighborhoodSearchChange(e.target.value)}
+        />
+        {selectedNeighborhoods.length > 0 && (
+          <div className="selected-neighborhoods-chips">
+            {selectedNeighborhoods.map(id => {
+              const neighborhood = neighborhoods.find(n => n.id === id);
+              if (!neighborhood) return null;
 
-      <div className="selected-neighborhoods-chips">
-        {selectedNeighborhoods.map(id => {
-          const neighborhood = neighborhoods.find(n => n.id === id);
-          if (!neighborhood) return null;
-
-          return (
-            <div key={id} className="neighborhood-chip">
-              <span>{neighborhood.name}</span>
-              <button
-                className="neighborhood-chip-remove"
-                onClick={() => handleRemoveNeighborhood(id)}
-                aria-label={`Remove ${neighborhood.name}`}
-              >
-                ×
-              </button>
-            </div>
-          );
-        })}
+              return (
+                <div key={id} className="neighborhood-chip">
+                  <span>{neighborhood.name}</span>
+                  <button
+                    type="button"
+                    className="neighborhood-chip-remove"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveNeighborhood(id);
+                    }}
+                    aria-label={`Remove ${neighborhood.name}`}
+                  >
+                    ×
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       <div className="neighborhood-list">
