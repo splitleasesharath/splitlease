@@ -1686,6 +1686,7 @@ export default function SearchPage() {
                       </a>
                       <a href="/why-split-lease">Understand Split Lease</a>
                       <a href="/faq">Explore FAQs</a>
+                      <a href="/help-center">Support Centre</a>
                     </div>
                   )}
                 </>
