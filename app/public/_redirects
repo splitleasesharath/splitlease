@@ -28,6 +28,11 @@
 # Handle FAQ page
 /faq.html  /faq.html  200
 
+# Handle Help Center pages
+/help-center  /help-center.html  200
+/help-center/  /help-center.html  200
+/help-center/*  /help-center-category.html  200
+
 # Handle policies page
 /policies.html  /policies.html  200
 

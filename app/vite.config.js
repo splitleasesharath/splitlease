@@ -97,6 +97,16 @@ export default defineConfig({
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/self-listing.html' + queryString;
           }
+          // Handle help-center routes
+          else if (url === '/help-center' || url === '/help-center/') {
+            req.url = '/public/help-center.html';
+          } else if (url.startsWith('/help-center/') && !url.includes('.')) {
+            // Handle category pages like /help-center/guests, /help-center/hosts, etc.
+            const pathAfterPrefix = url.substring('/help-center'.length);
+            req.url = '/public/help-center-category.html' + pathAfterPrefix;
+          } else if (url.startsWith('/help-center.html')) {
+            req.url = '/public/help-center.html' + (url.substring('/help-center.html'.length) || '');
+          }
 
           next();
         });
@@ -183,6 +193,16 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/self-listing.html' + queryString;
+          }
+          // Handle help-center routes
+          else if (url === '/help-center' || url === '/help-center/') {
+            req.url = '/help-center.html';
+          } else if (url.startsWith('/help-center/') && !url.includes('.')) {
+            // Handle category pages like /help-center/guests, /help-center/hosts, etc.
+            const pathAfterPrefix = url.substring('/help-center'.length);
+            req.url = '/help-center-category.html' + pathAfterPrefix;
+          } else if (url.startsWith('/help-center.html')) {
+            req.url = '/help-center.html' + (url.substring('/help-center.html'.length) || '');
           }
 
           next();
@@ -331,7 +351,9 @@ export default defineConfig({
         'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
         careers: resolve(__dirname, 'public/careers.html'),
         'account-profile': resolve(__dirname, 'public/account-profile.html'),
-        'self-listing': resolve(__dirname, 'public/self-listing.html')
+        'self-listing': resolve(__dirname, 'public/self-listing.html'),
+        'help-center': resolve(__dirname, 'public/help-center.html'),
+        'help-center-category': resolve(__dirname, 'public/help-center-category.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public
