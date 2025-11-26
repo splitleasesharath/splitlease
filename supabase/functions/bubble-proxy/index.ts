@@ -10,9 +10,9 @@
  * - create_listing: Create new listing (with Supabase sync) - NO AUTH REQUIRED
  * - get_listing: Fetch listing data from Bubble - NO AUTH REQUIRED
  * - send_message: Send message to host (no sync) - NO AUTH REQUIRED
+ * - signup_ai: AI-powered signup (atomic sync) - NO AUTH REQUIRED
  * - upload_photos: Upload listing photos (atomic sync)
  * - submit_referral: Submit referral (atomic sync)
- * - signup_ai: AI-powered signup (atomic sync)
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -34,7 +34,7 @@ import { handleAiSignup } from './handlers/signup.ts';
 console.log('[bubble-proxy] Edge Function started');
 
 // Actions that don't require authentication
-const PUBLIC_ACTIONS = ['create_listing', 'get_listing', 'send_message'];
+const PUBLIC_ACTIONS = ['create_listing', 'get_listing', 'send_message', 'signup_ai'];
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
