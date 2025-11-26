@@ -1,0 +1,256 @@
+/**
+ * Host Schedule Selector Component Styles
+ * Exact specifications from Bubble implementation
+ * Uses 'hss-' prefix to avoid conflicts
+ */
+
+/* Root container */
+.hss-host-schedule-selector {
+  display: inline-block;
+  border: 2px double #6B6B6B;
+  border-radius: 5px;
+  padding: 0;
+  min-height: 42px;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+/* Nights grid container */
+.hss-nights-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 28px);
+  grid-template-rows: 28px;
+  gap: 0;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #FFFFFF;
+  border-radius: 5px;
+}
+
+/* Individual night cell - Default state */
+.hss-night-cell {
+  width: 28px;
+  height: 28px;
+  background-color: #B2B2B2;
+  border: 1px solid #9D9D9D;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 5px 0;
+  box-sizing: border-box;
+  transition: background-color 500ms ease,
+              box-shadow 500ms ease,
+              color 500ms ease;
+  position: relative;
+  user-select: none;
+}
+
+/* Night letter text */
+.hss-night-letter {
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 18px;
+  color: #6D6D6D;
+  line-height: 1;
+  text-align: center;
+  user-select: none;
+  transition: color 500ms ease;
+  pointer-events: none;
+}
+
+/* Hover state (only for clickable cells) */
+.hss-night-cell:not(.hss-unavailable):not(.hss-disabled):hover {
+  opacity: 0.9;
+  cursor: pointer;
+}
+
+/* Selected state */
+.hss-night-cell.hss-selected {
+  background-color: #4B47CE;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.hss-night-cell.hss-selected .hss-night-letter {
+  color: #FFFFFF;
+}
+
+/* Unavailable state */
+.hss-night-cell.hss-unavailable {
+  background-color: #B2B2B2;
+  box-shadow: inset 0 0 0 2px #7D6565;
+  cursor: not-allowed;
+}
+
+.hss-night-cell.hss-unavailable .hss-night-letter {
+  color: #6D6D6D;
+}
+
+/* Disabled/Not clickable state */
+.hss-night-cell.hss-disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Non-contiguous warning state (proposal mode) */
+.hss-night-cell.hss-selected.hss-non-contiguous {
+  background-color: #4B47CE;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Preview mode specific styles */
+.hss-preview-mode .hss-night-cell.hss-unavailable {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Step-by-step guide mode specific styles */
+.hss-step-by-step-mode .hss-night-cell.hss-selected {
+  background-color: #4B47CE;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.hss-step-by-step-mode .hss-night-cell.hss-selected .hss-night-letter {
+  color: #FFFFFF;
+}
+
+/* Proposal mode specific styles */
+.hss-proposal-mode .hss-night-cell.hss-selected {
+  background-color: #4B47CE;
+  box-shadow: 0 0 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.hss-proposal-mode .hss-night-cell.hss-selected .hss-night-letter {
+  color: #FFFFFF;
+}
+
+/* Tooltip styling */
+.hss-night-cell[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  font-family: 'Lato', sans-serif;
+  white-space: nowrap;
+  margin-bottom: 5px;
+  z-index: 1000;
+  pointer-events: none;
+}
+
+/* Tooltip arrow (optional enhancement) */
+.hss-night-cell[data-tooltip]:hover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: rgba(0, 0, 0, 0.8);
+  margin-bottom: 1px;
+  z-index: 1001;
+  pointer-events: none;
+}
+
+/* Prevent tooltip on disabled cells */
+.hss-night-cell.hss-disabled[data-tooltip]:hover::after,
+.hss-night-cell.hss-disabled[data-tooltip]:hover::before {
+  display: none;
+}
+
+/* Animation for selection */
+@keyframes hss-select-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.hss-night-cell.hss-selected {
+  animation: hss-select-pulse 0.3s ease-out;
+}
+
+/* Active state (when clicking) */
+.hss-night-cell:active:not(.hss-disabled):not(.hss-unavailable) {
+  transform: scale(0.95);
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 320px) {
+  .hss-nights-grid {
+    grid-template-columns: repeat(7, 24px);
+    grid-template-rows: 24px;
+  }
+
+  .hss-night-cell {
+    width: 24px;
+    height: 24px;
+  }
+
+  .hss-night-letter {
+    font-size: 16px;
+  }
+}
+
+/* Mobile touch optimization */
+@media (max-width: 768px) {
+  .hss-night-cell {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    touch-action: manipulation;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .hss-night-cell {
+    border-width: 2px;
+  }
+
+  .hss-night-cell.hss-selected {
+    border-color: #FFFFFF;
+  }
+
+  .hss-night-cell.hss-unavailable {
+    border-color: #000000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .hss-night-cell {
+    transition: none;
+    animation: none;
+  }
+
+  .hss-night-letter {
+    transition: none;
+  }
+}
+
+/* Focus styles for accessibility */
+.hss-night-cell:focus-visible {
+  outline: 2px solid #4B47CE;
+  outline-offset: 2px;
+}
+
+.hss-night-cell.hss-unavailable:focus-visible {
+  outline: 2px solid #7D6565;
+}
+
+/* Performance optimization */
+.hss-night-cell {
+  contain: layout style paint;
+  will-change: background-color, box-shadow;
+}
