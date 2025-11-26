@@ -122,6 +122,16 @@ export default function PoliciesPage() {
   const handlePolicyClick = (policy) => {
     setCurrentPolicy(policy);
     window.location.hash = policy.slug;
+
+    // Only scroll if the document header is not visible
+    const header = document.querySelector('.policies-content-header');
+    if (header) {
+      const rect = header.getBoundingClientRect();
+      const isVisible = rect.top >= 0 && rect.top < window.innerHeight;
+      if (!isVisible) {
+        header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
   };
 
   const scrollToTop = () => {
