@@ -90,3 +90,6 @@ dump/
 # Planning and documentation (not tracked)
 plan/
 !plan/README.md
+
+# Temporary directories
+.temp/

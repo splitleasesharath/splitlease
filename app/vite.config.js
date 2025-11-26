@@ -35,11 +35,10 @@ export default defineConfig({
             req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
-          else if (url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
-            // Preserve the full path including listing ID
-            // e.g., /view-split-lease/LISTING_ID or /view-split-lease/LISTING_ID?query=value
-            const pathAfterPrefix = url.substring('/view-split-lease'.length);
-            req.url = '/public/view-split-lease.html' + pathAfterPrefix;
+          // Also handle exact /view-split-lease path (no trailing slash or query)
+          else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
+            // Serve the HTML file - the JS will extract the listing ID from window.location
+            req.url = '/public/view-split-lease.html';
           }
           // Legacy support for old URL structure
           else if (url.startsWith('/view-split-lease.html')) {
@@ -97,6 +96,16 @@ export default defineConfig({
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/self-listing.html' + queryString;
           }
+          // Handle help-center routes
+          else if (url === '/help-center' || url === '/help-center/') {
+            req.url = '/public/help-center.html';
+          } else if (url.startsWith('/help-center/') && !url.includes('.')) {
+            // Handle category pages like /help-center/guests, /help-center/hosts, etc.
+            const pathAfterPrefix = url.substring('/help-center'.length);
+            req.url = '/public/help-center-category.html' + pathAfterPrefix;
+          } else if (url.startsWith('/help-center.html')) {
+            req.url = '/public/help-center.html' + (url.substring('/help-center.html'.length) || '');
+          }
 
           next();
         });
@@ -122,11 +131,10 @@ export default defineConfig({
             req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
-          else if (url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
-            // Preserve the full path including listing ID
-            // e.g., /view-split-lease/LISTING_ID or /view-split-lease/LISTING_ID?query=value
-            const pathAfterPrefix = url.substring('/view-split-lease'.length);
-            req.url = '/view-split-lease.html' + pathAfterPrefix;
+          // Also handle exact /view-split-lease path (no trailing slash or query)
+          else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
+            // Serve the HTML file - the JS will extract the listing ID from window.location
+            req.url = '/view-split-lease.html';
           }
           // Legacy support for old URL structure
           else if (url.startsWith('/view-split-lease.html')) {
@@ -183,6 +191,16 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/self-listing.html' + queryString;
+          }
+          // Handle help-center routes
+          else if (url === '/help-center' || url === '/help-center/') {
+            req.url = '/help-center.html';
+          } else if (url.startsWith('/help-center/') && !url.includes('.')) {
+            // Handle category pages like /help-center/guests, /help-center/hosts, etc.
+            const pathAfterPrefix = url.substring('/help-center'.length);
+            req.url = '/help-center-category.html' + pathAfterPrefix;
+          } else if (url.startsWith('/help-center.html')) {
+            req.url = '/help-center.html' + (url.substring('/help-center.html'.length) || '');
           }
 
           next();
@@ -283,6 +301,48 @@ export default defineConfig({
           console.log('Created _internal/listing-view for Cloudflare routing');
         }
 
+        // Create help-center internal files to avoid Cloudflare's "pretty URL" normalization
+        const helpCenterSource = path.join(distDir, 'help-center.html');
+        const helpCenterDest = path.join(internalDir, 'help-center-view');
+        if (fs.existsSync(helpCenterSource)) {
+          fs.copyFileSync(helpCenterSource, helpCenterDest);
+          console.log('Created _internal/help-center-view for Cloudflare routing');
+        }
+
+        const helpCenterCategorySource = path.join(distDir, 'help-center-category.html');
+        const helpCenterCategoryDest = path.join(internalDir, 'help-center-category-view');
+        if (fs.existsSync(helpCenterCategorySource)) {
+          fs.copyFileSync(helpCenterCategorySource, helpCenterCategoryDest);
+          console.log('Created _internal/help-center-category-view for Cloudflare routing');
+        }
+
+        // Copy images directory to dist root
+        const imagesSource = path.resolve(__dirname, 'public/images');
+        const imagesDest = path.join(distDir, 'images');
+        if (fs.existsSync(imagesSource)) {
+          const copyDirectory = (src, dest) => {
+            if (!fs.existsSync(dest)) {
+              fs.mkdirSync(dest, { recursive: true });
+            }
+
+            const entries = fs.readdirSync(src, { withFileTypes: true });
+
+            for (const entry of entries) {
+              const srcPath = path.join(src, entry.name);
+              const destPath = path.join(dest, entry.name);
+
+              if (entry.isDirectory()) {
+                copyDirectory(srcPath, destPath);
+              } else {
+                fs.copyFileSync(srcPath, destPath);
+              }
+            }
+          };
+
+          copyDirectory(imagesSource, imagesDest);
+          console.log('Copied images directory to dist root');
+        }
+
         // Copy functions directory to dist root for Cloudflare Pages Functions
         const functionsSource = path.resolve(__dirname, 'functions');
         const functionsDest = path.join(distDir, 'functions');
@@ -313,6 +373,12 @@ export default defineConfig({
     }
   ],
   publicDir: false, // Disable automatic public directory copying
+  server: {
+    host: '127.0.0.1', // Ensure IPv4 binding for localhost
+  },
+  preview: {
+    host: '127.0.0.1',
+  },
   build: {
     outDir: 'dist',
     rollupOptions: {
@@ -331,7 +397,9 @@ export default defineConfig({
         'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
         careers: resolve(__dirname, 'public/careers.html'),
         'account-profile': resolve(__dirname, 'public/account-profile.html'),
-        'self-listing': resolve(__dirname, 'public/self-listing.html')
+        'self-listing': resolve(__dirname, 'public/self-listing.html'),
+        'help-center': resolve(__dirname, 'public/help-center.html'),
+        'help-center-category': resolve(__dirname, 'public/help-center-category.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

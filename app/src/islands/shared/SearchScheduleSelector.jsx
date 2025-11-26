@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
-import { motion } from 'framer-motion';
 
 // ============================================================================
 // STYLED COMPONENTS
@@ -52,7 +51,7 @@ const DaysGrid = styled.div`
   }
 `;
 
-const DayCell = styled(motion.button)`
+const DayCell = styled.button`
   width: 36px;
   height: 36px;
   min-width: 36px;
@@ -68,7 +67,7 @@ const DayCell = styled(motion.button)`
   border-radius: 10px;
   padding: 0;
   cursor: ${props => props.$isDragging ? 'grabbing' : 'pointer'};
-  transition: transform 0.2s ease-in-out, background 0.2s ease-in-out;
+  transition: transform 0.15s ease-in-out, background 0.2s ease-in-out;
   box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
 
@@ -91,11 +90,11 @@ const DayCell = styled(motion.button)`
   `}
 
   &:hover {
-    transform: translateY(-2px);
+    transform: scale(1.05) translateY(-2px);
   }
 
   &:active {
-    transform: translateY(0);
+    transform: scale(0.95);
   }
 
   &:focus-visible {
@@ -682,9 +681,6 @@ export default function SearchScheduleSelector({
               }}
               onMouseEnter={() => handleMouseEnter(index)}
               onMouseUp={() => handleMouseUp(index)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.2 }}
               role="button"
               aria-pressed={selectedDays.has(index)}
               aria-label={`Select ${day.fullName}`}

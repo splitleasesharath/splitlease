@@ -454,6 +454,12 @@ function SupportSection() {
       label: 'Browse our FAQs',
       link: FAQ_URL,
     },
+    {
+      icon: '/images/support-centre-icon.svg',
+      label: 'Support Centre',
+      link: '/help-center',
+      isInternal: true,
+    },
   ];
 
   return (
@@ -461,9 +467,14 @@ function SupportSection() {
       <h2>Get personal support</h2>
       <div className="support-options">
         {supportOptions.map((option, index) => (
-          <a key={index} href={option.link} target="_blank" rel="noopener noreferrer" className="support-card-link">
+          <a
+            key={index}
+            href={option.link}
+            {...(option.isInternal ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
+            className="support-card-link"
+          >
             <div className="support-card">
-              <div className={`support-icon ${index === 0 ? 'chat' : 'faq'}`}>
+              <div className="support-icon">
                 <img src={option.icon} alt={option.label} />
               </div>
               <p>{option.label}</p>

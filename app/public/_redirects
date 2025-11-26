@@ -28,6 +28,13 @@
 # Handle FAQ page
 /faq.html  /faq.html  200
 
+# Handle Help Center pages
+# Using internal files without .html extension to avoid Cloudflare's "pretty URL" normalization
+# which causes 308 redirects and redirect loops
+/help-center  /_internal/help-center-view  200
+/help-center/  /_internal/help-center-view  200
+/help-center/*  /_internal/help-center-category-view  200
+
 # Handle policies page
 /policies.html  /policies.html  200
 

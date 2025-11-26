@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Headset band -->
+  <path d="M12 32C12 20.954 20.954 12 32 12C43.046 12 52 20.954 52 32V36" stroke="#5B21B6" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- Left ear cup -->
+  <rect x="8" y="30" width="10" height="16" rx="3" fill="#5B21B6"/>
+
+  <!-- Right ear cup -->
+  <rect x="46" y="30" width="10" height="16" rx="3" fill="#5B21B6"/>
+
+  <!-- Microphone arm -->
+  <path d="M46 42C46 42 42 44 42 48V52" stroke="#5B21B6" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- Microphone head -->
+  <circle cx="42" cy="54" r="4" fill="#5B21B6"/>
+
+  <!-- Inner ear detail left -->
+  <rect x="11" y="34" width="4" height="8" rx="1" fill="#7C3AED"/>
+
+  <!-- Inner ear detail right -->
+  <rect x="49" y="34" width="4" height="8" rx="1" fill="#7C3AED"/>
+</svg>

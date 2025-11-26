@@ -329,13 +329,26 @@ function FilterPanel({
             </select>
           </div>
 
-          {/* Neighborhood Multi-Select - Checkbox list */}
-          <NeighborhoodCheckboxList
-            id="neighborhoodSelectMobile"
-            neighborhoods={neighborhoods}
-            selectedNeighborhoods={selectedNeighborhoods}
-            onNeighborhoodsChange={onNeighborhoodsChange}
-          />
+          {/* Neighborhood Dropdown */}
+          <div className="filter-group compact">
+            <label htmlFor="neighborhoodSelectMobile">Neighborhood</label>
+            <select
+              id="neighborhoodSelectMobile"
+              className="filter-select"
+              value={selectedNeighborhoods[0] || ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                onNeighborhoodsChange(value ? [value] : []);
+              }}
+            >
+              <option value="">All Neighborhoods</option>
+              {neighborhoods.map(neighborhood => (
+                <option key={neighborhood.id} value={neighborhood.id}>
+                  {neighborhood.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -1821,6 +1834,7 @@ export default function SearchPage() {
                       </a>
                       <a href="/why-split-lease">Understand Split Lease</a>
                       <a href="/faq">Explore FAQs</a>
+                      <a href="/help-center">Support Centre</a>
                     </div>
                   )}
                 </>

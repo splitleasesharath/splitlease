@@ -21,6 +21,8 @@ MAX_BUILD_ATTEMPTS: 3
 
 ### Pre-Deployment: Commit All Changes
 
+0. Kill all existing npm servers
+
 1. Navigate to the project root:
    - Run `cd $(git rev-parse --show-toplevel)` to ensure you're in the git root
 
