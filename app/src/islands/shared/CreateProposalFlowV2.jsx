@@ -122,6 +122,10 @@ export default function CreateProposalFlowV2({
         valid: pricingBreakdown?.valid
       }
     });
+
+    if (hasSavedDraft) {
+      console.log('📂 Loaded saved proposal draft from localStorage:', savedDraft);
+    }
   }, []);
 
   // Convert day objects to day names for compatibility
@@ -260,6 +264,30 @@ export default function CreateProposalFlowV2({
     }
   }, [internalPricingBreakdown, internalDaysSelected, proposalData.reservationSpan]);
 
+  // Save user details to localStorage when they change
+  useEffect(() => {
+    if (!listingId) return;
+
+    const userDetailsToSave = {
+      needForSpace: proposalData.needForSpace,
+      aboutYourself: proposalData.aboutYourself,
+      hasUniqueRequirements: proposalData.hasUniqueRequirements,
+      uniqueRequirements: proposalData.uniqueRequirements
+    };
+
+    // Only save if there's actual content to save
+    if (userDetailsToSave.needForSpace || userDetailsToSave.aboutYourself) {
+      saveProposalDraft(listingId, userDetailsToSave);
+      console.log('💾 Saved proposal draft to localStorage');
+    }
+  }, [
+    listingId,
+    proposalData.needForSpace,
+    proposalData.aboutYourself,
+    proposalData.hasUniqueRequirements,
+    proposalData.uniqueRequirements
+  ]);
+
   const updateProposalData = (field, value) => {
     // Handle full pricing breakdown object from DaysSelectionSection
     if (field === 'pricingBreakdown' && value && typeof value === 'object') {
@@ -369,6 +397,11 @@ export default function CreateProposalFlowV2({
       ...proposalData,
       daysSelectedObjects: dayNamesToObjects(proposalData.daysSelected)
     };
+
+    // Clear draft from localStorage on successful submission
+    clearProposalDraft(listingId);
+    console.log('🗑️ Cleared proposal draft from localStorage');
+
     onSubmit(submissionData);
   };
 
