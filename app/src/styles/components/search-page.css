@@ -32,9 +32,10 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   background: #ffffff;
   border-right: 1px solid #e5e7eb;
+  position: relative;
 }
 
 /* Inline Filters - All filters in single horizontal container */
@@ -49,6 +50,8 @@
   background: white;
   border-bottom: 1px solid #e5e7eb;
   overflow: visible;
+  position: relative;
+  z-index: 200;
 }
 
 .inline-filters .filter-group {
@@ -116,6 +119,7 @@
 .inline-filters .neighborhoods-group {
   position: relative;
   min-width: 240px;
+  z-index: 100;
 }
 
 /* Desktop: Force neighborhood and borough to wrap by making neighborhood wider */
@@ -218,19 +222,20 @@
   left: 0;
   right: 0;
   margin-top: 0.25rem;
-  max-height: 250px;
+  max-height: 400px;
   overflow-y: auto;
   background: white;
-  border: 1px solid #e5e7eb;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  z-index: 100;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 500;
   padding: 0.5rem;
 }
 
-/* Show dropdown when search input is focused or when hovering over the list */
+/* Show dropdown when search input is focused, hovering over list, or parent has focus-within */
 .neighborhood-search:focus ~ .neighborhood-list,
-.neighborhood-list:hover {
+.neighborhood-list:hover,
+.neighborhoods-group:focus-within .neighborhood-list {
   display: block;
 }
 
@@ -278,6 +283,7 @@
   overflow-x: hidden;
   padding: 1rem 1.5rem;
   background: #f9fafb;
+  min-height: 0;
 }
 
 /* Listings Container */
@@ -846,15 +852,17 @@
   /* Neighborhood list improvements on mobile - COLLAPSIBLE */
   .inline-filters .neighborhood-list {
     display: none; /* Hidden by default - collapsible */
-    max-height: 200px;
+    max-height: 300px;
     border-radius: 8px;
     margin-top: 0.5rem;
     overflow-y: auto;
+    z-index: 500;
   }
 
-  /* Show neighborhood list when search input is focused or when hovering */
+  /* Show neighborhood list when search input is focused, hovering, or parent has focus-within */
   .inline-filters .neighborhood-search:focus ~ .neighborhood-list,
-  .inline-filters .neighborhood-list:hover {
+  .inline-filters .neighborhood-list:hover,
+  .inline-filters .neighborhoods-group:focus-within .neighborhood-list {
     display: block;
   }
 
