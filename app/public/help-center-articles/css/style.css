@@ -1151,3 +1151,105 @@ a:focus-visible {
     scroll-behavior: auto !important;
   }
 }
+
+/* ===================================
+   MAIN SITE HEADER (for article pages)
+   =================================== */
+.sl-main-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #31135d;
+  z-index: 1000;
+  height: 70px;
+  display: flex;
+  align-items: center;
+}
+
+.sl-header-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sl-logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  gap: 10px;
+}
+
+.sl-logo-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+
+.sl-logo-text {
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sl-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.sl-nav-link {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.sl-nav-link:hover {
+  color: white;
+}
+
+.sl-nav-link.sl-nav-active {
+  color: white;
+}
+
+.sl-nav-btn {
+  background: white;
+  color: #31135d;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.sl-nav-btn:hover {
+  background: #f0f0f0;
+  transform: translateY(-1px);
+}
+
+/* Adjust body padding for fixed header */
+body {
+  padding-top: 70px;
+}
+
+/* Hide old header */
+.header {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .sl-nav-link {
+    display: none;
+  }
+
+  .sl-header-container {
+    padding: 0 16px;
+  }
+}
