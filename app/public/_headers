@@ -7,6 +7,16 @@
 /view-split-lease/*
   Content-Type: text/html; charset=utf-8
 
+# Help Center pages - serve as HTML
+/help-center
+  Content-Type: text/html; charset=utf-8
+/help-center/*
+  Content-Type: text/html; charset=utf-8
+
+# Internal files (no extension) - serve as HTML
+/_internal/*
+  Content-Type: text/html; charset=utf-8
+
 # COMPLETELY DISABLE ALL CACHING
 
 # All routes - no cache

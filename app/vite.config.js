@@ -303,6 +303,48 @@ export default defineConfig({
           console.log('Created _internal/listing-view for Cloudflare routing');
         }
 
+        // Create help-center internal files to avoid Cloudflare's "pretty URL" normalization
+        const helpCenterSource = path.join(distDir, 'help-center.html');
+        const helpCenterDest = path.join(internalDir, 'help-center-view');
+        if (fs.existsSync(helpCenterSource)) {
+          fs.copyFileSync(helpCenterSource, helpCenterDest);
+          console.log('Created _internal/help-center-view for Cloudflare routing');
+        }
+
+        const helpCenterCategorySource = path.join(distDir, 'help-center-category.html');
+        const helpCenterCategoryDest = path.join(internalDir, 'help-center-category-view');
+        if (fs.existsSync(helpCenterCategorySource)) {
+          fs.copyFileSync(helpCenterCategorySource, helpCenterCategoryDest);
+          console.log('Created _internal/help-center-category-view for Cloudflare routing');
+        }
+
+        // Copy images directory to dist root
+        const imagesSource = path.resolve(__dirname, 'public/images');
+        const imagesDest = path.join(distDir, 'images');
+        if (fs.existsSync(imagesSource)) {
+          const copyDirectory = (src, dest) => {
+            if (!fs.existsSync(dest)) {
+              fs.mkdirSync(dest, { recursive: true });
+            }
+
+            const entries = fs.readdirSync(src, { withFileTypes: true });
+
+            for (const entry of entries) {
+              const srcPath = path.join(src, entry.name);
+              const destPath = path.join(dest, entry.name);
+
+              if (entry.isDirectory()) {
+                copyDirectory(srcPath, destPath);
+              } else {
+                fs.copyFileSync(srcPath, destPath);
+              }
+            }
+          };
+
+          copyDirectory(imagesSource, imagesDest);
+          console.log('Copied images directory to dist root');
+        }
+
         // Copy functions directory to dist root for Cloudflare Pages Functions
         const functionsSource = path.resolve(__dirname, 'functions');
         const functionsDest = path.join(distDir, 'functions');
