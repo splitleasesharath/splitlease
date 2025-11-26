@@ -45,20 +45,19 @@ export async function handleListingCreate(
   console.log('[Listing Handler] User email:', user_email || 'Not provided (logged out)');
 
   try {
-    // Atomic create-and-sync operation
-    // NOTE: Bubble Data API uses 'Listing' (the Bubble type name), not 'zat_listings'
-    const syncedListing = await syncService.createAndSync(
+    // Simple workflow: Create in Bubble and return the ID
+    // No need to fetch full data or sync to Supabase - frontend just needs the ID
+    const listingId = await syncService.triggerWorkflow(
       'listing_creation_in_code',  // Bubble workflow name
-      params,                      // Workflow parameters
-      'Listing',                   // Bubble object type (must match Bubble's type name)
-      'zat_listings'               // Supabase table
+      params                       // Workflow parameters
     );
 
-    console.log('[Listing Handler] ✅ Listing created and synced');
-    console.log('[Listing Handler] Listing ID:', syncedListing._id);
+    console.log('[Listing Handler] ✅ Listing created in Bubble');
+    console.log('[Listing Handler] Listing ID:', listingId);
     console.log('[Listing Handler] ========== SUCCESS ==========');
 
-    return syncedListing;
+    // Return the listing ID - frontend will use this to redirect to edit page
+    return { _id: listingId, listing_id: listingId };
   } catch (error) {
     console.error('[Listing Handler] ========== ERROR ==========');
     console.error('[Listing Handler] Failed to create listing:', error);
