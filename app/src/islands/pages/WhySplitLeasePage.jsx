@@ -1,8 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
-import { SEARCH_URL } from '../../lib/constants.js';
+import { SEARCH_URL, VIEW_LISTING_URL } from '../../lib/constants.js';
+import { supabase } from '../../lib/supabase.js';
+import { fetchPhotoUrls, parseJsonArray } from '../../lib/supabaseUtils.js';
+import { getNeighborhoodName, getBoroughName, initializeLookups } from '../../lib/dataLookups.js';
 
 export default function WhySplitLeasePage() {
   // Dynamic text rotation state
@@ -11,6 +14,12 @@ export default function WhySplitLeasePage() {
 
   // Schedule selector state - stores 0-based day indices from SearchScheduleSelector
   const [selectedDays, setSelectedDays] = useState([1, 2, 3]); // Monday, Tuesday, Wednesday by default (3 days = 2 nights minimum)
+
+  // Borough filter state
+  const [boroughs, setBoroughs] = useState([]);
+  const [selectedBorough, setSelectedBorough] = useState('all'); // 'all' or borough value like 'manhattan'
+  const [featuredListings, setFeaturedListings] = useState([]);
+  const [isLoadingListings, setIsLoadingListings] = useState(true);
 
   const scenarios = [
     { city: "Philadelphia", purpose: "work" },
@@ -22,6 +31,141 @@ export default function WhySplitLeasePage() {
     { city: "Stamford", purpose: "train" },
     { city: "Albany", purpose: "care" }
   ];
+
+  // Initialize data lookups and load boroughs on mount
+  useEffect(() => {
+    const init = async () => {
+      await initializeLookups();
+
+      // Load boroughs
+      try {
+        const { data, error } = await supabase
+          .from('zat_geo_borough_toplevel')
+          .select('_id, "Display Borough"')
+          .order('"Display Borough"', { ascending: true });
+
+        if (error) throw error;
+
+        const boroughList = data
+          .filter(b => b['Display Borough'] && b['Display Borough'].trim())
+          .map(b => ({
+            id: b._id,
+            name: b['Display Borough'].trim(),
+            value: b['Display Borough'].trim().toLowerCase()
+              .replace(/\s+county\s+nj/i, '')
+              .replace(/\s+/g, '-')
+          }))
+          // Only include main NYC boroughs
+          .filter(b => ['manhattan', 'brooklyn', 'queens', 'bronx', 'staten-island'].includes(b.value));
+
+        setBoroughs(boroughList);
+      } catch (err) {
+        console.error('Failed to load boroughs:', err);
+      }
+    };
+
+    init();
+  }, []);
+
+  // Fetch listings based on selected borough
+  const fetchFeaturedListings = useCallback(async () => {
+    if (boroughs.length === 0) return;
+
+    setIsLoadingListings(true);
+    try {
+      // Build query for active, complete listings
+      let query = supabase
+        .from('listing')
+        .select(`
+          _id,
+          "Name",
+          "Location - Borough",
+          "Location - Hood",
+          "Location - Address",
+          "Features - Photos",
+          "Features - Qty Bedrooms",
+          "Features - Qty Bathrooms",
+          "Features - Amenities In-Unit",
+          "Days Available (List of Days)",
+          "Standarized Minimum Nightly Price (Filter)"
+        `)
+        .eq('"Complete"', true)
+        .or('"Active".eq.true,"Active".is.null')
+        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null');
+
+      // Apply borough filter if not "all"
+      if (selectedBorough !== 'all') {
+        const borough = boroughs.find(b => b.value === selectedBorough);
+        if (borough) {
+          query = query.eq('"Location - Borough"', borough.id);
+        }
+      }
+
+      // Limit to 3 listings for the featured section
+      query = query.limit(3);
+
+      const { data: listings, error } = await query;
+
+      if (error) throw error;
+
+      if (!listings || listings.length === 0) {
+        setFeaturedListings([]);
+        setIsLoadingListings(false);
+        return;
+      }
+
+      // Collect all photo IDs for batch fetching
+      const allPhotoIds = [];
+      listings.forEach(listing => {
+        const photoIds = parseJsonArray(listing['Features - Photos']);
+        if (photoIds && photoIds.length > 0) {
+          allPhotoIds.push(...photoIds.slice(0, 1)); // Only first photo for card
+        }
+      });
+
+      // Fetch photo URLs
+      const photoMap = await fetchPhotoUrls(allPhotoIds);
+
+      // Transform listings
+      const transformedListings = listings.map(listing => {
+        const photoIds = parseJsonArray(listing['Features - Photos']);
+        const firstPhotoId = photoIds?.[0];
+        const photoUrl = firstPhotoId && photoMap[firstPhotoId]
+          ? photoMap[firstPhotoId]
+          : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
+
+        const neighborhoodName = getNeighborhoodName(listing['Location - Hood']);
+        const boroughName = getBoroughName(listing['Location - Borough']);
+        const location = [neighborhoodName, boroughName].filter(Boolean).join(', ') || 'New York, NY';
+
+        // Parse available days
+        const availableDays = parseJsonArray(listing['Days Available (List of Days)']) || [];
+
+        return {
+          id: listing._id,
+          title: listing['Name'] || 'NYC Space',
+          location,
+          image: photoUrl,
+          bedrooms: listing['Features - Qty Bedrooms'] || 0,
+          bathrooms: listing['Features - Qty Bathrooms'] || 0,
+          availableDays,
+          price: listing['Standarized Minimum Nightly Price (Filter)'] || 0
+        };
+      });
+
+      setFeaturedListings(transformedListings);
+    } catch (err) {
+      console.error('Failed to fetch featured listings:', err);
+      setFeaturedListings([]);
+    } finally {
+      setIsLoadingListings(false);
+    }
+  }, [boroughs, selectedBorough]);
+
+  // Fetch listings when borough changes
+  useEffect(() => {
+    fetchFeaturedListings();
+  }, [fetchFeaturedListings]);
 
   // Dynamic text rotation effect
   useEffect(() => {
@@ -253,119 +397,103 @@ export default function WhySplitLeasePage() {
           </div>
 
           <div className="category-filters">
-            <div className="filter-pill active">All Spaces</div>
-            <div className="filter-pill">Manhattan</div>
-            <div className="filter-pill">Brooklyn</div>
-            <div className="filter-pill">Queens</div>
-            <div className="filter-pill">Private Bedroom</div>
-            <div className="filter-pill">Entire Place</div>
+            <div
+              className={`filter-pill ${selectedBorough === 'all' ? 'active' : ''}`}
+              onClick={() => setSelectedBorough('all')}
+            >
+              All Spaces
+            </div>
+            {boroughs.map(borough => (
+              <div
+                key={borough.id}
+                className={`filter-pill ${selectedBorough === borough.value ? 'active' : ''}`}
+                onClick={() => setSelectedBorough(borough.value)}
+              >
+                {borough.name}
+              </div>
+            ))}
           </div>
 
           <div className="spaces-grid">
-            {/* Space Card 1 */}
-            <div className="space-card" onClick={() => window.location.href = SEARCH_URL}>
-              <div style={{ position: 'relative' }}>
-                <img src="https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop" alt="Modern Midtown Studio" className="space-image" />
-                <div className="space-badge">Verified</div>
+            {isLoadingListings ? (
+              // Loading skeleton
+              <>
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="space-card loading">
+                    <div className="space-image-skeleton"></div>
+                    <div className="space-info">
+                      <div className="skeleton-text title"></div>
+                      <div className="skeleton-text location"></div>
+                      <div className="skeleton-text features"></div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : featuredListings.length === 0 ? (
+              // No listings message
+              <div className="no-listings-message">
+                <p>No listings available in this area. Try selecting a different borough.</p>
               </div>
-              <div className="space-info">
-                <h3 className="space-title">Modern Midtown Studio</h3>
-                <div className="space-location">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#6B7280" strokeWidth="2"/>
-                    <circle cx="12" cy="9" r="2.5" stroke="#6B7280" strokeWidth="2"/>
-                  </svg>
-                  Midtown West
-                </div>
-                <div className="space-features">
-                  <span className="feature-tag">Storage Space</span>
-                  <span className="feature-tag">Dedicated Workspace</span>
-                  <span className="feature-tag">WiFi</span>
-                </div>
-                <div className="space-schedule">
-                  <span className="available-days">Mon-Wed Available</span>
-                  <div className="day-indicators">
-                    <div className="day-dot"></div>
-                    <div className="day-dot available"></div>
-                    <div className="day-dot available"></div>
-                    <div className="day-dot available"></div>
-                    <div className="day-dot"></div>
-                    <div className="day-dot"></div>
-                    <div className="day-dot"></div>
+            ) : (
+              // Dynamic listing cards
+              featuredListings.map(listing => (
+                <div
+                  key={listing.id}
+                  className="space-card"
+                  onClick={() => window.location.href = `${VIEW_LISTING_URL}/${listing.id}`}
+                >
+                  <div style={{ position: 'relative' }}>
+                    <img
+                      src={listing.image}
+                      alt={listing.title}
+                      className="space-image"
+                      onError={(e) => {
+                        e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
+                      }}
+                    />
+                    <div className="space-badge">Verified</div>
+                  </div>
+                  <div className="space-info">
+                    <h3 className="space-title">{listing.title}</h3>
+                    <div className="space-location">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#6B7280" strokeWidth="2"/>
+                        <circle cx="12" cy="9" r="2.5" stroke="#6B7280" strokeWidth="2"/>
+                      </svg>
+                      {listing.location}
+                    </div>
+                    <div className="space-features">
+                      <span className="feature-tag">{listing.bedrooms} bed{listing.bedrooms !== 1 ? 's' : ''}</span>
+                      <span className="feature-tag">{listing.bathrooms} bath{listing.bathrooms !== 1 ? 's' : ''}</span>
+                      <span className="feature-tag">Storage</span>
+                    </div>
+                    <div className="space-schedule">
+                      <span className="available-days">
+                        {listing.availableDays.length > 0
+                          ? `${listing.availableDays.length} nights available`
+                          : 'Schedule flexible'}
+                      </span>
+                      <div className="day-indicators">
+                        {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((_, idx) => {
+                          // Check if this day index is in available days
+                          // Note: availableDays might be day names or indices
+                          const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                          const isAvailable = listing.availableDays.some(d =>
+                            d === dayNames[idx] || d === idx || d === String(idx)
+                          );
+                          return (
+                            <div
+                              key={idx}
+                              className={`day-dot ${isAvailable ? 'available' : ''}`}
+                            ></div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            {/* Space Card 2 */}
-            <div className="space-card" onClick={() => window.location.href = SEARCH_URL}>
-              <div style={{ position: 'relative' }}>
-                <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop" alt="Brooklyn Heights 1BR" className="space-image" />
-                <div className="space-badge">Verified</div>
-              </div>
-              <div className="space-info">
-                <h3 className="space-title">Brooklyn Heights 1BR</h3>
-                <div className="space-location">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#6B7280" strokeWidth="2"/>
-                    <circle cx="12" cy="9" r="2.5" stroke="#6B7280" strokeWidth="2"/>
-                  </svg>
-                  Brooklyn Heights
-                </div>
-                <div className="space-features">
-                  <span className="feature-tag">Storage Space</span>
-                  <span className="feature-tag">Office Setup</span>
-                  <span className="feature-tag">Quiet</span>
-                </div>
-                <div className="space-schedule">
-                  <span className="available-days">Sun-Tue Available</span>
-                  <div className="day-indicators">
-                    <div className="day-dot available"></div>
-                    <div className="day-dot available"></div>
-                    <div className="day-dot available"></div>
-                    <div className="day-dot"></div>
-                    <div className="day-dot"></div>
-                    <div className="day-dot"></div>
-                    <div className="day-dot"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Space Card 3 */}
-            <div className="space-card" onClick={() => window.location.href = SEARCH_URL}>
-              <div style={{ position: 'relative' }}>
-                <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="Lower East Side Loft" className="space-image" />
-                <div className="space-badge">Verified</div>
-              </div>
-              <div className="space-info">
-                <h3 className="space-title">Lower East Side Loft</h3>
-                <div className="space-location">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#6B7280" strokeWidth="2"/>
-                    <circle cx="12" cy="9" r="2.5" stroke="#6B7280" strokeWidth="2"/>
-                  </svg>
-                  Lower East Side
-                </div>
-                <div className="space-features">
-                  <span className="feature-tag">Storage Space</span>
-                  <span className="feature-tag">High-Speed WiFi</span>
-                  <span className="feature-tag">Desk</span>
-                </div>
-                <div className="space-schedule">
-                  <span className="available-days">Thu-Sat Available</span>
-                  <div className="day-indicators">
-                    <div className="day-dot"></div>
-                    <div className="day-dot"></div>
-                    <div className="day-dot"></div>
-                    <div className="day-dot"></div>
-                    <div className="day-dot available"></div>
-                    <div className="day-dot available"></div>
-                    <div className="day-dot available"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
+              ))
+            )}
           </div>
 
           <div style={{ textAlign: 'center', marginTop: '48px' }}>
@@ -537,7 +665,7 @@ export default function WhySplitLeasePage() {
             <p className="testimonials-description">
               See how people are saving thousands with consistent NYC housing through Split Lease—whatever brings them back to the city.
             </p>
-            <a href="https://app.split.lease/success-stories-guest" className="testimonials-cta">View all stories</a>
+            <a href="/guest-success" className="testimonials-cta">View all stories</a>
           </div>
 
           <div className="testimonials-grid">
