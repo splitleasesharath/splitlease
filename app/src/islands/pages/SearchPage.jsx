@@ -156,18 +156,22 @@ function NeighborhoodDropdownFilter({
     return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
   });
 
+  const inputRef = useRef(null);
+
+  const handleContainerClick = (e) => {
+    // Focus the input when clicking on the container
+    if (inputRef.current && e.target.closest('.neighborhood-dropdown-container')) {
+      inputRef.current.focus();
+    }
+  };
+
   return (
     <div className="filter-group compact neighborhoods-group">
       <label htmlFor={inputId}>Refine Neighborhood(s)</label>
-      <div className="neighborhood-dropdown-container">
-        <input
-          type="text"
-          id={inputId}
-          placeholder={selectedNeighborhoods.length > 0 ? "" : "Search neighborhoods..."}
-          className="neighborhood-search"
-          value={neighborhoodSearch}
-          onChange={(e) => onNeighborhoodSearchChange(e.target.value)}
-        />
+      <div
+        className="neighborhood-dropdown-container"
+        onClick={handleContainerClick}
+      >
         {selectedNeighborhoods.length > 0 && (
           <div className="selected-neighborhoods-chips">
             {selectedNeighborhoods.map(id => {
@@ -193,6 +197,15 @@ function NeighborhoodDropdownFilter({
             })}
           </div>
         )}
+        <input
+          ref={inputRef}
+          type="text"
+          id={inputId}
+          placeholder={selectedNeighborhoods.length > 0 ? "" : "Search neighborhoods..."}
+          className="neighborhood-search"
+          value={neighborhoodSearch}
+          onChange={(e) => onNeighborhoodSearchChange(e.target.value)}
+        />
       </div>
 
       <div className="neighborhood-list">
