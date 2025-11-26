@@ -9,7 +9,7 @@
   margin: 0;
   height: 100vh;
   width: 100vw;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Two-Column Layout: 45% listings, 55% map */
@@ -59,6 +59,7 @@
   min-width: 140px;
   position: relative;
   padding-top: 0.5rem;
+  z-index: 1;
 }
 
 .inline-filters .filter-group.compact {
@@ -120,6 +121,11 @@
   position: relative;
   min-width: 240px;
   z-index: 100;
+}
+
+/* Elevate neighborhoods-group when dropdown is open to appear above sibling filter groups */
+.inline-filters .neighborhoods-group:focus-within {
+  z-index: 1000;
 }
 
 /* Desktop: Force neighborhood and borough to wrap by making neighborhood wider */
@@ -228,7 +234,7 @@
   border: 1px solid #d1d5db;
   border-radius: 8px;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  z-index: 500;
+  z-index: 9999;
   padding: 0.5rem;
 }
 
