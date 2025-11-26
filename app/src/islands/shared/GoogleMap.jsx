@@ -329,6 +329,7 @@ const GoogleMap = forwardRef(({
       return;
     }
 
+    const map = googleMapRef.current;
     const mapRect = mapContainer.getBoundingClientRect();
     const priceTagRect = priceTag.getBoundingClientRect();
 
@@ -352,10 +353,56 @@ const GoogleMap = forwardRef(({
     const maxLeft = mapRect.width - margin - (cardWidth / 2);
     cardLeft = Math.max(minLeft, Math.min(maxLeft, cardLeft));
 
-    // Keep card within map bounds vertically
-    if (cardTop < margin) {
-      // If card would go above map, position it below the pin instead
-      cardTop = pinTop + priceTagRect.height + arrowHeight + gapFromPin;
+    // Check if card would go above map (marker is in upper portion)
+    // If so, pan the map down to create space for the card above the marker
+    if (cardTop < margin && map && listing.coordinates) {
+      console.log('📍 handlePinClick: Marker in upper portion, panning map down to create space');
+
+      // Calculate how much vertical space we need (card height + gap + margin)
+      const spaceNeeded = cardHeight + arrowHeight + gapFromPin + margin;
+
+      // Calculate how far above the center the pin currently is
+      const mapCenterY = mapRect.height / 2;
+      const pinDistanceAboveCenter = mapCenterY - pinTop;
+
+      // We need to pan the map so the pin moves down by at least spaceNeeded pixels
+      // This means panning north (decreasing latitude)
+      const projection = map.getProjection();
+      if (projection) {
+        const currentCenter = map.getCenter();
+        const scale = Math.pow(2, map.getZoom());
+        const worldCoordinateCenter = projection.fromLatLngToPoint(currentCenter);
+
+        // Calculate pixel offset needed - pan down by the space needed for the card
+        // Adding some extra padding (50px) for visual comfort
+        const pixelOffset = spaceNeeded - pinTop + 50;
+
+        // Convert pixel offset to world coordinates
+        // Negative Y means moving the map content up, which moves the pin down visually
+        const newWorldCoordinate = new window.google.maps.Point(
+          worldCoordinateCenter.x,
+          worldCoordinateCenter.y - (pixelOffset / scale)
+        );
+
+        const newCenter = projection.fromPointToLatLng(newWorldCoordinate);
+
+        // Smoothly pan to the new center
+        map.panTo(newCenter);
+
+        // Wait for pan to complete, then recalculate card position
+        await new Promise(resolve => setTimeout(resolve, 350));
+
+        // Recalculate position after pan
+        const newPriceTagRect = priceTag.getBoundingClientRect();
+        const newPinTop = newPriceTagRect.top - mapRect.top;
+        cardTop = newPinTop - cardHeight - arrowHeight - gapFromPin;
+
+        // Update horizontal position as well in case it shifted
+        const newPinCenterX = newPriceTagRect.left - mapRect.left + (newPriceTagRect.width / 2);
+        cardLeft = Math.max(minLeft, Math.min(maxLeft, newPinCenterX));
+
+        console.log('📍 handlePinClick: Recalculated card position after pan:', { x: cardLeft, y: cardTop });
+      }
     }
 
     console.log('📍 handlePinClick: Card position calculated:', { x: cardLeft, y: cardTop });
