@@ -37,10 +37,8 @@ export default defineConfig({
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
           // Also handle exact /view-split-lease path (no trailing slash or query)
           else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
-            // Preserve the full path including listing ID
-            // e.g., /view-split-lease/LISTING_ID or /view-split-lease/LISTING_ID?query=value
-            const pathAfterPrefix = url.substring('/view-split-lease'.length);
-            req.url = '/public/view-split-lease.html' + pathAfterPrefix;
+            // Serve the HTML file - the JS will extract the listing ID from window.location
+            req.url = '/public/view-split-lease.html';
           }
           // Legacy support for old URL structure
           else if (url.startsWith('/view-split-lease.html')) {
@@ -135,10 +133,8 @@ export default defineConfig({
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
           // Also handle exact /view-split-lease path (no trailing slash or query)
           else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
-            // Preserve the full path including listing ID
-            // e.g., /view-split-lease/LISTING_ID or /view-split-lease/LISTING_ID?query=value
-            const pathAfterPrefix = url.substring('/view-split-lease'.length);
-            req.url = '/view-split-lease.html' + pathAfterPrefix;
+            // Serve the HTML file - the JS will extract the listing ID from window.location
+            req.url = '/view-split-lease.html';
           }
           // Legacy support for old URL structure
           else if (url.startsWith('/view-split-lease.html')) {
@@ -377,6 +373,12 @@ export default defineConfig({
     }
   ],
   publicDir: false, // Disable automatic public directory copying
+  server: {
+    host: '127.0.0.1', // Ensure IPv4 binding for localhost
+  },
+  preview: {
+    host: '127.0.0.1',
+  },
   build: {
     outDir: 'dist',
     rollupOptions: {
