@@ -139,67 +139,6 @@
   color: white;
 }
 
-/* ========================================
-   NEIGHBORHOOD CHECKBOX LIST - Simple Multi-Select
-   ======================================== */
-
-.neighborhood-checkbox-list-group {
-  position: relative;
-}
-
-.neighborhood-checkbox-list {
-  width: 100%;
-  max-height: 180px;
-  overflow-y: auto;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  background: white;
-  padding: 0.25rem 0;
-}
-
-.neighborhood-checkbox-item {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
-  cursor: pointer;
-  transition: background 0.15s;
-  font-size: 0.875rem;
-  color: #374151;
-  user-select: none;
-}
-
-.neighborhood-checkbox-item:hover {
-  background: #f3f4f6;
-}
-
-.neighborhood-checkbox-item input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: #5b21b6;
-  cursor: pointer;
-  flex-shrink: 0;
-  margin: 0;
-}
-
-.neighborhood-checkbox-item span {
-  flex: 1;
-}
-
-.neighborhood-list-empty {
-  padding: 1rem 0.75rem;
-  text-align: center;
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
-.neighborhood-selection-count {
-  font-size: 0.75rem;
-  color: #5b21b6;
-  font-weight: 500;
-  margin-top: 0.25rem;
-}
-
 /* Listings Count */
 .listings-count {
   flex-shrink: 0;
@@ -352,6 +291,63 @@
 .header-dropdown a:hover {
   background: #f3f4f6;
   color: #5b21b6;
+}
+
+/* Map Header Actions - Right side container */
+.map-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Favorites Link (Heart) */
+.favorites-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #5b21b6;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.favorites-link:hover {
+  background: #ede9fe;
+  transform: scale(1.05);
+}
+
+.favorites-link svg {
+  stroke: #5b21b6;
+  fill: none;
+  transition: fill 0.2s ease;
+}
+
+.favorites-link:hover svg {
+  fill: rgba(91, 33, 182, 0.15);
+}
+
+/* Favorites Badge */
+.favorites-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #5b21b6;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 9px;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Google Map Container */
@@ -737,6 +733,28 @@
 
   .map-logo .logo-text {
     font-size: 1rem;
+  }
+
+  .map-header-actions {
+    gap: 0.75rem;
+  }
+
+  .favorites-link {
+    width: 36px;
+    height: 36px;
+  }
+
+  .favorites-link svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .favorites-badge {
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    top: -3px;
+    right: -3px;
   }
 
   .deep-research-floating-btn {

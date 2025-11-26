@@ -6,7 +6,9 @@ import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import AiSignupMarketReport from '../shared/AiSignupMarketReport';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
+import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import { supabase } from '../../lib/supabase.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getUserId, logoutUser } from '../../lib/auth.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
@@ -658,6 +660,11 @@ export default function SearchPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMapVisible, setMobileMapVisible] = useState(false);
 
+  // Auth state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [favoritesCount, setFavoritesCount] = useState(0);
+
   // Flag to prevent URL update on initial load
   const isInitialMount = useRef(true);
 
@@ -679,6 +686,51 @@ export default function SearchPage() {
       setInformationalTexts(texts);
     };
     loadInformationalTexts();
+  }, []);
+
+  // Check authentication status and fetch user data
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const authenticated = await checkAuthStatus();
+        setIsLoggedIn(authenticated);
+
+        if (authenticated) {
+          // Validate token and get user data
+          const userData = await validateTokenAndFetchUser();
+          if (userData) {
+            const userId = getUserId();
+            setCurrentUser({
+              id: userId,
+              name: userData.fullName || userData.firstName || '',
+              email: '', // Not fetched in validateTokenAndFetchUser
+              userType: userData.userType || 'GUEST',
+              avatarUrl: userData.profilePhoto || null
+            });
+
+            // Fetch favorites count from Supabase
+            if (userId) {
+              const { data: userFavorites, error } = await supabase
+                .from('user')
+                .select('"Favorites - Listing"')
+                .eq('_id', userId)
+                .single();
+
+              if (!error && userFavorites) {
+                const favorites = userFavorites['Favorites - Listing'];
+                setFavoritesCount(Array.isArray(favorites) ? favorites.length : 0);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[SearchPage] Auth check error:', error);
+        setIsLoggedIn(false);
+        setCurrentUser(null);
+      }
+    };
+
+    checkAuth();
   }, []);
 
   // Fetch ALL active listings for green markers (NO FILTERS - runs once on mount)
@@ -1379,6 +1431,24 @@ export default function SearchPage() {
     setIsAIResearchModalOpen(false);
   };
 
+  // Auth navigation handlers
+  const handleNavigate = (path) => {
+    window.location.href = path;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      setFavoritesCount(0);
+      // Optionally redirect to home or refresh the page
+      window.location.reload();
+    } catch (error) {
+      console.error('[SearchPage] Logout error:', error);
+    }
+  };
+
   // Mount SearchScheduleSelector component in both mobile and desktop locations
   // Note: Schedule selector is now display-only and does not affect filtering
   useEffect(() => {
@@ -1574,39 +1644,75 @@ export default function SearchPage() {
               <span className="logo-text">Split Lease</span>
             </a>
 
-            {/* Hamburger Menu */}
-            <button
-              className="hamburger-menu"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Toggle menu"
-            >
-              <span>Menu</span>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            </button>
+            {/* Right side: conditional based on auth state */}
+            <div className="map-header-actions">
+              {isLoggedIn && currentUser ? (
+                <>
+                  {/* Favorites Heart with Count */}
+                  <a href="/favorite-listings" className="favorites-link" aria-label="My Favorite Listings">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                    {favoritesCount > 0 && (
+                      <span className="favorites-badge">{favoritesCount}</span>
+                    )}
+                  </a>
 
-            {/* Dropdown Menu */}
-            {menuOpen && (
-              <div className="header-dropdown">
-                <a href="/guest-success">Success Stories</a>
-                <a
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setMenuOpen(false);
-                    setAuthModalView('login');
-                    setIsAuthModalOpen(true);
-                  }}
-                >
-                  Sign In / Sign Up
-                </a>
-                <a href="/why-split-lease">Understand Split Lease</a>
-                <a href="/faq">Explore FAQs</a>
-              </div>
-            )}
+                  {/* Logged In Avatar */}
+                  <LoggedInAvatar
+                    user={currentUser}
+                    currentPath="/search"
+                    onNavigate={handleNavigate}
+                    onLogout={handleLogout}
+                  />
+                </>
+              ) : (
+                <>
+                  {/* Hamburger Menu - Only for logged out users */}
+                  <button
+                    className="hamburger-menu"
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    aria-label="Toggle menu"
+                  >
+                    <span>Menu</span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="3" y1="12" x2="21" y2="12" />
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <line x1="3" y1="18" x2="21" y2="18" />
+                    </svg>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {menuOpen && (
+                    <div className="header-dropdown">
+                      <a href="/guest-success">Success Stories</a>
+                      <a
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setMenuOpen(false);
+                          setAuthModalView('login');
+                          setIsAuthModalOpen(true);
+                        }}
+                      >
+                        Sign In / Sign Up
+                      </a>
+                      <a href="/why-split-lease">Understand Split Lease</a>
+                      <a href="/faq">Explore FAQs</a>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
 
           <GoogleMap
