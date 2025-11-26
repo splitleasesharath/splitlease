@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
+import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import { SEARCH_URL } from '../../lib/constants.js';
 
 export default function WhySplitLeasePage() {
@@ -8,8 +9,8 @@ export default function WhySplitLeasePage() {
   const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
   const [fadeOut, setFadeOut] = useState(false);
 
-  // Schedule selector state
-  const [selectedDays, setSelectedDays] = useState([1, 2]); // Monday and Tuesday by default
+  // Schedule selector state - stores 0-based day indices from SearchScheduleSelector
+  const [selectedDays, setSelectedDays] = useState([1, 2, 3]); // Monday, Tuesday, Wednesday by default (3 days = 2 nights minimum)
 
   const scenarios = [
     { city: "Philadelphia", purpose: "work" },
@@ -21,9 +22,6 @@ export default function WhySplitLeasePage() {
     { city: "Stamford", purpose: "train" },
     { city: "Albany", purpose: "care" }
   ];
-
-  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const dayAbbreviations = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   // Dynamic text rotation effect
   useEffect(() => {
@@ -38,40 +36,22 @@ export default function WhySplitLeasePage() {
     return () => clearInterval(interval);
   }, [scenarios.length]);
 
-  // Toggle day selection
-  const toggleDay = (day) => {
-    if (selectedDays.includes(day)) {
-      setSelectedDays(selectedDays.filter(d => d !== day));
-    } else {
-      setSelectedDays([...selectedDays, day].sort((a, b) => a - b));
-    }
+  // Handle selection change from SearchScheduleSelector
+  const handleSelectionChange = (days) => {
+    // days is an array of day objects with { id, singleLetter, fullName, index }
+    const dayIndices = days.map(d => d.index);
+    setSelectedDays(dayIndices);
   };
-
-  // Get checkin/checkout days
-  const getCheckinCheckout = () => {
-    if (selectedDays.length === 0) {
-      return { checkin: '', checkout: '', show: false };
-    }
-
-    const firstDay = Math.min(...selectedDays);
-    const lastDay = Math.max(...selectedDays);
-    const checkoutDayIndex = (lastDay + 1) % 7;
-
-    return {
-      checkin: dayNames[firstDay],
-      checkout: dayNames[checkoutDayIndex],
-      show: true
-    };
-  };
-
-  const checkinCheckout = getCheckinCheckout();
 
   const handleExploreSpaces = () => {
     if (selectedDays.length === 0) {
       alert('Please select at least one night per week');
       return;
     }
-    window.location.href = SEARCH_URL;
+    // Convert 0-based indices to 1-based for URL (0→1, 1→2, etc.)
+    const oneBased = selectedDays.map(idx => idx + 1);
+    const daysParam = oneBased.join(',');
+    window.location.href = `${SEARCH_URL}?days-selected=${daysParam}`;
   };
 
   return (
@@ -211,32 +191,14 @@ export default function WhySplitLeasePage() {
           <div className="schedule-selector-wrapper">
             <div className="selector-label">Select your NYC nights →</div>
 
-            <div className="day-selector">
-              <div className="calendar-icon">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="3" y="6" width="18" height="15" rx="2" stroke="#6B7280" strokeWidth="2"/>
-                  <path d="M3 10H21" stroke="#6B7280" strokeWidth="2"/>
-                  <path d="M7 3V6M17 3V6" stroke="#6B7280" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </div>
-              {dayAbbreviations.map((day, index) => (
-                <div
-                  key={index}
-                  className={`day-badge ${selectedDays.includes(index) ? 'active' : ''}`}
-                  onClick={() => toggleDay(index)}
-                >
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            {checkinCheckout.show && (
-              <div className="checkin-checkout">
-                <span><strong>Check-in:</strong> <span>{checkinCheckout.checkin}</span></span>
-                <span>•</span>
-                <span><strong>Check-out:</strong> <span>{checkinCheckout.checkout}</span></span>
-              </div>
-            )}
+            <SearchScheduleSelector
+              initialSelection={selectedDays}
+              onSelectionChange={handleSelectionChange}
+              onError={(error) => console.error('Schedule selector error:', error)}
+              updateUrl={false}
+              minDays={2}
+              requireContiguous={true}
+            />
 
             <button className="schedule-cta" onClick={handleExploreSpaces}>
               See NYC Spaces for This Schedule
