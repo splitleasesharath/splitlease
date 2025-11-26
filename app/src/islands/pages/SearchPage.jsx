@@ -75,54 +75,6 @@ function MobileFilterBar({ onFilterClick, onMapClick, isMapVisible }) {
   );
 }
 
-/**
- * NeighborhoodCheckboxList - Simple scrollable list with checkboxes
- */
-function NeighborhoodCheckboxList({
-  neighborhoods,
-  selectedNeighborhoods,
-  onNeighborhoodsChange,
-  id
-}) {
-  // Toggle neighborhood selection
-  const handleToggleNeighborhood = (neighborhoodId) => {
-    if (selectedNeighborhoods.includes(neighborhoodId)) {
-      onNeighborhoodsChange(selectedNeighborhoods.filter(nId => nId !== neighborhoodId));
-    } else {
-      onNeighborhoodsChange([...selectedNeighborhoods, neighborhoodId]);
-    }
-  };
-
-  return (
-    <div className="filter-group compact neighborhood-checkbox-list-group">
-      <label>Refine Neighborhood(s)</label>
-
-      {/* Scrollable list with checkboxes */}
-      <div className="neighborhood-checkbox-list" id={id}>
-        {neighborhoods.length === 0 ? (
-          <div className="neighborhood-list-empty">Loading neighborhoods...</div>
-        ) : (
-          neighborhoods.map(neighborhood => (
-            <label key={neighborhood.id} className="neighborhood-checkbox-item">
-              <input
-                type="checkbox"
-                checked={selectedNeighborhoods.includes(neighborhood.id)}
-                onChange={() => handleToggleNeighborhood(neighborhood.id)}
-              />
-              <span>{neighborhood.name}</span>
-            </label>
-          ))
-        )}
-      </div>
-
-      {selectedNeighborhoods.length > 0 && (
-        <div className="neighborhood-selection-count">
-          {selectedNeighborhoods.length} selected
-        </div>
-      )}
-    </div>
-  );
-}
 
 /**
  * FilterPanel - Left sidebar with filters
@@ -222,13 +174,30 @@ function FilterPanel({
             </select>
           </div>
 
-          {/* Neighborhood Multi-Select - Checkbox list */}
-          <NeighborhoodCheckboxList
-            id="neighborhoodSelectMobile"
-            neighborhoods={neighborhoods}
-            selectedNeighborhoods={selectedNeighborhoods}
-            onNeighborhoodsChange={onNeighborhoodsChange}
-          />
+          {/* Neighborhood Dropdown */}
+          <div className="filter-group compact">
+            <label htmlFor="neighborhoodSelectMobile">Neighborhood</label>
+            <select
+              id="neighborhoodSelectMobile"
+              className="filter-select"
+              multiple
+              value={selectedNeighborhoods}
+              onChange={(e) => {
+                const selected = Array.from(e.target.selectedOptions, option => option.value);
+                onNeighborhoodsChange(selected);
+              }}
+            >
+              {neighborhoods.length === 0 ? (
+                <option value="">Loading...</option>
+              ) : (
+                neighborhoods.map(neighborhood => (
+                  <option key={neighborhood.id} value={neighborhood.id}>
+                    {neighborhood.name}
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -1519,13 +1488,30 @@ export default function SearchPage() {
               {/* SearchScheduleSelector will be mounted here on desktop */}
             </div>
 
-            {/* Neighborhood Multi-Select - Checkbox list */}
-            <NeighborhoodCheckboxList
-              id="neighborhoodSelect"
-              neighborhoods={neighborhoods}
-              selectedNeighborhoods={selectedNeighborhoods}
-              onNeighborhoodsChange={setSelectedNeighborhoods}
-            />
+            {/* Neighborhood Dropdown */}
+            <div className="filter-group compact">
+              <label htmlFor="neighborhoodSelect">Neighborhood</label>
+              <select
+                id="neighborhoodSelect"
+                className="filter-select"
+                multiple
+                value={selectedNeighborhoods}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions, option => option.value);
+                  setSelectedNeighborhoods(selected);
+                }}
+              >
+                {neighborhoods.length === 0 ? (
+                  <option value="">Loading...</option>
+                ) : (
+                  neighborhoods.map(neighborhood => (
+                    <option key={neighborhood.id} value={neighborhood.id}>
+                      {neighborhood.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
 
             {/* Borough Select */}
             <div className="filter-group compact">
