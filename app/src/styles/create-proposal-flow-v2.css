@@ -316,6 +316,7 @@
 /* Review Section Styles */
 .review-section {
   width: 100%;
+  margin-top: 10px;
 }
 
 .review-field {
