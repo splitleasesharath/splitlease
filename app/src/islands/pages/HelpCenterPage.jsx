@@ -127,7 +127,7 @@ export default function HelpCenterPage() {
 
         {/* Info Box */}
         {!isSearching && (
-          <div className="hc-info-box info" style={{ margin: '48px 0' }}>
+          <div className="hc-info-box info" style={{ margin: '24px 0 32px' }}>
             <div className="hc-info-box-icon">
               <HelpCircle />
             </div>
