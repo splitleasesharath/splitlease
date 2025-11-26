@@ -457,7 +457,7 @@ function SupportSection() {
     {
       icon: '/images/support-centre-icon.svg',
       label: 'Support Centre',
-      link: '/help-center.html',
+      link: '/help-center',
       isInternal: true,
     },
   ];

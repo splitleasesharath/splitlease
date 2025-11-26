@@ -8,7 +8,7 @@ const fs = require('fs');
 const path = require('path');
 
 // Configuration
-const DEPLOYMENT_URL = 'https://14aec9d6.splitlease.pages.dev';
+const DEPLOYMENT_URL = 'https://f13460bc.splitlease.pages.dev';
 const MAIN_DOMAIN_URL = 'https://split.lease';
 const SCREENSHOTS_DIR = path.join(__dirname, '.playwright-mcp', 'help-center-tests');
 

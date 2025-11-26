@@ -303,6 +303,21 @@ export default defineConfig({
           console.log('Created _internal/listing-view for Cloudflare routing');
         }
 
+        // Create help-center internal files to avoid Cloudflare's "pretty URL" normalization
+        const helpCenterSource = path.join(distDir, 'help-center.html');
+        const helpCenterDest = path.join(internalDir, 'help-center-view');
+        if (fs.existsSync(helpCenterSource)) {
+          fs.copyFileSync(helpCenterSource, helpCenterDest);
+          console.log('Created _internal/help-center-view for Cloudflare routing');
+        }
+
+        const helpCenterCategorySource = path.join(distDir, 'help-center-category.html');
+        const helpCenterCategoryDest = path.join(internalDir, 'help-center-category-view');
+        if (fs.existsSync(helpCenterCategorySource)) {
+          fs.copyFileSync(helpCenterCategorySource, helpCenterCategoryDest);
+          console.log('Created _internal/help-center-category-view for Cloudflare routing');
+        }
+
         // Copy images directory to dist root
         const imagesSource = path.resolve(__dirname, 'public/images');
         const imagesDest = path.join(distDir, 'images');
