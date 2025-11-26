@@ -124,6 +124,93 @@ function NeighborhoodCheckboxList({
   );
 }
 
+function NeighborhoodDropdownFilter({
+  neighborhoods,
+  selectedNeighborhoods,
+  onNeighborhoodsChange,
+  neighborhoodSearch,
+  onNeighborhoodSearchChange,
+  searchInputId
+}) {
+  const inputId = searchInputId || 'neighborhoodSearch';
+
+  const handleNeighborhoodToggle = (neighborhoodId) => {
+    const isSelected = selectedNeighborhoods.includes(neighborhoodId);
+    if (isSelected) {
+      onNeighborhoodsChange(selectedNeighborhoods.filter(id => id !== neighborhoodId));
+    } else {
+      onNeighborhoodsChange([...selectedNeighborhoods, neighborhoodId]);
+    }
+  };
+
+  const handleRemoveNeighborhood = (neighborhoodId) => {
+    onNeighborhoodsChange(selectedNeighborhoods.filter(id => id !== neighborhoodId));
+  };
+
+  const sanitizedSearch = sanitizeNeighborhoodSearch(neighborhoodSearch || '');
+
+  const filteredNeighborhoods = neighborhoods.filter((n) => {
+    if (!sanitizedSearch) {
+      return true;
+    }
+    return n.name.toLowerCase().includes(sanitizedSearch.toLowerCase());
+  });
+
+  return (
+    <div className="filter-group compact neighborhoods-group">
+      <label htmlFor={inputId}>Refine Neighborhood(s)</label>
+      <input
+        type="text"
+        id={inputId}
+        placeholder="Search neighborhoods..."
+        className="neighborhood-search"
+        value={neighborhoodSearch}
+        onChange={(e) => onNeighborhoodSearchChange(e.target.value)}
+      />
+
+      <div className="selected-neighborhoods-chips">
+        {selectedNeighborhoods.map(id => {
+          const neighborhood = neighborhoods.find(n => n.id === id);
+          if (!neighborhood) return null;
+
+          return (
+            <div key={id} className="neighborhood-chip">
+              <span>{neighborhood.name}</span>
+              <button
+                className="neighborhood-chip-remove"
+                onClick={() => handleRemoveNeighborhood(id)}
+                aria-label={`Remove ${neighborhood.name}`}
+              >
+                ×
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="neighborhood-list">
+        {filteredNeighborhoods.length === 0 ? (
+          <div style={{ padding: '10px', color: '#666' }}>
+            {neighborhoods.length === 0 ? 'Loading neighborhoods...' : 'No neighborhoods found'}
+          </div>
+        ) : (
+          filteredNeighborhoods.map(neighborhood => (
+            <label key={neighborhood.id}>
+              <input
+                type="checkbox"
+                value={neighborhood.id}
+                checked={selectedNeighborhoods.includes(neighborhood.id)}
+                onChange={() => handleNeighborhoodToggle(neighborhood.id)}
+              />
+              {neighborhood.name}
+            </label>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 /**
  * FilterPanel - Left sidebar with filters
  */
@@ -1520,11 +1607,13 @@ export default function SearchPage() {
             </div>
 
             {/* Neighborhood Multi-Select - Checkbox list */}
-            <NeighborhoodCheckboxList
-              id="neighborhoodSelect"
+            <NeighborhoodDropdownFilter
               neighborhoods={neighborhoods}
               selectedNeighborhoods={selectedNeighborhoods}
               onNeighborhoodsChange={setSelectedNeighborhoods}
+              neighborhoodSearch={neighborhoodSearch}
+              onNeighborhoodSearchChange={setNeighborhoodSearch}
+              searchInputId="neighborhoodSearchInline"
             />
 
             {/* Borough Select */}
