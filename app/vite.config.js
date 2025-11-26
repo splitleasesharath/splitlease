@@ -35,7 +35,8 @@ export default defineConfig({
             req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
-          else if (url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
+          // Also handle exact /view-split-lease path (no trailing slash or query)
+          else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
             // Preserve the full path including listing ID
             // e.g., /view-split-lease/LISTING_ID or /view-split-lease/LISTING_ID?query=value
             const pathAfterPrefix = url.substring('/view-split-lease'.length);
@@ -132,7 +133,8 @@ export default defineConfig({
             req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
-          else if (url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
+          // Also handle exact /view-split-lease path (no trailing slash or query)
+          else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
             // Preserve the full path including listing ID
             // e.g., /view-split-lease/LISTING_ID or /view-split-lease/LISTING_ID?query=value
             const pathAfterPrefix = url.substring('/view-split-lease'.length);
