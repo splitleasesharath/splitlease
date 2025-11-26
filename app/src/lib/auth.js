@@ -428,9 +428,34 @@ export async function loginUser(email, password) {
 
     if (error) {
       console.error('❌ Edge Function error:', error);
+      console.error('   Error context:', error.context);
+
+      // Extract detailed error from response body if available
+      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
+      let errorMessage = 'Failed to authenticate. Please try again.';
+
+      if (error.context?.body) {
+        try {
+          const errorBody = typeof error.context.body === 'string'
+            ? JSON.parse(error.context.body)
+            : error.context.body;
+          if (errorBody?.error) {
+            errorMessage = errorBody.error;
+            console.error('   Detailed error from response:', errorMessage);
+          }
+        } catch (parseErr) {
+          console.error('   Could not parse error body:', parseErr);
+        }
+      }
+
+      // Also check if data was returned despite the error (some edge cases)
+      if (data?.error) {
+        errorMessage = data.error;
+      }
+
       return {
         success: false,
-        error: error.message || 'Failed to authenticate. Please try again.'
+        error: errorMessage
       };
     }
 
@@ -524,9 +549,34 @@ export async function signupUser(email, password, retype) {
 
     if (error) {
       console.error('❌ Edge Function error:', error);
+      console.error('   Error context:', error.context);
+
+      // Extract detailed error from response body if available
+      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
+      let errorMessage = 'Failed to create account. Please try again.';
+
+      if (error.context?.body) {
+        try {
+          const errorBody = typeof error.context.body === 'string'
+            ? JSON.parse(error.context.body)
+            : error.context.body;
+          if (errorBody?.error) {
+            errorMessage = errorBody.error;
+            console.error('   Detailed error from response:', errorMessage);
+          }
+        } catch (parseErr) {
+          console.error('   Could not parse error body:', parseErr);
+        }
+      }
+
+      // Also check if data was returned despite the error (some edge cases)
+      if (data?.error) {
+        errorMessage = data.error;
+      }
+
       return {
         success: false,
-        error: error.message || 'Failed to create account. Please try again.'
+        error: errorMessage
       };
     }
 
@@ -603,6 +653,22 @@ export async function validateTokenAndFetchUser() {
 
     if (error) {
       console.error('❌ Edge Function error:', error);
+      console.error('   Error context:', error.context);
+
+      // Extract detailed error for logging
+      if (error.context?.body) {
+        try {
+          const errorBody = typeof error.context.body === 'string'
+            ? JSON.parse(error.context.body)
+            : error.context.body;
+          if (errorBody?.error) {
+            console.error('   Detailed error from response:', errorBody.error);
+          }
+        } catch (parseErr) {
+          // Silent - just for logging
+        }
+      }
+
       clearAuthData();
       isUserLoggedInState = false;
       return null;
@@ -610,6 +676,7 @@ export async function validateTokenAndFetchUser() {
 
     if (!data.success) {
       console.log('❌ Token validation failed - clearing auth data');
+      console.log('   Reason:', data.error || 'Unknown');
       clearAuthData();
       isUserLoggedInState = false;
       return null;

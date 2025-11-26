@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
-import { SIGNUP_LOGIN_URL, SEARCH_URL, AUTH_STORAGE_KEYS } from '../../lib/constants.js';
+import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
+import { getUserType as getStoredUserType } from '../../lib/secureStorage.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 
@@ -90,9 +91,10 @@ export default function Header({ autoShowLogin = false }) {
 
   // Monitor user type from localStorage for conditional header visibility
   useEffect(() => {
-    // Function to read user type from localStorage
+    // Function to read user type from localStorage using secureStorage module
+    // This ensures we read from the same key that auth.js writes to ('sl_user_type')
     const updateUserType = () => {
-      const storedUserType = localStorage.getItem(AUTH_STORAGE_KEYS.USER_TYPE);
+      const storedUserType = getStoredUserType();
       setUserType(storedUserType);
     };
 

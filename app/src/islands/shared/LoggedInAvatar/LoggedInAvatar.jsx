@@ -268,7 +268,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 8. My Favorite Listings - Always visible
+    // 8. My Favorite Listings - GUEST only when favoritesCount > 0
     if (menuVisibility.myFavoriteListings) {
       items.push({
         id: 'favorites',
@@ -292,7 +292,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 10. Rental Application - Always visible
+    // 10. Rental Application - GUEST only
     if (menuVisibility.rentalApplication) {
       items.push({
         id: 'rental-application',

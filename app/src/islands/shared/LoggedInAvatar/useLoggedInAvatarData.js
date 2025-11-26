@@ -14,7 +14,7 @@
  *   ✓ Virtual Meetings - Conditional (proposals = 0)
  *   ✓ House Manuals & Visits - Conditional (visits < 1)
  *   ✓ My Leases - ALWAYS
- *   ✓ My Favorite Listings - ALWAYS
+ *   ✓ My Favorite Listings - Conditional (favoritesCount > 0)
  *   ✓ Messages - ALWAYS
  *   ✓ Rental Application - ALWAYS
  *   ✓ Reviews Manager - ALWAYS
@@ -23,7 +23,7 @@
  * HOST / TRIAL HOST (has space to rent):
  *   ✓ My Profile - ALWAYS
  *   ✓ My Proposals - ALWAYS (proposals received from guests)
- *   ✗ My Proposals Suggested - HIDDEN
+ *   ✓ My Proposals Suggested - Conditional (proposalsCount < 1)
  *   ✓ My Listings - ALWAYS
  *   ✓ Virtual Meetings - Conditional (proposals = 0)
  *   ✓ House Manuals & Visits - Conditional (house manuals = 0)
@@ -240,7 +240,7 @@ export function useLoggedInAvatarData(userId) {
  * @returns {Object} Visibility flags for each menu section
  */
 export function getMenuVisibility(data, currentPath = '') {
-  const { userType, proposalsCount, visitsCount, houseManualsCount } = data;
+  const { userType, proposalsCount, visitsCount, houseManualsCount, favoritesCount } = data;
 
   const isGuest = userType === NORMALIZED_USER_TYPES.GUEST;
   const isHost = userType === NORMALIZED_USER_TYPES.HOST;
@@ -256,9 +256,9 @@ export function getMenuVisibility(data, currentPath = '') {
     //    - Hosts see proposals received from guests
     myProposals: true,
 
-    // 3. My Proposals Suggested - HIDDEN for all users
-    //    (This feature is not shown in the menu)
-    myProposalsSuggested: false,
+    // 3. My Proposals Suggested - HOST and TRIAL_HOST only when they have no proposals
+    //    This encourages hosts without proposals to explore suggested listings
+    myProposalsSuggested: isHostOrTrial && proposalsCount < 1,
 
     // 4. My Listings - HOST and TRIAL_HOST only
     //    Guests don't see this option
@@ -278,9 +278,9 @@ export function getMenuVisibility(data, currentPath = '') {
     // 7. My Leases - ALWAYS visible for all users
     myLeases: true,
 
-    // 8. My Favorite Listings - GUEST only
-    //    Hosts don't see favorite listings
-    myFavoriteListings: isGuest,
+    // 8. My Favorite Listings - GUEST only AND must have at least 1 favorite
+    //    Hidden when guest has no favorites (nothing to show)
+    myFavoriteListings: isGuest && favoritesCount > 0,
 
     // 9. Messages - ALWAYS visible for all users
     messages: true,
