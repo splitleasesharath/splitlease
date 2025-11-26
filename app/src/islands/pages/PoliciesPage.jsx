@@ -122,16 +122,6 @@ export default function PoliciesPage() {
   const handlePolicyClick = (policy) => {
     setCurrentPolicy(policy);
     window.location.hash = policy.slug;
-
-    // Scroll to PDF on desktop
-    if (window.innerWidth >= 900) {
-      setTimeout(() => {
-        const pdfContainer = document.querySelector('.policies-pdf-container');
-        if (pdfContainer) {
-          pdfContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 300);
-    }
   };
 
   const scrollToTop = () => {
