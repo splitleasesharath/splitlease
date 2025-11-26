@@ -79,7 +79,7 @@ export default function HelpCenterPage() {
               <ul className="hc-article-list">
                 {searchResults.map((article) => (
                   <li key={article.id} className="hc-article-list-item">
-                    <a href={`/help-center/${article.categoryId}/${article.slug}`}>
+                    <a href={`/help-center-articles/${article.categoryId}/${article.slug}.html`}>
                       <ArrowRight />
                       <div>
                         <strong>{article.title}</strong>

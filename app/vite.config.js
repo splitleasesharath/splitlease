@@ -343,6 +343,33 @@ export default defineConfig({
           console.log('Copied images directory to dist root');
         }
 
+        // Copy help-center-articles directory to dist root (static article HTML files)
+        const articlesSource = path.resolve(__dirname, 'public/help-center-articles');
+        const articlesDest = path.join(distDir, 'help-center-articles');
+        if (fs.existsSync(articlesSource)) {
+          const copyDirectory = (src, dest) => {
+            if (!fs.existsSync(dest)) {
+              fs.mkdirSync(dest, { recursive: true });
+            }
+
+            const entries = fs.readdirSync(src, { withFileTypes: true });
+
+            for (const entry of entries) {
+              const srcPath = path.join(src, entry.name);
+              const destPath = path.join(dest, entry.name);
+
+              if (entry.isDirectory()) {
+                copyDirectory(srcPath, destPath);
+              } else {
+                fs.copyFileSync(srcPath, destPath);
+              }
+            }
+          };
+
+          copyDirectory(articlesSource, articlesDest);
+          console.log('Copied help-center-articles directory to dist root');
+        }
+
         // Copy functions directory to dist root for Cloudflare Pages Functions
         const functionsSource = path.resolve(__dirname, 'functions');
         const functionsDest = path.join(distDir, 'functions');

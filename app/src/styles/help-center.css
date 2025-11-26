@@ -42,10 +42,17 @@
 .hc-search-banner {
   background: linear-gradient(135deg, var(--hc-brand-primary) 0%, var(--hc-brand-primary-light) 100%);
   padding: clamp(48px, 8vw, 80px) 16px;
+  padding-top: calc(80px + clamp(48px, 8vw, 80px));
   text-align: center;
   color: white;
   position: relative;
   overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .hc-search-banner {
+    padding-top: calc(90px + clamp(48px, 8vw, 80px));
+  }
 }
 
 .hc-search-banner::before {
@@ -285,6 +292,19 @@
 
 .hc-info-box.success .hc-info-box-icon {
   color: var(--hc-success-text);
+}
+
+/* ===================================
+   PAGE TOP SPACING (for fixed header)
+   =================================== */
+.hc-page-content {
+  padding-top: 80px;
+}
+
+@media (min-width: 768px) {
+  .hc-page-content {
+    padding-top: 90px;
+  }
 }
 
 /* ===================================
