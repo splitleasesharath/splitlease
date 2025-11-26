@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import type { LeaseStylesConfig, RentalType, WeeklyPattern } from '../types/listing.types';
+import { HostScheduleSelector, ALL_NIGHTS } from '../../../shared/HostScheduleSelector';
+import type { NightId } from '../../../shared/HostScheduleSelector/types';
 
 interface Section3Props {
   data: LeaseStylesConfig;
@@ -15,6 +17,41 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
   onBack
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  /**
+   * Convert boolean-based availableNights to NightId[] array
+   */
+  const selectedNightsArray = useMemo((): NightId[] => {
+    if (!data.availableNights) return [];
+    return ALL_NIGHTS
+      .filter((night) => data.availableNights![night.id as keyof typeof data.availableNights])
+      .map((night) => night.id);
+  }, [data.availableNights]);
+
+  /**
+   * Convert NightId[] array to boolean-based availableNights
+   */
+  const nightsArrayToBooleanConfig = useCallback((nights: NightId[]): LeaseStylesConfig['availableNights'] => {
+    return {
+      sunday: nights.includes('sunday'),
+      monday: nights.includes('monday'),
+      tuesday: nights.includes('tuesday'),
+      wednesday: nights.includes('wednesday'),
+      thursday: nights.includes('thursday'),
+      friday: nights.includes('friday'),
+      saturday: nights.includes('saturday'),
+    };
+  }, []);
+
+  /**
+   * Handle selection change from HostScheduleSelector
+   */
+  const handleNightsSelectionChange = useCallback((nights: NightId[]) => {
+    onChange({
+      ...data,
+      availableNights: nightsArrayToBooleanConfig(nights),
+    });
+  }, [data, onChange, nightsArrayToBooleanConfig]);
 
   const handleRentalTypeChange = (type: RentalType) => {
     const newData: LeaseStylesConfig = {
@@ -49,41 +86,14 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
     setErrors({});
   };
 
-  const toggleNight = (day: keyof NonNullable<LeaseStylesConfig['availableNights']>) => {
-    if (data.availableNights) {
-      onChange({
-        ...data,
-        availableNights: {
-          ...data.availableNights,
-          [day]: !data.availableNights[day]
-        }
-      });
-    }
-  };
+  const selectAllNights = useCallback(() => {
+    const allNightIds = ALL_NIGHTS.map((n) => n.id);
+    handleNightsSelectionChange(allNightIds);
+  }, [handleNightsSelectionChange]);
 
-  const selectAllNights = () => {
-    onChange({
-      ...data,
-      availableNights: {
-        sunday: true,
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: true,
-        friday: true,
-        saturday: true
-      }
-    });
-  };
+  const getAvailableNightsCount = () => selectedNightsArray.length;
 
-  const getAvailableNightsCount = () => {
-    if (!data.availableNights) return 0;
-    return Object.values(data.availableNights).filter((v) => v).length;
-  };
-
-  const getNotAvailableNightsCount = () => {
-    return 7 - getAvailableNightsCount();
-  };
+  const getNotAvailableNightsCount = () => 7 - selectedNightsArray.length;
 
   const handleWeeklyPatternChange = (pattern: WeeklyPattern) => {
     onChange({ ...data, weeklyPattern: pattern });
@@ -169,20 +179,13 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
           <h3>Select Available Nights</h3>
           <p>Choose which nights of the week you want to offer</p>
 
-          <div className="days-selector">
-            {(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const).map((day) => (
-              <button
-                key={day}
-                type="button"
-                className={`day-button ${data.availableNights![day] ? 'selected' : ''}`}
-                onClick={() => toggleNight(day)}
-              >
-                <div className="day-letter">{day.charAt(0).toUpperCase()}</div>
-                <div className="day-status">
-                  {data.availableNights![day] ? 'Available Night' : 'Not Available Night'}
-                </div>
-              </button>
-            ))}
+          <div className="host-schedule-selector-wrapper">
+            <HostScheduleSelector
+              selectedNights={selectedNightsArray}
+              onSelectionChange={handleNightsSelectionChange}
+              isClickable={true}
+              mode="normal"
+            />
           </div>
 
           <div className="nights-counter">

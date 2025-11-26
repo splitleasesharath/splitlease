@@ -607,6 +607,13 @@ textarea {
   font-weight: 600;
 }
 
+/* Host Schedule Selector Wrapper */
+.host-schedule-selector-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+
 /* Pricing */
 .price-input-group {
   position: relative;
