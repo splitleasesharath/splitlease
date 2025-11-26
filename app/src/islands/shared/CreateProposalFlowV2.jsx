@@ -472,7 +472,7 @@ export default function CreateProposalFlowV2({
     <div className="create-proposal-popup">
       <div className="proposal-container">
         <div className="proposal-header">
-          <div className="proposal-header-top">
+          <div className="proposal-header-top" style={{ marginBottom: getSectionSubtitle() ? '15px' : '0' }}>
             <div className="proposal-title">
               📄 {getSectionTitle()}
             </div>
