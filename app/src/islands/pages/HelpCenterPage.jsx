@@ -106,7 +106,7 @@ export default function HelpCenterPage() {
               const Icon = iconMap[category.icon] || HelpCircle;
               // Redirect guests and hosts to FAQ page with section selected
               const getCategoryHref = (cat) => {
-                if (cat.slug === 'guests') return '/faq?section=guests';
+                if (cat.slug === 'guests') return 'https://split.lease/faq?section=travelers';
                 if (cat.slug === 'hosts') return '/faq?section=hosts';
                 return `/help-center/${cat.slug}`;
               };
