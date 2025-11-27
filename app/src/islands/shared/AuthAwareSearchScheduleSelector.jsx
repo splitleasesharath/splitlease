@@ -123,6 +123,8 @@ export default function AuthAwareSearchScheduleSelector({
   debounceMs = 1000,
   ...props
 }) {
+  console.log('📅 AuthAwareSearchScheduleSelector: Component rendering');
+
   const [userDays, setUserDays] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [userId, setUserId] = useState(null);
