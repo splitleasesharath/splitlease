@@ -411,7 +411,9 @@ function FAQContent({ faqs, openQuestionId }) {
                   <span className="accordion-icon"></span>
                 </div>
                 <div className="accordion-content">
-                  <p>{faq.Answer}</p>
+                  <div className="accordion-content-inner">
+                    <p>{faq.Answer}</p>
+                  </div>
                 </div>
               </div>
             );
