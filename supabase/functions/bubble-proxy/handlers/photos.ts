@@ -2,73 +2,60 @@
  * Photo Upload Handler
  * Priority: HIGH
  *
- * Handles listing photo uploads via Bubble workflow
- * The Bubble workflow `listing_photos_section_in_code`:
- * - Receives listing_id and photos (list of images in Bubble file format)
- * - Creates Listing-Photo records for each image
- * - Attaches them to the Listing
- * - Sets sort_order based on array position (first = cover photo)
+ * Handles listing photo uploads via Supabase Storage + Bubble workflow
  *
- * Bubble API File Format:
- * When a parameter is a file/image, you can provide raw data as a JSON object:
- * { "filename": "photo.jpg", "contents": "base64...", "private": false }
- * Reference: https://manual.bubble.io/core-resources/api/the-bubble-api
+ * Flow:
+ * 1. Upload photos to Supabase Storage (listing-photos bucket)
+ * 2. Get public URLs
+ * 3. Send URLs to Bubble workflow (listing_photos_section_in_code)
+ * 4. Bubble creates Listing-Photo records and attaches to Listing
+ *
+ * This approach is more reliable than sending base64 to Bubble directly.
  */
 
 import { BubbleSyncService } from '../../_shared/bubbleSync.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 import { User } from '../../_shared/types.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 /**
- * Convert a base64 data URL to Bubble's file upload format
+ * Convert a base64 data URL to a Uint8Array for upload
  * @param dataUrl - Base64 data URL (e.g., "data:image/jpeg;base64,/9j/4AAQ...")
- * @param index - Photo index for filename
- * @returns Bubble file format object
+ * @returns Object with binary data and mime type
  */
-function convertTooBubbleFileFormat(dataUrl: string, index: number): {
-  filename: string;
-  contents: string;
-  private: boolean;
-} {
+function dataUrlToBytes(dataUrl: string): { bytes: Uint8Array; mimeType: string; extension: string } {
   // Extract mime type and base64 content from data URL
   // Format: data:image/jpeg;base64,/9j/4AAQ...
-  const matches = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+  const matches = dataUrl.match(/^data:(image\/\w+);base64,(.+)$/);
 
   if (!matches) {
-    // If not a data URL, assume it's already base64 or a URL
-    // Try to use it as-is
-    console.warn(`[Photo Handler] Photo ${index} is not a standard data URL, using as-is`);
-    return {
-      filename: `listing-photo-${index + 1}.jpg`,
-      contents: dataUrl,
-      private: false,
-    };
+    console.warn('[Photo Handler] Not a standard data URL, treating as raw base64');
+    // Assume JPEG if no mime type
+    const bytes = Uint8Array.from(atob(dataUrl), c => c.charCodeAt(0));
+    return { bytes, mimeType: 'image/jpeg', extension: 'jpg' };
   }
 
-  const [, extension, base64Content] = matches;
+  const [, mimeType, base64Content] = matches;
+  const bytes = Uint8Array.from(atob(base64Content), c => c.charCodeAt(0));
 
-  // Map common extensions
+  // Map mime type to extension
   const extMap: Record<string, string> = {
-    'jpeg': 'jpg',
-    'png': 'png',
-    'gif': 'gif',
-    'webp': 'webp',
-    'heic': 'heic',
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
   };
 
-  const fileExt = extMap[extension.toLowerCase()] || extension;
+  const extension = extMap[mimeType] || 'jpg';
 
-  return {
-    filename: `listing-photo-${index + 1}.${fileExt}`,
-    contents: base64Content,
-    private: false,
-  };
+  return { bytes, mimeType, extension };
 }
 
 /**
  * Handle photo upload
- * Converts base64 data URLs to Bubble file format and sends to workflow
- * Bubble handles creating Listing-Photo records and attaching to Listing
+ * 1. Uploads to Supabase Storage
+ * 2. Gets public URLs
+ * 3. Sends URLs to Bubble workflow
  */
 export async function handlePhotoUpload(
   syncService: BubbleSyncService,
@@ -90,48 +77,84 @@ export async function handlePhotoUpload(
   console.log('[Photo Handler] Listing ID:', listing_id);
   console.log('[Photo Handler] Number of photos:', photos.length);
 
+  // Get Supabase credentials
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Supabase configuration missing');
+  }
+
+  // Create Supabase client with service role (bypasses RLS)
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+
   try {
-    // Convert each base64 data URL to Bubble's file format
-    console.log('[Photo Handler] Converting photos to Bubble file format...');
+    // Step 1: Upload each photo to Supabase Storage
+    console.log('[Photo Handler] Step 1: Uploading photos to Supabase Storage...');
 
-    const bubblePhotos = photos.map((photoDataUrl: string, index: number) => {
-      const bubbleFile = convertTooBubbleFileFormat(photoDataUrl, index);
-      console.log(`[Photo Handler] Photo ${index + 1}: ${bubbleFile.filename} (base64 length: ${bubbleFile.contents.length})`);
-      return bubbleFile;
-    });
+    const uploadedUrls: string[] = [];
+    const timestamp = Date.now();
 
-    // Log the first few characters of each photo to verify format
-    console.log('[Photo Handler] Photo format verification:');
-    bubblePhotos.forEach((photo, index) => {
-      console.log(`[Photo Handler]   Photo ${index + 1}: filename=${photo.filename}, contents starts with: ${photo.contents.substring(0, 50)}...`);
-    });
+    for (let i = 0; i < photos.length; i++) {
+      const photoDataUrl = photos[i];
+      const { bytes, mimeType, extension } = dataUrlToBytes(photoDataUrl);
 
-    // Send all photos to Bubble in one workflow call
-    // Bubble workflow creates Listing-Photo records and attaches to Listing
-    // Sort order is determined by array position (index 0 = cover photo)
-    console.log('[Photo Handler] Calling Bubble workflow with formatted photos...');
+      // Create unique file path: listing_id/timestamp_index.ext
+      const filePath = `${listing_id}/${timestamp}_${i + 1}.${extension}`;
+
+      console.log(`[Photo Handler] Uploading photo ${i + 1}: ${filePath} (${bytes.length} bytes, ${mimeType})`);
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('listing-photos')
+        .upload(filePath, bytes, {
+          contentType: mimeType,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error(`[Photo Handler] Failed to upload photo ${i + 1}:`, uploadError);
+        throw new Error(`Failed to upload photo ${i + 1}: ${uploadError.message}`);
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('listing-photos')
+        .getPublicUrl(filePath);
+
+      console.log(`[Photo Handler] Photo ${i + 1} uploaded: ${publicUrl}`);
+      uploadedUrls.push(publicUrl);
+    }
+
+    console.log('[Photo Handler] All photos uploaded to Supabase Storage');
+    console.log('[Photo Handler] URLs:', uploadedUrls);
+
+    // Step 2: Send URLs to Bubble workflow
+    console.log('[Photo Handler] Step 2: Sending URLs to Bubble workflow...');
     console.log('[Photo Handler] Workflow: listing_photos_section_in_code');
     console.log('[Photo Handler] Params: listing_id =', listing_id);
-    console.log('[Photo Handler] Params: photos count =', bubblePhotos.length);
+    console.log('[Photo Handler] Params: photos (URLs) =', uploadedUrls);
 
     // Bubble workflow parameters (lowercase as defined in Bubble):
     // - listing_id: text
-    // - photos: list of files
+    // - photos: list of files (can accept URLs)
     const result = await syncService.triggerWorkflowOnly(
       'listing_photos_section_in_code',
       {
         listing_id: listing_id,
-        photos: bubblePhotos,
+        photos: uploadedUrls,
       }
     );
 
-    console.log('[Photo Handler] ✅ Photos uploaded to Bubble');
+    console.log('[Photo Handler] ✅ Photos uploaded and sent to Bubble');
     console.log('[Photo Handler] Workflow result:', JSON.stringify(result, null, 2));
     console.log('[Photo Handler] ========== SUCCESS ==========');
 
     return {
       listing_id,
       count: photos.length,
+      urls: uploadedUrls,
       message: 'Photos uploaded and attached to listing successfully',
     };
   } catch (error: any) {
