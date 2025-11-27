@@ -53,8 +53,11 @@ function ScheduleSelectorWrapper() {
     const checkUserData = setInterval(() => {
       if (window.userProfileData && window.userProfileData['Recent Days Selected']) {
         const dayNames = window.userProfileData['Recent Days Selected'];
-        const dayIndices = dayNames.map(name => dayMap[name]).filter(idx => idx !== undefined);
-        setSelectedDays(dayIndices);
+        // Ensure dayNames is an array before mapping (some users may have null/string/empty data)
+        if (Array.isArray(dayNames)) {
+          const dayIndices = dayNames.map(name => dayMap[name]).filter(idx => idx !== undefined);
+          setSelectedDays(dayIndices);
+        }
         clearInterval(checkUserData);
       }
     }, 100);
