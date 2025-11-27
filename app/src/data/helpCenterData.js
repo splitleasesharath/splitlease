@@ -25,7 +25,7 @@ export const helpCenterCategories = [
     title: 'About Split Lease',
     description: 'Learn about Split Lease, our mission, and how to contact us',
     icon: 'Info',
-    articleCount: 3,
+    articleCount: 2,
     slug: 'about'
   },
   {
@@ -171,14 +171,13 @@ export const helpCenterArticles = {
       {
         title: 'About Us',
         articles: [
-          { id: 'about-what-is', title: 'What is Split Lease and what do you do?', slug: 'what-is-split-lease' },
-          { id: 'vs-craigslist', title: 'What makes this service better than Craigslist?', slug: 'vs-craigslist' }
+          { id: 'about-what-is', title: 'What is Split Lease and what do you do?', slug: 'what-is-split-lease' }
         ]
       },
       {
-        title: 'Contact Us',
+        title: 'Blog Posts',
         articles: [
-          { id: 'contact-support', title: 'How do I contact Split Lease support?', slug: 'contact-support' }
+          { id: 'craigslist-female-safety', title: "Hybrid worker homes are available on Craigslist, but if you're female read this first", slug: 'craigslist-female-safety', external: '/help-center-articles/knowledge-base/craigslist-female-safety.html' }
         ]
       }
     ],
