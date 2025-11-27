@@ -303,18 +303,6 @@ export const Section7Review: React.FC<Section7Props> = ({
         </div>
       </div>
 
-      {/* Optional Notes */}
-      <div className="form-group">
-        <label htmlFor="optionalNotes">Additional Notes (Optional)</label>
-        <textarea
-          id="optionalNotes"
-          rows={4}
-          placeholder="Any additional information you'd like to share..."
-          value={reviewData.optionalNotes || ''}
-          onChange={(e) => handleChange('optionalNotes', e.target.value)}
-        />
-      </div>
-
       {/* Important Information */}
       <div className="info-box">
         <h4>Before you submit:</h4>
