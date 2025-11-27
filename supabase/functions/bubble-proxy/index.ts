@@ -3,13 +3,14 @@
  * Split Lease - Edge Function
  *
  * Routes client requests to appropriate Bubble workflow handlers
- * Authentication is OPTIONAL for create_listing (allows guest users)
+ * Authentication is OPTIONAL for public actions (allows guest users)
  * Other actions require authentication via Supabase Auth
  *
  * Supported Actions:
- * - create_listing: Create new listing (atomic sync) - NO AUTH REQUIRED
+ * - create_listing: Create new listing (with Supabase sync) - NO AUTH REQUIRED
+ * - get_listing: Fetch listing data from Bubble - NO AUTH REQUIRED
+ * - send_message: Send message to host (no sync) - NO AUTH REQUIRED
  * - upload_photos: Upload listing photos (atomic sync)
- * - send_message: Send message to host (no sync)
  * - submit_referral: Submit referral (atomic sync)
  * - signup_ai: AI-powered signup (atomic sync)
  */
@@ -24,6 +25,7 @@ import { EdgeFunctionRequest } from '../_shared/types.ts';
 
 // Import handlers
 import { handleListingCreate } from './handlers/listing.ts';
+import { handleGetListing } from './handlers/getListing.ts';
 import { handlePhotoUpload } from './handlers/photos.ts';
 import { handleSendMessage } from './handlers/messaging.ts';
 import { handleReferral } from './handlers/referral.ts';
@@ -32,7 +34,7 @@ import { handleAiSignup } from './handlers/signup.ts';
 console.log('[bubble-proxy] Edge Function started');
 
 // Actions that don't require authentication
-const PUBLIC_ACTIONS = ['create_listing'];
+const PUBLIC_ACTIONS = ['create_listing', 'get_listing', 'send_message'];
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -63,6 +65,7 @@ Deno.serve(async (req) => {
     // Validate action is supported
     const allowedActions = [
       'create_listing',
+      'get_listing',
       'upload_photos',
       'send_message',
       'submit_referral',
@@ -136,6 +139,10 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'create_listing':
         result = await handleListingCreate(syncService, payload, user);
+        break;
+
+      case 'get_listing':
+        result = await handleGetListing(syncService, payload, user);
         break;
 
       case 'upload_photos':
