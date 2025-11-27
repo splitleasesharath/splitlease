@@ -1,5 +1,10 @@
 /* FAQ Page Specific Styles */
 
+/* Override body background for FAQ page */
+body {
+  background: white;
+}
+
 /* Hero Section - Matches Help Center style */
 .hero {
   background: #31135d;
@@ -35,7 +40,6 @@
   position: sticky;
   top: 70px;
   z-index: 999;
-  box-shadow: 0 -10px 0 0 #31135d;
 }
 
 .tabs {
