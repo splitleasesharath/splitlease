@@ -18,15 +18,6 @@ Create documentation that maximizes:
 1. **Semantic Searchability (target: 85+)** - Perfect for RAG/vector retrieval
 2. **Digestibility (target: 85+)** - Token-efficient, unambiguous, parseable
 
-## Output Location
-
-Generated files go to: `docs/` directory with naming convention:
-- `CODEBASE_LLM_REFERENCE.md` for codebase
-- `ARCHITECTURE_LLM_REFERENCE.md` for architecture
-- `API_LLM_REFERENCE.md` for api
-- `CONFIG_LLM_REFERENCE.md` for config
-- `{DIRNAME}_LLM_REFERENCE.md` for directory scans
-
 ## Document Structure Template
 
 Every generated document MUST follow this structure:
@@ -145,59 +136,4 @@ Before saving, verify:
 - [ ] No entries have vague/generic descriptions
 - [ ] Stats section is accurate
 - [ ] No prose paragraphs exist
-- [ ] Maximum heading depth is 3
 
-### Phase 5: Save
-
-Save to `docs/{TYPE}_LLM_REFERENCE.md`
-
-## Example Output
-
-For `/generate-llm-docs directory:app/src/lib`:
-
-```markdown
-# app/src/lib - LLM Reference
-
-**GENERATED**: 2025-11-26
-**SCOPE**: Utility libraries and shared functions
-**OPTIMIZATION**: Semantic Searchability + Digestibility
-
----
-
-## QUICK_STATS
-
-[TOTAL_FILES]: 15
-[PRIMARY_LANGUAGE]: JavaScript
-[KEY_PATTERNS]: API clients, utilities, constants, authentication
-
----
-
-## CORE_UTILITIES
-
-### app/src/lib/auth.js
-[INTENT]: Authentication functions for login, logout, session validation via Edge Functions
-[EXPORTS]: checkAuthStatus(), loginUser(), logoutUser(), validateTokenAndFetchUser()
-[DEPENDS_ON]: lib/supabase.js, lib/secureStorage.js
-[USED_BY]: islands/shared/SignUpLoginModal.jsx, islands/shared/LoggedInAvatar.jsx
-
-### app/src/lib/constants.js
-[INTENT]: Application-wide constants including API URLs, feature flags, default values
-[EXPORTS]: BUBBLE_API_URL, DEFAULT_DAYS, PRICE_TIERS, USER_TYPES
-[DEPENDS_ON]: None
-[USED_BY]: Multiple components across islands/
-
-### app/src/lib/supabase.js
-[INTENT]: Supabase client initialization with anon key from environment
-[EXPORTS]: supabase (client instance)
-[DEPENDS_ON]: @supabase/supabase-js
-[USED_BY]: lib/auth.js, lib/dataLookups.js, lib/listingDataFetcher.js
-```
-
-## Argument Examples
-
-| Command | Result |
-|---------|--------|
-| `/generate-llm-docs codebase` | Full project documentation |
-| `/generate-llm-docs architecture` | Patterns, layers, conventions |
-| `/generate-llm-docs directory:app/src/logic` | Logic layer deep-dive |
-| `/generate-llm-docs file:app/src/lib/auth.js` | Single file detailed doc |
