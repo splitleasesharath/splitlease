@@ -171,7 +171,7 @@ export const helpCenterArticles = {
       {
         title: 'About Us',
         articles: [
-          { id: 'about-what-is', title: 'What is Split Lease and what do you do?', slug: 'what-is-split-lease' },
+          { id: 'about-what-is', title: 'What is Split Lease and what do you do?', slug: 'what-is-split-lease', external: '/help-center-articles/guests/getting-started/what-is-split-lease.html' },
           { id: 'vs-craigslist', title: 'What makes this service better than Craigslist?', slug: 'vs-craigslist' }
         ]
       },
