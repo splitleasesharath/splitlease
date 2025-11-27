@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 
 interface NightlyPriceSliderProps {
   initialP1?: number;
@@ -19,32 +19,42 @@ interface NightlyPriceSliderProps {
   }) => void;
 }
 
+/**
+ * NightlyPriceSlider - Shadow DOM based pricing slider
+ *
+ * EXACT PORT of the working Bubble implementation.
+ * The key to smooth dragging is keeping it SIMPLE:
+ * - Direct synchronous updates on every input event
+ * - No RAF batching, no debouncing, no drag state tracking
+ * - Let the browser handle native slider behavior
+ */
 export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
   initialP1 = 100,
   initialDecay = 0.95,
-  n2,
-  n3,
-  n4,
-  n5,
   onPricesChange
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const shadowRootRef = useRef<ShadowRoot | null>(null);
+  const initializedRef = useRef(false);
+
+  // Keep callback ref updated without triggering re-init
+  const onPricesChangeRef = useRef(onPricesChange);
+  useEffect(() => {
+    onPricesChangeRef.current = onPricesChange;
+  }, [onPricesChange]);
 
   useEffect(() => {
     if (!containerRef.current) return;
+    // Only initialize once
+    if (initializedRef.current) return;
+    initializedRef.current = true;
 
     const container = containerRef.current;
+    shadowRootRef.current = container.attachShadow({ mode: 'open' });
+    const root = shadowRootRef.current;
 
-    // Check if shadow root already exists, if not create it
-    if (!shadowRootRef.current) {
-      shadowRootRef.current = container.shadowRoot || container.attachShadow({ mode: 'open' });
-    }
-
-    const shadowRoot = shadowRootRef.current;
-
-    // Build the Shadow DOM content
-    shadowRoot.innerHTML = `
+    // Build UI inside Shadow DOM
+    root.innerHTML = `
       <style>
         :host { all: initial; }
         .app{ font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:#111827; background:#fff; max-width:100%; width:100%; margin:0; padding:12px; box-sizing:border-box; }
@@ -60,8 +70,7 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
         .track-wrap{ position:relative; height:64px; }
         .track{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); height:10px; background:linear-gradient(#9ea0a3,#9ea0a3) center/100% 10px no-repeat, #c9c9c9; border-radius:999px; }
         .ranges{ position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; }
-        .ranges input[type=range]{ pointer-events:auto; -webkit-appearance:none; appearance:none; position:absolute; top:50%; transform:translateY(-50%); background:transparent; height:36px; width:auto; touch-action:none; cursor:grab; }
-        .ranges input[type=range]:active{ cursor:grabbing; }
+        .ranges input[type=range]{ pointer-events:auto; -webkit-appearance:none; appearance:none; position:absolute; top:50%; transform:translateY(-50%); background:transparent; height:36px; width:auto; }
         #slw-r1{ left:0; width:49%; }
         #slw-r5{ right:0; width:49%; }
         .ranges input[type=range]::-webkit-slider-runnable-track{ height:10px; background:transparent; }
@@ -147,405 +156,238 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
       </div>
     `;
 
-    // JavaScript logic - create function that takes shadow root as parameter
-    const initSlider = (shadowRoot: ShadowRoot) => {
-      const N = 5;
-      const DECAY_MIN = 0.7;
-      const DECAY_MAX = 1.0;
+    // ============================================================
+    // EXACT PORT OF BUBBLE CODE - simple and direct
+    // ============================================================
+    const N = 5;
+    const DECAY_MIN = 0.7;
+    const DECAY_MAX = 1.0;
 
-      const root = shadowRoot;
-      const $ = (sel: string) => root.getElementById(sel);
-      const fmt0 = (n: number) => n.toLocaleString(undefined,{style:'currency',currency:'USD',maximumFractionDigits:0});
-      const roundUp = (n: number) => Math.ceil(n);
+    const $ = (sel: string) => root.getElementById(sel);
+    const fmt0 = (n: number) => n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+    const roundUp = (n: number) => Math.ceil(n);
 
-      const p1El = $('slw-p1') as HTMLInputElement;
-      const decayEl = $('slw-decay') as HTMLInputElement;
-      const totalEl = $('slw-total') as HTMLInputElement;
-      const r1 = $('slw-r1') as HTMLInputElement;
-      const r5 = $('slw-r5') as HTMLInputElement;
-      const rows = $('slw-rows') as HTMLElement;
-      const tag1 = $('slw-tag1') as HTMLElement;
-      const tag5 = $('slw-tag5') as HTMLElement;
-      const val1 = $('slw-val1') as HTMLElement;
-      const val5 = $('slw-val5') as HTMLElement;
-      const p1Up = $('slw-p1-up') as HTMLElement;
-      const p1Down = $('slw-p1-down') as HTMLElement;
-      const dUp = $('slw-decay-up') as HTMLElement;
-      const dDown = $('slw-decay-down') as HTMLElement;
+    const p1El = $('slw-p1') as HTMLInputElement;
+    const decayEl = $('slw-decay') as HTMLInputElement;
+    const totalEl = $('slw-total') as HTMLInputElement;
+    const r1 = $('slw-r1') as HTMLInputElement;
+    const r5 = $('slw-r5') as HTMLInputElement;
+    const rows = $('slw-rows') as HTMLElement;
+    const tag1 = $('slw-tag1') as HTMLElement;
+    const tag5 = $('slw-tag5') as HTMLElement;
+    const val1 = $('slw-val1') as HTMLElement;
+    const val5 = $('slw-val5') as HTMLElement;
+    const p1Up = $('slw-p1-up') as HTMLElement;
+    const p1Down = $('slw-p1-down') as HTMLElement;
+    const dUp = $('slw-decay-up') as HTMLElement;
+    const dDown = $('slw-decay-down') as HTMLElement;
 
-      let nightly: number[] = Array(N).fill(0);
-      let currentDecay = initialDecay;
-      let broadcastTimeoutId: number | null = null;
+    let nightly: number[] = Array(N).fill(0);
+    let currentDecay = initialDecay;
 
-      // Drag state tracking for smooth slider movement
-      let isDraggingR1 = false;
-      let isDraggingR5 = false;
-      let rafId: number | null = null;
-      let pendingUpdate: (() => void) | null = null;
+    const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
+    const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
-      // Store the last known total during r1 drag (don't update r5 slider during drag)
-      let frozenTotalForR1Drag = 0;
+    function sumSeries(p1: number, d: number) {
+      if (Math.abs(1 - d) < 1e-10) return p1 * N;
+      return p1 * (1 - Math.pow(d, N)) / (1 - d);
+    }
 
-      const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
-      const sum = (arr: number[]) => arr.reduce((a,b)=>a+b,0);
-
-      function sumSeries(p1: number, d: number) {
-        if (Math.abs(1 - d) < 1e-10) return p1 * N;
-        return p1 * (1 - Math.pow(d, N)) / (1 - d);
+    function solveDecay(p1: number, S: number) {
+      if (p1 <= 0) return DECAY_MIN;
+      const Smin = sumSeries(p1, DECAY_MIN);
+      const Smax = sumSeries(p1, DECAY_MAX);
+      const T = clamp(S, Smin, Smax);
+      if (Math.abs(T - Smin) < 1e-6) return DECAY_MIN;
+      if (Math.abs(T - Smax) < 1e-6) return DECAY_MAX;
+      let lo = DECAY_MIN, hi = DECAY_MAX, mid: number;
+      for (let i = 0; i < 50; i++) {
+        mid = (lo + hi) / 2;
+        const Sm = sumSeries(p1, mid);
+        if (Sm < T) lo = mid; else hi = mid;
       }
+      return clamp((lo + hi) / 2, DECAY_MIN, DECAY_MAX);
+    }
 
-      function solveDecay(p1: number, S: number) {
-        if (p1 <= 0) return DECAY_MIN;
-        const Smin = sumSeries(p1, DECAY_MIN);
-        const Smax = sumSeries(p1, DECAY_MAX);
-        const T = clamp(S, Smin, Smax);
-        if (Math.abs(T - Smin) < 1e-6) return DECAY_MIN;
-        if (Math.abs(T - Smax) < 1e-6) return DECAY_MAX;
-        let lo = DECAY_MIN, hi = DECAY_MAX, mid: number;
-        for (let i=0;i<50;i++) {
-          mid = (lo+hi)/2;
-          const Sm = sumSeries(p1, mid);
-          if (Sm < T) lo = mid; else hi = mid;
-        }
-        return clamp((lo+hi)/2, DECAY_MIN, DECAY_MAX);
-      }
+    function updateBounds() {
+      const p1 = +r1.value || 0;
+      const minTotal = sumSeries(p1, DECAY_MIN);
+      const maxTotal = sumSeries(p1, DECAY_MAX);
+      r5.min = String(Math.round(minTotal));
+      r5.max = String(Math.round(Math.max(maxTotal, minTotal)));
+    }
 
-      // Update bounds without triggering value changes
-      function updateBoundsOnly() {
-        const p1 = +r1.value || 0;
-        const minTotal = sumSeries(p1, DECAY_MIN);
-        const maxTotal = sumSeries(p1, DECAY_MAX);
-        r5.min = String(Math.round(minTotal));
-        r5.max = String(Math.round(Math.max(maxTotal, minTotal)));
-      }
-
-      function rebuildNightly(p1: number, d: number) {
-        nightly[0] = roundUp(+p1);
-        for (let k=1;k<N;k++) nightly[k] = roundUp(nightly[k-1] * d);
-      }
-
-      function placeTags() {
-        const wrap = root.querySelector('.ranges') as HTMLElement;
-        if (!wrap) return;
-        const rectWrap = wrap.getBoundingClientRect();
-        if (rectWrap.width === 0) return; // Not visible yet
-
-        const pad = 12;
-        const minGap = 84;
-
-        const posOn = (input: HTMLInputElement) => {
-          const r = input.getBoundingClientRect();
-          const min = +input.min, max = +input.max, val = +input.value;
-          const t = (val - min) / (max - min || 1);
-          return (r.left - rectWrap.left) + r.width * t;
-        };
-
-        let x1 = posOn(r1);
-        let x5 = posOn(r5);
-
-        const clampX = (x: number) => Math.max(pad, Math.min(rectWrap.width - pad, x));
-        if (Math.abs(x1 - x5) < minGap) {
-          const mid = (x1 + x5) / 2;
-          x1 = mid - minGap / 2;
-          x5 = mid + minGap / 2;
-        }
-        x1 = clampX(x1);
-        x5 = clampX(x5);
-
-        tag1.style.left = x1 + 'px';  val1.style.left = x1 + 'px';
-        tag5.style.left = x5 + 'px';  val5.style.left = x5 + 'px';
-
-        val1.textContent = fmt0(+r1.value);
-        val5.textContent = fmt0(+r5.value);
-      }
-
-      function renderTable() {
-        let cum = 0;
-        const body: string[] = [];
-        for (let i=0;i<N;i++) {
-          cum += nightly[i];
-          body.push(`<tr><td>${i+1}</td><td>${fmt0(nightly[i])}</td><td>${fmt0(cum)}</td></tr>`);
-        }
-        rows.innerHTML = body.join('');
-      }
-
-      function broadcast() {
-        const roundedNightly = nightly.map(v => Math.round(v));
-        const payload = {
-          p1: roundedNightly[0],
-          n1: roundedNightly[0],
-          n2: roundedNightly[1],
-          n3: roundedNightly[2],
-          n4: roundedNightly[3],
-          n5: roundedNightly[4],
-          decay: +currentDecay.toFixed(3),
-          total: sum(roundedNightly)
-        };
-
-        // Dispatch to parent React component
-        const event = new CustomEvent('nightly-prices-update', {
-          detail: payload,
-          bubbles: true,
-          composed: true
-        });
-        root.host.dispatchEvent(event);
-      }
-
-      // Debounced broadcast for smoother dragging
-      function broadcastDebounced() {
-        if (broadcastTimeoutId !== null) {
-          clearTimeout(broadcastTimeoutId);
-        }
-        broadcastTimeoutId = window.setTimeout(() => {
-          broadcast();
-          broadcastTimeoutId = null;
-        }, 50); // Slower updates during drag for better performance
-      }
-
-      // RAF-based visual update to prevent jank
-      function scheduleVisualUpdate(updateFn: () => void) {
-        pendingUpdate = updateFn;
-        if (rafId === null) {
-          rafId = requestAnimationFrame(() => {
-            rafId = null;
-            if (pendingUpdate) {
-              pendingUpdate();
-              pendingUpdate = null;
-            }
-          });
-        }
-      }
-
-      // Update UI elements (text inputs, table) without touching sliders
-      function updateTextUI() {
-        const p1 = nightly[0];
-        const total = sum(nightly);
-        p1El.value = String(Math.round(p1));
-        decayEl.value = currentDecay.toFixed(3);
-        totalEl.value = String(Math.round(total));
-      }
-
-      // Full sync when not dragging
-      function syncUI() {
-        const p1 = nightly[0];
-        const total = sum(nightly);
-
-        updateTextUI();
-
-        // Only update sliders when not being dragged
-        if (!isDraggingR1) {
-          r1.value = String(Math.round(p1));
-        }
-
-        updateBoundsOnly();
-
-        if (!isDraggingR5) {
-          r5.value = String(Math.round(total));
-        }
-
-        placeTags();
-        renderTable();
-        broadcast();
-      }
-
-      function commitP1() {
-        const raw = (p1El.value||'').trim(); if (!raw) return;
-        const p1 = Math.max(0, parseFloat(raw)); if (!isFinite(p1)) return;
-        rebuildNightly(p1, currentDecay);
-        syncUI();
-      }
-
-      function commitDecay() {
-        const raw = (decayEl.value||'').trim(); if (!raw) return;
-        let d = parseFloat(raw); if (!isFinite(d)) return;
-        d = clamp(d, DECAY_MIN, DECAY_MAX);
-        currentDecay = d;
-        const p1 = Math.max(0, parseFloat(p1El.value||r1.value||'0'));
-        rebuildNightly(p1, d);
-        syncUI();
-      }
-
-      // Optimized drag handler for r1 (1-night price slider)
-      function onDragP1() {
-        const val = parseFloat(r1.value);
-        const p1 = Math.max(0, val);
-
-        // Use frozen total during drag to maintain consistency
-        const targetTotal = isDraggingR1 ? frozenTotalForR1Drag : (+r5.value || sum(nightly));
-        const d = solveDecay(p1, targetTotal);
-        currentDecay = d;
-
-        // Rebuild nightly values
-        rebuildNightly(p1, d);
-
-        // Schedule visual update via RAF - DO NOT update r5.value during drag
-        scheduleVisualUpdate(() => {
-          updateTextUI();
-          updateBoundsOnly();
-          // Only update tags and table, NOT the r5 slider value during drag
-          placeTags();
-          renderTable();
-        });
-
-        broadcastDebounced();
-      }
-
-      // Optimized drag handler for r5 (5-night total slider)
-      function onDragTotal() {
-        const Sval = parseFloat(r5.value);
-        const p1 = +r1.value || nightly[0];
-
-        // Calculate bounds
-        const minTotal = sumSeries(p1, DECAY_MIN);
-        const maxTotal = sumSeries(p1, DECAY_MAX);
-        const S = clamp(Sval, minTotal, maxTotal);
-
-        // Solve for decay
-        const d = solveDecay(p1, S);
-        currentDecay = d;
-
-        // Rebuild nightly values
-        rebuildNightly(p1, d);
-
-        // Schedule visual update via RAF
-        scheduleVisualUpdate(() => {
-          updateTextUI();
-          placeTags();
-          renderTable();
-        });
-
-        broadcastDebounced();
-      }
-
-      // Drag state handlers for smooth slider movement
-      function startDragR1(e: PointerEvent | MouseEvent | TouchEvent) {
-        isDraggingR1 = true;
-        // Freeze current total so r5 slider doesn't jump during drag
-        frozenTotalForR1Drag = +r5.value || sum(nightly);
-
-        // Use pointer capture for reliable drag tracking
-        if ('setPointerCapture' in r1 && 'pointerId' in e) {
-          r1.setPointerCapture((e as PointerEvent).pointerId);
-        }
-
-        // Add document-level listeners for drag end (works even if mouse leaves element)
-        document.addEventListener('mouseup', endDragR1Global, { once: true });
-        document.addEventListener('touchend', endDragR1Global, { once: true });
-      }
-
-      function endDragR1() {
-        if (!isDraggingR1) return;
-        isDraggingR1 = false;
-        // Final sync: now update r5 slider to actual calculated total
-        syncUI();
-      }
-
-      function endDragR1Global() {
-        endDragR1();
-      }
-
-      function startDragR5(e: PointerEvent | MouseEvent | TouchEvent) {
-        isDraggingR5 = true;
-
-        // Use pointer capture for reliable drag tracking
-        if ('setPointerCapture' in r5 && 'pointerId' in e) {
-          r5.setPointerCapture((e as PointerEvent).pointerId);
-        }
-
-        // Add document-level listeners for drag end
-        document.addEventListener('mouseup', endDragR5Global, { once: true });
-        document.addEventListener('touchend', endDragR5Global, { once: true });
-      }
-
-      function endDragR5() {
-        if (!isDraggingR5) return;
-        isDraggingR5 = false;
-        // Final sync and broadcast when drag ends
-        syncUI();
-      }
-
-      function endDragR5Global() {
-        endDragR5();
-      }
-
-      // Events for text inputs
-      p1El.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitP1(); });
-      p1El.addEventListener('blur', commitP1);
-      decayEl.addEventListener('change', commitDecay);
-      decayEl.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitDecay(); });
-      decayEl.addEventListener('blur', commitDecay);
-
-      // Drag start tracking for r1 - use pointerdown for unified mouse/touch handling
-      r1.addEventListener('pointerdown', startDragR1);
-      // Fallback for older browsers
-      r1.addEventListener('mousedown', startDragR1 as EventListener);
-      r1.addEventListener('touchstart', startDragR1 as EventListener, { passive: true });
-
-      // Drag start tracking for r5
-      r5.addEventListener('pointerdown', startDragR5);
-      r5.addEventListener('mousedown', startDragR5 as EventListener);
-      r5.addEventListener('touchstart', startDragR5 as EventListener, { passive: true });
-
-      // NOTE: mouseup/touchend are handled at document level in startDrag functions
-      // NOTE: mouseleave handlers REMOVED - they caused premature drag termination
-
-      // Range slider input events - use native values directly
-      r1.addEventListener('input', onDragP1);
-      r5.addEventListener('input', onDragTotal);
-
-      // Change event fires for keyboard navigation (arrow keys, etc.)
-      // Drag end is handled via document-level listeners for pointer/mouse/touch
-      r1.addEventListener('change', () => { if (!isDraggingR1) syncUI(); });
-      r5.addEventListener('change', () => { if (!isDraggingR5) syncUI(); });
-
-      // Spinners
-      p1Up.addEventListener('click', () => { p1El.value = String(Math.round(+p1El.value||0) + 1); commitP1(); });
-      p1Down.addEventListener('click', () => { p1El.value = String(Math.max(0, Math.round(+p1El.value||0) - 1)); commitP1(); });
-      dUp.addEventListener('click', () => {
-        currentDecay = clamp(currentDecay + 0.001, DECAY_MIN, DECAY_MAX);
-        rebuildNightly(nightly[0], currentDecay);
-        syncUI();
-      });
-      dDown.addEventListener('click', () => {
-        currentDecay = clamp(currentDecay - 0.001, DECAY_MIN, DECAY_MAX);
-        rebuildNightly(nightly[0], currentDecay);
-        syncUI();
-      });
-
-      // Resize observer
-      const ro = new ResizeObserver(() => placeTags());
-      ro.observe(root.host);
-
-      // Initialize
-      const p1 = initialP1;
-      const d = initialDecay;
-      currentDecay = d;
-      nightly = Array(N).fill(0);
-      nightly[0] = p1;
-      for (let i=1;i<N;i++) nightly[i] = roundUp(nightly[i-1]*d);
-      r1.value = String(Math.round(p1));
-      r5.value = String(Math.round(sumSeries(p1,d)));
-      updateBoundsOnly();
+    function rebuildFrom(p1: number, d: number) {
+      nightly[0] = roundUp(+p1);
+      for (let k = 1; k < N; k++) nightly[k] = roundUp(nightly[k - 1] * d);
       syncUI();
-    };
+    }
 
-    // Call the initialization function
-    initSlider(shadowRoot);
+    function placeTags() {
+      const wrap = root.querySelector('.ranges') as HTMLElement;
+      if (!wrap) return;
+      const rectWrap = wrap.getBoundingClientRect();
+      if (rectWrap.width === 0) return;
 
-    // Listen for price updates from Shadow DOM
-    const handlePriceUpdate = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (onPricesChange && customEvent.detail) {
-        onPricesChange(customEvent.detail);
+      const pad = 12;
+      const minGap = 84;
+
+      const posOn = (input: HTMLInputElement) => {
+        const r = input.getBoundingClientRect();
+        const min = +input.min, max = +input.max, val = +input.value;
+        const t = (val - min) / (max - min || 1);
+        return (r.left - rectWrap.left) + r.width * t;
+      };
+
+      let x1 = posOn(r1);
+      let x5 = posOn(r5);
+
+      const clampX = (x: number) => Math.max(pad, Math.min(rectWrap.width - pad, x));
+      if (Math.abs(x1 - x5) < minGap) {
+        const mid = (x1 + x5) / 2;
+        x1 = mid - minGap / 2;
+        x5 = mid + minGap / 2;
       }
-    };
+      x1 = clampX(x1);
+      x5 = clampX(x5);
 
-    container.addEventListener('nightly-prices-update', handlePriceUpdate);
+      tag1.style.left = x1 + 'px'; val1.style.left = x1 + 'px';
+      tag5.style.left = x5 + 'px'; val5.style.left = x5 + 'px';
+
+      val1.textContent = fmt0(+r1.value);
+      val5.textContent = fmt0(+r5.value);
+    }
+
+    function renderTable() {
+      let cum = 0;
+      const body: string[] = [];
+      for (let i = 0; i < N; i++) {
+        cum += nightly[i];
+        body.push(`<tr><td>${i + 1}</td><td>${fmt0(nightly[i])}</td><td>${fmt0(cum)}</td></tr>`);
+      }
+      rows.innerHTML = body.join('');
+    }
+
+    function broadcast() {
+      const roundedNightly = nightly.map(v => Math.round(v));
+      const payload = {
+        p1: roundedNightly[0],
+        n1: roundedNightly[0],
+        n2: roundedNightly[1],
+        n3: roundedNightly[2],
+        n4: roundedNightly[3],
+        n5: roundedNightly[4],
+        decay: +currentDecay.toFixed(3),
+        total: sum(roundedNightly)
+      };
+
+      // Call React callback via ref (stable reference)
+      if (onPricesChangeRef.current) {
+        onPricesChangeRef.current(payload);
+      }
+    }
+
+    function syncUI() {
+      const p1 = nightly[0];
+      const total = sum(nightly);
+      p1El.value = String(Math.round(p1));
+      decayEl.value = currentDecay.toFixed(3);
+      totalEl.value = String(Math.round(total));
+      r1.value = String(Math.round(p1));
+      updateBounds();
+      const Sclamped = clamp(total, +r5.min, +r5.max);
+      r5.value = String(Math.round(Sclamped));
+      placeTags();
+      renderTable();
+      broadcast();
+    }
+
+    // Commit handlers (Enter/blur)
+    function commitP1() {
+      const raw = (p1El.value || '').trim();
+      if (!raw) return;
+      const p1 = Math.max(0, parseFloat(raw));
+      if (!isFinite(p1)) return;
+      rebuildFrom(p1, currentDecay);
+    }
+
+    function commitDecay() {
+      const raw = (decayEl.value || '').trim();
+      if (!raw) return;
+      let d = parseFloat(raw);
+      if (!isFinite(d)) return;
+      d = clamp(d, DECAY_MIN, DECAY_MAX);
+      currentDecay = d;
+      const p1 = Math.max(0, parseFloat(p1El.value || r1.value || '0'));
+      rebuildFrom(p1, d);
+    }
+
+    // Slider interactions — EXACT copy from Bubble code
+    function onDragP1(val: number) {
+      const p1 = Math.max(0, val);
+      updateBounds();
+      const Sfixed = clamp(+r5.value || 0, +r5.min, +r5.max);
+      const d = solveDecay(p1, Sfixed);
+      currentDecay = d;
+      rebuildFrom(p1, d);
+      r5.value = String(Math.round(Sfixed));
+      placeTags();
+    }
+
+    function onDragTotal(Sval: number) {
+      const p1 = +r1.value || 0;
+      updateBounds();
+      const S = clamp(Sval, +r5.min, +r5.max);
+      const d = solveDecay(p1, S);
+      currentDecay = d;
+      rebuildFrom(p1, d);
+      r1.value = String(Math.round(p1));
+      placeTags();
+    }
+
+    // Events — EXACT copy from Bubble code
+    p1El.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitP1(); });
+    p1El.addEventListener('blur', commitP1);
+    decayEl.addEventListener('input', commitDecay);
+    decayEl.addEventListener('change', commitDecay);
+    decayEl.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitDecay(); });
+    decayEl.addEventListener('blur', commitDecay);
+    r1.addEventListener('input', () => onDragP1(parseFloat(r1.value)));
+    r5.addEventListener('input', () => onDragTotal(parseFloat(r5.value)));
+
+    // Spinners
+    p1Up.addEventListener('click', () => { p1El.value = String(Math.round(+p1El.value || 0) + 1); commitP1(); });
+    p1Down.addEventListener('click', () => { p1El.value = String(Math.max(0, Math.round(+p1El.value || 0) - 1)); commitP1(); });
+    dUp.addEventListener('click', () => {
+      currentDecay = clamp(currentDecay + 0.001, DECAY_MIN, DECAY_MAX);
+      decayEl.value = currentDecay.toFixed(3);
+      const p1 = Math.max(0, parseFloat(p1El.value || r1.value || '0'));
+      rebuildFrom(p1, currentDecay);
+    });
+    dDown.addEventListener('click', () => {
+      currentDecay = clamp(currentDecay - 0.001, DECAY_MIN, DECAY_MAX);
+      decayEl.value = currentDecay.toFixed(3);
+      const p1 = Math.max(0, parseFloat(p1El.value || r1.value || '0'));
+      rebuildFrom(p1, currentDecay);
+    });
+
+    // Resize observer
+    const ro = new ResizeObserver(() => placeTags());
+    ro.observe(root.host);
+
+    // Initialize
+    currentDecay = initialDecay;
+    nightly = Array(N).fill(0);
+    nightly[0] = initialP1;
+    for (let i = 1; i < N; i++) nightly[i] = roundUp(nightly[i - 1] * initialDecay);
+    r1.value = String(Math.round(initialP1));
+    r5.value = String(Math.round(sumSeries(initialP1, initialDecay)));
+    syncUI();
 
     return () => {
-      container.removeEventListener('nightly-prices-update', handlePriceUpdate);
+      ro.disconnect();
     };
-  }, [initialP1, initialDecay, onPricesChange]);
+  }, []); // Empty deps - only run once on mount
 
   return <div ref={containerRef} style={{ width: '100%', minHeight: '400px' }} />;
 };
