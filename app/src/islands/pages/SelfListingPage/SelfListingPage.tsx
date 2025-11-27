@@ -248,8 +248,13 @@ export const SelfListingPage: React.FC = () => {
   ];
 
   const getSectionStatus = (sectionNum: number) => {
-    if (formData.completedSections.includes(sectionNum)) return 'completed';
-    if (sectionNum === currentSection) return 'active';
+    const isCompleted = formData.completedSections.includes(sectionNum);
+    const isActive = sectionNum === currentSection;
+
+    // If section is both completed AND currently active, return combined class
+    if (isCompleted && isActive) return 'completed active';
+    if (isCompleted) return 'completed';
+    if (isActive) return 'active';
     if (isSectionLocked(sectionNum)) return 'locked';
     return 'pending';
   };
