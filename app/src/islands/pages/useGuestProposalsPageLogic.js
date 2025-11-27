@@ -106,6 +106,7 @@ export function useGuestProposalsPageLogic() {
   const [showEditProposalModal, setShowEditProposalModal] = useState(false)
   const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false)
   const [showCancelProposalModal, setShowCancelProposalModal] = useState(false)
+  const [showGuestEditingProposalModal, setShowGuestEditingProposalModal] = useState(false)
 
   // ============================================================================
   // Initialization - Load user and proposals
@@ -545,6 +546,106 @@ export function useGuestProposalsPageLogic() {
     setShowProposalDetailsModal(false)
   }
 
+  function openGuestEditingProposalModal() {
+    setShowGuestEditingProposalModal(true)
+  }
+
+  function closeGuestEditingProposalModal() {
+    setShowGuestEditingProposalModal(false)
+  }
+
+  /**
+   * Handle proposal update from GuestEditingProposalModal
+   * Saves the updated proposal data to the database
+   */
+  async function handleGuestEditingProposalUpdate(payload) {
+    if (!payload?.proposal) return
+
+    try {
+      const { error } = await supabase
+        .from('proposal')
+        .update({
+          'Move in range start': payload.moveInDate?.toISOString(),
+          'Reservation Span (Weeks)': payload.numberOfWeeks,
+          'Days Selected': payload.daysSelected,
+          'nights per week (num)': payload.nightsSelected?.length || 0,
+          'check in day': payload.checkIn?.display,
+          'check out day': payload.checkOut?.display,
+          'Total Price for Reservation (guest)': payload.totalPrice || 0,
+          'proposal nightly price': payload.nightlyPrice || 0,
+          'Price Rent per 4 weeks': payload.fourWeekRent || 0,
+          'Modified Date': new Date().toISOString()
+        })
+        .eq('_id', payload.proposal._id || payload.proposal.id)
+
+      if (error) throw error
+
+      console.log('Proposal updated successfully from GuestEditingProposalModal')
+      closeGuestEditingProposalModal()
+
+      // Reload proposal details
+      if (selectedProposal) {
+        await loadProposalDetails(selectedProposal)
+      }
+    } catch (err) {
+      console.error('Error updating proposal:', err)
+      alert('Failed to update proposal. Please try again.')
+    }
+  }
+
+  /**
+   * Handle proposal cancellation from GuestEditingProposalModal
+   */
+  async function handleGuestEditingProposalCancel(reason) {
+    if (!selectedProposal) return
+
+    try {
+      const proposalForWorkflow = {
+        id: selectedProposal._id || selectedProposal.id,
+        status: getProposalStatus(),
+        deleted: getDeletedStatus(),
+        usualOrder: selectedProposal['Status - Usual Order'] || selectedProposal.usualOrder || 0,
+        houseManualAccessed: selectedProposal['Did user access house manual?'] || selectedProposal.houseManualAccessed || false
+      }
+
+      const result = await cancelProposalWorkflow({
+        supabase,
+        proposal: proposalForWorkflow,
+        source: 'guest-editing-modal',
+        canCancelProposal,
+        reason
+      })
+
+      if (result.success) {
+        console.log('Proposal cancelled successfully from GuestEditingProposalModal')
+        closeGuestEditingProposalModal()
+        alert(result.message)
+        await initializePage()
+      } else {
+        alert(result.message)
+      }
+    } catch (err) {
+      console.error('Error cancelling proposal:', err)
+      alert('Failed to cancel proposal. Please try again.')
+    }
+  }
+
+  /**
+   * Handle alert notifications from GuestEditingProposalModal
+   */
+  function handleGuestEditingProposalAlert(config) {
+    if (!config) return
+
+    // Simple alert for now - can be enhanced with toast notifications
+    const message = config.title ? `${config.title}: ${config.text}` : config.text
+    console.log(`[${config.alertType || 'info'}] ${message}`)
+
+    // Only show alert if not a simple information message
+    if (config.alertType === 'error' || config.alertType === 'warning') {
+      alert(message)
+    }
+  }
+
   // ============================================================================
   // Navigation Handlers
   // ============================================================================
@@ -839,6 +940,14 @@ export function useGuestProposalsPageLogic() {
     showCancelProposalModal,
     closeCancelProposalModal,
     handleConfirmCancelProposal,
+
+    // Modal state - Guest Editing Proposal
+    showGuestEditingProposalModal,
+    openGuestEditingProposalModal,
+    closeGuestEditingProposalModal,
+    handleGuestEditingProposalUpdate,
+    handleGuestEditingProposalCancel,
+    handleGuestEditingProposalAlert,
 
     // Utilities (from Logic Core)
     formatPrice,
