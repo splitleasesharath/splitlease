@@ -979,6 +979,12 @@
 
             <!-- Sidebar -->
             <div class="sidebar">
+                <!-- Host Listings (dynamically populated for hosts) -->
+                <div class="listings-card" style="display: none;">
+                    <h3 class="section-title">Your Listings</h3>
+                    <!-- Populated by JavaScript when user has listings -->
+                </div>
+
                 <!-- Recent Days Selected (from database) -->
                 <div class="profile-card schedule-section">
                     <h3 class="section-title">Recent Days Selected</h3>
@@ -1317,6 +1323,10 @@
         // Populate listings
         function populateListings(listings) {
             const listingsCard = document.querySelector('.listings-card');
+            if (!listingsCard) {
+                console.log('Listings card element not found - skipping listings render');
+                return;
+            }
             const userName = document.getElementById('profileName').textContent.split(' ')[0];
 
             let listingsHTML = `<h3 class="section-title">${userName}'s Listings</h3>`;
@@ -1366,6 +1376,7 @@
             });
 
             listingsCard.innerHTML = listingsHTML;
+            listingsCard.style.display = 'block'; // Show the listings card
         }
 
         // Populate reviews
