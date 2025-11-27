@@ -36,7 +36,8 @@ import { handleSubmitListing } from './handlers/submitListing.ts';
 console.log('[bubble-proxy] Edge Function started');
 
 // Actions that don't require authentication
-const PUBLIC_ACTIONS = ['create_listing', 'get_listing', 'send_message', 'signup_ai'];
+// upload_photos is public because photos are uploaded in Section 6 before user signup in Section 7
+const PUBLIC_ACTIONS = ['create_listing', 'get_listing', 'send_message', 'signup_ai', 'upload_photos'];
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
