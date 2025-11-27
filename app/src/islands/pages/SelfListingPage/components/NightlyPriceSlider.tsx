@@ -176,6 +176,12 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
       let currentDecay = initialDecay;
       let broadcastTimeoutId: number | null = null;
 
+      // Drag state tracking for smooth slider movement
+      let isDraggingR1 = false;
+      let isDraggingR5 = false;
+      let rafId: number | null = null;
+      let pendingUpdate: (() => void) | null = null;
+
       const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
       const sum = (arr: number[]) => arr.reduce((a,b)=>a+b,0);
 
@@ -200,7 +206,8 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
         return clamp((lo+hi)/2, DECAY_MIN, DECAY_MAX);
       }
 
-      function updateBounds() {
+      // Update bounds without triggering value changes
+      function updateBoundsOnly() {
         const p1 = +r1.value || 0;
         const minTotal = sumSeries(p1, DECAY_MIN);
         const maxTotal = sumSeries(p1, DECAY_MAX);
@@ -208,15 +215,17 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
         r5.max = String(Math.round(Math.max(maxTotal, minTotal)));
       }
 
-      function rebuildFrom(p1: number, d: number, isDragging = false, skipR1Update = false, skipR5Update = false) {
+      function rebuildNightly(p1: number, d: number) {
         nightly[0] = roundUp(+p1);
         for (let k=1;k<N;k++) nightly[k] = roundUp(nightly[k-1] * d);
-        syncUI(isDragging, skipR1Update, skipR5Update);
       }
 
       function placeTags() {
         const wrap = root.querySelector('.ranges') as HTMLElement;
+        if (!wrap) return;
         const rectWrap = wrap.getBoundingClientRect();
+        if (rectWrap.width === 0) return; // Not visible yet
+
         const pad = 12;
         const minGap = 84;
 
@@ -278,7 +287,7 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
         root.host.dispatchEvent(event);
       }
 
-      // Debounced broadcast for smoother dragging (16ms = ~60fps)
+      // Debounced broadcast for smoother dragging
       function broadcastDebounced() {
         if (broadcastTimeoutId !== null) {
           clearTimeout(broadcastTimeoutId);
@@ -286,45 +295,60 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
         broadcastTimeoutId = window.setTimeout(() => {
           broadcast();
           broadcastTimeoutId = null;
-        }, 16);
+        }, 50); // Slower updates during drag for better performance
       }
 
-      function syncUI(skipBroadcast = false, skipR1Update = false, skipR5Update = false) {
+      // RAF-based visual update to prevent jank
+      function scheduleVisualUpdate(updateFn: () => void) {
+        pendingUpdate = updateFn;
+        if (rafId === null) {
+          rafId = requestAnimationFrame(() => {
+            rafId = null;
+            if (pendingUpdate) {
+              pendingUpdate();
+              pendingUpdate = null;
+            }
+          });
+        }
+      }
+
+      // Update UI elements (text inputs, table) without touching sliders
+      function updateTextUI() {
         const p1 = nightly[0];
         const total = sum(nightly);
         p1El.value = String(Math.round(p1));
         decayEl.value = currentDecay.toFixed(3);
         totalEl.value = String(Math.round(total));
+      }
 
-        // Only update slider values if not actively dragging them
-        if (!skipR1Update) {
+      // Full sync when not dragging
+      function syncUI() {
+        const p1 = nightly[0];
+        const total = sum(nightly);
+
+        updateTextUI();
+
+        // Only update sliders when not being dragged
+        if (!isDraggingR1) {
           r1.value = String(Math.round(p1));
         }
 
-        // Update bounds for r5 slider
-        updateBounds();
+        updateBoundsOnly();
 
-        // Set r5 value to the calculated total
-        if (!skipR5Update) {
+        if (!isDraggingR5) {
           r5.value = String(Math.round(total));
         }
 
         placeTags();
         renderTable();
-
-        // Use debounced broadcast during drag operations
-        if (skipBroadcast) {
-          broadcastDebounced();
-        } else {
-          broadcast();
-        }
+        broadcast();
       }
 
       function commitP1() {
         const raw = (p1El.value||'').trim(); if (!raw) return;
         const p1 = Math.max(0, parseFloat(raw)); if (!isFinite(p1)) return;
-        const d = currentDecay;
-        rebuildFrom(p1, d);
+        rebuildNightly(p1, currentDecay);
+        syncUI();
       }
 
       function commitDecay() {
@@ -333,63 +357,127 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
         d = clamp(d, DECAY_MIN, DECAY_MAX);
         currentDecay = d;
         const p1 = Math.max(0, parseFloat(p1El.value||r1.value||'0'));
-        rebuildFrom(p1, d);
+        rebuildNightly(p1, d);
+        syncUI();
       }
 
-      function onDragP1(val: number) {
+      // Optimized drag handler for r1 (1-night price slider)
+      function onDragP1() {
+        const val = parseFloat(r1.value);
         const p1 = Math.max(0, val);
-        updateBounds();
-        const Sfixed = clamp(+r5.value || 0, +r5.min, +r5.max);
-        const d = solveDecay(p1, Sfixed);
+
+        // Calculate new decay to maintain current total (if possible)
+        const currentTotal = +r5.value || sum(nightly);
+        const d = solveDecay(p1, currentTotal);
         currentDecay = d;
-        // Skip updating r1 during drag to avoid fighting with browser
-        rebuildFrom(p1, d, true, true, false); // isDragging=true, skipR1=true, skipR5=false
-        r5.value = String(Math.round(Sfixed));
-        placeTags();
+
+        // Rebuild nightly values
+        rebuildNightly(p1, d);
+
+        // Schedule visual update via RAF
+        scheduleVisualUpdate(() => {
+          updateTextUI();
+          // Update r5 bounds and value to reflect new calculations
+          updateBoundsOnly();
+          const newTotal = sum(nightly);
+          r5.value = String(Math.round(newTotal));
+          placeTags();
+          renderTable();
+        });
+
+        broadcastDebounced();
       }
 
-      function onDragTotal(Sval: number) {
-        const p1 = +r1.value || 0;
-        updateBounds();
-        const S = clamp(Sval, +r5.min, +r5.max);
+      // Optimized drag handler for r5 (5-night total slider)
+      function onDragTotal() {
+        const Sval = parseFloat(r5.value);
+        const p1 = +r1.value || nightly[0];
+
+        // Calculate bounds
+        const minTotal = sumSeries(p1, DECAY_MIN);
+        const maxTotal = sumSeries(p1, DECAY_MAX);
+        const S = clamp(Sval, minTotal, maxTotal);
+
+        // Solve for decay
         const d = solveDecay(p1, S);
         currentDecay = d;
-        // Skip updating r5 during drag to avoid fighting with browser
-        rebuildFrom(p1, d, true, false, true); // isDragging=true, skipR1=false, skipR5=true
-        r1.value = String(Math.round(p1));
-        placeTags();
+
+        // Rebuild nightly values
+        rebuildNightly(p1, d);
+
+        // Schedule visual update via RAF
+        scheduleVisualUpdate(() => {
+          updateTextUI();
+          placeTags();
+          renderTable();
+        });
+
+        broadcastDebounced();
       }
 
-      // Events
+      // Drag state handlers for smooth slider movement
+      function startDragR1() {
+        isDraggingR1 = true;
+      }
+
+      function endDragR1() {
+        isDraggingR1 = false;
+        // Final sync and broadcast when drag ends
+        syncUI();
+      }
+
+      function startDragR5() {
+        isDraggingR5 = true;
+      }
+
+      function endDragR5() {
+        isDraggingR5 = false;
+        // Final sync and broadcast when drag ends
+        syncUI();
+      }
+
+      // Events for text inputs
       p1El.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitP1(); });
       p1El.addEventListener('blur', commitP1);
-      // Only commit decay on blur/enter/change, NOT on input (allows typing full number)
       decayEl.addEventListener('change', commitDecay);
       decayEl.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitDecay(); });
       decayEl.addEventListener('blur', commitDecay);
 
-      // Range slider events with RAF optimization
-      r1.addEventListener('input', () => onDragP1(parseFloat(r1.value)));
-      r5.addEventListener('input', () => onDragTotal(parseFloat(r5.value)));
+      // Drag start/end tracking for r1
+      r1.addEventListener('mousedown', startDragR1);
+      r1.addEventListener('touchstart', startDragR1, { passive: true });
+      r1.addEventListener('mouseup', endDragR1);
+      r1.addEventListener('touchend', endDragR1);
+      // Also handle mouse leaving the slider while dragging
+      r1.addEventListener('mouseleave', () => { if (isDraggingR1) endDragR1(); });
 
-      // Broadcast immediately when dragging stops
-      r1.addEventListener('change', () => broadcast());
-      r5.addEventListener('change', () => broadcast());
+      // Drag start/end tracking for r5
+      r5.addEventListener('mousedown', startDragR5);
+      r5.addEventListener('touchstart', startDragR5, { passive: true });
+      r5.addEventListener('mouseup', endDragR5);
+      r5.addEventListener('touchend', endDragR5);
+      r5.addEventListener('mouseleave', () => { if (isDraggingR5) endDragR5(); });
+
+      // Range slider input events - use native values directly
+      r1.addEventListener('input', onDragP1);
+      r5.addEventListener('input', onDragTotal);
+
+      // Final broadcast on change (drag end via keyboard or mouse release)
+      r1.addEventListener('change', () => { isDraggingR1 = false; syncUI(); });
+      r5.addEventListener('change', () => { isDraggingR5 = false; syncUI(); });
 
       // Spinners
       p1Up.addEventListener('click', () => { p1El.value = String(Math.round(+p1El.value||0) + 1); commitP1(); });
       p1Down.addEventListener('click', () => { p1El.value = String(Math.max(0, Math.round(+p1El.value||0) - 1)); commitP1(); });
       dUp.addEventListener('click', () => {
         currentDecay = clamp(currentDecay + 0.001, DECAY_MIN, DECAY_MAX);
-        decayEl.value = currentDecay.toFixed(3);
-        const p1 = Math.max(0, parseFloat(p1El.value||r1.value||'0'));
-        rebuildFrom(p1, currentDecay);
+        rebuildNightly(nightly[0], currentDecay);
+        syncUI();
       });
       dDown.addEventListener('click', () => {
         currentDecay = clamp(currentDecay - 0.001, DECAY_MIN, DECAY_MAX);
-        decayEl.value = currentDecay.toFixed(3);
-        const p1 = Math.max(0, parseFloat(p1El.value||r1.value||'0'));
-        rebuildFrom(p1, currentDecay);
+        rebuildNightly(nightly[0], currentDecay);
+        syncUI();
       });
 
       // Resize observer
@@ -405,6 +493,7 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
       for (let i=1;i<N;i++) nightly[i] = roundUp(nightly[i-1]*d);
       r1.value = String(Math.round(p1));
       r5.value = String(Math.round(sumSeries(p1,d)));
+      updateBoundsOnly();
       syncUI();
     };
 

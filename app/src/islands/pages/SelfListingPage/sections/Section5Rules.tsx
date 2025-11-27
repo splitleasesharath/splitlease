@@ -163,6 +163,14 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
       newErrors.cancellationPolicy = 'Cancellation policy is required';
     }
 
+    if (data.idealMinDuration < 6) {
+      newErrors.idealMinDuration = 'Minimum duration must be at least 6 weeks';
+    }
+
+    if (data.idealMaxDuration > 52) {
+      newErrors.idealMaxDuration = 'Maximum duration cannot exceed 52 weeks';
+    }
+
     if (data.idealMinDuration > data.idealMaxDuration) {
       newErrors.idealMaxDuration = 'Maximum duration must be greater than or equal to minimum';
     }
@@ -288,11 +296,13 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
           <input
             type="number"
             id="idealMinDuration"
-            min="2"
-            max="12"
+            min="6"
+            max="52"
             value={data.idealMinDuration}
             onChange={(e) => handleChange('idealMinDuration', parseInt(e.target.value))}
+            className={errors.idealMinDuration ? 'input-error' : ''}
           />
+          {errors.idealMinDuration && <span className="error-message">{errors.idealMinDuration}</span>}
         </div>
 
         <div className="form-group">
@@ -300,8 +310,8 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
           <input
             type="number"
             id="idealMaxDuration"
-            min="2"
-            max="12"
+            min="6"
+            max="52"
             value={data.idealMaxDuration}
             onChange={(e) => handleChange('idealMaxDuration', parseInt(e.target.value))}
             className={errors.idealMaxDuration ? 'input-error' : ''}
