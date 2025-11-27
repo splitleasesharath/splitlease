@@ -60,7 +60,8 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
         .track-wrap{ position:relative; height:64px; }
         .track{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); height:10px; background:linear-gradient(#9ea0a3,#9ea0a3) center/100% 10px no-repeat, #c9c9c9; border-radius:999px; }
         .ranges{ position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; }
-        .ranges input[type=range]{ pointer-events:auto; -webkit-appearance:none; appearance:none; position:absolute; top:50%; transform:translateY(-50%); background:transparent; height:36px; width:auto; }
+        .ranges input[type=range]{ pointer-events:auto; -webkit-appearance:none; appearance:none; position:absolute; top:50%; transform:translateY(-50%); background:transparent; height:36px; width:auto; touch-action:none; cursor:grab; }
+        .ranges input[type=range]:active{ cursor:grabbing; }
         #slw-r1{ left:0; width:49%; }
         #slw-r5{ right:0; width:49%; }
         .ranges input[type=range]::-webkit-slider-runnable-track{ height:10px; background:transparent; }
@@ -181,6 +182,9 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
       let isDraggingR5 = false;
       let rafId: number | null = null;
       let pendingUpdate: (() => void) | null = null;
+
+      // Store the last known total during r1 drag (don't update r5 slider during drag)
+      let frozenTotalForR1Drag = 0;
 
       const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
       const sum = (arr: number[]) => arr.reduce((a,b)=>a+b,0);
@@ -366,21 +370,19 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
         const val = parseFloat(r1.value);
         const p1 = Math.max(0, val);
 
-        // Calculate new decay to maintain current total (if possible)
-        const currentTotal = +r5.value || sum(nightly);
-        const d = solveDecay(p1, currentTotal);
+        // Use frozen total during drag to maintain consistency
+        const targetTotal = isDraggingR1 ? frozenTotalForR1Drag : (+r5.value || sum(nightly));
+        const d = solveDecay(p1, targetTotal);
         currentDecay = d;
 
         // Rebuild nightly values
         rebuildNightly(p1, d);
 
-        // Schedule visual update via RAF
+        // Schedule visual update via RAF - DO NOT update r5.value during drag
         scheduleVisualUpdate(() => {
           updateTextUI();
-          // Update r5 bounds and value to reflect new calculations
           updateBoundsOnly();
-          const newTotal = sum(nightly);
-          r5.value = String(Math.round(newTotal));
+          // Only update tags and table, NOT the r5 slider value during drag
           placeTags();
           renderTable();
         });
@@ -416,24 +418,54 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
       }
 
       // Drag state handlers for smooth slider movement
-      function startDragR1() {
+      function startDragR1(e: PointerEvent | MouseEvent | TouchEvent) {
         isDraggingR1 = true;
+        // Freeze current total so r5 slider doesn't jump during drag
+        frozenTotalForR1Drag = +r5.value || sum(nightly);
+
+        // Use pointer capture for reliable drag tracking
+        if ('setPointerCapture' in r1 && 'pointerId' in e) {
+          r1.setPointerCapture((e as PointerEvent).pointerId);
+        }
+
+        // Add document-level listeners for drag end (works even if mouse leaves element)
+        document.addEventListener('mouseup', endDragR1Global, { once: true });
+        document.addEventListener('touchend', endDragR1Global, { once: true });
       }
 
       function endDragR1() {
+        if (!isDraggingR1) return;
         isDraggingR1 = false;
-        // Final sync and broadcast when drag ends
+        // Final sync: now update r5 slider to actual calculated total
         syncUI();
       }
 
-      function startDragR5() {
+      function endDragR1Global() {
+        endDragR1();
+      }
+
+      function startDragR5(e: PointerEvent | MouseEvent | TouchEvent) {
         isDraggingR5 = true;
+
+        // Use pointer capture for reliable drag tracking
+        if ('setPointerCapture' in r5 && 'pointerId' in e) {
+          r5.setPointerCapture((e as PointerEvent).pointerId);
+        }
+
+        // Add document-level listeners for drag end
+        document.addEventListener('mouseup', endDragR5Global, { once: true });
+        document.addEventListener('touchend', endDragR5Global, { once: true });
       }
 
       function endDragR5() {
+        if (!isDraggingR5) return;
         isDraggingR5 = false;
         // Final sync and broadcast when drag ends
         syncUI();
+      }
+
+      function endDragR5Global() {
+        endDragR5();
       }
 
       // Events for text inputs
@@ -443,28 +475,28 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
       decayEl.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitDecay(); });
       decayEl.addEventListener('blur', commitDecay);
 
-      // Drag start/end tracking for r1
-      r1.addEventListener('mousedown', startDragR1);
-      r1.addEventListener('touchstart', startDragR1, { passive: true });
-      r1.addEventListener('mouseup', endDragR1);
-      r1.addEventListener('touchend', endDragR1);
-      // Also handle mouse leaving the slider while dragging
-      r1.addEventListener('mouseleave', () => { if (isDraggingR1) endDragR1(); });
+      // Drag start tracking for r1 - use pointerdown for unified mouse/touch handling
+      r1.addEventListener('pointerdown', startDragR1);
+      // Fallback for older browsers
+      r1.addEventListener('mousedown', startDragR1 as EventListener);
+      r1.addEventListener('touchstart', startDragR1 as EventListener, { passive: true });
 
-      // Drag start/end tracking for r5
-      r5.addEventListener('mousedown', startDragR5);
-      r5.addEventListener('touchstart', startDragR5, { passive: true });
-      r5.addEventListener('mouseup', endDragR5);
-      r5.addEventListener('touchend', endDragR5);
-      r5.addEventListener('mouseleave', () => { if (isDraggingR5) endDragR5(); });
+      // Drag start tracking for r5
+      r5.addEventListener('pointerdown', startDragR5);
+      r5.addEventListener('mousedown', startDragR5 as EventListener);
+      r5.addEventListener('touchstart', startDragR5 as EventListener, { passive: true });
+
+      // NOTE: mouseup/touchend are handled at document level in startDrag functions
+      // NOTE: mouseleave handlers REMOVED - they caused premature drag termination
 
       // Range slider input events - use native values directly
       r1.addEventListener('input', onDragP1);
       r5.addEventListener('input', onDragTotal);
 
-      // Final broadcast on change (drag end via keyboard or mouse release)
-      r1.addEventListener('change', () => { isDraggingR1 = false; syncUI(); });
-      r5.addEventListener('change', () => { isDraggingR5 = false; syncUI(); });
+      // Change event fires for keyboard navigation (arrow keys, etc.)
+      // Drag end is handled via document-level listeners for pointer/mouse/touch
+      r1.addEventListener('change', () => { if (!isDraggingR1) syncUI(); });
+      r5.addEventListener('change', () => { if (!isDraggingR5) syncUI(); });
 
       // Spinners
       p1Up.addEventListener('click', () => { p1El.value = String(Math.round(+p1El.value||0) + 1); commitP1(); });
