@@ -95,4 +95,4 @@ plan/
 !plan/README.md
 
 # Temporary directories
-.temp/
+.temp/*.gdoc
