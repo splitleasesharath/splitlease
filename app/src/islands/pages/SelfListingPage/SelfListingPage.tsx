@@ -7,7 +7,7 @@ import { Section5Rules } from './sections/Section5Rules';
 import { Section6Photos } from './sections/Section6Photos';
 import { Section7Review } from './sections/Section7Review';
 import type { ListingFormData } from './types/listing.types';
-import { useListingStore } from './store';
+import { useListingStore, listingLocalStore } from './store';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import { getListingById } from '../../../lib/bubbleAPI';
@@ -68,10 +68,13 @@ export const SelfListingPage: React.FC = () => {
           console.log('✅ Listing data fetched from Bubble:', listingData);
 
           // Preload the listing name into the form
+          // IMPORTANT: Get fresh data from store, not React state, to avoid race condition
+          // where formData.spaceSnapshot hasn't been updated with localStorage data yet
           if (listingData?.Name) {
             console.log('✅ Preloading listing name:', listingData.Name);
+            const currentStoreData = listingLocalStore.getData();
             updateSpaceSnapshot({
-              ...formData.spaceSnapshot,
+              ...currentStoreData.spaceSnapshot,
               listingName: listingData.Name,
             });
           } else {
