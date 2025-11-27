@@ -1,0 +1,230 @@
+/**
+ * Simple Host Schedule Selector Component Styles
+ * Uses 'shss-' prefix to avoid conflicts
+ */
+
+/* Container */
+.shss-container {
+  display: inline-block;
+  position: relative;
+  border: 2px double #6B6B6B;
+  border-radius: 8px;
+  padding: 12px;
+  min-height: 60px;
+  background: transparent;
+}
+
+/* Loading indicator */
+.shss-loading-indicator {
+  position: absolute;
+  top: -30px;
+  right: 0;
+  font-size: 12px;
+  color: #4B47CE;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.shss-loading-indicator span {
+  animation: shss-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes shss-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Nights grid container - BIGGER with MORE SPACING */
+.shss-nights-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 48px);
+  grid-template-rows: 48px;
+  gap: 12px;
+  padding: 8px;
+  margin: 0;
+  border: 1px solid #FFFFFF;
+  border-radius: 8px;
+}
+
+/* Individual night cell - BIGGER */
+.shss-night-cell {
+  width: 48px;
+  height: 48px;
+  background-color: #B2B2B2;
+  border: 2px solid #9D9D9D;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  box-sizing: border-box;
+  transition: background-color 500ms ease,
+              box-shadow 500ms ease,
+              color 500ms ease,
+              transform 200ms ease;
+  position: relative;
+  user-select: none;
+}
+
+/* Night letter text - BIGGER */
+.shss-night-letter {
+  font-family: 'Lato', sans-serif;
+  font-weight: 700;
+  font-size: 24px;
+  color: #6D6D6D;
+  line-height: 1;
+  text-align: center;
+  user-select: none;
+  transition: color 500ms ease;
+  pointer-events: none;
+}
+
+/* Hover state (only for clickable cells) */
+.shss-night-cell:not(.shss-disabled):hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+  cursor: pointer;
+}
+
+/* Active/pressed state */
+.shss-night-cell:not(.shss-disabled):active {
+  transform: scale(0.95);
+}
+
+/* Selected state */
+.shss-night-cell.shss-selected {
+  background-color: #4B47CE;
+  box-shadow: 0 0 4px 1px rgba(75, 71, 206, 0.5);
+  border-color: #4B47CE;
+}
+
+.shss-night-cell.shss-selected .shss-night-letter {
+  color: #FFFFFF;
+}
+
+/* Disabled state */
+.shss-night-cell.shss-disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* Info section */
+.shss-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #E0E0E0;
+}
+
+.shss-info-text {
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4B47CE;
+}
+
+.shss-info-subtext {
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  color: #6D6D6D;
+  font-style: italic;
+}
+
+/* Focus styles for accessibility */
+.shss-night-cell:focus {
+  outline: 3px solid #4B47CE;
+  outline-offset: 2px;
+}
+
+.shss-night-cell:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Tooltip (using data-tooltip attribute) */
+.shss-night-cell[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  white-space: nowrap;
+  margin-bottom: 8px;
+  z-index: 1000;
+  pointer-events: none;
+  font-family: 'Lato', sans-serif;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 768px) {
+  .shss-nights-grid {
+    grid-template-columns: repeat(7, 42px);
+    grid-template-rows: 42px;
+    gap: 8px;
+  }
+
+  .shss-night-cell {
+    width: 42px;
+    height: 42px;
+  }
+
+  .shss-night-letter {
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .shss-nights-grid {
+    grid-template-columns: repeat(7, 38px);
+    grid-template-rows: 38px;
+    gap: 6px;
+  }
+
+  .shss-night-cell {
+    width: 38px;
+    height: 38px;
+  }
+
+  .shss-night-letter {
+    font-size: 18px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .shss-night-cell {
+    border-width: 3px;
+  }
+
+  .shss-night-cell.shss-selected {
+    border-color: #FFFFFF;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .shss-night-cell,
+  .shss-night-letter {
+    transition: none;
+  }
+
+  .shss-loading-indicator span {
+    animation: none;
+  }
+}

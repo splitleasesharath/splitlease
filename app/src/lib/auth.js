@@ -508,9 +508,15 @@ export async function loginUser(email, password) {
  * @param {string} email - User email
  * @param {string} password - User password
  * @param {string} retype - Password confirmation
+ * @param {Object} additionalData - Optional additional signup data
+ * @param {string} additionalData.firstName - User's first name
+ * @param {string} additionalData.lastName - User's last name
+ * @param {string} additionalData.userType - 'Host' or 'Guest'
+ * @param {string} additionalData.birthDate - ISO date string (YYYY-MM-DD)
+ * @param {string} additionalData.phoneNumber - User's phone number
  * @returns {Promise<Object>} Response object with status, token, user_id, or error
  */
-export async function signupUser(email, password, retype) {
+export async function signupUser(email, password, retype, additionalData = null) {
   console.log('📝 Attempting signup via Edge Function for:', email);
 
   // Client-side validation
@@ -535,15 +541,24 @@ export async function signupUser(email, password, retype) {
     };
   }
 
+  // Build payload with optional additional data
+  const payload = {
+    email,
+    password,
+    retype
+  };
+
+  // Add additional signup data if provided
+  if (additionalData) {
+    payload.additionalData = additionalData;
+    console.log('📝 Additional signup data:', additionalData);
+  }
+
   try {
     const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
       body: {
         action: 'signup',
-        payload: {
-          email,
-          password,
-          retype
-        }
+        payload
       }
     });
 
