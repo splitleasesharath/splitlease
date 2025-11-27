@@ -6,6 +6,7 @@ app/server/.env
 
 # Secrets documentation (contains sensitive info)
 supabase/SECRETS_SETUP.md
+Context/Option Sets/
 
 # Python
 __pycache__/
@@ -82,9 +83,6 @@ videos/
 bun.lock
 bun.lockb
 
-# Context directory
-Context/
-
 # Agent Context and Tools directories
 input/
 .playwright-mcp/
@@ -95,4 +93,4 @@ plan/
 !plan/README.md
 
 # Temporary directories
-.temp/
+.temp/*.gdoc

@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
         break;
 
       case 'signup':
-        result = await handleSignup(bubbleAuthBaseUrl, bubbleApiKey, payload);
+        result = await handleSignup(bubbleAuthBaseUrl, bubbleApiKey, supabaseUrl, supabaseServiceKey, payload);
         break;
 
       case 'logout':
