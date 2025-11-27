@@ -206,7 +206,7 @@ export const helpCenterArticles = {
         title: 'Policies & Legal',
         articles: [
           { id: 'terms-of-use', title: 'Terms of Use', slug: 'terms-of-use', external: 'https://split.lease/policies#terms-of-use' },
-          { id: 'privacy-policy', title: 'Privacy Policy', slug: 'privacy-policy', external: 'https://app.split.lease/policies' }
+          { id: 'privacy-policy', title: 'Privacy Policy', slug: 'privacy-policy', external: 'https://split.lease/policies' }
         ]
       }
     ]
