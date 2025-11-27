@@ -111,16 +111,17 @@ export async function handlePhotoUpload(
     // Sort order is determined by array position (index 0 = cover photo)
     console.log('[Photo Handler] Calling Bubble workflow with formatted photos...');
     console.log('[Photo Handler] Workflow: listing_photos_section_in_code');
-    console.log('[Photo Handler] Params: Listing_id =', listing_id);
-    console.log('[Photo Handler] Params: Photos count =', bubblePhotos.length);
+    console.log('[Photo Handler] Params: listing_id =', listing_id);
+    console.log('[Photo Handler] Params: photos count =', bubblePhotos.length);
 
-    // NOTE: Bubble workflow parameters are case-sensitive!
-    // The workflow expects: Listing_id (text) and Photos (list of files)
+    // Bubble workflow parameters (lowercase as defined in Bubble):
+    // - listing_id: text
+    // - photos: list of files
     const result = await syncService.triggerWorkflowOnly(
       'listing_photos_section_in_code',
       {
-        Listing_id: listing_id,
-        Photos: bubblePhotos,
+        listing_id: listing_id,
+        photos: bubblePhotos,
       }
     );
 
