@@ -190,7 +190,7 @@ export default function FAQPage() {
             role="tab"
             aria-selected={activeTab === 'travelers'}
           >
-            For Travelers
+            For Guests
           </button>
           <button
             className={`tab ${activeTab === 'hosts' ? 'active' : ''}`}
