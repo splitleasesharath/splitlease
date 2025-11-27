@@ -430,6 +430,7 @@ export async function loginUser(email, password) {
       console.error('❌ Edge Function error:', error);
       console.error('   Error message:', error.message);
       console.error('   Error context:', error.context);
+      console.error('   Full error object:', JSON.stringify(error, null, 2));
 
       // Extract detailed error from response body if available
       // Supabase wraps non-2xx responses in a generic error, but the body may contain details
@@ -455,13 +456,35 @@ export async function loginUser(email, password) {
         }
       }
 
-      // Path 2: data object returned alongside error
+      // Path 2: Try to get response body from FunctionsHttpError
+      if (!errorMessage && error.context?.response) {
+        try {
+          // Clone response to read body without consuming it
+          const responseText = await error.context.response.clone().text();
+          console.error('   Response text:', responseText);
+          const responseJson = JSON.parse(responseText);
+          if (responseJson?.error) {
+            errorMessage = responseJson.error;
+          }
+        } catch (parseErr) {
+          console.error('   Could not parse response:', parseErr);
+        }
+      }
+
+      // Path 3: data object returned alongside error
       if (!errorMessage && data?.error) {
         errorMessage = data.error;
       }
 
-      // Path 3: error.message from Supabase client
-      if (!errorMessage && error.message && !error.message.includes('FunctionsHttpError')) {
+      // Path 4: Check if error itself has nested error property
+      if (!errorMessage && error.error) {
+        errorMessage = error.error;
+      }
+
+      // Path 5: error.message from Supabase client (exclude generic messages)
+      if (!errorMessage && error.message &&
+          !error.message.includes('FunctionsHttpError') &&
+          !error.message.includes('non-2xx status code')) {
         errorMessage = error.message;
       }
 
@@ -585,6 +608,7 @@ export async function signupUser(email, password, retype, additionalData = null)
       console.error('❌ Edge Function error:', error);
       console.error('   Error message:', error.message);
       console.error('   Error context:', error.context);
+      console.error('   Full error object:', JSON.stringify(error, null, 2));
 
       // Extract detailed error from response body if available
       // Supabase wraps non-2xx responses in a generic error, but the body may contain details
@@ -610,13 +634,35 @@ export async function signupUser(email, password, retype, additionalData = null)
         }
       }
 
-      // Path 2: data object returned alongside error
+      // Path 2: Try to get response body from FunctionsHttpError
+      if (!errorMessage && error.context?.response) {
+        try {
+          // Clone response to read body without consuming it
+          const responseText = await error.context.response.clone().text();
+          console.error('   Response text:', responseText);
+          const responseJson = JSON.parse(responseText);
+          if (responseJson?.error) {
+            errorMessage = responseJson.error;
+          }
+        } catch (parseErr) {
+          console.error('   Could not parse response:', parseErr);
+        }
+      }
+
+      // Path 3: data object returned alongside error
       if (!errorMessage && data?.error) {
         errorMessage = data.error;
       }
 
-      // Path 3: error.message from Supabase client
-      if (!errorMessage && error.message && !error.message.includes('FunctionsHttpError')) {
+      // Path 4: Check if error itself has nested error property
+      if (!errorMessage && error.error) {
+        errorMessage = error.error;
+      }
+
+      // Path 5: error.message from Supabase client (exclude generic messages)
+      if (!errorMessage && error.message &&
+          !error.message.includes('FunctionsHttpError') &&
+          !error.message.includes('non-2xx status code')) {
         errorMessage = error.message;
       }
 
