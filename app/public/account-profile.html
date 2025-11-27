@@ -1023,6 +1023,9 @@
     <!-- React Island: Notification Settings Modal -->
     <div id="notification-settings-root"></div>
 
+    <!-- React Island: Edit Phone Number Modal -->
+    <div id="edit-phone-number-root"></div>
+
     <!-- React Islands Hydration Script -->
     <script type="module" src="/src/account-profile.jsx"></script>
 
@@ -1716,12 +1719,21 @@
         });
 
         // Notification Settings link handler
-        document.getElementById('notification-settings-link')?.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (window.openNotificationSettings) {
-                window.openNotificationSettings();
-            } else {
-                console.error('Notification settings modal not yet loaded');
+        // Use event delegation to handle clicks reliably regardless of when React mounts
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'notification-settings-link' || e.target.closest('#notification-settings-link')) {
+                e.preventDefault();
+                if (window.openNotificationSettings) {
+                    window.openNotificationSettings();
+                } else {
+                    console.error('Notification settings modal not yet loaded');
+                    // Retry after a short delay in case React is still mounting
+                    setTimeout(() => {
+                        if (window.openNotificationSettings) {
+                            window.openNotificationSettings();
+                        }
+                    }, 500);
+                }
             }
         });
     </script>
