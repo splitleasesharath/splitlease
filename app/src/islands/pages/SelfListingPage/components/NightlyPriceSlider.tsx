@@ -117,12 +117,12 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
             </div>
           </div>
           <div class="field">
-            <div class="label">Decay per additional night (0.700–1.000)</div>
+            <div class="label">Discount per additional night (0.700–1.000)</div>
             <div class="spin">
               <input id="slw-decay" class="num" type="number" min="0.7" max="1" step="0.001" inputmode="decimal" value="0.950" />
               <div class="buttons">
-                <button class="btn" id="slw-decay-up" aria-label="Increase decay">▲</button>
-                <button class="btn" id="slw-decay-down" aria-label="Decrease decay">▼</button>
+                <button class="btn" id="slw-decay-up" aria-label="Increase discount">▲</button>
+                <button class="btn" id="slw-decay-down" aria-label="Decrease discount">▼</button>
               </div>
             </div>
           </div>
@@ -345,13 +345,13 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
       placeTags();
     }
 
-    // Events — EXACT copy from Bubble code
+    // Events for text inputs - only commit on blur or Enter (not on every keystroke)
     p1El.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitP1(); });
     p1El.addEventListener('blur', commitP1);
-    decayEl.addEventListener('input', commitDecay);
-    decayEl.addEventListener('change', commitDecay);
+    // Discount input: only commit on Enter or blur, NOT on input (allows user to type freely)
     decayEl.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitDecay(); });
     decayEl.addEventListener('blur', commitDecay);
+    // Range slider events
     r1.addEventListener('input', () => onDragP1(parseFloat(r1.value)));
     r5.addEventListener('input', () => onDragTotal(parseFloat(r5.value)));
 
