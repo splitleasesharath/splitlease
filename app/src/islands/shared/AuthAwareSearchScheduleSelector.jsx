@@ -135,6 +135,7 @@ export default function AuthAwareSearchScheduleSelector({
   useEffect(() => {
     const loadUserDays = async () => {
       const sessionId = getSessionId();
+      console.log('📅 AuthAwareSearchScheduleSelector: getSessionId() returned:', sessionId);
       setUserId(sessionId);
 
       if (!sessionId) {
@@ -150,7 +151,9 @@ export default function AuthAwareSearchScheduleSelector({
           .from('user')
           .select('"Recent Days Selected"')
           .eq('_id', sessionId)
-          .single();
+          .maybeSingle(); // Use maybeSingle to avoid error when no row found
+
+        console.log('📅 AuthAwareSearchScheduleSelector: Supabase response:', { data, error });
 
         if (error) {
           console.error('📅 AuthAwareSearchScheduleSelector: Supabase error:', error);
@@ -159,8 +162,10 @@ export default function AuthAwareSearchScheduleSelector({
         }
 
         const recentDays = data?.['Recent Days Selected'];
+        console.log('📅 AuthAwareSearchScheduleSelector: Recent Days Selected raw value:', recentDays, 'type:', typeof recentDays);
 
-        if (recentDays && Array.isArray(recentDays) && recentDays.length > 0) {
+        if (recentDays) {
+          // dayNamesToIndices handles both string and array formats
           const indices = dayNamesToIndices(recentDays);
 
           if (indices && indices.length > 0) {
