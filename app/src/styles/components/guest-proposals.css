@@ -18,7 +18,7 @@
 .proposals-page {
     max-width: 1280px;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 6rem 1rem 2rem; /* Added top padding to account for fixed header */
     width: 100%;
     box-sizing: border-box;
     position: relative;
