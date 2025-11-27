@@ -14,6 +14,8 @@ interface NightlyPriceSliderProps {
     n3: number;
     n4: number;
     n5: number;
+    n6: number;
+    n7: number;
     decay: number;
     total: number;
   }) => void;
@@ -127,8 +129,8 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
             </div>
           </div>
           <div class="field">
-            <div class="label">5-night total</div>
-            <input id="slw-total" class="num" type="text" inputmode="numeric" value="" readonly />
+            <div class="label">5-night price</div>
+            <input id="slw-n5" class="num" type="text" inputmode="numeric" value="" readonly />
           </div>
         </div>
 
@@ -136,11 +138,11 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
           <div class="track"></div>
           <div class="ranges">
             <input id="slw-r1" type="range" min="0" max="600" step="1" value="100" aria-label="1-night price" />
-            <input id="slw-r5" type="range" min="0" max="2000" step="1" value="0" aria-label="5-night total" />
+            <input id="slw-r5" type="range" min="0" max="600" step="1" value="0" aria-label="5-night price" />
 
             <div id="slw-tag1" class="tag">1 night price</div>
             <div id="slw-val1" class="value">$100</div>
-            <div id="slw-tag5" class="tag">5 night total</div>
+            <div id="slw-tag5" class="tag">5 night price</div>
             <div id="slw-val5" class="value">$0</div>
           </div>
         </div>
