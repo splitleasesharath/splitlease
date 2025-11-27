@@ -159,9 +159,9 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
     `;
 
     // ============================================================
-    // EXACT PORT OF BUBBLE CODE - simple and direct
+    // Pricing slider with 7 nights in table, sliders control night 1 and night 5 prices
     // ============================================================
-    const N = 5;
+    const N = 7; // 7 nights for table display
     const DECAY_MIN = 0.7;
     const DECAY_MAX = 1.0;
 
@@ -171,7 +171,7 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
 
     const p1El = $('slw-p1') as HTMLInputElement;
     const decayEl = $('slw-decay') as HTMLInputElement;
-    const totalEl = $('slw-total') as HTMLInputElement;
+    const n5El = $('slw-n5') as HTMLInputElement; // Now shows night 5 price, not total
     const r1 = $('slw-r1') as HTMLInputElement;
     const r5 = $('slw-r5') as HTMLInputElement;
     const rows = $('slw-rows') as HTMLElement;
@@ -190,33 +190,27 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
     const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
     const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
-    function sumSeries(p1: number, d: number) {
-      if (Math.abs(1 - d) < 1e-10) return p1 * N;
-      return p1 * (1 - Math.pow(d, N)) / (1 - d);
+    // Calculate night-5 price from p1 and decay: n5 = p1 * d^4
+    function calcN5(p1: number, d: number) {
+      return p1 * Math.pow(d, 4);
     }
 
-    function solveDecay(p1: number, S: number) {
+    // Solve decay given p1 and desired n5 price: d = (n5/p1)^(1/4)
+    function solveDecayFromN5(p1: number, n5: number) {
       if (p1 <= 0) return DECAY_MIN;
-      const Smin = sumSeries(p1, DECAY_MIN);
-      const Smax = sumSeries(p1, DECAY_MAX);
-      const T = clamp(S, Smin, Smax);
-      if (Math.abs(T - Smin) < 1e-6) return DECAY_MIN;
-      if (Math.abs(T - Smax) < 1e-6) return DECAY_MAX;
-      let lo = DECAY_MIN, hi = DECAY_MAX, mid: number;
-      for (let i = 0; i < 50; i++) {
-        mid = (lo + hi) / 2;
-        const Sm = sumSeries(p1, mid);
-        if (Sm < T) lo = mid; else hi = mid;
-      }
-      return clamp((lo + hi) / 2, DECAY_MIN, DECAY_MAX);
+      const ratio = n5 / p1;
+      if (ratio <= 0) return DECAY_MIN;
+      const d = Math.pow(ratio, 1/4);
+      return clamp(d, DECAY_MIN, DECAY_MAX);
     }
 
     function updateBounds() {
       const p1 = +r1.value || 0;
-      const minTotal = sumSeries(p1, DECAY_MIN);
-      const maxTotal = sumSeries(p1, DECAY_MAX);
-      r5.min = String(Math.round(minTotal));
-      r5.max = String(Math.round(Math.max(maxTotal, minTotal)));
+      // n5 bounds based on decay limits: n5 = p1 * d^4
+      const minN5 = calcN5(p1, DECAY_MIN); // smallest n5 with lowest decay
+      const maxN5 = calcN5(p1, DECAY_MAX); // largest n5 with highest decay (d=1 means n5=p1)
+      r5.min = String(Math.round(minN5));
+      r5.max = String(Math.round(Math.max(maxN5, minN5)));
     }
 
     function rebuildFrom(p1: number, d: number) {
@@ -279,6 +273,8 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
         n3: roundedNightly[2],
         n4: roundedNightly[3],
         n5: roundedNightly[4],
+        n6: roundedNightly[5],
+        n7: roundedNightly[6],
         decay: +currentDecay.toFixed(3),
         total: sum(roundedNightly)
       };
@@ -291,14 +287,14 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
 
     function syncUI() {
       const p1 = nightly[0];
-      const total = sum(nightly);
+      const n5 = nightly[4]; // night 5 price (index 4)
       p1El.value = String(Math.round(p1));
       decayEl.value = currentDecay.toFixed(3);
-      totalEl.value = String(Math.round(total));
+      n5El.value = String(Math.round(n5)); // Show night 5 price, not total
       r1.value = String(Math.round(p1));
       updateBounds();
-      const Sclamped = clamp(total, +r5.min, +r5.max);
-      r5.value = String(Math.round(Sclamped));
+      const n5Clamped = clamp(n5, +r5.min, +r5.max);
+      r5.value = String(Math.round(n5Clamped));
       placeTags();
       renderTable();
       broadcast();
@@ -324,23 +320,23 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
       rebuildFrom(p1, d);
     }
 
-    // Slider interactions — EXACT copy from Bubble code
+    // Slider interactions — now use n5 price instead of total
     function onDragP1(val: number) {
       const p1 = Math.max(0, val);
       updateBounds();
-      const Sfixed = clamp(+r5.value || 0, +r5.min, +r5.max);
-      const d = solveDecay(p1, Sfixed);
+      const n5Fixed = clamp(+r5.value || 0, +r5.min, +r5.max);
+      const d = solveDecayFromN5(p1, n5Fixed);
       currentDecay = d;
       rebuildFrom(p1, d);
-      r5.value = String(Math.round(Sfixed));
+      r5.value = String(Math.round(n5Fixed));
       placeTags();
     }
 
-    function onDragTotal(Sval: number) {
+    function onDragN5(n5Val: number) {
       const p1 = +r1.value || 0;
       updateBounds();
-      const S = clamp(Sval, +r5.min, +r5.max);
-      const d = solveDecay(p1, S);
+      const n5 = clamp(n5Val, +r5.min, +r5.max);
+      const d = solveDecayFromN5(p1, n5);
       currentDecay = d;
       rebuildFrom(p1, d);
       r1.value = String(Math.round(p1));
@@ -355,7 +351,7 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
     decayEl.addEventListener('blur', commitDecay);
     // Range slider events
     r1.addEventListener('input', () => onDragP1(parseFloat(r1.value)));
-    r5.addEventListener('input', () => onDragTotal(parseFloat(r5.value)));
+    r5.addEventListener('input', () => onDragN5(parseFloat(r5.value)));
 
     // Spinners
     p1Up.addEventListener('click', () => { p1El.value = String(Math.round(+p1El.value || 0) + 1); commitP1(); });
@@ -383,7 +379,7 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
     nightly[0] = initialP1;
     for (let i = 1; i < N; i++) nightly[i] = roundUp(nightly[i - 1] * initialDecay);
     r1.value = String(Math.round(initialP1));
-    r5.value = String(Math.round(sumSeries(initialP1, initialDecay)));
+    r5.value = String(Math.round(calcN5(initialP1, initialDecay)));
     syncUI();
 
     return () => {
