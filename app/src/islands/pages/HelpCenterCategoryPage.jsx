@@ -86,7 +86,7 @@ export default function HelpCenterCategoryPage() {
       <Header />
 
       {/* Breadcrumb */}
-      <div className="hc-container">
+      <div className="hc-container hc-page-content">
         <div className="hc-breadcrumb">
           <a href="/help-center">All Collections</a>
           <ChevronRight />
@@ -118,7 +118,7 @@ export default function HelpCenterCategoryPage() {
                       {article.title}
                     </a>
                   ) : (
-                    <a href={`/help-center/${category.slug}/${article.slug}`}>
+                    <a href={`/help-center-articles/${category.slug}/${article.slug}.html`}>
                       <ArrowRight />
                       {article.title}
                     </a>

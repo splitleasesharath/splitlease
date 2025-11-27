@@ -91,11 +91,6 @@ export default function FAQPage() {
 
   const handleTabClick = (tabName) => {
     setActiveTab(tabName);
-    // Scroll to FAQ container smoothly
-    const container = document.querySelector('.faq-container');
-    if (container) {
-      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
   };
 
   const handleInquirySubmit = async (e) => {
@@ -195,7 +190,7 @@ export default function FAQPage() {
             role="tab"
             aria-selected={activeTab === 'travelers'}
           >
-            For Travelers
+            For Guests
           </button>
           <button
             className={`tab ${activeTab === 'hosts' ? 'active' : ''}`}
@@ -411,7 +406,9 @@ function FAQContent({ faqs, openQuestionId }) {
                   <span className="accordion-icon"></span>
                 </div>
                 <div className="accordion-content">
-                  <p>{faq.Answer}</p>
+                  <div className="accordion-content-inner">
+                    <p>{faq.Answer}</p>
+                  </div>
                 </div>
               </div>
             );
