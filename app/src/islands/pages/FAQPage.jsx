@@ -91,11 +91,6 @@ export default function FAQPage() {
 
   const handleTabClick = (tabName) => {
     setActiveTab(tabName);
-    // Scroll to FAQ container smoothly
-    const container = document.querySelector('.faq-container');
-    if (container) {
-      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
   };
 
   const handleInquirySubmit = async (e) => {
