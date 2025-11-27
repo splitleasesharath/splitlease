@@ -13,12 +13,21 @@
  *
  * @param bubbleAuthBaseUrl - Base URL for Bubble auth API
  * @param bubbleApiKey - API key for Bubble
- * @param payload - Request payload {email, password, retype}
+ * @param payload - Request payload {email, password, retype, additionalData?}
+ *   additionalData may include: firstName, lastName, userType, birthDate, phoneNumber
  * @returns {token, user_id, expires}
  */
 
 import { BubbleApiError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
+
+interface SignupAdditionalData {
+  firstName?: string;
+  lastName?: string;
+  userType?: 'Host' | 'Guest';
+  birthDate?: string; // ISO format: YYYY-MM-DD
+  phoneNumber?: string;
+}
 
 export async function handleSignup(
   bubbleAuthBaseUrl: string,
@@ -29,9 +38,19 @@ export async function handleSignup(
 
   // Validate required fields
   validateRequiredFields(payload, ['email', 'password', 'retype']);
-  const { email, password, retype } = payload;
+  const { email, password, retype, additionalData } = payload;
+
+  // Extract additional signup data
+  const {
+    firstName = '',
+    lastName = '',
+    userType = 'Guest',
+    birthDate = '',
+    phoneNumber = ''
+  }: SignupAdditionalData = additionalData || {};
 
   console.log(`[signup] Registering new user: ${email}`);
+  console.log(`[signup] Additional data: firstName=${firstName}, lastName=${lastName}, userType=${userType}`);
 
   // Client-side validation (same as current auth.js)
   if (password.length < 4) {
@@ -47,17 +66,29 @@ export async function handleSignup(
     const url = `${bubbleAuthBaseUrl}/wf/signup-user`;
     console.log(`[signup] Calling Bubble API: ${url}`);
 
+    // Build request body with all available fields
+    const requestBody: Record<string, any> = {
+      email,
+      password,
+      retype
+    };
+
+    // Add optional fields if provided
+    if (firstName) requestBody.first_name = firstName;
+    if (lastName) requestBody.last_name = lastName;
+    if (userType) requestBody.user_type = userType;
+    if (birthDate) requestBody.birth_date = birthDate;
+    if (phoneNumber) requestBody.phone_number = phoneNumber;
+
+    console.log(`[signup] Request body:`, JSON.stringify(requestBody, null, 2));
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${bubbleApiKey}`
       },
-      body: JSON.stringify({
-        email,
-        password,
-        retype
-      })
+      body: JSON.stringify(requestBody)
     });
 
     console.log(`[signup] Bubble response status: ${response.status} ${response.statusText}`);
