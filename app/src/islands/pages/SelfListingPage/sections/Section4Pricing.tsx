@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { Pricing, NightlyPricing, RentalType } from '../types/listing.types';
 import { NightlyPriceSlider } from '../components/NightlyPriceSlider';
 
@@ -19,6 +19,17 @@ export const Section4Pricing: React.FC<Section4Props> = ({
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  }, []);
+
   const handleChange = (field: keyof Pricing, value: any) => {
     onChange({ ...data, [field]: value });
     if (errors[field]) {
@@ -28,36 +39,44 @@ export const Section4Pricing: React.FC<Section4Props> = ({
     }
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: Record<string, string> = {};
+    const errorOrder: string[] = [];
 
-    // Validate damage deposit
-    if (data.damageDeposit < 500) {
-      newErrors.damageDeposit = 'Damage deposit must be at least $500';
-    }
-
-    // Rental type specific validation
+    // Rental type specific validation (check first as it's at the top)
     if (rentalType === 'Monthly') {
       if (!data.monthlyCompensation || data.monthlyCompensation <= 0) {
         newErrors.monthlyCompensation = 'Monthly compensation is required';
+        errorOrder.push('monthlyCompensation');
       }
     } else if (rentalType === 'Weekly') {
       if (!data.weeklyCompensation || data.weeklyCompensation <= 0) {
         newErrors.weeklyCompensation = 'Weekly compensation is required';
+        errorOrder.push('weeklyCompensation');
       }
     } else if (rentalType === 'Nightly') {
       if (!data.nightlyPricing || data.nightlyPricing.oneNightPrice <= 0) {
         newErrors.nightlyPricing = '1-night price is required';
+        errorOrder.push('nightlyPricing');
       }
     }
 
+    // Validate damage deposit
+    if (data.damageDeposit < 500) {
+      newErrors.damageDeposit = 'Damage deposit must be at least $500';
+      errorOrder.push('damageDeposit');
+    }
+
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return errorOrder;
   };
 
   const handleNext = () => {
-    if (validateForm()) {
+    const errorKeys = validateForm();
+    if (errorKeys.length === 0) {
       onNext();
+    } else {
+      scrollToFirstError(errorKeys);
     }
   };
 
@@ -68,7 +87,7 @@ export const Section4Pricing: React.FC<Section4Props> = ({
 
       {/* Nightly Pricing Interface */}
       {rentalType === 'Nightly' && (
-        <div className="nightly-pricing">
+        <div className="nightly-pricing" id="nightlyPricing">
           <h3>Nightly Rate Calculator</h3>
           <NightlyPriceSlider
             initialP1={data.nightlyPricing?.oneNightPrice || 99}

@@ -18,6 +18,18 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    // For lease styles, we need to scroll to the config section
+    const element = document.getElementById(firstErrorKey) ||
+                   document.querySelector(`.${firstErrorKey.replace('Error', '')}-config`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
+
   /**
    * Convert boolean-based availableNights to NightId[] array
    */
@@ -105,24 +117,30 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
     setErrors({});
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: Record<string, string> = {};
+    const errorOrder: string[] = [];
 
     if (data.rentalType === 'Weekly' && !data.weeklyPattern) {
       newErrors.weeklyPattern = 'Please select a weekly pattern';
+      errorOrder.push('weeklyPattern');
     }
 
     if (data.rentalType === 'Monthly' && !data.subsidyAgreement) {
       newErrors.subsidyAgreement = 'You must agree to the subsidy terms for monthly rentals';
+      errorOrder.push('subsidyAgreement');
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return errorOrder;
   };
 
   const handleNext = () => {
-    if (validateForm()) {
+    const errorKeys = validateForm();
+    if (errorKeys.length === 0) {
       onNext();
+    } else {
+      scrollToFirstError(errorKeys);
     }
   };
 
@@ -204,7 +222,7 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 
       {/* Weekly Configuration */}
       {data.rentalType === 'Weekly' && (
-        <div className="weekly-config">
+        <div className="weekly-config" id="weeklyPattern">
           <h3>Weekly Pattern You're Offering</h3>
           <p className="info-text">This pattern is independent of the beginning of the month</p>
 
@@ -228,7 +246,7 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 
       {/* Monthly Configuration - Inline Agreement */}
       {data.rentalType === 'Monthly' && (
-        <div className="monthly-config">
+        <div className="monthly-config" id="subsidyAgreement">
           <h3>Monthly Lease Agreement</h3>
           <div className="agreement-text">
             <p>
