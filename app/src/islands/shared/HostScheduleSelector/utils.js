@@ -1,0 +1,301 @@
+/**
+ * Utility functions for the Host Schedule Selector component
+ * Includes contiguity checking, sequencing, and calculations
+ */
+
+import { getNightById, getNightByNumber, ALL_NIGHTS } from './constants.js'
+
+/**
+ * Check if selected nights form a contiguous block
+ * Returns true if nights are consecutive (no gaps)
+ * @param {import('./types.js').NightId[]} selectedNights
+ * @returns {import('./types.js').ContiguityResult}
+ */
+export function checkContiguity(selectedNights) {
+  if (selectedNights.length <= 1) {
+    return { isContiguous: true }
+  }
+
+  // Convert to bubble numbers and sort
+  const numbers = selectedNights
+    .map((id) => getNightById(id).bubbleNumber)
+    .sort((a, b) => a - b)
+
+  // Check for gaps
+  const gaps = []
+  for (let i = 1; i < numbers.length; i++) {
+    if (numbers[i] !== numbers[i - 1] + 1) {
+      gaps.push(i)
+    }
+  }
+
+  return {
+    isContiguous: gaps.length === 0,
+    gaps,
+  }
+}
+
+/**
+ * Get sequence of nights between two nights (inclusive)
+ * Handles both ascending and descending sequences
+ * @param {import('./types.js').NightId} startNightId
+ * @param {import('./types.js').NightId} endNightId
+ * @returns {import('./types.js').NightId[]}
+ */
+export function getNightSequence(startNightId, endNightId) {
+  const startNight = getNightById(startNightId)
+  const endNight = getNightById(endNightId)
+
+  const startNum = startNight.bubbleNumber
+  const endNum = endNight.bubbleNumber
+
+  const sequence = []
+
+  if (startNum <= endNum) {
+    // Ascending order
+    for (let i = startNum; i <= endNum; i++) {
+      sequence.push(getNightByNumber(i).id)
+    }
+  } else {
+    // Descending order
+    for (let i = startNum; i >= endNum; i--) {
+      sequence.push(getNightByNumber(i).id)
+    }
+  }
+
+  return sequence
+}
+
+/**
+ * Auto-fill nights between two selections to create a contiguous block
+ * This implements the "sequence filling" logic from Workflow 9
+ * @param {import('./types.js').NightId[]} currentlySelected
+ * @param {import('./types.js').NightId} newNightId
+ * @returns {import('./types.js').NightId[]}
+ */
+export function autoFillSequence(currentlySelected, newNightId) {
+  if (currentlySelected.length === 0) {
+    return [newNightId]
+  }
+
+  if (currentlySelected.length === 1) {
+    const firstNight = getNightById(currentlySelected[0])
+    const newNight = getNightById(newNightId)
+
+    // Get sequence between the two nights
+    const sequence = getNightSequence(firstNight.id, newNight.id)
+    return sequence
+  }
+
+  // If more than 1 already selected, just add the new one
+  return [...currentlySelected, newNightId]
+}
+
+/**
+ * Auto-complete to 7 nights when 6 are selected
+ * Finds the missing night and adds it
+ * @param {import('./types.js').NightId[]} selectedNights
+ * @returns {import('./types.js').NightId[]}
+ */
+export function autoCompleteToSeven(selectedNights) {
+  if (selectedNights.length !== 6) {
+    return selectedNights
+  }
+
+  const allNightIds = ALL_NIGHTS.map((n) => n.id)
+  const missingNight = allNightIds.find((id) => !selectedNights.includes(id))
+
+  if (missingNight) {
+    return [...selectedNights, missingNight]
+  }
+
+  return selectedNights
+}
+
+/**
+ * Get nights that are NOT selected
+ * @param {import('./types.js').NightId[]} selectedNights
+ * @returns {import('./types.js').NightId[]}
+ */
+export function getNotSelectedNights(selectedNights) {
+  return ALL_NIGHTS.map((n) => n.id).filter((id) => !selectedNights.includes(id))
+}
+
+/**
+ * Sort nights by their bubble number
+ * @param {import('./types.js').NightId[]} nights
+ * @returns {import('./types.js').NightId[]}
+ */
+export function sortNights(nights) {
+  return [...nights].sort((a, b) => {
+    const nightA = getNightById(a)
+    const nightB = getNightById(b)
+    return nightA.bubbleNumber - nightB.bubbleNumber
+  })
+}
+
+/**
+ * Get check-in day from selected nights
+ * Check-in day is the first day NOT in the selected nights
+ * @param {import('./types.js').NightId[]} selectedNights
+ * @param {import('./types.js').NightId[]} notSelectedNights
+ * @returns {import('./types.js').DayId | null}
+ */
+export function getCheckInDay(selectedNights, notSelectedNights) {
+  if (notSelectedNights.length === 0) {
+    return null
+  }
+
+  // Sort not-selected nights to get the first one
+  const sorted = sortNights(notSelectedNights)
+  const firstNotSelected = getNightById(sorted[0])
+
+  // Handle corner case when Sunday is selected
+  if (!notSelectedNights.includes('sunday')) {
+    // Special logic for Sunday corner case
+    const firstSelected = sortNights(selectedNights)[0]
+    return getNightById(firstSelected).associatedCheckin
+  }
+
+  return firstNotSelected.associatedCheckin
+}
+
+/**
+ * Get check-out day from selected nights
+ * Check-out day is the day after the last selected night
+ * @param {import('./types.js').NightId[]} selectedNights
+ * @param {import('./types.js').NightId[]} notSelectedNights
+ * @returns {import('./types.js').DayId | null}
+ */
+export function getCheckOutDay(selectedNights, notSelectedNights) {
+  if (notSelectedNights.length === 0) {
+    return null
+  }
+
+  // Handle corner case when Sunday is NOT in not-selected nights
+  if (!notSelectedNights.includes('sunday')) {
+    // Special logic for Sunday corner case
+    const lastSelected = sortNights(selectedNights).slice(-1)[0]
+    return getNightById(lastSelected).associatedCheckout
+  }
+
+  const sorted = sortNights(notSelectedNights)
+  const firstNotSelected = getNightById(sorted[0])
+  return firstNotSelected.associatedCheckout
+}
+
+/**
+ * Get start night number (bubble number of first selected night)
+ * @param {import('./types.js').NightId[]} selectedNights
+ * @param {import('./types.js').NightId[]} notSelectedNights
+ * @returns {number | null}
+ */
+export function getStartNightNumber(selectedNights, notSelectedNights) {
+  if (selectedNights.length === 0) {
+    return null
+  }
+
+  const sorted = sortNights(selectedNights)
+
+  // Handle corner case when Sunday is NOT in not-selected nights
+  if (!notSelectedNights.includes('sunday')) {
+    // If Sunday is selected, it might wrap around
+    const hasLowNumbers = sorted.some((id) => getNightById(id).bubbleNumber <= 3)
+    const hasHighNumbers = sorted.some((id) => getNightById(id).bubbleNumber >= 5)
+
+    if (hasLowNumbers && hasHighNumbers) {
+      // Wraps around Sunday, start is the first low number
+      const lowNumbers = sorted.filter((id) => getNightById(id).bubbleNumber <= 3)
+      return getNightById(lowNumbers[0]).bubbleNumber
+    }
+  }
+
+  return getNightById(sorted[0]).bubbleNumber
+}
+
+/**
+ * Get end night number (bubble number of last selected night)
+ * @param {import('./types.js').NightId[]} selectedNights
+ * @param {import('./types.js').NightId[]} notSelectedNights
+ * @returns {number | null}
+ */
+export function getEndNightNumber(selectedNights, notSelectedNights) {
+  if (selectedNights.length === 0) {
+    return null
+  }
+
+  const sorted = sortNights(selectedNights)
+
+  // Handle corner case when Sunday is NOT in not-selected nights
+  if (!notSelectedNights.includes('sunday')) {
+    // If Sunday is selected, it might wrap around
+    const hasLowNumbers = sorted.some((id) => getNightById(id).bubbleNumber <= 3)
+    const hasHighNumbers = sorted.some((id) => getNightById(id).bubbleNumber >= 5)
+
+    if (hasLowNumbers && hasHighNumbers) {
+      // Wraps around Sunday, end is the last high number
+      const highNumbers = sorted.filter((id) => getNightById(id).bubbleNumber >= 5)
+      return getNightById(highNumbers[highNumbers.length - 1]).bubbleNumber
+    }
+  }
+
+  return getNightById(sorted[sorted.length - 1]).bubbleNumber
+}
+
+/**
+ * Convert night IDs to day IDs
+ * @param {import('./types.js').NightId[]} nightIds
+ * @returns {import('./types.js').DayId[]}
+ */
+export function nightsToDays(nightIds) {
+  return nightIds.map((id) => getNightById(id).sameDay)
+}
+
+/**
+ * Validate selection based on business rules
+ * @param {import('./types.js').NightId[]} selectedNights
+ * @param {Object} options
+ * @param {number} [options.minNights=0]
+ * @param {number} [options.maxNights=7]
+ * @param {boolean} [options.enforceContiguous=false]
+ * @returns {{ valid: boolean, error?: string }}
+ */
+export function validateSelection(selectedNights, options = {}) {
+  const { minNights = 0, maxNights = 7, enforceContiguous = false } = options
+
+  if (selectedNights.length < minNights) {
+    return {
+      valid: false,
+      error: `Minimum ${minNights} night${minNights !== 1 ? 's' : ''} required`,
+    }
+  }
+
+  if (selectedNights.length > maxNights) {
+    return {
+      valid: false,
+      error: `Maximum ${maxNights} night${maxNights !== 1 ? 's' : ''} allowed`,
+    }
+  }
+
+  if (enforceContiguous) {
+    const { isContiguous } = checkContiguity(selectedNights)
+    if (!isContiguous) {
+      return {
+        valid: false,
+        error: 'Selected nights must be contiguous (consecutive)',
+      }
+    }
+  }
+
+  return { valid: true }
+}
+
+/**
+ * Check if a night is available in the listing
+ * @param {import('./types.js').NightId} nightId
+ * @param {import('./types.js').NightId[]} availableNights
+ * @returns {boolean}
+ */
+export function isNightAvailable(nightId, availableNights) {
+  return availableNights.includes(nightId)
+}

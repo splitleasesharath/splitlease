@@ -2,9 +2,17 @@
  * Photo Upload Handler
  * Priority: HIGH
  *
- * Handles listing photo uploads with atomic sync
- * Note: This handler expects base64-encoded photo data in the payload
- * The Bubble workflow handles the actual file upload and storage
+ * Handles listing photo uploads via Bubble workflow
+ * The Bubble workflow `listing_photos_section_in_code`:
+ * - Receives listing_id and photos (list of images in Bubble file format)
+ * - Creates Listing-Photo records for each image
+ * - Attaches them to the Listing
+ * - Sets sort_order based on array position (first = cover photo)
+ *
+ * Bubble API File Format:
+ * When a parameter is a file/image, you can provide raw data as a JSON object:
+ * { "filename": "photo.jpg", "contents": "base64...", "private": false }
+ * Reference: https://manual.bubble.io/core-resources/api/the-bubble-api
  */
 
 import { BubbleSyncService } from '../../_shared/bubbleSync.ts';
@@ -12,11 +20,55 @@ import { validateRequiredFields } from '../../_shared/validation.ts';
 import { User } from '../../_shared/types.ts';
 
 /**
+ * Convert a base64 data URL to Bubble's file upload format
+ * @param dataUrl - Base64 data URL (e.g., "data:image/jpeg;base64,/9j/4AAQ...")
+ * @param index - Photo index for filename
+ * @returns Bubble file format object
+ */
+function convertTooBubbleFileFormat(dataUrl: string, index: number): {
+  filename: string;
+  contents: string;
+  private: boolean;
+} {
+  // Extract mime type and base64 content from data URL
+  // Format: data:image/jpeg;base64,/9j/4AAQ...
+  const matches = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+
+  if (!matches) {
+    // If not a data URL, assume it's already base64 or a URL
+    // Try to use it as-is
+    console.warn(`[Photo Handler] Photo ${index} is not a standard data URL, using as-is`);
+    return {
+      filename: `listing-photo-${index + 1}.jpg`,
+      contents: dataUrl,
+      private: false,
+    };
+  }
+
+  const [, extension, base64Content] = matches;
+
+  // Map common extensions
+  const extMap: Record<string, string> = {
+    'jpeg': 'jpg',
+    'png': 'png',
+    'gif': 'gif',
+    'webp': 'webp',
+    'heic': 'heic',
+  };
+
+  const fileExt = extMap[extension.toLowerCase()] || extension;
+
+  return {
+    filename: `listing-photo-${index + 1}.${fileExt}`,
+    contents: base64Content,
+    private: false,
+  };
+}
+
+/**
  * Handle photo upload
- * NO FALLBACK: Atomic operation - all steps succeed or all fail
- *
- * Note: This is a simplified version. Full multipart/form-data handling
- * would require additional Edge Function configuration.
+ * Converts base64 data URLs to Bubble file format and sends to workflow
+ * Bubble handles creating Listing-Photo records and attaching to Listing
  */
 export async function handlePhotoUpload(
   syncService: BubbleSyncService,
@@ -39,37 +91,56 @@ export async function handlePhotoUpload(
   console.log('[Photo Handler] Number of photos:', photos.length);
 
   try {
-    // Atomic create-and-sync operation for each photo
-    // Note: This uploads photos sequentially to ensure data integrity
-    const uploadedPhotos = [];
+    // Convert each base64 data URL to Bubble's file format
+    console.log('[Photo Handler] Converting photos to Bubble file format...');
 
-    for (let i = 0; i < photos.length; i++) {
-      console.log(`[Photo Handler] Uploading photo ${i + 1}/${photos.length}`);
+    const bubblePhotos = photos.map((photoDataUrl: string, index: number) => {
+      const bubbleFile = convertTooBubbleFileFormat(photoDataUrl, index);
+      console.log(`[Photo Handler] Photo ${index + 1}: ${bubbleFile.filename} (base64 length: ${bubbleFile.contents.length})`);
+      return bubbleFile;
+    });
 
-      const photoData = await syncService.createAndSync(
-        'listing_photos_section_in_code',  // Bubble workflow name
-        {
-          Listing_id: listing_id,
-          Photo: photos[i],  // Base64-encoded photo or photo URL
-        },
-        'zat_listing_photos',  // Bubble object type
-        'zat_listing_photos'   // Supabase table
-      );
+    // Log the first few characters of each photo to verify format
+    console.log('[Photo Handler] Photo format verification:');
+    bubblePhotos.forEach((photo, index) => {
+      console.log(`[Photo Handler]   Photo ${index + 1}: filename=${photo.filename}, contents starts with: ${photo.contents.substring(0, 50)}...`);
+    });
 
-      uploadedPhotos.push(photoData);
-    }
+    // Send all photos to Bubble in one workflow call
+    // Bubble workflow creates Listing-Photo records and attaches to Listing
+    // Sort order is determined by array position (index 0 = cover photo)
+    console.log('[Photo Handler] Calling Bubble workflow with formatted photos...');
+    console.log('[Photo Handler] Workflow: listing_photos_section_in_code');
+    console.log('[Photo Handler] Params: listing_id =', listing_id);
+    console.log('[Photo Handler] Params: photos count =', bubblePhotos.length);
 
-    console.log('[Photo Handler] ✅ All photos uploaded and synced');
+    // Bubble workflow parameters (lowercase as defined in Bubble):
+    // - listing_id: text
+    // - photos: list of files
+    const result = await syncService.triggerWorkflowOnly(
+      'listing_photos_section_in_code',
+      {
+        listing_id: listing_id,
+        photos: bubblePhotos,
+      }
+    );
+
+    console.log('[Photo Handler] ✅ Photos uploaded to Bubble');
+    console.log('[Photo Handler] Workflow result:', JSON.stringify(result, null, 2));
     console.log('[Photo Handler] ========== SUCCESS ==========');
 
     return {
       listing_id,
-      photos: uploadedPhotos,
-      count: uploadedPhotos.length,
+      count: photos.length,
+      message: 'Photos uploaded and attached to listing successfully',
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Photo Handler] ========== ERROR ==========');
-    console.error('[Photo Handler] Failed to upload photos:', error);
+    console.error('[Photo Handler] Failed to upload photos:', error.message);
+    console.error('[Photo Handler] Error name:', error.name);
+    console.error('[Photo Handler] Error statusCode:', error.statusCode);
+    console.error('[Photo Handler] Bubble response:', error.bubbleResponse);
+    console.error('[Photo Handler] Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
     throw error;
   }
 }

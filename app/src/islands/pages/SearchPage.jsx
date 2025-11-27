@@ -4,7 +4,7 @@ import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import AiSignupMarketReport from '../shared/AiSignupMarketReport';
-import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
+import AuthAwareSearchScheduleSelector from '../shared/AuthAwareSearchScheduleSelector.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import { supabase } from '../../lib/supabase.js';
@@ -358,7 +358,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const priceInfoTriggerRef = useRef(null);
@@ -514,18 +514,20 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               </div>
             </>
           )}
-          <button className="favorite-btn" onClick={handleFavoriteClick}>
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill={isFavorite ? 'red' : 'none'}
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-          </button>
+          {isLoggedIn && (
+            <button className="favorite-btn" onClick={handleFavoriteClick}>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill={isFavorite ? 'red' : 'none'}
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </button>
+          )}
           {listing.isNew && <span className="new-badge">New Listing</span>}
         </div>
       )}
@@ -617,7 +619,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn }) {
   const sentinelRef = useRef(null);
 
   useEffect(() => {
@@ -658,6 +660,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
           }}
           onOpenContactModal={onOpenContactModal}
           onOpenInfoModal={onOpenInfoModal}
+          isLoggedIn={isLoggedIn}
         />
       ))}
 
@@ -1581,18 +1584,18 @@ export default function SearchPage() {
         console.log('Schedule selector changed (display only, not used for filtering):', days);
         // No state update - schedule selection is for display purposes only
       },
-      onError: (error) => console.error('SearchScheduleSelector error:', error)
+      onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error)
     };
 
     if (mountPointDesktop) {
       const rootDesktop = createRoot(mountPointDesktop);
-      rootDesktop.render(<SearchScheduleSelector {...selectorProps} />);
+      rootDesktop.render(<AuthAwareSearchScheduleSelector {...selectorProps} />);
       roots.push(rootDesktop);
     }
 
     if (mountPointMobile) {
       const rootMobile = createRoot(mountPointMobile);
-      rootMobile.render(<SearchScheduleSelector {...selectorProps} />);
+      rootMobile.render(<AuthAwareSearchScheduleSelector {...selectorProps} />);
       roots.push(rootMobile);
     }
 
@@ -1618,7 +1621,7 @@ export default function SearchPage() {
           {/* Mobile Schedule Selector - Always visible on mobile */}
           <div className="mobile-schedule-selector">
             <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
-              {/* SearchScheduleSelector will be mounted here on mobile */}
+              {/* AuthAwareSearchScheduleSelector will be mounted here on mobile */}
             </div>
           </div>
 
@@ -1636,7 +1639,7 @@ export default function SearchPage() {
 
             {/* Schedule Selector - First item on left (desktop only) */}
             <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
-              {/* SearchScheduleSelector will be mounted here on desktop */}
+              {/* AuthAwareSearchScheduleSelector will be mounted here on desktop */}
             </div>
 
             {/* Neighborhood Multi-Select - Checkbox list */}
@@ -1746,6 +1749,7 @@ export default function SearchPage() {
                 onOpenContactModal={handleOpenContactModal}
                 onOpenInfoModal={handleOpenInfoModal}
                 mapRef={mapRef}
+                isLoggedIn={isLoggedIn}
               />
             )}
           </div>
@@ -1852,6 +1856,7 @@ export default function SearchPage() {
               handleOpenContactModal(listing);
             }}
             onAIResearchClick={handleOpenAIResearchModal}
+            isLoggedIn={isLoggedIn}
           />
         </section>
       </main>
@@ -1914,6 +1919,7 @@ export default function SearchPage() {
                 handleOpenContactModal(listing);
               }}
               onAIResearchClick={handleOpenAIResearchModal}
+              isLoggedIn={isLoggedIn}
             />
           </div>
         </div>
