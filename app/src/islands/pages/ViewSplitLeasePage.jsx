@@ -2119,17 +2119,17 @@ export default function ViewSplitLeasePage() {
             src={listing.photos[currentPhotoIndex]?.Photo}
             alt={`${listing.Name} - photo ${currentPhotoIndex + 1}`}
             style={{
-              maxWidth: isMobile ? '90vw' : '85vw',
-              maxHeight: isMobile ? '60vh' : '70vh',
+              maxWidth: isMobile ? '95vw' : '90vw',
+              maxHeight: isMobile ? '75vh' : '80vh',
               objectFit: 'contain',
-              marginBottom: isMobile ? '8rem' : '6rem'
+              marginBottom: isMobile ? '6rem' : '5rem'
             }}
             onClick={(e) => e.stopPropagation()}
           />
 
           <div style={{
             position: 'absolute',
-            bottom: isMobile ? '5rem' : '6rem',
+            bottom: isMobile ? '4rem' : '5rem',
             left: '50%',
             transform: 'translateX(-50%)',
             display: 'flex',
@@ -2193,7 +2193,7 @@ export default function ViewSplitLeasePage() {
             onClick={() => setShowPhotoModal(false)}
             style={{
               position: 'absolute',
-              bottom: isMobile ? '1.5rem' : '2rem',
+              bottom: isMobile ? '1rem' : '1.5rem',
               left: '50%',
               transform: 'translateX(-50%)',
               background: 'white',
