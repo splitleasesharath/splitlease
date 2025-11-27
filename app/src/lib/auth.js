@@ -430,58 +430,53 @@ export async function loginUser(email, password) {
       console.error('❌ Edge Function error:', error);
       console.error('   Error message:', error.message);
       console.error('   Error context:', error.context);
-      console.error('   Full error object:', JSON.stringify(error, null, 2));
 
       // Extract detailed error from response body if available
-      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
+      // Supabase wraps non-2xx responses in a FunctionsHttpError with context as Response object
       let errorMessage = null;
 
-      // Try multiple paths to find the actual error message
-      // Path 1: error.context.body (most common for Edge Function errors)
-      if (error.context?.body) {
+      // Path 1: error.context is a Response object (FunctionsHttpError)
+      if (error.context && typeof error.context.json === 'function') {
         try {
-          const errorBody = typeof error.context.body === 'string'
-            ? JSON.parse(error.context.body)
-            : error.context.body;
-          console.error('   Parsed error body:', errorBody);
+          const errorBody = await error.context.json();
+          console.error('   Parsed response JSON:', errorBody);
           if (errorBody?.error) {
             errorMessage = errorBody.error;
           }
         } catch (parseErr) {
-          // If body is a plain string, use it directly
-          if (typeof error.context.body === 'string' && error.context.body.length < 200) {
-            errorMessage = error.context.body;
+          console.error('   Could not parse response as JSON:', parseErr);
+          // Try reading as text
+          try {
+            const errorText = await error.context.text();
+            console.error('   Response text:', errorText);
+            if (errorText && errorText.length < 200) {
+              // Try to parse as JSON one more time
+              try {
+                const parsed = JSON.parse(errorText);
+                if (parsed?.error) {
+                  errorMessage = parsed.error;
+                }
+              } catch {
+                errorMessage = errorText;
+              }
+            }
+          } catch (textErr) {
+            console.error('   Could not read response text:', textErr);
           }
-          console.error('   Could not parse error body:', parseErr);
         }
       }
 
-      // Path 2: Try to get response body from FunctionsHttpError
-      if (!errorMessage && error.context?.response) {
-        try {
-          // Clone response to read body without consuming it
-          const responseText = await error.context.response.clone().text();
-          console.error('   Response text:', responseText);
-          const responseJson = JSON.parse(responseText);
-          if (responseJson?.error) {
-            errorMessage = responseJson.error;
-          }
-        } catch (parseErr) {
-          console.error('   Could not parse response:', parseErr);
-        }
-      }
-
-      // Path 3: data object returned alongside error
+      // Path 2: data object returned alongside error
       if (!errorMessage && data?.error) {
         errorMessage = data.error;
       }
 
-      // Path 4: Check if error itself has nested error property
+      // Path 3: Check if error itself has nested error property
       if (!errorMessage && error.error) {
         errorMessage = error.error;
       }
 
-      // Path 5: error.message from Supabase client (exclude generic messages)
+      // Path 4: error.message from Supabase client (exclude generic messages)
       if (!errorMessage && error.message &&
           !error.message.includes('FunctionsHttpError') &&
           !error.message.includes('non-2xx status code')) {
@@ -608,58 +603,53 @@ export async function signupUser(email, password, retype, additionalData = null)
       console.error('❌ Edge Function error:', error);
       console.error('   Error message:', error.message);
       console.error('   Error context:', error.context);
-      console.error('   Full error object:', JSON.stringify(error, null, 2));
 
       // Extract detailed error from response body if available
-      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
+      // Supabase wraps non-2xx responses in a FunctionsHttpError with context as Response object
       let errorMessage = null;
 
-      // Try multiple paths to find the actual error message
-      // Path 1: error.context.body (most common for Edge Function errors)
-      if (error.context?.body) {
+      // Path 1: error.context is a Response object (FunctionsHttpError)
+      if (error.context && typeof error.context.json === 'function') {
         try {
-          const errorBody = typeof error.context.body === 'string'
-            ? JSON.parse(error.context.body)
-            : error.context.body;
-          console.error('   Parsed error body:', errorBody);
+          const errorBody = await error.context.json();
+          console.error('   Parsed response JSON:', errorBody);
           if (errorBody?.error) {
             errorMessage = errorBody.error;
           }
         } catch (parseErr) {
-          // If body is a plain string, use it directly
-          if (typeof error.context.body === 'string' && error.context.body.length < 200) {
-            errorMessage = error.context.body;
+          console.error('   Could not parse response as JSON:', parseErr);
+          // Try reading as text
+          try {
+            const errorText = await error.context.text();
+            console.error('   Response text:', errorText);
+            if (errorText && errorText.length < 200) {
+              // Try to parse as JSON one more time
+              try {
+                const parsed = JSON.parse(errorText);
+                if (parsed?.error) {
+                  errorMessage = parsed.error;
+                }
+              } catch {
+                errorMessage = errorText;
+              }
+            }
+          } catch (textErr) {
+            console.error('   Could not read response text:', textErr);
           }
-          console.error('   Could not parse error body:', parseErr);
         }
       }
 
-      // Path 2: Try to get response body from FunctionsHttpError
-      if (!errorMessage && error.context?.response) {
-        try {
-          // Clone response to read body without consuming it
-          const responseText = await error.context.response.clone().text();
-          console.error('   Response text:', responseText);
-          const responseJson = JSON.parse(responseText);
-          if (responseJson?.error) {
-            errorMessage = responseJson.error;
-          }
-        } catch (parseErr) {
-          console.error('   Could not parse response:', parseErr);
-        }
-      }
-
-      // Path 3: data object returned alongside error
+      // Path 2: data object returned alongside error
       if (!errorMessage && data?.error) {
         errorMessage = data.error;
       }
 
-      // Path 4: Check if error itself has nested error property
+      // Path 3: Check if error itself has nested error property
       if (!errorMessage && error.error) {
         errorMessage = error.error;
       }
 
-      // Path 5: error.message from Supabase client (exclude generic messages)
+      // Path 4: error.message from Supabase client (exclude generic messages)
       if (!errorMessage && error.message &&
           !error.message.includes('FunctionsHttpError') &&
           !error.message.includes('non-2xx status code')) {
