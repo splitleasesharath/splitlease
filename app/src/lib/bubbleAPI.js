@@ -116,6 +116,58 @@ export async function getListingById(listingId) {
 }
 
 /**
+ * Upload listing photos via Supabase Edge Function
+ * Sends all photos to Bubble in a single workflow call
+ * Bubble creates Listing-Photo records and attaches them to the Listing
+ * Sort order is determined by array position (first photo = cover photo)
+ * NO FALLBACK - Throws if Edge Function fails
+ *
+ * @param {string} listingId - Bubble ID of the listing
+ * @param {string[]} photos - Array of base64-encoded image data URLs
+ * @returns {Promise<Object>} - Upload result with count
+ */
+export async function uploadListingPhotos(listingId, photos) {
+  console.log('[Bubble API] Uploading photos via Edge Function');
+  console.log('[Bubble API] Listing ID:', listingId);
+  console.log('[Bubble API] Number of photos:', photos?.length || 0);
+
+  if (!listingId?.trim()) {
+    throw new Error('Listing ID is required');
+  }
+
+  if (!Array.isArray(photos) || photos.length === 0) {
+    throw new Error('At least one photo is required');
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('bubble-proxy', {
+      body: {
+        action: 'upload_photos',
+        payload: {
+          listing_id: listingId.trim(),
+          photos: photos,
+        },
+      },
+    });
+
+    if (error) {
+      console.error('[Bubble API] Edge Function error:', error);
+      throw new Error(error.message || 'Failed to upload photos');
+    }
+
+    if (!data.success) {
+      throw new Error(data.error || 'Unknown error');
+    }
+
+    console.log('[Bubble API] ✅ Photos uploaded:', data.data);
+    return data.data;
+  } catch (error) {
+    console.error('[Bubble API] Failed to upload photos:', error);
+    throw error;
+  }
+}
+
+/**
  * Submit a complete listing via Supabase Edge Function
  * Sends all listing form data to Bubble and syncs to Supabase
  * Called AFTER user signup/login with complete form data

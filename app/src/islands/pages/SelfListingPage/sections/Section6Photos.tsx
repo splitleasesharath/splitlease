@@ -6,9 +6,18 @@ interface Section6Props {
   onChange: (data: Photos) => void;
   onNext: () => void;
   onBack: () => void;
+  onUploadPhotos: () => Promise<boolean>;
+  isUploading: boolean;
 }
 
-export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext, onBack }) => {
+export const Section6Photos: React.FC<Section6Props> = ({
+  data,
+  onChange,
+  onNext,
+  onBack,
+  onUploadPhotos,
+  isUploading
+}) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
@@ -136,13 +145,19 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
     return errorOrder;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const errorKeys = validateForm();
-    if (errorKeys.length === 0) {
-      onNext();
-    } else {
+    if (errorKeys.length > 0) {
       scrollToFirstError(errorKeys);
+      return;
     }
+
+    // Upload photos to Bubble before proceeding
+    const uploadSuccess = await onUploadPhotos();
+    if (uploadSuccess) {
+      onNext();
+    }
+    // If upload fails, onUploadPhotos will show an error alert
   };
 
   const openMobileUpload = () => {
@@ -241,16 +256,16 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
 
       {/* Navigation */}
       <div className="section-navigation">
-        <button type="button" className="btn-back" onClick={onBack}>
+        <button type="button" className="btn-back" onClick={onBack} disabled={isUploading}>
           Back
         </button>
         <button
           type="button"
           className="btn-next"
           onClick={handleNext}
-          disabled={data.photos.length < data.minRequired}
+          disabled={data.photos.length < data.minRequired || isUploading}
         >
-          Next
+          {isUploading ? 'Uploading Photos...' : 'Next'}
         </button>
       </div>
     </div>

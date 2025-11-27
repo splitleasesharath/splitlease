@@ -10,7 +10,7 @@ import type { ListingFormData } from './types/listing.types';
 import { useListingStore, listingLocalStore } from './store';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
-import { getListingById } from '../../../lib/bubbleAPI';
+import { getListingById, uploadListingPhotos } from '../../../lib/bubbleAPI';
 import './styles/SelfListingPage.css';
 
 export const SelfListingPage: React.FC = () => {
@@ -44,6 +44,8 @@ export const SelfListingPage: React.FC = () => {
   const [currentSection, setCurrentSection] = useState(formData.currentSection || 1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingListing, setIsLoadingListing] = useState(false);
+  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
+  const [listingId, setListingId] = useState<string | null>(null);
 
   // Sync current section with store
   useEffect(() => {
@@ -56,15 +58,18 @@ export const SelfListingPage: React.FC = () => {
   useEffect(() => {
     const initializeFromUrl = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const listingId = urlParams.get('listing_id');
-      console.log('🏠 SelfListingPage: Listing ID from URL:', listingId);
+      const listingIdFromUrl = urlParams.get('listing_id');
+      console.log('🏠 SelfListingPage: Listing ID from URL:', listingIdFromUrl);
 
-      if (listingId) {
+      if (listingIdFromUrl) {
+        // Store the listing ID for later use (photo upload, submission)
+        setListingId(listingIdFromUrl);
+
         // If there's a listing ID in the URL, fetch it from Bubble API
         setIsLoadingListing(true);
         try {
           console.log('📡 Fetching listing data from Bubble API...');
-          const listingData = await getListingById(listingId);
+          const listingData = await getListingById(listingIdFromUrl);
           console.log('✅ Listing data fetched from Bubble:', listingData);
 
           // Preload the listing name into the form
@@ -188,6 +193,39 @@ export const SelfListingPage: React.FC = () => {
       handleSectionChange(currentSection - 1);
     }
   }, [currentSection, handleSectionChange]);
+
+  // Handle photo upload when leaving Section 6
+  const handlePhotoUpload = useCallback(async (): Promise<boolean> => {
+    if (!listingId) {
+      console.error('❌ No listing ID available for photo upload');
+      alert('Error: No listing ID found. Please start from the beginning.');
+      return false;
+    }
+
+    const photos = formData.photos.photos;
+    if (photos.length === 0) {
+      console.log('📷 No photos to upload');
+      return true; // No photos is valid if validation passed
+    }
+
+    // Extract base64 data URLs from photos
+    const photoDataUrls = photos.map(photo => photo.url);
+
+    console.log('📷 Uploading', photoDataUrls.length, 'photos to listing:', listingId);
+    setIsUploadingPhotos(true);
+
+    try {
+      const result = await uploadListingPhotos(listingId, photoDataUrls);
+      console.log('✅ Photos uploaded successfully:', result);
+      return true;
+    } catch (error) {
+      console.error('❌ Failed to upload photos:', error);
+      alert('Failed to upload photos. Please try again.');
+      return false;
+    } finally {
+      setIsUploadingPhotos(false);
+    }
+  }, [listingId, formData.photos.photos]);
 
   // Handle manual save draft
   const handleSaveDraft = useCallback(() => {
@@ -404,6 +442,8 @@ export const SelfListingPage: React.FC = () => {
               onChange={updatePhotos}
               onNext={handleNext}
               onBack={handleBack}
+              onUploadPhotos={handlePhotoUpload}
+              isUploading={isUploadingPhotos}
             />
           )}
 
