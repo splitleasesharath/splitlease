@@ -94,16 +94,25 @@ export async function handlePhotoUpload(
     // Convert each base64 data URL to Bubble's file format
     console.log('[Photo Handler] Converting photos to Bubble file format...');
 
-    const bubblePhotos = photos.map((photoDataUrl, index) => {
+    const bubblePhotos = photos.map((photoDataUrl: string, index: number) => {
       const bubbleFile = convertTooBubbleFileFormat(photoDataUrl, index);
-      console.log(`[Photo Handler] Photo ${index + 1}: ${bubbleFile.filename}`);
+      console.log(`[Photo Handler] Photo ${index + 1}: ${bubbleFile.filename} (base64 length: ${bubbleFile.contents.length})`);
       return bubbleFile;
+    });
+
+    // Log the first few characters of each photo to verify format
+    console.log('[Photo Handler] Photo format verification:');
+    bubblePhotos.forEach((photo, index) => {
+      console.log(`[Photo Handler]   Photo ${index + 1}: filename=${photo.filename}, contents starts with: ${photo.contents.substring(0, 50)}...`);
     });
 
     // Send all photos to Bubble in one workflow call
     // Bubble workflow creates Listing-Photo records and attaches to Listing
     // Sort order is determined by array position (index 0 = cover photo)
     console.log('[Photo Handler] Calling Bubble workflow with formatted photos...');
+    console.log('[Photo Handler] Workflow: listing_photos_section_in_code');
+    console.log('[Photo Handler] Params: listing_id =', listing_id);
+    console.log('[Photo Handler] Params: photos count =', bubblePhotos.length);
 
     const result = await syncService.triggerWorkflowOnly(
       'listing_photos_section_in_code',
@@ -114,7 +123,7 @@ export async function handlePhotoUpload(
     );
 
     console.log('[Photo Handler] ✅ Photos uploaded to Bubble');
-    console.log('[Photo Handler] Workflow result:', result);
+    console.log('[Photo Handler] Workflow result:', JSON.stringify(result, null, 2));
     console.log('[Photo Handler] ========== SUCCESS ==========');
 
     return {
@@ -122,9 +131,13 @@ export async function handlePhotoUpload(
       count: photos.length,
       message: 'Photos uploaded and attached to listing successfully',
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Photo Handler] ========== ERROR ==========');
-    console.error('[Photo Handler] Failed to upload photos:', error);
+    console.error('[Photo Handler] Failed to upload photos:', error.message);
+    console.error('[Photo Handler] Error name:', error.name);
+    console.error('[Photo Handler] Error statusCode:', error.statusCode);
+    console.error('[Photo Handler] Bubble response:', error.bubbleResponse);
+    console.error('[Photo Handler] Full error:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
     throw error;
   }
 }
