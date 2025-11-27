@@ -187,12 +187,6 @@ export const helpCenterArticles = {
         icon: 'Heart',
         title: 'Our Mission',
         content: "Split Lease connects repeat guests with repeat rentals. We help multi-locals find, negotiate, and manage relationships in secondary addresses, like pied-a-terres. We're building a market network for recurring travel and multi-locality living."
-      },
-      {
-        type: 'info',
-        icon: 'MessageCircle',
-        title: 'Get in Touch',
-        content: 'Email: support@split.lease\nLive Chat: Available on our website during business hours\nResponse Time: We typically respond within 24 hours'
       }
     ]
   },
