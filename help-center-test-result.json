@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "headerBottom": 78,
+  "titleTop": 151,
+  "spacing": 73,
+  "titleText": "For Guests",
+  "isTitleVisible": true,
+  "screenshotPath": "C:\\Users\\Split Lease\\My Drive\\!Agent Context and Tools\\SL21\\Split Lease\\help-center-spacing-test.png",
+  "message": "Content is properly spaced below the header with 73px spacing. Title \"For Guests\" is visible."
+}

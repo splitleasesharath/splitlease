@@ -4,7 +4,7 @@ import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import AiSignupMarketReport from '../shared/AiSignupMarketReport';
-import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
+import AuthAwareSearchScheduleSelector from '../shared/AuthAwareSearchScheduleSelector.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import { supabase } from '../../lib/supabase.js';
@@ -1584,18 +1584,18 @@ export default function SearchPage() {
         console.log('Schedule selector changed (display only, not used for filtering):', days);
         // No state update - schedule selection is for display purposes only
       },
-      onError: (error) => console.error('SearchScheduleSelector error:', error)
+      onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error)
     };
 
     if (mountPointDesktop) {
       const rootDesktop = createRoot(mountPointDesktop);
-      rootDesktop.render(<SearchScheduleSelector {...selectorProps} />);
+      rootDesktop.render(<AuthAwareSearchScheduleSelector {...selectorProps} />);
       roots.push(rootDesktop);
     }
 
     if (mountPointMobile) {
       const rootMobile = createRoot(mountPointMobile);
-      rootMobile.render(<SearchScheduleSelector {...selectorProps} />);
+      rootMobile.render(<AuthAwareSearchScheduleSelector {...selectorProps} />);
       roots.push(rootMobile);
     }
 
@@ -1621,7 +1621,7 @@ export default function SearchPage() {
           {/* Mobile Schedule Selector - Always visible on mobile */}
           <div className="mobile-schedule-selector">
             <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
-              {/* SearchScheduleSelector will be mounted here on mobile */}
+              {/* AuthAwareSearchScheduleSelector will be mounted here on mobile */}
             </div>
           </div>
 
@@ -1639,7 +1639,7 @@ export default function SearchPage() {
 
             {/* Schedule Selector - First item on left (desktop only) */}
             <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
-              {/* SearchScheduleSelector will be mounted here on desktop */}
+              {/* AuthAwareSearchScheduleSelector will be mounted here on desktop */}
             </div>
 
             {/* Neighborhood Multi-Select - Checkbox list */}

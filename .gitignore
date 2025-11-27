@@ -4,6 +4,9 @@
 app/server/.env
 .ports.env
 
+# Secrets documentation (contains sensitive info)
+supabase/SECRETS_SETUP.md
+
 # Python
 __pycache__/
 *.py[cod]
