@@ -25,7 +25,7 @@ export const helpCenterCategories = [
     title: 'About Split Lease',
     description: 'Learn about Split Lease, our mission, and how to contact us',
     icon: 'Info',
-    articleCount: 2,
+    articleCount: 7,
     slug: 'about'
   },
   {
@@ -177,7 +177,12 @@ export const helpCenterArticles = {
       {
         title: 'Blog Posts',
         articles: [
-          { id: 'craigslist-female-safety', title: "Hybrid worker homes are available on Craigslist, but if you're female read this first", slug: 'craigslist-female-safety', external: '/help-center-articles/knowledge-base/craigslist-female-safety.html' }
+          { id: 'craigslist-female-safety', title: "Hybrid worker homes are available on Craigslist, but if you're female read this first", slug: 'craigslist-female-safety', external: '/help-center-articles/knowledge-base/craigslist-female-safety.html' },
+          { id: 'airbnb-vs-split-lease', title: 'Airbnb vs. Split Lease: Why Split Lease is Better for Hybrid Work', slug: 'airbnb-vs-split-lease', external: '/help-center-articles/knowledge-base/airbnb-vs-split-lease.html' },
+          { id: 'live-anywhere-show-up-work', title: 'Good with computers? Live anywhere and show up for in-person work', slug: 'live-anywhere-show-up-work', external: '/help-center-articles/knowledge-base/live-anywhere-show-up-work.html' },
+          { id: 'two-homes-rich-people', title: 'I Thought Having Two Homes was for Rich People', slug: 'two-homes-rich-people', external: '/help-center-articles/knowledge-base/two-homes-rich-people.html' },
+          { id: 'month-to-month-losers', title: 'Losers Rent Month-to-Month, Winners Do This', slug: 'month-to-month-losers', external: '/help-center-articles/knowledge-base/month-to-month-losers.html' },
+          { id: 'grandkids-two-places', title: "Need a place by your grandkids? Here's how you can avoid maintaining two places", slug: 'grandkids-two-places', external: '/help-center-articles/knowledge-base/grandkids-two-places.html' }
         ]
       }
     ],
