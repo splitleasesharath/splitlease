@@ -3,6 +3,3 @@
 
 ## Run
 git ls-files
-
-## Read
-README.md
