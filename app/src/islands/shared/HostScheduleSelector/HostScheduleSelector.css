@@ -1,68 +1,67 @@
 /**
  * Host Schedule Selector Component Styles
- * Exact specifications from Bubble implementation
+ * Proportions matched to SearchScheduleSelector
  * Uses 'hss-' prefix to avoid conflicts
  */
 
-/* Root container */
+/* Root container - no border */
 .hss-host-schedule-selector {
   display: inline-block;
-  border: 2px double #6B6B6B;
-  border-radius: 5px;
+  border: none;
+  border-radius: 0;
   padding: 0;
-  min-height: 42px;
   background: transparent;
   box-sizing: border-box;
 }
 
 /* Nights grid container */
 .hss-nights-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 28px);
-  grid-template-rows: 28px;
-  gap: 0;
+  display: flex;
+  gap: 8px;
   padding: 0;
   margin: 0;
-  border: 1px solid #FFFFFF;
-  border-radius: 5px;
+  border: none;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Individual night cell - Default state */
 .hss-night-cell {
-  width: 28px;
-  height: 28px;
-  background-color: #B2B2B2;
-  border: 1px solid #9D9D9D;
-  border-radius: 5px;
+  width: 48px;
+  height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  background-color: #b2b2b2;
+  border: none;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  padding: 5px 0;
+  padding: 0;
   box-sizing: border-box;
-  transition: background-color 500ms ease,
-              box-shadow 500ms ease,
-              color 500ms ease;
+  transition: transform 0.15s ease-in-out, background 0.2s ease-in-out;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
   position: relative;
   user-select: none;
 }
 
 /* Night letter text */
 .hss-night-letter {
-  font-family: 'Lato', sans-serif;
-  font-weight: 700;
+  font-family: "Inter", Helvetica, Arial, sans-serif;
+  font-weight: 600;
   font-size: 18px;
-  color: #6D6D6D;
+  color: #ffffff;
   line-height: 1;
   text-align: center;
   user-select: none;
-  transition: color 500ms ease;
+  transition: color 0.2s ease;
   pointer-events: none;
 }
 
 /* Hover state (only for clickable cells) */
 .hss-night-cell:not(.hss-unavailable):not(.hss-disabled):hover {
-  opacity: 0.9;
+  transform: scale(1.05) translateY(-2px);
   cursor: pointer;
 }
 
@@ -187,16 +186,19 @@
   transform: scale(0.95);
 }
 
-/* Responsive adjustments for smaller screens */
-@media (max-width: 320px) {
+/* Responsive adjustments for tablets */
+@media (max-width: 768px) {
   .hss-nights-grid {
-    grid-template-columns: repeat(7, 24px);
-    grid-template-rows: 24px;
+    gap: 6px;
   }
 
   .hss-night-cell {
-    width: 24px;
-    height: 24px;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+    touch-action: manipulation;
   }
 
   .hss-night-letter {
@@ -204,11 +206,21 @@
   }
 }
 
-/* Mobile touch optimization */
-@media (max-width: 768px) {
+/* Responsive adjustments for small phones */
+@media (max-width: 480px) {
+  .hss-nights-grid {
+    gap: 4px;
+  }
+
   .hss-night-cell {
-    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
-    touch-action: manipulation;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    min-height: 36px;
+  }
+
+  .hss-night-letter {
+    font-size: 14px;
   }
 }
 
