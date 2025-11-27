@@ -428,30 +428,49 @@ export async function loginUser(email, password) {
 
     if (error) {
       console.error('❌ Edge Function error:', error);
+      console.error('   Error message:', error.message);
       console.error('   Error context:', error.context);
 
       // Extract detailed error from response body if available
       // Supabase wraps non-2xx responses in a generic error, but the body may contain details
-      let errorMessage = 'Failed to authenticate. Please try again.';
+      let errorMessage = null;
 
+      // Try multiple paths to find the actual error message
+      // Path 1: error.context.body (most common for Edge Function errors)
       if (error.context?.body) {
         try {
           const errorBody = typeof error.context.body === 'string'
             ? JSON.parse(error.context.body)
             : error.context.body;
+          console.error('   Parsed error body:', errorBody);
           if (errorBody?.error) {
             errorMessage = errorBody.error;
-            console.error('   Detailed error from response:', errorMessage);
           }
         } catch (parseErr) {
+          // If body is a plain string, use it directly
+          if (typeof error.context.body === 'string' && error.context.body.length < 200) {
+            errorMessage = error.context.body;
+          }
           console.error('   Could not parse error body:', parseErr);
         }
       }
 
-      // Also check if data was returned despite the error (some edge cases)
-      if (data?.error) {
+      // Path 2: data object returned alongside error
+      if (!errorMessage && data?.error) {
         errorMessage = data.error;
       }
+
+      // Path 3: error.message from Supabase client
+      if (!errorMessage && error.message && !error.message.includes('FunctionsHttpError')) {
+        errorMessage = error.message;
+      }
+
+      // Fallback only if we couldn't extract anything useful
+      if (!errorMessage) {
+        errorMessage = 'Failed to authenticate. Please try again.';
+      }
+
+      console.error('   Final error message:', errorMessage);
 
       return {
         success: false,
@@ -564,30 +583,49 @@ export async function signupUser(email, password, retype, additionalData = null)
 
     if (error) {
       console.error('❌ Edge Function error:', error);
+      console.error('   Error message:', error.message);
       console.error('   Error context:', error.context);
 
       // Extract detailed error from response body if available
       // Supabase wraps non-2xx responses in a generic error, but the body may contain details
-      let errorMessage = 'Failed to create account. Please try again.';
+      let errorMessage = null;
 
+      // Try multiple paths to find the actual error message
+      // Path 1: error.context.body (most common for Edge Function errors)
       if (error.context?.body) {
         try {
           const errorBody = typeof error.context.body === 'string'
             ? JSON.parse(error.context.body)
             : error.context.body;
+          console.error('   Parsed error body:', errorBody);
           if (errorBody?.error) {
             errorMessage = errorBody.error;
-            console.error('   Detailed error from response:', errorMessage);
           }
         } catch (parseErr) {
+          // If body is a plain string, use it directly
+          if (typeof error.context.body === 'string' && error.context.body.length < 200) {
+            errorMessage = error.context.body;
+          }
           console.error('   Could not parse error body:', parseErr);
         }
       }
 
-      // Also check if data was returned despite the error (some edge cases)
-      if (data?.error) {
+      // Path 2: data object returned alongside error
+      if (!errorMessage && data?.error) {
         errorMessage = data.error;
       }
+
+      // Path 3: error.message from Supabase client
+      if (!errorMessage && error.message && !error.message.includes('FunctionsHttpError')) {
+        errorMessage = error.message;
+      }
+
+      // Fallback only if we couldn't extract anything useful
+      if (!errorMessage) {
+        errorMessage = 'Failed to create account. Please try again.';
+      }
+
+      console.error('   Final error message:', errorMessage);
 
       return {
         success: false,
