@@ -13,80 +13,37 @@
     <!-- Header - Matches main Split Lease site -->
     <header class="sl-main-header">
         <nav class="sl-nav-container">
-            <!-- Logo -->
             <div class="sl-nav-left">
                 <a href="/" class="sl-logo">
                     <img src="/assets/images/logo.png" alt="Split Lease" class="sl-logo-img">
                     <span class="sl-logo-text">Split Lease</span>
                 </a>
             </div>
-
-            <!-- Hamburger Menu (mobile) -->
             <button class="sl-hamburger" aria-label="Toggle navigation menu" onclick="toggleMobileMenu()">
                 <span class="sl-hamburger-line"></span>
                 <span class="sl-hamburger-line"></span>
                 <span class="sl-hamburger-line"></span>
             </button>
-
-            <!-- Center Navigation -->
             <div class="sl-nav-center" id="navCenter">
-                <!-- Host with Us Dropdown -->
                 <div class="sl-nav-dropdown">
-                    <a href="#" class="sl-dropdown-trigger">
-                        Host with Us
-                        <svg class="sl-dropdown-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
-                            <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </a>
+                    <a href="#" class="sl-dropdown-trigger">Host with Us<svg class="sl-dropdown-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></a>
                     <div class="sl-dropdown-menu">
-                        <a href="/list-with-us.html" class="sl-dropdown-item">
-                            <span class="sl-dropdown-title">Why List with Us</span>
-                            <span class="sl-dropdown-desc">New to Split Lease? Learn more about hosting</span>
-                        </a>
-                        <a href="/host-success" class="sl-dropdown-item">
-                            <span class="sl-dropdown-title">Success Stories</span>
-                            <span class="sl-dropdown-desc">Explore other hosts' feedback</span>
-                        </a>
-                        <a href="/self-listing" class="sl-dropdown-item">
-                            <span class="sl-dropdown-title">List Property</span>
-                        </a>
-                        <a href="/faq?section=hosts" class="sl-dropdown-item">
-                            <span class="sl-dropdown-title">FAQs</span>
-                            <span class="sl-dropdown-desc">Frequently Asked Questions</span>
-                        </a>
+                        <a href="/list-with-us.html" class="sl-dropdown-item"><span class="sl-dropdown-title">Why List with Us</span><span class="sl-dropdown-desc">New to Split Lease? Learn more about hosting</span></a>
+                        <a href="/host-success" class="sl-dropdown-item"><span class="sl-dropdown-title">Success Stories</span><span class="sl-dropdown-desc">Explore other hosts' feedback</span></a>
+                        <a href="/self-listing" class="sl-dropdown-item"><span class="sl-dropdown-title">List Property</span></a>
+                        <a href="/faq?section=hosts" class="sl-dropdown-item"><span class="sl-dropdown-title">FAQs</span><span class="sl-dropdown-desc">Frequently Asked Questions</span></a>
                     </div>
                 </div>
-
-                <!-- Stay with Us Dropdown -->
                 <div class="sl-nav-dropdown">
-                    <a href="#" class="sl-dropdown-trigger">
-                        Stay with Us
-                        <svg class="sl-dropdown-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none">
-                            <path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                        </svg>
-                    </a>
+                    <a href="#" class="sl-dropdown-trigger">Stay with Us<svg class="sl-dropdown-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></a>
                     <div class="sl-dropdown-menu">
-                        <a href="/search" class="sl-dropdown-item">
-                            <span class="sl-dropdown-title">Explore Rentals</span>
-                            <span class="sl-dropdown-desc">See available listings!</span>
-                        </a>
-                        <a href="/why-split-lease" class="sl-dropdown-item">
-                            <span class="sl-dropdown-title">Why Split Lease</span>
-                            <span class="sl-dropdown-desc">Learn why guests choose Split Lease</span>
-                        </a>
-                        <a href="/guest-success" class="sl-dropdown-item">
-                            <span class="sl-dropdown-title">Success Stories</span>
-                            <span class="sl-dropdown-desc">Explore other guests' feedback</span>
-                        </a>
-                        <a href="/faq?section=travelers" class="sl-dropdown-item">
-                            <span class="sl-dropdown-title">FAQs</span>
-                            <span class="sl-dropdown-desc">Frequently Asked Questions</span>
-                        </a>
+                        <a href="/search" class="sl-dropdown-item"><span class="sl-dropdown-title">Explore Rentals</span><span class="sl-dropdown-desc">See available listings!</span></a>
+                        <a href="/why-split-lease" class="sl-dropdown-item"><span class="sl-dropdown-title">Why Split Lease</span><span class="sl-dropdown-desc">Learn why guests choose Split Lease</span></a>
+                        <a href="/guest-success" class="sl-dropdown-item"><span class="sl-dropdown-title">Success Stories</span><span class="sl-dropdown-desc">Explore other guests' feedback</span></a>
+                        <a href="/faq?section=travelers" class="sl-dropdown-item"><span class="sl-dropdown-title">FAQs</span><span class="sl-dropdown-desc">Frequently Asked Questions</span></a>
                     </div>
                 </div>
             </div>
-
-            <!-- Right Navigation -->
             <div class="sl-nav-right" id="navRight">
                 <a href="/search" class="sl-explore-btn">Explore Rentals</a>
                 <a href="/" class="sl-nav-link">Sign In</a>
@@ -94,20 +51,14 @@
             </div>
         </nav>
     </header>
-
-    <script>
-        function toggleMobileMenu() {
-            document.getElementById('navCenter').classList.toggle('mobile-active');
-            document.getElementById('navRight').classList.toggle('mobile-active');
-        }
-    </script>
+    <script>function toggleMobileMenu(){document.getElementById('navCenter').classList.toggle('mobile-active');document.getElementById('navRight').classList.toggle('mobile-active');}</script>
 
     <!-- Breadcrumb -->
     <div class="container" style="margin-top: 80px;">
         <div class="breadcrumb">
             <a href="/help-center">All Collections</a>
             <i data-feather="chevron-right"></i>
-            <a href="/help-center/guests">For Guests</a>
+            <a href="/help-center/about">About Split Lease</a>
             <i data-feather="chevron-right"></i>
             <span class="current">What is Split Lease?</span>
         </div>
@@ -308,14 +259,11 @@
             <!-- Sidebar Navigation -->
             <aside class="article-sidebar">
                 <nav class="sidebar-nav">
-                    <h4>In This Section</h4>
+                    <h4>About Split Lease</h4>
                     <ul>
                         <li><a href="what-is-split-lease.html" class="active">What is Split Lease?</a></li>
-                        <li><a href="who-benefits.html">Who benefits most?</a></li>
-                        <li><a href="how-to-get-started.html">How to get started</a></li>
-                        <li><a href="do-i-need-work-travel.html">Do I need to travel for work?</a></li>
-                        <li><a href="hybrid-worker-benefits.html">Hybrid worker benefits</a></li>
-                        <li><a href="vs-airbnb.html">Split Lease vs Airbnb</a></li>
+                        <li><a href="vs-craigslist.html">Better than Craigslist?</a></li>
+                        <li><a href="contact-support.html">Contact Support</a></li>
                     </ul>
                 </nav>
 

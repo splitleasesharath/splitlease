@@ -1,72 +1,89 @@
 /* FAQ Page Specific Styles */
 
-/* Hero Section */
+/* Override body background for FAQ page */
+body {
+  background: white;
+}
+
+/* Hero Section - Matches Help Center style */
 .hero {
-  background: linear-gradient(135deg, #f5f5f7 0%, #e8e8ea 100%);
-  padding: 80px 40px 40px;
+  background: #31135d;
+  padding: 32px 16px 24px;
+  padding-top: calc(70px + 32px);
   text-align: center;
-  margin-top: 80px; /* Account for fixed header */
+}
+
+@media (min-width: 768px) {
+  .hero {
+    padding: 40px 16px 32px;
+    padding-top: calc(70px + 40px);
+  }
 }
 
 .hero-title {
-  font-size: 48px;
-  font-weight: 700;
-  color: #000;
-  margin-bottom: 16px;
+  font-size: clamp(22px, 4vw, 28px);
+  font-weight: 600;
+  color: white;
+  margin-bottom: 8px;
 }
 
 .hero-subtitle {
-  font-size: 18px;
-  color: #666;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.9);
   font-weight: 400;
 }
 
 /* Tabs Container */
 .tabs-container {
-  background: #f5f5f7;
-  border-bottom: 1px solid #e5e5e5;
+  background: white;
+  border-bottom: 1px solid #E0E0E0;
   position: sticky;
-  top: 65px;
+  top: 70px;
   z-index: 999;
 }
 
 .tabs {
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
   display: flex;
-  gap: 0;
+  gap: 10px;
+  padding: 16px 24px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
 }
 
 .tab {
-  background: transparent;
-  border: none;
-  border-bottom: 3px solid transparent;
-  padding: 16px 32px;
-  font-size: 18px;
-  color: #666;
+  background: #F5F5F5;
+  border: 1px solid #E0E0E0;
+  border-radius: 20px;
+  padding: 10px 20px;
+  font-size: 14px;
+  color: #555;
   cursor: pointer;
   transition: all 0.2s ease;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .tab:hover {
-  color: #5B4AD6;
+  background: #EFEFEF;
+  border-color: #31135d;
+  color: #31135d;
 }
 
 .tab.active {
-  color: #5B4AD6;
-  border-bottom-color: #5B4AD6;
+  background: #31135d;
+  border-color: #31135d;
+  color: white;
   font-weight: 600;
 }
 
 /* FAQ Container */
 .faq-container {
-  max-width: 1200px;
-  margin: 40px auto;
-  padding: 40px;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 24px;
   background: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
 .tab-content {
@@ -82,101 +99,140 @@
 }
 
 .section-title {
-  font-size: 28px;
-  font-weight: 700;
-  color: #000;
-  margin-bottom: 24px;
-  margin-top: 40px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #31135d;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #F3E5F5;
 }
 
 .faq-section:first-child .section-title {
   margin-top: 0;
 }
 
-/* Accordion */
+/* Accordion - Knowledge Base Style */
 .accordion-item {
-  border: 1px solid #e5e5e5;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  background: white;
-  overflow: hidden;
-  transition: all 0.3s ease;
+  border-bottom: 1px solid #E0E0E0;
 }
 
-.accordion-item:hover {
-  border-color: #d0d0d0;
+.accordion-item:last-child {
+  border-bottom: none;
 }
 
 .accordion-header {
-  padding: 20px 24px;
+  padding: 16px;
   cursor: pointer;
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 12px;
   user-select: none;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.accordion-header:hover {
+  background-color: #F9F9F9;
+  padding-left: 20px;
+}
+
+.accordion-header:hover h3 {
+  color: #31135d;
 }
 
 .accordion-header h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #000;
+  font-size: 15px;
+  font-weight: 400;
+  color: #2C2C2C;
   flex: 1;
   margin: 0;
+  line-height: 1.5;
+  transition: color 0.2s ease;
 }
 
 .accordion-icon {
-  font-size: 24px;
-  color: #5B4AD6;
-  font-weight: 300;
-  width: 24px;
-  height: 24px;
+  color: #31135d;
+  width: 18px;
+  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  order: -1;
 }
 
 .accordion-icon::before {
-  content: '+';
+  content: '→';
+  font-size: 14px;
 }
 
-.accordion-item.active .accordion-icon::before {
-  content: '−';
+.accordion-header:hover .accordion-icon {
+  transform: translateX(4px);
+}
+
+.accordion-item.active .accordion-icon {
+  transform: rotate(90deg);
+}
+
+.accordion-item.active .accordion-header {
+  background-color: #F9F9F9;
+}
+
+.accordion-item.active .accordion-header h3 {
+  color: #31135d;
+  font-weight: 500;
 }
 
 .accordion-content {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.3s ease, padding 0.3s ease;
-  padding: 0 24px;
+  transition: max-height 0.3s ease;
 }
 
 .accordion-item.active .accordion-content {
-  max-height: 1000px;
-  padding: 0 24px 20px;
+  max-height: 2000px;
+}
+
+.accordion-content-inner {
+  padding: 12px 16px 20px 46px;
 }
 
 .accordion-content p {
-  margin-bottom: 12px;
-  font-size: 15px;
-  line-height: 1.6;
-  color: #333;
+  margin-bottom: 14px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #31135d;
+}
+
+.accordion-content p:last-child {
+  margin-bottom: 0;
 }
 
 .accordion-content ul,
 .accordion-content ol {
-  margin: 12px 0 12px 24px;
+  margin: 14px 0;
+  padding-left: 20px;
 }
 
 .accordion-content li {
   margin-bottom: 8px;
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.6;
-  color: #333;
+  color: #555;
+}
+
+.accordion-content li::marker {
+  color: #31135d;
+}
+
+.accordion-content strong {
+  font-weight: 600;
+  color: #2C2C2C;
 }
 
 .accordion-content a {
-  color: #5B4AD6;
+  color: #31135d;
   text-decoration: none;
 }
 
@@ -184,23 +240,44 @@
   text-decoration: underline;
 }
 
+/* Info boxes in accordion content */
+.accordion-content .info-box {
+  padding: 16px;
+  border-radius: 8px;
+  margin: 16px 0;
+  border-left: 4px solid;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.accordion-content .info-box.info {
+  background-color: #F3E5F5;
+  border-left-color: #31135d;
+}
+
+.accordion-content .info-box.success {
+  background-color: #E8F5E9;
+  border-left-color: #4CAF50;
+}
+
 /* Bottom CTA */
 .bottom-cta {
-  background: #f5f5f7;
-  padding: 60px 40px;
+  background: #fafafa;
+  padding: 40px 24px;
   text-align: center;
+  border-top: 1px solid #eee;
 }
 
 .cta-link {
-  font-size: 20px;
-  color: #5B4AD6;
+  font-size: 14px;
+  color: #31135d;
   text-decoration: none;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 
 .cta-link:hover {
   text-decoration: underline;
-  opacity: 0.8;
 }
 
 /* Loading and Error States */
@@ -212,12 +289,12 @@
 
 .spinner {
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #5B4AD6;
+  border-top: 4px solid #31135d;
   border-radius: 50%;
-  width: 50px;
-  height: 50px;
+  width: 40px;
+  height: 40px;
   animation: spin 1s linear infinite;
-  margin: 0 auto 20px;
+  margin: 0 auto 16px;
 }
 
 @keyframes spin {
@@ -233,21 +310,20 @@
 }
 
 .retry-btn {
-  margin-top: 20px;
-  padding: 12px 24px;
-  background: #5B4AD6;
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: #31135d;
   color: white;
   border: none;
   border-radius: 8px;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .retry-btn:hover {
-  background: #4a3ab5;
-  transform: scale(1.02);
+  background: #1e0a37;
 }
 
 /* Floating Market Research Widget */
@@ -309,7 +385,7 @@
   position: absolute;
   top: 0;
   right: 0;
-  background: #5B4AD6;
+  background: #31135d;
   color: white;
   padding: 4px 12px;
   border-radius: 12px;
@@ -337,7 +413,7 @@
 .next-btn {
   width: 100%;
   padding: 12px;
-  background: #5B4AD6;
+  background: #31135d;
   color: white;
   border: none;
   border-radius: 8px;
@@ -348,7 +424,7 @@
 }
 
 .next-btn:hover {
-  background: #4a3ab5;
+  background: #1e0a37;
   transform: scale(1.02);
 }
 
@@ -376,7 +452,7 @@
 
 .chat-tooltip {
   background: white;
-  border: 1px solid #5B4AD6;
+  border: 1px solid #31135d;
   border-radius: 12px;
   padding: 16px;
   margin-bottom: 12px;
@@ -393,9 +469,9 @@
 .explore-btn {
   width: 100%;
   padding: 8px 16px;
-  border: 1px solid #5B4AD6;
+  border: 1px solid #31135d;
   background: white;
-  color: #5B4AD6;
+  color: #31135d;
   border-radius: 6px;
   font-size: 14px;
   font-weight: 600;
@@ -404,7 +480,7 @@
 }
 
 .explore-btn:hover {
-  background: #5B4AD6;
+  background: #31135d;
   color: white;
 }
 
@@ -422,7 +498,7 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #5B4AD6 0%, #8B7BE8 100%);
+  background: linear-gradient(135deg, #31135d 0%, #8B7BE8 100%);
   flex-shrink: 0;
 }
 
@@ -482,31 +558,23 @@
 }
 
 @media (max-width: 768px) {
-  .hero-title {
-    font-size: 36px;
-  }
-
-  .hero-subtitle {
-    font-size: 16px;
-  }
-
   .tabs {
     overflow-x: auto;
   }
 
   .tab {
-    padding: 12px 20px;
-    font-size: 16px;
+    padding: 10px 16px;
+    font-size: 14px;
     white-space: nowrap;
   }
 
   .faq-container {
-    padding: 24px;
-    margin: 20px;
+    padding: 20px;
+    margin: 16px;
   }
 
   .section-title {
-    font-size: 24px;
+    font-size: 20px;
   }
 
   .market-research-widget {
@@ -532,37 +600,25 @@
 }
 
 @media (max-width: 480px) {
-  .hero {
-    padding: 60px 20px 30px;
-  }
-
-  .hero-title {
-    font-size: 28px;
-  }
-
-  .hero-subtitle {
-    font-size: 14px;
-  }
-
   .faq-container {
     padding: 16px;
-    margin: 16px;
+    margin: 12px;
   }
 
   .accordion-header {
-    padding: 16px;
+    padding: 14px;
   }
 
   .accordion-header h3 {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .bottom-cta {
-    padding: 40px 20px;
+    padding: 32px 16px;
   }
 
   .cta-link {
-    font-size: 18px;
+    font-size: 14px;
   }
 }
 
@@ -683,7 +739,7 @@
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #5B4AD6;
+  border-color: #31135d;
   box-shadow: 0 0 0 3px rgba(91, 74, 214, 0.1);
 }
 
@@ -701,7 +757,7 @@
 
 .submit-btn {
   padding: 14px 24px;
-  background: #5B4AD6;
+  background: #31135d;
   color: white;
   border: none;
   border-radius: 8px;
@@ -713,7 +769,7 @@
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #4a3ab5;
+  background: #1e0a37;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(91, 74, 214, 0.3);
 }

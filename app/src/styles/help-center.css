@@ -40,9 +40,9 @@
    SEARCH BANNER
    =================================== */
 .hc-search-banner {
-  background: linear-gradient(135deg, var(--hc-brand-primary) 0%, var(--hc-brand-primary-light) 100%);
-  padding: clamp(48px, 8vw, 80px) 16px;
-  padding-top: calc(80px + clamp(48px, 8vw, 80px));
+  background: #31135d;
+  padding: 32px 16px 40px;
+  padding-top: calc(70px + 32px);
   text-align: center;
   color: white;
   position: relative;
@@ -51,39 +51,30 @@
 
 @media (min-width: 768px) {
   .hc-search-banner {
-    padding-top: calc(90px + clamp(48px, 8vw, 80px));
+    padding: 40px 16px 48px;
+    padding-top: calc(70px + 40px);
   }
-}
-
-.hc-search-banner::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.1) 0%, transparent 50%);
-  pointer-events: none;
 }
 
 .hc-search-banner h1 {
   color: white;
-  font-size: clamp(28px, 6vw, 42px);
-  margin-bottom: 16px;
+  font-size: clamp(22px, 4vw, 28px);
+  margin-bottom: 8px;
   position: relative;
   z-index: 1;
+  font-weight: 600;
 }
 
 .hc-search-banner p {
-  color: rgba(255, 255, 255, 0.95);
-  font-size: clamp(16px, 3vw, 18px);
-  margin-bottom: 32px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  margin-bottom: 20px;
   position: relative;
   z-index: 1;
 }
 
 .hc-search-container {
-  max-width: 600px;
+  max-width: 480px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
@@ -97,28 +88,27 @@
 
 .hc-search-icon {
   position: absolute;
-  left: 16px;
+  left: 14px;
   color: var(--hc-text-secondary);
   pointer-events: none;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .hc-search-input {
   width: 100%;
-  padding: 16px 16px 16px 52px;
-  font-size: 16px;
+  padding: 12px 14px 12px 44px;
+  font-size: 14px;
   border: none;
-  border-radius: var(--hc-radius-lg);
-  box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+  border-radius: var(--hc-radius-md);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
   transition: all var(--hc-transition-base);
   background: white;
 }
 
 .hc-search-input:focus {
   outline: none;
-  box-shadow: 0 12px 24px rgba(0,0,0,0.12), 0 0 0 4px rgba(255, 255, 255, 0.2);
-  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.1), 0 0 0 3px rgba(255, 255, 255, 0.2);
 }
 
 .hc-search-input::placeholder {
@@ -130,7 +120,7 @@
    =================================== */
 .hc-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
   padding: 0 16px;
 }
@@ -152,29 +142,30 @@
    =================================== */
 .hc-categories-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: 24px;
-  padding: 48px 0;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 16px;
+  padding: 32px 0;
 }
 
 @media (min-width: 768px) {
   .hc-categories-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
   }
 }
 
 @media (min-width: 1024px) {
   .hc-categories-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 32px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
   }
 }
 
 .hc-category-card {
   background-color: white;
-  border: 2px solid var(--hc-border-light);
-  border-radius: var(--hc-radius-lg);
-  padding: 32px;
+  border: 1px solid var(--hc-border-light);
+  border-radius: var(--hc-radius-md);
+  padding: 20px;
   transition: all var(--hc-transition-base);
   cursor: pointer;
   text-decoration: none;
@@ -184,25 +175,25 @@
 
 .hc-category-card:hover {
   border-color: var(--hc-brand-primary);
-  box-shadow: var(--hc-shadow-hover);
-  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(49,19,93,0.1);
+  transform: translateY(-2px);
   text-decoration: none;
 }
 
 .hc-category-card:active {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
 }
 
 .hc-category-card-icon {
-  width: 56px;
-  height: 56px;
+  width: 40px;
+  height: 40px;
   background: linear-gradient(135deg, var(--hc-info-bg) 0%, rgba(243, 229, 245, 0.5) 100%);
   color: var(--hc-brand-primary);
-  border-radius: var(--hc-radius-lg);
+  border-radius: var(--hc-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   transition: transform var(--hc-transition-base);
 }
 
@@ -211,56 +202,56 @@
 }
 
 .hc-category-card-icon svg {
-  width: 28px;
-  height: 28px;
+  width: 20px;
+  height: 20px;
 }
 
 .hc-category-card h3 {
   color: var(--hc-brand-primary);
-  font-size: 20px;
-  margin-bottom: 12px;
+  font-size: 16px;
+  margin-bottom: 6px;
   font-weight: 600;
 }
 
 .hc-category-card p {
   color: var(--hc-text-secondary);
-  font-size: 14px;
-  margin-bottom: 20px;
-  line-height: 1.625;
+  font-size: 13px;
+  margin-bottom: 12px;
+  line-height: 1.5;
 }
 
 .hc-category-card-meta {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   color: var(--hc-text-tertiary);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 500;
 }
 
 .hc-category-card-meta svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 /* ===================================
    INFO BOXES
    =================================== */
 .hc-info-box {
-  padding: 20px;
+  padding: 16px;
   border-radius: var(--hc-radius-md);
-  margin: 24px 0;
-  border-left: 4px solid;
+  margin: 20px 0;
+  border-left: 3px solid;
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: flex-start;
   box-shadow: 0 1px 2px rgba(0,0,0,0.04);
 }
 
 .hc-info-box-icon {
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
 }
 
 .hc-info-box-content {
@@ -269,7 +260,9 @@
 }
 
 .hc-info-box-content p {
-  margin-bottom: 12px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .hc-info-box-content p:last-child {
@@ -298,12 +291,12 @@
    PAGE TOP SPACING (for fixed header)
    =================================== */
 .hc-page-content {
-  padding-top: 80px;
+  padding-top: 70px;
 }
 
 @media (min-width: 768px) {
   .hc-page-content {
-    padding-top: 90px;
+    padding-top: 70px;
   }
 }
 

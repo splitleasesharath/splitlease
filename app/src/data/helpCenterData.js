@@ -25,7 +25,7 @@ export const helpCenterCategories = [
     title: 'About Split Lease',
     description: 'Learn about Split Lease, our mission, and how to contact us',
     icon: 'Info',
-    articleCount: 3,
+    articleCount: 7,
     slug: 'about'
   },
   {
@@ -171,14 +171,18 @@ export const helpCenterArticles = {
       {
         title: 'About Us',
         articles: [
-          { id: 'about-what-is', title: 'What is Split Lease and what do you do?', slug: 'what-is-split-lease' },
-          { id: 'vs-craigslist', title: 'What makes this service better than Craigslist?', slug: 'vs-craigslist' }
+          { id: 'about-what-is', title: 'What is Split Lease and what do you do?', slug: 'what-is-split-lease' }
         ]
       },
       {
-        title: 'Contact Us',
+        title: 'Blog Posts',
         articles: [
-          { id: 'contact-support', title: 'How do I contact Split Lease support?', slug: 'contact-support' }
+          { id: 'craigslist-female-safety', title: "Hybrid worker homes are available on Craigslist, but if you're female read this first", slug: 'craigslist-female-safety', external: '/help-center-articles/knowledge-base/craigslist-female-safety.html' },
+          { id: 'airbnb-vs-split-lease', title: 'Airbnb vs. Split Lease: Why Split Lease is Better for Hybrid Work', slug: 'airbnb-vs-split-lease', external: '/help-center-articles/knowledge-base/airbnb-vs-split-lease.html' },
+          { id: 'live-anywhere-show-up-work', title: 'Good with computers? Live anywhere and show up for in-person work', slug: 'live-anywhere-show-up-work', external: '/help-center-articles/knowledge-base/live-anywhere-show-up-work.html' },
+          { id: 'two-homes-rich-people', title: 'I Thought Having Two Homes was for Rich People', slug: 'two-homes-rich-people', external: '/help-center-articles/knowledge-base/two-homes-rich-people.html' },
+          { id: 'month-to-month-losers', title: 'Losers Rent Month-to-Month, Winners Do This', slug: 'month-to-month-losers', external: '/help-center-articles/knowledge-base/month-to-month-losers.html' },
+          { id: 'grandkids-two-places', title: "Need a place by your grandkids? Here's how you can avoid maintaining two places", slug: 'grandkids-two-places', external: '/help-center-articles/knowledge-base/grandkids-two-places.html' }
         ]
       }
     ],
@@ -188,12 +192,6 @@ export const helpCenterArticles = {
         icon: 'Heart',
         title: 'Our Mission',
         content: "Split Lease connects repeat guests with repeat rentals. We help multi-locals find, negotiate, and manage relationships in secondary addresses, like pied-a-terres. We're building a market network for recurring travel and multi-locality living."
-      },
-      {
-        type: 'info',
-        icon: 'MessageCircle',
-        title: 'Get in Touch',
-        content: 'Email: support@split.lease\nLive Chat: Available on our website during business hours\nResponse Time: We typically respond within 24 hours'
       }
     ]
   },
@@ -205,8 +203,8 @@ export const helpCenterArticles = {
       {
         title: 'Policies & Legal',
         articles: [
-          { id: 'terms-of-use', title: 'Terms of Use', slug: 'terms-of-use', external: 'https://app.split.lease/policies/terms-of-use' },
-          { id: 'privacy-policy', title: 'Privacy Policy', slug: 'privacy-policy', external: 'https://app.split.lease/policies' }
+          { id: 'terms-of-use', title: 'Terms of Use', slug: 'terms-of-use', external: 'https://split.lease/policies#terms-of-use' },
+          { id: 'privacy-policy', title: 'Privacy Policy', slug: 'privacy-policy', external: 'https://split.lease/policies' }
         ]
       }
     ]

@@ -104,10 +104,16 @@ export default function HelpCenterPage() {
           <div className="hc-categories-grid">
             {helpCenterCategories.map((category) => {
               const Icon = iconMap[category.icon] || HelpCircle;
+              // Redirect guests and hosts to FAQ page with section selected
+              const getCategoryHref = (cat) => {
+                if (cat.slug === 'guests') return 'https://split.lease/faq?section=travelers';
+                if (cat.slug === 'hosts') return '/faq?section=hosts';
+                return `/help-center/${cat.slug}`;
+              };
               return (
                 <a
                   key={category.id}
-                  href={`/help-center/${category.slug}`}
+                  href={getCategoryHref(category)}
                   className="hc-category-card"
                 >
                   <div className="hc-category-card-icon">
@@ -127,7 +133,7 @@ export default function HelpCenterPage() {
 
         {/* Info Box */}
         {!isSearching && (
-          <div className="hc-info-box info" style={{ margin: '48px 0' }}>
+          <div className="hc-info-box info" style={{ margin: '24px 0 32px' }}>
             <div className="hc-info-box-icon">
               <HelpCircle />
             </div>
