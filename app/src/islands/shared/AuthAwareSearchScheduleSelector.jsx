@@ -33,12 +33,48 @@ const INDEX_TO_DAY_NAME = [
 ];
 
 /**
+ * Parse day names from database - handles both string and array formats
+ * Database may store as:
+ * - Native array: ["Monday", "Tuesday"]
+ * - JSON string: "[\"Monday\", \"Tuesday\"]"
+ *
+ * @param {string|string[]} rawData - Raw data from database
+ * @returns {string[]|null} - Parsed array of day names, or null if invalid
+ */
+function parseDayNamesFromDB(rawData) {
+  if (!rawData) {
+    return null;
+  }
+
+  // If it's already an array, return it
+  if (Array.isArray(rawData)) {
+    return rawData.length > 0 ? rawData : null;
+  }
+
+  // If it's a string, try to parse it as JSON
+  if (typeof rawData === 'string') {
+    try {
+      const parsed = JSON.parse(rawData);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    } catch (e) {
+      console.warn('📅 Failed to parse day names string:', rawData, e);
+    }
+  }
+
+  return null;
+}
+
+/**
  * Convert day names array from database to 0-based indices
- * @param {string[]} dayNames - Array of day name strings from DB
+ * @param {string|string[]} rawDayNames - Raw day names from DB (string or array)
  * @returns {number[]|null} - Array of 0-based day indices, or null if invalid
  */
-function dayNamesToIndices(dayNames) {
-  if (!Array.isArray(dayNames) || dayNames.length === 0) {
+function dayNamesToIndices(rawDayNames) {
+  const dayNames = parseDayNamesFromDB(rawDayNames);
+
+  if (!dayNames) {
     return null;
   }
 
