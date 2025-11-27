@@ -13,6 +13,7 @@
  * - signup_ai: AI-powered signup (atomic sync) - NO AUTH REQUIRED
  * - upload_photos: Upload listing photos (atomic sync)
  * - submit_referral: Submit referral (atomic sync)
+ * - submit_listing: Full listing submission with all form data - AUTH REQUIRED
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -30,6 +31,7 @@ import { handlePhotoUpload } from './handlers/photos.ts';
 import { handleSendMessage } from './handlers/messaging.ts';
 import { handleReferral } from './handlers/referral.ts';
 import { handleAiSignup } from './handlers/signup.ts';
+import { handleSubmitListing } from './handlers/submitListing.ts';
 
 console.log('[bubble-proxy] Edge Function started');
 
@@ -70,6 +72,7 @@ Deno.serve(async (req) => {
       'send_message',
       'submit_referral',
       'signup_ai',
+      'submit_listing',
     ];
     validateAction(action, allowedActions);
 
@@ -159,6 +162,10 @@ Deno.serve(async (req) => {
 
       case 'signup_ai':
         result = await handleAiSignup(syncService, payload, user);
+        break;
+
+      case 'submit_listing':
+        result = await handleSubmitListing(syncService, payload, user);
         break;
 
       default:
