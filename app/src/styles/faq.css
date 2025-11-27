@@ -35,6 +35,7 @@
   position: sticky;
   top: 70px;
   z-index: 999;
+  box-shadow: 0 -10px 0 0 #31135d;
 }
 
 .tabs {
