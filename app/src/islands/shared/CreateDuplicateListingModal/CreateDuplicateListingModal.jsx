@@ -17,7 +17,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase.js';
 import { showToast } from '../Toast.jsx';
-import { createListingInCode } from '../../../lib/bubbleAPI.js';
+// TODO: Re-add when Bubble integration is restored
+// import { createListingInCode } from '../../../lib/bubbleAPI.js';
 import '../../../styles/components/create-listing-modal.css';
 
 export default function CreateDuplicateListingModal({
@@ -58,61 +59,29 @@ export default function CreateDuplicateListingModal({
   const isLoggedIn = !!currentUser;
 
   // WORKFLOW #4: B: Create New is clicked
-  const handleCreateNew = async () => {
+  const handleCreateNew = () => {
     if (!listingName.trim()) {
       showToast('Please enter a listing title', 'error', 3000);
       return;
     }
 
-    setIsLoading(true);
+    console.log('🏠 CreateDuplicateListingModal: Starting new listing flow');
+    console.log('Listing name:', listingName.trim());
 
-    try {
-      console.log('🏠 CreateDuplicateListingModal: Creating new listing');
-      console.log('Listing name:', listingName.trim());
-      console.log('User email:', currentUser?.email || 'Not logged in');
+    // Store the listing name in localStorage for the self-listing page to use
+    localStorage.setItem('pendingListingName', listingName.trim());
 
-      // Step 1: Trigger Bubble backend workflow
-      const workflowResponse = await createListingInCode(
-        listingName.trim(),
-        currentUser?.email || null
-      );
+    // Close modal
+    onClose();
 
-      console.log('✅ Bubble workflow response:', workflowResponse);
-      console.log('Response structure:', JSON.stringify(workflowResponse, null, 2));
+    // Show success message
+    showToast('Redirecting to listing form...', 'success', 2000);
 
-      // Extract listing ID from various possible response formats
-      // Bubble can return: {response: {listing_id: "..."}} or {listing_id: "..."} or {response: {id: "..."}}
-      const listingId =
-        workflowResponse?.response?.listing_id ||
-        workflowResponse?.response?.id ||
-        workflowResponse?.listing_id ||
-        workflowResponse?.id;
-
-      console.log('📋 Extracted listing ID:', listingId);
-
-      if (!listingId) {
-        console.error('❌ No listing ID found in response. Response was:', workflowResponse);
-        throw new Error('Bubble workflow did not return a listing ID. Please check the workflow configuration to ensure it returns "listing_id" or "id" in the response.');
-      }
-
-      // Step 2: Hide modal
-      onClose();
-
-      // Step 3: Show success alert
-      showToast('Listing created successfully! Redirecting...', 'success', 2000);
-
-      // Step 4: Redirect to self-listing page (without listing_id for now)
-      console.log('🔄 Redirecting to self-listing page');
-      setTimeout(() => {
-        window.location.href = `/self-listing.html`;
-      }, 500);
-
-    } catch (error) {
-      console.error('❌ Error creating listing:', error);
-      showToast('Failed to create listing. Please try again.', 'error', 3000);
-    } finally {
-      setIsLoading(false);
-    }
+    // Redirect to self-listing page
+    console.log('🔄 Redirecting to self-listing page');
+    setTimeout(() => {
+      window.location.href = `/self-listing.html`;
+    }, 500);
   };
 
   // WORKFLOW #5: B: Duplicate is clicked

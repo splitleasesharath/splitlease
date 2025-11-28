@@ -22,11 +22,29 @@ export const SelfListingPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingListing, setIsLoadingListing] = useState(false);
 
-  // Initialize data: Load from localStorage draft
+  // Initialize data: Load from localStorage draft or pending listing name
   // TODO: Re-add listing_id URL parameter handling when needed
   useEffect(() => {
     const initializeData = async () => {
       console.log('🔄 SelfListingPage: Initializing data...');
+
+      // Check for pending listing name from CreateDuplicateListingModal
+      const pendingListingName = localStorage.getItem('pendingListingName');
+      if (pendingListingName) {
+        console.log('📝 Found pending listing name:', pendingListingName);
+        // Clear it so it's only used once
+        localStorage.removeItem('pendingListingName');
+        // Set the listing name in the form
+        setFormData(prevData => ({
+          ...prevData,
+          spaceSnapshot: {
+            ...prevData.spaceSnapshot,
+            listingName: pendingListingName
+          }
+        }));
+        console.log('✅ Preloaded listing name from modal');
+        return;
+      }
 
       // Load from localStorage draft
       console.log('📂 Checking localStorage for draft...');
