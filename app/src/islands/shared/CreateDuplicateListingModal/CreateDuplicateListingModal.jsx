@@ -101,10 +101,10 @@ export default function CreateDuplicateListingModal({
       // Step 3: Show success alert
       showToast('Listing created successfully! Redirecting...', 'success', 2000);
 
-      // Step 4: Redirect to self-listing page with listing ID
-      console.log('🔄 Redirecting to self-listing page with ID:', listingId);
+      // Step 4: Redirect to self-listing page (without listing_id for now)
+      console.log('🔄 Redirecting to self-listing page');
       setTimeout(() => {
-        window.location.href = `/self-listing.html?listing_id=${listingId}`;
+        window.location.href = `/self-listing.html`;
       }, 500);
 
     } catch (error) {

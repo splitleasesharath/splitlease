@@ -10,7 +10,8 @@ import type { ListingFormData } from './types/listing.types';
 import { DEFAULT_LISTING_DATA } from './types/listing.types';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
-import { getListingById } from '../../../lib/bubbleAPI';
+// TODO: Re-add when listing_id URL parameter handling is restored
+// import { getListingById } from '../../../lib/bubbleAPI';
 import './styles/SelfListingPage.css';
 
 export const SelfListingPage: React.FC = () => {
@@ -21,64 +22,26 @@ export const SelfListingPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingListing, setIsLoadingListing] = useState(false);
 
-  // Initialize data: Check URL for listing_id, then load from localStorage or fetch from database
+  // Initialize data: Load from localStorage draft
+  // TODO: Re-add listing_id URL parameter handling when needed
   useEffect(() => {
     const initializeData = async () => {
       console.log('🔄 SelfListingPage: Initializing data...');
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const listingId = urlParams.get('listing_id');
-      console.log('🏠 SelfListingPage: Listing ID from URL:', listingId);
-
-      if (listingId) {
-        // If there's a listing ID in the URL, fetch it from Bubble API
-        setIsLoadingListing(true);
+      // Load from localStorage draft
+      console.log('📂 Checking localStorage for draft...');
+      const savedData = localStorage.getItem('selfListingDraft');
+      if (savedData) {
         try {
-          console.log('📡 Fetching listing data from Bubble API...');
-          console.log('📋 Fetching listing data for ID:', listingId);
-          const listingData = await getListingById(listingId);
-          console.log('✅ Listing data fetched from Bubble:', listingData);
-
-          // Preload the listing name into the form
-          if (listingData?.Name) {
-            console.log('✅ Preloading listing name:', listingData.Name);
-            setFormData(prevData => {
-              const newData = {
-                ...prevData,
-                spaceSnapshot: {
-                  ...prevData.spaceSnapshot,
-                  listingName: listingData.Name
-                }
-              };
-              console.log('📝 Updated form data with listing name:', newData.spaceSnapshot.listingName);
-              return newData;
-            });
-          } else {
-            console.warn('⚠️ No listing name found in fetched data');
-          }
+          const parsed = JSON.parse(savedData);
+          console.log('📂 Loaded draft from localStorage:', parsed);
+          setFormData(parsed);
+          setCurrentSection(parsed.currentSection || 1);
         } catch (error) {
-          console.error('❌ Error fetching listing from Bubble:', error);
-          // Don't show error to user, just continue with empty form
-        } finally {
-          setIsLoadingListing(false);
-          console.log('✅ Loading complete');
+          console.error('❌ Error loading saved draft:', error);
         }
       } else {
-        // No listing ID in URL, try to load from localStorage draft
-        console.log('📂 No listing ID in URL, checking localStorage for draft...');
-        const savedData = localStorage.getItem('selfListingDraft');
-        if (savedData) {
-          try {
-            const parsed = JSON.parse(savedData);
-            console.log('📂 Loaded draft from localStorage:', parsed);
-            setFormData(parsed);
-            setCurrentSection(parsed.currentSection || 1);
-          } catch (error) {
-            console.error('❌ Error loading saved draft:', error);
-          }
-        } else {
-          console.log('📂 No draft found in localStorage');
-        }
+        console.log('📂 No draft found in localStorage, starting fresh');
       }
     };
 
