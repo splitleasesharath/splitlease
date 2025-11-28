@@ -10,15 +10,23 @@
 import { supabase } from './supabase.js';
 
 /**
- * Create a new listing in listing_trial table
+ * Create a new listing in listing_trial table, then sync to Bubble
+ *
+ * Flow:
+ * 1. Insert into listing_trial (Supabase) with placeholder _id
+ * 2. Call bubble-proxy to create listing in Bubble
+ * 3. Update listing_trial with the Bubble _id
+ * 4. Return the complete listing with Bubble _id
+ *
  * @param {object} formData - Complete form data from SelfListingPage
- * @returns {Promise<object>} - Created listing with id
+ * @returns {Promise<object>} - Created listing with id and _id (Bubble)
  */
 export async function createListing(formData) {
   console.log('[ListingService] Creating listing in listing_trial');
 
   const listingData = mapFormDataToDatabase(formData);
 
+  // Step 1: Insert into Supabase listing_trial
   const { data, error } = await supabase
     .from('listing_trial')
     .insert(listingData)
@@ -26,12 +34,90 @@ export async function createListing(formData) {
     .single();
 
   if (error) {
-    console.error('[ListingService] ❌ Error creating listing:', error);
+    console.error('[ListingService] ❌ Error creating listing in Supabase:', error);
     throw new Error(error.message || 'Failed to create listing');
   }
 
-  console.log('[ListingService] ✅ Listing created:', data.id);
+  console.log('[ListingService] ✅ Listing created in Supabase:', data.id);
+
+  // Step 2: Sync to Bubble to get the Bubble _id
+  try {
+    const bubbleId = await syncListingToBubble(data, formData);
+
+    if (bubbleId) {
+      // Step 3: Update listing_trial with Bubble _id
+      const { data: updatedData, error: updateError } = await supabase
+        .from('listing_trial')
+        .update({ _id: bubbleId })
+        .eq('id', data.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('[ListingService] ⚠️ Failed to update Bubble _id:', updateError);
+        // Return original data - the listing exists but _id update failed
+        return { ...data, _id: bubbleId };
+      }
+
+      console.log('[ListingService] ✅ Listing synced to Bubble with _id:', bubbleId);
+      return updatedData;
+    }
+  } catch (syncError) {
+    console.error('[ListingService] ⚠️ Bubble sync failed:', syncError);
+    // Listing was created in Supabase but Bubble sync failed
+    // Return the Supabase data - Bubble sync can be retried later
+  }
+
   return data;
+}
+
+/**
+ * Sync a listing from listing_trial to Bubble
+ * Calls the bubble-proxy edge function with sync_listing_to_bubble action
+ *
+ * @param {object} supabaseData - The listing data from Supabase
+ * @param {object} formData - Original form data for additional fields
+ * @returns {Promise<string|null>} - Bubble _id or null if sync fails
+ */
+async function syncListingToBubble(supabaseData, formData) {
+  console.log('[ListingService] Syncing listing to Bubble...');
+
+  const payload = {
+    listing_name: supabaseData.Name || formData.spaceSnapshot?.listingName,
+    supabase_id: supabaseData.id,
+    // Include additional data that Bubble might need
+    type_of_space: supabaseData['Features - Type of Space'],
+    bedrooms: supabaseData['Features - Qty Bedrooms'],
+    beds: supabaseData['Features - Qty Beds'],
+    bathrooms: supabaseData['Features - Qty Bathrooms'],
+    city: supabaseData['Location - City'],
+    state: supabaseData['Location - State'],
+    zip_code: supabaseData['Location - Zip Code'],
+    rental_type: supabaseData['rental type'],
+    description: supabaseData.Description,
+  };
+
+  console.log('[ListingService] Bubble sync payload:', payload);
+
+  const { data, error } = await supabase.functions.invoke('bubble-proxy', {
+    body: {
+      action: 'sync_listing_to_bubble',
+      payload,
+    },
+  });
+
+  if (error) {
+    console.error('[ListingService] ❌ Bubble proxy error:', error);
+    throw new Error(error.message || 'Failed to sync to Bubble');
+  }
+
+  if (!data.success) {
+    console.error('[ListingService] ❌ Bubble sync failed:', data.error);
+    throw new Error(data.error || 'Bubble sync returned error');
+  }
+
+  console.log('[ListingService] ✅ Bubble sync successful, _id:', data.data?.bubble_id);
+  return data.data?.bubble_id || null;
 }
 
 /**

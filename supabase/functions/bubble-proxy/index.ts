@@ -24,6 +24,7 @@ import { EdgeFunctionRequest } from '../_shared/types.ts';
 
 // Import handlers
 import { handleListingCreate } from './handlers/listing.ts';
+import { handleListingSyncToBubble } from './handlers/listingSync.ts';
 import { handlePhotoUpload } from './handlers/photos.ts';
 import { handleSendMessage } from './handlers/messaging.ts';
 import { handleReferral } from './handlers/referral.ts';
@@ -34,7 +35,8 @@ console.log('[bubble-proxy] Edge Function started');
 // Actions that don't require authentication
 // - create_listing: Guests create listings before signup
 // - upload_photos: Guests upload photos before signup (Section 6)
-const PUBLIC_ACTIONS = ['create_listing', 'upload_photos'];
+// - sync_listing_to_bubble: Sync listing_trial to Bubble (gets _id back)
+const PUBLIC_ACTIONS = ['create_listing', 'upload_photos', 'sync_listing_to_bubble'];
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -65,6 +67,7 @@ Deno.serve(async (req) => {
     // Validate action is supported
     const allowedActions = [
       'create_listing',
+      'sync_listing_to_bubble',
       'upload_photos',
       'send_message',
       'submit_referral',
@@ -138,6 +141,10 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'create_listing':
         result = await handleListingCreate(syncService, payload, user);
+        break;
+
+      case 'sync_listing_to_bubble':
+        result = await handleListingSyncToBubble(syncService, payload, user);
         break;
 
       case 'upload_photos':
