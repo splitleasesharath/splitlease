@@ -1,10 +1,7 @@
 /**
- * Service Area Zip Codes
+ * NYC Zip Codes by Borough
  *
- * Complete list of valid zip codes for the Split Lease service area:
- * - NYC 5 boroughs (Manhattan, Brooklyn, Queens, Bronx, Staten Island)
- * - Hudson County, NJ (Jersey City, Hoboken, Weehawken, Union City, etc.)
- *
+ * Complete list of valid zip codes for all 5 boroughs of New York City.
  * Used for address validation in the listing creation flow.
  */
 
@@ -52,36 +49,18 @@ export const NYC_ZIP_CODES = {
   statenIsland: [
     '10301', '10302', '10303', '10304', '10305', '10306', '10307', '10308',
     '10309', '10310', '10311', '10312', '10314'
-  ],
-
-  // Hudson County, NJ (Jersey City, Hoboken, Weehawken, Union City, etc.)
-  hudsonCountyNJ: [
-    '07002', '07003', '07006', '07008', '07010', '07011', '07012', '07014',
-    '07017', '07018', '07020', '07021', '07022', '07024', '07026', '07027',
-    '07028', '07029', '07030', '07031', '07032', '07033', '07034', '07036',
-    '07039', '07040', '07041', '07042', '07043', '07044', '07047', '07050',
-    '07052', '07055', '07057', '07060', '07062', '07063', '07064', '07065',
-    '07066', '07067', '07070', '07071', '07072', '07073', '07074', '07075',
-    '07076', '07077', '07078', '07079', '07080', '07081', '07083', '07086',
-    '07087', '07088', '07090', '07092', '07093', '07094', '07095', '07096',
-    '07097', '07099', '07101', '07102', '07103', '07104', '07105', '07106',
-    '07107', '07108', '07109', '07110', '07111', '07112', '07114', '07302',
-    '07303', '07304', '07305', '07306', '07307', '07308', '07309', '07310',
-    '07311', '07395', '07399'
   ]
 };
 
 /**
- * Flattened set of all valid zip codes for quick lookup
- * Includes NYC 5 boroughs + Hudson County, NJ
+ * Flattened set of all NYC zip codes for quick lookup
  */
 export const ALL_NYC_ZIP_CODES = new Set([
   ...NYC_ZIP_CODES.manhattan,
   ...NYC_ZIP_CODES.brooklyn,
   ...NYC_ZIP_CODES.queens,
   ...NYC_ZIP_CODES.bronx,
-  ...NYC_ZIP_CODES.statenIsland,
-  ...NYC_ZIP_CODES.hudsonCountyNJ
+  ...NYC_ZIP_CODES.statenIsland
 ]);
 
 /**
@@ -92,7 +71,7 @@ export function isNYCZipCode(zipCode: string): boolean {
 }
 
 /**
- * Get the borough/area name for a given zip code
+ * Get the borough name for a given zip code
  */
 export function getBoroughForZipCode(zipCode: string): string | null {
   if (NYC_ZIP_CODES.manhattan.includes(zipCode)) return 'Manhattan';
@@ -100,17 +79,16 @@ export function getBoroughForZipCode(zipCode: string): string | null {
   if (NYC_ZIP_CODES.queens.includes(zipCode)) return 'Queens';
   if (NYC_ZIP_CODES.bronx.includes(zipCode)) return 'Bronx';
   if (NYC_ZIP_CODES.statenIsland.includes(zipCode)) return 'Staten Island';
-  if (NYC_ZIP_CODES.hudsonCountyNJ.includes(zipCode)) return 'Hudson County, NJ';
   return null;
 }
 
 /**
- * Service Area Bounding Box Coordinates
- * Encompasses NYC 5 boroughs + Hudson County, NJ
+ * NYC Bounding Box Coordinates
+ * Encompasses all 5 boroughs
  */
 export const NYC_BOUNDS = {
   north: 40.9176,  // Northern Bronx
   south: 40.4774,  // Southern Staten Island
   east: -73.7004,  // Eastern Queens
-  west: -74.3000   // Western Hudson County, NJ (extended from -74.2591)
+  west: -74.2591   // Western Staten Island
 };

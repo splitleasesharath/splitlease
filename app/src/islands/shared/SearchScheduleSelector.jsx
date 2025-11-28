@@ -615,27 +615,17 @@ export default function SearchScheduleSelector({
     // Calculate check-in/check-out
     calculateCheckinCheckout(selectedDays);
 
-    // Validate the current selection to determine if error should be cleared
-    const validation = validateSelection(selectedDays);
-    const selectionIsValid = validation.valid;
-
     // Check for contiguity error (visual feedback + immediate alert)
     if (selectedDays.size > 1 && requireContiguous) {
-      const isContiguousNow = isContiguous(selectedDays);
+      const isValid = isContiguous(selectedDays);
       const wasContiguousError = hasContiguityError;
-      setHasContiguityError(!isContiguousNow);
+      setHasContiguityError(!isValid);
 
       // Show contiguity error immediately only if it's a NEW error (wasn't already showing)
-      if (!isContiguousNow && !wasContiguousError && !showError) {
+      if (!isValid && !wasContiguousError && !showError) {
         displayError('Please select contiguous days (e.g., Mon-Tue-Wed, not Mon-Wed-Fri)');
-      } else if (isContiguousNow && showError && wasContiguousError) {
+      } else if (isValid && showError && wasContiguousError) {
         // Selection became contiguous, clear the error immediately
-        if (errorTimeout) {
-          clearTimeout(errorTimeout);
-        }
-        setShowError(false);
-      } else if (selectionIsValid && showError) {
-        // Selection became valid (enough nights AND contiguous), clear any error
         if (errorTimeout) {
           clearTimeout(errorTimeout);
         }
@@ -643,8 +633,8 @@ export default function SearchScheduleSelector({
       }
     } else {
       setHasContiguityError(false);
-      // Hide error if selection becomes valid (has enough nights)
-      if (showError && selectionIsValid) {
+      // Hide error if selection becomes valid
+      if (showError) {
         if (errorTimeout) {
           clearTimeout(errorTimeout);
         }

@@ -1,409 +1,387 @@
 # Split Lease - Root Project Guide
 
-**GENERATED**: 2025-11-26
-**REPOSITORY**: https://github.com/splitleasesharath/splitlease
-**BRANCH**: main
-**OPTIMIZATION**: Semantic Searchability + Digestibility
+## Project Overview
 
----
+Split Lease is a **flexible rental marketplace for NYC properties** built with:
+- **Frontend**: React Islands Architecture with Vite (in `app/`)
+- **Backend**: Supabase (PostgreSQL + Edge Functions)
+- **Legacy Backend**: Bubble.io (being migrated to Edge Functions)
+- **Deployment**: Cloudflare Pages
 
-## ### QUICK_STATS ###
-
-[TOTAL_FILES]: 150+ source files
-[DATABASE_TABLES]: 93 Supabase PostgreSQL tables
-[ENTRY_POINTS]: 19 JSX files (React page mounts)
-[EDGE_FUNCTIONS]: 4 main functions + 7 shared utilities
-[CUSTOM_COMMANDS]: 40+ Claude slash commands
-[PRIMARY_LANGUAGE]: JavaScript/TypeScript + React
-
----
-
-## ### PROJECT_IDENTITY ###
-
-[PROJECT_TYPE]: Flexible Rental Marketplace for NYC Properties
-[FRONTEND]: React 18 + Vite (Islands Architecture) in `app/`
-[BACKEND]: Supabase (PostgreSQL + Edge Functions)
-[LEGACY_BACKEND]: Bubble.io (migrating to Edge Functions)
-[DEPLOYMENT]: Cloudflare Pages
-[NODE_VERSION]: 18
-
----
-
-## ### DEPENDENCY_GRAPH ###
-
+### Repository Structure
 ```
-Frontend (app/) ──> Page Components ──> Shared Components
-       │                    │                   │
-       └────────────────────┼───────────────────┘
-                            ▼
-              Logic Layer (logic/)
-              ┌─────────────────────┐
-              │ 1. Calculators      │ ← Pure math functions
-              │ 2. Rules            │ ← Boolean predicates
-              │ 3. Processors       │ ← Data transformers
-              │ 4. Workflows        │ ← Orchestration
-              └─────────────────────┘
-                            │
-                            ▼
-              Edge Functions (supabase/functions/)
-                            │
-                            ▼
-              Bubble.io API (legacy backend)
+SL18/
+├── app/                    # Frontend application (see app/CLAUDE.md)
+├── supabase/               # Edge Functions & database config
+├── docs/                   # Migration & implementation plans
+├── .claude/                # Claude Code configuration & commands
+├── Context/                # Architecture reference guides
+└── [config files]          # Build, deploy, environment
 ```
 
 ---
 
-## ### DIRECTORY_STRUCTURE ###
+## Directory Reference
 
-### /
-[INTENT]: Project root containing configuration, documentation, and subdirectories
-[KEY_FILES]: CLAUDE.md, package.json, .pages.toml, build.sh, DATABASE_SCHEMA_OVERVIEW.md
+### Core Application
+| Directory | Purpose |
+|-----------|---------|
+| `app/` | Vite + React frontend (see `app/CLAUDE.md` for details) |
+| `app/dist/` | Production build output |
 
-### /app
-[INTENT]: Main React frontend application using Islands Architecture
-[ENTRY_POINTS]: 19 JSX files mounting React components to HTML pages
-[COMPONENTS]: 35+ reusable UI components
-[LOGIC_LAYERS]: calculators, rules, processors, workflows
-[DETAILED_GUIDE]: app/CLAUDE.md
+### Backend Infrastructure
+| Directory | Purpose |
+|-----------|---------|
+| `supabase/` | Supabase project configuration |
+| `supabase/functions/` | Deno Edge Functions |
+| `supabase/functions/_shared/` | Shared utilities across functions |
 
-### /supabase
-[INTENT]: Backend infrastructure with Edge Functions and database configuration
-[EDGE_FUNCTIONS]: bubble-proxy, bubble-auth-proxy, ai-gateway, ai-signup-guest
-[SHARED_UTILITIES]: cors.ts, errors.ts, validation.ts, bubbleSync.ts, openai.ts, types.ts
+### Configuration
+| File | Purpose |
+|------|---------|
+| `package.json` | Root monorepo scripts |
+| `.pages.toml` | Cloudflare Pages deployment config |
+| `build.sh` | Build script for deployment |
+| `.env` | Environment variables (sensitive) |
+| `.node-version` | Node.js version lock (18) |
 
-### /docs
-[INTENT]: Migration plans, implementation guides, architecture documentation
-[FILES]: 18+ markdown documents including migration status and API enumeration
+### Documentation
+| Path | Purpose |
+|------|---------|
+| `README.md` | Comprehensive project documentation |
+| `PROJECT_STRUCTURE.md` | Detailed directory breakdown |
+| `DATABASE_SCHEMA_OVERVIEW.md` | 93-table schema reference |
+| `docs/` | Migration plans & implementation guides |
+| `Context/` | Architecture reference (ESM + React Islands) |
 
-### /.claude
-[INTENT]: Claude Code configuration, custom slash commands, execution logs
-[COMMANDS]: 40+ custom commands for deployment, testing, and development
-
-### /Context
-[INTENT]: Architecture reference guides including four-layer logic system documentation
-
----
-
-## ### CONFIGURATION_FILES ###
-
-### package.json
-[INTENT]: Root monorepo configuration with workspace scripts
-[COMMANDS]: npm run dev, npm run build, npm run preview
-[DEPENDENCIES]: Delegates to app/package.json
-
-### .pages.toml
-[INTENT]: Cloudflare Pages deployment configuration
-[BUILD_COMMAND]: npm run build
-[BUILD_DIRECTORY]: app
-[OUTPUT_DIRECTORY]: dist
-
-### build.sh
-[INTENT]: Shell script automating production build with error handling
-[DEPENDENCIES]: app/package.json, vite.config.js
-
-### .node-version
-[INTENT]: Lock Node.js version to 18 for consistent builds
-
-### .gitignore
-[INTENT]: Exclude node_modules, dist, .env, IDE files from version control
+### Claude Code
+| Path | Purpose |
+|------|---------|
+| `.claude/settings.json` | Permissions & restrictions |
+| `.claude/commands/` | Custom slash commands |
+| `.claude/tasks/` | Task definitions |
 
 ---
 
-## ### EDGE_FUNCTIONS_INVENTORY ###
+## Supabase Edge Functions
 
-### supabase/functions/bubble-proxy
-[INTENT]: General Bubble API proxy routing listing, messaging, photos, referral, and signup requests
-[HANDLERS]: listing.ts, messaging.ts, photos.ts, referral.ts, signup.ts
-[DEPENDENCIES]: _shared/bubbleSync, _shared/cors, _shared/validation
+### Function Inventory
+```
+supabase/functions/
+├── _shared/              # Shared utilities
+│   ├── cors.ts           # CORS handling
+│   ├── errors.ts         # Error types
+│   ├── validation.ts     # Input validation
+│   ├── bubbleSync.ts     # Bubble.io sync
+│   ├── openai.ts         # OpenAI integration
+│   └── types.ts          # Shared types
+├── bubble-proxy/         # General Bubble API proxy
+├── bubble-auth-proxy/    # Authentication proxy (login, signup, logout, validate)
+├── ai-gateway/           # AI service gateway
+└── ai-signup-guest/      # AI-powered guest signup
+```
 
-### supabase/functions/bubble-auth-proxy
-[INTENT]: Authentication proxy handling login, signup, logout, and token validation
-[HANDLERS]: login.ts, signup.ts, logout.ts, validate.ts
-[DEPENDENCIES]: _shared/bubbleSync, _shared/cors
+### Required Secrets
+Configure in Supabase Dashboard → Project Settings → Secrets:
 
-### supabase/functions/ai-gateway
-[INTENT]: AI service gateway routing requests to completion or streaming handlers
-[HANDLERS]: complete.ts, stream.ts
-[DEPENDENCIES]: _shared/openai, prompts/_registry
+| Secret | Value |
+|--------|-------|
+| `BUBBLE_API_BASE_URL` | `https://app.split.lease/version-test/api/1.1` |
+| `BUBBLE_API_KEY` | (see `supabase/SECRETS_SETUP.md`) |
+| `BUBBLE_AUTH_BASE_URL` | `https://upgradefromstr.bubbleapps.io/api/1.1` |
+| `SUPABASE_SERVICE_ROLE_KEY` | (from Supabase Dashboard) |
 
-### supabase/functions/ai-signup-guest
-[INTENT]: AI-powered guest signup flow generating personalized market research reports
-[DEPENDENCIES]: _shared/openai, _shared/cors
+### Deploying Edge Functions
+```bash
+# Deploy single function
+supabase functions deploy bubble-proxy
 
-### supabase/functions/_shared
-[INTENT]: Shared utilities across all Edge Functions
-[FILES]: cors.ts, errors.ts, validation.ts, bubbleSync.ts, openai.ts, types.ts, aiTypes.ts
+# Deploy all functions
+supabase functions deploy
+```
 
----
-
-## ### REQUIRED_SECRETS ###
-
-[CONFIGURE_IN]: Supabase Dashboard > Project Settings > Secrets
-
-### BUBBLE_API_BASE_URL
-[VALUE]: https://app.split.lease/version-test/api/1.1
-[USED_BY]: bubble-proxy, bubble-auth-proxy
-
-### BUBBLE_API_KEY
-[VALUE]: See supabase/SECRETS_SETUP.md
-[USED_BY]: All Bubble API calls
-
-### BUBBLE_AUTH_BASE_URL
-[VALUE]: https://upgradefromstr.bubbleapps.io/api/1.1
-[USED_BY]: bubble-auth-proxy
-
-### SUPABASE_SERVICE_ROLE_KEY
-[VALUE]: From Supabase Dashboard
-[USED_BY]: Server-side operations requiring elevated permissions
+See `docs/DEPLOY_EDGE_FUNCTION.md` for detailed guide.
 
 ---
 
-## ### ENVIRONMENT_VARIABLES ###
-
-### Root .env (CLI tools)
-[GITHUB_PAT]: GitHub personal access token
-[CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR]: true
-[E2B_API_KEY]: E2B sandbox API key
-
-### app/.env (Frontend)
-[VITE_SUPABASE_URL]: Supabase project URL for database and Edge Function calls
-[VITE_SUPABASE_ANON_KEY]: Supabase anonymous key for client-side authentication
-[VITE_GOOGLE_MAPS_API_KEY]: Google Maps API key for map components
-
----
-
-## ### DATABASE_OVERVIEW ###
-
-[TOTAL_TABLES]: 93 Supabase PostgreSQL tables
-[SCHEMA_REFERENCE]: DATABASE_SCHEMA_OVERVIEW.md
-
-### Core Tables
-[user / users]: User accounts
-[listing]: Property listings
-[proposal / proposals]: Booking proposals
-[virtualmeetingschedulesandlinks]: Video call scheduling
-
-### Lookup Tables
-[zat_geo_borough_toplevel]: NYC boroughs
-[zat_geo_hood_mediumlevel]: Neighborhoods
-[zat_features_amenity]: Amenities
-[zat_features_houserule]: House rules
-[informational_texts]: CMS content
-
----
-
-## ### ARCHITECTURE_PATTERNS ###
-
-### Four-Layer Logic Architecture
-[LAYER_1_CALCULATORS]: Pure mathematical functions with no side effects
-[LAYER_2_RULES]: Boolean predicates expressing business rules
-[LAYER_3_PROCESSORS]: Data transformation and adaptation
-[LAYER_4_WORKFLOWS]: Orchestration combining lower layers
-[LOCATION]: app/src/logic/
-
-### Hollow Component Pattern
-[DEFINITION]: UI components delegate all business logic to custom hooks
-[EXAMPLE]: ViewSplitLeasePage.jsx uses useViewSplitLeasePageLogic.js
-[BENEFIT]: Separation of concerns, testable logic
-
-### Day Indexing Convention (CRITICAL)
-[JAVASCRIPT_FORMAT]: 0=Sunday, 1=Monday, 2=Tuesday... 6=Saturday
-[BUBBLE_API_FORMAT]: 1=Sunday, 2=Monday, 3=Tuesday... 7=Saturday
-[CONVERSION_FROM_BUBBLE]: adaptDaysFromBubble() in app/src/logic/processors/external/
-[CONVERSION_TO_BUBBLE]: adaptDaysToBubble() in app/src/logic/processors/external/
-[CRITICAL_NOTE]: Always convert at system boundaries when interfacing with Bubble API
-
----
-
-## ### BUILD_DEPLOYMENT ###
+## Build & Deployment
 
 ### Local Development
-[COMMAND]: npm run dev
-[URL]: http://localhost:5173
+```bash
+# Install dependencies and start dev server
+npm run dev
+
+# Preview production build locally
+npm run preview
+```
 
 ### Production Build
-[COMMAND]: npm run build
-[OUTPUT]: app/dist/
-[ALTERNATIVE]: ./build.sh
+```bash
+# Full production build
+npm run build
+
+# Or use build script
+./build.sh
+```
 
 ### Cloudflare Pages Deployment
-[CONFIG_FILE]: .pages.toml
-[TRIGGER]: Auto-deploy on push to main
-[MANUAL]: /deploy Claude slash command
+Configured in `.pages.toml`:
+- Build command: `npm run build`
+- Build directory: `app`
+- Output directory: `dist`
+- Node version: 20
 
-### Deploy Slash Command
-[COMMAND]: /deploy
-[STEPS]: Commit changes > Build with auto-fix > Deploy to Cloudflare Pages > Push to GitHub
-
----
-
-## ### GIT_WORKFLOW ###
-
-[MAIN_BRANCH]: main (production deployments)
-[STAGING_BRANCH]: development (staging environment)
-[REMOTE]: https://github.com/splitleasesharath/splitlease.git
-[COMMIT_STYLE]: Conventional (feat, fix, chore, docs)
-[RULE]: Commit after each meaningful change, do not push unless explicitly asked
+### Deployment via Claude Command
+Use the `/deploy` slash command which:
+1. Commits all changes
+2. Builds with auto-fix (max 3 attempts)
+3. Deploys to Cloudflare Pages
+4. Pushes fixes to GitHub
 
 ---
 
-## ### CLAUDE_CODE_CONFIGURATION ###
+## Claude Code Configuration
 
 ### Allowed Operations
-[BASH_COMMANDS]: mkdir, uv, find, mv, grep, npm, ls, cp, chmod, touch
-[SCRIPTS]: ./scripts/copy_dot_env.sh
-[TOOLS]: Write tool
+From `.claude/settings.json`:
+- Bash: `mkdir`, `uv`, `find`, `mv`, `grep`, `npm`, `ls`, `cp`, `chmod`, `touch`
+- `./scripts/copy_dot_env.sh`
+- Write tool
 
 ### Blocked Operations
-[FORBIDDEN]: git push --force, git push -f, rm -rf
+- `git push --force` / `git push -f`
+- `rm -rf`
 
 ### Custom Slash Commands
-[/deploy]: Build and deploy to Cloudflare Pages
-[/preview]: Start dev server and open browser
-[/prime]: Project initialization and context loading
-[/splitlease]: Project-specific operations
+| Command | Purpose |
+|---------|---------|
+| `/deploy` | Build and deploy to Cloudflare Pages |
+| `/preview` | Start dev server and open browser |
+| `/prime` | Project initialization |
+| `/splitlease` | Project-specific operations |
 
 ---
 
-## ### MIGRATION_STATUS ###
+## Git Workflow
 
-[FROM]: Bubble.io
-[TO]: Supabase Edge Functions
-[STATUS]: In progress
+### Branches
+- `main` → Production
+- `development` → Staging
+- `sl18` → Current feature branch (this branch)
+
+### Remote
+```
+origin: https://github.com/splitleasesharath/splitlease.git
+```
+
+### Commit Convention
+After each change, commit to the current branch. Do not push unless explicitly asked.
+
+---
+
+## Database Overview
+
+The project uses **93 Supabase tables**. Key categories:
+
+### Core Tables
+| Table | Purpose |
+|-------|---------|
+| `user` / `users` | User accounts |
+| `listing` | Property listings |
+| `proposal` / `proposals` | Booking proposals |
+| `virtualmeetingschedulesandlinks` | Video call scheduling |
+
+### Feature Lookups
+| Table | Purpose |
+|-------|---------|
+| `zat_geo_borough_toplevel` | NYC boroughs |
+| `zat_geo_hood_mediumlevel` | Neighborhoods |
+| `zat_features_amenity` | Amenities |
+| `zat_features_houserule` | House rules |
+
+See `DATABASE_SCHEMA_OVERVIEW.md` for complete reference.
+
+---
+
+## Environment Variables
+
+### Root `.env` (for CLI tools)
+```
+GITHUB_PAT=<token>
+CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR=true
+E2B_API_KEY=<key>
+```
+
+### App Environment (app/.env)
+```
+VITE_SUPABASE_URL=<url>
+VITE_SUPABASE_ANON_KEY=<key>
+VITE_GOOGLE_MAPS_API_KEY=<key>
+```
+
+Note: Bubble API keys are stored in Supabase Secrets, NOT in environment files.
+
+---
+
+## Migration Status
+
+The project is migrating from Bubble.io to Supabase Edge Functions.
 
 ### Completed Migrations
-[AUTH]: login, signup, logout, validate via bubble-auth-proxy
-[API_PROXY]: General Bubble API calls via bubble-proxy
-[AI_GATEWAY]: AI service gateway via ai-gateway
+- Authentication (login, signup, logout, validate)
+- General API proxy
+- AI gateway
 
-### Migration Documentation
-[PLAN]: docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md
-[STATUS]: docs/MIGRATION_STATUS.md
-[API_REFERENCE]: docs/BUBBLE_WORKFLOW_API_ENUMERATION.md
+### Documentation
+- `docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md` - Overall plan
+- `docs/MIGRATION_STATUS.md` - Current progress
+- `docs/BUBBLE_WORKFLOW_API_ENUMERATION.md` - Bubble API reference
 
 ---
 
-## ### CORE_PRINCIPLES ###
+## Core Principles
 
 ### No Fallback Mechanisms
-[RULE]: When encountering errors, return null or throw descriptive errors
-[FORBIDDEN]: Fallback logic, workarounds, hardcoded demo data
-[RATIONALE]: Fallbacks mask real problems and create technical debt
+When encountering errors or edge cases:
+- Return `null` or throw descriptive errors
+- Never add fallback logic or workarounds
+- Never return hardcoded demo data
 
 ### Match Solution to Scale
-[RULE]: Build for current requirements, not hypothetical future needs
-[FORBIDDEN]: Over-engineering, premature abstractions
-[RATIONALE]: Simple solutions are easier to maintain and modify
+- Don't over-engineer for hypothetical future needs
+- Keep solutions simple and direct
+- Build for current requirements, not speculation
 
 ### Embrace Constraints
-[RULE]: Work within natural boundaries of tools and architecture
-[SIGNAL]: If something is difficult, question whether you're fighting the design
-[RATIONALE]: Friction often indicates a design mismatch
+- Work within the natural boundaries of tools and architecture
+- If something is difficult, question whether you're fighting the design
 
 ### Be Direct
-[RULE]: Choose simple, direct solutions over clever abstractions
-[REQUIREMENT]: Code should do exactly what it says, nothing more
-[RATIONALE]: Future maintainers need clear, obvious code
+- Choose simple, direct solutions over clever abstractions
+- Code should do exactly what it says, nothing more
 
 ---
 
-## ### DEVELOPMENT_DOS ###
+## DO's
 
-[USE_EDGE_FUNCTIONS]: All Bubble API calls must go through Edge Functions
-[CONFIGURE_SECRETS]: Store API keys in Supabase Dashboard, never in code
-[FOLLOW_LOGIC_ARCHITECTURE]: Use four-layer logic system in app/src/logic/
-[COMMIT_REGULARLY]: Commit after each meaningful change
-[VERIFY_BUILDS]: Check build succeeds before pushing
-[UPDATE_DOCS]: Update relevant documentation when changing architecture
-[CHECK_SCHEMA]: Reference DATABASE_SCHEMA_OVERVIEW.md before modifying tables
+### Development
+- Use Edge Functions for all Bubble API calls
+- Configure secrets in Supabase Dashboard (never in code)
+- Follow the four-layer logic architecture in `app/src/logic/`
+- Commit after each meaningful change
 
----
+### Deployment
+- Use `/deploy` command for production releases
+- Verify build succeeds before pushing
+- Check Cloudflare Pages dashboard for deployment status
 
-## ### DEVELOPMENT_DONTS ###
-
-[NEVER_EXPOSE_KEYS]: API keys must not appear in frontend code
-[NEVER_DIRECT_BUBBLE_CALLS]: Frontend cannot call Bubble API directly
-[NEVER_FORCE_PUSH]: git push --force is forbidden
-[NEVER_RM_RF]: Destructive commands are forbidden
-[NO_FALLBACK_MECHANISMS]: Never add fallback logic or workarounds
-[NO_COMPATIBILITY_LAYERS]: Solve root issues, don't add shims
-[NO_PREMATURE_ABSTRACTIONS]: Don't create helpers for one-time operations
-[NO_FUTURE_SPECULATION]: Don't design for hypothetical requirements
-[NO_TABLE_MODIFICATION]: Don't modify Supabase tables without explicit instruction
-[NO_RLS_BYPASS]: Don't bypass Row Level Security policies
-[NO_HARDCODED_IDS]: Don't hardcode IDs in migrations
+### Documentation
+- Update relevant docs when changing architecture
+- Reference `DATABASE_SCHEMA_OVERVIEW.md` before adding tables
+- Check `docs/` for existing migration plans
 
 ---
 
-## ### TROUBLESHOOTING ###
+## DON'Ts
 
-### Build Fails
-[CHECK_1]: Node version matches .node-version (18)
-[CHECK_2]: Run npm install in app/ directory
-[CHECK_3]: Look for TypeScript errors in console output
-[CHECK_4]: Review /deploy command logs in .claude/logs/
+### Development
+- Never expose API keys in frontend code
+- Never call Bubble API directly from frontend
+- Never use force push (`git push --force`)
+- Never use destructive commands (`rm -rf`)
 
-### Edge Function Errors
-[CHECK_1]: Verify secrets are set in Supabase Dashboard
-[CHECK_2]: Check function logs: supabase functions logs <function-name>
-[CHECK_3]: Test locally: supabase functions serve
+### Architecture
+- Don't add fallback mechanisms
+- Don't add compatibility layers
+- Don't create abstractions for one-time operations
+- Don't design for hypothetical future requirements
 
-### Authentication Issues
-[CHECK_1]: Check bubble-auth-proxy Edge Function logs
-[CHECK_2]: Verify BUBBLE_AUTH_BASE_URL secret is correct
-[CHECK_3]: Check browser console for detailed error messages
-
-### Database Connection
-[CHECK_1]: Verify VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in app/.env
-[CHECK_2]: Check RLS policies if queries return empty
-[CHECK_3]: Use Supabase Dashboard to verify data exists
+### Database
+- Don't modify Supabase tables without explicit instruction
+- Don't bypass RLS policies
+- Don't hardcode IDs in migrations
 
 ---
 
-## ### SUPPORT_DIRECTORIES ###
-
-### Active Directories
-[adws/]: Agent Development Workflow System (Python)
-[.playwright-mcp/]: Playwright browser automation config
-[ai_docs/]: AI-related documentation
-
-### Temporary Directories (gitignored)
-[input/]: Agent input data
-[dump/]: Temporary output
-[Context1/]: Working context files
-[plan1/]: Branch-specific plans
-[.temp-signup-login/]: Signup flow testing
-
-### Placeholder Directories (empty)
-[scripts/]: Project scripts (to be added)
-[agents/]: Agent definitions (to be added)
-[test-results/]: Test execution results
-[test-screenshots/]: Visual regression screenshots
-[specs/]: Feature specifications
-
----
-
-## ### QUICK_REFERENCE ###
+## Quick Reference
 
 ### Start Development
-[COMMAND]: npm run dev
-[URL]: http://localhost:5173
+```bash
+npm run dev
+# Opens at http://localhost:5173
+```
 
 ### Deploy to Production
-[COMMAND]: /deploy
+```
+/deploy
+```
 
 ### Check Database Schema
-[FILE]: DATABASE_SCHEMA_OVERVIEW.md
+```
+DATABASE_SCHEMA_OVERVIEW.md
+```
 
 ### Edge Function Documentation
-[SECRETS]: supabase/SECRETS_SETUP.md
-[DEPLOYMENT]: docs/DEPLOY_EDGE_FUNCTION.md
+```
+supabase/SECRETS_SETUP.md
+docs/DEPLOY_EDGE_FUNCTION.md
+```
 
 ### App-Specific Guide
-[FILE]: app/CLAUDE.md
+```
+app/CLAUDE.md
+```
 
 ---
 
-**DOCUMENT_VERSION**: 2.0
-**LAST_UPDATED**: 2025-11-26
-**STATUS**: LLM-Optimized for Semantic Searchability
+## Support Directories
+
+### Active
+| Directory | Purpose |
+|-----------|---------|
+| `adws/` | Agent Development Workflow System (Python) |
+| `.playwright-mcp/` | Playwright browser automation config |
+| `ai_docs/` | AI-related documentation |
+
+### Temporary (gitignored)
+| Directory | Purpose |
+|-----------|---------|
+| `input/` | Agent input data |
+| `dump/` | Temporary output |
+| `Context1/` | Working context files |
+| `plan1/` | Branch-specific plans |
+| `.temp-signup-login/` | Signup flow testing |
+
+### Empty (placeholder)
+| Directory | Purpose |
+|-----------|---------|
+| `scripts/` | Project scripts (to be added) |
+| `agents/` | Agent definitions (to be added) |
+| `test-results/` | Test execution results |
+| `test-screenshots/` | Visual regression screenshots |
+| `specs/` | Feature specifications |
+
+---
+
+## Troubleshooting
+
+### Build Fails
+1. Check Node version matches `.node-version` (18)
+2. Run `npm install` in `app/` directory
+3. Check for TypeScript errors in console output
+4. Review `/deploy` command logs in `.claude/logs/`
+
+### Edge Function Errors
+1. Verify secrets are set in Supabase Dashboard
+2. Check function logs: `supabase functions logs <function-name>`
+3. Test locally: `supabase functions serve`
+
+### Authentication Issues
+1. Check `bubble-auth-proxy` Edge Function logs
+2. Verify `BUBBLE_AUTH_BASE_URL` secret is correct
+3. Check browser console for detailed error messages
+
+### Database Connection
+1. Verify `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in `app/.env`
+2. Check RLS policies if queries return empty
+3. Use Supabase Dashboard to verify data exists

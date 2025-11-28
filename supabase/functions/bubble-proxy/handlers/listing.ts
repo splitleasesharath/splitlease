@@ -2,11 +2,11 @@
  * Listing Creation Handler
  * Priority: CRITICAL
  *
- * Handles listing creation with sync to Supabase:
- * 1. Create listing in Bubble (source of truth) - REQUIRED
- * 2. Fetch full listing data from Bubble - REQUIRED (for listing name)
- * 3. Sync to Supabase (replica) - BEST EFFORT (log errors but don't fail)
- * 4. Return listing data to client
+ * Handles atomic listing creation:
+ * 1. Create listing in Bubble (source of truth)
+ * 2. Fetch full listing data from Bubble
+ * 3. Sync to Supabase (replica)
+ * 4. Return synced listing data to client
  */
 
 import { BubbleSyncService } from '../../_shared/bubbleSync.ts';
@@ -15,7 +15,7 @@ import { User } from '../../_shared/types.ts';
 
 /**
  * Handle listing creation
- * Steps 1-2 must succeed, Step 3 is best-effort
+ * NO FALLBACK: Atomic operation - all steps succeed or all fail
  */
 export async function handleListingCreate(
   syncService: BubbleSyncService,
@@ -45,48 +45,19 @@ export async function handleListingCreate(
   console.log('[Listing Handler] User email:', user_email || 'Not provided (logged out)');
 
   try {
-    // Step 1: Create in Bubble (REQUIRED)
-    console.log('[Listing Handler] Step 1/3: Creating in Bubble...');
-    const listingId = await syncService.triggerWorkflow(
+    // Atomic create-and-sync operation
+    const syncedListing = await syncService.createAndSync(
       'listing_creation_in_code',  // Bubble workflow name
-      params                       // Workflow parameters
+      params,                      // Workflow parameters
+      'zat_listings',              // Bubble object type
+      'zat_listings'               // Supabase table
     );
-    console.log('[Listing Handler] ✅ Step 1 complete - Listing ID:', listingId);
 
-    // Step 2: Fetch full listing data from Bubble (REQUIRED for Name)
-    console.log('[Listing Handler] Step 2/3: Fetching listing data from Bubble...');
-    let listingData: any;
-    try {
-      listingData = await syncService.fetchBubbleObject('Listing', listingId);
-      console.log('[Listing Handler] ✅ Step 2 complete - Listing Name:', listingData?.Name);
-    } catch (fetchError) {
-      console.error('[Listing Handler] ⚠️ Step 2 failed - Could not fetch listing data:', fetchError);
-      // Return minimal data if fetch fails
-      return { _id: listingId, listing_id: listingId, Name: listing_name };
-    }
-
-    // Step 3: Sync to Supabase (BEST EFFORT - don't fail if this fails)
-    console.log('[Listing Handler] Step 3/3: Syncing to Supabase...');
-    try {
-      // Ensure _id is set for upsert
-      const dataToSync = { ...listingData, _id: listingId };
-      await syncService.syncToSupabase('listing', dataToSync);
-      console.log('[Listing Handler] ✅ Step 3 complete - Synced to Supabase');
-    } catch (syncError) {
-      // Log but don't fail - Supabase sync is best-effort
-      console.error('[Listing Handler] ⚠️ Step 3 failed - Supabase sync error:', syncError);
-      console.log('[Listing Handler] Continuing without Supabase sync...');
-    }
-
+    console.log('[Listing Handler] ✅ Listing created and synced');
+    console.log('[Listing Handler] Listing ID:', syncedListing._id);
     console.log('[Listing Handler] ========== SUCCESS ==========');
 
-    // Return the listing data with ID
-    return {
-      _id: listingId,
-      listing_id: listingId,
-      Name: listingData?.Name || listing_name,
-      ...listingData
-    };
+    return syncedListing;
   } catch (error) {
     console.error('[Listing Handler] ========== ERROR ==========');
     console.error('[Listing Handler] Failed to create listing:', error);

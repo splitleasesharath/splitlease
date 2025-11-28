@@ -11,9 +11,7 @@ import Header from './islands/shared/Header.jsx';
 import Footer from './islands/shared/Footer.jsx';
 import SearchScheduleSelector from './islands/shared/SearchScheduleSelector.jsx';
 import NotificationSettingsModal from './islands/modals/NotificationSettingsModal.jsx';
-import EditPhoneNumberModal from './islands/modals/EditPhoneNumberModal.jsx';
 import { getAuthToken, getSessionId } from './lib/auth.js';
-import { supabase } from './lib/supabase.js';
 
 // Mount Header island with autoShowLogin if user is not authenticated
 const headerRoot = document.getElementById('header-root');
@@ -53,11 +51,8 @@ function ScheduleSelectorWrapper() {
     const checkUserData = setInterval(() => {
       if (window.userProfileData && window.userProfileData['Recent Days Selected']) {
         const dayNames = window.userProfileData['Recent Days Selected'];
-        // Ensure dayNames is an array before mapping (some users may have null/string/empty data)
-        if (Array.isArray(dayNames)) {
-          const dayIndices = dayNames.map(name => dayMap[name]).filter(idx => idx !== undefined);
-          setSelectedDays(dayIndices);
-        }
+        const dayIndices = dayNames.map(name => dayMap[name]).filter(idx => idx !== undefined);
+        setSelectedDays(dayIndices);
         clearInterval(checkUserData);
       }
     }, 100);
@@ -129,65 +124,4 @@ function NotificationSettingsWrapper() {
 const notificationSettingsRoot = document.getElementById('notification-settings-root');
 if (notificationSettingsRoot) {
   createRoot(notificationSettingsRoot).render(<NotificationSettingsWrapper />);
-}
-
-// Edit Phone Number Modal wrapper component
-function EditPhoneNumberWrapper() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [currentPhoneNumber, setCurrentPhoneNumber] = useState('');
-  const userId = getSessionId();
-
-  useEffect(() => {
-    // Expose function to open modal from HTML page
-    window.openEditPhoneNumberModal = (phoneNumber) => {
-      setCurrentPhoneNumber(phoneNumber || '');
-      setIsOpen(true);
-    };
-
-    return () => {
-      delete window.openEditPhoneNumberModal;
-    };
-  }, []);
-
-  const handleSave = async (newPhoneNumber) => {
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-
-    // Update phone number in Supabase
-    const { error } = await supabase
-      .from('user')
-      .update({ 'Phone Number (as text)': newPhoneNumber })
-      .eq('_id', userId);
-
-    if (error) {
-      throw error;
-    }
-
-    // Update the displayed phone number in the HTML
-    const phoneNumberElement = document.getElementById('phoneNumber');
-    if (phoneNumberElement) {
-      phoneNumberElement.textContent = newPhoneNumber;
-    }
-
-    // Show success toast if available
-    if (window.showToast) {
-      window.showToast('Phone number updated successfully!', 'success');
-    }
-  };
-
-  return (
-    <EditPhoneNumberModal
-      isOpen={isOpen}
-      currentPhoneNumber={currentPhoneNumber}
-      onSave={handleSave}
-      onClose={() => setIsOpen(false)}
-    />
-  );
-}
-
-// Mount Edit Phone Number Modal island
-const editPhoneNumberRoot = document.getElementById('edit-phone-number-root');
-if (editPhoneNumberRoot) {
-  createRoot(editPhoneNumberRoot).render(<EditPhoneNumberWrapper />);
 }

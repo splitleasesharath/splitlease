@@ -1154,230 +1154,89 @@ a:focus-visible {
 
 /* ===================================
    MAIN SITE HEADER (for article pages)
-   Matches the React Header component
    =================================== */
 .sl-main-header {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  background: #31135D;
-  z-index: 9999;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background: #31135d;
+  z-index: 1000;
+  height: 70px;
+  display: flex;
+  align-items: center;
 }
 
-.sl-nav-container {
-  max-width: 90%;
+.sl-header-container {
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem 3rem;
+  padding: 0 24px;
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  align-items: center;
-}
-
-.sl-nav-left {
-  display: flex;
-  align-items: center;
 }
 
 .sl-logo {
   display: flex;
   align-items: center;
   text-decoration: none;
-  gap: 0.5rem;
+  gap: 10px;
 }
 
 .sl-logo-img {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  object-fit: cover;
 }
 
 .sl-logo-text {
-  font-size: 1rem;
-  font-weight: 600;
   color: white;
-  line-height: 1.2;
-  white-space: nowrap;
-}
-
-.sl-nav-center {
-  display: flex;
-  gap: 3rem;
-  flex: 1;
-  justify-content: center;
-  margin: 0 2rem;
-}
-
-.sl-nav-dropdown {
-  position: relative;
-}
-
-.sl-dropdown-trigger {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: white;
-  text-decoration: none;
-  font-weight: 500;
-  cursor: pointer;
-  background: none;
-  border: none;
-  font-size: 1rem;
-  padding: 0;
-}
-
-.sl-dropdown-trigger:hover {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.sl-dropdown-arrow {
-  transition: transform 0.3s ease;
-}
-
-.sl-nav-dropdown:hover .sl-dropdown-arrow {
-  transform: rotate(180deg);
-}
-
-.sl-dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 1rem;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  min-width: 280px;
-  padding: 0.5rem;
-  opacity: 0;
-  visibility: hidden;
-  transition: all 0.3s ease;
-  z-index: 1000;
-}
-
-.sl-nav-dropdown:hover .sl-dropdown-menu {
-  opacity: 1;
-  visibility: visible;
-  margin-top: 0.5rem;
-}
-
-.sl-dropdown-item {
-  display: block;
-  padding: 0.75rem 1rem;
-  color: #1a202c;
-  text-decoration: none;
-  border-radius: 8px;
-  transition: all 0.2s ease;
-}
-
-.sl-dropdown-item:hover {
-  background: rgba(91, 33, 182, 0.08);
-  box-shadow: 0 4px 12px rgba(91, 33, 182, 0.15);
-  transform: translateY(-2px);
-  text-decoration: none;
-}
-
-.sl-dropdown-title {
-  display: block;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #1a202c;
-  margin-bottom: 0.25rem;
-}
-
-.sl-dropdown-desc {
-  display: block;
-  font-size: 0.8rem;
-  color: #6b7280;
-  line-height: 1.3;
-}
-
-.sl-nav-right {
-  display: flex;
-  align-items: center;
-  gap: 2rem;
-  white-space: nowrap;
-}
-
-.sl-explore-btn {
-  background-color: rgb(255, 255, 255);
-  color: rgb(109, 35, 207);
-  padding: 0.75rem 2.5rem;
-  border: 2px solid rgb(255, 255, 255);
-  border-radius: 5px;
-  font-family: "DM Sans", sans-serif;
   font-size: 18px;
-  font-weight: bold;
-  text-align: center;
-  text-decoration: none;
-  transition: color 200ms, box-shadow 200ms;
-  cursor: pointer;
-  min-width: 213px;
-  max-width: 213px;
-  margin-right: 1rem;
-  display: inline-block;
-  line-height: 1;
+  font-weight: 600;
 }
 
-.sl-explore-btn:hover {
-  box-shadow: 0 4px 12px rgba(109, 35, 207, 0.25);
-  color: rgb(91, 33, 182);
-  text-decoration: none;
+.sl-nav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
 }
 
 .sl-nav-link {
+  color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
-  color: white;
+  font-size: 15px;
   font-weight: 500;
-  transition: color 0.3s ease;
-  position: relative;
+  transition: color 0.2s;
 }
 
 .sl-nav-link:hover {
-  color: rgba(255, 255, 255, 0.8);
+  color: white;
+}
+
+.sl-nav-link.sl-nav-active {
+  color: white;
+}
+
+.sl-nav-btn {
+  background: white;
+  color: #31135d;
+  padding: 10px 20px;
+  border-radius: 8px;
   text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.2s;
 }
 
-.sl-nav-link::after {
-  content: '';
-  position: absolute;
-  bottom: -5px;
-  left: 0;
-  width: 0;
-  height: 2px;
-  background: white;
-  transition: width 0.3s ease;
-}
-
-.sl-nav-link:hover::after {
-  width: 100%;
-}
-
-/* Hamburger Menu */
-.sl-hamburger {
-  display: none;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.5rem;
-  gap: 4px;
-}
-
-.sl-hamburger-line {
-  width: 24px;
-  height: 2px;
-  background: white;
-  transition: all 0.3s ease;
+.sl-nav-btn:hover {
+  background: #f0f0f0;
+  transform: translateY(-1px);
 }
 
 /* Adjust body padding for fixed header */
 body {
-  padding-top: 80px;
+  padding-top: 70px;
 }
 
 /* Hide old header */
@@ -1385,82 +1244,12 @@ body {
   display: none !important;
 }
 
-/* Mobile Responsive */
 @media (max-width: 768px) {
-  .sl-hamburger {
-    display: flex;
-  }
-
-  .sl-nav-center {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: #31135D;
-    flex-direction: column;
-    gap: 0;
-    margin: 0;
-    padding: 1rem 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  .sl-nav-center.mobile-active {
-    display: flex;
-  }
-
-  .sl-nav-right {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: #31135D;
-    flex-direction: column;
-    gap: 1rem;
-    margin: 0;
-    padding: 1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .sl-nav-right.mobile-active {
-    display: flex;
-  }
-
-  .sl-nav-container {
-    padding: 1rem;
-  }
-
-  .sl-logo-text {
+  .sl-nav-link {
     display: none;
   }
 
-  .sl-explore-btn {
-    min-width: auto;
-    max-width: none;
-    padding: 0.75rem 1.5rem;
-    font-size: 16px;
-  }
-
-  .sl-dropdown-menu {
-    position: static;
-    transform: none;
-    opacity: 1;
-    visibility: visible;
-    margin-top: 0.5rem;
-    box-shadow: none;
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .sl-dropdown-item {
-    color: white;
-  }
-
-  .sl-dropdown-title {
-    color: white;
-  }
-
-  .sl-dropdown-desc {
-    color: rgba(255, 255, 255, 0.7);
+  .sl-header-container {
+    padding: 0 16px;
   }
 }

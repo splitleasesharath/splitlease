@@ -11,16 +11,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabase.js';
 
-// Format host name: "John Smith" -> "John S."
-function formatHostName(fullName) {
-  if (!fullName) return 'Host';
-  const parts = fullName.trim().split(/\s+/);
-  if (parts.length === 1) return parts[0];
-  const firstName = parts[0];
-  const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
-  return `${firstName} ${lastInitial}.`;
-}
-
 export default function ContactHostMessaging({ isOpen, onClose, listing, userEmail }) {
   const [formData, setFormData] = useState({
     userName: '',
@@ -205,7 +195,7 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, userEma
               color: '#1a202c',
               margin: 0
             }}>
-              Message {formatHostName(listing.host?.name)}
+              Message {listing.host?.name || 'Host'}
             </h3>
           </div>
           <button

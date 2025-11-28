@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Section1SpaceSnapshot } from './sections/Section1SpaceSnapshot';
 import { Section2Features } from './sections/Section2Features';
 import { Section3LeaseStyles } from './sections/Section3LeaseStyles';
@@ -7,102 +7,89 @@ import { Section5Rules } from './sections/Section5Rules';
 import { Section6Photos } from './sections/Section6Photos';
 import { Section7Review } from './sections/Section7Review';
 import type { ListingFormData } from './types/listing.types';
-import { useListingStore, listingLocalStore } from './store';
+import { DEFAULT_LISTING_DATA } from './types/listing.types';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
-import { getListingById, uploadListingPhotos } from '../../../lib/bubbleAPI';
+import { getListingById } from '../../../lib/bubbleAPI';
 import './styles/SelfListingPage.css';
 
 export const SelfListingPage: React.FC = () => {
   console.log('🏠 SelfListingPage: Component mounting');
 
-  // Use the local store for all form data management
-  const {
-    formData,
-    lastSaved,
-    isDirty,
-    stagingStatus,
-    errors: storeErrors,
-    updateFormData,
-    updateSpaceSnapshot,
-    updateFeatures,
-    updateLeaseStyles,
-    updatePricing,
-    updateRules,
-    updatePhotos,
-    updateReview,
-    setCurrentSection: setStoreSection,
-    markSectionComplete,
-    saveDraft,
-    stageForSubmission,
-    markSubmitting,
-    markSubmitted,
-    markSubmissionFailed,
-    getDebugSummary,
-  } = useListingStore();
-
-  const [currentSection, setCurrentSection] = useState(formData.currentSection || 1);
+  const [formData, setFormData] = useState<ListingFormData>(DEFAULT_LISTING_DATA);
+  const [currentSection, setCurrentSection] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingListing, setIsLoadingListing] = useState(false);
-  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
-  const [listingId, setListingId] = useState<string | null>(null);
 
-  // Sync current section with store
+  // Initialize data: Check URL for listing_id, then load from localStorage or fetch from database
   useEffect(() => {
-    if (formData.currentSection && formData.currentSection !== currentSection) {
-      setCurrentSection(formData.currentSection);
-    }
-  }, [formData.currentSection]);
+    const initializeData = async () => {
+      console.log('🔄 SelfListingPage: Initializing data...');
 
-  // Initialize data: Check URL for listing_id to fetch existing listing from Bubble
-  useEffect(() => {
-    const initializeFromUrl = async () => {
       const urlParams = new URLSearchParams(window.location.search);
-      const listingIdFromUrl = urlParams.get('listing_id');
-      console.log('🏠 SelfListingPage: Listing ID from URL:', listingIdFromUrl);
+      const listingId = urlParams.get('listing_id');
+      console.log('🏠 SelfListingPage: Listing ID from URL:', listingId);
 
-      if (listingIdFromUrl) {
-        // Store the listing ID for later use (photo upload, submission)
-        setListingId(listingIdFromUrl);
-
+      if (listingId) {
         // If there's a listing ID in the URL, fetch it from Bubble API
         setIsLoadingListing(true);
         try {
           console.log('📡 Fetching listing data from Bubble API...');
-          const listingData = await getListingById(listingIdFromUrl);
+          console.log('📋 Fetching listing data for ID:', listingId);
+          const listingData = await getListingById(listingId);
           console.log('✅ Listing data fetched from Bubble:', listingData);
 
           // Preload the listing name into the form
-          // IMPORTANT: Get fresh data from store, not React state, to avoid race condition
-          // where formData.spaceSnapshot hasn't been updated with localStorage data yet
           if (listingData?.Name) {
             console.log('✅ Preloading listing name:', listingData.Name);
-            const currentStoreData = listingLocalStore.getData();
-            updateSpaceSnapshot({
-              ...currentStoreData.spaceSnapshot,
-              listingName: listingData.Name,
+            setFormData(prevData => {
+              const newData = {
+                ...prevData,
+                spaceSnapshot: {
+                  ...prevData.spaceSnapshot,
+                  listingName: listingData.Name
+                }
+              };
+              console.log('📝 Updated form data with listing name:', newData.spaceSnapshot.listingName);
+              return newData;
             });
           } else {
             console.warn('⚠️ No listing name found in fetched data');
           }
         } catch (error) {
           console.error('❌ Error fetching listing from Bubble:', error);
+          // Don't show error to user, just continue with empty form
         } finally {
           setIsLoadingListing(false);
           console.log('✅ Loading complete');
         }
       } else {
-        console.log('📂 No listing ID in URL, using stored draft data');
+        // No listing ID in URL, try to load from localStorage draft
+        console.log('📂 No listing ID in URL, checking localStorage for draft...');
+        const savedData = localStorage.getItem('selfListingDraft');
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData);
+            console.log('📂 Loaded draft from localStorage:', parsed);
+            setFormData(parsed);
+            setCurrentSection(parsed.currentSection || 1);
+          } catch (error) {
+            console.error('❌ Error loading saved draft:', error);
+          }
+        } else {
+          console.log('📂 No draft found in localStorage');
+        }
       }
     };
 
-    initializeFromUrl();
-  }, []); // Only run once on mount
+    initializeData();
+  }, []);
 
-  // Log store debug summary on changes
   useEffect(() => {
-    console.log('📊 Store Debug Summary:', getDebugSummary());
-  }, [formData, getDebugSummary]);
+    // Save draft every time formData changes
+    const dataToSave = { ...formData, currentSection };
+    localStorage.setItem('selfListingDraft', JSON.stringify(dataToSave));
+  }, [formData, currentSection]);
 
   // Validation functions for each section
   const isSectionComplete = (sectionNum: number): boolean => {
@@ -159,22 +146,24 @@ export const SelfListingPage: React.FC = () => {
     return !formData.completedSections.includes(previousSection);
   };
 
-  const handleSectionChange = useCallback((section: number) => {
+  const handleSectionChange = (section: number) => {
     // Prevent navigation to locked sections
     if (isSectionLocked(section)) {
       return;
     }
 
     setCurrentSection(section);
-    setStoreSection(section);
+    setFormData({ ...formData, currentSection: section });
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [isSectionLocked, setStoreSection]);
+  };
 
-  const handleNext = useCallback(() => {
+  const handleNext = () => {
     if (currentSection < 7) {
       // Only mark section as completed if validation passes
+      let completedSections = formData.completedSections;
+
       if (isSectionComplete(currentSection)) {
-        markSectionComplete(currentSection);
+        completedSections = [...new Set([...formData.completedSections, currentSection])];
       } else {
         // Section is not complete, show alert
         alert(`Please complete all required fields in Section ${currentSection} before proceeding.`);
@@ -182,86 +171,32 @@ export const SelfListingPage: React.FC = () => {
       }
 
       const nextSection = currentSection + 1;
+      setFormData({ ...formData, completedSections, currentSection: nextSection });
       setCurrentSection(nextSection);
-      setStoreSection(nextSection);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [currentSection, isSectionComplete, markSectionComplete, setStoreSection]);
+  };
 
-  const handleBack = useCallback(() => {
+  const handleBack = () => {
     if (currentSection > 1) {
       handleSectionChange(currentSection - 1);
     }
-  }, [currentSection, handleSectionChange]);
-
-  // Handle photo upload when leaving Section 6
-  const handlePhotoUpload = useCallback(async (): Promise<boolean> => {
-    if (!listingId) {
-      console.error('❌ No listing ID available for photo upload');
-      alert('Error: No listing ID found. Please start from the beginning.');
-      return false;
-    }
-
-    const photos = formData.photos.photos;
-    if (photos.length === 0) {
-      console.log('📷 No photos to upload');
-      return true; // No photos is valid if validation passed
-    }
-
-    // Extract base64 data URLs from photos
-    const photoDataUrls = photos.map(photo => photo.url);
-
-    console.log('📷 Uploading', photoDataUrls.length, 'photos to listing:', listingId);
-    setIsUploadingPhotos(true);
-
-    try {
-      const result = await uploadListingPhotos(listingId, photoDataUrls);
-      console.log('✅ Photos uploaded successfully:', result);
-      return true;
-    } catch (error) {
-      console.error('❌ Failed to upload photos:', error);
-      alert('Failed to upload photos. Please try again.');
-      return false;
-    } finally {
-      setIsUploadingPhotos(false);
-    }
-  }, [listingId, formData.photos.photos]);
-
-  // Handle manual save draft
-  const handleSaveDraft = useCallback(() => {
-    const success = saveDraft();
-    if (success) {
-      alert('Draft saved successfully!');
-    } else {
-      alert('Failed to save draft. Please try again.');
-    }
-  }, [saveDraft]);
+  };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
-    markSubmitting();
-
     try {
-      // Stage the data for submission (validates all fields)
-      const { success, errors } = stageForSubmission();
-
-      if (!success) {
-        console.error('❌ Validation errors:', errors);
-        alert(`Please fix the following errors:\n\n${errors.join('\n')}`);
-        setIsSubmitting(false);
-        return;
-      }
-
-      console.log('📦 Data staged for submission:', formData);
-      console.log('📊 Store debug:', getDebugSummary());
-
-      // TODO: Replace this mock with actual Edge Function call to Bubble
-      // The staged data is available via getStagedData() and ready to be
-      // transformed and sent to the bubble-proxy Edge Function
+      // Here you would make an API call to submit the listing
+      // For now, we'll simulate with a timeout
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Mark as submitted (clears local storage)
-      markSubmitted();
+      console.log('Submitting listing:', formData);
+
+      // Mark as submitted
+      setFormData({ ...formData, isSubmitted: true, isDraft: false });
+
+      // Clear draft from localStorage
+      localStorage.removeItem('selfListingDraft');
 
       // Show success message
       alert('Listing submitted successfully! You will receive a confirmation email shortly.');
@@ -270,7 +205,6 @@ export const SelfListingPage: React.FC = () => {
       // window.location.href = '/listing-submitted';
     } catch (error) {
       console.error('Error submitting listing:', error);
-      markSubmissionFailed(error instanceof Error ? error.message : 'Unknown error');
       alert('Error submitting listing. Please try again.');
     } finally {
       setIsSubmitting(false);
@@ -289,13 +223,8 @@ export const SelfListingPage: React.FC = () => {
   ];
 
   const getSectionStatus = (sectionNum: number) => {
-    const isCompleted = formData.completedSections.includes(sectionNum);
-    const isActive = sectionNum === currentSection;
-
-    // If section is both completed AND currently active, return combined class
-    if (isCompleted && isActive) return 'completed active';
-    if (isCompleted) return 'completed';
-    if (isActive) return 'active';
+    if (formData.completedSections.includes(sectionNum)) return 'completed';
+    if (sectionNum === currentSection) return 'active';
     if (isSectionLocked(sectionNum)) return 'locked';
     return 'pending';
   };
@@ -316,20 +245,9 @@ export const SelfListingPage: React.FC = () => {
           <div className="header-content">
             <h1>Create Your Listing</h1>
             <div className="header-actions">
-              <button
-                className="btn-save-draft"
-                onClick={handleSaveDraft}
-                disabled={!isDirty && stagingStatus !== 'failed'}
-              >
-                {isDirty ? 'Save Draft' : lastSaved ? 'Saved' : 'Save Draft'}
-              </button>
+              <button className="btn-save-draft">Save Draft</button>
               <button className="btn-help">Need Help?</button>
             </div>
-            {lastSaved && (
-              <span className="last-saved-indicator">
-                Last saved: {lastSaved.toLocaleTimeString()}
-              </span>
-            )}
           </div>
         </header>
 
@@ -391,7 +309,7 @@ export const SelfListingPage: React.FC = () => {
           {currentSection === 1 && (
             <Section1SpaceSnapshot
               data={formData.spaceSnapshot}
-              onChange={updateSpaceSnapshot}
+              onChange={(data) => setFormData({ ...formData, spaceSnapshot: data })}
               onNext={handleNext}
               isLoadingInitialData={isLoadingListing}
             />
@@ -400,7 +318,7 @@ export const SelfListingPage: React.FC = () => {
           {currentSection === 2 && (
             <Section2Features
               data={formData.features}
-              onChange={updateFeatures}
+              onChange={(data) => setFormData({ ...formData, features: data })}
               onNext={handleNext}
               onBack={handleBack}
               zipCode={formData.spaceSnapshot.address.zip}
@@ -410,7 +328,7 @@ export const SelfListingPage: React.FC = () => {
           {currentSection === 3 && (
             <Section3LeaseStyles
               data={formData.leaseStyles}
-              onChange={updateLeaseStyles}
+              onChange={(data) => setFormData({ ...formData, leaseStyles: data })}
               onNext={handleNext}
               onBack={handleBack}
             />
@@ -420,7 +338,7 @@ export const SelfListingPage: React.FC = () => {
             <Section4Pricing
               data={formData.pricing}
               rentalType={formData.leaseStyles.rentalType}
-              onChange={updatePricing}
+              onChange={(data) => setFormData({ ...formData, pricing: data })}
               onNext={handleNext}
               onBack={handleBack}
             />
@@ -430,7 +348,7 @@ export const SelfListingPage: React.FC = () => {
             <Section5Rules
               data={formData.rules}
               rentalType={formData.leaseStyles.rentalType}
-              onChange={updateRules}
+              onChange={(data) => setFormData({ ...formData, rules: data })}
               onNext={handleNext}
               onBack={handleBack}
             />
@@ -439,11 +357,9 @@ export const SelfListingPage: React.FC = () => {
           {currentSection === 6 && (
             <Section6Photos
               data={formData.photos}
-              onChange={updatePhotos}
+              onChange={(data) => setFormData({ ...formData, photos: data })}
               onNext={handleNext}
               onBack={handleBack}
-              onUploadPhotos={handlePhotoUpload}
-              isUploading={isUploadingPhotos}
             />
           )}
 
@@ -451,7 +367,7 @@ export const SelfListingPage: React.FC = () => {
             <Section7Review
               formData={formData}
               reviewData={formData.review}
-              onChange={updateReview}
+              onChange={(data) => setFormData({ ...formData, review: data })}
               onSubmit={handleSubmit}
               onBack={handleBack}
               isSubmitting={isSubmitting}

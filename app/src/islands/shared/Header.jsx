@@ -4,7 +4,6 @@ import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 import { getUserType as getStoredUserType } from '../../lib/secureStorage.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
-import SignUpLoginModal from './SignUpLoginModal.jsx';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -12,9 +11,20 @@ export default function Header({ autoShowLogin = false }) {
   const [headerVisible, setHeaderVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
 
-  // Auth Modal State (using new SignUpLoginModal)
-  const [showAuthModal, setShowAuthModal] = useState(autoShowLogin);
-  const [authModalInitialView, setAuthModalInitialView] = useState('initial'); // 'initial', 'login', 'signup'
+  // Login Modal State
+  const [showLoginModal, setShowLoginModal] = useState(autoShowLogin);
+  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // Signup Modal State
+  const [showSignupModal, setShowSignupModal] = useState(false);
+  const [signupForm, setSignupForm] = useState({ email: '', password: '', retype: '' });
+  const [signupError, setSignupError] = useState('');
+  const [isSigningUp, setIsSigningUp] = useState(false);
+  const [showSignupPassword, setShowSignupPassword] = useState(false);
+  const [showSignupRetype, setShowSignupRetype] = useState(false);
 
   // User Authentication State
   const [currentUser, setCurrentUser] = useState(null);
@@ -178,25 +188,74 @@ export default function Header({ autoShowLogin = false }) {
 
   // Handle auth modal - open login popup
   const handleLoginClick = () => {
-    setAuthModalInitialView('login');
-    setShowAuthModal(true);
+    setShowLoginModal(true);
+    setShowSignupModal(false);
+    setLoginError('');
+    setLoginForm({ email: '', password: '' });
+    setShowLoginPassword(false);
   };
 
   // Handle signup modal - open signup popup
   const handleSignupClick = () => {
-    setAuthModalInitialView('signup');
-    setShowAuthModal(true);
+    setShowSignupModal(true);
+    setShowLoginModal(false);
+    setSignupError('');
+    setSignupForm({ email: '', password: '', retype: '' });
+    setShowSignupPassword(false);
+    setShowSignupRetype(false);
   };
 
-  // Handle auth modal close
-  const handleAuthModalClose = () => {
-    setShowAuthModal(false);
+  // Handle login form submission
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setLoginError('');
+    setIsLoggingIn(true);
+
+    const result = await loginUser(loginForm.email, loginForm.password);
+
+    setIsLoggingIn(false);
+
+    if (result.success) {
+      // Login successful - close modal and reload page
+      setShowLoginModal(false);
+      window.location.reload();
+    } else {
+      // Show error message
+      setLoginError(result.error || 'Login failed. Please try again.');
+    }
   };
 
-  // Handle successful authentication
-  const handleAuthSuccess = (result) => {
-    console.log('✅ Authentication successful:', result);
-    // The modal will handle the reload
+  // Handle signup form submission
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault();
+    setSignupError('');
+    setIsSigningUp(true);
+
+    const result = await signupUser(signupForm.email, signupForm.password, signupForm.retype);
+
+    setIsSigningUp(false);
+
+    if (result.success) {
+      // Signup successful - close modal, wait briefly, then reload page
+      setShowSignupModal(false);
+      console.log('✅ Signup successful, fetching user data...');
+
+      // Short delay to ensure token is stored
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } else {
+      // Show error message
+      setSignupError(result.error || 'Signup failed. Please try again.');
+    }
+  };
+
+  // Close modal when clicking outside
+  const handleModalOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      setShowLoginModal(false);
+      setShowSignupModal(false);
+    }
   };
 
   // Handle keyboard navigation for dropdowns
@@ -501,14 +560,513 @@ export default function Header({ autoShowLogin = false }) {
         </div>
       </nav>
 
-      {/* Auth Modal (SignUpLoginModal) */}
-      <SignUpLoginModal
-        isOpen={showAuthModal}
-        onClose={handleAuthModalClose}
-        initialView={authModalInitialView}
-        onAuthSuccess={handleAuthSuccess}
-        disableClose={autoShowLogin && isProtectedPage()}
-      />
+      {/* Login Modal */}
+      {showLoginModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000
+          }}
+          onClick={handleModalOverlayClick}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '2rem',
+              maxWidth: '400px',
+              width: '90%',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: '#1a202c',
+                margin: 0
+              }}>
+                Sign In
+              </h2>
+              <p style={{
+                fontSize: '0.875rem',
+                color: '#6b7280',
+                marginTop: '0.5rem',
+                marginBottom: 0
+              }}>
+                Enter your credentials to access your account
+              </p>
+            </div>
+
+            {/* Login Form */}
+            <form onSubmit={handleLoginSubmit}>
+              {/* Email Field */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={loginForm.email}
+                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                  required
+                  placeholder="your@email.com"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
+                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                />
+              </div>
+
+              {/* Password Field */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
+                  Password
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showLoginPassword ? 'text' : 'password'}
+                    value={loginForm.password}
+                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                    required
+                    placeholder="Enter your password"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      paddingRight: '2.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '1rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
+                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '0.75rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#6b7280',
+                      fontSize: '0.875rem',
+                      padding: '0.25rem'
+                    }}
+                  >
+                    {showLoginPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {loginError && (
+                <div style={{
+                  padding: '0.75rem',
+                  backgroundColor: '#fee2e2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '6px',
+                  marginBottom: '1rem'
+                }}>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#dc2626',
+                    margin: 0
+                  }}>
+                    {loginError}
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                marginTop: '1.5rem'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setShowLoginModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    backgroundColor: 'white',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoggingIn}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    backgroundColor: isLoggingIn ? '#9333ea' : '#5B21B6',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    color: 'white',
+                    cursor: isLoggingIn ? 'not-allowed' : 'pointer',
+                    opacity: isLoggingIn ? 0.7 : 1
+                  }}
+                >
+                  {isLoggingIn ? 'Signing In...' : 'Sign In'}
+                </button>
+              </div>
+
+              {/* Switch to Signup */}
+              <div style={{
+                marginTop: '1rem',
+                textAlign: 'center'
+              }}>
+                <p style={{
+                  fontSize: '0.875rem',
+                  color: '#6b7280',
+                  margin: 0
+                }}>
+                  Don't have an account?{' '}
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleSignupClick();
+                    }}
+                    style={{
+                      color: '#5B21B6',
+                      textDecoration: 'none',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Sign Up
+                  </a>
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Signup Modal */}
+      {showSignupModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000
+          }}
+          onClick={handleModalOverlayClick}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '12px',
+              padding: '2rem',
+              maxWidth: '400px',
+              width: '90%',
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h2 style={{
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                color: '#1a202c',
+                margin: 0
+              }}>
+                Sign Up
+              </h2>
+              <p style={{
+                fontSize: '0.875rem',
+                color: '#6b7280',
+                marginTop: '0.5rem',
+                marginBottom: 0
+              }}>
+                Create your account to get started
+              </p>
+            </div>
+
+            {/* Signup Form */}
+            <form onSubmit={handleSignupSubmit}>
+              {/* Email Field */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={signupForm.email}
+                  onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
+                  required
+                  placeholder="your@email.com"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
+                  onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
+                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                />
+              </div>
+
+              {/* Password Field */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
+                  Password (min 4 characters)
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showSignupPassword ? 'text' : 'password'}
+                    value={signupForm.password}
+                    onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
+                    required
+                    minLength={4}
+                    placeholder="Enter your password"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      paddingRight: '2.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '1rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
+                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupPassword(!showSignupPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '0.75rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#6b7280',
+                      fontSize: '0.875rem',
+                      padding: '0.25rem'
+                    }}
+                  >
+                    {showSignupPassword ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Retype Password Field */}
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{
+                  display: 'block',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  color: '#374151',
+                  marginBottom: '0.5rem'
+                }}>
+                  Retype Password
+                </label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type={showSignupRetype ? 'text' : 'password'}
+                    value={signupForm.retype}
+                    onChange={(e) => setSignupForm({ ...signupForm, retype: e.target.value })}
+                    required
+                    minLength={4}
+                    placeholder="Retype your password"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      paddingRight: '2.5rem',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                      fontSize: '1rem',
+                      outline: 'none',
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
+                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowSignupRetype(!showSignupRetype)}
+                    style={{
+                      position: 'absolute',
+                      right: '0.75rem',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: '#6b7280',
+                      fontSize: '0.875rem',
+                      padding: '0.25rem'
+                    }}
+                  >
+                    {showSignupRetype ? '👁️' : '👁️‍🗨️'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error Message */}
+              {signupError && (
+                <div style={{
+                  padding: '0.75rem',
+                  backgroundColor: '#fee2e2',
+                  border: '1px solid #fecaca',
+                  borderRadius: '6px',
+                  marginBottom: '1rem'
+                }}>
+                  <p style={{
+                    fontSize: '0.875rem',
+                    color: '#dc2626',
+                    margin: 0
+                  }}>
+                    {signupError}
+                  </p>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                marginTop: '1.5rem'
+              }}>
+                <button
+                  type="button"
+                  onClick={() => setShowSignupModal(false)}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    backgroundColor: 'white',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    color: '#374151',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSigningUp}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    backgroundColor: isSigningUp ? '#9333ea' : '#5B21B6',
+                    border: 'none',
+                    borderRadius: '6px',
+                    fontSize: '1rem',
+                    fontWeight: '500',
+                    color: 'white',
+                    cursor: isSigningUp ? 'not-allowed' : 'pointer',
+                    opacity: isSigningUp ? 0.7 : 1
+                  }}
+                >
+                  {isSigningUp ? 'Signing Up...' : 'Sign Up'}
+                </button>
+              </div>
+
+              {/* Switch to Login */}
+              <div style={{
+                marginTop: '1rem',
+                textAlign: 'center'
+              }}>
+                <p style={{
+                  fontSize: '0.875rem',
+                  color: '#6b7280',
+                  margin: 0
+                }}>
+                  Already have an account?{' '}
+                  <a
+                    href="#"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleLoginClick();
+                    }}
+                    style={{
+                      color: '#5B21B6',
+                      textDecoration: 'none',
+                      fontWeight: '500'
+                    }}
+                  >
+                    Sign In
+                  </a>
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* CreateDuplicateListingModal */}
       {showListPropertyModal && (

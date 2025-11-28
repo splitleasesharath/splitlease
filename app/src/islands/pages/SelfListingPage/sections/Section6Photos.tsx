@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import type { Photos, PhotoData } from '../types/listing.types';
 
 interface Section6Props {
@@ -6,33 +6,13 @@ interface Section6Props {
   onChange: (data: Photos) => void;
   onNext: () => void;
   onBack: () => void;
-  onUploadPhotos: () => Promise<boolean>;
-  isUploading: boolean;
 }
 
-export const Section6Photos: React.FC<Section6Props> = ({
-  data,
-  onChange,
-  onNext,
-  onBack,
-  onUploadPhotos,
-  isUploading
-}) => {
+export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext, onBack }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-
-  // Scroll to first error field
-  const scrollToFirstError = useCallback((errorKeys: string[]) => {
-    if (errorKeys.length === 0) return;
-    const firstErrorKey = errorKeys[0];
-    const element = document.getElementById(firstErrorKey) ||
-                   document.querySelector('.upload-area');
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -132,32 +112,21 @@ export const Section6Photos: React.FC<Section6Props> = ({
     setDragOverIndex(null);
   };
 
-  const validateForm = (): string[] => {
+  const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    const errorOrder: string[] = [];
 
     if (data.photos.length < data.minRequired) {
       newErrors.photos = `Please upload at least ${data.minRequired} photos`;
-      errorOrder.push('photos');
     }
 
     setErrors(newErrors);
-    return errorOrder;
+    return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = async () => {
-    const errorKeys = validateForm();
-    if (errorKeys.length > 0) {
-      scrollToFirstError(errorKeys);
-      return;
-    }
-
-    // Upload photos to Bubble before proceeding
-    const uploadSuccess = await onUploadPhotos();
-    if (uploadSuccess) {
+  const handleNext = () => {
+    if (validateForm()) {
       onNext();
     }
-    // If upload fails, onUploadPhotos will show an error alert
   };
 
   const openMobileUpload = () => {
@@ -256,16 +225,16 @@ export const Section6Photos: React.FC<Section6Props> = ({
 
       {/* Navigation */}
       <div className="section-navigation">
-        <button type="button" className="btn-back" onClick={onBack} disabled={isUploading}>
+        <button type="button" className="btn-back" onClick={onBack}>
           Back
         </button>
         <button
           type="button"
           className="btn-next"
           onClick={handleNext}
-          disabled={data.photos.length < data.minRequired || isUploading}
+          disabled={data.photos.length < data.minRequired}
         >
-          {isUploading ? 'Uploading Photos...' : 'Next'}
+          Next
         </button>
       </div>
     </div>

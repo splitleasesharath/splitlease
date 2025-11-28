@@ -349,8 +349,8 @@ export const DEFAULT_LISTING_DATA: ListingFormData = {
     numberOfGuests: 2,
     checkInTime: '2:00 PM',
     checkOutTime: '11:00 AM',
-    idealMinDuration: 6,
-    idealMaxDuration: 52,
+    idealMinDuration: 2,
+    idealMaxDuration: 6,
     houseRules: [],
     blockedDates: []
   },

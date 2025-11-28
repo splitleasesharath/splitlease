@@ -1,7 +1,5 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState } from 'react';
 import type { LeaseStylesConfig, RentalType, WeeklyPattern } from '../types/listing.types';
-import { HostScheduleSelector, ALL_NIGHTS } from '../../../shared/HostScheduleSelector';
-import type { NightId } from '../../../shared/HostScheduleSelector/types';
 
 interface Section3Props {
   data: LeaseStylesConfig;
@@ -17,53 +15,6 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
   onBack
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Scroll to first error field
-  const scrollToFirstError = useCallback((errorKeys: string[]) => {
-    if (errorKeys.length === 0) return;
-    const firstErrorKey = errorKeys[0];
-    // For lease styles, we need to scroll to the config section
-    const element = document.getElementById(firstErrorKey) ||
-                   document.querySelector(`.${firstErrorKey.replace('Error', '')}-config`);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-  }, []);
-
-  /**
-   * Convert boolean-based availableNights to NightId[] array
-   */
-  const selectedNightsArray = useMemo((): NightId[] => {
-    if (!data.availableNights) return [];
-    return ALL_NIGHTS
-      .filter((night) => data.availableNights![night.id as keyof typeof data.availableNights])
-      .map((night) => night.id);
-  }, [data.availableNights]);
-
-  /**
-   * Convert NightId[] array to boolean-based availableNights
-   */
-  const nightsArrayToBooleanConfig = useCallback((nights: NightId[]): LeaseStylesConfig['availableNights'] => {
-    return {
-      sunday: nights.includes('sunday'),
-      monday: nights.includes('monday'),
-      tuesday: nights.includes('tuesday'),
-      wednesday: nights.includes('wednesday'),
-      thursday: nights.includes('thursday'),
-      friday: nights.includes('friday'),
-      saturday: nights.includes('saturday'),
-    };
-  }, []);
-
-  /**
-   * Handle selection change from HostScheduleSelector
-   */
-  const handleNightsSelectionChange = useCallback((nights: NightId[]) => {
-    onChange({
-      ...data,
-      availableNights: nightsArrayToBooleanConfig(nights),
-    });
-  }, [data, onChange, nightsArrayToBooleanConfig]);
 
   const handleRentalTypeChange = (type: RentalType) => {
     const newData: LeaseStylesConfig = {
@@ -98,14 +49,41 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
     setErrors({});
   };
 
-  const selectAllNights = useCallback(() => {
-    const allNightIds = ALL_NIGHTS.map((n) => n.id);
-    handleNightsSelectionChange(allNightIds);
-  }, [handleNightsSelectionChange]);
+  const toggleNight = (day: keyof NonNullable<LeaseStylesConfig['availableNights']>) => {
+    if (data.availableNights) {
+      onChange({
+        ...data,
+        availableNights: {
+          ...data.availableNights,
+          [day]: !data.availableNights[day]
+        }
+      });
+    }
+  };
 
-  const getAvailableNightsCount = () => selectedNightsArray.length;
+  const selectAllNights = () => {
+    onChange({
+      ...data,
+      availableNights: {
+        sunday: true,
+        monday: true,
+        tuesday: true,
+        wednesday: true,
+        thursday: true,
+        friday: true,
+        saturday: true
+      }
+    });
+  };
 
-  const getNotAvailableNightsCount = () => 7 - selectedNightsArray.length;
+  const getAvailableNightsCount = () => {
+    if (!data.availableNights) return 0;
+    return Object.values(data.availableNights).filter((v) => v).length;
+  };
+
+  const getNotAvailableNightsCount = () => {
+    return 7 - getAvailableNightsCount();
+  };
 
   const handleWeeklyPatternChange = (pattern: WeeklyPattern) => {
     onChange({ ...data, weeklyPattern: pattern });
@@ -117,30 +95,24 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
     setErrors({});
   };
 
-  const validateForm = (): string[] => {
+  const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
-    const errorOrder: string[] = [];
 
     if (data.rentalType === 'Weekly' && !data.weeklyPattern) {
       newErrors.weeklyPattern = 'Please select a weekly pattern';
-      errorOrder.push('weeklyPattern');
     }
 
     if (data.rentalType === 'Monthly' && !data.subsidyAgreement) {
       newErrors.subsidyAgreement = 'You must agree to the subsidy terms for monthly rentals';
-      errorOrder.push('subsidyAgreement');
     }
 
     setErrors(newErrors);
-    return errorOrder;
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleNext = () => {
-    const errorKeys = validateForm();
-    if (errorKeys.length === 0) {
+    if (validateForm()) {
       onNext();
-    } else {
-      scrollToFirstError(errorKeys);
     }
   };
 
@@ -197,13 +169,20 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
           <h3>Select Available Nights</h3>
           <p>Choose which nights of the week you want to offer</p>
 
-          <div className="host-schedule-selector-wrapper">
-            <HostScheduleSelector
-              selectedNights={selectedNightsArray}
-              onSelectionChange={handleNightsSelectionChange}
-              isClickable={true}
-              mode="normal"
-            />
+          <div className="days-selector">
+            {(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const).map((day) => (
+              <button
+                key={day}
+                type="button"
+                className={`day-button ${data.availableNights![day] ? 'selected' : ''}`}
+                onClick={() => toggleNight(day)}
+              >
+                <div className="day-letter">{day.charAt(0).toUpperCase()}</div>
+                <div className="day-status">
+                  {data.availableNights![day] ? 'Available Night' : 'Not Available Night'}
+                </div>
+              </button>
+            ))}
           </div>
 
           <div className="nights-counter">
@@ -222,7 +201,7 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 
       {/* Weekly Configuration */}
       {data.rentalType === 'Weekly' && (
-        <div className="weekly-config" id="weeklyPattern">
+        <div className="weekly-config">
           <h3>Weekly Pattern You're Offering</h3>
           <p className="info-text">This pattern is independent of the beginning of the month</p>
 
@@ -246,7 +225,7 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 
       {/* Monthly Configuration - Inline Agreement */}
       {data.rentalType === 'Monthly' && (
-        <div className="monthly-config" id="subsidyAgreement">
+        <div className="monthly-config">
           <h3>Monthly Lease Agreement</h3>
           <div className="agreement-text">
             <p>
