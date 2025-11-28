@@ -428,30 +428,67 @@ export async function loginUser(email, password) {
 
     if (error) {
       console.error('❌ Edge Function error:', error);
+      console.error('   Error message:', error.message);
       console.error('   Error context:', error.context);
 
       // Extract detailed error from response body if available
-      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
-      let errorMessage = 'Failed to authenticate. Please try again.';
+      // Supabase wraps non-2xx responses in a FunctionsHttpError with context as Response object
+      let errorMessage = null;
 
-      if (error.context?.body) {
+      // Path 1: error.context is a Response object (FunctionsHttpError)
+      if (error.context && typeof error.context.json === 'function') {
         try {
-          const errorBody = typeof error.context.body === 'string'
-            ? JSON.parse(error.context.body)
-            : error.context.body;
+          const errorBody = await error.context.json();
+          console.error('   Parsed response JSON:', errorBody);
           if (errorBody?.error) {
             errorMessage = errorBody.error;
-            console.error('   Detailed error from response:', errorMessage);
           }
         } catch (parseErr) {
-          console.error('   Could not parse error body:', parseErr);
+          console.error('   Could not parse response as JSON:', parseErr);
+          // Try reading as text
+          try {
+            const errorText = await error.context.text();
+            console.error('   Response text:', errorText);
+            if (errorText && errorText.length < 200) {
+              // Try to parse as JSON one more time
+              try {
+                const parsed = JSON.parse(errorText);
+                if (parsed?.error) {
+                  errorMessage = parsed.error;
+                }
+              } catch {
+                errorMessage = errorText;
+              }
+            }
+          } catch (textErr) {
+            console.error('   Could not read response text:', textErr);
+          }
         }
       }
 
-      // Also check if data was returned despite the error (some edge cases)
-      if (data?.error) {
+      // Path 2: data object returned alongside error
+      if (!errorMessage && data?.error) {
         errorMessage = data.error;
       }
+
+      // Path 3: Check if error itself has nested error property
+      if (!errorMessage && error.error) {
+        errorMessage = error.error;
+      }
+
+      // Path 4: error.message from Supabase client (exclude generic messages)
+      if (!errorMessage && error.message &&
+          !error.message.includes('FunctionsHttpError') &&
+          !error.message.includes('non-2xx status code')) {
+        errorMessage = error.message;
+      }
+
+      // Fallback only if we couldn't extract anything useful
+      if (!errorMessage) {
+        errorMessage = 'Failed to authenticate. Please try again.';
+      }
+
+      console.error('   Final error message:', errorMessage);
 
       return {
         success: false,
@@ -549,30 +586,67 @@ export async function signupUser(email, password, retype) {
 
     if (error) {
       console.error('❌ Edge Function error:', error);
+      console.error('   Error message:', error.message);
       console.error('   Error context:', error.context);
 
       // Extract detailed error from response body if available
-      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
-      let errorMessage = 'Failed to create account. Please try again.';
+      // Supabase wraps non-2xx responses in a FunctionsHttpError with context as Response object
+      let errorMessage = null;
 
-      if (error.context?.body) {
+      // Path 1: error.context is a Response object (FunctionsHttpError)
+      if (error.context && typeof error.context.json === 'function') {
         try {
-          const errorBody = typeof error.context.body === 'string'
-            ? JSON.parse(error.context.body)
-            : error.context.body;
+          const errorBody = await error.context.json();
+          console.error('   Parsed response JSON:', errorBody);
           if (errorBody?.error) {
             errorMessage = errorBody.error;
-            console.error('   Detailed error from response:', errorMessage);
           }
         } catch (parseErr) {
-          console.error('   Could not parse error body:', parseErr);
+          console.error('   Could not parse response as JSON:', parseErr);
+          // Try reading as text
+          try {
+            const errorText = await error.context.text();
+            console.error('   Response text:', errorText);
+            if (errorText && errorText.length < 200) {
+              // Try to parse as JSON one more time
+              try {
+                const parsed = JSON.parse(errorText);
+                if (parsed?.error) {
+                  errorMessage = parsed.error;
+                }
+              } catch {
+                errorMessage = errorText;
+              }
+            }
+          } catch (textErr) {
+            console.error('   Could not read response text:', textErr);
+          }
         }
       }
 
-      // Also check if data was returned despite the error (some edge cases)
-      if (data?.error) {
+      // Path 2: data object returned alongside error
+      if (!errorMessage && data?.error) {
         errorMessage = data.error;
       }
+
+      // Path 3: Check if error itself has nested error property
+      if (!errorMessage && error.error) {
+        errorMessage = error.error;
+      }
+
+      // Path 4: error.message from Supabase client (exclude generic messages)
+      if (!errorMessage && error.message &&
+          !error.message.includes('FunctionsHttpError') &&
+          !error.message.includes('non-2xx status code')) {
+        errorMessage = error.message;
+      }
+
+      // Fallback only if we couldn't extract anything useful
+      if (!errorMessage) {
+        errorMessage = 'Failed to create account. Please try again.';
+      }
+
+      console.error('   Final error message:', errorMessage);
 
       return {
         success: false,

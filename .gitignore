@@ -6,6 +6,7 @@ app/server/.env
 
 # Secrets documentation (contains sensitive info)
 supabase/SECRETS_SETUP.md
+Context/Option Sets/
 
 # Python
 __pycache__/
@@ -81,9 +82,6 @@ videos/
 # Bun lock files
 bun.lock
 bun.lockb
-
-# Context directory
-Context/
 
 # Agent Context and Tools directories
 input/

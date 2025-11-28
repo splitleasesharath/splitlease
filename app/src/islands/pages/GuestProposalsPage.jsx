@@ -39,6 +39,7 @@ import CompareTermsModal from '../modals/CompareTermsModal.jsx'
 import EditProposalModal from '../modals/EditProposalModal.jsx'
 import ProposalDetailsModal from '../modals/ProposalDetailsModal.jsx'
 import CancelProposalModal from '../modals/CancelProposalModal.jsx'
+import GuestEditingProposalModal from '../modals/GuestEditingProposalModal.jsx'
 
 // Logic Hook - ALL business logic lives here
 import { useGuestProposalsPageLogic } from './useGuestProposalsPageLogic.js'
@@ -123,6 +124,14 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
     showCancelProposalModal,
     closeCancelProposalModal,
     handleConfirmCancelProposal,
+
+    // Modal state - Guest Editing Proposal
+    showGuestEditingProposalModal,
+    closeGuestEditingProposalModal,
+    handleGuestEditingProposalUpdate,
+    handleGuestEditingProposalCancel,
+    handleGuestEditingProposalAlert,
+    openGuestEditingProposalModal,
 
     // Utilities
     formatPrice,
@@ -333,6 +342,25 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
           buttonText={cancelButtonText}
           onClose={closeCancelProposalModal}
           onConfirm={handleConfirmCancelProposal}
+        />
+      )}
+
+      {/* Guest Editing Proposal Modal */}
+      {showGuestEditingProposalModal && selectedProposal && (
+        <GuestEditingProposalModal
+          proposal={selectedProposal}
+          listing={selectedProposal._listing}
+          user={currentUser}
+          initialView="general"
+          isVisible={showGuestEditingProposalModal}
+          pageWidth={typeof window !== 'undefined' ? window.innerWidth : 1200}
+          onClose={closeGuestEditingProposalModal}
+          onProposalUpdate={handleGuestEditingProposalUpdate}
+          onProposalCancel={handleGuestEditingProposalCancel}
+          onAlert={handleGuestEditingProposalAlert}
+          pricePerNight={selectedProposal?.['proposal nightly price'] || 0}
+          totalPriceForReservation={selectedProposal?.['Total Price for Reservation (guest)'] || 0}
+          priceRentPer4Weeks={selectedProposal?.['Price Rent per 4 weeks'] || 0}
         />
       )}
     </div>
