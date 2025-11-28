@@ -10,8 +10,7 @@ import type { ListingFormData } from './types/listing.types';
 import { DEFAULT_LISTING_DATA } from './types/listing.types';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
-// TODO: Re-add when listing_id URL parameter handling is restored
-// import { getListingById } from '../../../lib/bubbleAPI';
+import { createListing } from '../../../lib/listingService';
 import './styles/SelfListingPage.css';
 
 export const SelfListingPage: React.FC = () => {
@@ -167,26 +166,28 @@ export const SelfListingPage: React.FC = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Here you would make an API call to submit the listing
-      // For now, we'll simulate with a timeout
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      console.log('[SelfListingPage] Submitting listing to Supabase...');
+      console.log('[SelfListingPage] Form data:', formData);
 
-      console.log('Submitting listing:', formData);
+      // Submit to listing_trial table via listingService
+      const newListing = await createListing(formData);
 
-      // Mark as submitted
+      console.log('[SelfListingPage] ✅ Listing created:', newListing);
+
+      // Mark as submitted in local state
       setFormData({ ...formData, isSubmitted: true, isDraft: false });
 
       // Clear draft from localStorage
       localStorage.removeItem('selfListingDraft');
 
       // Show success message
-      alert('Listing submitted successfully! You will receive a confirmation email shortly.');
+      alert('Listing submitted successfully! Your listing has been saved and is pending review.');
 
-      // Optionally redirect to a success page
-      // window.location.href = '/listing-submitted';
+      // Redirect to view the listing (using the new UUID)
+      window.location.href = `/host-success.html?listing_id=${newListing.id}`;
     } catch (error) {
-      console.error('Error submitting listing:', error);
-      alert('Error submitting listing. Please try again.');
+      console.error('[SelfListingPage] ❌ Error submitting listing:', error);
+      alert(`Error submitting listing: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     } finally {
       setIsSubmitting(false);
     }
