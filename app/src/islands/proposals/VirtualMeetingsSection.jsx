@@ -98,7 +98,7 @@ export default function VirtualMeetingsSection({ proposal, currentUser, onUpdate
 
         {/* Meeting Status Message */}
         <div className="vm-meeting-status flex items-center gap-2 mb-4 text-gray-700">
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
             <path d="M19,4H18V2H16V4H8V2H6V4H5C3.89,4 3,4.9 3,6V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V6A2,2 0 0,0 19,4M19,20H5V10H19V20M5,8V6H19V8H5Z" />
           </svg>
           <span>
@@ -157,7 +157,7 @@ export default function VirtualMeetingsSection({ proposal, currentUser, onUpdate
 
             <div className="text-center">
               <div className="flex justify-center mb-4">
-                <svg className="w-12 h-12 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="#ef4444">
                   <path d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
                 </svg>
               </div>
@@ -171,7 +171,7 @@ export default function VirtualMeetingsSection({ proposal, currentUser, onUpdate
               </p>
 
               <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg mb-6">
-                <svg className="w-6 h-6 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="#9ca3af" style={{ flexShrink: 0 }}>
                   <path d="M19,4H18V2H16V4H8V2H6V4H5C3.89,4 3,4.9 3,6V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V6A2,2 0 0,0 19,4M19,20H5V10H19V20M5,8V6H19V8H5Z" />
                 </svg>
                 <div className="text-left">

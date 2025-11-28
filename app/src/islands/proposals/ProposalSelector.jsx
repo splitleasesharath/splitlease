@@ -49,10 +49,12 @@ export default function ProposalSelector({ proposals, selectedProposal, onPropos
             </div>
           </div>
           <svg
-            className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'transform rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
+            fill="none"
+            stroke="#9ca3af"
+            style={{ flexShrink: 0, transition: 'transform 0.2s', transform: isOpen ? 'rotate(180deg)' : 'none' }}
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>

@@ -68,6 +68,7 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
     vmStateInfo,
     termsComparison,
     cancelButtonText,
+    buttonStates,
 
     // Proposal selection
     handleProposalChange,
@@ -206,6 +207,7 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
                   canRequestVM={canRequestVM}
                   vmStateInfo={vmStateInfo}
                   cancelButtonText={cancelButtonText}
+                  buttonStates={buttonStates}
                   formatPrice={formatPrice}
                   formatDate={formatDate}
                   onViewListing={handleViewListing}
@@ -221,6 +223,15 @@ export default function GuestProposalsPage({ requireAuth = false, isAuthenticate
                   onReviewDocuments={handleReviewDocuments}
                   onGoToLeases={handleGoToLeases}
                   onSeeDetails={handleSeeDetails}
+                  onRemindSplitLease={() => {/* TODO: Implement remind Split Lease */}}
+                  onConfirmProposal={() => {/* TODO: Implement confirm proposal */}}
+                  onAcceptModifiedTerms={handleAcceptProposal}
+                  onRejectModifiedTerms={handleCancelProposal}
+                  onSeeHouseManual={() => {
+                    if (selectedProposal?._listing?.['House manual']) {
+                      window.open(selectedProposal._listing['House manual'], '_blank')
+                    }
+                  }}
                 />
 
                 {/* Virtual Meetings Section */}

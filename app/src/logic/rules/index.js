@@ -61,6 +61,9 @@ export {
   getVMStateInfo
 } from './proposals/virtualMeetingRules.js'
 
+// Proposal Button States Hook
+export { useProposalButtonStates } from './proposals/useProposalButtonStates.js'
+
 // User Rules
 export { isHost } from './users/isHost.js'
 export { isGuest } from './users/isGuest.js'

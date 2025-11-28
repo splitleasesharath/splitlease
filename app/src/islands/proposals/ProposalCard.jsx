@@ -45,6 +45,7 @@ export default function ProposalCard({
   canRequestVM,
   vmStateInfo,
   cancelButtonText,
+  buttonStates,
   formatPrice: formatPriceProp,
   formatDate: formatDateProp,
   // Event handlers
@@ -61,6 +62,12 @@ export default function ProposalCard({
   onReviewDocuments,
   onGoToLeases,
   onSeeDetails,
+  // New handlers for buttonStates actions
+  onRemindSplitLease,
+  onConfirmProposal,
+  onAcceptModifiedTerms,
+  onRejectModifiedTerms,
+  onSeeHouseManual,
 }) {
   const [showHouseRules, setShowHouseRules] = useState(false)
 
@@ -176,11 +183,83 @@ export default function ProposalCard({
   const statusBanner = getStatusBannerConfig()
 
   /**
-   * Build action buttons using pre-computed props from Logic Core
+   * Build action buttons using buttonStates from useProposalButtonStates hook
+   * Falls back to legacy logic if buttonStates is not provided
    */
   function getActionButtons() {
     const buttons = []
 
+    // Use buttonStates if available (new Bubble-mapped conditionals)
+    if (buttonStates) {
+      // Button 1: Virtual Meeting
+      if (buttonStates.virtualMeeting?.visible) {
+        const vm = buttonStates.virtualMeeting
+        buttons.push({
+          label: vm.label,
+          onClick: onRequestVirtualMeeting,
+          className: 'btn-request-meeting',
+          disabled: vm.disabled,
+          style: vm.fontColor ? { color: vm.fontColor, fontWeight: vm.bold ? 'bold' : 'normal' } : {},
+          title: vm.tooltip,
+        })
+      }
+
+      // Button 2: Guest Action 1
+      if (buttonStates.guestAction1?.visible) {
+        const ga1 = buttonStates.guestAction1
+        const action1Handlers = {
+          'View Proposal': onSeeDetails,
+          'Remind Split Lease': onRemindSplitLease,
+          'Complete Application': onSubmitRentalApplication,
+          'Confirm Proposal': onConfirmProposal,
+          'Review Counteroffer': onReviewCounteroffer,
+          'Review Documents': onReviewDocuments,
+          'Go to Leases': onGoToLeases,
+          'Delete Proposal': onDeleteProposal,
+        }
+        buttons.push({
+          label: ga1.label,
+          onClick: action1Handlers[ga1.label] || onSeeDetails,
+          className: 'btn-primary-action',
+          style: ga1.backgroundColor ? { backgroundColor: ga1.backgroundColor } : {},
+        })
+      }
+
+      // Button 3: Guest Action 2
+      if (buttonStates.guestAction2?.visible) {
+        const ga2 = buttonStates.guestAction2
+        const action2Handlers = {
+          'Accept Modified Terms': onAcceptModifiedTerms,
+          'Submit ID Documents': onReviewDocuments,
+        }
+        buttons.push({
+          label: ga2.label,
+          onClick: action2Handlers[ga2.label] || onSeeDetails,
+          className: 'btn-secondary-action',
+        })
+      }
+
+      // Button 4: Cancel Proposal
+      if (buttonStates.cancelProposal?.visible) {
+        const cancel = buttonStates.cancelProposal
+        const cancelHandlers = {
+          'Delete Proposal': onDeleteProposal,
+          'Reject Modified Terms': onRejectModifiedTerms,
+          'See House Manual': onSeeHouseManual,
+          'Cancel Proposal': onCancelProposal,
+        }
+        buttons.push({
+          label: cancel.label,
+          onClick: cancelHandlers[cancel.label] || onCancelProposal,
+          className: cancel.label === 'See House Manual' ? 'btn-house-manual' : 'btn-cancel-proposal',
+          style: cancel.backgroundColor ? { backgroundColor: cancel.backgroundColor } : {},
+        })
+      }
+
+      return buttons
+    }
+
+    // Legacy fallback (in case buttonStates is not provided)
     // Status-based primary action buttons
     if (status === 'Awaiting Host Review' || status === 'Under Review') {
       if (canEdit) {
@@ -381,7 +460,14 @@ export default function ProposalCard({
             {actionButtons.length > 0 && (
               <div className="proposal-actions">
                 {actionButtons.map((button, index) => (
-                  <button key={index} className={button.className} onClick={button.onClick}>
+                  <button
+                    key={index}
+                    className={button.className}
+                    onClick={button.onClick}
+                    disabled={button.disabled}
+                    style={button.style}
+                    title={button.title}
+                  >
                     {button.label}
                   </button>
                 ))}

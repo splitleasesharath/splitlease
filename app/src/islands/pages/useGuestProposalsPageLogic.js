@@ -40,7 +40,8 @@ import {
   canRequestVirtualMeeting,
   getCancelButtonText as getCancelBtnText,
   VM_STATES,
-  getVMStateInfo
+  getVMStateInfo,
+  useProposalButtonStates
 } from '../../logic/index.js'
 
 // Logic Core imports - Workflows
@@ -744,6 +745,15 @@ export function useGuestProposalsPageLogic() {
   // Cancel button text
   const cancelButtonText = selectedProposal ? getCancelBtnText(selectedProposal) : 'Cancel Proposal'
 
+  // Button states from new hook (maps Bubble conditionals)
+  const buttonStates = useProposalButtonStates({
+    proposal: selectedProposal,
+    virtualMeeting: selectedProposal?._virtualMeeting,
+    guest: selectedProposal?._guest || currentUser,
+    listing: selectedProposal?._listing,
+    currentUserId: currentUser?._id || currentUser?.id,
+  })
+
   // ============================================================================
   // Return Hook API
   // ============================================================================
@@ -768,6 +778,7 @@ export function useGuestProposalsPageLogic() {
     vmStateInfo,
     termsComparison,
     cancelButtonText,
+    buttonStates,
 
     // Proposal selection
     handleProposalChange,
