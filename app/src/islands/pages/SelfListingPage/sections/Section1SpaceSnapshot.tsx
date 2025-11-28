@@ -56,10 +56,12 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
     const maxRetries = 50; // Try for 5 seconds
 
     const initAutocomplete = () => {
-      if (!window.google) {
+      // Check if Google Maps API is fully loaded (including places library)
+      // window.google may exist but maps/places may not be ready yet
+      if (!window.google?.maps?.places?.Autocomplete) {
         retryCount++;
         if (retryCount < maxRetries) {
-          console.log('Waiting for Google Maps to load...', retryCount);
+          console.log('Waiting for Google Maps Places library to load...', retryCount);
           setTimeout(initAutocomplete, 100);
         } else {
           console.error('Google Maps API failed to load. Please check your API key in index.html');
