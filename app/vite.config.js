@@ -93,6 +93,14 @@ export default defineConfig({
           } else if (url.startsWith('/help-center.html')) {
             req.url = '/public/help-center.html' + (url.substring('/help-center.html'.length) || '');
           }
+          // Handle guest-proposals with clean URL structure (e.g., /guest-proposals/USER_ID?proposal=PROPOSAL_ID)
+          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals/') || url.startsWith('/guest-proposals?')) {
+            req.url = '/public/guest-proposals.html';
+          } else if (url.startsWith('/guest-proposals.html')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/guest-proposals.html' + queryString;
+          }
 
           next();
         });
@@ -175,6 +183,14 @@ export default defineConfig({
             req.url = '/help-center-category.html' + pathAfterPrefix;
           } else if (url.startsWith('/help-center.html')) {
             req.url = '/help-center.html' + (url.substring('/help-center.html'.length) || '');
+          }
+          // Handle guest-proposals with clean URL structure (preview mode)
+          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals/') || url.startsWith('/guest-proposals?')) {
+            req.url = '/guest-proposals.html';
+          } else if (url.startsWith('/guest-proposals.html')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/guest-proposals.html' + queryString;
           }
 
           next();
@@ -290,6 +306,14 @@ export default defineConfig({
           console.log('Created _internal/help-center-category-view for Cloudflare routing');
         }
 
+        // Create guest-proposals internal file
+        const guestProposalsSource = path.join(distDir, 'guest-proposals.html');
+        const guestProposalsDest = path.join(internalDir, 'guest-proposals-view');
+        if (fs.existsSync(guestProposalsSource)) {
+          fs.copyFileSync(guestProposalsSource, guestProposalsDest);
+          console.log('Created _internal/guest-proposals-view for Cloudflare routing');
+        }
+
         // Copy images directory to dist root
         const imagesSource = path.resolve(__dirname, 'public/images');
         const imagesDest = path.join(distDir, 'images');
@@ -399,7 +423,8 @@ export default defineConfig({
         'account-profile': resolve(__dirname, 'public/account-profile.html'),
         'self-listing': resolve(__dirname, 'public/self-listing.html'),
         'help-center': resolve(__dirname, 'public/help-center.html'),
-        'help-center-category': resolve(__dirname, 'public/help-center-category.html')
+        'help-center-category': resolve(__dirname, 'public/help-center-category.html'),
+        'guest-proposals': resolve(__dirname, 'public/guest-proposals.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public
