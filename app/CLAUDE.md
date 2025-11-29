@@ -431,6 +431,13 @@ When modifying UI components:
 
 ---
 
+## Key References
+| What | Where |
+|------|-------|
+| Development beliefs | `../Context/DEVELOPMENT_BELIEFS.md` |
+
+---
+
 ## Quick Reference
 
 ### Common Imports
