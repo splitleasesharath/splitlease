@@ -19,9 +19,6 @@
 # Handle self-listing page
 /self-listing.html  /self-listing.html  200
 
-# Handle guest-proposals page
-/guest-proposals.html  /guest-proposals.html  200
-
 # Handle search page
 /search.html  /search.html  200
 

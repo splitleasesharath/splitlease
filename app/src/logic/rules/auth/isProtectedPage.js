@@ -3,7 +3,7 @@
  *
  * @intent Determine if the current URL requires user authentication.
  * @rule Protected pages redirect to home if user is not logged in.
- * @rule Handles both clean URLs (/guest-proposals) and .html URLs (/guest-proposals.html).
+ * @rule Handles both clean URLs (/account-profile) and .html URLs (/account-profile.html).
  *
  * @param {object} params - Named parameters.
  * @param {string} params.pathname - Current URL pathname.
@@ -12,7 +12,7 @@
  * @throws {Error} If pathname is not a string.
  *
  * @example
- * const protected = isProtectedPage({ pathname: '/guest-proposals' })
+ * const protected = isProtectedPage({ pathname: '/account-profile' })
  * // => true
  *
  * const public = isProtectedPage({ pathname: '/search' })
@@ -27,7 +27,6 @@ export function isProtectedPage({ pathname }) {
   }
 
   const protectedPaths = [
-    '/guest-proposals',
     '/account-profile',
     '/host-dashboard'
   ]

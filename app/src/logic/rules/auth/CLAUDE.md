@@ -41,7 +41,7 @@
 
 ## ### PROTECTED_PAGES ###
 
-[REQUIRES_AUTH]: /account-profile, /guest-proposals, /self-listing
+[REQUIRES_AUTH]: /account-profile, /host-dashboard
 [PUBLIC]: /search, /view-split-lease, /help-center, /faq
 
 ---

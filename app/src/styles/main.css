@@ -27,7 +27,6 @@
 @import url('components/guest-success.css');
 @import url('components/host-success.css');
 @import url('components/not-found.css');
-@import url('components/guest-proposals.css');
 
 /* Map Components */
 @import url('../islands/shared/ListingCard/ListingCardForMap.css');
