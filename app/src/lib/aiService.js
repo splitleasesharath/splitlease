@@ -27,13 +27,6 @@ import { supabase } from './supabase';
 export async function generateListingDescription(listingData) {
   console.log('[aiService] Generating listing description with data:', listingData);
 
-  // Get current session for auth
-  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-
-  if (sessionError || !session) {
-    throw new Error('You must be logged in to generate a description');
-  }
-
   // Format amenities arrays as comma-separated strings
   const amenitiesInUnit = Array.isArray(listingData.amenitiesInsideUnit)
     ? listingData.amenitiesInsideUnit.join(', ')

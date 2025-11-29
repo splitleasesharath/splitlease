@@ -35,6 +35,9 @@ import "./prompts/_registry.ts";
 
 const ALLOWED_ACTIONS = ["complete", "stream"];
 
+// Prompts that don't require authentication (public prompts)
+const PUBLIC_PROMPTS = ["listing-description", "echo-test"];
+
 // ─────────────────────────────────────────────────────────────
 // Main Handler
 // ─────────────────────────────────────────────────────────────
@@ -62,41 +65,12 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // ─────────────────────────────────────────────────────────
-    // 1. Authenticate user
-    // ─────────────────────────────────────────────────────────
-
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new ValidationError("Missing Authorization header");
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Client for auth validation
-    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const {
-      data: { user },
-      error: authError,
-    } = await authClient.auth.getUser();
-
-    if (authError || !user) {
-      console.error(`[ai-gateway] Auth failed:`, authError?.message);
-      throw new ValidationError("Invalid or expired token");
-    }
-
-    console.log(`[ai-gateway] Authenticated: ${user.email}`);
-
-    // Service client for data operations (bypasses RLS)
-    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
-
     // ─────────────────────────────────────────────────────────
-    // 2. Parse and validate request
+    // 1. Parse and validate request first (need prompt_key for auth decision)
     // ─────────────────────────────────────────────────────────
 
     const body: AIGatewayRequest = await req.json();
@@ -108,6 +82,44 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[ai-gateway] Action: ${body.action}`);
     console.log(`[ai-gateway] Prompt: ${body.payload.prompt_key}`);
+
+    const isPublicPrompt = PUBLIC_PROMPTS.includes(body.payload.prompt_key);
+
+    // ─────────────────────────────────────────────────────────
+    // 2. Authenticate user (skip for public prompts)
+    // ─────────────────────────────────────────────────────────
+
+    let user = null;
+
+    if (!isPublicPrompt) {
+      const authHeader = req.headers.get("Authorization");
+      if (!authHeader) {
+        throw new ValidationError("Missing Authorization header");
+      }
+
+      // Client for auth validation
+      const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+      });
+
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await authClient.auth.getUser();
+
+      if (authError || !authUser) {
+        console.error(`[ai-gateway] Auth failed:`, authError?.message);
+        throw new ValidationError("Invalid or expired token");
+      }
+
+      user = authUser;
+      console.log(`[ai-gateway] Authenticated: ${user.email}`);
+    } else {
+      console.log(`[ai-gateway] Public prompt - skipping authentication`);
+    }
+
+    // Service client for data operations (bypasses RLS)
+    const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
 
     // ─────────────────────────────────────────────────────────
     // 3. Route to handler
