@@ -14,6 +14,8 @@ interface NightlyPriceSliderProps {
     n3: number;
     n4: number;
     n5: number;
+    n6: number;
+    n7: number;
     decay: number;
     total: number;
   }) => void;
@@ -96,9 +98,9 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
           .ranges input[type=range]::-moz-range-thumb{ width:40px; height:40px; border-radius:12px; }
           .value{ bottom:-30px; font-size:15px; }
         }
-        #slw-decay::-webkit-outer-spin-button,
-        #slw-decay::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
-        #slw-decay{ -moz-appearance:textfield; appearance:textfield; }
+        #slw-discount::-webkit-outer-spin-button,
+        #slw-discount::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+        #slw-discount{ -moz-appearance:textfield; appearance:textfield; }
         #slw-p1::-webkit-outer-spin-button,
         #slw-p1::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
         #slw-p1{ -moz-appearance:textfield; appearance:textfield; }
@@ -117,18 +119,18 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
             </div>
           </div>
           <div class="field">
-            <div class="label">Decay per additional night (0.700–1.000)</div>
+            <div class="label">Discount per additional night (0.700–1.000)</div>
             <div class="spin">
-              <input id="slw-decay" class="num" type="number" min="0.7" max="1" step="0.001" inputmode="decimal" value="0.950" />
+              <input id="slw-discount" class="num" type="number" min="0.7" max="1" step="0.001" inputmode="decimal" value="0.950" />
               <div class="buttons">
-                <button class="btn" id="slw-decay-up" aria-label="Increase decay">▲</button>
-                <button class="btn" id="slw-decay-down" aria-label="Decrease decay">▼</button>
+                <button class="btn" id="slw-discount-up" aria-label="Increase discount">▲</button>
+                <button class="btn" id="slw-discount-down" aria-label="Decrease discount">▼</button>
               </div>
             </div>
           </div>
           <div class="field">
-            <div class="label">5-night total</div>
-            <input id="slw-total" class="num" type="text" inputmode="numeric" value="" readonly />
+            <div class="label">5-night price</div>
+            <input id="slw-n5" class="num" type="text" inputmode="numeric" value="" readonly />
           </div>
         </div>
 
@@ -136,11 +138,11 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
           <div class="track"></div>
           <div class="ranges">
             <input id="slw-r1" type="range" min="0" max="600" step="1" value="100" aria-label="1-night price" />
-            <input id="slw-r5" type="range" min="0" max="2000" step="1" value="0" aria-label="5-night total" />
+            <input id="slw-r5" type="range" min="0" max="600" step="1" value="0" aria-label="5-night price" />
 
             <div id="slw-tag1" class="tag">1 night price</div>
             <div id="slw-val1" class="value">$100</div>
-            <div id="slw-tag5" class="tag">5 night total</div>
+            <div id="slw-tag5" class="tag">5 night price</div>
             <div id="slw-val5" class="value">$0</div>
           </div>
         </div>
@@ -158,18 +160,19 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
 
     // ============================================================
     // EXACT PORT OF BUBBLE CODE - simple and direct
+    // Extended to 7 nights for table display
     // ============================================================
-    const N = 5;
-    const DECAY_MIN = 0.7;
-    const DECAY_MAX = 1.0;
+    const N = 7; // Extended to 7 nights
+    const DISCOUNT_MIN = 0.7;
+    const DISCOUNT_MAX = 1.0;
 
     const $ = (sel: string) => root.getElementById(sel);
     const fmt0 = (n: number) => n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
     const roundUp = (n: number) => Math.ceil(n);
 
     const p1El = $('slw-p1') as HTMLInputElement;
-    const decayEl = $('slw-decay') as HTMLInputElement;
-    const totalEl = $('slw-total') as HTMLInputElement;
+    const discountEl = $('slw-discount') as HTMLInputElement;
+    const n5El = $('slw-n5') as HTMLInputElement;
     const r1 = $('slw-r1') as HTMLInputElement;
     const r5 = $('slw-r5') as HTMLInputElement;
     const rows = $('slw-rows') as HTMLElement;
@@ -179,42 +182,38 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
     const val5 = $('slw-val5') as HTMLElement;
     const p1Up = $('slw-p1-up') as HTMLElement;
     const p1Down = $('slw-p1-down') as HTMLElement;
-    const dUp = $('slw-decay-up') as HTMLElement;
-    const dDown = $('slw-decay-down') as HTMLElement;
+    const dUp = $('slw-discount-up') as HTMLElement;
+    const dDown = $('slw-discount-down') as HTMLElement;
 
     let nightly: number[] = Array(N).fill(0);
-    let currentDecay = initialDecay;
+    let currentDiscount = initialDecay;
 
     const clamp = (x: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x));
     const sum = (arr: number[]) => arr.reduce((a, b) => a + b, 0);
 
-    function sumSeries(p1: number, d: number) {
-      if (Math.abs(1 - d) < 1e-10) return p1 * N;
-      return p1 * (1 - Math.pow(d, N)) / (1 - d);
+    // Calculate the nth night price given p1 and discount
+    function getNthNightPrice(p1: number, d: number, n: number) {
+      if (n === 1) return p1;
+      return p1 * Math.pow(d, n - 1);
     }
 
-    function solveDecay(p1: number, S: number) {
-      if (p1 <= 0) return DECAY_MIN;
-      const Smin = sumSeries(p1, DECAY_MIN);
-      const Smax = sumSeries(p1, DECAY_MAX);
-      const T = clamp(S, Smin, Smax);
-      if (Math.abs(T - Smin) < 1e-6) return DECAY_MIN;
-      if (Math.abs(T - Smax) < 1e-6) return DECAY_MAX;
-      let lo = DECAY_MIN, hi = DECAY_MAX, mid: number;
-      for (let i = 0; i < 50; i++) {
-        mid = (lo + hi) / 2;
-        const Sm = sumSeries(p1, mid);
-        if (Sm < T) lo = mid; else hi = mid;
-      }
-      return clamp((lo + hi) / 2, DECAY_MIN, DECAY_MAX);
+    // Solve for discount given p1 and target 5th night price
+    function solveDiscountFromN5(p1: number, n5Target: number) {
+      if (p1 <= 0) return DISCOUNT_MIN;
+      // n5 = p1 * d^4, so d = (n5/p1)^(1/4)
+      const ratio = n5Target / p1;
+      if (ratio <= 0) return DISCOUNT_MIN;
+      const d = Math.pow(ratio, 1/4);
+      return clamp(d, DISCOUNT_MIN, DISCOUNT_MAX);
     }
 
     function updateBounds() {
       const p1 = +r1.value || 0;
-      const minTotal = sumSeries(p1, DECAY_MIN);
-      const maxTotal = sumSeries(p1, DECAY_MAX);
-      r5.min = String(Math.round(minTotal));
-      r5.max = String(Math.round(Math.max(maxTotal, minTotal)));
+      // For n5 slider: min is p1 * 0.7^4, max is p1 * 1.0^4 = p1
+      const minN5 = Math.round(p1 * Math.pow(DISCOUNT_MIN, 4));
+      const maxN5 = Math.round(p1 * Math.pow(DISCOUNT_MAX, 4));
+      r5.min = String(minN5);
+      r5.max = String(Math.max(maxN5, minN5));
     }
 
     function rebuildFrom(p1: number, d: number) {
@@ -277,7 +276,9 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
         n3: roundedNightly[2],
         n4: roundedNightly[3],
         n5: roundedNightly[4],
-        decay: +currentDecay.toFixed(3),
+        n6: roundedNightly[5],
+        n7: roundedNightly[6],
+        decay: +currentDiscount.toFixed(3),
         total: sum(roundedNightly)
       };
 
@@ -289,14 +290,14 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
 
     function syncUI() {
       const p1 = nightly[0];
-      const total = sum(nightly);
+      const n5 = nightly[4]; // 5th night price (index 4)
       p1El.value = String(Math.round(p1));
-      decayEl.value = currentDecay.toFixed(3);
-      totalEl.value = String(Math.round(total));
+      discountEl.value = currentDiscount.toFixed(3);
+      n5El.value = String(Math.round(n5));
       r1.value = String(Math.round(p1));
       updateBounds();
-      const Sclamped = clamp(total, +r5.min, +r5.max);
-      r5.value = String(Math.round(Sclamped));
+      const n5Clamped = clamp(n5, +r5.min, +r5.max);
+      r5.value = String(Math.round(n5Clamped));
       placeTags();
       renderTable();
       broadcast();
@@ -308,67 +309,68 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
       if (!raw) return;
       const p1 = Math.max(0, parseFloat(raw));
       if (!isFinite(p1)) return;
-      rebuildFrom(p1, currentDecay);
+      rebuildFrom(p1, currentDiscount);
     }
 
-    function commitDecay() {
-      const raw = (decayEl.value || '').trim();
+    function commitDiscount() {
+      const raw = (discountEl.value || '').trim();
       if (!raw) return;
       let d = parseFloat(raw);
       if (!isFinite(d)) return;
-      d = clamp(d, DECAY_MIN, DECAY_MAX);
-      currentDecay = d;
+      d = clamp(d, DISCOUNT_MIN, DISCOUNT_MAX);
+      currentDiscount = d;
       const p1 = Math.max(0, parseFloat(p1El.value || r1.value || '0'));
       rebuildFrom(p1, d);
     }
 
-    // Slider interactions — EXACT copy from Bubble code
+    // Slider interactions
     function onDragP1(val: number) {
       const p1 = Math.max(0, val);
       updateBounds();
-      const Sfixed = clamp(+r5.value || 0, +r5.min, +r5.max);
-      const d = solveDecay(p1, Sfixed);
-      currentDecay = d;
+      // Keep the current n5 value clamped to new bounds
+      const n5Fixed = clamp(+r5.value || 0, +r5.min, +r5.max);
+      const d = solveDiscountFromN5(p1, n5Fixed);
+      currentDiscount = d;
       rebuildFrom(p1, d);
-      r5.value = String(Math.round(Sfixed));
+      r5.value = String(Math.round(n5Fixed));
       placeTags();
     }
 
-    function onDragTotal(Sval: number) {
+    function onDragN5(n5Val: number) {
       const p1 = +r1.value || 0;
       updateBounds();
-      const S = clamp(Sval, +r5.min, +r5.max);
-      const d = solveDecay(p1, S);
-      currentDecay = d;
+      const n5 = clamp(n5Val, +r5.min, +r5.max);
+      const d = solveDiscountFromN5(p1, n5);
+      currentDiscount = d;
       rebuildFrom(p1, d);
       r1.value = String(Math.round(p1));
       placeTags();
     }
 
-    // Events — EXACT copy from Bubble code
+    // Events
     p1El.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitP1(); });
     p1El.addEventListener('blur', commitP1);
-    decayEl.addEventListener('input', commitDecay);
-    decayEl.addEventListener('change', commitDecay);
-    decayEl.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitDecay(); });
-    decayEl.addEventListener('blur', commitDecay);
+    discountEl.addEventListener('input', commitDiscount);
+    discountEl.addEventListener('change', commitDiscount);
+    discountEl.addEventListener('keydown', (e: KeyboardEvent) => { if (e.key === 'Enter') commitDiscount(); });
+    discountEl.addEventListener('blur', commitDiscount);
     r1.addEventListener('input', () => onDragP1(parseFloat(r1.value)));
-    r5.addEventListener('input', () => onDragTotal(parseFloat(r5.value)));
+    r5.addEventListener('input', () => onDragN5(parseFloat(r5.value)));
 
     // Spinners
     p1Up.addEventListener('click', () => { p1El.value = String(Math.round(+p1El.value || 0) + 1); commitP1(); });
     p1Down.addEventListener('click', () => { p1El.value = String(Math.max(0, Math.round(+p1El.value || 0) - 1)); commitP1(); });
     dUp.addEventListener('click', () => {
-      currentDecay = clamp(currentDecay + 0.001, DECAY_MIN, DECAY_MAX);
-      decayEl.value = currentDecay.toFixed(3);
+      currentDiscount = clamp(currentDiscount + 0.001, DISCOUNT_MIN, DISCOUNT_MAX);
+      discountEl.value = currentDiscount.toFixed(3);
       const p1 = Math.max(0, parseFloat(p1El.value || r1.value || '0'));
-      rebuildFrom(p1, currentDecay);
+      rebuildFrom(p1, currentDiscount);
     });
     dDown.addEventListener('click', () => {
-      currentDecay = clamp(currentDecay - 0.001, DECAY_MIN, DECAY_MAX);
-      decayEl.value = currentDecay.toFixed(3);
+      currentDiscount = clamp(currentDiscount - 0.001, DISCOUNT_MIN, DISCOUNT_MAX);
+      discountEl.value = currentDiscount.toFixed(3);
       const p1 = Math.max(0, parseFloat(p1El.value || r1.value || '0'));
-      rebuildFrom(p1, currentDecay);
+      rebuildFrom(p1, currentDiscount);
     });
 
     // Resize observer
@@ -376,12 +378,12 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
     ro.observe(root.host);
 
     // Initialize
-    currentDecay = initialDecay;
+    currentDiscount = initialDecay;
     nightly = Array(N).fill(0);
     nightly[0] = initialP1;
     for (let i = 1; i < N; i++) nightly[i] = roundUp(nightly[i - 1] * initialDecay);
     r1.value = String(Math.round(initialP1));
-    r5.value = String(Math.round(sumSeries(initialP1, initialDecay)));
+    r5.value = String(Math.round(nightly[4])); // 5th night price
     syncUI();
 
     return () => {
