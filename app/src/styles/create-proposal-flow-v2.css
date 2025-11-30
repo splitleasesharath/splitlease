@@ -373,11 +373,31 @@
   border-color: #5B2C6F;
 }
 
+.user-details-section .form-textarea.is-invalid {
+  border-color: #EF4444;
+  background-color: #FEF2F2;
+}
+
+.user-details-section .form-textarea.is-invalid:focus {
+  border-color: #EF4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+}
+
 .user-details-section .checkbox-label {
   display: flex;
   align-items: center;
   font-size: 14px;
   cursor: pointer;
+}
+
+/* Error message styling */
+.form-error-message {
+  color: #EF4444;
+  font-size: 12px;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .user-details-section .checkbox-label input[type="checkbox"] {
@@ -421,6 +441,16 @@
 .date-picker:focus {
   outline: none;
   border-color: #5B2C6F;
+}
+
+.date-picker.is-invalid {
+  border-color: #EF4444;
+  background-color: #FEF2F2;
+}
+
+.date-picker.is-invalid:focus {
+  border-color: #EF4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
 }
 
 .form-input {

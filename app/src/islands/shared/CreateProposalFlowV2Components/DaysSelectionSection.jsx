@@ -57,7 +57,7 @@ const calculateCheckInCheckOutFromNumbers = (dayNumbers) => {
   };
 };
 
-export default function DaysSelectionSection({ data, updateData, listing, zatConfig }) {
+export default function DaysSelectionSection({ data, updateData, listing, zatConfig, errors = {} }) {
   const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   // Convert day names to day objects for ListingScheduleSelector
@@ -187,16 +187,21 @@ export default function DaysSelectionSection({ data, updateData, listing, zatCon
         </span>
       </h3>
 
-      <ListingScheduleSelector
-        listing={scheduleSelectorListing}
-        initialSelectedDays={initialSelectedDays}
-        limitToFiveNights={false}
-        reservationSpan={data.reservationSpan || 13}
-        zatConfig={zatConfig}
-        onSelectionChange={handleScheduleChange}
-        onPriceChange={handlePriceChange}
-        showPricing={true}
-      />
+      <div id="daysSelected">
+        <ListingScheduleSelector
+          listing={scheduleSelectorListing}
+          initialSelectedDays={initialSelectedDays}
+          limitToFiveNights={false}
+          reservationSpan={data.reservationSpan || 13}
+          zatConfig={zatConfig}
+          onSelectionChange={handleScheduleChange}
+          onPriceChange={handlePriceChange}
+          showPricing={true}
+        />
+        {errors.daysSelected && (
+          <div className="form-error-message" style={{ marginTop: '8px' }}>{errors.daysSelected}</div>
+        )}
+      </div>
 
       <div className="pricing-display" style={{ marginTop: '16px' }}>
         <p><strong>Price per Night:</strong> ${data.pricePerNight?.toFixed(2) || '0.00'}</p>
