@@ -175,6 +175,10 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const checkInTime = listing?.['Check in time'] || '2:00 pm';
   const checkOutTime = listing?.['Check Out time'] || '11:00 am';
 
+  // House rules - check if listing has any rules
+  const houseRules = listing?.['Features - House Rules'] || [];
+  const hasHouseRules = Array.isArray(houseRules) && houseRules.length > 0;
+
   // Progress stage (simplified - in real implementation, derive from status)
   const currentStageIndex = 3; // Example: at "Review Documents" stage
 
@@ -234,8 +238,10 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
             <span className="label">Anticipated Move-in</span> {anticipatedMoveIn || 'TBD'}
           </div>
 
-          {/* House rules link */}
-          <a href="#" className="house-rules-link">See House Rules</a>
+          {/* House rules link - only show if listing has rules */}
+          {hasHouseRules && (
+            <a href="#" className="house-rules-link">See House Rules</a>
+          )}
         </div>
 
         {/* Right column - Photo with host overlay */}
