@@ -31,7 +31,7 @@ export async function handleSignup(
 
   // Validate required fields
   validateRequiredFields(payload, ['email', 'password', 'retype']);
-  const { email, password, retype } = payload;
+  const { email, password, retype, firstName, lastName, userType, birthDate, phoneNumber } = payload;
 
   console.log(`[signup] Registering new user: ${email}`);
 
