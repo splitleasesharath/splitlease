@@ -17,7 +17,7 @@
 
 import { useState } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
-import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
+import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -100,14 +100,31 @@ function getAllDaysWithSelection(daysSelected) {
  *
  * Cascading Override Pattern: If a status matches multiple configs, the more specific one wins.
  * Order of checks: specific status key lookup → usualOrder-based defaults
+ *
+ * Based on Bubble documentation: Guest Proposals page Proposal Status Bar Conditionals
  */
 const STATUS_BANNERS = {
   // Specific status configurations (highest priority)
   'Proposal Submitted by guest - Awaiting Rental Application': {
-    text: 'Proposal Submitted!\nComplete your Rental Application to continue.',
-    bgColor: '#EBF5FF',
-    borderColor: '#3B82F6',
-    textColor: '#1D4ED8'
+    text: 'Please complete your rental application.\nThe host will be able to act on your proposal only after your application is submitted.',
+    bgColor: '#FBECEC',
+    borderColor: '#CC0000',
+    textColor: '#CC0000'
+  },
+  // Suggested proposals by Split Lease agent
+  'Proposal Submitted for guest by Split Lease - Awaiting Rental Application': {
+    type: 'suggested',
+    text: '💡 Suggested Proposal\nThis proposal was suggested by a Split Lease Agent on your behalf.',
+    bgColor: '#F3E8FF',
+    borderColor: '#4B0082',
+    textColor: '#4B0082'
+  },
+  'Proposal Submitted for guest by Split Lease - Pending Confirmation': {
+    type: 'suggested',
+    text: '💡 Suggested Proposal\nThis proposal was suggested by a Split Lease Agent on your behalf.',
+    bgColor: '#F3E8FF',
+    borderColor: '#4B0082',
+    textColor: '#4B0082'
   },
   'Rental Application Submitted': {
     text: 'Application Submitted!\nAwaiting host review.',
@@ -121,10 +138,13 @@ const STATUS_BANNERS = {
     borderColor: '#F59E0B',
     textColor: '#92400E'
   },
+  // usualOrder >= 3: Accepted states - text varies based on counteroffer
   'Proposal or Counteroffer Accepted / Drafting Lease Documents': {
+    type: 'accepted',
     text: 'Proposal Accepted!\nSplit Lease is Drafting Lease Documents',
+    // Alternative text when counteroffer: 'Host terms Accepted!\nLease Documents being prepared.'
     bgColor: '#E1FFE1',
-    borderColor: '#1BA54E',
+    borderColor: '#1E561A',
     textColor: '#1BA54E'
   },
   'Reviewing Documents': {
@@ -134,21 +154,34 @@ const STATUS_BANNERS = {
     textColor: '#1D4ED8'
   },
   'Lease Documents Sent for Review': {
-    text: 'Lease Documents Sent!\nPlease review and sign.',
+    text: 'Lease Documents Draft prepared.\nPlease review and comment.',
     bgColor: '#E1FFE1',
-    borderColor: '#1BA54E',
+    borderColor: '#1E561A',
     textColor: '#1BA54E'
   },
+  'Lease Documents Sent for Signatures': {
+    text: 'Check your email for legally submitted documents.',
+    bgColor: '#E1FFE1',
+    borderColor: '#1E561A',
+    textColor: '#1BA54E'
+  },
+  'Lease Documents Signed / Awaiting Initial payment': {
+    text: 'Lease Documents signed.\nSubmit payment to activate your lease.',
+    bgColor: '#E1FFE1',
+    borderColor: '#1E561A',
+    textColor: '#1BA54E'
+  },
+  // Legacy key format
   'Lease Signed / Awaiting Initial Payment': {
     text: 'Lease Signed!\nSubmit initial payment to activate.',
     bgColor: '#E1FFE1',
-    borderColor: '#1BA54E',
+    borderColor: '#1E561A',
     textColor: '#1BA54E'
   },
   'Initial Payment Submitted / Lease activated': {
-    text: 'Congratulations!\nYour lease is now active.',
+    text: 'Your lease agreement is now officially signed.\nFor details, please visit the lease section of your account.',
     bgColor: '#E1FFE1',
-    borderColor: '#1BA54E',
+    borderColor: '#1E561A',
     textColor: '#1BA54E'
   },
   // Terminal states
@@ -156,19 +189,19 @@ const STATUS_BANNERS = {
     type: 'cancelled',
     bgColor: '#FBECEC',
     borderColor: '#D34337',
-    textColor: '#D34337'
+    textColor: '#CC0000'
   },
   'Proposal Cancelled by Guest': {
-    text: 'You cancelled this proposal.',
+    type: 'cancelled_by_guest',
     bgColor: '#F3F4F6',
     borderColor: '#9CA3AF',
     textColor: '#6B7280'
   },
   'Proposal Rejected by Host': {
-    text: 'This proposal was declined by the host.',
+    type: 'rejected',
     bgColor: '#FBECEC',
     borderColor: '#D34337',
-    textColor: '#D34337'
+    textColor: '#CC0000'
   },
   'Expired': {
     text: 'This proposal has expired.',
@@ -194,24 +227,50 @@ function getDefaultBannerConfig(status, usualOrder) {
   return null;
 }
 
-function StatusBanner({ status, cancelReason }) {
+function StatusBanner({ status, cancelReason, isCounteroffer }) {
+  // Normalize status for lookup (handle trailing spaces from Bubble)
+  const normalizedStatus = typeof status === 'string' ? status.trim() : status;
+
   // Check if banner should be shown based on usualOrder >= 3 OR specific status
-  if (!shouldShowStatusBanner(status)) return null;
+  if (!shouldShowStatusBanner(normalizedStatus)) return null;
 
   // Get specific config or fall back to default
-  let config = STATUS_BANNERS[status];
+  let config = STATUS_BANNERS[normalizedStatus];
   if (!config) {
-    const usualOrder = getUsualOrder(status);
-    config = getDefaultBannerConfig(status, usualOrder);
+    const usualOrder = getUsualOrder(normalizedStatus);
+    config = getDefaultBannerConfig(normalizedStatus, usualOrder);
   }
 
   if (!config) return null;
 
   let displayText = config.text;
-  if (config.type === 'cancelled') {
-    // Hide banner entirely if no reason is provided for Split Lease cancellation
-    if (!cancelReason) return null;
-    displayText = `Proposal Cancelled by Split Lease\nReason: ${cancelReason}`;
+
+  // Handle different banner types
+  switch (config.type) {
+    case 'cancelled':
+      // Hide banner entirely if no reason is provided for Split Lease cancellation
+      if (!cancelReason) return null;
+      displayText = `Proposal Cancelled by Split Lease\nReason: ${cancelReason}`;
+      break;
+    case 'cancelled_by_guest':
+      displayText = cancelReason
+        ? `Proposal Cancelled!\nReason: ${cancelReason}`
+        : 'You cancelled this proposal.';
+      break;
+    case 'rejected':
+      displayText = cancelReason
+        ? `Proposal Cancelled!\nReason: ${cancelReason}`
+        : 'This proposal was declined by the host.';
+      break;
+    case 'accepted':
+      // Show different text based on whether counteroffer happened
+      displayText = isCounteroffer
+        ? 'Host terms Accepted!\nLease Documents being prepared.'
+        : config.text;
+      break;
+    default:
+      // Use the default text from config
+      break;
   }
 
   return (
@@ -256,22 +315,25 @@ function getStageLabels(status) {
 
   if (!status) return baseLabels;
 
+  // Normalize status for comparison
+  const normalizedStatus = typeof status === 'string' ? status.trim() : status;
+
   // Customize based on status
-  if (status.includes('Accepted') || status.includes('Drafting')) {
+  if (normalizedStatus.includes('Accepted') || normalizedStatus.includes('Drafting')) {
     baseLabels[2] = 'Host Review Complete';
     baseLabels[3] = 'Drafting Lease Docs';
   }
 
-  if (status.includes('Counteroffer')) {
+  if (normalizedStatus.includes('Counteroffer')) {
     baseLabels[2] = 'Counteroffer Pending';
   }
 
-  if (status.includes('Lease Documents Sent')) {
+  if (normalizedStatus.includes('Lease Documents Sent')) {
     baseLabels[2] = 'Host Review Complete';
     baseLabels[3] = 'Docs Reviewed';
   }
 
-  if (status.includes('Payment Submitted') || status.includes('activated')) {
+  if (normalizedStatus.includes('Payment Submitted') || normalizedStatus.includes('activated')) {
     baseLabels[2] = 'Host Review Complete';
     baseLabels[3] = 'Docs Reviewed';
     baseLabels[4] = 'Lease Signed';
@@ -290,52 +352,150 @@ const PROGRESS_STAGES = [
 ];
 
 /**
- * Color map for progress tracker based on status color
+ * Color constants for progress tracker
+ * Based on Bubble documentation: Guest Proposals page Progress Bar Status Conditionals
  */
 const PROGRESS_COLORS = {
-  blue: '#3B82F6',
-  green: '#10B981',
-  yellow: '#F59E0B',
-  red: '#DB2E2E',
-  gray: '#9CA3AF',
-  purple: '#6D31C2'
+  purple: '#6D31C2',    // Completed stage
+  green: '#1F8E16',     // Current/Active stage (action needed)
+  red: '#DB2E2E',       // Cancelled/Rejected
+  lightPurple: '#B6B7E9', // Pending/Waiting state
+  gray: '#DEDEDE',      // Inactive/Future stage
+  labelGray: '#9CA3AF'  // Inactive label color
 };
 
-function InlineProgressTracker({ currentStageIndex = 0, statusColor = 'blue', stageLabels = null, isTerminal = false }) {
-  // Use purple for accepted proposals, red for terminal/cancelled, otherwise use status color
-  let activeColor = PROGRESS_COLORS[statusColor] || PROGRESS_COLORS.blue;
-
-  // Special color logic matching Bubble:
-  // - Purple for accepted/in-progress proposals
-  // - Red for cancelled/rejected proposals
-  // - Gray for inactive stages
-  if (statusColor === 'green') {
-    activeColor = PROGRESS_COLORS.purple; // Purple for accepted proposals
-  }
+/**
+ * Per-stage color calculation based on Bubble documentation
+ * Each stage has specific conditions for being green (active), purple (completed), or red (terminal)
+ *
+ * @param {number} stageIndex - 0-indexed stage number
+ * @param {string} status - Proposal status
+ * @param {number} usualOrder - The usual order from status config
+ * @param {boolean} isTerminal - Whether proposal is cancelled/rejected
+ * @param {Object} proposal - Full proposal object for additional field checks
+ * @returns {string} Hex color for the stage
+ */
+function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}) {
+  // Terminal statuses: ALL stages turn red
   if (isTerminal) {
-    activeColor = PROGRESS_COLORS.red;
+    return PROGRESS_COLORS.red;
   }
 
+  const normalizedStatus = typeof status === 'string' ? status.trim() : status;
+  const hasRentalApp = proposal['rental application'];
+  const guestDocsFinalized = proposal['guest documents review finalized?'];
+
+  // Stage 1: Proposal Submitted - Always purple (completed) once proposal exists
+  if (stageIndex === 0) {
+    return PROGRESS_COLORS.purple;
+  }
+
+  // Stage 2: Rental App Submitted
+  if (stageIndex === 1) {
+    // Green when awaiting rental app
+    if (!hasRentalApp ||
+        normalizedStatus === 'Proposal Submitted by guest - Awaiting Rental Application' ||
+        normalizedStatus === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application' ||
+        normalizedStatus === 'Proposal Submitted for guest by Split Lease - Pending Confirmation') {
+      return PROGRESS_COLORS.green;
+    }
+    // Purple when past this stage
+    if (usualOrder >= 1) {
+      return PROGRESS_COLORS.purple;
+    }
+    return PROGRESS_COLORS.gray;
+  }
+
+  // Stage 3: Host Review
+  if (stageIndex === 2) {
+    // Green when in host review with rental app submitted
+    if (normalizedStatus === 'Host Review' && hasRentalApp) {
+      return PROGRESS_COLORS.green;
+    }
+    // Green when counteroffer awaiting review
+    if (normalizedStatus === 'Host Counteroffer Submitted / Awaiting Guest Review') {
+      return PROGRESS_COLORS.green;
+    }
+    // Purple when past this stage
+    if (usualOrder >= 3) {
+      return PROGRESS_COLORS.purple;
+    }
+    return PROGRESS_COLORS.gray;
+  }
+
+  // Stage 4: Review Documents
+  if (stageIndex === 3) {
+    // Green when lease documents sent for review
+    if (normalizedStatus === 'Lease Documents Sent for Review') {
+      return PROGRESS_COLORS.green;
+    }
+    // Light purple when guest documents review finalized (waiting state)
+    if (guestDocsFinalized) {
+      return PROGRESS_COLORS.lightPurple;
+    }
+    // Purple when past this stage
+    if (usualOrder >= 5) {
+      return PROGRESS_COLORS.purple;
+    }
+    return PROGRESS_COLORS.gray;
+  }
+
+  // Stage 5: Lease Documents
+  if (stageIndex === 4) {
+    // Green when sent for signatures
+    if (normalizedStatus === 'Lease Documents Sent for Signatures') {
+      return PROGRESS_COLORS.green;
+    }
+    // Purple when past this stage
+    if (usualOrder >= 6) {
+      return PROGRESS_COLORS.purple;
+    }
+    return PROGRESS_COLORS.gray;
+  }
+
+  // Stage 6: Initial Payment
+  if (stageIndex === 5) {
+    // Green when awaiting initial payment
+    if (normalizedStatus === 'Lease Documents Signed / Awaiting Initial payment' ||
+        normalizedStatus === 'Lease Signed / Awaiting Initial Payment') {
+      return PROGRESS_COLORS.green;
+    }
+    // Purple when lease activated
+    if (normalizedStatus === 'Initial Payment Submitted / Lease activated') {
+      return PROGRESS_COLORS.purple;
+    }
+    return PROGRESS_COLORS.gray;
+  }
+
+  return PROGRESS_COLORS.gray;
+}
+
+function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, stageLabels = null, proposal = {} }) {
   const labels = stageLabels || PROGRESS_STAGES.map(s => s.label);
 
   return (
     <div className="inline-progress-tracker">
       <div className="progress-line-container">
         {PROGRESS_STAGES.map((stage, index) => {
-          const isActive = index <= currentStageIndex;
+          const stageColor = getStageColor(index, status, usualOrder, isTerminal, proposal);
+          const prevStageColor = index > 0 ? getStageColor(index - 1, status, usualOrder, isTerminal, proposal) : null;
+
+          // Connector color: use the color of the stage it leads to if completed, otherwise gray
+          const connectorColor = stageColor !== PROGRESS_COLORS.gray ? stageColor : PROGRESS_COLORS.gray;
+
           return (
             <div key={stage.id} className="progress-node-wrapper">
               {/* Connector line before node (except first) */}
               {index > 0 && (
                 <div
                   className="progress-connector"
-                  style={{ backgroundColor: isActive ? activeColor : '#DEDEDE' }}
+                  style={{ backgroundColor: connectorColor }}
                 />
               )}
               {/* Node circle */}
               <div
                 className="progress-node"
-                style={{ backgroundColor: isActive ? activeColor : '#DEDEDE' }}
+                style={{ backgroundColor: stageColor }}
               />
             </div>
           );
@@ -343,12 +503,14 @@ function InlineProgressTracker({ currentStageIndex = 0, statusColor = 'blue', st
       </div>
       <div className="progress-labels">
         {PROGRESS_STAGES.map((stage, index) => {
-          const isActive = index <= currentStageIndex;
+          const stageColor = getStageColor(index, status, usualOrder, isTerminal, proposal);
+          const labelColor = stageColor !== PROGRESS_COLORS.gray ? stageColor : PROGRESS_COLORS.labelGray;
+
           return (
             <div
               key={stage.id}
               className="progress-label"
-              style={{ color: isActive ? activeColor : '#9CA3AF' }}
+              style={{ color: labelColor }}
             >
               {labels[index] || stage.label}
             </div>
@@ -491,7 +653,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   return (
     <div className="proposal-card-wrapper">
       {/* Status Banner - shows for accepted/counteroffer/cancelled states */}
-      <StatusBanner status={status} cancelReason={cancelReason} />
+      <StatusBanner status={status} cancelReason={cancelReason} isCounteroffer={isCounteroffer} />
 
       <div className="proposal-card-v2">
         {/* Main two-column content */}
@@ -680,10 +842,11 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
         {/* Progress tracker with dynamic stage, colors, and labels */}
         <InlineProgressTracker
-          currentStageIndex={currentStageIndex}
-          statusColor={statusColor}
+          status={status}
+          usualOrder={currentStatusConfig?.usualOrder || 0}
           stageLabels={stageLabels}
           isTerminal={isTerminal}
+          proposal={proposal}
         />
       </div>
     </div>

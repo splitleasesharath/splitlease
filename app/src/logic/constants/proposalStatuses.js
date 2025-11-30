@@ -74,6 +74,28 @@ export const PROPOSAL_STATUSES = {
     actions: ['submit_rental_app', 'cancel_proposal', 'request_vm', 'send_message']
   },
 
+  // Suggested proposal by Split Lease agent - awaiting rental application
+  SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP: {
+    key: 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application',
+    color: 'purple',
+    label: 'Suggested Proposal - Submit Rental App',
+    stage: 1,
+    usualOrder: 3,
+    isSuggestedBySL: true,
+    actions: ['submit_rental_app', 'cancel_proposal', 'request_vm', 'send_message']
+  },
+
+  // Suggested proposal by Split Lease agent - pending confirmation
+  SUGGESTED_PROPOSAL_PENDING_CONFIRMATION: {
+    key: 'Proposal Submitted for guest by Split Lease - Pending Confirmation',
+    color: 'purple',
+    label: 'Suggested Proposal - Pending Confirmation',
+    stage: 1,
+    usualOrder: 3,
+    isSuggestedBySL: true,
+    actions: ['confirm_proposal', 'cancel_proposal', 'request_vm', 'send_message']
+  },
+
   PENDING_CONFIRMATION: {
     key: 'Pending Confirmation',
     color: 'blue',
@@ -128,16 +150,37 @@ export const PROPOSAL_STATUSES = {
     key: 'Lease Documents Sent for Review',
     color: 'blue',
     label: 'Review Lease Documents',
-    stage: 5,
+    stage: 4,
     usualOrder: 6,
     actions: ['review_documents', 'request_vm', 'send_message']
   },
 
+  // Lease documents sent for legal signatures
+  LEASE_DOCUMENTS_SENT_FOR_SIGNATURES: {
+    key: 'Lease Documents Sent for Signatures',
+    color: 'green',
+    label: 'Sign Lease Documents',
+    stage: 5,
+    usualOrder: 6,
+    actions: ['sign_documents', 'request_vm', 'send_message']
+  },
+
+  // Lease signed, awaiting payment (note: lowercase "payment" matches Bubble)
+  LEASE_DOCUMENTS_SIGNED_AWAITING_PAYMENT: {
+    key: 'Lease Documents Signed / Awaiting Initial payment',
+    color: 'green',
+    label: 'Submit Initial Payment',
+    stage: 6,
+    usualOrder: 6,
+    actions: ['submit_payment', 'request_vm', 'send_message']
+  },
+
+  // Legacy key format (keeping for backwards compatibility)
   LEASE_SIGNED_AWAITING_INITIAL_PAYMENT: {
     key: 'Lease Signed / Awaiting Initial Payment',
     color: 'green',
     label: 'Submit Initial Payment',
-    stage: 5,
+    stage: 6,
     usualOrder: 6,
     actions: ['submit_payment', 'request_vm', 'send_message']
   },
@@ -291,6 +334,16 @@ export function isTerminalStatus(statusKey) {
 export function isCompletedStatus(statusKey) {
   const normalizedKey = normalizeStatusKey(statusKey);
   return normalizedKey === PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key;
+}
+
+/**
+ * Check if a status is a suggested proposal (created by Split Lease agent)
+ * @param {string} statusKey - The status string from the database
+ * @returns {boolean} True if proposal was suggested by Split Lease
+ */
+export function isSuggestedProposal(statusKey) {
+  const config = getStatusConfig(statusKey);
+  return config.isSuggestedBySL === true;
 }
 
 /**
