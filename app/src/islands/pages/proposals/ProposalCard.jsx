@@ -17,6 +17,7 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 
 /**
  * Get check-in/out day range text (e.g., "Friday to Monday")
+ * Handles both text day names (from Supabase) and numeric indices (legacy Bubble format)
  */
 function getCheckInOutRange(proposal) {
   const checkInDay = proposal['check in day'];
@@ -24,23 +25,61 @@ function getCheckInOutRange(proposal) {
 
   if (!checkInDay || !checkOutDay) return null;
 
-  // Days are 1-indexed from Bubble (1=Sunday, 7=Saturday)
-  const checkInName = DAY_NAMES[checkInDay - 1] || '';
-  const checkOutName = DAY_NAMES[checkOutDay - 1] || '';
+  // Handle both formats:
+  // - Text format from Supabase: "Monday", "Friday", etc.
+  // - Numeric format from legacy Bubble: 1=Sunday, 7=Saturday
+  let checkInName, checkOutName;
+
+  if (typeof checkInDay === 'string') {
+    // Already a day name string
+    checkInName = checkInDay;
+  } else if (typeof checkInDay === 'number') {
+    // Convert from Bubble 1-indexed to day name
+    checkInName = DAY_NAMES[checkInDay - 1] || '';
+  } else {
+    checkInName = '';
+  }
+
+  if (typeof checkOutDay === 'string') {
+    // Already a day name string
+    checkOutName = checkOutDay;
+  } else if (typeof checkOutDay === 'number') {
+    // Convert from Bubble 1-indexed to day name
+    checkOutName = DAY_NAMES[checkOutDay - 1] || '';
+  } else {
+    checkOutName = '';
+  }
 
   return `${checkInName} to ${checkOutName}`;
 }
 
 /**
  * Get all days with selection status
+ * Handles both text day names (from Supabase) and numeric indices (legacy Bubble format)
  */
 function getAllDaysWithSelection(daysSelected) {
-  const selectedSet = new Set(daysSelected || []);
-  return DAY_LETTERS.map((letter, index) => ({
-    index,
-    letter,
-    selected: selectedSet.has(index + 1) // Convert to Bubble 1-indexed
-  }));
+  const days = daysSelected || [];
+
+  // Determine if we're dealing with text day names or numeric indices
+  const isTextFormat = days.length > 0 && typeof days[0] === 'string';
+
+  if (isTextFormat) {
+    // Text format: ["Monday", "Tuesday", "Wednesday", etc.]
+    const selectedSet = new Set(days);
+    return DAY_LETTERS.map((letter, index) => ({
+      index,
+      letter,
+      selected: selectedSet.has(DAY_NAMES[index])
+    }));
+  } else {
+    // Numeric format: Bubble 1-indexed [2, 3, 4, 5, 6] for Mon-Fri
+    const selectedSet = new Set(days);
+    return DAY_LETTERS.map((letter, index) => ({
+      index,
+      letter,
+      selected: selectedSet.has(index + 1) // Convert to Bubble 1-indexed
+    }));
+  }
 }
 
 // ============================================================================
