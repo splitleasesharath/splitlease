@@ -30,11 +30,6 @@
 [CONTENTS]: faq-inquiry.js - Slack webhook integration for FAQ inquiries
 [ENDPOINT]: `/api/*`
 
-### guest-proposals/
-[INTENT]: Dynamic routing for guest proposal pages
-[CONTENTS]: [id].js - Serves guest-proposals.html for any user ID
-[ENDPOINT]: `/guest-proposals/[id]`
-
 ### view-split-lease/
 [INTENT]: Dynamic routing for split lease detail pages
 [ENDPOINT]: `/view-split-lease/[id]`
@@ -84,7 +79,6 @@ Set in Cloudflare Pages Dashboard:
 | File | URL Pattern |
 |------|-------------|
 | `api/faq-inquiry.js` | `/api/faq-inquiry` |
-| `guest-proposals/[id].js` | `/guest-proposals/*` |
 | `view-split-lease/[id].js` | `/view-split-lease/*` |
 
 ---

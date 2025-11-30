@@ -812,14 +812,13 @@ export async function validateTokenAndFetchUser() {
  * Check if current page is a protected page requiring authentication
  * Protected pages redirect to home if user is not logged in
  *
- * Handles both clean URLs (/guest-proposals) and .html URLs (/guest-proposals.html)
+ * Handles both clean URLs (/account-profile) and .html URLs (/account-profile.html)
  * by normalizing the path before comparison
  *
  * @returns {boolean} True if current page requires authentication
  */
 export function isProtectedPage() {
   const protectedPaths = [
-    '/guest-proposals',
     '/account-profile',
     '/host-dashboard'
   ];
