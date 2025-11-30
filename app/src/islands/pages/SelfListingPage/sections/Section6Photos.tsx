@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import type { Photos, PhotoData } from '../types/listing.types';
 
 interface Section6Props {
@@ -13,6 +13,11 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    console.log('📸 Section6Photos mounted');
+    console.log('📸 fileInputRef on mount:', fileInputRef.current);
+  }, []);
 
   const handleUploadClick = () => {
     console.log('📸 Upload button clicked');
