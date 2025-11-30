@@ -625,6 +625,17 @@
   background-color: #9CA3AF;
 }
 
+/* Virtual Meeting Declined - Red text, clickable */
+.btn-vm-declined {
+  background-color: #D1D5DB;
+  color: #DB2E2E;
+  font-weight: bold;
+}
+
+.btn-vm-declined:hover {
+  background-color: #9CA3AF;
+}
+
 /* Remind Split Lease - Green */
 .btn-remind {
   background-color: #39873D;

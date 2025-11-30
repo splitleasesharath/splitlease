@@ -369,12 +369,46 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   // Cancel reason (for cancelled proposals)
   const cancelReason = proposal['Cancelled Reason'] || proposal['reason for cancellation'];
 
-  // Virtual meeting status
-  const virtualMeetingConfirmed = proposal['virtual meeting confirmed '];
-  const requestVirtualMeeting = proposal['request virtual meeting'];
+  // Virtual meeting status - use virtualMeeting object from the fetched data
+  const virtualMeeting = proposal.virtualMeeting;
+  const vmBookedDate = virtualMeeting?.['booked date'];
+  const vmConfirmedBySL = virtualMeeting?.['confirmedBySplitLease'];
+  const vmDeclined = virtualMeeting?.['meeting declined'];
+  const vmRequestedBy = virtualMeeting?.['requested by'];
+
+  // Current user ID (for comparing who requested the VM)
+  const currentUserId = proposal.Guest;
 
   // Get available actions for this status
   const availableActions = getActionsForStatus(status);
+
+  // Determine VM button state based on the full virtual meeting lifecycle
+  const getVmButtonState = () => {
+    // 1. Meeting declined - can request again
+    if (vmDeclined === true) {
+      return { label: 'Virtual Meeting Declined', className: 'btn-vm-declined', disabled: false };
+    }
+    // 2. Meeting confirmed by Split Lease
+    if (vmBookedDate && vmConfirmedBySL === true) {
+      return { label: 'Meeting confirmed', className: 'btn-vm-confirmed', disabled: true };
+    }
+    // 3. Meeting accepted but not yet confirmed
+    if (vmBookedDate) {
+      return { label: 'Virtual Meeting Accepted', className: 'btn-vm-confirmed', disabled: true };
+    }
+    // 4. Current user requested - waiting for response
+    if (vmRequestedBy === currentUserId) {
+      return { label: 'Virtual Meeting Requested', className: 'btn-vm-confirmed', disabled: true };
+    }
+    // 5. Other party requested - can respond
+    if (vmRequestedBy && vmRequestedBy !== currentUserId) {
+      return { label: 'Respond to VM Request', className: 'btn-vm-request', disabled: false };
+    }
+    // 6. Default - can request
+    return { label: 'Request Virtual Meeting', className: 'btn-vm-request', disabled: false };
+  };
+
+  const vmButtonState = getVmButtonState();
 
   return (
     <div className="proposal-card-wrapper">
@@ -517,43 +551,40 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
           {/* Dynamic action buttons based on status */}
           <div className="action-buttons">
-            {/* Virtual Meeting button - show based on status */}
-            {availableActions.includes('request_vm') && (
-              virtualMeetingConfirmed ? (
-                <button className="btn-action-bar btn-vm-confirmed" disabled>
-                  Virtual Meeting Accepted
-                </button>
-              ) : (
-                <button className="btn-action-bar btn-vm-request">
-                  Request Virtual Meeting
-                </button>
-              )
+            {/* Virtual Meeting button - show for non-terminal statuses */}
+            {!isTerminal && (
+              <button
+                className={`btn-action-bar ${vmButtonState.className}`}
+                disabled={vmButtonState.disabled}
+              >
+                {vmButtonState.label}
+              </button>
             )}
 
-            {/* Remind Split Lease - show for accepted/drafting status */}
-            {status?.includes('Drafting') && (
+            {/* Remind Split Lease - show for drafting or host review status */}
+            {(status?.includes('Drafting') || status?.includes('Host Review')) && (
               <button className="btn-action-bar btn-remind">
                 Remind Split Lease
               </button>
             )}
 
-            {/* See Details - show for counteroffers */}
-            {availableActions.includes('compare_terms') && (
+            {/* See Details - show for all active (non-terminal) proposals */}
+            {!isTerminal && (
               <button className="btn-action-bar btn-details">
                 See Details
               </button>
             )}
 
-            {/* Cancel/Delete button */}
+            {/* Cancel/Delete button - show for all proposals */}
             {isTerminal ? (
               <button className="btn-action-bar btn-delete-proposal">
                 Delete Proposal
               </button>
-            ) : availableActions.includes('cancel_proposal') ? (
+            ) : (
               <button className="btn-action-bar btn-cancel-proposal">
                 Cancel Proposal
               </button>
-            ) : null}
+            )}
           </div>
         </div>
 
