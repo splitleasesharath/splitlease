@@ -72,7 +72,7 @@ function ListingSection({ listing }) {
         </div>
         <div className="listing-actions">
           <a
-            href={`/view-split-lease?listingId=${listing._id}`}
+            href={`/view-split-lease/${listing._id}`}
             className="btn btn-secondary"
             target="_blank"
             rel="noopener noreferrer"
