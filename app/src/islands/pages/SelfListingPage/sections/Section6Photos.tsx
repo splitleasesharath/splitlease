@@ -14,8 +14,20 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
+  const handleUploadClick = () => {
+    console.log('📸 Upload button clicked');
+    console.log('📸 fileInputRef.current:', fileInputRef.current);
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    } else {
+      console.error('❌ File input ref is null');
+    }
+  };
+
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('📸 handleFileUpload triggered');
     const files = event.target.files;
+    console.log('📸 Files selected:', files?.length);
     if (!files) return;
 
     const newPhotos: PhotoData[] = [];
@@ -153,7 +165,7 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
           <button
             type="button"
             className="btn-upload"
-            onClick={() => fileInputRef.current?.click()}
+            onClick={handleUploadClick}
           >
             Upload Photos
           </button>

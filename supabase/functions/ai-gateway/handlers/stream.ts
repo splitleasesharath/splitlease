@@ -14,7 +14,7 @@ import { getPrompt, loadAllData } from "../prompts/_registry.ts";
 import { interpolate } from "../prompts/_template.ts";
 
 interface HandlerContext {
-  user: User;
+  user: User | null;
   serviceClient: SupabaseClient;
   request: AIGatewayRequest;
 }
