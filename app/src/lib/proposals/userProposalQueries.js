@@ -21,6 +21,7 @@ import { getUserIdFromPath, getProposalIdFromQuery } from './urlParser.js';
  * @returns {Promise<Object>} User object with Proposals List
  */
 export async function fetchUserWithProposalList(userId) {
+  // Use .maybeSingle() instead of .single() to avoid 406 error when no rows found
   const { data, error } = await supabase
     .from('user')
     .select(`
@@ -33,7 +34,7 @@ export async function fetchUserWithProposalList(userId) {
       "Proposals List"
     `)
     .eq('_id', userId)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('fetchUserWithProposalList: Error fetching user:', error);
@@ -41,7 +42,8 @@ export async function fetchUserWithProposalList(userId) {
   }
 
   if (!data) {
-    throw new Error(`User with ID ${userId} not found`);
+    console.error('fetchUserWithProposalList: User not found with ID:', userId);
+    throw new Error(`User with ID ${userId} not found. Please check the URL.`);
   }
 
   console.log('fetchUserWithProposalList: User fetched:', data['Name - First'] || data['Name - Full']);
