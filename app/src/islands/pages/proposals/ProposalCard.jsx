@@ -17,7 +17,7 @@
 
 import { useState } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
-import { getStatusConfig, getActionsForStatus, isTerminalStatus } from '../../../logic/constants/proposalStatuses.js';
+import { getStatusConfig, getActionsForStatus, isTerminalStatus, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -96,13 +96,24 @@ function getAllDaysWithSelection(daysSelected) {
 
 /**
  * Status banner configurations for different proposal states
+ * Banner is shown when usualOrder >= 3 OR status is "Proposal Submitted by guest - Awaiting Rental Application"
+ *
+ * Cascading Override Pattern: If a status matches multiple configs, the more specific one wins.
+ * Order of checks: specific status key lookup → usualOrder-based defaults
  */
 const STATUS_BANNERS = {
-  'Proposal or Counteroffer Accepted / Drafting Lease Documents': {
-    text: 'Proposal Accepted!\nSplit Lease is Drafting Lease Documents',
-    bgColor: '#E1FFE1',
-    borderColor: '#1BA54E',
-    textColor: '#1BA54E'
+  // Specific status configurations (highest priority)
+  'Proposal Submitted by guest - Awaiting Rental Application': {
+    text: 'Proposal Submitted!\nComplete your Rental Application to continue.',
+    bgColor: '#EBF5FF',
+    borderColor: '#3B82F6',
+    textColor: '#1D4ED8'
+  },
+  'Rental Application Submitted': {
+    text: 'Application Submitted!\nAwaiting host review.',
+    bgColor: '#EBF5FF',
+    borderColor: '#3B82F6',
+    textColor: '#1D4ED8'
   },
   'Host Counteroffer Submitted / Awaiting Guest Review': {
     text: 'Host has submitted a counteroffer.\nReview the new terms below.',
@@ -110,6 +121,37 @@ const STATUS_BANNERS = {
     borderColor: '#F59E0B',
     textColor: '#92400E'
   },
+  'Proposal or Counteroffer Accepted / Drafting Lease Documents': {
+    text: 'Proposal Accepted!\nSplit Lease is Drafting Lease Documents',
+    bgColor: '#E1FFE1',
+    borderColor: '#1BA54E',
+    textColor: '#1BA54E'
+  },
+  'Reviewing Documents': {
+    text: 'Documents Ready for Review',
+    bgColor: '#EBF5FF',
+    borderColor: '#3B82F6',
+    textColor: '#1D4ED8'
+  },
+  'Lease Documents Sent for Review': {
+    text: 'Lease Documents Sent!\nPlease review and sign.',
+    bgColor: '#E1FFE1',
+    borderColor: '#1BA54E',
+    textColor: '#1BA54E'
+  },
+  'Lease Signed / Awaiting Initial Payment': {
+    text: 'Lease Signed!\nSubmit initial payment to activate.',
+    bgColor: '#E1FFE1',
+    borderColor: '#1BA54E',
+    textColor: '#1BA54E'
+  },
+  'Initial Payment Submitted / Lease activated': {
+    text: 'Congratulations!\nYour lease is now active.',
+    bgColor: '#E1FFE1',
+    borderColor: '#1BA54E',
+    textColor: '#1BA54E'
+  },
+  // Terminal states
   'Proposal Cancelled by Split Lease': {
     type: 'cancelled',
     bgColor: '#FBECEC',
@@ -127,11 +169,42 @@ const STATUS_BANNERS = {
     bgColor: '#FBECEC',
     borderColor: '#D34337',
     textColor: '#D34337'
+  },
+  'Expired': {
+    text: 'This proposal has expired.',
+    bgColor: '#F3F4F6',
+    borderColor: '#9CA3AF',
+    textColor: '#6B7280'
   }
 };
 
+/**
+ * Default banner config based on usualOrder (fallback when no specific config)
+ */
+function getDefaultBannerConfig(status, usualOrder) {
+  // Default blue banner for active statuses with usualOrder >= 3
+  if (usualOrder >= 3 && usualOrder < 99) {
+    return {
+      text: status,
+      bgColor: '#EBF5FF',
+      borderColor: '#3B82F6',
+      textColor: '#1D4ED8'
+    };
+  }
+  return null;
+}
+
 function StatusBanner({ status, cancelReason }) {
-  const config = STATUS_BANNERS[status];
+  // Check if banner should be shown based on usualOrder >= 3 OR specific status
+  if (!shouldShowStatusBanner(status)) return null;
+
+  // Get specific config or fall back to default
+  let config = STATUS_BANNERS[status];
+  if (!config) {
+    const usualOrder = getUsualOrder(status);
+    config = getDefaultBannerConfig(status, usualOrder);
+  }
+
   if (!config) return null;
 
   let displayText = config.text;
