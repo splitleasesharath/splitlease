@@ -33,23 +33,6 @@ const styles = {
     padding: '20px',
     marginBottom: '20px'
   },
-  closeButton: {
-    position: 'absolute',
-    top: '10px',
-    right: '10px',
-    width: '20px',
-    height: '20px',
-    background: 'var(--color-primary, #6D31C2)',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '14px',
-    fontWeight: 'bold'
-  },
   hostSection: {
     display: 'flex',
     gap: '20px',
@@ -252,11 +235,6 @@ export default function HostProfileModal({ host, listing, onClose }) {
   return (
     <div style={styles.overlay} onClick={onClose}>
       <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-        {/* Close X button */}
-        <button style={styles.closeButton} onClick={onClose}>
-          ×
-        </button>
-
         {/* Host section with photo and verification */}
         <div style={styles.hostSection}>
           {/* Host Photo */}
