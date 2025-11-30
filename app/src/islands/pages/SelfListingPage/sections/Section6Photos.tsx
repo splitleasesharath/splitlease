@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef } from 'react';
 import type { Photos, PhotoData } from '../types/listing.types';
 
 interface Section6Props {
@@ -14,36 +14,8 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Scroll to first error field
-  const scrollToFirstError = useCallback((errorKeys: string[]) => {
-    if (errorKeys.length === 0) return;
-    const firstErrorKey = errorKeys[0];
-    const element = document.getElementById(firstErrorKey);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      element.focus();
-    }
-  }, []);
-
-  useEffect(() => {
-    console.log('📸 Section6Photos mounted');
-    console.log('📸 fileInputRef on mount:', fileInputRef.current);
-  }, []);
-
-  const handleUploadClick = () => {
-    console.log('📸 Upload button clicked');
-    console.log('📸 fileInputRef.current:', fileInputRef.current);
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    } else {
-      console.error('❌ File input ref is null');
-    }
-  };
-
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    console.log('📸 handleFileUpload triggered');
     const files = event.target.files;
-    console.log('📸 Files selected:', files?.length);
     if (!files) return;
 
     const newPhotos: PhotoData[] = [];
@@ -181,13 +153,13 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
           accept="image/*"
           multiple
           onChange={handleFileUpload}
+          style={{ display: 'none' }}
         />
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'stretch' }}>
           <label
             htmlFor="photo-upload-input"
             className="btn-upload"
             style={{ cursor: 'pointer' }}
-            onClick={() => console.log('📸 Label clicked!')}
           >
             Upload Photos
           </label>
