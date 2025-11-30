@@ -151,7 +151,16 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const hostPhoto = host?.['Profile Photo'];
 
   // Schedule info
-  const daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
+  // Handle double-encoded JSONB: "Days Selected" may come as a JSON string that needs parsing
+  let daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
+  if (typeof daysSelected === 'string') {
+    try {
+      daysSelected = JSON.parse(daysSelected);
+    } catch (e) {
+      console.warn('ProposalCard: Failed to parse Days Selected:', e);
+      daysSelected = [];
+    }
+  }
   const allDays = getAllDaysWithSelection(daysSelected);
   const nightsPerWeek = proposal['nights per week (num)'] || daysSelected.length;
   const reservationWeeks = proposal['Reservation Span (Weeks)'] || proposal['hc reservation span (weeks)'] || 4;
