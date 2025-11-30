@@ -800,7 +800,9 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 <s>Total {formatPrice(originalTotalPrice)}</s>
               </span>
             )}
-            <span className="pricing-total">{formatPrice(totalPrice)} in total | Maintenance Fee: {formatPrice(cleaningFee)} | Damage deposit {formatPrice(damageDeposit)}</span>
+            <span className="pricing-total">Total {formatPrice(totalPrice)}</span>
+            <span className="pricing-fee">{cleaningFee > 0 ? `Maintenance fee ${formatPrice(cleaningFee)}` : 'No maintenance fee'}</span>
+            <span className="pricing-deposit">Damage deposit {formatPrice(damageDeposit)}</span>
           </div>
           <div className="pricing-nightly">
             {formatPrice(nightlyPrice)} / night
@@ -825,20 +827,13 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
               </a>
             )}
 
-            {/* Remind Split Lease - show for drafting or host review status */}
-            {(status?.includes('Drafting') || status?.includes('Host Review')) && (
-              <button className="btn-action-bar btn-remind">
-                Remind Split Lease
-              </button>
-            )}
-
-            {/* See Details - show for active (non-terminal, non-completed) proposals */}
+            {/* Modify Proposal - show for active (non-terminal, non-completed) proposals */}
             {!isTerminal && !isCompleted && (
               <button
-                className="btn-action-bar btn-details"
+                className="btn-action-bar btn-modify-proposal"
                 onClick={() => setShowProposalDetailsModal(true)}
               >
-                See Details
+                Modify Proposal
               </button>
             )}
 

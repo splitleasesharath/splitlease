@@ -670,14 +670,14 @@
   background-color: #2D6B30;
 }
 
-/* See Details - Purple */
-.btn-details {
-  background-color: #6D31C2;
+/* Modify Proposal - Green (matches Bubble design) */
+.btn-modify-proposal {
+  background-color: #39873D;
   color: white;
 }
 
-.btn-details:hover {
-  background-color: #5A28A0;
+.btn-modify-proposal:hover {
+  background-color: #2D6B30;
 }
 
 /* Cancel Proposal - Red */
