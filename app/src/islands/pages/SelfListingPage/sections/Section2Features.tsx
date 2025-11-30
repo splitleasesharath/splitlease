@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { Features } from '../types/listing.types';
 import { AMENITIES_INSIDE, AMENITIES_OUTSIDE } from '../types/listing.types';
 import { getNeighborhoodByZipCode } from '../utils/neighborhoodService';
 import { getCommonInUnitAmenities, getCommonBuildingAmenities } from '../utils/amenitiesService';
+import { generateListingDescription, extractListingDataFromDraft } from '../../../../lib/aiService';
 
 interface Section2Props {
   data: Features;
@@ -23,6 +24,18 @@ export const Section2Features: React.FC<Section2Props> = ({
   const [isLoadingNeighborhood, setIsLoadingNeighborhood] = useState(false);
   const [isLoadingInUnitAmenities, setIsLoadingInUnitAmenities] = useState(false);
   const [isLoadingBuildingAmenities, setIsLoadingBuildingAmenities] = useState(false);
+  const [isLoadingDescription, setIsLoadingDescription] = useState(false);
+
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  }, []);
 
   const handleChange = (field: keyof Features, value: any) => {
     onChange({ ...data, [field]: value });
@@ -79,16 +92,39 @@ export const Section2Features: React.FC<Section2Props> = ({
     }
   };
 
-  const loadTemplate = () => {
-    const template = `Welcome to our comfortable and well-appointed space! This listing offers a great location with easy access to local amenities and transportation.
+  const loadTemplate = async () => {
+    setIsLoadingDescription(true);
 
-The space features modern furnishings and all the essentials you need for a pleasant stay. You'll have access to [list specific areas/amenities].
+    try {
+      // Extract listing data from localStorage draft
+      const listingData = extractListingDataFromDraft();
 
-The neighborhood is [describe neighborhood characteristics - quiet, vibrant, family-friendly, etc.] with [mention nearby attractions, restaurants, shops, or transit].
+      if (!listingData) {
+        alert('Please complete Section 1 (Address) first to generate a description.');
+        return;
+      }
 
-We look forward to hosting you!`;
+      // Add current amenities from this section's data
+      const dataForGeneration = {
+        ...listingData,
+        amenitiesInsideUnit: data.amenitiesInsideUnit,
+        amenitiesOutsideUnit: data.amenitiesOutsideUnit,
+      };
 
-    handleChange('descriptionOfLodging', template);
+      const generatedDescription = await generateListingDescription(dataForGeneration);
+
+      if (generatedDescription) {
+        handleChange('descriptionOfLodging', generatedDescription);
+      } else {
+        alert('Could not generate description. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error generating description:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Error generating description: ${errorMessage}`);
+    } finally {
+      setIsLoadingDescription(false);
+    }
   };
 
   const loadNeighborhoodTemplate = async () => {
@@ -114,20 +150,25 @@ We look forward to hosting you!`;
     }
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: Record<string, string> = {};
+    const errorOrder: string[] = [];
 
     if (!data.descriptionOfLodging || data.descriptionOfLodging.trim().length === 0) {
       newErrors.descriptionOfLodging = 'Description of lodging is required';
+      errorOrder.push('descriptionOfLodging');
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return errorOrder;
   };
 
   const handleNext = () => {
-    if (validateForm()) {
+    const errorKeys = validateForm();
+    if (errorKeys.length === 0) {
       onNext();
+    } else {
+      scrollToFirstError(errorKeys);
     }
   };
 
@@ -205,8 +246,9 @@ We look forward to hosting you!`;
               type="button"
               className="btn-link"
               onClick={loadTemplate}
+              disabled={isLoadingDescription}
             >
-              load template
+              {isLoadingDescription ? 'generating...' : 'load template'}
             </button>
           </div>
           <textarea

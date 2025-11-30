@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import type { Rules, CancellationPolicy, GenderPreference, RentalType } from '../types/listing.types';
 import { HOUSE_RULES } from '../types/listing.types';
 
@@ -19,6 +19,17 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
   const [selectionMode, setSelectionMode] = useState<'individual' | 'range'>('range');
   const [tempSelectedDates, setTempSelectedDates] = useState<Date[]>([]);
   const datePickerRef = useRef<HTMLDivElement>(null);
+
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  }, []);
 
   const handleChange = (field: keyof Rules, value: any) => {
     onChange({ ...data, [field]: value });
@@ -156,24 +167,42 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
     return date >= selectedStartDate && date <= selectedEndDate;
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: Record<string, string> = {};
+    const errorOrder: string[] = [];
 
     if (!data.cancellationPolicy) {
       newErrors.cancellationPolicy = 'Cancellation policy is required';
+      errorOrder.push('cancellationPolicy');
+    }
+
+    if (data.idealMinDuration < 6) {
+      newErrors.idealMinDuration = 'Minimum duration must be at least 6 weeks';
+      errorOrder.push('idealMinDuration');
+    }
+
+    if (data.idealMaxDuration > 52) {
+      newErrors.idealMaxDuration = 'Maximum duration cannot exceed 52 weeks';
+      errorOrder.push('idealMaxDuration');
     }
 
     if (data.idealMinDuration > data.idealMaxDuration) {
       newErrors.idealMaxDuration = 'Maximum duration must be greater than or equal to minimum';
+      if (!errorOrder.includes('idealMaxDuration')) {
+        errorOrder.push('idealMaxDuration');
+      }
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return errorOrder;
   };
 
   const handleNext = () => {
-    if (validateForm()) {
+    const errorKeys = validateForm();
+    if (errorKeys.length === 0) {
       onNext();
+    } else {
+      scrollToFirstError(errorKeys);
     }
   };
 
@@ -288,11 +317,13 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
           <input
             type="number"
             id="idealMinDuration"
-            min="2"
-            max="12"
+            min="6"
+            max="52"
             value={data.idealMinDuration}
-            onChange={(e) => handleChange('idealMinDuration', parseInt(e.target.value))}
+            onChange={(e) => handleChange('idealMinDuration', Math.max(6, Math.min(52, parseInt(e.target.value) || 6)))}
+            className={errors.idealMinDuration ? 'input-error' : ''}
           />
+          {errors.idealMinDuration && <span className="error-message">{errors.idealMinDuration}</span>}
         </div>
 
         <div className="form-group">
@@ -300,10 +331,10 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
           <input
             type="number"
             id="idealMaxDuration"
-            min="2"
-            max="12"
+            min="6"
+            max="52"
             value={data.idealMaxDuration}
-            onChange={(e) => handleChange('idealMaxDuration', parseInt(e.target.value))}
+            onChange={(e) => handleChange('idealMaxDuration', Math.max(6, Math.min(52, parseInt(e.target.value) || 52)))}
             className={errors.idealMaxDuration ? 'input-error' : ''}
           />
           {errors.idealMaxDuration && <span className="error-message">{errors.idealMaxDuration}</span>}

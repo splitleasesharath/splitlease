@@ -112,20 +112,25 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
     setDragOverIndex(null);
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: Record<string, string> = {};
+    const errorOrder: string[] = [];
 
     if (data.photos.length < data.minRequired) {
       newErrors.photos = `Please upload at least ${data.minRequired} photos`;
+      errorOrder.push('photo-upload-input');
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return errorOrder;
   };
 
   const handleNext = () => {
-    if (validateForm()) {
+    const errorKeys = validateForm();
+    if (errorKeys.length === 0) {
       onNext();
+    } else {
+      scrollToFirstError(errorKeys);
     }
   };
 
@@ -143,6 +148,7 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
       <div className="upload-area">
         <input
           ref={fileInputRef}
+          id="photo-upload-input"
           type="file"
           accept="image/*"
           multiple
@@ -150,13 +156,13 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
           style={{ display: 'none' }}
         />
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'stretch' }}>
-          <button
-            type="button"
+          <label
+            htmlFor="photo-upload-input"
             className="btn-upload"
-            onClick={() => fileInputRef.current?.click()}
+            style={{ cursor: 'pointer' }}
           >
             Upload Photos
-          </button>
+          </label>
 
           <button type="button" className="btn-secondary" onClick={openMobileUpload}>
             Do you want to continue on mobile?

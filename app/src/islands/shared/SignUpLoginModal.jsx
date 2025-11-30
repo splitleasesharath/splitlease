@@ -12,6 +12,9 @@
  *     onClose={() => setShowModal(false)}
  *     initialView="login" // or "signup"
  *     onAuthSuccess={(userData) => handleSuccess(userData)}
+ *     defaultUserType="host" // optional: pre-select user type for signup
+ *     showUserTypeSelector={true} // optional: show user type selector in signup
+ *     skipReload={false} // optional: skip page reload after auth (for flows that continue)
  *   />
  */
 
@@ -175,6 +178,40 @@ const styles = {
     cursor: 'pointer',
     padding: '0.25rem',
     lineHeight: 1
+  },
+  userTypeSelector: {
+    display: 'flex',
+    gap: '0.75rem',
+    marginBottom: '1rem'
+  },
+  userTypeOption: {
+    flex: 1,
+    padding: '1rem',
+    border: '2px solid #d1d5db',
+    borderRadius: '8px',
+    backgroundColor: 'white',
+    cursor: 'pointer',
+    textAlign: 'center',
+    transition: 'all 0.15s ease'
+  },
+  userTypeOptionSelected: {
+    borderColor: '#5B21B6',
+    backgroundColor: '#f5f3ff'
+  },
+  userTypeIcon: {
+    fontSize: '1.5rem',
+    marginBottom: '0.5rem'
+  },
+  userTypeLabel: {
+    fontSize: '0.875rem',
+    fontWeight: '600',
+    color: '#374151',
+    margin: 0
+  },
+  userTypeDescription: {
+    fontSize: '0.75rem',
+    color: '#6b7280',
+    margin: '0.25rem 0 0 0'
   }
 };
 
@@ -182,12 +219,21 @@ const styles = {
 // Component
 // ============================================================================
 
+// User type values matching Supabase "Type - User Current" field
+const USER_TYPE_VALUES = {
+  guest: 'A Guest (I would like to rent a space)',
+  host: 'A Host (I have a space available to rent)'
+};
+
 export default function SignUpLoginModal({
   isOpen,
   onClose,
   initialView = 'login',
   onAuthSuccess,
-  disableClose = false
+  disableClose = false,
+  defaultUserType = null,
+  showUserTypeSelector = false,
+  skipReload = false
 }) {
   // View state: 'login' or 'signup'
   const [currentView, setCurrentView] = useState(initialView);
@@ -205,13 +251,17 @@ export default function SignUpLoginModal({
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showSignupRetype, setShowSignupRetype] = useState(false);
 
+  // User type state for signup
+  const [selectedUserType, setSelectedUserType] = useState(defaultUserType || 'guest');
+
   // Reset form state when modal opens/closes or view changes
   useEffect(() => {
     if (isOpen) {
       setCurrentView(initialView);
+      setSelectedUserType(defaultUserType || 'guest');
       resetForms();
     }
-  }, [isOpen, initialView]);
+  }, [isOpen, initialView, defaultUserType]);
 
   const resetForms = useCallback(() => {
     setLoginForm({ email: '', password: '' });
@@ -282,7 +332,9 @@ export default function SignUpLoginModal({
         onAuthSuccess(result);
       }
       onClose();
-      window.location.reload();
+      if (!skipReload) {
+        window.location.reload();
+      }
     } else {
       setLoginError(result.error || 'Login failed. Please try again.');
     }
@@ -294,7 +346,18 @@ export default function SignUpLoginModal({
     setSignupError('');
     setIsSigningUp(true);
 
-    const result = await signupUser(signupForm.email, signupForm.password, signupForm.retype);
+    // Build options with user type if selector is shown or default is provided
+    const signupOptions = {};
+    if (showUserTypeSelector || defaultUserType) {
+      signupOptions.userType = USER_TYPE_VALUES[selectedUserType];
+    }
+
+    const result = await signupUser(
+      signupForm.email,
+      signupForm.password,
+      signupForm.retype,
+      signupOptions
+    );
 
     setIsSigningUp(false);
 
@@ -304,9 +367,11 @@ export default function SignUpLoginModal({
         onAuthSuccess(result);
       }
       onClose();
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      if (!skipReload) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
     } else {
       setSignupError(result.error || 'Signup failed. Please try again.');
     }
@@ -427,6 +492,39 @@ export default function SignUpLoginModal({
             </div>
 
             <form onSubmit={handleSignupSubmit}>
+              {/* User Type Selector */}
+              {showUserTypeSelector && (
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>I am...</label>
+                  <div style={styles.userTypeSelector}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedUserType('guest')}
+                      style={{
+                        ...styles.userTypeOption,
+                        ...(selectedUserType === 'guest' ? styles.userTypeOptionSelected : {})
+                      }}
+                    >
+                      <div style={styles.userTypeIcon}>🏠</div>
+                      <p style={styles.userTypeLabel}>A Guest</p>
+                      <p style={styles.userTypeDescription}>Looking to rent</p>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedUserType('host')}
+                      style={{
+                        ...styles.userTypeOption,
+                        ...(selectedUserType === 'host' ? styles.userTypeOptionSelected : {})
+                      }}
+                    >
+                      <div style={styles.userTypeIcon}>🔑</div>
+                      <p style={styles.userTypeLabel}>A Host</p>
+                      <p style={styles.userTypeDescription}>Listing my space</p>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Email */}
               <div style={styles.formGroup}>
                 <label style={styles.label}>Email</label>
