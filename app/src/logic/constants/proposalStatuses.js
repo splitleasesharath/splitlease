@@ -174,6 +174,16 @@ export const PROPOSAL_STATUSES = {
 };
 
 /**
+ * Normalize status key by trimming whitespace
+ * Database values from Bubble may have trailing spaces
+ * @param {string} statusKey - The raw status string
+ * @returns {string} Trimmed status string
+ */
+function normalizeStatusKey(statusKey) {
+  return typeof statusKey === 'string' ? statusKey.trim() : statusKey;
+}
+
+/**
  * Get status configuration by status key
  * @param {string} statusKey - The status string from the database
  * @returns {Object} Status configuration object with color, label, stage, actions
@@ -190,14 +200,17 @@ export function getStatusConfig(statusKey) {
     };
   }
 
+  // Normalize status key to handle trailing spaces from Bubble data
+  const normalizedKey = normalizeStatusKey(statusKey);
+
   const config = Object.values(PROPOSAL_STATUSES).find(
-    s => s.key === statusKey
+    s => s.key === normalizedKey
   );
 
   return config || {
-    key: statusKey,
+    key: normalizedKey,
     color: 'gray',
-    label: statusKey,
+    label: normalizedKey,
     stage: null,
     usualOrder: 0,
     actions: []
@@ -266,7 +279,8 @@ export function isActiveStatus(statusKey) {
  */
 export function isTerminalStatus(statusKey) {
   const config = getStatusConfig(statusKey);
-  return config.color === 'red' || statusKey.includes('Cancelled') || statusKey.includes('Rejected');
+  const normalizedKey = normalizeStatusKey(statusKey) || '';
+  return config.color === 'red' || normalizedKey.includes('Cancelled') || normalizedKey.includes('Rejected');
 }
 
 /**
@@ -275,7 +289,8 @@ export function isTerminalStatus(statusKey) {
  * @returns {boolean} True if lease is activated
  */
 export function isCompletedStatus(statusKey) {
-  return statusKey === PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key;
+  const normalizedKey = normalizeStatusKey(statusKey);
+  return normalizedKey === PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key;
 }
 
 /**
