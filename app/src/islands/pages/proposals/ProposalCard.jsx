@@ -18,6 +18,7 @@
 import { useState } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
 import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
+import HostProfileModal from '../../modals/HostProfileModal.jsx';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -594,6 +595,9 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   // House rules toggle state
   const [showHouseRules, setShowHouseRules] = useState(false);
 
+  // Host profile modal state
+  const [showHostProfileModal, setShowHostProfileModal] = useState(false);
+
   // Status and progress - derive dynamically from statusConfig
   const status = proposal.Status;
   const currentStatusConfig = statusConfig || getStatusConfig(status);
@@ -771,7 +775,12 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 </div>
               )}
               <div className="host-name-badge">{hostName}</div>
-              <button className="btn-host btn-host-profile">Host Profile</button>
+              <button
+                className="btn-host btn-host-profile"
+                onClick={() => setShowHostProfileModal(true)}
+              >
+                Host Profile
+              </button>
               <button className="btn-host btn-host-message">Send a Message</button>
             </div>
           </div>
@@ -849,6 +858,15 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           proposal={proposal}
         />
       </div>
+
+      {/* Host Profile Modal */}
+      {showHostProfileModal && (
+        <HostProfileModal
+          host={host}
+          listing={listing}
+          onClose={() => setShowHostProfileModal(false)}
+        />
+      )}
     </div>
   );
 }
