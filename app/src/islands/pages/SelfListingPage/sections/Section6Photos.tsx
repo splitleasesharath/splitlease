@@ -181,13 +181,13 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
           accept="image/*"
           multiple
           onChange={handleFileUpload}
-          style={{ display: 'none' }}
         />
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'stretch' }}>
           <label
             htmlFor="photo-upload-input"
             className="btn-upload"
             style={{ cursor: 'pointer' }}
+            onClick={() => console.log('📸 Label clicked!')}
           >
             Upload Photos
           </label>
