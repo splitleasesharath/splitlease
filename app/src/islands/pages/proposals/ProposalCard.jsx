@@ -1,39 +1,34 @@
 /**
  * Proposal Card Component
  *
- * Displays detailed information about a selected proposal including:
- * - Listing details and photo
- * - Host information
- * - Schedule (days selected, nights, duration)
- * - Pricing breakdown
- * - Virtual meeting info (if scheduled)
- * - Action buttons based on status
+ * Displays detailed information about a selected proposal in a two-column layout:
+ * - Left column: Listing details, schedule, duration, move-in info
+ * - Right column: Listing photo with host overlay
+ * - Bottom: Pricing bar and progress tracker
+ *
+ * Design matches Bubble's MyProposals page layout.
  */
 
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
-import { getActionsForStatus } from '../../../logic/constants/proposalStatuses.js';
 
-// Day abbreviations for schedule display
-const DAY_ABBREVS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+// Day abbreviations for schedule display (single letter like Bubble)
+const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
- * Format days selected for display
+ * Get check-in/out day range text (e.g., "Friday to Monday")
  */
-function formatDaysSelected(daysSelected) {
-  if (!daysSelected || !Array.isArray(daysSelected)) {
-    return [];
-  }
+function getCheckInOutRange(proposal) {
+  const checkInDay = proposal['check in day'];
+  const checkOutDay = proposal['check out day'];
 
-  // Days from Bubble are 1-indexed (1=Sunday, 7=Saturday)
-  // Convert to 0-indexed for display
-  return daysSelected.map(day => {
-    const jsIndex = day - 1;
-    return {
-      index: jsIndex,
-      abbrev: DAY_ABBREVS[jsIndex] || '?',
-      selected: true
-    };
-  });
+  if (!checkInDay || !checkOutDay) return null;
+
+  // Days are 1-indexed from Bubble (1=Sunday, 7=Saturday)
+  const checkInName = DAY_NAMES[checkInDay - 1] || '';
+  const checkOutName = DAY_NAMES[checkOutDay - 1] || '';
+
+  return `${checkInName} to ${checkOutName}`;
 }
 
 /**
@@ -41,323 +36,51 @@ function formatDaysSelected(daysSelected) {
  */
 function getAllDaysWithSelection(daysSelected) {
   const selectedSet = new Set(daysSelected || []);
-  return DAY_ABBREVS.map((abbrev, index) => ({
+  return DAY_LETTERS.map((letter, index) => ({
     index,
-    abbrev,
+    letter,
     selected: selectedSet.has(index + 1) // Convert to Bubble 1-indexed
   }));
 }
 
 // ============================================================================
-// SUB-COMPONENTS
+// PROGRESS TRACKER (inline version matching Bubble's horizontal timeline)
 // ============================================================================
 
-function ListingSection({ listing }) {
-  if (!listing) return null;
+const PROGRESS_STAGES = [
+  { id: 1, label: 'Proposal Submitted' },
+  { id: 2, label: 'Rental App Submitted' },
+  { id: 3, label: 'Host Review' },
+  { id: 4, label: 'Review Documents' },
+  { id: 5, label: 'Lease Documents' },
+  { id: 6, label: 'Initial Payment' }
+];
 
-  const photoUrl = listing.featuredPhotoUrl ||
-    (listing['Features - Photos']?.[0]) ||
-    null;
-
-  const location = [listing.boroughName, listing.hoodName]
-    .filter(Boolean)
-    .join(', ') || 'New York';
-
+function InlineProgressTracker({ currentStageIndex = 0 }) {
   return (
-    <div className="proposal-section listing-section">
-      <div className="listing-header">
-        <div>
-          <h3 className="listing-title">{listing.Name || 'Listing'}</h3>
-          <p className="listing-location">{location}</p>
-        </div>
-        <div className="listing-actions">
-          <a
-            href={`/view-split-lease/${listing._id}`}
-            className="btn btn-secondary"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View Listing
-          </a>
-        </div>
-      </div>
-
-      {photoUrl && (
-        <img
-          src={photoUrl}
-          alt={listing.Name || 'Listing photo'}
-          className="listing-photo"
-        />
-      )}
-    </div>
-  );
-}
-
-function HostSection({ host }) {
-  if (!host) return null;
-
-  const name = host['Name - First'] || host['Name - Full'] || 'Host';
-  const photo = host['Profile Photo'];
-
-  return (
-    <div className="proposal-section host-section">
-      <h4>Your Host</h4>
-      <div className="host-card">
-        {photo ? (
-          <img src={photo} alt={name} className="host-photo" />
-        ) : (
-          <div className="host-photo host-photo-placeholder">
-            {name.charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div className="host-info">
-          <div className="host-name">{name}</div>
-          <div className="host-verification">
-            {host['user verified?'] && (
-              <span className="verify-badge">ID Verified</span>
+    <div className="inline-progress-tracker">
+      <div className="progress-line-container">
+        {PROGRESS_STAGES.map((stage, index) => (
+          <div key={stage.id} className="progress-node-wrapper">
+            {/* Connector line before node (except first) */}
+            {index > 0 && (
+              <div className={`progress-connector ${index <= currentStageIndex ? 'active' : ''}`} />
             )}
-            {host['Verify - Phone'] && (
-              <span className="verify-badge">Phone Verified</span>
-            )}
-            {host['Verify - Linked In ID'] && (
-              <span className="verify-badge">LinkedIn</span>
-            )}
-          </div>
-          <div className="host-actions">
-            <button className="btn btn-secondary">
-              Send Message
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ScheduleSection({ proposal }) {
-  const daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
-  const allDays = getAllDaysWithSelection(daysSelected);
-  const nightsPerWeek = proposal['nights per week (num)'] || daysSelected.length;
-  const reservationWeeks = proposal['Reservation Span (Weeks)'] || proposal['hc reservation span (weeks)'] || 4;
-
-  return (
-    <div className="proposal-section schedule-section">
-      <h4>Your Schedule</h4>
-
-      <div className="schedule-days">
-        {allDays.map((day) => (
-          <div
-            key={day.index}
-            className={`day-badge ${day.selected ? 'selected' : 'unselected'}`}
-          >
-            {day.abbrev}
+            {/* Node circle */}
+            <div className={`progress-node ${index <= currentStageIndex ? 'active' : ''}`} />
           </div>
         ))}
       </div>
-
-      <p className="schedule-duration">
-        {nightsPerWeek} nights per week for {reservationWeeks} weeks
-      </p>
-    </div>
-  );
-}
-
-function DatesSection({ proposal }) {
-  const moveInStart = proposal['Move in range start'];
-  const moveInEnd = proposal['Move in range end'];
-  const checkInDay = proposal['check in day'];
-  const checkOutDay = proposal['check out day'];
-
-  return (
-    <div className="proposal-section dates-section">
-      <h4>Move-in Window</h4>
-
-      <div className="date-item">
-        <label>Earliest:</label>
-        <span>{formatDate(moveInStart) || 'Not specified'}</span>
+      <div className="progress-labels">
+        {PROGRESS_STAGES.map((stage, index) => (
+          <div
+            key={stage.id}
+            className={`progress-label ${index <= currentStageIndex ? 'active' : ''}`}
+          >
+            {stage.label}
+          </div>
+        ))}
       </div>
-
-      <div className="date-item">
-        <label>Latest:</label>
-        <span>{formatDate(moveInEnd) || 'Not specified'}</span>
-      </div>
-
-      {checkInDay && (
-        <div className="date-item">
-          <label>Check-in Day:</label>
-          <span>{DAY_ABBREVS[checkInDay - 1] || checkInDay}</span>
-        </div>
-      )}
-
-      {checkOutDay && (
-        <div className="date-item">
-          <label>Check-out Day:</label>
-          <span>{DAY_ABBREVS[checkOutDay - 1] || checkOutDay}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PricingSection({ proposal }) {
-  const isCounteroffer = proposal['counter offer happened'];
-  const nightlyPrice = isCounteroffer
-    ? proposal['hc nightly price']
-    : proposal['proposal nightly price'];
-  const totalPrice = isCounteroffer
-    ? proposal['hc total price']
-    : proposal['Total Price for Reservation (guest)'];
-  const cleaningFee = proposal['cleaning fee'];
-  const damageDeposit = proposal['damage deposit'];
-
-  return (
-    <div className="proposal-section pricing-section">
-      <h4>Pricing</h4>
-
-      <div className="pricing-item">
-        <label>Nightly Rate:</label>
-        <span className="price-value">{formatPrice(nightlyPrice) || '—'}</span>
-      </div>
-
-      {cleaningFee > 0 && (
-        <div className="pricing-item">
-          <label>Cleaning Fee:</label>
-          <span>{formatPrice(cleaningFee)}</span>
-        </div>
-      )}
-
-      {damageDeposit > 0 && (
-        <div className="pricing-item">
-          <label>Security Deposit:</label>
-          <span>{formatPrice(damageDeposit)}</span>
-        </div>
-      )}
-
-      <div className="pricing-item" style={{ borderTop: '2px solid #e5e5e5', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
-        <label><strong>Total:</strong></label>
-        <span className="price-value" style={{ fontSize: '1.25rem' }}>
-          {formatPrice(totalPrice) || '—'}
-        </span>
-      </div>
-
-      {isCounteroffer && (
-        <p style={{ fontSize: '0.875rem', color: '#F59E0B', marginTop: '0.5rem' }}>
-          * Prices reflect host counteroffer
-        </p>
-      )}
-    </div>
-  );
-}
-
-function VirtualMeetingSection({ virtualMeeting }) {
-  if (!virtualMeeting) {
-    return (
-      <div className="proposal-section">
-        <h4>Virtual Meeting</h4>
-        <p style={{ color: '#6B7280' }}>No virtual meeting scheduled yet.</p>
-        <button className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
-          Request Virtual Meeting
-        </button>
-      </div>
-    );
-  }
-
-  const bookedDate = virtualMeeting['booked date'];
-  const meetingLink = virtualMeeting['meeting link'];
-  const isDeclined = virtualMeeting['meeting declined'];
-
-  if (isDeclined) {
-    return (
-      <div className="proposal-section">
-        <h4>Virtual Meeting</h4>
-        <p style={{ color: '#EF4444' }}>Meeting request was declined.</p>
-        <button className="btn btn-secondary" style={{ marginTop: '0.5rem' }}>
-          Request New Meeting
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div className="proposal-section">
-      <h4>Virtual Meeting</h4>
-
-      {bookedDate ? (
-        <div className="virtual-meeting-info">
-          <p><strong>Scheduled:</strong> {formatDate(bookedDate)}</p>
-          {meetingLink && (
-            <a
-              href={meetingLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="meeting-link-button"
-            >
-              Join Meeting
-            </a>
-          )}
-        </div>
-      ) : (
-        <p style={{ color: '#6B7280' }}>Meeting time pending confirmation.</p>
-      )}
-    </div>
-  );
-}
-
-function ActionButtons({ proposal, statusConfig }) {
-  const actions = getActionsForStatus(proposal.Status);
-
-  if (!actions || actions.length === 0) {
-    return null;
-  }
-
-  // Map action identifiers to button config
-  const actionButtons = {
-    submit_rental_app: { label: 'Submit Rental Application', primary: true },
-    cancel_proposal: { label: 'Cancel Proposal', danger: true },
-    request_vm: { label: 'Request Virtual Meeting', secondary: true },
-    send_message: { label: 'Message Host', secondary: true },
-    review_counteroffer: { label: 'Review Counteroffer', primary: true },
-    accept_counteroffer: { label: 'Accept Counteroffer', primary: true },
-    decline_counteroffer: { label: 'Decline', danger: true },
-    submit_payment: { label: 'Submit Payment', primary: true },
-    view_lease: { label: 'View Lease', secondary: true },
-    view_listing: { label: 'View Listing', secondary: true },
-    explore_rentals: { label: 'Browse Rentals', secondary: true }
-  };
-
-  return (
-    <div className="proposal-section action-buttons">
-      {actions.map((actionKey) => {
-        const config = actionButtons[actionKey];
-        if (!config) return null;
-
-        const className = config.primary
-          ? 'btn btn-primary'
-          : config.danger
-          ? 'btn btn-danger'
-          : 'btn btn-secondary';
-
-        return (
-          <button key={actionKey} className={className}>
-            {config.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-function MetadataSection({ proposal }) {
-  return (
-    <div className="proposal-metadata">
-      <p>
-        Proposal ID: {proposal._id?.slice(-8) || '—'}
-        {' | '}
-        Created: {formatDate(proposal['Created Date']) || '—'}
-        {proposal['Modified Date'] && (
-          <> | Updated: {formatDate(proposal['Modified Date'])}</>
-        )}
-      </p>
     </div>
   );
 }
@@ -373,33 +96,147 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
   const listing = proposal.listing;
   const host = listing?.host;
-  const virtualMeeting = proposal.virtualMeeting;
+
+  // Extract data
+  const listingName = listing?.Name || 'Listing';
+  const location = [listing?.hoodName, listing?.boroughName]
+    .filter(Boolean)
+    .join(', ') || 'New York';
+
+  const photoUrl = listing?.featuredPhotoUrl ||
+    (listing?.['Features - Photos']?.[0]) ||
+    null;
+
+  const hostName = host?.['Name - First'] || host?.['Name - Full'] || 'Host';
+  const hostPhoto = host?.['Profile Photo'];
+
+  // Schedule info
+  const daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
+  const allDays = getAllDaysWithSelection(daysSelected);
+  const nightsPerWeek = proposal['nights per week (num)'] || daysSelected.length;
+  const reservationWeeks = proposal['Reservation Span (Weeks)'] || proposal['hc reservation span (weeks)'] || 4;
+  const checkInOutRange = getCheckInOutRange(proposal);
+
+  // Pricing
+  const isCounteroffer = proposal['counter offer happened'];
+  const nightlyPrice = isCounteroffer
+    ? proposal['hc nightly price']
+    : proposal['proposal nightly price'];
+  const totalPrice = isCounteroffer
+    ? proposal['hc total price']
+    : proposal['Total Price for Reservation (guest)'];
+  const cleaningFee = proposal['cleaning fee'] || 0;
+  const damageDeposit = proposal['damage deposit'] || 0;
+
+  // Move-in date
+  const moveInStart = proposal['Move in range start'];
+  const anticipatedMoveIn = formatDate(moveInStart);
+
+  // Check-in/out times
+  const checkInTime = listing?.['Check in time'] || '2:00 pm';
+  const checkOutTime = listing?.['Check Out time'] || '11:00 am';
+
+  // Progress stage (simplified - in real implementation, derive from status)
+  const currentStageIndex = 3; // Example: at "Review Documents" stage
 
   return (
-    <div className="proposal-card">
-      {/* Listing Info */}
-      <ListingSection listing={listing} />
+    <div className="proposal-card-v2">
+      {/* Main two-column content */}
+      <div className="proposal-content-row">
+        {/* Left column - Listing details */}
+        <div className="proposal-left-column">
+          <h3 className="listing-title-v2">{listingName}</h3>
+          <p className="listing-location-v2">{location}</p>
 
-      {/* Host Info */}
-      <HostSection host={host} />
+          {/* Action buttons row */}
+          <div className="listing-actions-row">
+            <a
+              href={`/view-split-lease/${listing?._id}`}
+              className="btn-action btn-primary-v2"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              View Listing
+            </a>
+            <button className="btn-action btn-map">
+              View Map
+            </button>
+          </div>
 
-      {/* Schedule */}
-      <ScheduleSection proposal={proposal} />
+          {/* Schedule info */}
+          <div className="schedule-info-block">
+            {checkInOutRange && (
+              <div className="schedule-text primary">{checkInOutRange}</div>
+            )}
+            <div className="schedule-text">
+              <span className="label">Duration</span> {reservationWeeks} Weeks
+            </div>
+          </div>
 
-      {/* Dates */}
-      <DatesSection proposal={proposal} />
+          {/* Day selector badges */}
+          <div className="day-badges-row">
+            {allDays.map((day) => (
+              <div
+                key={day.index}
+                className={`day-badge-v2 ${day.selected ? 'selected' : ''}`}
+              >
+                {day.letter}
+              </div>
+            ))}
+          </div>
 
-      {/* Pricing */}
-      <PricingSection proposal={proposal} />
+          {/* Check-in/out times */}
+          <div className="checkin-times">
+            Check-in {checkInTime} Check-out {checkOutTime}
+          </div>
 
-      {/* Virtual Meeting */}
-      <VirtualMeetingSection virtualMeeting={virtualMeeting} />
+          {/* Anticipated move-in */}
+          <div className="movein-date">
+            <span className="label">Anticipated Move-in</span> {anticipatedMoveIn || 'TBD'}
+          </div>
 
-      {/* Action Buttons */}
-      <ActionButtons proposal={proposal} statusConfig={statusConfig} />
+          {/* House rules link */}
+          <a href="#" className="house-rules-link">See House Rules</a>
+        </div>
 
-      {/* Metadata */}
-      <MetadataSection proposal={proposal} />
+        {/* Right column - Photo with host overlay */}
+        <div className="proposal-right-column">
+          <div
+            className="listing-photo-container"
+            style={{ backgroundImage: photoUrl ? `url(${photoUrl})` : 'none' }}
+          >
+            {/* Host overlay */}
+            <div className="host-overlay">
+              {hostPhoto ? (
+                <img src={hostPhoto} alt={hostName} className="host-avatar" />
+              ) : (
+                <div className="host-avatar host-avatar-placeholder">
+                  {hostName.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="host-name-badge">{hostName}</div>
+              <button className="btn-host btn-host-profile">Host Profile</button>
+              <button className="btn-host btn-host-message">Send a Message</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pricing bar */}
+      <div className="pricing-bar">
+        <div className="pricing-details">
+          <span className="pricing-total">Total {formatPrice(totalPrice)}</span>
+          <span className="pricing-fee">Maintenance Fee: {formatPrice(cleaningFee)}</span>
+          <span className="pricing-deposit">Damage deposit {formatPrice(damageDeposit)}</span>
+        </div>
+        <div className="pricing-nightly">
+          {formatPrice(nightlyPrice)} / night
+        </div>
+        <button className="btn-delete-proposal">Delete Proposal</button>
+      </div>
+
+      {/* Progress tracker */}
+      <InlineProgressTracker currentStageIndex={currentStageIndex} />
     </div>
   );
 }

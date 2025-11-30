@@ -16,7 +16,7 @@ import Footer from '../shared/Footer.jsx';
 import { useGuestProposalsPageLogic } from './proposals/useGuestProposalsPageLogic.js';
 import ProposalSelector from './proposals/ProposalSelector.jsx';
 import ProposalCard from './proposals/ProposalCard.jsx';
-import ProgressTracker from './proposals/ProgressTracker.jsx';
+// ProgressTracker is now integrated inside ProposalCard
 
 // ============================================================================
 // LOADING STATE COMPONENT
@@ -129,16 +129,7 @@ export default function GuestProposalsPage() {
                 count={proposals.length}
               />
 
-              {/* Progress Tracker */}
-              {currentStage && (
-                <ProgressTracker
-                  stages={formattedStages}
-                  currentStage={currentStage}
-                  statusConfig={statusConfig}
-                />
-              )}
-
-              {/* Proposal Card */}
+              {/* Proposal Card (includes integrated Progress Tracker) */}
               {selectedProposal && (
                 <ProposalCard
                   proposal={selectedProposal}
