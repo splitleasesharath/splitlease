@@ -136,10 +136,9 @@ function StatusBanner({ status, cancelReason }) {
 
   let displayText = config.text;
   if (config.type === 'cancelled') {
-    // Only show reason line if there's an actual reason provided
-    displayText = cancelReason
-      ? `Proposal Cancelled by Split Lease\nReason: ${cancelReason}`
-      : 'Proposal Cancelled by Split Lease';
+    // Hide banner entirely if no reason is provided for Split Lease cancellation
+    if (!cancelReason) return null;
+    displayText = `Proposal Cancelled by Split Lease\nReason: ${cancelReason}`;
   }
 
   return (
