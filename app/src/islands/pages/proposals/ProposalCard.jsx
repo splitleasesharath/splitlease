@@ -810,7 +810,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
           {/* Dynamic action buttons based on status */}
           <div className="action-buttons">
-            {/* Virtual Meeting button - show for non-terminal, non-completed statuses */}
+            {/* Button 1: Virtual Meeting - show for non-terminal, non-completed statuses */}
             {!isTerminal && !isCompleted && (
               <button
                 className={`btn-action-bar ${vmButtonState.className}`}
@@ -820,14 +820,21 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
               </button>
             )}
 
-            {/* Go to Leases - show for completed/activated proposals */}
+            {/* Button 1 (alternate): Go to Leases - show for completed/activated proposals */}
             {isCompleted && (
               <a href="/my-leases" className="btn-action-bar btn-go-to-leases">
                 Go to Leases
               </a>
             )}
 
-            {/* Modify Proposal - show for active (non-terminal, non-completed) proposals */}
+            {/* Button 2: Remind Split Lease - show for Drafting or Host Review statuses */}
+            {(status?.includes('Drafting') || status === 'Host Review') && (
+              <button className="btn-action-bar btn-remind">
+                Remind Split Lease
+              </button>
+            )}
+
+            {/* Button 3: Modify Proposal - show for active (non-terminal, non-completed) proposals */}
             {!isTerminal && !isCompleted && (
               <button
                 className="btn-action-bar btn-modify-proposal"
@@ -837,7 +844,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
               </button>
             )}
 
-            {/* Cancel/Delete button - show based on status */}
+            {/* Button 4: Cancel/Delete button - show based on status */}
             {isTerminal && (
               <button className="btn-action-bar btn-delete-proposal">
                 Delete Proposal
