@@ -216,12 +216,38 @@ const daysToDisplay = isCounteroffer
 
 ## Related Statuses
 
-| Status | Stage | Action |
-|--------|-------|--------|
-| `PROPOSAL_SUBMITTED_AWAITING_RENTAL_APP` | 1 | Awaiting rental app |
-| `RENTAL_APP_SUBMITTED_AWAITING_HOST_REVIEW` | 2 | Host reviewing |
-| `PROPOSAL_APPROVED_BY_HOST` | 3 | Approved (progress tracker updates) |
-| `COUNTEROFFER_SUBMITTED_AWAITING_...` | 2 | Show hcDaysSelected instead |
+| Status | Stage | usualOrder | Action |
+|--------|-------|------------|--------|
+| `Pending` | 1 | 1 | View Proposal |
+| `Host Review` | 3 | 2 | Remind Split Lease |
+| `Proposal Submitted by guest - Awaiting Rental Application` | 1 | 3 | Complete Application |
+| `Rental Application Submitted` | 2 | 3 | Awaiting Host Review |
+| `Host Counteroffer Submitted / Awaiting Guest Review` | 3 | 4 | Review Counteroffer |
+| `Proposal or Counteroffer Accepted / Drafting Lease Documents` | 4 | 5 | Remind Split Lease |
+| `Lease Documents Sent for Review` | 5 | 6 | Review Documents |
+| `Initial Payment Submitted / Lease activated` | 6 | 7 | Go to Leases |
+| `Proposal Cancelled by *` | null | 99 | Delete Proposal |
+
+### usualOrder Values (Bubble Ordering)
+- **1**: Pending
+- **2**: Host Review
+- **3**: Proposal Submitted, Rental App Submitted, Pending Confirmation
+- **4**: Host Counteroffer
+- **5**: Accepted/Drafting, Reviewing Documents
+- **6**: Lease Documents
+- **7**: Initial Payment/Activated
+- **99**: Cancelled, Rejected, Expired
+- **0**: Draft, Unknown
+
+### Status Banner Visibility Rule
+```javascript
+// Banner shows when usualOrder >= 3 OR status is "Proposal Submitted..."
+import { shouldShowStatusBanner } from 'logic/constants/proposalStatuses';
+
+if (shouldShowStatusBanner(status)) {
+  // Show banner
+}
+```
 
 ## Conditional Patterns (Cascading Overrides)
 
