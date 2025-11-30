@@ -565,6 +565,16 @@
   display: block;
 }
 
+/* Original price with strikethrough (for counteroffers) */
+.pricing-original {
+  color: #808080;
+  display: block;
+}
+
+.pricing-original s {
+  text-decoration: line-through;
+}
+
 .pricing-total {
   color: #6B7280;
 }
@@ -634,6 +644,20 @@
 
 .btn-vm-declined:hover {
   background-color: #9CA3AF;
+}
+
+/* Go to Leases - Green (for completed proposals) */
+.btn-go-to-leases {
+  background-color: #39873D;
+  color: white;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-go-to-leases:hover {
+  background-color: #2D6B30;
 }
 
 /* Remind Split Lease - Green */

@@ -17,7 +17,7 @@
 
 import { useState } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
-import { getStatusConfig, getActionsForStatus, isTerminalStatus, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
+import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -408,6 +408,10 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const totalPrice = isCounteroffer
     ? proposal['hc total price']
     : proposal['Total Price for Reservation (guest)'];
+  // Original price (before counteroffer) for strikethrough display
+  const originalTotalPrice = isCounteroffer
+    ? proposal['Total Price for Reservation (guest)']
+    : null;
   const cleaningFee = proposal['cleaning fee'] || 0;
   const damageDeposit = proposal['damage deposit'] || 0;
 
@@ -434,6 +438,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const currentStageIndex = (currentStatusConfig?.stage || 1) - 1; // Convert 1-indexed to 0-indexed
   const statusColor = currentStatusConfig?.color || 'blue';
   const isTerminal = isTerminalStatus(status);
+  const isCompleted = isCompletedStatus(status);
   const stageLabels = getStageLabels(status);
 
   // Warning: some nights unavailable
@@ -614,9 +619,13 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
         {/* Pricing bar with dynamic action buttons */}
         <div className="pricing-bar">
           <div className="pricing-details">
-            <span className="pricing-total">Total {formatPrice(totalPrice)}</span>
-            <span className="pricing-fee">Maintenance Fee: {formatPrice(cleaningFee)}</span>
-            <span className="pricing-deposit">Damage deposit {formatPrice(damageDeposit)}</span>
+            {/* Show original price with strikethrough when counteroffer happened */}
+            {originalTotalPrice && (
+              <span className="pricing-original">
+                <s>Total {formatPrice(originalTotalPrice)}</s>
+              </span>
+            )}
+            <span className="pricing-total">{formatPrice(totalPrice)} in total | Maintenance Fee: {formatPrice(cleaningFee)} | Damage deposit {formatPrice(damageDeposit)}</span>
           </div>
           <div className="pricing-nightly">
             {formatPrice(nightlyPrice)} / night
@@ -624,14 +633,21 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
           {/* Dynamic action buttons based on status */}
           <div className="action-buttons">
-            {/* Virtual Meeting button - show for non-terminal statuses */}
-            {!isTerminal && (
+            {/* Virtual Meeting button - show for non-terminal, non-completed statuses */}
+            {!isTerminal && !isCompleted && (
               <button
                 className={`btn-action-bar ${vmButtonState.className}`}
                 disabled={vmButtonState.disabled}
               >
                 {vmButtonState.label}
               </button>
+            )}
+
+            {/* Go to Leases - show for completed/activated proposals */}
+            {isCompleted && (
+              <a href="/my-leases" className="btn-action-bar btn-go-to-leases">
+                Go to Leases
+              </a>
             )}
 
             {/* Remind Split Lease - show for drafting or host review status */}
@@ -641,19 +657,20 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
               </button>
             )}
 
-            {/* See Details - show for all active (non-terminal) proposals */}
-            {!isTerminal && (
+            {/* See Details - show for active (non-terminal, non-completed) proposals */}
+            {!isTerminal && !isCompleted && (
               <button className="btn-action-bar btn-details">
                 See Details
               </button>
             )}
 
-            {/* Cancel/Delete button - show for all proposals */}
-            {isTerminal ? (
+            {/* Cancel/Delete button - show based on status */}
+            {isTerminal && (
               <button className="btn-action-bar btn-delete-proposal">
                 Delete Proposal
               </button>
-            ) : (
+            )}
+            {!isTerminal && !isCompleted && (
               <button className="btn-action-bar btn-cancel-proposal">
                 Cancel Proposal
               </button>
