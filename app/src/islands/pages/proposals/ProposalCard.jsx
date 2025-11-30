@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
 import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
+import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -598,6 +599,9 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   // Host profile modal state
   const [showHostProfileModal, setShowHostProfileModal] = useState(false);
 
+  // Proposal details modal state (GuestEditingProposalModal)
+  const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false);
+
   // Status and progress - derive dynamically from statusConfig
   const status = proposal.Status;
   const currentStatusConfig = statusConfig || getStatusConfig(status);
@@ -830,7 +834,10 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
             {/* See Details - show for active (non-terminal, non-completed) proposals */}
             {!isTerminal && !isCompleted && (
-              <button className="btn-action-bar btn-details">
+              <button
+                className="btn-action-bar btn-details"
+                onClick={() => setShowProposalDetailsModal(true)}
+              >
                 See Details
               </button>
             )}
@@ -865,6 +872,21 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           host={host}
           listing={listing}
           onClose={() => setShowHostProfileModal(false)}
+        />
+      )}
+
+      {/* Proposal Details Modal (GuestEditingProposalModal) */}
+      {showProposalDetailsModal && (
+        <GuestEditingProposalModal
+          proposal={proposal}
+          listing={listing}
+          user={{ type: 'guest' }}
+          initialView="general"
+          isVisible={showProposalDetailsModal}
+          onClose={() => setShowProposalDetailsModal(false)}
+          pricePerNight={nightlyPrice}
+          totalPriceForReservation={totalPrice}
+          priceRentPer4Weeks={proposal['Price Rent per 4 weeks'] || (nightlyPrice * nightsPerWeek * 4)}
         />
       )}
     </div>
