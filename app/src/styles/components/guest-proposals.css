@@ -191,6 +191,27 @@
 }
 
 /* ============================================================================
+   PROPOSAL CARD WRAPPER - Contains banner and card
+   ============================================================================ */
+
+.proposal-card-wrapper {
+  margin-top: 15px;
+}
+
+/* ============================================================================
+   STATUS BANNER - Dynamic status messages above card
+   ============================================================================ */
+
+.status-banner {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================================
    PROPOSAL CARD V2 - Two Column Layout
    ============================================================================ */
 
@@ -199,7 +220,6 @@
   border-radius: 16px;
   border: 1px solid #D4D4D4;
   overflow: hidden;
-  margin-top: 15px;
 }
 
 .proposal-content-row {
@@ -563,9 +583,18 @@
   flex: 1;
 }
 
-.btn-delete-proposal {
-  background-color: #EF4444;
-  color: white;
+/* ============================================================================
+   ACTION BUTTONS - Dynamic buttons based on proposal status
+   ============================================================================ */
+
+.action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-action-bar {
   border: none;
   border-radius: 8px;
   padding: 8px 16px;
@@ -575,6 +604,61 @@
   cursor: pointer;
   height: 37px;
   min-width: 150px;
+  max-width: 250px;
+  transition: all 0.2s;
+}
+
+/* Virtual Meeting Confirmed - Gray/disabled */
+.btn-vm-confirmed {
+  background-color: #D1D5DB;
+  color: #374151;
+  cursor: default;
+}
+
+/* Virtual Meeting Request */
+.btn-vm-request {
+  background-color: #D1D5DB;
+  color: #374151;
+}
+
+.btn-vm-request:hover {
+  background-color: #9CA3AF;
+}
+
+/* Remind Split Lease - Green */
+.btn-remind {
+  background-color: #39873D;
+  color: white;
+}
+
+.btn-remind:hover {
+  background-color: #2D6B30;
+}
+
+/* See Details - Purple */
+.btn-details {
+  background-color: #6D31C2;
+  color: white;
+}
+
+.btn-details:hover {
+  background-color: #5A28A0;
+}
+
+/* Cancel Proposal - Red */
+.btn-cancel-proposal {
+  background-color: #EF4444;
+  color: white;
+}
+
+.btn-cancel-proposal:hover {
+  background-color: #DC2626;
+}
+
+/* Delete Proposal - Red */
+.btn-delete-proposal {
+  background-color: #EF4444;
+  color: white;
 }
 
 .btn-delete-proposal:hover {
@@ -608,20 +692,21 @@
   border-radius: 0;
 }
 
+/* Note: .active colors are now applied via inline styles for dynamic theming */
 .progress-connector.active {
-  background-color: #DB2E2E;
+  /* Color applied via inline style based on status */
 }
 
 .progress-node {
   width: 26px;
   height: 26px;
   border-radius: 100px;
-  background-color: #D4D4D4;
+  background-color: #DEDEDE;
   flex-shrink: 0;
 }
 
 .progress-node.active {
-  background-color: #DB2E2E;
+  /* Color applied via inline style based on status */
 }
 
 .progress-labels {
@@ -642,7 +727,7 @@
 }
 
 .progress-label.active {
-  color: #DB2E2E;
+  /* Color applied via inline style based on status */
 }
 
 /* ============================================================================
@@ -702,6 +787,17 @@
 
   .pricing-nightly {
     text-align: left;
+  }
+
+  /* Action buttons stack vertically on tablet */
+  .action-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .btn-action-bar {
+    width: 100%;
+    max-width: 100%;
   }
 
   /* Progress tracker responsive */

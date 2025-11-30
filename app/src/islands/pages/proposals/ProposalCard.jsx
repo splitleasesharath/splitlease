@@ -7,10 +7,17 @@
  * - Bottom: Pricing bar and progress tracker
  *
  * Design matches Bubble's MyProposals page layout.
+ *
+ * Dynamic UI Features:
+ * - Status banner for accepted/counteroffer/cancelled states
+ * - Dynamic progress tracker stage and colors based on status
+ * - Action buttons change based on proposal status
+ * - Warning icon when some nights become unavailable
  */
 
 import { useState } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
+import { getStatusConfig, getActionsForStatus, isTerminalStatus } from '../../../logic/constants/proposalStatuses.js';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -84,8 +91,119 @@ function getAllDaysWithSelection(daysSelected) {
 }
 
 // ============================================================================
+// STATUS BANNER - Shows status-specific messages above the card
+// ============================================================================
+
+/**
+ * Status banner configurations for different proposal states
+ */
+const STATUS_BANNERS = {
+  'Proposal or Counteroffer Accepted / Drafting Lease Documents': {
+    text: 'Proposal Accepted!\nSplit Lease is Drafting Lease Documents',
+    bgColor: '#E1FFE1',
+    borderColor: '#1BA54E',
+    textColor: '#1BA54E'
+  },
+  'Host Counteroffer Submitted / Awaiting Guest Review': {
+    text: 'Host has submitted a counteroffer.\nReview the new terms below.',
+    bgColor: '#FEF3C7',
+    borderColor: '#F59E0B',
+    textColor: '#92400E'
+  },
+  'Proposal Cancelled by Split Lease': {
+    type: 'cancelled',
+    bgColor: '#FBECEC',
+    borderColor: '#D34337',
+    textColor: '#D34337'
+  },
+  'Proposal Cancelled by Guest': {
+    text: 'You cancelled this proposal.',
+    bgColor: '#F3F4F6',
+    borderColor: '#9CA3AF',
+    textColor: '#6B7280'
+  },
+  'Proposal Rejected by Host': {
+    text: 'This proposal was declined by the host.',
+    bgColor: '#FBECEC',
+    borderColor: '#D34337',
+    textColor: '#D34337'
+  }
+};
+
+function StatusBanner({ status, cancelReason }) {
+  const config = STATUS_BANNERS[status];
+  if (!config) return null;
+
+  let displayText = config.text;
+  if (config.type === 'cancelled') {
+    displayText = `Proposal Cancelled by Split Lease\nReason: ${cancelReason || 'Not specified'}`;
+  }
+
+  return (
+    <div
+      className="status-banner"
+      style={{
+        background: config.bgColor,
+        border: `1px solid ${config.borderColor}`,
+        color: config.textColor,
+        borderRadius: '10px',
+        padding: '15px 20px',
+        textAlign: 'center',
+        fontWeight: 'bold',
+        marginBottom: '15px',
+        fontSize: '12px',
+        lineHeight: '1.5',
+        whiteSpace: 'pre-line'
+      }}
+    >
+      {displayText}
+    </div>
+  );
+}
+
+// ============================================================================
 // PROGRESS TRACKER (inline version matching Bubble's horizontal timeline)
 // ============================================================================
+
+/**
+ * Get dynamic stage labels based on status
+ * Labels change to reflect completion (e.g., "Host Review" -> "Host Review Complete")
+ */
+function getStageLabels(status) {
+  const baseLabels = [
+    'Proposal Submitted',
+    'Rental App Submitted',
+    'Host Review',
+    'Review Documents',
+    'Lease Documents',
+    'Initial Payment'
+  ];
+
+  if (!status) return baseLabels;
+
+  // Customize based on status
+  if (status.includes('Accepted') || status.includes('Drafting')) {
+    baseLabels[2] = 'Host Review Complete';
+    baseLabels[3] = 'Drafting Lease Docs';
+  }
+
+  if (status.includes('Counteroffer')) {
+    baseLabels[2] = 'Counteroffer Pending';
+  }
+
+  if (status.includes('Lease Documents Sent')) {
+    baseLabels[2] = 'Host Review Complete';
+    baseLabels[3] = 'Docs Reviewed';
+  }
+
+  if (status.includes('Payment Submitted') || status.includes('activated')) {
+    baseLabels[2] = 'Host Review Complete';
+    baseLabels[3] = 'Docs Reviewed';
+    baseLabels[4] = 'Lease Signed';
+  }
+
+  return baseLabels;
+}
 
 const PROGRESS_STAGES = [
   { id: 1, label: 'Proposal Submitted' },
@@ -96,30 +214,71 @@ const PROGRESS_STAGES = [
   { id: 6, label: 'Initial Payment' }
 ];
 
-function InlineProgressTracker({ currentStageIndex = 0 }) {
+/**
+ * Color map for progress tracker based on status color
+ */
+const PROGRESS_COLORS = {
+  blue: '#3B82F6',
+  green: '#10B981',
+  yellow: '#F59E0B',
+  red: '#DB2E2E',
+  gray: '#9CA3AF',
+  purple: '#6D31C2'
+};
+
+function InlineProgressTracker({ currentStageIndex = 0, statusColor = 'blue', stageLabels = null, isTerminal = false }) {
+  // Use purple for accepted proposals, red for terminal/cancelled, otherwise use status color
+  let activeColor = PROGRESS_COLORS[statusColor] || PROGRESS_COLORS.blue;
+
+  // Special color logic matching Bubble:
+  // - Purple for accepted/in-progress proposals
+  // - Red for cancelled/rejected proposals
+  // - Gray for inactive stages
+  if (statusColor === 'green') {
+    activeColor = PROGRESS_COLORS.purple; // Purple for accepted proposals
+  }
+  if (isTerminal) {
+    activeColor = PROGRESS_COLORS.red;
+  }
+
+  const labels = stageLabels || PROGRESS_STAGES.map(s => s.label);
+
   return (
     <div className="inline-progress-tracker">
       <div className="progress-line-container">
-        {PROGRESS_STAGES.map((stage, index) => (
-          <div key={stage.id} className="progress-node-wrapper">
-            {/* Connector line before node (except first) */}
-            {index > 0 && (
-              <div className={`progress-connector ${index <= currentStageIndex ? 'active' : ''}`} />
-            )}
-            {/* Node circle */}
-            <div className={`progress-node ${index <= currentStageIndex ? 'active' : ''}`} />
-          </div>
-        ))}
+        {PROGRESS_STAGES.map((stage, index) => {
+          const isActive = index <= currentStageIndex;
+          return (
+            <div key={stage.id} className="progress-node-wrapper">
+              {/* Connector line before node (except first) */}
+              {index > 0 && (
+                <div
+                  className="progress-connector"
+                  style={{ backgroundColor: isActive ? activeColor : '#DEDEDE' }}
+                />
+              )}
+              {/* Node circle */}
+              <div
+                className="progress-node"
+                style={{ backgroundColor: isActive ? activeColor : '#DEDEDE' }}
+              />
+            </div>
+          );
+        })}
       </div>
       <div className="progress-labels">
-        {PROGRESS_STAGES.map((stage, index) => (
-          <div
-            key={stage.id}
-            className={`progress-label ${index <= currentStageIndex ? 'active' : ''}`}
-          >
-            {stage.label}
-          </div>
-        ))}
+        {PROGRESS_STAGES.map((stage, index) => {
+          const isActive = index <= currentStageIndex;
+          return (
+            <div
+              key={stage.id}
+              className="progress-label"
+              style={{ color: isActive ? activeColor : '#9CA3AF' }}
+            >
+              {labels[index] || stage.label}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -177,9 +336,11 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const cleaningFee = proposal['cleaning fee'] || 0;
   const damageDeposit = proposal['damage deposit'] || 0;
 
-  // Move-in date
+  // Move-in/move-out dates
   const moveInStart = proposal['Move in range start'];
+  const moveInEnd = proposal['Move in range end'];
   const anticipatedMoveIn = formatDate(moveInStart);
+  const anticipatedMoveOut = formatDate(moveInEnd);
 
   // Check-in/out times
   const checkInTime = listing?.['Check in time'] || '2:00 pm';
@@ -192,64 +353,107 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   // House rules toggle state
   const [showHouseRules, setShowHouseRules] = useState(false);
 
-  // Progress stage (simplified - in real implementation, derive from status)
-  const currentStageIndex = 3; // Example: at "Review Documents" stage
+  // Status and progress - derive dynamically from statusConfig
+  const status = proposal.Status;
+  const currentStatusConfig = statusConfig || getStatusConfig(status);
+  const currentStageIndex = (currentStatusConfig?.stage || 1) - 1; // Convert 1-indexed to 0-indexed
+  const statusColor = currentStatusConfig?.color || 'blue';
+  const isTerminal = isTerminalStatus(status);
+  const stageLabels = getStageLabels(status);
+
+  // Warning: some nights unavailable
+  const someNightsUnavailable = proposal['some nights unavailable'];
+
+  // Cancel reason (for cancelled proposals)
+  const cancelReason = proposal['Cancelled Reason'] || proposal['reason for cancellation'];
+
+  // Virtual meeting status
+  const virtualMeetingConfirmed = proposal['virtual meeting confirmed '];
+  const requestVirtualMeeting = proposal['request virtual meeting'];
+
+  // Get available actions for this status
+  const availableActions = getActionsForStatus(status);
 
   return (
-    <div className="proposal-card-v2">
-      {/* Main two-column content */}
-      <div className="proposal-content-row">
-        {/* Left column - Listing details */}
-        <div className="proposal-left-column">
-          <h3 className="listing-title-v2">{listingName}</h3>
-          <p className="listing-location-v2">{location}</p>
+    <div className="proposal-card-wrapper">
+      {/* Status Banner - shows for accepted/counteroffer/cancelled states */}
+      <StatusBanner status={status} cancelReason={cancelReason} />
 
-          {/* Action buttons row */}
-          <div className="listing-actions-row">
-            <a
-              href={`/view-split-lease/${listing?._id}`}
-              className="btn-action btn-primary-v2"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              View Listing
-            </a>
-            <button className="btn-action btn-map">
-              View Map
-            </button>
-          </div>
+      <div className="proposal-card-v2">
+        {/* Main two-column content */}
+        <div className="proposal-content-row">
+          {/* Left column - Listing details */}
+          <div className="proposal-left-column">
+            <h3 className="listing-title-v2">{listingName}</h3>
+            <p className="listing-location-v2">{location}</p>
 
-          {/* Schedule info */}
-          <div className="schedule-info-block">
-            {checkInOutRange && (
-              <div className="schedule-text primary">{checkInOutRange}</div>
-            )}
-            <div className="schedule-text">
-              <span className="label">Duration</span> {reservationWeeks} Weeks
-            </div>
-          </div>
-
-          {/* Day selector badges */}
-          <div className="day-badges-row">
-            {allDays.map((day) => (
-              <div
-                key={day.index}
-                className={`day-badge-v2 ${day.selected ? 'selected' : ''}`}
+            {/* Action buttons row */}
+            <div className="listing-actions-row">
+              <a
+                href={`/view-split-lease/${listing?._id}`}
+                className="btn-action btn-primary-v2"
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                {day.letter}
+                View Listing
+              </a>
+              <button className="btn-action btn-map">
+                View Map
+              </button>
+            </div>
+
+            {/* Schedule info */}
+            <div className="schedule-info-block">
+              {checkInOutRange && (
+                <div className="schedule-text primary">{checkInOutRange}</div>
+              )}
+              <div className="schedule-text">
+                <span className="label">Duration</span> {reservationWeeks} Weeks
               </div>
-            ))}
-          </div>
+            </div>
 
-          {/* Check-in/out times */}
-          <div className="checkin-times">
-            Check-in {checkInTime} Check-out {checkOutTime}
-          </div>
+            {/* Day selector badges with warning icon */}
+            <div className="day-badges-row">
+              {allDays.map((day) => (
+                <div
+                  key={day.index}
+                  className={`day-badge-v2 ${day.selected ? 'selected' : ''}`}
+                >
+                  {day.letter}
+                </div>
+              ))}
+              {/* Warning icon when some nights are unavailable */}
+              {someNightsUnavailable && (
+                <span
+                  className="nights-unavailable-warning"
+                  title="Some selected nights are no longer available"
+                  style={{
+                    color: '#4B47CE',
+                    fontSize: '20px',
+                    marginLeft: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ⚠
+                </span>
+              )}
+            </div>
 
-          {/* Anticipated move-in */}
-          <div className="movein-date">
-            <span className="label">Anticipated Move-in</span> {anticipatedMoveIn || 'TBD'}
-          </div>
+            {/* Check-in/out times */}
+            <div className="checkin-times">
+              Check-in {checkInTime} Check-out {checkOutTime}
+            </div>
+
+            {/* Move-in and Move-out dates */}
+            <div className="movein-date">
+              <span className="label">Move-in</span> {anticipatedMoveIn || 'TBD'}
+              {anticipatedMoveOut && (
+                <>
+                  &nbsp;&nbsp;&nbsp;
+                  <span className="label">Move-out</span> {anticipatedMoveOut}
+                </>
+              )}
+            </div>
 
           {/* House rules section - only show if listing has rules */}
           {hasHouseRules && (
@@ -298,21 +502,67 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
         </div>
       </div>
 
-      {/* Pricing bar */}
-      <div className="pricing-bar">
-        <div className="pricing-details">
-          <span className="pricing-total">Total {formatPrice(totalPrice)}</span>
-          <span className="pricing-fee">Maintenance Fee: {formatPrice(cleaningFee)}</span>
-          <span className="pricing-deposit">Damage deposit {formatPrice(damageDeposit)}</span>
-        </div>
-        <div className="pricing-nightly">
-          {formatPrice(nightlyPrice)} / night
-        </div>
-        <button className="btn-delete-proposal">Delete Proposal</button>
-      </div>
+        {/* Pricing bar with dynamic action buttons */}
+        <div className="pricing-bar">
+          <div className="pricing-details">
+            <span className="pricing-total">Total {formatPrice(totalPrice)}</span>
+            <span className="pricing-fee">Maintenance Fee: {formatPrice(cleaningFee)}</span>
+            <span className="pricing-deposit">Damage deposit {formatPrice(damageDeposit)}</span>
+          </div>
+          <div className="pricing-nightly">
+            {formatPrice(nightlyPrice)} / night
+          </div>
 
-      {/* Progress tracker */}
-      <InlineProgressTracker currentStageIndex={currentStageIndex} />
+          {/* Dynamic action buttons based on status */}
+          <div className="action-buttons">
+            {/* Virtual Meeting button - show based on status */}
+            {availableActions.includes('request_vm') && (
+              virtualMeetingConfirmed ? (
+                <button className="btn-action-bar btn-vm-confirmed" disabled>
+                  Virtual Meeting Accepted
+                </button>
+              ) : (
+                <button className="btn-action-bar btn-vm-request">
+                  Request Virtual Meeting
+                </button>
+              )
+            )}
+
+            {/* Remind Split Lease - show for accepted/drafting status */}
+            {status?.includes('Drafting') && (
+              <button className="btn-action-bar btn-remind">
+                Remind Split Lease
+              </button>
+            )}
+
+            {/* See Details - show for counteroffers */}
+            {availableActions.includes('compare_terms') && (
+              <button className="btn-action-bar btn-details">
+                See Details
+              </button>
+            )}
+
+            {/* Cancel/Delete button */}
+            {isTerminal ? (
+              <button className="btn-action-bar btn-delete-proposal">
+                Delete Proposal
+              </button>
+            ) : availableActions.includes('cancel_proposal') ? (
+              <button className="btn-action-bar btn-cancel-proposal">
+                Cancel Proposal
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {/* Progress tracker with dynamic stage, colors, and labels */}
+        <InlineProgressTracker
+          currentStageIndex={currentStageIndex}
+          statusColor={statusColor}
+          stageLabels={stageLabels}
+          isTerminal={isTerminal}
+        />
+      </div>
     </div>
   );
 }
