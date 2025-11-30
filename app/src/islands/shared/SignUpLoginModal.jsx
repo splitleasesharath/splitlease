@@ -1,8 +1,15 @@
 /**
  * SignUpLoginModal - Shared authentication modal component
  *
- * A reusable modal for login/signup that can be used across the app.
- * Uses the existing auth functions from lib/auth.js.
+ * A comprehensive modal for login/signup matching the original Bubble design.
+ * Supports multiple views: initial, login, signup-step1, signup-step2, password-reset
+ *
+ * Key Features:
+ * - Multi-step signup with first name, last name, email, DOB, phone, password
+ * - Login with passwordless option and forgot password
+ * - Password reset with magic link option
+ * - Route-based user type prefilling
+ * - Data persistence between steps
  *
  * Usage:
  *   import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
@@ -10,16 +17,32 @@
  *   <SignUpLoginModal
  *     isOpen={showModal}
  *     onClose={() => setShowModal(false)}
- *     initialView="login" // or "signup"
+ *     initialView="initial" // 'initial', 'login', 'signup'
  *     onAuthSuccess={(userData) => handleSuccess(userData)}
- *     defaultUserType="host" // optional: pre-select user type for signup
- *     showUserTypeSelector={true} // optional: show user type selector in signup
- *     skipReload={false} // optional: skip page reload after auth (for flows that continue)
+ *     defaultUserType="guest" // 'host' or 'guest' - for route-based prefilling
  *   />
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { loginUser, signupUser } from '../../lib/auth.js';
+import { supabase } from '../../lib/supabase.js';
+
+// ============================================================================
+// Constants
+// ============================================================================
+
+const VIEWS = {
+  INITIAL: 'initial',
+  LOGIN: 'login',
+  SIGNUP_STEP1: 'signup-step1',
+  SIGNUP_STEP2: 'signup-step2',
+  PASSWORD_RESET: 'password-reset'
+};
+
+const USER_TYPES = {
+  HOST: 'Host',
+  GUEST: 'Guest'
+};
 
 // ============================================================================
 // Styles
@@ -43,27 +66,71 @@ const styles = {
     backgroundColor: 'white',
     borderRadius: '12px',
     padding: '2rem',
-    maxWidth: '400px',
+    maxWidth: '407px',
     width: '90%',
     maxHeight: '90vh',
     overflowY: 'auto',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-    animation: 'slideIn 200ms ease-out'
+    boxShadow: '0 50px 80px rgba(0, 0, 0, 0.25)',
+    animation: 'slideIn 200ms ease-out',
+    position: 'relative'
+  },
+  closeBtn: {
+    position: 'absolute',
+    top: '1rem',
+    right: '1rem',
+    background: 'none',
+    border: 'none',
+    fontSize: '1.5rem',
+    color: '#6b7280',
+    cursor: 'pointer',
+    padding: '0.25rem',
+    lineHeight: 1,
+    zIndex: 1
+  },
+  logoContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: '1rem'
+  },
+  logo: {
+    width: '50px',
+    height: '50px',
+    backgroundColor: '#6c40f5',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: '1.25rem'
   },
   header: {
+    textAlign: 'center',
     marginBottom: '1.5rem'
   },
   title: {
     fontSize: '1.5rem',
     fontWeight: '700',
-    color: '#1a202c',
-    margin: 0
+    color: '#1A1A2E',
+    margin: 0,
+    marginBottom: '0.5rem'
   },
   subtitle: {
-    fontSize: '0.875rem',
+    fontSize: '1rem',
+    color: '#6c40f5',
+    margin: 0
+  },
+  helperText: {
+    fontSize: '0.75rem',
     color: '#6b7280',
-    marginTop: '0.5rem',
+    marginTop: '0.25rem',
     marginBottom: 0
+  },
+  requiredNote: {
+    fontSize: '0.75rem',
+    color: '#6b7280',
+    marginBottom: '1rem'
   },
   formGroup: {
     marginBottom: '1rem'
@@ -86,13 +153,19 @@ const styles = {
     transition: 'border-color 0.15s ease'
   },
   inputFocused: {
-    borderColor: '#5B21B6'
+    borderColor: '#6c40f5'
+  },
+  inputError: {
+    borderColor: '#dc2626'
+  },
+  inputSuccess: {
+    borderColor: '#408141'
   },
   passwordWrapper: {
     position: 'relative'
   },
   inputWithIcon: {
-    paddingRight: '2.5rem'
+    paddingRight: '3rem'
   },
   togglePasswordBtn: {
     position: 'absolute',
@@ -103,8 +176,23 @@ const styles = {
     border: 'none',
     cursor: 'pointer',
     color: '#6b7280',
-    fontSize: '0.875rem',
-    padding: '0.25rem'
+    fontSize: '1.25rem',
+    padding: '0.25rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  select: {
+    width: '100%',
+    padding: '0.75rem',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '1rem',
+    outline: 'none',
+    boxSizing: 'border-box',
+    backgroundColor: 'white',
+    cursor: 'pointer',
+    transition: 'border-color 0.15s ease'
   },
   errorBox: {
     padding: '0.75rem',
@@ -118,160 +206,244 @@ const styles = {
     color: '#dc2626',
     margin: 0
   },
-  buttonRow: {
-    display: 'flex',
-    gap: '0.75rem',
-    marginTop: '1.5rem'
+  inlineError: {
+    fontSize: '0.75rem',
+    color: '#dc2626',
+    marginTop: '0.25rem'
   },
-  cancelBtn: {
-    flex: 1,
-    padding: '0.75rem',
-    backgroundColor: 'white',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '1rem',
-    fontWeight: '500',
-    color: '#374151',
-    cursor: 'pointer',
-    transition: 'background-color 0.15s ease'
-  },
-  submitBtn: {
-    flex: 1,
-    padding: '0.75rem',
-    backgroundColor: '#5B21B6',
+  buttonPrimary: {
+    width: '100%',
+    padding: '0.875rem',
+    backgroundColor: '#6c40f5',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: '8px',
     fontSize: '1rem',
-    fontWeight: '500',
+    fontWeight: '600',
     color: 'white',
     cursor: 'pointer',
-    transition: 'background-color 0.15s ease'
+    transition: 'background-color 0.15s ease',
+    marginBottom: '0.75rem'
   },
-  submitBtnDisabled: {
-    backgroundColor: '#9333ea',
+  buttonSecondary: {
+    width: '100%',
+    padding: '0.875rem',
+    backgroundColor: 'white',
+    border: '2px solid #6c40f5',
+    borderRadius: '8px',
+    fontSize: '1rem',
+    fontWeight: '600',
+    color: '#6c40f5',
+    cursor: 'pointer',
+    transition: 'all 0.15s ease',
+    marginBottom: '0.75rem'
+  },
+  buttonDisabled: {
+    backgroundColor: '#9CA3AF',
     cursor: 'not-allowed',
     opacity: 0.7
   },
-  switchText: {
-    marginTop: '1rem',
-    textAlign: 'center'
+  linkText: {
+    textAlign: 'center',
+    marginTop: '1rem'
   },
-  switchParagraph: {
-    fontSize: '0.875rem',
-    color: '#6b7280',
-    margin: 0
-  },
-  switchLink: {
-    color: '#5B21B6',
-    textDecoration: 'none',
-    fontWeight: '500',
-    cursor: 'pointer'
-  },
-  closeBtn: {
-    position: 'absolute',
-    top: '1rem',
-    right: '1rem',
+  link: {
+    color: '#6c40f5',
+    textDecoration: 'underline',
+    cursor: 'pointer',
     background: 'none',
     border: 'none',
-    fontSize: '1.5rem',
-    color: '#6b7280',
-    cursor: 'pointer',
-    padding: '0.25rem',
-    lineHeight: 1
+    fontSize: 'inherit',
+    fontWeight: '500'
   },
-  userTypeSelector: {
+  divider: {
     display: 'flex',
-    gap: '0.75rem',
-    marginBottom: '1rem'
+    alignItems: 'center',
+    margin: '1.5rem 0',
+    color: '#9CA3AF'
   },
-  userTypeOption: {
+  dividerLine: {
     flex: 1,
-    padding: '1rem',
-    border: '2px solid #d1d5db',
-    borderRadius: '8px',
-    backgroundColor: 'white',
-    cursor: 'pointer',
-    textAlign: 'center',
-    transition: 'all 0.15s ease'
+    height: '1px',
+    backgroundColor: '#E5E7EB'
   },
-  userTypeOptionSelected: {
-    borderColor: '#5B21B6',
-    backgroundColor: '#f5f3ff'
+  dividerText: {
+    padding: '0 1rem',
+    fontSize: '0.875rem'
   },
-  userTypeIcon: {
-    fontSize: '1.5rem',
-    marginBottom: '0.5rem'
-  },
-  userTypeLabel: {
-    fontSize: '0.875rem',
-    fontWeight: '600',
-    color: '#374151',
-    margin: 0
-  },
-  userTypeDescription: {
+  termsText: {
     fontSize: '0.75rem',
     color: '#6b7280',
-    margin: '0.25rem 0 0 0'
+    textAlign: 'center',
+    marginTop: '1rem',
+    lineHeight: 1.5
+  },
+  goBackBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    background: 'none',
+    border: 'none',
+    color: '#6c40f5',
+    cursor: 'pointer',
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    padding: 0,
+    marginTop: '1rem'
+  },
+  dateInputsRow: {
+    display: 'flex',
+    gap: '0.5rem'
+  },
+  dateSelect: {
+    flex: 1,
+    padding: '0.75rem',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    fontSize: '1rem',
+    outline: 'none',
+    backgroundColor: 'white',
+    cursor: 'pointer'
+  },
+  sectionLabel: {
+    fontSize: '0.75rem',
+    fontWeight: '600',
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
+    marginBottom: '1rem'
   }
+};
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+const EyeIcon = ({ open }) => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    {open ? (
+      <>
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </>
+    ) : (
+      <>
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+      </>
+    )}
+  </svg>
+);
+
+const ArrowLeftIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="19" y1="12" x2="5" y2="12" />
+    <polyline points="12 19 5 12 12 5" />
+  </svg>
+);
+
+// Generate arrays for date selectors
+const months = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+const currentYear = new Date().getFullYear();
+const years = Array.from({ length: 100 }, (_, i) => currentYear - i);
+
+const getDaysInMonth = (month, year) => {
+  if (!month || !year) return Array.from({ length: 31 }, (_, i) => i + 1);
+  return Array.from({ length: new Date(year, month, 0).getDate() }, (_, i) => i + 1);
+};
+
+const isOver18 = (birthMonth, birthDay, birthYear) => {
+  if (!birthMonth || !birthDay || !birthYear) return false;
+  const today = new Date();
+  const birthDate = new Date(birthYear, birthMonth - 1, birthDay);
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age >= 18;
 };
 
 // ============================================================================
 // Component
 // ============================================================================
 
-// User type values matching Supabase "Type - User Current" field
-const USER_TYPE_VALUES = {
-  guest: 'A Guest (I would like to rent a space)',
-  host: 'A Host (I have a space available to rent)'
-};
-
 export default function SignUpLoginModal({
   isOpen,
   onClose,
-  initialView = 'login',
+  initialView = 'initial',
   onAuthSuccess,
   disableClose = false,
-  defaultUserType = null,
-  showUserTypeSelector = false,
-  skipReload = false
+  defaultUserType = null // 'host' or 'guest' for route-based prefilling
 }) {
-  // View state: 'login' or 'signup'
-  const [currentView, setCurrentView] = useState(initialView);
+  // View state
+  const [currentView, setCurrentView] = useState(VIEWS.INITIAL);
+
+  // Signup form state (persisted between steps)
+  const [signupData, setSignupData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    userType: defaultUserType === 'host' ? USER_TYPES.HOST : USER_TYPES.GUEST,
+    birthMonth: '',
+    birthDay: '',
+    birthYear: '',
+    phoneNumber: '',
+    password: '',
+    confirmPassword: ''
+  });
 
   // Login form state
-  const [loginForm, setLoginForm] = useState({ email: '', password: '' });
-  const [loginError, setLoginError] = useState('');
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: ''
+  });
+
+  // Password reset state
+  const [resetEmail, setResetEmail] = useState('');
+
+  // UI state
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [passwordMismatch, setPasswordMismatch] = useState(false);
 
-  // Signup form state
-  const [signupForm, setSignupForm] = useState({ email: '', password: '', retype: '' });
-  const [signupError, setSignupError] = useState('');
-  const [isSigningUp, setIsSigningUp] = useState(false);
-  const [showSignupPassword, setShowSignupPassword] = useState(false);
-  const [showSignupRetype, setShowSignupRetype] = useState(false);
-
-  // User type state for signup
-  const [selectedUserType, setSelectedUserType] = useState(defaultUserType || 'guest');
-
-  // Reset form state when modal opens/closes or view changes
+  // Initialize view and prefill based on props
   useEffect(() => {
     if (isOpen) {
-      setCurrentView(initialView);
-      setSelectedUserType(defaultUserType || 'guest');
-      resetForms();
+      // Map initialView prop to internal view state
+      if (initialView === 'login') {
+        setCurrentView(VIEWS.LOGIN);
+      } else if (initialView === 'signup') {
+        setCurrentView(VIEWS.SIGNUP_STEP1);
+      } else {
+        setCurrentView(VIEWS.INITIAL);
+      }
+      setError('');
+
+      // Prefill user type if provided
+      if (defaultUserType) {
+        setSignupData(prev => ({
+          ...prev,
+          userType: defaultUserType === 'host' ? USER_TYPES.HOST : USER_TYPES.GUEST
+        }));
+      }
     }
   }, [isOpen, initialView, defaultUserType]);
 
-  const resetForms = useCallback(() => {
-    setLoginForm({ email: '', password: '' });
-    setLoginError('');
-    setShowLoginPassword(false);
-    setSignupForm({ email: '', password: '', retype: '' });
-    setSignupError('');
-    setShowSignupPassword(false);
-    setShowSignupRetype(false);
-  }, []);
+  // Check password match in real-time
+  useEffect(() => {
+    if (signupData.confirmPassword && signupData.password !== signupData.confirmPassword) {
+      setPasswordMismatch(true);
+    } else {
+      setPasswordMismatch(false);
+    }
+  }, [signupData.password, signupData.confirmPassword]);
 
   // Handle escape key
   useEffect(() => {
@@ -299,89 +471,700 @@ export default function SignUpLoginModal({
     }
   };
 
-  // Switch to login view
-  const handleShowLogin = () => {
-    setCurrentView('login');
-    setLoginError('');
-    setLoginForm({ email: '', password: '' });
+  // Reset all forms
+  const resetForms = useCallback(() => {
+    setSignupData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      userType: defaultUserType === 'host' ? USER_TYPES.HOST : USER_TYPES.GUEST,
+      birthMonth: '',
+      birthDay: '',
+      birthYear: '',
+      phoneNumber: '',
+      password: '',
+      confirmPassword: ''
+    });
+    setLoginData({ email: '', password: '' });
+    setResetEmail('');
+    setError('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     setShowLoginPassword(false);
+    setPasswordMismatch(false);
+  }, [defaultUserType]);
+
+  // Navigation helpers
+  const goToLogin = () => {
+    setCurrentView(VIEWS.LOGIN);
+    setError('');
+    // Preserve email if coming from signup
+    if (signupData.email) {
+      setLoginData(prev => ({ ...prev, email: signupData.email }));
+    }
   };
 
-  // Switch to signup view
-  const handleShowSignup = () => {
-    setCurrentView('signup');
-    setSignupError('');
-    setSignupForm({ email: '', password: '', retype: '' });
-    setShowSignupPassword(false);
-    setShowSignupRetype(false);
+  const goToSignupStep1 = () => {
+    setCurrentView(VIEWS.SIGNUP_STEP1);
+    setError('');
+  };
+
+  const goToSignupStep2 = () => {
+    setCurrentView(VIEWS.SIGNUP_STEP2);
+    setError('');
+  };
+
+  const goToPasswordReset = () => {
+    setCurrentView(VIEWS.PASSWORD_RESET);
+    setResetEmail(loginData.email); // Preserve email from login
+    setError('');
+  };
+
+  const goToInitial = () => {
+    setCurrentView(VIEWS.INITIAL);
+    setError('');
+  };
+
+  // Handle signup step 1 continue
+  const handleSignupStep1Continue = (e) => {
+    e.preventDefault();
+    setError('');
+
+    // Validate step 1
+    if (!signupData.firstName.trim()) {
+      setError('First name is required.');
+      return;
+    }
+    if (!signupData.lastName.trim()) {
+      setError('Last name is required.');
+      return;
+    }
+    if (!signupData.email.trim()) {
+      setError('Email is required.');
+      return;
+    }
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(signupData.email)) {
+      setError('Please enter a valid email address.');
+      return;
+    }
+
+    goToSignupStep2();
+  };
+
+  // Handle final signup submission
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    // Validate step 2
+    if (!signupData.birthMonth || !signupData.birthDay || !signupData.birthYear) {
+      setError('Please enter your date of birth.');
+      return;
+    }
+
+    if (!isOver18(parseInt(signupData.birthMonth), parseInt(signupData.birthDay), parseInt(signupData.birthYear))) {
+      setError('You must be at least 18 years old to use Split Lease.');
+      return;
+    }
+
+    if (!signupData.phoneNumber.trim()) {
+      setError('Phone number is required.');
+      return;
+    }
+
+    if (!signupData.password) {
+      setError('Password is required.');
+      return;
+    }
+
+    if (signupData.password.length < 4) {
+      setError('Password must be at least 4 characters.');
+      return;
+    }
+
+    if (signupData.password !== signupData.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+
+    setIsLoading(true);
+
+    // Call signup with extended data
+    const result = await signupUser(
+      signupData.email,
+      signupData.password,
+      signupData.confirmPassword,
+      {
+        firstName: signupData.firstName,
+        lastName: signupData.lastName,
+        userType: signupData.userType,
+        birthDate: `${signupData.birthYear}-${String(signupData.birthMonth).padStart(2, '0')}-${String(signupData.birthDay).padStart(2, '0')}`,
+        phoneNumber: signupData.phoneNumber
+      }
+    );
+
+    setIsLoading(false);
+
+    if (result.success) {
+      if (onAuthSuccess) {
+        onAuthSuccess(result);
+      }
+      onClose();
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } else {
+      setError(result.error || 'Signup failed. Please try again.');
+    }
   };
 
   // Handle login submission
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-    setLoginError('');
-    setIsLoggingIn(true);
+    setError('');
+    setIsLoading(true);
 
-    const result = await loginUser(loginForm.email, loginForm.password);
+    const result = await loginUser(loginData.email, loginData.password);
 
-    setIsLoggingIn(false);
+    setIsLoading(false);
 
     if (result.success) {
-      // Login successful
       if (onAuthSuccess) {
         onAuthSuccess(result);
       }
       onClose();
-      if (!skipReload) {
-        window.location.reload();
-      }
+      window.location.reload();
     } else {
-      setLoginError(result.error || 'Login failed. Please try again.');
+      setError(result.error || 'Login failed. Please check your credentials.');
     }
   };
 
-  // Handle signup submission
-  const handleSignupSubmit = async (e) => {
+  // Handle password reset
+  const handlePasswordReset = async (e) => {
     e.preventDefault();
-    setSignupError('');
-    setIsSigningUp(true);
+    setError('');
 
-    // Build options with user type if selector is shown or default is provided
-    const signupOptions = {};
-    if (showUserTypeSelector || defaultUserType) {
-      signupOptions.userType = USER_TYPE_VALUES[selectedUserType];
+    if (!resetEmail.trim()) {
+      setError('Please enter your email address.');
+      return;
     }
 
-    const result = await signupUser(
-      signupForm.email,
-      signupForm.password,
-      signupForm.retype,
-      signupOptions
-    );
+    setIsLoading(true);
 
-    setIsSigningUp(false);
+    try {
+      // Call the password reset workflow via Edge Function
+      const { data, error: fnError } = await supabase.functions.invoke('bubble-auth-proxy', {
+        body: {
+          action: 'reset-password',
+          payload: { email: resetEmail }
+        }
+      });
 
-    if (result.success) {
-      // Signup successful
-      if (onAuthSuccess) {
-        onAuthSuccess(result);
+      if (fnError || !data?.success) {
+        setError('Unable to send reset email. Please try again.');
+      } else {
+        alert('Password reset email sent! Please check your inbox.');
+        goToLogin();
       }
-      onClose();
-      if (!skipReload) {
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      }
-    } else {
-      setSignupError(result.error || 'Signup failed. Please try again.');
+    } catch (err) {
+      setError('Unable to send reset email. Please try again.');
     }
+
+    setIsLoading(false);
+  };
+
+  // Handle magic link request
+  const handleMagicLink = async () => {
+    const email = currentView === VIEWS.PASSWORD_RESET ? resetEmail : loginData.email;
+
+    if (!email.trim()) {
+      setError('Please enter your email address first.');
+      return;
+    }
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const { data, error: fnError } = await supabase.functions.invoke('bubble-auth-proxy', {
+        body: {
+          action: 'magic-link',
+          payload: { email }
+        }
+      });
+
+      if (fnError || !data?.success) {
+        setError('Unable to send magic link. Please try again.');
+      } else {
+        alert(`Magic link sent to ${email}! Please check your inbox.`);
+      }
+    } catch (err) {
+      setError('Unable to send magic link. Please try again.');
+    }
+
+    setIsLoading(false);
   };
 
   if (!isOpen) return null;
 
+  // ============================================================================
+  // Render Functions for Each View
+  // ============================================================================
+
+  const renderInitialView = () => (
+    <>
+      <div style={styles.logoContainer}>
+        <div style={styles.logo}>SL</div>
+      </div>
+      <div style={styles.header}>
+        <h2 style={styles.title}>Welcome to Split Lease!</h2>
+        <p style={styles.subtitle}>Have we met before?</p>
+      </div>
+
+      <button
+        style={styles.buttonSecondary}
+        onClick={goToSignupStep1}
+      >
+        I'm new around here
+      </button>
+
+      <button
+        style={styles.buttonSecondary}
+        onClick={goToLogin}
+      >
+        Log into my account
+      </button>
+
+      <button
+        style={styles.buttonPrimary}
+        onClick={() => {
+          // Market report signup - for now just go to signup
+          goToSignupStep1();
+        }}
+      >
+        Sign Up with Market Report
+      </button>
+    </>
+  );
+
+  const renderLoginView = () => (
+    <>
+      <div style={styles.logoContainer}>
+        <div style={styles.logo}>SL</div>
+      </div>
+      <div style={styles.header}>
+        <h2 style={styles.title}>Welcome back!</h2>
+      </div>
+
+      <div style={styles.sectionLabel}>Login</div>
+
+      <form onSubmit={handleLoginSubmit}>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Email *</label>
+          <input
+            type="email"
+            value={loginData.email}
+            onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+            required
+            placeholder="example@example.com"
+            style={styles.input}
+            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          />
+        </div>
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Password *</label>
+          <div style={styles.passwordWrapper}>
+            <input
+              type={showLoginPassword ? 'text' : 'password'}
+              value={loginData.password}
+              onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+              required
+              placeholder="Enter your password"
+              style={{ ...styles.input, ...styles.inputWithIcon }}
+              onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
+              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            />
+            <button
+              type="button"
+              onClick={() => setShowLoginPassword(!showLoginPassword)}
+              style={styles.togglePasswordBtn}
+            >
+              <EyeIcon open={showLoginPassword} />
+            </button>
+          </div>
+        </div>
+
+        {error && (
+          <div style={styles.errorBox}>
+            <p style={styles.errorText}>{error}</p>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isLoading || !loginData.email || !loginData.password}
+          style={{
+            ...styles.buttonPrimary,
+            ...(isLoading || !loginData.email || !loginData.password ? styles.buttonDisabled : {})
+          }}
+        >
+          {isLoading ? 'Logging in...' : 'Login'}
+        </button>
+
+        {/* Show additional options after email is entered */}
+        {loginData.email && (
+          <>
+            <div style={styles.linkText}>
+              <button type="button" onClick={handleMagicLink} style={styles.link}>
+                Log in Without Password
+              </button>
+            </div>
+            <div style={styles.linkText}>
+              <button type="button" onClick={goToPasswordReset} style={styles.link}>
+                Forgot Password? Reset here
+              </button>
+            </div>
+          </>
+        )}
+
+        <div style={{ ...styles.divider }}>
+          <div style={styles.dividerLine} />
+          <span style={styles.dividerText}>or</span>
+          <div style={styles.dividerLine} />
+        </div>
+
+        <div style={styles.linkText}>
+          <span style={{ color: '#6b7280' }}>Don't have an account? </span>
+          <button type="button" onClick={goToSignupStep1} style={styles.link}>
+            Sign Up Here
+          </button>
+        </div>
+      </form>
+    </>
+  );
+
+  const renderSignupStep1 = () => (
+    <>
+      <div style={styles.logoContainer}>
+        <div style={styles.logo}>SL</div>
+      </div>
+      <div style={styles.header}>
+        <h2 style={styles.title}>Nice To Meet You!</h2>
+      </div>
+
+      <p style={styles.requiredNote}>*Must match your government ID</p>
+
+      <form onSubmit={handleSignupStep1Continue}>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>First Name *</label>
+          <input
+            type="text"
+            value={signupData.firstName}
+            onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
+            required
+            placeholder="First Name"
+            style={styles.input}
+            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          />
+        </div>
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Last Name *</label>
+          <input
+            type="text"
+            value={signupData.lastName}
+            onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
+            required
+            placeholder="Last Name"
+            style={styles.input}
+            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          />
+        </div>
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Email *</label>
+          <input
+            type="email"
+            value={signupData.email}
+            onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+            required
+            placeholder="example@example.com"
+            style={styles.input}
+            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          />
+          <p style={styles.helperText}>
+            Your email serves as your User ID and primary communication channel
+          </p>
+        </div>
+
+        {error && (
+          <div style={styles.errorBox}>
+            <p style={styles.errorText}>{error}</p>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          style={{
+            ...styles.buttonPrimary,
+            ...(isLoading ? styles.buttonDisabled : {})
+          }}
+        >
+          Continue
+        </button>
+
+        <div style={styles.linkText}>
+          <span style={{ color: '#6b7280' }}>Have an account? </span>
+          <button type="button" onClick={goToLogin} style={styles.link}>
+            Log In
+          </button>
+        </div>
+      </form>
+    </>
+  );
+
+  const renderSignupStep2 = () => (
+    <>
+      <div style={styles.logoContainer}>
+        <div style={styles.logo}>SL</div>
+      </div>
+      <div style={styles.header}>
+        <h2 style={styles.title}>Hi, {signupData.firstName}!</h2>
+      </div>
+
+      <form onSubmit={handleSignupSubmit}>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>I am signing up to be *</label>
+          <select
+            value={signupData.userType}
+            onChange={(e) => setSignupData({ ...signupData, userType: e.target.value })}
+            style={styles.select}
+            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          >
+            <option value={USER_TYPES.GUEST}>A Guest (I would like to rent a space)</option>
+            <option value={USER_TYPES.HOST}>A Host (I have a space available to rent)</option>
+          </select>
+        </div>
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Birth Date (select month, year and day) *</label>
+          <div style={styles.dateInputsRow}>
+            <select
+              value={signupData.birthMonth}
+              onChange={(e) => setSignupData({ ...signupData, birthMonth: e.target.value })}
+              style={styles.dateSelect}
+            >
+              <option value="">Month</option>
+              {months.map((month, idx) => (
+                <option key={month} value={idx + 1}>{month}</option>
+              ))}
+            </select>
+            <select
+              value={signupData.birthDay}
+              onChange={(e) => setSignupData({ ...signupData, birthDay: e.target.value })}
+              style={styles.dateSelect}
+            >
+              <option value="">Day</option>
+              {getDaysInMonth(parseInt(signupData.birthMonth), parseInt(signupData.birthYear)).map(day => (
+                <option key={day} value={day}>{day}</option>
+              ))}
+            </select>
+            <select
+              value={signupData.birthYear}
+              onChange={(e) => setSignupData({ ...signupData, birthYear: e.target.value })}
+              style={styles.dateSelect}
+            >
+              <option value="">Year</option>
+              {years.map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+          </div>
+          <p style={styles.helperText}>
+            To use our service, you must be 18 years old. Your date of birth will be kept confidential.
+          </p>
+        </div>
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Phone Number *</label>
+          <input
+            type="tel"
+            value={signupData.phoneNumber}
+            onChange={(e) => setSignupData({ ...signupData, phoneNumber: e.target.value })}
+            required
+            placeholder="(555) 555-5555"
+            style={styles.input}
+            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          />
+        </div>
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Password *</label>
+          <div style={styles.passwordWrapper}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              value={signupData.password}
+              onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+              required
+              minLength={4}
+              placeholder="Enter your password"
+              style={{ ...styles.input, ...styles.inputWithIcon }}
+              onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
+              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={styles.togglePasswordBtn}
+            >
+              <EyeIcon open={showPassword} />
+            </button>
+          </div>
+        </div>
+
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Re-enter Password *</label>
+          <div style={styles.passwordWrapper}>
+            <input
+              type={showConfirmPassword ? 'text' : 'password'}
+              value={signupData.confirmPassword}
+              onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
+              required
+              minLength={4}
+              placeholder="Retype your password"
+              style={{
+                ...styles.input,
+                ...styles.inputWithIcon,
+                ...(passwordMismatch ? styles.inputError : {}),
+                ...(signupData.confirmPassword && !passwordMismatch && signupData.password === signupData.confirmPassword ? styles.inputSuccess : {})
+              }}
+              onFocus={(e) => e.target.style.borderColor = passwordMismatch ? '#dc2626' : '#6c40f5'}
+              onBlur={(e) => e.target.style.borderColor = passwordMismatch ? '#dc2626' : '#d1d5db'}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={styles.togglePasswordBtn}
+            >
+              <EyeIcon open={showConfirmPassword} />
+            </button>
+          </div>
+          {passwordMismatch && (
+            <p style={styles.inlineError}>The passwords don't match</p>
+          )}
+        </div>
+
+        {error && (
+          <div style={styles.errorBox}>
+            <p style={styles.errorText}>{error}</p>
+          </div>
+        )}
+
+        <p style={styles.termsText}>
+          By signing up or logging in, you agree to the Split Lease{' '}
+          <a href="/terms" target="_blank" style={{ color: '#6c40f5' }}>Terms of Use</a>,{' '}
+          <a href="/privacy" target="_blank" style={{ color: '#6c40f5' }}>Privacy Policy</a> and{' '}
+          <a href="/guidelines" target="_blank" style={{ color: '#6c40f5' }}>Community Guidelines</a>.
+        </p>
+
+        <button
+          type="submit"
+          disabled={isLoading || passwordMismatch}
+          style={{
+            ...styles.buttonPrimary,
+            ...(isLoading || passwordMismatch ? styles.buttonDisabled : {})
+          }}
+        >
+          {isLoading ? 'Creating Account...' : 'Agree and Sign Up'}
+        </button>
+
+        <button
+          type="button"
+          onClick={goToSignupStep1}
+          style={styles.goBackBtn}
+        >
+          <ArrowLeftIcon /> Go Back
+        </button>
+      </form>
+    </>
+  );
+
+  const renderPasswordResetView = () => (
+    <>
+      <div style={styles.header}>
+        <h2 style={styles.title}>Enter your email to reset your password.</h2>
+      </div>
+
+      <form onSubmit={handlePasswordReset}>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Email *</label>
+          <input
+            type="email"
+            value={resetEmail}
+            onChange={(e) => setResetEmail(e.target.value)}
+            required
+            placeholder="example@example.com"
+            style={styles.input}
+            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
+            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+          />
+        </div>
+
+        {error && (
+          <div style={styles.errorBox}>
+            <p style={styles.errorText}>{error}</p>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isLoading || !resetEmail}
+          style={{
+            ...styles.buttonPrimary,
+            ...(isLoading || !resetEmail ? styles.buttonDisabled : {})
+          }}
+        >
+          {isLoading ? 'Sending...' : 'Reset my password'}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleMagicLink}
+          disabled={isLoading || !resetEmail}
+          style={{
+            ...styles.buttonSecondary,
+            ...(isLoading || !resetEmail ? { opacity: 0.5, cursor: 'not-allowed' } : {})
+          }}
+        >
+          Send me a magic login link
+        </button>
+
+        <div style={styles.linkText}>
+          <button type="button" onClick={goToLogin} style={styles.link}>
+            Cancel
+          </button>
+        </div>
+      </form>
+    </>
+  );
+
+  // ============================================================================
+  // Main Render
+  // ============================================================================
+
   return (
     <div style={styles.overlay} onClick={handleOverlayClick}>
-      <div style={{ ...styles.modal, position: 'relative' }} onClick={(e) => e.stopPropagation()}>
+      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
         {/* Close button */}
         {!disableClose && (
           <button style={styles.closeBtn} onClick={onClose} aria-label="Close">
@@ -389,254 +1172,12 @@ export default function SignUpLoginModal({
           </button>
         )}
 
-        {currentView === 'login' ? (
-          // LOGIN VIEW
-          <>
-            <div style={styles.header}>
-              <h2 style={styles.title}>Sign In</h2>
-              <p style={styles.subtitle}>Enter your credentials to access your account</p>
-            </div>
-
-            <form onSubmit={handleLoginSubmit}>
-              {/* Email */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Email</label>
-                <input
-                  type="email"
-                  value={loginForm.email}
-                  onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
-                  required
-                  placeholder="your@email.com"
-                  style={styles.input}
-                  onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                />
-              </div>
-
-              {/* Password */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Password</label>
-                <div style={styles.passwordWrapper}>
-                  <input
-                    type={showLoginPassword ? 'text' : 'password'}
-                    value={loginForm.password}
-                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                    required
-                    placeholder="Enter your password"
-                    style={{ ...styles.input, ...styles.inputWithIcon }}
-                    onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
-                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    style={styles.togglePasswordBtn}
-                  >
-                    {showLoginPassword ? 'Hide' : 'Show'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Error message */}
-              {loginError && (
-                <div style={styles.errorBox}>
-                  <p style={styles.errorText}>{loginError}</p>
-                </div>
-              )}
-
-              {/* Buttons */}
-              <div style={styles.buttonRow}>
-                {!disableClose && (
-                  <button type="button" onClick={onClose} style={styles.cancelBtn}>
-                    Cancel
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  disabled={isLoggingIn}
-                  style={{
-                    ...styles.submitBtn,
-                    ...(isLoggingIn ? styles.submitBtnDisabled : {}),
-                    flex: disableClose ? 'none' : 1,
-                    width: disableClose ? '100%' : 'auto'
-                  }}
-                >
-                  {isLoggingIn ? 'Signing In...' : 'Sign In'}
-                </button>
-              </div>
-
-              {/* Switch to signup */}
-              <div style={styles.switchText}>
-                <p style={styles.switchParagraph}>
-                  Don't have an account?{' '}
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleShowSignup();
-                    }}
-                    style={styles.switchLink}
-                  >
-                    Sign Up
-                  </a>
-                </p>
-              </div>
-            </form>
-          </>
-        ) : (
-          // SIGNUP VIEW
-          <>
-            <div style={styles.header}>
-              <h2 style={styles.title}>Sign Up</h2>
-              <p style={styles.subtitle}>Create your account to get started</p>
-            </div>
-
-            <form onSubmit={handleSignupSubmit}>
-              {/* User Type Selector */}
-              {showUserTypeSelector && (
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>I am...</label>
-                  <div style={styles.userTypeSelector}>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedUserType('guest')}
-                      style={{
-                        ...styles.userTypeOption,
-                        ...(selectedUserType === 'guest' ? styles.userTypeOptionSelected : {})
-                      }}
-                    >
-                      <div style={styles.userTypeIcon}>🏠</div>
-                      <p style={styles.userTypeLabel}>A Guest</p>
-                      <p style={styles.userTypeDescription}>Looking to rent</p>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSelectedUserType('host')}
-                      style={{
-                        ...styles.userTypeOption,
-                        ...(selectedUserType === 'host' ? styles.userTypeOptionSelected : {})
-                      }}
-                    >
-                      <div style={styles.userTypeIcon}>🔑</div>
-                      <p style={styles.userTypeLabel}>A Host</p>
-                      <p style={styles.userTypeDescription}>Listing my space</p>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Email */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Email</label>
-                <input
-                  type="email"
-                  value={signupForm.email}
-                  onChange={(e) => setSignupForm({ ...signupForm, email: e.target.value })}
-                  required
-                  placeholder="your@email.com"
-                  style={styles.input}
-                  onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
-                  onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                />
-              </div>
-
-              {/* Password */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Password (min 4 characters)</label>
-                <div style={styles.passwordWrapper}>
-                  <input
-                    type={showSignupPassword ? 'text' : 'password'}
-                    value={signupForm.password}
-                    onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
-                    required
-                    minLength={4}
-                    placeholder="Enter your password"
-                    style={{ ...styles.input, ...styles.inputWithIcon }}
-                    onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
-                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowSignupPassword(!showSignupPassword)}
-                    style={styles.togglePasswordBtn}
-                  >
-                    {showSignupPassword ? 'Hide' : 'Show'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Retype Password */}
-              <div style={styles.formGroup}>
-                <label style={styles.label}>Retype Password</label>
-                <div style={styles.passwordWrapper}>
-                  <input
-                    type={showSignupRetype ? 'text' : 'password'}
-                    value={signupForm.retype}
-                    onChange={(e) => setSignupForm({ ...signupForm, retype: e.target.value })}
-                    required
-                    minLength={4}
-                    placeholder="Retype your password"
-                    style={{ ...styles.input, ...styles.inputWithIcon }}
-                    onFocus={(e) => e.target.style.borderColor = '#5B21B6'}
-                    onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowSignupRetype(!showSignupRetype)}
-                    style={styles.togglePasswordBtn}
-                  >
-                    {showSignupRetype ? 'Hide' : 'Show'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Error message */}
-              {signupError && (
-                <div style={styles.errorBox}>
-                  <p style={styles.errorText}>{signupError}</p>
-                </div>
-              )}
-
-              {/* Buttons */}
-              <div style={styles.buttonRow}>
-                {!disableClose && (
-                  <button type="button" onClick={onClose} style={styles.cancelBtn}>
-                    Cancel
-                  </button>
-                )}
-                <button
-                  type="submit"
-                  disabled={isSigningUp}
-                  style={{
-                    ...styles.submitBtn,
-                    ...(isSigningUp ? styles.submitBtnDisabled : {}),
-                    flex: disableClose ? 'none' : 1,
-                    width: disableClose ? '100%' : 'auto'
-                  }}
-                >
-                  {isSigningUp ? 'Signing Up...' : 'Sign Up'}
-                </button>
-              </div>
-
-              {/* Switch to login */}
-              <div style={styles.switchText}>
-                <p style={styles.switchParagraph}>
-                  Already have an account?{' '}
-                  <a
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      handleShowLogin();
-                    }}
-                    style={styles.switchLink}
-                  >
-                    Sign In
-                  </a>
-                </p>
-              </div>
-            </form>
-          </>
-        )}
+        {/* Render current view */}
+        {currentView === VIEWS.INITIAL && renderInitialView()}
+        {currentView === VIEWS.LOGIN && renderLoginView()}
+        {currentView === VIEWS.SIGNUP_STEP1 && renderSignupStep1()}
+        {currentView === VIEWS.SIGNUP_STEP2 && renderSignupStep2()}
+        {currentView === VIEWS.PASSWORD_RESET && renderPasswordResetView()}
       </div>
     </div>
   );

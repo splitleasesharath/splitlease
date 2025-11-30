@@ -13,27 +13,44 @@
  *
  * @param bubbleAuthBaseUrl - Base URL for Bubble auth API
  * @param bubbleApiKey - API key for Bubble
- * @param payload - Request payload {email, password, retype}
+ * @param payload - Request payload {email, password, retype, additionalData?}
+ *   additionalData may include: firstName, lastName, userType, birthDate, phoneNumber
  * @returns {token, user_id, expires}
  */
 
 import { BubbleApiError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 
+interface SignupAdditionalData {
+  firstName?: string;
+  lastName?: string;
+  userType?: 'Host' | 'Guest';
+  birthDate?: string; // ISO format: YYYY-MM-DD
+  phoneNumber?: string;
+}
+
 export async function handleSignup(
   bubbleAuthBaseUrl: string,
   bubbleApiKey: string,
-  supabaseUrl: string,
-  supabaseServiceKey: string,
   payload: any
 ): Promise<any> {
   console.log('[signup] ========== SIGNUP REQUEST ==========');
 
   // Validate required fields
   validateRequiredFields(payload, ['email', 'password', 'retype']);
-  const { email, password, retype, firstName, lastName, userType, birthDate, phoneNumber } = payload;
+  const { email, password, retype, additionalData } = payload;
+
+  // Extract additional signup data
+  const {
+    firstName = '',
+    lastName = '',
+    userType = 'Guest',
+    birthDate = '',
+    phoneNumber = ''
+  }: SignupAdditionalData = additionalData || {};
 
   console.log(`[signup] Registering new user: ${email}`);
+  console.log(`[signup] Additional data: firstName=${firstName}, lastName=${lastName}, userType=${userType}`);
 
   // Client-side validation (same as current auth.js)
   if (password.length < 4) {
@@ -49,17 +66,29 @@ export async function handleSignup(
     const url = `${bubbleAuthBaseUrl}/wf/signup-user`;
     console.log(`[signup] Calling Bubble API: ${url}`);
 
+    // Build request body with all available fields
+    const requestBody: Record<string, any> = {
+      email,
+      password,
+      retype
+    };
+
+    // Add optional fields if provided
+    if (firstName) requestBody.first_name = firstName;
+    if (lastName) requestBody.last_name = lastName;
+    if (userType) requestBody.user_type = userType;
+    if (birthDate) requestBody.birth_date = birthDate;
+    if (phoneNumber) requestBody.phone_number = phoneNumber;
+
+    console.log(`[signup] Request body:`, JSON.stringify(requestBody, null, 2));
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${bubbleApiKey}`
       },
-      body: JSON.stringify({
-        email,
-        password,
-        retype
-      })
+      body: JSON.stringify(requestBody)
     });
 
     console.log(`[signup] Bubble response status: ${response.status} ${response.statusText}`);
@@ -99,62 +128,6 @@ export async function handleSignup(
     console.log(`[signup]    User ID: ${userId}`);
     console.log(`[signup]    Token expires in: ${expires} seconds`);
     console.log(`[signup]    User automatically logged in`);
-
-    // Insert user into Supabase
-    console.log(`[signup] Inserting user into Supabase...`);
-
-    // Build Supabase user record with all available fields
-    const supabaseUserRecord: Record<string, any> = {
-      '_id': userId,
-      'email as text': email
-    };
-
-    // Add optional fields if provided (using Supabase column names)
-    if (firstName) supabaseUserRecord['Name - First'] = firstName;
-    if (lastName) supabaseUserRecord['Name - Last'] = lastName;
-    if (userType) supabaseUserRecord['Type - User Current'] = userType;
-    // Convert birthDate from ISO string to PostgreSQL timestamp format if provided
-    if (birthDate) {
-      try {
-        // Parse ISO date string and convert to timestamp
-        const dateObj = new Date(birthDate);
-        if (isNaN(dateObj.getTime())) {
-          console.warn(`[signup] Invalid birthDate format: ${birthDate}, skipping`);
-        } else {
-          supabaseUserRecord['Date of Birth'] = dateObj.toISOString();
-        }
-      } catch (e) {
-        console.warn(`[signup] Error parsing birthDate: ${e}, skipping`);
-      }
-    }
-    if (phoneNumber) supabaseUserRecord['Phone Number (as text)'] = phoneNumber;
-
-    console.log(`[signup] Supabase user record:`, JSON.stringify(supabaseUserRecord, null, 2));
-
-    try {
-      const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(supabaseUserRecord)
-      });
-
-      if (!supabaseResponse.ok) {
-        const errorText = await supabaseResponse.text();
-        console.error(`[signup] Supabase insert failed: ${supabaseResponse.status} - ${errorText}`);
-        // Log but don't fail - user exists in Bubble
-      } else {
-        console.log(`[signup] ✅ User inserted into Supabase`);
-      }
-    } catch (supabaseError) {
-      console.error(`[signup] Supabase insert error: ${supabaseError}`);
-      // Log but don't fail - user exists in Bubble
-    }
-
     console.log(`[signup] ========== SIGNUP COMPLETE ==========`);
 
     // Return authentication data (user is automatically logged in)
