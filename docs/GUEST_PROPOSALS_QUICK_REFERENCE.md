@@ -223,6 +223,104 @@ const daysToDisplay = isCounteroffer
 | `PROPOSAL_APPROVED_BY_HOST` | 3 | Approved (progress tracker updates) |
 | `COUNTEROFFER_SUBMITTED_AWAITING_...` | 2 | Show hcDaysSelected instead |
 
+## Conditional Patterns (Cascading Overrides)
+
+### Pattern: "Bottom Wins" (CSS-like)
+Similar to CSS specificity where later rules override earlier ones, conditionals can be structured so **the last matching condition wins**.
+
+#### Status Banner Example
+**File**: `ProposalCard.jsx:100-131`
+
+The `STATUS_BANNERS` object uses exact key matching. If you need override behavior, structure checks from general to specific:
+
+```javascript
+// Conceptual pattern - NOT in code
+let bannerConfig = null;
+
+// General conditions first
+if (isAccepted) bannerConfig = { text: 'Accepted', color: 'green' };
+
+// More specific conditions AFTER (override previous)
+if (isAccepted && isDrafting) bannerConfig = { text: 'Drafting', color: 'blue' };
+
+// Most specific condition LAST (final override)
+if (isAccepted && isDrafting && hasIssue) bannerConfig = { text: 'Issue', color: 'red' };
+```
+
+#### VM Button State Example
+**File**: `ProposalCard.jsx:385-409`
+
+The current implementation uses **early return** (first match wins):
+```javascript
+const getVmButtonState = () => {
+  if (vmDeclined) return { label: 'Declined' };     // Check 1
+  if (vmConfirmed) return { label: 'Confirmed' };   // Check 2
+  if (vmBooked) return { label: 'Accepted' };       // Check 3
+  return { label: 'Request' };                      // Default
+};
+```
+
+To use **"bottom wins"** pattern instead:
+```javascript
+const getVmButtonState = () => {
+  let state = { label: 'Request', disabled: false };  // Default
+
+  if (vmBooked) state = { label: 'Accepted', disabled: true };     // Override 1
+  if (vmConfirmed) state = { label: 'Confirmed', disabled: true }; // Override 2
+  if (vmDeclined) state = { label: 'Declined', disabled: false };  // Override 3 (wins)
+
+  return state;
+};
+```
+
+### When to Use Each Pattern
+
+| Pattern | Use When | Example |
+|---------|----------|---------|
+| **Early Return** (first wins) | Conditions are mutually exclusive | VM lifecycle states |
+| **Bottom Wins** (last wins) | Conditions can overlap, need override | Feature flags, permissions |
+| **Object Lookup** | Exact key mapping | Status banners, color themes |
+
+### JSX Conditional Rendering
+
+Multiple independent conditions can render multiple elements:
+```jsx
+{/* All matching conditions render their elements */}
+{!isTerminal && <VMButton />}           {/* Renders if active */}
+{status?.includes('Drafting') && <RemindButton />}  {/* Renders if drafting */}
+{!isTerminal && <SeeDetailsButton />}   {/* Renders if active */}
+{!isTerminal && <CancelButton />}       {/* Renders if active */}
+```
+
+Use ternary chains for **mutually exclusive** options:
+```jsx
+{isTerminal ? (
+  <DeleteButton />
+) : hasCounteroffer ? (
+  <RejectTermsButton />
+) : (
+  <CancelButton />
+)}
+```
+
+### Adding New Override Conditions
+
+When adding new button states or banners that should override existing ones:
+
+1. **Identify the override hierarchy** (most general → most specific)
+2. **Place more specific conditions AFTER general ones**
+3. **Test with overlapping conditions** to verify override behavior
+4. **Document the hierarchy** in comments
+
+Example adding a new VM state:
+```javascript
+// Existing checks...
+if (vmBooked) state = { label: 'Accepted' };
+
+// NEW: Add override for special case (place AFTER booked check)
+if (vmBooked && vmNeedsReschedule) state = { label: 'Reschedule Needed' };
+```
+
 ---
 
 **Last Updated**: 2025-11-30
