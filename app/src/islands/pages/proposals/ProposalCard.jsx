@@ -176,8 +176,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const checkInTime = listing?.['Check in time'] || '2:00 pm';
   const checkOutTime = listing?.['Check Out time'] || '11:00 am';
 
-  // House rules - use resolved names from query layer
-  const houseRules = listing?.houseRules || [];
+  // House rules - use resolved names from query layer (stored on proposal, not listing)
+  const houseRules = proposal.houseRules || [];
   const hasHouseRules = Array.isArray(houseRules) && houseRules.length > 0;
 
   // House rules toggle state

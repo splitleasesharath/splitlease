@@ -131,7 +131,8 @@ export async function fetchProposalsByIds(proposalIds) {
       "reason for cancellation",
       "rental application",
       "virtual meeting",
-      "Is Finalized"
+      "Is Finalized",
+      "House Rules"
     `)
     .in('_id', proposalIds)
     .order('"Created Date"', { ascending: false });
@@ -223,10 +224,26 @@ export async function fetchProposalsByIds(proposalIds) {
   const boroughIds = [...new Set((listings || []).map(l => l['Location - Borough']).filter(Boolean))];
   const hoodIds = [...new Set((listings || []).map(l => l['Location - Hood']).filter(Boolean))];
 
-  // Collect all house rule IDs from all listings
+  // Collect all house rule IDs from all proposals
+  // House Rules field is stored as a JSON string array: "[\"id1\", \"id2\"]"
   const allHouseRuleIds = [...new Set(
-    (listings || [])
-      .flatMap(l => l['Features - House Rules'] || [])
+    validProposals
+      .flatMap(p => {
+        const houseRulesRaw = p['House Rules'];
+        if (!houseRulesRaw) return [];
+        // Parse JSON string if needed
+        if (typeof houseRulesRaw === 'string') {
+          try {
+            return JSON.parse(houseRulesRaw);
+          } catch (e) {
+            console.warn('fetchProposalsByIds: Failed to parse House Rules JSON:', e);
+            return [];
+          }
+        }
+        // Already an array
+        if (Array.isArray(houseRulesRaw)) return houseRulesRaw;
+        return [];
+      })
       .filter(Boolean)
   )];
 
@@ -398,9 +415,23 @@ export async function fetchProposalsByIds(proposalIds) {
     const featuredPhotoUrl = listing ? featuredPhotoMap.get(listing._id) : null;
     // Lookup virtual meeting
     const virtualMeeting = vmMap.get(proposal._id) || null;
-    // Resolve house rules IDs to names
-    const listingHouseRuleIds = listing?.['Features - House Rules'] || [];
-    const houseRulesResolved = listingHouseRuleIds
+
+    // Resolve house rules IDs to names (from proposal, not listing)
+    // House Rules field is stored as a JSON string array: "[\"id1\", \"id2\"]"
+    let proposalHouseRuleIds = [];
+    const houseRulesRaw = proposal['House Rules'];
+    if (houseRulesRaw) {
+      if (typeof houseRulesRaw === 'string') {
+        try {
+          proposalHouseRuleIds = JSON.parse(houseRulesRaw);
+        } catch (e) {
+          proposalHouseRuleIds = [];
+        }
+      } else if (Array.isArray(houseRulesRaw)) {
+        proposalHouseRuleIds = houseRulesRaw;
+      }
+    }
+    const houseRulesResolved = proposalHouseRuleIds
       .map(id => houseRulesMap.get(id))
       .filter(Boolean);
 
@@ -411,11 +442,11 @@ export async function fetchProposalsByIds(proposalIds) {
         host,
         boroughName,
         hoodName,
-        featuredPhotoUrl,
-        houseRules: houseRulesResolved
+        featuredPhotoUrl
       } : null,
       guest: guest || null,
-      virtualMeeting
+      virtualMeeting,
+      houseRules: houseRulesResolved
     };
   });
 
