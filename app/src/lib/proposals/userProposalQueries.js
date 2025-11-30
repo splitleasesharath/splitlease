@@ -219,11 +219,18 @@ export async function fetchProposalsByIds(proposalIds) {
     console.log(`fetchProposalsByIds: Fetched ${(featuredPhotos || []).length} featured photos`);
   }
 
-  // Step 3.5: Fetch borough and neighborhood names from lookup tables
+  // Step 3.5: Fetch borough, neighborhood, and house rules names from lookup tables
   const boroughIds = [...new Set((listings || []).map(l => l['Location - Borough']).filter(Boolean))];
   const hoodIds = [...new Set((listings || []).map(l => l['Location - Hood']).filter(Boolean))];
 
-  console.log(`fetchProposalsByIds: Fetching ${boroughIds.length} boroughs and ${hoodIds.length} neighborhoods`);
+  // Collect all house rule IDs from all listings
+  const allHouseRuleIds = [...new Set(
+    (listings || [])
+      .flatMap(l => l['Features - House Rules'] || [])
+      .filter(Boolean)
+  )];
+
+  console.log(`fetchProposalsByIds: Fetching ${boroughIds.length} boroughs, ${hoodIds.length} neighborhoods, ${allHouseRuleIds.length} house rules`);
 
   let boroughs = [];
   let hoods = [];
@@ -249,6 +256,22 @@ export async function fetchProposalsByIds(proposalIds) {
     if (!hoodError) {
       hoods = hoodsData || [];
       console.log(`fetchProposalsByIds: Fetched ${hoods.length} neighborhoods`);
+    }
+  }
+
+  // Step 3.6: Fetch house rules names from lookup table
+  let houseRules = [];
+  if (allHouseRuleIds.length > 0) {
+    const { data: houseRulesData, error: houseRulesError } = await supabase
+      .from('zat_features_houserule')
+      .select('_id, "Name"')
+      .in('_id', allHouseRuleIds);
+
+    if (!houseRulesError) {
+      houseRules = houseRulesData || [];
+      console.log(`fetchProposalsByIds: Fetched ${houseRules.length} house rules`);
+    } else {
+      console.error('fetchProposalsByIds: Error fetching house rules:', houseRulesError);
     }
   }
 
@@ -358,6 +381,8 @@ export async function fetchProposalsByIds(proposalIds) {
   const hoodMap = new Map(hoods.map(h => [h._id, h['Display']]));
   // Key featured photos by their Listing ID
   const featuredPhotoMap = new Map((featuredPhotos || []).map(p => [p.Listing, p.Photo]));
+  // Key house rules by their _id to get names
+  const houseRulesMap = new Map(houseRules.map(r => [r._id, r.Name]));
 
   // Step 8: Manually join the data
   const enrichedProposals = validProposals.map((proposal) => {
@@ -373,6 +398,11 @@ export async function fetchProposalsByIds(proposalIds) {
     const featuredPhotoUrl = listing ? featuredPhotoMap.get(listing._id) : null;
     // Lookup virtual meeting
     const virtualMeeting = vmMap.get(proposal._id) || null;
+    // Resolve house rules IDs to names
+    const listingHouseRuleIds = listing?.['Features - House Rules'] || [];
+    const houseRulesResolved = listingHouseRuleIds
+      .map(id => houseRulesMap.get(id))
+      .filter(Boolean);
 
     return {
       ...proposal,
@@ -381,7 +411,8 @@ export async function fetchProposalsByIds(proposalIds) {
         host,
         boroughName,
         hoodName,
-        featuredPhotoUrl
+        featuredPhotoUrl,
+        houseRules: houseRulesResolved
       } : null,
       guest: guest || null,
       virtualMeeting

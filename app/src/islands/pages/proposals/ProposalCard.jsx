@@ -9,6 +9,7 @@
  * Design matches Bubble's MyProposals page layout.
  */
 
+import { useState } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
 
 // Day abbreviations for schedule display (single letter like Bubble)
@@ -175,9 +176,12 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const checkInTime = listing?.['Check in time'] || '2:00 pm';
   const checkOutTime = listing?.['Check Out time'] || '11:00 am';
 
-  // House rules - check if listing has any rules
-  const houseRules = listing?.['Features - House Rules'] || [];
+  // House rules - use resolved names from query layer
+  const houseRules = listing?.houseRules || [];
   const hasHouseRules = Array.isArray(houseRules) && houseRules.length > 0;
+
+  // House rules toggle state
+  const [showHouseRules, setShowHouseRules] = useState(false);
 
   // Progress stage (simplified - in real implementation, derive from status)
   const currentStageIndex = 3; // Example: at "Review Documents" stage
@@ -238,9 +242,27 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
             <span className="label">Anticipated Move-in</span> {anticipatedMoveIn || 'TBD'}
           </div>
 
-          {/* House rules link - only show if listing has rules */}
+          {/* House rules section - only show if listing has rules */}
           {hasHouseRules && (
-            <a href="#" className="house-rules-link">See House Rules</a>
+            <div className="house-rules-section">
+              <button
+                type="button"
+                className="house-rules-toggle"
+                onClick={() => setShowHouseRules(!showHouseRules)}
+              >
+                {showHouseRules ? 'Hide House Rules' : 'See House Rules'}
+              </button>
+
+              {showHouseRules && (
+                <div className="house-rules-grid">
+                  {houseRules.map((rule, index) => (
+                    <div key={index} className="house-rule-badge">
+                      {rule}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
         </div>
 

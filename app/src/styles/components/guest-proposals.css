@@ -355,7 +355,7 @@
   color: #000;
 }
 
-/* House Rules Link */
+/* House Rules Link (legacy - keep for compatibility) */
 .house-rules-link {
   font-family: 'Inter', sans-serif;
   font-size: 12px;
@@ -367,6 +367,66 @@
 
 .house-rules-link:hover {
   text-decoration: underline;
+}
+
+/* House Rules Section - Collapsible */
+.house-rules-section {
+  margin-top: 8px;
+  margin-bottom: 10px;
+}
+
+.house-rules-toggle {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4F46E5;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  line-height: 1.6;
+  transition: color 300ms;
+}
+
+.house-rules-toggle:hover {
+  text-decoration: underline;
+}
+
+/* House Rules Grid - 5 columns like Bubble */
+.house-rules-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.house-rule-badge {
+  background-color: #f0f0f0;
+  border-radius: 5px;
+  padding: 6px 8px;
+  font-family: 'Open Sans', 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Responsive: Fewer columns on smaller screens */
+@media (max-width: 768px) {
+  .house-rules-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .house-rules-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 /* Right Column - Photo with Host Overlay */
