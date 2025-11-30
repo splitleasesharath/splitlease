@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import type {
   SpaceSnapshot,
   SpaceType,
@@ -34,6 +34,17 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
   const addressInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
   const dataRef = useRef(data);
+
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  }, []);
 
   // Keep dataRef updated with latest data
   useEffect(() => {
@@ -256,54 +267,68 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
     setShowManualAddress(!showManualAddress);
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: Record<string, string> = {};
+    const errorOrder: string[] = [];
 
     if (!data.listingName || data.listingName.trim().length === 0) {
       newErrors.listingName = 'Listing name is required';
+      errorOrder.push('listingName');
     } else if (data.listingName.length > 35) {
       newErrors.listingName = 'Listing name must be 35 characters or less';
+      errorOrder.push('listingName');
     }
 
     if (!data.typeOfSpace) {
       newErrors.typeOfSpace = 'Type of space is required';
+      errorOrder.push('typeOfSpace');
     }
 
     if (!data.bedrooms || data.bedrooms < 0) {
       newErrors.bedrooms = 'Number of bedrooms is required';
+      errorOrder.push('bedrooms');
     }
 
     if (!data.typeOfKitchen) {
       newErrors.typeOfKitchen = 'Type of kitchen is required';
+      errorOrder.push('typeOfKitchen');
     }
 
     if (!data.typeOfParking) {
       newErrors.typeOfParking = 'Type of parking is required';
+      errorOrder.push('typeOfParking');
     }
 
     if (!data.bathrooms || data.bathrooms < 0) {
       newErrors.bathrooms = 'Number of bathrooms is required';
+      errorOrder.push('bathrooms');
     }
 
     if (!data.address.fullAddress || data.address.fullAddress.trim().length === 0) {
       setAddressError('Listing address is required');
       newErrors.address = 'Address is required';
+      errorOrder.push('fullAddress');
     } else if (!isAddressValid && !showManualAddress) {
       setAddressError('Please select a valid address from the dropdown or enter manually');
       newErrors.address = 'Address validation required';
+      errorOrder.push('fullAddress');
     }
 
     if (showManualAddress && !data.address.state) {
       newErrors.state = 'State is required when entering address manually';
+      errorOrder.push('state');
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return errorOrder;
   };
 
   const handleNext = () => {
-    if (validateForm()) {
+    const errorKeys = validateForm();
+    if (errorKeys.length === 0) {
       onNext();
+    } else {
+      scrollToFirstError(errorKeys);
     }
   };
 

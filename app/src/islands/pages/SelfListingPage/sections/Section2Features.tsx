@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { Features } from '../types/listing.types';
 import { AMENITIES_INSIDE, AMENITIES_OUTSIDE } from '../types/listing.types';
 import { getNeighborhoodByZipCode } from '../utils/neighborhoodService';
@@ -25,6 +25,17 @@ export const Section2Features: React.FC<Section2Props> = ({
   const [isLoadingInUnitAmenities, setIsLoadingInUnitAmenities] = useState(false);
   const [isLoadingBuildingAmenities, setIsLoadingBuildingAmenities] = useState(false);
   const [isLoadingDescription, setIsLoadingDescription] = useState(false);
+
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  }, []);
 
   const handleChange = (field: keyof Features, value: any) => {
     onChange({ ...data, [field]: value });
@@ -139,20 +150,25 @@ export const Section2Features: React.FC<Section2Props> = ({
     }
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: Record<string, string> = {};
+    const errorOrder: string[] = [];
 
     if (!data.descriptionOfLodging || data.descriptionOfLodging.trim().length === 0) {
       newErrors.descriptionOfLodging = 'Description of lodging is required';
+      errorOrder.push('descriptionOfLodging');
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return errorOrder;
   };
 
   const handleNext = () => {
-    if (validateForm()) {
+    const errorKeys = validateForm();
+    if (errorKeys.length === 0) {
       onNext();
+    } else {
+      scrollToFirstError(errorKeys);
     }
   };
 

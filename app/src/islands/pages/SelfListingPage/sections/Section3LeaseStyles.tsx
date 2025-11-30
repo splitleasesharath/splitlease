@@ -18,6 +18,17 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  }, []);
+
   /**
    * Convert boolean-based availableNights to NightId[] array
    */
@@ -105,24 +116,30 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
     setErrors({});
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = (): string[] => {
     const newErrors: Record<string, string> = {};
+    const errorOrder: string[] = [];
 
     if (data.rentalType === 'Weekly' && !data.weeklyPattern) {
       newErrors.weeklyPattern = 'Please select a weekly pattern';
+      errorOrder.push('weeklyPattern');
     }
 
     if (data.rentalType === 'Monthly' && !data.subsidyAgreement) {
       newErrors.subsidyAgreement = 'You must agree to the subsidy terms for monthly rentals';
+      errorOrder.push('subsidyAgreement');
     }
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return errorOrder;
   };
 
   const handleNext = () => {
-    if (validateForm()) {
+    const errorKeys = validateForm();
+    if (errorKeys.length === 0) {
       onNext();
+    } else {
+      scrollToFirstError(errorKeys);
     }
   };
 
