@@ -1,6 +1,6 @@
-# Library - Utility Modules
+# Library Map
 
-**GENERATED**: 2025-11-26
+**TYPE**: BRANCH NODE
 **PARENT**: app/src/
 
 ---
@@ -9,111 +9,104 @@
 
 [PURPOSE]: Utility modules, API clients, and shared infrastructure
 [PATTERN]: Service modules with async functions for data fetching
-[SCOPE]: Application-wide utilities
+[SCOPE]: Application-wide utilities (not UI components)
 
 ---
 
-## ### SUBDIRECTORIES ###
+## ### SUB-MODULES ###
 
-### constants/
-[INTENT]: Constant definitions for proposal statuses and stages
-[FILES]: 2 files
-[KEY_EXPORTS]: PROPOSAL_STAGES, PROPOSAL_STATUSES
-
-### scheduleSelector/
-[INTENT]: Utilities specific to schedule selector component
-[FILES]: 4 files
-[KEY_EXPORTS]: calculateNights, dayHelpers, validators
+- **[constants/](./constants/CLAUDE.md)**: Proposal statuses and stage definitions
+- **[scheduleSelector/](./scheduleSelector/CLAUDE.md)**: Schedule calculation utilities
 
 ---
 
-## ### FILE_INVENTORY ###
+## ### KEY_MODULES ###
+
+### supabase.js
+[INTENT]: Supabase client initialization
+[EXPORTS]: supabase (SupabaseClient instance)
+[USAGE]: `import { supabase } from 'lib/supabase'`
+[ENV]: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY
+
+---
 
 ### auth.js
-[INTENT]: Authentication functions (login, logout, validate, checkStatus)
-[IMPORTS]: ./secureStorage, ./supabase
-[DEPENDENCIES]: supabase/functions/bubble-auth-proxy/
+[INTENT]: Authentication functions
 [EXPORTS]: loginUser, logoutUser, checkAuthStatus, validateTokenAndFetchUser
+[DEPENDS_ON]: secureStorage, supabase
+[API]: bubble-auth-proxy Edge Function
 
-### availabilityValidation.js
-[INTENT]: Availability checking and date validation
-[IMPORTS]: ./dayUtils
+---
+
+### secureStorage.js
+[INTENT]: Encrypted storage for auth tokens (AES encryption)
+[EXPORTS]: setToken, getToken, clearToken, getSessionId, setSessionId
+[KEYS]: splitlease_auth_token, splitlease_session_id
+
+---
 
 ### bubbleAPI.js
 [INTENT]: Bubble API client routing through Edge Functions
-[IMPORTS]: ./supabase
-[DEPENDENCIES]: supabase/functions/bubble-proxy/, bubble-auth-proxy/
+[EXPORTS]: callBubbleAPI, fetchListing, submitProposal
+[DEPENDS_ON]: supabase
+[PATTERN]: All Bubble calls through Edge Functions (never direct)
 
-### config.js
-[INTENT]: Application configuration and environment values
-[EXPORTS]: config, SUPABASE_URL, SUPABASE_ANON_KEY
+---
 
 ### constants.js
-[INTENT]: Main constants file with statuses, days, tiers, endpoints
-[EXPORTS]: PROPOSAL_STATUSES, DAYS_OF_WEEK, PRICE_TIERS, API_ENDPOINTS
+[INTENT]: Main constants file
+[EXPORTS]:
+  - PROPOSAL_STATUSES: All status strings
+  - DAYS_OF_WEEK: Day name constants
+  - PRICE_TIERS: Search filter price ranges
+  - API_ENDPOINTS: Edge Function endpoints
+  - BOROUGH_MAP_CONFIGS: NYC borough map centers
+
+---
 
 ### dataLookups.js
-[INTENT]: Lookup functions for boroughs, neighborhoods, amenities
-[IMPORTS]: ./supabase
-[DATA_SOURCE]: Supabase lookup tables (zat_*)
+[INTENT]: Lookup functions for reference data
+[EXPORTS]: fetchBoroughs, fetchNeighborhoods, fetchAmenities, fetchHouseRules
+[DATA_SOURCE]: Supabase zat_* lookup tables
 
-### dayUtils.js
-[INTENT]: Day/week utility functions
-[EXPORTS]: getDayName, getWeekDays, formatDateRange
-
-### hotjar.js
-[INTENT]: Hotjar analytics integration
-[EXPORTS]: initHotjar, trackEvent
-
-### informationalTextsFetcher.js
-[INTENT]: CMS content fetcher from Supabase informational_texts
-[IMPORTS]: ./supabase
+---
 
 ### listingDataFetcher.js
 [INTENT]: Listing data retrieval via Edge Functions
-[IMPORTS]: ./bubbleAPI
-[EXPORTS]: fetchListing, fetchListingPhotos
+[EXPORTS]: fetchListing, fetchListingPhotos, fetchListingsByBorough
+[DEPENDS_ON]: bubbleAPI
 
-### mapUtils.js
-[INTENT]: Google Maps utilities
-[IMPORTS]: @react-google-maps/api
-
-### nycZipCodes.ts
-[INTENT]: NYC zip code validation and borough detection
-[EXPORTS]: isValidNYCZipCode, getBoroughByZipCode
-
-### priceCalculations.js
-[INTENT]: General pricing utilities
-[EXPORTS]: formatCurrency, calculateDiscount
+---
 
 ### proposalDataFetcher.js
 [INTENT]: Proposal data retrieval via Edge Functions
-[IMPORTS]: ./bubbleAPI
+[EXPORTS]: fetchProposal, fetchProposalsByGuest, fetchProposalsByHost
+[DEPENDS_ON]: bubbleAPI
+
+---
+
+### dayUtils.js
+[INTENT]: Day/week utility functions
+[EXPORTS]: getDayName, getWeekDays, formatDateRange, parseISODate
+
+---
 
 ### sanitize.js
 [INTENT]: HTML/input sanitization for XSS prevention
 [EXPORTS]: sanitizeHTML, sanitizeInput
+[USAGE]: Always sanitize user-generated content before display
 
-### secureStorage.js
-[INTENT]: Encrypted storage for auth tokens (AES encryption)
-[EXPORTS]: setToken, getToken, clearToken
-
-### supabase.js
-[INTENT]: Supabase client initialization
-[IMPORTS]: @supabase/supabase-js
-[EXPORTS]: supabase
-
-### supabaseUtils.js
-[INTENT]: Typed wrappers for Supabase operations
-[IMPORTS]: ./supabase
-[EXPORTS]: fetchFromTable, insertIntoTable
+---
 
 ### urlParams.js
 [INTENT]: URL parameter parsing utilities
-[EXPORTS]: getUrlParam, setUrlParam
+[EXPORTS]: getUrlParam, setUrlParam, removeUrlParam
 
-### SECURE_AUTH_README.md
-[INTENT]: Documentation for authentication security
+---
+
+### mapUtils.js
+[INTENT]: Google Maps utilities
+[EXPORTS]: formatAddress, geocodeAddress, getBoundsForListings
 
 ---
 
@@ -121,15 +114,34 @@
 
 ```javascript
 // All Bubble API calls go through Edge Functions
-import { supabase } from 'lib/supabase';
+import { supabase } from 'lib/supabase'
 
-async function fetchData() {
-  const { data } = await supabase.functions.invoke('bubble-proxy', {
+export async function fetchListing(listingId) {
+  const { data, error } = await supabase.functions.invoke('bubble-proxy', {
     body: { action: 'listing', type: 'fetch', id: listingId }
-  });
-  return data;
+  })
+
+  if (error) throw error
+  return data
 }
 ```
+
+---
+
+## ### CRITICAL_USAGE_RULES ###
+
+[RULE_1]: NEVER call Bubble API directly - always through Edge Functions
+[RULE_2]: Use secureStorage for auth tokens (encrypted)
+[RULE_3]: All environment variables start with VITE_ for frontend access
+[RULE_4]: API keys stored in Supabase Secrets, NOT in frontend
+
+---
+
+## ### DEPENDENCIES ###
+
+[LOCAL]: None (lib is foundational)
+[EXTERNAL]: @supabase/supabase-js
+[ENV]: VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_GOOGLE_MAPS_API_KEY
 
 ---
 

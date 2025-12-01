@@ -1,7 +1,6 @@
-# SelfListingPage Sections
+# SelfListingPage Sections Context
 
-**GENERATED**: 2025-11-26
-**ARCHITECTURE**: React Islands (TypeScript)
+**TYPE**: LEAF NODE
 **PARENT**: app/src/islands/pages/SelfListingPage/
 
 ---
@@ -14,46 +13,60 @@
 
 ---
 
-## ### FILE_INVENTORY ###
+## ### SECTION_CONTRACTS ###
 
 ### Section1SpaceSnapshot.tsx
+[PATH]: ./Section1SpaceSnapshot.tsx
 [INTENT]: Property type, bedrooms, bathrooms, address input section
-[IMPORTS]: react
 [FIELDS]: propertyType, bedrooms, bathrooms, address, borough, neighborhood
 [VALIDATION]: Required fields, valid NYC address
 
+---
+
 ### Section2Features.tsx
+[PATH]: ./Section2Features.tsx
 [INTENT]: Amenities and features selection section
-[IMPORTS]: react
-[DEPENDENCIES]: utils/amenitiesService
 [FIELDS]: selectedAmenities array
 [DATA_SOURCE]: Supabase zat_features_amenity table
+[DEPENDS_ON]: utils/amenitiesService
+
+---
 
 ### Section3LeaseStyles.tsx
+[PATH]: ./Section3LeaseStyles.tsx
 [INTENT]: Flexible lease configuration section
-[IMPORTS]: react
 [FIELDS]: availableDays, minimumStay, leaseTerms
 
+---
+
 ### Section4Pricing.tsx
+[PATH]: ./Section4Pricing.tsx
 [INTENT]: Pricing tier configuration section
-[IMPORTS]: react, ../components/NightlyPriceSlider
 [FIELDS]: nightlyRates by day count, cleaningFee, securityDeposit
+[DEPENDS_ON]: ../components/NightlyPriceSlider
+
+---
 
 ### Section5Rules.tsx
+[PATH]: ./Section5Rules.tsx
 [INTENT]: House rules and policies section
-[IMPORTS]: react
-[DATA_SOURCE]: Supabase zat_features_houserule table
 [FIELDS]: selectedRules array, customRules text
+[DATA_SOURCE]: Supabase zat_features_houserule table
+
+---
 
 ### Section6Photos.tsx
+[PATH]: ./Section6Photos.tsx
 [INTENT]: Photo upload section
-[IMPORTS]: react, shared/SubmitListingPhotos
 [FIELDS]: photos array
 [CONSTRAINTS]: 5-20 photos required
+[DEPENDS_ON]: shared/SubmitListingPhotos
+
+---
 
 ### Section7Review.tsx
+[PATH]: ./Section7Review.tsx
 [INTENT]: Final review section displaying all entered data before submission
-[IMPORTS]: react
 [ACTION]: Submit listing to Bubble API via Edge Function
 
 ---
@@ -78,11 +91,19 @@ Section 7: Review & Submit
 
 ---
 
-## ### USAGE_PATTERN ###
+## ### CRITICAL_USAGE_RULES ###
 
-[IMPORT_FROM]: import { Section1SpaceSnapshot } from './sections/Section1SpaceSnapshot'
-[CONSUMED_BY]: SelfListingPage.tsx
-[STATE_MANAGEMENT]: useSelfListingStore (Zustand)
+[RULE_1]: Each section validates before allowing next
+[RULE_2]: State managed by useSelfListingStore (Zustand)
+[RULE_3]: Draft auto-saved to localStorage on field change
+
+---
+
+## ### DEPENDENCIES ###
+
+[LOCAL]: useSelfListingStore, shared/SubmitListingPhotos
+[DATA]: Supabase zat_* lookup tables
+[EXTERNAL]: None
 
 ---
 

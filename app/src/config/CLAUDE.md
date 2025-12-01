@@ -1,11 +1,11 @@
-# Config - Application Configuration
+# Config - Application Configuration Context
 
-**GENERATED**: 2025-11-27
+**TYPE**: LEAF NODE
 **PARENT**: app/src/
 
 ---
 
-## DIRECTORY_INTENT
+## ### DIRECTORY_INTENT ###
 
 [PURPOSE]: Configuration mappings and constants for the application
 [PATTERN]: Export const objects and helper functions
@@ -13,15 +13,19 @@
 
 ---
 
-## FILE_INVENTORY
+## ### MODULE_CONTRACTS ###
 
 ### proposalStatusConfig.js
+[PATH]: ./proposalStatusConfig.js
 [INTENT]: Maps Bubble.io proposal status option set to React configuration
-[EXPORTS]: PROPOSAL_STATUS, STATUS_CONFIG, getStatusConfig()
+[EXPORTS]:
+  - PROPOSAL_STATUS: object - Enum of all proposal status strings
+  - STATUS_CONFIG: object - UI configuration per status
+  - getStatusConfig: (status: string) => StatusConfig | null
 
 ---
 
-## PROPOSAL_STATUS_ENUM
+## ### PROPOSAL_STATUS_ENUM ###
 
 ```javascript
 PROPOSAL_STATUS = {
@@ -42,22 +46,25 @@ PROPOSAL_STATUS = {
 
 ---
 
-## STATUS_CONFIG_STRUCTURE
+## ### STATUS_CONFIG_SHAPE ###
 
-Each status maps to:
-- `usualOrder`: Sort order (1-99, 99 = terminal states)
-- `guestAction1`: Primary action button text
-- `guestAction2`: Secondary action button text ('Invisible' = hidden)
+```javascript
+{
+  usualOrder: number,    // Sort order (1-99, 99 = terminal states)
+  guestAction1: string,  // Primary action button text
+  guestAction2: string   // Secondary action button text ('Invisible' = hidden)
+}
+```
 
 ---
 
-## USAGE
+## ### USAGE_PATTERN ###
 
 ```javascript
-import { PROPOSAL_STATUS, getStatusConfig } from 'src/config/proposalStatusConfig';
+import { PROPOSAL_STATUS, getStatusConfig } from 'src/config/proposalStatusConfig'
 
-const status = proposal.status;
-const config = getStatusConfig(status);
+const status = proposal.status
+const config = getStatusConfig(status)
 
 if (status === PROPOSAL_STATUS.HOST_COUNTEROFFER) {
   // Show counteroffer UI
@@ -66,10 +73,20 @@ if (status === PROPOSAL_STATUS.HOST_COUNTEROFFER) {
 
 ---
 
-## TECH_DEBT
+## ### CRITICAL_USAGE_RULES ###
 
-See `tech-debt/STATUS_CONFIG_TECH_DEBT.md` for future migration considerations.
+[RULE_1]: Use PROPOSAL_STATUS enum - never hardcode status strings
+[RULE_2]: Check for null from getStatusConfig (unknown status)
+[RULE_3]: 'Invisible' means button should be hidden
+
+---
+
+## ### DEPENDENCIES ###
+
+[LOCAL]: None
+[EXTERNAL]: None
 
 ---
 
 **FILE_COUNT**: 1
+**EXPORTS_COUNT**: 3
