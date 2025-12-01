@@ -134,8 +134,7 @@ export async function fetchProposalsByIds(proposalIds) {
       "Is Finalized",
       "House Rules",
       "remindersByGuest (number)",
-      "guest documents review finalized?",
-      "some nights unavailable"
+      "guest documents review finalized?"
     `)
     .in('_id', proposalIds)
     .order('"Created Date"', { ascending: false });
