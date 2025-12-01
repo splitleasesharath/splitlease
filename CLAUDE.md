@@ -96,10 +96,56 @@ Convert at boundaries: `adaptDaysFromBubble()`, `adaptDaysToBubble()`
 - Modify tables without explicit instruction
 - Hardcode IDs in migrations
 
+## Abstraction Ladder (CLAUDE.md Map)
+
+Contract-based documentation for AI navigation:
+
+```
+CLAUDE.md (Root - You are here)
+│
+├── app/CLAUDE.md (Frontend Guide)
+│   │
+│   ├── src/logic/CLAUDE.md (Four-Layer Logic Core)
+│   │   ├── calculators/CLAUDE.md → pricing/, scheduling/
+│   │   ├── rules/CLAUDE.md → auth/, pricing/, proposals/, scheduling/, search/, users/
+│   │   ├── processors/CLAUDE.md → display/, external/, listing/, proposal/, proposals/, user/
+│   │   └── workflows/CLAUDE.md → auth/, booking/, proposals/, scheduling/
+│   │
+│   ├── src/lib/CLAUDE.md (Utility Modules)
+│   │   ├── constants/CLAUDE.md (Proposal statuses/stages)
+│   │   └── scheduleSelector/CLAUDE.md (Day calculations)
+│   │
+│   ├── src/islands/shared/CLAUDE.md (Shared Components)
+│   │   ├── AiSignupMarketReport/CLAUDE.md
+│   │   ├── CreateDuplicateListingModal/CLAUDE.md
+│   │   ├── CreateProposalFlowV2Components/CLAUDE.md
+│   │   ├── HostScheduleSelector/CLAUDE.md
+│   │   ├── ImportListingModal/CLAUDE.md
+│   │   ├── ListingCard/CLAUDE.md
+│   │   ├── LoggedInAvatar/CLAUDE.md
+│   │   └── SubmitListingPhotos/CLAUDE.md
+│   │
+│   ├── src/islands/modals/CLAUDE.md (Modal Components)
+│   │
+│   ├── src/islands/pages/SelfListingPage/
+│   │   ├── sections/CLAUDE.md (7 form sections)
+│   │   ├── store/CLAUDE.md (Zustand state)
+│   │   └── styles/CLAUDE.md
+│   │
+│   └── src/config/CLAUDE.md (Status configuration)
+│
+└── supabase/ (Edge Functions - no CLAUDE.md files)
+```
+
+**[USAGE]**: Navigate to specific CLAUDE.md for function contracts, props, dependencies.
+
+---
+
 ## Key References
 | What | Where |
 |------|-------|
 | App guide | `app/CLAUDE.md` |
+| Logic contracts | `app/src/logic/CLAUDE.md` |
 | Development beliefs | `Context/DEVELOPMENT_BELIEFS.md` |
 | Database schema | `DATABASE_SCHEMA_OVERVIEW.md` |
 | Database relations | `Context/Database/DATABASE_RELATIONS.md` |
