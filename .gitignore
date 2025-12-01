@@ -95,3 +95,6 @@ plan/
 
 # Temporary directories
 .temp/*.gdoc
+
+# Deprecated code
+Deprecated/
