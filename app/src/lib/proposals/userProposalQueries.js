@@ -132,7 +132,10 @@ export async function fetchProposalsByIds(proposalIds) {
       "rental application",
       "virtual meeting",
       "Is Finalized",
-      "House Rules"
+      "House Rules",
+      "remindersByGuest (number)",
+      "guest documents review finalized?",
+      "some nights unavailable"
     `)
     .in('_id', proposalIds)
     .order('"Created Date"', { ascending: false });
@@ -191,7 +194,8 @@ export async function fetchProposalsByIds(proposalIds) {
       "Features - House Rules",
       "NEW Date Check-in Time",
       "NEW Date Check-out Time",
-      "Host / Landlord"
+      "Host / Landlord",
+      "House manual"
     `)
     .in('_id', listingIds);
 
@@ -341,7 +345,8 @@ export async function fetchProposalsByIds(proposalIds) {
         "About Me / Bio",
         "Verify - Linked In ID",
         "Verify - Phone",
-        "user verified?"
+        "user verified?",
+        "ID documents submitted?"
       `)
       .in('_id', guestIds);
 
@@ -442,7 +447,8 @@ export async function fetchProposalsByIds(proposalIds) {
         host,
         boroughName,
         hoodName,
-        featuredPhotoUrl
+        featuredPhotoUrl,
+        hasHouseManual: Boolean(listing['House manual'])
       } : null,
       guest: guest || null,
       virtualMeeting,

@@ -17,6 +17,7 @@ import { updateUrlWithProposal, getUserIdFromPath } from '../../../lib/proposals
 import { transformProposalData, getProposalDisplayText } from '../../../lib/proposals/dataTransformers.js';
 import { getStatusConfig, getStageFromStatus } from '../../../logic/constants/proposalStatuses.js';
 import { getAllStagesFormatted } from '../../../logic/constants/proposalStages.js';
+import { fetchStatusConfigurations, getButtonConfigForProposal, isStatusConfigCacheReady } from '../../../lib/proposals/statusButtonConfig.js';
 
 /**
  * Main logic hook for Guest Proposals Page
@@ -31,6 +32,7 @@ export function useGuestProposalsPageLogic() {
   const [user, setUser] = useState(null);
   const [proposals, setProposals] = useState([]);
   const [selectedProposal, setSelectedProposal] = useState(null);
+  const [statusConfigReady, setStatusConfigReady] = useState(false);
 
   // UI state
   const [isLoading, setIsLoading] = useState(true);
@@ -41,17 +43,23 @@ export function useGuestProposalsPageLogic() {
   // ============================================================================
 
   /**
-   * Load user proposals from URL
+   * Load user proposals from URL and status configurations
    */
   const loadProposals = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const data = await fetchUserProposalsFromUrl();
-      setUser(data.user);
-      setProposals(data.proposals);
-      setSelectedProposal(data.selectedProposal);
+      // Fetch proposals and status configurations in parallel
+      const [proposalData] = await Promise.all([
+        fetchUserProposalsFromUrl(),
+        fetchStatusConfigurations() // Caches for later use
+      ]);
+
+      setUser(proposalData.user);
+      setProposals(proposalData.proposals);
+      setSelectedProposal(proposalData.selectedProposal);
+      setStatusConfigReady(isStatusConfigCacheReady());
     } catch (err) {
       console.error('useGuestProposalsPageLogic: Error loading proposals:', err);
       setError(err.message || 'Failed to load proposals');
@@ -133,6 +141,14 @@ export function useGuestProposalsPageLogic() {
     label: getProposalDisplayText(transformProposalData(p))
   }));
 
+  /**
+   * Get button configuration for selected proposal
+   * Uses cached os_proposal_status data for dynamic labels
+   */
+  const buttonConfig = selectedProposal && statusConfigReady
+    ? getButtonConfigForProposal(selectedProposal)
+    : null;
+
   // ============================================================================
   // RETURN
   // ============================================================================
@@ -149,6 +165,7 @@ export function useGuestProposalsPageLogic() {
     currentStage,
     formattedStages,
     proposalOptions,
+    buttonConfig,
 
     // UI state
     isLoading,

@@ -527,7 +527,7 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
 // MAIN COMPONENT
 // ============================================================================
 
-export default function ProposalCard({ proposal, transformedProposal, statusConfig }) {
+export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig }) {
   if (!proposal) {
     return null;
   }
@@ -808,51 +808,119 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
             {formatPrice(nightlyPrice)} / night
           </div>
 
-          {/* Dynamic action buttons based on status */}
+          {/* Dynamic action buttons based on status - uses buttonConfig from os_proposal_status */}
           <div className="action-buttons">
-            {/* Button 1: Virtual Meeting - show for non-terminal, non-completed statuses */}
-            {!isTerminal && !isCompleted && (
+            {/* Fallback: Show basic buttons if buttonConfig not yet loaded */}
+            {!buttonConfig && !isTerminal && !isCompleted && (
+              <>
+                <button
+                  className={`btn-action-bar ${vmButtonState.className}`}
+                  disabled={vmButtonState.disabled}
+                >
+                  {vmButtonState.label}
+                </button>
+                <button
+                  className="btn-action-bar btn-modify-proposal"
+                  onClick={() => setShowProposalDetailsModal(true)}
+                >
+                  Modify Proposal
+                </button>
+                <button className="btn-action-bar btn-cancel-proposal">
+                  Cancel Proposal
+                </button>
+              </>
+            )}
+
+            {/* Button 1: Virtual Meeting - visibility based on status and VM state */}
+            {buttonConfig?.vmButton?.visible && (
               <button
                 className={`btn-action-bar ${vmButtonState.className}`}
                 disabled={vmButtonState.disabled}
+                style={vmButtonState.className === 'btn-vm-declined' ? { color: '#DB2E2E', fontWeight: 'bold' } : undefined}
               >
                 {vmButtonState.label}
               </button>
             )}
 
-            {/* Button 1 (alternate): Go to Leases - show for completed/activated proposals */}
-            {isCompleted && (
-              <a href="/my-leases" className="btn-action-bar btn-go-to-leases">
-                Go to Leases
-              </a>
+            {/* Button 2: Guest Action 1 - dynamic label from os_proposal_status.guest_action_1 */}
+            {buttonConfig?.guestAction1?.visible && (
+              buttonConfig.guestAction1.action === 'go_to_leases' ? (
+                <a
+                  href="/my-leases"
+                  className="btn-action-bar btn-go-to-leases"
+                  style={buttonConfig.guestAction1.style || undefined}
+                >
+                  {buttonConfig.guestAction1.label}
+                </a>
+              ) : (
+                <button
+                  className={`btn-action-bar ${
+                    buttonConfig.guestAction1.action === 'delete_proposal' ? 'btn-delete-proposal' :
+                    buttonConfig.guestAction1.action === 'remind_sl' ? 'btn-remind' :
+                    buttonConfig.guestAction1.action === 'modify_proposal' ? 'btn-modify-proposal' :
+                    buttonConfig.guestAction1.action === 'accept_counteroffer' ? 'btn-accept-counteroffer' :
+                    buttonConfig.guestAction1.action === 'confirm_interest' ? 'btn-interested' :
+                    'btn-primary-action'
+                  }`}
+                  style={buttonConfig.guestAction1.style || undefined}
+                  onClick={() => {
+                    // Handle different actions
+                    if (buttonConfig.guestAction1.action === 'modify_proposal') {
+                      setShowProposalDetailsModal(true);
+                    }
+                    // TODO: Add handlers for other actions (remind_sl, accept_counteroffer, etc.)
+                  }}
+                >
+                  {buttonConfig.guestAction1.label}
+                </button>
+              )
             )}
 
-            {/* Button 2: Remind Split Lease - show for Drafting or Host Review statuses */}
-            {(status?.includes('Drafting') || status === 'Host Review') && (
-              <button className="btn-action-bar btn-remind">
-                Remind Split Lease
-              </button>
-            )}
-
-            {/* Button 3: Modify Proposal - show for active (non-terminal, non-completed) proposals */}
-            {!isTerminal && !isCompleted && (
+            {/* Button 3: Guest Action 2 - dynamic label from os_proposal_status.guest_action_2 */}
+            {buttonConfig?.guestAction2?.visible && (
               <button
-                className="btn-action-bar btn-modify-proposal"
-                onClick={() => setShowProposalDetailsModal(true)}
+                className={`btn-action-bar ${
+                  buttonConfig.guestAction2.action === 'reject_suggestion' ? 'btn-not-interested' :
+                  buttonConfig.guestAction2.action === 'review_counteroffer' ? 'btn-review-terms' :
+                  buttonConfig.guestAction2.action === 'see_details' ? 'btn-see-details' :
+                  buttonConfig.guestAction2.action === 'verify_identity' ? 'btn-verify-identity' :
+                  'btn-secondary-action'
+                }`}
+                style={buttonConfig.guestAction2.style || undefined}
+                onClick={() => {
+                  // Handle different actions
+                  if (buttonConfig.guestAction2.action === 'see_details') {
+                    setShowProposalDetailsModal(true);
+                  }
+                  // TODO: Add handlers for other actions (reject_suggestion, review_counteroffer, verify_identity)
+                }}
               >
-                Modify Proposal
+                {buttonConfig.guestAction2.label}
               </button>
             )}
 
-            {/* Button 4: Cancel/Delete button - show based on status */}
-            {isTerminal && (
-              <button className="btn-action-bar btn-delete-proposal">
-                Delete Proposal
-              </button>
-            )}
-            {!isTerminal && !isCompleted && (
-              <button className="btn-action-bar btn-cancel-proposal">
-                Cancel Proposal
+            {/* Button 4: Cancel/Delete/Reject button - dynamic based on status */}
+            {buttonConfig?.cancelButton?.visible && (
+              <button
+                className={`btn-action-bar ${
+                  buttonConfig.cancelButton.action === 'delete_proposal' ? 'btn-delete-proposal' :
+                  buttonConfig.cancelButton.action === 'see_house_manual' ? 'btn-house-manual' :
+                  buttonConfig.cancelButton.action === 'reject_counteroffer' ? 'btn-reject-terms' :
+                  buttonConfig.cancelButton.action === 'reject_proposal' ? 'btn-reject-proposal' :
+                  'btn-cancel-proposal'
+                }`}
+                style={buttonConfig.cancelButton.style || undefined}
+                disabled={buttonConfig.cancelButton.disabled}
+                onClick={() => {
+                  // Handle different actions
+                  if (buttonConfig.cancelButton.action === 'see_house_manual') {
+                    // Navigate to house manual or open modal
+                    // TODO: Implement house manual navigation
+                  }
+                  // TODO: Add handlers for cancel, delete, reject actions
+                }}
+              >
+                {buttonConfig.cancelButton.label}
               </button>
             )}
           </div>

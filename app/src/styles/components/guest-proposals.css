@@ -700,6 +700,124 @@
   background-color: #DC2626;
 }
 
+/* Accept Counteroffer - Green */
+.btn-accept-counteroffer {
+  background-color: #39873D;
+  color: white;
+}
+
+.btn-accept-counteroffer:hover {
+  background-color: #2D6B30;
+}
+
+/* Interested - Green (for SL-suggested proposals) */
+.btn-interested {
+  background-color: #39873D;
+  color: white;
+}
+
+.btn-interested:hover {
+  background-color: #2D6B30;
+}
+
+/* Primary Action - Green (default for guest action 1) */
+.btn-primary-action {
+  background-color: #39873D;
+  color: white;
+}
+
+.btn-primary-action:hover {
+  background-color: #2D6B30;
+}
+
+/* Not Interested - Gray with red border (for SL-suggested proposals) */
+.btn-not-interested {
+  background-color: #F3F4F6;
+  color: #DC2626;
+  border: 1px solid #DC2626;
+}
+
+.btn-not-interested:hover {
+  background-color: #FEE2E2;
+}
+
+/* Review Host Terms - Yellow/Orange (for counteroffer review) */
+.btn-review-terms {
+  background-color: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #F59E0B;
+}
+
+.btn-review-terms:hover {
+  background-color: #FDE68A;
+}
+
+/* See Details - Blue (informational) */
+.btn-see-details {
+  background-color: #EBF5FF;
+  color: #1D4ED8;
+  border: 1px solid #3B82F6;
+}
+
+.btn-see-details:hover {
+  background-color: #DBEAFE;
+}
+
+/* Verify Identity - Blue (action required) */
+.btn-verify-identity {
+  background-color: #3B82F6;
+  color: white;
+}
+
+.btn-verify-identity:hover {
+  background-color: #2563EB;
+}
+
+/* Secondary Action - Gray (default for guest action 2) */
+.btn-secondary-action {
+  background-color: #F3F4F6;
+  color: #374151;
+  border: 1px solid #D4D4D4;
+}
+
+.btn-secondary-action:hover {
+  background-color: #E5E7EB;
+}
+
+/* See House Manual - Purple (non-clickable for late-stage proposals) */
+.btn-house-manual {
+  background-color: #6D31C2;
+  color: white;
+  cursor: default;
+}
+
+.btn-house-manual:disabled {
+  background-color: #6D31C2;
+  color: white;
+  opacity: 1;
+}
+
+/* Reject Modified Terms - Red outline (for counteroffer rejection) */
+.btn-reject-terms {
+  background-color: #FEE2E2;
+  color: #DC2626;
+  border: 1px solid #DC2626;
+}
+
+.btn-reject-terms:hover {
+  background-color: #FECACA;
+}
+
+/* Reject Proposal - Red (for SL-suggested proposals) */
+.btn-reject-proposal {
+  background-color: #EF4444;
+  color: white;
+}
+
+.btn-reject-proposal:hover {
+  background-color: #DC2626;
+}
+
 /* ============================================================================
    INLINE PROGRESS TRACKER (Horizontal Timeline)
    ============================================================================ */

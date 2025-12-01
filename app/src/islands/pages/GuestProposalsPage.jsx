@@ -85,6 +85,7 @@ export default function GuestProposalsPage() {
     currentStage,
     formattedStages,
     proposalOptions,
+    buttonConfig,
 
     // UI state
     isLoading,
@@ -135,6 +136,7 @@ export default function GuestProposalsPage() {
                   proposal={selectedProposal}
                   transformedProposal={transformedProposal}
                   statusConfig={statusConfig}
+                  buttonConfig={buttonConfig}
                 />
               )}
             </>
