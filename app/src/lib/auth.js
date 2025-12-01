@@ -428,67 +428,30 @@ export async function loginUser(email, password) {
 
     if (error) {
       console.error('❌ Edge Function error:', error);
-      console.error('   Error message:', error.message);
       console.error('   Error context:', error.context);
 
       // Extract detailed error from response body if available
-      // Supabase wraps non-2xx responses in a FunctionsHttpError with context as Response object
-      let errorMessage = null;
+      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
+      let errorMessage = 'Failed to authenticate. Please try again.';
 
-      // Path 1: error.context is a Response object (FunctionsHttpError)
-      if (error.context && typeof error.context.json === 'function') {
+      if (error.context?.body) {
         try {
-          const errorBody = await error.context.json();
-          console.error('   Parsed response JSON:', errorBody);
+          const errorBody = typeof error.context.body === 'string'
+            ? JSON.parse(error.context.body)
+            : error.context.body;
           if (errorBody?.error) {
             errorMessage = errorBody.error;
+            console.error('   Detailed error from response:', errorMessage);
           }
         } catch (parseErr) {
-          console.error('   Could not parse response as JSON:', parseErr);
-          // Try reading as text
-          try {
-            const errorText = await error.context.text();
-            console.error('   Response text:', errorText);
-            if (errorText && errorText.length < 200) {
-              // Try to parse as JSON one more time
-              try {
-                const parsed = JSON.parse(errorText);
-                if (parsed?.error) {
-                  errorMessage = parsed.error;
-                }
-              } catch {
-                errorMessage = errorText;
-              }
-            }
-          } catch (textErr) {
-            console.error('   Could not read response text:', textErr);
-          }
+          console.error('   Could not parse error body:', parseErr);
         }
       }
 
-      // Path 2: data object returned alongside error
-      if (!errorMessage && data?.error) {
+      // Also check if data was returned despite the error (some edge cases)
+      if (data?.error) {
         errorMessage = data.error;
       }
-
-      // Path 3: Check if error itself has nested error property
-      if (!errorMessage && error.error) {
-        errorMessage = error.error;
-      }
-
-      // Path 4: error.message from Supabase client (exclude generic messages)
-      if (!errorMessage && error.message &&
-          !error.message.includes('FunctionsHttpError') &&
-          !error.message.includes('non-2xx status code')) {
-        errorMessage = error.message;
-      }
-
-      // Fallback only if we couldn't extract anything useful
-      if (!errorMessage) {
-        errorMessage = 'Failed to authenticate. Please try again.';
-      }
-
-      console.error('   Final error message:', errorMessage);
 
       return {
         success: false,
@@ -545,13 +508,16 @@ export async function loginUser(email, password) {
  * @param {string} email - User email
  * @param {string} password - User password
  * @param {string} retype - Password confirmation
+ * @param {Object} additionalData - Optional additional signup data
+ * @param {string} additionalData.firstName - User's first name
+ * @param {string} additionalData.lastName - User's last name
+ * @param {string} additionalData.userType - 'Host' or 'Guest'
+ * @param {string} additionalData.birthDate - ISO date string (YYYY-MM-DD)
+ * @param {string} additionalData.phoneNumber - User's phone number
  * @returns {Promise<Object>} Response object with status, token, user_id, or error
  */
-export async function signupUser(email, password, retype, options = {}) {
+export async function signupUser(email, password, retype, additionalData = null) {
   console.log('📝 Attempting signup via Edge Function for:', email);
-
-  // Extract optional fields
-  const { userType, firstName, lastName, birthDate, phoneNumber } = options;
 
   // Client-side validation
   if (!email || !password || !retype) {
@@ -575,21 +541,20 @@ export async function signupUser(email, password, retype, options = {}) {
     };
   }
 
+  // Build payload with optional additional data
+  const payload = {
+    email,
+    password,
+    retype
+  };
+
+  // Add additional signup data if provided
+  if (additionalData) {
+    payload.additionalData = additionalData;
+    console.log('📝 Additional signup data:', additionalData);
+  }
+
   try {
-    // Build payload with required and optional fields
-    const payload = {
-      email,
-      password,
-      retype
-    };
-
-    // Add optional fields if provided
-    if (userType) payload.userType = userType;
-    if (firstName) payload.firstName = firstName;
-    if (lastName) payload.lastName = lastName;
-    if (birthDate) payload.birthDate = birthDate;
-    if (phoneNumber) payload.phoneNumber = phoneNumber;
-
     const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
       body: {
         action: 'signup',
@@ -599,67 +564,30 @@ export async function signupUser(email, password, retype, options = {}) {
 
     if (error) {
       console.error('❌ Edge Function error:', error);
-      console.error('   Error message:', error.message);
       console.error('   Error context:', error.context);
 
       // Extract detailed error from response body if available
-      // Supabase wraps non-2xx responses in a FunctionsHttpError with context as Response object
-      let errorMessage = null;
+      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
+      let errorMessage = 'Failed to create account. Please try again.';
 
-      // Path 1: error.context is a Response object (FunctionsHttpError)
-      if (error.context && typeof error.context.json === 'function') {
+      if (error.context?.body) {
         try {
-          const errorBody = await error.context.json();
-          console.error('   Parsed response JSON:', errorBody);
+          const errorBody = typeof error.context.body === 'string'
+            ? JSON.parse(error.context.body)
+            : error.context.body;
           if (errorBody?.error) {
             errorMessage = errorBody.error;
+            console.error('   Detailed error from response:', errorMessage);
           }
         } catch (parseErr) {
-          console.error('   Could not parse response as JSON:', parseErr);
-          // Try reading as text
-          try {
-            const errorText = await error.context.text();
-            console.error('   Response text:', errorText);
-            if (errorText && errorText.length < 200) {
-              // Try to parse as JSON one more time
-              try {
-                const parsed = JSON.parse(errorText);
-                if (parsed?.error) {
-                  errorMessage = parsed.error;
-                }
-              } catch {
-                errorMessage = errorText;
-              }
-            }
-          } catch (textErr) {
-            console.error('   Could not read response text:', textErr);
-          }
+          console.error('   Could not parse error body:', parseErr);
         }
       }
 
-      // Path 2: data object returned alongside error
-      if (!errorMessage && data?.error) {
+      // Also check if data was returned despite the error (some edge cases)
+      if (data?.error) {
         errorMessage = data.error;
       }
-
-      // Path 3: Check if error itself has nested error property
-      if (!errorMessage && error.error) {
-        errorMessage = error.error;
-      }
-
-      // Path 4: error.message from Supabase client (exclude generic messages)
-      if (!errorMessage && error.message &&
-          !error.message.includes('FunctionsHttpError') &&
-          !error.message.includes('non-2xx status code')) {
-        errorMessage = error.message;
-      }
-
-      // Fallback only if we couldn't extract anything useful
-      if (!errorMessage) {
-        errorMessage = 'Failed to create account. Please try again.';
-      }
-
-      console.error('   Final error message:', errorMessage);
 
       return {
         success: false,
@@ -812,13 +740,14 @@ export async function validateTokenAndFetchUser() {
  * Check if current page is a protected page requiring authentication
  * Protected pages redirect to home if user is not logged in
  *
- * Handles both clean URLs (/account-profile) and .html URLs (/account-profile.html)
+ * Handles both clean URLs (/guest-proposals) and .html URLs (/guest-proposals.html)
  * by normalizing the path before comparison
  *
  * @returns {boolean} True if current page requires authentication
  */
 export function isProtectedPage() {
   const protectedPaths = [
+    '/guest-proposals',
     '/account-profile',
     '/host-dashboard'
   ];
