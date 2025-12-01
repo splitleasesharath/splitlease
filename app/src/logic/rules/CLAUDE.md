@@ -1,7 +1,6 @@
-# Rules - Logic Layer 2
+# Rules Map
 
-**GENERATED**: 2025-11-26
-**LAYER**: Rules (Boolean Predicates)
+**TYPE**: BRANCH NODE
 **PARENT**: app/src/logic/
 
 ---
@@ -9,58 +8,66 @@
 ## ### DIRECTORY_INTENT ###
 
 [PURPOSE]: Boolean predicate functions expressing business rules
-[LAYER]: Layer 2 of four-layer logic architecture
-[PATTERN]: All functions return true/false based on input state
+[PATTERN]: Layer 2 of Four-Layer Logic Architecture
+[LAYER]: Rules (returns true/false, may call calculators)
 
 ---
 
-## ### SUBDIRECTORIES ###
+## ### SUB-MODULES ###
 
-### auth/
-[INTENT]: Authentication and authorization predicates
-[FILES]: 2 rule functions
-[KEY_EXPORTS]: isProtectedPage, isSessionValid
-
-### pricing/
-[INTENT]: Pricing validation predicates
-[FILES]: 1 rule function
-[KEY_EXPORTS]: isValidDayCountForPricing
-
-### proposals/
-[INTENT]: Proposal state and action eligibility predicates
-[FILES]: 6 rule functions
-[KEY_EXPORTS]: canAcceptProposal, canCancelProposal, canEditProposal, determineProposalStage
-
-### scheduling/
-[INTENT]: Date and schedule validation predicates
-[FILES]: 3 rule functions
-[KEY_EXPORTS]: isDateBlocked, isDateInRange, isScheduleContiguous
-
-### search/
-[INTENT]: Search filter validation predicates
-[FILES]: 3 rule functions
-[KEY_EXPORTS]: isValidPriceTier, isValidSortOption, isValidWeekPattern
-
-### users/
-[INTENT]: User type and profile state predicates
-[FILES]: 4 rule functions
-[KEY_EXPORTS]: isGuest, isHost, hasProfilePhoto, shouldShowFullName
+- **[auth/](./auth/CLAUDE.md)**: Authentication & authorization (isProtectedPage, isSessionValid)
+- **[pricing/](./pricing/CLAUDE.md)**: Pricing validation (isValidDayCountForPricing)
+- **[proposals/](./proposals/CLAUDE.md)**: Proposal state & actions (canCancelProposal, canAcceptProposal, canEditProposal, determineProposalStage, proposalRules)
+- **[scheduling/](./scheduling/CLAUDE.md)**: Date & schedule validation (isDateBlocked, isDateInRange, isScheduleContiguous)
+- **[search/](./search/CLAUDE.md)**: Search filter validation (isValidPriceTier, isValidSortOption, isValidWeekPattern)
+- **[users/](./users/CLAUDE.md)**: User type & profile checks (isGuest, isHost, hasProfilePhoto, shouldShowFullName)
 
 ---
 
-## ### LAYER_RULES ###
+## ### KEY_EXPORTS ###
 
-[ALLOWED]: Boolean logic, comparisons, type checks
-[ALLOWED]: Calling calculators for computed values
-[FORBIDDEN]: API calls, state mutations, side effects
-[TESTING]: All functions should have clear true/false test cases
+[FROM_AUTH]: isProtectedPage, isSessionValid
+[FROM_PROPOSALS]: canCancelProposal, canAcceptProposal, canEditProposal, determineProposalStage, proposalRules (all exports)
+[FROM_SCHEDULING]: isDateBlocked, isDateInRange, isScheduleContiguous
+[FROM_USERS]: isGuest, isHost, hasProfilePhoto, shouldShowFullName
+[BARREL]: index.js re-exports all
+
+---
+
+## ### SHARED_CONVENTIONS ###
+
+[CRITICAL]: All functions return boolean (true/false) OR throw errors
+[NO_FALLBACK]: Return false for invalid input, throw for critical errors
+[NAMING]: can* for permissions, is* for state checks, has* for property checks, should* for recommendations
+[LAYER]: May call calculators, NOT workflows or processors
+
+---
+
+## ### DEPENDENCY_FLOW ###
+
+```
+UI Components / Hooks
+    │
+    ▼
+Workflows (Layer 4)
+    │
+    ▼
+Processors (Layer 3)
+    │
+    ▼
+RULES (Layer 2) ← YOU ARE HERE
+    │
+    ▼
+Calculators (Layer 1)
+```
 
 ---
 
 ## ### USAGE_PATTERN ###
 
-[IMPORT_FROM]: import { canAcceptProposal } from 'logic/rules/proposals/canAcceptProposal'
-[PATTERN]: if (ruleFunction(data)) { /* action */ }
+[IMPORT_FROM]: import { canCancelProposal } from 'logic/rules/proposals/canCancelProposal'
+[PATTERN]: if (ruleFunction(data)) { /* allowed */ } else { /* denied */ }
+[CONSUMED_BY]: UI Components (button visibility), Workflows (validation), Processors (filtering)
 
 ---
 
