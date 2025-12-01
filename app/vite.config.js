@@ -24,16 +24,6 @@ export default defineConfig({
           else if (url.startsWith('/index-dev.html')) {
             req.url = '/public/index-dev.html' + (url.substring('/index-dev.html'.length) || '');
           }
-          // Handle guest-proposals (no ID) - direct access to /guest-proposals
-          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/guest-proposals.html' + queryString;
-          }
-          // Handle guest-proposals.html - direct HTML access
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
-          }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
           // Also handle exact /view-split-lease path (no trailing slash or query)
           else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
@@ -45,9 +35,6 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/view-split-lease.html' + queryString;
-          }
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           } else if (url.startsWith('/search.html')) {
             req.url = '/public/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/search-test.html')) {
@@ -106,6 +93,14 @@ export default defineConfig({
           } else if (url.startsWith('/help-center.html')) {
             req.url = '/public/help-center.html' + (url.substring('/help-center.html'.length) || '');
           }
+          // Handle guest-proposals with clean URL structure (e.g., /guest-proposals/USER_ID?proposal=PROPOSAL_ID)
+          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals/') || url.startsWith('/guest-proposals?')) {
+            req.url = '/public/guest-proposals.html';
+          } else if (url.startsWith('/guest-proposals.html')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/guest-proposals.html' + queryString;
+          }
 
           next();
         });
@@ -120,16 +115,6 @@ export default defineConfig({
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/index.html' + queryString;
           }
-          // Handle guest-proposals (no ID) - direct access to /guest-proposals
-          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/guest-proposals.html' + queryString;
-          }
-          // Handle guest-proposals.html - direct HTML access
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
-          }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
           // Also handle exact /view-split-lease path (no trailing slash or query)
           else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
@@ -141,9 +126,6 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/view-split-lease.html' + queryString;
-          }
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           } else if (url.startsWith('/search.html')) {
             req.url = '/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/search-test.html')) {
@@ -201,6 +183,14 @@ export default defineConfig({
             req.url = '/help-center-category.html' + pathAfterPrefix;
           } else if (url.startsWith('/help-center.html')) {
             req.url = '/help-center.html' + (url.substring('/help-center.html'.length) || '');
+          }
+          // Handle guest-proposals with clean URL structure (preview mode)
+          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals/') || url.startsWith('/guest-proposals?')) {
+            req.url = '/guest-proposals.html';
+          } else if (url.startsWith('/guest-proposals.html')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/guest-proposals.html' + queryString;
           }
 
           next();
@@ -316,6 +306,14 @@ export default defineConfig({
           console.log('Created _internal/help-center-category-view for Cloudflare routing');
         }
 
+        // Create guest-proposals internal file
+        const guestProposalsSource = path.join(distDir, 'guest-proposals.html');
+        const guestProposalsDest = path.join(internalDir, 'guest-proposals-view');
+        if (fs.existsSync(guestProposalsSource)) {
+          fs.copyFileSync(guestProposalsSource, guestProposalsDest);
+          console.log('Created _internal/guest-proposals-view for Cloudflare routing');
+        }
+
         // Copy images directory to dist root
         const imagesSource = path.resolve(__dirname, 'public/images');
         const imagesDest = path.join(distDir, 'images');
@@ -421,12 +419,12 @@ export default defineConfig({
         'guest-success': resolve(__dirname, 'public/guest-success.html'),
         'host-success': resolve(__dirname, 'public/host-success.html'),
         'why-split-lease': resolve(__dirname, 'public/why-split-lease.html'),
-        'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
         careers: resolve(__dirname, 'public/careers.html'),
         'account-profile': resolve(__dirname, 'public/account-profile.html'),
         'self-listing': resolve(__dirname, 'public/self-listing.html'),
         'help-center': resolve(__dirname, 'public/help-center.html'),
-        'help-center-category': resolve(__dirname, 'public/help-center-category.html')
+        'help-center-category': resolve(__dirname, 'public/help-center-category.html'),
+        'guest-proposals': resolve(__dirname, 'public/guest-proposals.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

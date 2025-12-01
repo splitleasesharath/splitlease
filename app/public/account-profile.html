@@ -979,12 +979,6 @@
 
             <!-- Sidebar -->
             <div class="sidebar">
-                <!-- Host Listings (dynamically populated for hosts) -->
-                <div class="listings-card" style="display: none;">
-                    <h3 class="section-title">Your Listings</h3>
-                    <!-- Populated by JavaScript when user has listings -->
-                </div>
-
                 <!-- Recent Days Selected (from database) -->
                 <div class="profile-card schedule-section">
                     <h3 class="section-title">Recent Days Selected</h3>
@@ -1028,9 +1022,6 @@
 
     <!-- React Island: Notification Settings Modal -->
     <div id="notification-settings-root"></div>
-
-    <!-- React Island: Edit Phone Number Modal -->
-    <div id="edit-phone-number-root"></div>
 
     <!-- React Islands Hydration Script -->
     <script type="module" src="/src/account-profile.jsx"></script>
@@ -1323,10 +1314,6 @@
         // Populate listings
         function populateListings(listings) {
             const listingsCard = document.querySelector('.listings-card');
-            if (!listingsCard) {
-                console.log('Listings card element not found - skipping listings render');
-                return;
-            }
             const userName = document.getElementById('profileName').textContent.split(' ')[0];
 
             let listingsHTML = `<h3 class="section-title">${userName}'s Listings</h3>`;
@@ -1376,7 +1363,6 @@
             });
 
             listingsCard.innerHTML = listingsHTML;
-            listingsCard.style.display = 'block'; // Show the listings card
         }
 
         // Populate reviews
@@ -1730,44 +1716,14 @@
         });
 
         // Notification Settings link handler
-        // Use event delegation to handle clicks reliably regardless of when React mounts
-        document.addEventListener('click', (e) => {
-            if (e.target.id === 'notification-settings-link' || e.target.closest('#notification-settings-link')) {
-                e.preventDefault();
-                if (window.openNotificationSettings) {
-                    window.openNotificationSettings();
-                } else {
-                    console.error('Notification settings modal not yet loaded');
-                    // Retry after a short delay in case React is still mounting
-                    setTimeout(() => {
-                        if (window.openNotificationSettings) {
-                            window.openNotificationSettings();
-                        }
-                    }, 500);
-                }
-            }
-
-            // Phone number edit button handler
-            const phoneItem = e.target.closest('[data-verification="phone"]');
-            if (phoneItem && e.target.closest('.edit-btn')) {
-                e.preventDefault();
-                const currentPhone = document.getElementById('phoneNumber')?.textContent || '';
-                if (window.openEditPhoneNumberModal) {
-                    window.openEditPhoneNumberModal(currentPhone);
-                } else {
-                    console.error('Edit phone number modal not yet loaded');
-                    // Retry after a short delay in case React is still mounting
-                    setTimeout(() => {
-                        if (window.openEditPhoneNumberModal) {
-                            window.openEditPhoneNumberModal(currentPhone);
-                        }
-                    }, 500);
-                }
+        document.getElementById('notification-settings-link')?.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (window.openNotificationSettings) {
+                window.openNotificationSettings();
+            } else {
+                console.error('Notification settings modal not yet loaded');
             }
         });
-
-        // Expose showToast to window for React components
-        window.showToast = showToast;
     </script>
 </body>
 </html>

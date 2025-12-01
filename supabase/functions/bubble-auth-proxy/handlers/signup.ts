@@ -32,8 +32,6 @@ interface SignupAdditionalData {
 export async function handleSignup(
   bubbleAuthBaseUrl: string,
   bubbleApiKey: string,
-  supabaseUrl: string,
-  supabaseServiceKey: string,
   payload: any
 ): Promise<any> {
   console.log('[signup] ========== SIGNUP REQUEST ==========');
@@ -130,62 +128,6 @@ export async function handleSignup(
     console.log(`[signup]    User ID: ${userId}`);
     console.log(`[signup]    Token expires in: ${expires} seconds`);
     console.log(`[signup]    User automatically logged in`);
-
-    // Insert user into Supabase
-    console.log(`[signup] Inserting user into Supabase...`);
-
-    // Build Supabase user record with all available fields
-    const supabaseUserRecord: Record<string, any> = {
-      '_id': userId,
-      'email as text': email
-    };
-
-    // Add optional fields if provided (using Supabase column names)
-    if (firstName) supabaseUserRecord['Name - First'] = firstName;
-    if (lastName) supabaseUserRecord['Name - Last'] = lastName;
-    if (userType) supabaseUserRecord['Type - User Current'] = userType;
-    // Convert birthDate from ISO string to PostgreSQL timestamp format if provided
-    if (birthDate) {
-      try {
-        // Parse ISO date string and convert to timestamp
-        const dateObj = new Date(birthDate);
-        if (isNaN(dateObj.getTime())) {
-          console.warn(`[signup] Invalid birthDate format: ${birthDate}, skipping`);
-        } else {
-          supabaseUserRecord['Date of Birth'] = dateObj.toISOString();
-        }
-      } catch (e) {
-        console.warn(`[signup] Error parsing birthDate: ${e}, skipping`);
-      }
-    }
-    if (phoneNumber) supabaseUserRecord['Phone Number (as text)'] = phoneNumber;
-
-    console.log(`[signup] Supabase user record:`, JSON.stringify(supabaseUserRecord, null, 2));
-
-    try {
-      const supabaseResponse = await fetch(`${supabaseUrl}/rest/v1/user`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseServiceKey,
-          'Authorization': `Bearer ${supabaseServiceKey}`,
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(supabaseUserRecord)
-      });
-
-      if (!supabaseResponse.ok) {
-        const errorText = await supabaseResponse.text();
-        console.error(`[signup] Supabase insert failed: ${supabaseResponse.status} - ${errorText}`);
-        // Log but don't fail - user exists in Bubble
-      } else {
-        console.log(`[signup] ✅ User inserted into Supabase`);
-      }
-    } catch (supabaseError) {
-      console.error(`[signup] Supabase insert error: ${supabaseError}`);
-      // Log but don't fail - user exists in Bubble
-    }
-
     console.log(`[signup] ========== SIGNUP COMPLETE ==========`);
 
     // Return authentication data (user is automatically logged in)

@@ -28,202 +28,95 @@ export async function triggerBubbleWorkflow(workflowName, parameters = {}) {
 
 /**
  * Create a new listing via Supabase Edge Function
- * Implements atomic operation: Create in Bubble → Fetch from Bubble → Sync to Supabase
- * NO FALLBACK - Throws if Edge Function fails
+ * @deprecated Use createListing from listingService.js instead
+ *
+ * MIGRATION NOTE: This function has been replaced by direct Supabase inserts
+ * to listing_trial table via listingService.js. The Bubble workflow is no
+ * longer used for self-listing creation.
  *
  * @param {string} listingName - Name of the listing to create
  * @param {string} [userEmail] - Email of the logged-in user (optional)
  * @returns {Promise<Object>} - Synced listing data from Supabase
  */
-export async function createListingInCode(listingName, userEmail = null) {
-  console.log('[Bubble API] Creating listing via Edge Function');
-  console.log('[Bubble API] Listing name:', listingName);
-  console.log('[Bubble API] User email:', userEmail || 'Not provided (logged out)');
-
-  if (!listingName?.trim()) {
-    throw new Error('Listing name is required');
-  }
-
-  try {
-    const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-      body: {
-        action: 'create_listing',
-        payload: {
-          listing_name: listingName.trim(),
-          user_email: userEmail,
-        },
-      },
-    });
-
-    if (error) {
-      console.error('[Bubble API] Edge Function error:', error);
-      throw new Error(error.message || 'Failed to create listing');
-    }
-
-    if (!data.success) {
-      throw new Error(data.error || 'Unknown error');
-    }
-
-    console.log('[Bubble API] ✅ Listing created and synced:', data.data);
-    return data.data;
-  } catch (error) {
-    console.error('[Bubble API] Failed to create listing:', error);
-    throw error;
-  }
-}
+// export async function createListingInCode(listingName, userEmail = null) {
+//   console.log('[Bubble API] Creating listing via Edge Function');
+//   console.log('[Bubble API] Listing name:', listingName);
+//   console.log('[Bubble API] User email:', userEmail || 'Not provided (logged out)');
+//
+//   if (!listingName?.trim()) {
+//     throw new Error('Listing name is required');
+//   }
+//
+//   try {
+//     const { data, error } = await supabase.functions.invoke('bubble-proxy', {
+//       body: {
+//         action: 'create_listing',
+//         payload: {
+//           listing_name: listingName.trim(),
+//           user_email: userEmail,
+//         },
+//       },
+//     });
+//
+//     if (error) {
+//       console.error('[Bubble API] Edge Function error:', error);
+//       throw new Error(error.message || 'Failed to create listing');
+//     }
+//
+//     if (!data.success) {
+//       throw new Error(data.error || 'Unknown error');
+//     }
+//
+//     console.log('[Bubble API] ✅ Listing created and synced:', data.data);
+//     return data.data;
+//   } catch (error) {
+//     console.error('[Bubble API] Failed to create listing:', error);
+//     throw error;
+//   }
+// }
 
 /**
  * Get a listing by ID via Supabase Edge Function
- * Fetches listing data from Bubble via Edge Function proxy
- * NO FALLBACK - Throws if Edge Function fails
+ * @deprecated For listing_trial entries, use getListingTrialById from listingService.js
+ *
+ * MIGRATION NOTE: This function is deprecated for self-listing entries.
+ * Use listingService.js for listings stored in listing_trial.
+ * This function may still be needed for Bubble-synced listings in the main listing table.
  *
  * @param {string} listingId - Bubble ID of the listing to fetch
  * @returns {Promise<Object>} - Listing data from Bubble
  */
-export async function getListingById(listingId) {
-  console.log('[Bubble API] Fetching listing via Edge Function');
-  console.log('[Bubble API] Listing ID:', listingId);
-
-  if (!listingId?.trim()) {
-    throw new Error('Listing ID is required');
-  }
-
-  try {
-    const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-      body: {
-        action: 'get_listing',
-        payload: {
-          listing_id: listingId.trim(),
-        },
-      },
-    });
-
-    if (error) {
-      console.error('[Bubble API] Edge Function error:', error);
-      throw new Error(error.message || 'Failed to fetch listing');
-    }
-
-    if (!data.success) {
-      throw new Error(data.error || 'Unknown error');
-    }
-
-    console.log('[Bubble API] ✅ Listing fetched:', data.data);
-    return data.data;
-  } catch (error) {
-    console.error('[Bubble API] Failed to fetch listing:', error);
-    throw error;
-  }
-}
-
-/**
- * Upload listing photos via Supabase Edge Function
- * Sends all photos to Bubble in a single workflow call
- * Bubble creates Listing-Photo records and attaches them to the Listing
- * Sort order is determined by array position (first photo = cover photo)
- * NO FALLBACK - Throws if Edge Function fails
- *
- * @param {string} listingId - Bubble ID of the listing
- * @param {string[]} photos - Array of base64-encoded image data URLs
- * @returns {Promise<Object>} - Upload result with count
- */
-export async function uploadListingPhotos(listingId, photos) {
-  console.log('[Bubble API] Uploading photos via Edge Function');
-  console.log('[Bubble API] Listing ID:', listingId);
-  console.log('[Bubble API] Number of photos:', photos?.length || 0);
-
-  if (!listingId?.trim()) {
-    throw new Error('Listing ID is required');
-  }
-
-  if (!Array.isArray(photos) || photos.length === 0) {
-    throw new Error('At least one photo is required');
-  }
-
-  try {
-    const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-      body: {
-        action: 'upload_photos',
-        payload: {
-          listing_id: listingId.trim(),
-          photos: photos,
-        },
-      },
-    });
-
-    if (error) {
-      console.error('[Bubble API] Edge Function error:', error);
-      throw new Error(error.message || 'Failed to upload photos');
-    }
-
-    if (!data.success) {
-      throw new Error(data.error || 'Unknown error');
-    }
-
-    console.log('[Bubble API] ✅ Photos uploaded:', data.data);
-    return data.data;
-  } catch (error) {
-    console.error('[Bubble API] Failed to upload photos:', error);
-    throw error;
-  }
-}
-
-/**
- * Submit a complete listing via Supabase Edge Function
- * Sends all listing form data to Bubble and syncs to Supabase
- * Called AFTER user signup/login with complete form data
- * NO FALLBACK - Throws if Edge Function fails
- *
- * @param {string} listingId - Bubble ID of the existing listing to update
- * @param {string} userEmail - Email of the user (from signup or existing user)
- * @param {Object} listingData - Complete listing data from prepareListingSubmission()
- * @param {string} [userUniqueId] - Bubble user unique ID (from signup response)
- * @returns {Promise<Object>} - Updated listing data
- */
-export async function submitListingFull(listingId, userEmail, listingData, userUniqueId = null) {
-  console.log('[Bubble API] Submitting full listing via Edge Function');
-  console.log('[Bubble API] Listing ID:', listingId);
-  console.log('[Bubble API] User Email:', userEmail);
-  console.log('[Bubble API] User Unique ID:', userUniqueId || 'Not provided');
-  console.log('[Bubble API] Listing data keys:', Object.keys(listingData));
-
-  if (!listingId?.trim()) {
-    throw new Error('Listing ID is required');
-  }
-
-  if (!userEmail?.trim()) {
-    throw new Error('User email is required');
-  }
-
-  if (!listingData || typeof listingData !== 'object') {
-    throw new Error('Listing data is required');
-  }
-
-  try {
-    const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-      body: {
-        action: 'submit_listing',
-        payload: {
-          listing_id: listingId.trim(),
-          user_email: userEmail.trim(),
-          user_unique_id: userUniqueId,
-          listing_data: listingData,
-        },
-      },
-    });
-
-    if (error) {
-      console.error('[Bubble API] Edge Function error:', error);
-      throw new Error(error.message || 'Failed to submit listing');
-    }
-
-    if (!data.success) {
-      throw new Error(data.error || 'Unknown error');
-    }
-
-    console.log('[Bubble API] ✅ Listing submitted and synced:', data.data);
-    return data.data;
-  } catch (error) {
-    console.error('[Bubble API] Failed to submit listing:', error);
-    throw error;
-  }
-}
+// export async function getListingById(listingId) {
+//   console.log('[Bubble API] Fetching listing via Edge Function');
+//   console.log('[Bubble API] Listing ID:', listingId);
+//
+//   if (!listingId?.trim()) {
+//     throw new Error('Listing ID is required');
+//   }
+//
+//   try {
+//     const { data, error } = await supabase.functions.invoke('bubble-proxy', {
+//       body: {
+//         action: 'get_listing',
+//         payload: {
+//           listing_id: listingId.trim(),
+//         },
+//       },
+//     });
+//
+//     if (error) {
+//       console.error('[Bubble API] Edge Function error:', error);
+//       throw new Error(error.message || 'Failed to fetch listing');
+//     }
+//
+//     if (!data.success) {
+//       throw new Error(data.error || 'Unknown error');
+//     }
+//
+//     console.log('[Bubble API] ✅ Listing fetched:', data.data);
+//     return data.data;
+//   } catch (error) {
+//     console.error('[Bubble API] Failed to fetch listing:', error);
+//     throw error;
+//   }
+// }

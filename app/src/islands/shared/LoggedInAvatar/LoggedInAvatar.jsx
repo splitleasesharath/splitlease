@@ -174,31 +174,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 2. My Proposals - HOST and TRIAL_HOST only
-    if (menuVisibility.myProposals && (effectiveUserType === NORMALIZED_USER_TYPES.HOST || effectiveUserType === NORMALIZED_USER_TYPES.TRIAL_HOST)) {
-      items.push({
-        id: 'proposals',
-        label: 'My Proposals',
-        icon: '/assets/icons/file-text-purple.svg',
-        path: '/guest-proposals',
-        badgeCount: effectiveProposalsCount,
-        badgeColor: 'purple',
-      });
-    }
-
-    // For GUEST users, show their proposals
-    if (effectiveUserType === NORMALIZED_USER_TYPES.GUEST) {
-      items.push({
-        id: 'guest-proposals',
-        label: 'My Proposals',
-        icon: '/assets/icons/file-text-purple.svg',
-        path: '/guest-proposals',
-        badgeCount: effectiveProposalsCount,
-        badgeColor: 'purple',
-      });
-    }
-
-    // 3. My Proposals Suggested - HOST and TRIAL_HOST only (when proposals > 0)
+    // 2. Proposals Suggested - HOST and TRIAL_HOST only (when proposals > 0)
     if (menuVisibility.myProposalsSuggested) {
       items.push({
         id: 'proposals-suggested',
@@ -210,7 +186,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 4. My Listings - Visible for all
+    // 3. My Listings - Visible for all
     if (menuVisibility.myListings) {
       items.push({
         id: 'listings',
@@ -226,7 +202,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 5. Virtual Meetings - When proposals count = 0
+    // 4. Virtual Meetings - When proposals count = 0
     if (menuVisibility.virtualMeetings) {
       items.push({
         id: 'virtual-meetings',
@@ -240,7 +216,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 6. House Manuals & Visits - Context-aware visibility
+    // 5. House Manuals & Visits - Context-aware visibility
     if (menuVisibility.houseManualsAndVisits) {
       items.push({
         id: 'house-manuals',
@@ -254,7 +230,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 7. My Leases - Always visible
+    // 6. My Leases - Always visible
     if (menuVisibility.myLeases) {
       items.push({
         id: 'leases',
@@ -268,7 +244,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 8. My Favorite Listings - GUEST only when favoritesCount > 0
+    // 7. My Favorite Listings - GUEST only when favoritesCount > 0
     if (menuVisibility.myFavoriteListings) {
       items.push({
         id: 'favorites',
@@ -280,7 +256,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 9. Messages - Always visible, with RED badge for urgency
+    // 8. Messages - Always visible, with RED badge for urgency
     if (menuVisibility.messages) {
       items.push({
         id: 'messages',
@@ -292,7 +268,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 10. Rental Application - GUEST only
+    // 9. Rental Application - GUEST only
     if (menuVisibility.rentalApplication) {
       items.push({
         id: 'rental-application',
@@ -304,7 +280,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 11. Reviews Manager - Always visible
+    // 10. Reviews Manager - Always visible
     if (menuVisibility.reviewsManager) {
       items.push({
         id: 'reviews',
@@ -314,7 +290,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 12. Referral - Always visible
+    // 11. Referral - Always visible
     if (menuVisibility.referral) {
       items.push({
         id: 'referral',
@@ -346,11 +322,8 @@ export default function LoggedInAvatar({
   // Extract first name from full name
   const firstName = user.name.split(' ')[0];
 
-  // Check if on search page for styling
-  const isSearchPage = currentPath.includes('search');
-
   return (
-    <div className={`logged-in-avatar ${isSearchPage ? 'on-search-page' : ''}`} ref={dropdownRef}>
+    <div className="logged-in-avatar" ref={dropdownRef}>
       <button
         className="avatar-button"
         onClick={(e) => {

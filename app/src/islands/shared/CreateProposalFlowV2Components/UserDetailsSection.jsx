@@ -2,7 +2,7 @@
  * UserDetailsSection - Collect user information for proposal
  */
 
-export default function UserDetailsSection({ data, updateData }) {
+export default function UserDetailsSection({ data, updateData, errors = {} }) {
   return (
     <div className="section user-details-section">
       <div className="form-group">
@@ -11,12 +11,15 @@ export default function UserDetailsSection({ data, updateData }) {
         </label>
         <textarea
           id="needForSpace"
-          className="form-textarea"
+          className={`form-textarea ${errors.needForSpace ? 'is-invalid' : ''}`}
           placeholder="How will you use the space? (minimum of 10 words)"
           value={data.needForSpace}
           onChange={(e) => updateData('needForSpace', e.target.value)}
           rows={4}
         />
+        {errors.needForSpace && (
+          <div className="form-error-message">{errors.needForSpace}</div>
+        )}
       </div>
 
       <div className="form-group">
@@ -25,15 +28,18 @@ export default function UserDetailsSection({ data, updateData }) {
         </label>
         <textarea
           id="aboutYourself"
-          className="form-textarea"
+          className={`form-textarea ${errors.aboutYourself ? 'is-invalid' : ''}`}
           placeholder="Please take a moment to share some details about yourself, such as your interests, travel preferences, etc. (minimum of 10 words)"
           value={data.aboutYourself}
           onChange={(e) => updateData('aboutYourself', e.target.value)}
           rows={4}
         />
+        {errors.aboutYourself && (
+          <div className="form-error-message">{errors.aboutYourself}</div>
+        )}
       </div>
 
-      <div className="form-group" style={{ marginBottom: data.hasUniqueRequirements ? '25px' : '0' }}>
+      <div className="form-group">
         <label className="checkbox-label">
           <input
             type="checkbox"
@@ -45,18 +51,21 @@ export default function UserDetailsSection({ data, updateData }) {
       </div>
 
       {data.hasUniqueRequirements && (
-        <div className="form-group" style={{ marginBottom: '0' }}>
+        <div className="form-group">
           <label htmlFor="uniqueRequirements" className="form-label">
             Write your unique requirements
           </label>
           <textarea
             id="uniqueRequirements"
-            className="form-textarea"
+            className={`form-textarea ${errors.uniqueRequirements ? 'is-invalid' : ''}`}
             placeholder="Any special needs, personal preference or specific requirements you may have (minimum of 10 words)"
             value={data.uniqueRequirements}
             onChange={(e) => updateData('uniqueRequirements', e.target.value)}
             rows={4}
           />
+          {errors.uniqueRequirements && (
+            <div className="form-error-message">{errors.uniqueRequirements}</div>
+          )}
         </div>
       )}
     </div>

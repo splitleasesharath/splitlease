@@ -7,7 +7,7 @@
  * No price calculations should happen outside of ListingScheduleSelector.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ReviewSection from './CreateProposalFlowV2Components/ReviewSection.jsx';
 import UserDetailsSection from './CreateProposalFlowV2Components/UserDetailsSection.jsx';
 import MoveInSection from './CreateProposalFlowV2Components/MoveInSection.jsx';
@@ -102,6 +102,9 @@ export default function CreateProposalFlowV2({
   const [currentSection, setCurrentSection] = useState(
     (hasExistingUserData || hasSavedDraft) ? 1 : 2
   );
+
+  // Error state for form validation with scroll-to-error support
+  const [errors, setErrors] = useState({});
 
   // Internal state for pricing (managed by ListingScheduleSelector in DaysSelectionSection)
   const [internalPricingBreakdown, setInternalPricingBreakdown] = useState(pricingBreakdown);
@@ -345,10 +348,25 @@ export default function CreateProposalFlowV2({
     setCurrentSection(4);
   };
 
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys) => {
+    if (!errorKeys || errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  }, []);
+
   // Navigation - always return to Review (Section 1) after any edit
   const handleNext = () => {
-    if (validateCurrentSection()) {
+    const errorKeys = validateCurrentSection();
+    if (errorKeys.length === 0) {
+      setErrors({});
       setCurrentSection(1); // Always go back to Review
+    } else {
+      scrollToFirstError(errorKeys);
     }
   };
 
@@ -363,32 +381,42 @@ export default function CreateProposalFlowV2({
   };
 
   const validateCurrentSection = () => {
+    const newErrors = {};
+    const errorOrder = [];
+
     switch (currentSection) {
       case 2: // User Details
-        if (!proposalData.needForSpace || !proposalData.aboutYourself) {
-          alert('Please fill in all required fields (minimum 10 words each)');
-          return false;
+        if (!proposalData.needForSpace || proposalData.needForSpace.trim().split(/\s+/).length < 10) {
+          newErrors.needForSpace = 'Please provide at least 10 words';
+          errorOrder.push('needForSpace');
+        }
+        if (!proposalData.aboutYourself || proposalData.aboutYourself.trim().split(/\s+/).length < 10) {
+          newErrors.aboutYourself = 'Please provide at least 10 words';
+          errorOrder.push('aboutYourself');
         }
         if (proposalData.hasUniqueRequirements && !proposalData.uniqueRequirements) {
-          alert('Please describe your unique requirements');
-          return false;
+          newErrors.uniqueRequirements = 'Please describe your unique requirements';
+          errorOrder.push('uniqueRequirements');
         }
-        return true;
+        break;
       case 3: // Move-in
         if (!proposalData.moveInDate) {
-          alert('Please select a move-in date');
-          return false;
+          newErrors.moveInDate = 'Please select a move-in date';
+          errorOrder.push('moveInDate');
         }
-        return true;
+        break;
       case 4: // Days Selection
         if (!proposalData.daysSelected || proposalData.daysSelected.length === 0) {
-          alert('Please select at least one day');
-          return false;
+          newErrors.daysSelected = 'Please select at least one day';
+          errorOrder.push('daysSelected');
         }
-        return true;
+        break;
       default:
-        return true;
+        break;
     }
+
+    setErrors(newErrors);
+    return errorOrder;
   };
 
   const handleSubmit = () => {
@@ -422,6 +450,7 @@ export default function CreateProposalFlowV2({
           <UserDetailsSection
             data={proposalData}
             updateData={updateProposalData}
+            errors={errors}
           />
         );
       case 3: // Move-in & Reservation
@@ -430,6 +459,7 @@ export default function CreateProposalFlowV2({
             data={proposalData}
             updateData={updateProposalData}
             listing={listing}
+            errors={errors}
           />
         );
       case 4: // Days Selection
@@ -439,6 +469,7 @@ export default function CreateProposalFlowV2({
             updateData={updateProposalData}
             listing={listing}
             zatConfig={zatConfig}
+            errors={errors}
           />
         );
       default:
@@ -472,7 +503,7 @@ export default function CreateProposalFlowV2({
     <div className="create-proposal-popup">
       <div className="proposal-container">
         <div className="proposal-header">
-          <div className="proposal-header-top" style={{ marginBottom: getSectionSubtitle() ? '15px' : '0' }}>
+          <div className="proposal-header-top">
             <div className="proposal-title">
               📄 {getSectionTitle()}
             </div>

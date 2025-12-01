@@ -358,7 +358,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const priceInfoTriggerRef = useRef(null);
@@ -514,20 +514,18 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               </div>
             </>
           )}
-          {isLoggedIn && (
-            <button className="favorite-btn" onClick={handleFavoriteClick}>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill={isFavorite ? 'red' : 'none'}
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </button>
-          )}
+          <button className="favorite-btn" onClick={handleFavoriteClick}>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill={isFavorite ? 'red' : 'none'}
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </button>
           {listing.isNew && <span className="new-badge">New Listing</span>}
         </div>
       )}
@@ -619,7 +617,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef }) {
   const sentinelRef = useRef(null);
 
   useEffect(() => {
@@ -660,7 +658,6 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
           }}
           onOpenContactModal={onOpenContactModal}
           onOpenInfoModal={onOpenInfoModal}
-          isLoggedIn={isLoggedIn}
         />
       ))}
 
@@ -1749,7 +1746,6 @@ export default function SearchPage() {
                 onOpenContactModal={handleOpenContactModal}
                 onOpenInfoModal={handleOpenInfoModal}
                 mapRef={mapRef}
-                isLoggedIn={isLoggedIn}
               />
             )}
           </div>
@@ -1856,7 +1852,6 @@ export default function SearchPage() {
               handleOpenContactModal(listing);
             }}
             onAIResearchClick={handleOpenAIResearchModal}
-            isLoggedIn={isLoggedIn}
           />
         </section>
       </main>
@@ -1919,7 +1914,6 @@ export default function SearchPage() {
                 handleOpenContactModal(listing);
               }}
               onAIResearchClick={handleOpenAIResearchModal}
-              isLoggedIn={isLoggedIn}
             />
           </div>
         </div>

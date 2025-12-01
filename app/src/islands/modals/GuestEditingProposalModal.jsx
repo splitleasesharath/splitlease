@@ -486,10 +486,7 @@ function ReservationPriceBreakdown({
 
   return (
     <div className="reservation-price-breakdown">
-      {/* Header - Only visible for guests */}
-      {isGuest && (
-        <h2 className="rpb-header">Proposal Details</h2>
-      )}
+      {/* Note: Header removed - parent GuestEditingProposalModal already has "Proposal Details" in gep-header */}
 
       {/* Move-in Section */}
       <div className="rpb-row">

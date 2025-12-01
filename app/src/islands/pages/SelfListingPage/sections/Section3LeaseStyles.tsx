@@ -22,11 +22,10 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
   const scrollToFirstError = useCallback((errorKeys: string[]) => {
     if (errorKeys.length === 0) return;
     const firstErrorKey = errorKeys[0];
-    // For lease styles, we need to scroll to the config section
-    const element = document.getElementById(firstErrorKey) ||
-                   document.querySelector(`.${firstErrorKey.replace('Error', '')}-config`);
+    const element = document.getElementById(firstErrorKey);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
     }
   }, []);
 
@@ -222,7 +221,7 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 
       {/* Weekly Configuration */}
       {data.rentalType === 'Weekly' && (
-        <div className="weekly-config" id="weeklyPattern">
+        <div className="weekly-config">
           <h3>Weekly Pattern You're Offering</h3>
           <p className="info-text">This pattern is independent of the beginning of the month</p>
 
@@ -246,7 +245,7 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 
       {/* Monthly Configuration - Inline Agreement */}
       {data.rentalType === 'Monthly' && (
-        <div className="monthly-config" id="subsidyAgreement">
+        <div className="monthly-config">
           <h3>Monthly Lease Agreement</h3>
           <div className="agreement-text">
             <p>

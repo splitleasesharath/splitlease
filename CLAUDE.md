@@ -100,6 +100,7 @@ Convert at boundaries: `adaptDaysFromBubble()`, `adaptDaysToBubble()`
 | What | Where |
 |------|-------|
 | App guide | `app/CLAUDE.md` |
+| Development beliefs | `Context/DEVELOPMENT_BELIEFS.md` |
 | Database schema | `DATABASE_SCHEMA_OVERVIEW.md` |
 | Database relations | `Context/Database/DATABASE_RELATIONS.md` |
 | Logic architecture | `Context/Refactoring Architecture for Logic Core.md` |
