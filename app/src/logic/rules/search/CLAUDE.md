@@ -1,7 +1,6 @@
-# Search Rules - Logic Layer 2
+# Search Rules Context
 
-**GENERATED**: 2025-11-26
-**LAYER**: Rules (Boolean Predicates)
+**TYPE**: LEAF NODE
 **PARENT**: app/src/logic/rules/
 
 ---
@@ -9,48 +8,115 @@
 ## ### DIRECTORY_INTENT ###
 
 [PURPOSE]: Boolean predicates for validating search filter parameters
-[LAYER]: Layer 2 - Rules (return true/false, express business rules)
-[PATTERN]: All functions validate search input against allowed values
+[LAYER]: Layer 2 - Rules (return true/false)
+[PATTERN]: Validate URL params and filter values against allowed options
 
 ---
 
-## ### FILE_INVENTORY ###
+## ### RULE_CONTRACTS ###
 
-### isValidPriceTier.js
-[INTENT]: Validate price range filter value against allowed price tiers
-[EXPORTS]: isValidPriceTier
-[IMPORTS]: lib/constants
-[SIGNATURE]: (priceTier: string) => boolean
-[RETURNS]: true if tier is valid (e.g., "budget", "mid", "premium")
-
-### isValidSortOption.js
-[INTENT]: Validate sort option parameter against allowed sort values
-[EXPORTS]: isValidSortOption
-[IMPORTS]: lib/constants
-[SIGNATURE]: (sortOption: string) => boolean
-[RETURNS]: true if sort option is valid (e.g., "price-asc", "price-desc", "newest")
-
-### isValidWeekPattern.js
-[INTENT]: Validate week pattern filter value for scheduling filter
-[EXPORTS]: isValidWeekPattern
-[IMPORTS]: lib/constants
-[SIGNATURE]: (weekPattern: string) => boolean
-[RETURNS]: true if pattern is valid (e.g., "every-week", "alternating", "custom")
+### isValidPriceTier
+[PATH]: ./isValidPriceTier.js
+[INTENT]: Validate price range filter value
+[SIGNATURE]: ({ priceTier: string }) => boolean
+[INPUT]:
+  - priceTier: string (req) - Price tier value to validate
+[OUTPUT]: boolean - true if valid tier
+[THROWS]: Error when priceTier is not a string
+[VALID_VALUES]: 'under-200', '200-350', '350-500', '500-plus', 'all'
+[EXAMPLE]:
+  - `isValidPriceTier({ priceTier: 'under-200' })` => true
+  - `isValidPriceTier({ priceTier: 'invalid' })` => false
+[DEPENDS_ON]: None (pure function)
 
 ---
 
-## ### USAGE_PATTERN ###
-
-[IMPORT_FROM]: import { isValidPriceTier } from 'logic/rules/search/isValidPriceTier'
-[CONSUMED_BY]: SearchPage, useSearchPageLogic hook
-[PATTERN]: if (!isValidPriceTier(urlParam)) useDefaultTier()
+### isValidSortOption
+[PATH]: ./isValidSortOption.js
+[INTENT]: Validate sort option parameter
+[SIGNATURE]: ({ sortBy: string }) => boolean
+[INPUT]:
+  - sortBy: string (req) - Sort option value to validate
+[OUTPUT]: boolean - true if valid sort option
+[THROWS]: Error when sortBy is not a string
+[VALID_VALUES]: 'recommended', 'price-low', 'most-viewed', 'recent'
+[EXAMPLE]:
+  - `isValidSortOption({ sortBy: 'price-low' })` => true
+  - `isValidSortOption({ sortBy: 'invalid' })` => false
+[DEPENDS_ON]: None (pure function)
 
 ---
 
-## ### VALIDATION_CONTEXT ###
+### isValidWeekPattern
+[PATH]: ./isValidWeekPattern.js
+[INTENT]: Validate week pattern filter value
+[SIGNATURE]: ({ weekPattern: string }) => boolean
+[INPUT]:
+  - weekPattern: string (req) - Week pattern value to validate
+[OUTPUT]: boolean - true if valid pattern
+[THROWS]: Error when weekPattern is not a string
+[VALID_VALUES]: 'every-week', 'one-on-off', 'two-on-off', 'one-three-off'
+[EXAMPLE]:
+  - `isValidWeekPattern({ weekPattern: 'one-on-off' })` => true
+  - `isValidWeekPattern({ weekPattern: 'invalid' })` => false
+[DEPENDS_ON]: None (pure function)
 
-[SOURCE]: URL parameters, filter dropdowns
-[PURPOSE]: Prevent invalid filter combinations, sanitize user input
+---
+
+## ### VALUE_REFERENCE ###
+
+| Rule | Valid Values |
+|------|--------------|
+| isValidPriceTier | 'under-200', '200-350', '350-500', '500-plus', 'all' |
+| isValidSortOption | 'recommended', 'price-low', 'most-viewed', 'recent' |
+| isValidWeekPattern | 'every-week', 'one-on-off', 'two-on-off', 'one-three-off' |
+
+---
+
+## ### CRITICAL_USAGE_RULES ###
+
+[RULE_1]: Always validate URL params before using in API calls
+[RULE_2]: Invalid values should fall back to defaults in UI, not throw
+[RULE_3]: These are the SOURCE OF TRUTH for allowed filter values
+
+---
+
+## ### COMMON_PATTERNS ###
+
+### URL Parameter Validation
+```javascript
+import { isValidPriceTier } from 'logic/rules/search/isValidPriceTier'
+import { isValidSortOption } from 'logic/rules/search/isValidSortOption'
+import { isValidWeekPattern } from 'logic/rules/search/isValidWeekPattern'
+
+function parseSearchParams(urlParams) {
+  const priceTier = urlParams.get('price')
+  const sortBy = urlParams.get('sort')
+  const weekPattern = urlParams.get('pattern')
+
+  return {
+    priceTier: isValidPriceTier({ priceTier }) ? priceTier : 'all',
+    sortBy: isValidSortOption({ sortBy }) ? sortBy : 'recommended',
+    weekPattern: isValidWeekPattern({ weekPattern }) ? weekPattern : 'every-week'
+  }
+}
+```
+
+---
+
+## ### DEPENDENCIES ###
+
+[LOCAL]: None
+[EXTERNAL]: None
+[EXPORTS]: isValidPriceTier, isValidSortOption, isValidWeekPattern
+
+---
+
+## ### SHARED_CONVENTIONS ###
+
+[NO_FALLBACK]: Functions throw on invalid input TYPE, return false for invalid VALUE
+[PURE]: No side effects, deterministic output
+[SOURCE_OF_TRUTH]: Internal arrays define valid options
 
 ---
 
