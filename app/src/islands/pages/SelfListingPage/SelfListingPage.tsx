@@ -509,12 +509,12 @@ export const SelfListingPage: React.FC = () => {
                 />
                 <path
                   className="circle"
-                  strokeDasharray={`${(formData.completedSections.filter(s => s <= 6).length / 6) * 100}, 100`}
+                  strokeDasharray={`${(Math.min(currentSection, 6) / 6) * 100}, 100`}
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                 />
               </svg>
               <div className="progress-text">
-                {formData.completedSections.filter(s => s <= 6).length}/6
+                {Math.min(currentSection, 6)}/6
               </div>
             </div>
             <p className="progress-label">Sections Complete</p>
