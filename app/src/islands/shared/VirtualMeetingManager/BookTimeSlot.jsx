@@ -125,9 +125,16 @@ export default function BookTimeSlot({
   // Check if a date is disabled
   const isDateDisabled = (date) => {
     if (isPastDate(date)) return true;
-    return disabledDates.some((disabledDate) =>
-      isSameDateTime(date, disabledDate)
-    );
+    if (disabledDates.some((disabledDate) => isSameDateTime(date, disabledDate))) return true;
+
+    // Disable dates when max selections reached, unless the date already has selected slots
+    // (user should still be able to click to view/deselect existing slots)
+    if (state.timesSelected.length >= maxSelections) {
+      const hasExistingSlots = state.timesSelected.some((slot) => isSameDate(slot, date));
+      if (!hasExistingSlots) return true;
+    }
+
+    return false;
   };
 
   // Check if a date is currently being viewed (time picker shown for this date)
