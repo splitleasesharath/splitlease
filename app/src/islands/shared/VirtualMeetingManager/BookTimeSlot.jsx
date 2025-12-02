@@ -259,7 +259,7 @@ export default function BookTimeSlot({
                   disabled={isDisabled || isAtLimit}
                   className={`vm-time-slot-button ${isSelected ? 'vm-time-slot-selected' : ''}`}
                 >
-                  {formatTimeEST(timeSlot, 'h:mm a')} (EST)
+                  {formatTimeEST(timeSlot, 'h:mm a')}
                 </button>
               );
             })}

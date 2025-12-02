@@ -9,28 +9,32 @@
 
 .vm-overlay {
   position: fixed;
-  top: 0;
+  top: 70px; /* Below header */
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.5);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   z-index: 1000;
   padding: 20px;
+  overflow-y: auto;
 }
 
 .vm-container {
   background: white;
-  border-radius: 10px;
-  padding: 24px;
-  max-width: 600px;
-  width: 100%;
-  max-height: 90vh;
+  border-radius: 16px;
+  padding: 24px 32px;
+  width: 95%;
+  max-width: 900px;
+  min-height: min(600px, calc(100vh - 130px));
+  max-height: calc(100vh - 130px);
   overflow-y: auto;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ============================================
@@ -511,16 +515,26 @@
    RESPONSIVE DESIGN
    ============================================ */
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   .vm-container {
-    max-width: 100%;
-    padding: 16px;
-    border-radius: 0;
-    max-height: 100vh;
+    max-width: 95%;
+    padding: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .vm-overlay {
+    top: 60px; /* Smaller header on mobile */
+    padding: 10px;
   }
 
-  .vm-overlay {
-    padding: 0;
+  .vm-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 16px;
+    border-radius: 12px;
+    min-height: auto;
+    max-height: calc(100vh - 80px);
   }
 
   .vm-button-group {

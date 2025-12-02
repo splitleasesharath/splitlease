@@ -4,11 +4,34 @@
 
 .vm-book-time-slot-container {
   width: 100%;
-  max-width: 400px;
+  max-width: 100%;
   min-height: 400px;
   font-family: inherit;
   background: white;
-  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  grid-template-rows: auto 1fr;
+  gap: 24px;
+  flex: 1;
+}
+
+/* Calendar section takes left column, full height */
+.vm-book-time-slot-container .vm-select-date-section {
+  grid-column: 1;
+  grid-row: 1 / 3;
+}
+
+/* Selected slots section in top-right */
+.vm-book-time-slot-container .vm-select-time-section {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+/* Time slots inline section in bottom spanning both columns when date is selected */
+.vm-book-time-slot-container .vm-inline-time-slots {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: start;
 }
 
 /* ============================================
@@ -290,6 +313,21 @@
 /* ============================================
    RESPONSIVE DESIGN
    ============================================ */
+
+@media (max-width: 800px) {
+  .vm-book-time-slot-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .vm-book-time-slot-container .vm-select-date-section,
+  .vm-book-time-slot-container .vm-select-time-section,
+  .vm-book-time-slot-container .vm-inline-time-slots {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
 
 @media (max-width: 640px) {
   .vm-book-time-slot-container {
