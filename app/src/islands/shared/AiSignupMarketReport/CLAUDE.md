@@ -1,6 +1,7 @@
-# AI Signup Market Report Context
+# AI Signup Market Report Component
 
-**TYPE**: LEAF NODE
+**GENERATED**: 2025-11-26
+**ARCHITECTURE**: React Islands
 **PARENT**: app/src/islands/shared/
 
 ---
@@ -13,28 +14,32 @@
 
 ---
 
-## ### COMPONENT_CONTRACTS ###
-
-### AiSignupMarketReport.jsx
-[PATH]: ./AiSignupMarketReport.jsx
-[INTENT]: Stream AI-generated market insights with typewriter display effect
-[PROPS]:
-  - neighborhood: string (req) - NYC neighborhood name
-  - propertyType: string (opt) - Type of property (apartment, room, etc.)
-  - onComplete: () => void (opt) - Callback when generation finishes
-[BEHAVIOR]:
-  - Calls ai-signup-guest Edge Function
-  - Streams response chunks to UI
-  - Displays market insights progressively
-[DEPENDS_ON]: lib/supabase
-[ASYNC]: Yes (streaming)
-
----
+## ### FILE_INVENTORY ###
 
 ### index.js
-[PATH]: ./index.js
-[INTENT]: Barrel export
-[EXPORTS]: { AiSignupMarketReport }
+[INTENT]: Barrel export providing AiSignupMarketReport component
+[EXPORTS]: AiSignupMarketReport
+
+### AiSignupMarketReport.jsx
+[INTENT]: Main component rendering AI-generated market research report with streaming display
+[IMPORTS]: react
+[DEPENDENCIES]: supabase/functions/ai-signup-guest/
+[PROPS]: neighborhood, propertyType, onComplete
+
+### Example.jsx
+[INTENT]: Example usage demonstrating component integration in signup flow
+[IMPORTS]: react, ./index
+
+### TestPage.jsx
+[INTENT]: Test page for validating AI report functionality with mock data
+[IMPORTS]: react, ./index
+[DEPENDENCIES]: supabase/functions/ai-gateway/
+
+### README.md
+[INTENT]: Component usage documentation
+
+### MIGRATION_SUMMARY.md
+[INTENT]: Migration notes from Bubble.io implementation
 
 ---
 
@@ -44,38 +49,26 @@
 User enters neighborhood
     │
     ▼
-AiSignupMarketReport mounts
+AiSignupMarketReport triggers
     │
     ▼
 Call ai-signup-guest Edge Function
     │
     ▼
-Stream AI response chunks to UI
+Stream AI response to UI
     │
     ▼
-Display market insights with typewriter effect
-    │
-    ▼
-Call onComplete when finished
+Display market insights
 ```
 
 ---
 
-## ### CRITICAL_USAGE_RULES ###
+## ### USAGE_PATTERN ###
 
-[RULE_1]: Component handles its own loading/error states
-[RULE_2]: AI content is streamed, not loaded all at once
-[RULE_3]: Edge Function handles API key security
-
----
-
-## ### DEPENDENCIES ###
-
-[LOCAL]: lib/supabase
-[EXTERNAL]: None
-[EDGE_FUNCTION]: ai-signup-guest
+[IMPORT_FROM]: import { AiSignupMarketReport } from 'islands/shared/AiSignupMarketReport'
+[CONSUMED_BY]: ListWithUsPage, host signup flow
 
 ---
 
 **FILE_COUNT**: 6
-**EXPORTS_COUNT**: 1
+**EXPORTS_COUNT**: 1 (main component)

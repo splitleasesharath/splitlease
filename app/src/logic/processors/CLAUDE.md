@@ -1,6 +1,7 @@
-# Processors Map
+# Processors - Logic Layer 3
 
-**TYPE**: BRANCH NODE
+**GENERATED**: 2025-11-26
+**LAYER**: Processors (Data Transformers)
 **PARENT**: app/src/logic/
 
 ---
@@ -8,38 +9,50 @@
 ## ### DIRECTORY_INTENT ###
 
 [PURPOSE]: Data transformation and adaptation functions
-[PATTERN]: Layer 3 of Four-Layer Logic Architecture
-[LAYER]: Transform raw data shapes into processed formats
+[LAYER]: Layer 3 of four-layer logic architecture
+[PATTERN]: Transform raw data into processed formats
 
 ---
 
-## ### SUB-MODULES ###
+## ### SUBDIRECTORIES ###
 
-- **[display/](./display/CLAUDE.md)**: UI formatting (formatHostName) - 1 function
-- **[external/](./external/CLAUDE.md)**: CRITICAL day format conversion (adaptDays*) - 4 functions
-- **[listing/](./listing/CLAUDE.md)**: Listing data extraction (coordinates, JSON parsing) - 3 functions
-- **[proposal/](./proposal/CLAUDE.md)**: Proposal data transformation with counteroffer merging - 1 function
-- **[proposals/](./proposals/CLAUDE.md)**: Rich proposal processing with nested data - 9 functions
-- **[user/](./user/CLAUDE.md)**: User data formatting (names, photos, initials) - 4 functions
+### display/
+[INTENT]: Format data for UI display
+[FILES]: 1 processor function
+[KEY_EXPORTS]: formatHostName
+
+### external/
+[INTENT]: CRITICAL - Convert data between JavaScript and external APIs (Bubble.io)
+[FILES]: 4 processor functions
+[KEY_EXPORTS]: adaptDaysFromBubble, adaptDaysToBubble (day format conversion)
+[CRITICAL]: Day indexing conversion between JS (0-6) and Bubble (1-7)
+
+### listing/
+[INTENT]: Transform listing data from API responses
+[FILES]: 2 processor functions
+[KEY_EXPORTS]: extractListingCoordinates, parseJsonArrayField
+
+### proposal/
+[INTENT]: Transform proposal data with computed fields
+[FILES]: 1 processor function
+[KEY_EXPORTS]: processProposalData
+
+### proposals/
+[INTENT]: Alternate proposal processing (check for duplication)
+[FILES]: 1 processor function
+
+### user/
+[INTENT]: Transform user data for display
+[FILES]: 4 processor functions
+[KEY_EXPORTS]: processUserDisplayName, processUserInitials, processProfilePhotoUrl
 
 ---
 
-## ### KEY_EXPORTS ###
+## ### FILE_INVENTORY ###
 
-[FROM_DISPLAY]: formatHostName
-[FROM_EXTERNAL]: adaptDaysFromBubble, adaptDaysToBubble, adaptDayFromBubble, adaptDayToBubble
-[FROM_LISTING]: extractListingCoordinates, parseJsonArrayField, parseJsonArrayFieldOptional
-[FROM_PROPOSAL]: processProposalData
-[FROM_PROPOSALS]: processProposalData, processUserData, processListingData, processHostData, processVirtualMeetingData, getProposalDisplayText, formatPrice, formatDate, formatDateTime, getEffectiveTerms
-[FROM_USER]: processProfilePhotoUrl, processUserDisplayName, processUserInitials, processUserData
-
----
-
-## ### SHARED_CONVENTIONS ###
-
-[NO_FALLBACK]: Functions throw errors for invalid input, return null for missing optional data
-[PURE]: No side effects, deterministic output (except console.warn for debugging)
-[INPUT_VALIDATION]: All functions validate inputs before processing
+### index.js
+[INTENT]: Barrel export aggregating all processor functions
+[EXPORTS]: * from all subdirectories
 
 ---
 
@@ -47,7 +60,7 @@
 
 [ALLOWED]: Data mapping, field extraction, format conversion
 [ALLOWED]: Calling calculators and rules
-[FORBIDDEN]: API calls, state mutations, async operations
+[FORBIDDEN]: API calls, state mutations
 [TESTING]: Input/output transformation tests
 
 ---
@@ -55,11 +68,10 @@
 ## ### CRITICAL_NOTE ###
 
 [DAY_CONVERSION]: external/ directory contains CRITICAL day index converters
-[ALWAYS_USE]: adaptDaysFromBubble when receiving from Bubble API
-[ALWAYS_USE]: adaptDaysToBubble when sending to Bubble API
-[NEVER_SKIP]: Day conversion at API boundaries
+[ALWAYS_USE]: adaptDaysFromBubble when receiving from API
+[ALWAYS_USE]: adaptDaysToBubble when sending to API
 
 ---
 
 **SUBDIRECTORY_COUNT**: 6
-**TOTAL_FILES**: 22 functions
+**TOTAL_FILES**: 13

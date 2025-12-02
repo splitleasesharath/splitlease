@@ -1,86 +1,48 @@
-# Auth Rules Context
+# Auth Rules - Logic Layer 2
 
-**TYPE**: LEAF NODE
+**GENERATED**: 2025-11-26
+**LAYER**: Rules (Boolean Predicates)
 **PARENT**: app/src/logic/rules/
 
 ---
 
-## ### LOGIC_CONTRACTS ###
+## ### DIRECTORY_INTENT ###
 
-### isProtectedPage
-[PATH]: ./isProtectedPage.js
-[INTENT]: Determine if URL pathname requires authentication
-[SIGNATURE]: ({ pathname: string }) => boolean
-[INPUT]:
-  - pathname: string (req) - Current URL pathname (e.g., '/guest-proposals')
-[OUTPUT]: boolean - true if page requires login, false otherwise
-[THROWS]:
-  - Error: "pathname must be a string" - When not string
-[TRUTH_SOURCE]: Internal `protectedPaths` array:
-  ```
-  ['/guest-proposals', '/account-profile', '/host-dashboard']
-  ```
-[RULES]:
-  - Handles both clean URLs (/guest-proposals) and .html URLs (/guest-proposals.html)
-  - Matches exact paths and sub-paths (e.g., /guest-proposals/123)
-  - Normalizes path by removing .html extension
-[EXAMPLE]:
-  - isProtectedPage({ pathname: '/guest-proposals' }) => true
-  - isProtectedPage({ pathname: '/search' }) => false
-  - isProtectedPage({ pathname: '/guest-proposals.html' }) => true
-[DEPENDS_ON]: None (pure function)
-[USED_BY]: Route guards, Header component, Auth workflows
-
-### isSessionValid
-[PATH]: ./isSessionValid.js
-[INTENT]: Check if user has valid active session
-[SIGNATURE]: ({ authState: boolean }) => boolean
-[INPUT]:
-  - authState: boolean (req) - Current authentication state
-[OUTPUT]: boolean - true if session is valid
-[THROWS]:
-  - Error: "authState must be a boolean" - When not boolean
-[RULE]: Session is valid if authState is true (Bubble API handles actual token expiry)
-[EXAMPLE]: isSessionValid({ authState: true }) => true
-[DEPENDS_ON]: None (pure function)
-[USED_BY]: Auth status checks, Protected page access
+[PURPOSE]: Boolean predicates for authentication and authorization decisions
+[LAYER]: Layer 2 - Rules (return true/false, express business rules)
+[PATTERN]: All functions return boolean values based on input state
 
 ---
 
-## ### CONSTANTS ###
+## ### FILE_INVENTORY ###
 
-[PROTECTED_PATHS]: ['/guest-proposals', '/account-profile', '/host-dashboard']
-[PUBLIC_PATHS]: All other paths (implicit - not in protected list)
+### isProtectedPage.js
+[INTENT]: Determine if current page path requires authentication before access
+[EXPORTS]: isProtectedPage
+[SIGNATURE]: (pathname: string) => boolean
+[RETURNS]: true if page requires login, false otherwise
 
----
-
-## ### DEPENDENCIES ###
-
-[LOCAL]: None
-[EXTERNAL]: None
-[EXPORTS]: isProtectedPage, isSessionValid
+### isSessionValid.js
+[INTENT]: Check if current session token is valid and not expired
+[EXPORTS]: isSessionValid
+[IMPORTS]: lib/secureStorage
+[SIGNATURE]: () => boolean
+[RETURNS]: true if session is valid, false if expired or missing
 
 ---
 
 ## ### USAGE_PATTERN ###
 
-```javascript
-import { isProtectedPage } from 'logic/rules/auth/isProtectedPage'
-import { isSessionValid } from 'logic/rules/auth/isSessionValid'
-
-// Route guard pattern
-if (isProtectedPage({ pathname }) && !isSessionValid({ authState })) {
-  redirect('/')
-}
-```
+[IMPORT_FROM]: import { isProtectedPage } from 'logic/rules/auth/isProtectedPage'
+[CONSUMED_BY]: Route guards, Header component, auth workflows
+[PATTERN]: if (isProtectedPage(path) && !isAuthenticated) redirect('/login')
 
 ---
 
-## ### SHARED_CONVENTIONS ###
+## ### PROTECTED_PAGES ###
 
-[NO_FALLBACK]: Throw errors for invalid input, never assume defaults
-[PURE]: No side effects, no external calls
-[LAYER]: Layer 2 - Rules (boolean predicates only)
+[REQUIRES_AUTH]: /account-profile, /guest-proposals, /self-listing
+[PUBLIC]: /search, /view-split-lease, /help-center, /faq
 
 ---
 

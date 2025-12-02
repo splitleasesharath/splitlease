@@ -35,6 +35,7 @@ Each page is an independent React root (island pattern):
 - `src/main.jsx` → `HomePage`
 - `src/search.jsx` → `SearchPage`
 - `src/view-split-lease.jsx` → `ViewSplitLeasePage`
+- `src/guest-proposals.jsx` → `GuestProposalsPage`
 - `src/self-listing.jsx` → `SelfListingPage`
 
 ### Four-Layer Logic Architecture
@@ -56,6 +57,7 @@ Located in `src/logic/`:
 src/main.jsx              → HomePage (landing)
 src/search.jsx            → SearchPage (browse listings)
 src/view-split-lease.jsx  → ViewSplitLeasePage (listing details)
+src/guest-proposals.jsx   → GuestProposalsPage (manage proposals)
 src/self-listing.jsx      → SelfListingPage (create/edit listing)
 ```
 
@@ -140,6 +142,7 @@ await logoutUser()
 ```
 
 ### Protected Pages
+- `/guest-proposals`
 - `/account-profile`
 - `/host-dashboard`
 
@@ -171,16 +174,16 @@ For data not in Bubble:
 ### 1. Hollow Component Pattern
 UI-only component that delegates ALL logic to a hook.
 
-**Example**: `ViewSplitLeasePage.jsx`
+**Example**: `GuestProposalsPage.jsx`
 ```javascript
 // Component contains ONLY JSX
-export default function ViewSplitLeasePage() {
+export default function GuestProposalsPage() {
   const {
-    listing,
-    selectedDays,
-    handleDaySelection,
+    proposals,
+    selectedProposal,
+    handleCancelProposal,
     // ... all state and handlers from hook
-  } = useViewSplitLeasePageLogic()
+  } = useGuestProposalsPageLogic()
 
   return (
     <div>
@@ -428,13 +431,6 @@ When modifying UI components:
 
 ---
 
-## Key References
-| What | Where |
-|------|-------|
-| Development beliefs | `../Context/DEVELOPMENT_BELIEFS.md` |
-
----
-
 ## Quick Reference
 
 ### Common Imports
@@ -460,7 +456,7 @@ import { canCancelProposal, canModifyProposal } from 'src/logic/rules/proposals/
 | Type | Convention | Example |
 |------|------------|---------|
 | React Components | PascalCase | `HomePage.jsx` |
-| Hooks | camelCase with `use` prefix | `useViewSplitLeasePageLogic.js` |
+| Hooks | camelCase with `use` prefix | `useGuestProposalsPageLogic.js` |
 | Utilities | camelCase | `priceCalculations.js` |
 | Constants | UPPER_SNAKE_CASE | `BUBBLE_API_URL` |
 | CSS Classes | kebab-case | `.hero-section` |

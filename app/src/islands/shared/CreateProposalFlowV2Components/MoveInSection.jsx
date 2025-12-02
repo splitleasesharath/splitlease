@@ -2,7 +2,7 @@
  * MoveInSection - Adjust move-in date and reservation length
  */
 
-export default function MoveInSection({ data, updateData, listing, errors = {} }) {
+export default function MoveInSection({ data, updateData, listing }) {
   const reservationOptions = [
     { value: 6, label: '6 weeks' },
     { value: 7, label: '7 weeks' },
@@ -40,15 +40,11 @@ export default function MoveInSection({ data, updateData, listing, errors = {} }
         </div>
         <input
           type="date"
-          id="moveInDate"
           value={data.moveInDate ? data.moveInDate.split('T')[0] : ''}
           onChange={(e) => updateData('moveInDate', e.target.value)}
           min={getMinDate()}
-          className={`form-input date-picker ${errors.moveInDate ? 'is-invalid' : ''}`}
+          className="form-input date-picker"
         />
-        {errors.moveInDate && (
-          <div className="form-error-message">{errors.moveInDate}</div>
-        )}
       </div>
 
       <div className="form-group">

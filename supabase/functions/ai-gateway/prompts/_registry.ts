@@ -155,5 +155,5 @@ registerLoader({
 // Add new prompts by creating files and importing them
 // ─────────────────────────────────────────────────────────────
 
-import "./listing-description.ts";
+// import "./listing-description.ts";
 // import "./market-analysis.ts";

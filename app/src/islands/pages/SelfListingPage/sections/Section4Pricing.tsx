@@ -43,13 +43,7 @@ export const Section4Pricing: React.FC<Section4Props> = ({
     const newErrors: Record<string, string> = {};
     const errorOrder: string[] = [];
 
-    // Validate damage deposit
-    if (data.damageDeposit < 500) {
-      newErrors.damageDeposit = 'Damage deposit must be at least $500';
-      errorOrder.push('damageDeposit');
-    }
-
-    // Rental type specific validation
+    // Rental type specific validation (check first as it's at the top)
     if (rentalType === 'Monthly') {
       if (!data.monthlyCompensation || data.monthlyCompensation <= 0) {
         newErrors.monthlyCompensation = 'Monthly compensation is required';
@@ -65,6 +59,12 @@ export const Section4Pricing: React.FC<Section4Props> = ({
         newErrors.nightlyPricing = '1-night price is required';
         errorOrder.push('nightlyPricing');
       }
+    }
+
+    // Validate damage deposit
+    if (data.damageDeposit < 500) {
+      newErrors.damageDeposit = 'Damage deposit must be at least $500';
+      errorOrder.push('damageDeposit');
     }
 
     setErrors(newErrors);
@@ -87,7 +87,7 @@ export const Section4Pricing: React.FC<Section4Props> = ({
 
       {/* Nightly Pricing Interface */}
       {rentalType === 'Nightly' && (
-        <div className="nightly-pricing">
+        <div className="nightly-pricing" id="nightlyPricing">
           <h3>Nightly Rate Calculator</h3>
           <NightlyPriceSlider
             initialP1={data.nightlyPricing?.oneNightPrice || 99}

@@ -1,6 +1,7 @@
-# Import Listing Modal Context
+# Import Listing Modal
 
-**TYPE**: LEAF NODE
+**GENERATED**: 2025-11-26
+**ARCHITECTURE**: React Islands
 **PARENT**: app/src/islands/shared/
 
 ---
@@ -12,22 +13,13 @@
 
 ---
 
-## ### COMPONENT_CONTRACTS ###
+## ### FILE_INVENTORY ###
 
 ### ImportListingModal.jsx
-[PATH]: ./ImportListingModal.jsx
 [INTENT]: Modal for importing listings from Airbnb/VRBO with URL parsing and data mapping
-[PROPS]:
-  - onImport: (listingData: object) => Promise<void> (req) - Success callback with mapped data
-  - onClose: () => void (req) - Close modal handler
-[BEHAVIOR]:
-  - Parse platform and listing ID from URL
-  - Fetch listing data via Edge Function
-  - Map external fields to Split Lease schema
-  - Opens SelfListingPage with pre-filled data
-[THROWS]: Error on invalid URL or fetch failure
-[DEPENDS_ON]: lib/bubbleAPI
-[ASYNC]: Yes
+[IMPORTS]: react, lib/bubbleAPI
+[DEPENDENCIES]: supabase/functions/bubble-proxy/
+[PROPS]: onImport, onClose
 
 ---
 
@@ -53,39 +45,15 @@ Open SelfListingPage with pre-filled data
 
 ## ### SUPPORTED_PLATFORMS ###
 
-| Platform | URL Pattern |
-|----------|-------------|
-| Airbnb | airbnb.com/rooms/{id} |
-| VRBO | vrbo.com/property/{id} |
+[AIRBNB]: airbnb.com/rooms/{id}
+[VRBO]: vrbo.com/property/{id}
 
 ---
 
-## ### FIELD_MAPPING ###
+## ### USAGE_PATTERN ###
 
-| External | Split Lease |
-|----------|-------------|
-| title | title |
-| description | description |
-| bedrooms | bedrooms |
-| bathrooms | bathrooms |
-| amenities | amenities (mapped to our IDs) |
-| photos | photos (URLs) |
-
----
-
-## ### CRITICAL_USAGE_RULES ###
-
-[RULE_1]: Only supports Airbnb and VRBO URLs
-[RULE_2]: Parent controls isOpen state
-[RULE_3]: Imported data pre-fills form, not auto-submits
-
----
-
-## ### DEPENDENCIES ###
-
-[LOCAL]: lib/bubbleAPI, lib/supabase
-[EXTERNAL]: None
-[EDGE_FUNCTION]: bubble-proxy
+[IMPORT_FROM]: import { ImportListingModal } from 'islands/shared/ImportListingModal/ImportListingModal'
+[CONSUMED_BY]: ListWithUsPage, host dashboard
 
 ---
 

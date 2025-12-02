@@ -1,6 +1,6 @@
-# Constants - Proposal Definitions Context
+# Constants - Proposal Definitions
 
-**TYPE**: LEAF NODE
+**GENERATED**: 2025-11-26
 **PARENT**: app/src/lib/
 
 ---
@@ -9,33 +9,22 @@
 
 [PURPOSE]: Constant definitions for proposal statuses and stages
 [PATTERN]: Immutable constant objects and enums
-[USAGE]: Import constants rather than hardcoding status strings
 
 ---
 
-## ### MODULE_CONTRACTS ###
+## ### FILE_INVENTORY ###
 
 ### proposalStages.js
-[PATH]: ./proposalStages.js
 [INTENT]: Proposal stage constant definitions mapping status codes to display info
-[EXPORTS]:
-  - PROPOSAL_STAGES: object - Stage definitions with number, label, color
-  - getStageLabel: (stage: number) => string - Get display label for stage
-  - getStageColor: (stage: number) => string - Get color for stage indicator
-
----
+[EXPORTS]: PROPOSAL_STAGES, getStageLabel, getStageColor
 
 ### proposalStatuses.js
-[PATH]: ./proposalStatuses.js
 [INTENT]: Proposal status value constants defining all possible states
-[EXPORTS]:
-  - PROPOSAL_STATUSES: object - All status string constants
-  - STATUS_TRANSITIONS: object - Valid transitions between statuses
-  - isTerminalStatus: (status: string) => boolean - Check if status is final
+[EXPORTS]: PROPOSAL_STATUSES, STATUS_TRANSITIONS, isTerminalStatus
 
 ---
 
-## ### PROPOSAL_STAGES_SHAPE ###
+## ### PROPOSAL_STAGES ###
 
 ```javascript
 PROPOSAL_STAGES = {
@@ -49,7 +38,7 @@ PROPOSAL_STAGES = {
 
 ---
 
-## ### PROPOSAL_STATUSES_SHAPE ###
+## ### PROPOSAL_STATUSES ###
 
 ```javascript
 PROPOSAL_STATUSES = {
@@ -65,18 +54,10 @@ PROPOSAL_STATUSES = {
 
 ---
 
-## ### CRITICAL_USAGE_RULES ###
+## ### USAGE_PATTERN ###
 
-[RULE_1]: Always import status constants - never hardcode status strings
-[RULE_2]: Use isTerminalStatus() to check if proposal can still be modified
-[RULE_3]: Use STATUS_TRANSITIONS for validation
-
----
-
-## ### DEPENDENCIES ###
-
-[LOCAL]: None
-[EXTERNAL]: None
+[IMPORT_FROM]: import { PROPOSAL_STAGES } from 'lib/constants/proposalStages'
+[CONSUMED_BY]: Proposal rules, processors, UI components
 
 ---
 

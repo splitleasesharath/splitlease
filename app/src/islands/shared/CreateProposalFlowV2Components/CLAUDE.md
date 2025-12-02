@@ -1,6 +1,7 @@
-# Create Proposal Flow V2 Components Context
+# Create Proposal Flow V2 Components
 
-**TYPE**: LEAF NODE
+**GENERATED**: 2025-11-26
+**ARCHITECTURE**: React Islands
 **PARENT**: app/src/islands/shared/
 
 ---
@@ -13,54 +14,29 @@
 
 ---
 
-## ### COMPONENT_CONTRACTS ###
+## ### FILE_INVENTORY ###
 
 ### DaysSelectionSection.jsx
-[PATH]: ./DaysSelectionSection.jsx
 [INTENT]: Day selection section with weekly schedule picker
-[PROPS]:
-  - listing: object (req) - Listing with available days
-  - selectedDays: number[] (req) - Currently selected day indices (0-6)
-  - onDaysChange: (days: number[]) => void (req) - Selection change handler
-  - onNext: () => void (req) - Navigate to next section
-[DEPENDS_ON]: ../ListingScheduleSelector
-
----
+[IMPORTS]: react, ../ListingScheduleSelector
+[PROPS]: listing, selectedDays, onDaysChange, onNext
 
 ### MoveInSection.jsx
-[PATH]: ./MoveInSection.jsx
 [INTENT]: Move-in date selection with calendar picker and availability validation
-[PROPS]:
-  - listing: object (req) - Listing with availability info
-  - blockedDates: Date[] (req) - Dates unavailable for move-in
-  - onDateSelect: (date: Date) => void (req) - Date selection handler
-  - onNext: () => void (req) - Navigate to next section
-  - onBack: () => void (req) - Navigate to previous section
-[DEPENDS_ON]: logic/workflows/scheduling/validateMoveInDateWorkflow
-[ASYNC]: Yes (validation)
-
----
-
-### UserDetailsSection.jsx
-[PATH]: ./UserDetailsSection.jsx
-[INTENT]: Guest personal details and special requests input
-[PROPS]:
-  - user: object (opt) - Pre-filled user data if logged in
-  - onDetailsChange: (details: object) => void (req) - Details change handler
-  - onNext: () => void (req) - Navigate to next section
-  - onBack: () => void (req) - Navigate to previous section
-
----
+[IMPORTS]: react
+[DEPENDENCIES]: logic/calculators/scheduling/calculateNextAvailableCheckIn, logic/workflows/scheduling/validateMoveInDateWorkflow
+[PROPS]: listing, blockedDates, onDateSelect, onNext, onBack
 
 ### ReviewSection.jsx
-[PATH]: ./ReviewSection.jsx
 [INTENT]: Final review displaying pricing breakdown and terms before submission
-[PROPS]:
-  - proposal: object (req) - Complete proposal data
-  - pricing: object (req) - Calculated pricing breakdown
-  - onSubmit: () => Promise<void> (req) - Submit proposal handler
-  - onBack: () => void (req) - Navigate to previous section
-[DEPENDS_ON]: logic/calculators/pricing/calculatePricingBreakdown
+[IMPORTS]: react, ../PriceDisplay
+[DEPENDENCIES]: logic/calculators/pricing/calculatePricingBreakdown, logic/calculators/pricing/calculateReservationTotal
+[PROPS]: proposal, pricing, onSubmit, onBack
+
+### UserDetailsSection.jsx
+[INTENT]: Guest personal details and special requests input
+[IMPORTS]: react
+[PROPS]: user, onDetailsChange, onNext, onBack
 
 ---
 
@@ -84,19 +60,11 @@ Proposal Created
 
 ---
 
-## ### CRITICAL_USAGE_RULES ###
+## ### USAGE_PATTERN ###
 
-[RULE_1]: Parent wizard (CreateProposalFlowV2) manages step navigation
-[RULE_2]: Each section validates before allowing onNext
-[RULE_3]: Day indices use JavaScript format (0-6)
-[RULE_4]: Pricing calculated fresh on ReviewSection mount
-
----
-
-## ### DEPENDENCIES ###
-
-[LOCAL]: logic/calculators/pricing/, logic/workflows/scheduling/
-[EXTERNAL]: None
+[IMPORT_FROM]: import { MoveInSection } from 'islands/shared/CreateProposalFlowV2Components/MoveInSection'
+[CONSUMED_BY]: CreateProposalFlowV2.jsx only
+[STATE_MANAGEMENT]: Parent wizard manages step state and data
 
 ---
 

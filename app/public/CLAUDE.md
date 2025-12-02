@@ -37,6 +37,7 @@
 ### account-profile.html → src/account-profile.jsx (protected)
 ### careers.html → src/careers.jsx
 ### faq.html → src/faq.jsx
+### guest-proposals.html → src/guest-proposals.jsx (protected)
 ### guest-success.html → src/guest-success.jsx
 ### help-center.html → src/help-center.jsx
 ### help-center-category.html → src/help-center-category.jsx

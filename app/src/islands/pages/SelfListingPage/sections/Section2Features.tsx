@@ -3,7 +3,6 @@ import type { Features } from '../types/listing.types';
 import { AMENITIES_INSIDE, AMENITIES_OUTSIDE } from '../types/listing.types';
 import { getNeighborhoodByZipCode } from '../utils/neighborhoodService';
 import { getCommonInUnitAmenities, getCommonBuildingAmenities } from '../utils/amenitiesService';
-import { generateListingDescription, extractListingDataFromDraft } from '../../../../lib/aiService';
 
 interface Section2Props {
   data: Features;
@@ -24,7 +23,6 @@ export const Section2Features: React.FC<Section2Props> = ({
   const [isLoadingNeighborhood, setIsLoadingNeighborhood] = useState(false);
   const [isLoadingInUnitAmenities, setIsLoadingInUnitAmenities] = useState(false);
   const [isLoadingBuildingAmenities, setIsLoadingBuildingAmenities] = useState(false);
-  const [isLoadingDescription, setIsLoadingDescription] = useState(false);
 
   // Scroll to first error field
   const scrollToFirstError = useCallback((errorKeys: string[]) => {
@@ -92,39 +90,16 @@ export const Section2Features: React.FC<Section2Props> = ({
     }
   };
 
-  const loadTemplate = async () => {
-    setIsLoadingDescription(true);
+  const loadTemplate = () => {
+    const template = `Welcome to our comfortable and well-appointed space! This listing offers a great location with easy access to local amenities and transportation.
 
-    try {
-      // Extract listing data from localStorage draft
-      const listingData = extractListingDataFromDraft();
+The space features modern furnishings and all the essentials you need for a pleasant stay. You'll have access to [list specific areas/amenities].
 
-      if (!listingData) {
-        alert('Please complete Section 1 (Address) first to generate a description.');
-        return;
-      }
+The neighborhood is [describe neighborhood characteristics - quiet, vibrant, family-friendly, etc.] with [mention nearby attractions, restaurants, shops, or transit].
 
-      // Add current amenities from this section's data
-      const dataForGeneration = {
-        ...listingData,
-        amenitiesInsideUnit: data.amenitiesInsideUnit,
-        amenitiesOutsideUnit: data.amenitiesOutsideUnit,
-      };
+We look forward to hosting you!`;
 
-      const generatedDescription = await generateListingDescription(dataForGeneration);
-
-      if (generatedDescription) {
-        handleChange('descriptionOfLodging', generatedDescription);
-      } else {
-        alert('Could not generate description. Please try again.');
-      }
-    } catch (error) {
-      console.error('Error generating description:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      alert(`Error generating description: ${errorMessage}`);
-    } finally {
-      setIsLoadingDescription(false);
-    }
+    handleChange('descriptionOfLodging', template);
   };
 
   const loadNeighborhoodTemplate = async () => {
@@ -246,9 +221,8 @@ export const Section2Features: React.FC<Section2Props> = ({
               type="button"
               className="btn-link"
               onClick={loadTemplate}
-              disabled={isLoadingDescription}
             >
-              {isLoadingDescription ? 'generating...' : 'load template'}
+              load template
             </button>
           </div>
           <textarea

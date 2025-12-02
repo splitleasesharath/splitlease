@@ -1,6 +1,7 @@
-# Shared Components Map
+# Shared Components
 
-**TYPE**: BRANCH NODE
+**GENERATED**: 2025-11-26
+**ARCHITECTURE**: React Islands
 **PARENT**: app/src/islands/
 
 ---
@@ -13,98 +14,109 @@
 
 ---
 
-## ### SUB-MODULES ###
+## ### SUBDIRECTORIES ###
 
-- **[AiSignupMarketReport/](./AiSignupMarketReport/CLAUDE.md)**: AI-powered market research report
-- **[CreateDuplicateListingModal/](./CreateDuplicateListingModal/CLAUDE.md)**: Listing duplication modal
-- **[CreateProposalFlowV2Components/](./CreateProposalFlowV2Components/CLAUDE.md)**: Proposal wizard sections
-- **[HostScheduleSelector/](./HostScheduleSelector/CLAUDE.md)**: Host-side schedule picker
-- **[ImportListingModal/](./ImportListingModal/CLAUDE.md)**: Airbnb/VRBO import modal
-- **[ListingCard/](./ListingCard/CLAUDE.md)**: Listing preview card variants
-- **[LoggedInAvatar/](./LoggedInAvatar/CLAUDE.md)**: User avatar with account menu
-- **[SubmitListingPhotos/](./SubmitListingPhotos/CLAUDE.md)**: Photo upload/management
-- **[VirtualMeetingManager/](./VirtualMeetingManager/CLAUDE.md)**: Virtual meeting workflow modal (4 views)
+### AiSignupMarketReport/
+[INTENT]: AI-powered market research report component
+[FILES]: 6 files including component, examples, tests
+
+### CreateDuplicateListingModal/
+[INTENT]: Modal for duplicating existing listings
+[FILES]: 3 files
+
+### CreateProposalFlowV2Components/
+[INTENT]: Section components for proposal creation wizard
+[FILES]: 4 section components
+
+### ImportListingModal/
+[INTENT]: Modal for importing listings from Airbnb/VRBO
+[FILES]: 1 component
+
+### ListingCard/
+[INTENT]: Listing preview card variants
+[FILES]: 2 files (map variant + CSS)
+
+### LoggedInAvatar/
+[INTENT]: User avatar dropdown with account menu
+[FILES]: 5 files including hook and styles
+
+### LoggedInHeaderAvatar2/
+[INTENT]: Alternate avatar component (check for duplication)
+
+### SubmitListingPhotos/
+[INTENT]: Photo upload and management component
+[FILES]: 6 files including delete modal
 
 ---
 
-## ### KEY_COMPONENTS ###
+## ### FILE_INVENTORY ###
+
+### Button.jsx
+[INTENT]: Reusable button with variants (primary, secondary, outline, ghost)
+[EXPORTS]: Button
+
+### ContactHostMessaging.jsx
+[INTENT]: Host messaging interface
+[DEPENDENCIES]: supabase/functions/bubble-proxy/handlers/messaging
+
+### CreateProposalFlowV2.jsx
+[INTENT]: Multi-step proposal creation wizard
+[IMPORTS]: CreateProposalFlowV2Components/, ListingScheduleSelector
+
+### DayButton.jsx
+[INTENT]: Day selection button for schedule picker
+[DEPENDENCIES]: Styled for selected/disabled/available states
+
+### ErrorOverlay.jsx
+[INTENT]: Error display overlay with retry option
+
+### ExternalReviews.jsx
+[INTENT]: Display Airbnb/VRBO reviews
+
+### Footer.jsx
+[INTENT]: Site footer with links and copyright
+
+### GoogleMap.jsx
+[INTENT]: Google Maps integration using @react-google-maps/api
+[DEPENDENCIES]: VITE_GOOGLE_MAPS_API_KEY
 
 ### Header.jsx
 [INTENT]: Site header with navigation and auth-aware user menu
 [IMPORTS]: LoggedInAvatar, SignUpLoginModal, lib/auth
-[BEHAVIOR]: Shows login button when logged out, avatar menu when logged in
 
-### Footer.jsx
-[INTENT]: Site footer with links and copyright
-[PROPS]: None (static content)
+### InformationalText.jsx
+[INTENT]: CMS content display from Supabase informational_texts table
 
-### GoogleMap.jsx
-[INTENT]: Google Maps integration for listing locations
-[IMPORTS]: @react-google-maps/api
-[REQUIRES]: VITE_GOOGLE_MAPS_API_KEY
+### ListingCard.jsx
+[INTENT]: Listing preview card for search results
 
 ### ListingScheduleSelector.jsx
 [INTENT]: Day/pricing selector for listing pages
 [IMPORTS]: useScheduleSelector, DayButton, PriceDisplay
-[BUSINESS_LOGIC]: Uses lib/scheduleSelector/ for calculations
 
-### CreateProposalFlowV2.jsx
-[INTENT]: Multi-step proposal creation wizard
-[SECTIONS]: Review → User Details → Move-in Date → Days Selection
-[IMPORTS]: CreateProposalFlowV2Components/
+### ListingScheduleSelectorV2.jsx
+[INTENT]: Updated schedule selector with improved UX
+
+### PriceDisplay.jsx
+[INTENT]: Price formatting and display with discounts
+
+### SearchScheduleSelector.jsx
+[INTENT]: Simplified schedule selector for search filters
 
 ### SignUpLoginModal.jsx
 [INTENT]: Authentication modal for login/signup
-[API_DEPENDENCY]: supabase/functions/bubble-auth-proxy/
-
-### Button.jsx
-[INTENT]: Reusable button with variants
-[VARIANTS]: primary, secondary, outline, ghost
+[DEPENDENCIES]: supabase/functions/bubble-auth-proxy/
 
 ### Toast.jsx
 [INTENT]: Notification toast with auto-dismiss
-[PROPS]: message, type ('success'|'error'|'info'), duration
+
+### useScheduleSelector.js
+[INTENT]: Hook for schedule selector state management
+
+### useScheduleSelectorLogicCore.js
+[INTENT]: Core scheduling logic shared between selector variants
 
 ---
 
-## ### COMPONENT_PATTERN ###
-
-```jsx
-// Hollow Component Pattern (delegates to hook)
-export function ListingScheduleSelector({ listing, onDaysChange }) {
-  const {
-    selectedDays,
-    handleDayClick,
-    pricing,
-    validation
-  } = useScheduleSelector({ listing })
-
-  return (
-    <div className="schedule-selector">
-      {/* Pure rendering, no business logic */}
-    </div>
-  )
-}
-```
-
----
-
-## ### CRITICAL_USAGE_RULES ###
-
-[RULE_1]: Use Hollow Component Pattern - logic in hooks, rendering in components
-[RULE_2]: All API calls go through lib/ or Edge Functions
-[RULE_3]: Use CSS variables from styles/variables.css
-[RULE_4]: Components receive callbacks via props (onSubmit, onChange, onClose)
-
----
-
-## ### DEPENDENCIES ###
-
-[LOCAL]: lib/auth, lib/supabase, lib/scheduleSelector/
-[EXTERNAL]: @react-google-maps/api, @supabase/supabase-js
-[LOGIC]: logic/calculators/, logic/rules/, logic/processors/
-
----
-
-**SUBDIRECTORY_COUNT**: 9
-**FILE_COUNT**: 40+
+**SUBDIRECTORY_COUNT**: 8
+**FILE_COUNT**: 30+

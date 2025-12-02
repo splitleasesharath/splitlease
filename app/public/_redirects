@@ -19,6 +19,9 @@
 # Handle self-listing page
 /self-listing.html  /self-listing.html  200
 
+# Handle guest-proposals page
+/guest-proposals.html  /guest-proposals.html  200
+
 # Handle search page
 /search.html  /search.html  200
 
@@ -31,12 +34,6 @@
 /help-center  /_internal/help-center-view  200
 /help-center/  /_internal/help-center-view  200
 /help-center/*  /_internal/help-center-category-view  200
-
-# Handle guest-proposals page with clean URL structure
-# Maps /guest-proposals/[user-id]?proposal=[proposal-id] to guest-proposals.html
-/guest-proposals  /_internal/guest-proposals-view  200
-/guest-proposals/  /_internal/guest-proposals-view  200
-/guest-proposals/*  /_internal/guest-proposals-view  200
 
 # Handle policies page
 /policies.html  /policies.html  200

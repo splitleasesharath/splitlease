@@ -434,11 +434,11 @@ export async function loginUser(email, password) {
       // Supabase wraps non-2xx responses in a generic error, but the body may contain details
       let errorMessage = 'Failed to authenticate. Please try again.';
 
-      // Try to read the response body from the error context (Response object)
-      if (error.context && typeof error.context.json === 'function') {
+      if (error.context?.body) {
         try {
-          const errorBody = await error.context.json();
-          console.error('   Error body from response:', errorBody);
+          const errorBody = typeof error.context.body === 'string'
+            ? JSON.parse(error.context.body)
+            : error.context.body;
           if (errorBody?.error) {
             errorMessage = errorBody.error;
             console.error('   Detailed error from response:', errorMessage);
@@ -570,11 +570,11 @@ export async function signupUser(email, password, retype, additionalData = null)
       // Supabase wraps non-2xx responses in a generic error, but the body may contain details
       let errorMessage = 'Failed to create account. Please try again.';
 
-      // Try to read the response body from the error context (Response object)
-      if (error.context && typeof error.context.json === 'function') {
+      if (error.context?.body) {
         try {
-          const errorBody = await error.context.json();
-          console.error('   Error body from response:', errorBody);
+          const errorBody = typeof error.context.body === 'string'
+            ? JSON.parse(error.context.body)
+            : error.context.body;
           if (errorBody?.error) {
             errorMessage = errorBody.error;
             console.error('   Detailed error from response:', errorMessage);

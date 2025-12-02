@@ -1,6 +1,6 @@
-# Schedule Selector Utilities Context
+# Schedule Selector Utilities
 
-**TYPE**: LEAF NODE
+**GENERATED**: 2025-11-26
 **PARENT**: app/src/lib/
 
 ---
@@ -9,86 +9,48 @@
 
 [PURPOSE]: Utility functions specific to schedule selector component
 [PATTERN]: Pure functions for day calculations, validation, and pricing
-[CONSUMED_BY]: useScheduleSelector hook, ListingScheduleSelector component
 
 ---
 
-## ### MODULE_CONTRACTS ###
+## ### FILE_INVENTORY ###
 
 ### dayHelpers.js
-[PATH]: ./dayHelpers.js
 [INTENT]: Day calculation helpers for contiguous day detection and gap analysis
-[EXPORTS]:
-  - areContiguousDays: (days: number[]) => boolean
-  - findGaps: (days: number[]) => number[][]
-  - mergeDayRanges: (ranges: number[][]) => number[]
-[SYNC]: Yes (pure functions)
+[EXPORTS]: areContiguousDays, findGaps, mergeDayRanges
+
+### nightCalculations.js
+[INTENT]: Calculate number of nights from selected day array
+[EXPORTS]: calculateNights, getNightRange
+
+### priceCalculations.js
+[INTENT]: Pricing calculations for schedule selector total cost
+[IMPORTS]: lib/priceCalculations
+[EXPORTS]: calculateTotalPrice, getPricePerNight
+
+### validators.js
+[INTENT]: Schedule validation for minimum stay and contiguity requirements
+[EXPORTS]: isValidSchedule, validateMinimumNights, validateContiguity
 
 ---
 
-### nightCalculations.js
-[PATH]: ./nightCalculations.js
-[INTENT]: Calculate number of nights from selected day array
-[EXPORTS]:
-  - calculateNights: (selectedDays: number[]) => number
-  - getNightRange: (selectedDays: number[]) => { start: number, end: number }
-[EXAMPLE]:
+## ### CALCULATION_EXAMPLES ###
+
 ```javascript
 // Night calculation
 selectedDays = [1, 2, 3] // Mon, Tue, Wed
 nights = calculateNights(selectedDays) // 2 nights (Mon-Tue, Tue-Wed)
-```
-[SYNC]: Yes (pure functions)
 
----
-
-### priceCalculations.js
-[PATH]: ./priceCalculations.js
-[INTENT]: Pricing calculations for schedule selector total cost
-[EXPORTS]:
-  - calculateTotalPrice: (listing: object, selectedDays: number[], weeks: number) => number
-  - getPricePerNight: (listing: object, nightCount: number) => number
-[DEPENDS_ON]: lib/priceCalculations
-[SYNC]: Yes (pure functions)
-
----
-
-### validators.js
-[PATH]: ./validators.js
-[INTENT]: Schedule validation for minimum stay and contiguity requirements
-[EXPORTS]:
-  - isValidSchedule: (days: number[], listing: object) => boolean
-  - validateMinimumNights: (days: number[], minNights: number) => boolean
-  - validateContiguity: (days: number[]) => boolean
-[SYNC]: Yes (pure functions)
-
----
-
-## ### CONTIGUITY_LOGIC ###
-
-```javascript
-// Days are contiguous if no gaps exist
-areContiguousDays([1, 2, 3]) // true - Mon, Tue, Wed
-areContiguousDays([1, 3, 5]) // false - gaps exist
-
-// Week wrap-around handling
-areContiguousDays([5, 6, 0]) // true - Fri, Sat, Sun (wraps)
+// Contiguity check
+areContiguousDays([1, 2, 3]) // true
+areContiguousDays([1, 3, 5]) // false (gaps)
 ```
 
 ---
 
-## ### CRITICAL_USAGE_RULES ###
+## ### USAGE_PATTERN ###
 
-[RULE_1]: Day indices use JavaScript format (0-6, Sun=0)
-[RULE_2]: Night count = days - 1 (3 days = 2 nights)
-[RULE_3]: Week wrap-around must be handled for Fri-Sat-Sun selections
-
----
-
-## ### DEPENDENCIES ###
-
-[LOCAL]: lib/priceCalculations
-[EXTERNAL]: None
+[IMPORT_FROM]: import { calculateNights } from 'lib/scheduleSelector/nightCalculations'
+[CONSUMED_BY]: useScheduleSelector hook, ListingScheduleSelector component
 
 ---
 

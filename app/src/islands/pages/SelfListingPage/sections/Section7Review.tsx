@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import type { ListingFormData, ReviewData } from '../types/listing.types';
 import { SAFETY_FEATURES } from '../types/listing.types';
-import { getCommonSafetyFeatures } from '../utils/safetyService';
 
 interface Section7Props {
   formData: ListingFormData;
@@ -12,8 +11,6 @@ interface Section7Props {
   isSubmitting: boolean;
 }
 
-type SectionKey = 'space' | 'features' | 'leaseStyle' | 'pricing' | 'rules' | 'photos';
-
 export const Section7Review: React.FC<Section7Props> = ({
   formData,
   reviewData,
@@ -23,20 +20,12 @@ export const Section7Review: React.FC<Section7Props> = ({
   isSubmitting
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isLoadingSafetyFeatures, setIsLoadingSafetyFeatures] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Record<SectionKey, boolean>>({
-    space: false,
-    features: false,
-    leaseStyle: false,
-    pricing: false,
-    rules: false,
-    photos: false
-  });
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
 
-  const toggleSection = (section: SectionKey) => {
+  const toggleSection = (sectionKey: string) => {
     setExpandedSections(prev => ({
       ...prev,
-      [section]: !prev[section]
+      [sectionKey]: !prev[sectionKey]
     }));
   };
 
@@ -55,24 +44,6 @@ export const Section7Review: React.FC<Section7Props> = ({
       ? currentFeatures.filter((f) => f !== feature)
       : [...currentFeatures, feature];
     handleChange('safetyFeatures', updated);
-  };
-
-  const loadCommonSafetyFeatures = async () => {
-    setIsLoadingSafetyFeatures(true);
-    try {
-      const commonFeatures = await getCommonSafetyFeatures();
-      if (commonFeatures.length > 0) {
-        const currentFeatures = reviewData.safetyFeatures || [];
-        handleChange('safetyFeatures', [...new Set([...currentFeatures, ...commonFeatures])]);
-      } else {
-        alert('No common safety features found in the database.');
-      }
-    } catch (error) {
-      console.error('Error loading common safety features:', error);
-      alert('Error loading common safety features. Please try again.');
-    } finally {
-      setIsLoadingSafetyFeatures(false);
-    }
   };
 
   const handleSubmit = () => {
@@ -96,17 +67,7 @@ export const Section7Review: React.FC<Section7Props> = ({
           <div className="optional-field-column">
             {/* Safety Features */}
             <div className="form-group">
-              <div className="label-with-action">
-                <label>Safety Features</label>
-                <button
-                  type="button"
-                  className="btn-link"
-                  onClick={loadCommonSafetyFeatures}
-                  disabled={isLoadingSafetyFeatures}
-                >
-                  {isLoadingSafetyFeatures ? 'loading...' : 'load common'}
-                </button>
-              </div>
+              <label>Safety Features</label>
               <p className="field-hint">Select safety features available at your property</p>
               <div className="checkbox-grid">
                 {SAFETY_FEATURES.map((feature) => (
@@ -188,55 +149,55 @@ export const Section7Review: React.FC<Section7Props> = ({
       {/* Summary Cards - Collapsible */}
       <div className="review-summary">
         {/* Space Snapshot Summary */}
-        <div className={`summary-card collapsible ${expandedSections.space ? 'expanded' : ''}`}>
+        <div className={`summary-card collapsible ${expandedSections['space'] ? 'expanded' : ''}`}>
           <div className="summary-card-header" onClick={() => toggleSection('space')}>
             <h3>📍 Space Details</h3>
             <div className="summary-card-header-right">
-              <span className="summary-brief">{formData.spaceSnapshot.typeOfSpace} · {formData.spaceSnapshot.bedrooms} BR</span>
-              <span className="expand-icon">{expandedSections.space ? '▲' : '▼'}</span>
+              <span className="summary-brief">{formData.spaceSnapshot.typeOfSpace} in {formData.spaceSnapshot.address.city || 'NYC'}</span>
+              <span className="expand-icon">{expandedSections['space'] ? '▼' : '▶'}</span>
             </div>
           </div>
-          {expandedSections.space && (
+          {expandedSections['space'] && (
             <div className="summary-content">
               <p><strong>Listing Name:</strong> {formData.spaceSnapshot.listingName}</p>
               <p><strong>Type:</strong> {formData.spaceSnapshot.typeOfSpace}</p>
               <p><strong>Bedrooms:</strong> {formData.spaceSnapshot.bedrooms}</p>
               <p><strong>Bathrooms:</strong> {formData.spaceSnapshot.bathrooms}</p>
               <p><strong>Address:</strong> {formData.spaceSnapshot.address.fullAddress}</p>
-              <button type="button" className="btn-link">Edit</button>
+              <button type="button" className="btn-link">Edit Section</button>
             </div>
           )}
         </div>
 
         {/* Features Summary */}
-        <div className={`summary-card collapsible ${expandedSections.features ? 'expanded' : ''}`}>
+        <div className={`summary-card collapsible ${expandedSections['features'] ? 'expanded' : ''}`}>
           <div className="summary-card-header" onClick={() => toggleSection('features')}>
             <h3>✨ Features</h3>
             <div className="summary-card-header-right">
               <span className="summary-brief">{formData.features.amenitiesInsideUnit.length + formData.features.amenitiesOutsideUnit.length} amenities</span>
-              <span className="expand-icon">{expandedSections.features ? '▲' : '▼'}</span>
+              <span className="expand-icon">{expandedSections['features'] ? '▼' : '▶'}</span>
             </div>
           </div>
-          {expandedSections.features && (
+          {expandedSections['features'] && (
             <div className="summary-content">
               <p><strong>Amenities Inside:</strong> {formData.features.amenitiesInsideUnit.length} selected</p>
               <p><strong>Amenities Outside:</strong> {formData.features.amenitiesOutsideUnit.length} selected</p>
               <p><strong>Description:</strong> {formData.features.descriptionOfLodging.substring(0, 100)}...</p>
-              <button type="button" className="btn-link">Edit</button>
+              <button type="button" className="btn-link">Edit Section</button>
             </div>
           )}
         </div>
 
         {/* Lease Style Summary */}
-        <div className={`summary-card collapsible ${expandedSections.leaseStyle ? 'expanded' : ''}`}>
-          <div className="summary-card-header" onClick={() => toggleSection('leaseStyle')}>
+        <div className={`summary-card collapsible ${expandedSections['lease'] ? 'expanded' : ''}`}>
+          <div className="summary-card-header" onClick={() => toggleSection('lease')}>
             <h3>📅 Lease Style</h3>
             <div className="summary-card-header-right">
-              <span className="summary-brief">{formData.leaseStyles.rentalType}</span>
-              <span className="expand-icon">{expandedSections.leaseStyle ? '▲' : '▼'}</span>
+              <span className="summary-brief">{formData.leaseStyles.rentalType} rental</span>
+              <span className="expand-icon">{expandedSections['lease'] ? '▼' : '▶'}</span>
             </div>
           </div>
-          {expandedSections.leaseStyle && (
+          {expandedSections['lease'] && (
             <div className="summary-content">
               <p><strong>Rental Type:</strong> {formData.leaseStyles.rentalType}</p>
               {formData.leaseStyles.rentalType === 'Nightly' && formData.leaseStyles.availableNights && (
@@ -251,13 +212,13 @@ export const Section7Review: React.FC<Section7Props> = ({
               {formData.leaseStyles.rentalType === 'Monthly' && (
                 <p><strong>Subsidy Agreement:</strong> {formData.leaseStyles.subsidyAgreement ? 'Agreed' : 'Not agreed'}</p>
               )}
-              <button type="button" className="btn-link">Edit</button>
+              <button type="button" className="btn-link">Edit Section</button>
             </div>
           )}
         </div>
 
         {/* Pricing Summary */}
-        <div className={`summary-card collapsible ${expandedSections.pricing ? 'expanded' : ''}`}>
+        <div className={`summary-card collapsible ${expandedSections['pricing'] ? 'expanded' : ''}`}>
           <div className="summary-card-header" onClick={() => toggleSection('pricing')}>
             <h3>💰 Pricing</h3>
             <div className="summary-card-header-right">
@@ -266,10 +227,10 @@ export const Section7Review: React.FC<Section7Props> = ({
                 {formData.leaseStyles.rentalType === 'Weekly' && `$${formData.pricing.weeklyCompensation}/wk`}
                 {formData.leaseStyles.rentalType === 'Nightly' && formData.pricing.nightlyPricing && `$${formData.pricing.nightlyPricing.oneNightPrice}/night`}
               </span>
-              <span className="expand-icon">{expandedSections.pricing ? '▲' : '▼'}</span>
+              <span className="expand-icon">{expandedSections['pricing'] ? '▼' : '▶'}</span>
             </div>
           </div>
-          {expandedSections.pricing && (
+          {expandedSections['pricing'] && (
             <div className="summary-content">
               {formData.leaseStyles.rentalType === 'Monthly' && (
                 <p><strong>Monthly Rate:</strong> ${formData.pricing.monthlyCompensation}</p>
@@ -285,42 +246,42 @@ export const Section7Review: React.FC<Section7Props> = ({
               )}
               <p><strong>Damage Deposit:</strong> ${formData.pricing.damageDeposit}</p>
               <p><strong>Monthly Maintenance Fee:</strong> ${formData.pricing.maintenanceFee}/month</p>
-              <button type="button" className="btn-link">Edit</button>
+              <button type="button" className="btn-link">Edit Section</button>
             </div>
           )}
         </div>
 
         {/* Rules Summary */}
-        <div className={`summary-card collapsible ${expandedSections.rules ? 'expanded' : ''}`}>
+        <div className={`summary-card collapsible ${expandedSections['rules'] ? 'expanded' : ''}`}>
           <div className="summary-card-header" onClick={() => toggleSection('rules')}>
             <h3>📋 Rules</h3>
             <div className="summary-card-header-right">
-              <span className="summary-brief">{formData.rules.houseRules.length} rules</span>
-              <span className="expand-icon">{expandedSections.rules ? '▲' : '▼'}</span>
+              <span className="summary-brief">{formData.rules.houseRules.length} rules, {formData.rules.cancellationPolicy}</span>
+              <span className="expand-icon">{expandedSections['rules'] ? '▼' : '▶'}</span>
             </div>
           </div>
-          {expandedSections.rules && (
+          {expandedSections['rules'] && (
             <div className="summary-content">
               <p><strong>Cancellation:</strong> {formData.rules.cancellationPolicy}</p>
               <p><strong>Check-in:</strong> {formData.rules.checkInTime}</p>
               <p><strong>Check-out:</strong> {formData.rules.checkOutTime}</p>
               <p><strong>Max Guests:</strong> {formData.rules.numberOfGuests}</p>
               <p><strong>House Rules:</strong> {formData.rules.houseRules.length} selected</p>
-              <button type="button" className="btn-link">Edit</button>
+              <button type="button" className="btn-link">Edit Section</button>
             </div>
           )}
         </div>
 
         {/* Photos Summary */}
-        <div className={`summary-card collapsible ${expandedSections.photos ? 'expanded' : ''}`}>
+        <div className={`summary-card collapsible ${expandedSections['photos'] ? 'expanded' : ''}`}>
           <div className="summary-card-header" onClick={() => toggleSection('photos')}>
             <h3>📷 Photos</h3>
             <div className="summary-card-header-right">
-              <span className="summary-brief">{formData.photos.photos.length} photos</span>
-              <span className="expand-icon">{expandedSections.photos ? '▲' : '▼'}</span>
+              <span className="summary-brief">{formData.photos.photos.length} photos uploaded</span>
+              <span className="expand-icon">{expandedSections['photos'] ? '▼' : '▶'}</span>
             </div>
           </div>
-          {expandedSections.photos && (
+          {expandedSections['photos'] && (
             <div className="summary-content">
               <p><strong>Total Photos:</strong> {formData.photos.photos.length}</p>
               <div className="photo-preview-grid">
@@ -336,7 +297,7 @@ export const Section7Review: React.FC<Section7Props> = ({
               {formData.photos.photos.length > 4 && (
                 <p>+{formData.photos.photos.length - 4} more photos</p>
               )}
-              <button type="button" className="btn-link">Edit</button>
+              <button type="button" className="btn-link">Edit Section</button>
             </div>
           )}
         </div>

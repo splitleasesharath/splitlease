@@ -18,7 +18,7 @@ import { getPrompt, loadAllData } from "../prompts/_registry.ts";
 import { interpolate } from "../prompts/_template.ts";
 
 interface HandlerContext {
-  user: User | null;
+  user: User;
   serviceClient: SupabaseClient;
   request: AIGatewayRequest;
 }
@@ -31,7 +31,7 @@ export async function handleComplete(
 
   console.log(`[Complete] ========== PROCESSING ==========`);
   console.log(`[Complete] Prompt: ${payload.prompt_key}`);
-  console.log(`[Complete] User: ${user?.email ?? "anonymous"}`);
+  console.log(`[Complete] User: ${user.email}`);
 
   // ─────────────────────────────────────────────────────────
   // 1. Get prompt configuration
@@ -44,8 +44,8 @@ export async function handleComplete(
   // ─────────────────────────────────────────────────────────
 
   const loaderContext = {
-    userId: user?.id ?? "anonymous",
-    userEmail: user?.email ?? "anonymous",
+    userId: user.id,
+    userEmail: user.email!,
     supabaseClient: serviceClient,
     variables: payload.variables ?? {},
   };
@@ -62,10 +62,10 @@ export async function handleComplete(
   const templateContext = {
     ...loadedData,
     ...payload.variables,
-    user: user ? {
+    user: {
       id: user.id,
       email: user.email,
-    } : null,
+    },
   };
 
   const userPrompt = interpolate(

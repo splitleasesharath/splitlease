@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import type { Photos, PhotoData } from '../types/listing.types';
 
 interface Section6Props {
@@ -6,13 +6,33 @@ interface Section6Props {
   onChange: (data: Photos) => void;
   onNext: () => void;
   onBack: () => void;
+  onUploadPhotos: () => Promise<boolean>;
+  isUploading: boolean;
 }
 
-export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext, onBack }) => {
+export const Section6Photos: React.FC<Section6Props> = ({
+  data,
+  onChange,
+  onNext,
+  onBack,
+  onUploadPhotos,
+  isUploading
+}) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey) ||
+                   document.querySelector('.upload-area');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -118,20 +138,26 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
 
     if (data.photos.length < data.minRequired) {
       newErrors.photos = `Please upload at least ${data.minRequired} photos`;
-      errorOrder.push('photo-upload-input');
+      errorOrder.push('photos');
     }
 
     setErrors(newErrors);
     return errorOrder;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     const errorKeys = validateForm();
-    if (errorKeys.length === 0) {
-      onNext();
-    } else {
+    if (errorKeys.length > 0) {
       scrollToFirstError(errorKeys);
+      return;
     }
+
+    // Upload photos to Bubble before proceeding
+    const uploadSuccess = await onUploadPhotos();
+    if (uploadSuccess) {
+      onNext();
+    }
+    // If upload fails, onUploadPhotos will show an error alert
   };
 
   const openMobileUpload = () => {
@@ -148,7 +174,6 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
       <div className="upload-area">
         <input
           ref={fileInputRef}
-          id="photo-upload-input"
           type="file"
           accept="image/*"
           multiple
@@ -156,13 +181,13 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
           style={{ display: 'none' }}
         />
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'stretch' }}>
-          <label
-            htmlFor="photo-upload-input"
+          <button
+            type="button"
             className="btn-upload"
-            style={{ cursor: 'pointer' }}
+            onClick={() => fileInputRef.current?.click()}
           >
             Upload Photos
-          </label>
+          </button>
 
           <button type="button" className="btn-secondary" onClick={openMobileUpload}>
             Do you want to continue on mobile?
@@ -231,16 +256,16 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
 
       {/* Navigation */}
       <div className="section-navigation">
-        <button type="button" className="btn-back" onClick={onBack}>
+        <button type="button" className="btn-back" onClick={onBack} disabled={isUploading}>
           Back
         </button>
         <button
           type="button"
           className="btn-next"
           onClick={handleNext}
-          disabled={data.photos.length < data.minRequired}
+          disabled={data.photos.length < data.minRequired || isUploading}
         >
-          Next
+          {isUploading ? 'Uploading Photos...' : 'Next'}
         </button>
       </div>
     </div>

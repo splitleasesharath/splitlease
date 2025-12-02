@@ -358,7 +358,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
   const priceInfoTriggerRef = useRef(null);
@@ -514,18 +514,20 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               </div>
             </>
           )}
-          <button className="favorite-btn" onClick={handleFavoriteClick}>
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill={isFavorite ? 'red' : 'none'}
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-          </button>
+          {isLoggedIn && (
+            <button className="favorite-btn" onClick={handleFavoriteClick}>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill={isFavorite ? 'red' : 'none'}
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </button>
+          )}
           {listing.isNew && <span className="new-badge">New Listing</span>}
         </div>
       )}
@@ -549,7 +551,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
             </svg>
             <span className="location-text">{listing.location}</span>
           </div>
-          <h3 className="listing-title" title={listing.title}>{listing.title}</h3>
+          <h3 className="listing-title">{listing.title}</h3>
           <p className="listing-type">
             {listing.type}
             {listing.squareFeet ? ` (${listing.squareFeet} SQFT)` : ''} - {listing.maxGuests} guests max
@@ -617,7 +619,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn }) {
   const sentinelRef = useRef(null);
 
   useEffect(() => {
@@ -658,6 +660,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
           }}
           onOpenContactModal={onOpenContactModal}
           onOpenInfoModal={onOpenInfoModal}
+          isLoggedIn={isLoggedIn}
         />
       ))}
 
@@ -1155,13 +1158,15 @@ export default function SearchPage() {
       // CRITICAL FIX: Use Complete=true instead of Active=true to match Bubble's filter logic
       // Bubble shows listings where Complete=true AND (Active=true OR Active IS NULL)
       // Note: The column name "Active" needs quotes in the .or() syntax
+      // PHOTO CONSTRAINT: Listings without photos cannot appear in search results
       let query = supabase
         .from('listing')
         .select('*')
         .eq('"Complete"', true)
         .or('"Active".eq.true,"Active".is.null')
         .eq('"Location - Borough"', borough.id)
-        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null');
+        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null')
+        .not('"Features - Photos"', 'is', null);
 
       // Apply week pattern filter
       if (weekPattern !== 'every-week') {
@@ -1304,8 +1309,27 @@ export default function SearchPage() {
         excluded: transformedListings.length - listingsWithCoordinates.length
       });
 
-      // No day filtering applied - show all listings with valid coordinates
-      const filteredListings = listingsWithCoordinates;
+      // PHOTO CONSTRAINT: Filter out listings without photos
+      const listingsWithPhotos = listingsWithCoordinates.filter(listing => {
+        const hasPhotos = listing.images && listing.images.length > 0;
+        if (!hasPhotos) {
+          console.warn('⚠️ SearchPage: Excluding listing without photos:', {
+            id: listing.id,
+            title: listing.title,
+            imageCount: listing.images?.length || 0
+          });
+        }
+        return hasPhotos;
+      });
+
+      console.log('📸 SearchPage: Photo filter results:', {
+        before: listingsWithCoordinates.length,
+        after: listingsWithPhotos.length,
+        excluded: listingsWithCoordinates.length - listingsWithPhotos.length
+      });
+
+      // No day filtering applied - show all listings with valid coordinates and photos
+      const filteredListings = listingsWithPhotos;
 
       console.log('📊 SearchPage: Final filtered listings being set to state:', {
         count: filteredListings.length,
@@ -1746,6 +1770,7 @@ export default function SearchPage() {
                 onOpenContactModal={handleOpenContactModal}
                 onOpenInfoModal={handleOpenInfoModal}
                 mapRef={mapRef}
+                isLoggedIn={isLoggedIn}
               />
             )}
           </div>
@@ -1852,6 +1877,7 @@ export default function SearchPage() {
               handleOpenContactModal(listing);
             }}
             onAIResearchClick={handleOpenAIResearchModal}
+            isLoggedIn={isLoggedIn}
           />
         </section>
       </main>
@@ -1914,6 +1940,7 @@ export default function SearchPage() {
                 handleOpenContactModal(listing);
               }}
               onAIResearchClick={handleOpenAIResearchModal}
+              isLoggedIn={isLoggedIn}
             />
           </div>
         </div>

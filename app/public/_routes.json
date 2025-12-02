@@ -1,12 +1,11 @@
 {
   "version": 1,
   "include": [
-    "/api/*"
+    "/api/*",
+    "/guest-proposals/*"
   ],
   "exclude": [
     "/view-split-lease/*",
-    "/view-split-lease",
-    "/guest-proposals/*",
-    "/guest-proposals"
+    "/view-split-lease"
   ]
 }

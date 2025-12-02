@@ -1,88 +1,67 @@
-# Logic Core Map
+# Logic Layer - Four-Layer Architecture
 
-**TYPE**: BRANCH NODE (Top Level)
+**GENERATED**: 2025-11-26
 **PARENT**: app/src/
 
 ---
 
 ## ### DIRECTORY_INTENT ###
 
-[PURPOSE]: Centralized business logic following Four-Layer Architecture
+[PURPOSE]: Centralized business logic following four-layer architecture
 [PATTERN]: Separation of concerns with clear layer responsibilities
-[BENEFIT]: Testable, maintainable, reusable logic independent of UI
+[BENEFIT]: Testable, maintainable, reusable logic
 
 ---
 
-## ### FOUR-LAYER ARCHITECTURE ###
+## ### FOUR_LAYER_ARCHITECTURE ###
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ Layer 4: WORKFLOWS (async orchestration)                    │
-│ [INTENT]: Multi-step operations with API calls              │
-│ [LINK]: ./workflows/CLAUDE.md                               │
-└─────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Layer 3: PROCESSORS (data transformation)                   │
-│ [INTENT]: Map, transform, validate data shapes              │
-│ [LINK]: ./processors/CLAUDE.md                              │
-└─────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Layer 2: RULES (boolean predicates)                         │
-│ [INTENT]: Business rules returning true/false               │
-│ [LINK]: ./rules/CLAUDE.md                                   │
-└─────────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Layer 1: CALCULATORS (pure math)                            │
-│ [INTENT]: Deterministic mathematical operations             │
-│ [LINK]: ./calculators/CLAUDE.md                             │
-└─────────────────────────────────────────────────────────────┘
-```
+### Layer 1: Calculators
+[PATH]: logic/calculators/
+[PURPOSE]: Pure mathematical functions
+[CHARACTERISTICS]: No side effects, deterministic output
+[EXAMPLE]: calculatePricingBreakdown, calculateNightsFromDays
+
+### Layer 2: Rules
+[PATH]: logic/rules/
+[PURPOSE]: Boolean predicates expressing business rules
+[CHARACTERISTICS]: Return true/false, may call calculators
+[EXAMPLE]: canAcceptProposal, isDateBlocked
+
+### Layer 3: Processors
+[PATH]: logic/processors/
+[PURPOSE]: Data transformation and adaptation
+[CHARACTERISTICS]: Map/transform data, may call calculators and rules
+[EXAMPLE]: processProposalData, adaptDaysFromBubble
+
+### Layer 4: Workflows
+[PATH]: logic/workflows/
+[PURPOSE]: Multi-step orchestration with async operations
+[CHARACTERISTICS]: Combine all layers, handle API calls
+[EXAMPLE]: acceptProposalWorkflow, checkAuthStatusWorkflow
 
 ---
 
-## ### SUB-MODULES ###
+## ### SUBDIRECTORIES ###
 
-- **[calculators/](./calculators/CLAUDE.md)**: Pure math (pricing, scheduling) - 8 functions
-- **[rules/](./rules/CLAUDE.md)**: Boolean predicates (auth, proposals, users) - 19 functions
-- **[processors/](./processors/CLAUDE.md)**: Data transformation (external adapters, display) - 13 functions
-- **[workflows/](./workflows/CLAUDE.md)**: Async orchestration (auth, booking, proposals) - 11 functions
+### calculators/
+[INTENT]: Pure math functions for pricing and scheduling
+[SUBDIRS]: pricing/, scheduling/
+[FILE_COUNT]: 8
 
----
+### rules/
+[INTENT]: Boolean predicates for all business rules
+[SUBDIRS]: auth/, pricing/, proposals/, scheduling/, search/, users/
+[FILE_COUNT]: 19
 
-## ### KEY_EXPORTS ###
+### processors/
+[INTENT]: Data transformation functions
+[SUBDIRS]: display/, external/, listing/, proposal/, proposals/, user/
+[FILE_COUNT]: 13
 
-[BARREL]: index.js re-exports from all layers
-[IMPORT_PATTERN]: import { functionName } from 'logic'
-[SPECIFIC_IMPORT]: import { functionName } from 'logic/layer/domain/file'
-
----
-
-## ### CRITICAL_RULES ###
-
-[DAY_INDEXING]: JavaScript uses 0-6 (Sun-Sat), Bubble uses 1-7
-[CONVERTER]: Use processors/external/adaptDays* at API boundaries
-[NO_FALLBACK]: All functions throw errors, never mask problems
-[PURE_CALCULATORS]: Layer 1 has zero side effects
-[BOOLEAN_RULES]: Layer 2 returns only true/false
-
----
-
-## ### USAGE_PATTERN ###
-
-```javascript
-// Top-level import (tree-shaking friendly)
-import { calculatePricingBreakdown, canCancelProposal } from 'logic'
-
-// Specific imports (smaller bundle)
-import { calculatePricingBreakdown } from 'logic/calculators/pricing/calculatePricingBreakdown'
-import { canCancelProposal } from 'logic/rules/proposals/canCancelProposal'
-```
+### workflows/
+[INTENT]: Orchestration functions with async operations
+[SUBDIRS]: auth/, booking/, proposals/, scheduling/
+[FILE_COUNT]: 11
 
 ---
 
@@ -94,5 +73,41 @@ import { canCancelProposal } from 'logic/rules/proposals/canCancelProposal'
 
 ---
 
-**SUBDIRECTORY_COUNT**: 4
+## ### DEPENDENCY_FLOW ###
+
+```
+UI Components
+    │
+    ▼
+Workflows (Layer 4) ───> API calls via lib/
+    │
+    ▼
+Processors (Layer 3)
+    │
+    ▼
+Rules (Layer 2)
+    │
+    ▼
+Calculators (Layer 1)
+```
+
+---
+
+## ### USAGE_PATTERN ###
+
+[IMPORT_FROM]: import { calculatePricingBreakdown, canAcceptProposal } from 'logic'
+[ALTERNATIVE]: import from specific layer for smaller bundles
+
+---
+
+## ### CRITICAL_NOTES ###
+
+[DAY_INDEXING]: Always convert days at system boundaries
+[JS_FORMAT]: 0=Sunday, 6=Saturday (internal)
+[BUBBLE_FORMAT]: 1=Sunday, 7=Saturday (external API)
+[CONVERTER]: logic/processors/external/adaptDays*
+
+---
+
 **TOTAL_FILES**: 51
+**ARCHITECTURE**: Four-Layer Logic System

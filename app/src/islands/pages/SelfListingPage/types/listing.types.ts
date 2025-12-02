@@ -146,14 +146,18 @@ export interface Photos {
   minRequired: number;
 }
 
-// Safety Feature Options - names must match database (zfut_safetyfeatures table)
+// Safety Feature Options
 export const SAFETY_FEATURES: string[] = [
-  'Smoke Detector',
-  'Carbon Monoxide Detector',
+  'Smoke Alarm',
+  'Carbon Monoxide Alarm',
   'Fire Extinguisher',
   'First Aid Kit',
-  'Fire Sprinklers',
-  'Lock on Bedroom Door'
+  'Security Cameras',
+  'Deadbolt Lock',
+  'Emergency Exit',
+  'Well-lit Entrance',
+  'Window Locks',
+  'Motion Sensor Lights'
 ];
 
 // Review Data (Section 7)

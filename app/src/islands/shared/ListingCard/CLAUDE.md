@@ -1,6 +1,7 @@
-# Listing Card Components Context
+# Listing Card Components
 
-**TYPE**: LEAF NODE
+**GENERATED**: 2025-11-26
+**ARCHITECTURE**: React Islands
 **PARENT**: app/src/islands/shared/
 
 ---
@@ -12,51 +13,39 @@
 
 ---
 
-## ### COMPONENT_CONTRACTS ###
+## ### FILE_INVENTORY ###
 
 ### ListingCardForMap.jsx
-[PATH]: ./ListingCardForMap.jsx
-[INTENT]: Compact listing card optimized for Google Maps info window display
-[PROPS]:
-  - listing: object (req) - Listing data with photos, price, location
-  - onClick: () => void (opt) - Click handler to navigate to listing
-[DEPENDS_ON]: logic/calculators/pricing/calculateGuestFacingPrice
-[SYNC]: Yes (pure rendering)
+[INTENT]: Compact listing card optimized for map popup/info window display
+[IMPORTS]: react
+[DEPENDENCIES]: logic/calculators/pricing/calculateGuestFacingPrice
+[PROPS]: listing, onClick
+
+### ListingCardForMap.css
+[INTENT]: Styles for map listing card with compact layout
 
 ---
 
 ## ### CARD_VARIANTS ###
 
-| Variant | Use Case | Location |
-|---------|----------|----------|
-| STANDARD | Full listing card | ../ListingCard.jsx (parent shared/) |
-| MAP_CARD | Compact for map popups | ./ListingCardForMap.jsx |
+[STANDARD]: Full listing card (in parent shared/ directory)
+[MAP_CARD]: Compact version for Google Maps info windows
 
 ---
 
 ## ### DISPLAYED_INFO ###
 
-| Field | Source |
-|-------|--------|
-| Photo | listing.photos[0] (primary) |
-| Price | calculateGuestFacingPrice(listing) |
-| Location | listing.neighborhood |
-| Basics | listing.bedrooms, listing.bathrooms |
+[PHOTO]: Primary listing image thumbnail
+[PRICE]: Guest-facing price per night
+[LOCATION]: Neighborhood name
+[BASICS]: Bedrooms, bathrooms count
 
 ---
 
-## ### CRITICAL_USAGE_RULES ###
+## ### USAGE_PATTERN ###
 
-[RULE_1]: MapCard is stateless - all data via props
-[RULE_2]: Price shows guest-facing rate (not raw nightly rate)
-[RULE_3]: Click handler optional - parent decides navigation
-
----
-
-## ### DEPENDENCIES ###
-
-[LOCAL]: logic/calculators/pricing/calculateGuestFacingPrice
-[EXTERNAL]: None
+[IMPORT_FROM]: import { ListingCardForMap } from 'islands/shared/ListingCard/ListingCardForMap'
+[CONSUMED_BY]: GoogleMap component, SearchPage map view
 
 ---
 
