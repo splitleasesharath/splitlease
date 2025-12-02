@@ -111,15 +111,17 @@ export const Section2Features: React.FC<Section2Props> = ({
         amenitiesOutsideUnit: data.amenitiesOutsideUnit,
       };
 
+      console.log('[Section2Features] Generating AI description with data:', dataForGeneration);
       const generatedDescription = await generateListingDescription(dataForGeneration);
 
       if (generatedDescription) {
         handleChange('descriptionOfLodging', generatedDescription);
+        console.log('[Section2Features] ✅ AI description generated successfully');
       } else {
         alert('Could not generate description. Please try again.');
       }
     } catch (error) {
-      console.error('Error generating description:', error);
+      console.error('[Section2Features] Error generating description:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       alert(`Error generating description: ${errorMessage}`);
     } finally {

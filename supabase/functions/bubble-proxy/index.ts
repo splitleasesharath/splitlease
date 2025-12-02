@@ -3,15 +3,17 @@
  * Split Lease - Edge Function
  *
  * Routes client requests to appropriate Bubble workflow handlers
- * Authentication is OPTIONAL for create_listing (allows guest users)
+ * Authentication is OPTIONAL for public actions (allows guest users)
  * Other actions require authentication via Supabase Auth
  *
  * Supported Actions:
- * - create_listing: Create new listing (atomic sync) - NO AUTH REQUIRED
+ * - create_listing: Create new listing (with Supabase sync) - NO AUTH REQUIRED
+ * - get_listing: Fetch listing data from Bubble - NO AUTH REQUIRED
+ * - send_message: Send message to host (no sync) - NO AUTH REQUIRED
+ * - signup_ai: AI-powered signup (atomic sync) - NO AUTH REQUIRED
  * - upload_photos: Upload listing photos (atomic sync)
- * - send_message: Send message to host (no sync)
  * - submit_referral: Submit referral (atomic sync)
- * - signup_ai: AI-powered signup (atomic sync)
+ * - submit_listing: Full listing submission with all form data - AUTH REQUIRED
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -24,19 +26,18 @@ import { EdgeFunctionRequest } from '../_shared/types.ts';
 
 // Import handlers
 import { handleListingCreate } from './handlers/listing.ts';
-import { handleListingSyncToBubble } from './handlers/listingSync.ts';
+import { handleGetListing } from './handlers/getListing.ts';
 import { handlePhotoUpload } from './handlers/photos.ts';
 import { handleSendMessage } from './handlers/messaging.ts';
 import { handleReferral } from './handlers/referral.ts';
 import { handleAiSignup } from './handlers/signup.ts';
+import { handleSubmitListing } from './handlers/submitListing.ts';
 
 console.log('[bubble-proxy] Edge Function started');
 
 // Actions that don't require authentication
-// - create_listing: Guests create listings before signup
-// - upload_photos: Guests upload photos before signup (Section 6)
-// - sync_listing_to_bubble: Sync listing_trial to Bubble (gets _id back)
-const PUBLIC_ACTIONS = ['create_listing', 'upload_photos', 'sync_listing_to_bubble'];
+// upload_photos is public because photos are uploaded in Section 6 before user signup in Section 7
+const PUBLIC_ACTIONS = ['create_listing', 'get_listing', 'send_message', 'signup_ai', 'upload_photos'];
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -67,11 +68,12 @@ Deno.serve(async (req) => {
     // Validate action is supported
     const allowedActions = [
       'create_listing',
-      'sync_listing_to_bubble',
+      'get_listing',
       'upload_photos',
       'send_message',
       'submit_referral',
       'signup_ai',
+      'submit_listing',
     ];
     validateAction(action, allowedActions);
 
@@ -143,8 +145,8 @@ Deno.serve(async (req) => {
         result = await handleListingCreate(syncService, payload, user);
         break;
 
-      case 'sync_listing_to_bubble':
-        result = await handleListingSyncToBubble(syncService, payload, user);
+      case 'get_listing':
+        result = await handleGetListing(syncService, payload, user);
         break;
 
       case 'upload_photos':
@@ -161,6 +163,10 @@ Deno.serve(async (req) => {
 
       case 'signup_ai':
         result = await handleAiSignup(syncService, payload, user);
+        break;
+
+      case 'submit_listing':
+        result = await handleSubmitListing(syncService, payload, user);
         break;
 
       default:

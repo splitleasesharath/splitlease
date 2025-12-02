@@ -24,6 +24,16 @@ export default defineConfig({
           else if (url.startsWith('/index-dev.html')) {
             req.url = '/public/index-dev.html' + (url.substring('/index-dev.html'.length) || '');
           }
+          // Handle guest-proposals (no ID) - direct access to /guest-proposals
+          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/guest-proposals.html' + queryString;
+          }
+          // Handle guest-proposals.html - direct HTML access
+          else if (url.startsWith('/guest-proposals.html')) {
+            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
+          }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
           // Also handle exact /view-split-lease path (no trailing slash or query)
           else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
@@ -35,6 +45,9 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/view-split-lease.html' + queryString;
+          }
+          else if (url.startsWith('/guest-proposals.html')) {
+            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           } else if (url.startsWith('/search.html')) {
             req.url = '/public/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/search-test.html')) {
@@ -43,8 +56,16 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/search-test.html' + queryString;
+          } else if (url === '/faq' || url.startsWith('/faq?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/faq.html' + queryString;
           } else if (url.startsWith('/faq.html')) {
             req.url = '/public/faq.html' + (url.substring('/faq.html'.length) || '');
+          } else if (url === '/policies' || url.startsWith('/policies?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/policies.html' + queryString;
           } else if (url.startsWith('/policies.html')) {
             req.url = '/public/policies.html' + (url.substring('/policies.html'.length) || '');
           } else if (url.startsWith('/list-with-us.html')) {
@@ -93,13 +114,29 @@ export default defineConfig({
           } else if (url.startsWith('/help-center.html')) {
             req.url = '/public/help-center.html' + (url.substring('/help-center.html'.length) || '');
           }
-          // Handle guest-proposals with clean URL structure (e.g., /guest-proposals/USER_ID?proposal=PROPOSAL_ID)
-          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals/') || url.startsWith('/guest-proposals?')) {
-            req.url = '/public/guest-proposals.html';
-          } else if (url.startsWith('/guest-proposals.html')) {
+          // Handle rental-application routes
+          else if (url === '/rental-application' || url.startsWith('/rental-application?')) {
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/guest-proposals.html' + queryString;
+            req.url = '/public/rental-application.html' + queryString;
+          } else if (url.startsWith('/rental-application.html')) {
+            req.url = '/public/rental-application.html' + (url.substring('/rental-application.html'.length) || '');
+          }
+          // Handle listing-dashboard routes
+          else if (url === '/listing-dashboard' || url.startsWith('/listing-dashboard?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/listing-dashboard.html' + queryString;
+          } else if (url.startsWith('/listing-dashboard.html')) {
+            req.url = '/public/listing-dashboard.html' + (url.substring('/listing-dashboard.html'.length) || '');
+          }
+          // Handle host-overview routes
+          else if (url === '/host-overview' || url.startsWith('/host-overview?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/host-overview.html' + queryString;
+          } else if (url.startsWith('/host-overview.html')) {
+            req.url = '/public/host-overview.html' + (url.substring('/host-overview.html'.length) || '');
           }
 
           next();
@@ -115,6 +152,16 @@ export default defineConfig({
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/index.html' + queryString;
           }
+          // Handle guest-proposals (no ID) - direct access to /guest-proposals
+          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/guest-proposals.html' + queryString;
+          }
+          // Handle guest-proposals.html - direct HTML access
+          else if (url.startsWith('/guest-proposals.html')) {
+            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
+          }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
           // Also handle exact /view-split-lease path (no trailing slash or query)
           else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
@@ -126,6 +173,9 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/view-split-lease.html' + queryString;
+          }
+          else if (url.startsWith('/guest-proposals.html')) {
+            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           } else if (url.startsWith('/search.html')) {
             req.url = '/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/search-test.html')) {
@@ -134,10 +184,22 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/search-test.html' + queryString;
+          } else if (url === '/faq' || url.startsWith('/faq?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/faq.html' + queryString;
           } else if (url.startsWith('/faq.html')) {
             req.url = '/faq.html' + (url.substring('/faq.html'.length) || '');
+          } else if (url === '/policies' || url.startsWith('/policies?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/policies.html' + queryString;
           } else if (url.startsWith('/policies.html')) {
             req.url = '/policies.html' + (url.substring('/policies.html'.length) || '');
+          } else if (url === '/list-with-us' || url.startsWith('/list-with-us?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/list-with-us.html' + queryString;
           } else if (url.startsWith('/list-with-us.html')) {
             req.url = '/list-with-us.html' + (url.substring('/list-with-us.html'.length) || '');
           } else if (url.startsWith('/guest-success.html')) {
@@ -184,13 +246,29 @@ export default defineConfig({
           } else if (url.startsWith('/help-center.html')) {
             req.url = '/help-center.html' + (url.substring('/help-center.html'.length) || '');
           }
-          // Handle guest-proposals with clean URL structure (preview mode)
-          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals/') || url.startsWith('/guest-proposals?')) {
-            req.url = '/guest-proposals.html';
-          } else if (url.startsWith('/guest-proposals.html')) {
+          // Handle rental-application routes
+          else if (url === '/rental-application' || url.startsWith('/rental-application?')) {
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/guest-proposals.html' + queryString;
+            req.url = '/rental-application.html' + queryString;
+          } else if (url.startsWith('/rental-application.html')) {
+            req.url = '/rental-application.html' + (url.substring('/rental-application.html'.length) || '');
+          }
+          // Handle listing-dashboard routes (preview mode)
+          else if (url === '/listing-dashboard' || url.startsWith('/listing-dashboard?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/listing-dashboard.html' + queryString;
+          } else if (url.startsWith('/listing-dashboard.html')) {
+            req.url = '/listing-dashboard.html' + (url.substring('/listing-dashboard.html'.length) || '');
+          }
+          // Handle host-overview routes (preview mode)
+          else if (url === '/host-overview' || url.startsWith('/host-overview?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/host-overview.html' + queryString;
+          } else if (url.startsWith('/host-overview.html')) {
+            req.url = '/host-overview.html' + (url.substring('/host-overview.html'.length) || '');
           }
 
           next();
@@ -306,14 +384,6 @@ export default defineConfig({
           console.log('Created _internal/help-center-category-view for Cloudflare routing');
         }
 
-        // Create guest-proposals internal file
-        const guestProposalsSource = path.join(distDir, 'guest-proposals.html');
-        const guestProposalsDest = path.join(internalDir, 'guest-proposals-view');
-        if (fs.existsSync(guestProposalsSource)) {
-          fs.copyFileSync(guestProposalsSource, guestProposalsDest);
-          console.log('Created _internal/guest-proposals-view for Cloudflare routing');
-        }
-
         // Copy images directory to dist root
         const imagesSource = path.resolve(__dirname, 'public/images');
         const imagesDest = path.join(distDir, 'images');
@@ -400,6 +470,34 @@ export default defineConfig({
   publicDir: false, // Disable automatic public directory copying
   server: {
     host: '127.0.0.1', // Ensure IPv4 binding for localhost
+    // Proxy /api routes to handle Cloudflare Pages Functions locally
+    // This provides a mock/development endpoint when wrangler isn't running
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8788', // Default wrangler pages dev port
+        changeOrigin: true,
+        secure: false,
+        // If wrangler isn't running, we need to handle it gracefully
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            // If wrangler isn't running, return a helpful mock response
+            if (req.url === '/api/faq-inquiry' && req.method === 'POST') {
+              console.log('[Vite Proxy] Wrangler not running, using mock response for FAQ inquiry');
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                success: true,
+                message: 'Inquiry sent successfully (dev mode - wrangler not running)'
+              }));
+            } else {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                error: 'API proxy error - ensure wrangler pages dev is running for full functionality'
+              }));
+            }
+          });
+        }
+      }
+    }
   },
   preview: {
     host: '127.0.0.1',
@@ -419,12 +517,15 @@ export default defineConfig({
         'guest-success': resolve(__dirname, 'public/guest-success.html'),
         'host-success': resolve(__dirname, 'public/host-success.html'),
         'why-split-lease': resolve(__dirname, 'public/why-split-lease.html'),
+        'guest-proposals': resolve(__dirname, 'public/guest-proposals.html'),
         careers: resolve(__dirname, 'public/careers.html'),
         'account-profile': resolve(__dirname, 'public/account-profile.html'),
         'self-listing': resolve(__dirname, 'public/self-listing.html'),
         'help-center': resolve(__dirname, 'public/help-center.html'),
         'help-center-category': resolve(__dirname, 'public/help-center-category.html'),
-        'guest-proposals': resolve(__dirname, 'public/guest-proposals.html')
+        'rental-application': resolve(__dirname, 'public/rental-application.html'),
+        'listing-dashboard': resolve(__dirname, 'public/listing-dashboard.html'),
+        'host-overview': resolve(__dirname, 'public/host-overview.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

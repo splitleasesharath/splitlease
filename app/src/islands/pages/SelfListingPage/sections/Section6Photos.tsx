@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import type { Photos, PhotoData } from '../types/listing.types';
 
 interface Section6Props {
@@ -8,11 +8,27 @@ interface Section6Props {
   onBack: () => void;
 }
 
-export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext, onBack }) => {
+export const Section6Photos: React.FC<Section6Props> = ({
+  data,
+  onChange,
+  onNext,
+  onBack
+}) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorKeys: string[]) => {
+    if (errorKeys.length === 0) return;
+    const firstErrorKey = errorKeys[0];
+    const element = document.getElementById(firstErrorKey) ||
+                   document.querySelector('.upload-area');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, []);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
@@ -118,7 +134,7 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
 
     if (data.photos.length < data.minRequired) {
       newErrors.photos = `Please upload at least ${data.minRequired} photos`;
-      errorOrder.push('photo-upload-input');
+      errorOrder.push('photos');
     }
 
     setErrors(newErrors);
@@ -127,11 +143,13 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
 
   const handleNext = () => {
     const errorKeys = validateForm();
-    if (errorKeys.length === 0) {
-      onNext();
-    } else {
+    if (errorKeys.length > 0) {
       scrollToFirstError(errorKeys);
+      return;
     }
+
+    // Photos are stored locally and will be uploaded during final submission
+    onNext();
   };
 
   const openMobileUpload = () => {
@@ -148,7 +166,6 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
       <div className="upload-area">
         <input
           ref={fileInputRef}
-          id="photo-upload-input"
           type="file"
           accept="image/*"
           multiple
@@ -156,13 +173,13 @@ export const Section6Photos: React.FC<Section6Props> = ({ data, onChange, onNext
           style={{ display: 'none' }}
         />
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'stretch' }}>
-          <label
-            htmlFor="photo-upload-input"
+          <button
+            type="button"
             className="btn-upload"
-            style={{ cursor: 'pointer' }}
+            onClick={() => fileInputRef.current?.click()}
           >
             Upload Photos
-          </label>
+          </button>
 
           <button type="button" className="btn-secondary" onClick={openMobileUpload}>
             Do you want to continue on mobile?

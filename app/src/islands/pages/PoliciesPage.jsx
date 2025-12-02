@@ -123,14 +123,14 @@ export default function PoliciesPage() {
     setCurrentPolicy(policy);
     window.location.hash = policy.slug;
 
-    // Scroll to PDF on desktop
-    if (window.innerWidth >= 900) {
-      setTimeout(() => {
-        const pdfContainer = document.querySelector('.policies-pdf-container');
-        if (pdfContainer) {
-          pdfContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      }, 300);
+    // Only scroll if the document header is not visible
+    const header = document.querySelector('.policies-content-header');
+    if (header) {
+      const rect = header.getBoundingClientRect();
+      const isVisible = rect.top >= 0 && rect.top < window.innerHeight;
+      if (!isVisible) {
+        header.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
   };
 

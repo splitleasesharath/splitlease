@@ -123,11 +123,22 @@ export default function FAQPage() {
         body: JSON.stringify({ name, email, inquiry })
       });
 
-      const data = await response.json();
-
+      // Handle non-OK responses (404, 500, etc.)
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to send inquiry');
+        // Try to parse error message from response body
+        let errorMessage = 'Failed to send inquiry';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // Response body wasn't valid JSON, use status text
+          errorMessage = `Server error: ${response.status} ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
       }
+
+      // Parse successful response
+      const data = await response.json();
 
       setSubmitSuccess(true);
       setInquiryForm({ name: '', email: '', inquiry: '' });
