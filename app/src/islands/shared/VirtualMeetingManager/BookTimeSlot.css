@@ -133,6 +133,39 @@
   background: #f9fafb;
 }
 
+/* Date currently being viewed (time picker shown) */
+.vm-date-button-active {
+  background: var(--color-primary, #31135d);
+  color: white;
+  border-color: var(--color-primary, #31135d);
+  box-shadow: 0 2px 8px rgba(49, 19, 93, 0.3);
+}
+
+.vm-date-button-active:hover:not(:disabled) {
+  background: var(--color-primary-hover, #1f0b38);
+}
+
+/* Date has selected time slots */
+.vm-date-button-has-slots {
+  background: #e8f5e9;
+  border-color: #4caf50;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.vm-date-button-has-slots:hover:not(:disabled) {
+  background: #c8e6c9;
+}
+
+/* Date is both active AND has slots */
+.vm-date-button-active.vm-date-button-has-slots {
+  background: var(--color-primary, #31135d);
+  color: white;
+  border-color: var(--color-primary, #31135d);
+  box-shadow: 0 0 0 3px #4caf50;
+}
+
+/* Legacy class for backwards compatibility */
 .vm-date-button-selected {
   background: var(--color-primary, #31135d);
   color: white;

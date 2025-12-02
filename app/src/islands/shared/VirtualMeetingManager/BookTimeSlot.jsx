@@ -14,6 +14,7 @@ import {
   getDayNames,
   isPastDate,
   isSameDateTime,
+  isSameDate,
 } from './dateUtils.js';
 import './BookTimeSlot.css';
 
@@ -129,6 +130,31 @@ export default function BookTimeSlot({
     );
   };
 
+  // Check if a date is currently being viewed (time picker shown for this date)
+  const isDateActive = (date) => {
+    return selectedDate && isSameDate(date, selectedDate);
+  };
+
+  // Check if a date has any selected time slots
+  const dateHasSelectedSlots = (date) => {
+    return state.timesSelected.some((slot) => isSameDate(slot, date));
+  };
+
+  // Get CSS classes for a date button
+  const getDateButtonClasses = (date) => {
+    const classes = ['vm-date-button'];
+
+    if (isDateActive(date)) {
+      classes.push('vm-date-button-active');
+    }
+
+    if (dateHasSelectedSlots(date)) {
+      classes.push('vm-date-button-has-slots');
+    }
+
+    return classes.join(' ');
+  };
+
   return (
     <div className="vm-book-time-slot-container">
       {/* Calendar Section */}
@@ -181,7 +207,7 @@ export default function BookTimeSlot({
                 <button
                   onClick={() => handleDateSelect(date)}
                   disabled={isDateDisabled(date)}
-                  className="vm-date-button"
+                  className={getDateButtonClasses(date)}
                   aria-label={`Select ${date.toDateString()}`}
                 >
                   {date.getDate()}
