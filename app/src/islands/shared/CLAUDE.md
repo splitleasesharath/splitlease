@@ -23,6 +23,7 @@
 - **[ListingCard/](./ListingCard/CLAUDE.md)**: Listing preview card variants
 - **[LoggedInAvatar/](./LoggedInAvatar/CLAUDE.md)**: User avatar with account menu
 - **[SubmitListingPhotos/](./SubmitListingPhotos/CLAUDE.md)**: Photo upload/management
+- **[VirtualMeetingManager/](./VirtualMeetingManager/CLAUDE.md)**: Virtual meeting workflow modal (4 views)
 
 ---
 
@@ -105,5 +106,5 @@ export function ListingScheduleSelector({ listing, onDaysChange }) {
 
 ---
 
-**SUBDIRECTORY_COUNT**: 8
-**FILE_COUNT**: 30+
+**SUBDIRECTORY_COUNT**: 9
+**FILE_COUNT**: 40+
