@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { ListingFormData, ReviewData } from '../types/listing.types';
 import { SAFETY_FEATURES } from '../types/listing.types';
+import { getCommonSafetyFeatures } from '../utils/safetyService';
 
 interface Section7Props {
   formData: ListingFormData;
@@ -21,6 +22,21 @@ export const Section7Review: React.FC<Section7Props> = ({
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [isLoadingSafetyFeatures, setIsLoadingSafetyFeatures] = useState(false);
+
+  const loadCommonSafetyFeatures = async () => {
+    setIsLoadingSafetyFeatures(true);
+    try {
+      const commonFeatures = await getCommonSafetyFeatures();
+      if (commonFeatures.length > 0) {
+        handleChange('safetyFeatures', commonFeatures);
+      }
+    } catch (err) {
+      console.error('Failed to load common safety features:', err);
+    } finally {
+      setIsLoadingSafetyFeatures(false);
+    }
+  };
 
   const toggleSection = (sectionKey: string) => {
     setExpandedSections(prev => ({
@@ -67,7 +83,17 @@ export const Section7Review: React.FC<Section7Props> = ({
           <div className="optional-field-column">
             {/* Safety Features */}
             <div className="form-group">
-              <label>Safety Features</label>
+              <div className="label-with-action">
+                <label>Safety Features</label>
+                <button
+                  type="button"
+                  className="btn-link load-common-btn"
+                  onClick={loadCommonSafetyFeatures}
+                  disabled={isLoadingSafetyFeatures}
+                >
+                  {isLoadingSafetyFeatures ? 'loading...' : 'load common'}
+                </button>
+              </div>
               <p className="field-hint">Select safety features available at your property</p>
               <div className="checkbox-grid">
                 {SAFETY_FEATURES.map((feature) => (

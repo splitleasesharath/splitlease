@@ -371,7 +371,9 @@ export const SelfListingPage: React.FC = () => {
                 >
                   <div className="nav-icon">{section.icon}</div>
                   <div className="nav-content">
-                    <div className="nav-number">Section {section.number}</div>
+                    <div className="nav-number">
+                      {section.number <= 6 ? `Section ${section.number}` : 'Final Step'}
+                    </div>
                     <div className="nav-title">{section.title}</div>
                   </div>
                   {formData.completedSections.includes(section.number) && (

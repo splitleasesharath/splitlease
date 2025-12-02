@@ -208,8 +208,9 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 
           <div className="nights-counter">
             <span>
-              {getAvailableNightsCount()} Nights Available, {getNotAvailableNightsCount()} Nights
-              Not Available
+              {getAvailableNightsCount() === 7
+                ? 'Full-Nights of the week Availability'
+                : `${getAvailableNightsCount()} Nights Available, ${getNotAvailableNightsCount()} Nights Not Available`}
             </span>
             {getNotAvailableNightsCount() > 0 && (
               <button type="button" className="btn-link" onClick={selectAllNights}>
