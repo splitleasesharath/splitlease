@@ -32,6 +32,8 @@ interface SignupAdditionalData {
 export async function handleSignup(
   bubbleAuthBaseUrl: string,
   bubbleApiKey: string,
+  supabaseUrl: string,
+  supabaseServiceKey: string,
   payload: any
 ): Promise<any> {
   console.log('[signup] ========== SIGNUP REQUEST ==========');
