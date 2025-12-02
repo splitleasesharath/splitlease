@@ -60,14 +60,15 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
       <style>
         :host { all: initial; }
         .app{ font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; color:#111827; background:#fff; max-width:100%; width:100%; margin:0; padding:12px; box-sizing:border-box; }
-        .row{ display:grid; grid-template-columns: 1fr auto auto; gap:16px; align-items:end; margin: 8px 0 16px; }
-        .field{ display:grid; gap:6px; min-width:0; }
+        .row{ display:grid; grid-template-columns: 1fr auto auto; gap:16px; align-items:start; margin: 8px 0 16px; }
+        .field{ display:flex; flex-direction:column; gap:6px; min-width:0; }
         .label{ font-size:13px; color:#6b7280; }
         .num{ font: inherit; padding:10px 12px; border-radius:12px; border:1px solid #e5e7eb; width:100%; box-sizing:border-box; }
-        .spin{ display:inline-flex; align-items:center; gap:8px; width:100%; }
+        .spin{ display:inline-flex; align-items:center; gap:8px; width:100%; min-height:54px; }
         .spin .buttons{ display:flex; flex-direction:column; }
         .spin .btn{ width:32px; height:24px; border:1px solid #e5e7eb; border-radius:8px; background:#fff; cursor:pointer; line-height:1; font-size:12px; }
         .spin .btn + .btn{ margin-top:6px; }
+        .spin .num{ height:44px; }
 
         .track-wrap{ position:relative; height:64px; }
         .track{ position:absolute; left:0; right:0; top:50%; transform:translateY(-50%); height:10px; background:linear-gradient(#9ea0a3,#9ea0a3) center/100% 10px no-repeat, #c9c9c9; border-radius:999px; }
@@ -130,7 +131,9 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
           </div>
           <div class="field">
             <div class="label">5-night price</div>
-            <input id="slw-n5" class="num" type="text" inputmode="numeric" value="" readonly />
+            <div class="spin">
+              <input id="slw-n5" class="num" type="text" inputmode="numeric" value="" readonly />
+            </div>
           </div>
         </div>
 
