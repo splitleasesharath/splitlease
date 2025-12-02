@@ -60,6 +60,18 @@ export async function createListing(formData) {
       }
 
       console.log('[ListingService] ✅ Listing synced to Bubble with _id:', bubbleId);
+
+      // Step 4: Sync to Supabase listing table (keeps both databases in sync)
+      try {
+        const listingRecord = await syncToListingTable(updatedData, bubbleId);
+        if (listingRecord) {
+          console.log('[ListingService] ✅ Listing synced to Supabase listing table');
+        }
+      } catch (listingSyncError) {
+        console.error('[ListingService] ⚠️ Supabase listing sync failed:', listingSyncError);
+        // Continue - the listing exists in listing_trial and Bubble
+      }
+
       return updatedData;
     }
   } catch (syncError) {
@@ -68,6 +80,109 @@ export async function createListing(formData) {
     // Return the Supabase data - Bubble sync can be retried later
   }
 
+  return data;
+}
+
+/**
+ * Sync a listing to the main Supabase `listing` table
+ * This keeps the listing_trial and listing tables in sync
+ *
+ * @param {object} listingTrialData - The listing data from listing_trial
+ * @param {string} bubbleId - The Bubble _id to use
+ * @returns {Promise<object|null>} - Created/updated listing record or null if sync fails
+ */
+async function syncToListingTable(listingTrialData, bubbleId) {
+  console.log('[ListingService] Syncing to listing table with _id:', bubbleId);
+
+  // Map listing_trial data to listing table format
+  // The listing table has the same schema but uses _id as primary key
+  const listingData = {
+    _id: bubbleId,
+    'Created By': listingTrialData['Created By'] || 'self-listing-form',
+    'Created Date': listingTrialData['Created Date'] || new Date().toISOString(),
+    'Modified Date': new Date().toISOString(),
+
+    // Core fields
+    Name: listingTrialData.Name,
+    'Features - Type of Space': listingTrialData['Features - Type of Space'],
+    'Features - Qty Bedrooms': listingTrialData['Features - Qty Bedrooms'],
+    'Features - Qty Beds': listingTrialData['Features - Qty Beds'],
+    'Features - Qty Bathrooms': listingTrialData['Features - Qty Bathrooms'],
+    'Kitchen Type': listingTrialData['Kitchen Type'],
+    'Features - Parking type': listingTrialData['Features - Parking type'],
+
+    // Location
+    'Location - Address': listingTrialData['Location - Address'],
+    'Location - City': listingTrialData['Location - City'],
+    'Location - State': listingTrialData['Location - State'],
+    'Location - Zip Code': listingTrialData['Location - Zip Code'],
+    'Location - Coordinates': listingTrialData['Location - Coordinates'],
+    'neighborhood (manual input by user)': listingTrialData['neighborhood (manual input by user)'],
+
+    // Features
+    'Features - Amenities In-Unit': listingTrialData['Features - Amenities In-Unit'],
+    'Features - Amenities In-Building': listingTrialData['Features - Amenities In-Building'],
+    Description: listingTrialData.Description,
+    'Description - Neighborhood': listingTrialData['Description - Neighborhood'],
+
+    // Lease style
+    'rental type': listingTrialData['rental type'],
+    'Days Available (List of Days)': listingTrialData['Days Available (List of Days)'],
+
+    // Pricing
+    '💰Damage Deposit': listingTrialData['💰Damage Deposit'],
+    '💰Cleaning Cost / Maintenance Fee': listingTrialData['💰Cleaning Cost / Maintenance Fee'],
+    '💰Weekly Host Rate': listingTrialData['💰Weekly Host Rate'],
+    '💰Monthly Host Rate': listingTrialData['💰Monthly Host Rate'],
+    '💰Nightly Host Rate for 2 nights': listingTrialData['💰Nightly Host Rate for 2 nights'],
+    '💰Nightly Host Rate for 3 nights': listingTrialData['💰Nightly Host Rate for 3 nights'],
+    '💰Nightly Host Rate for 4 nights': listingTrialData['💰Nightly Host Rate for 4 nights'],
+    '💰Nightly Host Rate for 5 nights': listingTrialData['💰Nightly Host Rate for 5 nights'],
+    '💰Nightly Host Rate for 7 nights': listingTrialData['💰Nightly Host Rate for 7 nights'],
+
+    // Rules
+    'Cancellation Policy': listingTrialData['Cancellation Policy'],
+    'Preferred Gender': listingTrialData['Preferred Gender'] || 'No Preference',
+    'Features - Qty Guests': listingTrialData['Features - Qty Guests'],
+    'NEW Date Check-in Time': listingTrialData['NEW Date Check-in Time'] || '2:00 PM',
+    'NEW Date Check-out Time': listingTrialData['NEW Date Check-out Time'] || '11:00 AM',
+    'Features - House Rules': listingTrialData['Features - House Rules'],
+    'Dates - Blocked': listingTrialData['Dates - Blocked'],
+
+    // Photos
+    'Features - Photos': listingTrialData['Features - Photos'],
+
+    // Safety & Review
+    'Features - Safety': listingTrialData['Features - Safety'],
+    'Features - SQFT Area': listingTrialData['Features - SQFT Area'],
+    ' First Available': listingTrialData[' First Available'],
+
+    // Status - new self-listings start inactive and unapproved
+    Active: false,
+    Approved: false,
+    Complete: true,
+
+    // Required defaults for listing table
+    'Features - Trial Periods Allowed': false,
+    'Maximum Weeks': listingTrialData['Maximum Weeks'] || 52,
+    'Minimum Nights': listingTrialData['Minimum Nights'] || 1,
+    'Weeks offered': listingTrialData['Weeks offered'] || 'All',
+    'Nights Available (List of Nights) ': listingTrialData['Nights Available (List of Nights) '] || [],
+  };
+
+  // Use upsert to handle both new listings and updates
+  const { data, error } = await supabase
+    .from('listing')
+    .upsert(listingData, { onConflict: '_id' })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[ListingService] ❌ Error syncing to listing table:', error);
+    return null;
+  }
+
+  console.log('[ListingService] ✅ Synced to listing table:', data._id);
   return data;
 }
 
