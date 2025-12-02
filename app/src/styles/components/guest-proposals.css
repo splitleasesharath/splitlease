@@ -618,32 +618,70 @@
   transition: all 0.2s;
 }
 
-/* Virtual Meeting Confirmed - Gray/disabled */
-.btn-vm-confirmed {
-  background-color: #D1D5DB;
-  color: #374151;
-  cursor: default;
-}
+/* ============================================================================
+   VIRTUAL MEETING BUTTON STATES
+   Implements 8 Bubble conditionals for VM button lifecycle
+   ============================================================================ */
 
-/* Virtual Meeting Request */
+/* Virtual Meeting Request - Default state (no VM exists) */
 .btn-vm-request {
-  background-color: #D1D5DB;
-  color: #374151;
+  background-color: var(--color-primary, #6B4EFF);
+  color: white;
 }
 
-.btn-vm-request:hover {
+.btn-vm-request:hover:not(:disabled) {
+  background-color: var(--color-primary-hover, #5840E0);
+}
+
+/* Respond to VM Request - Blue (action needed from other party) */
+.btn-vm-respond {
+  background-color: #3B82F6;
+  color: white;
+}
+
+.btn-vm-respond:hover:not(:disabled) {
+  background-color: #2563EB;
+}
+
+/* Virtual Meeting Requested - Gray (waiting for response, disabled) */
+.btn-vm-requested {
   background-color: #9CA3AF;
+  color: white;
+  cursor: not-allowed;
 }
 
-/* Virtual Meeting Declined - Red text, clickable */
+/* Virtual Meeting Accepted - Green (accepted but not yet confirmed by SL) */
+.btn-vm-accepted {
+  background-color: #10B981;
+  color: white;
+  cursor: not-allowed;
+}
+
+/* Meeting Confirmed - Darker green (confirmed by SL, clickable for details) */
+.btn-vm-confirmed {
+  background-color: #059669;
+  color: white;
+}
+
+.btn-vm-confirmed:hover:not(:disabled) {
+  background-color: #047857;
+}
+
+.btn-vm-confirmed:disabled {
+  background-color: #10B981;
+  cursor: not-allowed;
+}
+
+/* Virtual Meeting Declined - Red outline (can request alternative times) */
 .btn-vm-declined {
-  background-color: #D1D5DB;
+  background-color: transparent;
   color: #DB2E2E;
   font-weight: bold;
+  border: 1px solid #DB2E2E;
 }
 
-.btn-vm-declined:hover {
-  background-color: #9CA3AF;
+.btn-vm-declined:hover:not(:disabled) {
+  background-color: #FEE2E2;
 }
 
 /* Go to Leases - Green (for completed proposals) */

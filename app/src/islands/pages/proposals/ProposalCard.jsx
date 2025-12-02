@@ -15,11 +15,13 @@
  * - Warning icon when some nights become unavailable
  */
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
 import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
+import { shouldHideVirtualMeetingButton } from '../../../lib/proposals/statusButtonConfig.js';
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
+import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -602,6 +604,10 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   // Proposal details modal state (GuestEditingProposalModal)
   const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false);
 
+  // Virtual Meeting Manager modal state
+  const [showVMModal, setShowVMModal] = useState(false);
+  const [vmInitialView, setVmInitialView] = useState('');
+
   // Status and progress - derive dynamically from statusConfig
   const status = proposal.Status;
   const currentStatusConfig = statusConfig || getStatusConfig(status);
@@ -630,33 +636,128 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   // Get available actions for this status
   const availableActions = getActionsForStatus(status);
 
-  // Determine VM button state based on the full virtual meeting lifecycle
-  const getVmButtonState = () => {
-    // 1. Meeting declined - can request again
-    if (vmDeclined === true) {
-      return { label: 'Virtual Meeting Declined', className: 'btn-vm-declined', disabled: false };
-    }
-    // 2. Meeting confirmed by Split Lease
-    if (vmBookedDate && vmConfirmedBySL === true) {
-      return { label: 'Meeting confirmed', className: 'btn-vm-confirmed', disabled: true };
-    }
-    // 3. Meeting accepted but not yet confirmed
-    if (vmBookedDate) {
-      return { label: 'Virtual Meeting Accepted', className: 'btn-vm-confirmed', disabled: true };
-    }
-    // 4. Current user requested - waiting for response
-    if (vmRequestedBy === currentUserId) {
-      return { label: 'Virtual Meeting Requested', className: 'btn-vm-confirmed', disabled: true };
-    }
-    // 5. Other party requested - can respond
-    if (vmRequestedBy && vmRequestedBy !== currentUserId) {
-      return { label: 'Respond to VM Request', className: 'btn-vm-request', disabled: false };
-    }
-    // 6. Default - can request
-    return { label: 'Request Virtual Meeting', className: 'btn-vm-request', disabled: false };
+  // Construct current user object for VirtualMeetingManager
+  const currentUser = {
+    _id: currentUserId,
+    typeUserSignup: 'guest'
   };
 
-  const vmButtonState = getVmButtonState();
+  // ============================================================================
+  // VM BUTTON CONFIGURATION (implements 8 Bubble conditionals)
+  // ============================================================================
+  /**
+   * Determine VM button state based on the full virtual meeting lifecycle
+   * Maps Bubble's 8 conditionals to React state:
+   * 1. Other party requested -> "Respond to Virtual Meeting Request" (view: respond)
+   * 2. Current user requested -> "Virtual Meeting Requested" (disabled)
+   * 3. Button pressed -> visual feedback (handled by CSS)
+   * 4. Booked but not confirmed -> "Virtual Meeting Accepted" (disabled)
+   * 5. Booked and confirmed -> "Meeting confirmed" (view: details)
+   * 6. Meeting declined -> "Virtual Meeting Declined" (view: request, red style)
+   * 7-8. Hidden for rejected/cancelled/activated/SL-suggested statuses
+   */
+  const vmConfig = useMemo(() => {
+    // Conditional 7-8: Check status-based hiding first
+    if (shouldHideVirtualMeetingButton(status)) {
+      return { visible: false };
+    }
+
+    // No VM exists - request new meeting
+    if (!virtualMeeting) {
+      return {
+        visible: true,
+        view: 'request',
+        disabled: false,
+        label: 'Request Virtual Meeting',
+        className: 'btn-vm-request'
+      };
+    }
+
+    // Conditional 6: VM declined - can request alternative times
+    if (virtualMeeting['meeting declined'] === true) {
+      return {
+        visible: true,
+        view: 'request', // Opens request view in "suggesting alternatives" mode
+        disabled: false,
+        label: 'Virtual Meeting Declined',
+        className: 'btn-vm-declined',
+        style: { color: '#DB2E2E', fontWeight: 'bold' }
+      };
+    }
+
+    // Conditional 5: Meeting confirmed by Split Lease - show details
+    if (virtualMeeting['booked date'] && virtualMeeting['confirmedBySplitLease'] === true) {
+      return {
+        visible: true,
+        view: 'details',
+        disabled: false,
+        label: 'Meeting confirmed',
+        className: 'btn-vm-confirmed'
+      };
+    }
+
+    // Conditional 4: Meeting accepted but awaiting SL confirmation
+    if (virtualMeeting['booked date'] && !virtualMeeting['confirmedBySplitLease']) {
+      return {
+        visible: true,
+        view: 'details', // Can view details but meeting not yet confirmed
+        disabled: true,
+        label: 'Virtual Meeting Accepted',
+        className: 'btn-vm-accepted'
+      };
+    }
+
+    // Conditional 2: Current user requested - waiting for response
+    if (virtualMeeting['requested by'] === currentUserId) {
+      return {
+        visible: true,
+        view: null, // No action available
+        disabled: true,
+        label: 'Virtual Meeting Requested',
+        className: 'btn-vm-requested'
+      };
+    }
+
+    // Conditional 1: Other party requested - respond
+    if (virtualMeeting['requested by'] && virtualMeeting['requested by'] !== currentUserId) {
+      return {
+        visible: true,
+        view: 'respond',
+        disabled: false,
+        label: 'Respond to Virtual Meeting Request',
+        className: 'btn-vm-respond'
+      };
+    }
+
+    // Default fallback - can request new meeting
+    return {
+      visible: true,
+      view: 'request',
+      disabled: false,
+      label: 'Request Virtual Meeting',
+      className: 'btn-vm-request'
+    };
+  }, [virtualMeeting, currentUserId, status]);
+
+  // Handler for VM button click
+  const handleVMButtonClick = () => {
+    if (vmConfig.view && !vmConfig.disabled) {
+      setVmInitialView(vmConfig.view);
+      setShowVMModal(true);
+    }
+  };
+
+  // Handler for VM modal close
+  const handleVMModalClose = () => {
+    setShowVMModal(false);
+    setVmInitialView('');
+  };
+
+  // Handler for successful VM action
+  const handleVMSuccess = () => {
+    // Reload page to get fresh VM data
+    window.location.reload();
+  };
 
   return (
     <div className="proposal-card-wrapper">
@@ -813,12 +914,17 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
             {/* Fallback: Show basic buttons if buttonConfig not yet loaded */}
             {!buttonConfig && !isTerminal && !isCompleted && (
               <>
-                <button
-                  className={`btn-action-bar ${vmButtonState.className}`}
-                  disabled={vmButtonState.disabled}
-                >
-                  {vmButtonState.label}
-                </button>
+                {/* VM Button (Fallback) */}
+                {vmConfig.visible && (
+                  <button
+                    className={`btn-action-bar ${vmConfig.className}`}
+                    disabled={vmConfig.disabled}
+                    style={vmConfig.style || undefined}
+                    onClick={handleVMButtonClick}
+                  >
+                    {vmConfig.label}
+                  </button>
+                )}
                 <button
                   className="btn-action-bar btn-modify-proposal"
                   onClick={() => setShowProposalDetailsModal(true)}
@@ -831,14 +937,15 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
               </>
             )}
 
-            {/* Button 1: Virtual Meeting - visibility based on status and VM state */}
-            {buttonConfig?.vmButton?.visible && (
+            {/* Button 1: Virtual Meeting - visibility based on vmConfig (implements 8 Bubble conditionals) */}
+            {buttonConfig && vmConfig.visible && (
               <button
-                className={`btn-action-bar ${vmButtonState.className}`}
-                disabled={vmButtonState.disabled}
-                style={vmButtonState.className === 'btn-vm-declined' ? { color: '#DB2E2E', fontWeight: 'bold' } : undefined}
+                className={`btn-action-bar ${vmConfig.className}`}
+                disabled={vmConfig.disabled}
+                style={vmConfig.style || undefined}
+                onClick={handleVMButtonClick}
               >
-                {vmButtonState.label}
+                {vmConfig.label}
               </button>
             )}
 
@@ -957,6 +1064,17 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           pricePerNight={nightlyPrice}
           totalPriceForReservation={totalPrice}
           priceRentPer4Weeks={proposal['Price Rent per 4 weeks'] || (nightlyPrice * nightsPerWeek * 4)}
+        />
+      )}
+
+      {/* Virtual Meeting Manager Modal */}
+      {showVMModal && (
+        <VirtualMeetingManager
+          proposal={proposal}
+          initialView={vmInitialView}
+          currentUser={currentUser}
+          onClose={handleVMModalClose}
+          onSuccess={handleVMSuccess}
         />
       )}
     </div>
