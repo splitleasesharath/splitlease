@@ -214,7 +214,9 @@ export function getButtonConfigForProposal(proposal) {
     };
   }
 
-  const status = proposal.Status;
+  // Normalize status (trim whitespace from Bubble data)
+  const rawStatus = proposal.Status;
+  const status = typeof rawStatus === 'string' ? rawStatus.trim() : rawStatus;
   const config = getStatusConfigByDisplay(status);
   const sortOrder = config?.sort_order ?? -99;
 
