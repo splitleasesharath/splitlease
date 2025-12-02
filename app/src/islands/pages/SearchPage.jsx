@@ -549,7 +549,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
             </svg>
             <span className="location-text">{listing.location}</span>
           </div>
-          <h3 className="listing-title">{listing.title}</h3>
+          <h3 className="listing-title" title={listing.title}>{listing.title}</h3>
           <p className="listing-type">
             {listing.type}
             {listing.squareFeet ? ` (${listing.squareFeet} SQFT)` : ''} - {listing.maxGuests} guests max
