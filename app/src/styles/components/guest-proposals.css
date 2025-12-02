@@ -1058,6 +1058,222 @@
 }
 
 /* ============================================================================
+   VIRTUAL MEETINGS SECTION
+   Displays proposals with active virtual meetings
+   ============================================================================ */
+
+.vm-section-wrapper {
+  border-radius: 16px;
+  padding: 10px 5px 5px;
+  align-self: center;
+  min-width: 94%;
+  max-width: 94%;
+  margin: 20px auto;
+  background: transparent;
+}
+
+.vm-section-heading {
+  font-family: 'Inter', sans-serif;
+  font-size: 21px;
+  font-weight: 600;
+  color: var(--color-primary, #31135D);
+  line-height: 1.31;
+  margin: 0 0 10px 15px;
+}
+
+.vm-section-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* Individual VM Card */
+.vm-section-card {
+  background-color: var(--color-primary-contrast, #FFFFFF);
+  border-radius: 5px;
+  overflow: visible;
+  margin-bottom: 0;
+}
+
+.vm-section-card-content {
+  background-color: rgb(255, 255, 255);
+  padding: 0 0 0 20px;
+}
+
+/* Header row with profile icon and text */
+.vm-section-header-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  padding: 20px 0;
+  background-color: rgb(255, 255, 255);
+}
+
+.vm-section-profile-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 20px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.vm-section-profile-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 20px;
+}
+
+.vm-section-text-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 70%;
+  flex-grow: 1;
+}
+
+.vm-section-title {
+  font-family: 'Roboto', sans-serif;
+  font-size: 17px;
+  font-weight: 400;
+  color: rgb(28, 27, 31);
+  letter-spacing: 0.5px;
+  line-height: 1.5;
+  padding-left: 5px;
+  white-space: pre-wrap;
+}
+
+.vm-section-message-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+}
+
+.vm-section-message-row svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-left: 5px;
+}
+
+.vm-section-message {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-text, #424242);
+  line-height: 1;
+  padding-left: 5px;
+}
+
+/* Date/time pills row */
+.vm-section-dates-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 10px;
+  background-color: rgb(255, 255, 255);
+}
+
+.vm-section-date-pill {
+  background-color: rgb(210, 207, 207);
+  font-family: 'Open Sans', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-primary, #31135D);
+  line-height: 1.5;
+  padding: 5px 10px;
+  border-radius: 20px;
+  white-space: pre-wrap;
+}
+
+/* Action bar */
+.vm-section-action-bar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 15px;
+  background-color: rgb(247, 248, 249);
+  padding: 0 0 0 15px;
+  min-height: 70px;
+}
+
+.vm-section-cancel-btn {
+  background-color: rgb(147, 146, 147);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-primary-contrast, #FFFFFF);
+  text-align: center;
+  line-height: 1;
+  padding: 0 15px;
+  border-radius: 20px;
+  border: none;
+  height: 32px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.vm-section-cancel-btn:hover {
+  background-color: rgb(127, 126, 127);
+}
+
+/* Responsive styles for VM section */
+@media (max-width: 768px) {
+  .vm-section-wrapper {
+    min-width: 100%;
+    max-width: 100%;
+    padding: 10px;
+  }
+
+  .vm-section-heading {
+    margin-left: 0;
+    font-size: 18px;
+  }
+
+  .vm-section-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .vm-section-dates-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .vm-section-date-pill {
+    width: fit-content;
+  }
+
+  .vm-section-action-bar {
+    padding: 15px;
+    justify-content: center;
+  }
+
+  .vm-section-cancel-btn {
+    width: 100%;
+    max-width: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .vm-section-title {
+    font-size: 15px;
+  }
+
+  .vm-section-message {
+    font-size: 11px;
+  }
+
+  .vm-section-date-pill {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+}
+
+/* ============================================================================
    LEGACY STYLES (kept for backward compatibility with other components)
    ============================================================================ */
 

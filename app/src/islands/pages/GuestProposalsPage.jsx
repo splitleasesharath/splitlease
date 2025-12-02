@@ -16,6 +16,7 @@ import Footer from '../shared/Footer.jsx';
 import { useGuestProposalsPageLogic } from './proposals/useGuestProposalsPageLogic.js';
 import ProposalSelector from './proposals/ProposalSelector.jsx';
 import ProposalCard from './proposals/ProposalCard.jsx';
+import VirtualMeetingsSection from './proposals/VirtualMeetingsSection.jsx';
 // ProgressTracker is now integrated inside ProposalCard
 
 // ============================================================================
@@ -139,6 +140,12 @@ export default function GuestProposalsPage() {
                   buttonConfig={buttonConfig}
                 />
               )}
+
+              {/* Virtual Meetings Section - shows proposals with active VMs */}
+              <VirtualMeetingsSection
+                proposals={proposals}
+                currentUserId={user?._id}
+              />
             </>
           )}
         </div>
