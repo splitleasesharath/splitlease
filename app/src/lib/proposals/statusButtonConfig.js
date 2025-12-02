@@ -324,12 +324,18 @@ export function getButtonConfigForProposal(proposal) {
   // === Cancel/Delete Button ===
   let cancelButton = { visible: false, label: 'Cancel Proposal', action: 'cancel_proposal', style: null, disabled: false };
 
+  // Check for lease-activated status (completed flow - no cancel button)
+  const isLeaseActivated = status === 'Initial Payment Submitted / Lease activated';
+
   // Determine cancel button visibility and label based on Bubble conditionals
   if (isTerminal) {
     // Terminal states show "Delete Proposal"
     cancelButton.visible = true;
     cancelButton.label = 'Delete Proposal';
     cancelButton.action = 'delete_proposal';
+  } else if (isLeaseActivated) {
+    // Lease activated: Cancel button is HIDDEN (lease is complete, only "Go to Leases" shows)
+    cancelButton.visible = false;
   } else if (sortOrder > 5 && hasHouseManual) {
     // After lease docs stage with house manual: Show "See House Manual" (purple, non-clickable)
     cancelButton.visible = true;
