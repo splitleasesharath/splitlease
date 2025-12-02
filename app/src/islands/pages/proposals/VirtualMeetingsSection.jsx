@@ -82,13 +82,42 @@ function isFutureDateTime(dateTimeStr) {
 }
 
 /**
+ * Parse suggested dates - handles both array and JSON string formats
+ */
+function parseSuggestedDates(suggestedDates) {
+  if (!suggestedDates) return [];
+
+  // If already an array, return as-is
+  if (Array.isArray(suggestedDates)) return suggestedDates;
+
+  // If it's a string, try to parse it as JSON
+  if (typeof suggestedDates === 'string') {
+    try {
+      const parsed = JSON.parse(suggestedDates);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+/**
  * Get the last item from an array of dates
  */
 function getLastSuggestedDate(suggestedDates) {
-  if (!suggestedDates || !Array.isArray(suggestedDates) || suggestedDates.length === 0) {
-    return null;
-  }
-  return suggestedDates[suggestedDates.length - 1];
+  const dates = parseSuggestedDates(suggestedDates);
+  if (dates.length === 0) return null;
+  return dates[dates.length - 1];
+}
+
+/**
+ * Check if ANY suggested date is in the future
+ */
+function hasAnyFutureSuggestedDate(suggestedDates) {
+  const dates = parseSuggestedDates(suggestedDates);
+  return dates.some(dateStr => isFutureDateTime(dateStr));
 }
 
 /**
@@ -115,24 +144,31 @@ function filterProposalsWithActiveVM(proposals) {
     const vm = proposal.virtualMeeting;
 
     // Must have a virtual meeting
-    if (!vm) return false;
+    if (!vm) {
+      return false;
+    }
 
     // Status must not be in excluded list
     const status = proposal.Status?.trim();
-    if (excludedStatuses.includes(status)) return false;
+    if (excludedStatuses.includes(status)) {
+      return false;
+    }
 
     // Meeting must not be declined
-    if (vm['meeting declined'] === true) return false;
+    if (vm['meeting declined'] === true) {
+      return false;
+    }
 
-    // Either booked date is in future OR last suggested date is in future
+    // Either booked date is in future OR any suggested date is in future
     const bookedDate = vm['booked date'];
     const suggestedDates = vm['suggested dates and times'];
-    const lastSuggestedDate = getLastSuggestedDate(suggestedDates);
 
     const hasFutureBookedDate = isFutureDateTime(bookedDate);
-    const hasFutureSuggestedDate = isFutureDateTime(lastSuggestedDate);
+    const hasFutureSuggestedDate = hasAnyFutureSuggestedDate(suggestedDates);
 
-    if (!hasFutureBookedDate && !hasFutureSuggestedDate) return false;
+    if (!hasFutureBookedDate && !hasFutureSuggestedDate) {
+      return false;
+    }
 
     return true;
   });
@@ -154,15 +190,8 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
   // Get guest name for the message
   const guestName = proposal.guest?.['Name - First'] || proposal.guest?.['Name - Full'] || 'Guest';
 
-  // Get suggested dates/times
-  let suggestedDates = vm?.['suggested dates and times'] || [];
-  if (typeof suggestedDates === 'string') {
-    try {
-      suggestedDates = JSON.parse(suggestedDates);
-    } catch (e) {
-      suggestedDates = [];
-    }
-  }
+  // Get suggested dates/times using the shared parser
+  const suggestedDates = parseSuggestedDates(vm?.['suggested dates and times']);
 
   // Build the message text
   const messageText = `A virtual meeting with ${hostName} has been suggested for the times:`;
