@@ -13,10 +13,19 @@
  *   - booked date > current OR suggested dates last item > current
  *   - meeting declined is no
  *   - Status <> Proposal Cancelled by Split Lease
+ *
+ * State-Aware Behavior:
+ * - Uses virtualMeetingRules.js for state determination
+ * - Dynamically shows appropriate buttons and messages based on VM state
  */
 
 import { useState, useMemo } from 'react';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
+import {
+  getVirtualMeetingState,
+  getVMStateInfo,
+  VM_STATES
+} from '../../../logic/rules/proposals/virtualMeetingRules.js';
 
 // Calendar icon SVG (inline to match Bubble's design)
 const CalendarIcon = () => (
@@ -121,6 +130,119 @@ function hasAnyFutureSuggestedDate(suggestedDates) {
 }
 
 /**
+ * Normalize VM object field names from Bubble format to camelCase
+ * Bubble uses: 'meeting declined', 'booked date', 'confirmed by splitlease'
+ * Rules expect: meetingDeclined, bookedDate, confirmedBySplitlease
+ */
+function normalizeVMObject(vm) {
+  if (!vm) return null;
+
+  return {
+    // Original object preserved for any other fields
+    ...vm,
+    // Normalized fields for virtualMeetingRules.js
+    meetingDeclined: vm['meeting declined'] ?? vm.meetingDeclined ?? false,
+    bookedDate: vm['booked date'] ?? vm.bookedDate ?? null,
+    confirmedBySplitlease: vm['confirmed by splitlease'] ?? vm.confirmedBySplitlease ?? false,
+    requestedBy: vm['requested by'] ?? vm.requestedBy ?? null,
+    meetingLink: vm['meeting link'] ?? vm.meetingLink ?? null,
+    suggestedDates: vm['suggested dates and times'] ?? vm.suggestedDates ?? []
+  };
+}
+
+/**
+ * Determine which modal view to open based on VM state
+ */
+function getModalViewForState(vmState) {
+  switch (vmState) {
+    case VM_STATES.REQUESTED_BY_HOST:
+      return 'respond';
+    case VM_STATES.BOOKED_AWAITING_CONFIRMATION:
+    case VM_STATES.CONFIRMED:
+      return 'details';
+    case VM_STATES.REQUESTED_BY_GUEST:
+    case VM_STATES.NO_MEETING:
+    case VM_STATES.DECLINED:
+    default:
+      return 'cancel';
+  }
+}
+
+/**
+ * Get the context message to display based on VM state
+ */
+function getCardMessage(vmState, hostName) {
+  switch (vmState) {
+    case VM_STATES.REQUESTED_BY_HOST:
+      return `${hostName} has suggested times for a virtual meeting:`;
+    case VM_STATES.REQUESTED_BY_GUEST:
+      return `You've requested a virtual meeting. Waiting for ${hostName}'s response.`;
+    case VM_STATES.BOOKED_AWAITING_CONFIRMATION:
+      return `Your meeting is scheduled. Waiting for Split Lease confirmation.`;
+    case VM_STATES.CONFIRMED:
+      return `Your virtual meeting is confirmed!`;
+    default:
+      return `A virtual meeting with ${hostName} has been suggested:`;
+  }
+}
+
+/**
+ * Get badge configuration based on VM state
+ * Returns { text, className } or null if no badge needed
+ */
+function getStateBadge(vmState) {
+  switch (vmState) {
+    case VM_STATES.REQUESTED_BY_GUEST:
+      return { text: 'Awaiting Response', className: 'vm-section-badge-waiting' };
+    case VM_STATES.BOOKED_AWAITING_CONFIRMATION:
+      return { text: 'Pending Confirmation', className: 'vm-section-badge-pending' };
+    case VM_STATES.CONFIRMED:
+      return { text: 'Confirmed', className: 'vm-section-badge-confirmed' };
+    default:
+      return null;
+  }
+}
+
+/**
+ * Get primary button configuration based on VM state
+ * Returns { text, className, disabled, view }
+ */
+function getPrimaryButtonConfig(vmStateInfo, vmState) {
+  switch (vmState) {
+    case VM_STATES.REQUESTED_BY_HOST:
+      return {
+        text: 'Respond to Virtual Meeting',
+        className: 'vm-section-primary-btn vm-section-primary-btn--respond',
+        disabled: false,
+        view: 'respond'
+      };
+    case VM_STATES.REQUESTED_BY_GUEST:
+      return {
+        text: 'Meeting Requested',
+        className: 'vm-section-primary-btn vm-section-primary-btn--disabled',
+        disabled: true,
+        view: 'cancel'
+      };
+    case VM_STATES.BOOKED_AWAITING_CONFIRMATION:
+      return {
+        text: 'View Meeting Details',
+        className: 'vm-section-primary-btn vm-section-primary-btn--details',
+        disabled: false,
+        view: 'details'
+      };
+    case VM_STATES.CONFIRMED:
+      return {
+        text: 'Join Virtual Meeting',
+        className: 'vm-section-primary-btn vm-section-primary-btn--join',
+        disabled: false,
+        view: 'details'
+      };
+    default:
+      return null;
+  }
+}
+
+/**
  * Filter proposals to only those with active virtual meetings
  *
  * Based on Bubble's List filter conditions:
@@ -176,25 +298,41 @@ function filterProposalsWithActiveVM(proposals) {
 
 /**
  * Single Virtual Meeting Card
+ * Now state-aware: displays different content based on VM state
  */
 function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
   const listing = proposal.listing;
   const host = listing?.host;
   const vm = proposal.virtualMeeting;
 
+  // Normalize VM object for rules compatibility
+  const normalizedVM = normalizeVMObject(vm);
+
+  // Get VM state using business rules
+  const vmState = getVirtualMeetingState(normalizedVM, currentUserId);
+  const vmStateInfo = getVMStateInfo(normalizedVM, currentUserId);
+
   // Get host name and listing name for display
   const hostName = host?.['Name - First'] || host?.['Name - Full'] || 'Host';
   const listingName = listing?.Name || 'Listing';
   const displayTitle = `${hostName} - ${listingName}`;
 
-  // Get guest name for the message
-  const guestName = proposal.guest?.['Name - First'] || proposal.guest?.['Name - Full'] || 'Guest';
-
   // Get suggested dates/times using the shared parser
   const suggestedDates = parseSuggestedDates(vm?.['suggested dates and times']);
 
-  // Build the message text
-  const messageText = `A virtual meeting with ${hostName} has been suggested for the times:`;
+  // Get booked date if available
+  const bookedDate = normalizedVM?.bookedDate;
+
+  // Get state-specific configurations
+  const messageText = getCardMessage(vmState, hostName);
+  const badge = getStateBadge(vmState);
+  const primaryButton = getPrimaryButtonConfig(vmStateInfo, vmState);
+
+  // Determine which dates to show:
+  // - If booked, show single booked date
+  // - Otherwise show suggested dates
+  const showBookedDate = !!bookedDate;
+  const showSuggestedDates = !bookedDate && suggestedDates.length > 0;
 
   return (
     <div className="vm-section-card">
@@ -216,7 +354,15 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
 
           {/* Text content */}
           <div className="vm-section-text-content">
-            <div className="vm-section-title">{displayTitle}</div>
+            <div className="vm-section-title-row">
+              <div className="vm-section-title">{displayTitle}</div>
+              {/* State badge */}
+              {badge && (
+                <span className={`vm-section-badge ${badge.className}`}>
+                  {badge.text}
+                </span>
+              )}
+            </div>
             <div className="vm-section-message-row">
               <CalendarIcon />
               <span className="vm-section-message">{messageText}</span>
@@ -224,24 +370,49 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
           </div>
         </div>
 
-        {/* Date/time pills */}
-        <div className="vm-section-dates-row">
-          {suggestedDates.map((dateTime, index) => (
-            <div key={index} className="vm-section-date-pill">
-              {formatDateTime(dateTime)}
+        {/* Booked date (single date when meeting is scheduled) */}
+        {showBookedDate && (
+          <div className="vm-section-dates-row">
+            <div className="vm-section-date-pill vm-section-date-pill--booked">
+              {formatDateTime(bookedDate)}
             </div>
-          ))}
-        </div>
+          </div>
+        )}
+
+        {/* Suggested dates/times (when not yet booked) */}
+        {showSuggestedDates && (
+          <div className="vm-section-dates-row">
+            {suggestedDates.map((dateTime, index) => (
+              <div key={index} className="vm-section-date-pill">
+                {formatDateTime(dateTime)}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Action bar */}
-      <div className="vm-section-action-bar">
-        <button
-          className="vm-section-cancel-btn"
-          onClick={() => onOpenVMModal(proposal, 'cancel')}
-        >
-          Cancel Virtual Meeting
-        </button>
+      {/* Action bar - dynamic buttons based on state */}
+      <div className={`vm-section-action-bar ${primaryButton ? 'vm-section-action-bar--multi' : ''}`}>
+        {/* Primary action button */}
+        {primaryButton && (
+          <button
+            className={primaryButton.className}
+            onClick={() => !primaryButton.disabled && onOpenVMModal(proposal, primaryButton.view)}
+            disabled={primaryButton.disabled}
+          >
+            {primaryButton.text}
+          </button>
+        )}
+
+        {/* Cancel button - always show unless VM is confirmed or user is waiting for response */}
+        {vmState !== VM_STATES.CONFIRMED && (
+          <button
+            className="vm-section-cancel-btn"
+            onClick={() => onOpenVMModal(proposal, 'cancel')}
+          >
+            {vmState === VM_STATES.REQUESTED_BY_GUEST ? 'Cancel Request' : 'Cancel Virtual Meeting'}
+          </button>
+        )}
       </div>
     </div>
   );

@@ -1219,6 +1219,127 @@
   background-color: rgb(127, 126, 127);
 }
 
+/* ============================================================================
+   VM SECTION - STATE BADGES
+   Visual indicators for VM state (pending, confirmed, waiting)
+   ============================================================================ */
+
+.vm-section-title-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.vm-section-badge {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.vm-section-badge-waiting {
+  background-color: #E5E7EB;
+  color: #4B5563;
+}
+
+.vm-section-badge-pending {
+  background-color: #FEF3C7;
+  color: #92400E;
+}
+
+.vm-section-badge-confirmed {
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+
+/* ============================================================================
+   VM SECTION - PRIMARY ACTION BUTTONS
+   State-dependent action buttons
+   ============================================================================ */
+
+.vm-section-primary-btn {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  line-height: 1;
+  padding: 0 18px;
+  border-radius: 20px;
+  border: none;
+  height: 36px;
+  cursor: pointer;
+  transition: background-color 0.2s, opacity 0.2s;
+}
+
+/* Respond state - Blue (action needed) */
+.vm-section-primary-btn--respond {
+  background-color: #3B82F6;
+  color: white;
+}
+
+.vm-section-primary-btn--respond:hover {
+  background-color: #2563EB;
+}
+
+/* Details state - Purple */
+.vm-section-primary-btn--details {
+  background-color: var(--color-primary, #6B4EFF);
+  color: white;
+}
+
+.vm-section-primary-btn--details:hover {
+  background-color: var(--color-primary-hover, #5840E0);
+}
+
+/* Join state - Green */
+.vm-section-primary-btn--join {
+  background-color: #059669;
+  color: white;
+}
+
+.vm-section-primary-btn--join:hover {
+  background-color: #047857;
+}
+
+/* Disabled state - Gray (waiting for response) */
+.vm-section-primary-btn--disabled {
+  background-color: #9CA3AF;
+  color: white;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+
+.vm-section-primary-btn--disabled:hover {
+  background-color: #9CA3AF;
+}
+
+/* ============================================================================
+   VM SECTION - BOOKED DATE PILL
+   Different styling for confirmed/booked dates
+   ============================================================================ */
+
+.vm-section-date-pill--booked {
+  background-color: #D1FAE5;
+  color: #065F46;
+  font-weight: 500;
+}
+
+/* ============================================================================
+   VM SECTION - MULTI-BUTTON ACTION BAR
+   Layout for multiple buttons
+   ============================================================================ */
+
+.vm-section-action-bar--multi {
+  justify-content: flex-start;
+  gap: 10px;
+}
+
 /* Responsive styles for VM section */
 @media (max-width: 768px) {
   .vm-section-wrapper {
@@ -1238,6 +1359,12 @@
     gap: 10px;
   }
 
+  .vm-section-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
   .vm-section-dates-row {
     flex-direction: column;
     gap: 8px;
@@ -1250,6 +1377,17 @@
   .vm-section-action-bar {
     padding: 15px;
     justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .vm-section-action-bar--multi {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vm-section-primary-btn {
+    width: 100%;
+    max-width: 250px;
   }
 
   .vm-section-cancel-btn {
@@ -1267,9 +1405,25 @@
     font-size: 11px;
   }
 
+  .vm-section-badge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
   .vm-section-date-pill {
     font-size: 11px;
     padding: 4px 8px;
+  }
+
+  .vm-section-primary-btn {
+    font-size: 13px;
+    height: 34px;
+    padding: 0 14px;
+  }
+
+  .vm-section-cancel-btn {
+    font-size: 13px;
+    height: 30px;
   }
 }
 
