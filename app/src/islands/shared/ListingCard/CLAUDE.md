@@ -1,7 +1,6 @@
-# Listing Card Components
+# Listing Card Components Context
 
-**GENERATED**: 2025-11-26
-**ARCHITECTURE**: React Islands
+**TYPE**: LEAF NODE
 **PARENT**: app/src/islands/shared/
 
 ---
@@ -13,39 +12,51 @@
 
 ---
 
-## ### FILE_INVENTORY ###
+## ### COMPONENT_CONTRACTS ###
 
 ### ListingCardForMap.jsx
-[INTENT]: Compact listing card optimized for map popup/info window display
-[IMPORTS]: react
-[DEPENDENCIES]: logic/calculators/pricing/calculateGuestFacingPrice
-[PROPS]: listing, onClick
-
-### ListingCardForMap.css
-[INTENT]: Styles for map listing card with compact layout
+[PATH]: ./ListingCardForMap.jsx
+[INTENT]: Compact listing card optimized for Google Maps info window display
+[PROPS]:
+  - listing: object (req) - Listing data with photos, price, location
+  - onClick: () => void (opt) - Click handler to navigate to listing
+[DEPENDS_ON]: logic/calculators/pricing/calculateGuestFacingPrice
+[SYNC]: Yes (pure rendering)
 
 ---
 
 ## ### CARD_VARIANTS ###
 
-[STANDARD]: Full listing card (in parent shared/ directory)
-[MAP_CARD]: Compact version for Google Maps info windows
+| Variant | Use Case | Location |
+|---------|----------|----------|
+| STANDARD | Full listing card | ../ListingCard.jsx (parent shared/) |
+| MAP_CARD | Compact for map popups | ./ListingCardForMap.jsx |
 
 ---
 
 ## ### DISPLAYED_INFO ###
 
-[PHOTO]: Primary listing image thumbnail
-[PRICE]: Guest-facing price per night
-[LOCATION]: Neighborhood name
-[BASICS]: Bedrooms, bathrooms count
+| Field | Source |
+|-------|--------|
+| Photo | listing.photos[0] (primary) |
+| Price | calculateGuestFacingPrice(listing) |
+| Location | listing.neighborhood |
+| Basics | listing.bedrooms, listing.bathrooms |
 
 ---
 
-## ### USAGE_PATTERN ###
+## ### CRITICAL_USAGE_RULES ###
 
-[IMPORT_FROM]: import { ListingCardForMap } from 'islands/shared/ListingCard/ListingCardForMap'
-[CONSUMED_BY]: GoogleMap component, SearchPage map view
+[RULE_1]: MapCard is stateless - all data via props
+[RULE_2]: Price shows guest-facing rate (not raw nightly rate)
+[RULE_3]: Click handler optional - parent decides navigation
+
+---
+
+## ### DEPENDENCIES ###
+
+[LOCAL]: logic/calculators/pricing/calculateGuestFacingPrice
+[EXTERNAL]: None
 
 ---
 
