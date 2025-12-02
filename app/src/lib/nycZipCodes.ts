@@ -114,3 +114,42 @@ export const NYC_BOUNDS = {
   east: -73.7004,  // Eastern Queens
   west: -74.3000   // Western Hudson County, NJ (extended from -74.2591)
 };
+
+/**
+ * Valid Hudson County, NJ county name variations as returned by Google Places
+ */
+export const HUDSON_COUNTY_NAMES = [
+  'Hudson County',
+  'Hudson',
+];
+
+/**
+ * Check if an address is in Hudson County, NJ by state and county name
+ * Used as fallback when no zip code is available (e.g., highway addresses)
+ */
+export function isHudsonCountyNJ(state: string, county: string): boolean {
+  if (state !== 'NJ' && state !== 'New Jersey') {
+    return false;
+  }
+  const normalizedCounty = county.toLowerCase().replace(' county', '').trim();
+  return normalizedCounty === 'hudson';
+}
+
+/**
+ * Check if an address is valid for the service area
+ * Accepts NYC zip codes OR Hudson County, NJ addresses (by zip or county name)
+ */
+export function isValidServiceArea(zipCode: string, state?: string, county?: string): boolean {
+  // First check by zip code
+  if (zipCode && isNYCZipCode(zipCode)) {
+    return true;
+  }
+
+  // Fallback: check if it's Hudson County, NJ by county name
+  // This handles cases where Google Places doesn't return a zip code
+  if (state && county && isHudsonCountyNJ(state, county)) {
+    return true;
+  }
+
+  return false;
+}
