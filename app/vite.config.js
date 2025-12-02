@@ -56,8 +56,16 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/search-test.html' + queryString;
+          } else if (url === '/faq' || url.startsWith('/faq?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/faq.html' + queryString;
           } else if (url.startsWith('/faq.html')) {
             req.url = '/public/faq.html' + (url.substring('/faq.html'.length) || '');
+          } else if (url === '/policies' || url.startsWith('/policies?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/policies.html' + queryString;
           } else if (url.startsWith('/policies.html')) {
             req.url = '/public/policies.html' + (url.substring('/policies.html'.length) || '');
           } else if (url.startsWith('/list-with-us.html')) {
@@ -106,6 +114,30 @@ export default defineConfig({
           } else if (url.startsWith('/help-center.html')) {
             req.url = '/public/help-center.html' + (url.substring('/help-center.html'.length) || '');
           }
+          // Handle rental-application routes
+          else if (url === '/rental-application' || url.startsWith('/rental-application?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/rental-application.html' + queryString;
+          } else if (url.startsWith('/rental-application.html')) {
+            req.url = '/public/rental-application.html' + (url.substring('/rental-application.html'.length) || '');
+          }
+          // Handle listing-dashboard routes
+          else if (url === '/listing-dashboard' || url.startsWith('/listing-dashboard?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/listing-dashboard.html' + queryString;
+          } else if (url.startsWith('/listing-dashboard.html')) {
+            req.url = '/public/listing-dashboard.html' + (url.substring('/listing-dashboard.html'.length) || '');
+          }
+          // Handle host-overview routes
+          else if (url === '/host-overview' || url.startsWith('/host-overview?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/host-overview.html' + queryString;
+          } else if (url.startsWith('/host-overview.html')) {
+            req.url = '/public/host-overview.html' + (url.substring('/host-overview.html'.length) || '');
+          }
 
           next();
         });
@@ -152,10 +184,22 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/search-test.html' + queryString;
+          } else if (url === '/faq' || url.startsWith('/faq?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/faq.html' + queryString;
           } else if (url.startsWith('/faq.html')) {
             req.url = '/faq.html' + (url.substring('/faq.html'.length) || '');
+          } else if (url === '/policies' || url.startsWith('/policies?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/policies.html' + queryString;
           } else if (url.startsWith('/policies.html')) {
             req.url = '/policies.html' + (url.substring('/policies.html'.length) || '');
+          } else if (url === '/list-with-us' || url.startsWith('/list-with-us?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/list-with-us.html' + queryString;
           } else if (url.startsWith('/list-with-us.html')) {
             req.url = '/list-with-us.html' + (url.substring('/list-with-us.html'.length) || '');
           } else if (url.startsWith('/guest-success.html')) {
@@ -201,6 +245,30 @@ export default defineConfig({
             req.url = '/help-center-category.html' + pathAfterPrefix;
           } else if (url.startsWith('/help-center.html')) {
             req.url = '/help-center.html' + (url.substring('/help-center.html'.length) || '');
+          }
+          // Handle rental-application routes
+          else if (url === '/rental-application' || url.startsWith('/rental-application?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/rental-application.html' + queryString;
+          } else if (url.startsWith('/rental-application.html')) {
+            req.url = '/rental-application.html' + (url.substring('/rental-application.html'.length) || '');
+          }
+          // Handle listing-dashboard routes (preview mode)
+          else if (url === '/listing-dashboard' || url.startsWith('/listing-dashboard?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/listing-dashboard.html' + queryString;
+          } else if (url.startsWith('/listing-dashboard.html')) {
+            req.url = '/listing-dashboard.html' + (url.substring('/listing-dashboard.html'.length) || '');
+          }
+          // Handle host-overview routes (preview mode)
+          else if (url === '/host-overview' || url.startsWith('/host-overview?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/host-overview.html' + queryString;
+          } else if (url.startsWith('/host-overview.html')) {
+            req.url = '/host-overview.html' + (url.substring('/host-overview.html'.length) || '');
           }
 
           next();
@@ -402,6 +470,34 @@ export default defineConfig({
   publicDir: false, // Disable automatic public directory copying
   server: {
     host: '127.0.0.1', // Ensure IPv4 binding for localhost
+    // Proxy /api routes to handle Cloudflare Pages Functions locally
+    // This provides a mock/development endpoint when wrangler isn't running
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:8788', // Default wrangler pages dev port
+        changeOrigin: true,
+        secure: false,
+        // If wrangler isn't running, we need to handle it gracefully
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            // If wrangler isn't running, return a helpful mock response
+            if (req.url === '/api/faq-inquiry' && req.method === 'POST') {
+              console.log('[Vite Proxy] Wrangler not running, using mock response for FAQ inquiry');
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                success: true,
+                message: 'Inquiry sent successfully (dev mode - wrangler not running)'
+              }));
+            } else {
+              res.writeHead(503, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({
+                error: 'API proxy error - ensure wrangler pages dev is running for full functionality'
+              }));
+            }
+          });
+        }
+      }
+    }
   },
   preview: {
     host: '127.0.0.1',
@@ -426,7 +522,10 @@ export default defineConfig({
         'account-profile': resolve(__dirname, 'public/account-profile.html'),
         'self-listing': resolve(__dirname, 'public/self-listing.html'),
         'help-center': resolve(__dirname, 'public/help-center.html'),
-        'help-center-category': resolve(__dirname, 'public/help-center-category.html')
+        'help-center-category': resolve(__dirname, 'public/help-center-category.html'),
+        'rental-application': resolve(__dirname, 'public/rental-application.html'),
+        'listing-dashboard': resolve(__dirname, 'public/listing-dashboard.html'),
+        'host-overview': resolve(__dirname, 'public/host-overview.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public
