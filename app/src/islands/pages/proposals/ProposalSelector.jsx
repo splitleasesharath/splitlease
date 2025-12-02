@@ -2,7 +2,11 @@
  * Proposal Selector Component
  *
  * Dropdown for selecting between multiple proposals.
- * Shows proposal count and allows quick switching between proposals.
+ * Shows proposal count inline with title (matching Bubble: "My Proposals (4)")
+ * and allows quick switching between proposals.
+ *
+ * Note: Count excludes deleted proposals and proposals cancelled by guest
+ * (filtering handled in userProposalQueries.js)
  */
 
 export default function ProposalSelector({ proposals, selectedId, onSelect, count }) {
@@ -17,8 +21,7 @@ export default function ProposalSelector({ proposals, selectedId, onSelect, coun
   return (
     <div className="proposal-selector">
       <div className="selector-header">
-        <h2>My Proposals</h2>
-        <span className="proposal-count">{count}</span>
+        <h2>My Proposals ({count})</h2>
       </div>
 
       <select
