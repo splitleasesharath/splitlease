@@ -618,10 +618,17 @@ export async function signupUser(email, password, retype, additionalData = null)
     console.log('   User Email:', email);
     console.log('   Token expires in:', data.data.expires, 'seconds');
 
+    // Store Supabase user ID if returned (for future hybrid auth migration)
+    if (data.data.supabase_user_id) {
+      localStorage.setItem('splitlease_supabase_user_id', data.data.supabase_user_id);
+      console.log('   Supabase User ID:', data.data.supabase_user_id);
+    }
+
     return {
       success: true,
       user_id: data.data.user_id,
-      expires: data.data.expires
+      expires: data.data.expires,
+      supabase_user_id: data.data.supabase_user_id || null
     };
 
   } catch (error) {
