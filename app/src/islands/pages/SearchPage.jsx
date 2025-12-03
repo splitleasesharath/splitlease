@@ -533,7 +533,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
         </div>
       )}
 
-      {/* Content Section - F6 Layout */}
+      {/* Content Section - F7b Layout */}
       <div className="listing-content">
         {/* Main Info - Left Side */}
         <div className="listing-main-info">
@@ -566,51 +566,50 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
             <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
           </div>
 
-          {/* Pricing - Bottom Left */}
-          <div className="listing-pricing">
-            <div
-              ref={priceInfoTriggerRef}
-              className="price-starting"
+          {/* Host Row - Bottom Left */}
+          <div className="listing-host-row">
+            <div className="host">
+              {listing.host?.image ? (
+                <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
+              ) : (
+                <div className="host-avatar-placeholder">?</div>
+              )}
+              <span className="host-name">
+                {formatHostName(listing.host?.name)}
+                {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
+              </span>
+            </div>
+            <button
+              className="message-btn"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onOpenInfoModal(listing, priceInfoTriggerRef);
+                onOpenContactModal(listing);
               }}
             >
-              Starting at ${parseFloat(startingPrice).toFixed(2)}/night
-            </div>
-            <div className="price-main">
-              ${dynamicPrice.toFixed(2)}<span>/night</span>
-            </div>
-            <div className="availability-note">Message Split Lease for Availability</div>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+              Message
+            </button>
           </div>
         </div>
 
-        {/* Host Sidebar - Right Side */}
-        <div className="listing-host-sidebar">
-          {listing.host?.image ? (
-            <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
-          ) : (
-            <div className="host-avatar-placeholder">?</div>
-          )}
-          <div className="host-name">
-            {formatHostName(listing.host?.name)}
-            {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
-          </div>
-          <div className="host-label">Host</div>
-          <button
-            className="message-btn"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onOpenContactModal(listing);
-            }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-            </svg>
-            Message
-          </button>
+        {/* Price Sidebar - Right Side */}
+        <div
+          className="listing-price-sidebar"
+          ref={priceInfoTriggerRef}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onOpenInfoModal(listing, priceInfoTriggerRef);
+          }}
+        >
+          <div className="price-main">${dynamicPrice.toFixed(2)}</div>
+          <div className="price-period">/night</div>
+          <div className="price-divider"></div>
+          <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
+          <div className="availability-note">Message Split Lease<br/>for Availability</div>
         </div>
       </div>
     </a>
