@@ -596,6 +596,7 @@ export const SelfListingPage: React.FC = () => {
               onChange={updateReview}
               onSubmit={handleSubmit}
               onBack={handleBack}
+              onNavigateToSection={handleSectionChange}
               isSubmitting={isSubmitting}
             />
           )}
