@@ -24,8 +24,8 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { BubbleApiError } from '../_shared/errors.ts';
-import { validateRequiredFields } from '../_shared/validation.ts';
+import { BubbleApiError } from '../../_shared/errors.ts';
+import { validateRequiredFields } from '../../_shared/validation.ts';
 
 interface SignupAdditionalData {
   firstName?: string;
