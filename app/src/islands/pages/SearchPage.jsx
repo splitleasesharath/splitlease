@@ -480,10 +480,21 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 
   const listingId = listing.id || listing._id;
 
+  // Get the days-selected parameter from the current URL to pass to view page
+  const getListingUrl = () => {
+    if (!listingId) return '#';
+    const urlParams = new URLSearchParams(window.location.search);
+    const daysSelected = urlParams.get('days-selected');
+    if (daysSelected) {
+      return `/view-split-lease/${listingId}?days-selected=${daysSelected}`;
+    }
+    return `/view-split-lease/${listingId}`;
+  };
+
   return (
     <a
       className="listing-card"
-      href={listingId ? `/view-split-lease/${listingId}` : '#'}
+      href={getListingUrl()}
       target="_blank"
       rel="noopener noreferrer"
       style={{ textDecoration: 'none', color: 'inherit' }}

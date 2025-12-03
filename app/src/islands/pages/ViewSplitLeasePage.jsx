@@ -39,6 +39,45 @@ import '../../styles/listing-schedule-selector.css';
 // ============================================================================
 
 /**
+ * Get initial schedule selection from URL parameter
+ * URL format: ?days-selected=1,2,3,4 (1-based, where 1=Sunday)
+ * Returns: Array of Day objects (0-based, where 0=Sunday)
+ */
+function getInitialScheduleFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const daysParam = urlParams.get('days-selected');
+
+  if (!daysParam) {
+    console.log('📅 ViewSplitLeasePage: No days-selected URL param, using empty initial selection');
+    return [];
+  }
+
+  try {
+    // Parse 1-based indices from URL and convert to 0-based
+    const oneBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+    const zeroBased = oneBased
+      .filter(d => d >= 1 && d <= 7) // Validate 1-based range
+      .map(d => d - 1); // Convert to 0-based (1→0, 2→1, etc.)
+
+    if (zeroBased.length > 0) {
+      // Convert to Day objects using createDay
+      const dayObjects = zeroBased.map(dayIndex => createDay(dayIndex, true));
+      console.log('📅 ViewSplitLeasePage: Loaded schedule from URL:', {
+        urlParam: daysParam,
+        oneBased,
+        zeroBased,
+        dayObjects: dayObjects.map(d => d.name)
+      });
+      return dayObjects;
+    }
+  } catch (e) {
+    console.warn('⚠️ ViewSplitLeasePage: Failed to parse days-selected URL parameter:', e);
+  }
+
+  return [];
+}
+
+/**
  * Fetch informational texts from Supabase
  */
 async function fetchInformationalTexts() {
@@ -433,7 +472,7 @@ export default function ViewSplitLeasePage() {
   // Booking widget state
   const [moveInDate, setMoveInDate] = useState(null);
   const [strictMode, setStrictMode] = useState(false);
-  const [selectedDayObjects, setSelectedDayObjects] = useState([]); // Day objects from new component
+  const [selectedDayObjects, setSelectedDayObjects] = useState(() => getInitialScheduleFromUrl()); // Day objects from URL param or empty
   const [reservationSpan, setReservationSpan] = useState(13); // 13 weeks default
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [priceBreakdown, setPriceBreakdown] = useState(null);
@@ -480,6 +519,16 @@ export default function ViewSplitLeasePage() {
 
     return smartDate.toISOString().split('T')[0];
   }, [minMoveInDate]);
+
+  // Set initial move-in date if days were loaded from URL
+  useEffect(() => {
+    if (selectedDayObjects.length > 0 && !moveInDate) {
+      const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
+      const smartDate = calculateSmartMoveInDate(dayNumbers);
+      setMoveInDate(smartDate);
+      console.log('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
+    }
+  }, [selectedDayObjects, moveInDate, calculateSmartMoveInDate]);
 
   // UI state
   const [showTutorialModal, setShowTutorialModal] = useState(false);
