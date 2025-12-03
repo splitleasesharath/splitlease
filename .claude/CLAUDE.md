@@ -1,0 +1,167 @@
+# Split Lease - Project Overview
+
+**REPOSITORY**: https://github.com/splitleasesharath/splitlease
+**BRANCH**: main
+
+---
+
+## What is Split Lease?
+
+Flexible Rental Marketplace for NYC Properties enabling:
+- **Split Scheduling**: Property owners list spaces for specific days/weeks
+- **Repeat Stays**: Guests rent rooms on selected days (claimed "45% less than Airbnb")
+- **Proposal System**: Guests submit proposals with custom terms
+- **Virtual Meetings**: Video calls between hosts and guests
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18 + Vite (Islands Architecture) |
+| Backend | Supabase (PostgreSQL + Edge Functions) |
+| Legacy Backend | Bubble.io (migrating to Edge Functions) |
+| Deployment | Cloudflare Pages |
+| Node Version | 18 |
+
+---
+
+## Quick Commands
+
+```bash
+npm run dev      # Start dev server at http://localhost:5173
+npm run build    # Production build
+/deploy          # Claude slash command for deployment
+```
+
+---
+
+## Project Structure
+
+```
+Split Lease/
+├── app/                    # React frontend application
+├── supabase/               # Edge Functions and database config
+├── docs/                   # Migration plans and documentation
+├── .claude/                # Claude Code configuration and commands
+└── Context/                # Architecture reference guides
+```
+
+---
+
+## Context Files
+
+For detailed information, see these context files:
+
+### Frontend Application
+- **[../app/CLAUDE.md](../app/CLAUDE.md)** - React app architecture, components, islands pattern, and frontend conventions
+
+### Backend Infrastructure
+- **[../supabase/CLAUDE.md](../supabase/CLAUDE.md)** - Edge Functions, database overview, secrets configuration
+
+### Logic Architecture
+- **[../app/src/logic/CLAUDE.md](../app/src/logic/CLAUDE.md)** - Four-layer logic system (calculators, rules, processors, workflows)
+
+### Database
+- **[../DATABASE_SCHEMA_OVERVIEW.md](../DATABASE_SCHEMA_OVERVIEW.md)** - Complete Supabase table schemas (93 tables)
+
+### Migration Documentation
+- **[../docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md](../docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md)** - Bubble.io to Edge Functions migration
+
+---
+
+## Core Architecture Patterns
+
+### Four-Layer Logic System
+Located in `app/src/logic/`:
+1. **Calculators** - Pure math functions (`calculate*`, `get*`)
+2. **Rules** - Boolean predicates (`can*`, `is*`, `has*`, `should*`)
+3. **Processors** - Data transformation (`adapt*`, `extract*`, `process*`)
+4. **Workflows** - Orchestration (`*Workflow`)
+
+### Hollow Component Pattern
+UI components delegate all business logic to custom hooks.
+Example: `ViewSplitLeasePage.jsx` uses `useViewSplitLeasePageLogic.js`
+
+### Day Indexing (CRITICAL)
+| System | Sun | Mon | Tue | Wed | Thu | Fri | Sat |
+|--------|-----|-----|-----|-----|-----|-----|-----|
+| JavaScript (internal) | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+| Bubble API | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+
+Always convert at system boundaries using `adaptDaysFromBubble()` / `adaptDaysToBubble()`.
+
+---
+
+## Core Principles
+
+### No Fallback Mechanisms
+When encountering errors, return null or throw descriptive errors. Never add fallback logic or workarounds.
+
+### Match Solution to Scale
+Build for current requirements, not hypothetical future needs. Avoid over-engineering.
+
+### Be Direct
+Choose simple, direct solutions over clever abstractions. Code should do exactly what it says.
+
+---
+
+## Essential Rules
+
+### DO
+- Use Edge Functions for all Bubble API calls
+- Store API keys in Supabase Dashboard Secrets
+- Follow four-layer logic architecture
+- Commit after each meaningful change
+- Convert days at system boundaries
+
+### DON'T
+- Never expose API keys in frontend code
+- Never call Bubble API directly from frontend
+- Never `git push --force`
+- Never modify Supabase tables without explicit instruction
+- Never add fallback mechanisms
+
+---
+
+## Git Workflow
+
+- **Main branch**: `main` (production)
+- **Staging branch**: `development`
+- **Commit style**: Conventional (feat, fix, chore, docs)
+- **Rule**: Commit after each change, don't push unless asked
+
+---
+
+## Environment Variables
+
+### Frontend (app/.env)
+```
+VITE_SUPABASE_URL=<supabase-project-url>
+VITE_SUPABASE_ANON_KEY=<supabase-anon-key>
+VITE_GOOGLE_MAPS_API_KEY=<google-maps-api-key>
+```
+
+### Supabase Secrets
+Configured in Supabase Dashboard > Project Settings > Secrets:
+- `BUBBLE_API_BASE_URL`
+- `BUBBLE_API_KEY`
+- `OPENAI_API_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+---
+
+## Troubleshooting
+
+| Issue | Check |
+|-------|-------|
+| Build fails | Node version is 18, run `npm install` in app/ |
+| Edge Function errors | Verify secrets in Supabase Dashboard |
+| Auth issues | Check bubble-auth-proxy logs |
+| Empty queries | Check RLS policies |
+
+---
+
+**VERSION**: 3.0 (Lightweight)
+**STATUS**: References detailed context files
