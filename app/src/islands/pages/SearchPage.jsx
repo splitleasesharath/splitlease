@@ -480,30 +480,38 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 
   const listingId = listing.id || listing._id;
 
-  // Get the days-selected parameter from the current URL to pass to view page
-  const getListingUrl = () => {
-    if (!listingId) return '#';
+  // Handle click to pass days-selected parameter at click time (not render time)
+  // This ensures we get the current URL parameter after SearchScheduleSelector has updated it
+  const handleCardClick = (e) => {
+    if (!listingId) {
+      e.preventDefault();
+      console.error('[PropertyCard] No listing ID found', { listing });
+      return;
+    }
+
+    // Prevent default link behavior - we'll handle navigation manually
+    e.preventDefault();
+
+    // Get days-selected from URL at click time (after SearchScheduleSelector has updated it)
     const urlParams = new URLSearchParams(window.location.search);
     const daysSelected = urlParams.get('days-selected');
-    if (daysSelected) {
-      return `/view-split-lease/${listingId}?days-selected=${daysSelected}`;
-    }
-    return `/view-split-lease/${listingId}`;
+
+    const url = daysSelected
+      ? `/view-split-lease/${listingId}?days-selected=${daysSelected}`
+      : `/view-split-lease/${listingId}`;
+
+    console.log('📅 PropertyCard: Opening listing with URL:', url);
+    window.open(url, '_blank', 'noopener,noreferrer');
   };
 
   return (
     <a
       className="listing-card"
-      href={getListingUrl()}
+      href={listingId ? `/view-split-lease/${listingId}` : '#'}
       target="_blank"
       rel="noopener noreferrer"
       style={{ textDecoration: 'none', color: 'inherit' }}
-      onClick={(e) => {
-        if (!listingId) {
-          e.preventDefault();
-          console.error('[PropertyCard] No listing ID found', { listing });
-        }
-      }}
+      onClick={handleCardClick}
     >
       {hasImages && (
         <div className="listing-images">
