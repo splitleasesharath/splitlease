@@ -14,7 +14,9 @@ import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
+import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
+import { checkAuthStatus } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
   calculatePricingBreakdown,
@@ -435,6 +437,8 @@ export default function ViewSplitLeasePage() {
   const [reservationSpan, setReservationSpan] = useState(13); // 13 weeks default
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [priceBreakdown, setPriceBreakdown] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingProposalData, setPendingProposalData] = useState(null);
 
   // Calculate minimum move-in date (2 weeks from today)
   const minMoveInDate = useMemo(() => {
@@ -808,33 +812,70 @@ export default function ViewSplitLeasePage() {
     setIsProposalModalOpen(true);
   };
 
+  // Submit proposal to backend (after auth is confirmed)
+  const submitProposal = async (proposalData) => {
+    try {
+      // TODO: Integrate with backend API to submit the proposal
+      // const response = await supabase.functions.invoke('bubble-proxy', {
+      //   body: {
+      //     action: 'proposal',
+      //     type: 'create',
+      //     payload: proposalData
+      //   }
+      // });
+
+      console.log('✅ Proposal submitted successfully:', proposalData);
+      alert('Proposal submitted successfully! (Backend integration pending)');
+      setIsProposalModalOpen(false);
+      setPendingProposalData(null);
+
+      // Redirect to guest proposals page
+      window.location.href = '/guest-proposals';
+
+    } catch (error) {
+      console.error('❌ Error submitting proposal:', error);
+      alert('Failed to submit proposal. Please try again.');
+    }
+  };
+
+  // Handle proposal submission - checks auth first
   const handleProposalSubmit = async (proposalData) => {
-    console.log('Proposal submitted:', proposalData);
+    console.log('📋 Proposal submission initiated:', proposalData);
 
-    // TODO: Integrate with your backend API to submit the proposal
-    // Example:
-    // try {
-    //   const response = await fetch('/api/proposals', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(proposalData)
-    //   });
-    //
-    //   if (response.ok) {
-    //     alert('Proposal submitted successfully!');
-    //     setIsProposalModalOpen(false);
-    //     // Redirect to success page or proposals page
-    //   } else {
-    //     alert('Failed to submit proposal. Please try again.');
-    //   }
-    // } catch (error) {
-    //   console.error('Error submitting proposal:', error);
-    //   alert('An error occurred. Please try again.');
-    // }
+    // Check if user is logged in
+    const isLoggedIn = await checkAuthStatus();
 
-    // For now, just show success and close modal
-    alert('Proposal submitted successfully! (Backend integration pending)');
-    setIsProposalModalOpen(false);
+    if (!isLoggedIn) {
+      console.log('🔐 User not logged in, showing auth modal');
+      // Store the proposal data for later submission
+      setPendingProposalData(proposalData);
+      // Close the proposal modal
+      setIsProposalModalOpen(false);
+      // Open auth modal
+      setShowAuthModal(true);
+      return;
+    }
+
+    // User is logged in, proceed with submission
+    console.log('✅ User is logged in, submitting proposal');
+    await submitProposal(proposalData);
+  };
+
+  // Handle successful authentication
+  const handleAuthSuccess = async (authResult) => {
+    console.log('🎉 Auth success:', authResult);
+
+    // Close the auth modal
+    setShowAuthModal(false);
+
+    // If there's a pending proposal, submit it now
+    if (pendingProposalData) {
+      console.log('📤 Submitting pending proposal after auth');
+      // Small delay to ensure auth state is fully updated
+      setTimeout(async () => {
+        await submitProposal(pendingProposalData);
+      }, 500);
+    }
   };
 
   const scrollToSection = (sectionRef, shouldZoomMap = false) => {
@@ -2251,6 +2292,21 @@ export default function ViewSplitLeasePage() {
           existingUserData={null}
           onClose={() => setIsProposalModalOpen(false)}
           onSubmit={handleProposalSubmit}
+        />
+      )}
+
+      {/* Auth Modal for Proposal Submission */}
+      {showAuthModal && (
+        <SignUpLoginModal
+          isOpen={showAuthModal}
+          onClose={() => {
+            setShowAuthModal(false);
+            setPendingProposalData(null);
+          }}
+          initialView="initial"
+          onAuthSuccess={handleAuthSuccess}
+          defaultUserType="guest"
+          skipReload={true}
         />
       )}
 
