@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Section1SpaceSnapshot } from './sections/Section1SpaceSnapshot';
 import { Section2Features } from './sections/Section2Features';
 import { Section3LeaseStyles } from './sections/Section3LeaseStyles';
@@ -11,10 +11,12 @@ import { useListingStore, listingLocalStore } from './store';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import SignUpLoginModal from '../../shared/SignUpLoginModal';
+import Toast, { useToast } from '../../shared/Toast';
 import { getListingById } from '../../../lib/bubbleAPI';
 import { checkAuthStatus } from '../../../lib/auth';
 import { createListing } from '../../../lib/listingService';
 import './styles/SelfListingPage.css';
+import '../../../styles/components/toast.css';
 
 // ============================================================================
 // Success Modal Component
@@ -198,6 +200,12 @@ export const SelfListingPage: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdListingId, setCreatedListingId] = useState('');
 
+  // Toast notifications
+  const { toasts, showToast, removeToast } = useToast();
+
+  // Key to force Header re-render after auth change
+  const [headerKey, setHeaderKey] = useState(0);
+
   // Sync current section with store
   useEffect(() => {
     if (formData.currentSection && formData.currentSection !== currentSection) {
@@ -369,9 +377,20 @@ export const SelfListingPage: React.FC = () => {
   }, [saveDraft]);
 
   // Handle auth success callback - called after user signs up/logs in via modal
-  const handleAuthSuccess = () => {
-    console.log('[SelfListingPage] Auth success callback triggered');
+  const handleAuthSuccess = (result: { success: boolean; isNewUser?: boolean }) => {
+    console.log('[SelfListingPage] Auth success callback triggered', result);
     setShowAuthModal(false);
+
+    // Force Header to re-render and check auth state
+    setHeaderKey(prev => prev + 1);
+
+    // Show success toast
+    const isSignup = result?.isNewUser !== false; // Default to signup message
+    showToast(
+      isSignup ? 'Account created successfully! Submitting your listing...' : 'Logged in successfully! Submitting your listing...',
+      'success',
+      3000
+    );
 
     // User agreed to terms by signing up (modal shows "By signing up or logging in, you agree to...")
     // So we set agreedToTerms to true to pass validation
@@ -385,7 +404,7 @@ export const SelfListingPage: React.FC = () => {
       // Small delay to ensure auth state is fully updated and review data is persisted
       setTimeout(() => {
         proceedWithSubmit();
-      }, 200);
+      }, 500);
     }
   };
 
@@ -478,9 +497,12 @@ export const SelfListingPage: React.FC = () => {
 
   return (
     <>
-      {/* Shared Header Island */}
+      {/* Toast Notifications */}
+      <Toast toasts={toasts} onRemove={removeToast} />
+
+      {/* Shared Header Island - key forces re-render after auth change */}
       {console.log('🎨 Rendering Header component')}
-      <Header />
+      <Header key={headerKey} />
 
       <div className="self-listing-page">
         {/* Page Header */}
