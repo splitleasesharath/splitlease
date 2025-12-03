@@ -1227,8 +1227,8 @@ export default function ViewSplitLeasePage() {
               </h2>
 
               {listing.amenitiesInUnit?.length > 0 && (
-                <div style={{ marginBottom: '1.5rem' }}>
-                  <h3 style={{ fontWeight: '600', marginBottom: '0.75rem' }}>In-Unit</h3>
+                <div style={{ marginBottom: '1rem' }}>
+                  <h3 style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem', color: COLORS.TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.5px' }}>In-Unit</h3>
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
@@ -1256,7 +1256,7 @@ export default function ViewSplitLeasePage() {
 
               {listing.safetyFeatures?.length > 0 && (
                 <div>
-                  <h3 style={{ fontWeight: '600', marginBottom: '0.75rem' }}>Safety Features</h3>
+                  <h3 style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem', color: COLORS.TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Safety Features</h3>
                   <div style={{
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
