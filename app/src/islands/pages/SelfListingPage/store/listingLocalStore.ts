@@ -256,8 +256,9 @@ class ListingLocalStore {
       return { success: false, errors: validationErrors };
     }
 
+    // Try to save staged data to localStorage for recovery purposes
+    // But don't fail submission if localStorage is full
     try {
-      // Save current data as staged
       const stagedData = {
         ...this.state.data,
         stagedAt: new Date().toISOString(),
@@ -270,15 +271,17 @@ class ListingLocalStore {
       };
 
       localStorage.setItem(STORAGE_KEYS.STAGED, JSON.stringify(stagedData));
-      this.state.stagingStatus = 'staged';
-      this.state.errors = [];
       console.log('📦 ListingLocalStore: Data staged for submission');
-      this.notifyListeners();
-      return { success: true, errors: [] };
     } catch (error) {
-      console.error('❌ ListingLocalStore: Error staging data:', error);
-      return { success: false, errors: ['Failed to stage data for submission'] };
+      // localStorage quota exceeded - log but continue with submission
+      // The data is already in memory and can be submitted
+      console.warn('⚠️ ListingLocalStore: Could not stage to localStorage (quota exceeded), continuing with submission');
     }
+
+    this.state.stagingStatus = 'staged';
+    this.state.errors = [];
+    this.notifyListeners();
+    return { success: true, errors: [] };
   }
 
   /**
