@@ -1,0 +1,74 @@
+/**
+ * FavoriteButton Styles
+ * Heart icon button for toggling favorite status
+ */
+
+.favorite-button {
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.favorite-button:hover {
+  background-color: #FFFFFF;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: scale(1.1);
+}
+
+.favorite-button:active {
+  transform: scale(0.95);
+}
+
+.favorite-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Heart icon colors */
+.favorite-button.favorited {
+  color: #FF6B35;
+}
+
+.favorite-button.not-favorited {
+  color: #CCCCCC;
+}
+
+.favorite-button.not-favorited:hover {
+  color: #FF6B35;
+}
+
+/* Animation on toggle */
+.favorite-button.animating {
+  animation: heartbeat 0.3s ease-in-out;
+}
+
+@keyframes heartbeat {
+  0% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.3);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  75% {
+    transform: scale(1.25);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* SVG icon */
+.favorite-button svg {
+  pointer-events: none;
+}

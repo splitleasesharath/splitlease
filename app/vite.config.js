@@ -138,6 +138,14 @@ export default defineConfig({
           } else if (url.startsWith('/host-overview.html')) {
             req.url = '/public/host-overview.html' + (url.substring('/host-overview.html'.length) || '');
           }
+          // Handle favorite-listings routes
+          else if (url === '/favorite-listings' || url.startsWith('/favorite-listings?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/favorite-listings.html' + queryString;
+          } else if (url.startsWith('/favorite-listings.html')) {
+            req.url = '/public/favorite-listings.html' + (url.substring('/favorite-listings.html'.length) || '');
+          }
 
           next();
         });
@@ -269,6 +277,14 @@ export default defineConfig({
             req.url = '/host-overview.html' + queryString;
           } else if (url.startsWith('/host-overview.html')) {
             req.url = '/host-overview.html' + (url.substring('/host-overview.html'.length) || '');
+          }
+          // Handle favorite-listings routes (preview mode)
+          else if (url === '/favorite-listings' || url.startsWith('/favorite-listings?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/favorite-listings.html' + queryString;
+          } else if (url.startsWith('/favorite-listings.html')) {
+            req.url = '/favorite-listings.html' + (url.substring('/favorite-listings.html'.length) || '');
           }
 
           next();
@@ -525,7 +541,8 @@ export default defineConfig({
         'help-center-category': resolve(__dirname, 'public/help-center-category.html'),
         'rental-application': resolve(__dirname, 'public/rental-application.html'),
         'listing-dashboard': resolve(__dirname, 'public/listing-dashboard.html'),
-        'host-overview': resolve(__dirname, 'public/host-overview.html')
+        'host-overview': resolve(__dirname, 'public/host-overview.html'),
+        'favorite-listings': resolve(__dirname, 'public/favorite-listings.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public
