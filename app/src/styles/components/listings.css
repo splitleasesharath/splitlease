@@ -674,8 +674,10 @@
     margin-bottom: 6px;
     line-height: 1.3;
     transition: color 0.2s;
-    /* Truncate to 1 line with ellipsis */
-    white-space: nowrap;
+    /* Truncate to 2 lines with ellipsis */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
 }
