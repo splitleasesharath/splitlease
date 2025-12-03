@@ -494,6 +494,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
         }
       }}
     >
+      {/* Image Section */}
       {hasImages && (
         <div className="listing-images">
           <img
@@ -532,84 +533,84 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
         </div>
       )}
 
+      {/* Content Section - F6 Layout */}
       <div className="listing-content">
-        <div className="listing-info">
-          <div
-            className="listing-location"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (onLocationClick) {
-                onLocationClick(listing);
-              }
-            }}
-            style={{ cursor: onLocationClick ? 'pointer' : 'default' }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-            <span className="location-text">{listing.location}</span>
-          </div>
-          <h3 className="listing-title">{listing.title}</h3>
-          <p className="listing-type">
-            {listing.type}
-            {listing.squareFeet ? ` (${listing.squareFeet} SQFT)` : ''} - {listing.maxGuests} guests max
-          </p>
-          {renderAmenityIcons()}
-          <p className="listing-details">{listing.description}</p>
-        </div>
-
-        <div className="listing-footer">
-          <div className="host-info">
-            {listing.host?.image && (
-              <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
-            )}
-            {!listing.host?.image && (
-              <div className="host-avatar-placeholder">?</div>
-            )}
-            <div className="host-details">
-              <span className="host-name">
-                {formatHostName(listing.host?.name)}
-                {listing.host.verified && <span className="verified-badge" title="Verified">✓</span>}
-              </span>
-              <button
-                className="message-btn"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onOpenContactModal(listing);
-                }}
-              >
-                Message
-              </button>
+        {/* Main Info - Left Side */}
+        <div className="listing-main-info">
+          <div className="listing-info-top">
+            <div
+              className="listing-location"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (onLocationClick) {
+                  onLocationClick(listing);
+                }
+              }}
+              style={{ cursor: onLocationClick ? 'pointer' : 'default' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span className="location-text">{listing.location}</span>
             </div>
+            <h3 className="listing-title">{listing.title}</h3>
           </div>
 
-          <div className="pricing-info">
+          {/* Meta Section - Info Dense Style */}
+          <div className="listing-meta">
+            <span className="meta-item"><strong>{listing.type || 'Entire Place'}</strong></span>
+            <span className="meta-item"><strong>{listing.maxGuests}</strong> guests</span>
+            <span className="meta-item"><strong>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`}</strong></span>
+            <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
+          </div>
+
+          {/* Pricing - Bottom Left */}
+          <div className="listing-pricing">
             <div
               ref={priceInfoTriggerRef}
-              className="starting-price"
-              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              className="price-starting"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 onOpenInfoModal(listing, priceInfoTriggerRef);
               }}
             >
-              <span>Starting at ${parseFloat(startingPrice).toFixed(2)}/night</span>
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                style={{ color: '#3b82f6', fill: 'currentColor', cursor: 'pointer' }}
-              >
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
-              </svg>
+              Starting at ${parseFloat(startingPrice).toFixed(2)}/night
             </div>
-            <div className="full-price">${dynamicPrice.toFixed(2)}/night</div>
-            <div className="availability-text">Message Split Lease for Availability</div>
+            <div className="price-main">
+              ${dynamicPrice.toFixed(2)}<span>/night</span>
+            </div>
+            <div className="availability-note">Message Split Lease for Availability</div>
           </div>
+        </div>
+
+        {/* Host Sidebar - Right Side */}
+        <div className="listing-host-sidebar">
+          {listing.host?.image ? (
+            <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
+          ) : (
+            <div className="host-avatar-placeholder">?</div>
+          )}
+          <div className="host-name">
+            {formatHostName(listing.host?.name)}
+            {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
+          </div>
+          <div className="host-label">Host</div>
+          <button
+            className="message-btn"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenContactModal(listing);
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            Message
+          </button>
         </div>
       </div>
     </a>
