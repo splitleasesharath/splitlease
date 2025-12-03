@@ -218,7 +218,23 @@ export const SelfListingPage: React.FC = () => {
           console.log('✅ Loading complete');
         }
       } else {
-        console.log('📂 No listing ID in URL, using stored draft data');
+        console.log('📂 No listing ID in URL, checking for pending listing name');
+
+        // Check if there's a pending listing name from the CreateDuplicateListingModal
+        const pendingName = localStorage.getItem('pendingListingName');
+        if (pendingName) {
+          console.log('📝 Found pending listing name:', pendingName);
+          const currentStoreData = listingLocalStore.getData();
+          updateSpaceSnapshot({
+            ...currentStoreData.spaceSnapshot,
+            listingName: pendingName,
+          });
+          // Clean up the temporary storage key after use
+          localStorage.removeItem('pendingListingName');
+          console.log('✅ Pending listing name applied and cleaned up');
+        } else {
+          console.log('📂 No pending listing name, using stored draft data');
+        }
       }
     };
 
