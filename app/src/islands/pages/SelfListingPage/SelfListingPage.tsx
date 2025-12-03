@@ -101,6 +101,10 @@ const successModalStyles = {
 const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, listingId, listingName }) => {
   if (!isOpen) return null;
 
+  const handleGoToDashboard = () => {
+    window.location.href = '/host-dashboard.html';
+  };
+
   const handleViewListing = () => {
     window.location.href = `/view-split-lease.html?listing_id=${listingId}`;
   };
@@ -117,11 +121,29 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, listingId, listingN
         </p>
         <button
           style={successModalStyles.button}
-          onClick={handleViewListing}
+          onClick={handleGoToDashboard}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#4C1D95')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#5B21B6')}
         >
-          View Your Listing
+          Go to My Dashboard
+        </button>
+        <button
+          style={{
+            ...successModalStyles.button,
+            backgroundColor: 'transparent',
+            color: '#5B21B6',
+            border: '2px solid #5B21B6',
+            marginTop: '0.75rem',
+          }}
+          onClick={handleViewListing}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#F5F3FF';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          Preview Listing
         </button>
         <p style={successModalStyles.secondaryText}>
           You'll be notified once your listing is approved.
@@ -350,12 +372,20 @@ export const SelfListingPage: React.FC = () => {
   const handleAuthSuccess = () => {
     console.log('[SelfListingPage] Auth success callback triggered');
     setShowAuthModal(false);
+
+    // User agreed to terms by signing up (modal shows "By signing up or logging in, you agree to...")
+    // So we set agreedToTerms to true to pass validation
+    updateReview({
+      ...formData.review,
+      agreedToTerms: true,
+    });
+
     if (pendingSubmit) {
       setPendingSubmit(false);
-      // Small delay to ensure auth state is fully updated
+      // Small delay to ensure auth state is fully updated and review data is persisted
       setTimeout(() => {
         proceedWithSubmit();
-      }, 100);
+      }, 200);
     }
   };
 
