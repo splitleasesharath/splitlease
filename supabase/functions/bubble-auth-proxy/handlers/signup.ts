@@ -66,19 +66,17 @@ export async function handleSignup(
     const url = `${bubbleAuthBaseUrl}/wf/signup-user`;
     console.log(`[signup] Calling Bubble API: ${url}`);
 
-    // Build request body with all available fields
+    // Build request body with all required fields (camelCase as Bubble expects)
     const requestBody: Record<string, any> = {
       email,
       password,
-      retype
+      retype,
+      firstName,
+      lastName,
+      userType,
+      birthDate,
+      phoneNumber
     };
-
-    // Add optional fields if provided
-    if (firstName) requestBody.first_name = firstName;
-    if (lastName) requestBody.last_name = lastName;
-    if (userType) requestBody.user_type = userType;
-    if (birthDate) requestBody.birth_date = birthDate;
-    if (phoneNumber) requestBody.phone_number = phoneNumber;
 
     console.log(`[signup] Request body:`, JSON.stringify(requestBody, null, 2));
 
