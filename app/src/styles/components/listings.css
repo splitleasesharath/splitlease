@@ -285,9 +285,7 @@
 }
 
 .listing-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    border-color: #e5e7eb;
+    border-color: #d1d5db;
 }
 
 /* NOTE: Removed .listing-card:not(:has(.listing-images)) rule
@@ -312,11 +310,6 @@
     height: 100%;
     object-fit: cover;
     object-position: center;
-    transition: transform 0.3s ease;
-}
-
-.listing-card:hover .listing-images img {
-    transform: scale(1.05);
 }
 
 /* Image Navigation Buttons (Carousel) */
