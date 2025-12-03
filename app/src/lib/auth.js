@@ -649,7 +649,7 @@ export async function signupUser(email, password, retype, additionalData = null)
  * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
  * API key is stored server-side in Supabase Secrets
  *
- * @returns {Promise<Object|null>} User data object with firstName, profilePhoto, userType, etc. or null if invalid
+ * @returns {Promise<Object|null>} User data object with firstName, fullName, email, profilePhoto, userType, etc. or null if invalid
  */
 export async function validateTokenAndFetchUser() {
   const token = getAuthToken();
@@ -726,6 +726,7 @@ export async function validateTokenAndFetchUser() {
       userId: userData.userId,
       firstName: userData.firstName || null,
       fullName: userData.fullName || null,
+      email: userData.email || null,
       profilePhoto: userData.profilePhoto || null,
       userType: userType
     };

@@ -58,25 +58,35 @@ export async function getFavoritedListings(userId, options = {}) {
  * Remove a listing from user's favorites
  * @param {string} userId - The user's ID
  * @param {string} listingId - The listing ID to remove
- * @returns {Promise<{success: boolean}>}
+ * @returns {Promise<{success: boolean, favorites: string[]}>}
  */
 export async function removeFromFavorites(userId, listingId) {
   try {
+    // Use Edge Function to remove from favorites (bypasses RLS with service role key)
+    console.log('🔄 Calling Edge Function to remove from favorites:', { userId, listingId });
+
     const { data, error } = await supabase.functions.invoke('bubble-proxy', {
       body: {
-        action: 'listing',
-        type: 'unfavorite',
-        userId,
-        listingId,
+        action: 'toggle_favorite',
+        payload: {
+          userId,
+          listingId,
+          action: 'remove',
+        },
       },
     });
 
     if (error) {
-      console.error('❌ Error removing from favorites:', error);
+      console.error('❌ Edge Function error:', error);
       throw error;
     }
 
-    return { success: true };
+    if (!data?.success) {
+      throw new Error(data?.error?.message || 'Failed to remove from favorites');
+    }
+
+    console.log('✅ Removed from favorites successfully');
+    return { success: true, favorites: data.data?.favorites || [] };
   } catch (err) {
     console.error('❌ Failed to remove from favorites:', err);
     throw err;
@@ -87,25 +97,35 @@ export async function removeFromFavorites(userId, listingId) {
  * Add a listing to user's favorites
  * @param {string} userId - The user's ID
  * @param {string} listingId - The listing ID to add
- * @returns {Promise<{success: boolean}>}
+ * @returns {Promise<{success: boolean, favorites: string[]}>}
  */
 export async function addToFavorites(userId, listingId) {
   try {
+    // Use Edge Function to add to favorites (bypasses RLS with service role key)
+    console.log('🔄 Calling Edge Function to add to favorites:', { userId, listingId });
+
     const { data, error } = await supabase.functions.invoke('bubble-proxy', {
       body: {
-        action: 'listing',
-        type: 'favorite',
-        userId,
-        listingId,
+        action: 'toggle_favorite',
+        payload: {
+          userId,
+          listingId,
+          action: 'add',
+        },
       },
     });
 
     if (error) {
-      console.error('❌ Error adding to favorites:', error);
+      console.error('❌ Edge Function error:', error);
       throw error;
     }
 
-    return { success: true };
+    if (!data?.success) {
+      throw new Error(data?.error?.message || 'Failed to add to favorites');
+    }
+
+    console.log('✅ Added to favorites successfully');
+    return { success: true, favorites: data.data?.favorites || [] };
   } catch (err) {
     console.error('❌ Failed to add to favorites:', err);
     throw err;

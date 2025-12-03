@@ -358,9 +358,8 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, onToggleFavorite }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
   const priceInfoTriggerRef = useRef(null);
 
   const hasImages = listing.images && listing.images.length > 0;
@@ -400,7 +399,10 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
   const handleFavoriteClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsFavorite(!isFavorite);
+    if (onToggleFavorite) {
+      const listingId = listing.id || listing._id;
+      onToggleFavorite(listingId, listing.title);
+    }
   };
 
   // Calculate dynamic price using default 5 nights (Monday-Friday pattern)
@@ -533,20 +535,22 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               </div>
             </>
           )}
-          {isLoggedIn && (
-            <button className="favorite-btn" onClick={handleFavoriteClick}>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill={isFavorite ? 'red' : 'none'}
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </button>
-          )}
+          <button
+            className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
+            onClick={handleFavoriteClick}
+            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill={isFavorited ? '#FF6B35' : 'none'}
+              stroke={isFavorited ? '#FF6B35' : 'currentColor'}
+              strokeWidth="2"
+            >
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+          </button>
           {listing.isNew && <span className="new-badge">New Listing</span>}
         </div>
       )}
@@ -638,7 +642,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, favoritedListingIds, onToggleFavorite }) {
   const sentinelRef = useRef(null);
 
   useEffect(() => {
@@ -668,20 +672,25 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
 
   return (
     <div className="listings-container">
-      {listings.map((listing, index) => (
-        <PropertyCard
-          key={listing.id}
-          listing={listing}
-          onLocationClick={(listing) => {
-            if (mapRef.current) {
-              mapRef.current.zoomToListing(listing.id);
-            }
-          }}
-          onOpenContactModal={onOpenContactModal}
-          onOpenInfoModal={onOpenInfoModal}
-          isLoggedIn={isLoggedIn}
-        />
-      ))}
+      {listings.map((listing, index) => {
+        const listingId = listing.id || listing._id;
+        return (
+          <PropertyCard
+            key={listing.id}
+            listing={listing}
+            onLocationClick={(listing) => {
+              if (mapRef.current) {
+                mapRef.current.zoomToListing(listing.id);
+              }
+            }}
+            onOpenContactModal={onOpenContactModal}
+            onOpenInfoModal={onOpenInfoModal}
+            isLoggedIn={isLoggedIn}
+            isFavorited={favoritedListingIds?.has(listingId)}
+            onToggleFavorite={onToggleFavorite}
+          />
+        );
+      })}
 
       {hasMore && (
         <div ref={sentinelRef} className="lazy-load-sentinel">
@@ -806,6 +815,10 @@ export default function SearchPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [favoritesCount, setFavoritesCount] = useState(0);
+  const [favoritedListingIds, setFavoritedListingIds] = useState(new Set());
+
+  // Toast notification state
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Flag to prevent URL update on initial load
   const isInitialMount = useRef(true);
@@ -845,22 +858,28 @@ export default function SearchPage() {
             setCurrentUser({
               id: userId,
               name: userData.fullName || userData.firstName || '',
-              email: '', // Not fetched in validateTokenAndFetchUser
+              email: userData.email || '',
               userType: userData.userType || 'GUEST',
               avatarUrl: userData.profilePhoto || null
             });
 
-            // Fetch favorites count from Supabase
+            // Fetch favorites from Supabase
             if (userId) {
               const { data: userFavorites, error } = await supabase
                 .from('user')
-                .select('"Favorites - Listing"')
+                .select('"Favorited Listings"')
                 .eq('_id', userId)
                 .single();
 
               if (!error && userFavorites) {
-                const favorites = userFavorites['Favorites - Listing'];
-                setFavoritesCount(Array.isArray(favorites) ? favorites.length : 0);
+                const favorites = userFavorites['Favorited Listings'];
+                if (Array.isArray(favorites)) {
+                  setFavoritesCount(favorites.length);
+                  setFavoritedListingIds(new Set(favorites));
+                } else {
+                  setFavoritesCount(0);
+                  setFavoritedListingIds(new Set());
+                }
               }
             }
           }
@@ -1594,6 +1613,83 @@ export default function SearchPage() {
     setIsAIResearchModalOpen(false);
   };
 
+  // Show toast notification
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, 3000);
+  };
+
+  // Toggle favorite for a listing
+  const handleToggleFavorite = async (listingId, listingTitle) => {
+    console.log('[SearchPage] handleToggleFavorite called:', { listingId, listingTitle, isLoggedIn, currentUser });
+
+    if (!isLoggedIn || !currentUser?.id) {
+      // If not logged in, open auth modal
+      console.log('[SearchPage] User not logged in, opening auth modal');
+      setAuthModalView('signup');
+      setIsAuthModalOpen(true);
+      return;
+    }
+
+    const userId = currentUser.id;
+    const isFavorited = favoritedListingIds.has(listingId);
+    console.log('[SearchPage] Toggle favorite:', { userId, listingId, isFavorited });
+
+    // Optimistic update
+    const newFavoritedIds = new Set(favoritedListingIds);
+    if (isFavorited) {
+      newFavoritedIds.delete(listingId);
+    } else {
+      newFavoritedIds.add(listingId);
+    }
+    setFavoritedListingIds(newFavoritedIds);
+    setFavoritesCount(newFavoritedIds.size);
+
+    try {
+      // Use Edge Function to toggle favorite (bypasses RLS with service role key)
+      console.log('[SearchPage] Calling Edge Function to toggle favorite:', { userId, listingId, action: isFavorited ? 'remove' : 'add' });
+
+      const { data, error } = await supabase.functions.invoke('bubble-proxy', {
+        body: {
+          action: 'toggle_favorite',
+          payload: {
+            userId,
+            listingId,
+            action: isFavorited ? 'remove' : 'add',
+          },
+        },
+      });
+
+      console.log('[SearchPage] Edge Function result:', { data, error });
+
+      if (error) {
+        throw error;
+      }
+
+      if (!data?.success) {
+        throw new Error(data?.error?.message || 'Failed to update favorites');
+      }
+
+      // Show toast notification
+      const displayName = listingTitle || 'Listing';
+      if (isFavorited) {
+        showToast(`${displayName} removed from favorites`, 'info');
+      } else {
+        showToast(`${displayName} added to favorites`, 'success');
+      }
+
+      console.log('[SearchPage] Favorite toggled successfully');
+    } catch (error) {
+      console.error('[SearchPage] Error toggling favorite:', error);
+      // Revert optimistic update on error
+      setFavoritedListingIds(favoritedListingIds);
+      setFavoritesCount(favoritedListingIds.size);
+      showToast('Failed to update favorites. Please try again.', 'error');
+    }
+  };
+
   // Auth navigation handlers
   const handleNavigate = (path) => {
     window.location.href = path;
@@ -1647,6 +1743,30 @@ export default function SearchPage() {
   // Render
   return (
     <div className="search-page">
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className={`toast toast-${toast.type} show`}>
+          <span className="toast-icon">
+            {toast.type === 'success' && (
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+            )}
+            {toast.type === 'info' && (
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+              </svg>
+            )}
+            {toast.type === 'error' && (
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+            )}
+          </span>
+          <span className="toast-message">{toast.message}</span>
+        </div>
+      )}
+
       {/* Two-column layout: Listings (left) + Map (right) */}
       <main className="two-column-layout">
         {/* LEFT COLUMN: Listings with filters */}
@@ -1790,6 +1910,8 @@ export default function SearchPage() {
                 onOpenInfoModal={handleOpenInfoModal}
                 mapRef={mapRef}
                 isLoggedIn={isLoggedIn}
+                favoritedListingIds={favoritedListingIds}
+                onToggleFavorite={handleToggleFavorite}
               />
             )}
           </div>
@@ -1897,6 +2019,8 @@ export default function SearchPage() {
             }}
             onAIResearchClick={handleOpenAIResearchModal}
             isLoggedIn={isLoggedIn}
+            favoritedListingIds={favoritedListingIds}
+            onToggleFavorite={handleToggleFavorite}
           />
         </section>
       </main>
@@ -1906,7 +2030,8 @@ export default function SearchPage() {
         isOpen={isContactModalOpen}
         onClose={handleCloseContactModal}
         listing={selectedListing}
-        userEmail={null}
+        userEmail={currentUser?.email || ''}
+        userName={currentUser?.name || ''}
       />
       <InformationalText
         isOpen={isInfoModalOpen}
@@ -1960,6 +2085,8 @@ export default function SearchPage() {
               }}
               onAIResearchClick={handleOpenAIResearchModal}
               isLoggedIn={isLoggedIn}
+              favoritedListingIds={favoritedListingIds}
+              onToggleFavorite={handleToggleFavorite}
             />
           </div>
         </div>

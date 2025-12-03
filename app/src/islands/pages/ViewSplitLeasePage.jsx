@@ -16,7 +16,7 @@ import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
-import { checkAuthStatus } from '../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
   calculatePricingBreakdown,
@@ -478,6 +478,7 @@ export default function ViewSplitLeasePage() {
   const [priceBreakdown, setPriceBreakdown] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingProposalData, setPendingProposalData] = useState(null);
+  const [loggedInUserData, setLoggedInUserData] = useState(null);
 
   // Calculate minimum move-in date (2 weeks from today)
   const minMoveInDate = useMemo(() => {
@@ -590,6 +591,16 @@ export default function ViewSplitLeasePage() {
       try {
         // Initialize lookup caches
         await initializeLookups();
+
+        // Check auth status and fetch user data if logged in
+        const isLoggedIn = await checkAuthStatus();
+        if (isLoggedIn) {
+          const userData = await validateTokenAndFetchUser();
+          if (userData) {
+            setLoggedInUserData(userData);
+            console.log('👤 ViewSplitLeasePage: User data loaded:', userData.firstName);
+          }
+        }
 
         // Fetch ZAT price configuration
         const zatConfigData = await fetchZatPriceConfiguration();
@@ -2371,7 +2382,8 @@ export default function ViewSplitLeasePage() {
               name: listing.host ? `${listing.host['Name - First']} ${listing.host['Name - Last']?.charAt(0)}.` : 'Host'
             }
           }}
-          userEmail=""
+          userEmail={loggedInUserData?.email || ''}
+          userName={loggedInUserData?.fullName || loggedInUserData?.firstName || ''}
         />
       )}
 

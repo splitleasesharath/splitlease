@@ -1,7 +1,6 @@
-# Submit Listing Photos Component
+# Submit Listing Photos Context
 
-**GENERATED**: 2025-11-26
-**ARCHITECTURE**: React Islands
+**TYPE**: LEAF NODE
 **PARENT**: app/src/islands/shared/
 
 ---
@@ -13,31 +12,40 @@
 
 ---
 
-## ### FILE_INVENTORY ###
-
-### index.js
-[INTENT]: Barrel export providing SubmitListingPhotos component
-[EXPORTS]: SubmitListingPhotos
+## ### COMPONENT_CONTRACTS ###
 
 ### SubmitListingPhotos.jsx
+[PATH]: ./SubmitListingPhotos.jsx
 [INTENT]: Main photo upload component with drag-drop and preview grid
-[IMPORTS]: react
-[DEPENDENCIES]: supabase/functions/bubble-proxy/handlers/photos
-[PROPS]: listingId, photos, onPhotosChange
+[PROPS]:
+  - listingId: string (req) - Listing ID for photo association
+  - photos: Photo[] (req) - Current photos array
+  - onPhotosChange: (photos: Photo[]) => void (req) - Photos update callback
+[BEHAVIOR]:
+  - Drag-drop file upload
+  - Thumbnail preview grid
+  - Drag to reorder
+  - Click to delete (with confirmation)
+[DEPENDS_ON]: lib/supabase
+[ASYNC]: Yes (upload)
 
-### SubmitListingPhotos.css
-[INTENT]: Styles for upload zone, photo grid, and drag handles
+---
 
 ### DeletePhotoModal.jsx
+[PATH]: ./DeletePhotoModal.jsx
 [INTENT]: Confirmation modal for photo deletion with preview
-[IMPORTS]: react, ../Button
-[PROPS]: photo, onConfirm, onCancel
+[PROPS]:
+  - photo: Photo (req) - Photo to delete
+  - onConfirm: () => void (req) - Confirm deletion
+  - onCancel: () => void (req) - Cancel deletion
+[DEPENDS_ON]: ../Button
 
-### DeletePhotoModal.css
-[INTENT]: Styles for delete confirmation modal
+---
 
-### README.md
-[INTENT]: Component usage documentation
+### index.js
+[PATH]: ./index.js
+[INTENT]: Barrel export
+[EXPORTS]: { SubmitListingPhotos }
 
 ---
 
@@ -56,24 +64,36 @@ Upload to Bubble storage via Edge Function
 Add to photo grid
     │
     ▼
-Drag to reorder
+Drag to reorder (optional)
 ```
 
 ---
 
 ## ### PHOTO_CONSTRAINTS ###
 
-[MAX_SIZE]: 10MB per photo
-[FORMATS]: JPEG, PNG, WebP
-[MIN_COUNT]: 5 photos required
-[MAX_COUNT]: 20 photos maximum
+| Constraint | Value |
+|------------|-------|
+| MAX_SIZE | 10MB per photo |
+| FORMATS | JPEG, PNG, WebP |
+| MIN_COUNT | 5 photos required |
+| MAX_COUNT | 20 photos maximum |
 
 ---
 
-## ### USAGE_PATTERN ###
+## ### CRITICAL_USAGE_RULES ###
 
-[IMPORT_FROM]: import { SubmitListingPhotos } from 'islands/shared/SubmitListingPhotos'
-[CONSUMED_BY]: SelfListingPage photos section
+[RULE_1]: Minimum 5 photos required for listing submission
+[RULE_2]: First photo becomes primary/cover photo
+[RULE_3]: Reorder via drag-drop updates array order
+[RULE_4]: Delete requires confirmation modal
+
+---
+
+## ### DEPENDENCIES ###
+
+[LOCAL]: lib/supabase, shared/Button
+[EXTERNAL]: None
+[EDGE_FUNCTION]: bubble-proxy (photos handler)
 
 ---
 
