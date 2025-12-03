@@ -295,8 +295,8 @@
 /* Image Section - Left side, full height */
 .listing-images {
     position: relative;
-    width: 280px;
-    min-width: 280px;
+    width: 240px;
+    min-width: 200px;
     align-self: stretch;
     overflow: hidden;
     background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
@@ -438,10 +438,12 @@
 /* Main Info - Left Side */
 .listing-main-info {
     flex: 1;
-    padding: 16px 20px;
+    min-width: 0;
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    overflow: hidden;
 }
 
 .listing-info-top {
@@ -507,9 +509,9 @@
 
 /* Host Sidebar - Right Side */
 .listing-host-sidebar {
-    width: 140px;
+    width: 120px;
     background: #f9f7fc;
-    padding: 16px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
     align-items: center;
