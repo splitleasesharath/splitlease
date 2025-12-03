@@ -2352,7 +2352,7 @@ export default function ViewSplitLeasePage() {
             setShowAuthModal(false);
             setPendingProposalData(null);
           }}
-          initialView="initial"
+          initialView="signup-step1"
           onAuthSuccess={handleAuthSuccess}
           defaultUserType="guest"
           skipReload={true}
