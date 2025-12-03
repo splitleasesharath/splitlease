@@ -146,6 +146,14 @@ export default defineConfig({
           } else if (url.startsWith('/favorite-listings.html')) {
             req.url = '/public/favorite-listings.html' + (url.substring('/favorite-listings.html'.length) || '');
           }
+          // Handle about-us routes
+          else if (url === '/about-us' || url.startsWith('/about-us?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/about-us.html' + queryString;
+          } else if (url.startsWith('/about-us.html')) {
+            req.url = '/public/about-us.html' + (url.substring('/about-us.html'.length) || '');
+          }
 
           next();
         });
@@ -285,6 +293,14 @@ export default defineConfig({
             req.url = '/favorite-listings.html' + queryString;
           } else if (url.startsWith('/favorite-listings.html')) {
             req.url = '/favorite-listings.html' + (url.substring('/favorite-listings.html'.length) || '');
+          }
+          // Handle about-us routes (preview mode)
+          else if (url === '/about-us' || url.startsWith('/about-us?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/about-us.html' + queryString;
+          } else if (url.startsWith('/about-us.html')) {
+            req.url = '/about-us.html' + (url.substring('/about-us.html'.length) || '');
           }
 
           next();
@@ -542,7 +558,8 @@ export default defineConfig({
         'rental-application': resolve(__dirname, 'public/rental-application.html'),
         'listing-dashboard': resolve(__dirname, 'public/listing-dashboard.html'),
         'host-overview': resolve(__dirname, 'public/host-overview.html'),
-        'favorite-listings': resolve(__dirname, 'public/favorite-listings.html')
+        'favorite-listings': resolve(__dirname, 'public/favorite-listings.html'),
+        'about-us': resolve(__dirname, 'public/about-us.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

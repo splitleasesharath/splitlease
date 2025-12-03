@@ -78,9 +78,10 @@ const FavoriteListingsPage = () => {
         // Check auth status
         const isAuthenticated = await checkAuthStatus();
         if (!isAuthenticated) {
-          // Redirect to login or show auth message
-          console.log('User not authenticated, redirecting...');
-          window.location.href = '/?login=true';
+          // Show auth required message instead of redirecting
+          console.log('User not authenticated');
+          setError('Please log in to view your favorite listings.');
+          setLoading(false);
           return;
         }
 
