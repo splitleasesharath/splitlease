@@ -1,5 +1,5 @@
 /**
- * Signup Handler - Register new user via Bubble
+ * Signup Handler - Register new user via Bubble + Supabase Auth
  * Split Lease - bubble-auth-proxy
  *
  * Flow:
@@ -7,17 +7,22 @@
  * 2. Client-side validation (password length, match)
  * 3. Call Bubble signup workflow (BUBBLE_API_BASE_URL/wf/signup-user)
  * 4. If successful, Bubble creates user and returns {token, user_id, expires}
- * 5. Auto-login user (return token and user data)
+ * 5. Create Supabase Auth user (non-blocking - failures logged but don't break signup)
+ * 6. Return token and user data (including supabase_user_id if created)
  *
  * NO FALLBACK - If Bubble signup fails, entire operation fails
+ * Supabase Auth creation is additive - failures are logged but don't break the flow
  *
  * @param bubbleAuthBaseUrl - Base URL for Bubble auth API
  * @param bubbleApiKey - API key for Bubble
+ * @param supabaseUrl - Supabase project URL
+ * @param supabaseServiceKey - Supabase service role key for admin operations
  * @param payload - Request payload {email, password, retype, additionalData?}
  *   additionalData may include: firstName, lastName, userType, birthDate, phoneNumber
- * @returns {token, user_id, expires}
+ * @returns {token, user_id, expires, supabase_user_id}
  */
 
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { BubbleApiError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 
@@ -32,6 +37,8 @@ interface SignupAdditionalData {
 export async function handleSignup(
   bubbleAuthBaseUrl: string,
   bubbleApiKey: string,
+  supabaseUrl: string,
+  supabaseServiceKey: string,
   payload: any
 ): Promise<any> {
   console.log('[signup] ========== SIGNUP REQUEST ==========');
@@ -122,17 +129,92 @@ export async function handleSignup(
       throw new BubbleApiError('Signup response missing required fields', 500);
     }
 
-    console.log(`[signup] ✅ Signup successful`);
-    console.log(`[signup]    User ID: ${userId}`);
+    console.log(`[signup] ✅ Bubble signup successful`);
+    console.log(`[signup]    Bubble User ID: ${userId}`);
     console.log(`[signup]    Token expires in: ${expires} seconds`);
-    console.log(`[signup]    User automatically logged in`);
+
+    // ========== SUPABASE AUTH USER CREATION ==========
+    // Non-blocking: Failures are logged but don't break signup
+    let supabaseUserId: string | null = null;
+
+    try {
+      console.log('[signup] Creating Supabase Auth user...');
+
+      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      });
+
+      // Check if user already exists in Supabase Auth (e.g., from previous attempt)
+      let existingUser = null;
+      try {
+        const { data: allUsers } = await supabaseAdmin.auth.admin.listUsers();
+        existingUser = allUsers?.users?.find(u => u.email === email);
+      } catch (listErr) {
+        console.log('[signup] Could not list users, will try to create:', listErr);
+      }
+
+      if (existingUser) {
+        console.log('[signup] Supabase user already exists, updating metadata to link Bubble ID...');
+        supabaseUserId = existingUser.id;
+
+        // Update metadata to include Bubble user ID
+        const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(existingUser.id, {
+          user_metadata: {
+            ...existingUser.user_metadata,
+            bubble_user_id: userId,
+            first_name: firstName || existingUser.user_metadata?.first_name,
+            last_name: lastName || existingUser.user_metadata?.last_name,
+            user_type: userType || existingUser.user_metadata?.user_type
+          }
+        });
+
+        if (updateError) {
+          console.error('[signup] Failed to update existing Supabase user metadata:', updateError.message);
+        } else {
+          console.log('[signup] ✅ Linked existing Supabase user to Bubble ID');
+        }
+      } else {
+        // Create new Supabase Auth user
+        const { data: supabaseUser, error: supabaseError } = await supabaseAdmin.auth.admin.createUser({
+          email: email,
+          password: password,
+          email_confirm: true, // Auto-confirm since Bubble already validated
+          user_metadata: {
+            bubble_user_id: userId,
+            first_name: firstName,
+            last_name: lastName,
+            user_type: userType,
+            birth_date: birthDate,
+            phone_number: phoneNumber
+          }
+        });
+
+        if (supabaseError) {
+          console.error('[signup] Supabase user creation failed:', supabaseError.message);
+          // Don't throw - Bubble signup succeeded, log and continue
+        } else {
+          supabaseUserId = supabaseUser.user?.id || null;
+          console.log('[signup] ✅ Supabase Auth user created:', supabaseUserId);
+        }
+      }
+    } catch (supabaseErr) {
+      console.error('[signup] Supabase user creation error:', supabaseErr);
+      // Non-fatal: Bubble signup succeeded, continue with null supabase_user_id
+    }
+
     console.log(`[signup] ========== SIGNUP COMPLETE ==========`);
+    console.log(`[signup]    Bubble User ID: ${userId}`);
+    console.log(`[signup]    Supabase User ID: ${supabaseUserId || 'not created'}`);
 
     // Return authentication data (user is automatically logged in)
     return {
       token,
       user_id: userId,
-      expires
+      expires,
+      supabase_user_id: supabaseUserId
     };
 
   } catch (error) {
