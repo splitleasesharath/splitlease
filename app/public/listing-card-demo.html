@@ -250,6 +250,57 @@
       font-size: 13px;
       color: #666;
     }
+
+    /* ========== VARIATION 2 STYLES ========== */
+    .listing-specs {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 8px;
+    }
+
+    .price-starting {
+      font-size: 13px;
+      color: #888;
+      text-decoration: line-through;
+      margin-bottom: 2px;
+    }
+
+    .message-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: #31135D;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .message-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .availability-note {
+      font-size: 12px;
+      color: #31135D;
+      margin-top: 6px;
+      font-weight: 500;
+    }
+
+    .card-spacer {
+      height: 40px;
+    }
+
+    h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 18px;
+    }
   </style>
 </head>
 <body>
@@ -317,6 +368,61 @@
           <div class="listing-price">
             <span class="price-amount">$89</span>
             <span class="price-period">/night</span>
+          </div>
+        </div>
+      </div>
+    </a>
+
+    <div class="card-spacer"></div>
+
+    <!-- ========== VARIATION 2: One Platt Studio ========== -->
+    <h2>Variation 2: One Platt Studio</h2>
+
+    <a href="#" class="listing-card">
+      <div class="listing-images">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <button class="image-nav prev-btn">‹</button>
+        <button class="image-nav next-btn">›</button>
+        <div class="image-counter">1 / 7</div>
+        <button class="favorite-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="listing-content">
+        <div class="listing-info">
+          <div class="listing-location">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            <span>Civic Center, Manhattan</span>
+          </div>
+          <h3 class="listing-title">One Platt | Studio</h3>
+          <p class="listing-type">Entire Place - 2 guests max</p>
+          <p class="listing-specs">Studio • 1 bathroom</p>
+        </div>
+
+        <div class="listing-footer">
+          <div class="host-info">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S." class="host-avatar">
+            <span class="host-name">Robert S.</span>
+          </div>
+          <div class="listing-price">
+            <div class="price-starting">Starting at $227.50/night</div>
+            <div>
+              <span class="price-amount">$255.94</span>
+              <span class="price-period">/night</span>
+            </div>
+            <button class="message-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+              </svg>
+              Message
+            </button>
+            <div class="availability-note">Message Split Lease for Availability</div>
           </div>
         </div>
       </div>
