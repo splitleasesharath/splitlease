@@ -22,10 +22,11 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
   const scrollToFirstError = useCallback((errorKeys: string[]) => {
     if (errorKeys.length === 0) return;
     const firstErrorKey = errorKeys[0];
-    const element = document.getElementById(firstErrorKey);
+    // For lease styles, we need to scroll to the config section
+    const element = document.getElementById(firstErrorKey) ||
+                   document.querySelector(`.${firstErrorKey.replace('Error', '')}-config`);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      element.focus();
     }
   }, []);
 
@@ -207,8 +208,9 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 
           <div className="nights-counter">
             <span>
-              {getAvailableNightsCount()} Nights Available, {getNotAvailableNightsCount()} Nights
-              Not Available
+              {getAvailableNightsCount() === 7
+                ? 'Full-Nights of the week Availability'
+                : `${getAvailableNightsCount()} Nights Available, ${getNotAvailableNightsCount()} Nights Not Available`}
             </span>
             {getNotAvailableNightsCount() > 0 && (
               <button type="button" className="btn-link" onClick={selectAllNights}>
@@ -221,7 +223,7 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 
       {/* Weekly Configuration */}
       {data.rentalType === 'Weekly' && (
-        <div className="weekly-config">
+        <div className="weekly-config" id="weeklyPattern">
           <h3>Weekly Pattern You're Offering</h3>
           <p className="info-text">This pattern is independent of the beginning of the month</p>
 
@@ -245,7 +247,7 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
 
       {/* Monthly Configuration - Inline Agreement */}
       {data.rentalType === 'Monthly' && (
-        <div className="monthly-config">
+        <div className="monthly-config" id="subsidyAgreement">
           <h3>Monthly Lease Agreement</h3>
           <div className="agreement-text">
             <p>

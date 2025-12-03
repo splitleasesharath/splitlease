@@ -11,37 +11,51 @@
 <body>
     <!-- Header - Matches main Split Lease site -->
     <header class="sl-main-header">
-        <div class="sl-header-container">
-            <a href="/" class="sl-logo">
-                <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=48&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="sl-logo-img">
-                <span class="sl-logo-text">Split Lease</span>
-            </a>
-            <nav class="sl-nav">
-                <a href="/search" class="sl-nav-link">Explore Rentals</a>
-                <a href="/help-center" class="sl-nav-link sl-nav-active">Help Center</a>
-                <a href="/" class="sl-nav-btn">Sign In</a>
-            </nav>
-        </div>
-    </header>
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <a href="/help-center" class="logo">
-                    <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" style="width: 32px; height: 32px; margin-right: 8px;">
-                    Split Lease Help Center
+        <nav class="sl-nav-container">
+            <div class="sl-nav-left">
+                <a href="/" class="sl-logo">
+                    <img src="/assets/images/logo.png" alt="Split Lease" class="sl-logo-img">
+                    <span class="sl-logo-text">Split Lease</span>
                 </a>
-                <nav class="header-nav">
-                    <a href="https://split.lease" class="btn-header" target="_blank">Go to Split Lease</a>
-                </nav>
             </div>
-        </div>
+            <button class="sl-hamburger" aria-label="Toggle navigation menu" onclick="toggleMobileMenu()">
+                <span class="sl-hamburger-line"></span>
+                <span class="sl-hamburger-line"></span>
+                <span class="sl-hamburger-line"></span>
+            </button>
+            <div class="sl-nav-center" id="navCenter">
+                <div class="sl-nav-dropdown">
+                    <a href="#" class="sl-dropdown-trigger">Host with Us<svg class="sl-dropdown-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></a>
+                    <div class="sl-dropdown-menu">
+                        <a href="/list-with-us.html" class="sl-dropdown-item"><span class="sl-dropdown-title">Why List with Us</span><span class="sl-dropdown-desc">New to Split Lease? Learn more about hosting</span></a>
+                        <a href="/host-success" class="sl-dropdown-item"><span class="sl-dropdown-title">Success Stories</span><span class="sl-dropdown-desc">Explore other hosts' feedback</span></a>
+                        <a href="/self-listing" class="sl-dropdown-item"><span class="sl-dropdown-title">List Property</span></a>
+                        <a href="/faq?section=hosts" class="sl-dropdown-item"><span class="sl-dropdown-title">FAQs</span><span class="sl-dropdown-desc">Frequently Asked Questions</span></a>
+                    </div>
+                </div>
+                <div class="sl-nav-dropdown">
+                    <a href="#" class="sl-dropdown-trigger">Stay with Us<svg class="sl-dropdown-arrow" width="12" height="8" viewBox="0 0 12 8" fill="none"><path d="M1 1.5L6 6.5L11 1.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></a>
+                    <div class="sl-dropdown-menu">
+                        <a href="/search" class="sl-dropdown-item"><span class="sl-dropdown-title">Explore Rentals</span><span class="sl-dropdown-desc">See available listings!</span></a>
+                        <a href="/why-split-lease" class="sl-dropdown-item"><span class="sl-dropdown-title">Why Split Lease</span><span class="sl-dropdown-desc">Learn why guests choose Split Lease</span></a>
+                        <a href="/guest-success" class="sl-dropdown-item"><span class="sl-dropdown-title">Success Stories</span><span class="sl-dropdown-desc">Explore other guests' feedback</span></a>
+                        <a href="/faq?section=travelers" class="sl-dropdown-item"><span class="sl-dropdown-title">FAQs</span><span class="sl-dropdown-desc">Frequently Asked Questions</span></a>
+                    </div>
+                </div>
+            </div>
+            <div class="sl-nav-right" id="navRight">
+                <a href="/search" class="sl-explore-btn">Explore Rentals</a>
+                <a href="/" class="sl-nav-link">Sign In</a>
+                <a href="/" class="sl-nav-link">Sign Up</a>
+            </div>
+        </nav>
     </header>
-    <div class="container">
+    <script>function toggleMobileMenu(){document.getElementById('navCenter').classList.toggle('mobile-active');document.getElementById('navRight').classList.toggle('mobile-active');}</script>
+    <div class="container" style="margin-top: 80px;">
         <div class="breadcrumb">
             <a href="/help-center">All Collections</a>
             <i data-feather="chevron-right"></i>
-            <a href="/help-center/knowledge-base.html">Knowledge Base</a>
+            <a href="/help-center/knowledge-base">Knowledge Base</a>
             <i data-feather="chevron-right"></i>
             <span class="current">What Fees Do I Have to Pay Before Signing the Lease</span>
         </div>

@@ -20,6 +20,7 @@ export { isProtectedPage } from './auth/isProtectedPage.js'
 export { isValidPriceTier } from './search/isValidPriceTier.js'
 export { isValidWeekPattern } from './search/isValidWeekPattern.js'
 export { isValidSortOption } from './search/isValidSortOption.js'
+export { hasListingPhotos } from './search/hasListingPhotos.js'
 
 // Proposal Rules
 export { determineProposalStage } from './proposals/determineProposalStage.js'

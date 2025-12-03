@@ -1,0 +1,18 @@
+/* Host Overview Page Component Styles
+ * Note: Main styles are in src/styles/components/host-overview.css
+ * This file is for component-specific overrides if needed
+ */
+
+/* Progress tracker container if added later */
+.progress-tracker-container {
+  margin-top: var(--ho-spacing-2xl, 24px);
+}
+
+/* Any page-specific utility classes */
+.host-overview-hidden {
+  display: none !important;
+}
+
+.host-overview-visible {
+  display: block !important;
+}

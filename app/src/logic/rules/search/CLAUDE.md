@@ -63,6 +63,23 @@
 
 ---
 
+### hasListingPhotos
+[PATH]: ./hasListingPhotos.js
+[INTENT]: Check if a listing has at least one photo for search display
+[SIGNATURE]: ({ listing: object }) => boolean
+[INPUT]:
+  - listing: object (req) - The listing object to check
+[OUTPUT]: boolean - true if listing has at least one photo
+[THROWS]: Error when listing is null or undefined
+[CRITICAL]: Listings without photos MUST NOT appear in search results
+[EXAMPLE]:
+  - `hasListingPhotos({ listing: { 'Features - Photos': ['photo1'] } })` => true
+  - `hasListingPhotos({ listing: { 'Features - Photos': [] } })` => false
+  - `hasListingPhotos({ listing: { 'Features - Photos': null } })` => false
+[DEPENDS_ON]: None (pure function)
+
+---
+
 ## ### VALUE_REFERENCE ###
 
 | Rule | Valid Values |
@@ -108,7 +125,7 @@ function parseSearchParams(urlParams) {
 
 [LOCAL]: None
 [EXTERNAL]: None
-[EXPORTS]: isValidPriceTier, isValidSortOption, isValidWeekPattern
+[EXPORTS]: isValidPriceTier, isValidSortOption, isValidWeekPattern, hasListingPhotos
 
 ---
 
@@ -120,5 +137,15 @@ function parseSearchParams(urlParams) {
 
 ---
 
-**FILE_COUNT**: 3
-**EXPORTS_COUNT**: 3
+## ### SEARCH_CONSTRAINTS ###
+
+Listings MUST satisfy ALL of the following to appear in search results:
+1. `Complete = true`
+2. `Active = true OR Active IS NULL`
+3. Has valid coordinates (`Location - Address` or `Location - slightly different address`)
+4. **Has at least one photo** (`Features - Photos` is not null and not empty)
+
+---
+
+**FILE_COUNT**: 4
+**EXPORTS_COUNT**: 4

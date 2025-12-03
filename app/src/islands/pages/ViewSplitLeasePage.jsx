@@ -2119,8 +2119,8 @@ export default function ViewSplitLeasePage() {
             src={listing.photos[currentPhotoIndex]?.Photo}
             alt={`${listing.Name} - photo ${currentPhotoIndex + 1}`}
             style={{
-              width: isMobile ? '95vw' : '90vw',
-              height: isMobile ? '70vh' : '75vh',
+              maxWidth: isMobile ? '95vw' : '90vw',
+              maxHeight: isMobile ? '75vh' : '80vh',
               objectFit: 'contain',
               marginBottom: isMobile ? '6rem' : '5rem'
             }}
@@ -2129,7 +2129,7 @@ export default function ViewSplitLeasePage() {
 
           <div style={{
             position: 'absolute',
-            bottom: isMobile ? '4rem' : '4.5rem',
+            bottom: isMobile ? '4rem' : '5rem',
             left: '50%',
             transform: 'translateX(-50%)',
             display: 'flex',
