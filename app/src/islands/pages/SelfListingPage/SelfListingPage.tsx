@@ -104,7 +104,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, listingId, listingN
   if (!isOpen) return null;
 
   const handleGoToDashboard = () => {
-    window.location.href = '/host-dashboard.html';
+    window.location.href = `/listing-dashboard.html?listing_id=${listingId}`;
   };
 
   const handleViewListing = () => {
@@ -381,15 +381,12 @@ export const SelfListingPage: React.FC = () => {
     console.log('[SelfListingPage] Auth success callback triggered', result);
     setShowAuthModal(false);
 
-    // Force Header to re-render and check auth state
-    setHeaderKey(prev => prev + 1);
-
     // Show success toast
     const isSignup = result?.isNewUser !== false; // Default to signup message
     showToast(
       isSignup ? 'Account created successfully! Submitting your listing...' : 'Logged in successfully! Submitting your listing...',
       'success',
-      3000
+      4000
     );
 
     // User agreed to terms by signing up (modal shows "By signing up or logging in, you agree to...")
@@ -399,12 +396,17 @@ export const SelfListingPage: React.FC = () => {
       agreedToTerms: true,
     });
 
+    // Force Header to re-render after a brief delay to ensure token is stored
+    setTimeout(() => {
+      setHeaderKey(prev => prev + 1);
+    }, 100);
+
     if (pendingSubmit) {
       setPendingSubmit(false);
-      // Small delay to ensure auth state is fully updated and review data is persisted
+      // Delay submission to ensure auth state is fully updated
       setTimeout(() => {
         proceedWithSubmit();
-      }, 500);
+      }, 300);
     }
   };
 
