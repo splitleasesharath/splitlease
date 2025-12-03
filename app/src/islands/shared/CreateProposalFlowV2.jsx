@@ -479,7 +479,7 @@ export default function CreateProposalFlowV2({
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="currentColor"
+                stroke="#31135D"
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
