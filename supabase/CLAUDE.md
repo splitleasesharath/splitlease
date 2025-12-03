@@ -54,15 +54,11 @@ Configure in Supabase Dashboard → Project Settings → Secrets:
 
 ### BUBBLE_API_BASE_URL
 [VALUE]: https://app.split.lease/version-test/api/1.1
-[USED_BY]: bubble-proxy
+[USED_BY]: bubble-proxy, bubble-auth-proxy
 
 ### BUBBLE_API_KEY
 [VALUE]: See SECRETS_SETUP.md
 [USED_BY]: bubble-proxy, bubble-auth-proxy
-
-### BUBBLE_AUTH_BASE_URL
-[VALUE]: https://upgradefromstr.bubbleapps.io/api/1.1
-[USED_BY]: bubble-auth-proxy
 
 ### OPENAI_API_KEY
 [VALUE]: OpenAI API key

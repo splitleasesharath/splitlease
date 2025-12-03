@@ -72,7 +72,7 @@ POST /bubble-auth-proxy
 
 ## ### REQUIRED_SECRETS ###
 
-[BUBBLE_AUTH_BASE_URL]: https://upgradefromstr.bubbleapps.io/api/1.1
+[BUBBLE_API_BASE_URL]: https://app.split.lease/version-test/api/1.1
 [BUBBLE_API_KEY]: Bubble.io API key
 
 ---

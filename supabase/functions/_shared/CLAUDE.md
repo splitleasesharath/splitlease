@@ -78,8 +78,7 @@ Deno.serve(async (req) => {
 ## ### SECRETS_REQUIRED ###
 
 [BUBBLE_API_KEY]: Required for bubbleSync.ts
-[BUBBLE_API_BASE_URL]: Required for bubbleSync.ts
-[BUBBLE_AUTH_BASE_URL]: Required for auth functions
+[BUBBLE_API_BASE_URL]: Required for bubbleSync.ts and auth functions
 [OPENAI_API_KEY]: Required for openai.ts
 
 ---
