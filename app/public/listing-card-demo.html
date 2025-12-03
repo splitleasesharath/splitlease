@@ -20,8 +20,14 @@
 
     h1 {
       text-align: center;
-      margin-bottom: 40px;
+      margin-bottom: 20px;
       color: #31135D;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 40px;
     }
 
     .card-container {
@@ -29,345 +35,489 @@
       margin: 0 auto;
     }
 
-    /* ========== LISTING CARD STYLES ========== */
-    .listing-card {
-      display: flex;
-      flex-direction: row;
-      background: white;
-      border-radius: 12px;
-      border: 1px solid #e5e7eb;
-      overflow: hidden;
-      text-decoration: none;
-      color: inherit;
-      min-height: 220px;
-      transition: border-color 0.2s ease;
-    }
-
-    .listing-card:hover {
-      border-color: #d1d5db;
-    }
-
-    /* Image Section */
-    .listing-images {
-      position: relative;
-      width: 40%;
-      min-width: 280px;
-      overflow: hidden;
-      background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
-      flex-shrink: 0;
-      align-self: stretch;
-    }
-
-    .listing-images img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-    }
-
-    /* Image Navigation */
-    .image-nav {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(255,255,255,0.9);
-      border: 1px solid rgba(0,0,0,0.1);
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-      font-size: 18px;
-      font-weight: bold;
+    h2 {
       color: #333;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-    }
-
-    .listing-card:hover .image-nav {
-      opacity: 1;
-    }
-
-    .image-nav:hover {
-      background: white;
-    }
-
-    .prev-btn { left: 8px; }
-    .next-btn { right: 8px; }
-
-    /* Image Counter */
-    .image-counter {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
-      background: rgba(0, 0, 0, 0.6);
-      color: white;
-      padding: 4px 8px;
-      border-radius: 12px;
-      font-size: 12px;
+      margin-bottom: 16px;
+      font-size: 16px;
       font-weight: 600;
-      opacity: 0;
-      transition: opacity 0.2s ease;
-    }
-
-    .listing-card:hover .image-counter {
-      opacity: 1;
-    }
-
-    /* Favorite Button */
-    .favorite-btn {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      background: rgba(255, 255, 255, 0.9);
-      border: none;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-
-    .favorite-btn svg {
-      width: 18px;
-      height: 18px;
-      color: #666;
-    }
-
-    /* Content Section */
-    .listing-content {
-      flex: 1;
-      padding: 16px 20px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .listing-location {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13px;
-      color: #666;
-      margin-bottom: 6px;
-    }
-
-    .listing-location svg {
-      width: 14px;
-      height: 14px;
-      color: #31135D;
-    }
-
-    .listing-title {
-      font-size: 17px;
-      font-weight: 600;
-      color: #111;
-      margin-bottom: 4px;
-      line-height: 1.3;
-    }
-
-    .listing-type {
-      font-size: 14px;
-      color: #666;
-      margin-bottom: 8px;
-    }
-
-    .listing-amenities {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 8px;
-    }
-
-    .amenity-item {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 13px;
-      color: #555;
-    }
-
-    .amenity-item svg {
-      width: 16px;
-      height: 16px;
-      color: #31135D;
-    }
-
-    .listing-description {
-      font-size: 14px;
-      color: #666;
-      line-height: 1.5;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    /* Footer */
-    .listing-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px solid #f0f0f0;
-    }
-
-    .host-info {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .host-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      object-fit: cover;
-    }
-
-    .host-name {
-      font-size: 13px;
-      color: #666;
-    }
-
-    .listing-price {
-      text-align: right;
-    }
-
-    .price-amount {
-      font-size: 18px;
-      font-weight: 700;
-      color: #31135D;
-    }
-
-    .price-period {
-      font-size: 13px;
-      color: #666;
-    }
-
-    /* ========== VARIATION 2 STYLES ========== */
-    .listing-specs {
-      font-size: 14px;
-      color: #666;
-      margin-bottom: 8px;
-    }
-
-    .price-starting {
-      font-size: 13px;
-      color: #888;
-      text-decoration: line-through;
-      margin-bottom: 2px;
-    }
-
-    .message-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 8px 16px;
-      background: #31135D;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      margin-top: 8px;
-    }
-
-    .message-btn svg {
-      width: 16px;
-      height: 16px;
-    }
-
-    .availability-note {
-      font-size: 12px;
-      color: #31135D;
-      margin-top: 6px;
-      font-weight: 500;
     }
 
     .card-spacer {
       height: 40px;
     }
 
-    h2 {
+    /* ========== VARIATION A: Clean & Minimal ========== */
+    .card-a {
+      display: flex;
+      background: white;
+      border-radius: 12px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s ease;
+    }
+
+    .card-a:hover {
+      border-color: #d1d5db;
+    }
+
+    .card-a .image-section {
+      position: relative;
+      width: 300px;
+      flex-shrink: 0;
+      align-self: stretch;
+      overflow: hidden;
+    }
+
+    .card-a .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-a .image-nav {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(255,255,255,0.9);
+      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s;
+      font-size: 16px;
       color: #333;
-      margin-bottom: 20px;
+    }
+
+    .card-a:hover .image-nav { opacity: 1; }
+    .card-a .prev { left: 8px; }
+    .card-a .next { right: 8px; }
+
+    .card-a .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .card-a .content {
+      flex: 1;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-a .location {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .card-a .location svg {
+      width: 14px;
+      height: 14px;
+      color: #31135D;
+    }
+
+    .card-a .title {
       font-size: 18px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 4px;
+    }
+
+    .card-a .type {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 2px;
+    }
+
+    .card-a .specs {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .card-a .footer {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+
+    .card-a .host {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-a .host img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .card-a .host-name {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .card-a .pricing {
+      text-align: right;
+    }
+
+    .card-a .price-old {
+      font-size: 12px;
+      color: #999;
+      text-decoration: line-through;
+    }
+
+    .card-a .price-current {
+      font-size: 20px;
+      font-weight: 700;
+      color: #31135D;
+    }
+
+    .card-a .price-current span {
+      font-size: 13px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    /* ========== VARIATION B: Compact with CTA ========== */
+    .card-b {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      border: 1px solid #e5e7eb;
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-b:hover {
+      border-color: #c7d2fe;
+    }
+
+    .card-b .image-section {
+      position: relative;
+      width: 260px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-b .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-b .image-counter {
+      position: absolute;
+      bottom: 8px;
+      left: 8px;
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+    }
+
+    .card-b .content {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-b .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+
+    .card-b .location {
+      font-size: 12px;
+      color: #31135D;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .card-b .price-badge {
+      background: #f0e6ff;
+      color: #31135D;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .card-b .title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 6px;
+    }
+
+    .card-b .details {
+      font-size: 14px;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .card-b .footer {
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-b .host {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-b .host img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+    }
+
+    .card-b .host-name {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-b .cta-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .card-b .cta-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* ========== VARIATION C: Info Dense ========== */
+    .card-c {
+      display: flex;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-c:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+
+    .card-c .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-c .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-c .image-counter {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: white;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .card-c .content {
+      flex: 1;
+      padding: 16px 20px;
+    }
+
+    .card-c .header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .card-c .title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #111;
+    }
+
+    .card-c .location {
+      font-size: 13px;
+      color: #31135D;
+    }
+
+    .card-c .pricing {
+      text-align: right;
+    }
+
+    .card-c .price-old {
+      font-size: 12px;
+      color: #999;
+      text-decoration: line-through;
+    }
+
+    .card-c .price-main {
+      font-size: 22px;
+      font-weight: 700;
+      color: #31135D;
+    }
+
+    .card-c .price-main span {
+      font-size: 12px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-c .meta {
+      display: flex;
+      gap: 16px;
+      padding: 12px 0;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+      margin-bottom: 12px;
+    }
+
+    .card-c .meta-item {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-c .meta-item strong {
+      color: #111;
+    }
+
+    .card-c .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-c .host {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-c .host img {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+    }
+
+    .card-c .host-info .name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #111;
+    }
+
+    .card-c .host-info .label {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .card-c .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .card-c .btn-outline {
+      padding: 8px 14px;
+      border: 1px solid #31135D;
+      background: white;
+      color: #31135D;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+    }
+
+    .card-c .btn-primary {
+      padding: 8px 14px;
+      border: none;
+      background: #31135D;
+      color: white;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>Listing Card Demo</h1>
+  <h1>Listing Card Variations</h1>
+  <p class="subtitle">One Platt | Studio - Finding the perfect card design</p>
 
   <div class="card-container">
-    <a href="#" class="listing-card">
-      <div class="listing-images">
-        <img src="https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop" alt="Apartment">
-        <button class="image-nav prev-btn">‹</button>
-        <button class="image-nav next-btn">›</button>
-        <div class="image-counter">1 / 5</div>
-        <button class="favorite-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-        </button>
+
+    <!-- VARIATION A: Clean & Minimal -->
+    <h2>A. Clean & Minimal</h2>
+    <a href="#" class="card-a">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <button class="image-nav prev">‹</button>
+        <button class="image-nav next">›</button>
+        <div class="image-counter">1 / 7</div>
       </div>
-
-      <div class="listing-content">
-        <div class="listing-info">
-          <div class="listing-location">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
-            <span>Williamsburg, Brooklyn</span>
-          </div>
-          <h3 class="listing-title">Sunny Private Room in Modern Apartment</h3>
-          <p class="listing-type">Private Room - 2 guests max</p>
-
-          <div class="listing-amenities">
-            <span class="amenity-item">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
-              </svg>
-              WiFi
-            </span>
-            <span class="amenity-item">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="7" width="20" height="15" rx="2" ry="2"/>
-                <polyline points="17 2 12 7 7 2"/>
-              </svg>
-              AC
-            </span>
-            <span class="amenity-item">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-              </svg>
-              Washer
-            </span>
-          </div>
-
-          <p class="listing-description">
-            Beautiful sun-filled room in a newly renovated apartment. Walking distance to the L train and plenty of restaurants and cafes nearby.
-          </p>
+      <div class="content">
+        <div class="location">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Civic Center, Manhattan
         </div>
-
-        <div class="listing-footer">
-          <div class="host-info">
-            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" alt="Host" class="host-avatar">
-            <span class="host-name">Hosted by Alex</span>
+        <h3 class="title">One Platt | Studio</h3>
+        <p class="type">Entire Place · 2 guests max</p>
+        <p class="specs">Studio · 1 bathroom</p>
+        <div class="footer">
+          <div class="host">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+            <span class="host-name">Robert S.</span>
           </div>
-          <div class="listing-price">
-            <span class="price-amount">$89</span>
-            <span class="price-period">/night</span>
+          <div class="pricing">
+            <div class="price-old">$227.50/night</div>
+            <div class="price-current">$255.94<span>/night</span></div>
           </div>
         </div>
       </div>
@@ -375,58 +525,77 @@
 
     <div class="card-spacer"></div>
 
-    <!-- ========== VARIATION 2: One Platt Studio ========== -->
-    <h2>Variation 2: One Platt Studio</h2>
-
-    <a href="#" class="listing-card">
-      <div class="listing-images">
+    <!-- VARIATION B: Compact with CTA -->
+    <h2>B. Compact with CTA</h2>
+    <a href="#" class="card-b">
+      <div class="image-section">
         <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
-        <button class="image-nav prev-btn">‹</button>
-        <button class="image-nav next-btn">›</button>
         <div class="image-counter">1 / 7</div>
-        <button class="favorite-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-          </svg>
-        </button>
       </div>
-
-      <div class="listing-content">
-        <div class="listing-info">
-          <div class="listing-location">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
-              <circle cx="12" cy="10" r="3"/>
-            </svg>
-            <span>Civic Center, Manhattan</span>
-          </div>
-          <h3 class="listing-title">One Platt | Studio</h3>
-          <p class="listing-type">Entire Place - 2 guests max</p>
-          <p class="listing-specs">Studio • 1 bathroom</p>
+      <div class="content">
+        <div class="top-row">
+          <span class="location">Civic Center, Manhattan</span>
+          <span class="price-badge">$255.94/night</span>
         </div>
-
-        <div class="listing-footer">
-          <div class="host-info">
-            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S." class="host-avatar">
+        <h3 class="title">One Platt | Studio</h3>
+        <p class="details">Entire Place · 2 guests · Studio · 1 bath</p>
+        <div class="footer">
+          <div class="host">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
             <span class="host-name">Robert S.</span>
           </div>
-          <div class="listing-price">
-            <div class="price-starting">Starting at $227.50/night</div>
-            <div>
-              <span class="price-amount">$255.94</span>
-              <span class="price-period">/night</span>
+          <button class="cta-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Message
+          </button>
+        </div>
+      </div>
+    </a>
+
+    <div class="card-spacer"></div>
+
+    <!-- VARIATION C: Info Dense -->
+    <h2>C. Info Dense</h2>
+    <a href="#" class="card-c">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="header">
+          <div>
+            <h3 class="title">One Platt | Studio</h3>
+            <span class="location">Civic Center, Manhattan</span>
+          </div>
+          <div class="pricing">
+            <div class="price-old">$227.50/night</div>
+            <div class="price-main">$255.94<span>/night</span></div>
+          </div>
+        </div>
+        <div class="meta">
+          <span class="meta-item"><strong>Entire Place</strong></span>
+          <span class="meta-item"><strong>2</strong> guests</span>
+          <span class="meta-item"><strong>Studio</strong></span>
+          <span class="meta-item"><strong>1</strong> bathroom</span>
+        </div>
+        <div class="footer">
+          <div class="host">
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+            <div class="host-info">
+              <div class="name">Robert S.</div>
+              <div class="label">Host</div>
             </div>
-            <button class="message-btn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-              </svg>
-              Message
-            </button>
-            <div class="availability-note">Message Split Lease for Availability</div>
+          </div>
+          <div class="actions">
+            <button class="btn-outline">View Details</button>
+            <button class="btn-primary">Message</button>
           </div>
         </div>
       </div>
     </a>
+
   </div>
 </body>
 </html>
