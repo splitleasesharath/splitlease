@@ -1,83 +1,24 @@
 import { useState, useEffect } from 'react';
 import Header from '../../shared/Header.jsx';
 import Footer from '../../shared/Footer.jsx';
+import { supabase } from '../../../lib/supabase.js';
 import './AboutUsPage.css';
 
-// Team member data - replicated from ZAT-Split Lease Team database structure
-const teamMembers = [
-  {
-    id: 1,
-    name: "Sharath Koppu",
-    title: "CEO & Co-Founder",
-    image: "/assets/images/team/placeholder.svg",
-    clickThroughLink: "https://www.linkedin.com/in/sharathkoppu/",
-    active: true,
-    order: 1
-  },
-  {
-    id: 2,
-    name: "Alex Chen",
-    title: "CTO & Co-Founder",
-    image: "/assets/images/team/placeholder.svg",
-    clickThroughLink: "https://www.linkedin.com/",
-    active: true,
-    order: 2
-  },
-  {
-    id: 3,
-    name: "Jordan Martinez",
-    title: "Head of Operations",
-    image: "/assets/images/team/placeholder.svg",
-    clickThroughLink: "https://www.linkedin.com/",
-    active: true,
-    order: 3
-  },
-  {
-    id: 4,
-    name: "Taylor Brooks",
-    title: "Head of Product",
-    image: "/assets/images/team/placeholder.svg",
-    clickThroughLink: "https://www.linkedin.com/",
-    active: true,
-    order: 4
-  },
-  {
-    id: 5,
-    name: "Morgan Lee",
-    title: "Lead Designer",
-    image: "/assets/images/team/placeholder.svg",
-    clickThroughLink: "https://www.linkedin.com/",
-    active: true,
-    order: 5
-  },
-  {
-    id: 6,
-    name: "Casey Williams",
-    title: "Business Development",
-    image: "/assets/images/team/placeholder.svg",
-    clickThroughLink: "https://www.linkedin.com/",
-    active: true,
-    order: 6
-  },
-  {
-    id: 7,
-    name: "Riley Johnson",
-    title: "Customer Success",
-    image: "/assets/images/team/placeholder.svg",
-    clickThroughLink: "https://www.linkedin.com/",
-    active: true,
-    order: 7
-  },
-  {
-    id: 8,
-    name: "Jamie Kim",
-    title: "Marketing Lead",
-    image: "/assets/images/team/placeholder.svg",
-    clickThroughLink: "https://www.linkedin.com/",
-    active: true,
-    order: 8
+/**
+ * Formats image URL from Supabase to ensure it has the correct protocol
+ * @param {string} imageUrl - The image URL from the database
+ * @returns {string} - Properly formatted image URL
+ */
+function formatImageUrl(imageUrl) {
+  if (!imageUrl) return '/assets/images/team/placeholder.svg';
+
+  // If URL starts with //, add https:
+  if (imageUrl.startsWith('//')) {
+    return `https:${imageUrl}`;
   }
-];
+
+  return imageUrl;
+}
 
 function TeamCard({ member }) {
   const [imageError, setImageError] = useState(false);
@@ -88,12 +29,18 @@ function TeamCard({ member }) {
     }
   };
 
+  const imageUrl = formatImageUrl(member.image);
+
   return (
-    <div className="about-team-card" onClick={handleClick} data-member-id={member.id}>
+    <div
+      className={`about-team-card ${member.clickThroughLink ? 'clickable' : ''}`}
+      onClick={handleClick}
+      data-member-id={member.id}
+    >
       <div className="about-team-image" style={imageError ? { backgroundColor: '#4B47CE' } : {}}>
         {!imageError && (
           <img
-            src={member.image}
+            src={imageUrl}
             alt={member.name}
             onError={() => setImageError(true)}
           />
@@ -105,10 +52,60 @@ function TeamCard({ member }) {
   );
 }
 
+function TeamSkeleton() {
+  return (
+    <div className="about-team-card about-team-skeleton">
+      <div className="about-team-image skeleton-pulse"></div>
+      <div className="about-team-name skeleton-pulse skeleton-text"></div>
+      <div className="about-team-title skeleton-pulse skeleton-text-small"></div>
+    </div>
+  );
+}
+
 export default function AboutUsPage() {
-  const activeMembers = teamMembers
-    .filter(member => member.active)
-    .sort((a, b) => a.order - b.order);
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchTeamMembers() {
+      try {
+        console.log('[AboutUsPage] Fetching team members from Supabase...');
+
+        const { data, error: fetchError } = await supabase
+          .from('zat_splitleaseteam')
+          .select('_id, name, title, image, "click through link", "order"')
+          .eq('active', true)
+          .order('order', { ascending: true });
+
+        if (fetchError) {
+          console.error('[AboutUsPage] Error fetching team members:', fetchError);
+          setError(fetchError.message);
+          return;
+        }
+
+        // Transform data to match component expectations
+        const transformedData = data.map(member => ({
+          id: member._id,
+          name: member.name,
+          title: member.title,
+          image: member.image,
+          clickThroughLink: member['click through link'],
+          order: member.order
+        }));
+
+        console.log('[AboutUsPage] Fetched team members:', transformedData.length);
+        setTeamMembers(transformedData);
+      } catch (err) {
+        console.error('[AboutUsPage] Unexpected error:', err);
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchTeamMembers();
+  }, []);
 
   return (
     <>
@@ -166,9 +163,23 @@ export default function AboutUsPage() {
             <h2 className="about-section-heading-large">Meet the Team Empowering Multi-Locality</h2>
 
             <div className="about-team-grid">
-              {activeMembers.map(member => (
-                <TeamCard key={member.id} member={member} />
-              ))}
+              {isLoading ? (
+                // Show skeleton loaders while loading
+                <>
+                  <TeamSkeleton />
+                  <TeamSkeleton />
+                  <TeamSkeleton />
+                  <TeamSkeleton />
+                </>
+              ) : error ? (
+                <p className="about-team-error">Unable to load team members. Please try again later.</p>
+              ) : teamMembers.length === 0 ? (
+                <p className="about-team-empty">No team members to display.</p>
+              ) : (
+                teamMembers.map(member => (
+                  <TeamCard key={member.id} member={member} />
+                ))
+              )}
             </div>
           </div>
         </section>

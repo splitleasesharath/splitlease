@@ -317,6 +317,69 @@
 }
 
 /* ==========================================================================
+   SKELETON LOADING STATES
+   ========================================================================== */
+
+.about-team-skeleton {
+  cursor: default;
+}
+
+.about-team-skeleton:hover {
+  transform: none;
+}
+
+.skeleton-pulse {
+  background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-text {
+  height: 24px;
+  width: 120px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.skeleton-text-small {
+  height: 18px;
+  width: 100px;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-pulse {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* Error and empty states */
+.about-team-error,
+.about-team-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--about-secondary-text);
+  font-size: 16px;
+  padding: 40px 20px;
+}
+
+/* Clickable team card cursor */
+.about-team-card.clickable {
+  cursor: pointer;
+}
+
+.about-team-card:not(.clickable) {
+  cursor: default;
+}
+
+.about-team-card:not(.clickable):hover {
+  transform: none;
+}
+
+/* ==========================================================================
    UTILITY CLASSES
    ========================================================================== */
 
