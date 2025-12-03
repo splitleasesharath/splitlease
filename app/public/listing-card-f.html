@@ -992,14 +992,22 @@
       margin-bottom: 6px;
     }
 
-    .card-f6 .specs {
-      font-size: 13px;
-      color: #666;
+    .card-f6 .meta {
+      display: flex;
+      gap: 16px;
+      padding: 12px 0;
+      border-top: 1px solid #f0f0f0;
+      border-bottom: 1px solid #f0f0f0;
+      margin: 12px 0;
     }
 
-    .card-f6 .specs .dot {
-      margin: 0 4px;
-      color: #ccc;
+    .card-f6 .meta-item {
+      font-size: 13px;
+      color: #555;
+    }
+
+    .card-f6 .meta-item strong {
+      color: #111;
     }
 
     .card-f6 .pricing {
@@ -1370,15 +1378,12 @@
               Civic Center, Manhattan
             </div>
             <h3 class="title">One Platt | Studio</h3>
-            <div class="specs">
-              <span>Entire Place</span>
-              <span class="dot">·</span>
-              <span>2 guests</span>
-              <span class="dot">·</span>
-              <span>Studio</span>
-              <span class="dot">·</span>
-              <span>1 bath</span>
-            </div>
+          </div>
+          <div class="meta">
+            <span class="meta-item"><strong>Entire Place</strong></span>
+            <span class="meta-item"><strong>2</strong> guests</span>
+            <span class="meta-item"><strong>Studio</strong></span>
+            <span class="meta-item"><strong>1</strong> bath</span>
           </div>
           <div class="pricing">
             <div class="price-starting">Starting at $227.50/night</div>
