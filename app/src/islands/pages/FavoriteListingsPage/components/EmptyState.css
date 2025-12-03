@@ -1,0 +1,83 @@
+/**
+ * EmptyState Styles
+ * Displayed when user has no favorite listings
+ */
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+  padding: 48px 24px;
+}
+
+.empty-state-content {
+  max-width: 525px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+/* Icon */
+.empty-state-icon {
+  width: 64px;
+  height: 64px;
+  color: #CCCCCC;
+  stroke-width: 1.5;
+}
+
+/* Message Text */
+.empty-state-message {
+  font-family: 'Lato', sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+  color: #424242;
+  line-height: 1.25;
+  margin: 0;
+}
+
+/* CTA Button */
+.empty-state-cta {
+  padding: 12px 32px;
+  background-color: #3E3161;
+  color: #FFFFFF;
+  border: 1px double #6B6B6B;
+  border-radius: 0px;
+  font-family: 'Lato', sans-serif;
+  font-size: 24px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  min-width: 200px;
+}
+
+.empty-state-cta:hover {
+  background-color: #9DA9E8;
+}
+
+.empty-state-cta:active {
+  background-color: #6C7FEB;
+}
+
+/* Responsive: Mobile (< 900px) */
+@media (max-width: 900px) {
+  .empty-state {
+    min-height: 400px;
+    padding: 32px 16px;
+  }
+
+  .empty-state-content {
+    max-width: 100%;
+  }
+
+  .empty-state-message {
+    font-size: 20px;
+  }
+
+  .empty-state-cta {
+    width: 85%;
+    font-size: 20px;
+  }
+}

@@ -1,0 +1,160 @@
+/**
+ * MapView Styles
+ * Styles for interactive map with price pins
+ * Full-height display for side-by-side layout
+ */
+
+.map-view-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  overflow: hidden;
+  box-shadow: none;
+}
+
+.map-view {
+  width: 100%;
+  height: 100%;
+}
+
+/* Map Loading State */
+.map-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #F5F5F5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.map-loading .loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #E0E0E0;
+  border-top-color: #3E3161;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.map-loading p {
+  font-size: 16px;
+  color: #666666;
+}
+
+/* Price Pin Markers */
+.price-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+.price-pin {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.price-pin:hover {
+  transform: scale(1.1);
+  z-index: 1000 !important;
+}
+
+.price-pin.selected {
+  transform: scale(1.15);
+  z-index: 1001 !important;
+}
+
+.price-pin-content {
+  background: #FFFFFF;
+  color: #3E3161;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 700;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+  border: 2px solid #3E3161;
+  font-family: 'Lato', sans-serif;
+}
+
+.price-pin.selected .price-pin-content {
+  background: #3E3161;
+  color: #FFFFFF;
+}
+
+.price-pin-arrow {
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #3E3161;
+  margin: -1px auto 0;
+}
+
+.price-pin.selected .price-pin-arrow {
+  border-top-color: #3E3161;
+}
+
+/* Map Popup */
+.map-popup {
+  font-family: 'Lato', sans-serif;
+  padding: 4px 0;
+}
+
+.map-popup h4 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #424242;
+}
+
+.map-popup p {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #666666;
+}
+
+.map-popup-price {
+  font-size: 16px;
+  font-weight: 700;
+  color: #3E3161 !important;
+}
+
+.map-popup-features {
+  font-size: 13px;
+  color: #888888 !important;
+}
+
+/* Leaflet Popup Customization */
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.leaflet-popup-tip {
+  background: white;
+}
+
+/* Mobile Responsive */
+@media (max-width: 900px) {
+  .map-view-container {
+    height: 400px;
+  }
+
+  .price-pin-content {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+}

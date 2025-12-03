@@ -1,0 +1,376 @@
+/**
+ * ListingCard Styles (Enhanced)
+ * Matching Bubble.io vertical card layout
+ * Includes: Proposal badges, Host profiles, Action buttons
+ */
+
+/* Enhanced Card (Bubble.io Style) */
+.listing-card-enhanced {
+  display: flex;
+  flex-direction: column;
+  background: #FFFFFF;
+  border: 1px solid #E0E0E0;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.1s;
+  position: relative;
+}
+
+.listing-card-enhanced:hover {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+/* Photo Container */
+.listing-photo-container-enhanced {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  background-color: #F5F5F5;
+}
+
+.listing-photo-container-enhanced .listing-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.listing-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #E0E0E0;
+  color: #999999;
+}
+
+/* Photo Navigation */
+.photo-navigation {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.listing-photo-container-enhanced:hover .photo-navigation {
+  opacity: 1;
+}
+
+.photo-nav-button {
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: 50%;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+  color: #424242;
+}
+
+.photo-nav-button:hover:not(.disabled) {
+  background-color: #FFFFFF;
+}
+
+.photo-nav-button.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Photo Counter */
+.photo-counter {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: #FFFFFF;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 400;
+}
+
+/* Proposal Badge (Top Left) */
+.proposal-badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+}
+
+.proposal-ribbon {
+  width: 0;
+  height: 0;
+  border-left: 40px solid #6C5CE7;
+  border-bottom: 40px solid transparent;
+}
+
+.proposal-text {
+  position: absolute;
+  top: 8px;
+  left: 6px;
+  color: white;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  transform: rotate(-45deg);
+  font-family: 'Lato', sans-serif;
+}
+
+/* New Listing Badge */
+.new-listing-badge {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(108, 92, 231, 0.95);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+  z-index: 10;
+}
+
+/* Favorite Button (Top Right) */
+.favorite-button-container-enhanced {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 10;
+}
+
+/* Enhanced Details Section */
+.listing-details-enhanced {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Location Row */
+.listing-location-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #6C5CE7;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'Lato', sans-serif;
+}
+
+.listing-location-row svg {
+  flex-shrink: 0;
+}
+
+/* Listing Name */
+.listing-name-enhanced {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #424242;
+  font-family: 'Lato', sans-serif;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+.listing-name-enhanced:hover {
+  color: #6C5CE7;
+}
+
+/* Guest Capacity */
+.listing-capacity {
+  font-size: 14px;
+  color: #666666;
+  font-family: 'Lato', sans-serif;
+  font-weight: 500;
+}
+
+/* Features */
+.listing-features-enhanced {
+  font-size: 14px;
+  color: #424242;
+  font-family: 'Lato', sans-serif;
+}
+
+/* Listing Footer (Host + Pricing) */
+.listing-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-top: 12px;
+  border-top: 1px solid #F0F0F0;
+  margin-top: 8px;
+}
+
+/* Host Profile */
+.host-profile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.host-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6C5CE7 0%, #8A7FF9 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  font-family: 'Lato', sans-serif;
+  flex-shrink: 0;
+}
+
+.host-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.host-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #424242;
+  font-family: 'Lato', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.verified-icon {
+  color: #FFD700;
+}
+
+/* Pricing Section */
+.pricing-section {
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.starting-price {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+  font-size: 13px;
+  color: #666666;
+  font-family: 'Lato', sans-serif;
+}
+
+.starting-price svg {
+  color: #999999;
+  cursor: help;
+}
+
+.current-price {
+  font-size: 20px;
+  font-weight: 700;
+  color: #3E3161;
+  font-family: 'Lato', sans-serif;
+}
+
+.availability-message {
+  font-size: 11px;
+  color: #999999;
+  font-family: 'Lato', sans-serif;
+}
+
+/* Action Buttons */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #F0F0F0;
+  margin-top: 8px;
+}
+
+.action-button {
+  flex: 1;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: 'Lato', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.action-button.primary {
+  background: #6C5CE7;
+  color: white;
+}
+
+.action-button.primary:hover {
+  background: #7C6CF7;
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+}
+
+.action-button.secondary {
+  background: white;
+  color: #3E3161;
+  border: 2px solid #3E3161;
+}
+
+.action-button.secondary:hover {
+  background: #F0F4FF;
+}
+
+/* Mobile Responsive for Enhanced Card */
+@media (max-width: 768px) {
+  .listing-photo-container-enhanced {
+    height: 240px;
+  }
+
+  .listing-details-enhanced {
+    padding: 16px;
+  }
+
+  .listing-name-enhanced {
+    font-size: 16px;
+  }
+
+  .listing-footer {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .pricing-section {
+    text-align: left;
+    align-items: flex-start;
+  }
+
+  .starting-price {
+    justify-content: flex-start;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+
+  .action-button {
+    width: 100%;
+  }
+}

@@ -157,7 +157,8 @@ export const Section4Pricing: React.FC<Section4Props> = ({
               <input
                 type="number"
                 id="monthlyCompensation"
-                value={data.monthlyCompensation || 1850}
+                placeholder="1850 (example)"
+                value={data.monthlyCompensation || ''}
                 onChange={(e) =>
                   handleChange('monthlyCompensation', parseInt(e.target.value) || 0)
                 }

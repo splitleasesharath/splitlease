@@ -332,6 +332,7 @@ export default function Header({ autoShowLogin = false }) {
                 <span className="dropdown-title">FAQs</span>
                 <span className="dropdown-desc">Frequently Asked Questions</span>
               </a>
+              {!currentUser && (
               <a
                 href="#"
                 className="dropdown-item"
@@ -345,6 +346,7 @@ export default function Header({ autoShowLogin = false }) {
               >
                 <span className="dropdown-title">Sign Up</span>
               </a>
+              )}
             </div>
           </div>
           )}
@@ -419,6 +421,7 @@ export default function Header({ autoShowLogin = false }) {
                 <span className="dropdown-title">FAQs</span>
                 <span className="dropdown-desc">Frequently Asked Questions</span>
               </a>
+              {!currentUser && (
               <a
                 href="#"
                 className="dropdown-item"
@@ -432,6 +435,7 @@ export default function Header({ autoShowLogin = false }) {
               >
                 <span className="dropdown-title">Sign Up</span>
               </a>
+              )}
             </div>
           </div>
           )}

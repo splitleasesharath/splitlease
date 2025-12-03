@@ -377,7 +377,8 @@ export default function SignUpLoginModal({
   initialView = 'initial',
   onAuthSuccess,
   disableClose = false,
-  defaultUserType = null // 'host' or 'guest' for route-based prefilling
+  defaultUserType = null, // 'host' or 'guest' for route-based prefilling
+  skipReload = false // When true, don't reload page after auth success (for modal flows)
 }) {
   // View state
   const [currentView, setCurrentView] = useState(VIEWS.INITIAL);
@@ -612,9 +613,11 @@ export default function SignUpLoginModal({
         onAuthSuccess(result);
       }
       onClose();
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
+      if (!skipReload) {
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
     } else {
       setError(result.error || 'Signup failed. Please try again.');
     }
@@ -635,7 +638,9 @@ export default function SignUpLoginModal({
         onAuthSuccess(result);
       }
       onClose();
-      window.location.reload();
+      if (!skipReload) {
+        window.location.reload();
+      }
     } else {
       setError(result.error || 'Login failed. Please check your credentials.');
     }

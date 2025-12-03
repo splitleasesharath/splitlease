@@ -9,6 +9,7 @@ interface Section7Props {
   onChange: (data: ReviewData) => void;
   onSubmit: () => void;
   onBack: () => void;
+  onNavigateToSection?: (sectionNum: number) => void;
   isSubmitting: boolean;
 }
 
@@ -18,6 +19,7 @@ export const Section7Review: React.FC<Section7Props> = ({
   onChange,
   onSubmit,
   onBack,
+  onNavigateToSection,
   isSubmitting
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -190,7 +192,7 @@ export const Section7Review: React.FC<Section7Props> = ({
               <p><strong>Bedrooms:</strong> {formData.spaceSnapshot.bedrooms}</p>
               <p><strong>Bathrooms:</strong> {formData.spaceSnapshot.bathrooms}</p>
               <p><strong>Address:</strong> {formData.spaceSnapshot.address.fullAddress}</p>
-              <button type="button" className="btn-link">Edit Section</button>
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(1)}>Edit Section</button>
             </div>
           )}
         </div>
@@ -209,7 +211,7 @@ export const Section7Review: React.FC<Section7Props> = ({
               <p><strong>Amenities Inside:</strong> {formData.features.amenitiesInsideUnit.length} selected</p>
               <p><strong>Amenities Outside:</strong> {formData.features.amenitiesOutsideUnit.length} selected</p>
               <p><strong>Description:</strong> {formData.features.descriptionOfLodging.substring(0, 100)}...</p>
-              <button type="button" className="btn-link">Edit Section</button>
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(2)}>Edit Section</button>
             </div>
           )}
         </div>
@@ -238,7 +240,7 @@ export const Section7Review: React.FC<Section7Props> = ({
               {formData.leaseStyles.rentalType === 'Monthly' && (
                 <p><strong>Subsidy Agreement:</strong> {formData.leaseStyles.subsidyAgreement ? 'Agreed' : 'Not agreed'}</p>
               )}
-              <button type="button" className="btn-link">Edit Section</button>
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(3)}>Edit Section</button>
             </div>
           )}
         </div>
@@ -272,7 +274,7 @@ export const Section7Review: React.FC<Section7Props> = ({
               )}
               <p><strong>Damage Deposit:</strong> ${formData.pricing.damageDeposit}</p>
               <p><strong>Monthly Maintenance Fee:</strong> ${formData.pricing.maintenanceFee}/month</p>
-              <button type="button" className="btn-link">Edit Section</button>
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(4)}>Edit Section</button>
             </div>
           )}
         </div>
@@ -293,7 +295,7 @@ export const Section7Review: React.FC<Section7Props> = ({
               <p><strong>Check-out:</strong> {formData.rules.checkOutTime}</p>
               <p><strong>Max Guests:</strong> {formData.rules.numberOfGuests}</p>
               <p><strong>House Rules:</strong> {formData.rules.houseRules.length} selected</p>
-              <button type="button" className="btn-link">Edit Section</button>
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(5)}>Edit Section</button>
             </div>
           )}
         </div>
@@ -323,7 +325,7 @@ export const Section7Review: React.FC<Section7Props> = ({
               {formData.photos.photos.length > 4 && (
                 <p>+{formData.photos.photos.length - 4} more photos</p>
               )}
-              <button type="button" className="btn-link">Edit Section</button>
+              <button type="button" className="btn-link" onClick={() => onNavigateToSection?.(6)}>Edit Section</button>
             </div>
           )}
         </div>
