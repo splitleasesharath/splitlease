@@ -917,6 +917,179 @@
       width: 14px;
       height: 14px;
     }
+
+    /* ========== F6: Price Left, Host Sidebar Right ========== */
+    .card-f6 {
+      display: flex;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: hidden;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .card-f6:hover { box-shadow: 0 3px 12px rgba(0,0,0,0.12); }
+
+    .card-f6 .image-section {
+      position: relative;
+      width: 280px;
+      flex-shrink: 0;
+      align-self: stretch;
+    }
+
+    .card-f6 .image-section img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-f6 .image-counter {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.6);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+    }
+
+    .card-f6 .content {
+      flex: 1;
+      display: flex;
+    }
+
+    .card-f6 .main-info {
+      flex: 1;
+      padding: 16px 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-f6 .info-top {}
+
+    .card-f6 .location {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .card-f6 .location svg {
+      width: 12px;
+      height: 12px;
+      color: #31135D;
+    }
+
+    .card-f6 .title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 6px;
+    }
+
+    .card-f6 .specs {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .card-f6 .specs .dot {
+      margin: 0 4px;
+      color: #ccc;
+    }
+
+    .card-f6 .pricing {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-f6 .price-starting {
+      font-size: 11px;
+      color: #888;
+    }
+
+    .card-f6 .price-main {
+      font-size: 22px;
+      font-weight: 700;
+      color: #31135D;
+      line-height: 1.2;
+    }
+
+    .card-f6 .price-main span {
+      font-size: 12px;
+      font-weight: 400;
+      color: #666;
+    }
+
+    .card-f6 .availability-note {
+      font-size: 10px;
+      color: #31135D;
+      margin-top: 2px;
+    }
+
+    .card-f6 .host-sidebar {
+      width: 140px;
+      background: #f9f7fc;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-left: 1px solid #f0e6ff;
+    }
+
+    .card-f6 .host-sidebar img {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      margin-bottom: 8px;
+      border: 2px solid white;
+      box-shadow: 0 2px 8px rgba(49, 19, 93, 0.15);
+    }
+
+    .card-f6 .host-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #31135D;
+      margin-bottom: 2px;
+    }
+
+    .card-f6 .host-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .card-f6 .message-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      background: #31135D;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      transition: background 0.2s;
+    }
+
+    .card-f6 .message-btn:hover {
+      background: #250f4a;
+    }
+
+    .card-f6 .message-btn svg {
+      width: 14px;
+      height: 14px;
+    }
   </style>
 </head>
 <body>
@@ -1174,6 +1347,55 @@
               Message
             </button>
           </div>
+        </div>
+      </div>
+    </a>
+
+    <div style="height: 40px;"></div>
+
+    <h2 style="margin-bottom: 16px; font-size: 14px; color: #666;">F6. Price Left, Host Sidebar Right</h2>
+    <a href="#" class="card-f6">
+      <div class="image-section">
+        <img src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop" alt="One Platt Studio">
+        <div class="image-counter">1 / 7</div>
+      </div>
+      <div class="content">
+        <div class="main-info">
+          <div class="info-top">
+            <div class="location">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              Civic Center, Manhattan
+            </div>
+            <h3 class="title">One Platt | Studio</h3>
+            <div class="specs">
+              <span>Entire Place</span>
+              <span class="dot">·</span>
+              <span>2 guests</span>
+              <span class="dot">·</span>
+              <span>Studio</span>
+              <span class="dot">·</span>
+              <span>1 bath</span>
+            </div>
+          </div>
+          <div class="pricing">
+            <div class="price-starting">Starting at $227.50/night</div>
+            <div class="price-main">$255.94<span>/night</span></div>
+            <div class="availability-note">Message Split Lease for Availability</div>
+          </div>
+        </div>
+        <div class="host-sidebar">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" alt="Robert S.">
+          <div class="host-name">Robert S.</div>
+          <div class="host-label">Host</div>
+          <button class="message-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+            Message
+          </button>
         </div>
       </div>
     </a>
