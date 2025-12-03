@@ -1020,11 +1020,11 @@ export default function ViewSplitLeasePage() {
           </section>
 
           {/* Description */}
-          <section style={{ marginBottom: '2rem' }}>
+          <section style={{ marginBottom: '1.5rem' }}>
             <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              marginBottom: '1rem',
+              fontSize: '1.125rem',
+              fontWeight: '600',
+              marginBottom: '0.75rem',
               color: COLORS.TEXT_DARK
             }}>
               Description of Lodging
@@ -1059,11 +1059,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Storage Section */}
           {listing.storageOption && (
-            <section style={{ marginBottom: '2rem' }}>
+            <section style={{ marginBottom: '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Storage
@@ -1109,11 +1109,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Neighborhood Description */}
           {listing['Description - Neighborhood'] && (
-            <section style={{ marginBottom: '2rem' }}>
+            <section style={{ marginBottom: '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Neighborhood
@@ -1150,11 +1150,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Commute Section */}
           {(listing.parkingOption || listing['Time to Station (commute)']) && (
-            <section ref={commuteSectionRef} style={{ marginBottom: '2rem' }}>
+            <section ref={commuteSectionRef} style={{ marginBottom: '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Commute
@@ -1216,11 +1216,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Amenities Section */}
           {(listing.amenitiesInUnit?.length > 0 || listing.safetyFeatures?.length > 0) && (
-            <section ref={amenitiesSectionRef} style={{ marginBottom: '2rem' }}>
+            <section ref={amenitiesSectionRef} style={{ marginBottom: '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Amenities
@@ -1286,11 +1286,11 @@ export default function ViewSplitLeasePage() {
 
           {/* House Rules */}
           {listing.houseRules?.length > 0 && (
-            <section ref={houseRulesSectionRef} style={{ marginBottom: '2rem' }}>
+            <section ref={houseRulesSectionRef} style={{ marginBottom: '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 House Rules
@@ -1317,11 +1317,11 @@ export default function ViewSplitLeasePage() {
           )}
 
           {/* Map Section */}
-          <section ref={mapSectionRef} style={{ marginBottom: '2rem' }}>
+          <section ref={mapSectionRef} style={{ marginBottom: '1.5rem' }}>
             <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: '700',
-              marginBottom: '1rem',
+              fontSize: '1.125rem',
+              fontWeight: '600',
+              marginBottom: '0.75rem',
               color: COLORS.TEXT_DARK
             }}>
               Map
@@ -1361,11 +1361,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Host Section */}
           {listing.host && (
-            <section style={{ marginBottom: '2rem' }}>
+            <section style={{ marginBottom: '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Meet Your Host
@@ -1373,60 +1373,60 @@ export default function ViewSplitLeasePage() {
               <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '1rem',
-                padding: '1.5rem',
+                gap: '0.75rem',
+                padding: '1rem',
                 background: COLORS.BG_LIGHT,
-                borderRadius: '12px'
+                borderRadius: '10px'
               }}>
                 {listing.host['Profile Photo'] && (
                   <img
                     src={listing.host['Profile Photo']}
                     alt={listing.host['Name - First']}
                     style={{
-                      width: '80px',
-                      height: '80px',
+                      width: '48px',
+                      height: '48px',
                       borderRadius: '50%',
                       objectFit: 'cover'
                     }}
                   />
                 )}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '0.25rem' }}>
+                  <div style={{ fontSize: '0.9375rem', fontWeight: '600', marginBottom: '0.125rem' }}>
                     {listing.host['Name - First']} {listing.host['Name - Last']?.charAt(0)}.
                   </div>
-                  <div style={{ color: COLORS.TEXT_LIGHT }}>Host</div>
+                  <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.8125rem' }}>Host</div>
                 </div>
                 <button
                   onClick={() => setShowContactHostModal(true)}
                   style={{
-                    padding: '0.75rem 1.5rem',
+                    padding: '0.5rem 1rem',
                     background: COLORS.PRIMARY,
                     color: 'white',
                     border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '1rem',
+                    borderRadius: '6px',
+                    fontSize: '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '0.5rem',
-                    boxShadow: '0 2px 8px rgba(49, 19, 93, 0.2)'
+                    gap: '0.375rem',
+                    boxShadow: '0 2px 6px rgba(49, 19, 93, 0.2)'
                   }}
                   onMouseEnter={(e) => {
                     e.target.style.background = COLORS.PRIMARY_HOVER;
-                    e.target.style.transform = 'translateY(-2px)';
-                    e.target.style.boxShadow = '0 4px 12px rgba(49, 19, 93, 0.3)';
+                    e.target.style.transform = 'translateY(-1px)';
+                    e.target.style.boxShadow = '0 3px 8px rgba(49, 19, 93, 0.25)';
                   }}
                   onMouseLeave={(e) => {
                     e.target.style.background = COLORS.PRIMARY;
                     e.target.style.transform = '';
-                    e.target.style.boxShadow = '0 2px 8px rgba(49, 19, 93, 0.2)';
+                    e.target.style.boxShadow = '0 2px 6px rgba(49, 19, 93, 0.2)';
                   }}
                 >
                   <svg
-                    width="20"
-                    height="20"
+                    width="16"
+                    height="16"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -1444,11 +1444,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Cancellation Policy */}
           {listing.cancellationPolicy && (
-            <section style={{ marginBottom: '2rem' }}>
+            <section style={{ marginBottom: '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.5rem',
-                fontWeight: '700',
-                marginBottom: '1rem',
+                fontSize: '1.125rem',
+                fontWeight: '600',
+                marginBottom: '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Cancellation Policy
