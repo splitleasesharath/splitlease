@@ -101,3 +101,6 @@ plan/
 Deprecated/
 desktop.ini
 nul
+
+# Implementation directory
+Implementation/
