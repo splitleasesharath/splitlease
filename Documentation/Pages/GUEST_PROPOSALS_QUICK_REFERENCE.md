@@ -10,11 +10,57 @@
 
 **IMPORTANT**: This page requires authenticated Guest users only.
 
-| Condition | Action |
-|-----------|--------|
-| Not logged in | Redirect to `/` (home) |
-| Logged in as Host | Redirect to `/` (home) |
-| Logged in as Guest | Show proposals page |
+### Access Control Matrix
+| Condition | Action | Redirect Reason |
+|-----------|--------|-----------------|
+| Not logged in | Redirect to `/` (home) | `NOT_AUTHENTICATED` |
+| Logged in as Host | Redirect to `/` (home) | `NOT_GUEST` |
+| Logged in as Guest | Show proposals page | N/A |
+
+### Auth State Object
+The hook maintains an `authState` object with the following structure:
+```javascript
+const [authState, setAuthState] = useState({
+  isChecking: true,      // Currently validating auth
+  isAuthenticated: false, // User has valid session
+  isGuest: false,         // User type is 'Guest'
+  shouldRedirect: false,  // Redirect triggered
+  redirectReason: null    // 'NOT_AUTHENTICATED' | 'NOT_GUEST' | null
+});
+```
+
+### Auth Check Flow
+```
+1. Page loads → authState.isChecking = true
+2. Clean legacy URL patterns (cleanLegacyUserIdFromUrl)
+3. Check auth status (checkAuthStatus)
+   ├─ Not authenticated → redirect to /
+   └─ Authenticated → check user type (getUserType)
+       ├─ Not Guest → redirect to /
+       └─ Is Guest → load proposals
+```
+
+### Key Auth Functions Used
+```javascript
+import { checkAuthStatus, getUserType } from 'lib/auth.js'
+import { getSessionId } from 'lib/secureStorage.js'
+
+// Check if user is logged in
+const isAuthenticated = await checkAuthStatus()
+
+// Get user type ('Host' or 'Guest')
+const userType = getUserType()
+
+// Get user ID from secure session storage
+const userId = getSessionId()
+```
+
+### Session Storage Keys
+| Key | Storage Key | Purpose |
+|-----|-------------|---------|
+| Auth Token | `__sl_at__` | Bearer token (encrypted) |
+| Session ID | `__sl_sid__` | User ID / Bubble unique ID |
+| User Type | `sl_user_type` | 'Host' or 'Guest' |
 
 User ID comes from **session storage** (`getSessionId()`), NOT from URL.
 Legacy URLs with user ID in path or query are cleaned automatically.
@@ -114,10 +160,16 @@ guest-proposals.jsx (Entry Point)
 ### Library Utilities
 | File | Purpose |
 |------|---------|
-| `app/src/lib/proposals/userProposalQueries.js` | Supabase proposal queries |
+| `app/src/lib/proposals/userProposalQueries.js` | Session-based Supabase proposal queries |
 | `app/src/lib/proposals/dataTransformers.js` | Data transformation utilities |
 | `app/src/lib/proposals/statusButtonConfig.js` | Status -> button mapping |
-| `app/src/lib/proposals/urlParser.js` | URL parsing for userId/proposalId |
+| `app/src/lib/proposals/urlParser.js` | Session-based user ID + URL proposal ID |
+
+### Authentication Utilities
+| File | Purpose |
+|------|---------|
+| `app/src/lib/auth.js` | checkAuthStatus, getUserType |
+| `app/src/lib/secureStorage.js` | getSessionId (user ID from session) |
 
 ### Styles
 | File | Purpose |
@@ -339,13 +391,59 @@ const buttonStates = useProposalButtonStates({
 
 ## ### DATA_FLOW ###
 
-### 1. Fetch Proposals
+### Complete Data Flow (Session-Based)
+```
+1. Auth Check
+   └─ checkAuthStatus() → getUserType() → validate Guest
+
+2. Get User ID from Session
+   └─ getUserIdFromSession() → getSessionId() from secure storage
+
+3. Fetch User with Proposals List
+   └─ fetchUserWithProposalList(userId)
+       └─ SELECT _id, "Name - First", "Proposals List" FROM user
+
+4. Extract Proposal IDs
+   └─ extractProposalIds(user) → parse "Proposals List" JSONB
+
+5. Fetch Proposals by IDs
+   └─ fetchProposalsByIds(proposalIds)
+       ├─ Fetch proposals from 'proposal' table
+       ├─ Fetch listings from 'listing' table
+       ├─ Fetch hosts from 'user' table (via Host / Landlord)
+       ├─ Fetch guests from 'user' table
+       ├─ Fetch boroughs from 'zat_geo_borough_toplevel'
+       ├─ Fetch neighborhoods from 'zat_geo_hood_mediumlevel'
+       ├─ Fetch house rules from 'zat_features_houserule'
+       ├─ Fetch featured photos from 'listing_photo'
+       └─ Fetch virtual meetings from 'virtualmeetingschedulesandlinks'
+
+6. Enrich & Return
+   └─ Manual joins to create enriched proposal objects
+```
+
+### 1. Fetch Proposals (Session-Based)
 ```javascript
 // In useGuestProposalsPageLogic.js
-import { fetchUserProposals, fetchProposalWithDetails } from 'lib/proposals/userProposalQueries.js'
+import { fetchUserProposalsFromUrl } from 'lib/proposals/userProposalQueries.js'
 
-const proposals = await fetchUserProposals(userId)
-const detailedProposal = await fetchProposalWithDetails(proposalId)
+// User ID comes from session, NOT passed as parameter
+const { user, proposals, selectedProposal } = await fetchUserProposalsFromUrl()
+```
+
+### Main Query Function
+```javascript
+// userProposalQueries.js - fetchUserProposalsFromUrl()
+export async function fetchUserProposalsFromUrl() {
+  // Step 1: Get user ID from session (NOT URL)
+  const userId = getUserIdFromSession();
+  if (!userId) {
+    throw new Error('NOT_AUTHENTICATED');
+  }
+
+  // Step 2-6: Fetch and enrich data...
+  return { user, proposals, selectedProposal };
+}
 ```
 
 ### 2. Transform Data
@@ -639,6 +737,10 @@ Shows host verification badges and featured listing:
 ## ### KEY_IMPORTS ###
 
 ```javascript
+// Authentication
+import { checkAuthStatus, getUserType } from 'lib/auth.js'
+import { getSessionId } from 'lib/secureStorage.js'
+
 // Page hook
 import { useGuestProposalsPageLogic } from './proposals/useGuestProposalsPageLogic'
 
@@ -668,11 +770,46 @@ import { processProposalData, getEffectiveTerms } from 'logic/processors/proposa
 import { executeCancelProposal, determineCancellationCondition } from 'logic/workflows/proposals/cancelProposalWorkflow.js'
 import { navigateToListing, navigateToMessaging } from 'logic/workflows/proposals/navigationWorkflow.js'
 
-// Queries
-import { fetchUserProposals, fetchProposalWithDetails } from 'lib/proposals/userProposalQueries.js'
+// Queries (session-based)
+import { fetchUserProposalsFromUrl } from 'lib/proposals/userProposalQueries.js'
 
-// URL utilities
-import { parseProposalPageUrl, updateUrlWithProposal } from 'lib/proposals/urlParser.js'
+// URL utilities (session-based)
+import {
+  getUserIdFromSession,
+  getProposalIdFromQuery,
+  parseProposalPageUrl,
+  updateUrlWithProposal,
+  cleanLegacyUserIdFromUrl
+} from 'lib/proposals/urlParser.js'
+```
+
+### Hook Return Value
+```javascript
+const {
+  // Auth state
+  authState,  // { isChecking, isAuthenticated, isGuest, shouldRedirect, redirectReason }
+
+  // Raw data
+  user,             // User object from session
+  proposals,        // Array of enriched proposals
+  selectedProposal, // Currently selected proposal
+
+  // Transformed/derived data
+  transformedProposal, // Processed proposal data
+  statusConfig,        // Status configuration object
+  currentStage,        // Current progress stage (1-6)
+  formattedStages,     // Formatted stages for progress tracker
+  proposalOptions,     // Dropdown options [{ id, label }]
+  buttonConfig,        // Dynamic button configuration
+
+  // UI state
+  isLoading,  // Combined: authState.isChecking || dataLoading
+  error,      // Error message or null
+
+  // Handlers
+  handleProposalSelect, // (proposalId) => void
+  handleRetry           // () => void
+} = useGuestProposalsPageLogic()
 ```
 
 ---
@@ -782,6 +919,7 @@ const getButtonState = () => {
 
 ---
 
-**VERSION**: 2.0
+**VERSION**: 3.0
 **LAST_UPDATED**: 2025-12-04
-**STATUS**: Comprehensive after major refactoring
+**STATUS**: Session-based authentication (user ID from session, not URL)
+**MAJOR_CHANGE**: Removed user ID from URL path/query - now uses authenticated session
