@@ -7,14 +7,69 @@
  * - faq_inquiry: Send FAQ inquiries to Slack channels
  *
  * NO AUTHENTICATION REQUIRED - Public endpoint
+ *
+ * INLINED DEPENDENCIES: All shared utilities inlined to resolve bundling issues
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { corsHeaders } from '../_shared/cors.ts';
-import { formatErrorResponse, getStatusCodeFromError, ValidationError } from '../_shared/errors.ts';
-import { validateAction, validateRequiredFields, validateEmail } from '../_shared/validation.ts';
 
-console.log('[slack] Edge Function started');
+// ============ CORS Headers (from _shared/cors.ts) ============
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
+};
+
+// ============ Error Classes (from _shared/errors.ts) ============
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+function formatErrorResponse(error: Error): { success: false; error: string } {
+  console.error('[Error Handler]', error);
+  return {
+    success: false,
+    error: error.message || 'An error occurred',
+  };
+}
+
+function getStatusCodeFromError(error: Error): number {
+  if (error instanceof ValidationError) {
+    return 400;
+  }
+  return 500;
+}
+
+// ============ Validation Functions (from _shared/validation.ts) ============
+function validateEmail(email: string): void {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    throw new ValidationError(`Invalid email format: ${email}`);
+  }
+}
+
+function validateRequiredFields(
+  obj: Record<string, any>,
+  requiredFields: string[]
+): void {
+  for (const field of requiredFields) {
+    if (!(field in obj) || obj[field] === undefined || obj[field] === null || obj[field] === '') {
+      throw new ValidationError(`Missing required field: ${field}`);
+    }
+  }
+}
+
+function validateAction(action: string, allowedActions: string[]): void {
+  if (!allowedActions.includes(action)) {
+    throw new ValidationError(`Unknown action: ${action}. Allowed actions: ${allowedActions.join(', ')}`);
+  }
+}
+
+// ============ Application Code ============
+console.log('[slack] Edge Function loaded');
 
 interface FaqInquiryPayload {
   name: string;
@@ -45,6 +100,9 @@ async function handleFaqInquiry(payload: FaqInquiryPayload): Promise<{ message: 
   const webhookAcquisition = Deno.env.get('SLACK_WEBHOOK_ACQUISITION');
   const webhookGeneral = Deno.env.get('SLACK_WEBHOOK_GENERAL');
 
+  console.log('[slack] Webhook Acquisition exists:', !!webhookAcquisition);
+  console.log('[slack] Webhook General exists:', !!webhookGeneral);
+
   if (!webhookAcquisition || !webhookGeneral) {
     console.error('[slack] Missing Slack webhook environment variables');
     throw new Error('Server configuration error: Slack webhooks not configured');
@@ -69,13 +127,20 @@ async function handleFaqInquiry(payload: FaqInquiryPayload): Promise<{ message: 
     )
   );
 
+  // Log results for debugging
+  console.log('[slack] Webhook results:', JSON.stringify(results.map(r => ({
+    status: r.status,
+    value: r.status === 'fulfilled' ? { ok: r.value.ok, status: r.value.status } : null,
+    reason: r.status === 'rejected' ? String(r.reason) : null
+  }))));
+
   // Check if at least one succeeded
   const hasSuccess = results.some(
     result => result.status === 'fulfilled' && result.value.ok
   );
 
   if (!hasSuccess) {
-    console.error('[slack] All Slack webhooks failed:', results);
+    console.error('[slack] All Slack webhooks failed');
     throw new Error('Failed to send inquiry to Slack');
   }
 
@@ -83,7 +148,7 @@ async function handleFaqInquiry(payload: FaqInquiryPayload): Promise<{ message: 
   return { message: 'Inquiry sent successfully' };
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -145,10 +210,10 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[slack] ========== ERROR ==========');
     console.error('[slack] Error:', error);
-    console.error('[slack] Error stack:', error.stack);
+    console.error('[slack] Error stack:', error instanceof Error ? error.stack : 'No stack');
 
-    const statusCode = getStatusCodeFromError(error);
-    const errorResponse = formatErrorResponse(error);
+    const statusCode = getStatusCodeFromError(error as Error);
+    const errorResponse = formatErrorResponse(error as Error);
 
     return new Response(
       JSON.stringify(errorResponse),
