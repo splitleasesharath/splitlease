@@ -771,6 +771,10 @@ export default function SearchPage() {
   const [allListings, setAllListings] = useState([]); // Filtered listings (purple pins)
   const [displayedListings, setDisplayedListings] = useState([]); // Lazy-loaded subset for cards
   const [loadedCount, setLoadedCount] = useState(0);
+  const [fallbackListings, setFallbackListings] = useState([]); // All listings shown when filtered results are empty
+  const [fallbackDisplayedListings, setFallbackDisplayedListings] = useState([]); // Lazy-loaded subset for fallback
+  const [fallbackLoadedCount, setFallbackLoadedCount] = useState(0);
+  const [isFallbackLoading, setIsFallbackLoading] = useState(false);
 
   // Modal state management
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
@@ -1423,6 +1427,102 @@ export default function SearchPage() {
     }
   }, [boroughs, selectedBorough, selectedNeighborhoods, weekPattern, priceTier, sortBy]);
 
+  // Fetch all listings with basic constraints only (for fallback display when filtered results are empty)
+  const fetchAllListings = useCallback(async () => {
+    setIsFallbackLoading(true);
+
+    try {
+      // Build query with ONLY basic constraints - no borough, neighborhood, price, or week pattern filters
+      const query = supabase
+        .from('listing')
+        .select('*')
+        .eq('"Complete"', true)
+        .or('"Active".eq.true,"Active".is.null')
+        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null')
+        .not('"Features - Photos"', 'is', null)
+        .order('"Modified Date"', { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      console.log('📊 SearchPage: Fallback query returned', data.length, 'listings');
+
+      // Batch fetch photos for all listings
+      const allPhotoIds = new Set();
+      data.forEach(listing => {
+        const photosField = listing['Features - Photos'];
+        if (Array.isArray(photosField)) {
+          photosField.forEach(id => allPhotoIds.add(id));
+        } else if (typeof photosField === 'string') {
+          try {
+            const parsed = JSON.parse(photosField);
+            if (Array.isArray(parsed)) {
+              parsed.forEach(id => allPhotoIds.add(id));
+            }
+          } catch (e) {
+            // Ignore parse errors
+          }
+        }
+      });
+
+      const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds));
+
+      // Extract photos per listing
+      const resolvedPhotos = {};
+      data.forEach(listing => {
+        resolvedPhotos[listing._id] = extractPhotos(
+          listing['Features - Photos'],
+          photoMap,
+          listing._id
+        );
+      });
+
+      // Batch fetch host data for all listings
+      const hostIds = new Set();
+      data.forEach(listing => {
+        if (listing['Host / Landlord']) {
+          hostIds.add(listing['Host / Landlord']);
+        }
+      });
+
+      const hostMap = await fetchHostData(Array.from(hostIds));
+
+      // Map host data to listings
+      const resolvedHosts = {};
+      data.forEach(listing => {
+        const hostId = listing['Host / Landlord'];
+        resolvedHosts[listing._id] = hostMap[hostId] || null;
+      });
+
+      // Transform listings
+      const transformedListings = data.map(listing =>
+        transformListing(listing, resolvedPhotos[listing._id], resolvedHosts[listing._id])
+      );
+
+      // Filter out listings without valid coordinates
+      const listingsWithCoordinates = transformedListings.filter(listing => {
+        return listing.coordinates && listing.coordinates.lat && listing.coordinates.lng;
+      });
+
+      // Filter out listings without photos
+      const listingsWithPhotos = listingsWithCoordinates.filter(listing => {
+        return listing.images && listing.images.length > 0;
+      });
+
+      console.log('📊 SearchPage: Fallback listings ready:', listingsWithPhotos.length);
+
+      setFallbackListings(listingsWithPhotos);
+      setFallbackLoadedCount(0);
+    } catch (err) {
+      console.error('Failed to fetch fallback listings:', err);
+      // Don't set error state - this is a fallback, so we just show nothing
+      setFallbackListings([]);
+    } finally {
+      setIsFallbackLoading(false);
+    }
+  }, []);
+
   // Transform raw listing data
   const transformListing = (dbListing, images, hostData) => {
     // Resolve human-readable names from database IDs
@@ -1586,6 +1686,43 @@ export default function SearchPage() {
   }, [loadedCount, allListings]);
 
   const hasMore = loadedCount < allListings.length;
+
+  // Fetch fallback listings when filtered results are empty
+  useEffect(() => {
+    if (!isLoading && allListings.length === 0 && fallbackListings.length === 0 && !isFallbackLoading) {
+      fetchAllListings();
+    }
+  }, [isLoading, allListings.length, fallbackListings.length, isFallbackLoading, fetchAllListings]);
+
+  // Clear fallback listings when filtered results are found
+  useEffect(() => {
+    if (allListings.length > 0 && fallbackListings.length > 0) {
+      setFallbackListings([]);
+      setFallbackDisplayedListings([]);
+      setFallbackLoadedCount(0);
+    }
+  }, [allListings.length, fallbackListings.length]);
+
+  // Lazy load fallback listings
+  useEffect(() => {
+    if (fallbackListings.length === 0) {
+      setFallbackDisplayedListings([]);
+      return;
+    }
+
+    const initialCount = LISTING_CONFIG.INITIAL_LOAD_COUNT;
+    setFallbackDisplayedListings(fallbackListings.slice(0, initialCount));
+    setFallbackLoadedCount(initialCount);
+  }, [fallbackListings]);
+
+  const handleFallbackLoadMore = useCallback(() => {
+    const batchSize = LISTING_CONFIG.LOAD_BATCH_SIZE;
+    const nextCount = Math.min(fallbackLoadedCount + batchSize, fallbackListings.length);
+    setFallbackDisplayedListings(fallbackListings.slice(0, nextCount));
+    setFallbackLoadedCount(nextCount);
+  }, [fallbackLoadedCount, fallbackListings]);
+
+  const hasFallbackMore = fallbackLoadedCount < fallbackListings.length;
 
   // Reset all filters
   const handleResetFilters = () => {
@@ -1874,7 +2011,42 @@ export default function SearchPage() {
             )}
 
             {!isLoading && !error && allListings.length === 0 && (
-              <EmptyState onResetFilters={handleResetFilters} />
+              <>
+                <EmptyState onResetFilters={handleResetFilters} />
+
+                {/* Fallback: Show all available listings */}
+                {isFallbackLoading && (
+                  <div className="fallback-loading">
+                    <p>Loading all available listings...</p>
+                  </div>
+                )}
+
+                {!isFallbackLoading && fallbackListings.length > 0 && (
+                  <div className="fallback-listings-section">
+                    <div className="fallback-header">
+                      <h3>Browse All Available Listings</h3>
+                      <p>Showing {fallbackListings.length} listings across all NYC boroughs</p>
+                    </div>
+                    <ListingsGrid
+                      listings={fallbackDisplayedListings}
+                      onLoadMore={handleFallbackLoadMore}
+                      hasMore={hasFallbackMore}
+                      isLoading={false}
+                      onOpenContactModal={handleOpenContactModal}
+                      onOpenInfoModal={handleOpenInfoModal}
+                      mapRef={mapRef}
+                      isLoggedIn={isLoggedIn}
+                      userId={currentUser?.id}
+                      favoritedListingIds={favoritedListingIds}
+                      onToggleFavorite={handleToggleFavorite}
+                      onRequireAuth={() => {
+                        setAuthModalView('signup');
+                        setIsAuthModalOpen(true);
+                      }}
+                    />
+                  </div>
+                )}
+              </>
             )}
 
             {!isLoading && !error && allListings.length > 0 && (
@@ -2003,6 +2175,11 @@ export default function SearchPage() {
             isLoggedIn={isLoggedIn}
             favoritedListingIds={favoritedListingIds}
             onToggleFavorite={handleToggleFavorite}
+            userId={currentUser?.id}
+            onRequireAuth={() => {
+              setAuthModalView('signup');
+              setIsAuthModalOpen(true);
+            }}
           />
         </section>
       </main>
@@ -2069,6 +2246,11 @@ export default function SearchPage() {
               isLoggedIn={isLoggedIn}
               favoritedListingIds={favoritedListingIds}
               onToggleFavorite={handleToggleFavorite}
+              userId={currentUser?.id}
+              onRequireAuth={() => {
+                setAuthModalView('signup');
+                setIsAuthModalOpen(true);
+              }}
             />
           </div>
         </div>

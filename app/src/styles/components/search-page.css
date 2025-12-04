@@ -626,6 +626,42 @@
 }
 
 /* ========================================
+   FALLBACK LISTINGS SECTION
+   ======================================== */
+
+.fallback-loading {
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.fallback-listings-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.fallback-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.fallback-header h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.5rem 0;
+}
+
+.fallback-header p {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* ========================================
    RESPONSIVE DESIGN
    ======================================== */
 
