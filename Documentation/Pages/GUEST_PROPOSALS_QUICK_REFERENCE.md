@@ -14,6 +14,7 @@
 | Condition | Action | Redirect Reason |
 |-----------|--------|-----------------|
 | Not logged in | Redirect to `/` (home) | `NOT_AUTHENTICATED` |
+| Token invalid | Redirect to `/` (home) | `TOKEN_INVALID` |
 | Logged in as Host | Redirect to `/` (home) | `NOT_GUEST` |
 | Logged in as Guest | Show proposals page | N/A |
 
@@ -25,31 +26,42 @@ const [authState, setAuthState] = useState({
   isAuthenticated: false, // User has valid session
   isGuest: false,         // User type is 'Guest'
   shouldRedirect: false,  // Redirect triggered
-  redirectReason: null    // 'NOT_AUTHENTICATED' | 'NOT_GUEST' | null
+  redirectReason: null    // 'NOT_AUTHENTICATED' | 'TOKEN_INVALID' | 'NOT_GUEST' | null
 });
 ```
 
-### Auth Check Flow
+### Auth Check Flow (Two-Step Pattern)
 ```
 1. Page loads → authState.isChecking = true
 2. Clean legacy URL patterns (cleanLegacyUserIdFromUrl)
-3. Check auth status (checkAuthStatus)
-   ├─ Not authenticated → redirect to /
-   └─ Authenticated → check user type (getUserType)
-       ├─ Not Guest → redirect to /
+3. Step 1: Lightweight auth check (checkAuthStatus)
+   ├─ Not authenticated → redirect to / (NOT_AUTHENTICATED)
+   └─ Authenticated → continue to Step 2
+4. Step 2: Validate token AND fetch user data (validateTokenAndFetchUser)
+   ├─ Token invalid → redirect to / (TOKEN_INVALID)
+   └─ Valid → get userType from response
+       ├─ Not Guest → redirect to / (NOT_GUEST)
        └─ Is Guest → load proposals
 ```
 
+**IMPORTANT**: This two-step pattern prevents race conditions where `getUserType()`
+was called before user data was fetched and cached. The same pattern is used in
+`FavoriteListingsPage`, `SearchPage`, and `ViewSplitLeasePage`.
+
 ### Key Auth Functions Used
 ```javascript
-import { checkAuthStatus, getUserType } from 'lib/auth.js'
+import { checkAuthStatus, validateTokenAndFetchUser } from 'lib/auth.js'
 import { getSessionId } from 'lib/secureStorage.js'
 
-// Check if user is logged in
+// Step 1: Lightweight check if tokens/cookies exist
 const isAuthenticated = await checkAuthStatus()
 
-// Get user type ('Host' or 'Guest')
-const userType = getUserType()
+// Step 2: Validate token AND fetch user data (including userType)
+const userData = await validateTokenAndFetchUser()
+// userData = { userId, firstName, fullName, email, profilePhoto, userType }
+
+// Get userType from the validated response (NOT from sync storage)
+const userType = userData.userType  // 'Host' or 'Guest'
 
 // Get user ID from secure session storage
 const userId = getSessionId()
@@ -75,7 +87,7 @@ guest-proposals.jsx (Entry Point)
     +-- GuestProposalsPage.jsx (Hollow Component)
             |
             +-- useGuestProposalsPageLogic.js (Business Logic Hook)
-            |       +-- Auth check (checkAuthStatus + getUserType)
+            |       +-- Two-step auth (checkAuthStatus + validateTokenAndFetchUser)
             |       +-- User ID from session (NOT URL)
             |       +-- Proposal fetching via userProposalQueries
             |       +-- Virtual meeting management
@@ -393,8 +405,8 @@ const buttonStates = useProposalButtonStates({
 
 ### Complete Data Flow (Session-Based)
 ```
-1. Auth Check
-   └─ checkAuthStatus() → getUserType() → validate Guest
+1. Auth Check (Two-Step Pattern)
+   └─ checkAuthStatus() → validateTokenAndFetchUser() → get userType from response
 
 2. Get User ID from Session
    └─ getUserIdFromSession() → getSessionId() from secure storage
@@ -737,8 +749,8 @@ Shows host verification badges and featured listing:
 ## ### KEY_IMPORTS ###
 
 ```javascript
-// Authentication
-import { checkAuthStatus, getUserType } from 'lib/auth.js'
+// Authentication (two-step pattern)
+import { checkAuthStatus, validateTokenAndFetchUser } from 'lib/auth.js'
 import { getSessionId } from 'lib/secureStorage.js'
 
 // Page hook
@@ -893,6 +905,7 @@ const getButtonState = () => {
 
 | Issue | Check |
 |-------|-------|
+| Redirected to home (timing) | Auth uses two-step: `checkAuthStatus()` then `validateTokenAndFetchUser()` |
 | Redirected to home | Check auth status (must be logged in as Guest) |
 | No proposals showing | Verify session has user ID, check Supabase RLS |
 | Buttons not appearing | Check status config via `getStatusConfig()` |
@@ -919,7 +932,7 @@ const getButtonState = () => {
 
 ---
 
-**VERSION**: 3.0
+**VERSION**: 3.1
 **LAST_UPDATED**: 2025-12-04
-**STATUS**: Session-based authentication (user ID from session, not URL)
-**MAJOR_CHANGE**: Removed user ID from URL path/query - now uses authenticated session
+**STATUS**: Session-based authentication with two-step auth pattern
+**MAJOR_CHANGE**: Fixed auth timing race condition - now uses `validateTokenAndFetchUser()` to get userType from async response instead of sync storage read
