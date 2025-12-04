@@ -19,6 +19,7 @@ import { useState, useMemo } from 'react';
 import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers.js';
 import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
 import { shouldHideVirtualMeetingButton } from '../../../lib/proposals/statusButtonConfig.js';
+import { navigateToMessaging } from '../../../logic/workflows/proposals/navigationWorkflow.js';
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
@@ -886,7 +887,10 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
               >
                 Host Profile
               </button>
-              <button className="btn-host btn-host-message">Send a Message</button>
+              <button
+                className="btn-host btn-host-message"
+                onClick={() => navigateToMessaging(host?._id, proposal._id)}
+              >Send a Message</button>
             </div>
           </div>
         </div>

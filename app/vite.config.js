@@ -24,15 +24,13 @@ export default defineConfig({
           else if (url.startsWith('/index-dev.html')) {
             req.url = '/public/index-dev.html' + (url.substring('/index-dev.html'.length) || '');
           }
-          // Handle guest-proposals (no ID) - direct access to /guest-proposals
-          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals?')) {
+          // Handle guest-proposals with clean URL structure (e.g., /guest-proposals/USER_ID?proposal=PROPOSAL_ID)
+          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals/') || url.startsWith('/guest-proposals?')) {
+            req.url = '/public/guest-proposals.html';
+          } else if (url.startsWith('/guest-proposals.html')) {
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/guest-proposals.html' + queryString;
-          }
-          // Handle guest-proposals.html - direct HTML access
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
           // Also handle exact /view-split-lease path (no trailing slash or query)
@@ -45,9 +43,6 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/view-split-lease.html' + queryString;
-          }
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           } else if (url.startsWith('/search.html')) {
             req.url = '/public/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/search-test.html')) {
@@ -172,15 +167,13 @@ export default defineConfig({
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/index.html' + queryString;
           }
-          // Handle guest-proposals (no ID) - direct access to /guest-proposals
-          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals?')) {
+          // Handle guest-proposals with clean URL structure (preview mode)
+          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals/') || url.startsWith('/guest-proposals?')) {
+            req.url = '/guest-proposals.html';
+          } else if (url.startsWith('/guest-proposals.html')) {
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/guest-proposals.html' + queryString;
-          }
-          // Handle guest-proposals.html - direct HTML access
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           }
           // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
           // Also handle exact /view-split-lease path (no trailing slash or query)
@@ -193,9 +186,6 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/view-split-lease.html' + queryString;
-          }
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
           } else if (url.startsWith('/search.html')) {
             req.url = '/search.html' + (url.substring('/search.html'.length) || '');
           } else if (url.startsWith('/search-test.html')) {
@@ -422,6 +412,14 @@ export default defineConfig({
         if (fs.existsSync(helpCenterCategorySource)) {
           fs.copyFileSync(helpCenterCategorySource, helpCenterCategoryDest);
           console.log('Created _internal/help-center-category-view for Cloudflare routing');
+        }
+
+        // Create guest-proposals internal file
+        const guestProposalsSource = path.join(distDir, 'guest-proposals.html');
+        const guestProposalsDest = path.join(internalDir, 'guest-proposals-view');
+        if (fs.existsSync(guestProposalsSource)) {
+          fs.copyFileSync(guestProposalsSource, guestProposalsDest);
+          console.log('Created _internal/guest-proposals-view for Cloudflare routing');
         }
 
         // Copy images directory to dist root

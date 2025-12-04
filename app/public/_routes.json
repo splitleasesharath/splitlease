@@ -3,5 +3,8 @@
   "include": [
     "/api/*"
   ],
-  "exclude": []
+  "exclude": [
+    "/guest-proposals",
+    "/guest-proposals/*"
+  ]
 }
