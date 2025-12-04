@@ -4,6 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port 8000",
+    "generate-routes": "node scripts/generate-redirects.js",
+    "prebuild": "npm run generate-routes",
     "build": "vite build",
     "preview": "vite preview --port 8000"
   },
