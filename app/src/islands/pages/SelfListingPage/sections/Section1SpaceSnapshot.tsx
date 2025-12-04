@@ -67,7 +67,8 @@ export const Section1SpaceSnapshot: React.FC<Section1Props> = ({
     const maxRetries = 50; // Try for 5 seconds
 
     const initAutocomplete = () => {
-      if (!window.google) {
+      // Check for Google Maps AND the Places library
+      if (!window.google || !window.google.maps || !window.google.maps.places) {
         retryCount++;
         if (retryCount < maxRetries) {
           console.log('Waiting for Google Maps to load...', retryCount);

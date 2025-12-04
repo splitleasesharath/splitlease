@@ -96,27 +96,38 @@
   transform: scale(1.1);
 }
 
-/* Favorite Button */
-.listing-card-favorite-btn {
-  position: absolute;
+/* Favorite Button - Override styles for shared FavoriteButton component in map card context */
+.listing-card-for-map-container .favorite-button-shared {
+  /* Position at top-left instead of top-right */
   top: 6px;
   left: 6px;
+  right: auto;
+
+  /* White background for map card (to match close button style) */
   background: rgba(255, 255, 255, 0.95);
-  border: none;
-  cursor: pointer;
-  z-index: 10;
-  padding: 4px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-.listing-card-favorite-btn:hover {
+.listing-card-for-map-container .favorite-button-shared:hover:not(:disabled) {
   background: rgba(255, 255, 255, 1);
-  transform: scale(1.1);
+}
+
+/* Override icon colors for light background context */
+.listing-card-for-map-container .favorite-button-shared:not(.favorited) .favorite-button-icon {
+  color: #4D4D4D;
+  stroke: #4D4D4D;
+}
+
+.listing-card-for-map-container .favorite-button-shared:not(.favorited):hover .favorite-button-icon {
+  color: #FF6B35;
+  stroke: #FF6B35;
+}
+
+/* Keep favorited state colors (orange) */
+.listing-card-for-map-container .favorite-button-shared.favorited .favorite-button-icon {
+  color: #FF6B35;
+  stroke: #FF6B35;
+  fill: #FF6B35;
 }
 
 /* Image Container */

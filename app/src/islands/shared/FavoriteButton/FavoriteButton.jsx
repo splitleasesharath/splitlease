@@ -1,26 +1,28 @@
 /**
  * FavoriteButton Component
  *
- * A self-contained reusable heart icon button for favoriting listings.
- * Manages its own state for immediate visual feedback - no need to pass
- * favorites state down through props.
+ * A reusable heart icon button for favoriting listings.
+ * Manages its own state for immediate visual feedback while staying
+ * in sync with the parent's state via the initialFavorited prop.
  *
  * Usage:
  *   <FavoriteButton
  *     listingId="123x456"
  *     userId="789x012"
- *     initialFavorited={false}
- *     onToggle={(newState) => console.log('Favorited:', newState)}
+ *     initialFavorited={isFavorited}
+ *     onToggle={(newState, listingId) => updateParentState(listingId, newState)}
+ *     onRequireAuth={() => showLoginModal()}
  *   />
  *
  * Key Features:
  * - Immediate visual feedback (no waiting for API)
- * - Self-contained state management
- * - Works without passing favorites from parent
+ * - Syncs with parent state when initialFavorited changes
+ * - Multiple instances for same listing stay in sync
  * - Shows login modal if user not authenticated
+ * - Reverts visual state on API error
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase.js';
 import './FavoriteButton.css';
 
@@ -37,6 +39,12 @@ const FavoriteButton = ({
   const [isFavorited, setIsFavorited] = useState(initialFavorited);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Sync internal state when parent's initialFavorited prop changes
+  // This ensures multiple FavoriteButton instances for the same listing stay in sync
+  useEffect(() => {
+    setIsFavorited(initialFavorited);
+  }, [initialFavorited]);
 
   const handleClick = useCallback(async (e) => {
     e.preventDefault();

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
@@ -13,7 +13,9 @@ export default function WhySplitLeasePage() {
   const [fadeOut, setFadeOut] = useState(false);
 
   // Schedule selector state - stores 0-based day indices from SearchScheduleSelector
-  const [selectedDays, setSelectedDays] = useState([1, 2, 3]); // Monday, Tuesday, Wednesday by default (3 days = 2 nights minimum)
+  // Use ref to ensure we always have the latest value at click time (avoids stale closure issues)
+  const selectedDaysRef = useRef([1, 2, 3]); // Monday, Tuesday, Wednesday by default
+  const [selectedDays, setSelectedDays] = useState([1, 2, 3]);
 
   // Borough filter state
   const [boroughs, setBoroughs] = useState([]);
@@ -184,16 +186,22 @@ export default function WhySplitLeasePage() {
   const handleSelectionChange = (days) => {
     // days is an array of day objects with { id, singleLetter, fullName, index }
     const dayIndices = days.map(d => d.index);
+    // Update both state and ref to ensure we have the latest value
     setSelectedDays(dayIndices);
+    selectedDaysRef.current = dayIndices;
   };
 
   const handleExploreSpaces = () => {
-    if (selectedDays.length === 0) {
+    // Use ref to get the latest selection (avoids stale closure issues)
+    const currentSelection = selectedDaysRef.current;
+
+    if (currentSelection.length === 0) {
       alert('Please select at least one night per week');
       return;
     }
     // Convert 0-based indices to 1-based for URL (0→1, 1→2, etc.)
-    const oneBased = selectedDays.map(idx => idx + 1);
+    // 0=Sunday → 1, 1=Monday → 2, etc.
+    const oneBased = currentSelection.map(idx => idx + 1);
     const daysParam = oneBased.join(',');
     window.location.href = `${SEARCH_URL}?days-selected=${daysParam}`;
   };

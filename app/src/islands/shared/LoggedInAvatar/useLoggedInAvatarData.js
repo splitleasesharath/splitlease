@@ -9,11 +9,11 @@
  * GUEST (wants to rent a space):
  *   ✓ My Profile - ALWAYS
  *   ✓ My Proposals - ALWAYS (their proposals as guest)
- *   ✗ My Proposals Suggested - HIDDEN
+ *   ✓ My Proposals Suggested - ALWAYS (GUEST only feature)
  *   ✗ My Listings - HIDDEN
- *   ✓ Virtual Meetings - Conditional (proposals = 0)
+ *   ✓ Virtual Meetings - Conditional (proposalsCount > 0) - requires proposals to exist
  *   ✓ House Manuals & Visits - Conditional (visits < 1)
- *   ✓ My Leases - ALWAYS
+ *   ✓ My Leases - Conditional (leasesCount > 0)
  *   ✓ My Favorite Listings - Conditional (favoritesCount > 0)
  *   ✓ Messages - ALWAYS
  *   ✓ Rental Application - ALWAYS
@@ -23,11 +23,11 @@
  * HOST / TRIAL HOST (has space to rent):
  *   ✓ My Profile - ALWAYS
  *   ✓ My Proposals - ALWAYS (proposals received from guests)
- *   ✓ My Proposals Suggested - Conditional (proposalsCount < 1)
+ *   ✗ My Proposals Suggested - HIDDEN (GUEST only feature)
  *   ✓ My Listings - ALWAYS
- *   ✓ Virtual Meetings - Conditional (proposals = 0)
+ *   ✓ Virtual Meetings - Conditional (proposalsCount > 0) - requires proposals to exist
  *   ✓ House Manuals & Visits - Conditional (house manuals = 0)
- *   ✓ My Leases - ALWAYS
+ *   ✓ My Leases - Conditional (leasesCount > 0)
  *   ✗ My Favorite Listings - HIDDEN
  *   ✓ Messages - ALWAYS
  *   ✗ Rental Application - HIDDEN
@@ -240,7 +240,7 @@ export function useLoggedInAvatarData(userId) {
  * @returns {Object} Visibility flags for each menu section
  */
 export function getMenuVisibility(data, currentPath = '') {
-  const { userType, proposalsCount, visitsCount, houseManualsCount, favoritesCount } = data;
+  const { userType, proposalsCount, visitsCount, houseManualsCount, favoritesCount, leasesCount } = data;
 
   const isGuest = userType === NORMALIZED_USER_TYPES.GUEST;
   const isHost = userType === NORMALIZED_USER_TYPES.HOST;
@@ -256,17 +256,17 @@ export function getMenuVisibility(data, currentPath = '') {
     //    - Hosts see proposals received from guests
     myProposals: true,
 
-    // 3. My Proposals Suggested - HOST and TRIAL_HOST only when they have no proposals
-    //    This encourages hosts without proposals to explore suggested listings
-    myProposalsSuggested: isHostOrTrial && proposalsCount < 1,
+    // 3. My Proposals Suggested - GUEST only
+    //    This helps guests discover listings to submit proposals to
+    myProposalsSuggested: isGuest,
 
     // 4. My Listings - HOST and TRIAL_HOST only
     //    Guests don't see this option
     myListings: isHostOrTrial,
 
-    // 5. Virtual Meetings - Conditional based on proposals:
-    //    Shows when user has no active proposals (proposals = 0)
-    virtualMeetings: proposalsCount === 0,
+    // 5. Virtual Meetings - Shows when user HAS proposals (proposalsCount > 0)
+    //    Virtual meetings can only be created when proposals exist
+    virtualMeetings: proposalsCount > 0,
 
     // 6. House Manuals & Visits - Context-aware:
     //    - GUEST: When visits < 1 (encourage scheduling)
@@ -275,8 +275,9 @@ export function getMenuVisibility(data, currentPath = '') {
       ? visitsCount < 1
       : houseManualsCount === 0,
 
-    // 7. My Leases - ALWAYS visible for all users
-    myLeases: true,
+    // 7. My Leases - Only visible when user has leases (leasesCount > 0)
+    //    Hidden when no leases exist for the user
+    myLeases: leasesCount > 0,
 
     // 8. My Favorite Listings - GUEST only AND must have at least 1 favorite
     //    Hidden when guest has no favorites (nothing to show)
