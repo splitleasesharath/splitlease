@@ -477,15 +477,14 @@
 .listing-host-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
 }
 
 .listing-host-row .host {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     min-width: 0;
-    flex: 1;
 }
 
 .listing-host-row .host-avatar {
