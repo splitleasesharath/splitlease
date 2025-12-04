@@ -382,3 +382,8 @@ entrypoint = "./functions/bubble-auth-proxy/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/ai-signup-guest/index.ts"
+
+[functions.slack]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/slack/index.ts"

@@ -8,7 +8,7 @@
 
 ## Architecture Overview
 
-The project has **4 main Edge Functions**:
+The project has **5 main Edge Functions**:
 
 | Function | Purpose | JWT Auth |
 |----------|---------|----------|
@@ -16,6 +16,7 @@ The project has **4 main Edge Functions**:
 | `bubble-auth-proxy` | Authentication (login, signup, logout, validate) | No |
 | `ai-gateway` | AI completions with OpenAI (streaming + non-streaming) | Optional per prompt |
 | `ai-signup-guest` | AI-powered guest signup flow | No |
+| `slack` | Slack integration (FAQ inquiries to Slack channels) | No |
 
 ---
 
@@ -70,8 +71,11 @@ supabase/
     │       ├── _template.ts       # Template interpolation
     │       └── listing-description.ts
     │
-    └── ai-signup-guest/           # AI-powered guest signup
-        └── index.ts
+    ├── ai-signup-guest/           # AI-powered guest signup
+    │   └── index.ts
+    │
+    └── slack/                     # Slack integration
+        └── index.ts               # FAQ inquiry handler
 ```
 
 ---
@@ -273,6 +277,38 @@ const stream = await stream(messages, options);
 
 ---
 
+## slack Actions
+
+**Endpoint**: `POST /functions/v1/slack`
+
+| Action | Description |
+|--------|-------------|
+| `faq_inquiry` | Send FAQ inquiries to Slack channels |
+
+### Request Format
+```json
+{
+  "action": "faq_inquiry",
+  "payload": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "inquiry": "What are the payment methods available?"
+  }
+}
+```
+
+### Response
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Inquiry sent successfully"
+  }
+}
+```
+
+---
+
 ## Required Secrets
 
 Configure in **Supabase Dashboard > Project Settings > Secrets**:
@@ -283,6 +319,8 @@ Configure in **Supabase Dashboard > Project Settings > Secrets**:
 | `BUBBLE_API_KEY` | See secrets setup | All Bubble API calls |
 | `SUPABASE_SERVICE_ROLE_KEY` | From Supabase Dashboard | Server-side operations (bypasses RLS) |
 | `OPENAI_API_KEY` | From OpenAI | ai-gateway |
+| `SLACK_WEBHOOK_ACQUISITION` | Slack webhook URL | slack (acquisition channel) |
+| `SLACK_WEBHOOK_GENERAL` | Slack webhook URL | slack (general channel) |
 
 ---
 

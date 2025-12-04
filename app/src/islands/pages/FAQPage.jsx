@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { supabase } from '../../lib/supabase.js';
+import { sendFaqInquiry } from '../../lib/slackService.js';
 
 export default function FAQPage() {
   const [activeTab, setActiveTab] = useState('general');
@@ -116,29 +117,8 @@ export default function FAQPage() {
     }
 
     try {
-      // Send inquiry to serverless function
-      const response = await fetch('/api/faq-inquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, inquiry })
-      });
-
-      // Handle non-OK responses (404, 500, etc.)
-      if (!response.ok) {
-        // Try to parse error message from response body
-        let errorMessage = 'Failed to send inquiry';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          // Response body wasn't valid JSON, use status text
-          errorMessage = `Server error: ${response.status} ${response.statusText}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      // Parse successful response
-      const data = await response.json();
+      // Send inquiry via Slack Edge Function
+      await sendFaqInquiry({ name, email, inquiry });
 
       setSubmitSuccess(true);
       setInquiryForm({ name: '', email: '', inquiry: '' });

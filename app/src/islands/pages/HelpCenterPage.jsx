@@ -3,6 +3,7 @@ import { User, Users, Info, LifeBuoy, BookOpen, FileText, Search, HelpCircle, Ch
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { helpCenterCategories, searchHelpCenter } from '../../data/helpCenterData.js';
+import { sendFaqInquiry } from '../../lib/slackService.js';
 import '../../styles/help-center.css';
 import '../../styles/faq.css'; // For inquiry modal styles
 
@@ -71,26 +72,8 @@ export default function HelpCenterPage() {
     }
 
     try {
-      // Send inquiry to serverless function
-      const response = await fetch('/api/faq-inquiry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, inquiry })
-      });
-
-      // Handle non-OK responses (404, 500, etc.)
-      if (!response.ok) {
-        let errorMessage = 'Failed to send inquiry';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          errorMessage = `Server error: ${response.status} ${response.statusText}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      await response.json();
+      // Send inquiry via Slack Edge Function
+      await sendFaqInquiry({ name, email, inquiry });
 
       setSubmitSuccess(true);
       setInquiryForm({ name: '', email: '', inquiry: '' });

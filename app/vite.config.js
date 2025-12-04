@@ -222,7 +222,8 @@ export default defineConfig({
   server: {
     host: true, // Listen on all addresses (127.0.0.1 and localhost)
     // Proxy /api routes to handle Cloudflare Pages Functions locally
-    // This provides a mock/development endpoint when wrangler isn't running
+    // Note: FAQ inquiries now use Supabase Edge Functions (slack function)
+    // This proxy is for any remaining Cloudflare Pages Functions
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8788', // Default wrangler pages dev port
@@ -231,20 +232,10 @@ export default defineConfig({
         // If wrangler isn't running, we need to handle it gracefully
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            // If wrangler isn't running, return a helpful mock response
-            if (req.url === '/api/faq-inquiry' && req.method === 'POST') {
-              console.log('[Vite Proxy] Wrangler not running, using mock response for FAQ inquiry');
-              res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({
-                success: true,
-                message: 'Inquiry sent successfully (dev mode - wrangler not running)'
-              }));
-            } else {
-              res.writeHead(503, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({
-                error: 'API proxy error - ensure wrangler pages dev is running for full functionality'
-              }));
-            }
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: 'API proxy error - ensure wrangler pages dev is running for full functionality'
+            }));
           });
         }
       }
