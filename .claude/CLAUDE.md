@@ -69,7 +69,8 @@ For detailed information, see these context files:
 - **[../Documentation/Database/DATABASE_TABLES_DETAILED.md](../Documentation/Database/DATABASE_TABLES_DETAILED.md)** - Detailed database table documentation with field descriptions
 - **[../Documentation/Database/DATABASE_OPTION_SETS_QUICK_REFERENCE.md](../Documentation/Database/DATABASE_OPTION_SETS_QUICK_REFERENCE.md)** - Quick reference for database option sets
 - **[../Documentation/Database/OPTION_SETS_DETAILED.md](../Documentation/Database/OPTION_SETS_DETAILED.md)** - Comprehensive option sets documentation with values and usage
-- **[../Documentation/Database/ROUTING_GUIDE.md](../Documentation/Database/ROUTING_GUIDE.md)** - Application routing patterns and navigation structure
+### Routing
+- **[../Documentation/Routing/ROUTING_GUIDE.md](../Documentation/Routing/ROUTING_GUIDE.md)** - **MUST READ** when adding new pages or modifying routes. Single source of truth for all routing configuration.
 
 ### Authentication Flows
 - **[../Documentation/Auth/LOGIN_FLOW.md](../Documentation/Auth/LOGIN_FLOW.md)** - Complete login flow documentation with UI states, validation, and API integration
@@ -135,6 +136,7 @@ Choose simple, direct solutions over clever abstractions. Code should do exactly
 - Follow four-layer logic architecture
 - Commit after each meaningful change
 - Convert days at system boundaries
+- **Follow [ROUTING_GUIDE.md](../Documentation/Routing/ROUTING_GUIDE.md) when adding/modifying routes** - run `npm run generate-routes` after changes
 
 ### DON'T
 - Never expose API keys in frontend code
@@ -183,6 +185,6 @@ Configured in Supabase Dashboard > Project Settings > Secrets:
 
 ---
 
-**VERSION**: 3.2 (Lightweight)
+**VERSION**: 3.3 (Lightweight)
 **LAST_UPDATED**: 2025-12-04
-**STATUS**: Updated paths for reorganized Documentation structure (Auth/, Database/, Pages/)
+**STATUS**: Added ROUTING_GUIDE.md reference for route management
