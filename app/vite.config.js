@@ -269,7 +269,8 @@ export default defineConfig({
         'listing-dashboard': resolve(__dirname, 'public/listing-dashboard.html'),
         'host-overview': resolve(__dirname, 'public/host-overview.html'),
         'favorite-listings': resolve(__dirname, 'public/favorite-listings.html'),
-        'about-us': resolve(__dirname, 'public/about-us.html')
+        'about-us': resolve(__dirname, 'public/about-us.html'),
+        '_internal-test': resolve(__dirname, 'public/_internal-test.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

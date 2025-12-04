@@ -229,6 +229,16 @@ export const routes = [
     protected: false,
     cloudflareInternal: false,
     hasDynamicSegment: false
+  },
+
+  // ===== INTERNAL/DEV PAGES =====
+  {
+    path: '/_internal-test',
+    file: '_internal-test.html',
+    aliases: ['/_internal-test.html'],
+    protected: false,
+    cloudflareInternal: false,
+    hasDynamicSegment: false
   }
 ];
 
