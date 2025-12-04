@@ -337,7 +337,7 @@
   height: 100vh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
   background: #f3f4f6;
 }
@@ -455,6 +455,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  margin-right: 45px; /* Prevent dropdown menu from touching right edge */
 }
 
 /* Favorites Link (Heart) */
