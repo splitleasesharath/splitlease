@@ -1,7 +1,6 @@
-# Workflows - Logic Layer 4
+# Workflows Map
 
-**GENERATED**: 2025-11-26
-**LAYER**: Workflows (Orchestration)
+**TYPE**: BRANCH NODE
 **PARENT**: app/src/logic/
 
 ---
@@ -9,40 +8,26 @@
 ## ### DIRECTORY_INTENT ###
 
 [PURPOSE]: Multi-step orchestration combining lower layers with async operations
-[LAYER]: Layer 4 of four-layer logic architecture
-[PATTERN]: Coordinate complex operations across rules, processors, and APIs
+[PATTERN]: Layer 4 of Four-Layer Logic Architecture
+[LAYER]: Coordinate complex operations across rules, processors, and APIs
 
 ---
 
-## ### SUBDIRECTORIES ###
+## ### SUB-MODULES ###
 
-### auth/
-[INTENT]: Authentication workflows for login state and token validation
-[FILES]: 2 workflow functions
-[KEY_EXPORTS]: checkAuthStatusWorkflow, validateTokenWorkflow
-
-### booking/
-[INTENT]: Booking lifecycle workflows for proposal acceptance and cancellation
-[FILES]: 3 workflow functions
-[KEY_EXPORTS]: acceptProposalWorkflow, cancelProposalWorkflow, loadProposalDetailsWorkflow
-
-### proposals/
-[INTENT]: Proposal-specific workflows including counteroffers and meetings
-[FILES]: 4 workflow functions
-[KEY_EXPORTS]: counterofferWorkflow, virtualMeetingWorkflow, navigationWorkflow
-
-### scheduling/
-[INTENT]: Schedule validation workflows combining rules and availability checks
-[FILES]: 2 workflow functions
-[KEY_EXPORTS]: validateMoveInDateWorkflow, validateScheduleWorkflow
+- **[auth/](./auth/CLAUDE.md)**: Authentication workflows (checkAuthStatus, validateToken) - 2 functions
+- **[booking/](./booking/CLAUDE.md)**: Booking lifecycle (accept, cancel, load proposal details) - 3 functions
+- **[proposals/](./proposals/CLAUDE.md)**: Counteroffer and virtual meeting workflows - 4 functions
+- **[scheduling/](./scheduling/CLAUDE.md)**: Schedule validation workflows - 2 functions
 
 ---
 
-## ### FILE_INVENTORY ###
+## ### KEY_EXPORTS ###
 
-### index.js
-[INTENT]: Barrel export aggregating all workflow functions
-[EXPORTS]: * from all subdirectories
+[FROM_AUTH]: checkAuthStatusWorkflow, validateTokenWorkflow
+[FROM_BOOKING]: acceptProposalWorkflow, cancelProposalWorkflow, loadProposalDetailsWorkflow
+[FROM_PROPOSALS]: acceptCounteroffer, declineCounteroffer, getTermsComparison, cancelProposalWorkflow
+[FROM_SCHEDULING]: validateMoveInDateWorkflow, validateScheduleWorkflow
 
 ---
 
@@ -51,6 +36,7 @@
 [ALLOWED]: Async operations, API calls via lib/
 [ALLOWED]: Calling rules, processors, calculators
 [ALLOWED]: Error handling and recovery logic
+[FORBIDDEN]: Direct DOM manipulation
 [PATTERN]: Try/catch with meaningful error messages
 
 ---
@@ -58,25 +44,43 @@
 ## ### WORKFLOW_PATTERN ###
 
 ```javascript
-async function exampleWorkflow(input) {
-  // 1. Validate using rules
-  if (!canPerformAction(input)) {
-    throw new Error('Action not allowed');
+async function exampleWorkflow(params) {
+  // 1. Validate inputs (throw on invalid)
+  if (!params.required) throw new Error('param is required')
+
+  // 2. Check rules (can*, is*, has*)
+  if (!canPerformAction(params)) {
+    return { success: false, message: 'Not allowed' }
   }
 
-  // 2. Transform using processors
-  const processed = processData(input);
-
-  // 3. Calculate using calculators
-  const computed = calculate(processed);
+  // 3. Transform using processors
+  const processed = processData(params)
 
   // 4. Call external API
-  const result = await apiCall(computed);
+  const { data, error } = await supabase.from('table').update(...)
 
-  // 5. Return processed result
-  return processResult(result);
+  // 5. Return structured result
+  return { success: !error, data, message: error?.message || 'Success' }
 }
 ```
+
+---
+
+## ### ERROR_HANDLING_CONVENTION ###
+
+[VALIDATION_ERRORS]: Throw immediately (missing required params)
+[RULE_VIOLATIONS]: Return { success: false, message: 'reason' }
+[API_ERRORS]: Return { success: false, error: err, message: err.message }
+[NEVER]: Silently fail or return undefined
+
+---
+
+## ### SHARED_CONVENTIONS ###
+
+[ASYNC]: Most workflows are async (except pure validation)
+[SUPABASE_CLIENT]: Passed as parameter, not imported globally
+[RULE_INJECTION]: Rule functions passed as params for testability
+[RESULT_SHAPE]: { success: boolean, message: string, data?: any }
 
 ---
 

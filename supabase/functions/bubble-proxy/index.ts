@@ -14,6 +14,7 @@
  * - upload_photos: Upload listing photos (atomic sync)
  * - submit_referral: Submit referral (atomic sync)
  * - submit_listing: Full listing submission with all form data - AUTH REQUIRED
+ * - toggle_favorite: Add/remove listing from user's favorites - NO AUTH REQUIRED (uses Bubble user ID)
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -32,12 +33,14 @@ import { handleSendMessage } from './handlers/messaging.ts';
 import { handleReferral } from './handlers/referral.ts';
 import { handleAiSignup } from './handlers/signup.ts';
 import { handleSubmitListing } from './handlers/submitListing.ts';
+import { handleFavorites } from './handlers/favorites.ts';
+import { handleGetFavorites } from './handlers/getFavorites.ts';
 
 console.log('[bubble-proxy] Edge Function started');
 
 // Actions that don't require authentication
 // upload_photos is public because photos are uploaded in Section 6 before user signup in Section 7
-const PUBLIC_ACTIONS = ['create_listing', 'get_listing', 'send_message', 'signup_ai', 'upload_photos'];
+const PUBLIC_ACTIONS = ['create_listing', 'get_listing', 'send_message', 'signup_ai', 'upload_photos', 'toggle_favorite', 'get_favorites'];
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -74,6 +77,8 @@ Deno.serve(async (req) => {
       'submit_referral',
       'signup_ai',
       'submit_listing',
+      'toggle_favorite',
+      'get_favorites',
     ];
     validateAction(action, allowedActions);
 
@@ -167,6 +172,14 @@ Deno.serve(async (req) => {
 
       case 'submit_listing':
         result = await handleSubmitListing(syncService, payload, user);
+        break;
+
+      case 'toggle_favorite':
+        result = await handleFavorites(payload);
+        break;
+
+      case 'get_favorites':
+        result = await handleGetFavorites(payload);
         break;
 
       default:

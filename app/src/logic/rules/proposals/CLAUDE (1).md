@@ -1,79 +1,181 @@
-# Proposal Rules - Logic Layer 2
+# Proposal Rules Context
 
-**GENERATED**: 2025-11-26
-**LAYER**: Rules (Boolean Predicates)
+**TYPE**: LEAF NODE
 **PARENT**: app/src/logic/rules/
 
 ---
 
-## ### DIRECTORY_INTENT ###
+## ### LOGIC_CONTRACTS ###
 
-[PURPOSE]: Boolean predicates for proposal state management and action eligibility
-[LAYER]: Layer 2 - Rules (return true/false, express business rules)
-[PATTERN]: All functions evaluate proposal state to determine allowed actions
+### canCancelProposal
+[PATH]: ./canCancelProposal.js
+[INTENT]: Determine if guest can cancel their proposal
+[SIGNATURE]: ({ proposalStatus: string, deleted?: boolean }) => boolean
+[INPUT]:
+  - proposalStatus: string (req) - The "Proposal Status" field
+  - deleted: boolean (opt) - Whether proposal is soft-deleted, default: false
+[OUTPUT]: boolean - true if cancellation allowed
+[RULES]:
+  - Returns false if deleted
+  - Returns false for terminal statuses: 'Cancelled by Guest', 'Cancelled by Host', 'Rejected', 'Expired', 'Completed'
+  - Returns true for all active states (Draft, Pending, Host Countered, VM Requested, etc.)
+[TRUTH_SOURCE]: Internal `terminalStatuses` array:
+  ```
+  ['Cancelled by Guest', 'Cancelled by Host', 'Rejected', 'Expired', 'Completed']
+  ```
+[DEPENDS_ON]: None
+[USED_BY]: GuestProposalsPage, CancelProposalModal
 
----
+### canAcceptProposal
+[PATH]: ./canAcceptProposal.js
+[INTENT]: Determine if guest can accept (after host counteroffer)
+[SIGNATURE]: ({ proposalStatus: string, deleted?: boolean }) => boolean
+[INPUT]:
+  - proposalStatus: string (req) - The "Proposal Status" field
+  - deleted: boolean (opt) - default: false
+[OUTPUT]: boolean - true if acceptance allowed
+[RULE]: Only returns true when status === 'Host Countered'
+[DEPENDS_ON]: None
+[USED_BY]: ProposalDetailsModal, Accept button visibility
 
-## ### FILE_INVENTORY ###
+### canEditProposal
+[PATH]: ./canEditProposal.js
+[INTENT]: Determine if guest can edit their proposal terms
+[SIGNATURE]: ({ proposalStatus: string, deleted?: boolean }) => boolean
+[INPUT]:
+  - proposalStatus: string (req) - The "Proposal Status" field
+  - deleted: boolean (opt) - default: false
+[OUTPUT]: boolean - true if editing allowed
+[TRUTH_SOURCE]: Internal `editableStatuses` array:
+  ```
+  ['Draft', 'Pending', 'Host Countered']
+  ```
+[DEPENDS_ON]: None
+[USED_BY]: EditProposalModal, Edit button visibility
 
-### canAcceptProposal.js
-[INTENT]: Determine if guest can accept proposal based on current status and payment readiness
-[EXPORTS]: canAcceptProposal
-[IMPORTS]: ./proposalRules
-[SIGNATURE]: (proposal: object) => boolean
-[RETURNS]: true if proposal can be accepted
+### determineProposalStage
+[PATH]: ./determineProposalStage.js
+[INTENT]: Map proposal status to visual progress tracker stage (1-6)
+[SIGNATURE]: ({ proposalStatus: string, deleted?: boolean }) => number
+[INPUT]:
+  - proposalStatus: string (req) - The "Proposal Status" field
+  - deleted: boolean (opt) - default: false
+[OUTPUT]: number - Stage 1-6
+[THROWS]:
+  - Error: "proposalStatus is required and must be a string" - When missing
+[TRUTH_SOURCE]: Stage mapping:
+  ```
+  Stage 1: 'Draft', 'Pending' (Proposal Sent)
+  Stage 2: 'Host Countered' (Awaiting guest response)
+  Stage 3: 'VM Requested', 'VM Confirmed' (Virtual Meeting)
+  Stage 4: 'Accepted', 'Verified' (Confirmed booking)
+  Stage 5: 'Completed' (Terminal positive)
+  Stage 6: 'Cancelled by Guest', 'Cancelled by Host', 'Rejected', 'Expired', deleted (Terminal negative)
+  ```
+[DEPENDS_ON]: None
+[USED_BY]: ProgressTracker component
 
-### canCancelProposal.js
-[INTENT]: Determine if proposal can be cancelled based on status and cancellation policy
-[EXPORTS]: canCancelProposal
-[IMPORTS]: ./proposalRules
-[SIGNATURE]: (proposal: object) => boolean
-[RETURNS]: true if cancellation is allowed
-
-### canEditProposal.js
-[INTENT]: Determine if proposal can be modified based on status (only SUBMITTED allows edits)
-[EXPORTS]: canEditProposal
-[IMPORTS]: ./proposalRules
-[SIGNATURE]: (proposal: object) => boolean
-[RETURNS]: true if proposal is editable
-
-### determineProposalStage.js
-[INTENT]: Calculate current proposal stage (1-5) from status code for progress display
-[EXPORTS]: determineProposalStage
-[IMPORTS]: lib/constants/proposalStages
-[SIGNATURE]: (status: string) => number
-[RETURNS]: Stage number 1-5
-
-### proposalRules.js
-[INTENT]: Consolidated proposal business rules module containing all proposal-related predicates
-[EXPORTS]: canAcceptProposal, canCancelProposal, canEditProposal, canCounteroffer, isTerminalStatus
-[IMPORTS]: lib/constants/proposalStatuses
-[NOTE]: Master file importing from others for convenience
+### proposalRules.js (Master Module)
+[PATH]: ./proposalRules.js
+[INTENT]: Consolidated proposal business rules with all predicates
+[EXPORTS]:
+  - canCancelProposal(proposal) - Uses proposal.status || proposal.Status
+  - canModifyProposal(proposal) - Only PROPOSAL_SUBMITTED_AWAITING_RENTAL_APP
+  - hasReviewableCounteroffer(proposal) - COUNTEROFFER + counterOfferHappened
+  - canAcceptCounteroffer(proposal) - Alias for hasReviewableCounteroffer
+  - canDeclineCounteroffer(proposal) - Alias for hasReviewableCounteroffer
+  - canSubmitRentalApplication(proposal) - PROPOSAL_SUBMITTED_AWAITING_RENTAL_APP
+  - canReviewDocuments(proposal) - Uses getActionsForStatus
+  - canRequestVirtualMeeting(proposal) - Non-terminal + has 'request_vm' action
+  - canSendMessage(proposal) - Uses getActionsForStatus
+  - isProposalActive(proposal) - !isTerminalStatus
+  - isProposalCancelled(proposal) - CANCELLED_BY_GUEST or CANCELLED_BY_SPLITLEASE
+  - isProposalRejected(proposal) - REJECTED_BY_HOST
+  - isLeaseActivated(proposal) - INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED
+  - requiresSpecialCancellationConfirmation(proposal) - usualOrder > 5 && houseManual
+  - getCancelButtonText(proposal) - 'Cancel Proposal' or 'Decline Counteroffer'
+  - getCancellationReasonOptions() - Returns reason array
+[DEPENDS_ON]: lib/constants/proposalStatuses.js (PROPOSAL_STATUSES, isTerminalStatus, getActionsForStatus)
 
 ### virtualMeetingRules.js
-[INTENT]: Virtual meeting availability rules determining if/when virtual tour can be scheduled
+[PATH]: ./virtualMeetingRules.js
+[INTENT]: Virtual meeting scheduling eligibility rules
 [EXPORTS]: canScheduleVirtualMeeting, isWithinMeetingWindow
-[SIGNATURE]: (proposal: object, hostAvailability: object) => boolean
+[DEPENDS_ON]: lib/constants/proposalStatuses.js
+
+### useProposalButtonStates.js
+[PATH]: ./useProposalButtonStates.js
+[INTENT]: React hook combining rules for button visibility states
+[EXPORTS]: useProposalButtonStates
+[PATTERN]: Hook that returns computed button states based on proposal
 
 ---
 
-## ### PROPOSAL_STAGES ###
+## ### PROPOSAL_STATUS_CONSTANTS ###
 
-[STAGE_1]: SUBMITTED - Guest submitted, awaiting host response
-[STAGE_2]: HOST_APPROVED - Host approved, awaiting guest payment
-[STAGE_3]: PAYMENT_PENDING - Payment initiated
-[STAGE_4]: CONFIRMED - Booking confirmed
-[STAGE_5]: COMPLETED - Stay completed
+[SOURCE]: lib/constants/proposalStatuses.js
+[STATUSES]:
+  ```
+  PROPOSAL_SUBMITTED_AWAITING_RENTAL_APP: Stage 1
+  RENTAL_APP_SUBMITTED_AWAITING_HOST_REVIEW: Stage 1
+  COUNTEROFFER_SUBMITTED_AWAITING_GUEST_REVIEW: Stage 2
+  PROPOSAL_APPROVED_BY_HOST: Stage 4
+  AWAITING_DOCUMENTS_AND_INITIAL_PAYMENT: Stage 4
+  INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED: Stage 5 (terminal)
+  REJECTED_BY_HOST: Stage 6 (terminal)
+  CANCELLED_BY_GUEST: Stage 6 (terminal)
+  CANCELLED_BY_SPLITLEASE: Stage 6 (terminal)
+  EXPIRED: Stage 6 (terminal)
+  ```
+
+---
+
+## ### CANCELLATION_REASONS ###
+
+[SOURCE]: proposalRules.js getCancellationReasonOptions()
+[OPTIONS]:
+  ```
+  ['Found another property', 'Changed move-in dates', 'Changed budget',
+   'Changed location preference', 'No longer need housing', 'Host not responsive',
+   'Terms not acceptable', 'Other']
+  ```
+
+---
+
+## ### DEPENDENCIES ###
+
+[LOCAL]: ./index.js (barrel export)
+[EXTERNAL]: lib/constants/proposalStatuses.js
+[EXPORTS]: canCancelProposal, canAcceptProposal, canEditProposal, determineProposalStage, proposalRules (all exports), virtualMeetingRules, useProposalButtonStates
 
 ---
 
 ## ### USAGE_PATTERN ###
 
-[IMPORT_FROM]: import { canAcceptProposal } from 'logic/rules/proposals/canAcceptProposal'
-[CONSUMED_BY]: GuestProposalsPage, ProposalDetailsModal, booking workflows
-[PATTERN]: if (canAcceptProposal(proposal)) showAcceptButton()
+```javascript
+// Individual rule imports (recommended)
+import { canCancelProposal } from 'logic/rules/proposals/canCancelProposal'
+import { determineProposalStage } from 'logic/rules/proposals/determineProposalStage'
+
+// Master module import
+import { canCancelProposal, canModifyProposal, isProposalActive } from 'logic/rules/proposals/proposalRules'
+
+// Button visibility pattern
+if (canCancelProposal({ proposalStatus })) {
+  showCancelButton()
+}
+```
 
 ---
 
-**FILE_COUNT**: 6
-**EXPORTS_COUNT**: 10+
+## ### SHARED_CONVENTIONS ###
+
+[NO_FALLBACK]: Return false for invalid input, throw only for critical errors
+[STATUS_FIELD]: Handle both `proposal.status` and `proposal.Status` (Bubble inconsistency)
+[LAYER]: Layer 2 - Rules (boolean predicates only)
+[NAMING]: can* for permissions, is* for state checks, has* for property checks
+
+---
+
+**FILE_COUNT**: 7
+**EXPORTS_COUNT**: 20+

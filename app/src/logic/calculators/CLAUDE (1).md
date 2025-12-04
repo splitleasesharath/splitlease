@@ -1,7 +1,6 @@
-# Calculators - Logic Layer 1
+# Calculators Map
 
-**GENERATED**: 2025-11-26
-**LAYER**: Calculators (Pure Functions)
+**TYPE**: BRANCH NODE
 **PARENT**: app/src/logic/
 
 ---
@@ -9,44 +8,63 @@
 ## ### DIRECTORY_INTENT ###
 
 [PURPOSE]: Pure mathematical functions with no side effects
-[LAYER]: Layer 1 of four-layer logic architecture
-[PATTERN]: Deterministic output - same input always produces same output
+[PATTERN]: Layer 1 of Four-Layer Logic Architecture
+[LAYER]: Calculators (bottom layer - most foundational)
 
 ---
 
-## ### SUBDIRECTORIES ###
+## ### SUB-MODULES ###
 
-### pricing/
-[INTENT]: Pricing calculations including nightly rates, fees, totals
-[FILES]: 5 calculator functions
-[KEY_EXPORTS]: calculatePricingBreakdown, calculateReservationTotal, getNightlyRateByFrequency
-
-### scheduling/
-[INTENT]: Date and scheduling calculations for check-in/out and night counts
-[FILES]: 3 calculator functions
-[KEY_EXPORTS]: calculateNightsFromDays, calculateNextAvailableCheckIn, calculateCheckInOutDays
+- **[pricing/](./pricing/CLAUDE.md)**: Rental pricing calculations (getNightlyRateByFrequency, calculatePricingBreakdown, calculateFourWeekRent, calculateReservationTotal, calculateGuestFacingPrice)
+- **[scheduling/](./scheduling/CLAUDE.md)**: Date and scheduling calculations (calculateNightsFromDays, calculateCheckInOutDays, calculateNextAvailableCheckIn)
 
 ---
 
-## ### FILE_INVENTORY ###
+## ### KEY_EXPORTS ###
 
-### index.js
-[INTENT]: Barrel export aggregating all calculator functions
-[EXPORTS]: * from pricing/*, * from scheduling/*
+[FROM_PRICING]: getNightlyRateByFrequency, calculateFourWeekRent, calculateReservationTotal, calculateGuestFacingPrice, calculatePricingBreakdown
+[FROM_SCHEDULING]: calculateNightsFromDays, calculateCheckInOutDays, calculateNextAvailableCheckIn
+[BARREL]: index.js re-exports all
 
 ---
 
-## ### LAYER_RULES ###
+## ### SHARED_CONVENTIONS ###
 
-[ALLOWED]: Pure math operations, array transformations, object mapping
-[FORBIDDEN]: API calls, DOM access, state mutations, async operations
-[TESTING]: All functions should have unit tests with deterministic assertions
+[CRITICAL]: All functions are PURE - no side effects, deterministic output
+[NO_FALLBACK]: Throw errors for invalid input, never return defaults
+[NAMING]: calculate* for derived values, get* for lookups
+[VALIDATION]: All inputs validated before calculation
+[TESTING]: Unit tests with deterministic assertions
+
+---
+
+## ### DEPENDENCY_FLOW ###
+
+```
+UI Components / Hooks
+    │
+    ▼
+Workflows (Layer 4)
+    │
+    ▼
+Processors (Layer 3)
+    │
+    ▼
+Rules (Layer 2)
+    │
+    ▼
+CALCULATORS (Layer 1) ← YOU ARE HERE
+    │
+    ▼
+(No dependencies - foundational)
+```
 
 ---
 
 ## ### USAGE_PATTERN ###
 
 [IMPORT_FROM]: import { calculatePricingBreakdown } from 'logic/calculators'
+[ALTERNATIVE]: import { calculatePricingBreakdown } from 'logic/calculators/pricing/calculatePricingBreakdown'
 [CONSUMED_BY]: Rules, Processors, Workflows, UI Components
 
 ---

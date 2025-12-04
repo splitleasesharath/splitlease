@@ -21,9 +21,9 @@ function formatHostName(fullName) {
   return `${firstName} ${lastInitial}.`;
 }
 
-export default function ContactHostMessaging({ isOpen, onClose, listing, userEmail }) {
+export default function ContactHostMessaging({ isOpen, onClose, listing, userEmail, userName }) {
   const [formData, setFormData] = useState({
-    userName: '',
+    userName: userName || '',
     email: userEmail || '',
     message: ''
   });
@@ -35,14 +35,14 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, userEma
   useEffect(() => {
     if (isOpen) {
       setFormData({
-        userName: '',
+        userName: userName || '',
         email: userEmail || '',
         message: ''
       });
       setErrors({});
       setMessageSent(false);
     }
-  }, [isOpen, userEmail]);
+  }, [isOpen, userEmail, userName]);
 
   // Handle escape key
   useEffect(() => {
@@ -144,7 +144,7 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, userEma
   };
 
   const handleClose = () => {
-    setFormData({ userName: '', email: userEmail || '', message: '' });
+    setFormData({ userName: userName || '', email: userEmail || '', message: '' });
     setErrors({});
     setMessageSent(false);
     onClose();

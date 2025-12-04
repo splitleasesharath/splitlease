@@ -76,6 +76,10 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/public/guest-success.html' + queryString;
+          } else if (url === '/why-split-lease' || url.startsWith('/why-split-lease?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/public/why-split-lease.html' + queryString;
           } else if (url.startsWith('/why-split-lease.html')) {
             req.url = '/public/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
           } else if (url.startsWith('/careers.html')) {
@@ -224,6 +228,10 @@ export default defineConfig({
             const queryStart = url.indexOf('?');
             const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
             req.url = '/guest-success.html' + queryString;
+          } else if (url === '/why-split-lease' || url.startsWith('/why-split-lease?')) {
+            const queryStart = url.indexOf('?');
+            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
+            req.url = '/why-split-lease.html' + queryString;
           } else if (url.startsWith('/why-split-lease.html')) {
             req.url = '/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
           } else if (url.startsWith('/careers.html')) {
@@ -499,9 +507,9 @@ export default defineConfig({
       }
     }
   ],
-  publicDir: false, // Disable automatic public directory copying
+  publicDir: 'public', // Enable public directory serving for static assets
   server: {
-    host: '127.0.0.1', // Ensure IPv4 binding for localhost
+    host: true, // Listen on all addresses (127.0.0.1 and localhost)
     // Proxy /api routes to handle Cloudflare Pages Functions locally
     // This provides a mock/development endpoint when wrangler isn't running
     proxy: {

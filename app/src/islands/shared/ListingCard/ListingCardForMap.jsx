@@ -23,6 +23,8 @@ import './ListingCardForMap.css';
  * @param {Object} props.position - Position {x, y} relative to map container
  * @param {Function} props.onMessageClick - Callback when message button is clicked
  * @param {boolean} props.isLoggedIn - Whether user is logged in (for showing favorite button)
+ * @param {boolean} props.isFavorited - Whether the listing is favorited by the user
+ * @param {Function} props.onToggleFavorite - Callback when favorite button is clicked
  */
 export default function ListingCardForMap({
   listing,
@@ -30,10 +32,11 @@ export default function ListingCardForMap({
   isVisible,
   position = { x: 0, y: 0 },
   onMessageClick,
-  isLoggedIn = false
+  isLoggedIn = false,
+  isFavorited = false,
+  onToggleFavorite
 }) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-  const [isFavorited, setIsFavorited] = useState(false);
 
   if (!isVisible || !listing) return null;
 
@@ -53,7 +56,10 @@ export default function ListingCardForMap({
 
   const handleToggleFavorite = (e) => {
     e.stopPropagation();
-    setIsFavorited(!isFavorited);
+    if (onToggleFavorite) {
+      const listingId = listing.id || listing._id;
+      onToggleFavorite(listingId, listing.title);
+    }
   };
 
   const handleViewDetails = () => {
@@ -118,20 +124,18 @@ export default function ListingCardForMap({
           <X size={16} color="#4D4D4D" />
         </button>
 
-        {/* Favorite Button - Only visible when logged in */}
-        {isLoggedIn && (
-          <button
-            className="listing-card-favorite-btn"
-            onClick={handleToggleFavorite}
-            aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-          >
-            <Heart
-              size={16}
-              color={isFavorited ? "#FF0000" : "#4D4D4D"}
-              fill={isFavorited ? "#FF0000" : "none"}
-            />
-          </button>
-        )}
+        {/* Favorite Button - Always visible, prompts login if not authenticated */}
+        <button
+          className={`listing-card-favorite-btn ${isFavorited ? 'favorited' : ''}`}
+          onClick={handleToggleFavorite}
+          aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+        >
+          <Heart
+            size={16}
+            color={isFavorited ? "#FF6B35" : "#4D4D4D"}
+            fill={isFavorited ? "#FF6B35" : "none"}
+          />
+        </button>
 
         {/* Image Section */}
         <div className="listing-card-image-container">

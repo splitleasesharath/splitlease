@@ -113,7 +113,9 @@ const GoogleMap = forwardRef(({
   disableAutoZoom = false, // If true, don't auto-fit bounds or restrict zoom
   onAIResearchClick = null, // Callback when AI research button is clicked
   onMessageClick = null,   // Callback when message button is clicked on map card
-  isLoggedIn = false       // Whether user is logged in (for showing favorite button)
+  isLoggedIn = false,      // Whether user is logged in (for showing favorite button)
+  favoritedListingIds = new Set(), // Set of favorited listing IDs
+  onToggleFavorite = null  // Callback when favorite button is clicked: (listingId, listingTitle) => void
 }, ref) => {
   console.log('🗺️ GoogleMap: Component rendered with props:', {
     listingsCount: listings.length,
@@ -507,8 +509,9 @@ const GoogleMap = forwardRef(({
       console.log('✅ GoogleMap: Map initialized successfully with zoom controls enabled');
     };
 
-    // Wait for Google Maps API to load
-    if (window.google && window.google.maps) {
+    // Wait for Google Maps API to fully load
+    // Check that both google.maps exists AND ControlPosition is available (indicates full load)
+    if (window.google && window.google.maps && window.google.maps.ControlPosition) {
       console.log('✅ GoogleMap: Google Maps API already loaded, initializing...');
       initMap();
     } else {
@@ -986,8 +989,9 @@ const GoogleMap = forwardRef(({
             </div>
           )}
           {!isLoadingListingDetails && selectedListingForCard && (() => {
+            const listingId = selectedListingForCard.id || selectedListingForCard._id;
             console.log('[GoogleMap] Rendering ListingCardForMap', {
-              listingId: selectedListingForCard.id,
+              listingId,
               hasMessageCallback: !!onMessageClick
             });
             return (
@@ -1001,6 +1005,8 @@ const GoogleMap = forwardRef(({
                 position={cardPosition}
                 onMessageClick={onMessageClick}
                 isLoggedIn={isLoggedIn}
+                isFavorited={favoritedListingIds?.has(listingId)}
+                onToggleFavorite={onToggleFavorite}
               />
             );
           })()}

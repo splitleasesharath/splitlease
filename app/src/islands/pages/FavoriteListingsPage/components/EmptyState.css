@@ -1,71 +1,75 @@
 /**
  * EmptyState Styles
  * Displayed when user has no favorite listings
+ * Matches SearchPage styling
  */
 
 .empty-state {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 500px;
-  padding: 48px 24px;
+  min-height: 400px;
+  padding: 3rem 2rem;
 }
 
 .empty-state-content {
-  max-width: 525px;
+  max-width: 400px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 24px;
+  gap: 1.5rem;
 }
 
 /* Icon */
 .empty-state-icon {
   width: 64px;
   height: 64px;
-  color: #CCCCCC;
+  color: #9ca3af;
   stroke-width: 1.5;
 }
 
 /* Message Text */
 .empty-state-message {
-  font-family: 'Lato', sans-serif;
-  font-size: 24px;
+  font-size: 0.9375rem;
   font-weight: 400;
-  color: #424242;
-  line-height: 1.25;
+  color: #6b7280;
+  line-height: 1.6;
   margin: 0;
 }
 
 /* CTA Button */
 .empty-state-cta {
-  padding: 12px 32px;
-  background-color: #3E3161;
-  color: #FFFFFF;
-  border: 1px double #6B6B6B;
-  border-radius: 0px;
-  font-family: 'Lato', sans-serif;
-  font-size: 24px;
-  font-weight: 400;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background: #5b21b6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
-  min-width: 200px;
+  transition: all 0.2s;
+  min-width: auto;
 }
 
 .empty-state-cta:hover {
-  background-color: #9DA9E8;
+  background: #4c1d95;
+  transform: translateY(-1px);
 }
 
 .empty-state-cta:active {
-  background-color: #6C7FEB;
+  background: #4c1d95;
+  transform: translateY(0);
 }
 
-/* Responsive: Mobile (< 900px) */
-@media (max-width: 900px) {
+/* Responsive: Mobile (< 768px) */
+@media (max-width: 768px) {
   .empty-state {
-    min-height: 400px;
-    padding: 32px 16px;
+    min-height: 300px;
+    padding: 2rem 1rem;
   }
 
   .empty-state-content {
@@ -73,11 +77,12 @@
   }
 
   .empty-state-message {
-    font-size: 20px;
+    font-size: 0.875rem;
   }
 
   .empty-state-cta {
-    width: 85%;
-    font-size: 20px;
+    width: auto;
+    font-size: 0.875rem;
+    padding: 0.75rem 1.5rem;
   }
 }

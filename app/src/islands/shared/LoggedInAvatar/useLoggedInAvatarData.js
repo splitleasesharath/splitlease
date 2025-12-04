@@ -128,7 +128,7 @@ export function useLoggedInAvatarData(userId) {
             "Type - User Current",
             "Proposals List",
             "Account - Host / Landlord",
-            "Favorites - Listing"
+            "Favorited Listings"
           `)
           .eq('_id', userId)
           .single(),
@@ -180,7 +180,7 @@ export function useLoggedInAvatarData(userId) {
       const proposalsCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
 
       // Get favorites count from user's favorites list
-      const favoritesList = userData?.['Favorites - Listing'];
+      const favoritesList = userData?.['Favorited Listings'];
       const favoritesCount = Array.isArray(favoritesList) ? favoritesList.length : 0;
 
       // Get house manuals count if user is a host

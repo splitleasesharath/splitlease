@@ -3,10 +3,5 @@
   "include": [
     "/api/*"
   ],
-  "exclude": [
-    "/view-split-lease/*",
-    "/view-split-lease",
-    "/guest-proposals/*",
-    "/guest-proposals"
-  ]
+  "exclude": []
 }
