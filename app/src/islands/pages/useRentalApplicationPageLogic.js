@@ -500,7 +500,8 @@ export function useRentalApplicationPageLogic() {
 
         console.log('[RentalApplication] User data fetched:', userData);
 
-        const userEmail = userData['email'] || '';
+        // Check both email columns - some users have email in 'email', others in 'email as text'
+        const userEmail = userData['email'] || userData['email as text'] || '';
 
         // Build full name from first + last if full name not available
         let fullName = userData['Name - Full'] || '';
