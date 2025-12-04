@@ -346,11 +346,12 @@ export default function LoggedInAvatar({
   // Extract first name from full name
   const firstName = user.name.split(' ')[0];
 
-  // Check if on search page for styling
+  // Check if on a page with light header for styling
   const isSearchPage = currentPath.includes('search');
+  const isLightHeaderPage = currentPath.includes('favorite-listings');
 
   return (
-    <div className={`logged-in-avatar ${isSearchPage ? 'on-search-page' : ''}`} ref={dropdownRef}>
+    <div className={`logged-in-avatar ${isSearchPage ? 'on-search-page' : ''} ${isLightHeaderPage ? 'on-light-header' : ''}`} ref={dropdownRef}>
       <button
         className="avatar-button"
         onClick={(e) => {

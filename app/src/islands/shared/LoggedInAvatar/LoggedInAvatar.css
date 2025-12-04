@@ -54,8 +54,9 @@
   gap: 4px;
 }
 
-/* Username color on search page */
-.logged-in-avatar.on-search-page .user-name-wrapper {
+/* Username color on pages with light headers (search, favorites) */
+.logged-in-avatar.on-search-page .user-name-wrapper,
+.logged-in-avatar.on-light-header .user-name-wrapper {
   color: #31135D;
 }
 
