@@ -1,17 +1,21 @@
 /**
- * Slack Service - Edge Function Proxy
+ * Slack Service - Cloudflare Pages Function Proxy
  *
- * Handles Slack-related operations via Supabase Edge Functions.
- * NO FALLBACK: If Edge Function fails, we fail.
+ * Handles Slack-related operations via Cloudflare Pages Functions.
+ * Uses /api/faq-inquiry endpoint (Cloudflare Pages Function).
+ *
+ * NOTE: Switched from Supabase Edge Functions due to known bug where
+ * secrets don't propagate to Edge Functions (GitHub issue #38329).
+ * Cloudflare Pages Functions work correctly with secrets.
+ *
+ * NO FALLBACK: If the function fails, we fail.
  *
  * @module slackService
  */
 
-import { supabase } from './supabase.js';
-
 /**
- * Send an FAQ inquiry to Slack channels via Edge Function
- * NO FALLBACK - Throws if Edge Function fails
+ * Send an FAQ inquiry to Slack channels via Cloudflare Pages Function
+ * NO FALLBACK - Throws if function fails
  *
  * @param {Object} inquiry - The inquiry data
  * @param {string} inquiry.name - Name of the person submitting
@@ -20,27 +24,30 @@ import { supabase } from './supabase.js';
  * @returns {Promise<Object>} - Success response with message
  */
 export async function sendFaqInquiry({ name, email, inquiry }) {
-  console.log('[Slack Service] Sending FAQ inquiry via Edge Function');
+  console.log('[Slack Service] Sending FAQ inquiry via Cloudflare Pages Function');
 
   if (!name?.trim() || !email?.trim() || !inquiry?.trim()) {
     throw new Error('All fields are required');
   }
 
   try {
-    const { data, error } = await supabase.functions.invoke('slack', {
-      body: {
-        action: 'faq_inquiry',
-        payload: {
-          name: name.trim(),
-          email: email.trim(),
-          inquiry: inquiry.trim(),
-        },
+    const response = await fetch('/api/faq-inquiry', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        name: name.trim(),
+        email: email.trim(),
+        inquiry: inquiry.trim(),
+      }),
     });
 
-    if (error) {
-      console.error('[Slack Service] Edge Function error:', error);
-      throw new Error(error.message || 'Failed to send inquiry');
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[Slack Service] Cloudflare Function error:', data);
+      throw new Error(data.error || 'Failed to send inquiry');
     }
 
     if (!data.success) {
@@ -48,7 +55,7 @@ export async function sendFaqInquiry({ name, email, inquiry }) {
     }
 
     console.log('[Slack Service] FAQ inquiry sent successfully');
-    return data.data;
+    return data;
   } catch (error) {
     console.error('[Slack Service] Failed to send FAQ inquiry:', error);
     throw error;

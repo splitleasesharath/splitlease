@@ -68,8 +68,37 @@ function validateAction(action: string, allowedActions: string[]): void {
   }
 }
 
-// ============ Application Code ============
-console.log('[slack] Edge Function loaded');
+// ============ Environment Diagnostics ============
+function logEnvironmentDiagnostics(): void {
+  console.log('[slack] ========== ENVIRONMENT DIAGNOSTICS ==========');
+  console.log('[slack] Deno version:', Deno.version.deno);
+  console.log('[slack] V8 version:', Deno.version.v8);
+  console.log('[slack] TypeScript version:', Deno.version.typescript);
+
+  // Log all available environment variable names (not values for security)
+  const envKeys = Object.keys(Deno.env.toObject());
+  console.log('[slack] Available env var count:', envKeys.length);
+  console.log('[slack] Available env var names:', envKeys.join(', '));
+
+  // Check specific Slack-related secrets (truncated for security)
+  const webhookAcq = Deno.env.get('SLACK_WEBHOOK_ACQUISITION');
+  const webhookGen = Deno.env.get('SLACK_WEBHOOK_GENERAL');
+
+  console.log('[slack] SLACK_WEBHOOK_ACQUISITION:', webhookAcq ? `SET (${webhookAcq.length} chars, starts with: ${webhookAcq.substring(0, 30)}...)` : 'NOT SET');
+  console.log('[slack] SLACK_WEBHOOK_GENERAL:', webhookGen ? `SET (${webhookGen} chars, starts with: ${webhookGen.substring(0, 30)}...)` : 'NOT SET');
+
+  // Check for common Supabase env vars
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  console.log('[slack] SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
+  console.log('[slack] SUPABASE_ANON_KEY:', supabaseAnonKey ? 'SET' : 'NOT SET');
+  console.log('[slack] ========== END DIAGNOSTICS ==========');
+}
+
+// Run diagnostics on function load
+console.log('[slack] Edge Function loading...');
+logEnvironmentDiagnostics();
+console.log('[slack] Edge Function loaded successfully');
 
 interface FaqInquiryPayload {
   name: string;
@@ -79,6 +108,51 @@ interface FaqInquiryPayload {
 
 interface SlackMessage {
   text: string;
+}
+
+interface DiagnoseResult {
+  status: string;
+  environment: {
+    deno_version: string;
+    env_var_count: number;
+    env_var_names: string[];
+    slack_webhook_acquisition: string;
+    slack_webhook_general: string;
+    supabase_url: string;
+    supabase_anon_key: string;
+  };
+  timestamp: string;
+}
+
+/**
+ * Diagnose environment and configuration
+ * Use this to debug secret loading issues
+ */
+function handleDiagnose(): DiagnoseResult {
+  console.log('[slack] Running diagnostics...');
+
+  const envKeys = Object.keys(Deno.env.toObject());
+  const webhookAcq = Deno.env.get('SLACK_WEBHOOK_ACQUISITION');
+  const webhookGen = Deno.env.get('SLACK_WEBHOOK_GENERAL');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+  const result: DiagnoseResult = {
+    status: (webhookAcq && webhookGen) ? 'healthy' : 'unhealthy',
+    environment: {
+      deno_version: Deno.version.deno,
+      env_var_count: envKeys.length,
+      env_var_names: envKeys,
+      slack_webhook_acquisition: webhookAcq ? `SET (${webhookAcq.length} chars)` : 'NOT SET',
+      slack_webhook_general: webhookGen ? `SET (${webhookGen.length} chars)` : 'NOT SET',
+      supabase_url: supabaseUrl ? 'SET' : 'NOT SET',
+      supabase_anon_key: supabaseAnonKey ? 'SET' : 'NOT SET',
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  console.log('[slack] Diagnostics result:', JSON.stringify(result, null, 2));
+  return result;
 }
 
 /**
@@ -175,7 +249,7 @@ Deno.serve(async (req: Request) => {
     const { action, payload } = body;
 
     // Validate action is supported
-    const allowedActions = ['faq_inquiry'];
+    const allowedActions = ['faq_inquiry', 'diagnose'];
     validateAction(action, allowedActions);
 
     console.log(`[slack] Action: ${action}`);
@@ -186,6 +260,10 @@ Deno.serve(async (req: Request) => {
     switch (action) {
       case 'faq_inquiry':
         result = await handleFaqInquiry(payload);
+        break;
+
+      case 'diagnose':
+        result = handleDiagnose();
         break;
 
       default:
