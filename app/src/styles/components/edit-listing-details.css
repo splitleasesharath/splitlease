@@ -1,0 +1,486 @@
+/**
+ * Edit Listing Details - Component Styles
+ * Design System for Split Lease Edit Listing Details Modal
+ * Prefixed with 'eld-' to avoid style conflicts
+ */
+
+/* Popup Overlay */
+.eld-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: var(--spacing-xl, 24px);
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+/* Popup Container */
+.eld-popup-container {
+  width: 100%;
+  max-width: 720px;
+  background: white;
+  border-radius: var(--radius-lg, 10px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  animation: eld-slideIn 300ms ease;
+}
+
+@keyframes eld-slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Popup Header */
+.eld-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-lg, 16px);
+  border-bottom: 1px solid var(--color-border, #E5E7EB);
+}
+
+.eld-popup-header h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1F2937);
+  margin: 0;
+}
+
+.eld-popup-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  color: var(--color-text-secondary, #6B7280);
+  transition: background-color 150ms ease;
+}
+
+.eld-popup-close:hover {
+  background-color: var(--color-background-light, #F7F8F9);
+}
+
+/* Popup Subtitle */
+.eld-popup-subtitle {
+  padding: 0 var(--spacing-lg, 16px);
+  margin-top: calc(-1 * var(--spacing-sm, 8px));
+  margin-bottom: var(--spacing-md, 12px);
+  font-size: 13px;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+/* Popup Body */
+.eld-popup-body {
+  padding: var(--spacing-lg, 16px);
+  max-height: calc(100vh - 250px);
+  overflow-y: auto;
+}
+
+/* Form Elements */
+.eld-form-field {
+  margin-bottom: var(--spacing-lg, 16px);
+}
+
+.eld-form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-primary, #1F2937);
+  margin-bottom: var(--spacing-xs, 4px);
+}
+
+.eld-form-input,
+.eld-form-textarea,
+.eld-form-select {
+  width: 100%;
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-sm, 6px);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-text-primary, #1F2937);
+  background-color: white;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.eld-form-input {
+  height: 40px;
+}
+
+.eld-form-textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.eld-form-input:focus,
+.eld-form-textarea:focus,
+.eld-form-select:focus {
+  outline: none;
+  border-color: var(--color-primary, #4F46E5);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+.eld-form-input::placeholder,
+.eld-form-textarea::placeholder {
+  color: var(--color-text-placeholder, #9CA3AF);
+}
+
+.eld-form-helper {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+  margin-top: var(--spacing-xs, 4px);
+}
+
+/* Form Grid */
+.eld-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-md, 12px);
+}
+
+.eld-form-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-md, 12px);
+}
+
+@media (max-width: 640px) {
+  .eld-form-grid,
+  .eld-form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Collapsible Section */
+.eld-collapsible-section {
+  border: 1px solid var(--color-border, #E5E7EB);
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: var(--spacing-md, 12px);
+  overflow: hidden;
+}
+
+.eld-collapsible-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-md, 12px) var(--spacing-lg, 16px);
+  background-color: var(--color-background-light, #F7F8F9);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.eld-collapsible-header:hover {
+  background-color: #EBEDEF;
+}
+
+.eld-collapsible-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+}
+
+.eld-collapsible-header-left .eld-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.eld-collapsible-header h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1F2937);
+  margin: 0;
+}
+
+.eld-collapsible-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  color: var(--color-text-secondary, #6B7280);
+  transition: transform 200ms ease;
+}
+
+.eld-collapsible-toggle.expanded {
+  transform: rotate(180deg);
+}
+
+.eld-collapsible-content {
+  padding: var(--spacing-lg, 16px);
+  background-color: white;
+  border-top: 1px solid var(--color-border, #E5E7EB);
+}
+
+.eld-collapsible-content.collapsed {
+  display: none;
+}
+
+/* Button Group */
+.eld-button-group {
+  display: flex;
+  gap: var(--spacing-md, 12px);
+  justify-content: flex-end;
+  padding: var(--spacing-lg, 16px);
+  border-top: 1px solid var(--color-border, #E5E7EB);
+}
+
+/* Buttons */
+.eld-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-sm, 8px) var(--spacing-xl, 24px);
+  height: 36px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 200ms ease;
+  border: none;
+}
+
+.eld-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.eld-btn-primary {
+  background-color: var(--color-primary, #321662);
+  color: white;
+}
+
+.eld-btn-primary:hover:not(:disabled) {
+  background-color: #271250;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.eld-btn-secondary {
+  background-color: transparent;
+  color: var(--color-primary, #4F46E5);
+  border: 1px solid var(--color-primary, #4F46E5);
+}
+
+.eld-btn-secondary:hover:not(:disabled) {
+  background-color: rgba(79, 70, 229, 0.05);
+}
+
+/* Checkbox Grid */
+.eld-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm, 8px);
+}
+
+@media (max-width: 768px) {
+  .eld-checkbox-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .eld-checkbox-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.eld-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  background-color: var(--color-background-light, #F7F8F9);
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  transition: background-color 150ms ease;
+  font-size: 13px;
+}
+
+.eld-checkbox-item:hover {
+  background-color: #EBEDEF;
+}
+
+.eld-checkbox-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary, #321662);
+  cursor: pointer;
+}
+
+.eld-checkbox-item span {
+  flex: 1;
+  color: var(--color-text-primary, #1F2937);
+}
+
+/* Toast Notifications */
+.eld-toast {
+  position: fixed;
+  bottom: var(--spacing-xl, 24px);
+  right: var(--spacing-xl, 24px);
+  min-width: 200px;
+  max-width: 320px;
+  padding: var(--spacing-md, 12px) var(--spacing-lg, 16px);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  animation: eld-slideUp 200ms ease;
+  z-index: 2000;
+  background: white;
+}
+
+@keyframes eld-slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.eld-toast-success {
+  border-left: 4px solid var(--color-success, #059669);
+}
+
+.eld-toast-error {
+  border-left: 4px solid var(--color-error, #DC2626);
+}
+
+.eld-toast-info {
+  border-left: 4px solid var(--color-primary, #4F46E5);
+}
+
+.eld-toast-close {
+  position: absolute;
+  top: var(--spacing-sm, 8px);
+  right: var(--spacing-sm, 8px);
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary, #6B7280);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm, 6px);
+  transition: color 150ms ease;
+}
+
+.eld-toast-close:hover {
+  color: var(--color-text-primary, #1F2937);
+}
+
+.eld-toast-message {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary, #1F2937);
+  padding-right: var(--spacing-lg, 16px);
+}
+
+.eld-toast-submessage {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+  margin-top: var(--spacing-xs, 4px);
+}
+
+/* Images Preview */
+.eld-images-preview {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm, 8px);
+  margin-bottom: var(--spacing-md, 12px);
+}
+
+@media (max-width: 480px) {
+  .eld-images-preview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.eld-image-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm, 6px);
+  overflow: hidden;
+  background-color: var(--color-background-light, #F7F8F9);
+}
+
+.eld-image-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Empty State */
+.eld-empty-state {
+  text-align: center;
+  padding: var(--spacing-2xl, 32px);
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.eld-empty-state svg {
+  width: 48px;
+  height: 48px;
+  margin-bottom: var(--spacing-md, 12px);
+  opacity: 0.5;
+}
+
+.eld-empty-state p {
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Current Value Display */
+.eld-current-value {
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  background-color: var(--color-background-light, #F7F8F9);
+  border-radius: var(--radius-sm, 6px);
+  font-size: 13px;
+  color: var(--color-text-secondary, #6B7280);
+  margin-bottom: var(--spacing-sm, 8px);
+}
+
+.eld-current-value strong {
+  color: var(--color-text-primary, #1F2937);
+  font-weight: 500;
+}
+
+/* Add Rule Button */
+.eld-add-rule-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm, 8px);
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  background: transparent;
+  border: 1px dashed var(--color-border, #E5E7EB);
+  border-radius: var(--radius-sm, 6px);
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--color-text-secondary, #6B7280);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.eld-add-rule-btn:hover {
+  border-color: var(--color-primary, #321662);
+  color: var(--color-primary, #321662);
+}
