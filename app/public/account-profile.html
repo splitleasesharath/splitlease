@@ -642,12 +642,22 @@
             background-color: #8968A8;
         }
 
-        .delete-account {
-            color: #ef4444;
-            text-decoration: none;
+        .delete-account-btn {
+            background-color: #f10d0c;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
             font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
             margin-top: 20px;
             display: inline-block;
+            transition: background-color 0.2s;
+        }
+
+        .delete-account-btn:hover {
+            background-color: #d90b0a;
         }
 
         /* Responsive */
@@ -974,7 +984,7 @@
                     <button class="btn-save">Save</button>
                 </div>
 
-                <a href="#" class="delete-account">Delete Account</a>
+                <button class="delete-account-btn" id="deleteAccountBtn">Delete account</button>
             </div>
 
             <!-- Sidebar -->
