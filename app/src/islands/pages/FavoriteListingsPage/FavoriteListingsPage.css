@@ -1,284 +1,182 @@
-/**
- * FavoriteListingsPage Styles
- * Side-by-side layout: Listings (left) + Map (right)
- */
+/* ========================================
+   FAVORITES PAGE - MATCHES SEARCH PAGE LAYOUT
+   Two-column: 45% listings, 55% map
+   ======================================== */
 
-.page-with-header-footer {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
+/* Import search-page styles for shared layout */
+@import '../../../styles/components/search-page.css';
+@import '../../../styles/components/listings.css';
+@import '../../../styles/components/toast.css';
 
-.main-content-with-header {
-  flex: 1;
-  margin-top: 80px; /* Space for fixed header */
-  height: calc(100vh - 80px);
-  overflow: hidden;
-}
-
-.favorite-listings-page-enhanced {
-  display: grid;
-  grid-template-columns: 650px 1fr;
-  height: 100%;
-  gap: 0;
-}
-
-/* Left Panel: Listings */
-.listings-panel {
-  overflow-y: auto;
-  height: 100%;
-  background: #F5F5F5;
-  padding: 0;
-}
-
-.listings-panel-inner {
-  padding: 32px 24px;
-}
-
-/* Right Panel: Map */
-.map-panel {
-  position: sticky;
-  top: 80px;
-  height: calc(100vh - 80px);
-  overflow: hidden;
-}
-
-/* Listings Container */
-.listings-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-/* Loading State */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  gap: 16px;
-}
-
-.loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #E0E0E0;
-  border-top-color: #3E3161;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.loading-container p {
-  font-size: 16px;
-  color: #666666;
-}
-
-/* Error State */
-.error-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  gap: 16px;
-  padding: 24px;
-  text-align: center;
-}
-
-.error-message {
-  font-size: 18px;
-  color: #D32F2F;
+/* Favorites Page - Same as Search Page */
+.favorites-page {
+  padding-top: 0 !important;
   margin: 0;
+  height: 100vh;
+  width: 100vw;
+  overflow: visible;
 }
 
-.retry-button {
-  padding: 12px 24px;
-  background-color: #3E3161;
-  color: #FFFFFF;
-  border: none;
-  border-radius: 4px;
-  font-family: 'Lato', sans-serif;
-  font-size: 16px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.retry-button:hover {
-  background-color: #9DA9E8;
-}
-
-/* Map Section (right panel) */
-.map-section {
-  height: 100%;
-  width: 100%;
-}
-
-/* Listings Section */
-.listings-section {
-  margin-top: 0;
-}
-
-.listings-section-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #424242;
-  margin: 0 0 20px 0;
-  font-family: 'Lato', sans-serif;
-}
-
-/* Listing Highlighted (from map selection) */
-.listing-highlighted {
-  animation: highlight-pulse 1s ease-in-out;
-}
-
-@keyframes highlight-pulse {
-  0%, 100% {
-    transform: scale(1);
-    box-shadow: none;
-  }
-  50% {
-    transform: scale(1.02);
-    box-shadow: 0 8px 24px rgba(62, 49, 97, 0.2);
-  }
-}
-
-/* Pricing Info Note */
-.pricing-info-note {
+/* Hamburger Menu Button */
+.favorites-page .hamburger-menu {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  margin-top: 32px;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #F0F4FF 0%, #E8EEFF 100%);
-  border-left: 4px solid #3E3161;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: 1px solid #d1d5db;
   border-radius: 8px;
-  font-family: 'Lato', sans-serif;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s;
 }
 
-.pricing-info-note svg {
-  color: #3E3161;
-  flex-shrink: 0;
-  margin-top: 2px;
+.favorites-page .hamburger-menu:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
 }
 
-.pricing-info-note strong {
-  color: #3E3161;
+.favorites-page .hamburger-menu svg {
+  color: #6b7280;
 }
 
-.pricing-info-note div {
-  font-size: 14px;
-  color: #424242;
-  line-height: 1.5;
+/* Active state for favorites link */
+.favorites-page .favorites-link.active svg {
+  fill: #FF6B35;
+  stroke: #FF6B35;
 }
 
-/* Support Section */
-.support-section {
-  margin-top: 32px;
-  padding: 32px 24px;
+/* Toast Notifications */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
   background: white;
-  border-radius: 8px;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  z-index: 4000;
+  transform: translateX(100%);
+  opacity: 0;
+  transition: all 0.3s ease;
 }
 
-.support-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+.toast.show {
+  transform: translateX(0);
+  opacity: 1;
 }
 
-.support-item {
+.toast-success {
+  border-left: 4px solid #22c55e;
+}
+
+.toast-success .toast-icon {
+  color: #22c55e;
+}
+
+.toast-info {
+  border-left: 4px solid #3b82f6;
+}
+
+.toast-info .toast-icon {
+  color: #3b82f6;
+}
+
+.toast-error {
+  border-left: 4px solid #ef4444;
+}
+
+.toast-error .toast-icon {
+  color: #ef4444;
+}
+
+.toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-message {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
+}
+
+/* Empty State */
+.empty-state-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px;
-  background: #F0F4FF;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.support-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(62, 49, 97, 0.15);
-}
-
-.support-item svg {
-  width: 48px;
-  height: 48px;
-  color: #3E3161;
-  margin-bottom: 12px;
-}
-
-.support-item-text {
-  font-size: 14px;
-  font-weight: 500;
-  color: #424242;
+  justify-content: center;
+  padding: 4rem 2rem;
   text-align: center;
-  font-family: 'Lato', sans-serif;
+  min-height: 400px;
 }
 
-/* Base favorite-listings-page for states */
-.favorite-listings-page {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
-  font-family: 'Lato', sans-serif;
-  background-color: #FFFFFF;
-  min-height: 100vh;
+.empty-state-container svg {
+  color: #9ca3af;
+  margin-bottom: 1.5rem;
+}
+
+.empty-state-container h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.75rem 0;
+}
+
+.empty-state-container p {
+  font-size: 0.9375rem;
+  color: #6b7280;
+  margin: 0 0 2rem 0;
+  max-width: 400px;
+  line-height: 1.6;
+}
+
+.empty-state-container a,
+.empty-state-container button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background: #5b21b6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.empty-state-container a:hover,
+.empty-state-container button:hover {
+  background: #4c1d95;
+  transform: translateY(-1px);
 }
 
 /* Mobile Responsive */
-@media (max-width: 1024px) {
-  .favorite-listings-page-enhanced {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+@media (max-width: 768px) {
+  .toast {
+    top: auto;
+    bottom: 20px;
+    left: 20px;
+    right: 20px;
+    transform: translateY(100%);
   }
 
-  .listings-panel {
-    order: 2;
-    height: auto;
+  .toast.show {
+    transform: translateY(0);
   }
 
-  .map-panel {
-    order: 1;
-    position: relative;
-    top: 0;
-    height: 400px;
-  }
-
-  .map-section {
-    height: 400px;
-  }
-}
-
-@media (max-width: 900px) {
-  .main-content-with-header {
-    margin-top: 60px;
-    height: auto;
-  }
-
-  .listings-panel-inner {
-    padding: 16px;
-  }
-
-  .listings-section-title {
-    font-size: 20px;
-  }
-
-  .pricing-info-note {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .support-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  /* Hide hamburger menu on mobile */
+  .favorites-page .hamburger-menu {
+    display: none;
   }
 }

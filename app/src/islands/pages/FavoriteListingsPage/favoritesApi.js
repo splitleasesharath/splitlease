@@ -17,25 +17,41 @@ import { supabase } from '../../../lib/supabase.js';
 export async function getFavoritedListings(userId, options = {}) {
   const { page = 1, perPage = 20, sortBy = 'price_asc' } = options;
 
+  console.log('📡 [favoritesApi] getFavoritedListings called with:', { userId, options });
+
   try {
-    const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-      body: {
-        action: 'listing',
-        type: 'favorites',
+    const requestBody = {
+      action: 'get_favorites',
+      payload: {
         userId,
         page,
         perPage,
         sortBy,
       },
+    };
+    console.log('📡 [favoritesApi] Request body:', JSON.stringify(requestBody, null, 2));
+
+    const { data, error } = await supabase.functions.invoke('bubble-proxy', {
+      body: requestBody,
     });
+
+    console.log('📡 [favoritesApi] Response data:', data);
+    console.log('📡 [favoritesApi] Response error:', error);
 
     if (error) {
       console.error('❌ Error fetching favorited listings:', error);
       throw error;
     }
 
+    // Check for success response from Edge Function
+    if (!data?.success) {
+      const errorMsg = data?.error?.message || 'Failed to fetch favorites';
+      console.error('❌ Edge Function error:', errorMsg);
+      throw new Error(errorMsg);
+    }
+
     // If no data returned, return empty response
-    if (!data || !data.listings) {
+    if (!data.data || !data.data.listings) {
       return {
         listings: [],
         pagination: {
@@ -47,7 +63,7 @@ export async function getFavoritedListings(userId, options = {}) {
       };
     }
 
-    return data;
+    return data.data;
   } catch (err) {
     console.error('❌ Failed to fetch favorited listings:', err);
     throw err;

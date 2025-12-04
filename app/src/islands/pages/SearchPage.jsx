@@ -7,6 +7,7 @@ import AiSignupMarketReport from '../shared/AiSignupMarketReport';
 import AuthAwareSearchScheduleSelector from '../shared/AuthAwareSearchScheduleSelector.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
+import FavoriteButton from '../shared/FavoriteButton';
 import { supabase } from '../../lib/supabase.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getUserId, logoutUser } from '../../lib/auth.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
@@ -358,7 +359,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, onToggleFavorite }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
 
@@ -396,14 +397,8 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
     );
   };
 
-  const handleFavoriteClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (onToggleFavorite) {
-      const listingId = listing.id || listing._id;
-      onToggleFavorite(listingId, listing.title);
-    }
-  };
+  // Get listing ID for FavoriteButton
+  const favoriteListingId = listing.id || listing._id;
 
   // Calculate dynamic price using default 5 nights (Monday-Friday pattern)
   // Uses the same formula as priceCalculations.js for Nightly rental type
@@ -535,22 +530,18 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               </div>
             </>
           )}
-          <button
-            className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
-            onClick={handleFavoriteClick}
-            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill={isFavorited ? '#FF6B35' : 'none'}
-              stroke={isFavorited ? '#FF6B35' : 'currentColor'}
-              strokeWidth="2"
-            >
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-          </button>
+          <FavoriteButton
+            listingId={favoriteListingId}
+            userId={userId}
+            initialFavorited={isFavorited}
+            onToggle={(newState, listingId) => {
+              if (onToggleFavorite) {
+                onToggleFavorite(listingId, listing.title, newState);
+              }
+            }}
+            onRequireAuth={onRequireAuth}
+            size="medium"
+          />
           {listing.isNew && <span className="new-badge">New Listing</span>}
         </div>
       )}
@@ -642,7 +633,8 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, favoritedListingIds, onToggleFavorite }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth }) {
+
   const sentinelRef = useRef(null);
 
   useEffect(() => {
@@ -674,6 +666,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
     <div className="listings-container">
       {listings.map((listing, index) => {
         const listingId = listing.id || listing._id;
+        const isFavorited = favoritedListingIds?.has(listingId);
         return (
           <PropertyCard
             key={listing.id}
@@ -686,8 +679,10 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             onOpenContactModal={onOpenContactModal}
             onOpenInfoModal={onOpenInfoModal}
             isLoggedIn={isLoggedIn}
-            isFavorited={favoritedListingIds?.has(listingId)}
+            isFavorited={isFavorited}
+            userId={userId}
             onToggleFavorite={onToggleFavorite}
+            onRequireAuth={onRequireAuth}
           />
         );
       })}
@@ -863,7 +858,7 @@ export default function SearchPage() {
               avatarUrl: userData.profilePhoto || null
             });
 
-            // Fetch favorites from Supabase
+            // Fetch favorites from Supabase - only count ACTIVE listings
             if (userId) {
               const { data: userFavorites, error } = await supabase
                 .from('user')
@@ -874,8 +869,31 @@ export default function SearchPage() {
               if (!error && userFavorites) {
                 const favorites = userFavorites['Favorited Listings'];
                 if (Array.isArray(favorites)) {
-                  setFavoritesCount(favorites.length);
-                  setFavoritedListingIds(new Set(favorites));
+                  // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
+                  const validFavorites = favorites.filter(id =>
+                    typeof id === 'string' && /^\d+x\d+$/.test(id)
+                  );
+
+                  // Store all favorited IDs for heart icon state (includes inactive)
+                  setFavoritedListingIds(new Set(validFavorites));
+
+                  // Count only ACTIVE favorites for the header badge
+                  if (validFavorites.length > 0) {
+                    const { data: activeListings, error: activeError } = await supabase
+                      .from('listing')
+                      .select('_id')
+                      .in('_id', validFavorites)
+                      .eq('Active', true);
+
+                    if (!activeError && activeListings) {
+                      setFavoritesCount(activeListings.length);
+                      console.log('[SearchPage] Active favorites count:', activeListings.length, 'of', validFavorites.length, 'total');
+                    } else {
+                      setFavoritesCount(validFavorites.length);
+                    }
+                  } else {
+                    setFavoritesCount(0);
+                  }
                 } else {
                   setFavoritesCount(0);
                   setFavoritedListingIds(new Set());
@@ -1621,72 +1639,31 @@ export default function SearchPage() {
     }, 3000);
   };
 
-  // Toggle favorite for a listing
-  const handleToggleFavorite = async (listingId, listingTitle) => {
-    console.log('[SearchPage] handleToggleFavorite called:', { listingId, listingTitle, isLoggedIn, currentUser });
+  // Update favorites count and show toast (API call handled by FavoriteButton component)
+  const handleToggleFavorite = (listingId, listingTitle, newState) => {
+    console.log('[SearchPage] handleToggleFavorite called:', {
+      listingId,
+      listingTitle,
+      newState,
+      currentFavoritesSize: favoritedListingIds.size
+    });
 
-    if (!isLoggedIn || !currentUser?.id) {
-      // If not logged in, open auth modal
-      console.log('[SearchPage] User not logged in, opening auth modal');
-      setAuthModalView('signup');
-      setIsAuthModalOpen(true);
-      return;
-    }
-
-    const userId = currentUser.id;
-    const isFavorited = favoritedListingIds.has(listingId);
-    console.log('[SearchPage] Toggle favorite:', { userId, listingId, isFavorited });
-
-    // Optimistic update
+    // Update the local set to keep header badge in sync
     const newFavoritedIds = new Set(favoritedListingIds);
-    if (isFavorited) {
-      newFavoritedIds.delete(listingId);
-    } else {
+    if (newState) {
       newFavoritedIds.add(listingId);
+    } else {
+      newFavoritedIds.delete(listingId);
     }
     setFavoritedListingIds(newFavoritedIds);
     setFavoritesCount(newFavoritedIds.size);
 
-    try {
-      // Use Edge Function to toggle favorite (bypasses RLS with service role key)
-      console.log('[SearchPage] Calling Edge Function to toggle favorite:', { userId, listingId, action: isFavorited ? 'remove' : 'add' });
-
-      const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          action: 'toggle_favorite',
-          payload: {
-            userId,
-            listingId,
-            action: isFavorited ? 'remove' : 'add',
-          },
-        },
-      });
-
-      console.log('[SearchPage] Edge Function result:', { data, error });
-
-      if (error) {
-        throw error;
-      }
-
-      if (!data?.success) {
-        throw new Error(data?.error?.message || 'Failed to update favorites');
-      }
-
-      // Show toast notification
-      const displayName = listingTitle || 'Listing';
-      if (isFavorited) {
-        showToast(`${displayName} removed from favorites`, 'info');
-      } else {
-        showToast(`${displayName} added to favorites`, 'success');
-      }
-
-      console.log('[SearchPage] Favorite toggled successfully');
-    } catch (error) {
-      console.error('[SearchPage] Error toggling favorite:', error);
-      // Revert optimistic update on error
-      setFavoritedListingIds(favoritedListingIds);
-      setFavoritesCount(favoritedListingIds.size);
-      showToast('Failed to update favorites. Please try again.', 'error');
+    // Show toast notification
+    const displayName = listingTitle || 'Listing';
+    if (newState) {
+      showToast(`${displayName} added to favorites`, 'success');
+    } else {
+      showToast(`${displayName} removed from favorites`, 'info');
     }
   };
 
@@ -1910,8 +1887,13 @@ export default function SearchPage() {
                 onOpenInfoModal={handleOpenInfoModal}
                 mapRef={mapRef}
                 isLoggedIn={isLoggedIn}
+                userId={currentUser?.id}
                 favoritedListingIds={favoritedListingIds}
                 onToggleFavorite={handleToggleFavorite}
+                onRequireAuth={() => {
+                  setAuthModalView('signup');
+                  setIsAuthModalOpen(true);
+                }}
               />
             )}
           </div>
