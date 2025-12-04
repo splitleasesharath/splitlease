@@ -66,12 +66,25 @@ For detailed information, see these context files:
 
 ### Database & Data References
 - **[../DATABASE_SCHEMA_OVERVIEW.md](../DATABASE_SCHEMA_OVERVIEW.md)** - Complete Supabase table schemas (93 tables)
-- **[../Documentation/DATABASE_TABLES_DETAILED.md](../Documentation/DATABASE_TABLES_DETAILED.md)** - Detailed database table documentation with field descriptions
-- **[../Documentation/DATABASE_OPTION_SETS_QUICK_REFERENCE.md](../Documentation/DATABASE_OPTION_SETS_QUICK_REFERENCE.md)** - Quick reference for database option sets
-- **[../Documentation/OPTION_SETS_DETAILED.md](../Documentation/OPTION_SETS_DETAILED.md)** - Comprehensive option sets documentation with values and usage
+- **[../Documentation/Database/DATABASE_TABLES_DETAILED.md](../Documentation/Database/DATABASE_TABLES_DETAILED.md)** - Detailed database table documentation with field descriptions
+- **[../Documentation/Database/DATABASE_OPTION_SETS_QUICK_REFERENCE.md](../Documentation/Database/DATABASE_OPTION_SETS_QUICK_REFERENCE.md)** - Quick reference for database option sets
+- **[../Documentation/Database/OPTION_SETS_DETAILED.md](../Documentation/Database/OPTION_SETS_DETAILED.md)** - Comprehensive option sets documentation with values and usage
+- **[../Documentation/Database/ROUTING_GUIDE.md](../Documentation/Database/ROUTING_GUIDE.md)** - Application routing patterns and navigation structure
 
-### Routing
-- **[../Documentation/ROUTING_GUIDE.md](../Documentation/ROUTING_GUIDE.md)** - Application routing patterns and navigation structure
+### Authentication Flows
+- **[../Documentation/Auth/LOGIN_FLOW.md](../Documentation/Auth/LOGIN_FLOW.md)** - Complete login flow documentation with UI states, validation, and API integration
+- **[../Documentation/Auth/SIGNUP_FLOW.md](../Documentation/Auth/SIGNUP_FLOW.md)** - Complete signup flow documentation including guest/host registration
+
+### Page Quick References
+Located in `Documentation/Pages/` - Quick reference guides for individual pages:
+- **[../Documentation/Pages/ABOUT_US_QUICK_REFERENCE.md](../Documentation/Pages/ABOUT_US_QUICK_REFERENCE.md)** - About Us page structure and content
+- **[../Documentation/Pages/ACCOUNT_PROFILE_QUICK_REFERENCE.md](../Documentation/Pages/ACCOUNT_PROFILE_QUICK_REFERENCE.md)** - Account profile page with user settings
+- **[../Documentation/Pages/CAREERS_QUICK_REFERENCE.md](../Documentation/Pages/CAREERS_QUICK_REFERENCE.md)** - Careers page documentation
+- **[../Documentation/Pages/FAQ_QUICK_REFERENCE.md](../Documentation/Pages/FAQ_QUICK_REFERENCE.md)** - FAQ page structure
+- **[../Documentation/Pages/FAVORITE_LISTINGS_QUICK_REFERENCE.md](../Documentation/Pages/FAVORITE_LISTINGS_QUICK_REFERENCE.md)** - User's favorite listings page
+- **[../Documentation/Pages/GUEST_PROPOSALS_QUICK_REFERENCE.md](../Documentation/Pages/GUEST_PROPOSALS_QUICK_REFERENCE.md)** - Guest proposals management page
+- **[../Documentation/Pages/GUEST_SUCCESS_QUICK_REFERENCE.md](../Documentation/Pages/GUEST_SUCCESS_QUICK_REFERENCE.md)** - Guest success/onboarding page
+- **[../Documentation/Pages/404_QUICK_REFERENCE.md](../Documentation/Pages/404_QUICK_REFERENCE.md)** - 404 error page
 
 ### Migration Documentation
 - **[../docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md](../docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md)** - Bubble.io to Edge Functions migration
@@ -170,6 +183,6 @@ Configured in Supabase Dashboard > Project Settings > Secrets:
 
 ---
 
-**VERSION**: 3.1 (Lightweight)
+**VERSION**: 3.2 (Lightweight)
 **LAST_UPDATED**: 2025-12-04
-**STATUS**: References detailed context files including Documentation directory
+**STATUS**: Updated paths for reorganized Documentation structure (Auth/, Database/, Pages/)
