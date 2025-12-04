@@ -109,8 +109,9 @@ export function useGuestProposalsPageLogic() {
 
       // Check if user is a Guest (not a Host)
       // userType comes from the validated userData object, NOT from sync storage
+      // Database has inconsistent values: 'Guest' OR 'A Guest (I would like to rent a space)'
       const userType = userData.userType;
-      const isGuest = userType === 'Guest';
+      const isGuest = userType === 'Guest' || userType?.includes('Guest');
 
       if (!isGuest) {
         console.log('❌ Guest Proposals: User is not a Guest (type:', userType, '), redirecting to home');
