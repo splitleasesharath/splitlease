@@ -1782,10 +1782,11 @@ export default function SearchPage() {
       listingId,
       listingTitle,
       newState,
-      currentFavoritesSize: favoritedListingIds.size
+      currentFavoritesCount: favoritesCount,
+      currentFavoritedIdsSize: favoritedListingIds.size
     });
 
-    // Update the local set to keep header badge in sync
+    // Update the local set to keep heart icon state in sync
     const newFavoritedIds = new Set(favoritedListingIds);
     if (newState) {
       newFavoritedIds.add(listingId);
@@ -1793,7 +1794,20 @@ export default function SearchPage() {
       newFavoritedIds.delete(listingId);
     }
     setFavoritedListingIds(newFavoritedIds);
-    setFavoritesCount(newFavoritedIds.size);
+
+    // Only update favoritesCount if the listing is ACTIVE
+    // This keeps the header badge count consistent with what shows on the favorites page
+    const isActiveListing = allActiveListings.some(listing => listing.id === listingId);
+    if (isActiveListing) {
+      if (newState) {
+        setFavoritesCount(prev => prev + 1);
+      } else {
+        setFavoritesCount(prev => Math.max(0, prev - 1));
+      }
+      console.log('[SearchPage] Active listing toggled, updating favoritesCount');
+    } else {
+      console.log('[SearchPage] Inactive listing toggled, favoritesCount unchanged');
+    }
 
     // Show toast notification
     const displayName = listingTitle || 'Listing';
