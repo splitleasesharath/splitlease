@@ -21,7 +21,6 @@ Split Lease now uses a **secure, encrypted storage system** for authentication t
 │  ✅ getUserId() → string (user ID)                     │
 │  ✅ getUserType() → 'Host' | 'Guest'                   │
 │  ✅ isSessionValid() → boolean                         │
-│  ✅ getLastActivity() → timestamp                      │
 │                                                         │
 │  Cannot Access:                                        │
 │  ❌ Raw tokens (encrypted in sessionStorage)           │
@@ -61,7 +60,6 @@ Split Lease now uses a **secure, encrypted storage system** for authentication t
 │  - sl_auth_state     → 'true' | 'false'                │
 │  - sl_user_id        → user ID (public identifier)     │
 │  - sl_user_type      → 'Host' | 'Guest'                │
-│  - sl_last_activity  → timestamp                       │
 │  - sl_session_valid  → 'true' | 'false'                │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
@@ -128,16 +126,12 @@ const encrypted = await crypto.subtle.encrypt(
 | Auth State | localStorage (plaintext) | Public | Until logout or Bubble token expiry |
 | User ID | localStorage (plaintext) | **Public** | Until logout |
 | User Type | localStorage (plaintext) | **Public** | Until logout |
-| Last Activity | localStorage (plaintext) | Public | Until logout |
 
 ### 3. **Session Management**
 
-Sessions are managed by **Bubble API token expiry**:
+Sessions are managed entirely by **Bubble API token expiry**:
 
 ```javascript
-// Auto-updated on each authenticated action
-updateLastActivity();
-
 // Bubble handles token expiry - we validate on each request
 const userData = await validateTokenAndFetchUser();
 if (!userData) {
@@ -146,6 +140,8 @@ if (!userData) {
   redirectToLogin();
 }
 ```
+
+No client-side session expiration is performed - Bubble is the source of truth for token validity.
 
 ## Usage Guide
 
@@ -409,15 +405,6 @@ describe('Secure Storage', () => {
     expect(token).toBe('test-token-123'); // Decrypted
   });
 
-  it('expires sessions', () => {
-    setAuthState(true);
-    updateLastActivity();
-
-    // Fast-forward 1 hour
-    jest.advanceTimersByTime(3600000);
-
-    expect(isSessionExpired()).toBe(true);
-  });
 });
 ```
 
@@ -426,10 +413,9 @@ describe('Secure Storage', () => {
 ### ✅ DO:
 
 1. Use `getAuthState()` for UI conditionals
-2. Call `updateLastActivity()` on user interactions
-3. Let `auth.js` handle token management
-4. Check `isSessionValid()` before sensitive operations
-5. Clear auth data on logout
+2. Let `auth.js` handle token management
+3. Check `isSessionValid()` before sensitive operations
+4. Clear auth data on logout
 
 ### ❌ DON'T:
 

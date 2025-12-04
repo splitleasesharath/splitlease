@@ -190,9 +190,7 @@ export const AUTH_STORAGE_KEYS = {
 };
 
 export const SESSION_VALIDATION = {
-  MAX_AGE_MS: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
-  MAX_AUTH_CHECK_ATTEMPTS: 3,
-  CACHE_VALIDITY_MS: 60 * 1000 // 1 minute for auth cache
+  MAX_AUTH_CHECK_ATTEMPTS: 3
 };
 
 // ============================================================================

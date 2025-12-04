@@ -32,8 +32,6 @@ import {
   getUserId as getPublicUserId,
   setUserType as setSecureUserType,
   getUserType as getSecureUserType,
-  updateLastActivity,
-  isSessionExpired,
   clearAllAuthData,
   hasValidTokens,
   migrateFromLegacyStorage
@@ -139,7 +137,6 @@ export async function checkAuthStatus() {
     if (hasTokens) {
       console.log('✅ User authenticated via secure storage');
       isUserLoggedInState = true;
-      updateLastActivity();
       return true;
     }
   }
@@ -164,25 +161,6 @@ export function isSessionValid() {
   // Simply check if auth state is set
   // Bubble will reject expired tokens on API calls
   return getAuthState();
-}
-
-/**
- * Get the timestamp of the last authentication
- *
- * @returns {number|null} Timestamp in milliseconds, or null if no auth recorded
- */
-export function getLastAuthTime() {
-  return getLastActivity();
-}
-
-/**
- * Get current session age in milliseconds
- *
- * @returns {number|null} Age in milliseconds, or null if no session
- */
-export function getSessionAge() {
-  const lastAuthTime = getLastAuthTime();
-  return lastAuthTime ? Date.now() - lastAuthTime : null;
 }
 
 /**
@@ -214,13 +192,11 @@ export function getAuthToken() {
 
 /**
  * Store authentication token in secure storage
- * Automatically updates last activity timestamp
  *
  * @param {string} token - Authentication token to store
  */
 export function setAuthToken(token) {
   setSecureAuthToken(token);
-  updateLastActivity();
 }
 
 /**
@@ -236,13 +212,11 @@ export function getSessionId() {
 
 /**
  * Store session ID in secure storage
- * Automatically updates last activity timestamp
  *
  * @param {string} sessionId - Session ID to store
  */
 export function setSessionId(sessionId) {
   setSecureSessionId(sessionId);
-  updateLastActivity();
 }
 
 /**
@@ -703,9 +677,6 @@ export async function validateTokenAndFetchUser() {
       isUserLoggedInState = false;
       return null;
     }
-
-    // Token is valid, update last activity
-    updateLastActivity();
 
     // Extract user data from Edge Function response
     const userData = data.data;
