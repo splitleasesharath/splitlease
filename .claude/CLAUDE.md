@@ -19,11 +19,11 @@ Flexible Rental Marketplace for NYC Properties enabling:
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 18 + Vite (Islands Architecture) |
+| Frontend | React 20 + Vite (Islands Architecture) |
 | Backend | Supabase (PostgreSQL + Edge Functions) |
 | Legacy Backend | Bubble.io (migrating to Edge Functions) |
 | Deployment | Cloudflare Pages |
-| Node Version | 18 |
+| Node Version | 20 |
 
 ---
 
