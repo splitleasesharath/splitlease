@@ -895,7 +895,7 @@
                         <div class="verification-info">
                             <div class="verification-icon">✉️</div>
                             <div>
-                                <div id="email"></div>
+                                <div id="email">Loading email...</div>
                                 <div class="verification-status">Unverified</div>
                             </div>
                         </div>
@@ -1219,9 +1219,17 @@
                 document.getElementById('phoneNumber').textContent = user['Phone Number (as text)'];
             }
 
-            // Update email
-            if (user['email as text']) {
-                document.getElementById('email').textContent = user['email as text'];
+            // Update email - try multiple possible field names
+            const emailValue = user['email as text'] || user['email'] || user['Email'] || user['authentication.email.email'];
+            const emailElement = document.getElementById('email');
+            if (emailValue && emailElement) {
+                emailElement.textContent = emailValue;
+                console.log('✅ Email populated:', emailValue);
+            } else {
+                console.log('⚠️ No email found. Available user fields:', Object.keys(user).filter(k => k.toLowerCase().includes('email')));
+                if (emailElement) {
+                    emailElement.textContent = 'No email available';
+                }
             }
 
             // Update biography
