@@ -34,7 +34,6 @@ const STATE_KEYS = {
   IS_AUTHENTICATED: 'sl_auth_state',
   USER_ID: 'sl_user_id',
   USER_TYPE: 'sl_user_type',
-  LAST_ACTIVITY: 'sl_last_activity',
   SESSION_VALID: 'sl_session_valid'
 };
 
@@ -106,7 +105,6 @@ export function clearSecureStorage() {
  */
 export function setAuthState(isAuthenticated, userId = null) {
   localStorage.setItem(STATE_KEYS.IS_AUTHENTICATED, isAuthenticated ? 'true' : 'false');
-  localStorage.setItem(STATE_KEYS.LAST_ACTIVITY, Date.now().toString());
 
   // Store user ID in public state (non-sensitive identifier)
   if (userId) {
@@ -164,35 +162,6 @@ export function getSessionValid() {
   return localStorage.getItem(STATE_KEYS.SESSION_VALID) === 'true';
 }
 
-/**
- * Update last activity timestamp
- */
-export function updateLastActivity() {
-  localStorage.setItem(STATE_KEYS.LAST_ACTIVITY, Date.now().toString());
-}
-
-/**
- * Get last activity timestamp
- * @returns {number|null} Timestamp or null
- */
-export function getLastActivity() {
-  const timestamp = localStorage.getItem(STATE_KEYS.LAST_ACTIVITY);
-  return timestamp ? parseInt(timestamp, 10) : null;
-}
-
-/**
- * Check if session has expired (based on last activity)
- * NOTE: This is only used for UI staleness checks, not for auth validation.
- * Bubble API handles token expiry - we validate on each request.
- * @param {number} maxAgeMs - Maximum session age in milliseconds (default 24 hours)
- * @returns {boolean} True if session expired
- */
-export function isSessionExpired(maxAgeMs = 86400000) { // Default 24 hours
-  const lastActivity = getLastActivity();
-  if (!lastActivity) return true;
-
-  return (Date.now() - lastActivity) > maxAgeMs;
-}
 
 /**
  * Clear all authentication data (both secure and state)
@@ -205,8 +174,9 @@ export function clearAllAuthData() {
   localStorage.removeItem(STATE_KEYS.IS_AUTHENTICATED);
   localStorage.removeItem(STATE_KEYS.USER_ID);
   localStorage.removeItem(STATE_KEYS.USER_TYPE);
-  localStorage.removeItem(STATE_KEYS.LAST_ACTIVITY);
   localStorage.removeItem(STATE_KEYS.SESSION_VALID);
+  // Also clear legacy last activity key if present
+  localStorage.removeItem('sl_last_activity');
 
   // Clear legacy keys
   localStorage.removeItem('splitlease_auth_token');

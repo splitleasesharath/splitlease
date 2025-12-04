@@ -154,7 +154,6 @@ export async function loginUser(email, password) {
     setAuthToken(token);
     setSessionId(user_id);
     setAuthState(true, user_id);
-    updateLastActivity();
 
     // Fetch and store user type
     const userData = await validateTokenAndFetchUser();
@@ -321,7 +320,6 @@ const STATE_KEYS = {
   IS_AUTHENTICATED: 'sl_auth_state',
   USER_ID: 'sl_user_id',
   USER_TYPE: 'sl_user_type',
-  LAST_ACTIVITY: 'sl_last_activity',
   SESSION_VALID: 'sl_session_valid'
 };
 ```
@@ -340,11 +338,6 @@ setSessionId(userId);
 setAuthState(true, userId);
 // localStorage.setItem('sl_auth_state', 'true');
 // localStorage.setItem('sl_user_id', userId);
-// localStorage.setItem('sl_last_activity', Date.now());
-
-// Update activity timestamp
-updateLastActivity();
-// localStorage.setItem('sl_last_activity', Date.now());
 ```
 
 ---
@@ -536,8 +529,7 @@ export async function validateTokenAndFetchUser() {
 
 ### 1. Token Storage
 - Tokens stored in localStorage (persists across sessions)
-- Token expiry managed by Bubble API
-- Activity timestamp tracked for UI staleness
+- Token expiry managed entirely by Bubble API (no client-side expiration)
 
 ### 2. API Key Protection
 - Bubble API key stored server-side in Supabase Secrets

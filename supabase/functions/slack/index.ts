@@ -7,14 +7,98 @@
  * - faq_inquiry: Send FAQ inquiries to Slack channels
  *
  * NO AUTHENTICATION REQUIRED - Public endpoint
+ *
+ * INLINED DEPENDENCIES: All shared utilities inlined to resolve bundling issues
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { corsHeaders } from '../_shared/cors.ts';
-import { formatErrorResponse, getStatusCodeFromError, ValidationError } from '../_shared/errors.ts';
-import { validateAction, validateRequiredFields, validateEmail } from '../_shared/validation.ts';
 
-console.log('[slack] Edge Function started');
+// ============ CORS Headers (from _shared/cors.ts) ============
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
+};
+
+// ============ Error Classes (from _shared/errors.ts) ============
+class ValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ValidationError';
+  }
+}
+
+function formatErrorResponse(error: Error): { success: false; error: string } {
+  console.error('[Error Handler]', error);
+  return {
+    success: false,
+    error: error.message || 'An error occurred',
+  };
+}
+
+function getStatusCodeFromError(error: Error): number {
+  if (error instanceof ValidationError) {
+    return 400;
+  }
+  return 500;
+}
+
+// ============ Validation Functions (from _shared/validation.ts) ============
+function validateEmail(email: string): void {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(email)) {
+    throw new ValidationError(`Invalid email format: ${email}`);
+  }
+}
+
+function validateRequiredFields(
+  obj: Record<string, any>,
+  requiredFields: string[]
+): void {
+  for (const field of requiredFields) {
+    if (!(field in obj) || obj[field] === undefined || obj[field] === null || obj[field] === '') {
+      throw new ValidationError(`Missing required field: ${field}`);
+    }
+  }
+}
+
+function validateAction(action: string, allowedActions: string[]): void {
+  if (!allowedActions.includes(action)) {
+    throw new ValidationError(`Unknown action: ${action}. Allowed actions: ${allowedActions.join(', ')}`);
+  }
+}
+
+// ============ Environment Diagnostics ============
+function logEnvironmentDiagnostics(): void {
+  console.log('[slack] ========== ENVIRONMENT DIAGNOSTICS ==========');
+  console.log('[slack] Deno version:', Deno.version.deno);
+  console.log('[slack] V8 version:', Deno.version.v8);
+  console.log('[slack] TypeScript version:', Deno.version.typescript);
+
+  // Log all available environment variable names (not values for security)
+  const envKeys = Object.keys(Deno.env.toObject());
+  console.log('[slack] Available env var count:', envKeys.length);
+  console.log('[slack] Available env var names:', envKeys.join(', '));
+
+  // Check specific Slack-related secrets (truncated for security)
+  const webhookAcq = Deno.env.get('SLACK_WEBHOOK_ACQUISITION');
+  const webhookGen = Deno.env.get('SLACK_WEBHOOK_GENERAL');
+
+  console.log('[slack] SLACK_WEBHOOK_ACQUISITION:', webhookAcq ? `SET (${webhookAcq.length} chars, starts with: ${webhookAcq.substring(0, 30)}...)` : 'NOT SET');
+  console.log('[slack] SLACK_WEBHOOK_GENERAL:', webhookGen ? `SET (${webhookGen} chars, starts with: ${webhookGen.substring(0, 30)}...)` : 'NOT SET');
+
+  // Check for common Supabase env vars
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  console.log('[slack] SUPABASE_URL:', supabaseUrl ? 'SET' : 'NOT SET');
+  console.log('[slack] SUPABASE_ANON_KEY:', supabaseAnonKey ? 'SET' : 'NOT SET');
+  console.log('[slack] ========== END DIAGNOSTICS ==========');
+}
+
+// Run diagnostics on function load
+console.log('[slack] Edge Function loading...');
+logEnvironmentDiagnostics();
+console.log('[slack] Edge Function loaded successfully');
 
 interface FaqInquiryPayload {
   name: string;
@@ -24,6 +108,51 @@ interface FaqInquiryPayload {
 
 interface SlackMessage {
   text: string;
+}
+
+interface DiagnoseResult {
+  status: string;
+  environment: {
+    deno_version: string;
+    env_var_count: number;
+    env_var_names: string[];
+    slack_webhook_acquisition: string;
+    slack_webhook_general: string;
+    supabase_url: string;
+    supabase_anon_key: string;
+  };
+  timestamp: string;
+}
+
+/**
+ * Diagnose environment and configuration
+ * Use this to debug secret loading issues
+ */
+function handleDiagnose(): DiagnoseResult {
+  console.log('[slack] Running diagnostics...');
+
+  const envKeys = Object.keys(Deno.env.toObject());
+  const webhookAcq = Deno.env.get('SLACK_WEBHOOK_ACQUISITION');
+  const webhookGen = Deno.env.get('SLACK_WEBHOOK_GENERAL');
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+  const result: DiagnoseResult = {
+    status: (webhookAcq && webhookGen) ? 'healthy' : 'unhealthy',
+    environment: {
+      deno_version: Deno.version.deno,
+      env_var_count: envKeys.length,
+      env_var_names: envKeys,
+      slack_webhook_acquisition: webhookAcq ? `SET (${webhookAcq.length} chars)` : 'NOT SET',
+      slack_webhook_general: webhookGen ? `SET (${webhookGen.length} chars)` : 'NOT SET',
+      supabase_url: supabaseUrl ? 'SET' : 'NOT SET',
+      supabase_anon_key: supabaseAnonKey ? 'SET' : 'NOT SET',
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  console.log('[slack] Diagnostics result:', JSON.stringify(result, null, 2));
+  return result;
 }
 
 /**
@@ -44,6 +173,9 @@ async function handleFaqInquiry(payload: FaqInquiryPayload): Promise<{ message: 
   // Get Slack webhook URLs from environment
   const webhookAcquisition = Deno.env.get('SLACK_WEBHOOK_ACQUISITION');
   const webhookGeneral = Deno.env.get('SLACK_WEBHOOK_GENERAL');
+
+  console.log('[slack] Webhook Acquisition exists:', !!webhookAcquisition);
+  console.log('[slack] Webhook General exists:', !!webhookGeneral);
 
   if (!webhookAcquisition || !webhookGeneral) {
     console.error('[slack] Missing Slack webhook environment variables');
@@ -69,13 +201,20 @@ async function handleFaqInquiry(payload: FaqInquiryPayload): Promise<{ message: 
     )
   );
 
+  // Log results for debugging
+  console.log('[slack] Webhook results:', JSON.stringify(results.map(r => ({
+    status: r.status,
+    value: r.status === 'fulfilled' ? { ok: r.value.ok, status: r.value.status } : null,
+    reason: r.status === 'rejected' ? String(r.reason) : null
+  }))));
+
   // Check if at least one succeeded
   const hasSuccess = results.some(
     result => result.status === 'fulfilled' && result.value.ok
   );
 
   if (!hasSuccess) {
-    console.error('[slack] All Slack webhooks failed:', results);
+    console.error('[slack] All Slack webhooks failed');
     throw new Error('Failed to send inquiry to Slack');
   }
 
@@ -83,7 +222,7 @@ async function handleFaqInquiry(payload: FaqInquiryPayload): Promise<{ message: 
   return { message: 'Inquiry sent successfully' };
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, {
@@ -110,7 +249,7 @@ Deno.serve(async (req) => {
     const { action, payload } = body;
 
     // Validate action is supported
-    const allowedActions = ['faq_inquiry'];
+    const allowedActions = ['faq_inquiry', 'diagnose'];
     validateAction(action, allowedActions);
 
     console.log(`[slack] Action: ${action}`);
@@ -121,6 +260,10 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'faq_inquiry':
         result = await handleFaqInquiry(payload);
+        break;
+
+      case 'diagnose':
+        result = handleDiagnose();
         break;
 
       default:
@@ -145,10 +288,10 @@ Deno.serve(async (req) => {
   } catch (error) {
     console.error('[slack] ========== ERROR ==========');
     console.error('[slack] Error:', error);
-    console.error('[slack] Error stack:', error.stack);
+    console.error('[slack] Error stack:', error instanceof Error ? error.stack : 'No stack');
 
-    const statusCode = getStatusCodeFromError(error);
-    const errorResponse = formatErrorResponse(error);
+    const statusCode = getStatusCodeFromError(error as Error);
+    const errorResponse = formatErrorResponse(error as Error);
 
     return new Response(
       JSON.stringify(errorResponse),

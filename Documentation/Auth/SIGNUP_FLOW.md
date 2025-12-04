@@ -361,7 +361,6 @@ export async function signupUser(email, password, retype, additionalData = {}) {
     setSessionId(user_id);
     setAuthState(true, user_id);
     setUserType(additionalData.userType || 'Guest');
-    updateLastActivity();
 
     return {
       success: true,
@@ -737,7 +736,6 @@ setAuthToken(token);
 setSessionId(user_id);
 setAuthState(true, user_id);
 setUserType(additionalData.userType || 'Guest');
-updateLastActivity();
 ```
 
 ### 2. Page Reload
