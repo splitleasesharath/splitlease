@@ -1,43 +1,85 @@
 /**
  * URL Parser Utilities for Guest Proposals Page
- * Handles URL-based routing for user-centric proposal flow
+ *
+ * The guest-proposals page uses authenticated session to identify user.
+ * User ID is NOT extracted from URL - it comes from secure storage.
  *
  * Supported patterns:
- * - /guest-proposals/{USER_ID}
- * - /guest-proposals/{USER_ID}?proposal={PROPOSAL_ID}
+ * - /guest-proposals
+ * - /guest-proposals?proposal={PROPOSAL_ID}
+ *
+ * Legacy patterns (redirected to clean URL):
+ * - /guest-proposals/{USER_ID} → /guest-proposals
+ * - /guest-proposals?user={USER_ID} → /guest-proposals
  */
 
+import { getSessionId } from '../secureStorage.js';
+
 /**
- * Extract user ID from URL path
- * Supports: /guest-proposals/{userId}
+ * Check if URL contains legacy user ID patterns and clean them
+ * Redirects to clean URL if legacy patterns detected
  *
- * @returns {string|null} User ID or null if not found
+ * @returns {boolean} True if redirect was triggered, false otherwise
  */
-export function getUserIdFromPath() {
+export function cleanLegacyUserIdFromUrl() {
   const pathSegments = window.location.pathname.split('/').filter(Boolean);
+  const urlParams = new URLSearchParams(window.location.search);
 
   // Find 'guest-proposals' segment index
   const pageIndex = pathSegments.findIndex(seg =>
     seg === 'guest-proposals' || seg === 'guest-proposals.html'
   );
 
-  // Next segment should be user ID
+  let needsRedirect = false;
+  let cleanPath = '/guest-proposals';
+  const cleanParams = new URLSearchParams();
+
+  // Check for user ID in path (legacy pattern)
   if (pageIndex !== -1 && pathSegments[pageIndex + 1]) {
-    const userId = pathSegments[pageIndex + 1];
-    console.log('getUserIdFromPath: Extracted user ID from path:', userId);
+    console.log('cleanLegacyUserIdFromUrl: Found legacy user ID in path, will redirect');
+    needsRedirect = true;
+  }
+
+  // Check for user query param (legacy pattern)
+  if (urlParams.has('user')) {
+    console.log('cleanLegacyUserIdFromUrl: Found legacy user query param, will redirect');
+    needsRedirect = true;
+  }
+
+  // Preserve proposal query param if present
+  const proposalId = urlParams.get('proposal');
+  if (proposalId) {
+    cleanParams.set('proposal', proposalId);
+  }
+
+  // Redirect if legacy patterns detected
+  if (needsRedirect) {
+    const cleanUrl = cleanParams.toString()
+      ? `${cleanPath}?${cleanParams.toString()}`
+      : cleanPath;
+    console.log('cleanLegacyUserIdFromUrl: Redirecting to clean URL:', cleanUrl);
+    window.history.replaceState({}, '', cleanUrl);
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Get user ID from authenticated session
+ * User ID comes from secure storage, NOT from URL
+ *
+ * @returns {string|null} User ID from session or null if not authenticated
+ */
+export function getUserIdFromSession() {
+  const userId = getSessionId();
+
+  if (userId) {
+    console.log('getUserIdFromSession: Got user ID from session');
     return userId;
   }
 
-  // Fallback: Check query parameter
-  const urlParams = new URLSearchParams(window.location.search);
-  const userParam = urlParams.get('user');
-
-  if (userParam) {
-    console.log('getUserIdFromPath: Extracted user ID from query param:', userParam);
-    return userParam;
-  }
-
-  console.error('getUserIdFromPath: No user ID found in URL');
+  console.log('getUserIdFromSession: No user ID in session (not authenticated)');
   return null;
 }
 
@@ -60,24 +102,28 @@ export function getProposalIdFromQuery() {
 /**
  * Update URL with selected proposal (without page reload)
  * Uses History API to update URL without triggering navigation
+ * User ID is NOT included in URL - only proposal ID as query param
  *
- * @param {string} userId - The current user ID
  * @param {string} proposalId - The selected proposal ID
  */
-export function updateUrlWithProposal(userId, proposalId) {
-  const newUrl = `/guest-proposals/${userId}?proposal=${proposalId}`;
+export function updateUrlWithProposal(proposalId) {
+  const newUrl = `/guest-proposals?proposal=${proposalId}`;
   window.history.pushState({}, '', newUrl);
   console.log('updateUrlWithProposal: Updated URL to:', newUrl);
 }
 
 /**
  * Parse complete URL parameters for proposal page
+ * User ID comes from session, NOT from URL
  *
- * @returns {{userId: string|null, proposalId: string|null}} Object with userId and proposalId
+ * @returns {{userId: string|null, proposalId: string|null}} Object with userId (from session) and proposalId (from URL)
  */
 export function parseProposalPageUrl() {
+  // Clean legacy URL patterns first
+  cleanLegacyUserIdFromUrl();
+
   return {
-    userId: getUserIdFromPath(),
+    userId: getUserIdFromSession(),
     proposalId: getProposalIdFromQuery()
   };
 }

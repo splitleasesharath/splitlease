@@ -3,7 +3,7 @@
  * Implements user."Proposals List" approach per user requirement
  *
  * Data flow:
- * 1. Extract user ID from URL
+ * 1. Get user ID from authenticated session (NOT from URL)
  * 2. Fetch user data with "Proposals List" array
  * 3. Extract proposal IDs from the array
  * 4. Fetch proposals by those specific IDs
@@ -12,7 +12,7 @@
  */
 
 import { supabase } from '../supabase.js';
-import { getUserIdFromPath, getProposalIdFromQuery } from './urlParser.js';
+import { getUserIdFromSession, getProposalIdFromQuery } from './urlParser.js';
 
 /**
  * STEP 1: Fetch user data with Proposals List
@@ -460,16 +460,19 @@ export async function fetchProposalsByIds(proposalIds) {
 }
 
 /**
- * COMPLETE FLOW: Get user's proposals from URL
+ * COMPLETE FLOW: Get user's proposals from authenticated session
  * This is the main function to call from components
+ *
+ * User ID comes from secure storage (session), NOT from URL.
+ * This ensures users can only view their own proposals.
  *
  * @returns {Promise<{user: Object, proposals: Array, selectedProposal: Object|null}>}
  */
 export async function fetchUserProposalsFromUrl() {
-  // Step 1: Extract user ID from URL
-  const userId = getUserIdFromPath();
+  // Step 1: Get user ID from authenticated session (NOT URL)
+  const userId = getUserIdFromSession();
   if (!userId) {
-    throw new Error('No user ID found in URL path. Expected: /guest-proposals/{userId}');
+    throw new Error('NOT_AUTHENTICATED');
   }
 
   // Step 2: Fetch user data with Proposals List

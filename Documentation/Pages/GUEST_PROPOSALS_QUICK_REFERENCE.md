@@ -1,8 +1,23 @@
 # Guest Proposals Page - Quick Reference
 
 **GENERATED**: 2025-12-04
-**PAGE_URL**: `/guest-proposals/{userId}?proposal={proposalId}`
+**PAGE_URL**: `/guest-proposals` or `/guest-proposals?proposal={proposalId}`
 **ENTRY_POINT**: `app/src/guest-proposals.jsx`
+
+---
+
+## ### AUTHENTICATION ###
+
+**IMPORTANT**: This page requires authenticated Guest users only.
+
+| Condition | Action |
+|-----------|--------|
+| Not logged in | Redirect to `/` (home) |
+| Logged in as Host | Redirect to `/` (home) |
+| Logged in as Guest | Show proposals page |
+
+User ID comes from **session storage** (`getSessionId()`), NOT from URL.
+Legacy URLs with user ID in path or query are cleaned automatically.
 
 ---
 
@@ -14,7 +29,8 @@ guest-proposals.jsx (Entry Point)
     +-- GuestProposalsPage.jsx (Hollow Component)
             |
             +-- useGuestProposalsPageLogic.js (Business Logic Hook)
-            |       +-- Auth validation via URL user ID + token
+            |       +-- Auth check (checkAuthStatus + getUserType)
+            |       +-- User ID from session (NOT URL)
             |       +-- Proposal fetching via userProposalQueries
             |       +-- Virtual meeting management
             |       +-- Modal state management
@@ -113,22 +129,38 @@ guest-proposals.jsx (Entry Point)
 ## ### URL_ROUTING ###
 
 ```
-/guest-proposals/{userId}                    # All proposals for user
-/guest-proposals/{userId}?proposal={id}      # Pre-select specific proposal
+/guest-proposals                          # All proposals for logged-in Guest
+/guest-proposals?proposal={id}            # Pre-select specific proposal
+```
+
+**Note**: User ID is NOT in URL. User is identified via authenticated session.
+
+### Legacy URL Patterns (Auto-Cleaned)
+These patterns are automatically cleaned and redirected:
+```
+/guest-proposals/{userId}         → /guest-proposals
+/guest-proposals?user={userId}    → /guest-proposals
 ```
 
 ### URL Parser Functions
 ```javascript
-import { getUserIdFromPath, getProposalIdFromQuery, parseProposalPageUrl } from 'lib/proposals/urlParser.js'
+import { getUserIdFromSession, getProposalIdFromQuery, parseProposalPageUrl, cleanLegacyUserIdFromUrl } from 'lib/proposals/urlParser.js'
 
+// Get user from session (NOT URL)
+const userId = getUserIdFromSession()
+
+// Get proposal from query param
+const proposalId = getProposalIdFromQuery()
+
+// Full parse (cleans legacy URLs first)
 const { userId, proposalId } = parseProposalPageUrl()
 ```
 
 ### URL Update (Without Reload)
 ```javascript
-import { updateUrlWithProposal } from 'logic/workflows/proposals/navigationWorkflow.js'
+import { updateUrlWithProposal } from 'lib/proposals/urlParser.js'
 
-updateUrlWithProposal(proposalId)  // Uses History API
+updateUrlWithProposal(proposalId)  // Updates to /guest-proposals?proposal={id}
 ```
 
 ---
@@ -724,7 +756,8 @@ const getButtonState = () => {
 
 | Issue | Check |
 |-------|-------|
-| No proposals showing | Verify userId in URL, check Supabase RLS |
+| Redirected to home | Check auth status (must be logged in as Guest) |
+| No proposals showing | Verify session has user ID, check Supabase RLS |
 | Buttons not appearing | Check status config via `getStatusConfig()` |
 | VM button wrong state | Verify `virtualMeeting` object populated |
 | Progress not updating | Check `stage` value in status config |
