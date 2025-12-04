@@ -1,52 +1,85 @@
 # Cloudflare Pages redirects and rewrites
+# AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
+# Generated: 2025-12-04T08:26:29.684Z
+#
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
-# Handle view-split-lease page with clean URL structure
-# Maps /view-split-lease/[listing-id] to view-split-lease.html
-# The 200 status makes this a rewrite, not a redirect, keeping the URL intact
-# IMPORTANT: Do NOT create a Cloudflare Function for this route!
-# Functions conflict with _redirects and cause the listing ID to be lost.
-# Route all view-split-lease requests to listing-page.html
-# Using a differently named file to avoid Cloudflare's "smart" URL normalization
+# ===== DYNAMIC ROUTES (with parameters) =====
+# These routes use _internal/ files to avoid Cloudflare's 308 redirects
+
+# /view-split-lease → view-split-lease.html
 /view-split-lease  /_internal/listing-view  200
 /view-split-lease/  /_internal/listing-view  200
 /view-split-lease/*  /_internal/listing-view  200
 
-# Handle account-profile page with clean URL structure
-# Maps /account-profile/[user-id] to account-profile.html
-/account-profile/*  /account-profile.html  200
-
-# Handle self-listing page
-/self-listing.html  /self-listing.html  200
-
-# Handle search page
-/search.html  /search.html  200
-
-# Handle FAQ page
-/faq.html  /faq.html  200
-
-# Handle Help Center pages
-# Using internal files without .html extension to avoid Cloudflare's "pretty URL" normalization
-# which causes 308 redirects and redirect loops
-/help-center  /_internal/help-center-view  200
-/help-center/  /_internal/help-center-view  200
-/help-center/*  /_internal/help-center-category-view  200
-
-# Handle guest-proposals page with clean URL structure
-# Maps /guest-proposals/[user-id]?proposal=[proposal-id] to guest-proposals.html
+# /guest-proposals → guest-proposals.html
 /guest-proposals  /_internal/guest-proposals-view  200
 /guest-proposals/  /_internal/guest-proposals-view  200
 /guest-proposals/*  /_internal/guest-proposals-view  200
 
-# Handle policies page
-/policies.html  /policies.html  200
+# /account-profile → account-profile.html
+/account-profile/*  /account-profile.html  200
 
-# Handle why-split-lease page
-/why-split-lease.html  /why-split-lease.html  200
+# /help-center/:category → help-center-category.html (wildcard only, base handled separately)
+/help-center/*  /_internal/help-center-category-view  200
+
+# ===== STATIC PAGES =====
 
 # Homepage
 /  /index.html  200
 /index.html  /index.html  200
+
+# /search
+/search.html  /search.html  200
+
+# /search-test
+/search-test.html  /search-test.html  200
+
+# /help-center → help-center.html
+/help-center  /_internal/help-center-view  200
+/help-center/  /_internal/help-center-view  200
+
+# /faq
+/faq.html  /faq.html  200
+
+# /policies
+/policies.html  /policies.html  200
+
+# /list-with-us
+/list-with-us.html  /list-with-us.html  200
+
+# /why-split-lease
+/why-split-lease.html  /why-split-lease.html  200
+
+# /careers
+/careers.html  /careers.html  200
+
+# /about-us
+/about-us.html  /about-us.html  200
+
+# /guest-success
+/guest-success.html  /guest-success.html  200
+
+# /host-success
+/host-success.html  /host-success.html  200
+
+# /self-listing
+/self-listing.html  /self-listing.html  200
+
+# /listing-dashboard
+/listing-dashboard.html  /listing-dashboard.html  200
+
+# /host-overview
+/host-overview.html  /host-overview.html  200
+
+# /favorite-listings
+/favorite-listings.html  /favorite-listings.html  200
+
+# /rental-application
+/rental-application.html  /rental-application.html  200
+
+# /404
+/404.html  /404.html  200
 
 # Note: Cloudflare Pages automatically serves /404.html for not found routes
 # No explicit catch-all rule needed - native 404.html support handles this
