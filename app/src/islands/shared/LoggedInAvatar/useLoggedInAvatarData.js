@@ -91,6 +91,7 @@ export function useLoggedInAvatarData(userId) {
     visitsCount: 0,
     houseManualsCount: 0,
     listingsCount: 0,
+    firstListingId: null, // ID of first listing when user has exactly 1
     virtualMeetingsCount: 0,
     leasesCount: 0,
     favoritesCount: 0,
@@ -133,10 +134,10 @@ export function useLoggedInAvatarData(userId) {
           .eq('_id', userId)
           .single(),
 
-        // 2. Count listings created by this user
+        // 2. Fetch listings created by this user (get IDs and count)
         supabase
           .from('listing')
-          .select('_id', { count: 'exact', head: true })
+          .select('_id')
           .eq('Created By', userId),
 
         // 3. Count visits for this user (as guest)
@@ -201,12 +202,18 @@ export function useLoggedInAvatarData(userId) {
         }
       }
 
+      // Process listings - get count and first listing ID
+      const listings = listingsResult.data || [];
+      const listingsCount = listings.length;
+      const firstListingId = listingsCount === 1 ? listings[0]._id : null;
+
       const newData = {
         userType: normalizedType,
         proposalsCount,
         visitsCount: visitsResult.count || 0,
         houseManualsCount,
-        listingsCount: listingsResult.count || 0,
+        listingsCount,
+        firstListingId,
         virtualMeetingsCount: virtualMeetingsResult.count || 0,
         leasesCount: leasesResult.count || 0,
         favoritesCount,
