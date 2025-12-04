@@ -11,6 +11,7 @@ import AuthAwareSearchScheduleSelector from '../../shared/AuthAwareSearchSchedul
 import ContactHostMessaging from '../../shared/ContactHostMessaging.jsx';
 import InformationalText from '../../shared/InformationalText.jsx';
 import LoggedInAvatar from '../../shared/LoggedInAvatar/LoggedInAvatar.jsx';
+import FavoriteButton from '../../shared/FavoriteButton/FavoriteButton.jsx';
 import EmptyState from './components/EmptyState';
 import { getFavoritedListings, removeFromFavorites } from './favoritesApi';
 import { checkAuthStatus, getSessionId, validateTokenAndFetchUser, getUserId, logoutUser } from '../../../lib/auth';
@@ -22,12 +23,15 @@ import './FavoriteListingsPage.css';
 /**
  * PropertyCard - Individual listing card (matches SearchPage PropertyCard)
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, onToggleFavorite }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, onToggleFavorite, userId }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
 
   const hasImages = listing.images && listing.images.length > 0;
   const hasMultipleImages = listing.images && listing.images.length > 1;
+
+  // Get listing ID for FavoriteButton
+  const favoriteListingId = listing.id || listing._id;
 
   // Format host name to show "FirstName L."
   const formatHostName = (fullName) => {
@@ -58,15 +62,6 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
     setCurrentImageIndex((prev) =>
       prev === listing.images.length - 1 ? 0 : prev + 1
     );
-  };
-
-  const handleFavoriteClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (onToggleFavorite) {
-      const listingId = listing.id || listing._id;
-      onToggleFavorite(listingId, listing.title);
-    }
   };
 
   // Calculate dynamic price using default 5 nights (Monday-Friday pattern)
@@ -173,23 +168,17 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               </div>
             </>
           )}
-          <button
-            type="button"
-            className={`favorite-btn ${isFavorited ? 'favorited' : ''}`}
-            onClick={handleFavoriteClick}
-            aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill={isFavorited ? '#FF6B35' : 'none'}
-              stroke={isFavorited ? '#FF6B35' : 'currentColor'}
-              strokeWidth="2"
-            >
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-          </button>
+          <FavoriteButton
+            listingId={favoriteListingId}
+            userId={userId}
+            initialFavorited={isFavorited}
+            onToggle={(newState, listingId) => {
+              if (onToggleFavorite) {
+                onToggleFavorite(listingId, listing.title, newState);
+              }
+            }}
+            size="medium"
+          />
           {listing.isNew && <span className="new-badge">New Listing</span>}
         </div>
       )}
@@ -282,7 +271,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
  * ListingsGrid - Grid of property cards
  * Note: On favorites page, all listings are favorited by definition
  */
-function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, onToggleFavorite }) {
+function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, onToggleFavorite, userId }) {
   return (
     <div className="listings-container">
       {listings.map((listing) => {
@@ -300,6 +289,7 @@ function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, i
             isLoggedIn={isLoggedIn}
             isFavorited={true}
             onToggleFavorite={onToggleFavorite}
+            userId={userId}
           />
         );
       })}
@@ -609,49 +599,16 @@ const FavoriteListingsPage = () => {
     }, 3000);
   };
 
-  // Toggle favorite
-  const handleToggleFavorite = async (listingId, listingTitle) => {
-    if (!isLoggedIn || !currentUser?.id) return;
+  // Toggle favorite - called after FavoriteButton handles the API call
+  const handleToggleFavorite = (listingId, listingTitle, newState) => {
+    const displayName = listingTitle || 'Listing';
 
-    const isFavorited = favoritedListingIds.has(listingId);
-
-    // Optimistic update
-    const newFavoritedIds = new Set(favoritedListingIds);
-    if (isFavorited) {
-      newFavoritedIds.delete(listingId);
-      // Also remove from listings display
+    // If unfavorited (newState = false), remove from listings display
+    if (!newState) {
       setListings(prev => prev.filter(l => l.id !== listingId));
+      showToast(`${displayName} removed from favorites`, 'info');
     } else {
-      newFavoritedIds.add(listingId);
-    }
-    setFavoritedListingIds(newFavoritedIds);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          action: 'toggle_favorite',
-          payload: {
-            userId: currentUser.id,
-            listingId,
-            action: isFavorited ? 'remove' : 'add',
-          },
-        },
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error?.message || 'Failed to update favorites');
-
-      const displayName = listingTitle || 'Listing';
-      if (isFavorited) {
-        showToast(`${displayName} removed from favorites`, 'info');
-      } else {
-        showToast(`${displayName} added to favorites`, 'success');
-      }
-    } catch (error) {
-      console.error('Error toggling favorite:', error);
-      // Revert optimistic update
-      setFavoritedListingIds(favoritedListingIds);
-      showToast('Failed to update favorites. Please try again.', 'error');
+      showToast(`${displayName} added to favorites`, 'success');
     }
   };
 
@@ -809,6 +766,7 @@ const FavoriteListingsPage = () => {
                 mapRef={mapRef}
                 isLoggedIn={isLoggedIn}
                 onToggleFavorite={handleToggleFavorite}
+                userId={userId}
               />
             )}
           </div>
