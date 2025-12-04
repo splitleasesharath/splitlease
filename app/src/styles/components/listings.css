@@ -310,6 +310,7 @@
     height: 100%;
     object-fit: cover;
     object-position: center;
+    border-radius: 16px 0 0 16px;
 }
 
 /* Image Navigation Buttons (Carousel) */
@@ -477,6 +478,7 @@
 .listing-host-row {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 8px;
 }
 
@@ -485,6 +487,7 @@
     align-items: center;
     gap: 8px;
     min-width: 0;
+    flex: 1;
 }
 
 .listing-host-row .host-avatar {
@@ -520,18 +523,20 @@
 .listing-host-row .message-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
     background: #31135D;
     color: white;
     border: none;
-    padding: 10px 18px;
+    padding: 8px 18px;
     border-radius: 6px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: background 0.2s;
     flex-shrink: 0;
     white-space: nowrap;
+    min-width: 100px;
 }
 
 .listing-host-row .message-btn:hover {
