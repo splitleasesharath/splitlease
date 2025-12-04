@@ -11,7 +11,8 @@
  */
 
 import { useState } from 'react';
-import { X, Heart, MapPin, ChevronLeft, ChevronRight, Bed, Bath, Square } from 'lucide-react';
+import { X, MapPin, ChevronLeft, ChevronRight, Bed, Bath, Square } from 'lucide-react';
+import FavoriteButton from '../FavoriteButton';
 import './ListingCardForMap.css';
 
 /**
@@ -24,7 +25,9 @@ import './ListingCardForMap.css';
  * @param {Function} props.onMessageClick - Callback when message button is clicked
  * @param {boolean} props.isLoggedIn - Whether user is logged in (for showing favorite button)
  * @param {boolean} props.isFavorited - Whether the listing is favorited by the user
- * @param {Function} props.onToggleFavorite - Callback when favorite button is clicked
+ * @param {Function} props.onToggleFavorite - Callback when favorite state changes: (listingId, listingTitle, newState) => void
+ * @param {string} props.userId - Current user ID for favorite API calls
+ * @param {Function} props.onRequireAuth - Callback to show login modal if not authenticated
  */
 export default function ListingCardForMap({
   listing,
@@ -34,7 +37,9 @@ export default function ListingCardForMap({
   onMessageClick,
   isLoggedIn = false,
   isFavorited = false,
-  onToggleFavorite
+  onToggleFavorite,
+  userId = null,
+  onRequireAuth = null
 }) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
 
@@ -54,13 +59,8 @@ export default function ListingCardForMap({
     );
   };
 
-  const handleToggleFavorite = (e) => {
-    e.stopPropagation();
-    if (onToggleFavorite) {
-      const listingId = listing.id || listing._id;
-      onToggleFavorite(listingId, listing.title);
-    }
-  };
+  // Get listing ID for FavoriteButton
+  const favoriteListingId = listing.id || listing._id;
 
   const handleViewDetails = () => {
     const listingId = listing.id || listing._id;
@@ -124,18 +124,19 @@ export default function ListingCardForMap({
           <X size={16} color="#4D4D4D" />
         </button>
 
-        {/* Favorite Button - Always visible, prompts login if not authenticated */}
-        <button
-          className={`listing-card-favorite-btn ${isFavorited ? 'favorited' : ''}`}
-          onClick={handleToggleFavorite}
-          aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-        >
-          <Heart
-            size={16}
-            color={isFavorited ? "#FF6B35" : "#4D4D4D"}
-            fill={isFavorited ? "#FF6B35" : "none"}
-          />
-        </button>
+        {/* Favorite Button - Uses shared FavoriteButton component */}
+        <FavoriteButton
+          listingId={favoriteListingId}
+          userId={userId}
+          initialFavorited={isFavorited}
+          onToggle={(newState, listingId) => {
+            if (onToggleFavorite) {
+              onToggleFavorite(listingId, listing.title, newState);
+            }
+          }}
+          onRequireAuth={onRequireAuth}
+          size="small"
+        />
 
         {/* Image Section */}
         <div className="listing-card-image-container">

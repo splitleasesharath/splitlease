@@ -517,12 +517,11 @@ const FavoriteListingsPage = () => {
           return;
         }
 
-        // Fetch listings data from Supabase
+        // Fetch listings data from Supabase (all favorited listings, regardless of Active status)
         const { data: listingsData, error: listingsError } = await supabase
           .from('listing')
           .select('*')
-          .in('_id', favoritedIds)
-          .eq('Active', true);
+          .in('_id', favoritedIds);
 
         if (listingsError) {
           console.error('Error fetching listings:', listingsError);

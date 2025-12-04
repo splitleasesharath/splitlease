@@ -862,7 +862,7 @@ export default function SearchPage() {
               avatarUrl: userData.profilePhoto || null
             });
 
-            // Fetch favorites from Supabase - only count ACTIVE listings
+            // Fetch favorites from Supabase
             if (userId) {
               const { data: userFavorites, error } = await supabase
                 .from('user')
@@ -878,26 +878,11 @@ export default function SearchPage() {
                     typeof id === 'string' && /^\d+x\d+$/.test(id)
                   );
 
-                  // Store all favorited IDs for heart icon state (includes inactive)
+                  // Store all favorited IDs for heart icon state
                   setFavoritedListingIds(new Set(validFavorites));
-
-                  // Count only ACTIVE favorites for the header badge
-                  if (validFavorites.length > 0) {
-                    const { data: activeListings, error: activeError } = await supabase
-                      .from('listing')
-                      .select('_id')
-                      .in('_id', validFavorites)
-                      .eq('Active', true);
-
-                    if (!activeError && activeListings) {
-                      setFavoritesCount(activeListings.length);
-                      console.log('[SearchPage] Active favorites count:', activeListings.length, 'of', validFavorites.length, 'total');
-                    } else {
-                      setFavoritesCount(validFavorites.length);
-                    }
-                  } else {
-                    setFavoritesCount(0);
-                  }
+                  // Set count to match - all favorites count regardless of Active status
+                  setFavoritesCount(validFavorites.length);
+                  console.log('[SearchPage] Favorites count:', validFavorites.length);
                 } else {
                   setFavoritesCount(0);
                   setFavoritedListingIds(new Set());
@@ -1782,8 +1767,7 @@ export default function SearchPage() {
       listingId,
       listingTitle,
       newState,
-      currentFavoritesCount: favoritesCount,
-      currentFavoritedIdsSize: favoritedListingIds.size
+      currentFavoritesCount: favoritesCount
     });
 
     // Update the local set to keep heart icon state in sync
@@ -1794,20 +1778,8 @@ export default function SearchPage() {
       newFavoritedIds.delete(listingId);
     }
     setFavoritedListingIds(newFavoritedIds);
-
-    // Only update favoritesCount if the listing is ACTIVE
-    // This keeps the header badge count consistent with what shows on the favorites page
-    const isActiveListing = allActiveListings.some(listing => listing.id === listingId);
-    if (isActiveListing) {
-      if (newState) {
-        setFavoritesCount(prev => prev + 1);
-      } else {
-        setFavoritesCount(prev => Math.max(0, prev - 1));
-      }
-      console.log('[SearchPage] Active listing toggled, updating favoritesCount');
-    } else {
-      console.log('[SearchPage] Inactive listing toggled, favoritesCount unchanged');
-    }
+    // Update count to match the set size
+    setFavoritesCount(newFavoritedIds.size);
 
     // Show toast notification
     const displayName = listingTitle || 'Listing';

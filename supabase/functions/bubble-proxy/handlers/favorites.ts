@@ -91,16 +91,33 @@ export async function handleFavorites(
 
     console.log('[Favorites Handler] Updated favorites:', updatedFavorites);
 
-    // Step 3: Update user record
-    console.log('[Favorites Handler] Step 2: Updating user record...');
-    const { error: updateError } = await supabase
-      .from('user')
-      .update({ 'Favorited Listings': updatedFavorites })
-      .eq('_id', userId);
+    // Step 3: Update user record using database function
+    // Note: Using RPC function to reliably handle column name with space
+    console.log('[Favorites Handler] Step 2: Updating user record via RPC...');
+    console.log('[Favorites Handler] Update payload:', JSON.stringify(updatedFavorites));
+
+    const { error: updateError } = await supabase.rpc('update_user_favorites', {
+      p_user_id: userId,
+      p_favorites: updatedFavorites
+    });
 
     if (updateError) {
       console.error('[Favorites Handler] Update error:', updateError);
       throw new Error(`Failed to update favorites: ${updateError.message}`);
+    }
+
+    // Verify the update by fetching again
+    const { data: verifyData, error: verifyError } = await supabase
+      .from('user')
+      .select('"Favorited Listings"')
+      .eq('_id', userId)
+      .single();
+
+    if (verifyError) {
+      console.error('[Favorites Handler] Verify error:', verifyError);
+    } else {
+      console.log('[Favorites Handler] Verification - current favorites in DB:', verifyData?.['Favorited Listings']);
+      console.log('[Favorites Handler] Favorites count after update:', verifyData?.['Favorited Listings']?.length || 0);
     }
 
     console.log('[Favorites Handler] ========== SUCCESS ==========');

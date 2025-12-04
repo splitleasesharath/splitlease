@@ -15,11 +15,12 @@ import { useLoggedInAvatarData, getMenuVisibility, NORMALIZED_USER_TYPES } from 
  *
  * Menu Visibility Rules (from Bubble.io conditionals):
  * 1. My Profile - ALWAYS visible
- * 2. My Proposals - HOST and TRIAL_HOST only
- * 3. My Proposals Suggested - HOST and TRIAL_HOST only (when proposals > 0)
- * 4. My Listings - ALL users
- * 5. Virtual Meetings - When proposals count = 0
+ * 2. My Proposals - ALWAYS visible (all users)
+ * 3. Proposals Suggested - GUEST only
+ * 4. My Listings - HOST and TRIAL_HOST only
+ * 5. Virtual Meetings - When user HAS proposals (proposalsCount > 0)
  * 6. House Manuals & Visits - GUEST: visits < 1, HOST: house manuals = 0
+ * 7. My Leases - Only when user has leases (leasesCount > 0)
  *
  * @component
  * @param {Object} props - Component props
@@ -174,8 +175,10 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 2. My Proposals - HOST and TRIAL_HOST only
-    if (menuVisibility.myProposals && (effectiveUserType === NORMALIZED_USER_TYPES.HOST || effectiveUserType === NORMALIZED_USER_TYPES.TRIAL_HOST)) {
+    // 2. My Proposals - Visible for all users
+    //    - Guests see their submitted proposals
+    //    - Hosts see proposals received from guests
+    if (menuVisibility.myProposals) {
       items.push({
         id: 'proposals',
         label: 'My Proposals',
@@ -186,31 +189,18 @@ export default function LoggedInAvatar({
       });
     }
 
-    // For GUEST users, show their proposals
-    if (effectiveUserType === NORMALIZED_USER_TYPES.GUEST) {
-      items.push({
-        id: 'guest-proposals',
-        label: 'My Proposals',
-        icon: '/assets/icons/file-text-purple.svg',
-        path: '/guest-proposals',
-        badgeCount: effectiveProposalsCount,
-        badgeColor: 'purple',
-      });
-    }
-
-    // 3. My Proposals Suggested - HOST and TRIAL_HOST only (when proposals > 0)
+    // 3. Proposals Suggested - GUEST only
+    //    Helps guests discover listings to submit proposals to
     if (menuVisibility.myProposalsSuggested) {
       items.push({
         id: 'proposals-suggested',
         label: 'Proposals Suggested',
         icon: '/assets/icons/file-text-purple.svg',
         path: '/proposals-suggested',
-        badgeCount: effectiveProposalsCount > 0 ? effectiveProposalsCount : undefined,
-        badgeColor: 'purple',
       });
     }
 
-    // 4. My Listings - Visible for all
+    // 4. My Listings - HOST and TRIAL_HOST only
     if (menuVisibility.myListings) {
       items.push({
         id: 'listings',
@@ -226,7 +216,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 5. Virtual Meetings - When proposals count = 0
+    // 5. Virtual Meetings - When user HAS proposals (proposalsCount > 0)
     if (menuVisibility.virtualMeetings) {
       items.push({
         id: 'virtual-meetings',
@@ -254,7 +244,7 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 7. My Leases - Always visible
+    // 7. My Leases - Only when user has leases (leasesCount > 0)
     if (menuVisibility.myLeases) {
       items.push({
         id: 'leases',

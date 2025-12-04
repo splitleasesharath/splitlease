@@ -115,7 +115,9 @@ const GoogleMap = forwardRef(({
   onMessageClick = null,   // Callback when message button is clicked on map card
   isLoggedIn = false,      // Whether user is logged in (for showing favorite button)
   favoritedListingIds = new Set(), // Set of favorited listing IDs
-  onToggleFavorite = null  // Callback when favorite button is clicked: (listingId, listingTitle) => void
+  onToggleFavorite = null, // Callback when favorite button is clicked: (listingId, listingTitle, newState) => void
+  userId = null,           // Current user ID for favorite button API calls
+  onRequireAuth = null     // Callback to show login modal if not authenticated
 }, ref) => {
   console.log('🗺️ GoogleMap: Component rendered with props:', {
     listingsCount: listings.length,
@@ -1007,6 +1009,8 @@ const GoogleMap = forwardRef(({
                 isLoggedIn={isLoggedIn}
                 isFavorited={favoritedListingIds?.has(listingId)}
                 onToggleFavorite={onToggleFavorite}
+                userId={userId}
+                onRequireAuth={onRequireAuth}
               />
             );
           })()}
