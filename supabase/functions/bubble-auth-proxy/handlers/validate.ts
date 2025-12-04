@@ -19,7 +19,7 @@
  * @param supabaseUrl - Supabase project URL
  * @param supabaseServiceKey - Service role key for bypassing RLS
  * @param payload - Request payload {token, user_id}
- * @returns {userId, firstName, fullName, profilePhoto, userType}
+ * @returns {userId, firstName, fullName, email, profilePhoto, userType}
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -62,7 +62,7 @@ export async function handleValidate(
 
     const { data: userData, error: userError } = await supabase
       .from('user')
-      .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current"')
+      .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text"')
       .eq('_id', user_id)
       .single();
 
@@ -89,6 +89,7 @@ export async function handleValidate(
       userId: userData._id,
       firstName: userData['Name - First'] || null,
       fullName: userData['Name - Full'] || null,
+      email: userData['email as text'] || null,
       profilePhoto: profilePhoto || null,
       userType: userData['Type - User Current'] || null
     };

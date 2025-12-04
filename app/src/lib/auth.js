@@ -618,10 +618,17 @@ export async function signupUser(email, password, retype, additionalData = null)
     console.log('   User Email:', email);
     console.log('   Token expires in:', data.data.expires, 'seconds');
 
+    // Store Supabase user ID if returned (for future hybrid auth migration)
+    if (data.data.supabase_user_id) {
+      localStorage.setItem('splitlease_supabase_user_id', data.data.supabase_user_id);
+      console.log('   Supabase User ID:', data.data.supabase_user_id);
+    }
+
     return {
       success: true,
       user_id: data.data.user_id,
-      expires: data.data.expires
+      expires: data.data.expires,
+      supabase_user_id: data.data.supabase_user_id || null
     };
 
   } catch (error) {
@@ -642,7 +649,7 @@ export async function signupUser(email, password, retype, additionalData = null)
  * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
  * API key is stored server-side in Supabase Secrets
  *
- * @returns {Promise<Object|null>} User data object with firstName, profilePhoto, userType, etc. or null if invalid
+ * @returns {Promise<Object|null>} User data object with firstName, fullName, email, profilePhoto, userType, etc. or null if invalid
  */
 export async function validateTokenAndFetchUser() {
   const token = getAuthToken();
@@ -719,6 +726,7 @@ export async function validateTokenAndFetchUser() {
       userId: userData.userId,
       firstName: userData.firstName || null,
       fullName: userData.fullName || null,
+      email: userData.email || null,
       profilePhoto: userData.profilePhoto || null,
       userType: userType
     };

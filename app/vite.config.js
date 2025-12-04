@@ -4,6 +4,97 @@ import { resolve } from 'path';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { routes, getInternalRoutes, getBasePath, buildRollupInputs } from './src/routes.config.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+/**
+ * Shared routing logic for both dev and preview servers
+ * Uses the Route Registry as single source of truth
+ *
+ * @param {Object} req - Request object
+ * @param {string} publicPrefix - '/public' for dev, '' for preview
+ */
+function handleRouting(req, publicPrefix = '') {
+  const url = req.url || '';
+  const [urlPath, queryStringPart] = url.split('?');
+  const queryString = queryStringPart ? `?${queryStringPart}` : '';
+
+  // Special handling for help-center category routes (e.g., /help-center/guests)
+  // Must check before general route matching
+  // The category is extracted from the URL by the client-side JavaScript
+  if (urlPath.startsWith('/help-center/') && !urlPath.includes('.')) {
+    req.url = `${publicPrefix}/help-center-category.html${queryString}`;
+    return;
+  }
+
+  // Find matching route from registry
+  for (const route of routes) {
+    const basePath = getBasePath(route);
+
+    // Check exact match on base path
+    if (urlPath === basePath || urlPath === basePath + '/') {
+      req.url = `${publicPrefix}/${route.file}${queryString}`;
+      return;
+    }
+
+    // Check if URL starts with query string on base path
+    if (url.startsWith(basePath + '?')) {
+      req.url = `${publicPrefix}/${route.file}${queryString}`;
+      return;
+    }
+
+    // Check dynamic segments (e.g., /view-split-lease/123)
+    if (route.hasDynamicSegment && urlPath.startsWith(basePath + '/')) {
+      // For account-profile, preserve the full path including user ID
+      if (route.path === '/account-profile') {
+        const pathAfterPrefix = url.substring('/account-profile'.length);
+        req.url = `${publicPrefix}/${route.file}${pathAfterPrefix}`;
+      } else {
+        req.url = `${publicPrefix}/${route.file}`;
+      }
+      return;
+    }
+
+    // Check aliases (e.g., /faq.html, /index.html)
+    if (route.aliases) {
+      for (const alias of route.aliases) {
+        if (urlPath === alias) {
+          req.url = `${publicPrefix}/${route.file}${queryString}`;
+          return;
+        }
+        // Handle alias with additional path/query
+        if (urlPath.startsWith(alias)) {
+          const remainder = url.substring(alias.length);
+          req.url = `${publicPrefix}/${route.file}${remainder}`;
+          return;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Copy directory recursively
+ */
+function copyDirectory(src, dest) {
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+
+    if (entry.isDirectory()) {
+      copyDirectory(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
 
 export default defineConfig({
   plugins: [
@@ -12,265 +103,13 @@ export default defineConfig({
       name: 'multi-page-routing',
       configureServer(server) {
         server.middlewares.use((req, res, next) => {
-          const url = req.url || '';
-
-          // Handle root path, /index, and index.html
-          if (url === '/' || url === '/index' || url.startsWith('/index?') || url.startsWith('/index.html')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/index.html' + queryString;
-          }
-          // Handle index-dev.html
-          else if (url.startsWith('/index-dev.html')) {
-            req.url = '/public/index-dev.html' + (url.substring('/index-dev.html'.length) || '');
-          }
-          // Handle guest-proposals (no ID) - direct access to /guest-proposals
-          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/guest-proposals.html' + queryString;
-          }
-          // Handle guest-proposals.html - direct HTML access
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
-          }
-          // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
-          // Also handle exact /view-split-lease path (no trailing slash or query)
-          else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
-            // Serve the HTML file - the JS will extract the listing ID from window.location
-            req.url = '/public/view-split-lease.html';
-          }
-          // Legacy support for old URL structure
-          else if (url.startsWith('/view-split-lease.html')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/view-split-lease.html' + queryString;
-          }
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/public/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
-          } else if (url.startsWith('/search.html')) {
-            req.url = '/public/search.html' + (url.substring('/search.html'.length) || '');
-          } else if (url.startsWith('/search-test.html')) {
-            req.url = '/public/search-test.html' + (url.substring('/search-test.html'.length) || '');
-          } else if (url.startsWith('/search-test')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/search-test.html' + queryString;
-          } else if (url === '/faq' || url.startsWith('/faq?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/faq.html' + queryString;
-          } else if (url.startsWith('/faq.html')) {
-            req.url = '/public/faq.html' + (url.substring('/faq.html'.length) || '');
-          } else if (url === '/policies' || url.startsWith('/policies?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/policies.html' + queryString;
-          } else if (url.startsWith('/policies.html')) {
-            req.url = '/public/policies.html' + (url.substring('/policies.html'.length) || '');
-          } else if (url.startsWith('/list-with-us.html')) {
-            req.url = '/public/list-with-us.html' + (url.substring('/list-with-us.html'.length) || '');
-          } else if (url.startsWith('/guest-success.html')) {
-            req.url = '/public/guest-success.html' + (url.substring('/guest-success.html'.length) || '');
-          } else if (url.startsWith('/guest-success')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/guest-success.html' + queryString;
-          } else if (url.startsWith('/why-split-lease.html')) {
-            req.url = '/public/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
-          } else if (url.startsWith('/careers.html')) {
-            req.url = '/public/careers.html' + (url.substring('/careers.html'.length) || '');
-          } else if (url.startsWith('/careers')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/careers.html' + queryString;
-          } else if (url.startsWith('/host-success.html')) {
-            req.url = '/public/host-success.html' + (url.substring('/host-success.html'.length) || '');
-          } else if (url.startsWith('/host-success')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/host-success.html' + queryString;
-          } else if (url.startsWith('/account-profile.html')) {
-            req.url = '/public/account-profile.html' + (url.substring('/account-profile.html'.length) || '');
-          } else if (url.startsWith('/account-profile')) {
-            // Preserve the full path including user ID
-            // e.g., /account-profile/USER_ID or /account-profile/USER_ID?query=value
-            const pathAfterPrefix = url.substring('/account-profile'.length);
-            req.url = '/public/account-profile.html' + pathAfterPrefix;
-          } else if (url.startsWith('/self-listing.html')) {
-            req.url = '/public/self-listing.html' + (url.substring('/self-listing.html'.length) || '');
-          } else if (url.startsWith('/self-listing')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/self-listing.html' + queryString;
-          }
-          // Handle help-center routes
-          else if (url === '/help-center' || url === '/help-center/') {
-            req.url = '/public/help-center.html';
-          } else if (url.startsWith('/help-center/') && !url.includes('.')) {
-            // Handle category pages like /help-center/guests, /help-center/hosts, etc.
-            const pathAfterPrefix = url.substring('/help-center'.length);
-            req.url = '/public/help-center-category.html' + pathAfterPrefix;
-          } else if (url.startsWith('/help-center.html')) {
-            req.url = '/public/help-center.html' + (url.substring('/help-center.html'.length) || '');
-          }
-          // Handle rental-application routes
-          else if (url === '/rental-application' || url.startsWith('/rental-application?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/rental-application.html' + queryString;
-          } else if (url.startsWith('/rental-application.html')) {
-            req.url = '/public/rental-application.html' + (url.substring('/rental-application.html'.length) || '');
-          }
-          // Handle listing-dashboard routes
-          else if (url === '/listing-dashboard' || url.startsWith('/listing-dashboard?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/listing-dashboard.html' + queryString;
-          } else if (url.startsWith('/listing-dashboard.html')) {
-            req.url = '/public/listing-dashboard.html' + (url.substring('/listing-dashboard.html'.length) || '');
-          }
-          // Handle host-overview routes
-          else if (url === '/host-overview' || url.startsWith('/host-overview?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/public/host-overview.html' + queryString;
-          } else if (url.startsWith('/host-overview.html')) {
-            req.url = '/public/host-overview.html' + (url.substring('/host-overview.html'.length) || '');
-          }
-
+          handleRouting(req, '/public');
           next();
         });
       },
       configurePreviewServer(server) {
         server.middlewares.use((req, res, next) => {
-          const url = req.url || '';
-
-          // Handle root path, /index, and index.html (preview mode - files in dist root)
-          if (url === '/' || url === '/index' || url.startsWith('/index?') || url.startsWith('/index.html')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/index.html' + queryString;
-          }
-          // Handle guest-proposals (no ID) - direct access to /guest-proposals
-          else if (url === '/guest-proposals' || url.startsWith('/guest-proposals?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/guest-proposals.html' + queryString;
-          }
-          // Handle guest-proposals.html - direct HTML access
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
-          }
-          // Handle view-split-lease with clean URL structure (e.g., /view-split-lease/123?query=param)
-          // Also handle exact /view-split-lease path (no trailing slash or query)
-          else if (url === '/view-split-lease' || url.startsWith('/view-split-lease/') || url.startsWith('/view-split-lease?')) {
-            // Serve the HTML file - the JS will extract the listing ID from window.location
-            req.url = '/view-split-lease.html';
-          }
-          // Legacy support for old URL structure
-          else if (url.startsWith('/view-split-lease.html')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/view-split-lease.html' + queryString;
-          }
-          else if (url.startsWith('/guest-proposals.html')) {
-            req.url = '/guest-proposals.html' + (url.substring('/guest-proposals.html'.length) || '');
-          } else if (url.startsWith('/search.html')) {
-            req.url = '/search.html' + (url.substring('/search.html'.length) || '');
-          } else if (url.startsWith('/search-test.html')) {
-            req.url = '/search-test.html' + (url.substring('/search-test.html'.length) || '');
-          } else if (url.startsWith('/search-test')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/search-test.html' + queryString;
-          } else if (url === '/faq' || url.startsWith('/faq?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/faq.html' + queryString;
-          } else if (url.startsWith('/faq.html')) {
-            req.url = '/faq.html' + (url.substring('/faq.html'.length) || '');
-          } else if (url === '/policies' || url.startsWith('/policies?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/policies.html' + queryString;
-          } else if (url.startsWith('/policies.html')) {
-            req.url = '/policies.html' + (url.substring('/policies.html'.length) || '');
-          } else if (url === '/list-with-us' || url.startsWith('/list-with-us?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/list-with-us.html' + queryString;
-          } else if (url.startsWith('/list-with-us.html')) {
-            req.url = '/list-with-us.html' + (url.substring('/list-with-us.html'.length) || '');
-          } else if (url.startsWith('/guest-success.html')) {
-            req.url = '/guest-success.html' + (url.substring('/guest-success.html'.length) || '');
-          } else if (url.startsWith('/guest-success')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/guest-success.html' + queryString;
-          } else if (url.startsWith('/why-split-lease.html')) {
-            req.url = '/why-split-lease.html' + (url.substring('/why-split-lease.html'.length) || '');
-          } else if (url.startsWith('/careers.html')) {
-            req.url = '/careers.html' + (url.substring('/careers.html'.length) || '');
-          } else if (url.startsWith('/careers')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/careers.html' + queryString;
-          } else if (url.startsWith('/host-success.html')) {
-            req.url = '/host-success.html' + (url.substring('/host-success.html'.length) || '');
-          } else if (url.startsWith('/host-success')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/host-success.html' + queryString;
-          } else if (url.startsWith('/account-profile.html')) {
-            req.url = '/account-profile.html' + (url.substring('/account-profile.html'.length) || '');
-          } else if (url.startsWith('/account-profile')) {
-            // Preserve the full path including user ID
-            // e.g., /account-profile/USER_ID or /account-profile/USER_ID?query=value
-            const pathAfterPrefix = url.substring('/account-profile'.length);
-            req.url = '/account-profile.html' + pathAfterPrefix;
-          } else if (url.startsWith('/self-listing.html')) {
-            req.url = '/self-listing.html' + (url.substring('/self-listing.html'.length) || '');
-          } else if (url.startsWith('/self-listing')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/self-listing.html' + queryString;
-          }
-          // Handle help-center routes
-          else if (url === '/help-center' || url === '/help-center/') {
-            req.url = '/help-center.html';
-          } else if (url.startsWith('/help-center/') && !url.includes('.')) {
-            // Handle category pages like /help-center/guests, /help-center/hosts, etc.
-            const pathAfterPrefix = url.substring('/help-center'.length);
-            req.url = '/help-center-category.html' + pathAfterPrefix;
-          } else if (url.startsWith('/help-center.html')) {
-            req.url = '/help-center.html' + (url.substring('/help-center.html'.length) || '');
-          }
-          // Handle rental-application routes
-          else if (url === '/rental-application' || url.startsWith('/rental-application?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/rental-application.html' + queryString;
-          } else if (url.startsWith('/rental-application.html')) {
-            req.url = '/rental-application.html' + (url.substring('/rental-application.html'.length) || '');
-          }
-          // Handle listing-dashboard routes (preview mode)
-          else if (url === '/listing-dashboard' || url.startsWith('/listing-dashboard?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/listing-dashboard.html' + queryString;
-          } else if (url.startsWith('/listing-dashboard.html')) {
-            req.url = '/listing-dashboard.html' + (url.substring('/listing-dashboard.html'.length) || '');
-          }
-          // Handle host-overview routes (preview mode)
-          else if (url === '/host-overview' || url.startsWith('/host-overview?')) {
-            const queryStart = url.indexOf('?');
-            const queryString = queryStart !== -1 ? url.substring(queryStart) : '';
-            req.url = '/host-overview.html' + queryString;
-          } else if (url.startsWith('/host-overview.html')) {
-            req.url = '/host-overview.html' + (url.substring('/host-overview.html'.length) || '');
-          }
-
+          handleRouting(req, '');
           next();
         });
       }
@@ -278,10 +117,10 @@ export default defineConfig({
     {
       name: 'move-html-to-root',
       closeBundle() {
-        // Move HTML files from dist/public to dist root after build
         const distDir = path.resolve(__dirname, 'dist');
         const publicDir = path.join(distDir, 'public');
 
+        // Move HTML files from dist/public to dist root after build
         if (fs.existsSync(publicDir)) {
           const htmlFiles = fs.readdirSync(publicDir).filter(file => file.endsWith('.html'));
 
@@ -303,31 +142,9 @@ export default defineConfig({
         const assetsDest = path.join(distDir, 'assets');
 
         if (fs.existsSync(assetsSource)) {
-          // Create dist/assets if it doesn't exist
           if (!fs.existsSync(assetsDest)) {
             fs.mkdirSync(assetsDest, { recursive: true });
           }
-
-          // Copy all subdirectories (images, fonts, lotties)
-          const copyDirectory = (src, dest) => {
-            if (!fs.existsSync(dest)) {
-              fs.mkdirSync(dest, { recursive: true });
-            }
-
-            const entries = fs.readdirSync(src, { withFileTypes: true });
-
-            for (const entry of entries) {
-              const srcPath = path.join(src, entry.name);
-              const destPath = path.join(dest, entry.name);
-
-              if (entry.isDirectory()) {
-                copyDirectory(srcPath, destPath);
-              } else {
-                fs.copyFileSync(srcPath, destPath);
-              }
-            }
-          };
-
           copyDirectory(assetsSource, assetsDest);
           console.log('Copied assets directory to dist/assets');
         }
@@ -356,57 +173,29 @@ export default defineConfig({
           console.log('Copied _routes.json to dist root');
         }
 
-        // Create _internal directory and copy view-split-lease.html as listing-view (no .html extension)
+        // Create _internal directory and copy files for routes that need it
         // This avoids Cloudflare's "pretty URL" normalization which causes 308 redirects
         const internalDir = path.join(distDir, '_internal');
         if (!fs.existsSync(internalDir)) {
           fs.mkdirSync(internalDir, { recursive: true });
         }
-        const viewSplitLeaseSource = path.join(distDir, 'view-split-lease.html');
-        const listingViewDest = path.join(internalDir, 'listing-view');
-        if (fs.existsSync(viewSplitLeaseSource)) {
-          fs.copyFileSync(viewSplitLeaseSource, listingViewDest);
-          console.log('Created _internal/listing-view for Cloudflare routing');
-        }
 
-        // Create help-center internal files to avoid Cloudflare's "pretty URL" normalization
-        const helpCenterSource = path.join(distDir, 'help-center.html');
-        const helpCenterDest = path.join(internalDir, 'help-center-view');
-        if (fs.existsSync(helpCenterSource)) {
-          fs.copyFileSync(helpCenterSource, helpCenterDest);
-          console.log('Created _internal/help-center-view for Cloudflare routing');
-        }
+        // Generate _internal files from Route Registry
+        const internalRoutes = getInternalRoutes();
+        for (const route of internalRoutes) {
+          const source = path.join(distDir, route.file);
+          const dest = path.join(internalDir, route.internalName);
 
-        const helpCenterCategorySource = path.join(distDir, 'help-center-category.html');
-        const helpCenterCategoryDest = path.join(internalDir, 'help-center-category-view');
-        if (fs.existsSync(helpCenterCategorySource)) {
-          fs.copyFileSync(helpCenterCategorySource, helpCenterCategoryDest);
-          console.log('Created _internal/help-center-category-view for Cloudflare routing');
+          if (fs.existsSync(source)) {
+            fs.copyFileSync(source, dest);
+            console.log(`Created _internal/${route.internalName} for Cloudflare routing`);
+          }
         }
 
         // Copy images directory to dist root
         const imagesSource = path.resolve(__dirname, 'public/images');
         const imagesDest = path.join(distDir, 'images');
         if (fs.existsSync(imagesSource)) {
-          const copyDirectory = (src, dest) => {
-            if (!fs.existsSync(dest)) {
-              fs.mkdirSync(dest, { recursive: true });
-            }
-
-            const entries = fs.readdirSync(src, { withFileTypes: true });
-
-            for (const entry of entries) {
-              const srcPath = path.join(src, entry.name);
-              const destPath = path.join(dest, entry.name);
-
-              if (entry.isDirectory()) {
-                copyDirectory(srcPath, destPath);
-              } else {
-                fs.copyFileSync(srcPath, destPath);
-              }
-            }
-          };
-
           copyDirectory(imagesSource, imagesDest);
           console.log('Copied images directory to dist root');
         }
@@ -415,25 +204,6 @@ export default defineConfig({
         const articlesSource = path.resolve(__dirname, 'public/help-center-articles');
         const articlesDest = path.join(distDir, 'help-center-articles');
         if (fs.existsSync(articlesSource)) {
-          const copyDirectory = (src, dest) => {
-            if (!fs.existsSync(dest)) {
-              fs.mkdirSync(dest, { recursive: true });
-            }
-
-            const entries = fs.readdirSync(src, { withFileTypes: true });
-
-            for (const entry of entries) {
-              const srcPath = path.join(src, entry.name);
-              const destPath = path.join(dest, entry.name);
-
-              if (entry.isDirectory()) {
-                copyDirectory(srcPath, destPath);
-              } else {
-                fs.copyFileSync(srcPath, destPath);
-              }
-            }
-          };
-
           copyDirectory(articlesSource, articlesDest);
           console.log('Copied help-center-articles directory to dist root');
         }
@@ -442,36 +212,18 @@ export default defineConfig({
         const functionsSource = path.resolve(__dirname, 'functions');
         const functionsDest = path.join(distDir, 'functions');
         if (fs.existsSync(functionsSource)) {
-          const copyDirectory = (src, dest) => {
-            if (!fs.existsSync(dest)) {
-              fs.mkdirSync(dest, { recursive: true });
-            }
-
-            const entries = fs.readdirSync(src, { withFileTypes: true });
-
-            for (const entry of entries) {
-              const srcPath = path.join(src, entry.name);
-              const destPath = path.join(dest, entry.name);
-
-              if (entry.isDirectory()) {
-                copyDirectory(srcPath, destPath);
-              } else {
-                fs.copyFileSync(srcPath, destPath);
-              }
-            }
-          };
-
           copyDirectory(functionsSource, functionsDest);
           console.log('Copied functions directory to dist root');
         }
       }
     }
   ],
-  publicDir: false, // Disable automatic public directory copying
+  publicDir: 'public', // Enable public directory serving for static assets
   server: {
-    host: '127.0.0.1', // Ensure IPv4 binding for localhost
+    host: true, // Listen on all addresses (127.0.0.1 and localhost)
     // Proxy /api routes to handle Cloudflare Pages Functions locally
-    // This provides a mock/development endpoint when wrangler isn't running
+    // Note: FAQ inquiries now use Supabase Edge Functions (slack function)
+    // This proxy is for any remaining Cloudflare Pages Functions
     proxy: {
       '/api': {
         target: 'http://127.0.0.1:8788', // Default wrangler pages dev port
@@ -480,20 +232,10 @@ export default defineConfig({
         // If wrangler isn't running, we need to handle it gracefully
         configure: (proxy, options) => {
           proxy.on('error', (err, req, res) => {
-            // If wrangler isn't running, return a helpful mock response
-            if (req.url === '/api/faq-inquiry' && req.method === 'POST') {
-              console.log('[Vite Proxy] Wrangler not running, using mock response for FAQ inquiry');
-              res.writeHead(200, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({
-                success: true,
-                message: 'Inquiry sent successfully (dev mode - wrangler not running)'
-              }));
-            } else {
-              res.writeHead(503, { 'Content-Type': 'application/json' });
-              res.end(JSON.stringify({
-                error: 'API proxy error - ensure wrangler pages dev is running for full functionality'
-              }));
-            }
+            res.writeHead(503, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+              error: 'API proxy error - ensure wrangler pages dev is running for full functionality'
+            }));
           });
         }
       }
@@ -525,7 +267,9 @@ export default defineConfig({
         'help-center-category': resolve(__dirname, 'public/help-center-category.html'),
         'rental-application': resolve(__dirname, 'public/rental-application.html'),
         'listing-dashboard': resolve(__dirname, 'public/listing-dashboard.html'),
-        'host-overview': resolve(__dirname, 'public/host-overview.html')
+        'host-overview': resolve(__dirname, 'public/host-overview.html'),
+        'favorite-listings': resolve(__dirname, 'public/favorite-listings.html'),
+        'about-us': resolve(__dirname, 'public/about-us.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

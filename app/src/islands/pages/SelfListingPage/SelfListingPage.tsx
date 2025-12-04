@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Section1SpaceSnapshot } from './sections/Section1SpaceSnapshot';
 import { Section2Features } from './sections/Section2Features';
 import { Section3LeaseStyles } from './sections/Section3LeaseStyles';
@@ -11,10 +11,12 @@ import { useListingStore, listingLocalStore } from './store';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import SignUpLoginModal from '../../shared/SignUpLoginModal';
+import Toast, { useToast } from '../../shared/Toast';
 import { getListingById } from '../../../lib/bubbleAPI';
 import { checkAuthStatus } from '../../../lib/auth';
 import { createListing } from '../../../lib/listingService';
 import './styles/SelfListingPage.css';
+import '../../../styles/components/toast.css';
 
 // ============================================================================
 // Success Modal Component
@@ -101,6 +103,10 @@ const successModalStyles = {
 const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, listingId, listingName }) => {
   if (!isOpen) return null;
 
+  const handleGoToDashboard = () => {
+    window.location.href = `/listing-dashboard.html?listing_id=${listingId}`;
+  };
+
   const handleViewListing = () => {
     window.location.href = `/view-split-lease.html?listing_id=${listingId}`;
   };
@@ -117,11 +123,29 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, listingId, listingN
         </p>
         <button
           style={successModalStyles.button}
-          onClick={handleViewListing}
+          onClick={handleGoToDashboard}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#4C1D95')}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#5B21B6')}
         >
-          View Your Listing
+          Go to My Dashboard
+        </button>
+        <button
+          style={{
+            ...successModalStyles.button,
+            backgroundColor: 'transparent',
+            color: '#5B21B6',
+            border: '2px solid #5B21B6',
+            marginTop: '0.75rem',
+          }}
+          onClick={handleViewListing}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#F5F3FF';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'transparent';
+          }}
+        >
+          Preview Listing
         </button>
         <p style={successModalStyles.secondaryText}>
           You'll be notified once your listing is approved.
@@ -176,6 +200,12 @@ export const SelfListingPage: React.FC = () => {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdListingId, setCreatedListingId] = useState('');
 
+  // Toast notifications
+  const { toasts, showToast, removeToast } = useToast();
+
+  // Key to force Header re-render after auth change
+  const [headerKey, setHeaderKey] = useState(0);
+
   // Sync current section with store
   useEffect(() => {
     if (formData.currentSection && formData.currentSection !== currentSection) {
@@ -218,7 +248,23 @@ export const SelfListingPage: React.FC = () => {
           console.log('✅ Loading complete');
         }
       } else {
-        console.log('📂 No listing ID in URL, using stored draft data');
+        console.log('📂 No listing ID in URL, checking for pending listing name');
+
+        // Check if there's a pending listing name from the CreateDuplicateListingModal
+        const pendingName = localStorage.getItem('pendingListingName');
+        if (pendingName) {
+          console.log('📝 Found pending listing name:', pendingName);
+          const currentStoreData = listingLocalStore.getData();
+          updateSpaceSnapshot({
+            ...currentStoreData.spaceSnapshot,
+            listingName: pendingName,
+          });
+          // Clean up the temporary storage key after use
+          localStorage.removeItem('pendingListingName');
+          console.log('✅ Pending listing name applied and cleaned up');
+        } else {
+          console.log('📂 No pending listing name, using stored draft data');
+        }
       }
     };
 
@@ -331,15 +377,36 @@ export const SelfListingPage: React.FC = () => {
   }, [saveDraft]);
 
   // Handle auth success callback - called after user signs up/logs in via modal
-  const handleAuthSuccess = () => {
-    console.log('[SelfListingPage] Auth success callback triggered');
+  const handleAuthSuccess = (result: { success: boolean; isNewUser?: boolean }) => {
+    console.log('[SelfListingPage] Auth success callback triggered', result);
     setShowAuthModal(false);
+
+    // Show success toast
+    const isSignup = result?.isNewUser !== false; // Default to signup message
+    showToast(
+      isSignup ? 'Account created successfully! Submitting your listing...' : 'Logged in successfully! Submitting your listing...',
+      'success',
+      4000
+    );
+
+    // User agreed to terms by signing up (modal shows "By signing up or logging in, you agree to...")
+    // So we set agreedToTerms to true to pass validation
+    updateReview({
+      ...formData.review,
+      agreedToTerms: true,
+    });
+
+    // Force Header to re-render after a brief delay to ensure token is stored
+    setTimeout(() => {
+      setHeaderKey(prev => prev + 1);
+    }, 100);
+
     if (pendingSubmit) {
       setPendingSubmit(false);
-      // Small delay to ensure auth state is fully updated
+      // Delay submission to ensure auth state is fully updated
       setTimeout(() => {
         proceedWithSubmit();
-      }, 100);
+      }, 300);
     }
   };
 
@@ -432,9 +499,12 @@ export const SelfListingPage: React.FC = () => {
 
   return (
     <>
-      {/* Shared Header Island */}
+      {/* Toast Notifications */}
+      <Toast toasts={toasts} onRemove={removeToast} />
+
+      {/* Shared Header Island - key forces re-render after auth change */}
       {console.log('🎨 Rendering Header component')}
-      <Header />
+      <Header key={headerKey} />
 
       <div className="self-listing-page">
         {/* Page Header */}
@@ -580,6 +650,7 @@ export const SelfListingPage: React.FC = () => {
               onChange={updateReview}
               onSubmit={handleSubmit}
               onBack={handleBack}
+              onNavigateToSection={handleSectionChange}
               isSubmitting={isSubmitting}
             />
           )}

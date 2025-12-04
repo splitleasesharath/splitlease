@@ -14,7 +14,9 @@ import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
+import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
+import { checkAuthStatus, validateTokenAndFetchUser } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
   calculatePricingBreakdown,
@@ -28,13 +30,52 @@ import {
   getBlockedDatesList,
   calculateNightsFromDays
 } from '../../lib/availabilityValidation.js';
-import { DAY_ABBREVIATIONS, DEFAULTS, COLORS } from '../../lib/constants.js';
+import { DAY_ABBREVIATIONS, DEFAULTS, COLORS, SCHEDULE_PATTERNS } from '../../lib/constants.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import '../../styles/listing-schedule-selector.css';
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
+
+/**
+ * Get initial schedule selection from URL parameter
+ * URL format: ?days-selected=1,2,3,4 (1-based, where 1=Sunday)
+ * Returns: Array of Day objects (0-based, where 0=Sunday)
+ */
+function getInitialScheduleFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const daysParam = urlParams.get('days-selected');
+
+  if (!daysParam) {
+    console.log('📅 ViewSplitLeasePage: No days-selected URL param, using empty initial selection');
+    return [];
+  }
+
+  try {
+    // Parse 1-based indices from URL and convert to 0-based
+    const oneBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+    const zeroBased = oneBased
+      .filter(d => d >= 1 && d <= 7) // Validate 1-based range
+      .map(d => d - 1); // Convert to 0-based (1→0, 2→1, etc.)
+
+    if (zeroBased.length > 0) {
+      // Convert to Day objects using createDay
+      const dayObjects = zeroBased.map(dayIndex => createDay(dayIndex, true));
+      console.log('📅 ViewSplitLeasePage: Loaded schedule from URL:', {
+        urlParam: daysParam,
+        oneBased,
+        zeroBased,
+        dayObjects: dayObjects.map(d => d.name)
+      });
+      return dayObjects;
+    }
+  } catch (e) {
+    console.warn('⚠️ ViewSplitLeasePage: Failed to parse days-selected URL parameter:', e);
+  }
+
+  return [];
+}
 
 /**
  * Fetch informational texts from Supabase
@@ -119,6 +160,129 @@ async function fetchInformationalTexts() {
     console.error('❌ Error fetching informational texts:', error);
     return {};
   }
+}
+
+// ============================================================================
+// SCHEDULE PATTERN HELPERS
+// ============================================================================
+
+/**
+ * Calculate actual weeks from reservation span based on schedule pattern
+ * @param {number} reservationSpan - Total weeks in the reservation span
+ * @param {string} weeksOffered - Schedule pattern from listing
+ * @returns {object} { actualWeeks, cycleDescription, showHighlight }
+ */
+function calculateActualWeeks(reservationSpan, weeksOffered) {
+  // Normalize the pattern string for comparison
+  const pattern = (weeksOffered || 'Every week').toLowerCase().trim();
+
+  // Every week or nightly/monthly patterns - no highlighting needed
+  if (pattern === 'every week' || pattern === '') {
+    return {
+      actualWeeks: reservationSpan,
+      cycleDescription: null,
+      showHighlight: false
+    };
+  }
+
+  // One week on, one week off - 2 week cycle, guest gets 1 week per cycle
+  if (pattern.includes('one week on') && pattern.includes('one week off')) {
+    const cycles = reservationSpan / 2;
+    const actualWeeks = Math.floor(cycles); // 1 week per 2-week cycle
+    return {
+      actualWeeks,
+      cycleDescription: '1 week on, 1 week off',
+      showHighlight: true,
+      weeksOn: 1,
+      weeksOff: 1
+    };
+  }
+
+  // Two weeks on, two weeks off - 4 week cycle, guest gets 2 weeks per cycle
+  if (pattern.includes('two weeks on') && pattern.includes('two weeks off')) {
+    const cycles = reservationSpan / 4;
+    const actualWeeks = Math.floor(cycles * 2); // 2 weeks per 4-week cycle
+    return {
+      actualWeeks,
+      cycleDescription: '2 weeks on, 2 weeks off',
+      showHighlight: true,
+      weeksOn: 2,
+      weeksOff: 2
+    };
+  }
+
+  // One week on, three weeks off - 4 week cycle, guest gets 1 week per cycle
+  if (pattern.includes('one week on') && pattern.includes('three weeks off')) {
+    const cycles = reservationSpan / 4;
+    const actualWeeks = Math.floor(cycles); // 1 week per 4-week cycle
+    return {
+      actualWeeks,
+      cycleDescription: '1 week on, 3 weeks off',
+      showHighlight: true,
+      weeksOn: 1,
+      weeksOff: 3
+    };
+  }
+
+  // Default: treat as every week
+  return {
+    actualWeeks: reservationSpan,
+    cycleDescription: null,
+    showHighlight: false
+  };
+}
+
+/**
+ * Component to display schedule pattern info when applicable
+ */
+function SchedulePatternHighlight({ reservationSpan, weeksOffered }) {
+  const patternInfo = calculateActualWeeks(reservationSpan, weeksOffered);
+
+  if (!patternInfo.showHighlight) {
+    return null;
+  }
+
+  return (
+    <div style={{
+      marginTop: '8px',
+      padding: '10px 12px',
+      background: 'linear-gradient(135deg, #EDE9FE 0%, #F3E8FF 100%)',
+      borderRadius: '8px',
+      border: '1px solid #C4B5FD',
+      fontSize: '13px'
+    }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        marginBottom: '4px'
+      }}>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#7C3AED"
+          strokeWidth="2"
+        >
+          <path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 012 2v14a2 2 0 01-2 2H5a2 2 0 01-2-2V6a2 2 0 012-2z" />
+        </svg>
+        <span style={{
+          fontWeight: '600',
+          color: '#5B21B6',
+          textTransform: 'uppercase',
+          letterSpacing: '0.3px',
+          fontSize: '11px'
+        }}>
+          {patternInfo.cycleDescription}
+        </span>
+      </div>
+      <div style={{ color: '#6B21A8' }}>
+        <span style={{ fontWeight: '700' }}>{patternInfo.actualWeeks} actual weeks</span>
+        <span style={{ color: '#7C3AED' }}> of stay within {reservationSpan}-week span</span>
+      </div>
+    </div>
+  );
 }
 
 // ============================================================================
@@ -431,10 +595,13 @@ export default function ViewSplitLeasePage() {
   // Booking widget state
   const [moveInDate, setMoveInDate] = useState(null);
   const [strictMode, setStrictMode] = useState(false);
-  const [selectedDayObjects, setSelectedDayObjects] = useState([]); // Day objects from new component
+  const [selectedDayObjects, setSelectedDayObjects] = useState(() => getInitialScheduleFromUrl()); // Day objects from URL param or empty
   const [reservationSpan, setReservationSpan] = useState(13); // 13 weeks default
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [priceBreakdown, setPriceBreakdown] = useState(null);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingProposalData, setPendingProposalData] = useState(null);
+  const [loggedInUserData, setLoggedInUserData] = useState(null);
 
   // Calculate minimum move-in date (2 weeks from today)
   const minMoveInDate = useMemo(() => {
@@ -476,6 +643,16 @@ export default function ViewSplitLeasePage() {
 
     return smartDate.toISOString().split('T')[0];
   }, [minMoveInDate]);
+
+  // Set initial move-in date if days were loaded from URL
+  useEffect(() => {
+    if (selectedDayObjects.length > 0 && !moveInDate) {
+      const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
+      const smartDate = calculateSmartMoveInDate(dayNumbers);
+      setMoveInDate(smartDate);
+      console.log('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
+    }
+  }, [selectedDayObjects, moveInDate, calculateSmartMoveInDate]);
 
   // UI state
   const [showTutorialModal, setShowTutorialModal] = useState(false);
@@ -537,6 +714,16 @@ export default function ViewSplitLeasePage() {
       try {
         // Initialize lookup caches
         await initializeLookups();
+
+        // Check auth status and fetch user data if logged in
+        const isLoggedIn = await checkAuthStatus();
+        if (isLoggedIn) {
+          const userData = await validateTokenAndFetchUser();
+          if (userData) {
+            setLoggedInUserData(userData);
+            console.log('👤 ViewSplitLeasePage: User data loaded:', userData.firstName);
+          }
+        }
 
         // Fetch ZAT price configuration
         const zatConfigData = await fetchZatPriceConfiguration();
@@ -808,33 +995,70 @@ export default function ViewSplitLeasePage() {
     setIsProposalModalOpen(true);
   };
 
+  // Submit proposal to backend (after auth is confirmed)
+  const submitProposal = async (proposalData) => {
+    try {
+      // TODO: Integrate with backend API to submit the proposal
+      // const response = await supabase.functions.invoke('bubble-proxy', {
+      //   body: {
+      //     action: 'proposal',
+      //     type: 'create',
+      //     payload: proposalData
+      //   }
+      // });
+
+      console.log('✅ Proposal submitted successfully:', proposalData);
+      alert('Proposal submitted successfully! (Backend integration pending)');
+      setIsProposalModalOpen(false);
+      setPendingProposalData(null);
+
+      // Redirect to guest proposals page
+      window.location.href = '/guest-proposals';
+
+    } catch (error) {
+      console.error('❌ Error submitting proposal:', error);
+      alert('Failed to submit proposal. Please try again.');
+    }
+  };
+
+  // Handle proposal submission - checks auth first
   const handleProposalSubmit = async (proposalData) => {
-    console.log('Proposal submitted:', proposalData);
+    console.log('📋 Proposal submission initiated:', proposalData);
 
-    // TODO: Integrate with your backend API to submit the proposal
-    // Example:
-    // try {
-    //   const response = await fetch('/api/proposals', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify(proposalData)
-    //   });
-    //
-    //   if (response.ok) {
-    //     alert('Proposal submitted successfully!');
-    //     setIsProposalModalOpen(false);
-    //     // Redirect to success page or proposals page
-    //   } else {
-    //     alert('Failed to submit proposal. Please try again.');
-    //   }
-    // } catch (error) {
-    //   console.error('Error submitting proposal:', error);
-    //   alert('An error occurred. Please try again.');
-    // }
+    // Check if user is logged in
+    const isLoggedIn = await checkAuthStatus();
 
-    // For now, just show success and close modal
-    alert('Proposal submitted successfully! (Backend integration pending)');
-    setIsProposalModalOpen(false);
+    if (!isLoggedIn) {
+      console.log('🔐 User not logged in, showing auth modal');
+      // Store the proposal data for later submission
+      setPendingProposalData(proposalData);
+      // Close the proposal modal
+      setIsProposalModalOpen(false);
+      // Open auth modal
+      setShowAuthModal(true);
+      return;
+    }
+
+    // User is logged in, proceed with submission
+    console.log('✅ User is logged in, submitting proposal');
+    await submitProposal(proposalData);
+  };
+
+  // Handle successful authentication
+  const handleAuthSuccess = async (authResult) => {
+    console.log('🎉 Auth success:', authResult);
+
+    // Close the auth modal
+    setShowAuthModal(false);
+
+    // If there's a pending proposal, submit it now
+    if (pendingProposalData) {
+      console.log('📤 Submitting pending proposal after auth');
+      // Small delay to ensure auth state is fully updated
+      setTimeout(async () => {
+        await submitProposal(pendingProposalData);
+      }, 500);
+    }
   };
 
   const scrollToSection = (sectionRef, shouldZoomMap = false) => {
@@ -1887,6 +2111,11 @@ export default function ViewSplitLeasePage() {
                 pointerEvents: 'none'
               }}></div>
             </div>
+            {/* Schedule Pattern Highlight - shows actual weeks for alternating patterns */}
+            <SchedulePatternHighlight
+              reservationSpan={reservationSpan}
+              weeksOffered={listing?.['Weeks offered']}
+            />
           </div>
 
           {/* Price Breakdown */}
@@ -2254,6 +2483,21 @@ export default function ViewSplitLeasePage() {
         />
       )}
 
+      {/* Auth Modal for Proposal Submission */}
+      {showAuthModal && (
+        <SignUpLoginModal
+          isOpen={showAuthModal}
+          onClose={() => {
+            setShowAuthModal(false);
+            setPendingProposalData(null);
+          }}
+          initialView="signup-step1"
+          onAuthSuccess={handleAuthSuccess}
+          defaultUserType="guest"
+          skipReload={true}
+        />
+      )}
+
       {/* Contact Host Messaging Modal */}
       {showContactHostModal && listing && (
         <ContactHostMessaging
@@ -2266,7 +2510,8 @@ export default function ViewSplitLeasePage() {
               name: listing.host ? `${listing.host['Name - First']} ${listing.host['Name - Last']?.charAt(0)}.` : 'Host'
             }
           }}
-          userEmail=""
+          userEmail={loggedInUserData?.email || ''}
+          userName={loggedInUserData?.fullName || loggedInUserData?.firstName || ''}
         />
       )}
 

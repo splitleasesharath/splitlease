@@ -17,6 +17,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { supabase } from '../../lib/supabase.js';
+import { checkAuthStatus, getSessionId } from '../../lib/auth.js';
 
 // Required fields for base progress calculation
 const REQUIRED_FIELDS = [
@@ -456,6 +458,88 @@ export function useRentalApplicationPageLogic() {
     } catch (error) {
       console.error('❌ Error loading saved data:', error);
     }
+  }, []);
+
+  // Pre-populate form with user data when logged in
+  useEffect(() => {
+    async function fetchAndPopulateUserData() {
+      try {
+        // Check if user is authenticated
+        const isAuthenticated = await checkAuthStatus();
+        if (!isAuthenticated) {
+          console.log('[RentalApplication] User not authenticated, skipping pre-population');
+          return;
+        }
+
+        // Get user ID from session
+        const userId = getSessionId();
+        if (!userId) {
+          console.log('[RentalApplication] No user ID found, skipping pre-population');
+          return;
+        }
+
+        console.log('[RentalApplication] Fetching user data for pre-population...');
+
+        // Fetch user data from Supabase
+        // Using select('*') to ensure we get all available email fields
+        const { data: userData, error } = await supabase
+          .from('user')
+          .select('*')
+          .eq('_id', userId)
+          .single();
+
+        if (error) {
+          console.error('[RentalApplication] Error fetching user data:', error);
+          return;
+        }
+
+        if (!userData) {
+          console.log('[RentalApplication] No user data found');
+          return;
+        }
+
+        console.log('[RentalApplication] User data fetched:', userData);
+
+        const userEmail = userData['email'] || '';
+
+        // Build full name from first + last if full name not available
+        let fullName = userData['Name - Full'] || '';
+        if (!fullName && (userData['Name - First'] || userData['Name - Last'])) {
+          fullName = [userData['Name - First'], userData['Name - Last']]
+            .filter(Boolean)
+            .join(' ');
+        }
+
+        // Format date of birth for date input (YYYY-MM-DD)
+        let dob = '';
+        if (userData['Date of Birth']) {
+          try {
+            const dobDate = new Date(userData['Date of Birth']);
+            if (!isNaN(dobDate.getTime())) {
+              dob = dobDate.toISOString().split('T')[0];
+            }
+          } catch (e) {
+            console.warn('[RentalApplication] Could not parse date of birth:', e);
+          }
+        }
+
+        // Pre-populate form fields (only if not already filled)
+        setFormData(prev => ({
+          ...prev,
+          // Only populate if field is empty (preserve any manually entered data)
+          fullName: prev.fullName || fullName || '',
+          email: prev.email || userEmail || '',
+          phone: prev.phone || userData['Phone Number (as text)'] || '',
+          dob: prev.dob || dob || ''
+        }));
+
+        console.log('✅ Pre-populated rental application with user data');
+      } catch (error) {
+        console.error('[RentalApplication] Error in fetchAndPopulateUserData:', error);
+      }
+    }
+
+    fetchAndPopulateUserData();
   }, []);
 
   // Warn on navigation when dirty

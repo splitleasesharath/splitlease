@@ -7,6 +7,7 @@ import AiSignupMarketReport from '../shared/AiSignupMarketReport';
 import AuthAwareSearchScheduleSelector from '../shared/AuthAwareSearchScheduleSelector.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
+import FavoriteButton from '../shared/FavoriteButton';
 import { supabase } from '../../lib/supabase.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getUserId, logoutUser } from '../../lib/auth.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
@@ -358,9 +359,8 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
   const priceInfoTriggerRef = useRef(null);
 
   const hasImages = listing.images && listing.images.length > 0;
@@ -397,11 +397,8 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
     );
   };
 
-  const handleFavoriteClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsFavorite(!isFavorite);
-  };
+  // Get listing ID for FavoriteButton
+  const favoriteListingId = listing.id || listing._id;
 
   // Calculate dynamic price using default 5 nights (Monday-Friday pattern)
   // Uses the same formula as priceCalculations.js for Nightly rental type
@@ -480,6 +477,30 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 
   const listingId = listing.id || listing._id;
 
+  // Handle click to pass days-selected parameter at click time (not render time)
+  // This ensures we get the current URL parameter after SearchScheduleSelector has updated it
+  const handleCardClick = (e) => {
+    if (!listingId) {
+      e.preventDefault();
+      console.error('[PropertyCard] No listing ID found', { listing });
+      return;
+    }
+
+    // Prevent default link behavior - we'll handle navigation manually
+    e.preventDefault();
+
+    // Get days-selected from URL at click time (after SearchScheduleSelector has updated it)
+    const urlParams = new URLSearchParams(window.location.search);
+    const daysSelected = urlParams.get('days-selected');
+
+    const url = daysSelected
+      ? `/view-split-lease/${listingId}?days-selected=${daysSelected}`
+      : `/view-split-lease/${listingId}`;
+
+    console.log('📅 PropertyCard: Opening listing with URL:', url);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <a
       className="listing-card"
@@ -487,12 +508,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
       target="_blank"
       rel="noopener noreferrer"
       style={{ textDecoration: 'none', color: 'inherit' }}
-      onClick={(e) => {
-        if (!listingId) {
-          e.preventDefault();
-          console.error('[PropertyCard] No listing ID found', { listing });
-        }
-      }}
+      onClick={handleCardClick}
     >
       {/* Image Section */}
       {hasImages && (
@@ -515,20 +531,18 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               </div>
             </>
           )}
-          {isLoggedIn && (
-            <button className="favorite-btn" onClick={handleFavoriteClick}>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill={isFavorite ? 'red' : 'none'}
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-              </svg>
-            </button>
-          )}
+          <FavoriteButton
+            listingId={favoriteListingId}
+            userId={userId}
+            initialFavorited={isFavorited}
+            onToggle={(newState, listingId) => {
+              if (onToggleFavorite) {
+                onToggleFavorite(listingId, listing.title, newState);
+              }
+            }}
+            onRequireAuth={onRequireAuth}
+            size="medium"
+          />
           {listing.isNew && <span className="new-badge">New Listing</span>}
         </div>
       )}
@@ -619,7 +633,8 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth }) {
+
   const sentinelRef = useRef(null);
 
   useEffect(() => {
@@ -649,20 +664,28 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
 
   return (
     <div className="listings-container">
-      {listings.map((listing, index) => (
-        <PropertyCard
-          key={listing.id}
-          listing={listing}
-          onLocationClick={(listing) => {
-            if (mapRef.current) {
-              mapRef.current.zoomToListing(listing.id);
-            }
-          }}
-          onOpenContactModal={onOpenContactModal}
-          onOpenInfoModal={onOpenInfoModal}
-          isLoggedIn={isLoggedIn}
-        />
-      ))}
+      {listings.map((listing, index) => {
+        const listingId = listing.id || listing._id;
+        const isFavorited = favoritedListingIds?.has(listingId);
+        return (
+          <PropertyCard
+            key={listing.id}
+            listing={listing}
+            onLocationClick={(listing) => {
+              if (mapRef.current) {
+                mapRef.current.zoomToListing(listing.id);
+              }
+            }}
+            onOpenContactModal={onOpenContactModal}
+            onOpenInfoModal={onOpenInfoModal}
+            isLoggedIn={isLoggedIn}
+            isFavorited={isFavorited}
+            userId={userId}
+            onToggleFavorite={onToggleFavorite}
+            onRequireAuth={onRequireAuth}
+          />
+        );
+      })}
 
       {hasMore && (
         <div ref={sentinelRef} className="lazy-load-sentinel">
@@ -787,6 +810,10 @@ export default function SearchPage() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [favoritesCount, setFavoritesCount] = useState(0);
+  const [favoritedListingIds, setFavoritedListingIds] = useState(new Set());
+
+  // Toast notification state
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
   // Flag to prevent URL update on initial load
   const isInitialMount = useRef(true);
@@ -826,22 +853,51 @@ export default function SearchPage() {
             setCurrentUser({
               id: userId,
               name: userData.fullName || userData.firstName || '',
-              email: '', // Not fetched in validateTokenAndFetchUser
+              email: userData.email || '',
               userType: userData.userType || 'GUEST',
               avatarUrl: userData.profilePhoto || null
             });
 
-            // Fetch favorites count from Supabase
+            // Fetch favorites from Supabase - only count ACTIVE listings
             if (userId) {
               const { data: userFavorites, error } = await supabase
                 .from('user')
-                .select('"Favorites - Listing"')
+                .select('"Favorited Listings"')
                 .eq('_id', userId)
                 .single();
 
               if (!error && userFavorites) {
-                const favorites = userFavorites['Favorites - Listing'];
-                setFavoritesCount(Array.isArray(favorites) ? favorites.length : 0);
+                const favorites = userFavorites['Favorited Listings'];
+                if (Array.isArray(favorites)) {
+                  // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
+                  const validFavorites = favorites.filter(id =>
+                    typeof id === 'string' && /^\d+x\d+$/.test(id)
+                  );
+
+                  // Store all favorited IDs for heart icon state (includes inactive)
+                  setFavoritedListingIds(new Set(validFavorites));
+
+                  // Count only ACTIVE favorites for the header badge
+                  if (validFavorites.length > 0) {
+                    const { data: activeListings, error: activeError } = await supabase
+                      .from('listing')
+                      .select('_id')
+                      .in('_id', validFavorites)
+                      .eq('Active', true);
+
+                    if (!activeError && activeListings) {
+                      setFavoritesCount(activeListings.length);
+                      console.log('[SearchPage] Active favorites count:', activeListings.length, 'of', validFavorites.length, 'total');
+                    } else {
+                      setFavoritesCount(validFavorites.length);
+                    }
+                  } else {
+                    setFavoritesCount(0);
+                  }
+                } else {
+                  setFavoritesCount(0);
+                  setFavoritedListingIds(new Set());
+                }
               }
             }
           }
@@ -1575,6 +1631,42 @@ export default function SearchPage() {
     setIsAIResearchModalOpen(false);
   };
 
+  // Show toast notification
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, 3000);
+  };
+
+  // Update favorites count and show toast (API call handled by FavoriteButton component)
+  const handleToggleFavorite = (listingId, listingTitle, newState) => {
+    console.log('[SearchPage] handleToggleFavorite called:', {
+      listingId,
+      listingTitle,
+      newState,
+      currentFavoritesSize: favoritedListingIds.size
+    });
+
+    // Update the local set to keep header badge in sync
+    const newFavoritedIds = new Set(favoritedListingIds);
+    if (newState) {
+      newFavoritedIds.add(listingId);
+    } else {
+      newFavoritedIds.delete(listingId);
+    }
+    setFavoritedListingIds(newFavoritedIds);
+    setFavoritesCount(newFavoritedIds.size);
+
+    // Show toast notification
+    const displayName = listingTitle || 'Listing';
+    if (newState) {
+      showToast(`${displayName} added to favorites`, 'success');
+    } else {
+      showToast(`${displayName} removed from favorites`, 'info');
+    }
+  };
+
   // Auth navigation handlers
   const handleNavigate = (path) => {
     window.location.href = path;
@@ -1628,6 +1720,30 @@ export default function SearchPage() {
   // Render
   return (
     <div className="search-page">
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className={`toast toast-${toast.type} show`}>
+          <span className="toast-icon">
+            {toast.type === 'success' && (
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+            )}
+            {toast.type === 'info' && (
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+              </svg>
+            )}
+            {toast.type === 'error' && (
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+            )}
+          </span>
+          <span className="toast-message">{toast.message}</span>
+        </div>
+      )}
+
       {/* Two-column layout: Listings (left) + Map (right) */}
       <main className="two-column-layout">
         {/* LEFT COLUMN: Listings with filters */}
@@ -1771,6 +1887,13 @@ export default function SearchPage() {
                 onOpenInfoModal={handleOpenInfoModal}
                 mapRef={mapRef}
                 isLoggedIn={isLoggedIn}
+                userId={currentUser?.id}
+                favoritedListingIds={favoritedListingIds}
+                onToggleFavorite={handleToggleFavorite}
+                onRequireAuth={() => {
+                  setAuthModalView('signup');
+                  setIsAuthModalOpen(true);
+                }}
               />
             )}
           </div>
@@ -1878,6 +2001,8 @@ export default function SearchPage() {
             }}
             onAIResearchClick={handleOpenAIResearchModal}
             isLoggedIn={isLoggedIn}
+            favoritedListingIds={favoritedListingIds}
+            onToggleFavorite={handleToggleFavorite}
           />
         </section>
       </main>
@@ -1887,7 +2012,8 @@ export default function SearchPage() {
         isOpen={isContactModalOpen}
         onClose={handleCloseContactModal}
         listing={selectedListing}
-        userEmail={null}
+        userEmail={currentUser?.email || ''}
+        userName={currentUser?.name || ''}
       />
       <InformationalText
         isOpen={isInfoModalOpen}
@@ -1941,6 +2067,8 @@ export default function SearchPage() {
               }}
               onAIResearchClick={handleOpenAIResearchModal}
               isLoggedIn={isLoggedIn}
+              favoritedListingIds={favoritedListingIds}
+              onToggleFavorite={handleToggleFavorite}
             />
           </div>
         </div>

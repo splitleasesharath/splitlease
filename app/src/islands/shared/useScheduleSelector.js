@@ -40,6 +40,14 @@ export const useScheduleSelector = ({
     errorMessage: ''
   });
 
+  // Sync selectedDays when initialSelectedDays changes (e.g., from URL parameter)
+  useEffect(() => {
+    if (initialSelectedDays && initialSelectedDays.length > 0) {
+      console.log('📅 useScheduleSelector: Syncing with initialSelectedDays:', initialSelectedDays.map(d => d.name || d.dayOfWeek));
+      setSelectedDays(initialSelectedDays);
+    }
+  }, [initialSelectedDays]);
+
   // Component state flags
   const [isClickable, setIsClickable] = useState(true);
   const [recalculateState, setRecalculateState] = useState(false);

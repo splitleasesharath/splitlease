@@ -95,8 +95,12 @@ plan/
 
 # Temporary directories
 .temp/*.gdoc
+*.gdoc
 
 # Deprecated code
 Deprecated/
 desktop.ini
 nul
+
+# Implementation directory
+Implementation/

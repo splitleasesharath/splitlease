@@ -1,232 +1,256 @@
-# Supabase - Backend Infrastructure
+# Supabase Edge Functions - Context Guide
 
-**GENERATED**: 2025-12-02
-**PARENT**: / (project root)
-
----
-
-## ### DIRECTORY_INTENT ###
-
-[PURPOSE]: Backend infrastructure with Edge Functions and database configuration
-[RUNTIME]: Deno (Edge Functions), PostgreSQL (Database)
-[PATTERN]: Serverless functions proxying to Bubble.io and handling AI services
+**GENERATED**: 2025-12-04
+**LOCATION**: `supabase/functions/`
+**RUNTIME**: Deno 2
 
 ---
 
-## ### SUBDIRECTORIES ###
+## Architecture Overview
 
-### functions/
-[INTENT]: Deno Edge Functions for API proxying and AI services
-[SUBDIRS]: _shared/, ai-gateway/, ai-signup-guest/, bubble-auth-proxy/, bubble-proxy/
-[FILES]: 25+ TypeScript files
-[ENDPOINT_COUNT]: 4 main functions
+The project has **5 main Edge Functions**:
 
----
-
-## ### FILE_INVENTORY ###
-
-### config.toml
-[INTENT]: Supabase project configuration
-[CONTAINS]: Project ID, API settings, database connection, Edge Function options
-
-### SECRETS_SETUP.md
-[INTENT]: Documentation for configuring required secrets in Supabase Dashboard
-
-### .gitignore
-[INTENT]: Git ignore rules for Supabase CLI artifacts
+| Function | Purpose | JWT Auth |
+|----------|---------|----------|
+| `bubble-proxy` | General Bubble API proxy for listings, messaging, photos, favorites | No (optional per action) |
+| `bubble-auth-proxy` | Authentication (login, signup, logout, validate) | No |
+| `ai-gateway` | AI completions with OpenAI (streaming + non-streaming) | Optional per prompt |
+| `ai-signup-guest` | AI-powered guest signup flow | No |
+| `slack` | Slack integration (FAQ inquiries to Slack channels) | No |
 
 ---
 
-## ### REQUIRED_SECRETS ###
+## Directory Structure
 
-Configure in **Supabase Dashboard → Project Settings → Edge Functions → Secrets**:
-
-| Secret Name | Value | Used By |
-|-------------|-------|---------|
-| `BUBBLE_API_BASE_URL` | `https://app.split.lease/version-test/api/1.1` | bubble-proxy, bubble-auth-proxy, ai-signup-guest |
-| `BUBBLE_API_KEY` | (stored in Supabase Dashboard) | bubble-proxy, bubble-auth-proxy, ai-signup-guest |
-| `OPENAI_API_KEY` | (stored in Supabase Dashboard) | ai-gateway |
-| `SUPABASE_URL` | Auto-provided by Supabase | All functions |
-| `SUPABASE_ANON_KEY` | Auto-provided by Supabase | bubble-proxy, ai-gateway |
-| `SUPABASE_SERVICE_ROLE_KEY` | Auto-provided by Supabase | bubble-proxy, bubble-auth-proxy, ai-gateway |
-
-**IMPORTANT**: `app.split.lease` and `upgradefromstr.bubbleapps.io` point to the same Bubble application. Use `BUBBLE_API_BASE_URL` for all Bubble API calls.
+```
+supabase/
+├── config.toml                    # Supabase local config + function definitions
+├── CLAUDE.md                      # This file
+└── functions/
+    ├── _shared/                   # Shared utilities
+    │   ├── aiTypes.ts             # AI-specific TypeScript types
+    │   ├── bubbleSync.ts          # Core BubbleSyncService class
+    │   ├── cors.ts                # CORS headers configuration
+    │   ├── errors.ts              # Custom error classes
+    │   ├── openai.ts              # OpenAI API wrapper
+    │   ├── types.ts               # General TypeScript interfaces
+    │   └── validation.ts          # Input validation utilities
+    │
+    ├── bubble-proxy/              # General Bubble API proxy
+    │   ├── index.ts               # Main router
+    │   ├── deno.json              # Import map
+    │   └── handlers/
+    │       ├── favorites.ts       # Toggle favorites
+    │       ├── getFavorites.ts    # Get user favorites
+    │       ├── getListing.ts      # Fetch listing data
+    │       ├── listing.ts         # Create listing
+    │       ├── listingSync.ts     # Listing sync utilities
+    │       ├── messaging.ts       # Send messages
+    │       ├── photos.ts          # Upload photos
+    │       ├── referral.ts        # Submit referrals
+    │       ├── signup.ts          # AI signup
+    │       └── submitListing.ts   # Full listing submission
+    │
+    ├── bubble-auth-proxy/         # Authentication proxy
+    │   ├── index.ts               # Main router
+    │   ├── deno.json              # Import map
+    │   └── handlers/
+    │       ├── login.ts           # User login
+    │       ├── logout.ts          # User logout
+    │       ├── signup.ts          # User registration
+    │       └── validate.ts        # Token validation
+    │
+    ├── ai-gateway/                # AI service gateway
+    │   ├── index.ts               # Main router
+    │   ├── deno.json              # Import map
+    │   ├── handlers/
+    │   │   ├── complete.ts        # Non-streaming completion
+    │   │   └── stream.ts          # SSE streaming completion
+    │   └── prompts/
+    │       ├── _registry.ts       # Prompt registry
+    │       ├── _template.ts       # Template interpolation
+    │       └── listing-description.ts
+    │
+    ├── ai-signup-guest/           # AI-powered guest signup
+    │   └── index.ts
+    │
+    └── slack/                     # Slack integration
+        └── index.ts               # FAQ inquiry handler
+```
 
 ---
 
-## ### EDGE_FUNCTIONS_OVERVIEW ###
+## Shared Utilities (`_shared/`)
 
-| Function | Version | Purpose | Auth Required |
-|----------|---------|---------|---------------|
-| bubble-auth-proxy | v22 | Authentication (login, signup, logout, validate) | No (these ARE auth endpoints) |
-| bubble-proxy | v26 | General Bubble API proxy | Optional (some actions public) |
-| ai-gateway | v12 | AI completions and streaming | Optional (some prompts public) |
-| ai-signup-guest | v11 | Guest market research signup | No |
+### bubbleSync.ts - Core Sync Service
+
+The `BubbleSyncService` class implements the **Write-Read-Write atomic pattern**:
+
+```typescript
+// Pattern: Atomic Create-and-Sync
+// 1. Create in Bubble (source of truth)
+// 2. Fetch full data from Bubble Data API
+// 3. Sync to Supabase (replica)
+// 4. Return synced data to client
+
+const syncService = new BubbleSyncService(
+  bubbleBaseUrl,
+  bubbleApiKey,
+  supabaseUrl,
+  supabaseServiceKey
+);
+
+// Atomic operation
+await syncService.createAndSync(
+  'workflow_name',
+  params,
+  'BubbleObjectType',
+  'supabase_table'
+);
+
+// Workflow only (no sync)
+await syncService.triggerWorkflowOnly('workflow_name', params);
+
+// Manual fetch
+await syncService.fetchBubbleObject('ObjectType', 'object_id');
+
+// Manual sync
+await syncService.syncToSupabase('table_name', data);
+```
+
+### errors.ts - Custom Error Classes
+
+| Error Class | HTTP Status | Use Case |
+|-------------|-------------|----------|
+| `BubbleApiError` | Variable (default 500) | Bubble API failures |
+| `SupabaseSyncError` | 500 | Supabase sync failures |
+| `ValidationError` | 400 | Input validation failures |
+| `AuthenticationError` | 401 | Missing/invalid authentication |
+| `OpenAIError` | Variable (default 500) | OpenAI API failures |
+
+### validation.ts - Input Validation
+
+```typescript
+validateEmail(email);                    // Throws if invalid format
+validatePhone(phone);                    // Throws if invalid (optional field)
+validateRequired(value, 'fieldName');    // Throws if null/undefined/empty
+validateRequiredFields(obj, ['field1', 'field2']);
+validateAction(action, ['allowed1', 'allowed2']);
+```
+
+### cors.ts - CORS Configuration
+
+```typescript
+export const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, GET, OPTIONS, PUT, DELETE',
+};
+```
+
+### openai.ts - OpenAI Wrapper
+
+```typescript
+// Non-streaming
+const result = await complete(messages, {
+  model: 'gpt-4',
+  temperature: 0.7,
+  maxTokens: 1000,
+  responseFormat: 'json_object' | 'text'
+});
+
+// Streaming (returns ReadableStream)
+const stream = await stream(messages, options);
+```
 
 ---
 
-## ### BUBBLE-AUTH-PROXY ###
+## bubble-proxy Actions
 
-**Endpoint**: `POST /bubble-auth-proxy`
-**Purpose**: Authentication proxy handling login, signup, logout, and token validation
+**Endpoint**: `POST /functions/v1/bubble-proxy`
 
-### Actions
-
-#### login
-**Bubble Workflow**: `{BUBBLE_API_BASE_URL}/wf/login-user`
-**Request**:
+**Request Format**:
 ```json
 {
-  "action": "login",
-  "payload": {
-    "email": "user@example.com",
-    "password": "userpassword"
+  "action": "action_name",
+  "payload": { ... }
+}
+```
+
+| Action | Auth Required | Handler | Description |
+|--------|---------------|---------|-------------|
+| `create_listing` | No | `listing.ts` | Create new listing with Supabase sync |
+| `get_listing` | No | `getListing.ts` | Fetch listing data from Bubble |
+| `send_message` | No | `messaging.ts` | Send message to host |
+| `signup_ai` | No | `signup.ts` | AI-powered signup |
+| `upload_photos` | No | `photos.ts` | Upload listing photos |
+| `toggle_favorite` | No | `favorites.ts` | Add/remove from favorites |
+| `get_favorites` | No | `getFavorites.ts` | Get user's favorited listings |
+| `submit_referral` | **Yes** | `referral.ts` | Submit referral |
+| `submit_listing` | **Yes** | `submitListing.ts` | Full listing submission with all form data |
+
+### submit_listing Payload Structure
+
+```typescript
+{
+  listing_id: string;
+  user_email: string;
+  user_unique_id?: string;
+  listing_data: {
+    'Name': string;
+    'Type of Space': string;
+    'Bedrooms': number;
+    'Beds': number;
+    'Bathrooms': number;
+    'Address': string;
+    'Neighborhood': string;
+    'Amenities Inside Unit': string[];
+    'Amenities Outside Unit': string[];
+    'Description of Lodging': string;
+    'Rental Type': string;
+    'Available Nights': string[];
+    'Damage Deposit': number;
+    'House Rules': string[];
+    // ... more fields
   }
 }
 ```
-**Response**:
+
+---
+
+## bubble-auth-proxy Actions
+
+**Endpoint**: `POST /functions/v1/bubble-auth-proxy`
+
+| Action | Handler | Bubble Workflow | Description |
+|--------|---------|-----------------|-------------|
+| `login` | `login.ts` | `/wf/login-user` | Authenticate user, returns token |
+| `signup` | `signup.ts` | Signup workflow | Register new user + sync to Supabase |
+| `logout` | `logout.ts` | Logout workflow | Invalidate token |
+| `validate` | `validate.ts` | Validate workflow | Validate token + fetch user data |
+
+### Login Response
 ```json
 {
   "success": true,
   "data": {
     "token": "...",
     "user_id": "...",
-    "expires": 86400
-  }
-}
-```
-
-#### signup
-**Bubble Workflow**: `{BUBBLE_API_BASE_URL}/wf/signup-user`
-
-**CRITICAL**: All parameters use **camelCase** (not snake_case). All fields are **required** by Bubble.
-
-**Request**:
-```json
-{
-  "action": "signup",
-  "payload": {
-    "email": "user@example.com",
-    "password": "userpassword",
-    "retype": "userpassword",
-    "additionalData": {
-      "firstName": "John",
-      "lastName": "Doe",
-      "userType": "Guest",
-      "birthDate": "1990-05-15",
-      "phoneNumber": "+1234567890"
-    }
-  }
-}
-```
-
-**Parameters sent to Bubble** (all camelCase, all required):
-| Parameter | Type | Format |
-|-----------|------|--------|
-| `email` | string | Valid email |
-| `password` | string | Min 4 characters |
-| `retype` | string | Must match password |
-| `firstName` | string | User's first name |
-| `lastName` | string | User's last name |
-| `userType` | string | "Host" or "Guest" |
-| `birthDate` | string | ISO format: YYYY-MM-DD |
-| `phoneNumber` | string | Phone number |
-
-**Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "token": "...",
-    "user_id": "...",
-    "expires": 86400
-  }
-}
-```
-
-**Error Reasons from Bubble**:
-- `NOT_VALID_EMAIL`: Invalid email format
-- `USED_EMAIL`: Email already registered
-- `DO_NOT_MATCH`: Passwords don't match
-
-#### logout
-**Bubble Workflow**: `{BUBBLE_API_BASE_URL}/wf/logout-user`
-**Note**: Always succeeds locally even if Bubble API fails (ensures users can clear session)
-**Request**:
-```json
-{
-  "action": "logout",
-  "payload": {
-    "token": "user_auth_token"
-  }
-}
-```
-
-#### validate
-**Purpose**: Validates session and fetches user data from Supabase
-**Note**: Token validation against Bubble is skipped; user existence is verified in Supabase
-**Request**:
-```json
-{
-  "action": "validate",
-  "payload": {
-    "token": "user_auth_token",
-    "user_id": "bubble_user_id"
-  }
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "userId": "...",
-    "firstName": "John",
-    "fullName": "John Doe",
-    "profilePhoto": "https://...",
-    "userType": "Guest"
+    "expires": 3600
   }
 }
 ```
 
 ---
 
-## ### BUBBLE-PROXY ###
+## ai-gateway Actions
 
-**Endpoint**: `POST /bubble-proxy`
-**Purpose**: General API proxy for Bubble workflows
+**Endpoint**: `POST /functions/v1/ai-gateway`
 
-### Public Actions (No Auth Required)
-- `create_listing` - Create new listing with Supabase sync
-- `get_listing` - Fetch listing data from Bubble
-- `send_message` - Send message to host
-- `signup_ai` - AI-powered signup
-- `upload_photos` - Upload listing photos
-
-### Protected Actions (Auth Required)
-- `submit_listing` - Full listing submission with all form data
-- `submit_referral` - Submit referral
-
-### Request Format
-```json
-{
-  "action": "get_listing",
-  "payload": {
-    "listing_id": "..."
-  }
-}
-```
-
----
-
-## ### AI-GATEWAY ###
-
-**Endpoint**: `POST /ai-gateway`
-**Purpose**: AI service gateway for completions and streaming
-
-### Actions
-- `complete` - Non-streaming completion
-- `stream` - SSE streaming completion
+| Action | Handler | Description |
+|--------|---------|-------------|
+| `complete` | `complete.ts` | Non-streaming OpenAI completion |
+| `stream` | `stream.ts` | SSE streaming completion |
 
 ### Public Prompts (No Auth Required)
 - `listing-description`
@@ -239,8 +263,13 @@ Configure in **Supabase Dashboard → Project Settings → Edge Functions → Se
   "payload": {
     "prompt_key": "listing-description",
     "variables": {
-      "propertyType": "studio",
-      "neighborhood": "Brooklyn"
+      "neighborhood": "Brooklyn",
+      "amenities": ["WiFi", "AC"]
+    },
+    "options": {
+      "model": "gpt-4",
+      "temperature": 0.7,
+      "max_tokens": 1000
     }
   }
 }
@@ -248,135 +277,214 @@ Configure in **Supabase Dashboard → Project Settings → Edge Functions → Se
 
 ---
 
-## ### AI-SIGNUP-GUEST ###
+## slack Actions
 
-**Endpoint**: `POST /ai-signup-guest`
-**Purpose**: Guest market research signup (no authentication)
+**Endpoint**: `POST /functions/v1/slack`
 
-**Bubble Workflow**: `{BUBBLE_API_BASE_URL}/wf/ai-signup-guest`
+| Action | Description |
+|--------|-------------|
+| `faq_inquiry` | Send FAQ inquiries to Slack channels |
 
 ### Request Format
 ```json
 {
-  "email": "user@example.com",
-  "phone": "+1234567890",
-  "text_inputted": "Looking for a studio in Brooklyn..."
+  "action": "faq_inquiry",
+  "payload": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "inquiry": "What are the payment methods available?"
+  }
 }
 ```
 
-### Parameters sent to Bubble
-| Parameter | Required | Description |
-|-----------|----------|-------------|
-| `email` | Yes | Valid email address |
-| `phone` | No | Phone number |
-| `text inputted` | Yes | Market research description (note: space in key name) |
-
----
-
-## ### ARCHITECTURE_FLOW ###
-
-```
-Frontend (app/)
-    │
-    ▼
-Supabase Edge Functions
-    │
-    ├─► bubble-auth-proxy ──► Bubble.io Auth Workflows
-    │   └─► /wf/login-user
-    │   └─► /wf/signup-user
-    │   └─► /wf/logout-user
-    │
-    ├─► bubble-proxy ──────► Bubble.io Data Workflows
-    │   └─► /wf/listing_creation_in_code
-    │   └─► /wf/core-contact-host-send-message
-    │   └─► /wf/referral-index-lite
-    │
-    ├─► ai-gateway ────────► OpenAI API
-    │
-    └─► ai-signup-guest ───► Bubble.io + OpenAI
-        └─► /wf/ai-signup-guest
+### Response
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Inquiry sent successfully"
+  }
+}
 ```
 
 ---
 
-## ### DEPLOYMENT ###
+## Required Secrets
 
-**Preferred Method**: Use Supabase MCP to deploy directly
+Configure in **Supabase Dashboard > Project Settings > Secrets**:
 
-**Alternative** (requires SUPABASE_ACCESS_TOKEN):
+| Secret | Value | Used By |
+|--------|-------|---------|
+| `BUBBLE_API_BASE_URL` | `https://app.split.lease/version-test/api/1.1` | bubble-proxy, bubble-auth-proxy |
+| `BUBBLE_API_KEY` | See secrets setup | All Bubble API calls |
+| `SUPABASE_SERVICE_ROLE_KEY` | From Supabase Dashboard | Server-side operations (bypasses RLS) |
+| `OPENAI_API_KEY` | From OpenAI | ai-gateway |
+| `SLACK_WEBHOOK_ACQUISITION` | Slack webhook URL | slack (acquisition channel) |
+| `SLACK_WEBHOOK_GENERAL` | Slack webhook URL | slack (general channel) |
+
+---
+
+## Key Design Principles
+
+### NO FALLBACK PRINCIPLE
+
+All Edge Functions follow the "No Fallback" principle:
+
+```typescript
+// CORRECT - Fail fast
+if (!data) {
+  throw new BubbleApiError('Data not found', 404);
+}
+
+// WRONG - Never do this
+if (!data) {
+  return { fallback: 'default value' }; // NO!
+}
+```
+
+- Real data or nothing
+- No fallback mechanisms
+- No hardcoded values
+- Atomic operations only
+- Errors propagate, not hidden
+
+### Action-Based Routing
+
+All functions accept POST requests with:
+```json
+{
+  "action": "action_name",
+  "payload": { ... }
+}
+```
+
+### Authentication Pattern
+
+```typescript
+// Optional auth (for public actions)
+const authHeader = req.headers.get('Authorization');
+if (authHeader) {
+  const { data: { user } } = await supabase.auth.getUser();
+  // Use authenticated user
+} else {
+  // Guest user
+  user = { id: 'guest', email: null };
+}
+
+// Required auth
+if (!user) {
+  throw new AuthenticationError('Authentication required');
+}
+```
+
+---
+
+## Configuration (config.toml)
+
+```toml
+[functions.bubble-proxy]
+enabled = true
+verify_jwt = false
+import_map = "./functions/bubble-proxy/deno.json"
+entrypoint = "./functions/bubble-proxy/index.ts"
+
+[functions.bubble-auth-proxy]
+enabled = true
+verify_jwt = false
+import_map = "./functions/bubble-auth-proxy/deno.json"
+entrypoint = "./functions/bubble-auth-proxy/index.ts"
+
+[functions.ai-signup-guest]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/ai-signup-guest/index.ts"
+
+[edge_runtime]
+enabled = true
+policy = "per_worker"  # Hot reload in dev
+deno_version = 2
+```
+
+**Note**: `verify_jwt = false` because functions handle their own authentication.
+
+---
+
+## Local Development
+
+```bash
+# Start local Supabase
+supabase start
+
+# Serve functions locally
+supabase functions serve
+
+# View function logs
+supabase functions logs bubble-proxy
+supabase functions logs bubble-auth-proxy
+supabase functions logs ai-gateway
+```
+
+---
+
+## Deployment
+
 ```bash
 # Deploy single function
-supabase functions deploy bubble-auth-proxy
+supabase functions deploy bubble-proxy
 
 # Deploy all functions
 supabase functions deploy
-
-# View logs
-supabase functions logs bubble-auth-proxy --tail
-
-# Test locally
-supabase functions serve
 ```
 
 ---
 
-## ### DATABASE_OVERVIEW ###
+## Error Response Format
 
-[TOTAL_TABLES]: 93 Supabase PostgreSQL tables
-[SCHEMA_REFERENCE]: ../DATABASE_SCHEMA_OVERVIEW.md
+All functions return consistent error responses:
 
-### Key Tables
-- `user` / `users`: User accounts (synced from Bubble)
-- `listing`: Property listings
-- `proposal` / `proposals`: Booking proposals
-- `virtualmeetingschedulesandlinks`: Video call scheduling
+```json
+{
+  "success": false,
+  "error": "Error message describing what went wrong"
+}
+```
 
-### Lookup Tables (zat_*)
-- `zat_geo_borough_toplevel`: NYC boroughs
-- `zat_geo_hood_mediumlevel`: Neighborhoods
-- `zat_features_amenity`: Amenities
-- `zat_features_houserule`: House rules
-
----
-
-## ### SECURITY_NOTES ###
-
-[API_KEYS]: Never exposed to frontend - stored in Supabase Secrets
-[VALIDATION]: All inputs validated before forwarding to Bubble
-[CORS]: Configured for split.lease domain
-[RLS]: Row Level Security enabled on sensitive tables
-[AUTH_ENDPOINTS]: bubble-auth-proxy requires NO authentication (these ARE the auth endpoints)
+HTTP status codes are determined by error type:
+- `400` - ValidationError
+- `401` - AuthenticationError
+- `500` - Default / SupabaseSyncError
+- Variable - BubbleApiError (uses original status)
 
 ---
 
-## ### COMMON_ISSUES ###
+## Adding a New Edge Function
 
-### "date of birth is missing" Error
-**Cause**: Parameters sent to Bubble using wrong field names (snake_case instead of camelCase)
-**Solution**: Always use camelCase for Bubble API parameters: `firstName`, `lastName`, `birthDate`, `phoneNumber`, `userType`
-
-### 500 Errors on Edge Functions
-**Check**:
-1. Secrets configured in Supabase Dashboard
-2. CORS preflight handler returns 200 for OPTIONS
-3. Check logs: `supabase functions logs <function-name>`
-
-### 401/403 Errors
-**Check**:
-1. Token passed in Authorization header
-2. Token not expired
-3. Action requires auth but user not authenticated
+1. Create directory: `supabase/functions/new-function/`
+2. Create `index.ts` with `Deno.serve()` handler
+3. Create `deno.json` for import map (optional)
+4. Add configuration to `config.toml`:
+   ```toml
+   [functions.new-function]
+   enabled = true
+   verify_jwt = false
+   entrypoint = "./functions/new-function/index.ts"
+   ```
+5. Deploy: `supabase functions deploy new-function`
 
 ---
 
-## ### DOCUMENTATION ###
+## Adding a New Handler to bubble-proxy
 
-[SECRETS]: SECRETS_SETUP.md
-[DEPLOYMENT]: ../docs/DEPLOY_EDGE_FUNCTION.md
-[MIGRATION]: ../docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md
+1. Create handler in `supabase/functions/bubble-proxy/handlers/newHandler.ts`
+2. Import in `index.ts`:
+   ```typescript
+   import { handleNewAction } from './handlers/newHandler.ts';
+   ```
+3. Add to `allowedActions` array
+4. Add to switch statement in router
+5. If public (no auth), add to `PUBLIC_ACTIONS` array
 
 ---
 
-**SUBDIRECTORY_COUNT**: 1 (functions/)
-**EDGE_FUNCTION_COUNT**: 4
-**TOTAL_FILES**: 30+
+**DOCUMENT_VERSION**: 1.0
+**LAST_UPDATED**: 2025-12-04

@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 import { supabase } from '../../lib/supabase.js';
+import { checkAuthStatus, getUserType } from '../../lib/auth.js';
+import { normalizeUserType, NORMALIZED_USER_TYPES } from './LoggedInAvatar/useLoggedInAvatarData.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import ImportListingModal from './ImportListingModal/ImportListingModal.jsx';
 
@@ -13,6 +15,21 @@ export default function Footer() {
   const [isSubmittingImport, setIsSubmittingImport] = useState(false);
   const [showCreateListingModal, setShowCreateListingModal] = useState(false);
   const [showImportListingModal, setShowImportListingModal] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userType, setUserType] = useState(null); // 'Host' or 'Guest'
+
+  // Check auth status and user type on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const loggedIn = await checkAuthStatus();
+      setIsLoggedIn(loggedIn);
+      if (loggedIn) {
+        const type = getUserType();
+        setUserType(type);
+      }
+    };
+    checkAuth();
+  }, []);
 
   // Handle referral method change
   const handleReferralMethodChange = (method) => {
@@ -115,44 +132,62 @@ export default function Footer() {
     }
   };
 
+  // Determine which columns to show based on user type
+  // If logged in as Guest, hide "For Hosts" column
+  // If logged in as Host (or Trial Host), hide "For Guests" column
+  // If not logged in, show both columns
+  const normalizedType = normalizeUserType(userType);
+  const showHostsColumn = !isLoggedIn || normalizedType !== NORMALIZED_USER_TYPES.GUEST;
+  const showGuestsColumn = !isLoggedIn || (normalizedType !== NORMALIZED_USER_TYPES.HOST && normalizedType !== NORMALIZED_USER_TYPES.TRIAL_HOST);
+
+  // Calculate column count for grid
+  const columnCount = 3 + (showHostsColumn ? 1 : 0) + (showGuestsColumn ? 1 : 0);
+
   return (
     <>
       {/* Main Footer */}
       <footer className="main-footer">
-        <div className="footer-container">
-          {/* For Hosts Column */}
-          <div className="footer-column">
-            <h4>For Hosts</h4>
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setShowCreateListingModal(true);
-              }}
-            >
-              List Property Now
-            </a>
-            <a href="/list-with-us.html">How to List</a>
-            <a href="/host-success">Success Stories</a>
-            <a href="/policies.html">Legal Section</a>
-            <a href="https://app.split.lease/host-guarantee">Guarantees</a>
-            <a href="https://app.split.lease/demo-house-manual">Free House Manual</a>
-          </div>
+        <div
+          className="footer-container"
+          style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
+        >
+          {/* For Hosts Column - hidden for logged-in guests */}
+          {showHostsColumn && (
+            <div className="footer-column">
+              <h4>For Hosts</h4>
+              <a
+                href="#"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowCreateListingModal(true);
+                }}
+              >
+                List Property Now
+              </a>
+              <a href="/list-with-us.html">How to List</a>
+              <a href="/host-success">Success Stories</a>
+              <a href="/policies.html">Legal Section</a>
+              <a href="https://app.split.lease/host-guarantee">Guarantees</a>
+              <a href="https://app.split.lease/demo-house-manual">Free House Manual</a>
+            </div>
+          )}
 
-          {/* For Guests Column */}
-          <div className="footer-column">
-            <h4>For Guests</h4>
-            <a href={SEARCH_URL}>Explore Split Leases</a>
-            <a href="/guest-success">Success Stories</a>
-            <a href={SIGNUP_LOGIN_URL}>Speak to an Agent</a>
-            <a href="/faq.html?section=travelers">View FAQ</a>
-          </div>
+          {/* For Guests Column - hidden for logged-in hosts */}
+          {showGuestsColumn && (
+            <div className="footer-column">
+              <h4>For Guests</h4>
+              <a href={SEARCH_URL}>Explore Split Leases</a>
+              <a href="/guest-success">Success Stories</a>
+              <a href={SIGNUP_LOGIN_URL}>Speak to an Agent</a>
+              <a href="/faq.html?section=travelers">View FAQ</a>
+            </div>
+          )}
 
           {/* Company Column */}
           <div className="footer-column">
             <h4>Company</h4>
             <a href="/faq.html?section=travelers&question=1692211080963x751695924087252700">About Periodic Tenancy</a>
-            <a href="https://app.split.lease/team">About the Team</a>
+            <a href="/about-us">About the Team</a>
             <a href="/careers.html">Careers at Split Lease</a>
             <a href="https://app.split.lease/knowledge-base/1676496004548x830972865850585500">Blog</a>
           </div>

@@ -1,7 +1,6 @@
-# SelfListingPage Styles
+# SelfListingPage Styles Context
 
-**GENERATED**: 2025-11-26
-**ARCHITECTURE**: CSS Modules
+**TYPE**: LEAF NODE
 **PARENT**: app/src/islands/pages/SelfListingPage/
 
 ---
@@ -13,9 +12,10 @@
 
 ---
 
-## ### FILE_INVENTORY ###
+## ### FILE_CONTRACT ###
 
 ### SelfListingPage.css
+[PATH]: ./SelfListingPage.css
 [INTENT]: Main styles for listing form layout, sections, and navigation
 [SCOPE]: SelfListingPage component and child sections
 
@@ -23,10 +23,27 @@
 
 ## ### STYLE_PATTERNS ###
 
-[LAYOUT]: Multi-section form with sticky navigation
-[SECTIONS]: Card-style containers with spacing
-[NAVIGATION]: Progress indicator and prev/next buttons
-[RESPONSIVE]: Mobile-first with desktop enhancements
+| Pattern | Description |
+|---------|-------------|
+| LAYOUT | Multi-section form with sticky navigation |
+| SECTIONS | Card-style containers with consistent spacing |
+| NAVIGATION | Progress indicator and prev/next buttons |
+| RESPONSIVE | Mobile-first with desktop enhancements |
+
+---
+
+## ### CSS_CONVENTIONS ###
+
+[RULE_1]: Use CSS variables from styles/variables.css
+[RULE_2]: Mobile-first responsive design
+[RULE_3]: BEM-style class naming
+
+---
+
+## ### DEPENDENCIES ###
+
+[LOCAL]: styles/variables.css
+[EXTERNAL]: None
 
 ---
 
