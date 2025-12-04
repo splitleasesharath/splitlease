@@ -44,6 +44,7 @@ Split Lease/
 ├── app/                    # React frontend application
 ├── supabase/               # Edge Functions and database config
 ├── docs/                   # Migration plans and documentation
+├── Documentation/          # Database tables, option sets, and routing guides
 ├── .claude/                # Claude Code configuration and commands
 └── Context/                # Architecture reference guides
 ```
@@ -58,13 +59,19 @@ For detailed information, see these context files:
 - **[../app/CLAUDE.md](../app/CLAUDE.md)** - React app architecture, components, islands pattern, and frontend conventions
 
 ### Backend Infrastructure
-- **[../supabase/CLAUDE.md](../supabase/CLAUDE.md)** - Edge Functions, database overview, secrets configuration
+- **[../supabase/CLAUDE.md](../supabase/CLAUDE.md)** - Edge Functions architecture, shared utilities (bubbleSync, errors, validation, cors, openai), action-based routing, authentication patterns, deployment commands, and configuration
 
 ### Logic Architecture
 - **[../app/src/logic/CLAUDE.md](../app/src/logic/CLAUDE.md)** - Four-layer logic system (calculators, rules, processors, workflows)
 
-### Database
+### Database & Data References
 - **[../DATABASE_SCHEMA_OVERVIEW.md](../DATABASE_SCHEMA_OVERVIEW.md)** - Complete Supabase table schemas (93 tables)
+- **[../Documentation/DATABASE_TABLES_DETAILED.md](../Documentation/DATABASE_TABLES_DETAILED.md)** - Detailed database table documentation with field descriptions
+- **[../Documentation/DATABASE_OPTION_SETS_QUICK_REFERENCE.md](../Documentation/DATABASE_OPTION_SETS_QUICK_REFERENCE.md)** - Quick reference for database option sets
+- **[../Documentation/OPTION_SETS_DETAILED.md](../Documentation/OPTION_SETS_DETAILED.md)** - Comprehensive option sets documentation with values and usage
+
+### Routing
+- **[../Documentation/ROUTING_GUIDE.md](../Documentation/ROUTING_GUIDE.md)** - Application routing patterns and navigation structure
 
 ### Migration Documentation
 - **[../docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md](../docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md)** - Bubble.io to Edge Functions migration
@@ -163,5 +170,6 @@ Configured in Supabase Dashboard > Project Settings > Secrets:
 
 ---
 
-**VERSION**: 3.0 (Lightweight)
-**STATUS**: References detailed context files
+**VERSION**: 3.1 (Lightweight)
+**LAST_UPDATED**: 2025-12-04
+**STATUS**: References detailed context files including Documentation directory
