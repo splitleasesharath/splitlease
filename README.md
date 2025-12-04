@@ -1,8 +1,11 @@
 # Split Lease Platform
 
-A modern, high-performance multi-page web application for flexible shared accommodations with weekly scheduling. Built with Vite, React Islands Architecture, Supabase, and Google Maps, deployed on Cloudflare Pages.
+A modern, high-performance multi-page web application for flexible shared accommodations with weekly scheduling. Built with Vite, React Islands Architecture, Supabase Edge Functions, and Google Maps, deployed on Cloudflare Pages.
 
-## 📋 Table of Contents
+**Repository**: https://github.com/splitleasesharath/splitlease
+**Branch**: main
+
+## Table of Contents
 
 - [Overview](#overview)
 - [Architecture](#architecture)
@@ -19,14 +22,19 @@ A modern, high-performance multi-page web application for flexible shared accomm
 
 ---
 
-## 🎯 Overview
+## Overview
 
-Split Lease is a comprehensive web platform enabling users to find, filter, and book shared accommodations across NYC and New Jersey with flexible weekly scheduling. The application features advanced filtering, dynamic pricing, interactive maps, multi-step booking flows, and real-time data synchronization.
+Split Lease is a flexible rental marketplace for NYC properties enabling:
+- **Split Scheduling**: Property owners list spaces for specific days/weeks
+- **Repeat Stays**: Guests rent rooms on selected days (claimed "45% less than Airbnb")
+- **Proposal System**: Guests submit proposals with custom terms
+- **Virtual Meetings**: Video calls between hosts and guests
 
 ### What Makes It Special
 
 - **No Fallback Mechanisms**: 100% truthful data - returns real data or null/empty values, never hardcoded demo data
 - **Islands Architecture**: Multi-page app with selective React hydration for optimal performance
+- **Four-Layer Logic System**: Calculators, Rules, Processors, Workflows for clean separation of concerns
 - **Intelligent Pricing**: Real-time calculations based on 2-7 night selections with dynamic rate adjustment
 - **Advanced Schedule System**: Contiguous day validation, check-in/check-out logic, and week-wrap handling
 - **Database-Driven Everything**: All location data, amenities, policies loaded dynamically from Supabase
@@ -36,66 +44,56 @@ Split Lease is a comprehensive web platform enabling users to find, filter, and 
 
 ### Application Scale
 
-- **12 Pages**: Homepage, Search, View Listing, FAQ, Policies, List With Us, Success pages, Careers, and more
-- **30+ React Components**: Shared components with isolated state management
-- **20+ Utility Modules**: Centralized business logic and data transformation
-- **15+ Database Tables**: Listings, photos, reviews, geographic data, feature lookups
-- **~15,000 Lines**: JavaScript/JSX codebase with modular architecture
-- **~8,000 Lines**: CSS with variables, components, responsive design
+- **19 Entry Points**: JSX files mounting React components to HTML pages
+- **35+ React Components**: Shared components with isolated state management
+- **93 Database Tables**: Supabase PostgreSQL tables for all data
+- **4 Edge Functions**: bubble-proxy, bubble-auth-proxy, ai-gateway, ai-signup-guest
+- **40+ Claude Commands**: Custom slash commands for deployment, testing, and development
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
-### Islands Architecture Pattern
+### Tech Stack
 
-**Philosophy**: Static HTML pages with selective React hydration for interactive components only.
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18 + Vite (Islands Architecture) |
+| Backend | Supabase (PostgreSQL + Edge Functions) |
+| Legacy Backend | Bubble.io (migrating to Edge Functions) |
+| Deployment | Cloudflare Pages |
+| Node Version | 18 |
+
+### Dependency Graph
 
 ```
-┌─────────────────────────────────────────────────┐
-│          Multi-Page Application (MPA)           │
-├─────────────────────────────────────────────────┤
-│  12 Static HTML Pages                           │
-│  ├── public/index.html                          │
-│  ├── public/search.html                         │
-│  ├── public/view-split-lease.html               │
-│  └── ... (9 more pages)                         │
-├─────────────────────────────────────────────────┤
-│  React Islands (Selective Hydration)            │
-│  ├── src/main.jsx → HomePage                    │
-│  ├── src/search.jsx → SearchPage                │
-│  ├── src/view-split-lease.jsx → ViewListing     │
-│  └── ... (9 more entry points)                  │
-├─────────────────────────────────────────────────┤
-│  Shared Components (30+)                        │
-│  ├── Header, Footer, Modal, GoogleMap           │
-│  ├── SearchScheduleSelector                     │
-│  ├── ListingScheduleSelector                    │
-│  ├── CreateProposalFlowV2                       │
-│  └── ContactHostMessaging                       │
-├─────────────────────────────────────────────────┤
-│  Core Library Modules (20+)                     │
-│  ├── supabase.js, auth.js, constants.js         │
-│  ├── dataLookups.js, priceCalculations.js       │
-│  ├── dayUtils.js, urlParams.js, mapUtils.js     │
-│  └── sanitize.js, availabilityValidation.js     │
-├─────────────────────────────────────────────────┤
-│  API Layer                                      │
-│  ├── Supabase Client (PostgreSQL via PostgREST) │
-│  ├── Bubble.io Workflows (Messaging, AI)        │
-│  └── Google Maps JavaScript API                 │
-└─────────────────────────────────────────────────┘
-         ↓                    ↓                ↓
-┌──────────────────┐  ┌─────────────────┐  ┌─────────────┐
-│    Supabase      │  │   Bubble.io     │  │Google Maps  │
-│   (PostgreSQL)   │  │   Workflows     │  │     API     │
-│  - Listings      │  │  - Messaging    │  │ - Maps JS   │
-│  - Photos        │  │  - Proposals    │  │ - Places    │
-│  - Reviews       │  │  - AI Research  │  │ - Markers   │
-│  - Locations     │  │  - Referrals    │  └─────────────┘
-│  - Lookups       │  │  - Auth         │
-└──────────────────┘  └─────────────────┘
+Frontend (app/) ──> Page Components ──> Shared Components
+       │                    │                   │
+       └────────────────────┼───────────────────┘
+                            ▼
+              Logic Layer (app/src/logic/)
+              ┌─────────────────────┐
+              │ 1. Calculators      │ ← Pure math functions
+              │ 2. Rules            │ ← Boolean predicates
+              │ 3. Processors       │ ← Data transformers
+              │ 4. Workflows        │ ← Orchestration
+              └─────────────────────┘
+                            │
+                            ▼
+              Edge Functions (supabase/functions/)
+                            │
+                            ▼
+              Bubble.io API (legacy backend)
 ```
+
+### Edge Functions
+
+| Function | Purpose |
+|----------|---------|
+| `bubble-proxy` | General Bubble API proxy for listing, messaging, photos, referral, signup |
+| `bubble-auth-proxy` | Authentication proxy for login, signup, logout, token validation |
+| `ai-gateway` | AI service gateway routing to completion or streaming handlers |
+| `ai-signup-guest` | AI-powered guest signup flow with personalized market research |
 
 ### Build System
 
@@ -114,9 +112,9 @@ Split Lease is a comprehensive web platform enabling users to find, filter, and 
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🔍 Advanced Search & Filtering
+### Advanced Search & Filtering
 
 **6-Dimension Filter System** (`SearchPage.jsx`):
 
@@ -137,7 +135,7 @@ Split Lease is a comprehensive web platform enabling users to find, filter, and 
 /search.html?borough=manhattan&days-selected=2,3,4,5,6&pricetier=200-350&sort=price-asc
 ```
 
-### 🗺️ Interactive Google Maps
+### Interactive Google Maps
 
 **Features** (`GoogleMap.jsx`, `mapUtils.js`):
 - Custom price markers for each listing
@@ -151,7 +149,7 @@ Split Lease is a comprehensive web platform enabling users to find, filter, and 
 - Brooklyn: 40.6782, -73.9442, zoom 12
 - Queens, Bronx, Staten Island, Hudson County: Custom configs
 
-### 💰 Dynamic Pricing Engine
+### Dynamic Pricing Engine
 
 **Multi-Tier Pricing** (`priceCalculations.js`):
 
@@ -177,7 +175,7 @@ const grandTotal = reservationTotal + cleaningFee + damageDeposit;
 - `💰Nightly Host Rate for 7 nights`
 - `💰Price Override` (overrides all other prices)
 
-### 📅 Schedule Selector System
+### Schedule Selector System
 
 **Two Implementations**:
 
@@ -205,7 +203,7 @@ const grandTotal = reservationTotal + cleaningFee + damageDeposit;
 - Days must be in listing's "Days Available" array
 - Cannot overlap with blocked dates
 
-### 📝 Proposal Creation Flow
+### Proposal Creation Flow
 
 **Multi-Step Modal** (`CreateProposalFlowV2.jsx`):
 
@@ -227,7 +225,7 @@ const grandTotal = reservationTotal + cleaningFee + damageDeposit;
 - Shows success/error states
 - Redirects to proposals dashboard on success
 
-### 💬 Contact Host Messaging
+### Contact Host Messaging
 
 **Modal Component** (`ContactHostMessaging.jsx`):
 
@@ -249,7 +247,7 @@ Body: {
 }
 ```
 
-### 🔐 Authentication System
+### Authentication System
 
 **Architecture**: Cookie-based cross-domain auth from Bubble.io
 
@@ -274,7 +272,7 @@ Body: {
 
 **No Fallback**: Returns `false` or `null` on auth failure, no simulated/demo auth
 
-### 🗃️ Data Lookup System
+### Data Lookup System
 
 **Architecture** (`dataLookups.js`): Initialize once on app startup, then synchronous lookups from in-memory cache
 
@@ -300,7 +298,7 @@ const neighborhoodName = getNeighborhoodName(listing['Location - Hood']);
 
 **No Fallback**: Returns empty arrays or original IDs when cache miss, never hardcoded data
 
-### 🔄 Day Indexing System
+### Day Indexing System (CRITICAL)
 
 **Critical Concept** (`dayUtils.js`):
 - **Internal (JavaScript)**: 0-based (0=Sunday, 1=Monday, ..., 6=Saturday)
@@ -324,7 +322,7 @@ const internalDays = fromBubbleDays(bubbleResponse); // [1, 2, 3, 4, 5]
 - Convert from 1-based when receiving Bubble data
 - Convert to 1-based for URL display
 
-### ⚡ Performance Optimizations
+### Performance Optimizations
 
 **Lazy Loading** (`SearchPage.jsx`):
 - Load 6 listings initially
@@ -346,7 +344,7 @@ const internalDays = fromBubbleDays(bubbleResponse); // [1, 2, 3, 4, 5]
 - Image lazy loading (native `loading="lazy"`)
 - Code splitting per page (12 entry points)
 
-### 🛡️ Security Features
+### Security Features
 
 **Input Sanitization** (`sanitize.js`):
 - `sanitizeText()` - Removes script tags, event handlers, dangerous protocols
@@ -367,20 +365,20 @@ const internalDays = fromBubbleDays(bubbleResponse); // [1, 2, 3, 4, 5]
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- **Node.js**: 18+ (for development)
+- **Node.js**: 18 (see `.node-version`)
 - **npm**: 9+ (comes with Node.js)
 - **API Keys**: Supabase, Google Maps (see [Configuration](#configuration))
 
-### 5-Minute Setup
+### Setup
 
 ```bash
 # 1. Clone the repository
-git clone <repository-url>
-cd SL18
+git clone https://github.com/splitleasesharath/splitlease.git
+cd splitlease
 
 # 2. Navigate to app directory
 cd app
@@ -399,17 +397,33 @@ cp .env.example .env
 # 6. Start development server
 npm run dev
 
-# 7. Open browser
-# Navigate to http://localhost:5173
+# 7. Open browser at http://localhost:5173
 ```
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
-SL18/
-└── app/                                    # Main application directory
+Split Lease/
+├── app/                                    # React frontend application
+├── supabase/                               # Edge Functions and database config
+│   ├── functions/                          # Supabase Edge Functions
+│   │   ├── bubble-proxy/                   # General Bubble API proxy
+│   │   ├── bubble-auth-proxy/              # Authentication proxy
+│   │   ├── ai-gateway/                     # AI service gateway
+│   │   ├── ai-signup-guest/                # AI signup flow
+│   │   └── _shared/                        # Shared utilities
+│   └── CLAUDE.md                           # Supabase context guide
+├── docs/                                   # Migration plans and documentation
+├── .claude/                                # Claude Code configuration
+│   ├── commands/                           # Custom slash commands
+│   ├── plans/                              # Implementation plans
+│   └── tasks/                              # Task documentation
+├── Context/                                # Architecture reference guides
+└── CLAUDE.md                               # Project context guide
+
+app/                                        # Main application directory
     ├── public/                             # Static HTML pages and assets
     │   ├── index.html                      # Homepage entry
     │   ├── search.html                     # Search page entry
@@ -541,11 +555,16 @@ SL18/
 
 ### Key Files by Function
 
-**Entry Points** (12 pages):
-- `src/main.jsx` → `public/index.html` (Homepage)
-- `src/search.jsx` → `public/search.html` (Search)
-- `src/view-split-lease.jsx` → `public/view-split-lease.html` (Listing detail)
-- 9 more entry points for other pages
+**Entry Points** (19 pages):
+- `src/main.jsx` → Homepage
+- `src/search.jsx` → Search page
+- `src/view-split-lease.jsx` → Listing detail
+- `src/self-listing.jsx` → Host self-listing flow
+- `src/listing-dashboard.jsx` → Host listing management
+- `src/guest-proposals.jsx` → Guest proposal dashboard
+- `src/favorite-listings.jsx` → Saved listings
+- `src/account-profile.jsx` → User profile
+- Plus 11 more entry points (FAQ, policies, careers, success pages, etc.)
 
 **Core Business Logic** (`src/lib/`):
 - `constants.js:439` - Application constants (price tiers, days, patterns)
@@ -583,24 +602,31 @@ SL18/
 
 ---
 
-## 🗺️ Pages & Routes
+## Pages & Routes
 
-### Page Overview (12 pages)
+### Page Overview (19 pages)
 
-| Route | Entry Point | Page Component | Purpose |
-|-------|-------------|----------------|---------|
-| `/` or `/index.html` | `main.jsx` | `HomePage.jsx` | Landing page with hero, value props, featured listings |
-| `/search.html` | `search.jsx` | `SearchPage.jsx` | Main listing search with filters and map |
-| `/search-test.html` | `search-test.jsx` | `SearchPageTest.jsx` | Experimental search version |
-| `/view-split-lease/[id]` | `view-split-lease.jsx` | `ViewSplitLeasePage.jsx` | Single listing detail with booking widget |
-| `/faq.html` | `faq.jsx` | `FAQPage.jsx` | Frequently Asked Questions |
-| `/policies.html` | `policies.jsx` | `PoliciesPage.jsx` | Terms of Service, Privacy Policy |
-| `/list-with-us.html` | `list-with-us.jsx` | `ListWithUsPage.jsx` | Host onboarding information |
-| `/why-split-lease.html` | `why-split-lease.jsx` | `WhySplitLeasePage.jsx` | Product explainer and value prop |
-| `/guest-success.html` | `guest-success.jsx` | `GuestSuccessPage.jsx` | Post-signup success for guests |
-| `/host-success.html` | `host-success.jsx` | `HostSuccessPage.jsx` | Post-signup success for hosts |
-| `/guest-proposals.html` | `guest-proposals.jsx` | `GuestProposalsPage.jsx` | Guest proposal management dashboard |
-| `/careers.html` | `careers.jsx` | `CareersPage.jsx` | Job listings and company culture |
+| Route | Entry Point | Purpose |
+|-------|-------------|---------|
+| `/` | `main.jsx` | Landing page with hero, value props |
+| `/search.html` | `search.jsx` | Listing search with filters and map |
+| `/view-split-lease/[id]` | `view-split-lease.jsx` | Listing detail with booking widget |
+| `/self-listing.html` | `self-listing.jsx` | Host self-listing wizard (TypeScript) |
+| `/listing-dashboard.html` | `listing-dashboard.jsx` | Host listing management |
+| `/guest-proposals.html` | `guest-proposals.jsx` | Guest proposal dashboard |
+| `/favorite-listings.html` | `favorite-listings.jsx` | Saved listings |
+| `/account-profile.html` | `account-profile.jsx` | User profile management |
+| `/rental-application.html` | `rental-application.jsx` | Rental application form |
+| `/faq.html` | `faq.jsx` | Frequently Asked Questions |
+| `/policies.html` | `policies.jsx` | Terms of Service, Privacy Policy |
+| `/list-with-us.html` | `list-with-us.jsx` | Host onboarding information |
+| `/why-split-lease.html` | `why-split-lease.jsx` | Product explainer and value prop |
+| `/about-us.html` | `about-us.jsx` | Company information |
+| `/careers.html` | `careers.jsx` | Job listings |
+| `/guest-success.html` | `guest-success.jsx` | Post-signup success for guests |
+| `/host-success.html` | `host-success.jsx` | Post-signup success for hosts |
+| `/host-overview.html` | `host-overview.jsx` | Host dashboard overview |
+| `/help-center.html` | `help-center.jsx` | Help center index |
 
 ### Dynamic Routes (Cloudflare Functions)
 
@@ -641,47 +667,39 @@ const listing = await fetchListingComplete(listingId);
 
 ---
 
-## 💻 Core Technologies
+## Core Technologies
 
 ### Frontend Stack
 
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Vite** | 5.0 | Build tool, dev server, HMR |
-| **React** | 18.2 | UI library for interactive components |
-| **React DOM** | 18.2 | React renderer for browser |
-| **JavaScript/JSX** | ES2020 | Primary language (not TypeScript compiled) |
-| **CSS3** | Modern | Custom properties, Flexbox, Grid |
-| **Framer Motion** | 12.23 | Animation library |
-| **Lottie React** | 2.4 | JSON-based animations |
-| **Lucide React** | 0.553 | Icon library |
-| **Styled Components** | 6.1 | CSS-in-JS (limited use) |
+| Technology | Purpose |
+|------------|---------|
+| **Vite 5.0** | Build tool, dev server, HMR |
+| **React 18.2** | UI library for interactive components |
+| **TypeScript** | Type safety (partial migration in progress) |
+| **CSS3** | Custom properties, Flexbox, Grid |
+| **Framer Motion** | Animation library |
+| **Lottie React** | JSON-based animations |
+| **Lucide React** | Icon library |
 
 ### Backend & Database
 
 | Technology | Purpose |
 |------------|---------|
-| **Supabase** | PostgreSQL database with PostgREST API |
-| **@supabase/supabase-js** | Supabase client library (v2.38.0) |
-| **Bubble.io** | No-code backend for workflows (messaging, AI, auth) |
+| **Supabase** | PostgreSQL database (93 tables) + Edge Functions |
+| **Supabase Edge Functions** | Deno-based serverless functions |
+| **Bubble.io** | Legacy backend (migrating away) |
 
 ### External Services
 
-| Service | APIs Used | Purpose |
-|---------|-----------|---------|
-| **Google Maps Platform** | Maps JavaScript API, Places API | Interactive maps, location search |
-| **Cloudflare Pages** | Hosting, Functions, CDN | Deployment and edge functions |
-
-### Build & Development Tools
-
-- **Vite**: Fast build tool with ES modules support
-- **TypeScript**: Type checking (JavaScript codebase with TS config)
-- **ESLint**: Code linting (optional)
-- **Playwright**: End-to-end testing (optional)
+| Service | Purpose |
+|---------|---------|
+| **Google Maps Platform** | Interactive maps, location search |
+| **Cloudflare Pages** | Hosting, CDN, deployment |
+| **OpenAI** | AI-powered features via ai-gateway |
 
 ---
 
-## 🗄️ Database Schema
+## Database Schema
 
 ### Core Tables (Supabase PostgreSQL)
 
@@ -845,7 +863,7 @@ const daysAvailable = parseJsonArray(listing['Days Available (List of Days)']);
 
 ---
 
-## 🛠️ Development
+## Development
 
 ### Setup
 
@@ -1100,7 +1118,7 @@ console.log(fromBubbleDays([2, 3, 4, 5, 6])); // [1, 2, 3, 4, 5]
 
 ---
 
-## 🚀 Deployment
+## Deployment
 
 ### Cloudflare Pages
 
@@ -1284,7 +1302,7 @@ vercel env add VITE_GOOGLE_MAPS_API_KEY
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -1471,7 +1489,7 @@ plugins: [
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 ### Development Principles
 
@@ -1658,45 +1676,38 @@ Adds a new AI market research signup modal that allows users to request personal
 
 ---
 
-## 📞 Contact & Support
+## Context Files
+
+For detailed information, see these context files:
+
+| File | Description |
+|------|-------------|
+| `CLAUDE.md` | Root project guide with architecture overview |
+| `app/CLAUDE.md` | Frontend app architecture and conventions |
+| `supabase/CLAUDE.md` | Edge Functions and database configuration |
+| `app/src/logic/CLAUDE.md` | Four-layer logic system documentation |
+| `DATABASE_SCHEMA_OVERVIEW.md` | Complete Supabase table schemas (93 tables) |
+| `docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md` | Bubble.io to Edge Functions migration |
+
+---
+
+## Git Workflow
+
+- **Main branch**: `main` (production deployments)
+- **Staging branch**: `development`
+- **Remote**: https://github.com/splitleasesharath/splitlease.git
+- **Commit style**: Conventional (feat, fix, chore, docs)
+- **Rule**: Commit after each meaningful change, do not push unless explicitly asked
+
+---
+
+## Contact & Support
 
 **Split Lease**
 - Website: [app.split.lease](https://app.split.lease)
-
-**For Developers**:
-- Check GitHub Issues for known bugs and feature requests
-- Create new issue for bugs or feature proposals
+- Repository: [github.com/splitleasesharath/splitlease](https://github.com/splitleasesharath/splitlease)
 
 ---
 
-## 📄 License
-
-MIT License - See [LICENSE](./LICENSE) file for details.
-
----
-
-## 🙏 Acknowledgments
-
-- **Supabase** - Database and authentication
-- **Google Maps Platform** - Interactive maps
-- **Bubble.io** - No-code workflow backend
-- **Cloudflare Pages** - Fast global deployment
-- **Vite** - Lightning-fast build tool
-- **React** - UI component library
-- **Lottie** - Beautiful animations
-
----
-
-**Last Updated**: 2025-01-16
-**Version**: 2.0.0
-**Status**: Active Development
-
----
-
-## 🗂️ Additional Documentation
-
-For more detailed technical reference:
-- Database schema details: See "Database Schema" section above
-- API integration: See "Core Technologies" section
-- Component API: See component files for JSDoc comments
-- Vite configuration: See `vite.config.js` inline comments
+**Last Updated**: 2025-12-04
+**Status**: Active Development (Bubble.io → Supabase Edge Functions migration in progress)
