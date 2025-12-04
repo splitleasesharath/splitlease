@@ -23,7 +23,7 @@ import { transformProposalData, getProposalDisplayText } from '../../../lib/prop
 import { getStatusConfig, getStageFromStatus } from '../../../logic/constants/proposalStatuses.js';
 import { getAllStagesFormatted } from '../../../logic/constants/proposalStages.js';
 import { fetchStatusConfigurations, getButtonConfigForProposal, isStatusConfigCacheReady } from '../../../lib/proposals/statusButtonConfig.js';
-import { checkAuthStatus, getUserType } from '../../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
 
 /**
  * Main logic hook for Guest Proposals Page
@@ -60,6 +60,10 @@ export function useGuestProposalsPageLogic() {
   /**
    * Check authentication status and user type
    * Redirects if not authenticated or not a Guest
+   *
+   * Uses two-step auth pattern (same as FavoriteListingsPage, SearchPage, ViewSplitLeasePage):
+   * 1. checkAuthStatus() - lightweight check for tokens/cookies
+   * 2. validateTokenAndFetchUser() - validates token AND fetches user data including userType
    */
   useEffect(() => {
     async function checkAuth() {
@@ -68,7 +72,7 @@ export function useGuestProposalsPageLogic() {
       // Clean any legacy user ID from URL first
       cleanLegacyUserIdFromUrl();
 
-      // Check if user is authenticated
+      // Step 1: Lightweight auth check (tokens/cookies exist)
       const isAuthenticated = await checkAuthStatus();
 
       if (!isAuthenticated) {
@@ -85,8 +89,27 @@ export function useGuestProposalsPageLogic() {
         return;
       }
 
+      // Step 2: Validate token AND fetch user data (including userType)
+      // This ensures userType is fetched from server and cached before we check it
+      const userData = await validateTokenAndFetchUser();
+
+      if (!userData) {
+        console.log('❌ Guest Proposals: Token validation failed, redirecting to home');
+        setAuthState({
+          isChecking: false,
+          isAuthenticated: false,
+          isGuest: false,
+          shouldRedirect: true,
+          redirectReason: 'TOKEN_INVALID'
+        });
+        // Redirect to home page
+        window.location.href = '/';
+        return;
+      }
+
       // Check if user is a Guest (not a Host)
-      const userType = getUserType();
+      // userType comes from the validated userData object, NOT from sync storage
+      const userType = userData.userType;
       const isGuest = userType === 'Guest';
 
       if (!isGuest) {
