@@ -317,51 +317,66 @@ export default function useListingDashboardPageLogic() {
     try {
       console.log('🔍 Fetching listing:', listingId);
 
-      // Check if the ID format looks like a UUID (listing_trial) or Bubble ID (listing)
-      const isUuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(listingId);
+      // Try listing_trial first (by id column), then fall back to listing table (by _id column)
+      // This handles both new self-listing submissions (stored in listing_trial) and
+      // existing Bubble listings (stored in listing table)
 
-      // Determine which table to query based on ID format
-      const tableName = isUuidFormat ? 'listing_trial' : 'listing';
-      const idColumn = isUuidFormat ? 'id' : '_id';
+      // First, try listing_trial table by 'id' column
+      console.log('📋 Trying listing_trial table with id=' + listingId);
+      const trialResult = await supabase
+        .from('listing_trial')
+        .select('*')
+        .eq('id', listingId)
+        .maybeSingle();
 
-      console.log(`📋 Querying ${tableName} table with ${idColumn}=${listingId}`);
+      let listingData = trialResult.data;
+      let isListingTrial = true;
 
-      // Fetch lookup tables and listing data in parallel
-      // Note: Using .maybeSingle() instead of .single() to avoid error when listing not found
-      const [lookups, listingResult, photosResult, proposalsResult, leasesResult, meetingsResult] = await Promise.all([
+      // If not found in listing_trial, try the listing table by '_id' column
+      if (!listingData) {
+        console.log('📋 Not found in listing_trial, trying listing table with _id=' + listingId);
+        const listingResult = await supabase
+          .from('listing')
+          .select('*')
+          .eq('_id', listingId)
+          .maybeSingle();
+
+        if (listingResult.error) {
+          throw new Error(`Failed to fetch listing: ${listingResult.error.message}`);
+        }
+
+        listingData = listingResult.data;
+        isListingTrial = false;
+      }
+
+      if (!listingData) {
+        throw new Error('Listing not found in either listing_trial or listing table');
+      }
+
+      console.log(`✅ Found listing in ${isListingTrial ? 'listing_trial' : 'listing'} table:`, listingData);
+
+      // Fetch lookup tables and related data in parallel
+      const [lookups, photosResult, proposalsResult, leasesResult, meetingsResult] = await Promise.all([
         fetchLookupTables(),
-        supabase.from(tableName).select('*').eq(idColumn, listingId).maybeSingle(),
         // For listing_trial, photos are stored inline in 'Features - Photos' column, not a separate table
-        isUuidFormat
+        isListingTrial
           ? Promise.resolve({ data: [], error: null })
           : supabase.from('listing_photo').select('*').eq('Listing', listingId).eq('Active', true).order('SortOrder', { ascending: true }),
         // For listing_trial, proposals/leases/meetings may not exist yet
-        isUuidFormat
+        isListingTrial
           ? Promise.resolve({ count: 0, error: null })
           : supabase.from('proposal').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
-        isUuidFormat
+        isListingTrial
           ? Promise.resolve({ count: 0, error: null })
           : supabase.from('bookings_leases').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
-        isUuidFormat
+        isListingTrial
           ? Promise.resolve({ count: 0, error: null })
           : supabase.from('virtualmeetingschedulesandlinks').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
       ]);
 
-      const { data: listingData, error: listingError } = listingResult;
-
-      if (listingError) {
-        throw new Error(`Failed to fetch listing: ${listingError.message}`);
-      }
-
-      if (!listingData) {
-        throw new Error(`Listing not found in ${tableName} table`);
-      }
-
-      console.log('✅ Listing data:', listingData);
-
       // For listing_trial, extract photos from inline 'Features - Photos' JSON column
       let photos = [];
-      if (isUuidFormat) {
+      if (isListingTrial) {
         const inlinePhotos = safeParseJsonArray(listingData['Features - Photos']);
         // Transform inline photos to match expected format
         photos = inlinePhotos.map((photo, index) => ({
@@ -398,8 +413,8 @@ export default function useListingDashboardPageLogic() {
         console.warn('⚠️ Failed to fetch meetings count:', meetingsError);
       }
 
-      // Pass isUuidFormat to handle listing_trial (uses 'id') vs listing (uses '_id')
-      const transformedListing = transformListingData(listingData, photos || [], lookups, isUuidFormat);
+      // Pass isListingTrial to handle listing_trial (uses 'id') vs listing (uses '_id')
+      const transformedListing = transformListingData(listingData, photos || [], lookups, isListingTrial);
 
       setListing(transformedListing);
       setCounts({
@@ -534,10 +549,18 @@ export default function useListingDashboardPageLogic() {
   const updateListing = useCallback(async (listingId, updates) => {
     console.log('📝 Updating listing:', listingId, updates);
 
-    // Check if the ID format looks like a UUID (listing_trial) or Bubble ID (listing)
-    const isUuidFormat = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(listingId);
-    const tableName = isUuidFormat ? 'listing_trial' : 'listing';
-    const idColumn = isUuidFormat ? 'id' : '_id';
+    // Try listing_trial first (by id column), then fall back to listing table (by _id column)
+    // First check if the listing exists in listing_trial
+    const { data: trialCheck } = await supabase
+      .from('listing_trial')
+      .select('id')
+      .eq('id', listingId)
+      .maybeSingle();
+
+    const tableName = trialCheck ? 'listing_trial' : 'listing';
+    const idColumn = trialCheck ? 'id' : '_id';
+
+    console.log(`📋 Updating ${tableName} table with ${idColumn}=${listingId}`);
 
     const { data, error: updateError } = await supabase
       .from(tableName)
