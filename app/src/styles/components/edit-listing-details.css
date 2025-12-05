@@ -14,10 +14,10 @@
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   padding: var(--spacing-xl, 24px);
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 10000; /* Above header (z-index: 9999) */
 }
 
 /* Popup Container */
