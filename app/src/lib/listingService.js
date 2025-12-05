@@ -9,6 +9,7 @@
 
 import { supabase } from './supabase.js';
 import { getSessionId } from './secureStorage.js';
+import { uploadPhotos } from './photoUpload.js';
 
 /**
  * Create a new listing in listing_trial table, then sync to Bubble
@@ -31,7 +32,42 @@ export async function createListing(formData) {
   const userId = getSessionId();
   console.log('[ListingService] Current user ID:', userId);
 
-  const listingData = mapFormDataToDatabase(formData, userId);
+  // Generate a temporary listing ID for photo uploads
+  const tempListingId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  // Step 0: Upload photos to Supabase Storage first
+  let uploadedPhotos = [];
+  if (formData.photos?.photos?.length > 0) {
+    console.log('[ListingService] Uploading photos to Supabase Storage...');
+    try {
+      uploadedPhotos = await uploadPhotos(formData.photos.photos, tempListingId);
+      console.log('[ListingService] ✅ Photos uploaded:', uploadedPhotos.length);
+    } catch (uploadError) {
+      console.error('[ListingService] ⚠️ Photo upload failed:', uploadError);
+      // Continue with data URLs as fallback
+      uploadedPhotos = formData.photos.photos.map((p, i) => ({
+        id: p.id,
+        url: p.url,
+        Photo: p.url,
+        'Photo (thumbnail)': p.url,
+        caption: p.caption,
+        displayOrder: p.displayOrder ?? i,
+        SortOrder: p.displayOrder ?? i,
+        toggleMainPhoto: i === 0
+      }));
+    }
+  }
+
+  // Create form data with uploaded photo URLs
+  const formDataWithPhotos = {
+    ...formData,
+    photos: {
+      ...formData.photos,
+      photos: uploadedPhotos
+    }
+  };
+
+  const listingData = mapFormDataToDatabase(formDataWithPhotos, userId);
 
   // Step 1: Insert into Supabase listing_trial
   const { data, error } = await supabase
@@ -480,12 +516,17 @@ function mapFormDataToDatabase(formData, userId = null) {
     'Features - House Rules': formData.rules?.houseRules || [],
     'Dates - Blocked': formData.rules?.blockedDates || [],
 
-    // Section 6: Photos
-    'Features - Photos': formData.photos?.photos?.map((p) => ({
+    // Section 6: Photos - Store with format compatible with listing display
+    'Features - Photos': formData.photos?.photos?.map((p, index) => ({
       id: p.id,
-      url: p.url,
-      caption: p.caption,
-      displayOrder: p.displayOrder,
+      url: p.url || p.Photo,
+      Photo: p.url || p.Photo,
+      'Photo (thumbnail)': p['Photo (thumbnail)'] || p.url || p.Photo,
+      caption: p.caption || '',
+      displayOrder: p.displayOrder ?? index,
+      SortOrder: p.SortOrder ?? p.displayOrder ?? index,
+      toggleMainPhoto: p.toggleMainPhoto ?? (index === 0),
+      storagePath: p.storagePath || null
     })) || [],
 
     // Section 7: Review
@@ -644,11 +685,16 @@ export function mapDatabaseToFormData(dbRecord) {
       blockedDates: dbRecord['Dates - Blocked'] || [],
     },
     photos: {
-      photos: (dbRecord['Features - Photos'] || []).map((p) => ({
+      photos: (dbRecord['Features - Photos'] || []).map((p, index) => ({
         id: p.id,
-        url: p.url,
+        url: p.url || p.Photo,
+        Photo: p.Photo || p.url,
+        'Photo (thumbnail)': p['Photo (thumbnail)'] || p.url || p.Photo,
         caption: p.caption || '',
-        displayOrder: p.displayOrder || 0,
+        displayOrder: p.displayOrder ?? index,
+        SortOrder: p.SortOrder ?? p.displayOrder ?? index,
+        toggleMainPhoto: p.toggleMainPhoto ?? (index === 0),
+        storagePath: p.storagePath || null
       })),
       minRequired: 3,
     },
