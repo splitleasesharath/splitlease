@@ -304,14 +304,12 @@ export default function Header({ autoShowLogin = false }) {
                 <span className="dropdown-desc">Explore other hosts' feedback</span>
               </a>
               <a
-                href="#"
+                href="/self-listing-v2"
                 className="dropdown-item"
                 role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
+                onClick={() => {
                   setActiveDropdown(null);
                   setMobileMenuActive(false);
-                  setShowListPropertyModal(true);
                 }}
               >
                 <span className="dropdown-title">List Property</span>
