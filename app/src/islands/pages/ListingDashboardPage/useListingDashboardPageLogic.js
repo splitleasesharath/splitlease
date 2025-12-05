@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { validateTokenAndFetchUser } from '../../../lib/auth';
 import { mockListing, mockCounts } from './data/mockListing';
 
 /**
@@ -536,6 +537,39 @@ export default function useListingDashboardPageLogic() {
     console.log('AI Assistant requested');
   }, []);
 
+  // Schedule Cohost state
+  const [showScheduleCohost, setShowScheduleCohost] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Fetch current user data
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const userData = await validateTokenAndFetchUser();
+        if (userData) {
+          setCurrentUser(userData);
+        }
+      } catch (err) {
+        console.warn('⚠️ Could not fetch user data:', err);
+      }
+    };
+    fetchUser();
+  }, []);
+
+  // Schedule Cohost handlers
+  const handleScheduleCohost = useCallback(() => {
+    setShowScheduleCohost(true);
+  }, []);
+
+  const handleCloseScheduleCohost = useCallback(() => {
+    setShowScheduleCohost(false);
+  }, []);
+
+  const handleCohostRequestSubmitted = useCallback((requestId, virtualMeetingId) => {
+    console.log('✅ Co-host request submitted:', { requestId, virtualMeetingId });
+    // Optionally refresh data or show success notification
+  }, []);
+
   // Edit modal handlers
   const handleEditSection = useCallback((section) => {
     setEditSection(section);
@@ -595,6 +629,8 @@ export default function useListingDashboardPageLogic() {
     isLoading,
     error,
     editSection,
+    showScheduleCohost,
+    currentUser,
 
     // Handlers
     handleTabChange,
@@ -604,6 +640,11 @@ export default function useListingDashboardPageLogic() {
     handleCancellationPolicyChange,
     handleCopyLink,
     handleAIAssistant,
+
+    // Schedule Cohost handlers
+    handleScheduleCohost,
+    handleCloseScheduleCohost,
+    handleCohostRequestSubmitted,
 
     // Edit modal handlers
     handleEditSection,

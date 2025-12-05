@@ -1,6 +1,7 @@
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import { EditListingDetails } from '../../shared/EditListingDetails/EditListingDetails';
+import ScheduleCohost from '../../shared/ScheduleCohost';
 import useListingDashboardPageLogic from './useListingDashboardPageLogic';
 import {
   NavigationHeader,
@@ -27,6 +28,8 @@ export default function ListingDashboardPage() {
     isLoading,
     error,
     editSection,
+    showScheduleCohost,
+    currentUser,
     handleTabChange,
     handleCardClick,
     handleBackClick,
@@ -34,6 +37,9 @@ export default function ListingDashboardPage() {
     handleCancellationPolicyChange,
     handleCopyLink,
     handleAIAssistant,
+    handleScheduleCohost,
+    handleCloseScheduleCohost,
+    handleCohostRequestSubmitted,
     handleEditSection,
     handleCloseEdit,
     handleSaveEdit,
@@ -110,8 +116,8 @@ export default function ListingDashboardPage() {
               onBackClick={handleBackClick}
             />
 
-            {/* Alert Banner */}
-            <AlertBanner />
+            {/* Alert Banner - Schedule Cohost CTA */}
+            <AlertBanner onScheduleCohost={handleScheduleCohost} />
 
             {/* Action Cards Grid */}
             <ActionCardGrid counts={counts} onCardClick={handleCardClick} />
@@ -218,6 +224,18 @@ export default function ListingDashboardPage() {
           onClose={handleCloseEdit}
           onSave={handleSaveEdit}
           updateListing={updateListing}
+        />
+      )}
+
+      {/* Schedule Cohost Modal */}
+      {showScheduleCohost && (
+        <ScheduleCohost
+          userId={currentUser?._id || currentUser?.id || ''}
+          userEmail={currentUser?.email || ''}
+          userName={currentUser?.firstName || currentUser?.name || ''}
+          listingId={listing?.id}
+          onRequestSubmitted={handleCohostRequestSubmitted}
+          onClose={handleCloseScheduleCohost}
         />
       )}
     </>

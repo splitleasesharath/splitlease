@@ -150,14 +150,34 @@
 /* Alert Banner */
 .listing-dashboard-alert {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   margin: 16px 24px;
-  padding: 16px;
+  padding: 16px 20px;
   background-color: #eff6ff;
   border: 2px dashed #93c5fd;
   border-radius: 8px;
   position: relative;
+  width: calc(100% - 48px);
+  text-align: left;
+  font-family: inherit;
+}
+
+/* Clickable variant */
+.listing-dashboard-alert--clickable {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.listing-dashboard-alert--clickable:hover {
+  background-color: #dbeafe;
+  border-color: #60a5fa;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+}
+
+.listing-dashboard-alert--clickable:active {
+  transform: translateY(0);
 }
 
 .listing-dashboard-alert__icon {
@@ -174,14 +194,38 @@
 
 .listing-dashboard-alert__content {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .listing-dashboard-alert__text {
   font-size: 14px;
+  font-weight: 500;
   color: var(--ld-text-primary);
   margin: 0;
 }
 
+.listing-dashboard-alert__subtext {
+  font-size: 13px;
+  color: var(--ld-text-secondary);
+  margin: 0;
+}
+
+.listing-dashboard-alert__chevron {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ld-accent-purple);
+  transition: transform 0.2s;
+}
+
+.listing-dashboard-alert--clickable:hover .listing-dashboard-alert__chevron {
+  transform: translateX(4px);
+}
+
+/* Legacy styles for backwards compatibility */
 .listing-dashboard-alert__expanded {
   margin-top: 8px;
 }
