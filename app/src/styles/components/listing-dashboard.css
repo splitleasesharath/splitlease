@@ -1326,16 +1326,48 @@
   object-fit: cover;
 }
 
+/* Placeholder when no image URL */
+.listing-dashboard-photos__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  gap: 8px;
+}
+
+.listing-dashboard-photos__placeholder span {
+  font-size: 12px;
+}
+
+/* Error state when image fails to load */
+.listing-dashboard-photos__image-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f3f4f6;
+}
+
+.listing-dashboard-photos__image-error::after {
+  content: 'Failed to load';
+  color: #9ca3af;
+  font-size: 12px;
+}
+
 .listing-dashboard-photos__cover-badge {
   position: absolute;
   top: 8px;
   left: 8px;
-  padding: 4px 8px;
+  padding: 4px 10px;
   background-color: var(--ld-success);
   color: white;
   font-size: 11px;
   font-weight: 600;
   border-radius: 4px;
+  z-index: 2;
 }
 
 .listing-dashboard-photos__actions {
@@ -1343,7 +1375,8 @@
   top: 8px;
   right: 8px;
   display: flex;
-  gap: 4px;
+  gap: 6px;
+  z-index: 2;
 }
 
 .listing-dashboard-photos__star-btn,
@@ -1351,28 +1384,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   background-color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: background-color 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
 }
 
 .listing-dashboard-photos__star-btn:hover {
   background-color: #fef3c7;
+  transform: scale(1.05);
 }
 
 .listing-dashboard-photos__star-btn--active {
-  background-color: #fcd34d;
-  color: white;
+  background-color: #fef3c7;
 }
 
 .listing-dashboard-photos__delete-btn:hover {
   background-color: #fee2e2;
   color: #ef4444;
+  transform: scale(1.05);
 }
 
 .listing-dashboard-photos__type {
