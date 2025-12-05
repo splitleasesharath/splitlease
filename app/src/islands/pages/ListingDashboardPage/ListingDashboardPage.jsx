@@ -8,6 +8,13 @@ import {
   SecondaryActions,
   PropertyInfoSection,
   DetailsSection,
+  AmenitiesSection,
+  DescriptionSection,
+  PricingSection,
+  RulesSection,
+  AvailabilitySection,
+  PhotosSection,
+  CancellationPolicySection,
 } from './components';
 import '../../../styles/components/listing-dashboard.css';
 
@@ -116,10 +123,55 @@ export default function ListingDashboardPage() {
               onDescriptionChange={handleDescriptionChange}
             />
 
+            {/* Description Section */}
+            <DescriptionSection
+              listing={listing}
+              onEditLodging={() => console.log('Edit lodging description')}
+              onEditNeighborhood={() => console.log('Edit neighborhood description')}
+            />
+
+            {/* Amenities Section */}
+            <AmenitiesSection
+              listing={listing}
+              onEdit={() => console.log('Edit amenities')}
+            />
+
             {/* Details Section */}
             <DetailsSection
               listing={listing}
-              onCancellationPolicyChange={handleCancellationPolicyChange}
+              onEdit={() => console.log('Edit details')}
+            />
+
+            {/* Pricing & Lease Style Section */}
+            <PricingSection
+              listing={listing}
+              onEdit={() => console.log('Edit pricing')}
+            />
+
+            {/* Rules Section */}
+            <RulesSection
+              listing={listing}
+              onEdit={() => console.log('Edit rules')}
+            />
+
+            {/* Availability Section */}
+            <AvailabilitySection
+              listing={listing}
+              onEdit={() => console.log('Edit availability')}
+            />
+
+            {/* Photos Section */}
+            <PhotosSection
+              listing={listing}
+              onAddPhotos={() => console.log('Add photos')}
+              onDeletePhoto={(id) => console.log('Delete photo', id)}
+              onSetCover={(id) => console.log('Set cover photo', id)}
+            />
+
+            {/* Cancellation Policy Section */}
+            <CancellationPolicySection
+              listing={listing}
+              onPolicyChange={handleCancellationPolicyChange}
             />
           </div>
         </div>
