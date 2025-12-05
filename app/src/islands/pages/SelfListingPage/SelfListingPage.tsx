@@ -26,6 +26,7 @@ interface SuccessModalProps {
   isOpen: boolean;
   listingId: string;
   listingName: string;
+  isLoading?: boolean;
 }
 
 const successModalStyles = {
@@ -98,9 +99,39 @@ const successModalStyles = {
     color: '#9ca3af',
     marginTop: '1rem',
   },
+  loadingIconWrapper: {
+    width: '80px',
+    height: '80px',
+    backgroundColor: '#5B21B6',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: '0 auto 1.5rem',
+  },
+  spinner: {
+    width: '40px',
+    height: '40px',
+    border: '4px solid rgba(255, 255, 255, 0.3)',
+    borderTop: '4px solid white',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+  },
+  loadingTitle: {
+    fontSize: '1.5rem',
+    fontWeight: '700' as const,
+    color: '#1a202c',
+    margin: '0 0 0.75rem',
+  },
+  loadingSubtitle: {
+    fontSize: '1rem',
+    color: '#6b7280',
+    margin: '0 0 1.5rem',
+    lineHeight: '1.5',
+  },
 };
 
-const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, listingId, listingName }) => {
+const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, listingId, listingName, isLoading = false }) => {
   if (!isOpen) return null;
 
   const handleGoToDashboard = () => {
@@ -111,6 +142,32 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, listingId, listingN
     window.location.href = `/view-split-lease.html?listing_id=${listingId}`;
   };
 
+  // Loading state UI
+  if (isLoading) {
+    return (
+      <div style={successModalStyles.overlay}>
+        <style>
+          {`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}
+        </style>
+        <div style={successModalStyles.modal}>
+          <div style={successModalStyles.loadingIconWrapper}>
+            <div style={successModalStyles.spinner} />
+          </div>
+          <h2 style={successModalStyles.loadingTitle}>Creating Your Listing...</h2>
+          <p style={successModalStyles.loadingSubtitle}>
+            Please wait while we set up <span style={successModalStyles.listingName}>"{listingName}"</span>. This may take a moment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Success state UI
   return (
     <div style={successModalStyles.overlay}>
       <div style={successModalStyles.modal}>
@@ -384,7 +441,7 @@ export const SelfListingPage: React.FC = () => {
     // Show success toast
     const isSignup = result?.isNewUser !== false; // Default to signup message
     showToast(
-      isSignup ? 'Account created successfully! Submitting your listing...' : 'Logged in successfully! Submitting your listing...',
+      isSignup ? 'Account created successfully! Creating your listing...' : 'Logged in successfully! Creating your listing...',
       'success',
       4000
     );
@@ -403,10 +460,56 @@ export const SelfListingPage: React.FC = () => {
 
     if (pendingSubmit) {
       setPendingSubmit(false);
+
+      // Show the success modal immediately with loading state
+      // This provides instant feedback after signup
+      setIsSubmitting(true);
+      setShowSuccessModal(true);
+
       // Delay submission to ensure auth state is fully updated
       setTimeout(() => {
-        proceedWithSubmit();
+        proceedWithSubmitAfterAuth();
       }, 300);
+    }
+  };
+
+  // Submission logic specifically for after auth (modal already shown)
+  const proceedWithSubmitAfterAuth = async () => {
+    markSubmitting();
+
+    try {
+      // Stage the data for submission (validates all fields)
+      const { success, errors } = stageForSubmission();
+
+      if (!success) {
+        console.error('❌ Validation errors:', errors);
+        setShowSuccessModal(false);
+        setIsSubmitting(false);
+        alert(`Please fix the following errors:\n\n${errors.join('\n')}`);
+        return;
+      }
+
+      console.log('[SelfListingPage] Submitting listing after auth...');
+      console.log('[SelfListingPage] Form data:', formData);
+
+      // Submit to listing_trial table via listingService
+      const newListing = await createListing(formData);
+
+      console.log('[SelfListingPage] ✅ Listing created:', newListing);
+
+      // Mark as submitted (clears local storage)
+      markSubmitted();
+
+      // Update modal with the listing ID (transitions from loading to success)
+      setCreatedListingId(newListing.id);
+    } catch (error) {
+      console.error('[SelfListingPage] ❌ Error submitting listing:', error);
+      markSubmissionFailed(error instanceof Error ? error.message : 'Unknown error');
+      // Hide the modal on error
+      setShowSuccessModal(false);
+      alert(`Error submitting listing: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -426,6 +529,10 @@ export const SelfListingPage: React.FC = () => {
         return;
       }
 
+      // Show success modal immediately with loading state
+      // This provides immediate feedback to the user
+      setShowSuccessModal(true);
+
       console.log('[SelfListingPage] Submitting listing...');
       console.log('[SelfListingPage] Form data:', formData);
 
@@ -437,12 +544,13 @@ export const SelfListingPage: React.FC = () => {
       // Mark as submitted (clears local storage)
       markSubmitted();
 
-      // Show success modal
+      // Update modal with the listing ID (transitions from loading to success)
       setCreatedListingId(newListing.id);
-      setShowSuccessModal(true);
     } catch (error) {
       console.error('[SelfListingPage] ❌ Error submitting listing:', error);
       markSubmissionFailed(error instanceof Error ? error.message : 'Unknown error');
+      // Hide the modal on error
+      setShowSuccessModal(false);
       alert(`Error submitting listing: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     } finally {
       setIsSubmitting(false);
@@ -676,11 +784,12 @@ export const SelfListingPage: React.FC = () => {
         onAuthSuccess={handleAuthSuccess}
       />
 
-      {/* Success Modal */}
+      {/* Success Modal - shows loading state while creating, success state when done */}
       <SuccessModal
         isOpen={showSuccessModal}
         listingId={createdListingId}
         listingName={formData.spaceSnapshot.listingName}
+        isLoading={isSubmitting && !createdListingId}
       />
     </>
   );

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Pricing Calculator</title>
+    <style>
+        :root {
+            --primary: #5b21b6;
+            --primary-light: #7c3aed;
+            --bg: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #1f2937;
+            --text-sub: #6b7280;
+            --border: #e5e7eb;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            padding: 40px 20px;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+        .header p {
+            color: var(--text-sub);
+            font-size: 1rem;
+        }
+
+        .section-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        h2 { margin: 0 0 20px 0; font-size: 1.3rem; color: var(--text-main); }
+
+        /* Interactive Schedule Selector */
+        .day-selector-wrapper {
+            background: #eef2ff;
+            border: 2px solid #c7d2fe;
+            border-radius: 16px;
+            padding: 25px 15px;
+            margin-bottom: 20px;
+        }
+        .day-selector { 
+            display: flex; 
+            justify-content: space-between; 
+            gap: 8px; 
+        }
+        
+        .day-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .day-label {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-sub);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .day-btn {
+            width: 100%;
+            aspect-ratio: 3/4;
+            max-width: 70px;
+            border-radius: 12px;
+            border: 2px solid white;
+            background: white;
+            color: #4b5563;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .day-btn.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 8px 15px rgba(91, 33, 182, 0.3);
+            transform: translateY(-4px);
+        }
+        
+        .day-btn:hover:not(.selected) {
+            background: #f9fafb;
+            transform: translateY(-2px);
+        }
+
+        .btn-icon {
+            font-size: 1.2rem;
+            margin-bottom: 4px;
+            font-weight: 800;
+        }
+        
+        .btn-price {
+            font-size: 0.85rem;
+            font-weight: 700;
+            opacity: 0; /* Hidden when not selected */
+            transform: translateY(5px);
+            transition: all 0.2s;
+        }
+        
+        .day-btn.selected .btn-price {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Slider Styling */
+        .controls-container {
+            padding: 0 10px;
+        }
+        
+        .slider-group {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 10px;
+        }
+        
+        .slider-label {
+            font-weight: 700;
+            color: var(--text-main);
+            font-size: 0.95rem;
+        }
+        
+        .slider-value {
+            font-weight: 800;
+            color: var(--primary);
+            font-size: 1.2rem;
+        }
+
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 24px;
+            width: 24px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            margin-top: -10px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            border: 2px solid white;
+        }
+        
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            background: #e5e7eb;
+            border-radius: 3px;
+        }
+        
+        /* Summary Card */
+        .summary-card {
+            background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 20px;
+            margin-top: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .summary-item h3 {
+            margin: 0 0 5px 0;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            color: #9ca3af;
+            letter-spacing: 1px;
+        }
+        .summary-item .price-large {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+        }
+        .summary-divider {
+            width: 1px;
+            height: 50px;
+            background: #374151;
+        }
+
+        .info-pill {
+            display: inline-block;
+            background: #eff6ff;
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Dynamic Pricing</h1>
+        <p>Adjust rates and see how density impacts earnings.</p>
+    </div>
+
+    <!-- SCHEDULE & PRICING INTEGRATED -->
+    <div class="section-card">
+        <h2>Weekly Schedule & Rates</h2>
+        <p style="color: var(--text-sub); font-size: 0.9rem; margin-bottom: 20px;">
+            Select days to build your weekly schedule. Consecutive days get discounted rates automatically.
+        </p>
+
+        <div class="day-selector-wrapper">
+            <div class="day-selector">
+                <!-- Generated by JS -->
+                <div class="day-col"><div class="day-label">Sun</div><button class="day-btn" data-idx="0"><div class="btn-icon">S</div><div class="btn-price">-</div></button></div>
+                <div class="day-col"><div class="day-label">Mon</div><button class="day-btn selected" data-idx="1"><div class="btn-icon">M</div><div class="btn-price">$100</div></button></div>
+                <div class="day-col"><div class="day-label">Tue</div><button class="day-btn selected" data-idx="2"><div class="btn-icon">T</div><div class="btn-price">$95</div></button></div>
+                <div class="day-col"><div class="day-label">Wed</div><button class="day-btn selected" data-idx="3"><div class="btn-icon">W</div><div class="btn-price">$91</div></button></div>
+                <div class="day-col"><div class="day-label">Thu</div><button class="day-btn" data-idx="4"><div class="btn-icon">T</div><div class="btn-price">-</div></button></div>
+                <div class="day-col"><div class="day-label">Fri</div><button class="day-btn" data-idx="5"><div class="btn-icon">F</div><div class="btn-price">-</div></button></div>
+                <div class="day-col"><div class="day-label">Sat</div><button class="day-btn" data-idx="6"><div class="btn-icon">S</div><div class="btn-price">-</div></button></div>
+            </div>
+        </div>
+
+        <div class="controls-container">
+            <div class="info-pill" id="decay-info">Decay Factor: 0.950</div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">Base Nightly Rate (Night 1)</span>
+                    <span class="slider-value" id="val-p1">$100</span>
+                </div>
+                <input type="range" id="slider-p1" min="0" max="600" value="100" step="1">
+            </div>
+
+            <div class="slider-group">
+                <div class="slider-header">
+                    <span class="slider-label">Deep Stay Rate (Night 5)</span>
+                    <span class="slider-value" id="val-p5">$400</span>
+                </div>
+                <input type="range" id="slider-p5" min="0" max="600" value="0" step="1">
+                <p style="font-size: 0.8rem; color: var(--text-sub); margin-top: 5px;">
+                    Lowering this increases the discount for consecutive nights.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="summary-card">
+        <div class="summary-item">
+            <h3>Weekly Total</h3>
+            <div class="price-large" id="weekly-total">$286</div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item" style="text-align: right;">
+            <h3>Est. Monthly</h3>
+            <div class="price-large" id="monthly-total">$1,238</div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // --- Pricing Logic ---
+    const N = 7;
+    const DECAY_MIN = 0.7;
+    const DECAY_MAX = 1.0;
+    
+    // State
+    let selectedDays = [false, true, true, true, false, false, false]; // S M T W T F S
+    let nightlyCurve = []; // Stores price for Night 1, Night 2, etc.
+    let currentDecay = 0.95;
+
+    // DOM Elements
+    const sliderP1 = document.getElementById('slider-p1');
+    const sliderP5 = document.getElementById('slider-p5');
+    const valP1 = document.getElementById('val-p1');
+    const valP5 = document.getElementById('val-p5');
+    const decayInfo = document.getElementById('decay-info');
+    const weeklyTotalEl = document.getElementById('weekly-total');
+    const monthlyTotalEl = document.getElementById('monthly-total');
+    const dayBtns = document.querySelectorAll('.day-btn');
+
+    // Helpers
+    const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+    const roundUp = (n) => Math.ceil(n);
+    const fmtCur = (n) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+
+    // Core Calculation
+    function calcN5(p1, d) { return p1 * Math.pow(d, 4); }
+
+    function solveDecayFromN5(p1, n5) {
+        if (p1 <= 0) return DECAY_MIN;
+        const ratio = n5 / p1;
+        if (ratio <= 0) return DECAY_MIN;
+        const d = Math.pow(ratio, 1/4);
+        return clamp(d, DECAY_MIN, DECAY_MAX);
+    }
+
+    function updateCurve(p1, d) {
+        nightlyCurve[0] = roundUp(+p1);
+        for (let k = 1; k < N; k++) {
+            nightlyCurve[k] = roundUp(nightlyCurve[k - 1] * d);
+        }
+    }
+
+    // Update Logic
+    function refreshAll() {
+        const p1 = +sliderP1.value;
+        // We derive decay from the slider P5 value vs P1
+        // But P5 slider range needs to be dynamic or we just handle logic
+        
+        // 1. Update visual values
+        valP1.innerText = fmtCur(p1);
+        
+        // 2. Calculate Decay based on current P5 slider position
+        // P5 slider value is "Desired price for 5th night"
+        const p5Target = +sliderP5.value;
+        
+        // Ensure p5Target is valid relative to p1 (can't be higher than P1)
+        // Actually, if decay=1, P5=P1. 
+        const safeP5 = Math.min(p5Target, p1);
+        
+        // Solve decay
+        let d = solveDecayFromN5(p1, safeP5);
+        currentDecay = d;
+        decayInfo.innerText = `Decay Factor: \${d.toFixed(3)}`;
+        
+        // 3. Build the full 1-7 night curve
+        updateCurve(p1, d);
+        
+        // 4. Update P5 slider to reflect reality (snap to curve)
+        // Ideally we don't snap while dragging, but for simplicity:
+        const actualP5 = nightlyCurve[4];
+        valP5.innerText = fmtCur(actualP5);
+        
+        // 5. Update Day Buttons
+        updateDayButtons();
+    }
+
+    function updateDayButtons() {
+        let totalWeekly = 0;
+        let consecutiveCounter = 0;
+
+        // Iterate 0 (Sun) to 6 (Sat)
+        // Wait, if Sun is selected and Sat was selected last week?
+        // For simplicity, we treat Sunday as start of week, reset counter unless we want wrap-around logic.
+        // Context "Split Lease" usually fixed days. Let's assume Mon reset or Sun reset.
+        // Let's iterate standard week.
+        
+        for(let i=0; i<7; i++) {
+            const btn = dayBtns[i];
+            const priceEl = btn.querySelector('.btn-price');
+            
+            if (selectedDays[i]) {
+                // It is selected
+                // Get price from curve based on consecutiveCounter
+                const price = nightlyCurve[consecutiveCounter];
+                
+                // Update UI
+                btn.classList.add('selected');
+                priceEl.innerText = fmtCur(price);
+                
+                totalWeekly += price;
+                consecutiveCounter++; // Increment for next day
+            } else {
+                // Not selected
+                btn.classList.remove('selected');
+                priceEl.innerText = '-';
+                consecutiveCounter = 0; // Reset counter
+            }
+        }
+
+        // 6. Update Totals
+        weeklyTotalEl.innerText = fmtCur(totalWeekly);
+        monthlyTotalEl.innerText = fmtCur(totalWeekly * 4.33);
+    }
+
+    // Events
+    sliderP1.addEventListener('input', () => {
+        // If P1 changes, P5 slider might need adjustment bounds? 
+        // Just let refreshAll handle math.
+        refreshAll();
+    });
+
+    sliderP5.addEventListener('input', () => {
+        refreshAll();
+    });
+
+    // Day Click
+    dayBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const idx = +btn.dataset.idx;
+            selectedDays[idx] = !selectedDays[idx];
+            updateDayButtons(); // Just re-run price distribution
+        });
+    });
+
+    // Init
+    refreshAll();
+    // Set initial P5 slider to match default curve
+    sliderP5.value = nightlyCurve[4];
+    valP5.innerText = fmtCur(nightlyCurve[4]);
+
+</script>
+
+</body>
+</html>

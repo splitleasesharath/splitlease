@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simplified Pricing Calculator</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: #fff;
+      border-radius: 24px;
+      padding: 32px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+    }
+    h1 {
+      margin: 0 0 8px;
+      color: #111827;
+      font-size: 22px;
+      text-align: center;
+    }
+    p.subtitle {
+      margin: 0 0 32px;
+      text-align: center;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    #calculator { width: 100%; }
+    
+    /* Output area for debug/integration data */
+    .output {
+      margin-top: 32px;
+      padding: 16px;
+      background: #f9fafb;
+      border-radius: 12px;
+      font-size: 12px;
+      color: #6b7280;
+      border: 1px solid #e5e7eb;
+      display: none; /* Hidden for user simplicity, toggle if needed */
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Pricing Strategy</h1>
+    <p class="subtitle">Set your base rate and discounts for recurring guests.</p>
+    
+    <div id="calculator"></div>
+    
+    <div class="output">
+      <pre id="output"></pre>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const container = document.getElementById('calculator');
+      const outputEl = document.getElementById('output');
+
+      // Initial values
+      const initialP1 = 100;
+      const initialDiscount = 20; // 20% discount by default
+
+      // Create Shadow DOM
+      const shadowRoot = container.attachShadow({ mode: 'open' });
+
+      shadowRoot.innerHTML = `
+        <style>
+          :host { all: initial; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; }
+          
+          /* Input Section */
+          .control-group { margin-bottom: 24px; }
+          .label-row { display: flex; justify-content: space-between; margin-bottom: 8px; align-items: baseline; }
+          .label { font-size: 14px; font-weight: 600; color: #374151; }
+          .value-display { font-size: 14px; font-weight: 700; color: #5b3bb3; }
+
+          /* Big Base Rate Input */
+          .base-input-wrapper { position: relative; max-width: 200px; margin: 0 auto 30px; }
+          .currency-symbol { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 20px; font-weight: 600; color: #9ca3af; }
+          .base-input { 
+            width: 100%; padding: 12px 12px 12px 32px; font-size: 24px; font-weight: 700; 
+            text-align: center; border: 2px solid #e5e7eb; border-radius: 16px; 
+            color: #111827; outline: none; transition: border-color 0.2s;
+          }
+          .base-input:focus { border-color: #5b3bb3; }
+
+          /* Slider */
+          .range-wrapper { position: relative; height: 40px; display: flex; align-items: center; }
+          input[type=range] {
+            -webkit-appearance: none; width: 100%; background: transparent; cursor: pointer;
+          }
+          input[type=range]:focus { outline: none; }
+          input[type=range]::-webkit-slider-runnable-track {
+            width: 100%; height: 8px; cursor: pointer; background: #e5e7eb; border-radius: 4px;
+          }
+          input[type=range]::-webkit-slider-thumb {
+            height: 24px; width: 24px; border-radius: 50%; background: #5b3bb3; 
+            cursor: pointer; -webkit-appearance: none; margin-top: -8px; 
+            box-shadow: 0 2px 6px rgba(91, 59, 179, 0.3); border: 2px solid #fff;
+          }
+          /* Discount Marks */
+          .marks { display: flex; justify-content: space-between; margin-top: -5px; padding: 0 2px; }
+          .mark { font-size: 11px; color: #9ca3af; }
+
+          /* Schedule Selector Styles */
+          .day-selector-wrapper { 
+            margin-top: 30px; background: #f9fafb; border: 1px solid #e5e7eb; 
+            border-radius: 16px; padding: 20px; 
+          }
+          .day-selector-header { text-align: center; margin-bottom: 15px; font-size: 13px; color: #6b7280; font-weight: 500; }
+          
+          .day-selector { display: flex; justify-content: space-between; gap: 6px; }
+          .day-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
+          .day-label { font-size: 11px; font-weight: 700; color: #9ca3af; margin-bottom: 6px; text-transform: uppercase; }
+          
+          .day-btn { 
+            width: 100%; aspect-ratio: 1/1; max-width: 48px;
+            border-radius: 10px; border: 2px solid transparent; 
+            background: #fff; color: #9ca3af; cursor: pointer; transition: all 0.2s; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); display: flex; flex-direction: column; 
+            align-items: center; justify-content: center; padding: 2px; 
+            user-select: none;
+          }
+          .day-btn.selected { 
+            background: #5b3bb3; color: white; border-color: #5b3bb3; 
+            box-shadow: 0 4px 10px rgba(91, 59, 179, 0.3); transform: translateY(-2px); 
+          }
+          .day-btn:hover:not(.selected) { background: #fff; border-color: #d1d5db; color: #6b7280; }
+          
+          .btn-icon { font-size: 13px; margin-bottom: 2px; font-weight: 700; }
+          .btn-price { font-size: 11px; font-weight: 600; line-height: 1; }
+          
+          /* Summary */
+          .total-display { 
+            margin-top: 20px; padding-top: 15px; border-top: 1px solid #e5e7eb; 
+            display: flex; justify-content: space-between; align-items: center; 
+          }
+          .total-block { text-align: right; }
+          .total-label { font-size: 12px; color: #6b7280; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+          .total-val { font-size: 20px; color: #111827; font-weight: 800; }
+          .weekly-block { text-align: left; }
+        </style>
+
+        <div class="app">
+          
+          <!-- Base Rate Input -->
+          <div class="control-group" style="text-align:center;">
+            <label class="label" style="display:block; margin-bottom:10px;">Base Nightly Rate</label>
+            <div class="base-input-wrapper">
+              <span class="currency-symbol">$</span>
+              <input id="inp-base" class="base-input" type="number" min="0" step="1" value="100">
+            </div>
+          </div>
+
+          <!-- Discount Slider -->
+          <div class="control-group">
+            <div class="label-row">
+              <span class="label">Long Stay Discount</span>
+              <span class="value-display" id="disp-discount">20%</span>
+            </div>
+            <div class="range-wrapper">
+              <input id="inp-discount" type="range" min="0" max="50" step="1" value="20">
+            </div>
+            <div class="marks">
+              <span class="mark">0%</span>
+              <span class="mark">25%</span>
+              <span class="mark">50%</span>
+            </div>
+            <p style="font-size:12px; color:#6b7280; margin-top:8px; line-height:1.4;">
+              Increases occupancy by discounting consecutive nights. A 5-night stay will average 
+              <strong id="disp-avg-price" style="color:#5b3bb3;">$85</strong>/night.
+            </p>
+          </div>
+
+          <!-- Schedule Selector -->
+          <div class="day-selector-wrapper">
+            <div class="day-selector-header">Select your available nights</div>
+            <div class="day-selector">
+                <!-- Days generated by JS -->
+            </div>
+            
+            <div class="total-display">
+                <div class="weekly-block">
+                    <div class="total-label">Weekly Total</div>
+                    <div class="total-val" id="val-weekly">$0</div>
+                </div>
+                <div class="total-block">
+                    <div class="total-label">Est. Monthly</div>
+                    <div class="total-val" id="val-monthly">$0</div>
+                </div>
+            </div>
+          </div>
+
+        </div>
+      `;
+
+      // Logic
+      const N = 7;
+      const DECAY_MIN = 0.7;
+      const DECAY_MAX = 1.0;
+
+      const $ = (sel) => shadowRoot.getElementById(sel);
+      const fmt0 = (n) => n.toLocaleString(undefined, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+      const roundUp = (n) => Math.ceil(n);
+      const clamp = (x, lo, hi) => Math.max(lo, Math.min(hi, x));
+      const sum = (arr) => arr.reduce((a, b) => a + b, 0);
+
+      // Elements
+      const inpBase = $('inp-base');
+      const inpDiscount = $('inp-discount');
+      const dispDiscount = $('disp-discount');
+      const dispAvgPrice = $('disp-avg-price');
+      const daySelector = shadowRoot.querySelector('.day-selector');
+      const valWeekly = $('val-weekly');
+      const valMonthly = $('val-monthly');
+
+      // State
+      let baseRate = initialP1;
+      let discountPercent = initialDiscount;
+      let selectedDays = [false, true, true, true, true, true, false]; // M-F default
+      let nightlyPrices = Array(N).fill(0);
+      
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const dayLetters = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+      // Math Helpers
+      function solveDecay(p1, p5) {
+        if (p1 <= 0) return 1.0;
+        if (p5 >= p1) return 1.0; // No discount
+        const ratio = p5 / p1; // p5 = p1 * d^4  => d = (p5/p1)^(1/4)
+        const d = Math.pow(ratio, 0.25); 
+        return clamp(d, DECAY_MIN, DECAY_MAX);
+      }
+
+      function calculateCurve() {
+        // 1. Calculate Target 5th Night Price based on discount
+        // Discount slider represents the % off the base rate for the 5th night (approx/heuristic for user)
+        // User mental model: "20% discount" usually means "20% off the total" or "20% off the daily rate"?
+        // Let's map it: Slider 20% -> 5th night is 20% cheaper than 1st night.
+        // P5 = P1 * (1 - discount/100)
+        
+        const p5Target = baseRate * (1 - (discountPercent / 100));
+        
+        // 2. Derive Decay Factor
+        const decay = solveDecay(baseRate, p5Target);
+        
+        // 3. Build Curve
+        nightlyPrices[0] = roundUp(baseRate);
+        for(let i=1; i<N; i++) {
+            nightlyPrices[i] = roundUp(nightlyPrices[i-1] * decay);
+        }
+
+        // Update average display (avg of 5 nights)
+        const sum5 = nightlyPrices.slice(0,5).reduce((a,b)=>a+b, 0);
+        dispAvgPrice.textContent = fmt0(sum5/5);
+        
+        return decay;
+      }
+
+      function renderDays() {
+        daySelector.innerHTML = dayNames.map((day, i) => `
+            <div class="day-col">
+                <div class="day-label">${day}</div>
+                <div class="day-btn ${selectedDays[i] ? 'selected' : ''}" data-idx="${i}">
+                    <div class="btn-icon">${dayLetters[i]}</div>
+                    <div class="btn-price">-</div>
+                </div>
+            </div>
+        `).join('');
+        
+        // Listeners
+        daySelector.querySelectorAll('.day-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const idx = +btn.dataset.idx;
+                selectedDays[idx] = !selectedDays[idx];
+                updateUI();
+            });
+        });
+      }
+
+      function updateDayPrices() {
+        let totalWeekly = 0;
+        let consecutiveCounter = 0;
+        const btns = daySelector.querySelectorAll('.day-btn');
+
+        for(let i=0; i<7; i++) {
+            const btn = btns[i];
+            const priceEl = btn.querySelector('.btn-price');
+            const isSelected = selectedDays[i];
+            
+            if (isSelected) {
+                const price = nightlyPrices[consecutiveCounter];
+                btn.classList.add('selected');
+                priceEl.textContent = fmt0(price);
+                totalWeekly += price;
+                if (consecutiveCounter < N-1) consecutiveCounter++;
+            } else {
+                btn.classList.remove('selected');
+                priceEl.textContent = '-';
+                consecutiveCounter = 0;
+            }
+        }
+        
+        valWeekly.textContent = fmt0(totalWeekly);
+        valMonthly.textContent = fmt0(totalWeekly * 4.33);
+        
+        return totalWeekly;
+      }
+
+      function updateUI() {
+        const decay = calculateCurve();
+        
+        // Visuals
+        dispDiscount.textContent = discountPercent + '%';
+        
+        // Re-render buttons prices
+        const weeklyTotal = updateDayPrices();
+        
+        // Debug output
+        outputEl.textContent = JSON.stringify({
+            base: baseRate,
+            discount: discountPercent + '%',
+            decay: decay.toFixed(4),
+            curve: nightlyPrices,
+            weekly: weeklyTotal
+        }, null, 2);
+      }
+
+      // Listeners
+      inpBase.addEventListener('input', (e) => {
+        let val = parseFloat(e.target.value);
+        if(isNaN(val) || val < 0) val = 0;
+        baseRate = val;
+        updateUI();
+      });
+
+      inpDiscount.addEventListener('input', (e) => {
+        discountPercent = parseFloat(e.target.value);
+        updateUI();
+      });
+
+      // Init
+      renderDays();
+      updateUI();
+
+    })();
+  </script>
+</body>
+</html>
