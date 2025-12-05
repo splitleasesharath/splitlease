@@ -8,15 +8,18 @@
  */
 
 import { supabase } from './supabase.js';
+import { getSessionId } from './secureStorage.js';
 
 /**
  * Create a new listing in listing_trial table, then sync to Bubble
  *
  * Flow:
- * 1. Insert into listing_trial (Supabase) with placeholder _id
- * 2. Call bubble-proxy to create listing in Bubble
- * 3. Update listing_trial with the Bubble _id
- * 4. Return the complete listing with Bubble _id
+ * 1. Get current user ID from secure storage
+ * 2. Insert into listing_trial (Supabase) with user as host
+ * 3. Call bubble-proxy to create listing in Bubble
+ * 4. Update listing_trial with the Bubble _id
+ * 5. Link listing to account_host
+ * 6. Return the complete listing with Bubble _id
  *
  * @param {object} formData - Complete form data from SelfListingPage
  * @returns {Promise<object>} - Created listing with id and _id (Bubble)
@@ -24,7 +27,11 @@ import { supabase } from './supabase.js';
 export async function createListing(formData) {
   console.log('[ListingService] Creating listing in listing_trial');
 
-  const listingData = mapFormDataToDatabase(formData);
+  // Get current user ID
+  const userId = getSessionId();
+  console.log('[ListingService] Current user ID:', userId);
+
+  const listingData = mapFormDataToDatabase(formData, userId);
 
   // Step 1: Insert into Supabase listing_trial
   const { data, error } = await supabase
@@ -39,6 +46,17 @@ export async function createListing(formData) {
   }
 
   console.log('[ListingService] ✅ Listing created in Supabase:', data.id);
+
+  // Step 2: Link listing to account_host if user is logged in
+  if (userId) {
+    try {
+      await linkListingToHost(userId, data.id);
+      console.log('[ListingService] ✅ Listing linked to host account');
+    } catch (linkError) {
+      console.error('[ListingService] ⚠️ Failed to link listing to host:', linkError);
+      // Continue - the listing exists, just not linked yet
+    }
+  }
 
   // Step 2: Sync to Bubble to get the Bubble _id
   try {
@@ -81,6 +99,54 @@ export async function createListing(formData) {
   }
 
   return data;
+}
+
+/**
+ * Link a listing to the host's account_host record
+ * Adds the listing ID to the Listings array in account_host
+ *
+ * @param {string} userId - The user's Bubble _id
+ * @param {string} listingId - The listing's id
+ * @returns {Promise<void>}
+ */
+async function linkListingToHost(userId, listingId) {
+  console.log('[ListingService] Linking listing to host:', userId, listingId);
+
+  // First, get the current Listings array
+  const { data: hostData, error: fetchError } = await supabase
+    .from('account_host')
+    .select('_id, Listings')
+    .eq('User', userId)
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error('[ListingService] ❌ Error fetching account_host:', fetchError);
+    throw fetchError;
+  }
+
+  if (!hostData) {
+    console.warn('[ListingService] ⚠️ No account_host found for user:', userId);
+    return;
+  }
+
+  // Add the new listing ID to the array
+  const currentListings = hostData.Listings || [];
+  if (!currentListings.includes(listingId)) {
+    currentListings.push(listingId);
+  }
+
+  // Update the account_host with the new Listings array
+  const { error: updateError } = await supabase
+    .from('account_host')
+    .update({ Listings: currentListings })
+    .eq('_id', hostData._id);
+
+  if (updateError) {
+    console.error('[ListingService] ❌ Error updating account_host Listings:', updateError);
+    throw updateError;
+  }
+
+  console.log('[ListingService] ✅ account_host Listings updated:', currentListings);
 }
 
 /**
@@ -324,9 +390,10 @@ export async function saveDraft(formData, existingId = null) {
  * Handles the translation between React form structure and Bubble-compatible schema
  *
  * @param {object} formData - Form data from SelfListingPage
+ * @param {string|null} userId - The current user's ID (for host linking)
  * @returns {object} - Database-ready object
  */
-function mapFormDataToDatabase(formData) {
+function mapFormDataToDatabase(formData, userId = null) {
   const now = new Date().toISOString();
 
   // Generate a unique _id for Bubble compatibility (even though not syncing)
@@ -341,7 +408,8 @@ function mapFormDataToDatabase(formData) {
   return {
     // Required fields
     _id: uniqueId,
-    'Created By': 'self-listing-form',
+    'Created By': userId || 'self-listing-form',
+    'Host / Landlord': userId || null,
     'Created Date': now,
     'Modified Date': now,
 
