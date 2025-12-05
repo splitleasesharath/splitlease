@@ -387,3 +387,19 @@ entrypoint = "./functions/ai-signup-guest/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/slack/index.ts"
+
+[functions.proposal]
+enabled = true
+verify_jwt = false
+import_map = "./functions/proposal/deno.json"
+entrypoint = "./functions/proposal/index.ts"
+
+[functions.communications]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/communications/index.ts"
+
+[functions.pricing]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/pricing/index.ts"

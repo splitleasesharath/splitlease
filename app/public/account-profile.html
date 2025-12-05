@@ -374,6 +374,9 @@
             -webkit-appearance: none;
             width: 20px;
             height: 20px;
+            min-width: 20px;
+            min-height: 20px;
+            flex-shrink: 0;
             border-radius: 50%;
             border: 2px solid #d1d5db;
             cursor: pointer;
@@ -1557,11 +1560,17 @@
         function applyUserTypeVisibility(userType) {
             console.log('Applying user type visibility:', userType);
 
-            // Guest-only sections
+            // Guest-only sections - show only if user is a guest (not host-only)
             const guestSections = [
                 { id: 'transportationSection', type: 'section' }, // Transportation dropdown
-                { id: 'storedItemsGrid', type: 'parent' } // Commonly Stored Items (get parent card)
+                { id: 'storedItemsGrid', type: 'parent' }, // Commonly Stored Items (get parent card)
+                { id: 'schedule-selector-root', type: 'parent' } // Recent Days Selected (get parent card)
             ];
+
+            // Determine if user should see guest sections
+            // Show only if user is NOT a host (guest-only users)
+            const showGuestSections = !userType.isHost;
+            console.log('Show guest sections:', showGuestSections, '(isGuest:', userType.isGuest, ', isHost:', userType.isHost, ')');
 
             // Show/hide guest sections
             guestSections.forEach(({ id, type }) => {
@@ -1569,7 +1578,8 @@
                 if (element) {
                     const target = type === 'parent' ? element.closest('.profile-card') : element;
                     if (target) {
-                        target.style.display = userType.isGuest ? 'block' : 'none';
+                        target.style.display = showGuestSections ? 'block' : 'none';
+                        console.log(`Setting ${id} display to:`, showGuestSections ? 'block' : 'none');
                     }
                 }
             });
