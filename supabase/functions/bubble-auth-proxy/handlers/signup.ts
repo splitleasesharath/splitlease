@@ -6,12 +6,22 @@
  * 1. Validate email/password/retype in payload
  * 2. Client-side validation (password length, match)
  * 3. Call Bubble signup workflow (BUBBLE_API_BASE_URL/wf/signup-user)
- * 4. If successful, Bubble creates user and returns {token, user_id, expires}
- * 5. Create Supabase Auth user (auth.users table)
- * 6. Insert user profile into public.user table (BLOCKING - frontend waits)
- * 7. Return token and user data
+ * 4. If successful, Bubble creates user and returns {token, bubble_user_id, expires}
+ * 5. Generate Supabase IDs using generate_bubble_id():
+ *    - user_id (primary _id for user table)
+ *    - host_account_id (primary _id for account_host table)
+ *    - guest_account_id (primary _id for account_guest table)
+ * 6. Create Supabase Auth user (auth.users table)
+ * 7. Insert account_host row with generated ID
+ * 8. Insert account_guest row with generated ID
+ * 9. Insert user profile into public.user table with:
+ *    - _id = generated user_id
+ *    - bubble_id = Bubble's user_id (for backward compatibility)
+ *    - Account - Host / Landlord = host_account_id
+ *    - Account - Guest = guest_account_id
+ * 10. Return token and user data
  *
- * NO FALLBACK - If Bubble signup OR public.user insert fails, entire operation fails
+ * NO FALLBACK - If Bubble signup OR any insert fails, entire operation fails
  * Supabase Auth user creation is best-effort (logged but doesn't block)
  *
  * @param bubbleAuthBaseUrl - Base URL for Bubble auth API
@@ -131,14 +141,14 @@ export async function handleSignup(
     }
 
     console.log(`[signup] ✅ Bubble signup successful`);
-    console.log(`[signup]    Bubble User ID: ${userId}`);
+    console.log(`[signup]    Bubble User ID (stored as bubble_id): ${userId}`);
     console.log(`[signup]    Token expires in: ${expires} seconds`);
 
     // ========== SUPABASE USER CREATION (BLOCKING) ==========
     // Frontend waits for this to complete before proceeding
     let supabaseUserId: string | null = null;
 
-    console.log('[signup] Creating Supabase users (auth + public.user)...');
+    console.log('[signup] Creating Supabase users (auth + accounts + public.user)...');
 
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: {
@@ -146,6 +156,26 @@ export async function handleSignup(
         persistSession: false
       }
     });
+
+    // ========== GENERATE BUBBLE-STYLE IDs ==========
+    console.log('[signup] Generating Supabase IDs using generate_bubble_id()...');
+
+    const { data: generatedIds, error: idGenError } = await supabaseAdmin.rpc('generate_bubble_id');
+    const { data: generatedHostId, error: hostIdError } = await supabaseAdmin.rpc('generate_bubble_id');
+    const { data: generatedGuestId, error: guestIdError } = await supabaseAdmin.rpc('generate_bubble_id');
+
+    if (idGenError || hostIdError || guestIdError) {
+      console.error('[signup] Failed to generate IDs:', idGenError || hostIdError || guestIdError);
+      throw new BubbleApiError('Failed to generate unique IDs', 500);
+    }
+
+    const generatedUserId = generatedIds as string;
+    const hostAccountId = generatedHostId as string;
+    const guestAccountId = generatedGuestId as string;
+
+    console.log(`[signup]    Generated User ID: ${generatedUserId}`);
+    console.log(`[signup]    Generated Host Account ID: ${hostAccountId}`);
+    console.log(`[signup]    Generated Guest Account ID: ${guestAccountId}`);
 
     // Step 1: Create Supabase Auth user
     console.log('[signup] Step 1: Creating Supabase Auth user...');
@@ -163,11 +193,14 @@ export async function handleSignup(
       console.log('[signup] Supabase Auth user already exists, updating metadata...');
       supabaseUserId = existingAuthUser.id;
 
-      // Update metadata to include Bubble user ID
+      // Update metadata to include both IDs
       const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(existingAuthUser.id, {
         user_metadata: {
           ...existingAuthUser.user_metadata,
+          user_id: generatedUserId,
           bubble_user_id: userId,
+          host_account_id: hostAccountId,
+          guest_account_id: guestAccountId,
           first_name: firstName || existingAuthUser.user_metadata?.first_name,
           last_name: lastName || existingAuthUser.user_metadata?.last_name,
           user_type: userType || existingAuthUser.user_metadata?.user_type
@@ -186,7 +219,10 @@ export async function handleSignup(
         password: password,
         email_confirm: true, // Auto-confirm since Bubble already validated
         user_metadata: {
+          user_id: generatedUserId,
           bubble_user_id: userId,
+          host_account_id: hostAccountId,
+          guest_account_id: guestAccountId,
           first_name: firstName,
           last_name: lastName,
           user_type: userType,
@@ -204,11 +240,66 @@ export async function handleSignup(
       }
     }
 
-    // Step 2: Insert into public.user table
-    console.log('[signup] Step 2: Inserting into public.user table...');
-
     const now = new Date().toISOString();
     const fullName = [firstName, lastName].filter(Boolean).join(' ') || null;
+
+    // Step 2: Insert into account_host table
+    console.log('[signup] Step 2: Creating account_host record...');
+
+    const hostAccountRecord = {
+      '_id': hostAccountId,
+      'User': generatedUserId,
+      'HasClaimedListing': false,
+      'Receptivity': 0,
+      'Created Date': now,
+      'Modified Date': now,
+      'bubble_id': null // Will be synced from Bubble if needed
+    };
+
+    const { error: hostInsertError } = await supabaseAdmin
+      .from('account_host')
+      .insert(hostAccountRecord);
+
+    if (hostInsertError) {
+      console.error('[signup] Failed to insert into account_host:', hostInsertError.message);
+      throw new BubbleApiError(
+        `Failed to create host account: ${hostInsertError.message}`,
+        500,
+        hostInsertError
+      );
+    }
+
+    console.log('[signup] ✅ account_host record created:', hostAccountId);
+
+    // Step 3: Insert into account_guest table
+    console.log('[signup] Step 3: Creating account_guest record...');
+
+    const guestAccountRecord = {
+      '_id': guestAccountId,
+      'User': generatedUserId,
+      'Email': email,
+      'Created Date': now,
+      'Modified Date': now,
+      'bubble_id': null // Will be synced from Bubble if needed
+    };
+
+    const { error: guestInsertError } = await supabaseAdmin
+      .from('account_guest')
+      .insert(guestAccountRecord);
+
+    if (guestInsertError) {
+      console.error('[signup] Failed to insert into account_guest:', guestInsertError.message);
+      throw new BubbleApiError(
+        `Failed to create guest account: ${guestInsertError.message}`,
+        500,
+        guestInsertError
+      );
+    }
+
+    console.log('[signup] ✅ account_guest record created:', guestAccountId);
+
+    // Step 4: Insert into public.user table
+    console.log('[signup] Step 4: Inserting into public.user table...');
 
     // Parse birthDate to timestamp if provided
     let dateOfBirth: string | null = null;
@@ -221,7 +312,8 @@ export async function handleSignup(
     }
 
     const userRecord = {
-      '_id': userId,
+      '_id': generatedUserId,
+      'bubble_id': userId, // Store Bubble's user_id for backward compatibility
       'email as text': email,
       'Name - First': firstName || null,
       'Name - Last': lastName || null,
@@ -230,6 +322,8 @@ export async function handleSignup(
       'Phone Number (as text)': phoneNumber || null,
       'Type - User Current': userType || 'Guest',
       'Type - User Signup': userType || 'Guest',
+      'Account - Host / Landlord': hostAccountId,
+      'Account - Guest': guestAccountId,
       'Created Date': now,
       'Modified Date': now,
       'authentication': {}, // Required jsonb field
@@ -253,16 +347,25 @@ export async function handleSignup(
       );
     }
 
-    console.log('[signup] OK User inserted into public.user table');
+    console.log('[signup] ✅ User inserted into public.user table');
     console.log(`[signup] ========== SIGNUP COMPLETE ==========`);
-    console.log(`[signup]    Bubble User ID: ${userId}`);
+    console.log(`[signup]    User ID (_id): ${generatedUserId}`);
+    console.log(`[signup]    Bubble User ID (bubble_id): ${userId}`);
+    console.log(`[signup]    Host Account ID: ${hostAccountId}`);
+    console.log(`[signup]    Guest Account ID: ${guestAccountId}`);
     console.log(`[signup]    Supabase Auth ID: ${supabaseUserId || 'not created'}`);
     console.log(`[signup]    public.user created: yes`);
+    console.log(`[signup]    account_host created: yes`);
+    console.log(`[signup]    account_guest created: yes`);
 
     // Return authentication data (user is automatically logged in)
+    // Note: user_id now returns our generated ID, bubble_id contains Bubble's ID
     return {
       token,
-      user_id: userId,
+      user_id: generatedUserId,
+      bubble_id: userId,
+      host_account_id: hostAccountId,
+      guest_account_id: guestAccountId,
       expires,
       supabase_user_id: supabaseUserId
     };
