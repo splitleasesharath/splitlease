@@ -1,0 +1,10 @@
+{
+  "imports": {
+    "@shared/": "../_shared/",
+    "@lib/": "./lib/",
+    "@actions/": "./actions/"
+  },
+  "compilerOptions": {
+    "strict": true
+  }
+}
