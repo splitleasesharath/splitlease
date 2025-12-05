@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2025-12-05T01:28:00.802Z
+# Generated: 2025-12-05T17:26:54.552Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -70,6 +70,9 @@
 
 # /self-listing
 /self-listing.html  /self-listing.html  200
+
+# /self-listing-v2
+/self-listing-v2.html  /self-listing-v2.html  200
 
 # /listing-dashboard
 /listing-dashboard.html  /listing-dashboard.html  200

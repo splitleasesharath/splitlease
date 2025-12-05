@@ -197,6 +197,14 @@ export const routes = [
     hasDynamicSegment: false
   },
   {
+    path: '/self-listing-v2',
+    file: 'self-listing-v2.html',
+    aliases: ['/self-listing-v2.html'],
+    protected: false,
+    cloudflareInternal: false,
+    hasDynamicSegment: false
+  },
+  {
     path: '/listing-dashboard',
     file: 'listing-dashboard.html',
     aliases: ['/listing-dashboard.html'],

@@ -264,6 +264,7 @@ export default defineConfig({
         careers: resolve(__dirname, 'public/careers.html'),
         'account-profile': resolve(__dirname, 'public/account-profile.html'),
         'self-listing': resolve(__dirname, 'public/self-listing.html'),
+        'self-listing-v2': resolve(__dirname, 'public/self-listing-v2.html'),
         'help-center': resolve(__dirname, 'public/help-center.html'),
         'help-center-category': resolve(__dirname, 'public/help-center-category.html'),
         'rental-application': resolve(__dirname, 'public/rental-application.html'),

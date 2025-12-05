@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Your Listing - Split Lease</title>
+  <meta name="description" content="Create and submit your rental listing on Split Lease">
+  <link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png">
+  <link rel="stylesheet" href="/src/styles/main.css">
+
+  <!-- Load environment config FIRST -->
+  <script type="module" src="/src/lib/config.js"></script>
+  <script type="module" src="/src/lib/hotjar.js"></script>
+
+  <!-- Google Maps API -->
+  <script>
+    // Initialize callback function before loading API
+    window.initMap = function() {
+      console.log('Google Maps API loaded successfully');
+      window.dispatchEvent(new Event('google-maps-loaded'));
+    };
+
+    // Load Google Maps API dynamically
+    function loadGoogleMaps() {
+      const apiKey = window.ENV?.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        console.error('❌ Google Maps API key not configured in window.ENV');
+        console.error('Available ENV keys:', Object.keys(window.ENV || {}));
+        return;
+      }
+
+      console.log('🗺️ Loading Google Maps API...');
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap&loading=async`;
+      script.async = true;
+      script.defer = true;
+      script.onerror = function() {
+        console.error('❌ Failed to load Google Maps API');
+      };
+      document.head.appendChild(script);
+    }
+
+    // Wait for config.js to load and set window.ENV
+    // Use event-based approach for reliability
+    if (window.ENV) {
+      // Config already loaded (rare, but possible)
+      loadGoogleMaps();
+    } else {
+      // Wait for the env-config-loaded event from config.js
+      window.addEventListener('env-config-loaded', loadGoogleMaps, { once: true });
+
+      // Fallback timeout in case event doesn't fire (e.g., config.js fails to load)
+      setTimeout(() => {
+        if (!window.ENV) {
+          console.error('❌ window.ENV not available after 2 seconds - config.js may have failed to load');
+        } else if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+          // ENV exists but script wasn't loaded - try one more time
+          console.warn('⚠️ Fallback: Attempting to load Google Maps after timeout');
+          loadGoogleMaps();
+        }
+      }, 2000);
+    }
+  </script>
+</head>
+<body>
+  <div id="self-listing-v2-page"></div>
+
+  <script type="module" src="/src/self-listing-v2.jsx"></script>
+</body>
+</html>
