@@ -1,5 +1,6 @@
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
+import { EditListingDetails } from '../../shared/EditListingDetails/EditListingDetails';
 import useListingDashboardPageLogic from './useListingDashboardPageLogic';
 import {
   NavigationHeader,
@@ -25,6 +26,7 @@ export default function ListingDashboardPage() {
     counts,
     isLoading,
     error,
+    editSection,
     handleTabChange,
     handleCardClick,
     handleBackClick,
@@ -32,6 +34,10 @@ export default function ListingDashboardPage() {
     handleCancellationPolicyChange,
     handleCopyLink,
     handleAIAssistant,
+    handleEditSection,
+    handleCloseEdit,
+    handleSaveEdit,
+    updateListing,
   } = useListingDashboardPageLogic();
 
   // Loading state
@@ -126,44 +132,44 @@ export default function ListingDashboardPage() {
             {/* Description Section */}
             <DescriptionSection
               listing={listing}
-              onEditLodging={() => console.log('Edit lodging description')}
-              onEditNeighborhood={() => console.log('Edit neighborhood description')}
+              onEditLodging={() => handleEditSection('description')}
+              onEditNeighborhood={() => handleEditSection('neighborhood')}
             />
 
             {/* Amenities Section */}
             <AmenitiesSection
               listing={listing}
-              onEdit={() => console.log('Edit amenities')}
+              onEdit={() => handleEditSection('amenities')}
             />
 
             {/* Details Section */}
             <DetailsSection
               listing={listing}
-              onEdit={() => console.log('Edit details')}
+              onEdit={() => handleEditSection('details')}
             />
 
             {/* Pricing & Lease Style Section */}
             <PricingSection
               listing={listing}
-              onEdit={() => console.log('Edit pricing')}
+              onEdit={() => handleEditSection('availability')}
             />
 
             {/* Rules Section */}
             <RulesSection
               listing={listing}
-              onEdit={() => console.log('Edit rules')}
+              onEdit={() => handleEditSection('rules')}
             />
 
             {/* Availability Section */}
             <AvailabilitySection
               listing={listing}
-              onEdit={() => console.log('Edit availability')}
+              onEdit={() => handleEditSection('availability')}
             />
 
             {/* Photos Section */}
             <PhotosSection
               listing={listing}
-              onAddPhotos={() => console.log('Add photos')}
+              onAddPhotos={() => handleEditSection('photos')}
               onDeletePhoto={(id) => console.log('Delete photo', id)}
               onSetCover={(id) => console.log('Set cover photo', id)}
             />
@@ -177,6 +183,43 @@ export default function ListingDashboardPage() {
         </div>
       </div>
       <Footer />
+
+      {/* Edit Listing Details Modal */}
+      {editSection && (
+        <EditListingDetails
+          listing={{
+            _id: listing.id,
+            Name: listing.title,
+            Description: listing.description,
+            'Description Neighborhood': listing.descriptionNeighborhood,
+            'Location - City': listing.location?.city,
+            'Location - State': listing.location?.state,
+            'Location - Zip Code': listing.location?.zipCode,
+            'Location - Borough': listing.location?.hoodsDisplay,
+            'Location - Hood': listing.location?.hoodsDisplay,
+            'Features - Type of Space': listing.features?.typeOfSpace?.id,
+            'Features - Qty Bedrooms': listing.features?.bedrooms,
+            'Features - Qty Bathrooms': listing.features?.bathrooms,
+            'Features - Qty Beds': listing.features?.bedrooms,
+            'Features - Qty Guests': listing.maxGuests,
+            'Features - SQFT Area': listing.features?.squareFootage,
+            'Kitchen Type': listing.features?.kitchenType?.id,
+            'Features - House Rules': listing.houseRules?.map(r => r.name) || [],
+            'Features - Photos': listing.photos?.map(p => p.url) || [],
+            'Features - Amenities In-Unit': listing.inUnitAmenities?.map(a => a.name) || [],
+            'Features - Amenities In-Building': listing.buildingAmenities?.map(a => a.name) || [],
+            'Features - Safety': listing.safetyFeatures?.map(s => s.name) || [],
+            'First Available': listing.earliestAvailableDate,
+            'Minimum Nights': listing.nightsPerWeekMin,
+            'Maximum Nights': listing.nightsPerWeekMax,
+            'Cancellation Policy': listing.cancellationPolicy,
+          }}
+          editSection={editSection}
+          onClose={handleCloseEdit}
+          onSave={handleSaveEdit}
+          updateListing={updateListing}
+        />
+      )}
     </>
   );
 }
