@@ -66,6 +66,7 @@ export default function LoggedInAvatar({
   const effectiveLeasesCount = dataLoading ? (user.leasesCount || 0) : supabaseData.leasesCount;
   const effectiveFavoritesCount = dataLoading ? (user.favoritesCount || 0) : supabaseData.favoritesCount;
   const effectiveUnreadMessagesCount = dataLoading ? (user.unreadMessagesCount || 0) : supabaseData.unreadMessagesCount;
+  const effectiveFirstListingId = dataLoading ? null : supabaseData.firstListingId;
 
   // Debug logging
   useEffect(() => {
@@ -202,15 +203,17 @@ export default function LoggedInAvatar({
 
     // 4. My Listings - HOST and TRIAL_HOST only
     if (menuVisibility.myListings) {
+      // When user has exactly 1 listing, go directly to listing-dashboard with the ID
+      let listingsPath = '/host-overview';
+      if (effectiveListingsCount === 1 && effectiveFirstListingId) {
+        listingsPath = `/listing-dashboard?id=${effectiveFirstListingId}`;
+      }
+
       items.push({
         id: 'listings',
         label: 'My Listings',
         icon: '/assets/icons/list-purple.svg',
-        path: effectiveListingsCount > 1
-          ? '/host-overview'
-          : effectiveListingsCount === 1
-            ? '/host-dashboard'
-            : '/host-overview',
+        path: listingsPath,
         badgeCount: effectiveListingsCount,
         badgeColor: 'purple',
       });

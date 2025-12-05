@@ -699,7 +699,11 @@ export async function validateTokenAndFetchUser() {
       fullName: userData.fullName || null,
       email: userData.email || null,
       profilePhoto: userData.profilePhoto || null,
-      userType: userType
+      userType: userType,
+      // Host account ID for fetching host-specific data (listings, etc.)
+      accountHostId: userData.accountHostId || null,
+      // Also include with Bubble field naming for backwards compatibility
+      'Account - Host / Landlord': userData.accountHostId || null
     };
 
     console.log('✅ User data validated:', userDataObject.firstName, '- Type:', userDataObject.userType);
