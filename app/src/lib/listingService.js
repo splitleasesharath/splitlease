@@ -344,7 +344,7 @@ async function syncListingToBubble(supabaseData, formData) {
 /**
  * Update an existing listing in listing_trial table
  * @param {string} id - UUID of the listing
- * @param {object} formData - Updated form data
+ * @param {object} formData - Updated form data (can be flat DB columns or nested SelfListingPage format)
  * @returns {Promise<object>} - Updated listing
  */
 export async function updateListing(id, formData) {
@@ -354,7 +354,21 @@ export async function updateListing(id, formData) {
     throw new Error('Listing ID is required for update');
   }
 
-  const listingData = mapFormDataToDatabase(formData);
+  // Check if formData is already in flat database column format
+  // (e.g., from EditListingDetails which uses DB column names directly)
+  const isFlatDbFormat = isFlatDatabaseFormat(formData);
+
+  let listingData;
+  if (isFlatDbFormat) {
+    // Already using database column names - normalize special columns
+    listingData = normalizeDatabaseColumns(formData);
+    console.log('[ListingService] Using flat DB format update');
+  } else {
+    // Nested SelfListingPage format - needs mapping
+    listingData = mapFormDataToDatabase(formData);
+    console.log('[ListingService] Using mapped SelfListingPage format');
+  }
+
   listingData['Modified Date'] = new Date().toISOString();
 
   const { data, error } = await supabase
@@ -371,6 +385,59 @@ export async function updateListing(id, formData) {
 
   console.log('[ListingService] ✅ Listing updated:', data.id);
   return data;
+}
+
+/**
+ * Check if formData uses flat database column names
+ * @param {object} formData - Form data to check
+ * @returns {boolean} - True if using flat DB column format
+ */
+function isFlatDatabaseFormat(formData) {
+  // Database column names have specific patterns
+  const dbColumnPatterns = [
+    'Name',
+    'Description',
+    'Features - ',
+    'Location - ',
+    'Description - ',
+    'Kitchen Type',
+    'Cancellation Policy',
+    'First Available'
+  ];
+
+  const keys = Object.keys(formData);
+  return keys.some(key =>
+    dbColumnPatterns.some(pattern => key === pattern || key.startsWith(pattern))
+  );
+}
+
+/**
+ * Normalize database column names to handle quirks like leading/trailing spaces
+ * Some Bubble-synced columns have unusual names that must be preserved exactly
+ * @param {object} formData - Form data with database column names
+ * @returns {object} - Normalized data ready for database update
+ */
+function normalizeDatabaseColumns(formData) {
+  // Map of common field names to their actual database column names
+  // (handles leading/trailing spaces from Bubble sync)
+  const columnNameMap = {
+    'First Available': ' First Available', // DB column has leading space
+    'Nights Available (List of Nights)': 'Nights Available (List of Nights) ', // DB column has trailing space
+    'Not Found - Location - Address': 'Not Found - Location - Address ' // DB column has trailing space
+  };
+
+  const normalized = {};
+
+  for (const [key, value] of Object.entries(formData)) {
+    // Check if this key needs to be remapped
+    if (columnNameMap[key]) {
+      normalized[columnNameMap[key]] = value;
+    } else {
+      normalized[key] = value;
+    }
+  }
+
+  return normalized;
 }
 
 /**

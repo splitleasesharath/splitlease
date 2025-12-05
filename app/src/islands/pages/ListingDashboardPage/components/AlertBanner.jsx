@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 // Icon components (inline SVGs)
 const InfoIcon = () => (
   <svg
@@ -19,11 +17,11 @@ const InfoIcon = () => (
   </svg>
 );
 
-const CloseIcon = () => (
+const ChevronRightIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="16"
-    height="16"
+    width="20"
+    height="20"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -31,19 +29,17 @@ const CloseIcon = () => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M18 6 6 18" />
-    <path d="m6 6 12 12" />
+    <path d="m9 18 6-6-6-6" />
   </svg>
 );
 
-export default function AlertBanner() {
-  const [isVisible, setIsVisible] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
-
-  if (!isVisible) return null;
-
+export default function AlertBanner({ onScheduleCohost }) {
   return (
-    <div className="listing-dashboard-alert">
+    <button
+      className="listing-dashboard-alert listing-dashboard-alert--clickable"
+      onClick={onScheduleCohost}
+      type="button"
+    >
       {/* Info Icon */}
       <div className="listing-dashboard-alert__icon">
         <InfoIcon />
@@ -54,29 +50,15 @@ export default function AlertBanner() {
         <p className="listing-dashboard-alert__text">
           Need help setting up? Ask a Specialist Co-host!
         </p>
-        {isExpanded && (
-          <div className="listing-dashboard-alert__expanded">
-            <p>
-              Our specialists can help you optimize your listing and attract
-              more quality tenants.
-            </p>
-          </div>
-        )}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="listing-dashboard-alert__toggle"
-        >
-          {isExpanded ? 'show less' : 'show more'}
-        </button>
+        <span className="listing-dashboard-alert__subtext">
+          Our specialists can help you optimize your listing and attract more quality tenants.
+        </span>
       </div>
 
-      {/* Close Button */}
-      <button
-        onClick={() => setIsVisible(false)}
-        className="listing-dashboard-alert__close"
-      >
-        <CloseIcon />
-      </button>
-    </div>
+      {/* Chevron Icon */}
+      <div className="listing-dashboard-alert__chevron">
+        <ChevronRightIcon />
+      </div>
+    </button>
   );
 }

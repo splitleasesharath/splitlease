@@ -156,4 +156,5 @@ registerLoader({
 // ─────────────────────────────────────────────────────────────
 
 import "./listing-description.ts";
+import "./listing-title.ts";
 // import "./market-analysis.ts";
