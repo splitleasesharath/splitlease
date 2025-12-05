@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview Listing - Split Lease</title>
+  <meta name="description" content="Preview your listing as guests will see it">
+  <link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png">
+  <link rel="stylesheet" href="/src/styles/main.css">
+
+  <!-- Load environment config FIRST - required for inline scripts -->
+  <script type="module" src="/src/lib/config.js"></script>
+  <script type="module" src="/src/lib/hotjar.js"></script>
+
+  <!-- Google Maps API -->
+  <script>
+    // Initialize callback function before loading API
+    window.initMap = function() {
+      console.log('Google Maps API loaded successfully');
+      window.dispatchEvent(new Event('google-maps-loaded'));
+    };
+
+    // Load Google Maps API dynamically
+    function loadGoogleMaps() {
+      const apiKey = window.ENV?.GOOGLE_MAPS_API_KEY;
+      if (!apiKey) {
+        console.error('Google Maps API key not configured in window.ENV');
+        console.error('Available ENV keys:', Object.keys(window.ENV || {}));
+        return;
+      }
+
+      console.log('Loading Google Maps API...');
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&callback=initMap&loading=async`;
+      script.async = true;
+      script.defer = true;
+      script.onerror = function() {
+        console.error('Failed to load Google Maps API');
+      };
+      document.head.appendChild(script);
+    }
+
+    // Wait for config.js to load and set window.ENV
+    if (window.ENV) {
+      loadGoogleMaps();
+    } else {
+      // Wait for the env-config-loaded event from config.js
+      window.addEventListener('env-config-loaded', loadGoogleMaps, { once: true });
+
+      // Fallback timeout in case event doesn't fire
+      setTimeout(() => {
+        if (!window.ENV) {
+          console.error('window.ENV not available after 2 seconds - config.js may have failed to load');
+        } else if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+          console.warn('Fallback: Attempting to load Google Maps after timeout');
+          loadGoogleMaps();
+        }
+      }, 2000);
+    }
+  </script>
+</head>
+<body>
+  <div id="preview-split-lease-page"></div>
+
+  <script type="module" src="/src/preview-split-lease.jsx"></script>
+</body>
+</html>

@@ -69,6 +69,16 @@ export const routes = [
     dynamicPattern: '/view-split-lease/:id'
   },
   {
+    path: '/preview-split-lease',
+    file: 'preview-split-lease.html',
+    aliases: ['/preview-split-lease.html'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'preview-listing-view',
+    hasDynamicSegment: true,
+    dynamicPattern: '/preview-split-lease/:id'
+  },
+  {
     path: '/guest-proposals',
     file: 'guest-proposals.html',
     aliases: ['/guest-proposals.html'],
