@@ -108,6 +108,7 @@ export const mockListing = {
   nightsPerWeekMin: 2,
   nightsPerWeekMax: 7,
   availableDays: [0, 1, 2, 3, 4, 5, 6], // All days available (0=Sun, 6=Sat)
+  nightsAvailable: ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'], // Night IDs for HostScheduleSelector
 
   pricing: {
     2: 350,  // $350/night * 2 = $700/week
