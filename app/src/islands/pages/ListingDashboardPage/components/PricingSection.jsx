@@ -1,8 +1,10 @@
 import { HostScheduleSelector } from '../../../shared/HostScheduleSelector';
+import NightlyPricingLegend from './NightlyPricingLegend';
 
 export default function PricingSection({ listing, onEdit }) {
   const weeklyComp = listing?.weeklyCompensation || {};
   const nightsAvailable = listing?.nightsAvailable || [];
+  const isNightly = (listing?.leaseStyle || 'Nightly').toLowerCase() === 'nightly';
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -58,14 +60,23 @@ export default function PricingSection({ listing, onEdit }) {
 
         {/* Right Column - Pricing Info */}
         <div className="listing-dashboard-pricing__right">
-          <div className="listing-dashboard-pricing__rates">
-            <p><strong>Occupancy Comp./Wk</strong></p>
-            {[2, 3, 4, 5, 6, 7].map((nights) => (
-              <p key={nights}>
-                @<strong>{nights}</strong> nights/wk: {formatCurrency(weeklyComp[nights] || 0)}
-              </p>
-            ))}
-          </div>
+          {/* Nightly pricing uses gradient legend */}
+          {isNightly ? (
+            <NightlyPricingLegend
+              weeklyCompensation={weeklyComp}
+              nightsPerWeekMin={listing?.nightsPerWeekMin || 2}
+              nightsPerWeekMax={listing?.nightsPerWeekMax || 7}
+            />
+          ) : (
+            <div className="listing-dashboard-pricing__rates">
+              <p><strong>Occupancy Comp./Wk</strong></p>
+              {[2, 3, 4, 5, 6, 7].map((nights) => (
+                <p key={nights}>
+                  @<strong>{nights}</strong> nights/wk: {formatCurrency(weeklyComp[nights] || 0)}
+                </p>
+              ))}
+            </div>
+          )}
 
           <div className="listing-dashboard-pricing__fees">
             <p><strong>Additional Charges</strong></p>
