@@ -1436,10 +1436,10 @@ export function SelfListingPageV2() {
         <h2>Success!</h2>
         <p>Your request has been sent to our concierge team.</p>
         <div className="success-actions">
-          <a href="/listing-dashboard" className="btn-next">Go to My Dashboard</a>
+          <a href={createdListingId ? `/listing-dashboard?id=${createdListingId}` : '/listing-dashboard'} className="btn-next">Go to My Dashboard</a>
           {createdListingId && (
             <a
-              href={`/view-split-lease/${createdListingId}`}
+              href={`/view-split-lease?id=${createdListingId}`}
               className="btn-next btn-secondary"
             >
               Preview Listing
