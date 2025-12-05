@@ -17,7 +17,7 @@
  *   <SignUpLoginModal
  *     isOpen={showModal}
  *     onClose={() => setShowModal(false)}
- *     initialView="initial" // 'initial', 'login', 'signup'
+ *     initialView="initial" // 'initial', 'login', 'signup', 'signup-step1', 'signup-step2'
  *     onAuthSuccess={(userData) => handleSuccess(userData)}
  *     defaultUserType="guest" // 'host' or 'guest' - for route-based prefilling
  *   />
@@ -420,8 +420,10 @@ export default function SignUpLoginModal({
       // Map initialView prop to internal view state
       if (initialView === 'login') {
         setCurrentView(VIEWS.LOGIN);
-      } else if (initialView === 'signup') {
+      } else if (initialView === 'signup' || initialView === 'signup-step1') {
         setCurrentView(VIEWS.SIGNUP_STEP1);
+      } else if (initialView === 'signup-step2') {
+        setCurrentView(VIEWS.SIGNUP_STEP2);
       } else {
         setCurrentView(VIEWS.INITIAL);
       }
