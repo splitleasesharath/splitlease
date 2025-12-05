@@ -4,12 +4,18 @@
  * Processes the sync_queue and pushes data FROM Supabase TO Bubble.
  * This is the reverse direction of the bubble_to_supabase_sync.py script.
  *
+ * Supports TWO modes:
+ * 1. Workflow API (/wf/) - For complex operations requiring Bubble-side logic
+ * 2. Data API (/obj/) - For direct CRUD operations (recommended)
+ *
  * Actions:
- * - process_queue: Process pending items in the queue
+ * - process_queue: Process pending items using Workflow API
+ * - process_queue_data_api: Process pending items using Data API (recommended)
  * - sync_single: Manually sync a single record
  * - retry_failed: Retry failed items
  * - get_status: Get queue statistics
  * - cleanup: Clean up old completed items
+ * - build_request: Preview API request without executing (debugging)
  *
  * NO FALLBACK PRINCIPLE:
  * - Real data or nothing
@@ -22,17 +28,21 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 
 import { handleProcessQueue } from './handlers/processQueue.ts';
+import { handleProcessQueueDataApi } from './handlers/processQueueDataApi.ts';
 import { handleSyncSingle } from './handlers/syncSingle.ts';
 import { handleRetryFailed } from './handlers/retryFailed.ts';
 import { handleGetStatus } from './handlers/getStatus.ts';
 import { handleCleanup } from './handlers/cleanup.ts';
+import { handleBuildRequest } from './handlers/buildRequest.ts';
 
 const ALLOWED_ACTIONS = [
     'process_queue',
+    'process_queue_data_api',
     'sync_single',
     'retry_failed',
     'get_status',
-    'cleanup'
+    'cleanup',
+    'build_request'
 ];
 
 Deno.serve(async (req: Request) => {
@@ -91,11 +101,22 @@ Deno.serve(async (req: Request) => {
             throw new Error('Missing required environment variables: BUBBLE_API_BASE_URL, BUBBLE_API_KEY');
         }
 
+        // Build Data API config
+        const dataApiConfig = {
+            baseUrl: bubbleConfig.bubbleBaseUrl,
+            apiKey: bubbleConfig.bubbleApiKey,
+        };
+
         // Route to handler
         let result;
         switch (action) {
             case 'process_queue':
+                // Workflow API mode (original)
                 result = await handleProcessQueue(supabase, bubbleConfig, payload);
+                break;
+            case 'process_queue_data_api':
+                // Data API mode (recommended)
+                result = await handleProcessQueueDataApi(supabase, dataApiConfig, payload);
                 break;
             case 'sync_single':
                 result = await handleSyncSingle(supabase, bubbleConfig, payload);
@@ -108,6 +129,10 @@ Deno.serve(async (req: Request) => {
                 break;
             case 'cleanup':
                 result = await handleCleanup(supabase, payload);
+                break;
+            case 'build_request':
+                // Preview request without executing
+                result = await handleBuildRequest(dataApiConfig, payload);
                 break;
             default:
                 throw new Error(`Unhandled action: ${action}`);
