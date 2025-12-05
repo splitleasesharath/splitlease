@@ -113,6 +113,15 @@ Example: `ViewSplitLeasePage.jsx` uses `useViewSplitLeasePageLogic.js`
 
 Always convert at system boundaries using `adaptDaysFromBubble()` / `adaptDaysToBubble()`.
 
+### Unique ID Generation (CRITICAL)
+When creating new rows in Supabase tables, use the `generate_bubble_id()` RPC function to generate Bubble-compatible unique IDs:
+
+```typescript
+const { data: newId, error } = await supabaseAdmin.rpc('generate_bubble_id');
+```
+
+This ensures IDs match Bubble's format for data compatibility during the migration period.
+
 ---
 
 ## Core Principles
