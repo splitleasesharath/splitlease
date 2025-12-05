@@ -877,111 +877,111 @@ export function SelfListingPageV2() {
     );
   };
 
-  // Render Step 4: Nightly Pricing Calculator
+  // Render Step 4: Nightly Pricing Calculator (Vertical Layout - matches HTML reference)
   const renderStep4 = () => {
     const sum5 = nightlyPricesRef.current.slice(0, 5).reduce((a, b) => a + b, 0);
     const avgPrice = Math.round(sum5 / 5);
 
     return (
-      <div className="section-card section-card-wide">
+      <div className="section-card">
         <h2>Pricing Strategy</h2>
-        <p className="subtitle">Set your base rate and discounts for recurring guests.</p>
+        <p className="subtitle">Set your base rate. Longer stays get automatic discounts to encourage bookings.</p>
 
-        <div className="nightly-calculator nightly-calculator-horizontal">
-          {/* Left Column: Controls */}
-          <div className="pricing-controls">
-            <div className="control-group" style={{ textAlign: 'center' }}>
-              <label className="calc-label">Base Nightly Rate</label>
-              <div className="base-input-wrapper">
-                <span className="currency-symbol">$</span>
-                <input
-                  type="number"
-                  className="base-input"
-                  value={formData.nightlyBaseRate}
-                  onChange={e => updateFormData({ nightlyBaseRate: Math.max(0, parseInt(e.target.value) || 0) })}
-                  min="0"
-                />
-              </div>
+        <div className="nightly-calculator-vertical">
+          {/* Base Nightly Rate Input */}
+          <div className="control-group" style={{ textAlign: 'center' }}>
+            <label className="calc-label">Base Nightly Rate</label>
+            <div className="base-input-wrapper">
+              <span className="currency-symbol">$</span>
+              <input
+                type="number"
+                className="base-input"
+                value={formData.nightlyBaseRate}
+                onChange={e => updateFormData({ nightlyBaseRate: Math.max(0, parseInt(e.target.value) || 0) })}
+                min="0"
+              />
             </div>
-
-            <div className="control-group">
-              <div className="label-row">
-                <span className="calc-label">Long Stay Discount</span>
-                <span className="value-display">{formData.nightlyDiscount}%</span>
-              </div>
-              <div className="range-wrapper">
-                <input
-                  type="range"
-                  min="0"
-                  max="50"
-                  value={formData.nightlyDiscount}
-                  onChange={e => updateFormData({ nightlyDiscount: parseInt(e.target.value) })}
-                />
-              </div>
-              <div className="marks">
-                <span>0%</span>
-                <span>25%</span>
-                <span>50%</span>
-              </div>
-              <p className="calc-hint">
-                A 5-night stay will average <strong>${avgPrice}</strong>/night.
-              </p>
-            </div>
-
-            {/* Summary based on selected nights */}
-            <div className="total-display">
-              <div className="weekly-block">
-                <div className="total-label">Weekly Total</div>
-                <div className="total-val">${Math.round(formData.weeklyTotal)}</div>
-                <div className="total-sub">{formData.selectedNights.length} nights</div>
-              </div>
-              <div className="total-block">
-                <div className="total-label">Est. Monthly</div>
-                <div className="total-val">${Math.round(formData.monthlyEstimate)}</div>
-                <div className="total-sub">x 4.33 weeks</div>
-              </div>
-            </div>
-
-            {/* Smart Pricing explanation in the left column below totals */}
-            <details className="pricing-details-inline">
-              <summary>How does Smart Pricing work?</summary>
-              <div className="details-content">
-                We calculate a "decay curve" for your pricing. The first night is your full Base Rate.
-                Each consecutive night gets slightly cheaper based on your Discount setting.
-                This encourages guests to book longer stays.
-              </div>
-            </details>
           </div>
 
-          {/* Right Column: Pricing Table */}
-          <div className="pricing-table-wrapper pricing-table-side">
-            <div className="pricing-table-header">Price by Stay Length</div>
-            <div className="pricing-table">
-              <div className="pricing-table-row pricing-table-head">
-                <div className="pricing-table-cell">Nights</div>
-                <div className="pricing-table-cell">$/Night</div>
-                <div className="pricing-table-cell">Total</div>
-              </div>
-              {[1, 2, 3, 4, 5, 6, 7].map(nights => {
-                const pricePerNight = nightlyPricesRef.current[nights - 1] || 0;
-                let total = 0;
-                for (let i = 0; i < nights; i++) {
-                  total += nightlyPricesRef.current[i] || 0;
-                }
-                const isSelected = formData.selectedNights.length === nights;
-                return (
-                  <div
-                    key={nights}
-                    className={`pricing-table-row ${isSelected ? 'highlighted' : ''}`}
-                  >
-                    <div className="pricing-table-cell">{nights}</div>
-                    <div className="pricing-table-cell">${pricePerNight}</div>
-                    <div className="pricing-table-cell">${total}</div>
+          {/* Long Stay Discount Slider */}
+          <div className="control-group">
+            <div className="label-row">
+              <span className="calc-label">Long Stay Discount</span>
+              <span className="value-display">{formData.nightlyDiscount}%</span>
+            </div>
+            <div className="range-wrapper">
+              <input
+                type="range"
+                min="0"
+                max="50"
+                value={formData.nightlyDiscount}
+                onChange={e => updateFormData({ nightlyDiscount: parseInt(e.target.value) })}
+              />
+            </div>
+            <div className="marks">
+              <span>0%</span>
+              <span>25%</span>
+              <span>50%</span>
+            </div>
+            <p className="calc-hint">
+              Consecutive nights get progressively cheaper. A 5-night stay averages <strong>${avgPrice}</strong>/night.
+            </p>
+          </div>
+
+          {/* Color Palette Display - BELOW the slider */}
+          <div className="nights-display-wrapper">
+            <div className="nights-display-header">Price per consecutive night</div>
+            <div className="palette-container">
+              <div className="palette-row">
+                {[1, 2, 3, 4, 5, 6, 7].map(night => (
+                  <div key={night} className={`palette-swatch n${night}`}>
+                    <span className="swatch-number">Night {night}</span>
+                    <span className="swatch-price">${nightlyPricesRef.current[night - 1] || 0}</span>
+                    <span className="swatch-label">per night</span>
                   </div>
-                );
+                ))}
+              </div>
+            </div>
+            <div className="formula-row">
+              {[1, 2, 3, 4, 5, 6, 7].map(night => {
+                // Total for N nights = N * (price per night for that stay length)
+                const pricePerNight = nightlyPricesRef.current[night - 1] || 0;
+                const total = night * pricePerNight;
+                return <div key={night} className="formula-item">${total}</div>;
               })}
             </div>
+            <div className="formula-total-row">
+              <div className="formula-total-label">7-Night Total</div>
+              <div className="formula-total">
+                ${7 * (nightlyPricesRef.current[6] || 0)}
+              </div>
+            </div>
           </div>
+
+          {/* Summary Row */}
+          <div className="summary-row">
+            <div className="summary-item">
+              <div className="summary-label">Your Weekly Total</div>
+              <div className="summary-value">${Math.round(formData.weeklyTotal)}</div>
+              <div className="summary-sub">{formData.selectedNights.length} nights</div>
+            </div>
+            <div className="summary-item">
+              <div className="summary-label">Est. Monthly</div>
+              <div className="summary-value">${Math.round(formData.monthlyEstimate)}</div>
+              <div className="summary-sub">x 4.33 weeks</div>
+            </div>
+          </div>
+
+          {/* Smart Pricing explanation */}
+          <details className="pricing-details">
+            <summary>How does Smart Pricing work?</summary>
+            <div className="details-content">
+              We calculate a "decay curve" for your pricing. The first night is your full Base Rate.
+              Each consecutive night gets slightly cheaper based on your Discount setting.
+              This encourages guests to book longer blocks (like Mon-Fri) instead of just two nights,
+              maximizing your occupancy and reducing turnover effort.
+            </div>
+          </details>
         </div>
 
         <div className="btn-group">

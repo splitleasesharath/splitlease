@@ -1605,13 +1605,213 @@
   margin-top: 4px;
 }
 
+/* ============================================
+   Nightly Calculator - Vertical Layout (matches HTML reference)
+   ============================================ */
+.nightly-calculator-vertical {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Nights Display Wrapper (Color Palette) */
+.nights-display-wrapper {
+  margin-top: 10px;
+}
+
+.nights-display-header {
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.palette-container {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.palette-row {
+  display: flex;
+}
+
+.palette-swatch {
+  flex: 1;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 2px;
+}
+
+/* Gradient colors - dark grey to white */
+.palette-swatch.n1 { background: #374151; color: white; }
+.palette-swatch.n2 { background: #4b5563; color: white; }
+.palette-swatch.n3 { background: #6b7280; color: white; }
+.palette-swatch.n4 { background: #9ca3af; color: white; }
+.palette-swatch.n5 { background: #d1d5db; color: #374151; }
+.palette-swatch.n6 { background: #e5e7eb; color: #374151; }
+.palette-swatch.n7 { background: #f3f4f6; color: #374151; }
+
+.swatch-number {
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.75;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.swatch-price {
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.swatch-label {
+  font-size: 7px;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.65;
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Cumulative totals row */
+.formula-row {
+  display: flex;
+  margin-top: 8px;
+}
+
+.formula-item {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.formula-total-row {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.formula-total-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.formula-total {
+  font-size: 18px;
+  font-weight: 800;
+  color: #374151;
+}
+
+/* Summary Row */
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8f0fe 100%);
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+  padding: 16px 20px;
+}
+
+.summary-item {
+  text-align: center;
+  flex: 1;
+}
+
+.summary-item:first-child {
+  text-align: left;
+}
+
+.summary-item:last-child {
+  text-align: right;
+}
+
+.summary-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.summary-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--v2-primary);
+}
+
+.summary-sub {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+/* Pricing Details Accordion */
+.pricing-details {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 15px;
+  margin-top: 10px;
+}
+
+.pricing-details summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pricing-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.pricing-details summary::before {
+  content: "▸";
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+.pricing-details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.pricing-details summary:hover {
+  color: #374151;
+}
+
+.pricing-details .details-content {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7280;
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 8px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
-  /* Stack horizontal layout on tablets and below */
-  .nightly-calculator-horizontal {
-    flex-direction: column;
-  }
-
   .pricing-table-side {
     flex: none;
     width: 100%;
@@ -1623,6 +1823,38 @@
 
   .pricing-details-inline {
     margin-top: 20px;
+  }
+}
+
+@media (max-width: 550px) {
+  /* Smaller text in swatches on mobile */
+  .swatch-number {
+    font-size: 7px;
+  }
+
+  .swatch-price {
+    font-size: 11px;
+  }
+
+  .swatch-label {
+    display: none;
+  }
+
+  .palette-swatch {
+    min-height: 55px;
+    padding: 6px 1px;
+  }
+
+  .formula-item {
+    font-size: 9px;
+  }
+
+  .summary-value {
+    font-size: 18px;
+  }
+
+  .summary-row {
+    padding: 12px 15px;
   }
 }
 
