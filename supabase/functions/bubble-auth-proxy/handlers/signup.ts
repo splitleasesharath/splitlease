@@ -314,6 +314,7 @@ export async function handleSignup(
     const userRecord = {
       '_id': generatedUserId,
       'bubble_id': userId, // Store Bubble's user_id for backward compatibility
+      'email': email,
       'email as text': email,
       'Name - First': firstName || null,
       'Name - Last': lastName || null,
