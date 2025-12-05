@@ -591,16 +591,16 @@ export default function PreviewSplitLeasePage() {
       try {
         await initializeLookups();
 
-        // Check auth status
+        // Check auth status - but don't redirect, just track it
+        // Preview page should work even if auth check fails in new tab
         const isLoggedIn = await checkAuthStatus();
-        if (!isLoggedIn) {
-          window.location.href = '/';
-          return;
-        }
-
-        const userData = await validateTokenAndFetchUser();
-        if (userData) {
-          setLoggedInUserData(userData);
+        if (isLoggedIn) {
+          const userData = await validateTokenAndFetchUser();
+          if (userData) {
+            setLoggedInUserData(userData);
+          }
+        } else {
+          console.log('⚠️ PreviewSplitLeasePage: User not authenticated, continuing in read-only mode');
         }
 
         // Fetch ZAT price configuration
@@ -1395,8 +1395,8 @@ export default function PreviewSplitLeasePage() {
         >
           {/* Preview Mode Indicator */}
           <div style={{
-            background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)',
-            border: '1px solid #F59E0B',
+            background: 'linear-gradient(135deg, #DCFCE7 0%, #BBF7D0 100%)',
+            border: '1px solid #22C55E',
             borderRadius: '8px',
             padding: '10px 12px',
             marginBottom: '16px',
@@ -1409,48 +1409,93 @@ export default function PreviewSplitLeasePage() {
               height="16"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#D97706"
+              stroke="#16A34A"
               strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
             </svg>
-            <span style={{ fontSize: '12px', fontWeight: '600', color: '#92400E' }}>
-              Preview Mode - Guests see this widget
+            <span style={{ fontSize: '12px', fontWeight: '600', color: '#166534' }}>
+              Host View - Your Compensation
             </span>
           </div>
 
-          {/* Price Display */}
+          {/* Host Rate Display - Single Price */}
           <div style={{
-            background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
+            background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
             padding: '12px',
             borderRadius: '12px',
             marginBottom: '16px',
-            border: '1px solid #e9d5ff'
+            border: '1px solid #86efac'
           }}>
-            <div style={{
-              fontSize: '32px',
-              fontWeight: '800',
-              background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text',
-              letterSpacing: '-1px',
-              display: 'inline-block'
-            }}>
-              {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
-                ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
-                : 'Select Days'}
-              <span style={{
-                fontSize: '16px',
-                color: '#6B7280',
-                fontWeight: '500',
-                background: 'none',
-                WebkitTextFillColor: '#6B7280'
-              }}>/night</span>
-            </div>
+            {/* Show Weekly or Monthly rate if rental type is Weekly/Monthly */}
+            {listing?.['rental type'] === 'Weekly' && listing?.['💰Weekly Host Rate'] ? (
+              <>
+                <div style={{
+                  fontSize: '32px',
+                  fontWeight: '800',
+                  color: '#166534',
+                  letterSpacing: '-1px',
+                  display: 'inline-block'
+                }}>
+                  ${listing['💰Weekly Host Rate']}
+                  <span style={{
+                    fontSize: '16px',
+                    color: '#6B7280',
+                    fontWeight: '500'
+                  }}>/week</span>
+                </div>
+                <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
+                  Your weekly host rate
+                </div>
+              </>
+            ) : listing?.['rental type'] === 'Monthly' && listing?.['💰Monthly Host Rate'] ? (
+              <>
+                <div style={{
+                  fontSize: '32px',
+                  fontWeight: '800',
+                  color: '#166534',
+                  letterSpacing: '-1px',
+                  display: 'inline-block'
+                }}>
+                  ${listing['💰Monthly Host Rate']}
+                  <span style={{
+                    fontSize: '16px',
+                    color: '#6B7280',
+                    fontWeight: '500'
+                  }}>/month</span>
+                </div>
+                <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
+                  Your monthly host rate
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  fontSize: '32px',
+                  fontWeight: '800',
+                  color: '#166534',
+                  letterSpacing: '-1px',
+                  display: 'inline-block'
+                }}>
+                  {(() => {
+                    // Get the host rate based on nights selected
+                    const rateKey = `💰Nightly Host Rate for ${nightsSelected} nights`;
+                    const rate = listing?.[rateKey] || listing?.['💰Nightly Host Rate for 4 nights'];
+                    return rate ? `$${rate}` : 'Select Days';
+                  })()}
+                  <span style={{
+                    fontSize: '16px',
+                    color: '#6B7280',
+                    fontWeight: '500'
+                  }}>/night</span>
+                </div>
+                <div style={{ fontSize: '12px', color: '#6B7280', marginTop: '4px' }}>
+                  Your rate for {nightsSelected} nights selected
+                </div>
+              </>
+            )}
           </div>
 
           {/* Move-in Date */}
@@ -1576,25 +1621,34 @@ export default function PreviewSplitLeasePage() {
             />
           </div>
 
-          {/* Price Breakdown */}
+          {/* Host Compensation Estimate */}
           <div style={{
             marginBottom: '12px',
             padding: '12px',
-            background: 'linear-gradient(135deg, #f9fafb 0%, #ffffff 100%)',
+            background: 'linear-gradient(135deg, #f0fdf4 0%, #ffffff 100%)',
             borderRadius: '10px',
-            border: '1px solid #E5E7EB'
+            border: '1px solid #86efac'
           }}>
             <div style={{
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              fontSize: '15px'
+              fontSize: '15px',
+              marginBottom: '8px'
             }}>
-              <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Rent</span>
-              <span style={{ color: '#111827', fontWeight: '700', fontSize: '16px' }}>
-                {pricingBreakdown?.valid && pricingBreakdown?.fourWeekRent
-                  ? formatPrice(pricingBreakdown.fourWeekRent)
-                  : priceMessage || 'Please Add More Days'}
+              <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Compensation</span>
+              <span style={{ color: '#166534', fontWeight: '700', fontSize: '16px' }}>
+                {(() => {
+                  if (listing?.['rental type'] === 'Weekly' && listing?.['💰Weekly Host Rate']) {
+                    return formatPrice(listing['💰Weekly Host Rate'] * 4);
+                  } else if (listing?.['rental type'] === 'Monthly' && listing?.['💰Monthly Host Rate']) {
+                    return formatPrice(listing['💰Monthly Host Rate']);
+                  } else {
+                    const rateKey = `💰Nightly Host Rate for ${nightsSelected} nights`;
+                    const rate = listing?.[rateKey] || listing?.['💰Nightly Host Rate for 4 nights'];
+                    return rate ? formatPrice(rate * nightsSelected * 4) : 'Select Days';
+                  }
+                })()}
               </span>
             </div>
           </div>
@@ -1612,37 +1666,51 @@ export default function PreviewSplitLeasePage() {
               fontSize: '16px',
               fontWeight: '700',
               color: '#111827'
-            }}>Reservation Estimated Total</span>
+            }}>Est. {reservationSpan}-Week Total</span>
             <span style={{
               fontSize: '28px',
               fontWeight: '800',
-              background: 'linear-gradient(135deg, #31135d 0%, #31135d 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
+              color: '#166534'
             }}>
-              {pricingBreakdown?.valid && pricingBreakdown?.reservationTotal
-                ? formatPrice(pricingBreakdown.reservationTotal)
-                : priceMessage || 'Please Add More Days'}
+              {(() => {
+                if (listing?.['rental type'] === 'Weekly' && listing?.['💰Weekly Host Rate']) {
+                  return formatPrice(listing['💰Weekly Host Rate'] * reservationSpan);
+                } else if (listing?.['rental type'] === 'Monthly' && listing?.['💰Monthly Host Rate']) {
+                  return formatPrice(listing['💰Monthly Host Rate'] * (reservationSpan / 4));
+                } else {
+                  const rateKey = `💰Nightly Host Rate for ${nightsSelected} nights`;
+                  const rate = listing?.[rateKey] || listing?.['💰Nightly Host Rate for 4 nights'];
+                  return rate ? formatPrice(rate * nightsSelected * reservationSpan) : 'Select Days';
+                }
+              })()}
             </span>
           </div>
 
-          {/* Preview-only Button (Disabled) */}
+          {/* Back to Dashboard Button */}
           <button
-            disabled
+            onClick={() => window.location.href = `/listing-dashboard.html?id=${listing?._id}`}
             style={{
               width: '100%',
               padding: '14px',
-              background: '#D1D5DB',
+              background: 'linear-gradient(135deg, #31135d 0%, #4c1d95 100%)',
               color: 'white',
               border: 'none',
               borderRadius: '10px',
               fontSize: '16px',
               fontWeight: '700',
-              cursor: 'not-allowed'
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = 'translateY(-1px)';
+              e.target.style.boxShadow = '0 4px 12px rgba(49, 19, 93, 0.3)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = 'none';
             }}
           >
-            Create Proposal (Preview Only)
+            Back to Dashboard
           </button>
         </div>
       </main>

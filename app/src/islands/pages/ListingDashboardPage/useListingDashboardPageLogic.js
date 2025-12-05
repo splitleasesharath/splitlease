@@ -453,9 +453,9 @@ export default function useListingDashboardPageLogic() {
     // Handle tab-specific navigation
     switch (tab) {
       case 'preview':
-        // Could open in new tab or navigate
+        // Open preview page in new tab
         if (listing) {
-          window.open(`/view-split-lease.html?id=${listing.id}`, '_blank');
+          window.open(`/preview-split-lease.html?id=${listing.id}`, '_blank');
         }
         break;
       case 'proposals':
@@ -478,7 +478,7 @@ export default function useListingDashboardPageLogic() {
     switch (cardId) {
       case 'preview':
         if (listing) {
-          window.open(`/view-split-lease.html?id=${listing.id}`, '_blank');
+          window.open(`/preview-split-lease.html?id=${listing.id}`, '_blank');
         }
         break;
       case 'copy-link':
