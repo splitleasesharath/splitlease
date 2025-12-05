@@ -1,8 +1,81 @@
 # Guest Proposals Page - Quick Reference
 
 **GENERATED**: 2025-12-04
-**PAGE_URL**: `/guest-proposals/{userId}?proposal={proposalId}`
+**PAGE_URL**: `/guest-proposals` or `/guest-proposals?proposal={proposalId}`
 **ENTRY_POINT**: `app/src/guest-proposals.jsx`
+
+---
+
+## ### AUTHENTICATION ###
+
+**IMPORTANT**: This page requires authenticated Guest users only.
+
+### Access Control Matrix
+| Condition | Action | Redirect Reason |
+|-----------|--------|-----------------|
+| Not logged in | Redirect to `/` (home) | `NOT_AUTHENTICATED` |
+| Token invalid | Redirect to `/` (home) | `TOKEN_INVALID` |
+| Logged in as Host | Redirect to `/` (home) | `NOT_GUEST` |
+| Logged in as Guest | Show proposals page | N/A |
+
+### Auth State Object
+The hook maintains an `authState` object with the following structure:
+```javascript
+const [authState, setAuthState] = useState({
+  isChecking: true,      // Currently validating auth
+  isAuthenticated: false, // User has valid session
+  isGuest: false,         // User type is 'Guest'
+  shouldRedirect: false,  // Redirect triggered
+  redirectReason: null    // 'NOT_AUTHENTICATED' | 'TOKEN_INVALID' | 'NOT_GUEST' | null
+});
+```
+
+### Auth Check Flow (Two-Step Pattern)
+```
+1. Page loads → authState.isChecking = true
+2. Clean legacy URL patterns (cleanLegacyUserIdFromUrl)
+3. Step 1: Lightweight auth check (checkAuthStatus)
+   ├─ Not authenticated → redirect to / (NOT_AUTHENTICATED)
+   └─ Authenticated → continue to Step 2
+4. Step 2: Validate token AND fetch user data (validateTokenAndFetchUser)
+   ├─ Token invalid → redirect to / (TOKEN_INVALID)
+   └─ Valid → get userType from response
+       ├─ Not Guest → redirect to / (NOT_GUEST)
+       └─ Is Guest → load proposals
+```
+
+**IMPORTANT**: This two-step pattern prevents race conditions where `getUserType()`
+was called before user data was fetched and cached. The same pattern is used in
+`FavoriteListingsPage`, `SearchPage`, and `ViewSplitLeasePage`.
+
+### Key Auth Functions Used
+```javascript
+import { checkAuthStatus, validateTokenAndFetchUser } from 'lib/auth.js'
+import { getSessionId } from 'lib/secureStorage.js'
+
+// Step 1: Lightweight check if tokens/cookies exist
+const isAuthenticated = await checkAuthStatus()
+
+// Step 2: Validate token AND fetch user data (including userType)
+const userData = await validateTokenAndFetchUser()
+// userData = { userId, firstName, fullName, email, profilePhoto, userType }
+
+// Get userType from the validated response (NOT from sync storage)
+const userType = userData.userType  // 'Host' or 'Guest'
+
+// Get user ID from secure session storage
+const userId = getSessionId()
+```
+
+### Session Storage Keys
+| Key | Storage Key | Purpose |
+|-----|-------------|---------|
+| Auth Token | `__sl_at__` | Bearer token (encrypted) |
+| Session ID | `__sl_sid__` | User ID / Bubble unique ID |
+| User Type | `sl_user_type` | 'Host' or 'Guest' |
+
+User ID comes from **session storage** (`getSessionId()`), NOT from URL.
+Legacy URLs with user ID in path or query are cleaned automatically.
 
 ---
 
@@ -14,7 +87,8 @@ guest-proposals.jsx (Entry Point)
     +-- GuestProposalsPage.jsx (Hollow Component)
             |
             +-- useGuestProposalsPageLogic.js (Business Logic Hook)
-            |       +-- Auth validation via URL user ID + token
+            |       +-- Two-step auth (checkAuthStatus + validateTokenAndFetchUser)
+            |       +-- User ID from session (NOT URL)
             |       +-- Proposal fetching via userProposalQueries
             |       +-- Virtual meeting management
             |       +-- Modal state management
@@ -98,10 +172,16 @@ guest-proposals.jsx (Entry Point)
 ### Library Utilities
 | File | Purpose |
 |------|---------|
-| `app/src/lib/proposals/userProposalQueries.js` | Supabase proposal queries |
+| `app/src/lib/proposals/userProposalQueries.js` | Session-based Supabase proposal queries |
 | `app/src/lib/proposals/dataTransformers.js` | Data transformation utilities |
 | `app/src/lib/proposals/statusButtonConfig.js` | Status -> button mapping |
-| `app/src/lib/proposals/urlParser.js` | URL parsing for userId/proposalId |
+| `app/src/lib/proposals/urlParser.js` | Session-based user ID + URL proposal ID |
+
+### Authentication Utilities
+| File | Purpose |
+|------|---------|
+| `app/src/lib/auth.js` | checkAuthStatus, getUserType |
+| `app/src/lib/secureStorage.js` | getSessionId (user ID from session) |
 
 ### Styles
 | File | Purpose |
@@ -113,22 +193,38 @@ guest-proposals.jsx (Entry Point)
 ## ### URL_ROUTING ###
 
 ```
-/guest-proposals/{userId}                    # All proposals for user
-/guest-proposals/{userId}?proposal={id}      # Pre-select specific proposal
+/guest-proposals                          # All proposals for logged-in Guest
+/guest-proposals?proposal={id}            # Pre-select specific proposal
+```
+
+**Note**: User ID is NOT in URL. User is identified via authenticated session.
+
+### Legacy URL Patterns (Auto-Cleaned)
+These patterns are automatically cleaned and redirected:
+```
+/guest-proposals/{userId}         → /guest-proposals
+/guest-proposals?user={userId}    → /guest-proposals
 ```
 
 ### URL Parser Functions
 ```javascript
-import { getUserIdFromPath, getProposalIdFromQuery, parseProposalPageUrl } from 'lib/proposals/urlParser.js'
+import { getUserIdFromSession, getProposalIdFromQuery, parseProposalPageUrl, cleanLegacyUserIdFromUrl } from 'lib/proposals/urlParser.js'
 
+// Get user from session (NOT URL)
+const userId = getUserIdFromSession()
+
+// Get proposal from query param
+const proposalId = getProposalIdFromQuery()
+
+// Full parse (cleans legacy URLs first)
 const { userId, proposalId } = parseProposalPageUrl()
 ```
 
 ### URL Update (Without Reload)
 ```javascript
-import { updateUrlWithProposal } from 'logic/workflows/proposals/navigationWorkflow.js'
+import { updateUrlWithProposal } from 'lib/proposals/urlParser.js'
 
-updateUrlWithProposal(proposalId)  // Uses History API
+updateUrlWithProposal(proposalId)  // Updates to /guest-proposals?proposal={id}
 ```
 
 ---
@@ -307,13 +403,59 @@ const buttonStates = useProposalButtonStates({
 
 ## ### DATA_FLOW ###
 
-### 1. Fetch Proposals
+### Complete Data Flow (Session-Based)
+```
+1. Auth Check (Two-Step Pattern)
+   └─ checkAuthStatus() → validateTokenAndFetchUser() → get userType from response
+
+2. Get User ID from Session
+   └─ getUserIdFromSession() → getSessionId() from secure storage
+
+3. Fetch User with Proposals List
+   └─ fetchUserWithProposalList(userId)
+       └─ SELECT _id, "Name - First", "Proposals List" FROM user
+
+4. Extract Proposal IDs
+   └─ extractProposalIds(user) → parse "Proposals List" JSONB
+
+5. Fetch Proposals by IDs
+   └─ fetchProposalsByIds(proposalIds)
+       ├─ Fetch proposals from 'proposal' table
+       ├─ Fetch listings from 'listing' table
+       ├─ Fetch hosts from 'user' table (via Host / Landlord)
+       ├─ Fetch guests from 'user' table
+       ├─ Fetch boroughs from 'zat_geo_borough_toplevel'
+       ├─ Fetch neighborhoods from 'zat_geo_hood_mediumlevel'
+       ├─ Fetch house rules from 'zat_features_houserule'
+       ├─ Fetch featured photos from 'listing_photo'
+       └─ Fetch virtual meetings from 'virtualmeetingschedulesandlinks'
+
+6. Enrich & Return
+   └─ Manual joins to create enriched proposal objects
+```
+
+### 1. Fetch Proposals (Session-Based)
 ```javascript
 // In useGuestProposalsPageLogic.js
-import { fetchUserProposals, fetchProposalWithDetails } from 'lib/proposals/userProposalQueries.js'
+import { fetchUserProposalsFromUrl } from 'lib/proposals/userProposalQueries.js'
 
-const proposals = await fetchUserProposals(userId)
-const detailedProposal = await fetchProposalWithDetails(proposalId)
+// User ID comes from session, NOT passed as parameter
+const { user, proposals, selectedProposal } = await fetchUserProposalsFromUrl()
+```
+
+### Main Query Function
+```javascript
+// userProposalQueries.js - fetchUserProposalsFromUrl()
+export async function fetchUserProposalsFromUrl() {
+  // Step 1: Get user ID from session (NOT URL)
+  const userId = getUserIdFromSession();
+  if (!userId) {
+    throw new Error('NOT_AUTHENTICATED');
+  }
+
+  // Step 2-6: Fetch and enrich data...
+  return { user, proposals, selectedProposal };
+}
 ```
 
 ### 2. Transform Data
@@ -607,6 +749,10 @@ Shows host verification badges and featured listing:
 ## ### KEY_IMPORTS ###
 
 ```javascript
+// Authentication (two-step pattern)
+import { checkAuthStatus, validateTokenAndFetchUser } from 'lib/auth.js'
+import { getSessionId } from 'lib/secureStorage.js'
+
 // Page hook
 import { useGuestProposalsPageLogic } from './proposals/useGuestProposalsPageLogic'
 
@@ -636,11 +782,46 @@ import { processProposalData, getEffectiveTerms } from 'logic/processors/proposa
 import { executeCancelProposal, determineCancellationCondition } from 'logic/workflows/proposals/cancelProposalWorkflow.js'
 import { navigateToListing, navigateToMessaging } from 'logic/workflows/proposals/navigationWorkflow.js'
 
-// Queries
-import { fetchUserProposals, fetchProposalWithDetails } from 'lib/proposals/userProposalQueries.js'
+// Queries (session-based)
+import { fetchUserProposalsFromUrl } from 'lib/proposals/userProposalQueries.js'
 
-// URL utilities
-import { parseProposalPageUrl, updateUrlWithProposal } from 'lib/proposals/urlParser.js'
+// URL utilities (session-based)
+import {
+  getUserIdFromSession,
+  getProposalIdFromQuery,
+  parseProposalPageUrl,
+  updateUrlWithProposal,
+  cleanLegacyUserIdFromUrl
+} from 'lib/proposals/urlParser.js'
+```
+
+### Hook Return Value
+```javascript
+const {
+  // Auth state
+  authState,  // { isChecking, isAuthenticated, isGuest, shouldRedirect, redirectReason }
+
+  // Raw data
+  user,             // User object from session
+  proposals,        // Array of enriched proposals
+  selectedProposal, // Currently selected proposal
+
+  // Transformed/derived data
+  transformedProposal, // Processed proposal data
+  statusConfig,        // Status configuration object
+  currentStage,        // Current progress stage (1-6)
+  formattedStages,     // Formatted stages for progress tracker
+  proposalOptions,     // Dropdown options [{ id, label }]
+  buttonConfig,        // Dynamic button configuration
+
+  // UI state
+  isLoading,  // Combined: authState.isChecking || dataLoading
+  error,      // Error message or null
+
+  // Handlers
+  handleProposalSelect, // (proposalId) => void
+  handleRetry           // () => void
+} = useGuestProposalsPageLogic()
 ```
 
 ---
@@ -724,7 +905,9 @@ const getButtonState = () => {
 
 | Issue | Check |
 |-------|-------|
-| No proposals showing | Verify userId in URL, check Supabase RLS |
+| Redirected to home (timing) | Auth uses two-step: `checkAuthStatus()` then `validateTokenAndFetchUser()` |
+| Redirected to home | Check auth status (must be logged in as Guest) |
+| No proposals showing | Verify session has user ID, check Supabase RLS |
 | Buttons not appearing | Check status config via `getStatusConfig()` |
 | VM button wrong state | Verify `virtualMeeting` object populated |
 | Progress not updating | Check `stage` value in status config |
@@ -749,6 +932,7 @@ const getButtonState = () => {
 
 ---
 
-**VERSION**: 2.0
+**VERSION**: 3.1
 **LAST_UPDATED**: 2025-12-04
-**STATUS**: Comprehensive after major refactoring
+**STATUS**: Session-based authentication with two-step auth pattern
+**MAJOR_CHANGE**: Fixed auth timing race condition - now uses `validateTokenAndFetchUser()` to get userType from async response instead of sync storage read

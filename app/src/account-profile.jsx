@@ -111,8 +111,20 @@ function NotificationSettingsWrapper() {
       setIsOpen(true);
     };
 
+    // Set up click handler for the notification settings link
+    const handleNotificationSettingsClick = (e) => {
+      const link = document.getElementById('notification-settings-link');
+      if (e.target === link || e.target.closest('#notification-settings-link')) {
+        e.preventDefault();
+        setIsOpen(true);
+      }
+    };
+
+    document.addEventListener('click', handleNotificationSettingsClick);
+
     return () => {
       delete window.openNotificationSettings;
+      document.removeEventListener('click', handleNotificationSettingsClick);
     };
   }, []);
 
@@ -144,8 +156,22 @@ function EditPhoneNumberWrapper() {
       setIsOpen(true);
     };
 
+    // Set up click handler for the phone edit button
+    const handlePhoneEditClick = (e) => {
+      const phoneItem = e.target.closest('[data-verification="phone"]');
+      if (phoneItem && e.target.closest('.edit-btn')) {
+        e.preventDefault();
+        const currentPhone = document.getElementById('phoneNumber')?.textContent || '';
+        setCurrentPhoneNumber(currentPhone);
+        setIsOpen(true);
+      }
+    };
+
+    document.addEventListener('click', handlePhoneEditClick);
+
     return () => {
       delete window.openEditPhoneNumberModal;
+      document.removeEventListener('click', handlePhoneEditClick);
     };
   }, []);
 

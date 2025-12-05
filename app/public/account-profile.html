@@ -642,12 +642,22 @@
             background-color: #8968A8;
         }
 
-        .delete-account {
-            color: #ef4444;
-            text-decoration: none;
+        .delete-account-btn {
+            background-color: #f10d0c;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            padding: 12px 30px;
             font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
             margin-top: 20px;
             display: inline-block;
+            transition: background-color 0.2s;
+        }
+
+        .delete-account-btn:hover {
+            background-color: #d90b0a;
         }
 
         /* Responsive */
@@ -895,7 +905,7 @@
                         <div class="verification-info">
                             <div class="verification-icon">✉️</div>
                             <div>
-                                <div id="email"></div>
+                                <div id="email">Loading email...</div>
                                 <div class="verification-status">Unverified</div>
                             </div>
                         </div>
@@ -974,7 +984,7 @@
                     <button class="btn-save">Save</button>
                 </div>
 
-                <a href="#" class="delete-account">Delete Account</a>
+                <button class="delete-account-btn" id="deleteAccountBtn">Delete account</button>
             </div>
 
             <!-- Sidebar -->
@@ -1219,9 +1229,17 @@
                 document.getElementById('phoneNumber').textContent = user['Phone Number (as text)'];
             }
 
-            // Update email
-            if (user['email as text']) {
-                document.getElementById('email').textContent = user['email as text'];
+            // Update email - try multiple possible field names
+            const emailValue = user['email as text'] || user['email'] || user['Email'] || user['authentication.email.email'];
+            const emailElement = document.getElementById('email');
+            if (emailValue && emailElement) {
+                emailElement.textContent = emailValue;
+                console.log('✅ Email populated:', emailValue);
+            } else {
+                console.log('⚠️ No email found. Available user fields:', Object.keys(user).filter(k => k.toLowerCase().includes('email')));
+                if (emailElement) {
+                    emailElement.textContent = 'No email available';
+                }
             }
 
             // Update biography
@@ -1729,42 +1747,9 @@
             window.history.back();
         });
 
-        // Notification Settings link handler
-        // Use event delegation to handle clicks reliably regardless of when React mounts
-        document.addEventListener('click', (e) => {
-            if (e.target.id === 'notification-settings-link' || e.target.closest('#notification-settings-link')) {
-                e.preventDefault();
-                if (window.openNotificationSettings) {
-                    window.openNotificationSettings();
-                } else {
-                    console.error('Notification settings modal not yet loaded');
-                    // Retry after a short delay in case React is still mounting
-                    setTimeout(() => {
-                        if (window.openNotificationSettings) {
-                            window.openNotificationSettings();
-                        }
-                    }, 500);
-                }
-            }
-
-            // Phone number edit button handler
-            const phoneItem = e.target.closest('[data-verification="phone"]');
-            if (phoneItem && e.target.closest('.edit-btn')) {
-                e.preventDefault();
-                const currentPhone = document.getElementById('phoneNumber')?.textContent || '';
-                if (window.openEditPhoneNumberModal) {
-                    window.openEditPhoneNumberModal(currentPhone);
-                } else {
-                    console.error('Edit phone number modal not yet loaded');
-                    // Retry after a short delay in case React is still mounting
-                    setTimeout(() => {
-                        if (window.openEditPhoneNumberModal) {
-                            window.openEditPhoneNumberModal(currentPhone);
-                        }
-                    }, 500);
-                }
-            }
-        });
+        // Note: Notification Settings and Edit Phone Number click handlers
+        // are now managed by their respective React components in account-profile.jsx
+        // to avoid race conditions between module loading
 
         // Expose showToast to window for React components
         window.showToast = showToast;

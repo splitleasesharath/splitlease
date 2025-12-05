@@ -9,6 +9,11 @@
  * - Islands Architecture (independent React root)
  * - Uses shared Header/Footer components
  * - Four-Layer Logic Architecture via hook
+ *
+ * Authentication:
+ * - Page requires authenticated Guest user
+ * - User ID comes from session, NOT URL
+ * - Redirects to home if not authenticated or not a Guest
  */
 
 import Header from '../shared/Header.jsx';
@@ -75,6 +80,9 @@ function EmptyState() {
 
 export default function GuestProposalsPage() {
   const {
+    // Auth state
+    authState,
+
     // Raw data
     user,
     proposals,
@@ -96,6 +104,21 @@ export default function GuestProposalsPage() {
     handleProposalSelect,
     handleRetry
   } = useGuestProposalsPageLogic();
+
+  // Don't render content if redirecting (auth failed)
+  if (authState.shouldRedirect) {
+    return (
+      <>
+        <Header />
+        <main className="main-content">
+          <div className="proposals-page">
+            <LoadingState />
+          </div>
+        </main>
+        <Footer />
+      </>
+    );
+  }
 
   // ============================================================================
   // RENDER

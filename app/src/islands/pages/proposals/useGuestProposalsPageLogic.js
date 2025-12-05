@@ -9,15 +9,21 @@
  * - Uses constants from logic/constants/
  * - Uses queries from lib/proposals/
  * - Uses processors from lib/proposals/dataTransformers.js
+ *
+ * Authentication:
+ * - Page requires authenticated Guest user
+ * - User ID comes from session, NOT URL
+ * - Redirects to home if not authenticated or not a Guest
  */
 
 import { useState, useEffect, useCallback } from 'react';
 import { fetchUserProposalsFromUrl } from '../../../lib/proposals/userProposalQueries.js';
-import { updateUrlWithProposal, getUserIdFromPath } from '../../../lib/proposals/urlParser.js';
+import { updateUrlWithProposal, cleanLegacyUserIdFromUrl } from '../../../lib/proposals/urlParser.js';
 import { transformProposalData, getProposalDisplayText } from '../../../lib/proposals/dataTransformers.js';
 import { getStatusConfig, getStageFromStatus } from '../../../logic/constants/proposalStatuses.js';
 import { getAllStagesFormatted } from '../../../logic/constants/proposalStages.js';
 import { fetchStatusConfigurations, getButtonConfigForProposal, isStatusConfigCacheReady } from '../../../lib/proposals/statusButtonConfig.js';
+import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
 
 /**
  * Main logic hook for Guest Proposals Page
@@ -27,6 +33,15 @@ export function useGuestProposalsPageLogic() {
   // ============================================================================
   // STATE
   // ============================================================================
+
+  // Auth state
+  const [authState, setAuthState] = useState({
+    isChecking: true,
+    isAuthenticated: false,
+    isGuest: false,
+    shouldRedirect: false,
+    redirectReason: null
+  });
 
   // Data state
   const [user, setUser] = useState(null);
@@ -39,11 +54,98 @@ export function useGuestProposalsPageLogic() {
   const [error, setError] = useState(null);
 
   // ============================================================================
+  // AUTHENTICATION CHECK
+  // ============================================================================
+
+  /**
+   * Check authentication status and user type
+   * Redirects if not authenticated or not a Guest
+   *
+   * Uses two-step auth pattern (same as FavoriteListingsPage, SearchPage, ViewSplitLeasePage):
+   * 1. checkAuthStatus() - lightweight check for tokens/cookies
+   * 2. validateTokenAndFetchUser() - validates token AND fetches user data including userType
+   */
+  useEffect(() => {
+    async function checkAuth() {
+      console.log('🔐 Guest Proposals: Checking authentication...');
+
+      // Clean any legacy user ID from URL first
+      cleanLegacyUserIdFromUrl();
+
+      // Step 1: Lightweight auth check (tokens/cookies exist)
+      const isAuthenticated = await checkAuthStatus();
+
+      if (!isAuthenticated) {
+        console.log('❌ Guest Proposals: User not authenticated, redirecting to home');
+        setAuthState({
+          isChecking: false,
+          isAuthenticated: false,
+          isGuest: false,
+          shouldRedirect: true,
+          redirectReason: 'NOT_AUTHENTICATED'
+        });
+        // Redirect to home page
+        window.location.href = '/';
+        return;
+      }
+
+      // Step 2: Validate token AND fetch user data (including userType)
+      // This ensures userType is fetched from server and cached before we check it
+      const userData = await validateTokenAndFetchUser();
+
+      if (!userData) {
+        console.log('❌ Guest Proposals: Token validation failed, redirecting to home');
+        setAuthState({
+          isChecking: false,
+          isAuthenticated: false,
+          isGuest: false,
+          shouldRedirect: true,
+          redirectReason: 'TOKEN_INVALID'
+        });
+        // Redirect to home page
+        window.location.href = '/';
+        return;
+      }
+
+      // Check if user is a Guest (not a Host)
+      // userType comes from the validated userData object, NOT from sync storage
+      // Database has inconsistent values: 'Guest' OR 'A Guest (I would like to rent a space)'
+      const userType = userData.userType;
+      const isGuest = userType === 'Guest' || userType?.includes('Guest');
+
+      if (!isGuest) {
+        console.log('❌ Guest Proposals: User is not a Guest (type:', userType, '), redirecting to home');
+        setAuthState({
+          isChecking: false,
+          isAuthenticated: true,
+          isGuest: false,
+          shouldRedirect: true,
+          redirectReason: 'NOT_GUEST'
+        });
+        // Redirect to home page
+        window.location.href = '/';
+        return;
+      }
+
+      console.log('✅ Guest Proposals: User authenticated as Guest');
+      setAuthState({
+        isChecking: false,
+        isAuthenticated: true,
+        isGuest: true,
+        shouldRedirect: false,
+        redirectReason: null
+      });
+    }
+
+    checkAuth();
+  }, []);
+
+  // ============================================================================
   // DATA LOADING
   // ============================================================================
 
   /**
-   * Load user proposals from URL and status configurations
+   * Load user proposals from session and status configurations
    */
   const loadProposals = useCallback(async () => {
     setIsLoading(true);
@@ -62,16 +164,27 @@ export function useGuestProposalsPageLogic() {
       setStatusConfigReady(isStatusConfigCacheReady());
     } catch (err) {
       console.error('useGuestProposalsPageLogic: Error loading proposals:', err);
+
+      // Handle specific error types
+      if (err.message === 'NOT_AUTHENTICATED') {
+        // This shouldn't happen since we check auth first, but handle it
+        window.location.href = '/';
+        return;
+      }
+
       setError(err.message || 'Failed to load proposals');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Load data on mount
+  // Load data after auth check passes
   useEffect(() => {
-    loadProposals();
-  }, [loadProposals]);
+    // Only load proposals if authenticated as Guest
+    if (authState.isAuthenticated && authState.isGuest && !authState.isChecking) {
+      loadProposals();
+    }
+  }, [authState.isAuthenticated, authState.isGuest, authState.isChecking, loadProposals]);
 
   // ============================================================================
   // HANDLERS
@@ -86,11 +199,8 @@ export function useGuestProposalsPageLogic() {
     if (proposal) {
       setSelectedProposal(proposal);
 
-      // Update URL with selected proposal
-      const userId = getUserIdFromPath();
-      if (userId) {
-        updateUrlWithProposal(userId, proposalId);
-      }
+      // Update URL with selected proposal (no user ID in URL)
+      updateUrlWithProposal(proposalId);
     }
   }, [proposals]);
 
@@ -150,10 +260,20 @@ export function useGuestProposalsPageLogic() {
     : null;
 
   // ============================================================================
+  // COMPUTED LOADING STATE
+  // ============================================================================
+
+  // Show loading if checking auth OR loading proposals
+  const isPageLoading = authState.isChecking || isLoading;
+
+  // ============================================================================
   // RETURN
   // ============================================================================
 
   return {
+    // Auth state
+    authState,
+
     // Raw data
     user,
     proposals,
@@ -168,7 +288,7 @@ export function useGuestProposalsPageLogic() {
     buttonConfig,
 
     // UI state
-    isLoading,
+    isLoading: isPageLoading,
     error,
 
     // Handlers
