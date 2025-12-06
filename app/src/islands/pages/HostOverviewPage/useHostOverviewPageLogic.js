@@ -83,33 +83,87 @@ export function useHostOverviewPageLogic() {
     }
   }, []);
 
-  const fetchHostListings = useCallback(async (hostAccountId) => {
-    if (!hostAccountId) return [];
+  const fetchHostListings = useCallback(async (hostAccountId, userId) => {
+    if (!hostAccountId && !userId) return [];
 
     try {
-      // Fetch listings from Bubble via Edge Function
-      const { data, error: fetchError } = await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          endpoint: 'listing',
-          method: 'GET',
-          params: {
-            constraints: JSON.stringify([
-              { key: 'Creator', constraint_type: 'equals', value: hostAccountId },
-              { key: 'Complete', constraint_type: 'equals', value: true }
-            ])
+      // Fetch listings from multiple sources in parallel:
+      // 1. Bubble API (existing synced listings)
+      // 2. listing_trial table (new self-listing submissions)
+      // 3. account_host.Listings array (linked listings)
+
+      const fetchPromises = [];
+
+      // 1. Try Bubble API (may fail if no listings exist there)
+      fetchPromises.push(
+        supabase.functions.invoke('bubble-proxy', {
+          body: {
+            endpoint: 'listing',
+            method: 'GET',
+            params: {
+              constraints: JSON.stringify([
+                { key: 'Creator', constraint_type: 'equals', value: hostAccountId },
+                { key: 'Complete', constraint_type: 'equals', value: true }
+              ])
+            }
           }
-        }
-      });
+        }).then(result => {
+          if (result.error) {
+            console.warn('Bubble listings fetch failed:', result.error);
+            return { data: { response: { results: [] } } };
+          }
+          return result;
+        }).catch(err => {
+          console.warn('Bubble listings fetch failed:', err);
+          return { data: { response: { results: [] } } };
+        })
+      );
 
-      if (fetchError) throw fetchError;
+      // 2. Fetch from listing_trial where Host / Landlord = userId or Created By = userId
+      // Using RPC function to handle column names with special characters
+      if (userId) {
+        fetchPromises.push(
+          supabase
+            .rpc('get_host_listings', { host_user_id: userId })
+            .then(result => {
+              console.log('[HostOverview] listing_trial query result:', result);
+              return { type: 'listing_trial', ...result };
+            })
+            .catch(err => {
+              console.warn('listing_trial fetch failed:', err);
+              return { type: 'listing_trial', data: [], error: err };
+            })
+        );
+      }
 
-      const listings = data?.response?.results || [];
-      return listings.map(listing => ({
+      // 3. Fetch listing IDs from account_host.Listings array
+      if (hostAccountId) {
+        fetchPromises.push(
+          supabase
+            .from('account_host')
+            .select('Listings')
+            .eq('_id', hostAccountId)
+            .maybeSingle()
+            .then(result => ({ type: 'account_host', ...result }))
+            .catch(err => {
+              console.warn('account_host fetch failed:', err);
+              return { type: 'account_host', data: null, error: err };
+            })
+        );
+      }
+
+      const results = await Promise.all(fetchPromises);
+
+      // Process Bubble listings
+      const bubbleResult = results[0];
+      const bubbleListings = bubbleResult?.data?.response?.results || [];
+      const mappedBubbleListings = bubbleListings.map(listing => ({
         id: listing._id,
         _id: listing._id,
         name: listing.Name || listing.name || 'Unnamed Listing',
         Name: listing.Name,
         complete: listing.Complete || listing.complete,
+        source: 'bubble',
         location: {
           borough: listing['Location - Borough']?.Display || listing.borough || ''
         },
@@ -117,6 +171,82 @@ export function useHostOverviewPageLogic() {
         proposalsCount: listing['Proposals Count'] || 0,
         photos: listing['Features - Photos'] || []
       }));
+
+      // Process listing_trial listings
+      let trialListings = [];
+      const trialResult = results.find(r => r?.type === 'listing_trial');
+      if (trialResult?.data && !trialResult.error) {
+        trialListings = trialResult.data.map(listing => ({
+          id: listing.id,
+          _id: listing._id,
+          name: listing.Name || 'Unnamed Listing',
+          Name: listing.Name,
+          complete: listing.Complete || false,
+          source: 'listing_trial',
+          location: {
+            borough: listing['Location - Borough'] || '',
+            city: listing['Location - City'] || '',
+            state: listing['Location - State'] || ''
+          },
+          leasesCount: 0,
+          proposalsCount: 0,
+          photos: listing['Features - Photos'] || []
+        }));
+      }
+
+      // Check if we need to fetch additional listings from account_host.Listings
+      const accountHostResult = results.find(r => r?.type === 'account_host');
+      const linkedListingIds = accountHostResult?.data?.Listings || [];
+
+      // Fetch any linked listings that aren't already in our results
+      const existingIds = new Set([
+        ...mappedBubbleListings.map(l => l.id),
+        ...trialListings.map(l => l.id)
+      ]);
+
+      const missingIds = linkedListingIds.filter(id => !existingIds.has(id));
+
+      if (missingIds.length > 0) {
+        // Fetch missing listings from listing_trial
+        const { data: missingListings } = await supabase
+          .from('listing_trial')
+          .select('*')
+          .in('id', missingIds);
+
+        if (missingListings) {
+          const mappedMissing = missingListings.map(listing => ({
+            id: listing.id,
+            _id: listing._id,
+            name: listing.Name || 'Unnamed Listing',
+            Name: listing.Name,
+            complete: listing.Complete || false,
+            source: 'listing_trial',
+            location: {
+              borough: listing['Location - Borough'] || '',
+              city: listing['Location - City'] || '',
+              state: listing['Location - State'] || ''
+            },
+            leasesCount: 0,
+            proposalsCount: 0,
+            photos: listing['Features - Photos'] || []
+          }));
+          trialListings = [...trialListings, ...mappedMissing];
+        }
+      }
+
+      // Combine all listings, deduplicated by id
+      const allListings = [...mappedBubbleListings, ...trialListings];
+      const uniqueListings = allListings.filter((listing, index, self) =>
+        index === self.findIndex(l => l.id === listing.id)
+      );
+
+      console.log('[HostOverview] Fetched listings:', {
+        bubble: mappedBubbleListings.length,
+        trial: trialListings.length,
+        total: uniqueListings.length
+      });
+
+      return uniqueListings;
     } catch (err) {
       console.error('Error fetching host listings:', err);
       return [];
@@ -251,10 +381,13 @@ export function useHostOverviewPageLogic() {
       }
 
       const hostAccountId = userData['Account - Host / Landlord'] || userData.accountHostId;
+      const userId = userData.userId || userData._id || userData.id;
+
+      console.log('[HostOverview] loadData - hostAccountId:', hostAccountId, 'userId:', userId);
 
       // Fetch all data in parallel
       const [listings, claimListings, manuals, meetings] = await Promise.all([
-        fetchHostListings(hostAccountId),
+        fetchHostListings(hostAccountId, userId),
         fetchListingsToClaim(hostAccountId),
         fetchHouseManuals(hostAccountId),
         fetchVirtualMeetings(hostAccountId)

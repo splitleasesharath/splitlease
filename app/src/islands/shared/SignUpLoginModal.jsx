@@ -662,7 +662,7 @@ export default function SignUpLoginModal({
 
     try {
       // Call the password reset workflow via Edge Function
-      const { data, error: fnError } = await supabase.functions.invoke('bubble-auth-proxy', {
+      const { data, error: fnError } = await supabase.functions.invoke('auth-user', {
         body: {
           action: 'reset-password',
           payload: { email: resetEmail }
@@ -695,7 +695,7 @@ export default function SignUpLoginModal({
     setError('');
 
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('bubble-auth-proxy', {
+      const { data, error: fnError } = await supabase.functions.invoke('auth-user', {
         body: {
           action: 'magic-link',
           payload: { email }
@@ -1108,6 +1108,9 @@ export default function SignUpLoginModal({
 
   const renderPasswordResetView = () => (
     <>
+      <div style={styles.logoContainer}>
+        <div style={styles.logo}>SL</div>
+      </div>
       <div style={styles.header}>
         <h2 style={styles.title}>Enter your email to reset your password.</h2>
       </div>

@@ -77,6 +77,63 @@ export async function generateListingDescription(listingData) {
 }
 
 /**
+ * Generate a listing title using AI based on property details
+ *
+ * @param {Object} listingData - The listing data to generate title from
+ * @param {string} listingData.neighborhood - Neighborhood name
+ * @param {string} listingData.typeOfSpace - Type of space (e.g., "Private Room", "Entire Place")
+ * @param {number} listingData.bedrooms - Number of bedrooms (0 = Studio)
+ * @param {string[]} listingData.amenitiesInsideUnit - Array of in-unit amenities
+ * @returns {Promise<string>} Generated title
+ * @throws {Error} If generation fails
+ */
+export async function generateListingTitle(listingData) {
+  console.log('[aiService] Generating listing title with data:', listingData);
+
+  // Format amenities array as comma-separated string (top 3 for brevity)
+  const amenitiesInUnit = Array.isArray(listingData.amenitiesInsideUnit)
+    ? listingData.amenitiesInsideUnit.slice(0, 3).join(', ')
+    : listingData.amenitiesInsideUnit || '';
+
+  // Prepare variables for the prompt
+  const variables = {
+    neighborhood: listingData.neighborhood || '',
+    typeOfSpace: listingData.typeOfSpace || '',
+    bedrooms: listingData.bedrooms ?? '',
+    amenitiesInsideUnit: amenitiesInUnit || 'None specified',
+  };
+
+  console.log('[aiService] Calling ai-gateway for title with variables:', variables);
+
+  const { data, error } = await supabase.functions.invoke('ai-gateway', {
+    body: {
+      action: 'complete',
+      payload: {
+        prompt_key: 'listing-title',
+        variables,
+      },
+    },
+  });
+
+  if (error) {
+    console.error('[aiService] Edge Function error:', error);
+    throw new Error(`Failed to generate title: ${error.message}`);
+  }
+
+  if (!data?.success) {
+    console.error('[aiService] AI Gateway error:', data?.error);
+    throw new Error(data?.error || 'Failed to generate title');
+  }
+
+  // Clean up the response (remove quotes if present)
+  let title = data.data?.content || '';
+  title = title.trim().replace(/^["']|["']$/g, '');
+
+  console.log('[aiService] Generated title:', title);
+  return title;
+}
+
+/**
  * Extract listing data from localStorage draft for AI generation
  * Reads the selfListingDraft from localStorage and extracts relevant fields
  *

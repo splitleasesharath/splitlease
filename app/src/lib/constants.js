@@ -31,7 +31,7 @@ export const AI_SIGNUP_WORKFLOW_URL = 'https://app.split.lease/api/1.1/wf/ai-sig
 // REMOVED: VITE_BUBBLE_API_KEY - Now stored server-side in Supabase Secrets
 // REMOVED: VITE_BUBBLE_API_BASE_URL - Now stored server-side in Supabase Secrets
 // Supabase credentials are configured in supabase.js using VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY
-// All Bubble workflows now proxied through bubble-proxy and bubble-auth-proxy Edge Functions
+// All Bubble workflows now proxied through bubble-proxy and auth-user Edge Functions
 
 // ============================================================================
 // Lottie Animation URLs

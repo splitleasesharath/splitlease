@@ -39,7 +39,7 @@ export async function handleValidate(
   validateRequiredFields(payload, ['token', 'user_id']);
   const { token, user_id } = payload;
 
-  console.log(`[validate] Validating session for user: ${user_id}`);
+  console.log(`[validate] Validating session for user (bubble_id): ${user_id}`);
 
   try {
     // Token validation against Bubble Data API is skipped because:
@@ -60,10 +60,11 @@ export async function handleValidate(
       }
     });
 
+    // Query by bubble_id since that's what Bubble login returns and stores in browser
     const { data: userData, error: userError } = await supabase
       .from('user')
-      .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord"')
-      .eq('_id', user_id)
+      .select('_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", email, "Account - Host / Landlord"')
+      .eq('bubble_id', user_id)
       .single();
 
     if (userError) {
@@ -72,8 +73,8 @@ export async function handleValidate(
     }
 
     if (!userData) {
-      console.error(`[validate] User not found in Supabase: ${user_id}`);
-      throw new SupabaseSyncError(`User not found: ${user_id}`);
+      console.error(`[validate] User not found in Supabase by bubble_id: ${user_id}`);
+      throw new SupabaseSyncError(`User not found with bubble_id: ${user_id}`);
     }
 
     // Step 2: Format user data
@@ -85,8 +86,8 @@ export async function handleValidate(
       profilePhoto = 'https:' + profilePhoto;
     }
 
-    // Use 'email' column first (more commonly populated), fall back to 'email as text'
-    const userEmail = userData['email'] || userData['email as text'] || null;
+    // Use 'email' column
+    const userEmail = userData.email || null;
 
     const userDataObject = {
       userId: userData._id,

@@ -39,7 +39,7 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('en-US', options);
 }
 
-export default function PropertyInfoSection({ listing, onDescriptionChange }) {
+export default function PropertyInfoSection({ listing, onDescriptionChange, onImportReviews }) {
   return (
     <div className="listing-dashboard-property">
       {/* Section Header */}
@@ -57,7 +57,7 @@ export default function PropertyInfoSection({ listing, onDescriptionChange }) {
       </div>
 
       {/* Import Reviews Link */}
-      <button className="listing-dashboard-property__import-btn">
+      <button className="listing-dashboard-property__import-btn" onClick={onImportReviews}>
         <DownloadIcon />
         <span>Import reviews from other sites</span>
       </button>

@@ -88,7 +88,9 @@ export const Section4Pricing: React.FC<Section4Props> = ({
       {/* Nightly Pricing Interface */}
       {rentalType === 'Nightly' && (
         <div className="nightly-pricing" id="nightlyPricing">
-          <h3>Nightly Rate Calculator</h3>
+          <p className="pricing-description" style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '20px' }}>
+            Set your base rate. Longer stays get automatic discounts to encourage bookings.
+          </p>
           <NightlyPriceSlider
             initialP1={data.nightlyPricing?.oneNightPrice || 99}
             initialDecay={data.nightlyPricing?.decayPerNight || 0.956}
