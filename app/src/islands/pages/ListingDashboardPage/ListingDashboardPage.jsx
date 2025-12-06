@@ -14,6 +14,7 @@ import {
   AmenitiesSection,
   DescriptionSection,
   PricingSection,
+  PricingEditSection,
   RulesSection,
   AvailabilitySection,
   PhotosSection,
@@ -167,7 +168,7 @@ export default function ListingDashboardPage() {
             {/* Pricing & Lease Style Section */}
             <PricingSection
               listing={listing}
-              onEdit={() => handleEditSection('availability')}
+              onEdit={() => handleEditSection('pricing')}
             />
 
             {/* Rules Section */}
@@ -201,8 +202,21 @@ export default function ListingDashboardPage() {
       </div>
       <Footer />
 
+      {/* Pricing Edit Section (Full-screen overlay) */}
+      {editSection === 'pricing' && (
+        <PricingEditSection
+          listing={listing}
+          onClose={handleCloseEdit}
+          onSave={async (updates) => {
+            await updateListing(listing.id, updates);
+            handleSaveEdit(updates);
+          }}
+          isOwner={true}
+        />
+      )}
+
       {/* Edit Listing Details Modal */}
-      {editSection && (
+      {editSection && editSection !== 'pricing' && (
         <EditListingDetails
           listing={{
             _id: listing.id,

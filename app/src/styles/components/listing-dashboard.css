@@ -1869,3 +1869,568 @@
 .modal-close:hover {
   color: var(--ld-text-primary);
 }
+
+/* ============================================
+   Pricing Edit Section (Full-screen overlay)
+   ============================================ */
+.pricing-edit-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 10000;
+  overflow-y: auto;
+}
+
+.pricing-edit-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Header with back button */
+.pricing-edit-header {
+  margin-bottom: 24px;
+}
+
+.pricing-edit-back {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  color: var(--ld-text-primary);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 8px 0;
+  transition: color 0.2s;
+}
+
+.pricing-edit-back:hover {
+  color: var(--ld-accent-purple);
+}
+
+/* Content area */
+.pricing-edit-content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Title row with save button */
+.pricing-edit-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pricing-edit-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pricing-edit-title h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ld-text-primary);
+  margin: 0;
+}
+
+.pricing-edit-help {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background-color: #f3f4f6;
+  border: 1px solid var(--ld-border-color);
+  border-radius: 50%;
+  color: var(--ld-text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pricing-edit-help:hover {
+  background-color: var(--ld-accent-purple);
+  color: white;
+  border-color: var(--ld-accent-purple);
+}
+
+/* Save button */
+.pricing-edit-save {
+  padding: 12px 32px;
+  background-color: var(--ld-success);
+  color: #FCFAFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 200px;
+  text-align: center;
+}
+
+.pricing-edit-save:hover:not(:disabled) {
+  background-color: #1f0b38;
+  transform: translateY(-1px);
+}
+
+.pricing-edit-save--disabled,
+.pricing-edit-save:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Rental Type Cards */
+.pricing-edit-rental-types {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .pricing-edit-rental-types {
+    flex-direction: row;
+    gap: 20px;
+  }
+}
+
+.pricing-edit-rental-card {
+  flex: 1;
+  padding: 20px;
+  border: 2px solid var(--ld-border-color);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: white;
+}
+
+.pricing-edit-rental-card:hover {
+  border-color: var(--ld-accent-purple);
+  box-shadow: 0 4px 12px rgba(107, 79, 187, 0.15);
+}
+
+.pricing-edit-rental-card--selected {
+  border-color: var(--ld-success);
+  background-color: #f8f5ff;
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.15);
+}
+
+.pricing-edit-rental-card--disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.pricing-edit-rental-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pricing-edit-rental-card__title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--ld-text-primary);
+}
+
+.pricing-edit-rental-card__star {
+  color: #FFD700;
+}
+
+.pricing-edit-rental-card__description {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ld-text-secondary);
+  margin: 0 0 16px 0;
+}
+
+.pricing-edit-rental-card__benefits {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pricing-edit-rental-card__benefits li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ld-text-primary);
+}
+
+/* Common Fields */
+.pricing-edit-common-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 640px) {
+  .pricing-edit-common-fields {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Field styling */
+.pricing-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pricing-edit-field label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ld-text-primary);
+}
+
+.pricing-edit-field__help {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background-color: #f3f4f6;
+  border: 1px solid var(--ld-border-color);
+  border-radius: 50%;
+  color: var(--ld-text-secondary);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pricing-edit-field__help:hover {
+  background-color: var(--ld-accent-purple);
+  color: white;
+  border-color: var(--ld-accent-purple);
+}
+
+.pricing-edit-field input,
+.pricing-edit-field select {
+  padding: 12px 16px;
+  border: 1px solid var(--ld-border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  background-color: #f9fafb;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.pricing-edit-field input:focus,
+.pricing-edit-field select:focus {
+  outline: none;
+  border-color: var(--ld-accent-purple);
+  box-shadow: 0 0 0 3px rgba(107, 79, 187, 0.1);
+}
+
+.pricing-edit-field input:disabled,
+.pricing-edit-field select:disabled {
+  background-color: #e5e7eb;
+  cursor: not-allowed;
+}
+
+.pricing-edit-field__hint {
+  font-size: 12px;
+  color: var(--ld-text-secondary);
+}
+
+/* Nightly Section */
+.pricing-edit-nightly {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Schedule Selector */
+.pricing-edit-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background-color: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid var(--ld-border-color);
+}
+
+.pricing-edit-schedule__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pricing-edit-schedule__header label {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ld-text-primary);
+}
+
+.pricing-edit-schedule__select-all {
+  background: none;
+  border: none;
+  color: #2563eb;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.pricing-edit-schedule__select-all:hover {
+  color: var(--ld-accent-purple);
+}
+
+.pricing-edit-schedule__select-all:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.pricing-edit-schedule__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pricing-edit-schedule__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ld-text-secondary);
+}
+
+.pricing-edit-schedule__legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.pricing-edit-schedule__legend-dot--selected {
+  background-color: var(--ld-accent-purple);
+}
+
+.pricing-edit-schedule__legend-dot--unselected {
+  background-color: #d1d5db;
+}
+
+/* Nights Range */
+.pricing-edit-nights-range {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pricing-edit-nights-range label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ld-text-primary);
+}
+
+.pricing-edit-nights-range__inputs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pricing-edit-nights-range__inputs input {
+  width: 80px;
+  padding: 10px 12px;
+  border: 1px solid var(--ld-border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  text-align: center;
+  background-color: #f9fafb;
+}
+
+.pricing-edit-nights-range__inputs input:focus {
+  outline: none;
+  border-color: var(--ld-accent-purple);
+  box-shadow: 0 0 0 3px rgba(107, 79, 187, 0.1);
+}
+
+.pricing-edit-nights-range__inputs span {
+  color: var(--ld-text-secondary);
+  font-size: 14px;
+}
+
+/* Compensation Calculator */
+.pricing-edit-compensation {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pricing-edit-compensation h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ld-text-primary);
+  margin: 0;
+}
+
+.pricing-edit-compensation__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .pricing-edit-compensation__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.pricing-edit-compensation__item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  background-color: #f9fafb;
+  border: 1px solid var(--ld-border-color);
+  border-radius: 12px;
+}
+
+.pricing-edit-compensation__item label {
+  font-size: 13px;
+  color: var(--ld-text-secondary);
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.pricing-edit-compensation__item input {
+  padding: 12px 16px;
+  border: 1px solid var(--ld-border-color);
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  background-color: white;
+}
+
+.pricing-edit-compensation__item input:focus {
+  outline: none;
+  border-color: var(--ld-accent-purple);
+  box-shadow: 0 0 0 3px rgba(107, 79, 187, 0.1);
+}
+
+.pricing-edit-compensation__rate {
+  font-size: 14px;
+  color: var(--ld-accent-purple);
+  font-weight: 500;
+  text-align: right;
+}
+
+/* Weekly Section */
+.pricing-edit-weekly {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Monthly Section */
+.pricing-edit-monthly {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Agreement Section */
+.pricing-edit-agreement {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  background-color: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+}
+
+.pricing-edit-agreement__info {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pricing-edit-agreement__info p {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ld-text-primary);
+  margin: 0;
+}
+
+.pricing-edit-agreement__options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pricing-edit-agreement__options label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--ld-text-primary);
+  cursor: pointer;
+}
+
+.pricing-edit-agreement__options input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ld-success);
+}
+
+.pricing-edit-agreement__options input[type="radio"]:disabled {
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments for pricing edit */
+@media (max-width: 640px) {
+  .pricing-edit-container {
+    padding: 16px;
+  }
+
+  .pricing-edit-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .pricing-edit-save {
+    width: 100%;
+  }
+
+  .pricing-edit-rental-card {
+    padding: 16px;
+  }
+
+  .pricing-edit-rental-card__title {
+    font-size: 18px;
+  }
+
+  .pricing-edit-schedule {
+    padding: 16px;
+  }
+
+  .pricing-edit-nights-range__inputs {
+    flex-wrap: wrap;
+  }
+}

@@ -13,3 +13,4 @@ export { default as AvailabilitySection } from './AvailabilitySection';
 export { default as PhotosSection } from './PhotosSection';
 export { default as CancellationPolicySection } from './CancellationPolicySection';
 export { default as NightlyPricingLegend } from './NightlyPricingLegend';
+export { default as PricingEditSection } from './PricingEditSection';
