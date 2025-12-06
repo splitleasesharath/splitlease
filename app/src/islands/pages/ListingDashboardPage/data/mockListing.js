@@ -130,6 +130,7 @@ export const mockListing = {
 
   damageDeposit: 500,
   maintenanceFee: 250,
+  monthlyHostRate: 2500, // Monthly host rate for monthly listings
 
   // Availability
   leaseTermMin: 6,   // weeks

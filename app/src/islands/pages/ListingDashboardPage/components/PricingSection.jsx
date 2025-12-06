@@ -5,6 +5,7 @@ export default function PricingSection({ listing, onEdit }) {
   const weeklyComp = listing?.weeklyCompensation || {};
   const nightsAvailable = listing?.nightsAvailable || [];
   const isNightly = (listing?.leaseStyle || 'Nightly').toLowerCase() === 'nightly';
+  const isMonthly = (listing?.leaseStyle || '').toLowerCase() === 'monthly';
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -34,34 +35,46 @@ export default function PricingSection({ listing, onEdit }) {
             <p>
               <strong>Selected Lease Style:</strong> {listing?.leaseStyle || 'Nightly'}
             </p>
-            <p>
-              <strong>Nights / Week</strong>{' '}
-              {listing?.nightsPerWeekMin || 2} to {listing?.nightsPerWeekMax || 7}
-            </p>
+            {!isMonthly && (
+              <p>
+                <strong>Nights / Week</strong>{' '}
+                {listing?.nightsPerWeekMin || 2} to {listing?.nightsPerWeekMax || 7}
+              </p>
+            )}
           </div>
 
-          {/* Host Schedule Selector - Display Only */}
-          <div className="listing-dashboard-pricing__days">
-            <p className="listing-dashboard-pricing__days-label">Nights / Week</p>
-            <HostScheduleSelector
-              listing={{ nightsAvailable }}
-              selectedNights={nightsAvailable}
-              isClickable={false}
-              mode="preview"
-            />
-            <div className="listing-dashboard-pricing__legend">
-              <span className="listing-dashboard-pricing__legend-dot listing-dashboard-pricing__legend-dot--available" />
-              <span>
-                {nightsAvailable.length === 7 ? 'All nights available' : `${nightsAvailable.length} nights available`}
-              </span>
+          {/* Host Schedule Selector - Display Only (only for nightly) */}
+          {!isMonthly && (
+            <div className="listing-dashboard-pricing__days">
+              <p className="listing-dashboard-pricing__days-label">Nights / Week</p>
+              <HostScheduleSelector
+                listing={{ nightsAvailable }}
+                selectedNights={nightsAvailable}
+                isClickable={false}
+                mode="preview"
+              />
+              <div className="listing-dashboard-pricing__legend">
+                <span className="listing-dashboard-pricing__legend-dot listing-dashboard-pricing__legend-dot--available" />
+                <span>
+                  {nightsAvailable.length === 7 ? 'All nights available' : `${nightsAvailable.length} nights available`}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Right Column - Pricing Info */}
         <div className="listing-dashboard-pricing__right">
-          {/* Nightly pricing uses gradient legend */}
-          {isNightly ? (
+          {/* Monthly pricing shows just the monthly host rate */}
+          {isMonthly ? (
+            <div className="listing-dashboard-pricing__monthly-rate">
+              <p className="listing-dashboard-pricing__monthly-rate-label">Monthly Host Rate</p>
+              <p className="listing-dashboard-pricing__monthly-rate-value">
+                {formatCurrency(listing?.monthlyHostRate || 0)}
+                <span className="listing-dashboard-pricing__monthly-rate-period">/month</span>
+              </p>
+            </div>
+          ) : isNightly ? (
             <NightlyPricingLegend
               weeklyCompensation={weeklyComp}
               nightsPerWeekMin={listing?.nightsPerWeekMin || 2}
