@@ -1,6 +1,8 @@
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import { EditListingDetails } from '../../shared/EditListingDetails/EditListingDetails';
+import ScheduleCohost from '../../shared/ScheduleCohost';
+import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal';
 import useListingDashboardPageLogic from './useListingDashboardPageLogic';
 import {
   NavigationHeader,
@@ -12,6 +14,7 @@ import {
   AmenitiesSection,
   DescriptionSection,
   PricingSection,
+  PricingEditSection,
   RulesSection,
   AvailabilitySection,
   PhotosSection,
@@ -27,6 +30,9 @@ export default function ListingDashboardPage() {
     isLoading,
     error,
     editSection,
+    showScheduleCohost,
+    showImportReviews,
+    currentUser,
     handleTabChange,
     handleCardClick,
     handleBackClick,
@@ -34,6 +40,16 @@ export default function ListingDashboardPage() {
     handleCancellationPolicyChange,
     handleCopyLink,
     handleAIAssistant,
+    handleScheduleCohost,
+    handleCloseScheduleCohost,
+    handleCohostRequestSubmitted,
+    handleImportReviews,
+    handleCloseImportReviews,
+    handleSubmitImportReviews,
+    isImportingReviews,
+    handleSetCoverPhoto,
+    handleDeletePhoto,
+    handleReorderPhotos,
     handleEditSection,
     handleCloseEdit,
     handleSaveEdit,
@@ -110,8 +126,8 @@ export default function ListingDashboardPage() {
               onBackClick={handleBackClick}
             />
 
-            {/* Alert Banner */}
-            <AlertBanner />
+            {/* Alert Banner - Schedule Cohost CTA */}
+            <AlertBanner onScheduleCohost={handleScheduleCohost} />
 
             {/* Action Cards Grid */}
             <ActionCardGrid counts={counts} onCardClick={handleCardClick} />
@@ -127,6 +143,7 @@ export default function ListingDashboardPage() {
             <PropertyInfoSection
               listing={listing}
               onDescriptionChange={handleDescriptionChange}
+              onImportReviews={handleImportReviews}
             />
 
             {/* Description Section */}
@@ -151,7 +168,7 @@ export default function ListingDashboardPage() {
             {/* Pricing & Lease Style Section */}
             <PricingSection
               listing={listing}
-              onEdit={() => handleEditSection('availability')}
+              onEdit={() => handleEditSection('pricing')}
             />
 
             {/* Rules Section */}
@@ -170,8 +187,9 @@ export default function ListingDashboardPage() {
             <PhotosSection
               listing={listing}
               onAddPhotos={() => handleEditSection('photos')}
-              onDeletePhoto={(id) => console.log('Delete photo', id)}
-              onSetCover={(id) => console.log('Set cover photo', id)}
+              onDeletePhoto={handleDeletePhoto}
+              onSetCover={handleSetCoverPhoto}
+              onReorderPhotos={handleReorderPhotos}
             />
 
             {/* Cancellation Policy Section */}
@@ -184,8 +202,21 @@ export default function ListingDashboardPage() {
       </div>
       <Footer />
 
+      {/* Pricing Edit Section (Full-screen overlay) */}
+      {editSection === 'pricing' && (
+        <PricingEditSection
+          listing={listing}
+          onClose={handleCloseEdit}
+          onSave={async (updates) => {
+            await updateListing(listing.id, updates);
+            handleSaveEdit(updates);
+          }}
+          isOwner={true}
+        />
+      )}
+
       {/* Edit Listing Details Modal */}
-      {editSection && (
+      {editSection && editSection !== 'pricing' && (
         <EditListingDetails
           listing={{
             _id: listing.id,
@@ -220,6 +251,28 @@ export default function ListingDashboardPage() {
           updateListing={updateListing}
         />
       )}
+
+      {/* Schedule Cohost Modal */}
+      {showScheduleCohost && (
+        <ScheduleCohost
+          userId={currentUser?._id || currentUser?.id || ''}
+          userEmail={currentUser?.email || ''}
+          userName={currentUser?.firstName || currentUser?.name || ''}
+          listingId={listing?.id}
+          onRequestSubmitted={handleCohostRequestSubmitted}
+          onClose={handleCloseScheduleCohost}
+        />
+      )}
+
+      {/* Import Listing Reviews Modal */}
+      <ImportListingReviewsModal
+        isOpen={showImportReviews}
+        onClose={handleCloseImportReviews}
+        onSubmit={handleSubmitImportReviews}
+        currentUserEmail={currentUser?.email || ''}
+        listingId={listing?.id}
+        isLoading={isImportingReviews}
+      />
     </>
   );
 }

@@ -4,7 +4,12 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { COMMON_RULES, COMMON_SAFETY_FEATURES, NEIGHBORHOOD_TEMPLATE } from './constants';
+import { NEIGHBORHOOD_TEMPLATE } from './constants';
+import { generateListingDescription, generateListingTitle } from '../../../lib/aiService';
+import { getCommonHouseRules } from './services/houseRulesService';
+import { getCommonSafetyFeatures } from './services/safetyFeaturesService';
+import { getCommonInUnitAmenities, getCommonBuildingAmenities } from './services/amenitiesService';
+import { uploadPhoto } from '../../../lib/photoUpload';
 
 /**
  * Custom hook containing all business logic for EditListingDetails component
@@ -18,9 +23,21 @@ import { COMMON_RULES, COMMON_SAFETY_FEATURES, NEIGHBORHOOD_TEMPLATE } from './c
 export function useEditListingDetailsLogic({ listing, editSection, onClose, onSave, updateListing }) {
   const [formData, setFormData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  const [isLoadingInUnitAmenities, setIsLoadingInUnitAmenities] = useState(false);
+  const [isLoadingBuildingAmenities, setIsLoadingBuildingAmenities] = useState(false);
+  const [isLoadingRules, setIsLoadingRules] = useState(false);
+  const [isLoadingSafetyFeatures, setIsLoadingSafetyFeatures] = useState(false);
+  const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // Photo drag and drop state
+  const [draggedPhotoIndex, setDraggedPhotoIndex] = useState(null);
+  const [dragOverPhotoIndex, setDragOverPhotoIndex] = useState(null);
   const [expandedSections, setExpandedSections] = useState({
     name: true,
+    title: true,
     description: true,
     neighborhood: true,
     location: true,
@@ -35,6 +52,19 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     building: true
   });
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    // Store original overflow value
+    const originalOverflow = document.body.style.overflow;
+    // Lock scroll
+    document.body.style.overflow = 'hidden';
+
+    // Cleanup: restore original overflow when component unmounts
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Initialize form data from listing
   useEffect(() => {
     if (!listing) return;
@@ -42,7 +72,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     setFormData({
       Name: listing.Name,
       Description: listing.Description,
-      'Description Neighborhood': listing['Description Neighborhood'],
+      'Description - Neighborhood': listing['Description - Neighborhood'],
       'Location - City': listing['Location - City'],
       'Location - State': listing['Location - State'],
       'Location - Zip Code': listing['Location - Zip Code'],
@@ -134,42 +164,191 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
   }, []);
 
   const loadCommonRules = useCallback(async () => {
-    const selectedRules = Array.isArray(formData['Features - House Rules'])
-      ? formData['Features - House Rules']
-      : [];
-    const newRules = [...new Set([...selectedRules, ...COMMON_RULES])];
-    setFormData(prev => ({ ...prev, 'Features - House Rules': newRules }));
-
+    setIsLoadingRules(true);
     try {
+      const commonRules = await getCommonHouseRules();
+
+      if (commonRules.length === 0) {
+        showToast('No common rules found', 'Database returned no pre-set rules', 'error');
+        return;
+      }
+
+      const selectedRules = Array.isArray(formData['Features - House Rules'])
+        ? formData['Features - House Rules']
+        : [];
+      const newRules = [...new Set([...selectedRules, ...commonRules])];
+      setFormData(prev => ({ ...prev, 'Features - House Rules': newRules }));
+
       const updated = await updateListing(listing._id, { 'Features - House Rules': newRules });
       onSave(updated);
-      showToast('Common rules loaded!');
+      showToast('Common rules loaded!', `${commonRules.length} rules added`);
     } catch (e) {
-      console.error(e);
+      console.error('[loadCommonRules] Error:', e);
       showToast('Error loading rules', 'Please try again', 'error');
+    } finally {
+      setIsLoadingRules(false);
     }
   }, [formData, listing, updateListing, onSave, showToast]);
 
   const loadCommonSafetyFeatures = useCallback(async () => {
-    const safetyFeatures = Array.isArray(formData['Features - Safety'])
-      ? formData['Features - Safety']
-      : [];
-    const newFeatures = [...new Set([...safetyFeatures, ...COMMON_SAFETY_FEATURES])];
-    setFormData(prev => ({ ...prev, 'Features - Safety': newFeatures }));
-
+    setIsLoadingSafetyFeatures(true);
     try {
+      const commonFeatures = await getCommonSafetyFeatures();
+
+      if (commonFeatures.length === 0) {
+        showToast('No common safety features found', 'Database returned no pre-set features', 'error');
+        return;
+      }
+
+      const currentFeatures = Array.isArray(formData['Features - Safety'])
+        ? formData['Features - Safety']
+        : [];
+      const newFeatures = [...new Set([...currentFeatures, ...commonFeatures])];
+      setFormData(prev => ({ ...prev, 'Features - Safety': newFeatures }));
+
       const updated = await updateListing(listing._id, { 'Features - Safety': newFeatures });
       onSave(updated);
-      showToast('Common safety features loaded!');
+      showToast('Common safety features loaded!', `${commonFeatures.length} features added`);
     } catch (e) {
-      console.error(e);
+      console.error('[loadCommonSafetyFeatures] Error:', e);
       showToast('Error loading safety features', 'Please try again', 'error');
+    } finally {
+      setIsLoadingSafetyFeatures(false);
+    }
+  }, [formData, listing, updateListing, onSave, showToast]);
+
+  const loadCommonInUnitAmenities = useCallback(async () => {
+    setIsLoadingInUnitAmenities(true);
+    try {
+      const commonAmenities = await getCommonInUnitAmenities();
+
+      if (commonAmenities.length === 0) {
+        showToast('No common in-unit amenities found', 'Database returned no pre-set amenities', 'error');
+        return;
+      }
+
+      const currentAmenities = Array.isArray(formData['Features - Amenities In-Unit'])
+        ? formData['Features - Amenities In-Unit']
+        : [];
+      const newAmenities = [...new Set([...currentAmenities, ...commonAmenities])];
+      setFormData(prev => ({ ...prev, 'Features - Amenities In-Unit': newAmenities }));
+
+      const updated = await updateListing(listing._id, { 'Features - Amenities In-Unit': newAmenities });
+      onSave(updated);
+      showToast('Common in-unit amenities loaded!', `${commonAmenities.length} amenities added`);
+    } catch (e) {
+      console.error('[loadCommonInUnitAmenities] Error:', e);
+      showToast('Error loading amenities', 'Please try again', 'error');
+    } finally {
+      setIsLoadingInUnitAmenities(false);
+    }
+  }, [formData, listing, updateListing, onSave, showToast]);
+
+  const loadCommonBuildingAmenities = useCallback(async () => {
+    setIsLoadingBuildingAmenities(true);
+    try {
+      const commonAmenities = await getCommonBuildingAmenities();
+
+      if (commonAmenities.length === 0) {
+        showToast('No common building amenities found', 'Database returned no pre-set amenities', 'error');
+        return;
+      }
+
+      const currentAmenities = Array.isArray(formData['Features - Amenities In-Building'])
+        ? formData['Features - Amenities In-Building']
+        : [];
+      const newAmenities = [...new Set([...currentAmenities, ...commonAmenities])];
+      setFormData(prev => ({ ...prev, 'Features - Amenities In-Building': newAmenities }));
+
+      const updated = await updateListing(listing._id, { 'Features - Amenities In-Building': newAmenities });
+      onSave(updated);
+      showToast('Common building amenities loaded!', `${commonAmenities.length} amenities added`);
+    } catch (e) {
+      console.error('[loadCommonBuildingAmenities] Error:', e);
+      showToast('Error loading amenities', 'Please try again', 'error');
+    } finally {
+      setIsLoadingBuildingAmenities(false);
     }
   }, [formData, listing, updateListing, onSave, showToast]);
 
   const loadNeighborhoodTemplate = useCallback(() => {
-    handleInputChange('Description Neighborhood', NEIGHBORHOOD_TEMPLATE);
+    handleInputChange('Description - Neighborhood', NEIGHBORHOOD_TEMPLATE);
   }, [handleInputChange]);
+
+  /**
+   * Extract listing data from current form/listing for AI generation
+   */
+  const extractListingDataForAI = useCallback(() => {
+    return {
+      listingName: formData.Name || listing?.Name || '',
+      address: `${formData['Location - City'] || listing?.['Location - City'] || ''}, ${formData['Location - State'] || listing?.['Location - State'] || ''}`,
+      neighborhood: formData['Location - Hood'] || listing?.['Location - Hood'] || formData['Location - Borough'] || listing?.['Location - Borough'] || '',
+      typeOfSpace: formData['Features - Type of Space'] || listing?.['Features - Type of Space'] || '',
+      bedrooms: formData['Features - Qty Bedrooms'] ?? listing?.['Features - Qty Bedrooms'] ?? 0,
+      beds: formData['Features - Qty Beds'] ?? listing?.['Features - Qty Beds'] ?? 0,
+      bathrooms: formData['Features - Qty Bathrooms'] ?? listing?.['Features - Qty Bathrooms'] ?? 0,
+      kitchenType: formData['Kitchen Type'] || listing?.['Kitchen Type'] || '',
+      amenitiesInsideUnit: formData['Features - Amenities In-Unit'] || listing?.['Features - Amenities In-Unit'] || [],
+      amenitiesOutsideUnit: formData['Features - Amenities In-Building'] || listing?.['Features - Amenities In-Building'] || [],
+    };
+  }, [formData, listing]);
+
+  /**
+   * Generate AI listing title
+   */
+  const generateAITitle = useCallback(async () => {
+    setIsGeneratingTitle(true);
+    try {
+      const listingData = extractListingDataForAI();
+
+      if (!listingData.neighborhood && !listingData.typeOfSpace) {
+        showToast('Missing data', 'Please fill in neighborhood or space type first', 'error');
+        return;
+      }
+
+      console.log('[EditListingDetails] Generating AI title with data:', listingData);
+      const generatedTitle = await generateListingTitle(listingData);
+
+      if (generatedTitle) {
+        handleInputChange('Name', generatedTitle);
+        showToast('Title generated!', 'AI title applied successfully');
+      } else {
+        showToast('Could not generate title', 'Please try again', 'error');
+      }
+    } catch (error) {
+      console.error('[EditListingDetails] Error generating title:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      showToast('Error generating title', errorMessage, 'error');
+    } finally {
+      setIsGeneratingTitle(false);
+    }
+  }, [extractListingDataForAI, handleInputChange, showToast]);
+
+  /**
+   * Generate AI listing description
+   */
+  const generateAIDescription = useCallback(async () => {
+    setIsGeneratingDescription(true);
+    try {
+      const listingData = extractListingDataForAI();
+
+      console.log('[EditListingDetails] Generating AI description with data:', listingData);
+      const generatedDescription = await generateListingDescription(listingData);
+
+      if (generatedDescription) {
+        handleInputChange('Description', generatedDescription);
+        showToast('Description generated!', 'AI description applied successfully');
+      } else {
+        showToast('Could not generate description', 'Please try again', 'error');
+      }
+    } catch (error) {
+      console.error('[EditListingDetails] Error generating description:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      showToast('Error generating description', errorMessage, 'error');
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  }, [extractListingDataForAI, handleInputChange, showToast]);
 
   const addPhotoUrl = useCallback(() => {
     const url = prompt('Enter image URL:');
@@ -180,6 +359,120 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
       handleInputChange('Features - Photos', [...photos, url]);
     }
   }, [formData, handleInputChange]);
+
+  /**
+   * Handle file upload for photos
+   */
+  const handlePhotoUpload = useCallback(async (e) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploadingPhotos(true);
+    const currentPhotos = Array.isArray(formData['Features - Photos'])
+      ? formData['Features - Photos']
+      : [];
+
+    try {
+      const uploadedUrls = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const photoObj = { file, url: URL.createObjectURL(file) };
+        const result = await uploadPhoto(photoObj, listing._id, currentPhotos.length + i);
+        uploadedUrls.push(result.url);
+      }
+
+      const newPhotos = [...currentPhotos, ...uploadedUrls];
+      handleInputChange('Features - Photos', newPhotos);
+
+      // Autosave to database
+      const updated = await updateListing(listing._id, { 'Features - Photos': newPhotos });
+      onSave(updated);
+      showToast(`${uploadedUrls.length} photo(s) uploaded!`, 'Photos saved successfully');
+    } catch (error) {
+      console.error('[handlePhotoUpload] Error:', error);
+      showToast('Error uploading photos', error.message || 'Please try again', 'error');
+    } finally {
+      setIsUploadingPhotos(false);
+      // Reset file input
+      e.target.value = '';
+    }
+  }, [formData, listing, handleInputChange, updateListing, onSave, showToast]);
+
+  /**
+   * Remove a photo from the list
+   */
+  const removePhoto = useCallback(async (index) => {
+    const currentPhotos = Array.isArray(formData['Features - Photos'])
+      ? formData['Features - Photos']
+      : [];
+    const newPhotos = currentPhotos.filter((_, i) => i !== index);
+
+    handleInputChange('Features - Photos', newPhotos);
+
+    // Autosave to database
+    try {
+      const updated = await updateListing(listing._id, { 'Features - Photos': newPhotos });
+      onSave(updated);
+      showToast('Photo removed', 'Changes saved');
+    } catch (error) {
+      console.error('[removePhoto] Error:', error);
+      showToast('Error removing photo', 'Please try again', 'error');
+      // Revert on error
+      handleInputChange('Features - Photos', currentPhotos);
+    }
+  }, [formData, listing, handleInputChange, updateListing, onSave, showToast]);
+
+  /**
+   * Drag and drop handlers for photo reordering
+   */
+  const handlePhotoDragStart = useCallback((index) => {
+    setDraggedPhotoIndex(index);
+  }, []);
+
+  const handlePhotoDragOver = useCallback((e, index) => {
+    e.preventDefault();
+    setDragOverPhotoIndex(index);
+  }, []);
+
+  const handlePhotoDragLeave = useCallback(() => {
+    setDragOverPhotoIndex(null);
+  }, []);
+
+  const handlePhotoDrop = useCallback(async (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedPhotoIndex === null || draggedPhotoIndex === dropIndex) {
+      setDraggedPhotoIndex(null);
+      setDragOverPhotoIndex(null);
+      return;
+    }
+
+    const currentPhotos = Array.isArray(formData['Features - Photos'])
+      ? formData['Features - Photos']
+      : [];
+    const updated = [...currentPhotos];
+    const [draggedItem] = updated.splice(draggedPhotoIndex, 1);
+    updated.splice(dropIndex, 0, draggedItem);
+
+    handleInputChange('Features - Photos', updated);
+    setDraggedPhotoIndex(null);
+    setDragOverPhotoIndex(null);
+
+    // Autosave to database
+    try {
+      const result = await updateListing(listing._id, { 'Features - Photos': updated });
+      onSave(result);
+      showToast('Photos reordered', 'Changes saved');
+    } catch (error) {
+      console.error('[handlePhotoDrop] Error:', error);
+      showToast('Error reordering photos', 'Please try again', 'error');
+      handleInputChange('Features - Photos', currentPhotos);
+    }
+  }, [formData, draggedPhotoIndex, listing, handleInputChange, updateListing, onSave, showToast]);
+
+  const handlePhotoDragEnd = useCallback(() => {
+    setDraggedPhotoIndex(null);
+    setDragOverPhotoIndex(null);
+  }, []);
 
   const getSectionTitle = useCallback(() => {
     switch (editSection) {
@@ -233,8 +526,19 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     // State
     formData,
     isLoading,
+    isGeneratingTitle,
+    isGeneratingDescription,
+    isLoadingInUnitAmenities,
+    isLoadingBuildingAmenities,
+    isLoadingRules,
+    isLoadingSafetyFeatures,
+    isUploadingPhotos,
     toast,
     expandedSections,
+
+    // Photo drag and drop state
+    draggedPhotoIndex,
+    dragOverPhotoIndex,
 
     // Derived state
     inUnitAmenities,
@@ -254,8 +558,19 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     toggleSection,
     loadCommonRules,
     loadCommonSafetyFeatures,
+    loadCommonInUnitAmenities,
+    loadCommonBuildingAmenities,
     loadNeighborhoodTemplate,
+    generateAITitle,
+    generateAIDescription,
     addPhotoUrl,
+    handlePhotoUpload,
+    removePhoto,
+    handlePhotoDragStart,
+    handlePhotoDragOver,
+    handlePhotoDragLeave,
+    handlePhotoDrop,
+    handlePhotoDragEnd,
     dismissToast,
     onClose
   };

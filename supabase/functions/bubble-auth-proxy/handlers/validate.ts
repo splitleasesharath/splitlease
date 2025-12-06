@@ -63,7 +63,7 @@ export async function handleValidate(
     // Query by bubble_id since that's what Bubble login returns and stores in browser
     const { data: userData, error: userError } = await supabase
       .from('user')
-      .select('_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord"')
+      .select('_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", email, "Account - Host / Landlord"')
       .eq('bubble_id', user_id)
       .single();
 
@@ -86,8 +86,8 @@ export async function handleValidate(
       profilePhoto = 'https:' + profilePhoto;
     }
 
-    // Use 'email' column first (more commonly populated), fall back to 'email as text'
-    const userEmail = userData['email'] || userData['email as text'] || null;
+    // Use 'email' column
+    const userEmail = userData.email || null;
 
     const userDataObject = {
       userId: userData._id,

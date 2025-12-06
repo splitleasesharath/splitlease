@@ -33,8 +33,17 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
   const {
     formData,
     isLoading,
+    isGeneratingTitle,
+    isGeneratingDescription,
+    isLoadingInUnitAmenities,
+    isLoadingBuildingAmenities,
+    isLoadingRules,
+    isLoadingSafetyFeatures,
+    isUploadingPhotos,
     toast,
     expandedSections,
+    draggedPhotoIndex,
+    dragOverPhotoIndex,
     inUnitAmenities,
     buildingAmenities,
     selectedRules,
@@ -48,8 +57,19 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
     toggleSection,
     loadCommonRules,
     loadCommonSafetyFeatures,
+    loadCommonInUnitAmenities,
+    loadCommonBuildingAmenities,
     loadNeighborhoodTemplate,
+    generateAITitle,
+    generateAIDescription,
     addPhotoUrl,
+    handlePhotoUpload,
+    removePhoto,
+    handlePhotoDragStart,
+    handlePhotoDragOver,
+    handlePhotoDragLeave,
+    handlePhotoDrop,
+    handlePhotoDragEnd,
     dismissToast
   } = useEditListingDetailsLogic({
     listing,
@@ -137,38 +157,100 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
     </div>
   );
 
-  // Description Section
+  // Description Section (now includes Title and Description with AI generation)
   const renderDescriptionSection = () => (
-    <div className="eld-collapsible-section">
-      <div className="eld-collapsible-header" onClick={() => toggleSection('description')}>
-        <div className="eld-collapsible-header-left">
-          <span className="eld-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="16" x2="12" y2="12"/>
-              <line x1="12" y1="8" x2="12.01" y2="8"/>
+    <>
+      {/* Listing Title Sub-section */}
+      <div className="eld-collapsible-section">
+        <div className="eld-collapsible-header" onClick={() => toggleSection('title')}>
+          <div className="eld-collapsible-header-left">
+            <span className="eld-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </span>
+            <h3>Listing Title</h3>
+          </div>
+          <div className={`eld-collapsible-toggle ${expandedSections.title !== false ? 'expanded' : ''}`}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6,9 12,15 18,9"/>
             </svg>
-          </span>
-          <h3>Description of Lodging</h3>
+          </div>
         </div>
-        <div className={`eld-collapsible-toggle ${expandedSections.description ? 'expanded' : ''}`}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="6,9 12,15 18,9"/>
-          </svg>
+        <div className={`eld-collapsible-content ${expandedSections.title === false ? 'collapsed' : ''}`}>
+          <div className="eld-label-with-action">
+            <label className="eld-form-label">Listing Name</label>
+            <button
+              type="button"
+              className="eld-btn-link"
+              onClick={generateAITitle}
+              disabled={isGeneratingTitle}
+            >
+              {isGeneratingTitle ? 'generating...' : 'generate with AI'}
+            </button>
+          </div>
+          <div className="eld-form-field">
+            <input
+              type="text"
+              className="eld-form-input"
+              placeholder="Enter a catchy title for your listing..."
+              value={formData.Name || ''}
+              onChange={(e) => handleInputChange('Name', e.target.value)}
+            />
+          </div>
+          <p className="eld-form-helper">
+            A good title highlights your space's best feature and location
+          </p>
         </div>
       </div>
-      <div className={`eld-collapsible-content ${!expandedSections.description ? 'collapsed' : ''}`}>
-        <div className="eld-form-field">
-          <textarea
-            className="eld-form-textarea"
-            placeholder="Describe your listing in detail..."
-            value={formData.Description || ''}
-            onChange={(e) => handleInputChange('Description', e.target.value)}
-            rows={8}
-          />
+
+      {/* Description of Lodging Sub-section */}
+      <div className="eld-collapsible-section">
+        <div className="eld-collapsible-header" onClick={() => toggleSection('description')}>
+          <div className="eld-collapsible-header-left">
+            <span className="eld-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+            </span>
+            <h3>Description of Lodging</h3>
+          </div>
+          <div className={`eld-collapsible-toggle ${expandedSections.description ? 'expanded' : ''}`}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="6,9 12,15 18,9"/>
+            </svg>
+          </div>
+        </div>
+        <div className={`eld-collapsible-content ${!expandedSections.description ? 'collapsed' : ''}`}>
+          <div className="eld-label-with-action">
+            <label className="eld-form-label">Description</label>
+            <button
+              type="button"
+              className="eld-btn-link"
+              onClick={generateAIDescription}
+              disabled={isGeneratingDescription}
+            >
+              {isGeneratingDescription ? 'generating...' : 'generate with AI'}
+            </button>
+          </div>
+          <div className="eld-form-field">
+            <textarea
+              className="eld-form-textarea"
+              placeholder="Describe your listing in detail..."
+              value={formData.Description || ''}
+              onChange={(e) => handleInputChange('Description', e.target.value)}
+              rows={8}
+            />
+          </div>
+          <p className="eld-form-helper">
+            A compelling description highlights your space's unique features and lifestyle benefits
+          </p>
         </div>
       </div>
-    </div>
+    </>
   );
 
   // Neighborhood Description Section
@@ -202,8 +284,8 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           <textarea
             className="eld-form-textarea"
             placeholder="Describe the neighborhood, nearby attractions, transportation..."
-            value={formData['Description Neighborhood'] || ''}
-            onChange={(e) => handleInputChange('Description Neighborhood', e.target.value)}
+            value={formData['Description - Neighborhood'] || ''}
+            onChange={(e) => handleInputChange('Description - Neighborhood', e.target.value)}
             rows={6}
           />
         </div>
@@ -232,9 +314,19 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           </div>
         </div>
         <div className={`eld-collapsible-content ${!expandedSections.amenities ? 'collapsed' : ''}`}>
-          <p className="eld-form-helper" style={{ marginBottom: '12px' }}>
-            Changes are saved automatically when you check/uncheck items
-          </p>
+          <div className="eld-label-with-action">
+            <p className="eld-form-helper">
+              Changes are saved automatically when you check/uncheck items
+            </p>
+            <button
+              type="button"
+              className="eld-btn-link"
+              onClick={loadCommonInUnitAmenities}
+              disabled={isLoadingInUnitAmenities}
+            >
+              {isLoadingInUnitAmenities ? 'loading...' : 'load common'}
+            </button>
+          </div>
           <div className="eld-checkbox-grid">
             {IN_UNIT_AMENITIES.map(amenity => (
               <label key={amenity} className="eld-checkbox-item">
@@ -273,6 +365,19 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           </div>
         </div>
         <div className={`eld-collapsible-content ${expandedSections.building === false ? 'collapsed' : ''}`}>
+          <div className="eld-label-with-action">
+            <p className="eld-form-helper">
+              Changes are saved automatically when you check/uncheck items
+            </p>
+            <button
+              type="button"
+              className="eld-btn-link"
+              onClick={loadCommonBuildingAmenities}
+              disabled={isLoadingBuildingAmenities}
+            >
+              {isLoadingBuildingAmenities ? 'loading...' : 'load common'}
+            </button>
+          </div>
           <div className="eld-checkbox-grid">
             {BUILDING_AMENITIES.map(amenity => (
               <label key={amenity} className="eld-checkbox-item">
@@ -314,16 +419,19 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
         </div>
       </div>
       <div className={`eld-collapsible-content ${!expandedSections.rules ? 'collapsed' : ''}`}>
-        <p className="eld-form-helper" style={{ marginBottom: '12px' }}>
-          Rules are autosaved when checked/unchecked
-        </p>
-        <button
-          className="eld-btn eld-btn-secondary"
-          style={{ marginBottom: '16px' }}
-          onClick={loadCommonRules}
-        >
-          Load Common Rules
-        </button>
+        <div className="eld-label-with-action">
+          <p className="eld-form-helper">
+            Rules are autosaved when checked/unchecked
+          </p>
+          <button
+            type="button"
+            className="eld-btn-link"
+            onClick={loadCommonRules}
+            disabled={isLoadingRules}
+          >
+            {isLoadingRules ? 'loading...' : 'load common'}
+          </button>
+        </div>
         <div className="eld-checkbox-grid">
           {HOUSE_RULES.map(rule => (
             <label key={rule} className="eld-checkbox-item">
@@ -442,16 +550,19 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           </div>
         </div>
         <div className={`eld-collapsible-content ${!expandedSections.safety ? 'collapsed' : ''}`}>
-          <p className="eld-form-helper" style={{ marginBottom: '12px' }}>
-            Safety features are autosaved when checked
-          </p>
-          <button
-            className="eld-btn eld-btn-secondary"
-            style={{ marginBottom: '16px' }}
-            onClick={loadCommonSafetyFeatures}
-          >
-            Load Common Safety Features
-          </button>
+          <div className="eld-label-with-action">
+            <p className="eld-form-helper">
+              Safety features are autosaved when checked
+            </p>
+            <button
+              type="button"
+              className="eld-btn-link"
+              onClick={loadCommonSafetyFeatures}
+              disabled={isLoadingSafetyFeatures}
+            >
+              {isLoadingSafetyFeatures ? 'loading...' : 'load common'}
+            </button>
+          </div>
           <div className="eld-checkbox-grid">
             {SAFETY_FEATURES.map(feature => (
               <label key={feature} className="eld-checkbox-item">
@@ -669,21 +780,50 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
               <strong>{photoIds.length} photo(s)</strong> linked from database
             </div>
           )}
+
+          {/* Photo Gallery with Drag and Drop */}
           {photoUrls.length > 0 && (
-            <div className="eld-images-preview">
-              {photoUrls.map((photo, index) => (
-                <div key={index} className="eld-image-item">
-                  <img
-                    src={String(photo)}
-                    alt={`Photo ${index + 1}`}
-                    onError={(e) => {
-                      e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23f0f0f0" width="100" height="100"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999">Error</text></svg>';
-                    }}
-                  />
-                </div>
-              ))}
+            <div className="eld-photo-gallery">
+              <p className="eld-drag-hint">Drag and drop photos to reorder. First photo is the cover photo.</p>
+              <div className="eld-photo-grid">
+                {photoUrls.map((photo, index) => (
+                  <div
+                    key={index}
+                    className={`eld-photo-item ${draggedPhotoIndex === index ? 'dragging' : ''} ${dragOverPhotoIndex === index ? 'drag-over' : ''}`}
+                    draggable
+                    onDragStart={() => handlePhotoDragStart(index)}
+                    onDragOver={(e) => handlePhotoDragOver(e, index)}
+                    onDragLeave={handlePhotoDragLeave}
+                    onDrop={(e) => handlePhotoDrop(e, index)}
+                    onDragEnd={handlePhotoDragEnd}
+                  >
+                    <img
+                      src={String(photo)}
+                      alt={`Photo ${index + 1}`}
+                      onError={(e) => {
+                        e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect fill="%23f0f0f0" width="100" height="100"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999">Error</text></svg>';
+                      }}
+                    />
+                    <div className="eld-photo-controls">
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(index)}
+                        className="eld-photo-delete"
+                        title="Remove photo"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                      </button>
+                    </div>
+                    {index === 0 && <div className="eld-photo-badge">Cover</div>}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
+
           {photoUrls.length === 0 && photoIds.length === 0 && (
             <div className="eld-empty-state">
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -694,13 +834,41 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
               <p>No photos added yet</p>
             </div>
           )}
-          <button className="eld-add-rule-btn" onClick={addPhotoUrl}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"/>
-              <line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Add Photo URL
-          </button>
+
+          {/* Upload Zone */}
+          <label className={`eld-photo-zone ${isUploadingPhotos ? 'uploading' : ''}`}>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
+              disabled={isUploadingPhotos}
+              style={{ display: 'none' }}
+            />
+            <div className="eld-photo-zone-content">
+              {isUploadingPhotos ? (
+                <>
+                  <div className="eld-upload-spinner"></div>
+                  <p className="eld-photo-zone-title">Uploading...</p>
+                </>
+              ) : (
+                <>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <p className="eld-photo-zone-title">Click to upload photos</p>
+                  <p className="eld-photo-zone-subtitle">or drag and drop files here</p>
+                </>
+              )}
+            </div>
+          </label>
+
+          {/* Photo count indicator */}
+          <div className="eld-photo-count">
+            {photoUrls.length} photo{photoUrls.length !== 1 ? 's' : ''} uploaded
+          </div>
         </div>
       </div>
     );
