@@ -376,7 +376,7 @@ export function resetAuthCheckAttempts() {
 // ============================================================================
 
 /**
- * Login user via Supabase Edge Function (bubble-auth-proxy)
+ * Login user via Supabase Edge Function (auth-user)
  * Stores token and user_id in localStorage on success
  *
  * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
@@ -390,7 +390,7 @@ export async function loginUser(email, password) {
   console.log('🔐 Attempting login via Edge Function for:', email);
 
   try {
-    const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
       body: {
         action: 'login',
         payload: {
@@ -472,7 +472,7 @@ export async function loginUser(email, password) {
 }
 
 /**
- * Sign up new user via Supabase Edge Function (bubble-auth-proxy)
+ * Sign up new user via Supabase Edge Function (auth-user)
  * Stores token and user_id in localStorage on success
  * Automatically logs in the user after successful signup
  *
@@ -529,7 +529,7 @@ export async function signupUser(email, password, retype, additionalData = null)
   }
 
   try {
-    const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
       body: {
         action: 'signup',
         payload
@@ -615,7 +615,7 @@ export async function signupUser(email, password, retype, additionalData = null)
 }
 
 /**
- * Validate token via Supabase Edge Function (bubble-auth-proxy) and fetch user data
+ * Validate token via Supabase Edge Function (auth-user) and fetch user data
  * Two-step process:
  * 1. Validate token via Edge Function (validates with Bubble + fetches from Supabase)
  * 2. Cache user type locally
@@ -637,7 +637,7 @@ export async function validateTokenAndFetchUser() {
   console.log('🔍 Validating token and fetching user data via Edge Function...');
 
   try {
-    const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
       body: {
         action: 'validate',
         payload: {
@@ -745,7 +745,7 @@ export function isProtectedPage() {
 }
 
 /**
- * Logout user via Supabase Edge Function (bubble-auth-proxy)
+ * Logout user via Supabase Edge Function (auth-user)
  * Calls logout endpoint with stored Bearer token
  * Clears all authentication data from localStorage
  *
@@ -770,7 +770,7 @@ export async function logoutUser() {
   console.log('🔓 Attempting logout via Edge Function...');
 
   try {
-    const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
       body: {
         action: 'logout',
         payload: {

@@ -8,15 +8,19 @@
  */
 
 import { supabase } from './supabase.js';
+import { getSessionId } from './secureStorage.js';
+import { uploadPhotos } from './photoUpload.js';
 
 /**
  * Create a new listing in listing_trial table, then sync to Bubble
  *
  * Flow:
- * 1. Insert into listing_trial (Supabase) with placeholder _id
- * 2. Call bubble-proxy to create listing in Bubble
- * 3. Update listing_trial with the Bubble _id
- * 4. Return the complete listing with Bubble _id
+ * 1. Get current user ID from secure storage
+ * 2. Insert into listing_trial (Supabase) with user as host
+ * 3. Call bubble-proxy to create listing in Bubble
+ * 4. Update listing_trial with the Bubble _id
+ * 5. Link listing to account_host
+ * 6. Return the complete listing with Bubble _id
  *
  * @param {object} formData - Complete form data from SelfListingPage
  * @returns {Promise<object>} - Created listing with id and _id (Bubble)
@@ -24,7 +28,46 @@ import { supabase } from './supabase.js';
 export async function createListing(formData) {
   console.log('[ListingService] Creating listing in listing_trial');
 
-  const listingData = mapFormDataToDatabase(formData);
+  // Get current user ID
+  const userId = getSessionId();
+  console.log('[ListingService] Current user ID:', userId);
+
+  // Generate a temporary listing ID for photo uploads
+  const tempListingId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+  // Step 0: Upload photos to Supabase Storage first
+  let uploadedPhotos = [];
+  if (formData.photos?.photos?.length > 0) {
+    console.log('[ListingService] Uploading photos to Supabase Storage...');
+    try {
+      uploadedPhotos = await uploadPhotos(formData.photos.photos, tempListingId);
+      console.log('[ListingService] ✅ Photos uploaded:', uploadedPhotos.length);
+    } catch (uploadError) {
+      console.error('[ListingService] ⚠️ Photo upload failed:', uploadError);
+      // Continue with data URLs as fallback
+      uploadedPhotos = formData.photos.photos.map((p, i) => ({
+        id: p.id,
+        url: p.url,
+        Photo: p.url,
+        'Photo (thumbnail)': p.url,
+        caption: p.caption,
+        displayOrder: p.displayOrder ?? i,
+        SortOrder: p.displayOrder ?? i,
+        toggleMainPhoto: i === 0
+      }));
+    }
+  }
+
+  // Create form data with uploaded photo URLs
+  const formDataWithPhotos = {
+    ...formData,
+    photos: {
+      ...formData.photos,
+      photos: uploadedPhotos
+    }
+  };
+
+  const listingData = mapFormDataToDatabase(formDataWithPhotos, userId);
 
   // Step 1: Insert into Supabase listing_trial
   const { data, error } = await supabase
@@ -39,6 +82,17 @@ export async function createListing(formData) {
   }
 
   console.log('[ListingService] ✅ Listing created in Supabase:', data.id);
+
+  // Step 2: Link listing to account_host if user is logged in
+  if (userId) {
+    try {
+      await linkListingToHost(userId, data.id);
+      console.log('[ListingService] ✅ Listing linked to host account');
+    } catch (linkError) {
+      console.error('[ListingService] ⚠️ Failed to link listing to host:', linkError);
+      // Continue - the listing exists, just not linked yet
+    }
+  }
 
   // Step 2: Sync to Bubble to get the Bubble _id
   try {
@@ -81,6 +135,54 @@ export async function createListing(formData) {
   }
 
   return data;
+}
+
+/**
+ * Link a listing to the host's account_host record
+ * Adds the listing ID to the Listings array in account_host
+ *
+ * @param {string} userId - The user's Bubble _id
+ * @param {string} listingId - The listing's id
+ * @returns {Promise<void>}
+ */
+async function linkListingToHost(userId, listingId) {
+  console.log('[ListingService] Linking listing to host:', userId, listingId);
+
+  // First, get the current Listings array
+  const { data: hostData, error: fetchError } = await supabase
+    .from('account_host')
+    .select('_id, Listings')
+    .eq('User', userId)
+    .maybeSingle();
+
+  if (fetchError) {
+    console.error('[ListingService] ❌ Error fetching account_host:', fetchError);
+    throw fetchError;
+  }
+
+  if (!hostData) {
+    console.warn('[ListingService] ⚠️ No account_host found for user:', userId);
+    return;
+  }
+
+  // Add the new listing ID to the array
+  const currentListings = hostData.Listings || [];
+  if (!currentListings.includes(listingId)) {
+    currentListings.push(listingId);
+  }
+
+  // Update the account_host with the new Listings array
+  const { error: updateError } = await supabase
+    .from('account_host')
+    .update({ Listings: currentListings })
+    .eq('_id', hostData._id);
+
+  if (updateError) {
+    console.error('[ListingService] ❌ Error updating account_host Listings:', updateError);
+    throw updateError;
+  }
+
+  console.log('[ListingService] ✅ account_host Listings updated:', currentListings);
 }
 
 /**
@@ -242,7 +344,7 @@ async function syncListingToBubble(supabaseData, formData) {
 /**
  * Update an existing listing in listing_trial table
  * @param {string} id - UUID of the listing
- * @param {object} formData - Updated form data
+ * @param {object} formData - Updated form data (can be flat DB columns or nested SelfListingPage format)
  * @returns {Promise<object>} - Updated listing
  */
 export async function updateListing(id, formData) {
@@ -252,7 +354,21 @@ export async function updateListing(id, formData) {
     throw new Error('Listing ID is required for update');
   }
 
-  const listingData = mapFormDataToDatabase(formData);
+  // Check if formData is already in flat database column format
+  // (e.g., from EditListingDetails which uses DB column names directly)
+  const isFlatDbFormat = isFlatDatabaseFormat(formData);
+
+  let listingData;
+  if (isFlatDbFormat) {
+    // Already using database column names - normalize special columns
+    listingData = normalizeDatabaseColumns(formData);
+    console.log('[ListingService] Using flat DB format update');
+  } else {
+    // Nested SelfListingPage format - needs mapping
+    listingData = mapFormDataToDatabase(formData);
+    console.log('[ListingService] Using mapped SelfListingPage format');
+  }
+
   listingData['Modified Date'] = new Date().toISOString();
 
   const { data, error } = await supabase
@@ -269,6 +385,59 @@ export async function updateListing(id, formData) {
 
   console.log('[ListingService] ✅ Listing updated:', data.id);
   return data;
+}
+
+/**
+ * Check if formData uses flat database column names
+ * @param {object} formData - Form data to check
+ * @returns {boolean} - True if using flat DB column format
+ */
+function isFlatDatabaseFormat(formData) {
+  // Database column names have specific patterns
+  const dbColumnPatterns = [
+    'Name',
+    'Description',
+    'Features - ',
+    'Location - ',
+    'Description - ',
+    'Kitchen Type',
+    'Cancellation Policy',
+    'First Available'
+  ];
+
+  const keys = Object.keys(formData);
+  return keys.some(key =>
+    dbColumnPatterns.some(pattern => key === pattern || key.startsWith(pattern))
+  );
+}
+
+/**
+ * Normalize database column names to handle quirks like leading/trailing spaces
+ * Some Bubble-synced columns have unusual names that must be preserved exactly
+ * @param {object} formData - Form data with database column names
+ * @returns {object} - Normalized data ready for database update
+ */
+function normalizeDatabaseColumns(formData) {
+  // Map of common field names to their actual database column names
+  // (handles leading/trailing spaces from Bubble sync)
+  const columnNameMap = {
+    'First Available': ' First Available', // DB column has leading space
+    'Nights Available (List of Nights)': 'Nights Available (List of Nights) ', // DB column has trailing space
+    'Not Found - Location - Address': 'Not Found - Location - Address ' // DB column has trailing space
+  };
+
+  const normalized = {};
+
+  for (const [key, value] of Object.entries(formData)) {
+    // Check if this key needs to be remapped
+    if (columnNameMap[key]) {
+      normalized[columnNameMap[key]] = value;
+    } else {
+      normalized[key] = value;
+    }
+  }
+
+  return normalized;
 }
 
 /**
@@ -324,9 +493,10 @@ export async function saveDraft(formData, existingId = null) {
  * Handles the translation between React form structure and Bubble-compatible schema
  *
  * @param {object} formData - Form data from SelfListingPage
+ * @param {string|null} userId - The current user's ID (for host linking)
  * @returns {object} - Database-ready object
  */
-function mapFormDataToDatabase(formData) {
+function mapFormDataToDatabase(formData, userId = null) {
   const now = new Date().toISOString();
 
   // Generate a unique _id for Bubble compatibility (even though not syncing)
@@ -341,7 +511,8 @@ function mapFormDataToDatabase(formData) {
   return {
     // Required fields
     _id: uniqueId,
-    'Created By': 'self-listing-form',
+    'Created By': userId || 'self-listing-form',
+    'Host / Landlord': userId || null,
     'Created Date': now,
     'Modified Date': now,
 
@@ -412,12 +583,17 @@ function mapFormDataToDatabase(formData) {
     'Features - House Rules': formData.rules?.houseRules || [],
     'Dates - Blocked': formData.rules?.blockedDates || [],
 
-    // Section 6: Photos
-    'Features - Photos': formData.photos?.photos?.map((p) => ({
+    // Section 6: Photos - Store with format compatible with listing display
+    'Features - Photos': formData.photos?.photos?.map((p, index) => ({
       id: p.id,
-      url: p.url,
-      caption: p.caption,
-      displayOrder: p.displayOrder,
+      url: p.url || p.Photo,
+      Photo: p.url || p.Photo,
+      'Photo (thumbnail)': p['Photo (thumbnail)'] || p.url || p.Photo,
+      caption: p.caption || '',
+      displayOrder: p.displayOrder ?? index,
+      SortOrder: p.SortOrder ?? p.displayOrder ?? index,
+      toggleMainPhoto: p.toggleMainPhoto ?? (index === 0),
+      storagePath: p.storagePath || null
     })) || [],
 
     // Section 7: Review
@@ -576,11 +752,16 @@ export function mapDatabaseToFormData(dbRecord) {
       blockedDates: dbRecord['Dates - Blocked'] || [],
     },
     photos: {
-      photos: (dbRecord['Features - Photos'] || []).map((p) => ({
+      photos: (dbRecord['Features - Photos'] || []).map((p, index) => ({
         id: p.id,
-        url: p.url,
+        url: p.url || p.Photo,
+        Photo: p.Photo || p.url,
+        'Photo (thumbnail)': p['Photo (thumbnail)'] || p.url || p.Photo,
         caption: p.caption || '',
-        displayOrder: p.displayOrder || 0,
+        displayOrder: p.displayOrder ?? index,
+        SortOrder: p.SortOrder ?? p.displayOrder ?? index,
+        toggleMainPhoto: p.toggleMainPhoto ?? (index === 0),
+        storagePath: p.storagePath || null
       })),
       minRequired: 3,
     },

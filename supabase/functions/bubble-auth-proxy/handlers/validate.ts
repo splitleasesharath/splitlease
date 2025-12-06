@@ -62,7 +62,7 @@ export async function handleValidate(
 
     const { data: userData, error: userError } = await supabase
       .from('user')
-      .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord"')
+      .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", email, "Account - Host / Landlord"')
       .eq('_id', user_id)
       .single();
 
@@ -85,8 +85,8 @@ export async function handleValidate(
       profilePhoto = 'https:' + profilePhoto;
     }
 
-    // Use 'email' column first (more commonly populated), fall back to 'email as text'
-    const userEmail = userData['email'] || userData['email as text'] || null;
+    // Use 'email' column
+    const userEmail = userData.email || null;
 
     const userDataObject = {
       userId: userData._id,

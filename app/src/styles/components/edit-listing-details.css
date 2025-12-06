@@ -14,10 +14,10 @@
   background-color: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   padding: var(--spacing-xl, 24px);
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 10000; /* Above header (z-index: 9999) */
 }
 
 /* Popup Container */
@@ -77,11 +77,11 @@
 
 /* Popup Subtitle */
 .eld-popup-subtitle {
-  padding: 0 var(--spacing-lg, 16px);
-  margin-top: calc(-1 * var(--spacing-sm, 8px));
-  margin-bottom: var(--spacing-md, 12px);
+  padding: var(--spacing-sm, 8px) var(--spacing-lg, 16px) var(--spacing-md, 12px);
+  margin: 0;
   font-size: 13px;
   color: var(--color-text-secondary, #6B7280);
+  background: white;
 }
 
 /* Popup Body */
@@ -334,16 +334,28 @@
 /* Toast Notifications */
 .eld-toast {
   position: fixed;
-  bottom: var(--spacing-xl, 24px);
-  right: var(--spacing-xl, 24px);
+  top: var(--spacing-xl, 24px);
+  left: 50%;
+  transform: translateX(-50%);
   min-width: 200px;
-  max-width: 320px;
+  max-width: 400px;
   padding: var(--spacing-md, 12px) var(--spacing-lg, 16px);
   border-radius: var(--radius-md, 8px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  animation: eld-slideUp 200ms ease;
-  z-index: 2000;
+  animation: eld-slideDown 200ms ease;
+  z-index: 10001; /* Above popup overlay */
   background: white;
+}
+
+@keyframes eld-slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 }
 
 @keyframes eld-slideUp {
@@ -483,4 +495,211 @@
 .eld-add-rule-btn:hover {
   border-color: var(--color-primary, #321662);
   color: var(--color-primary, #321662);
+}
+
+/* Label with Action (e.g., "generate with AI" link) */
+.eld-label-with-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-xs, 4px);
+}
+
+.eld-label-with-action .eld-form-label {
+  margin-bottom: 0;
+}
+
+/* Link-style Button */
+.eld-btn-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary, #321662);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color 150ms ease, opacity 150ms ease;
+}
+
+.eld-btn-link:hover:not(:disabled) {
+  color: #271250;
+  text-decoration: underline;
+}
+
+.eld-btn-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Photo Gallery with Drag and Drop */
+.eld-photo-gallery {
+  margin-bottom: var(--spacing-lg, 16px);
+}
+
+.eld-drag-hint {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+  margin-bottom: var(--spacing-sm, 8px);
+}
+
+.eld-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-sm, 8px);
+}
+
+@media (max-width: 480px) {
+  .eld-photo-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.eld-photo-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  background-color: var(--color-background-light, #F7F8F9);
+  cursor: grab;
+  transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.eld-photo-item:active {
+  cursor: grabbing;
+}
+
+.eld-photo-item.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.eld-photo-item.drag-over {
+  box-shadow: 0 0 0 2px var(--color-primary, #321662);
+  transform: scale(1.02);
+}
+
+.eld-photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.eld-photo-controls {
+  position: absolute;
+  top: var(--spacing-xs, 4px);
+  right: var(--spacing-xs, 4px);
+  display: flex;
+  gap: var(--spacing-xs, 4px);
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.eld-photo-item:hover .eld-photo-controls {
+  opacity: 1;
+}
+
+.eld-photo-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.9);
+  border: none;
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  color: var(--color-error, #DC2626);
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.eld-photo-delete:hover {
+  background: var(--color-error, #DC2626);
+  color: white;
+}
+
+.eld-photo-badge {
+  position: absolute;
+  bottom: var(--spacing-xs, 4px);
+  left: var(--spacing-xs, 4px);
+  padding: 2px 8px;
+  background: var(--color-primary, #321662);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: var(--radius-sm, 6px);
+  text-transform: uppercase;
+}
+
+/* Upload Zone */
+.eld-photo-zone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: var(--spacing-lg, 16px);
+  border: 2px dashed var(--color-border, #E5E7EB);
+  border-radius: var(--radius-md, 8px);
+  background-color: var(--color-background-light, #F7F8F9);
+  cursor: pointer;
+  transition: border-color 150ms ease, background-color 150ms ease;
+  margin-bottom: var(--spacing-md, 12px);
+}
+
+.eld-photo-zone:hover:not(.uploading) {
+  border-color: var(--color-primary, #321662);
+  background-color: rgba(49, 22, 98, 0.02);
+}
+
+.eld-photo-zone.uploading {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.eld-photo-zone-content {
+  text-align: center;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.eld-photo-zone-content svg {
+  margin-bottom: var(--spacing-sm, 8px);
+  color: var(--color-text-secondary, #6B7280);
+}
+
+.eld-photo-zone-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary, #1F2937);
+  margin: 0 0 var(--spacing-xs, 4px);
+}
+
+.eld-photo-zone-subtitle {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+  margin: 0;
+}
+
+/* Upload Spinner */
+.eld-upload-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--color-border, #E5E7EB);
+  border-top-color: var(--color-primary, #321662);
+  border-radius: 50%;
+  animation: eld-spin 0.8s linear infinite;
+  margin: 0 auto var(--spacing-sm, 8px);
+}
+
+@keyframes eld-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Photo Count */
+.eld-photo-count {
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+  text-align: center;
 }
