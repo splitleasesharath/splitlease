@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 // Icons
 const StarIcon = ({ filled }) => (
   <svg
@@ -39,6 +41,27 @@ const TrashIcon = () => (
   </svg>
 );
 
+const DragHandleIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="9" cy="5" r="1" fill="currentColor" />
+    <circle cx="9" cy="12" r="1" fill="currentColor" />
+    <circle cx="9" cy="19" r="1" fill="currentColor" />
+    <circle cx="15" cy="5" r="1" fill="currentColor" />
+    <circle cx="15" cy="12" r="1" fill="currentColor" />
+    <circle cx="15" cy="19" r="1" fill="currentColor" />
+  </svg>
+);
+
 const PHOTO_TYPES = [
   'Dining Room',
   'Bathroom',
@@ -49,8 +72,61 @@ const PHOTO_TYPES = [
   'Other',
 ];
 
-export default function PhotosSection({ listing, onAddPhotos, onDeletePhoto, onSetCover }) {
+export default function PhotosSection({ listing, onAddPhotos, onDeletePhoto, onSetCover, onReorderPhotos }) {
   const photos = listing?.photos || [];
+
+  // Drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  // Drag and drop handlers
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    // Add a slight delay to allow the drag image to be captured
+    setTimeout(() => {
+      e.target.closest('.listing-dashboard-photos__card')?.classList.add('listing-dashboard-photos__card--dragging');
+    }, 0);
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    // Only clear if leaving the card entirely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setDragOverIndex(null);
+    }
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // Call the reorder handler
+    if (onReorderPhotos) {
+      onReorderPhotos(draggedIndex, dropIndex);
+    }
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = (e) => {
+    e.target.closest('.listing-dashboard-photos__card')?.classList.remove('listing-dashboard-photos__card--dragging');
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
 
   // Helper to get a valid image URL
   const getImageUrl = (photo) => {
@@ -83,13 +159,36 @@ export default function PhotosSection({ listing, onAddPhotos, onDeletePhoto, onS
         </button>
       </div>
 
+      {/* Drag hint */}
+      {photos.length > 1 && (
+        <p className="listing-dashboard-photos__hint">
+          Drag and drop photos to reorder. First photo is the cover photo.
+        </p>
+      )}
+
       {/* Photos Grid */}
       <div className="listing-dashboard-photos__grid">
         {photos.map((photo, index) => {
           const imageUrl = getImageUrl(photo);
+          const isDragging = draggedIndex === index;
+          const isDragOver = dragOverIndex === index;
 
           return (
-            <div key={photo.id || index} className="listing-dashboard-photos__card">
+            <div
+              key={photo.id || index}
+              className={`listing-dashboard-photos__card ${isDragging ? 'listing-dashboard-photos__card--dragging' : ''} ${isDragOver ? 'listing-dashboard-photos__card--drag-over' : ''}`}
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
+            >
+              {/* Drag Handle */}
+              <div className="listing-dashboard-photos__drag-handle" title="Drag to reorder">
+                <DragHandleIcon />
+              </div>
+
               {/* Photo Image */}
               <div className="listing-dashboard-photos__image-container">
                 {imageUrl ? (
@@ -98,6 +197,7 @@ export default function PhotosSection({ listing, onAddPhotos, onDeletePhoto, onS
                     alt={photo.photoType || `Photo ${index + 1}`}
                     className="listing-dashboard-photos__image"
                     onError={handleImageError}
+                    draggable={false}
                   />
                 ) : (
                   <div className="listing-dashboard-photos__placeholder">

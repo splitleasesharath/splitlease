@@ -1349,15 +1349,6 @@
   }
 }
 
-.listing-dashboard-photos__card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  border: 1px solid var(--ld-border-color);
-  border-radius: 8px;
-  overflow: hidden;
-}
-
 .listing-dashboard-photos__image-container {
   position: relative;
   aspect-ratio: 4/3;
@@ -1527,6 +1518,76 @@
 
 .listing-dashboard-photos__empty button:hover {
   background-color: var(--ld-success);
+}
+
+/* Drag hint text */
+.listing-dashboard-photos__hint {
+  font-size: 13px;
+  color: var(--ld-text-secondary);
+  margin: 0 0 12px 0;
+  font-style: italic;
+}
+
+/* Drag handle */
+.listing-dashboard-photos__drag-handle {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: grab;
+  color: #6b7280;
+  z-index: 3;
+  transition: all 0.2s ease;
+}
+
+.listing-dashboard-photos__drag-handle:hover {
+  background-color: #f3f4f6;
+  color: #374151;
+}
+
+.listing-dashboard-photos__card:active .listing-dashboard-photos__drag-handle {
+  cursor: grabbing;
+}
+
+/* Photo card - make it position relative for absolute positioned children */
+.listing-dashboard-photos__card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border: 2px solid var(--ld-border-color);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: grab;
+  transition: all 0.2s ease;
+  background-color: white;
+}
+
+.listing-dashboard-photos__card:active {
+  cursor: grabbing;
+}
+
+/* Dragging state */
+.listing-dashboard-photos__card--dragging {
+  opacity: 0.5;
+  transform: scale(0.98);
+  border-color: var(--ld-accent-purple);
+  box-shadow: 0 8px 24px rgba(107, 79, 187, 0.3);
+}
+
+/* Drag over state - show where item will be dropped */
+.listing-dashboard-photos__card--drag-over {
+  border-color: var(--ld-accent-purple);
+  border-style: dashed;
+  background-color: #f3e8ff;
+  transform: scale(1.02);
 }
 
 /* Cancellation Policy Section */
@@ -1705,6 +1766,44 @@
   font-size: 12px;
   color: var(--ld-text-secondary);
   font-style: italic;
+}
+
+/* Monthly Pricing Display */
+.listing-dashboard-pricing__monthly-rate {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px;
+  background: linear-gradient(135deg, #f8f5ff 0%, #eef2ff 100%);
+  border: 2px solid var(--ld-accent-purple);
+  border-radius: 12px;
+  text-align: center;
+}
+
+.listing-dashboard-pricing__monthly-rate-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ld-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.listing-dashboard-pricing__monthly-rate-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--ld-accent-purple);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+
+.listing-dashboard-pricing__monthly-rate-period {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ld-text-secondary);
 }
 
 /* Responsive adjustments */

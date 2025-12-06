@@ -269,6 +269,7 @@ function transformListingData(dbListing, photos = [], lookups = {}, isListingTri
 
     damageDeposit: dbListing['💰Damage Deposit'] || 0,
     maintenanceFee: dbListing['💰Cleaning Cost / Maintenance Fee'] || 0,
+    monthlyHostRate: dbListing['💰Monthly Host Rate'] || 0,
 
     // Availability
     leaseTermMin: dbListing['Minimum Weeks'] || 6,
@@ -714,6 +715,74 @@ export default function useListingDashboardPageLogic() {
     }
   }, [listing, getListingIdFromUrl, fetchListing]);
 
+  const handleReorderPhotos = useCallback(async (fromIndex, toIndex) => {
+    if (!listing || fromIndex === toIndex) return;
+
+    console.log('🔀 Reordering photos:', fromIndex, '→', toIndex);
+
+    // Create new photos array with reordered items
+    const newPhotos = [...listing.photos];
+    const [movedPhoto] = newPhotos.splice(fromIndex, 1);
+    newPhotos.splice(toIndex, 0, movedPhoto);
+
+    // Update isCover - first photo is always cover
+    newPhotos.forEach((p, idx) => {
+      p.isCover = idx === 0;
+    });
+
+    // Update local state immediately for responsive UI
+    setListing(prev => ({
+      ...prev,
+      photos: newPhotos,
+    }));
+
+    // Persist to database
+    try {
+      const listingId = getListingIdFromUrl();
+
+      // Check if this is a listing_trial
+      const { data: trialCheck } = await supabase
+        .from('listing_trial')
+        .select('id')
+        .eq('id', listingId)
+        .maybeSingle();
+
+      if (trialCheck) {
+        // For listing_trial, update the inline 'Features - Photos' JSON
+        const photosJson = newPhotos.map((p, idx) => ({
+          url: p.url,
+          isCover: idx === 0,
+          type: p.photoType || 'Other',
+          sortOrder: idx,
+        }));
+
+        await supabase
+          .from('listing_trial')
+          .update({ 'Features - Photos': JSON.stringify(photosJson) })
+          .eq('id', listingId);
+
+        console.log('✅ Photos reordered in listing_trial');
+      } else {
+        // For regular listing, update the listing_photo table sort orders
+        for (let i = 0; i < newPhotos.length; i++) {
+          await supabase
+            .from('listing_photo')
+            .update({
+              SortOrder: i,
+              toggleMainPhoto: i === 0,
+            })
+            .eq('_id', newPhotos[i].id);
+        }
+
+        console.log('✅ Photos reordered in listing_photo table');
+      }
+    } catch (err) {
+      console.error('❌ Error reordering photos:', err);
+      // Revert local state on error
+      fetchListing(getListingIdFromUrl());
+    }
+  }, [listing, getListingIdFromUrl, fetchListing]);
+
   const handleDeletePhoto = useCallback(async (photoId) => {
     if (!listing || !photoId) return;
 
@@ -870,10 +939,13 @@ export default function useListingDashboardPageLogic() {
     // Import Reviews handlers
     handleImportReviews,
     handleCloseImportReviews,
+    handleSubmitImportReviews,
+    isImportingReviews,
 
     // Photo management handlers
     handleSetCoverPhoto,
     handleDeletePhoto,
+    handleReorderPhotos,
 
     // Edit modal handlers
     handleEditSection,

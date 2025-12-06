@@ -48,6 +48,7 @@ export default function ListingDashboardPage() {
     isImportingReviews,
     handleSetCoverPhoto,
     handleDeletePhoto,
+    handleReorderPhotos,
     handleEditSection,
     handleCloseEdit,
     handleSaveEdit,
@@ -187,6 +188,7 @@ export default function ListingDashboardPage() {
               onAddPhotos={() => handleEditSection('photos')}
               onDeletePhoto={handleDeletePhoto}
               onSetCover={handleSetCoverPhoto}
+              onReorderPhotos={handleReorderPhotos}
             />
 
             {/* Cancellation Policy Section */}
