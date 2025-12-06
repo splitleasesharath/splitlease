@@ -1,6 +1,32 @@
 /* Schedule Co-Host Modal Styles */
+/* Design based on Bubble Schedule-Co-Host component specifications */
 
-/* Overlay */
+/* ============================================================
+   COLOR PALETTE (from design spec)
+   ============================================================ */
+:root {
+  --sc-purple-primary: #6F348F;
+  --sc-purple-deep: #31135D;
+  --sc-purple-border: #4847CE;
+  --sc-purple-light: #8C97C7;
+  --sc-purple-text: #5C20B6;
+  --sc-white: #FFFFFF;
+  --sc-background-light: #F7F8F9;
+  --sc-border-gray: #D4D4D4;
+  --sc-text-dark: #000000;
+  --sc-text-medium: #424242;
+  --sc-text-light: #3D3D3D;
+  --sc-placeholder: #B5B5B5;
+  --sc-tag-bg: #dfdff6;
+  --sc-shadow: #AAAAAA;
+  --sc-tag-border: #C9C9C9;
+  --sc-disabled: #DDDDDD;
+  --sc-alert-yellow: #FFF6B2;
+}
+
+/* ============================================================
+   OVERLAY
+   ============================================================ */
 .schedule-cohost-overlay {
   position: fixed;
   top: 0;
@@ -15,27 +41,32 @@
   padding: 20px;
 }
 
-/* Modal Container */
+/* ============================================================
+   MODAL CONTAINER
+   ============================================================ */
 .schedule-cohost-modal {
   position: relative;
-  background-color: #e8e8e8;
-  border-radius: 12px;
-  padding: 32px;
+  background-color: var(--sc-white);
+  border-radius: 10px;
+  padding: 0;
   width: 100%;
-  max-width: 600px;
+  max-width: 419px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 2px 0 var(--sc-shadow);
+  border: 1px solid var(--sc-border-gray);
 }
 
-/* Close Button */
+/* ============================================================
+   CLOSE BUTTON
+   ============================================================ */
 .schedule-cohost-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 9px;
+  right: 15px;
   background: none;
   border: none;
-  color: #666;
+  color: var(--sc-purple-primary);
   cursor: pointer;
   padding: 4px;
   display: flex;
@@ -43,14 +74,16 @@
   justify-content: center;
   border-radius: 4px;
   transition: all 0.2s;
+  z-index: 10;
 }
 
 .schedule-cohost-close:hover {
-  background-color: rgba(0, 0, 0, 0.1);
-  color: #333;
+  background-color: rgba(111, 52, 143, 0.1);
 }
 
-/* Loading Overlay */
+/* ============================================================
+   LOADING OVERLAY
+   ============================================================ */
 .schedule-cohost-loading {
   position: absolute;
   top: 0;
@@ -58,7 +91,7 @@
   right: 0;
   bottom: 0;
   background-color: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -70,7 +103,7 @@
   width: 48px;
   height: 48px;
   border: 4px solid #f3f3f3;
-  border-top: 4px solid #1b1428;
+  border-top: 4px solid var(--sc-purple-deep);
   border-radius: 50%;
   animation: schedule-cohost-spin 1s linear infinite;
 }
@@ -84,7 +117,8 @@
   margin-top: 16px;
   font-size: 16px;
   font-weight: 500;
-  color: #1b1428;
+  color: var(--sc-purple-deep);
+  font-family: 'Inter', sans-serif;
   animation: schedule-cohost-pulse 1.5s ease-in-out infinite;
 }
 
@@ -93,9 +127,13 @@
   50% { opacity: 0.5; }
 }
 
-/* Header */
+/* ============================================================
+   HEADER
+   ============================================================ */
 .schedule-cohost-header {
-  margin-bottom: 24px;
+  padding: 20px 20px 15px 20px;
+  border-bottom: 1px solid var(--sc-text-dark);
+  margin-bottom: 0;
 }
 
 .schedule-cohost-header-title {
@@ -105,32 +143,42 @@
   margin-bottom: 8px;
 }
 
-.schedule-cohost-icon {
-  font-size: 28px;
+.schedule-cohost-icon-img {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
 }
 
 .schedule-cohost-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1b1428;
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--sc-text-dark);
   margin: 0;
+  line-height: 1.6;
 }
 
 .schedule-cohost-subtitle {
+  font-family: 'Lato', sans-serif;
   font-size: 14px;
-  color: #666;
+  font-weight: 400;
+  color: var(--sc-text-medium);
   margin: 0;
+  line-height: 1.25;
 }
 
-/* Alerts */
+/* ============================================================
+   ALERTS
+   ============================================================ */
 .schedule-cohost-alert {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
+  margin: 15px 20px;
   border-radius: 8px;
-  margin-bottom: 20px;
   font-size: 14px;
+  font-family: 'Lato', sans-serif;
   animation: schedule-cohost-slide-in 0.3s ease-out;
 }
 
@@ -162,31 +210,38 @@
   font-weight: bold;
 }
 
-/* Team Members */
+/* ============================================================
+   TEAM MEMBERS SECTION
+   ============================================================ */
 .schedule-cohost-team {
-  text-align: center;
-  margin-bottom: 24px;
+  background-color: var(--sc-background-light);
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin: 15px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .schedule-cohost-avatars {
   display: flex;
-  justify-content: center;
-  margin-bottom: 12px;
+  flex-shrink: 0;
 }
 
 .schedule-cohost-avatar {
-  width: 48px;
-  height: 48px;
+  width: 38px;
+  height: 38px;
   border-radius: 50%;
-  border: 3px solid white;
+  border: 2px solid var(--sc-white);
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   font-weight: 600;
-  font-size: 18px;
-  margin-left: -12px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  margin-left: -10px;
 }
 
 .schedule-cohost-avatar:first-child {
@@ -194,90 +249,226 @@
 }
 
 .schedule-cohost-team-text {
-  font-size: 14px;
-  color: #555;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  color: #010001;
   margin: 0;
+  line-height: 1.5;
+  letter-spacing: 0.5px;
 }
 
-/* Time Slots Section */
+/* ============================================================
+   CALENDAR SECTION
+   ============================================================ */
+.schedule-cohost-calendar {
+  background-color: var(--sc-white);
+  padding: 15px 20px;
+  margin: 0 20px 15px;
+}
+
+.schedule-cohost-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.schedule-cohost-calendar-nav {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  color: var(--sc-text-dark);
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.schedule-cohost-calendar-nav:hover {
+  background-color: var(--sc-background-light);
+}
+
+.schedule-cohost-calendar-month {
+  font-family: 'Alata', 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 8px;
+}
+
+.schedule-cohost-calendar-weekday {
+  text-align: center;
+  font-family: 'Alata', 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sc-text-medium);
+  padding: 8px 0;
+}
+
+.schedule-cohost-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.schedule-cohost-calendar-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Alata', 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: #434343;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  line-height: 1.25;
+}
+
+.schedule-cohost-calendar-day:hover:not(:disabled) {
+  background-color: var(--sc-background-light);
+}
+
+.schedule-cohost-calendar-day--other {
+  color: var(--sc-disabled);
+}
+
+.schedule-cohost-calendar-day--past {
+  color: var(--sc-disabled);
+  cursor: not-allowed;
+}
+
+.schedule-cohost-calendar-day--selected {
+  background-color: var(--sc-purple-light);
+  color: var(--sc-purple-text);
+  font-weight: 700;
+}
+
+.schedule-cohost-calendar-day--today {
+  border: 2px solid var(--sc-purple-border);
+}
+
+.schedule-cohost-calendar-day--today.schedule-cohost-calendar-day--selected {
+  border: none;
+}
+
+/* ============================================================
+   TIME SLOTS SECTION
+   ============================================================ */
 .schedule-cohost-timeslots {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  background-color: var(--sc-white);
+  border-radius: 5px;
+  padding: 15px 20px;
+  margin: 0 20px 15px;
+  border: 1px solid var(--sc-border-gray);
 }
 
 .schedule-cohost-timeslots-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  align-items: flex-start;
+  margin-bottom: 12px;
   flex-wrap: wrap;
   gap: 8px;
 }
 
+.schedule-cohost-timeslots-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .schedule-cohost-label {
-  font-size: 16px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
   font-weight: 600;
-  color: #1b1428;
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-label u {
+  text-decoration: underline;
 }
 
 .schedule-cohost-count {
-  font-weight: normal;
-  color: #666;
-  font-size: 14px;
+  font-family: 'Lato', sans-serif;
+  font-weight: 400;
+  color: var(--sc-text-medium);
+  font-size: 12px;
 }
 
 .schedule-cohost-clear-btn {
   background: none;
-  border: 1px solid #9d9d9d;
+  border: 1px solid var(--sc-border-gray);
   border-radius: 6px;
   padding: 6px 12px;
-  font-size: 13px;
-  color: #666;
+  font-size: 12px;
+  font-family: 'Lato', sans-serif;
+  color: var(--sc-text-medium);
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .schedule-cohost-clear-btn:hover {
-  background-color: #f0f0f0;
-  border-color: #1b1428;
-  color: #1b1428;
+  background-color: var(--sc-background-light);
+  border-color: var(--sc-purple-deep);
+  color: var(--sc-purple-deep);
+}
+
+.schedule-cohost-selected-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background-color: var(--sc-alert-yellow);
+  border: 1px dashed var(--sc-purple-border);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  color: var(--sc-text-dark);
 }
 
 .schedule-cohost-slots-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
   margin-bottom: 12px;
 }
 
 .schedule-cohost-slot {
-  background-color: white;
+  background-color: var(--sc-white);
   color: #333;
-  border: 2px solid #9d9d9d;
-  border-radius: 20px;
-  padding: 10px 16px;
-  font-size: 13px;
+  border: 1px solid var(--sc-purple-text);
+  border-radius: 10px;
+  padding: 10px 8px;
+  font-family: 'Alata', 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
   white-space: nowrap;
+  text-align: center;
 }
 
 .schedule-cohost-slot:hover:not(:disabled) {
-  border-color: #1b1428;
-  background-color: #f8f8f8;
+  background-color: var(--sc-purple-light);
+  color: var(--sc-purple-text);
 }
 
 .schedule-cohost-slot--selected {
-  background-color: #1b1428;
-  color: white;
-  border-color: #1b1428;
-}
-
-.schedule-cohost-slot--selected:hover {
-  background-color: #2d1f3d;
+  background-color: var(--sc-purple-light);
+  color: var(--sc-purple-text);
+  font-weight: 700;
+  border-color: var(--sc-purple-text);
 }
 
 .schedule-cohost-slot--disabled {
@@ -286,18 +477,17 @@
 }
 
 .schedule-cohost-timezone {
+  font-family: 'Lato', sans-serif;
   font-size: 12px;
-  color: #666;
+  color: var(--sc-text-medium);
   margin: 0;
 }
 
-/* Form Fields */
+/* ============================================================
+   FORM SECTION
+   ============================================================ */
 .schedule-cohost-form {
-  background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  padding: 15px 20px;
 }
 
 .schedule-cohost-field {
@@ -308,13 +498,56 @@
   margin-bottom: 0;
 }
 
+/* Subject Tags (Multi-select) */
+.schedule-cohost-subjects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.schedule-cohost-subject-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--sc-white);
+  border: 1px solid var(--sc-tag-border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: #252525;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.schedule-cohost-subject-tag:hover {
+  border-color: var(--sc-purple-border);
+  background-color: var(--sc-tag-bg);
+}
+
+.schedule-cohost-subject-tag--selected {
+  background-color: var(--sc-tag-bg);
+  border-color: var(--sc-purple-border);
+}
+
+.schedule-cohost-subject-remove {
+  color: #999;
+  font-size: 16px;
+  line-height: 1;
+}
+
+/* Textarea */
 .schedule-cohost-textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid #9d9d9d;
-  border-radius: 8px;
+  border: 1px solid var(--sc-purple-border);
+  border-radius: 4px;
+  font-family: 'Lato', sans-serif;
   font-size: 14px;
-  font-family: inherit;
+  font-weight: 400;
+  color: var(--sc-text-light);
   resize: vertical;
   transition: border-color 0.2s;
   box-sizing: border-box;
@@ -323,15 +556,16 @@
 
 .schedule-cohost-textarea:focus {
   outline: none;
-  border-color: #1b1428;
+  border-color: var(--sc-purple-deep);
 }
 
 .schedule-cohost-textarea::placeholder {
-  color: #999;
+  color: var(--sc-placeholder);
 }
 
 .schedule-cohost-charcount {
   display: block;
+  font-family: 'Lato', sans-serif;
   font-size: 12px;
   color: #999;
   text-align: right;
@@ -342,27 +576,33 @@
   color: #d9534f;
 }
 
-/* Actions */
+/* ============================================================
+   ACTIONS / SUBMIT BUTTON
+   ============================================================ */
 .schedule-cohost-actions {
+  padding: 15px 20px 20px;
   text-align: center;
 }
 
 .schedule-cohost-submit {
-  background-color: #1b1428;
-  color: white;
+  background-color: var(--sc-purple-deep);
+  color: #FCFAFF;
   border: none;
-  border-radius: 100px;
-  padding: 14px 40px;
-  font-size: 15px;
-  font-weight: 600;
+  border-radius: 20px;
+  padding: 14px 20px;
+  font-family: 'DM Sans', 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 500;
+  letter-spacing: -0.25px;
   cursor: pointer;
   transition: all 0.3s;
+  min-width: 200px;
 }
 
 .schedule-cohost-submit:hover:not(:disabled) {
   background-color: #2d1f3d;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(27, 20, 40, 0.3);
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.3);
 }
 
 .schedule-cohost-submit:disabled {
@@ -372,15 +612,18 @@
 }
 
 .schedule-cohost-hint {
+  font-family: 'Lato', sans-serif;
   font-size: 13px;
   color: #d9534f;
   margin: 12px 0 0;
 }
 
-/* Submitted Stage */
+/* ============================================================
+   SUBMITTED STAGE
+   ============================================================ */
 .schedule-cohost-submitted {
   text-align: center;
-  padding: 20px 0;
+  padding: 30px 20px;
 }
 
 .schedule-cohost-success-icon {
@@ -398,15 +641,17 @@
 }
 
 .schedule-cohost-success-title {
+  font-family: 'Inter', sans-serif;
   font-size: 20px;
   font-weight: 600;
-  color: #1b1428;
+  color: var(--sc-purple-deep);
   margin: 0 0 12px;
 }
 
 .schedule-cohost-success-text {
+  font-family: 'Lato', sans-serif;
   font-size: 14px;
-  color: #666;
+  color: var(--sc-text-medium);
   margin: 0 0 16px;
 }
 
@@ -415,17 +660,29 @@
 }
 
 .schedule-cohost-selected-time {
-  background-color: white;
+  background-color: var(--sc-background-light);
   padding: 12px 16px;
   border-radius: 8px;
   margin-bottom: 8px;
+  font-family: 'Lato', sans-serif;
   font-size: 14px;
-  color: #333;
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-submitted-subject {
+  background-color: var(--sc-tag-bg);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--sc-text-dark);
 }
 
 .schedule-cohost-success-info {
+  font-family: 'Lato', sans-serif;
   font-size: 14px;
-  color: #666;
+  color: var(--sc-text-medium);
   margin: 0 0 24px;
 }
 
@@ -435,6 +692,7 @@
   border: none;
   border-radius: 8px;
   padding: 12px 32px;
+  font-family: 'DM Sans', 'Inter', sans-serif;
   font-size: 15px;
   font-weight: 600;
   cursor: pointer;
@@ -445,11 +703,13 @@
   background-color: #559237;
 }
 
-/* Metadata */
+/* ============================================================
+   METADATA
+   ============================================================ */
 .schedule-cohost-metadata {
-  margin-top: 20px;
+  margin: 0 20px 20px;
   padding: 12px 16px;
-  background-color: #f8f9fa;
+  background-color: var(--sc-background-light);
   border-radius: 8px;
   font-size: 13px;
   display: flex;
@@ -457,32 +717,51 @@
 }
 
 .schedule-cohost-metadata-label {
-  color: #666;
+  font-family: 'Lato', sans-serif;
+  color: var(--sc-text-medium);
 }
 
 .schedule-cohost-metadata-value {
-  color: #333;
   font-family: monospace;
+  color: var(--sc-text-dark);
 }
 
-/* Responsive */
-@media (max-width: 640px) {
+/* ============================================================
+   RESPONSIVE STYLES
+   ============================================================ */
+@media (max-width: 768px) {
   .schedule-cohost-modal {
-    padding: 24px 16px;
+    max-width: 100%;
+    margin: 10px;
+  }
+
+  .schedule-cohost-slots-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .schedule-cohost-subject-tag {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .schedule-cohost-modal {
+    padding: 0;
     max-height: 95vh;
   }
 
   .schedule-cohost-title {
-    font-size: 20px;
+    font-size: 16px;
   }
 
   .schedule-cohost-slots-grid {
-    flex-direction: column;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .schedule-cohost-slot {
-    width: 100%;
-    text-align: center;
+    padding: 8px 6px;
+    font-size: 13px;
   }
 
   .schedule-cohost-submit {
@@ -492,5 +771,10 @@
   .schedule-cohost-timeslots-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .schedule-cohost-team {
+    flex-direction: column;
+    text-align: center;
   }
 }

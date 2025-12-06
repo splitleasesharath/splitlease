@@ -2,6 +2,7 @@ import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import { EditListingDetails } from '../../shared/EditListingDetails/EditListingDetails';
 import ScheduleCohost from '../../shared/ScheduleCohost';
+import ExternalReviews from '../../shared/ExternalReviews';
 import useListingDashboardPageLogic from './useListingDashboardPageLogic';
 import {
   NavigationHeader,
@@ -29,6 +30,7 @@ export default function ListingDashboardPage() {
     error,
     editSection,
     showScheduleCohost,
+    showImportReviews,
     currentUser,
     handleTabChange,
     handleCardClick,
@@ -40,6 +42,8 @@ export default function ListingDashboardPage() {
     handleScheduleCohost,
     handleCloseScheduleCohost,
     handleCohostRequestSubmitted,
+    handleImportReviews,
+    handleCloseImportReviews,
     handleEditSection,
     handleCloseEdit,
     handleSaveEdit,
@@ -133,6 +137,7 @@ export default function ListingDashboardPage() {
             <PropertyInfoSection
               listing={listing}
               onDescriptionChange={handleDescriptionChange}
+              onImportReviews={handleImportReviews}
             />
 
             {/* Description Section */}
@@ -237,6 +242,19 @@ export default function ListingDashboardPage() {
           onRequestSubmitted={handleCohostRequestSubmitted}
           onClose={handleCloseScheduleCohost}
         />
+      )}
+
+      {/* Import Listing Reviews Modal */}
+      {showImportReviews && (
+        <div className="modal-overlay" onClick={handleCloseImportReviews}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={handleCloseImportReviews}>
+              &times;
+            </button>
+            <h2 style={{ marginTop: 0, marginBottom: '16px' }}>Import Listing Reviews</h2>
+            <ExternalReviews listingId={listing?.id} />
+          </div>
+        </div>
       )}
     </>
   );

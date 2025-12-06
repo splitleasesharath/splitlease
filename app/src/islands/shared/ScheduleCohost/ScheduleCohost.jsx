@@ -1,16 +1,40 @@
 /**
  * Schedule Co-Host Component
  * Modal for scheduling meetings with Split Lease specialists
+ * Features a calendar date picker with time slot selection
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  generateAvailableTimeSlots,
+  generateCalendarDays,
+  generateTimeSlots,
   createCoHostRequest,
   validateTimeSlots,
   sanitizeInput,
+  formatDateForDisplay,
 } from './cohostService';
 import './ScheduleCohost.css';
+
+// Team member data (from Co-Host/Split Lease Admins option set)
+const TEAM_MEMBERS = [
+  { id: 'sharath', name: 'Sharath', initial: 'S' },
+  { id: 'frederick', name: 'Frederick', initial: 'F' },
+  { id: 'rod', name: 'Rod', initial: 'R' },
+  { id: 'igor', name: 'Igor', initial: 'I' },
+];
+
+// Subject options (from design spec)
+const SUBJECT_OPTIONS = [
+  'Can my Listing be private?',
+  'What are the differences between the rental styles?',
+  'How do I get paid?',
+  'Setting up my listing',
+  'Understanding pricing',
+  'Other question',
+];
+
+// Days of week header
+const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /**
  * @param {Object} props
@@ -29,26 +53,34 @@ export default function ScheduleCohost({
   onRequestSubmitted,
   onClose,
 }) {
-  const [stage, setStage] = useState('form'); // 'form' | 'submitted' | 'rating'
-  const [selectedSlots, setSelectedSlots] = useState([]);
-  const [subject, setSubject] = useState('');
+  const [stage, setStage] = useState('form'); // 'form' | 'submitted'
+
+  // Calendar state
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState([]);
+
+  // Form state
+  const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [details, setDetails] = useState('');
-  const [availableSlots, setAvailableSlots] = useState([]);
+
+  // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [requestId, setRequestId] = useState(null);
 
-  // Rating state
-  const [rating, setRating] = useState(0);
-  const [ratingMessage, setRatingMessage] = useState('');
+  // Generate calendar days for current month
+  const calendarDays = useMemo(() => {
+    return generateCalendarDays(currentMonth);
+  }, [currentMonth]);
 
-  // Initialize available slots
-  useEffect(() => {
-    const slots = generateAvailableTimeSlots();
-    setAvailableSlots(slots);
-  }, []);
+  // Generate available time slots for selected date (11 AM - 10 PM EST, hourly)
+  const availableTimeSlots = useMemo(() => {
+    if (!selectedDate) return [];
+    return generateTimeSlots(selectedDate, 11, 22, 60);
+  }, [selectedDate]);
 
   // Clear messages after timeout
   useEffect(() => {
@@ -65,30 +97,68 @@ export default function ScheduleCohost({
     }
   }, [error]);
 
-  const handleSlotSelect = (slotId) => {
+  // Calendar navigation
+  const goToPreviousMonth = () => {
+    setCurrentMonth((prev) => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() - 1);
+      return newDate;
+    });
+  };
+
+  const goToNextMonth = () => {
+    setCurrentMonth((prev) => {
+      const newDate = new Date(prev);
+      newDate.setMonth(newDate.getMonth() + 1);
+      return newDate;
+    });
+  };
+
+  // Date selection
+  const handleDateClick = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Don't allow past dates
+    if (date < today) return;
+
+    // Don't allow dates not in current month
+    if (date.getMonth() !== currentMonth.getMonth()) return;
+
+    setSelectedDate(date);
+    // Clear time slots when date changes
+    setSelectedTimeSlots([]);
     setError(null);
-    setSelectedSlots((prev) => {
-      if (prev.includes(slotId)) {
-        return prev.filter((id) => id !== slotId);
+  };
+
+  // Time slot selection (max 3)
+  const handleTimeSlotClick = (slot) => {
+    setError(null);
+    setSelectedTimeSlots((prev) => {
+      const isSelected = prev.some((s) => s.id === slot.id);
+      if (isSelected) {
+        return prev.filter((s) => s.id !== slot.id);
       }
       if (prev.length < 3) {
-        return [...prev, slotId];
+        return [...prev, slot];
       }
       return prev;
     });
   };
 
-  const handleClearSlots = () => {
-    setSelectedSlots([]);
+  const handleClearTimeSlots = () => {
+    setSelectedTimeSlots([]);
     setError(null);
   };
 
-  const handleSubjectChange = (e) => {
-    const value = sanitizeInput(e.target.value);
-    if (value.length <= 500) {
-      setSubject(value);
-      setError(null);
-    }
+  // Subject selection (multi-select)
+  const handleSubjectToggle = (subject) => {
+    setSelectedSubjects((prev) => {
+      if (prev.includes(subject)) {
+        return prev.filter((s) => s !== subject);
+      }
+      return [...prev, subject];
+    });
   };
 
   const handleDetailsChange = (e) => {
@@ -99,7 +169,7 @@ export default function ScheduleCohost({
   };
 
   const handleSubmit = async () => {
-    const validation = validateTimeSlots(selectedSlots);
+    const validation = validateTimeSlots(selectedTimeSlots);
     if (!validation.valid) {
       setError(validation.error);
       return;
@@ -114,8 +184,8 @@ export default function ScheduleCohost({
       userEmail,
       userName,
       listingId,
-      selectedTimes: selectedSlots,
-      subject,
+      selectedTimes: selectedTimeSlots,
+      subject: selectedSubjects.join(', '),
       details,
     });
 
@@ -138,12 +208,46 @@ export default function ScheduleCohost({
     }
   };
 
-  const getSelectedSlotDetails = () => {
-    return selectedSlots.map((slotId) => {
-      const slot = availableSlots.find((s) => s.id === slotId);
-      return slot?.formattedTime || slotId;
-    });
+  // Check if a date is in the current month
+  const isCurrentMonth = (date) => {
+    return date.getMonth() === currentMonth.getMonth();
   };
+
+  // Check if a date is today
+  const isToday = (date) => {
+    const today = new Date();
+    return (
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
+    );
+  };
+
+  // Check if a date is in the past
+  const isPastDate = (date) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return date < today;
+  };
+
+  // Check if a date is selected
+  const isSelectedDate = (date) => {
+    if (!selectedDate) return false;
+    return (
+      date.getDate() === selectedDate.getDate() &&
+      date.getMonth() === selectedDate.getMonth() &&
+      date.getFullYear() === selectedDate.getFullYear()
+    );
+  };
+
+  // Format month/year for display
+  const monthYearDisplay = currentMonth.toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric',
+  });
+
+  const canSubmit = selectedTimeSlots.length === 3 && !isLoading;
+  const slotsRemaining = 3 - selectedTimeSlots.length;
 
   return (
     <div className="schedule-cohost-overlay" onClick={handleBackdropClick}>
@@ -158,7 +262,7 @@ export default function ScheduleCohost({
 
         {/* Close Button */}
         <button className="schedule-cohost-close" onClick={onClose} type="button">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
         </button>
@@ -166,7 +270,11 @@ export default function ScheduleCohost({
         {/* Header */}
         <div className="schedule-cohost-header">
           <div className="schedule-cohost-header-title">
-            <span className="schedule-cohost-icon">👥</span>
+            <img
+              src="https://cdn.prod.website-files.com/65c82bd7eda94f81b69c8ea8/65e81c5fb2c5ee14e40bfb0c_Icon-cohost.svg"
+              alt=""
+              className="schedule-cohost-icon-img"
+            />
             <h2 className="schedule-cohost-title">Meet with a Co-Host</h2>
           </div>
           <p className="schedule-cohost-subtitle">Get personalized guidance and support.</p>
@@ -181,7 +289,7 @@ export default function ScheduleCohost({
         )}
         {error && (
           <div className="schedule-cohost-alert schedule-cohost-alert--error">
-            <span className="schedule-cohost-alert-icon">✕</span>
+            <span className="schedule-cohost-alert-icon">!</span>
             <span>{error}</span>
           </div>
         )}
@@ -189,12 +297,16 @@ export default function ScheduleCohost({
         {/* Form Stage */}
         {stage === 'form' && (
           <>
-            {/* Team Members */}
+            {/* Team Members Section */}
             <div className="schedule-cohost-team">
               <div className="schedule-cohost-avatars">
-                {['A', 'B', 'C', 'D'].map((letter, index) => (
-                  <div key={letter} className="schedule-cohost-avatar" style={{ zIndex: 10 - index }}>
-                    {letter}
+                {TEAM_MEMBERS.map((member, index) => (
+                  <div
+                    key={member.id}
+                    className="schedule-cohost-avatar"
+                    style={{ zIndex: TEAM_MEMBERS.length - index }}
+                  >
+                    {member.initial}
                   </div>
                 ))}
               </div>
@@ -203,57 +315,144 @@ export default function ScheduleCohost({
               </p>
             </div>
 
-            {/* Time Slots */}
-            <div className="schedule-cohost-timeslots">
-              <div className="schedule-cohost-timeslots-header">
-                <label className="schedule-cohost-label">
-                  Select 3 Time Slots (EST)
-                  <span className="schedule-cohost-count"> ({selectedSlots.length}/3 selected)</span>
-                </label>
-                {selectedSlots.length > 0 && (
-                  <button
-                    className="schedule-cohost-clear-btn"
-                    onClick={handleClearSlots}
-                    type="button"
-                  >
-                    Clear Time Slots
-                  </button>
-                )}
+            {/* Calendar Section */}
+            <div className="schedule-cohost-calendar">
+              {/* Calendar Header */}
+              <div className="schedule-cohost-calendar-header">
+                <button
+                  type="button"
+                  className="schedule-cohost-calendar-nav"
+                  onClick={goToPreviousMonth}
+                  aria-label="Previous month"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M15 18l-6-6 6-6" />
+                  </svg>
+                </button>
+                <span className="schedule-cohost-calendar-month">{monthYearDisplay}</span>
+                <button
+                  type="button"
+                  className="schedule-cohost-calendar-nav"
+                  onClick={goToNextMonth}
+                  aria-label="Next month"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 18l6-6-6-6" />
+                  </svg>
+                </button>
               </div>
-              <div className="schedule-cohost-slots-grid">
-                {availableSlots.map((slot) => {
-                  const isSelected = selectedSlots.includes(slot.id);
-                  const isDisabled = !isSelected && selectedSlots.length >= 3;
+
+              {/* Days of Week */}
+              <div className="schedule-cohost-calendar-weekdays">
+                {DAYS_OF_WEEK.map((day) => (
+                  <div key={day} className="schedule-cohost-calendar-weekday">
+                    {day}
+                  </div>
+                ))}
+              </div>
+
+              {/* Calendar Grid */}
+              <div className="schedule-cohost-calendar-grid">
+                {calendarDays.map((date, index) => {
+                  const isOtherMonth = !isCurrentMonth(date);
+                  const isPast = isPastDate(date);
+                  const isSelected = isSelectedDate(date);
+                  const isTodayDate = isToday(date);
+                  const isClickable = !isOtherMonth && !isPast;
+
                   return (
                     <button
-                      key={slot.id}
-                      className={`schedule-cohost-slot ${isSelected ? 'schedule-cohost-slot--selected' : ''} ${isDisabled ? 'schedule-cohost-slot--disabled' : ''}`}
-                      onClick={() => handleSlotSelect(slot.id)}
-                      disabled={isDisabled}
+                      key={index}
                       type="button"
+                      className={`schedule-cohost-calendar-day ${isOtherMonth ? 'schedule-cohost-calendar-day--other' : ''} ${isPast ? 'schedule-cohost-calendar-day--past' : ''} ${isSelected ? 'schedule-cohost-calendar-day--selected' : ''} ${isTodayDate ? 'schedule-cohost-calendar-day--today' : ''}`}
+                      onClick={() => isClickable && handleDateClick(date)}
+                      disabled={!isClickable}
                     >
-                      {slot.formattedTime}
+                      {date.getDate()}
                     </button>
                   );
                 })}
               </div>
-              <p className="schedule-cohost-timezone">Current timezone: Eastern Standard Time (EST)</p>
             </div>
 
-            {/* Form Fields */}
+            {/* Time Slots Section */}
+            {selectedDate && (
+              <div className="schedule-cohost-timeslots">
+                <div className="schedule-cohost-timeslots-header">
+                  <div className="schedule-cohost-timeslots-title">
+                    <label className="schedule-cohost-label">
+                      Select <u>3</u> Time Slots (EST)
+                    </label>
+                    <span className="schedule-cohost-count">
+                      {selectedTimeSlots.length}/3 selected
+                    </span>
+                  </div>
+                  {selectedTimeSlots.length > 0 && (
+                    <button
+                      className="schedule-cohost-clear-btn"
+                      onClick={handleClearTimeSlots}
+                      type="button"
+                    >
+                      Clear Time Slots
+                    </button>
+                  )}
+                </div>
+
+                {/* Selected Date Display */}
+                <div className="schedule-cohost-selected-date">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </svg>
+                  <span>{formatDateForDisplay(selectedDate)}</span>
+                </div>
+
+                {/* Time Slot Grid */}
+                <div className="schedule-cohost-slots-grid">
+                  {availableTimeSlots.map((slot) => {
+                    const isSelected = selectedTimeSlots.some((s) => s.id === slot.id);
+                    const isDisabled = !isSelected && selectedTimeSlots.length >= 3;
+                    return (
+                      <button
+                        key={slot.id}
+                        className={`schedule-cohost-slot ${isSelected ? 'schedule-cohost-slot--selected' : ''} ${isDisabled ? 'schedule-cohost-slot--disabled' : ''}`}
+                        onClick={() => handleTimeSlotClick(slot)}
+                        disabled={isDisabled}
+                        type="button"
+                      >
+                        {slot.formattedTime}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <p className="schedule-cohost-timezone">
+                  Times shown in Eastern Standard Time (EST)
+                </p>
+              </div>
+            )}
+
+            {/* Subject Selection */}
             <div className="schedule-cohost-form">
               <div className="schedule-cohost-field">
-                <label className="schedule-cohost-label">Need help with...</label>
-                <textarea
-                  className="schedule-cohost-textarea"
-                  value={subject}
-                  onChange={handleSubjectChange}
-                  placeholder="I need help with..."
-                  rows={3}
-                />
-                <span className={`schedule-cohost-charcount ${subject.length > 450 ? 'schedule-cohost-charcount--warning' : ''}`}>
-                  {subject.length}/500 characters
-                </span>
+                <label className="schedule-cohost-label">What would you like help with?</label>
+                <div className="schedule-cohost-subjects">
+                  {SUBJECT_OPTIONS.map((subject) => (
+                    <button
+                      key={subject}
+                      type="button"
+                      className={`schedule-cohost-subject-tag ${selectedSubjects.includes(subject) ? 'schedule-cohost-subject-tag--selected' : ''}`}
+                      onClick={() => handleSubjectToggle(subject)}
+                    >
+                      {subject}
+                      {selectedSubjects.includes(subject) && (
+                        <span className="schedule-cohost-subject-remove">×</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="schedule-cohost-field">
@@ -263,7 +462,7 @@ export default function ScheduleCohost({
                   value={details}
                   onChange={handleDetailsChange}
                   placeholder="Type any details of what you want to get help with (optional)"
-                  rows={5}
+                  rows={4}
                 />
                 <span className={`schedule-cohost-charcount ${details.length > 900 ? 'schedule-cohost-charcount--warning' : ''}`}>
                   {details.length}/1000 characters
@@ -276,15 +475,17 @@ export default function ScheduleCohost({
               <button
                 className="schedule-cohost-submit"
                 onClick={handleSubmit}
-                disabled={selectedSlots.length !== 3 || isLoading}
+                disabled={!canSubmit}
                 type="button"
               >
-                {isLoading ? 'Submitting...' : 'Submit Request'}
+                {isLoading
+                  ? 'Submitting...'
+                  : slotsRemaining > 0
+                    ? `Select ${slotsRemaining} more slot${slotsRemaining !== 1 ? 's' : ''}`
+                    : 'Submit Request'}
               </button>
-              {selectedSlots.length < 3 && (
-                <p className="schedule-cohost-hint">
-                  Please select {3 - selectedSlots.length} more time slot{3 - selectedSlots.length !== 1 ? 's' : ''}
-                </p>
+              {!selectedDate && (
+                <p className="schedule-cohost-hint">Please select a date from the calendar</p>
               )}
             </div>
           </>
@@ -297,12 +498,17 @@ export default function ScheduleCohost({
             <h3 className="schedule-cohost-success-title">Your request has been submitted!</h3>
             <p className="schedule-cohost-success-text">Your suggested meeting times:</p>
             <div className="schedule-cohost-selected-times">
-              {getSelectedSlotDetails().map((time, index) => (
-                <div key={index} className="schedule-cohost-selected-time">
-                  #{index + 1} - {time}
+              {selectedTimeSlots.map((slot, index) => (
+                <div key={slot.id} className="schedule-cohost-selected-time">
+                  #{index + 1} - {slot.displayTime}
                 </div>
               ))}
             </div>
+            {selectedSubjects.length > 0 && (
+              <div className="schedule-cohost-submitted-subject">
+                <strong>Topics:</strong> {selectedSubjects.join(', ')}
+              </div>
+            )}
             <p className="schedule-cohost-success-info">
               We'll reach out to confirm a time that works for everyone.
             </p>

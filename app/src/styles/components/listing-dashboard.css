@@ -1428,29 +1428,57 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  background-color: white;
-  border: none;
-  border-radius: 6px;
+  width: 40px;
+  height: 40px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   transition: all 0.2s ease;
+  padding: 0;
 }
 
+/* Ensure SVG icons are visible */
+.listing-dashboard-photos__star-btn svg,
+.listing-dashboard-photos__delete-btn svg {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+/* Star button hover state */
 .listing-dashboard-photos__star-btn:hover {
   background-color: #fef3c7;
-  transform: scale(1.05);
+  border-color: #f59e0b;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
 }
 
+.listing-dashboard-photos__star-btn:hover svg {
+  stroke: #f59e0b;
+}
+
+/* Star button - filled/active state (current cover photo) */
 .listing-dashboard-photos__star-btn--active {
   background-color: #fef3c7;
+  border-color: #f59e0b;
 }
 
+.listing-dashboard-photos__star-btn--active:hover {
+  background-color: #fde68a;
+}
+
+/* Delete button hover state */
 .listing-dashboard-photos__delete-btn:hover {
   background-color: #fee2e2;
-  color: #ef4444;
-  transform: scale(1.05);
+  border-color: #ef4444;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.listing-dashboard-photos__delete-btn:hover svg {
+  stroke: #ef4444;
 }
 
 .listing-dashboard-photos__type {
@@ -1697,4 +1725,48 @@
   .ld-nightly-legend__swatch-rate {
     font-size: 7px;
   }
+}
+
+/* ========================================
+   Import Reviews Modal Styles
+   ======================================== */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--ld-text-secondary);
+  line-height: 1;
+  padding: 4px;
+}
+
+.modal-close:hover {
+  color: var(--ld-text-primary);
 }

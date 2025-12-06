@@ -541,6 +541,9 @@ export default function useListingDashboardPageLogic() {
   const [showScheduleCohost, setShowScheduleCohost] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
+  // Import Reviews modal state
+  const [showImportReviews, setShowImportReviews] = useState(false);
+
   // Fetch current user data
   useEffect(() => {
     const fetchUser = async () => {
@@ -568,6 +571,15 @@ export default function useListingDashboardPageLogic() {
   const handleCohostRequestSubmitted = useCallback((requestId, virtualMeetingId) => {
     console.log('✅ Co-host request submitted:', { requestId, virtualMeetingId });
     // Optionally refresh data or show success notification
+  }, []);
+
+  // Import Reviews handlers
+  const handleImportReviews = useCallback(() => {
+    setShowImportReviews(true);
+  }, []);
+
+  const handleCloseImportReviews = useCallback(() => {
+    setShowImportReviews(false);
   }, []);
 
   // Edit modal handlers
@@ -630,6 +642,7 @@ export default function useListingDashboardPageLogic() {
     error,
     editSection,
     showScheduleCohost,
+    showImportReviews,
     currentUser,
 
     // Handlers
@@ -645,6 +658,10 @@ export default function useListingDashboardPageLogic() {
     handleScheduleCohost,
     handleCloseScheduleCohost,
     handleCohostRequestSubmitted,
+
+    // Import Reviews handlers
+    handleImportReviews,
+    handleCloseImportReviews,
 
     // Edit modal handlers
     handleEditSection,

@@ -1,54 +1,84 @@
 /**
  * Co-Host Service
  * Handles API calls for co-host scheduling via Supabase Edge Functions
+ * Includes calendar generation and time slot utilities
  */
 
 import { supabase } from '../../../lib/supabase';
 
 /**
- * Generate available time slots for the next 7 days
- * @returns {Array<{id: string, dateTime: Date, formattedTime: string}>}
+ * Generate 42 calendar days (6 weeks x 7 days) for a given month
+ * Includes padding from previous and next months
+ * @param {Date} month - Any date within the target month
+ * @returns {Date[]} Array of 42 dates for the calendar grid
  */
-export function generateAvailableTimeSlots() {
+export function generateCalendarDays(month) {
+  const year = month.getFullYear();
+  const monthIndex = month.getMonth();
+
+  // First day of the month
+  const firstDayOfMonth = new Date(year, monthIndex, 1);
+  // Day of week for first day (0 = Sunday, 6 = Saturday)
+  const startDayOfWeek = firstDayOfMonth.getDay();
+
+  // Calculate the first date to show (may be in previous month)
+  const startDate = new Date(firstDayOfMonth);
+  startDate.setDate(startDate.getDate() - startDayOfWeek);
+
+  const days = [];
+  for (let i = 0; i < 42; i++) {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
+    days.push(date);
+  }
+
+  return days;
+}
+
+/**
+ * Generate available time slots for a given date
+ * @param {Date} selectedDate - The selected date
+ * @param {number} startHour - Start hour (default: 11 for 11 AM)
+ * @param {number} endHour - End hour (default: 22 for 10 PM)
+ * @param {number} intervalMinutes - Interval in minutes (default: 60)
+ * @returns {Array<{id: string, dateTime: Date, formattedTime: string, displayTime: string}>}
+ */
+export function generateTimeSlots(selectedDate, startHour = 11, endHour = 22, intervalMinutes = 60) {
   const slots = [];
-  const now = new Date();
+  const date = new Date(selectedDate);
 
-  for (let i = 1; i <= 7; i++) {
-    const date = new Date(now);
-    date.setDate(date.getDate() + i);
+  for (let hour = startHour; hour < endHour; hour++) {
+    for (let minutes = 0; minutes < 60; minutes += intervalMinutes) {
+      const slotTime = new Date(date);
+      slotTime.setHours(hour, minutes, 0, 0);
 
-    // Skip weekends
-    const dayOfWeek = date.getDay();
-    if (dayOfWeek === 0 || dayOfWeek === 6) continue;
-
-    // Morning slots (9am, 10am, 11am EST)
-    [9, 10, 11].forEach((hour) => {
-      const slot = new Date(date);
-      slot.setHours(hour, 0, 0, 0);
       slots.push({
-        id: `slot_${slot.getTime()}`,
-        dateTime: slot,
-        formattedTime: formatDateTime(slot),
+        id: `slot_${slotTime.getTime()}`,
+        dateTime: slotTime,
+        formattedTime: formatTimeOnly(slotTime),
+        displayTime: formatDateTime(slotTime),
       });
-    });
-
-    // Afternoon slots (2pm, 3pm, 4pm EST)
-    [14, 15, 16].forEach((hour) => {
-      const slot = new Date(date);
-      slot.setHours(hour, 0, 0, 0);
-      slots.push({
-        id: `slot_${slot.getTime()}`,
-        dateTime: slot,
-        formattedTime: formatDateTime(slot),
-      });
-    });
+    }
   }
 
   return slots;
 }
 
 /**
- * Format date/time for display
+ * Format time only for display (e.g., "4:00 pm")
+ * @param {Date} date
+ * @returns {string}
+ */
+export function formatTimeOnly(date) {
+  return date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  }).toLowerCase();
+}
+
+/**
+ * Format date/time for display (e.g., "Wed, Dec 25, 4:00 pm EST")
  * @param {Date} date
  * @returns {string}
  */
@@ -61,6 +91,20 @@ export function formatDateTime(date) {
     minute: '2-digit',
     hour12: true,
   }) + ' EST';
+}
+
+/**
+ * Format date for display (e.g., "Wednesday, December 25, 2024")
+ * @param {Date} date
+ * @returns {string}
+ */
+export function formatDateForDisplay(date) {
+  return date.toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 /**
@@ -85,7 +129,7 @@ export function formatDateForBubble(date) {
  * @param {string} data.userId - Current user's ID
  * @param {string} data.userEmail - Current user's email
  * @param {string} data.userName - Current user's name
- * @param {string[]} data.selectedTimes - Array of selected time slot IDs
+ * @param {Array} data.selectedTimes - Array of selected time slot objects
  * @param {string} [data.subject] - What help is needed
  * @param {string} [data.details] - Additional details
  * @param {string} [data.listingId] - Associated listing ID
@@ -93,6 +137,11 @@ export function formatDateForBubble(date) {
  */
 export async function createCoHostRequest(data) {
   try {
+    // Format times for Bubble API
+    const formattedTimes = data.selectedTimes.map((slot) => {
+      return formatDateForBubble(slot.dateTime);
+    });
+
     const { data: response, error } = await supabase.functions.invoke('bubble-proxy', {
       body: {
         action: 'cohost-request',
@@ -102,13 +151,11 @@ export async function createCoHostRequest(data) {
           'details submitted (optional)': data.details || '',
           'Co-Host User': data.userId,
           'Listing': data.listingId,
-          'selected_times': data.selectedTimes.map((id) => {
-            // Extract timestamp from slot ID and format for Bubble
-            const timestamp = parseInt(id.replace('slot_', ''), 10);
-            return formatDateForBubble(new Date(timestamp));
-          }),
+          'selected_times': formattedTimes,
+          'suggested dates and times': formattedTimes,
           userEmail: data.userEmail,
           userName: data.userName,
+          'Status - Co-Host Request': 'Co-Host Requested',
         },
       },
     });
@@ -164,7 +211,7 @@ export async function submitRating(requestId, rating, message) {
 
 /**
  * Validate time slot selection
- * @param {string[]} selectedSlots
+ * @param {Array} selectedSlots - Array of slot objects
  * @returns {{valid: boolean, error?: string}}
  */
 export function validateTimeSlots(selectedSlots) {
@@ -192,4 +239,37 @@ export function sanitizeInput(input) {
     .trim()
     .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
     .substring(0, 5000);
+}
+
+/**
+ * Check if a date is selectable (not in the past, not a weekend if required)
+ * @param {Date} date
+ * @param {Date} [lastLogicalDate] - Optional last valid date
+ * @returns {boolean}
+ */
+export function isDateSelectable(date, lastLogicalDate = null) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Past dates are not selectable
+  if (date < today) {
+    return false;
+  }
+
+  // If lastLogicalDate is set, dates beyond it are not selectable
+  if (lastLogicalDate && date > lastLogicalDate) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Check if a date is in the given month
+ * @param {Date} date
+ * @param {Date} month
+ * @returns {boolean}
+ */
+export function isDateInMonth(date, month) {
+  return date.getMonth() === month.getMonth() && date.getFullYear() === month.getFullYear();
 }
