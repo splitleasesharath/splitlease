@@ -834,9 +834,10 @@ export function SelfListingPageV2() {
           >
             <label>Monthly Lease Agreement</label>
             <p className="agreement-desc">
-              Our Split Lease 'Monthly' model helps guests meet rent obligations through a subsidy.
-              For financial stability, we may need to sublease unused nights. If this isn't ideal,
-              our other models might be more fitting for you, as they don't require this provision.
+              With the 'Monthly' model, you receive a fixed monthly rate regardless of how many
+              nights your guest uses. Split Lease may sublease unused nights to short-term guests,
+              maximizing occupancy. If you'd rather not have additional guests in your space,
+              our other models may suit you better.
             </p>
             <div className="agreement-option">
               <label className="agreement-label">
@@ -852,7 +853,7 @@ export function SelfListingPageV2() {
                     }
                   }}
                 />
-                <span className="agreement-text">I agree to the monthly subsidy terms</span>
+                <span className="agreement-text">I agree to the monthly sublease terms</span>
               </label>
             </div>
             <div className="agreement-option">
