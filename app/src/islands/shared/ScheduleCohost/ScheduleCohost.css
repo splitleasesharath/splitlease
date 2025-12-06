@@ -778,3 +778,176 @@
     text-align: center;
   }
 }
+
+/* ============================================================
+   TOAST NOTIFICATIONS (from workflow spec)
+   ============================================================ */
+.schedule-cohost-toasts {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10001;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 400px;
+  width: calc(100% - 40px);
+}
+
+.schedule-cohost-toast {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 40px 14px 16px;
+  background-color: var(--sc-white);
+  border-radius: 8px;
+  border-left: 4px solid;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  animation: schedule-cohost-toast-in 0.3s ease-out;
+  overflow: hidden;
+}
+
+@keyframes schedule-cohost-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.schedule-cohost-toast-icon {
+  font-size: 20px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.schedule-cohost-toast-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.schedule-cohost-toast-title {
+  display: block;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sc-text-dark);
+  margin-bottom: 2px;
+}
+
+.schedule-cohost-toast-message {
+  font-family: 'Lato', sans-serif;
+  font-size: 13px;
+  color: var(--sc-text-medium);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.schedule-cohost-toast-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--sc-text-medium);
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  transition: color 0.2s;
+}
+
+.schedule-cohost-toast-close:hover {
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  animation: schedule-cohost-toast-progress linear forwards;
+}
+
+@keyframes schedule-cohost-toast-progress {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+/* ============================================================
+   STAR RATING (for post-meeting feedback)
+   ============================================================ */
+.schedule-cohost-star-rating {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.schedule-cohost-star {
+  background: none;
+  border: none;
+  font-size: 32px;
+  color: var(--sc-border-gray);
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s, transform 0.2s;
+}
+
+.schedule-cohost-star:hover:not(:disabled) {
+  transform: scale(1.1);
+}
+
+.schedule-cohost-star--filled {
+  color: #F6DA3B;
+}
+
+.schedule-cohost-star:disabled {
+  cursor: default;
+}
+
+/* ============================================================
+   RATING SECTION
+   ============================================================ */
+.schedule-cohost-rating-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--sc-border-gray);
+}
+
+.schedule-cohost-rating-title {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sc-text-dark);
+  text-align: center;
+  margin: 0 0 10px;
+}
+
+/* ============================================================
+   DETAILS STAGE
+   ============================================================ */
+.schedule-cohost-details {
+  text-align: center;
+  padding: 30px 20px;
+}
+
+.schedule-cohost-details-subject {
+  background-color: var(--sc-tag-bg);
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  color: var(--sc-text-dark);
+}

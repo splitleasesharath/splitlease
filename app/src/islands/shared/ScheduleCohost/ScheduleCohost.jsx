@@ -2,13 +2,20 @@
  * Schedule Co-Host Component
  * Modal for scheduling meetings with Split Lease specialists
  * Features a calendar date picker with time slot selection
+ *
+ * Workflow based on Bubble Schedule-Co-Host element:
+ * - Creates Co-Host Request record
+ * - Creates Virtual Meeting Schedules and Links record
+ * - Sends confirmation notifications
+ * - Supports post-meeting rating
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   generateCalendarDays,
   generateTimeSlots,
   createCoHostRequest,
+  submitRating,
   validateTimeSlots,
   sanitizeInput,
   formatDateForDisplay,
@@ -36,12 +43,96 @@ const SUBJECT_OPTIONS = [
 // Days of week header
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// Toast types with colors (from workflow spec)
+const TOAST_TYPES = {
+  success: { color: '#22C55E', icon: '✓' },
+  error: { color: '#EF4444', icon: '✕' },
+  warning: { color: '#F6DA3B', icon: '⚠' },
+  information: { color: '#3B82F6', icon: 'ℹ' },
+};
+
+/**
+ * Toast notification component
+ */
+function Toast({ toast, onClose }) {
+  const config = TOAST_TYPES[toast.type] || TOAST_TYPES.information;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onClose(toast.id);
+    }, toast.duration || 10000);
+    return () => clearTimeout(timer);
+  }, [toast.id, toast.duration, onClose]);
+
+  return (
+    <div
+      className="schedule-cohost-toast"
+      style={{ borderLeftColor: config.color }}
+    >
+      <span
+        className="schedule-cohost-toast-icon"
+        style={{ color: config.color }}
+      >
+        {config.icon}
+      </span>
+      <div className="schedule-cohost-toast-content">
+        <strong className="schedule-cohost-toast-title">{toast.title}</strong>
+        {toast.content && (
+          <p className="schedule-cohost-toast-message">{toast.content}</p>
+        )}
+      </div>
+      <button
+        className="schedule-cohost-toast-close"
+        onClick={() => onClose(toast.id)}
+        type="button"
+      >
+        ×
+      </button>
+      <div
+        className="schedule-cohost-toast-progress"
+        style={{
+          backgroundColor: config.color,
+          animationDuration: `${toast.duration || 10000}ms`,
+        }}
+      />
+    </div>
+  );
+}
+
+/**
+ * Star rating component for post-meeting feedback
+ */
+function StarRating({ value, onChange, disabled }) {
+  const [hoverValue, setHoverValue] = useState(0);
+
+  return (
+    <div className="schedule-cohost-star-rating">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          className={`schedule-cohost-star ${
+            star <= (hoverValue || value) ? 'schedule-cohost-star--filled' : ''
+          }`}
+          onClick={() => !disabled && onChange(star)}
+          onMouseEnter={() => !disabled && setHoverValue(star)}
+          onMouseLeave={() => setHoverValue(0)}
+          disabled={disabled}
+        >
+          ★
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /**
  * @param {Object} props
  * @param {string} props.userId - Current user's Bubble ID
  * @param {string} props.userEmail - Current user's email
  * @param {string} props.userName - Current user's name
  * @param {string} [props.listingId] - Associated listing ID
+ * @param {Object} [props.existingRequest] - Existing co-host request to view/rate
  * @param {Function} [props.onRequestSubmitted] - Callback when request is submitted
  * @param {Function} props.onClose - Callback to close the modal
  */
@@ -50,10 +141,15 @@ export default function ScheduleCohost({
   userEmail,
   userName,
   listingId,
+  existingRequest,
   onRequestSubmitted,
   onClose,
 }) {
-  const [stage, setStage] = useState('form'); // 'form' | 'submitted'
+  // Stage controls which view is shown: 'request' | 'details' | 'rating'
+  const [stage, setStage] = useState(existingRequest ? 'details' : 'request');
+
+  // Co-host request state
+  const [coHostRequest, setCoHostRequest] = useState(existingRequest || null);
 
   // Calendar state
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -64,12 +160,14 @@ export default function ScheduleCohost({
   const [selectedSubjects, setSelectedSubjects] = useState([]);
   const [details, setDetails] = useState('');
 
+  // Rating state (for post-meeting feedback)
+  const [rating, setRating] = useState(0);
+  const [ratingMessage, setRatingMessage] = useState('');
+
   // UI state
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
-  const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [requestId, setRequestId] = useState(null);
+  const [toasts, setToasts] = useState([]);
 
   // Generate calendar days for current month
   const calendarDays = useMemo(() => {
@@ -82,20 +180,15 @@ export default function ScheduleCohost({
     return generateTimeSlots(selectedDate, 11, 22, 60);
   }, [selectedDate]);
 
-  // Clear messages after timeout
-  useEffect(() => {
-    if (successMessage) {
-      const timer = setTimeout(() => setSuccessMessage(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [successMessage]);
+  // Toast notification system (from workflow spec)
+  const showToast = useCallback(({ title, content, type = 'information', duration = 10000 }) => {
+    const id = `toast_${Date.now()}`;
+    setToasts((prev) => [...prev, { id, title, content, type, duration }]);
+  }, []);
 
-  useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(null), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error]);
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
 
   // Calendar navigation
   const goToPreviousMonth = () => {
@@ -128,12 +221,10 @@ export default function ScheduleCohost({
     setSelectedDate(date);
     // Clear time slots when date changes
     setSelectedTimeSlots([]);
-    setError(null);
   };
 
   // Time slot selection (max 3)
   const handleTimeSlotClick = (slot) => {
-    setError(null);
     setSelectedTimeSlots((prev) => {
       const isSelected = prev.some((s) => s.id === slot.id);
       if (isSelected) {
@@ -148,7 +239,6 @@ export default function ScheduleCohost({
 
   const handleClearTimeSlots = () => {
     setSelectedTimeSlots([]);
-    setError(null);
   };
 
   // Subject selection (multi-select)
@@ -168,16 +258,29 @@ export default function ScheduleCohost({
     }
   };
 
+  /**
+   * Main submit workflow (from Bubble workflow spec)
+   * Steps:
+   * 1. Create Co-Host Request
+   * 2. Create Virtual Meeting Schedules and Links
+   * 3. Link virtual meeting to request
+   * 4-5. Send internal notification email (handled by Edge Function)
+   * 6. Save to user's account (handled by Edge Function)
+   * 7. Send confirmation email and SMS (handled by Edge Function)
+   * 8. Schedule reminder (handled by Edge Function)
+   * 9-10. Reset time slots
+   * 11. Show success toast
+   * 12. Hide modal (or show details)
+   */
   const handleSubmit = async () => {
     const validation = validateTimeSlots(selectedTimeSlots);
     if (!validation.valid) {
-      setError(validation.error);
+      showToast({ title: 'Validation Error', content: validation.error, type: 'error' });
       return;
     }
 
     setIsLoading(true);
-    setLoadingMessage('Scheduling your booking...');
-    setError(null);
+    setLoadingMessage('Creating your co-host request...');
 
     const result = await createCoHostRequest({
       userId,
@@ -193,12 +296,85 @@ export default function ScheduleCohost({
     setLoadingMessage('');
 
     if (result.success) {
-      setRequestId(result.requestId);
-      setSuccessMessage('Co-Host request submitted successfully!');
-      setStage('submitted');
+      // Store the created request
+      setCoHostRequest({
+        id: result.requestId,
+        virtualMeetingId: result.virtualMeetingId,
+        status: 'Co-Host Requested',
+        subject: selectedSubjects.join(', '),
+        details,
+        selectedTimes: selectedTimeSlots,
+      });
+
+      // Reset time slots (Steps 9-10)
+      setSelectedTimeSlots([]);
+      setSelectedDate(null);
+      setSelectedSubjects([]);
+      setDetails('');
+
+      // Show success toast (Step 11)
+      showToast({
+        title: 'Request Submitted!',
+        content: 'Your co-host request has been submitted. We\'ll reach out to confirm a time.',
+        type: 'success',
+        duration: 10000,
+      });
+
+      // Change to details view
+      setStage('details');
+
+      // Callback to parent
       onRequestSubmitted?.(result.requestId, result.virtualMeetingId);
     } else {
-      setError(result.error || 'Failed to submit request');
+      showToast({
+        title: 'Submission Failed',
+        content: result.error || 'Failed to submit request. Please try again.',
+        type: 'error',
+      });
+    }
+  };
+
+  /**
+   * Submit rating workflow (from Bubble workflow spec)
+   * Updates Co-Host Request with rating and closes the request
+   */
+  const handleSubmitRating = async () => {
+    if (!coHostRequest?.id || rating === 0) {
+      showToast({ title: 'Please select a rating', type: 'warning' });
+      return;
+    }
+
+    setIsLoading(true);
+    setLoadingMessage('Submitting your rating...');
+
+    const result = await submitRating(coHostRequest.id, rating, ratingMessage);
+
+    setIsLoading(false);
+    setLoadingMessage('');
+
+    if (result.success) {
+      showToast({
+        title: 'Thank you!',
+        content: 'Your feedback has been submitted.',
+        type: 'success',
+      });
+
+      // Update local state
+      setCoHostRequest((prev) => ({
+        ...prev,
+        status: 'Request closed',
+        rating,
+        ratingMessage,
+      }));
+
+      // Close after a short delay
+      setTimeout(() => onClose(), 2000);
+    } else {
+      showToast({
+        title: 'Failed to submit rating',
+        content: result.error,
+        type: 'error',
+      });
     }
   };
 
@@ -252,6 +428,13 @@ export default function ScheduleCohost({
   return (
     <div className="schedule-cohost-overlay" onClick={handleBackdropClick}>
       <div className="schedule-cohost-modal">
+        {/* Toast Notifications */}
+        <div className="schedule-cohost-toasts">
+          {toasts.map((toast) => (
+            <Toast key={toast.id} toast={toast} onClose={removeToast} />
+          ))}
+        </div>
+
         {/* Loading Overlay */}
         {isLoading && (
           <div className="schedule-cohost-loading">
@@ -280,22 +463,8 @@ export default function ScheduleCohost({
           <p className="schedule-cohost-subtitle">Get personalized guidance and support.</p>
         </div>
 
-        {/* Alerts */}
-        {successMessage && (
-          <div className="schedule-cohost-alert schedule-cohost-alert--success">
-            <span className="schedule-cohost-alert-icon">✓</span>
-            <span>{successMessage}</span>
-          </div>
-        )}
-        {error && (
-          <div className="schedule-cohost-alert schedule-cohost-alert--error">
-            <span className="schedule-cohost-alert-icon">!</span>
-            <span>{error}</span>
-          </div>
-        )}
-
-        {/* Form Stage */}
-        {stage === 'form' && (
+        {/* Request Form Stage */}
+        {stage === 'request' && (
           <>
             {/* Team Members Section */}
             <div className="schedule-cohost-team">
@@ -491,27 +660,54 @@ export default function ScheduleCohost({
           </>
         )}
 
-        {/* Submitted Stage */}
-        {stage === 'submitted' && (
-          <div className="schedule-cohost-submitted">
+        {/* Details Stage (after submission or viewing existing request) */}
+        {stage === 'details' && coHostRequest && (
+          <div className="schedule-cohost-details">
             <div className="schedule-cohost-success-icon">✓</div>
             <h3 className="schedule-cohost-success-title">Your request has been submitted!</h3>
             <p className="schedule-cohost-success-text">Your suggested meeting times:</p>
+
             <div className="schedule-cohost-selected-times">
-              {selectedTimeSlots.map((slot, index) => (
-                <div key={slot.id} className="schedule-cohost-selected-time">
-                  #{index + 1} - {slot.displayTime}
+              {(coHostRequest.selectedTimes || selectedTimeSlots).map((slot, index) => (
+                <div key={slot.id || index} className="schedule-cohost-selected-time">
+                  #{index + 1} - {slot.displayTime || slot.formattedTime}
                 </div>
               ))}
             </div>
-            {selectedSubjects.length > 0 && (
-              <div className="schedule-cohost-submitted-subject">
-                <strong>Topics:</strong> {selectedSubjects.join(', ')}
+
+            {coHostRequest.subject && (
+              <div className="schedule-cohost-details-subject">
+                <strong>Topics:</strong> {coHostRequest.subject}
               </div>
             )}
+
             <p className="schedule-cohost-success-info">
-              We'll reach out to confirm a time that works for everyone.
+              We'll reach out to confirm a time that works for everyone. You'll receive a confirmation email and SMS shortly.
             </p>
+
+            {/* Show rating option if meeting is completed */}
+            {coHostRequest.status === 'Virtual Meeting Finished' && (
+              <div className="schedule-cohost-rating-section">
+                <h4 className="schedule-cohost-rating-title">How was your meeting?</h4>
+                <StarRating value={rating} onChange={setRating} disabled={isLoading} />
+                <textarea
+                  className="schedule-cohost-textarea"
+                  value={ratingMessage}
+                  onChange={(e) => setRatingMessage(sanitizeInput(e.target.value))}
+                  placeholder="Any feedback? (optional)"
+                  rows={3}
+                />
+                <button
+                  className="schedule-cohost-submit"
+                  onClick={handleSubmitRating}
+                  disabled={rating === 0 || isLoading}
+                  type="button"
+                >
+                  Submit Rating
+                </button>
+              </div>
+            )}
+
             <button
               className="schedule-cohost-done-btn"
               onClick={onClose}
@@ -519,14 +715,14 @@ export default function ScheduleCohost({
             >
               Done
             </button>
-          </div>
-        )}
 
-        {/* Request ID (if available) */}
-        {requestId && stage === 'submitted' && (
-          <div className="schedule-cohost-metadata">
-            <span className="schedule-cohost-metadata-label">Request ID:</span>
-            <span className="schedule-cohost-metadata-value">{requestId}</span>
+            {/* Request ID */}
+            {coHostRequest.id && (
+              <div className="schedule-cohost-metadata">
+                <span className="schedule-cohost-metadata-label">Request ID:</span>
+                <span className="schedule-cohost-metadata-value">{coHostRequest.id}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
