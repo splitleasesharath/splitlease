@@ -543,6 +543,7 @@ export default function useListingDashboardPageLogic() {
 
   // Import Reviews modal state
   const [showImportReviews, setShowImportReviews] = useState(false);
+  const [isImportingReviews, setIsImportingReviews] = useState(false);
 
   // Fetch current user data
   useEffect(() => {
@@ -581,6 +582,213 @@ export default function useListingDashboardPageLogic() {
   const handleCloseImportReviews = useCallback(() => {
     setShowImportReviews(false);
   }, []);
+
+  // Submit import reviews request to Slack
+  const handleSubmitImportReviews = useCallback(async (data) => {
+    setIsImportingReviews(true);
+    try {
+      console.log('📥 Submitting import reviews request:', data);
+
+      // Send to Slack via Edge Function
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/slack`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({
+            action: 'faq_inquiry',
+            payload: {
+              name: currentUser?.firstName || currentUser?.name || 'Host',
+              email: data.emailAddress,
+              inquiry: `📥 **Import Reviews Request**\n\n**Listing ID:** ${data.listingId || 'N/A'}\n**Reviews URL:** ${data.reviewsUrl}\n**Requested by:** ${data.emailAddress}\n\nPlease import reviews from the above URL for this listing.`
+            }
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to submit request');
+      }
+
+      console.log('✅ Import reviews request submitted successfully');
+      alert('Your request has been submitted! Our team will import your reviews within 24-48 hours.');
+      setShowImportReviews(false);
+    } catch (err) {
+      console.error('❌ Error submitting import reviews request:', err);
+      alert('Failed to submit request. Please try again later.');
+    } finally {
+      setIsImportingReviews(false);
+    }
+  }, [currentUser]);
+
+  // Photo management handlers
+  const handleSetCoverPhoto = useCallback(async (photoId) => {
+    if (!listing || !photoId) return;
+
+    console.log('⭐ Setting cover photo:', photoId);
+
+    // Find the photo to set as cover
+    const photoIndex = listing.photos.findIndex(p => p.id === photoId);
+    if (photoIndex === -1 || photoIndex === 0) {
+      console.log('Photo not found or already first');
+      return;
+    }
+
+    // Create new photos array with selected photo first
+    const newPhotos = [...listing.photos];
+    const [selectedPhoto] = newPhotos.splice(photoIndex, 1);
+    selectedPhoto.isCover = true;
+
+    // Reset isCover on other photos
+    newPhotos.forEach(p => { p.isCover = false; });
+
+    // Put selected photo at the beginning
+    newPhotos.unshift(selectedPhoto);
+
+    // Update local state immediately for responsive UI
+    setListing(prev => ({
+      ...prev,
+      photos: newPhotos,
+    }));
+
+    // Persist to database
+    try {
+      const listingId = getListingIdFromUrl();
+
+      // Check if this is a listing_trial
+      const { data: trialCheck } = await supabase
+        .from('listing_trial')
+        .select('id')
+        .eq('id', listingId)
+        .maybeSingle();
+
+      if (trialCheck) {
+        // For listing_trial, update the inline 'Features - Photos' JSON
+        const photosJson = newPhotos.map((p, idx) => ({
+          url: p.url,
+          isCover: idx === 0,
+          type: p.photoType || 'Other',
+          sortOrder: idx,
+        }));
+
+        await supabase
+          .from('listing_trial')
+          .update({ 'Features - Photos': JSON.stringify(photosJson) })
+          .eq('id', listingId);
+
+        console.log('✅ Cover photo updated in listing_trial');
+      } else {
+        // For regular listing, update the listing_photo table
+        // First, reset all photos' toggleMainPhoto to false
+        await supabase
+          .from('listing_photo')
+          .update({ toggleMainPhoto: false })
+          .eq('Listing', listingId);
+
+        // Set the selected photo as cover
+        await supabase
+          .from('listing_photo')
+          .update({ toggleMainPhoto: true, SortOrder: 0 })
+          .eq('_id', photoId);
+
+        // Update sort order for other photos
+        for (let i = 0; i < newPhotos.length; i++) {
+          if (newPhotos[i].id !== photoId) {
+            await supabase
+              .from('listing_photo')
+              .update({ SortOrder: i })
+              .eq('_id', newPhotos[i].id);
+          }
+        }
+
+        console.log('✅ Cover photo updated in listing_photo table');
+      }
+    } catch (err) {
+      console.error('❌ Error updating cover photo:', err);
+      // Revert local state on error
+      fetchListing(getListingIdFromUrl());
+    }
+  }, [listing, getListingIdFromUrl, fetchListing]);
+
+  const handleDeletePhoto = useCallback(async (photoId) => {
+    if (!listing || !photoId) return;
+
+    console.log('🗑️ Deleting photo:', photoId);
+
+    // Find the photo to delete
+    const photoIndex = listing.photos.findIndex(p => p.id === photoId);
+    if (photoIndex === -1) {
+      console.log('Photo not found');
+      return;
+    }
+
+    // Create new photos array without the deleted photo
+    const newPhotos = listing.photos.filter(p => p.id !== photoId);
+
+    // If we deleted the cover photo, make the first remaining photo the cover
+    if (newPhotos.length > 0 && listing.photos[photoIndex].isCover) {
+      newPhotos[0].isCover = true;
+    }
+
+    // Update local state immediately for responsive UI
+    setListing(prev => ({
+      ...prev,
+      photos: newPhotos,
+    }));
+
+    // Persist to database
+    try {
+      const listingId = getListingIdFromUrl();
+
+      // Check if this is a listing_trial
+      const { data: trialCheck } = await supabase
+        .from('listing_trial')
+        .select('id')
+        .eq('id', listingId)
+        .maybeSingle();
+
+      if (trialCheck) {
+        // For listing_trial, update the inline 'Features - Photos' JSON
+        const photosJson = newPhotos.map((p, idx) => ({
+          url: p.url,
+          isCover: idx === 0,
+          type: p.photoType || 'Other',
+          sortOrder: idx,
+        }));
+
+        await supabase
+          .from('listing_trial')
+          .update({ 'Features - Photos': JSON.stringify(photosJson) })
+          .eq('id', listingId);
+
+        console.log('✅ Photo deleted from listing_trial');
+      } else {
+        // For regular listing, soft-delete by setting Active to false
+        await supabase
+          .from('listing_photo')
+          .update({ Active: false })
+          .eq('_id', photoId);
+
+        // If this was the cover photo, set the first remaining photo as cover
+        if (newPhotos.length > 0 && listing.photos[photoIndex].isCover) {
+          await supabase
+            .from('listing_photo')
+            .update({ toggleMainPhoto: true })
+            .eq('_id', newPhotos[0].id);
+        }
+
+        console.log('✅ Photo deleted from listing_photo table');
+      }
+    } catch (err) {
+      console.error('❌ Error deleting photo:', err);
+      // Revert local state on error
+      fetchListing(getListingIdFromUrl());
+    }
+  }, [listing, getListingIdFromUrl, fetchListing]);
 
   // Edit modal handlers
   const handleEditSection = useCallback((section) => {
@@ -662,6 +870,10 @@ export default function useListingDashboardPageLogic() {
     // Import Reviews handlers
     handleImportReviews,
     handleCloseImportReviews,
+
+    // Photo management handlers
+    handleSetCoverPhoto,
+    handleDeletePhoto,
 
     // Edit modal handlers
     handleEditSection,

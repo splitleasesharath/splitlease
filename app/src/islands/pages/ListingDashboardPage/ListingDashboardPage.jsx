@@ -2,7 +2,7 @@ import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import { EditListingDetails } from '../../shared/EditListingDetails/EditListingDetails';
 import ScheduleCohost from '../../shared/ScheduleCohost';
-import ExternalReviews from '../../shared/ExternalReviews';
+import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal';
 import useListingDashboardPageLogic from './useListingDashboardPageLogic';
 import {
   NavigationHeader,
@@ -44,6 +44,10 @@ export default function ListingDashboardPage() {
     handleCohostRequestSubmitted,
     handleImportReviews,
     handleCloseImportReviews,
+    handleSubmitImportReviews,
+    isImportingReviews,
+    handleSetCoverPhoto,
+    handleDeletePhoto,
     handleEditSection,
     handleCloseEdit,
     handleSaveEdit,
@@ -181,8 +185,8 @@ export default function ListingDashboardPage() {
             <PhotosSection
               listing={listing}
               onAddPhotos={() => handleEditSection('photos')}
-              onDeletePhoto={(id) => console.log('Delete photo', id)}
-              onSetCover={(id) => console.log('Set cover photo', id)}
+              onDeletePhoto={handleDeletePhoto}
+              onSetCover={handleSetCoverPhoto}
             />
 
             {/* Cancellation Policy Section */}
@@ -245,17 +249,14 @@ export default function ListingDashboardPage() {
       )}
 
       {/* Import Listing Reviews Modal */}
-      {showImportReviews && (
-        <div className="modal-overlay" onClick={handleCloseImportReviews}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={handleCloseImportReviews}>
-              &times;
-            </button>
-            <h2 style={{ marginTop: 0, marginBottom: '16px' }}>Import Listing Reviews</h2>
-            <ExternalReviews listingId={listing?.id} />
-          </div>
-        </div>
-      )}
+      <ImportListingReviewsModal
+        isOpen={showImportReviews}
+        onClose={handleCloseImportReviews}
+        onSubmit={handleSubmitImportReviews}
+        currentUserEmail={currentUser?.email || ''}
+        listingId={listing?.id}
+        isLoading={isImportingReviews}
+      />
     </>
   );
 }
