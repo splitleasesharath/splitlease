@@ -1359,6 +1359,10 @@
   background: white;
   color: var(--v2-primary);
   border: 2px solid var(--v2-primary);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-next.btn-secondary:hover {
