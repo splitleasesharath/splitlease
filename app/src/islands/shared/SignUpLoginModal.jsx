@@ -1108,6 +1108,9 @@ export default function SignUpLoginModal({
 
   const renderPasswordResetView = () => (
     <>
+      <div style={styles.logoContainer}>
+        <div style={styles.logo}>SL</div>
+      </div>
       <div style={styles.header}>
         <h2 style={styles.title}>Enter your email to reset your password.</h2>
       </div>
