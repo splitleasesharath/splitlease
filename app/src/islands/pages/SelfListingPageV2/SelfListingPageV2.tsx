@@ -1,0 +1,1516 @@
+/**
+ * SelfListingPageV2 - Simplified 8-step listing creation flow
+ *
+ * Steps:
+ * 1. Host Type - resident, liveout, coliving, agent
+ * 2. Market Strategy - private (concierge) or public (marketplace)
+ * 3. Listing Strategy - nightly/weekly/monthly with conditional content
+ * 4. Pricing Strategy - V5 Calculator (nightly only)
+ * 5. Financials - rent, utilities, deposit, cleaning (weekly/monthly only)
+ * 6. Space & Time - property type, location, bedrooms, bathrooms
+ * 7. Photos - optional photo upload
+ * 8. Review & Activate - preview and submit
+ */
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import Header from '../../shared/Header.jsx';
+import Footer from '../../shared/Footer.jsx';
+import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
+import Toast, { useToast } from '../../shared/Toast.jsx';
+import { HostScheduleSelector } from '../../shared/HostScheduleSelector/HostScheduleSelector.jsx';
+import { checkAuthStatus } from '../../../lib/auth.js';
+import { createListing } from '../../../lib/listingService.js';
+import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode } from '../../../lib/nycZipCodes';
+import './styles/SelfListingPageV2.css';
+import '../../../styles/components/toast.css';
+
+// Declare google as a global for TypeScript
+declare global {
+  interface Window {
+    google: typeof google;
+  }
+}
+
+// Space type options
+type SpaceType = 'Private Room' | 'Entire Place' | 'Shared Room' | '';
+
+// Address data structure
+interface AddressData {
+  fullAddress: string;
+  number: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  neighborhood: string;
+  latitude: number | null;
+  longitude: number | null;
+  validated: boolean;
+}
+
+// Night ID type matching HostScheduleSelector
+type NightId = 'sunday' | 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday';
+const NIGHT_IDS: NightId[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
+// Types
+interface FormData {
+  // Step 1: Host Type
+  hostType: 'resident' | 'liveout' | 'coliving' | 'agent';
+
+  // Step 2: Market Strategy
+  marketStrategy: 'private' | 'public';
+
+  // Step 3: Listing Strategy
+  leaseStyle: 'nightly' | 'weekly' | 'monthly';
+  selectedNights: NightId[]; // Array of night IDs like ['monday', 'tuesday', ...]
+  weeklyPattern: string;
+  monthlyAgreement: boolean;
+
+  // Step 4: Nightly Pricing (only for nightly)
+  nightlyBaseRate: number;
+  nightlyDiscount: number;
+  weeklyTotal: number;
+  monthlyEstimate: number;
+
+  // Step 5: Financials (for weekly/monthly)
+  price: number;
+  frequency: 'Month' | 'Week';
+  utilitiesIncluded: boolean;
+  utilityCost: number;
+  securityDeposit: number;
+  cleaningFee: number;
+
+  // Step 6: Space & Time
+  typeOfSpace: SpaceType;
+  address: AddressData;
+  bedrooms: string;
+  bathrooms: string;
+
+  // Step 7: Photos
+  photos: Array<{ id: string; url: string; file?: File }>;
+}
+
+const DEFAULT_FORM_DATA: FormData = {
+  hostType: 'resident',
+  marketStrategy: 'private',
+  leaseStyle: 'nightly',
+  selectedNights: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'], // Mon-Fri default
+  weeklyPattern: '1on1off',
+  monthlyAgreement: true,
+  nightlyBaseRate: 100,
+  nightlyDiscount: 20,
+  weeklyTotal: 0,
+  monthlyEstimate: 0,
+  price: 2000,
+  frequency: 'Month',
+  utilitiesIncluded: true,
+  utilityCost: 150,
+  securityDeposit: 1000,
+  cleaningFee: 150,
+  typeOfSpace: '',
+  address: {
+    fullAddress: '',
+    number: '',
+    street: '',
+    city: '',
+    state: '',
+    zip: '',
+    neighborhood: '',
+    latitude: null,
+    longitude: null,
+    validated: false,
+  },
+  bedrooms: '1',
+  bathrooms: '1',
+  photos: [],
+};
+
+const STORAGE_KEY = 'selfListingV2Draft';
+
+// Host Type Options
+const HOST_TYPES = [
+  { id: 'resident', description: 'I live in the property part-time and rent out the nights I\'m away.' },
+  { id: 'liveout', description: 'I own or rent the property but do not live there.' },
+  { id: 'coliving', description: 'I live in the property and rent out a private room in my space.' },
+  { id: 'agent', description: 'I manage listings for landlords.' },
+];
+
+// Weekly Pattern Options
+const WEEKLY_PATTERNS = [
+  { value: '1on1off', label: 'One week on and one week off' },
+  { value: '2on2off', label: 'Two weeks on and two weeks off' },
+  { value: '1on3off', label: 'One week on and three weeks off' },
+];
+
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+export function SelfListingPageV2() {
+  // State
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<FormData>(DEFAULT_FORM_DATA);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [createdListingId, setCreatedListingId] = useState<string | null>(null);
+  const [headerKey, setHeaderKey] = useState(0);
+
+  // Refs for nightly calculator
+  const nightlyPricesRef = useRef<number[]>([100, 95, 90, 86, 82, 78, 74]);
+
+  // Address autocomplete state and refs
+  const addressInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+  const [addressError, setAddressError] = useState<string | null>(null);
+  const [isAddressValid, setIsAddressValid] = useState(false);
+
+  // Photo drag and drop state
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Toast notifications
+  const { toasts, showToast, removeToast } = useToast();
+
+  // Validation errors for highlighting fields
+  const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
+
+  // Load draft and step from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Restore form data
+        if (parsed.formData) {
+          setFormData({ ...DEFAULT_FORM_DATA, ...parsed.formData });
+        }
+        // Restore current step
+        if (parsed.currentStep && parsed.currentStep >= 1 && parsed.currentStep <= 8) {
+          setCurrentStep(parsed.currentStep);
+        }
+      } catch (e) {
+        console.error('Failed to load draft:', e);
+      }
+    }
+  }, []);
+
+  // Save draft and step to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      formData,
+      currentStep,
+    }));
+  }, [formData, currentStep]);
+
+  // Check auth status on mount
+  useEffect(() => {
+    checkAuthStatus().then(setIsLoggedIn);
+  }, []);
+
+  // Calculate nightly prices based on base rate and discount
+  const calculateNightlyPrices = useCallback(() => {
+    const { nightlyBaseRate, nightlyDiscount } = formData;
+    const p5Target = nightlyBaseRate * (1 - nightlyDiscount / 100);
+    const decay = nightlyBaseRate > 0 ? Math.pow(p5Target / nightlyBaseRate, 0.25) : 1;
+    const clampedDecay = Math.max(0.7, Math.min(1, decay));
+
+    const prices = [Math.ceil(nightlyBaseRate)];
+    for (let i = 1; i < 7; i++) {
+      prices.push(Math.ceil(prices[i - 1] * clampedDecay));
+    }
+    nightlyPricesRef.current = prices;
+
+    // Calculate totals based on selected nights
+    const numNights = formData.selectedNights.length;
+    let weeklyTotal = 0;
+    for (let i = 0; i < numNights && i < prices.length; i++) {
+      weeklyTotal += prices[i];
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      weeklyTotal,
+      monthlyEstimate: weeklyTotal * 4.33,
+    }));
+  }, [formData.nightlyBaseRate, formData.nightlyDiscount, formData.selectedNights]);
+
+  // Recalculate prices when relevant values change
+  useEffect(() => {
+    if (formData.leaseStyle === 'nightly') {
+      calculateNightlyPrices();
+    }
+  }, [formData.nightlyBaseRate, formData.nightlyDiscount, formData.selectedNights, formData.leaseStyle]);
+
+  // Initialize Google Places autocomplete when on step 6
+  useEffect(() => {
+    if (currentStep !== 6) return;
+
+    let retryCount = 0;
+    const maxRetries = 50; // 5 seconds max
+
+    const initAutocomplete = () => {
+      if (!window.google || !window.google.maps || !window.google.maps.places) {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          setTimeout(initAutocomplete, 100);
+        } else {
+          setAddressError('Address autocomplete is unavailable. Please enter your address manually.');
+        }
+        return;
+      }
+
+      if (!addressInputRef.current) return;
+
+      // Create NYC bounding box
+      const nycBounds = new window.google.maps.LatLngBounds(
+        new window.google.maps.LatLng(NYC_BOUNDS.south, NYC_BOUNDS.west),
+        new window.google.maps.LatLng(NYC_BOUNDS.north, NYC_BOUNDS.east)
+      );
+
+      // Initialize autocomplete
+      const autocomplete = new window.google.maps.places.Autocomplete(
+        addressInputRef.current,
+        {
+          types: ['address'],
+          componentRestrictions: { country: 'us' },
+          bounds: nycBounds,
+          strictBounds: true,
+          fields: ['address_components', 'formatted_address', 'geometry', 'name', 'place_id']
+        }
+      );
+
+      autocompleteRef.current = autocomplete;
+
+      // Prevent form submission on Enter
+      window.google.maps.event.addDomListener(addressInputRef.current, 'keydown', (e: KeyboardEvent) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+        }
+      });
+
+      // Handle place selection
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace();
+
+        if (!place.place_id || !place.geometry || !place.address_components) {
+          setAddressError('Please select a valid address from the dropdown');
+          setIsAddressValid(false);
+          return;
+        }
+
+        // Extract address components
+        let streetNumber = '';
+        let streetName = '';
+        let city = '';
+        let state = '';
+        let zip = '';
+        let neighborhood = '';
+        let county = '';
+
+        place.address_components.forEach((component) => {
+          const types = component.types;
+          if (types.includes('street_number')) streetNumber = component.long_name;
+          if (types.includes('route')) streetName = component.long_name;
+          if (types.includes('locality')) city = component.long_name;
+          if (types.includes('administrative_area_level_1')) state = component.short_name;
+          if (types.includes('administrative_area_level_2')) county = component.long_name;
+          if (types.includes('postal_code')) zip = component.long_name;
+          if (types.includes('neighborhood') || types.includes('sublocality')) neighborhood = component.long_name;
+        });
+
+        // Validate service area
+        if (!isValidServiceArea(zip, state, county)) {
+          const borough = zip ? getBoroughForZipCode(zip) : null;
+          const errorMsg = borough
+            ? `This address appears to be outside our service area.`
+            : `This address is outside our NYC / Hudson County service area.`;
+          setAddressError(errorMsg);
+          setIsAddressValid(false);
+          return;
+        }
+
+        // Update form data with validated address
+        const parsedAddress: AddressData = {
+          fullAddress: place.formatted_address || '',
+          number: streetNumber,
+          street: streetName,
+          city: city,
+          state: state,
+          zip: zip,
+          neighborhood: neighborhood,
+          latitude: place.geometry.location?.lat() || null,
+          longitude: place.geometry.location?.lng() || null,
+          validated: true
+        };
+
+        updateFormData({ address: parsedAddress });
+        setAddressError(null);
+        setIsAddressValid(true);
+        // Clear address validation error when valid address is selected
+        setValidationErrors(prev => ({ ...prev, address: false }));
+      });
+    };
+
+    initAutocomplete();
+
+    return () => {
+      if (autocompleteRef.current) {
+        window.google?.maps?.event?.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
+  }, [currentStep]);
+
+  // Handle manual address input change
+  const handleAddressInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setIsAddressValid(false);
+    setAddressError(null);
+    // Clear address validation error when user starts typing
+    if (validationErrors.address) {
+      setValidationErrors(prev => ({ ...prev, address: false }));
+    }
+    updateFormData({
+      address: {
+        ...formData.address,
+        fullAddress: value,
+        validated: false
+      }
+    });
+  };
+
+  // Update form data
+  const updateFormData = (updates: Partial<FormData>) => {
+    setFormData(prev => ({ ...prev, ...updates }));
+  };
+
+  // Handle night selection change from HostScheduleSelector
+  const handleNightSelectionChange = (nights: NightId[]) => {
+    updateFormData({ selectedNights: nights });
+    // Clear night selector validation error when at least one night is selected
+    if (nights.length > 0 && validationErrors.nightSelector) {
+      setValidationErrors(prev => ({ ...prev, nightSelector: false }));
+    }
+  };
+
+  // Get schedule text
+  const getScheduleText = () => {
+    const count = formData.selectedNights.length;
+    const weekdayNights: NightId[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    const isWeekdays = count === 5 && weekdayNights.every(n => formData.selectedNights.includes(n));
+
+    if (count === 0) return { text: 'Select at least 1 day', error: true };
+    if (isWeekdays) return { text: 'Weekdays Only (You keep weekends!)', error: false };
+    return { text: `${count} Nights / Week`, error: false };
+  };
+
+  // Determine next step based on lease style
+  const getNextStep = (current: number): number => {
+    if (current === 3) {
+      return formData.leaseStyle === 'nightly' ? 4 : 5;
+    }
+    if (current === 4) {
+      return 6; // Skip step 5 for nightly
+    }
+    return current + 1;
+  };
+
+  // Determine previous step based on lease style
+  const getPrevStep = (current: number): number => {
+    if (current === 6) {
+      return formData.leaseStyle === 'nightly' ? 4 : 5;
+    }
+    if (current === 5) {
+      return 3;
+    }
+    if (current === 4) {
+      return 3;
+    }
+    return current - 1;
+  };
+
+  // Get display step number (for progress)
+  const getDisplayStep = (actual: number): number => {
+    if (formData.leaseStyle === 'nightly') {
+      const map: Record<number, number> = { 1: 1, 2: 2, 3: 3, 4: 4, 6: 5, 7: 6, 8: 7 };
+      return map[actual] || actual;
+    } else {
+      const map: Record<number, number> = { 1: 1, 2: 2, 3: 3, 5: 4, 6: 5, 7: 6, 8: 7 };
+      return map[actual] || actual;
+    }
+  };
+
+  // Scroll to first error field
+  const scrollToFirstError = useCallback((errorFieldId: string) => {
+    const element = document.getElementById(errorFieldId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.focus();
+    }
+  }, []);
+
+  // Validation
+  const validateStep = (step: number): boolean => {
+    // Clear previous validation errors
+    setValidationErrors({});
+
+    switch (step) {
+      case 3:
+        if (formData.leaseStyle === 'nightly' && formData.selectedNights.length === 0) {
+          showToast('Please select at least one night', 'error', 4000);
+          setValidationErrors({ nightSelector: true });
+          scrollToFirstError('nightSelector');
+          return false;
+        }
+        if (formData.leaseStyle === 'monthly' && !formData.monthlyAgreement) {
+          showToast('You must agree to the terms or select a different rental style.', 'error', 4000);
+          setValidationErrors({ monthlyAgreement: true });
+          scrollToFirstError('monthlyAgreement');
+          return false;
+        }
+        return true;
+      case 5:
+        if (!formData.price || formData.price <= 0) {
+          showToast('Please enter a price', 'error', 4000);
+          setValidationErrors({ price: true });
+          scrollToFirstError('price');
+          return false;
+        }
+        return true;
+      case 6:
+        if (!formData.typeOfSpace) {
+          showToast('Please select a type of space', 'error', 4000);
+          setValidationErrors({ typeOfSpace: true });
+          scrollToFirstError('typeOfSpace');
+          return false;
+        }
+        if (!formData.address.fullAddress.trim()) {
+          showToast('Please enter your address', 'error', 4000);
+          setValidationErrors({ address: true });
+          scrollToFirstError('address');
+          return false;
+        }
+        if (!formData.address.validated) {
+          showToast('Please select a valid address from the dropdown suggestions', 'error', 4000);
+          setValidationErrors({ address: true });
+          scrollToFirstError('address');
+          return false;
+        }
+        return true;
+      case 7:
+        if (formData.photos.length < 3) {
+          showToast('Please upload at least 3 photos', 'error', 4000);
+          return false;
+        }
+        return true;
+      default:
+        return true;
+    }
+  };
+
+  // Navigation
+  const nextStep = () => {
+    if (!validateStep(currentStep)) return;
+
+    const next = getNextStep(currentStep);
+    if (next <= 8) {
+      setCurrentStep(next);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const prevStep = () => {
+    const prev = getPrevStep(currentStep);
+    if (prev >= 1) {
+      setCurrentStep(prev);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Auth success handler
+  const handleAuthSuccess = () => {
+    setShowAuthModal(false);
+    setIsLoggedIn(true);
+    setHeaderKey(prev => prev + 1);
+
+    if (pendingSubmit) {
+      setPendingSubmit(false);
+      handleSubmit();
+    }
+  };
+
+  // Submit handler
+  const handleSubmit = async () => {
+    const loggedIn = await checkAuthStatus();
+    setIsLoggedIn(loggedIn);
+
+    if (!loggedIn) {
+      setShowAuthModal(true);
+      setPendingSubmit(true);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Map form data to listingService format
+      const listingData = mapFormDataToListingService(formData);
+      const result = await createListing(listingData);
+
+      console.log('[SelfListingPageV2] Listing created:', result);
+      setCreatedListingId(result.id);
+      setSubmitSuccess(true);
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.error('[SelfListingPageV2] Submit error:', error);
+      alert('Failed to create listing. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Map form data to listingService format
+  const mapFormDataToListingService = (data: FormData) => {
+    // Convert selectedNights array to availableNights object
+    const availableNights = {
+      sunday: data.selectedNights.includes('sunday'),
+      monday: data.selectedNights.includes('monday'),
+      tuesday: data.selectedNights.includes('tuesday'),
+      wednesday: data.selectedNights.includes('wednesday'),
+      thursday: data.selectedNights.includes('thursday'),
+      friday: data.selectedNights.includes('friday'),
+      saturday: data.selectedNights.includes('saturday'),
+    };
+
+    // Build nightly pricing object if applicable
+    const nightlyPricing = data.leaseStyle === 'nightly' ? {
+      oneNightPrice: data.nightlyBaseRate,
+      discountPercentage: data.nightlyDiscount,
+      decayRate: Math.pow(1 - data.nightlyDiscount / 100, 0.25),
+      calculatedRates: {
+        night1: nightlyPricesRef.current[0],
+        night2: nightlyPricesRef.current[1],
+        night3: nightlyPricesRef.current[2],
+        night4: nightlyPricesRef.current[3],
+        night5: nightlyPricesRef.current[4],
+      },
+    } : null;
+
+    return {
+      // V2 specific fields
+      hostType: data.hostType,
+      marketStrategy: data.marketStrategy,
+      source_type: 'self-listing-v2',
+
+      // Space snapshot
+      spaceSnapshot: {
+        listingName: `${data.bedrooms} Bedroom ${data.typeOfSpace || 'Space'} in ${data.address.neighborhood || data.address.city || 'NYC'}`,
+        typeOfSpace: data.typeOfSpace || 'Entire Place',
+        bedrooms: parseInt(data.bedrooms) || 1,
+        beds: parseInt(data.bedrooms) || 1,
+        bathrooms: data.bathrooms === 'Shared' ? 1 : parseFloat(data.bathrooms) || 1,
+        typeOfKitchen: 'Full Kitchen',
+        typeOfParking: 'No Parking',
+        address: {
+          fullAddress: data.address.fullAddress,
+          number: data.address.number,
+          street: data.address.street,
+          city: data.address.city,
+          state: data.address.state,
+          zip: data.address.zip,
+          neighborhood: data.address.neighborhood,
+          latitude: data.address.latitude,
+          longitude: data.address.longitude,
+          validated: data.address.validated,
+        },
+      },
+
+      // Features (minimal for V2)
+      features: {
+        amenitiesInsideUnit: [],
+        amenitiesOutsideUnit: [],
+        descriptionOfLodging: `${data.bedrooms} bedroom ${(data.typeOfSpace || 'space').toLowerCase()} available for ${data.leaseStyle} rental.`,
+        neighborhoodDescription: '',
+      },
+
+      // Lease styles
+      leaseStyles: {
+        rentalType: data.leaseStyle.charAt(0).toUpperCase() + data.leaseStyle.slice(1),
+        availableNights: data.leaseStyle === 'nightly' ? availableNights : {},
+        weeklyPattern: data.leaseStyle === 'weekly' ? data.weeklyPattern : '',
+        subsidyAgreement: data.leaseStyle === 'monthly' ? data.monthlyAgreement : false,
+      },
+
+      // Pricing
+      pricing: {
+        damageDeposit: data.leaseStyle === 'nightly' ? 500 : data.securityDeposit,
+        maintenanceFee: data.leaseStyle === 'nightly' ? 0 : data.cleaningFee,
+        weeklyCompensation: data.leaseStyle === 'weekly' ? data.price : null,
+        monthlyCompensation: data.leaseStyle === 'monthly' ? data.price : null,
+        nightlyPricing: nightlyPricing,
+      },
+
+      // Rules (defaults)
+      rules: {
+        cancellationPolicy: 'Standard',
+        preferredGender: 'No Preference',
+        numberOfGuests: 2,
+        checkInTime: '2:00 PM',
+        checkOutTime: '11:00 AM',
+        idealMinDuration: 2,
+        idealMaxDuration: 52,
+        houseRules: [],
+        blockedDates: [],
+      },
+
+      // Photos
+      photos: {
+        photos: data.photos.map((p, i) => ({
+          id: p.id,
+          url: p.url,
+          caption: '',
+          displayOrder: i,
+        })),
+        minRequired: 0, // Photos are optional in V2
+      },
+
+      // Review
+      review: {
+        safetyFeatures: [],
+        squareFootage: null,
+        firstDayAvailable: new Date().toISOString().split('T')[0],
+        agreedToTerms: true,
+        optionalNotes: '',
+        previousReviewsLink: '',
+      },
+
+      // Meta
+      isSubmitted: true,
+      isDraft: false,
+    };
+  };
+
+  // Progress percentage
+  const progressPercentage = (getDisplayStep(currentStep) / 7) * 100;
+
+  // Render Step 1: Host Type
+  const renderStep1 = () => (
+    <div className="section-card">
+      <h2>Who are you?</h2>
+      <div className="form-group">
+        <label>Select your host type</label>
+        <div className="privacy-options">
+          {HOST_TYPES.map(type => (
+            <div
+              key={type.id}
+              className={`privacy-card ${formData.hostType === type.id ? 'selected' : ''}`}
+              onClick={() => updateFormData({ hostType: type.id as FormData['hostType'] })}
+            >
+              <div className="privacy-radio"></div>
+              <div className="privacy-content">
+                <p>{type.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="btn-group">
+        <button className="btn-next" onClick={nextStep}>Continue</button>
+      </div>
+    </div>
+  );
+
+  // Render Step 2: Market Strategy
+  const renderStep2 = () => (
+    <div className="section-card">
+      <h2>Market Strategy</h2>
+      <div className="form-group">
+        <label>How should we market it?</label>
+        <div className="privacy-options">
+          <div
+            className={`privacy-card ${formData.marketStrategy === 'private' ? 'selected' : ''}`}
+            onClick={() => updateFormData({ marketStrategy: 'private' })}
+          >
+            <div className="privacy-radio"></div>
+            <div className="privacy-content">
+              <h3>Private Network (Concierge)</h3>
+              <p>We search for a guest for you. Address remains hidden until vetting is complete. <strong>Recommended.</strong></p>
+            </div>
+          </div>
+          <div
+            className={`privacy-card ${formData.marketStrategy === 'public' ? 'selected' : ''}`}
+            onClick={() => updateFormData({ marketStrategy: 'public' })}
+          >
+            <div className="privacy-radio"></div>
+            <div className="privacy-content">
+              <h3>Public Marketplace</h3>
+              <p>Standard listing. Visible to all users immediately.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="btn-group">
+        <button className="btn-next" onClick={nextStep}>Continue</button>
+        <button className="btn-back" onClick={prevStep}>Back</button>
+      </div>
+    </div>
+  );
+
+  // Render Step 3: Listing Strategy
+  const renderStep3 = () => {
+    const scheduleInfo = getScheduleText();
+
+    return (
+      <div className="section-card">
+        <h2>Listing Strategy</h2>
+
+        <div className="form-group">
+          <label>Lease Style</label>
+          <div className="lease-options-columns">
+            {(['nightly', 'weekly', 'monthly'] as const).map(style => (
+              <div
+                key={style}
+                className={`privacy-card ${formData.leaseStyle === style ? 'selected' : ''}`}
+                onClick={() => updateFormData({ leaseStyle: style })}
+              >
+                <div className="privacy-radio"></div>
+                <div className="privacy-content">
+                  <h3>{style.charAt(0).toUpperCase() + style.slice(1)}</h3>
+                  <p>
+                    {style === 'nightly' && 'Rent by the night with flexible availability'}
+                    {style === 'weekly' && 'Rent in weekly patterns'}
+                    {style === 'monthly' && 'Traditional month-to-month rental'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Nightly - Night Selector */}
+        {formData.leaseStyle === 'nightly' && (
+          <div
+            id="nightSelector"
+            className={`conditional-section visible ${validationErrors.nightSelector ? 'validation-error' : ''}`}
+          >
+            <label>Available Nights (Tap to select)</label>
+            <div className="host-schedule-selector-wrapper">
+              <HostScheduleSelector
+                selectedNights={formData.selectedNights}
+                onSelectionChange={handleNightSelectionChange}
+                isClickable={true}
+                className="v2-schedule-selector"
+              />
+            </div>
+            <div
+              className="schedule-text"
+              style={{ color: scheduleInfo.error ? 'red' : 'var(--v2-primary)' }}
+            >
+              {scheduleInfo.text}
+            </div>
+          </div>
+        )}
+
+        {/* Weekly - Pattern Selector */}
+        {formData.leaseStyle === 'weekly' && (
+          <div className="conditional-section visible">
+            <label>Select Weekly Pattern</label>
+            <select
+              value={formData.weeklyPattern}
+              onChange={e => updateFormData({ weeklyPattern: e.target.value })}
+            >
+              {WEEKLY_PATTERNS.map(p => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Monthly - Agreement */}
+        {formData.leaseStyle === 'monthly' && (
+          <div
+            id="monthlyAgreement"
+            className={`conditional-section visible ${validationErrors.monthlyAgreement ? 'validation-error' : ''}`}
+          >
+            <label>Monthly Lease Agreement</label>
+            <p className="agreement-desc">
+              Our Split Lease 'Monthly' model helps guests meet rent obligations through a subsidy.
+              For financial stability, we may need to sublease unused nights. If this isn't ideal,
+              our other models might be more fitting for you, as they don't require this provision.
+            </p>
+            <div className="agreement-option">
+              <label className="agreement-label">
+                <input
+                  type="radio"
+                  name="monthlyAgreement"
+                  checked={formData.monthlyAgreement}
+                  onChange={() => {
+                    updateFormData({ monthlyAgreement: true });
+                    // Clear validation error when user agrees
+                    if (validationErrors.monthlyAgreement) {
+                      setValidationErrors(prev => ({ ...prev, monthlyAgreement: false }));
+                    }
+                  }}
+                />
+                <span className="agreement-text">I agree to the monthly subsidy terms</span>
+              </label>
+            </div>
+            <div className="agreement-option">
+              <label className="agreement-label">
+                <input
+                  type="radio"
+                  name="monthlyAgreement"
+                  checked={!formData.monthlyAgreement}
+                  onChange={() => updateFormData({ monthlyAgreement: false })}
+                />
+                <span className="agreement-text">No, I will select a different rental style</span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        <div className="btn-group">
+          <button className="btn-next" onClick={nextStep}>Continue</button>
+          <button className="btn-back" onClick={prevStep}>Back</button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render Step 4: Nightly Pricing Calculator
+  const renderStep4 = () => {
+    const sum5 = nightlyPricesRef.current.slice(0, 5).reduce((a, b) => a + b, 0);
+    const avgPrice = Math.round(sum5 / 5);
+
+    return (
+      <div className="section-card section-card-wide">
+        <h2>Pricing Strategy</h2>
+        <p className="subtitle">Set your base rate and discounts for recurring guests.</p>
+
+        <div className="nightly-calculator nightly-calculator-horizontal">
+          {/* Left Column: Controls */}
+          <div className="pricing-controls">
+            <div className="control-group" style={{ textAlign: 'center' }}>
+              <label className="calc-label">Base Nightly Rate</label>
+              <div className="base-input-wrapper">
+                <span className="currency-symbol">$</span>
+                <input
+                  type="number"
+                  className="base-input"
+                  value={formData.nightlyBaseRate}
+                  onChange={e => updateFormData({ nightlyBaseRate: Math.max(0, parseInt(e.target.value) || 0) })}
+                  min="0"
+                />
+              </div>
+            </div>
+
+            <div className="control-group">
+              <div className="label-row">
+                <span className="calc-label">Long Stay Discount</span>
+                <span className="value-display">{formData.nightlyDiscount}%</span>
+              </div>
+              <div className="range-wrapper">
+                <input
+                  type="range"
+                  min="0"
+                  max="50"
+                  value={formData.nightlyDiscount}
+                  onChange={e => updateFormData({ nightlyDiscount: parseInt(e.target.value) })}
+                />
+              </div>
+              <div className="marks">
+                <span>0%</span>
+                <span>25%</span>
+                <span>50%</span>
+              </div>
+              <p className="calc-hint">
+                A 5-night stay will average <strong>${avgPrice}</strong>/night.
+              </p>
+            </div>
+
+            {/* Summary based on selected nights */}
+            <div className="total-display">
+              <div className="weekly-block">
+                <div className="total-label">Weekly Total</div>
+                <div className="total-val">${Math.round(formData.weeklyTotal)}</div>
+                <div className="total-sub">{formData.selectedNights.length} nights</div>
+              </div>
+              <div className="total-block">
+                <div className="total-label">Est. Monthly</div>
+                <div className="total-val">${Math.round(formData.monthlyEstimate)}</div>
+                <div className="total-sub">x 4.33 weeks</div>
+              </div>
+            </div>
+
+            {/* Smart Pricing explanation in the left column below totals */}
+            <details className="pricing-details-inline">
+              <summary>How does Smart Pricing work?</summary>
+              <div className="details-content">
+                We calculate a "decay curve" for your pricing. The first night is your full Base Rate.
+                Each consecutive night gets slightly cheaper based on your Discount setting.
+                This encourages guests to book longer stays.
+              </div>
+            </details>
+          </div>
+
+          {/* Right Column: Pricing Table */}
+          <div className="pricing-table-wrapper pricing-table-side">
+            <div className="pricing-table-header">Price by Stay Length</div>
+            <div className="pricing-table">
+              <div className="pricing-table-row pricing-table-head">
+                <div className="pricing-table-cell">Nights</div>
+                <div className="pricing-table-cell">$/Night</div>
+                <div className="pricing-table-cell">Total</div>
+              </div>
+              {[1, 2, 3, 4, 5, 6, 7].map(nights => {
+                const pricePerNight = nightlyPricesRef.current[nights - 1] || 0;
+                let total = 0;
+                for (let i = 0; i < nights; i++) {
+                  total += nightlyPricesRef.current[i] || 0;
+                }
+                const isSelected = formData.selectedNights.length === nights;
+                return (
+                  <div
+                    key={nights}
+                    className={`pricing-table-row ${isSelected ? 'highlighted' : ''}`}
+                  >
+                    <div className="pricing-table-cell">{nights}</div>
+                    <div className="pricing-table-cell">${pricePerNight}</div>
+                    <div className="pricing-table-cell">${total}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="btn-group">
+          <button className="btn-next" onClick={nextStep}>Continue</button>
+          <button className="btn-back" onClick={prevStep}>Back</button>
+        </div>
+      </div>
+    );
+  };
+
+  // Render Step 5: Financials (Weekly/Monthly)
+  const renderStep5 = () => {
+    const frequencyLabel = formData.leaseStyle === 'weekly' ? 'Week' : 'Month';
+
+    return (
+    <div className="section-card">
+      <h2>Financials</h2>
+
+      <div className="form-group">
+        <label>Desired Rent (Per {frequencyLabel})</label>
+        <div className="input-with-prefix">
+          <span className="prefix">$</span>
+          <input
+            id="price"
+            type="number"
+            value={formData.price || ''}
+            onChange={e => {
+              const value = parseInt(e.target.value) || 0;
+              updateFormData({ price: value });
+              if (value > 0 && validationErrors.price) {
+                setValidationErrors(prev => ({ ...prev, price: false }));
+              }
+            }}
+            placeholder={formData.leaseStyle === 'weekly' ? '500' : '2000'}
+            className={validationErrors.price ? 'input-error' : ''}
+          />
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label>Utilities (WiFi, Electric, Gas)</label>
+        <div className="utility-options">
+          <div
+            className={`utility-card ${formData.utilitiesIncluded ? 'selected' : ''}`}
+            onClick={() => updateFormData({ utilitiesIncluded: true })}
+          >
+            <div className="utility-radio"></div>
+            <span>Included in Rent</span>
+          </div>
+          <div
+            className={`utility-card ${!formData.utilitiesIncluded ? 'selected' : ''}`}
+            onClick={() => updateFormData({ utilitiesIncluded: false })}
+          >
+            <div className="utility-radio"></div>
+            <span>Charged Extra</span>
+          </div>
+        </div>
+        {!formData.utilitiesIncluded && (
+          <div className="utility-cost-wrapper">
+            <label>Estimated Monthly Cost</label>
+            <div className="input-with-prefix">
+              <span className="prefix">$</span>
+              <input
+                type="number"
+                value={formData.utilityCost || ''}
+                onChange={e => updateFormData({ utilityCost: parseInt(e.target.value) || 0 })}
+                placeholder="150"
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="row">
+        <div className="col">
+          <div className="form-group">
+            <label>Security Deposit</label>
+            <div className="input-with-prefix">
+              <span className="prefix">$</span>
+              <input
+                type="number"
+                value={formData.securityDeposit || ''}
+                onChange={e => updateFormData({ securityDeposit: parseInt(e.target.value) || 0 })}
+                placeholder="1000"
+              />
+            </div>
+          </div>
+        </div>
+        <div className="col">
+          <div className="form-group">
+            <label>Cleaning Fee</label>
+            <div className="input-with-prefix">
+              <span className="prefix">$</span>
+              <input
+                type="number"
+                value={formData.cleaningFee || ''}
+                onChange={e => updateFormData({ cleaningFee: parseInt(e.target.value) || 0 })}
+                placeholder="150"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="btn-group">
+        <button className="btn-next" onClick={nextStep}>Next: Space & Time</button>
+        <button className="btn-back" onClick={prevStep}>Back</button>
+      </div>
+    </div>
+    );
+  };
+
+  // Render Step 6: Space & Time
+  const renderStep6 = () => (
+    <div className="section-card">
+      <h2>The Space & Time</h2>
+
+      <div className="form-group">
+        <label>Type of Space<span className="required">*</span></label>
+        <select
+          id="typeOfSpace"
+          value={formData.typeOfSpace}
+          onChange={e => {
+            updateFormData({ typeOfSpace: e.target.value as SpaceType });
+            if (e.target.value && validationErrors.typeOfSpace) {
+              setValidationErrors(prev => ({ ...prev, typeOfSpace: false }));
+            }
+          }}
+          className={`${!formData.typeOfSpace ? 'input-placeholder' : ''} ${validationErrors.typeOfSpace ? 'input-error' : ''}`}
+        >
+          <option value="">Choose an option…</option>
+          <option value="Private Room">Private Room</option>
+          <option value="Entire Place">Entire Place</option>
+          <option value="Shared Room">Shared Room</option>
+        </select>
+      </div>
+
+      <div className="form-group">
+        <label>Address<span className="required">*</span></label>
+        <input
+          id="address"
+          ref={addressInputRef}
+          type="text"
+          value={formData.address.fullAddress}
+          onChange={handleAddressInputChange}
+          placeholder="Start typing your address..."
+          className={addressError || validationErrors.address ? 'input-error' : isAddressValid ? 'input-valid' : ''}
+        />
+        {addressError && (
+          <span className="error-message">{addressError}</span>
+        )}
+        {isAddressValid && formData.address.neighborhood && (
+          <span className="address-info">
+            {formData.address.neighborhood}, {formData.address.city}
+          </span>
+        )}
+      </div>
+
+      <div className="row">
+        <div className="col">
+          <div className="form-group">
+            <label>Bedrooms</label>
+            <select
+              value={formData.bedrooms}
+              onChange={e => updateFormData({ bedrooms: e.target.value })}
+            >
+              <option value="Studio">Studio</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4+</option>
+            </select>
+          </div>
+        </div>
+        <div className="col">
+          <div className="form-group">
+            <label>Bathrooms</label>
+            <select
+              value={formData.bathrooms}
+              onChange={e => updateFormData({ bathrooms: e.target.value })}
+            >
+              <option value="1">1</option>
+              <option value="1.5">1.5</option>
+              <option value="2">2</option>
+              <option value="Shared">Shared</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div className="btn-group">
+        <button className="btn-next" onClick={nextStep}>Next: Photos</button>
+        <button className="btn-back" onClick={prevStep}>Back</button>
+      </div>
+    </div>
+  );
+
+  // Render Step 7: Photos
+  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newPhotos = Array.from(files).map((file, index) => ({
+      id: `photo_${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`,
+      url: URL.createObjectURL(file),
+      file,
+    }));
+
+    updateFormData({ photos: [...formData.photos, ...newPhotos] });
+  };
+
+  const removePhoto = (id: string) => {
+    updateFormData({ photos: formData.photos.filter(p => p.id !== id) });
+  };
+
+  // Drag and drop handlers for photo reordering
+  const handleDragStart = (index: number) => {
+    setDraggedIndex(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const updated = [...formData.photos];
+    const [draggedItem] = updated.splice(draggedIndex, 1);
+    updated.splice(dropIndex, 0, draggedItem);
+
+    updateFormData({ photos: updated });
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const renderStep7 = () => (
+    <div className="section-card">
+      <h2>Photos</h2>
+      <p className="subtitle">Add photos of your property (minimum 3 required)</p>
+
+      {/* Photo Gallery with Drag and Drop */}
+      {formData.photos.length > 0 && (
+        <div className="photo-gallery">
+          <p className="drag-drop-hint">Drag and drop photos to reorder. First photo is the cover photo.</p>
+          <div className="photo-grid">
+            {formData.photos.map((photo, index) => (
+              <div
+                key={photo.id}
+                className={`photo-item ${draggedIndex === index ? 'dragging' : ''} ${dragOverIndex === index ? 'drag-over' : ''}`}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
+              >
+                <img src={photo.url} alt={`Property photo ${index + 1}`} />
+                <div className="photo-controls">
+                  <button
+                    type="button"
+                    onClick={() => removePhoto(photo.id)}
+                    className="btn-delete"
+                    title="Remove photo"
+                  >
+                    🗑️
+                  </button>
+                </div>
+                {index === 0 && <div className="photo-badge">Cover Photo</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Upload Zone */}
+      <label className="photo-zone">
+        <input
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handlePhotoUpload}
+          style={{ display: 'none' }}
+        />
+        <div className="photo-zone-content">
+          <p className="photo-zone-title">Click to upload photos</p>
+          <p className="photo-zone-subtitle">
+            {formData.photos.length < 3
+              ? `${3 - formData.photos.length} more photo${3 - formData.photos.length === 1 ? '' : 's'} required`
+              : 'Add more photos (optional)'}
+          </p>
+        </div>
+      </label>
+
+      {/* Progress Indicator */}
+      <div className="photo-progress">
+        <div className="progress-bar-bg">
+          <div
+            className="progress-bar-fill"
+            style={{ width: `${Math.min(100, (formData.photos.length / 3) * 100)}%` }}
+          />
+        </div>
+        <p className="progress-text">
+          {formData.photos.length} of 3 minimum photos uploaded
+          {formData.photos.length >= 3 && ' ✓'}
+        </p>
+      </div>
+
+      <div className="btn-group">
+        <button className="btn-next" onClick={nextStep}>
+          Continue to Review
+        </button>
+        <button className="btn-back" onClick={prevStep}>Back</button>
+      </div>
+    </div>
+  );
+
+  // Render Step 8: Review
+  const renderStep8 = () => {
+    let price: number;
+    let freq: string;
+    let schedule: string;
+
+    if (formData.leaseStyle === 'nightly') {
+      price = Math.round(formData.weeklyTotal);
+      freq = 'Week';
+      schedule = getScheduleText().text;
+    } else if (formData.leaseStyle === 'weekly') {
+      price = formData.price;
+      freq = formData.frequency;
+      const pattern = WEEKLY_PATTERNS.find(p => p.value === formData.weeklyPattern);
+      schedule = `Weekly: ${pattern?.label || formData.weeklyPattern}`;
+    } else {
+      price = formData.price;
+      freq = formData.frequency;
+      schedule = 'Monthly Agreement';
+    }
+
+    // Get host type label
+    const hostTypeLabel = HOST_TYPES.find(h => h.id === formData.hostType)?.id || formData.hostType;
+    const hostTypeDisplay = hostTypeLabel.charAt(0).toUpperCase() + hostTypeLabel.slice(1);
+
+    return (
+      <div className="section-card section-card-review">
+        <h2>Review & Activate</h2>
+        <p className="subtitle">Your listing is ready to go live on our network.</p>
+
+        {/* Market Strategy Badge */}
+        <div className="review-badge-row">
+          <span
+            className="review-market-badge"
+            style={{ background: formData.marketStrategy === 'private' ? '#5b21b6' : '#10b981' }}
+          >
+            {formData.marketStrategy === 'private' ? 'Private (Concierge)' : 'Public Listing'}
+          </span>
+        </div>
+
+        {/* Main Preview Card */}
+        <div className="review-preview-card">
+          {/* Photo Section */}
+          <div className="review-photo-section">
+            {formData.photos.length > 0 ? (
+              <div className="review-photos-grid">
+                {formData.photos.slice(0, 3).map((photo, idx) => (
+                  <div
+                    key={photo.id}
+                    className={`review-photo ${idx === 0 ? 'review-photo-main' : 'review-photo-small'}`}
+                    style={{ backgroundImage: `url(${photo.url})` }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="review-photo-placeholder">
+                <span>No photos uploaded</span>
+              </div>
+            )}
+          </div>
+
+          {/* Details Section */}
+          <div className="review-details-section">
+            <h3 className="review-listing-title">
+              {formData.bedrooms} Bedroom {formData.typeOfSpace || 'Space'}
+            </h3>
+            <p className="review-listing-location">
+              {formData.address.neighborhood || formData.address.city || 'Your Location'}
+            </p>
+
+            <div className="review-details-grid">
+              <div className="review-detail-item">
+                <span className="review-detail-label">Address</span>
+                <span className="review-detail-value">{formData.address.fullAddress || '—'}</span>
+              </div>
+              <div className="review-detail-item">
+                <span className="review-detail-label">Bedrooms</span>
+                <span className="review-detail-value">{formData.bedrooms}</span>
+              </div>
+              <div className="review-detail-item">
+                <span className="review-detail-label">Bathrooms</span>
+                <span className="review-detail-value">{formData.bathrooms}</span>
+              </div>
+              <div className="review-detail-item">
+                <span className="review-detail-label">Host Type</span>
+                <span className="review-detail-value">{hostTypeDisplay}</span>
+              </div>
+            </div>
+
+            {/* Pricing Highlight */}
+            <div className="review-pricing-box">
+              <div className="review-price-main">
+                <span className="review-price-amount">${price}</span>
+                <span className="review-price-period">/ {freq}</span>
+              </div>
+              <div className="review-schedule-badge">{schedule}</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="btn-group">
+          <button
+            className="btn-next btn-success"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Creating...' : 'Activate Listing'}
+          </button>
+          <button className="btn-back" onClick={prevStep} disabled={isSubmitting}>Back</button>
+        </div>
+      </div>
+    );
+  };
+
+  // Success Modal
+  const renderSuccessModal = () => (
+    <div className="success-modal-overlay">
+      <div className="success-modal">
+        <div className="success-icon">✓</div>
+        <h2>Success!</h2>
+        <p>Your request has been sent to our concierge team.</p>
+        <div className="success-actions">
+          <a href={createdListingId ? `/listing-dashboard?id=${createdListingId}` : '/listing-dashboard'} className="btn-next">Go to My Dashboard</a>
+          {createdListingId && (
+            <a
+              href={`/view-split-lease?id=${createdListingId}`}
+              className="btn-next btn-secondary"
+            >
+              Preview Listing
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+
+  // Main render
+  const renderCurrentStep = () => {
+    switch (currentStep) {
+      case 1: return renderStep1();
+      case 2: return renderStep2();
+      case 3: return renderStep3();
+      case 4: return renderStep4();
+      case 5: return renderStep5();
+      case 6: return renderStep6();
+      case 7: return renderStep7();
+      case 8: return renderStep8();
+      default: return renderStep1();
+    }
+  };
+
+  return (
+    <div className="self-listing-v2-page">
+      <Header key={headerKey} />
+
+      <main className="self-listing-v2-main">
+        <div className="container">
+          <div className="header-section">
+            <h1>Listing Setup</h1>
+            <p>Let's find your perfect match.</p>
+          </div>
+
+          <div className="progress-container">
+            <div className="progress-bar-bg">
+              <div className="progress-bar-fill" style={{ width: `${progressPercentage}%` }} />
+            </div>
+            <div className="step-indicator">
+              Step {getDisplayStep(currentStep)} of 7
+            </div>
+          </div>
+
+          {renderCurrentStep()}
+        </div>
+      </main>
+
+      <Footer />
+
+      {showAuthModal && (
+        <SignUpLoginModal
+          isOpen={showAuthModal}
+          onClose={() => {
+            setShowAuthModal(false);
+            setPendingSubmit(false);
+          }}
+          initialView="signup"
+          defaultUserType="host"
+          skipReload={true}
+          onAuthSuccess={handleAuthSuccess}
+        />
+      )}
+
+      {submitSuccess && renderSuccessModal()}
+
+      {/* Toast Notifications */}
+      <Toast toasts={toasts} onRemove={removeToast} />
+    </div>
+  );
+}
+
+export default SelfListingPageV2;

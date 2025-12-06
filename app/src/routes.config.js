@@ -69,6 +69,16 @@ export const routes = [
     dynamicPattern: '/view-split-lease/:id'
   },
   {
+    path: '/preview-split-lease',
+    file: 'preview-split-lease.html',
+    aliases: ['/preview-split-lease.html'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'preview-listing-view',
+    hasDynamicSegment: true,
+    dynamicPattern: '/preview-split-lease/:id'
+  },
+  {
     path: '/guest-proposals',
     file: 'guest-proposals.html',
     aliases: ['/guest-proposals.html'],
@@ -183,6 +193,14 @@ export const routes = [
     file: 'self-listing.html',
     aliases: ['/self-listing.html'],
     protected: true,
+    cloudflareInternal: false,
+    hasDynamicSegment: false
+  },
+  {
+    path: '/self-listing-v2',
+    file: 'self-listing-v2.html',
+    aliases: ['/self-listing-v2.html'],
+    protected: false,
     cloudflareInternal: false,
     hasDynamicSegment: false
   },

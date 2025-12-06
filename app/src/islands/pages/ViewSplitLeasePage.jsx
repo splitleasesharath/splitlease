@@ -16,7 +16,7 @@ import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
-import { checkAuthStatus, validateTokenAndFetchUser } from '../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getSessionId } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import {
   calculatePricingBreakdown,
@@ -32,7 +32,10 @@ import {
 } from '../../lib/availabilityValidation.js';
 import { DAY_ABBREVIATIONS, DEFAULTS, COLORS, SCHEDULE_PATTERNS } from '../../lib/constants.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
+import { supabase } from '../../lib/supabase.js';
+import { adaptDaysToBubble } from '../../logic/processors/external/adaptDaysToBubble.js';
 import '../../styles/listing-schedule-selector.css';
+import '../../styles/components/toast.css';
 
 // ============================================================================
 // HELPER FUNCTIONS
@@ -602,6 +605,18 @@ export default function ViewSplitLeasePage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingProposalData, setPendingProposalData] = useState(null);
   const [loggedInUserData, setLoggedInUserData] = useState(null);
+  const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
+
+  // Toast notification state
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Show toast notification helper
+  const showToast = (message, type = 'success') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast({ show: false, message: '', type: 'success' });
+    }, 4000);
+  };
 
   // Calculate minimum move-in date (2 weeks from today)
   const minMoveInDate = useMemo(() => {
@@ -997,27 +1012,106 @@ export default function ViewSplitLeasePage() {
 
   // Submit proposal to backend (after auth is confirmed)
   const submitProposal = async (proposalData) => {
-    try {
-      // TODO: Integrate with backend API to submit the proposal
-      // const response = await supabase.functions.invoke('bubble-proxy', {
-      //   body: {
-      //     action: 'proposal',
-      //     type: 'create',
-      //     payload: proposalData
-      //   }
-      // });
+    setIsSubmittingProposal(true);
 
-      console.log('✅ Proposal submitted successfully:', proposalData);
-      alert('Proposal submitted successfully! (Backend integration pending)');
+    try {
+      // Get the guest ID (Bubble user _id)
+      const guestId = loggedInUserData?.userId || getSessionId();
+
+      if (!guestId) {
+        throw new Error('User ID not found. Please log in again.');
+      }
+
+      console.log('📤 Submitting proposal to Edge Function...');
+      console.log('   Guest ID:', guestId);
+      console.log('   Listing ID:', proposalData.listingId);
+
+      // Convert days from JS format (0-6) to Bubble format (1-7)
+      // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
+      const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || selectedDays;
+      const daysInBubbleFormat = adaptDaysToBubble({ jsDays: daysInJsFormat });
+
+      // Calculate nights from days (nights = days without the last checkout day)
+      // For consecutive days [1,2,3,4,5] (Mon-Fri), nights are [1,2,3,4] (Mon-Thu)
+      const sortedDays = [...daysInBubbleFormat].sort((a, b) => a - b);
+      const nightsInBubbleFormat = sortedDays.slice(0, -1); // Remove last day (checkout day)
+
+      // Get check-in and check-out days in Bubble format
+      const checkInDayBubble = sortedDays[0];
+      const checkOutDayBubble = sortedDays[sortedDays.length - 1];
+
+      // Format reservation span text
+      const reservationSpanWeeks = proposalData.reservationSpan || reservationSpan;
+      const reservationSpanText = reservationSpanWeeks === 13
+        ? '13 weeks (3 months)'
+        : reservationSpanWeeks === 20
+          ? '20 weeks (approx. 5 months)'
+          : `${reservationSpanWeeks} weeks`;
+
+      // Build the Edge Function payload
+      const edgeFunctionPayload = {
+        guestId: guestId,
+        listingId: proposalData.listingId,
+        moveInStartRange: proposalData.moveInDate,
+        moveInEndRange: proposalData.moveInDate, // Same as start if no flexibility
+        daysSelected: daysInBubbleFormat,
+        nightsSelected: nightsInBubbleFormat,
+        reservationSpan: reservationSpanText,
+        reservationSpanWeeks: reservationSpanWeeks,
+        checkInDay: checkInDayBubble,
+        checkOutDay: checkOutDayBubble,
+        proposalPrice: proposalData.pricePerNight,
+        fourWeekRent: proposalData.pricePerFourWeeks,
+        hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now
+        needForSpace: proposalData.needForSpace || '',
+        aboutMe: proposalData.aboutYourself || '',
+        estimatedBookingTotal: proposalData.totalPrice,
+        // Optional fields
+        specialNeeds: proposalData.hasUniqueRequirements ? proposalData.uniqueRequirements : '',
+        moveInRangeText: proposalData.moveInRange || '',
+        flexibleMoveIn: !!proposalData.moveInRange,
+        fourWeekCompensation: proposalData.pricePerFourWeeks
+      };
+
+      console.log('📋 Edge Function payload:', edgeFunctionPayload);
+
+      // Call the Edge Function
+      const { data, error } = await supabase.functions.invoke('bubble-proxy', {
+        body: {
+          action: 'create_proposal',
+          payload: edgeFunctionPayload
+        }
+      });
+
+      if (error) {
+        console.error('❌ Edge Function error:', error);
+        throw new Error(error.message || 'Failed to submit proposal');
+      }
+
+      if (!data?.success) {
+        console.error('❌ Proposal submission failed:', data?.error);
+        throw new Error(data?.error || 'Failed to submit proposal');
+      }
+
+      console.log('✅ Proposal submitted successfully:', data);
+      console.log('   Proposal ID:', data.data?.proposalId);
+
+      // Show success toast
+      showToast('Proposal submitted successfully!', 'success');
+
       setIsProposalModalOpen(false);
       setPendingProposalData(null);
 
-      // Redirect to guest proposals page
-      window.location.href = '/guest-proposals';
+      // Redirect to guest proposals page after a short delay to show the toast
+      setTimeout(() => {
+        window.location.href = '/guest-proposals';
+      }, 1500);
 
     } catch (error) {
       console.error('❌ Error submitting proposal:', error);
-      alert('Failed to submit proposal. Please try again.');
+      showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
+    } finally {
+      setIsSubmittingProposal(false);
     }
   };
 
@@ -1050,6 +1144,17 @@ export default function ViewSplitLeasePage() {
 
     // Close the auth modal
     setShowAuthModal(false);
+
+    // Update the logged-in user data
+    try {
+      const userData = await validateTokenAndFetchUser();
+      if (userData) {
+        setLoggedInUserData(userData);
+        console.log('👤 User data updated after auth:', userData.firstName);
+      }
+    } catch (err) {
+      console.error('❌ Error fetching user data after auth:', err);
+    }
 
     // If there's a pending proposal, submit it now
     if (pendingProposalData) {
@@ -1127,6 +1232,25 @@ export default function ViewSplitLeasePage() {
   return (
     <>
       <Header />
+
+      {/* Toast Notification */}
+      {toast.show && (
+        <div className={`toast toast-${toast.type} show`}>
+          <span className="toast-icon">
+            {toast.type === 'success' && (
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+              </svg>
+            )}
+            {toast.type === 'error' && (
+              <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+            )}
+          </span>
+          <span className="toast-message">{toast.message}</span>
+        </div>
+      )}
 
       <main style={{
         maxWidth: '1400px',

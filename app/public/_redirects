@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2025-12-04T19:33:21.733Z
+# Generated: 2025-12-05T17:26:54.552Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -11,6 +11,11 @@
 /view-split-lease  /_internal/listing-view  200
 /view-split-lease/  /_internal/listing-view  200
 /view-split-lease/*  /_internal/listing-view  200
+
+# /preview-split-lease → preview-split-lease.html
+/preview-split-lease  /_internal/preview-listing-view  200
+/preview-split-lease/  /_internal/preview-listing-view  200
+/preview-split-lease/*  /_internal/preview-listing-view  200
 
 # /guest-proposals → guest-proposals.html
 /guest-proposals  /_internal/guest-proposals-view  200
@@ -65,6 +70,9 @@
 
 # /self-listing
 /self-listing.html  /self-listing.html  200
+
+# /self-listing-v2
+/self-listing-v2.html  /self-listing-v2.html  200
 
 # /listing-dashboard
 /listing-dashboard.html  /listing-dashboard.html  200

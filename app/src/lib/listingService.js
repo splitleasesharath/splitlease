@@ -157,6 +157,10 @@ async function syncToListingTable(listingTrialData, bubbleId) {
     'Features - SQFT Area': listingTrialData['Features - SQFT Area'],
     ' First Available': listingTrialData[' First Available'],
 
+    // V2 fields
+    host_type: listingTrialData.host_type || null,
+    market_strategy: listingTrialData.market_strategy || 'private',
+
     // Status - new self-listings start inactive and unapproved
     Active: false,
     Approved: false,
@@ -433,7 +437,11 @@ function mapFormDataToDatabase(formData) {
     },
 
     // Source identification
-    source_type: 'self-listing-form',
+    source_type: formData.source_type || 'self-listing-form',
+
+    // V2 fields (simplified flow)
+    host_type: formData.hostType || null,
+    market_strategy: formData.marketStrategy || 'private',
 
     // Status defaults for new self-listings
     Active: false,
@@ -588,6 +596,10 @@ export function mapDatabaseToFormData(dbRecord) {
     completedSections: formMetadata.completedSections || [],
     isDraft: formMetadata.isDraft !== false,
     isSubmitted: formMetadata.isSubmitted || false,
+
+    // V2 fields
+    hostType: dbRecord.host_type || null,
+    marketStrategy: dbRecord.market_strategy || 'private',
   };
 }
 

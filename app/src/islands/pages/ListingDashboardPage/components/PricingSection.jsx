@@ -1,8 +1,8 @@
-const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+import { HostScheduleSelector } from '../../../shared/HostScheduleSelector';
 
 export default function PricingSection({ listing, onEdit }) {
   const weeklyComp = listing?.weeklyCompensation || {};
-  const availableDays = listing?.availableDays || [];
+  const nightsAvailable = listing?.nightsAvailable || [];
 
   // Format currency
   const formatCurrency = (amount) => {
@@ -38,26 +38,19 @@ export default function PricingSection({ listing, onEdit }) {
             </p>
           </div>
 
-          {/* Day Selector Visual */}
+          {/* Host Schedule Selector - Display Only */}
           <div className="listing-dashboard-pricing__days">
             <p className="listing-dashboard-pricing__days-label">Nights / Week</p>
-            <div className="listing-dashboard-pricing__day-grid">
-              {DAY_LABELS.map((day, index) => {
-                const isAvailable = availableDays.includes(index);
-                return (
-                  <div
-                    key={index}
-                    className={`listing-dashboard-pricing__day ${isAvailable ? 'listing-dashboard-pricing__day--available' : ''}`}
-                  >
-                    {day}
-                  </div>
-                );
-              })}
-            </div>
+            <HostScheduleSelector
+              listing={{ nightsAvailable }}
+              selectedNights={nightsAvailable}
+              isClickable={false}
+              mode="preview"
+            />
             <div className="listing-dashboard-pricing__legend">
               <span className="listing-dashboard-pricing__legend-dot listing-dashboard-pricing__legend-dot--available" />
               <span>
-                {availableDays.length === 7 ? 'All nights available' : `${availableDays.length} nights available`}
+                {nightsAvailable.length === 7 ? 'All nights available' : `${nightsAvailable.length} nights available`}
               </span>
             </div>
           </div>
