@@ -2,6 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { validateTokenAndFetchUser } from '../../../lib/auth';
 import { mockListing, mockCounts } from './data/mockListing';
+import { generateListingDescription, generateListingTitle } from '../../../lib/aiService';
+import { getCommonHouseRules } from '../../shared/EditListingDetails/services/houseRulesService';
+import { getCommonSafetyFeatures } from '../../shared/EditListingDetails/services/safetyFeaturesService';
+import { getCommonInUnitAmenities, getCommonBuildingAmenities } from '../../shared/EditListingDetails/services/amenitiesService';
+import { getNeighborhoodByZipCode } from '../../shared/EditListingDetails/services/neighborhoodService';
 
 /**
  * Safely parse a JSON string or return the value if already an array
@@ -532,10 +537,23 @@ export default function useListingDashboardPageLogic() {
     console.log('Link copied');
   }, []);
 
-  // AI Assistant handler
+  // AI Assistant handler - opens the AI Import Assistant modal
   const handleAIAssistant = useCallback(() => {
-    // TODO: Open AI assistant modal or navigate
-    console.log('AI Assistant requested');
+    // Reset state and open modal
+    setAiGenerationStatus({
+      name: 'pending',
+      description: 'pending',
+      neighborhood: 'pending',
+      inUnitAmenities: 'pending',
+      buildingAmenities: 'pending',
+      houseRules: 'pending',
+      safetyFeatures: 'pending',
+    });
+    setIsAIGenerating(false);
+    setIsAIComplete(false);
+    setAiGeneratedData({});
+    setShowAIImportAssistant(true);
+    console.log('🤖 AI Import Assistant opened');
   }, []);
 
   // Schedule Cohost state
@@ -545,6 +563,21 @@ export default function useListingDashboardPageLogic() {
   // Import Reviews modal state
   const [showImportReviews, setShowImportReviews] = useState(false);
   const [isImportingReviews, setIsImportingReviews] = useState(false);
+
+  // AI Import Assistant modal state
+  const [showAIImportAssistant, setShowAIImportAssistant] = useState(false);
+  const [aiGenerationStatus, setAiGenerationStatus] = useState({
+    name: 'pending',
+    description: 'pending',
+    neighborhood: 'pending',
+    inUnitAmenities: 'pending',
+    buildingAmenities: 'pending',
+    houseRules: 'pending',
+    safetyFeatures: 'pending',
+  });
+  const [isAIGenerating, setIsAIGenerating] = useState(false);
+  const [isAIComplete, setIsAIComplete] = useState(false);
+  const [aiGeneratedData, setAiGeneratedData] = useState({});
 
   // Fetch current user data
   useEffect(() => {
@@ -625,6 +658,209 @@ export default function useListingDashboardPageLogic() {
       setIsImportingReviews(false);
     }
   }, [currentUser]);
+
+  // AI Import Assistant handlers
+  const handleCloseAIImportAssistant = useCallback(() => {
+    setShowAIImportAssistant(false);
+  }, []);
+
+  const handleAIImportComplete = useCallback((generatedData) => {
+    console.log('✅ AI Import complete, refreshing listing data...');
+    // Refresh listing data to show updated values
+    const listingId = getListingIdFromUrl();
+    if (listingId) {
+      fetchListing(listingId);
+    }
+  }, [fetchListing, getListingIdFromUrl]);
+
+  // Update listing in database and local state
+  // NOTE: This is defined here (before handleStartAIGeneration) to avoid temporal dead zone issues
+  const updateListing = useCallback(async (listingId, updates) => {
+    console.log('📝 Updating listing:', listingId, updates);
+
+    // Try listing_trial first (by id column), then fall back to listing table (by _id column)
+    // First check if the listing exists in listing_trial
+    const { data: trialCheck } = await supabase
+      .from('listing_trial')
+      .select('id')
+      .eq('id', listingId)
+      .maybeSingle();
+
+    const tableName = trialCheck ? 'listing_trial' : 'listing';
+    const idColumn = trialCheck ? 'id' : '_id';
+
+    console.log(`📋 Updating ${tableName} table with ${idColumn}=${listingId}`);
+
+    const { data, error: updateError } = await supabase
+      .from(tableName)
+      .update(updates)
+      .eq(idColumn, listingId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.error('❌ Error updating listing:', updateError);
+      throw updateError;
+    }
+
+    console.log('✅ Listing updated:', data);
+    return data;
+  }, []);
+
+  /**
+   * Start the AI generation process for all fields
+   * This runs each generation task sequentially to show progress
+   */
+  const handleStartAIGeneration = useCallback(async () => {
+    if (!listing) {
+      console.error('❌ No listing data available for AI generation');
+      return;
+    }
+
+    setIsAIGenerating(true);
+    const listingId = getListingIdFromUrl();
+    const generatedResults = {};
+
+    try {
+      console.log('🤖 Starting AI Import Assistant generation...');
+
+      // Extract listing data for AI generation
+      const listingData = {
+        listingName: listing.title || '',
+        address: `${listing.location?.city || ''}, ${listing.location?.state || ''}`,
+        neighborhood: listing.location?.hoodsDisplay || '',
+        typeOfSpace: listing.features?.typeOfSpace?.label || '',
+        bedrooms: listing.features?.bedrooms ?? 0,
+        beds: listing.features?.bedrooms ?? 0,
+        bathrooms: listing.features?.bathrooms ?? 0,
+        kitchenType: listing.features?.kitchenType?.display || '',
+        amenitiesInsideUnit: listing.inUnitAmenities?.map(a => a.name) || [],
+        amenitiesOutsideUnit: listing.buildingAmenities?.map(a => a.name) || [],
+      };
+
+      // 1. Generate Listing Name
+      setAiGenerationStatus(prev => ({ ...prev, name: 'loading' }));
+      try {
+        const generatedName = await generateListingTitle(listingData);
+        if (generatedName) {
+          generatedResults.name = generatedName;
+          await updateListing(listingId, { Name: generatedName });
+        }
+        setAiGenerationStatus(prev => ({ ...prev, name: 'complete' }));
+      } catch (err) {
+        console.error('❌ Error generating name:', err);
+        setAiGenerationStatus(prev => ({ ...prev, name: 'complete' }));
+      }
+
+      // 2. Generate Description
+      setAiGenerationStatus(prev => ({ ...prev, description: 'loading' }));
+      try {
+        const generatedDescription = await generateListingDescription(listingData);
+        if (generatedDescription) {
+          generatedResults.description = generatedDescription;
+          await updateListing(listingId, { Description: generatedDescription });
+        }
+        setAiGenerationStatus(prev => ({ ...prev, description: 'complete' }));
+      } catch (err) {
+        console.error('❌ Error generating description:', err);
+        setAiGenerationStatus(prev => ({ ...prev, description: 'complete' }));
+      }
+
+      // 3. Load Neighborhood Description
+      setAiGenerationStatus(prev => ({ ...prev, neighborhood: 'loading' }));
+      try {
+        const zipCode = listing.location?.zipCode;
+        if (zipCode) {
+          const neighborhood = await getNeighborhoodByZipCode(zipCode);
+          if (neighborhood && neighborhood.description) {
+            generatedResults.neighborhood = neighborhood.description;
+            generatedResults.neighborhoodName = neighborhood.neighborhoodName;
+            await updateListing(listingId, { 'Description - Neighborhood': neighborhood.description });
+          }
+        }
+        setAiGenerationStatus(prev => ({ ...prev, neighborhood: 'complete' }));
+      } catch (err) {
+        console.error('❌ Error loading neighborhood:', err);
+        setAiGenerationStatus(prev => ({ ...prev, neighborhood: 'complete' }));
+      }
+
+      // 4. Load Common In-Unit Amenities
+      setAiGenerationStatus(prev => ({ ...prev, inUnitAmenities: 'loading' }));
+      try {
+        const commonAmenities = await getCommonInUnitAmenities();
+        if (commonAmenities.length > 0) {
+          const currentAmenities = listing.inUnitAmenities?.map(a => a.name) || [];
+          const newAmenities = [...new Set([...currentAmenities, ...commonAmenities])];
+          generatedResults.inUnitAmenities = newAmenities;
+          generatedResults.inUnitAmenitiesCount = commonAmenities.length;
+          await updateListing(listingId, { 'Features - Amenities In-Unit': newAmenities });
+        }
+        setAiGenerationStatus(prev => ({ ...prev, inUnitAmenities: 'complete' }));
+      } catch (err) {
+        console.error('❌ Error loading in-unit amenities:', err);
+        setAiGenerationStatus(prev => ({ ...prev, inUnitAmenities: 'complete' }));
+      }
+
+      // 5. Load Common Building Amenities
+      setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'loading' }));
+      try {
+        const commonAmenities = await getCommonBuildingAmenities();
+        if (commonAmenities.length > 0) {
+          const currentAmenities = listing.buildingAmenities?.map(a => a.name) || [];
+          const newAmenities = [...new Set([...currentAmenities, ...commonAmenities])];
+          generatedResults.buildingAmenities = newAmenities;
+          generatedResults.buildingAmenitiesCount = commonAmenities.length;
+          await updateListing(listingId, { 'Features - Amenities In-Building': newAmenities });
+        }
+        setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'complete' }));
+      } catch (err) {
+        console.error('❌ Error loading building amenities:', err);
+        setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'complete' }));
+      }
+
+      // 6. Load Common House Rules
+      setAiGenerationStatus(prev => ({ ...prev, houseRules: 'loading' }));
+      try {
+        const commonRules = await getCommonHouseRules();
+        if (commonRules.length > 0) {
+          const currentRules = listing.houseRules?.map(r => r.name) || [];
+          const newRules = [...new Set([...currentRules, ...commonRules])];
+          generatedResults.houseRules = newRules;
+          generatedResults.houseRulesCount = commonRules.length;
+          await updateListing(listingId, { 'Features - House Rules': newRules });
+        }
+        setAiGenerationStatus(prev => ({ ...prev, houseRules: 'complete' }));
+      } catch (err) {
+        console.error('❌ Error loading house rules:', err);
+        setAiGenerationStatus(prev => ({ ...prev, houseRules: 'complete' }));
+      }
+
+      // 7. Load Common Safety Features
+      setAiGenerationStatus(prev => ({ ...prev, safetyFeatures: 'loading' }));
+      try {
+        const commonFeatures = await getCommonSafetyFeatures();
+        if (commonFeatures.length > 0) {
+          const currentFeatures = listing.safetyFeatures?.map(s => s.name) || [];
+          const newFeatures = [...new Set([...currentFeatures, ...commonFeatures])];
+          generatedResults.safetyFeatures = newFeatures;
+          generatedResults.safetyFeaturesCount = commonFeatures.length;
+          await updateListing(listingId, { 'Features - Safety': newFeatures });
+        }
+        setAiGenerationStatus(prev => ({ ...prev, safetyFeatures: 'complete' }));
+      } catch (err) {
+        console.error('❌ Error loading safety features:', err);
+        setAiGenerationStatus(prev => ({ ...prev, safetyFeatures: 'complete' }));
+      }
+
+      console.log('✅ AI Import Assistant generation complete:', generatedResults);
+      setAiGeneratedData(generatedResults);
+      setIsAIComplete(true);
+    } catch (err) {
+      console.error('❌ AI generation error:', err);
+    } finally {
+      setIsAIGenerating(false);
+    }
+  }, [listing, getListingIdFromUrl, updateListing]);
 
   // Photo management handlers
   const handleSetCoverPhoto = useCallback(async (photoId) => {
@@ -868,39 +1104,6 @@ export default function useListingDashboardPageLogic() {
     setEditSection(null);
   }, []);
 
-  // Update listing in database and local state
-  const updateListing = useCallback(async (listingId, updates) => {
-    console.log('📝 Updating listing:', listingId, updates);
-
-    // Try listing_trial first (by id column), then fall back to listing table (by _id column)
-    // First check if the listing exists in listing_trial
-    const { data: trialCheck } = await supabase
-      .from('listing_trial')
-      .select('id')
-      .eq('id', listingId)
-      .maybeSingle();
-
-    const tableName = trialCheck ? 'listing_trial' : 'listing';
-    const idColumn = trialCheck ? 'id' : '_id';
-
-    console.log(`📋 Updating ${tableName} table with ${idColumn}=${listingId}`);
-
-    const { data, error: updateError } = await supabase
-      .from(tableName)
-      .update(updates)
-      .eq(idColumn, listingId)
-      .select()
-      .single();
-
-    if (updateError) {
-      console.error('❌ Error updating listing:', updateError);
-      throw updateError;
-    }
-
-    console.log('✅ Listing updated:', data);
-    return data;
-  }, []);
-
   // Handle save from edit modal - update local state
   const handleSaveEdit = useCallback((updatedData) => {
     // Refresh listing data after save
@@ -969,6 +1172,16 @@ export default function useListingDashboardPageLogic() {
     handleCloseImportReviews,
     handleSubmitImportReviews,
     isImportingReviews,
+
+    // AI Import Assistant handlers
+    showAIImportAssistant,
+    handleCloseAIImportAssistant,
+    handleAIImportComplete,
+    handleStartAIGeneration,
+    aiGenerationStatus,
+    isAIGenerating,
+    isAIComplete,
+    aiGeneratedData,
 
     // Photo management handlers
     handleSetCoverPhoto,
