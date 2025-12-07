@@ -6,9 +6,9 @@
  * NO USER AUTHENTICATION REQUIRED - These ARE the auth endpoints
  *
  * Supported Actions:
- * - login: User login (email/password) - via Bubble
+ * - login: User login (email/password) - via Supabase Auth (native)
  * - signup: New user registration - via Supabase Auth (native)
- * - logout: User logout (invalidate token) - via Bubble
+ * - logout: User logout (invalidate token) - via Bubble (legacy)
  * - validate: Validate token and fetch user data - via Bubble + Supabase
  *
  * Security:
@@ -77,8 +77,8 @@ Deno.serve(async (req) => {
       throw new Error('Supabase configuration missing in secrets');
     }
 
-    // Bubble config is required for login, logout, validate (but NOT signup - now uses Supabase Auth)
-    if (action !== 'signup' && (!bubbleAuthBaseUrl || !bubbleApiKey)) {
+    // Bubble config is required for logout, validate (but NOT login/signup - now use Supabase Auth)
+    if ((action === 'logout' || action === 'validate') && (!bubbleAuthBaseUrl || !bubbleApiKey)) {
       throw new Error('Bubble API configuration missing in secrets');
     }
 
@@ -89,7 +89,8 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case 'login':
-        result = await handleLogin(bubbleAuthBaseUrl, bubbleApiKey, payload);
+        // Login now uses Supabase Auth natively (no Bubble dependency)
+        result = await handleLogin(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       case 'signup':

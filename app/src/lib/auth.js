@@ -475,25 +475,68 @@ export async function loginUser(email, password) {
       };
     }
 
-    // Store token and user_id in secure storage
-    setAuthToken(data.data.token);
-    setSessionId(data.data.user_id);
+    // Extract Supabase session data (login now returns same format as signup)
+    const {
+      access_token,
+      refresh_token,
+      expires_in,
+      user_id,
+      host_account_id,
+      guest_account_id,
+      supabase_user_id,
+      user_type
+    } = data.data;
+
+    // Set Supabase session using the client
+    // This stores the session in localStorage and enables authenticated requests
+    if (access_token && refresh_token) {
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token,
+        refresh_token
+      });
+
+      if (sessionError) {
+        console.error('❌ Failed to set Supabase session:', sessionError.message);
+        // Continue anyway - tokens are still valid, just not in client state
+      } else {
+        console.log('✅ Supabase session set successfully');
+      }
+    }
+
+    // Store access_token as auth token for backward compatibility
+    setAuthToken(access_token);
+    setSessionId(user_id);
 
     // Set auth state with user ID (public, non-sensitive)
-    setAuthState(true, data.data.user_id);
+    setAuthState(true, user_id);
+
+    // Store user type
+    if (user_type) {
+      setUserType(user_type);
+    }
 
     // Update login state
     isUserLoggedInState = true;
 
-    console.log('✅ Login successful');
-    console.log('   User ID:', data.data.user_id);
-    console.log('   User Email:', email);
-    console.log('   Token expires in:', data.data.expires, 'seconds');
+    console.log('✅ Login successful (Supabase Auth)');
+    console.log('   User ID (_id):', user_id);
+    console.log('   Supabase Auth ID:', supabase_user_id);
+    console.log('   User Type:', user_type);
+    console.log('   Session expires in:', expires_in, 'seconds');
+
+    // Store Supabase user ID for reference
+    if (supabase_user_id) {
+      localStorage.setItem('splitlease_supabase_user_id', supabase_user_id);
+    }
 
     return {
       success: true,
-      user_id: data.data.user_id,
-      expires: data.data.expires
+      user_id: user_id,
+      host_account_id: host_account_id,
+      guest_account_id: guest_account_id,
+      supabase_user_id: supabase_user_id,
+      user_type: user_type,
+      expires_in: expires_in
     };
 
   } catch (error) {
