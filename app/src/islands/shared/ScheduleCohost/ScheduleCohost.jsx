@@ -556,16 +556,24 @@ export default function ScheduleCohost({
                 {calendarDays.map((date, index) => {
                   const isOtherMonth = !isCurrentMonth(date);
                   const isPast = isPastDate(date);
-                  const isSelected = isSelectedDate(date);
+                  const isActive = isSelectedDate(date);
                   const hasSlots = hasSelectedSlots(date);
                   const isTodayDate = isToday(date);
                   const isClickable = !isOtherMonth && !isPast;
+
+                  // Build class names array
+                  const classNames = ['schedule-cohost-calendar-day'];
+                  if (isOtherMonth) classNames.push('schedule-cohost-calendar-day--other');
+                  if (isPast) classNames.push('schedule-cohost-calendar-day--past');
+                  if (isActive) classNames.push('schedule-cohost-calendar-day--selected');
+                  if (hasSlots) classNames.push('schedule-cohost-calendar-day--has-slots');
+                  if (isTodayDate) classNames.push('schedule-cohost-calendar-day--today');
 
                   return (
                     <button
                       key={index}
                       type="button"
-                      className={`schedule-cohost-calendar-day ${isOtherMonth ? 'schedule-cohost-calendar-day--other' : ''} ${isPast ? 'schedule-cohost-calendar-day--past' : ''} ${isSelected ? 'schedule-cohost-calendar-day--selected' : ''} ${hasSlots && !isSelected ? 'schedule-cohost-calendar-day--has-slots' : ''} ${isTodayDate ? 'schedule-cohost-calendar-day--today' : ''}`}
+                      className={classNames.join(' ')}
                       onClick={() => isClickable && handleDateClick(date)}
                       disabled={!isClickable}
                     >
@@ -632,6 +640,29 @@ export default function ScheduleCohost({
                 <p className="schedule-cohost-timezone">
                   Times shown in Eastern Standard Time (EST)
                 </p>
+
+                {/* Selected Time Slots Summary */}
+                {selectedTimeSlots.length > 0 && (
+                  <div className="schedule-cohost-selections-summary">
+                    <label className="schedule-cohost-label">Your selected time slots:</label>
+                    <div className="schedule-cohost-selections-list">
+                      {selectedTimeSlots.map((slot, index) => (
+                        <div key={slot.id} className="schedule-cohost-selection-item">
+                          <span className="schedule-cohost-selection-number">#{index + 1}</span>
+                          <span className="schedule-cohost-selection-datetime">{slot.displayTime}</span>
+                          <button
+                            type="button"
+                            className="schedule-cohost-selection-remove"
+                            onClick={() => handleTimeSlotClick(slot)}
+                            aria-label={`Remove ${slot.displayTime}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

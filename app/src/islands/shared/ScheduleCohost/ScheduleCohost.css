@@ -499,6 +499,63 @@
 }
 
 /* ============================================================
+   SELECTED TIME SLOTS SUMMARY
+   ============================================================ */
+.schedule-cohost-selections-summary {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--sc-border-gray);
+}
+
+.schedule-cohost-selections-summary .schedule-cohost-label {
+  margin-bottom: 10px;
+  display: block;
+}
+
+.schedule-cohost-selections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.schedule-cohost-selection-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background-color: var(--sc-purple-light);
+  border-radius: 8px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+}
+
+.schedule-cohost-selection-number {
+  font-weight: 700;
+  color: var(--sc-purple-text);
+  min-width: 24px;
+}
+
+.schedule-cohost-selection-datetime {
+  flex: 1;
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-selection-remove {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: var(--sc-text-medium);
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+
+.schedule-cohost-selection-remove:hover {
+  color: var(--sc-purple-text);
+}
+
+/* ============================================================
    FORM SECTION
    ============================================================ */
 .schedule-cohost-form {
