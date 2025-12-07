@@ -232,8 +232,7 @@ export default function ScheduleCohost({
     if (date.getMonth() !== currentMonth.getMonth()) return;
 
     setSelectedDate(date);
-    // Clear time slots when date changes
-    setSelectedTimeSlots([]);
+    // Note: Don't clear time slots - user can select slots from different dates
 
     // Scroll to time slots section after a brief delay to allow render
     setTimeout(() => {
