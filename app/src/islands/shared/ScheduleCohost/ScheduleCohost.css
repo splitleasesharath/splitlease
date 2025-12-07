@@ -50,7 +50,7 @@
   border-radius: 10px;
   padding: 0;
   width: 100%;
-  max-width: 419px;
+  max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 4px 2px 0 var(--sc-shadow);
@@ -265,6 +265,7 @@
   background-color: var(--sc-white);
   padding: 15px 20px;
   margin: 0 20px 15px;
+  overflow: visible;
 }
 
 .schedule-cohost-calendar-header {
@@ -297,8 +298,8 @@
 
 .schedule-cohost-calendar-weekdays {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  grid-template-columns: repeat(7, minmax(40px, 1fr));
+  gap: 4px;
   margin-bottom: 8px;
 }
 
@@ -309,12 +310,13 @@
   font-weight: 500;
   color: var(--sc-text-medium);
   padding: 8px 0;
+  min-width: 40px;
 }
 
 .schedule-cohost-calendar-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 2px;
+  grid-template-columns: repeat(7, minmax(40px, 1fr));
+  gap: 4px;
 }
 
 .schedule-cohost-calendar-day {
@@ -323,7 +325,7 @@
   align-items: center;
   justify-content: center;
   font-family: 'Alata', 'Inter', sans-serif;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 500;
   color: #434343;
   background: none;
@@ -332,6 +334,8 @@
   cursor: pointer;
   transition: all 0.2s;
   line-height: 1.25;
+  min-width: 40px;
+  min-height: 40px;
 }
 
 .schedule-cohost-calendar-day:hover:not(:disabled) {
@@ -743,6 +747,23 @@
     font-size: 13px;
     padding: 6px 10px;
   }
+
+  .schedule-cohost-calendar-weekdays,
+  .schedule-cohost-calendar-grid {
+    grid-template-columns: repeat(7, minmax(36px, 1fr));
+    gap: 2px;
+  }
+
+  .schedule-cohost-calendar-day {
+    min-width: 36px;
+    min-height: 36px;
+    font-size: 13px;
+  }
+
+  .schedule-cohost-calendar-weekday {
+    min-width: 36px;
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -776,6 +797,29 @@
   .schedule-cohost-team {
     flex-direction: column;
     text-align: center;
+  }
+
+  .schedule-cohost-calendar-weekdays,
+  .schedule-cohost-calendar-grid {
+    grid-template-columns: repeat(7, minmax(32px, 1fr));
+    gap: 2px;
+  }
+
+  .schedule-cohost-calendar-day {
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 12px;
+  }
+
+  .schedule-cohost-calendar-weekday {
+    min-width: 32px;
+    font-size: 10px;
+    padding: 6px 0;
+  }
+
+  .schedule-cohost-calendar {
+    padding: 10px 15px;
+    margin: 0 15px 15px;
   }
 }
 
