@@ -32,7 +32,9 @@ import { handleSuggest } from "./actions/suggest.ts";
 // ─────────────────────────────────────────────────────────────
 
 const ALLOWED_ACTIONS = ["create", "update", "get", "suggest"] as const;
-const PUBLIC_ACTIONS = ["get"] as const; // Actions that don't require auth
+// NOTE: 'create' is temporarily public until Supabase auth migration is complete
+// TODO: Remove 'create' from PUBLIC_ACTIONS once auth migration is done
+const PUBLIC_ACTIONS = ["get", "create"] as const; // Actions that don't require auth
 
 type Action = (typeof ALLOWED_ACTIONS)[number];
 
@@ -145,9 +147,8 @@ Deno.serve(async (req: Request) => {
 
     switch (body.action) {
       case "create":
-        if (!user) {
-          throw new AuthenticationError("Authentication required for create");
-        }
+        // NOTE: 'create' is temporarily public until Supabase auth migration is complete
+        // The handler validates guestId from payload instead of requiring auth
         result = await handleCreate(body.payload, user, serviceClient);
         break;
 
