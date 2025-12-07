@@ -918,3 +918,160 @@ export async function logoutUser() {
     };
   }
 }
+
+// ============================================================================
+// Password Reset Functions
+// ============================================================================
+
+/**
+ * Request password reset email via Edge Function (auth-user)
+ * Always returns success to prevent email enumeration
+ *
+ * Uses Edge Functions - API keys stored server-side
+ *
+ * @param {string} email - User's email address
+ * @returns {Promise<Object>} Response object with success status and message
+ */
+export async function requestPasswordReset(email) {
+  console.log('🔐 Requesting password reset for:', email);
+
+  if (!email) {
+    return {
+      success: false,
+      error: 'Email is required.'
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
+      body: {
+        action: 'request_password_reset',
+        payload: {
+          email,
+          redirectTo: `${window.location.origin}/reset-password`
+        }
+      }
+    });
+
+    if (error) {
+      console.error('❌ Password reset request failed:', error);
+      // Don't expose error details - always show generic message
+      return {
+        success: true, // Return success even on error to prevent email enumeration
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      };
+    }
+
+    console.log('✅ Password reset request processed');
+    return {
+      success: true,
+      message: data?.data?.message || 'If an account with that email exists, a password reset link has been sent.'
+    };
+
+  } catch (error) {
+    console.error('❌ Password reset error:', error);
+    return {
+      success: true, // Return success even on error to prevent email enumeration
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    };
+  }
+}
+
+/**
+ * Update password after clicking reset link
+ * Must be called when user has active session from PASSWORD_RECOVERY event
+ *
+ * Uses Edge Functions - API keys stored server-side
+ *
+ * @param {string} newPassword - New password to set
+ * @returns {Promise<Object>} Response object with success status
+ */
+export async function updatePassword(newPassword) {
+  console.log('🔐 Updating password...');
+
+  if (!newPassword) {
+    return {
+      success: false,
+      error: 'New password is required.'
+    };
+  }
+
+  if (newPassword.length < 4) {
+    return {
+      success: false,
+      error: 'Password must be at least 4 characters long.'
+    };
+  }
+
+  // Get current session (from PASSWORD_RECOVERY event)
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    console.error('❌ No active session for password update');
+    return {
+      success: false,
+      error: 'Invalid or expired reset link. Please request a new password reset.'
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
+      body: {
+        action: 'update_password',
+        payload: {
+          password: newPassword,
+          access_token: session.access_token
+        }
+      }
+    });
+
+    if (error) {
+      console.error('❌ Password update failed:', error);
+
+      // Extract detailed error from response body if available
+      let errorMessage = 'Failed to update password. Please try again.';
+
+      if (error.context?.body) {
+        try {
+          const errorBody = typeof error.context.body === 'string'
+            ? JSON.parse(error.context.body)
+            : error.context.body;
+          if (errorBody?.error) {
+            errorMessage = errorBody.error;
+          }
+        } catch (parseErr) {
+          // Silent - use default message
+        }
+      }
+
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+
+    if (!data.success && data.error) {
+      return {
+        success: false,
+        error: data.error
+      };
+    }
+
+    console.log('✅ Password updated successfully');
+
+    // Clear existing auth data - user should log in with new password
+    clearAuthData();
+
+    return {
+      success: true,
+      message: data?.data?.message || 'Password updated successfully.'
+    };
+
+  } catch (error) {
+    console.error('❌ Password update error:', error);
+    return {
+      success: false,
+      error: 'Network error. Please check your connection and try again.'
+    };
+  }
+}
