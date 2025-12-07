@@ -1388,15 +1388,64 @@
 }
 
 .btn-skip {
+  width: 100%;
+  padding: 15px;
   background: white;
   border: 2px solid var(--v2-border);
+  border-radius: 12px;
   color: var(--v2-text-sub);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
 .btn-skip:hover {
   background: var(--v2-bg);
   color: var(--v2-text-main);
   border-color: var(--v2-text-sub);
+}
+
+/* Secondary button row (Back + Continue on Phone side by side) */
+.btn-row-secondary {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.btn-row-secondary .btn-back {
+  flex: 1;
+}
+
+.btn-row-secondary .btn-continue-phone {
+  flex: 1;
+}
+
+/* Continue on Phone Button */
+.btn-continue-phone {
+  width: 100%;
+  padding: 15px;
+  background: white;
+  border: 2px solid #c7d2fe;
+  border-radius: 12px;
+  color: var(--v2-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-continue-phone:hover {
+  background: #f5f3ff;
+  border-color: var(--v2-primary);
+}
+
+.btn-icon-phone {
+  font-size: 1.1rem;
 }
 
 /* Success Modal */
@@ -1907,5 +1956,167 @@
 
   .photo-preview-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Mobile: Stack secondary buttons on small screens */
+  .btn-row-secondary {
+    flex-direction: column;
+  }
+}
+
+/* ============================================
+   Continue on Phone Modal
+   ============================================ */
+.continue-phone-modal {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+  animation: slideIn 0.3s ease;
+  position: relative;
+}
+
+.continue-phone-modal .modal-close-btn {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: var(--v2-text-sub);
+  cursor: pointer;
+  line-height: 1;
+  padding: 5px;
+  transition: color 0.2s;
+}
+
+.continue-phone-modal .modal-close-btn:hover {
+  color: var(--v2-text-main);
+}
+
+.continue-phone-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+}
+
+.continue-phone-modal h2 {
+  margin: 0 0 10px 0;
+  color: var(--v2-text-main);
+  font-size: 1.5rem;
+}
+
+.continue-phone-modal p {
+  color: var(--v2-text-sub);
+  margin-bottom: 25px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+/* QR Code Section */
+.qr-placeholder {
+  margin-bottom: 25px;
+}
+
+.qr-code-box {
+  background: #f9fafb;
+  border: 2px solid var(--v2-border);
+  border-radius: 16px;
+  padding: 20px;
+  display: inline-block;
+}
+
+.qr-visual {
+  width: 120px;
+  height: 120px;
+  display: block;
+  margin: 0 auto;
+}
+
+.qr-hint {
+  margin: 12px 0 0 0;
+  font-size: 0.8rem;
+  color: var(--v2-text-sub);
+  font-style: italic;
+}
+
+/* Link Copy Section */
+.continue-link-section {
+  text-align: left;
+  margin-bottom: 25px;
+}
+
+.continue-link-section label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--v2-text-main);
+  margin-bottom: 8px;
+}
+
+.link-copy-row {
+  display: flex;
+  gap: 10px;
+}
+
+.continue-link-input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 2px solid var(--v2-border);
+  border-radius: 10px;
+  font-size: 0.85rem;
+  color: var(--v2-text-sub);
+  background: #f9fafb;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-copy {
+  padding: 12px 20px;
+  background: var(--v2-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-copy:hover {
+  background: var(--v2-primary-light);
+}
+
+.modal-actions {
+  margin-top: 20px;
+}
+
+.modal-actions .btn-next {
+  max-width: 200px;
+  margin: 0 auto;
+}
+
+/* Mobile adjustments for Continue on Phone Modal */
+@media (max-width: 480px) {
+  .continue-phone-modal {
+    padding: 30px 20px;
+    margin: 15px;
+    max-width: none;
+  }
+
+  .qr-visual {
+    width: 100px;
+    height: 100px;
+  }
+
+  .link-copy-row {
+    flex-direction: column;
+  }
+
+  .btn-copy {
+    width: 100%;
   }
 }

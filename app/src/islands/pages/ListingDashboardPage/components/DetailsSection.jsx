@@ -88,7 +88,7 @@ export default function DetailsSection({ listing, onEdit }) {
   const getSafetyIcon = (name) => safetyIcons[name] || <DefaultIcon />;
 
   return (
-    <div className="listing-dashboard-section">
+    <div id="details" className="listing-dashboard-section">
       {/* Section Header */}
       <div className="listing-dashboard-section__header">
         <h2 className="listing-dashboard-section__title">Details</h2>

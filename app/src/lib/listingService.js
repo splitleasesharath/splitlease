@@ -859,11 +859,12 @@ function mapNightlyRatesToColumns(nightlyPricing) {
   const rates = nightlyPricing.calculatedRates;
 
   return {
+    '💰Nightly Host Rate for 1 night': rates.night1 || null,
     '💰Nightly Host Rate for 2 nights': rates.night2 || null,
     '💰Nightly Host Rate for 3 nights': rates.night3 || null,
     '💰Nightly Host Rate for 4 nights': rates.night4 || null,
     '💰Nightly Host Rate for 5 nights': rates.night5 || null,
-    '💰Nightly Host Rate for 7 nights': rates.night5 || null, // Use night5 as fallback
+    '💰Nightly Host Rate for 7 nights': rates.night7 || rates.night5 || null, // Use night7 if available, fallback to night5
   };
 }
 

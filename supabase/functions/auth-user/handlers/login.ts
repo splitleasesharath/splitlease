@@ -123,7 +123,7 @@ export async function handleLogin(
     };
 
   } catch (error) {
-    if (error instanceof BubbleApiError) {
+    if (error instanceof BubbleApiError || error instanceof SupabaseSyncError) {
       throw error;
     }
 

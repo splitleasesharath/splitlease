@@ -814,7 +814,11 @@ export async function validateTokenAndFetchUser() {
       // Host account ID for fetching host-specific data (listings, etc.)
       accountHostId: userData.accountHostId || null,
       // Also include with Bubble field naming for backwards compatibility
-      'Account - Host / Landlord': userData.accountHostId || null
+      'Account - Host / Landlord': userData.accountHostId || null,
+      // User profile fields for proposal prefilling
+      aboutMe: userData.aboutMe || null,
+      needForSpace: userData.needForSpace || null,
+      specialNeeds: userData.specialNeeds || null
     };
 
     console.log('✅ User data validated:', userDataObject.firstName, '- Type:', userDataObject.userType);

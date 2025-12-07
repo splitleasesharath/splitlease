@@ -1,6 +1,6 @@
 export default function CancellationPolicySection({ listing, onPolicyChange }) {
   return (
-    <div className="listing-dashboard-section">
+    <div id="cancellation-policy" className="listing-dashboard-section">
       {/* Section Header */}
       <div className="listing-dashboard-section__header">
         <h2 className="listing-dashboard-section__title">Cancellation Policy</h2>

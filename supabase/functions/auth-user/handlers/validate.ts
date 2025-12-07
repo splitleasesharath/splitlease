@@ -4,7 +4,7 @@
  *
  * Flow:
  * 1. Get token and user_id from payload
- * 2. Fetch user data from Supabase database (validates user exists)
+ * 2. Fetch user data from Supabase database by _id (validates user exists)
  * 3. Return user profile data
  *
  * Note: Token validation against Bubble is skipped because:
@@ -39,7 +39,7 @@ export async function handleValidate(
   validateRequiredFields(payload, ['token', 'user_id']);
   const { token, user_id } = payload;
 
-  console.log(`[validate] Validating session for user (bubble_id): ${user_id}`);
+  console.log(`[validate] Validating session for user (_id): ${user_id}`);
 
   try {
     // Token validation against Bubble Data API is skipped because:
@@ -60,11 +60,11 @@ export async function handleValidate(
       }
     });
 
-    // Query by bubble_id since that's what Bubble login returns and stores in browser
+    // Query by _id (the primary key stored in browser after login/signup)
     const { data: userData, error: userError } = await supabase
       .from('user')
-      .select('_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord"')
-      .eq('bubble_id', user_id)
+      .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs"')
+      .eq('_id', user_id)
       .single();
 
     if (userError) {
@@ -73,8 +73,8 @@ export async function handleValidate(
     }
 
     if (!userData) {
-      console.error(`[validate] User not found in Supabase by bubble_id: ${user_id}`);
-      throw new SupabaseSyncError(`User not found with bubble_id: ${user_id}`);
+      console.error(`[validate] User not found in Supabase by _id: ${user_id}`);
+      throw new SupabaseSyncError(`User not found with _id: ${user_id}`);
     }
 
     // Step 2: Format user data
@@ -96,7 +96,11 @@ export async function handleValidate(
       email: userEmail,
       profilePhoto: profilePhoto || null,
       userType: userData['Type - User Current'] || null,
-      accountHostId: userData['Account - Host / Landlord'] || null
+      accountHostId: userData['Account - Host / Landlord'] || null,
+      // User profile fields for proposal prefilling
+      aboutMe: userData['About Me / Bio'] || null,
+      needForSpace: userData['need for Space'] || null,
+      specialNeeds: userData['special needs'] || null
     };
 
     console.log(`[validate] ✅ Validation complete`);

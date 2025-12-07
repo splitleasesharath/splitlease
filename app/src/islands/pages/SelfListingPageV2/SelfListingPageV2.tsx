@@ -169,6 +169,9 @@ export function SelfListingPageV2() {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
+  // Continue on Phone modal state
+  const [showContinueOnPhoneModal, setShowContinueOnPhoneModal] = useState(false);
+
   // Toast notifications
   const { toasts, showToast, removeToast } = useToast();
 
@@ -387,8 +390,8 @@ export function SelfListingPageV2() {
   // Handle night selection change from HostScheduleSelector
   const handleNightSelectionChange = (nights: NightId[]) => {
     updateFormData({ selectedNights: nights });
-    // Clear night selector validation error when at least one night is selected
-    if (nights.length > 0 && validationErrors.nightSelector) {
+    // Clear night selector validation error when at least 2 nights are selected
+    if (nights.length >= 2 && validationErrors.nightSelector) {
       setValidationErrors(prev => ({ ...prev, nightSelector: false }));
     }
   };
@@ -399,7 +402,7 @@ export function SelfListingPageV2() {
     const weekdayNights: NightId[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
     const isWeekdays = count === 5 && weekdayNights.every(n => formData.selectedNights.includes(n));
 
-    if (count === 0) return { text: 'Select at least 1 day', error: true };
+    if (count < 2) return { text: 'Select at least 2 nights', error: true };
     if (isWeekdays) return { text: 'Weekdays Only (You keep weekends!)', error: false };
     return { text: `${count} Nights / Week`, error: false };
   };
@@ -456,8 +459,8 @@ export function SelfListingPageV2() {
 
     switch (step) {
       case 3:
-        if (formData.leaseStyle === 'nightly' && formData.selectedNights.length === 0) {
-          showToast('Please select at least one night', 'error', 4000);
+        if (formData.leaseStyle === 'nightly' && formData.selectedNights.length < 2) {
+          showToast('Please select at least 2 nights', 'error', 4000);
           setValidationErrors({ nightSelector: true });
           scrollToFirstError('nightSelector');
           return false;
@@ -498,10 +501,7 @@ export function SelfListingPageV2() {
         }
         return true;
       case 7:
-        if (formData.photos.length < 3) {
-          showToast('Please upload at least 3 photos', 'error', 4000);
-          return false;
-        }
+        // Photos are optional - validation passes even without photos
         return true;
       default:
         return true;
@@ -525,6 +525,37 @@ export function SelfListingPageV2() {
       setCurrentStep(prev);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  // Skip current step (for optional steps like Photos)
+  const skipStep = () => {
+    const next = getNextStep(currentStep);
+    if (next <= 8) {
+      setCurrentStep(next);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  // Generate a shareable link for continuing on phone
+  const generateContinueLink = () => {
+    // Save current progress to localStorage with a unique session ID
+    const sessionId = `sl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const continueData = {
+      formData,
+      currentStep,
+      sessionId,
+      createdAt: new Date().toISOString(),
+    };
+    localStorage.setItem(`${STORAGE_KEY}_session_${sessionId}`, JSON.stringify(continueData));
+
+    // Return the URL with session parameter
+    const baseUrl = window.location.origin + window.location.pathname;
+    return `${baseUrl}?session=${sessionId}`;
+  };
+
+  // Handle Continue on Phone button click
+  const handleContinueOnPhone = () => {
+    setShowContinueOnPhoneModal(true);
   };
 
   // Auth success handler
@@ -593,6 +624,8 @@ export function SelfListingPageV2() {
         night3: nightlyPricesRef.current[2],
         night4: nightlyPricesRef.current[3],
         night5: nightlyPricesRef.current[4],
+        night6: nightlyPricesRef.current[5],
+        night7: nightlyPricesRef.current[6],
       },
     } : null;
 
@@ -716,6 +749,9 @@ export function SelfListingPageV2() {
       </div>
       <div className="btn-group">
         <button className="btn-next" onClick={nextStep}>Continue</button>
+        <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
+          <span className="btn-icon-phone">📱</span> Continue on Phone
+        </button>
       </div>
     </div>
   );
@@ -751,7 +787,12 @@ export function SelfListingPageV2() {
       </div>
       <div className="btn-group">
         <button className="btn-next" onClick={nextStep}>Continue</button>
-        <button className="btn-back" onClick={prevStep}>Back</button>
+        <div className="btn-row-secondary">
+          <button className="btn-back" onClick={prevStep}>Back</button>
+          <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
+            <span className="btn-icon-phone">📱</span> Continue on Phone
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -872,7 +913,12 @@ export function SelfListingPageV2() {
 
         <div className="btn-group">
           <button className="btn-next" onClick={nextStep}>Continue</button>
-          <button className="btn-back" onClick={prevStep}>Back</button>
+          <div className="btn-row-secondary">
+            <button className="btn-back" onClick={prevStep}>Back</button>
+            <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
+              <span className="btn-icon-phone">📱</span> Continue on Phone
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -987,7 +1033,12 @@ export function SelfListingPageV2() {
 
         <div className="btn-group">
           <button className="btn-next" onClick={nextStep}>Continue</button>
-          <button className="btn-back" onClick={prevStep}>Back</button>
+          <div className="btn-row-secondary">
+            <button className="btn-back" onClick={prevStep}>Back</button>
+            <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
+              <span className="btn-icon-phone">📱</span> Continue on Phone
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -1088,8 +1139,13 @@ export function SelfListingPageV2() {
       </div>
 
       <div className="btn-group">
-        <button className="btn-next" onClick={nextStep}>Next: Space & Time</button>
-        <button className="btn-back" onClick={prevStep}>Back</button>
+        <button className="btn-next" onClick={nextStep}>Continue</button>
+        <div className="btn-row-secondary">
+          <button className="btn-back" onClick={prevStep}>Back</button>
+          <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
+            <span className="btn-icon-phone">📱</span> Continue on Phone
+          </button>
+        </div>
       </div>
     </div>
     );
@@ -1174,8 +1230,13 @@ export function SelfListingPageV2() {
       </div>
 
       <div className="btn-group">
-        <button className="btn-next" onClick={nextStep}>Next: Photos</button>
-        <button className="btn-back" onClick={prevStep}>Back</button>
+        <button className="btn-next" onClick={nextStep}>Continue</button>
+        <div className="btn-row-secondary">
+          <button className="btn-back" onClick={prevStep}>Back</button>
+          <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
+            <span className="btn-icon-phone">📱</span> Continue on Phone
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1307,10 +1368,14 @@ export function SelfListingPageV2() {
       </div>
 
       <div className="btn-group">
-        <button className="btn-next" onClick={nextStep}>
-          Continue to Review
-        </button>
-        <button className="btn-back" onClick={prevStep}>Back</button>
+        <button className="btn-next" onClick={nextStep}>Continue</button>
+        <button className="btn-skip" onClick={skipStep}>Skip for Now</button>
+        <div className="btn-row-secondary">
+          <button className="btn-back" onClick={prevStep}>Back</button>
+          <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
+            <span className="btn-icon-phone">📱</span> Continue on Phone
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1451,6 +1516,83 @@ export function SelfListingPageV2() {
     </div>
   );
 
+  // Continue on Phone Modal
+  const renderContinueOnPhoneModal = () => {
+    const continueLink = generateContinueLink();
+
+    const copyToClipboard = () => {
+      navigator.clipboard.writeText(continueLink).then(() => {
+        showToast('Link copied to clipboard!', 'success', 3000);
+      }).catch(() => {
+        showToast('Failed to copy link', 'error', 3000);
+      });
+    };
+
+    return (
+      <div className="success-modal-overlay" onClick={() => setShowContinueOnPhoneModal(false)}>
+        <div className="continue-phone-modal" onClick={(e) => e.stopPropagation()}>
+          <button
+            className="modal-close-btn"
+            onClick={() => setShowContinueOnPhoneModal(false)}
+            aria-label="Close modal"
+          >
+            ×
+          </button>
+          <div className="continue-phone-icon">📱</div>
+          <h2>Continue on Your Phone</h2>
+          <p>Your progress has been saved. Scan the QR code or copy the link below to continue on your mobile device.</p>
+
+          <div className="qr-placeholder">
+            <div className="qr-code-box">
+              {/* Simple QR-like visual - in production, use a QR code library */}
+              <svg viewBox="0 0 100 100" className="qr-visual">
+                <rect x="10" y="10" width="25" height="25" fill="#1f2937" />
+                <rect x="65" y="10" width="25" height="25" fill="#1f2937" />
+                <rect x="10" y="65" width="25" height="25" fill="#1f2937" />
+                <rect x="40" y="40" width="20" height="20" fill="#1f2937" />
+                <rect x="15" y="15" width="15" height="15" fill="white" />
+                <rect x="70" y="15" width="15" height="15" fill="white" />
+                <rect x="15" y="70" width="15" height="15" fill="white" />
+                <rect x="20" y="20" width="5" height="5" fill="#1f2937" />
+                <rect x="75" y="20" width="5" height="5" fill="#1f2937" />
+                <rect x="20" y="75" width="5" height="5" fill="#1f2937" />
+              </svg>
+              <p className="qr-hint">Point your phone camera here</p>
+            </div>
+          </div>
+
+          <div className="continue-link-section">
+            <label>Or copy this link:</label>
+            <div className="link-copy-row">
+              <input
+                type="text"
+                value={continueLink}
+                readOnly
+                className="continue-link-input"
+              />
+              <button
+                type="button"
+                className="btn-copy"
+                onClick={copyToClipboard}
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+
+          <div className="modal-actions">
+            <button
+              className="btn-next btn-secondary"
+              onClick={() => setShowContinueOnPhoneModal(false)}
+            >
+              Continue Here
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Main render
   const renderCurrentStep = () => {
     switch (currentStep) {
@@ -1507,6 +1649,8 @@ export function SelfListingPageV2() {
       )}
 
       {submitSuccess && renderSuccessModal()}
+
+      {showContinueOnPhoneModal && renderContinueOnPhoneModal()}
 
       {/* Toast Notifications */}
       <Toast toasts={toasts} onRemove={removeToast} />

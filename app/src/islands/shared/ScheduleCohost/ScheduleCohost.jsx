@@ -10,7 +10,7 @@
  * - Supports post-meeting rating
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   generateCalendarDays,
   generateTimeSlots,
@@ -169,6 +169,19 @@ export default function ScheduleCohost({
   const [loadingMessage, setLoadingMessage] = useState('');
   const [toasts, setToasts] = useState([]);
 
+  // Ref for time slots section to scroll to
+  const timeSlotsRef = useRef(null);
+
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Generate calendar days for current month
   const calendarDays = useMemo(() => {
     return generateCalendarDays(currentMonth);
@@ -219,8 +232,14 @@ export default function ScheduleCohost({
     if (date.getMonth() !== currentMonth.getMonth()) return;
 
     setSelectedDate(date);
-    // Clear time slots when date changes
-    setSelectedTimeSlots([]);
+    // Note: Don't clear time slots - user can select slots from different dates
+
+    // Scroll to time slots section after a brief delay to allow render
+    setTimeout(() => {
+      if (timeSlotsRef.current) {
+        timeSlotsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
   };
 
   // Time slot selection (max 3)
@@ -406,7 +425,7 @@ export default function ScheduleCohost({
     return date < today;
   };
 
-  // Check if a date is selected
+  // Check if a date is the currently active/selected date
   const isSelectedDate = (date) => {
     if (!selectedDate) return false;
     return (
@@ -414,6 +433,18 @@ export default function ScheduleCohost({
       date.getMonth() === selectedDate.getMonth() &&
       date.getFullYear() === selectedDate.getFullYear()
     );
+  };
+
+  // Check if a date has any time slots selected
+  const hasSelectedSlots = (date) => {
+    return selectedTimeSlots.some((slot) => {
+      const slotDate = slot.dateTime;
+      return (
+        slotDate.getDate() === date.getDate() &&
+        slotDate.getMonth() === date.getMonth() &&
+        slotDate.getFullYear() === date.getFullYear()
+      );
+    });
   };
 
   // Format month/year for display
@@ -525,15 +556,24 @@ export default function ScheduleCohost({
                 {calendarDays.map((date, index) => {
                   const isOtherMonth = !isCurrentMonth(date);
                   const isPast = isPastDate(date);
-                  const isSelected = isSelectedDate(date);
+                  const isActive = isSelectedDate(date);
+                  const hasSlots = hasSelectedSlots(date);
                   const isTodayDate = isToday(date);
                   const isClickable = !isOtherMonth && !isPast;
+
+                  // Build class names array
+                  const classNames = ['schedule-cohost-calendar-day'];
+                  if (isOtherMonth) classNames.push('schedule-cohost-calendar-day--other');
+                  if (isPast) classNames.push('schedule-cohost-calendar-day--past');
+                  if (isActive) classNames.push('schedule-cohost-calendar-day--selected');
+                  if (hasSlots) classNames.push('schedule-cohost-calendar-day--has-slots');
+                  if (isTodayDate) classNames.push('schedule-cohost-calendar-day--today');
 
                   return (
                     <button
                       key={index}
                       type="button"
-                      className={`schedule-cohost-calendar-day ${isOtherMonth ? 'schedule-cohost-calendar-day--other' : ''} ${isPast ? 'schedule-cohost-calendar-day--past' : ''} ${isSelected ? 'schedule-cohost-calendar-day--selected' : ''} ${isTodayDate ? 'schedule-cohost-calendar-day--today' : ''}`}
+                      className={classNames.join(' ')}
                       onClick={() => isClickable && handleDateClick(date)}
                       disabled={!isClickable}
                     >
@@ -546,7 +586,7 @@ export default function ScheduleCohost({
 
             {/* Time Slots Section */}
             {selectedDate && (
-              <div className="schedule-cohost-timeslots">
+              <div className="schedule-cohost-timeslots" ref={timeSlotsRef}>
                 <div className="schedule-cohost-timeslots-header">
                   <div className="schedule-cohost-timeslots-title">
                     <label className="schedule-cohost-label">
@@ -600,6 +640,29 @@ export default function ScheduleCohost({
                 <p className="schedule-cohost-timezone">
                   Times shown in Eastern Standard Time (EST)
                 </p>
+
+                {/* Selected Time Slots Summary */}
+                {selectedTimeSlots.length > 0 && (
+                  <div className="schedule-cohost-selections-summary">
+                    <label className="schedule-cohost-label">Your selected time slots:</label>
+                    <div className="schedule-cohost-selections-list">
+                      {selectedTimeSlots.map((slot, index) => (
+                        <div key={slot.id} className="schedule-cohost-selection-item">
+                          <span className="schedule-cohost-selection-number">#{index + 1}</span>
+                          <span className="schedule-cohost-selection-datetime">{slot.displayTime}</span>
+                          <button
+                            type="button"
+                            className="schedule-cohost-selection-remove"
+                            onClick={() => handleTimeSlotClick(slot)}
+                            aria-label={`Remove ${slot.displayTime}`}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
