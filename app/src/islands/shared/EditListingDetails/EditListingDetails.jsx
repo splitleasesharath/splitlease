@@ -775,13 +775,48 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           </div>
         </div>
         <div className={`eld-collapsible-content ${!expandedSections.photos ? 'collapsed' : ''}`}>
+          {/* Upload Zone - Now first */}
+          <label className={`eld-photo-zone ${isUploadingPhotos ? 'uploading' : ''}`}>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handlePhotoUpload}
+              disabled={isUploadingPhotos}
+              style={{ display: 'none' }}
+            />
+            <div className="eld-photo-zone-content">
+              {isUploadingPhotos ? (
+                <>
+                  <div className="eld-upload-spinner"></div>
+                  <p className="eld-photo-zone-title">Uploading...</p>
+                </>
+              ) : (
+                <>
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  <p className="eld-photo-zone-title">Click to upload photos</p>
+                  <p className="eld-photo-zone-subtitle">or drag and drop files here</p>
+                </>
+              )}
+            </div>
+          </label>
+
+          {/* Photo count indicator */}
+          <div className="eld-photo-count">
+            {photoUrls.length} photo{photoUrls.length !== 1 ? 's' : ''} uploaded
+          </div>
+
           {photoIds.length > 0 && (
-            <div className="eld-current-value" style={{ marginBottom: '12px' }}>
+            <div className="eld-current-value" style={{ marginTop: '12px', marginBottom: '12px' }}>
               <strong>{photoIds.length} photo(s)</strong> linked from database
             </div>
           )}
 
-          {/* Photo Gallery with Drag and Drop */}
+          {/* Photo Gallery with Drag and Drop - Now after upload zone */}
           {photoUrls.length > 0 && (
             <div className="eld-photo-gallery">
               <p className="eld-drag-hint">Drag and drop photos to reorder. First photo is the cover photo.</p>
@@ -834,41 +869,6 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
               <p>No photos added yet</p>
             </div>
           )}
-
-          {/* Upload Zone */}
-          <label className={`eld-photo-zone ${isUploadingPhotos ? 'uploading' : ''}`}>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handlePhotoUpload}
-              disabled={isUploadingPhotos}
-              style={{ display: 'none' }}
-            />
-            <div className="eld-photo-zone-content">
-              {isUploadingPhotos ? (
-                <>
-                  <div className="eld-upload-spinner"></div>
-                  <p className="eld-photo-zone-title">Uploading...</p>
-                </>
-              ) : (
-                <>
-                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="17 8 12 3 7 8"/>
-                    <line x1="12" y1="3" x2="12" y2="15"/>
-                  </svg>
-                  <p className="eld-photo-zone-title">Click to upload photos</p>
-                  <p className="eld-photo-zone-subtitle">or drag and drop files here</p>
-                </>
-              )}
-            </div>
-          </label>
-
-          {/* Photo count indicator */}
-          <div className="eld-photo-count">
-            {photoUrls.length} photo{photoUrls.length !== 1 ? 's' : ''} uploaded
-          </div>
         </div>
       </div>
     );
