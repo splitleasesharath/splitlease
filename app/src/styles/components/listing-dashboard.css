@@ -1212,9 +1212,84 @@
   font-style: italic;
 }
 
+.listing-dashboard-availability__range-hint {
+  padding: 8px 12px;
+  background-color: #ede9fe;
+  color: #5b21b6;
+  border-radius: 6px;
+  font-size: 13px;
+  margin: 0;
+}
+
+.listing-dashboard-availability__blocked-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.listing-dashboard-availability__blocked-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.listing-dashboard-availability__remove-date {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.listing-dashboard-availability__remove-date:hover {
+  background-color: #fecaca;
+}
+
+.listing-dashboard-availability__more-dates {
+  font-size: 12px;
+  color: var(--ld-text-secondary);
+  font-style: italic;
+  padding: 4px 8px;
+}
+
+.listing-dashboard-availability__more-dates-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  background-color: #f3f4f6;
+  color: var(--ld-accent-purple);
+  border: 1px solid #e5e7eb;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.listing-dashboard-availability__more-dates-btn:hover {
+  background-color: #ede9fe;
+  border-color: var(--ld-accent-purple);
+}
+
 .listing-dashboard-availability__calendar {
-  flex: 1;
-  max-width: 400px;
+  flex: 1.5;
+  max-width: 550px;
+  min-width: 400px;
 }
 
 .listing-dashboard-availability__calendar-header {
@@ -1294,6 +1369,39 @@
   color: #9ca3af;
   background-color: #f9fafb;
   cursor: not-allowed;
+}
+
+.listing-dashboard-availability__calendar-day--blocked {
+  background-color: #fee2e2;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.listing-dashboard-availability__calendar-day--blocked:hover {
+  background-color: #fecaca;
+}
+
+.listing-dashboard-availability__calendar-day--range-start,
+.listing-dashboard-availability__calendar-day--range-end {
+  background-color: #ddd6fe;
+  color: #5b21b6;
+  font-weight: 600;
+}
+
+.listing-dashboard-availability__calendar-day--in-range {
+  background-color: #ede9fe;
+  color: #7c3aed;
+}
+
+.listing-dashboard-availability__calendar-day--selected {
+  background-color: #ddd6fe;
+  color: #5b21b6;
+  font-weight: 600;
+}
+
+.listing-dashboard-availability__calendar-day--selectable:hover {
+  background-color: #f3f4f6;
+  cursor: pointer;
 }
 
 .listing-dashboard-availability__legend {

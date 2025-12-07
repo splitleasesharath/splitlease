@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 
 // Calendar navigation icons
 const ChevronLeftIcon = () => (
@@ -20,9 +20,50 @@ const MONTHS = [
 
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-export default function AvailabilitySection({ listing, onEdit }) {
+// Helper to format date as YYYY-MM-DD
+const formatDateKey = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Helper to get all dates between two dates (inclusive)
+const getDatesBetween = (startDate, endDate) => {
+  const dates = [];
+  let start = new Date(startDate);
+  let end = new Date(endDate);
+
+  // Ensure start is before end
+  if (start > end) {
+    const temp = start;
+    start = end;
+    end = temp;
+  }
+
+  const current = new Date(start);
+  while (current <= end) {
+    dates.push(formatDateKey(current));
+    current.setDate(current.getDate() + 1);
+  }
+
+  return dates;
+};
+
+export default function AvailabilitySection({ listing, onEdit, onBlockedDatesChange }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dateSelectionMode, setDateSelectionMode] = useState('individual'); // 'range' or 'individual'
+
+  // State for blocked dates - initialize from listing
+  const [blockedDates, setBlockedDates] = useState(() => {
+    return listing?.blockedDates || [];
+  });
+
+  // State for range selection (stores the first click while waiting for second)
+  const [rangeStart, setRangeStart] = useState(null);
+
+  // State for showing all blocked dates
+  const [showAllBlockedDates, setShowAllBlockedDates] = useState(false);
 
   // Format date for display
   const formatDate = (date) => {
@@ -86,6 +127,114 @@ export default function AvailabilitySection({ listing, onEdit }) {
       newDate.setMonth(prev.getMonth() + direction);
       return newDate;
     });
+  };
+
+  // Check if a date is blocked
+  const isDateBlocked = useCallback((date) => {
+    if (!date) return false;
+    const dateKey = formatDateKey(date);
+    return blockedDates.includes(dateKey);
+  }, [blockedDates]);
+
+  // Toggle a blocked date (add if not present, remove if present)
+  const toggleBlockedDate = useCallback((dateKey) => {
+    setBlockedDates((prev) => {
+      const newBlockedDates = prev.includes(dateKey)
+        ? prev.filter((d) => d !== dateKey)
+        : [...prev, dateKey];
+
+      // Notify parent component of the change
+      if (onBlockedDatesChange) {
+        onBlockedDatesChange(newBlockedDates);
+      }
+
+      return newBlockedDates;
+    });
+  }, [onBlockedDatesChange]);
+
+  // Add multiple dates to blocked list
+  const addBlockedDates = useCallback((datesToAdd) => {
+    setBlockedDates((prev) => {
+      // Filter out dates that are already blocked
+      const newDates = datesToAdd.filter((d) => !prev.includes(d));
+      const newBlockedDates = [...prev, ...newDates];
+
+      // Notify parent component of the change
+      if (onBlockedDatesChange) {
+        onBlockedDatesChange(newBlockedDates);
+      }
+
+      return newBlockedDates;
+    });
+  }, [onBlockedDatesChange]);
+
+  // Handle date click
+  const handleDateClick = useCallback((dayInfo) => {
+    console.log('📅 Date clicked:', dayInfo);
+
+    // Don't allow clicking on past dates or dates from other months
+    if (dayInfo.isPast || !dayInfo.isCurrentMonth || !dayInfo.date) {
+      console.log('📅 Click ignored: past date or not current month');
+      return;
+    }
+
+    const dateKey = formatDateKey(dayInfo.date);
+    console.log('📅 Date key:', dateKey, 'Mode:', dateSelectionMode);
+
+    if (dateSelectionMode === 'individual') {
+      // Individual mode: toggle the clicked date
+      console.log('📅 Individual mode: toggling date', dateKey);
+      toggleBlockedDate(dateKey);
+    } else {
+      // Range mode: wait for two clicks
+      if (!rangeStart) {
+        // First click: set the start of the range
+        console.log('📅 Range mode: setting start date', dayInfo.date);
+        setRangeStart(dayInfo.date);
+      } else {
+        // Second click: block all dates in the range
+        const rangeDates = getDatesBetween(rangeStart, dayInfo.date);
+        console.log('📅 Range mode: blocking dates', rangeDates);
+        addBlockedDates(rangeDates);
+        // Reset range start for next selection
+        setRangeStart(null);
+      }
+    }
+  }, [dateSelectionMode, rangeStart, toggleBlockedDate, addBlockedDates]);
+
+  // Check if a date is within the pending range (when rangeStart is set)
+  const isInPendingRange = useCallback((date) => {
+    if (!rangeStart || !date || dateSelectionMode !== 'range') return false;
+    const dateKey = formatDateKey(date);
+    const startKey = formatDateKey(rangeStart);
+    return dateKey === startKey;
+  }, [rangeStart, dateSelectionMode]);
+
+  // Get future blocked dates for display
+  const allFutureBlockedDates = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayKey = formatDateKey(today);
+
+    return blockedDates
+      .filter((dateKey) => dateKey >= todayKey)
+      .sort();
+  }, [blockedDates]);
+
+  // Dates to display (limited or all based on showAllBlockedDates)
+  const displayedBlockedDates = useMemo(() => {
+    if (showAllBlockedDates) {
+      return allFutureBlockedDates;
+    }
+    return allFutureBlockedDates.slice(0, 10);
+  }, [allFutureBlockedDates, showAllBlockedDates]);
+
+  const hasMoreDates = allFutureBlockedDates.length > 10;
+
+  // Reset range start when switching modes
+  const handleModeChange = (mode) => {
+    setDateSelectionMode(mode);
+    setRangeStart(null);
   };
 
   const calendarDays = getCalendarDays();
@@ -174,7 +323,7 @@ export default function AvailabilitySection({ listing, onEdit }) {
                   name="dateMode"
                   value="range"
                   checked={dateSelectionMode === 'range'}
-                  onChange={() => setDateSelectionMode('range')}
+                  onChange={() => handleModeChange('range')}
                 />
                 Range
               </label>
@@ -184,18 +333,63 @@ export default function AvailabilitySection({ listing, onEdit }) {
                   name="dateMode"
                   value="individual"
                   checked={dateSelectionMode === 'individual'}
-                  onChange={() => setDateSelectionMode('individual')}
+                  onChange={() => handleModeChange('individual')}
                 />
                 Individual dates
               </label>
             </div>
 
-            <div className="listing-dashboard-availability__info">
-              <p><strong>Nights Available per week</strong></p>
-              <p><strong>Dates Blocked by You</strong></p>
-              <p className="listing-dashboard-availability__no-blocked">
-                You don't have any future date blocked yet
+            {rangeStart && dateSelectionMode === 'range' && (
+              <p className="listing-dashboard-availability__range-hint">
+                Range start selected: {formatDate(rangeStart)}. Click another date to complete the range.
               </p>
+            )}
+
+            <div className="listing-dashboard-availability__info">
+              <p><strong>Dates Blocked by You</strong></p>
+              {allFutureBlockedDates.length > 0 ? (
+                <div className="listing-dashboard-availability__blocked-list">
+                  {displayedBlockedDates.map((dateKey) => (
+                    <span key={dateKey} className="listing-dashboard-availability__blocked-date">
+                      {new Date(dateKey + 'T00:00:00').toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                      <button
+                        type="button"
+                        className="listing-dashboard-availability__remove-date"
+                        onClick={() => toggleBlockedDate(dateKey)}
+                        title="Remove blocked date"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  {hasMoreDates && !showAllBlockedDates && (
+                    <button
+                      type="button"
+                      className="listing-dashboard-availability__more-dates-btn"
+                      onClick={() => setShowAllBlockedDates(true)}
+                    >
+                      +{allFutureBlockedDates.length - 10} more dates
+                    </button>
+                  )}
+                  {showAllBlockedDates && hasMoreDates && (
+                    <button
+                      type="button"
+                      className="listing-dashboard-availability__more-dates-btn"
+                      onClick={() => setShowAllBlockedDates(false)}
+                    >
+                      Show less
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <p className="listing-dashboard-availability__no-blocked">
+                  You don't have any future date blocked yet
+                </p>
+              )}
             </div>
           </div>
 
@@ -223,16 +417,34 @@ export default function AvailabilitySection({ listing, onEdit }) {
 
             {/* Calendar Grid */}
             <div className="listing-dashboard-availability__calendar-grid">
-              {calendarDays.map((dayInfo, index) => (
-                <div
-                  key={index}
-                  className={`listing-dashboard-availability__calendar-day ${
-                    !dayInfo.isCurrentMonth ? 'listing-dashboard-availability__calendar-day--other-month' : ''
-                  } ${dayInfo.isPast ? 'listing-dashboard-availability__calendar-day--past' : ''}`}
-                >
-                  {String(dayInfo.day).padStart(2, '0')}
-                </div>
-              ))}
+              {calendarDays.map((dayInfo, index) => {
+                const isBlocked = dayInfo.date && isDateBlocked(dayInfo.date);
+                const isRangeStartDate = isInPendingRange(dayInfo.date);
+                const isSelectable = dayInfo.isCurrentMonth && !dayInfo.isPast;
+
+                return (
+                  <div
+                    key={index}
+                    className={`listing-dashboard-availability__calendar-day ${
+                      !dayInfo.isCurrentMonth ? 'listing-dashboard-availability__calendar-day--other-month' : ''
+                    } ${dayInfo.isPast ? 'listing-dashboard-availability__calendar-day--past' : ''
+                    } ${isBlocked ? 'listing-dashboard-availability__calendar-day--blocked' : ''
+                    } ${isRangeStartDate ? 'listing-dashboard-availability__calendar-day--range-start' : ''
+                    } ${isSelectable ? 'listing-dashboard-availability__calendar-day--selectable' : ''}`}
+                    onClick={() => handleDateClick(dayInfo)}
+                    role={isSelectable ? 'button' : undefined}
+                    tabIndex={isSelectable ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (isSelectable && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        handleDateClick(dayInfo);
+                      }
+                    }}
+                  >
+                    {String(dayInfo.day).padStart(2, '0')}
+                  </div>
+                );
+              })}
             </div>
 
             {/* Legend */}

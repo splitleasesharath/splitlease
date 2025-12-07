@@ -910,6 +910,34 @@ export default function useListingDashboardPageLogic() {
     }
   }, [fetchListing, getListingIdFromUrl]);
 
+  // Handle blocked dates change - save to database
+  const handleBlockedDatesChange = useCallback(async (newBlockedDates) => {
+    const listingId = getListingIdFromUrl();
+    if (!listingId) {
+      console.error('❌ No listing ID found for blocked dates update');
+      return;
+    }
+
+    console.log('📅 Saving blocked dates:', newBlockedDates);
+
+    try {
+      // Update the database with the new blocked dates
+      await updateListing(listingId, {
+        'Dates - Blocked': JSON.stringify(newBlockedDates),
+      });
+
+      // Update local state
+      setListing((prev) => ({
+        ...prev,
+        blockedDates: newBlockedDates,
+      }));
+
+      console.log('✅ Blocked dates saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save blocked dates:', error);
+    }
+  }, [getListingIdFromUrl, updateListing]);
+
   return {
     // State
     activeTab,
@@ -952,5 +980,8 @@ export default function useListingDashboardPageLogic() {
     handleCloseEdit,
     handleSaveEdit,
     updateListing,
+
+    // Blocked dates handler
+    handleBlockedDatesChange,
   };
 }
