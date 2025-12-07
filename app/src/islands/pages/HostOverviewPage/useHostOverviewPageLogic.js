@@ -419,10 +419,8 @@ export function useHostOverviewPageLogic() {
   // ============================================================================
 
   const handleCreateNewListing = useCallback(() => {
-    showToast('Creating Listing', 'Redirecting to listing creation page...', 'information');
-    // Navigate to self-listing v2 page
     window.location.href = '/self-listing-v2';
-  }, [showToast]);
+  }, []);
 
   const handleImportListing = useCallback(() => {
     showToast('Import Listing', 'Import listing feature coming soon', 'information');
