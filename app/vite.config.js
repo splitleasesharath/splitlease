@@ -272,7 +272,8 @@ export default defineConfig({
         'host-overview': resolve(__dirname, 'public/host-overview.html'),
         'favorite-listings': resolve(__dirname, 'public/favorite-listings.html'),
         'about-us': resolve(__dirname, 'public/about-us.html'),
-        '_internal-test': resolve(__dirname, 'public/_internal-test.html')
+        '_internal-test': resolve(__dirname, 'public/_internal-test.html'),
+        'reset-password': resolve(__dirname, 'public/reset-password.html')
       },
       output: {
         // Ensure HTML files are output to dist root, not dist/public

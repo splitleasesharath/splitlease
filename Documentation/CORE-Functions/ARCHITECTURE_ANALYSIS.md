@@ -22,7 +22,7 @@ The Split Lease project implements a **Action-Based Routing** pattern across 5 m
 | Function | Purpose | Handlers | Auth Model | Status |
 |----------|---------|----------|-----------|--------|
 | **bubble-proxy** | General Bubble API proxy | 9 handlers | Optional per action | Active |
-| **bubble-auth-proxy** | Authentication system | 4 handlers | None (IS the auth) | Active |
+| **auth-user** | Authentication system | 4 handlers | None (IS the auth) | Active |
 | **ai-gateway** | AI completions service | 2 handlers + prompts | Optional per prompt | Active |
 | **ai-signup-guest** | AI-powered guest signup | 1 handler | None | Active |
 | **slack** | Slack notifications | 1 handler | None | Active |
@@ -57,7 +57,7 @@ supabase/functions/
 │       ├── getFavorites.ts           # get_favorites
 │       └── listingSync.ts            # Sync utilities
 │
-├── bubble-auth-proxy/
+├── auth-user/
 │   ├── index.ts                      # Main router
 │   ├── deno.json                     # Import map
 │   └── handlers/                     # 4 action handlers
@@ -201,9 +201,9 @@ export async function handleListingCreate(
 }
 ```
 
-### 2. bubble-auth-proxy (4 Handlers)
+### 2. auth-user (4 Handlers)
 
-**File**: `C:\Users\Split Lease\splitleaseteam\_Agent Context and Tools\SL6\Split Lease\supabase\functions\bubble-auth-proxy\index.ts`
+**File**: `C:\Users\Split Lease\splitleaseteam\_Agent Context and Tools\SL6\Split Lease\supabase\functions\auth-user\index.ts`
 
 **Actions**:
 - `login` - Authenticate user via email/password
@@ -691,7 +691,7 @@ export async function handleListingCreate(
 ```
 
 ### Pattern 3: Multi-Step Auth Handler
-**Example**: `signup.ts` (bubble-auth-proxy)
+**Example**: `signup.ts` (auth-user)
 
 ```typescript
 export async function handleSignup(
@@ -1076,7 +1076,7 @@ curl -X POST http://localhost:54321/functions/v1/bubble-proxy \
 Key architecture files referenced throughout this analysis:
 
 - `/supabase/functions/bubble-proxy/index.ts` - Main router
-- `/supabase/functions/bubble-auth-proxy/index.ts` - Auth router
+- `/supabase/functions/auth-user/index.ts` - Auth router
 - `/supabase/functions/ai-gateway/index.ts` - AI router
 - `/supabase/functions/_shared/bubbleSync.ts` - Core sync service
 - `/supabase/functions/_shared/errors.ts` - Error handling

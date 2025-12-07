@@ -34,7 +34,7 @@
                     │                         │                         │
                     ▼                         ▼                         ▼
          ┌────────────────────┐    ┌─────────────────────┐   ┌──────────────────┐
-         │  bubble-proxy      │    │ bubble-auth-proxy   │   │  ai-gateway      │
+         │  bubble-proxy      │    │ auth-user   │   │  ai-gateway      │
          │  (9 handlers)      │    │ (4 handlers)        │   │  (2 handlers)    │
          └────────┬───────────┘    └──────────┬──────────┘   └────────┬─────────┘
                   │                           │                       │
@@ -96,7 +96,7 @@ INDEX.TS ROUTER
         ├─→ Return HTTP 200
 ```
 
-### Flow 2: bubble-auth-proxy (Authentication)
+### Flow 2: auth-user (Authentication)
 
 ```
 REQUEST: {action: "signup", payload: {email, password, retype}}
@@ -404,7 +404,7 @@ REQUEST ARRIVES
     ┌────┴─────────────────┐
     │                      │
     ▼                      ▼
-bubble-proxy        bubble-auth-proxy
+bubble-proxy        auth-user
     │                      │
     ├─ Get action          └─ ACTION IS LOGIN/SIGNUP
     │                          ├─ NO auth required

@@ -1,36 +1,32 @@
 /**
- * Login Handler - Authenticate user via Bubble
- * Split Lease - bubble-auth-proxy
+ * Login Handler - Authenticate user via Supabase Auth (Native)
+ * Split Lease - auth-user
  *
  * Flow:
  * 1. Validate email/password in payload
- * 2. Call Bubble login workflow (BUBBLE_API_BASE_URL/wf/login-user)
- * 3. If successful, Bubble returns {token, user_id (bubble_id), expires}
- * 4. Look up user in Supabase by bubble_id to get the Supabase _id
- * 5. Return token and Supabase _id to client
+ * 2. Authenticate via Supabase Auth (signInWithPassword)
+ * 3. Fetch user profile from public.user table
+ * 4. Return session tokens and user data
  *
- * NO FALLBACK - If Bubble login fails or user not found in Supabase, entire operation fails
+ * NO FALLBACK - If login fails, entire operation fails
+ * Uses Supabase Auth natively - no Bubble dependency
  *
- * @param bubbleAuthBaseUrl - Base URL for Bubble auth API
- * @param bubbleApiKey - API key for Bubble
  * @param supabaseUrl - Supabase project URL
- * @param supabaseServiceKey - Service role key for bypassing RLS
+ * @param supabaseServiceKey - Supabase service role key for admin operations
  * @param payload - Request payload {email, password}
- * @returns {token, user_id (_id), bubble_id, expires}
+ * @returns {access_token, refresh_token, user_id, expires_in, user_type}
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { BubbleApiError, SupabaseSyncError } from '../../_shared/errors.ts';
+import { BubbleApiError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 
 export async function handleLogin(
-  bubbleAuthBaseUrl: string,
-  bubbleApiKey: string,
   supabaseUrl: string,
   supabaseServiceKey: string,
   payload: any
 ): Promise<any> {
-  console.log('[login] ========== LOGIN REQUEST ==========');
+  console.log('[login] ========== LOGIN REQUEST (SUPABASE NATIVE) ==========');
 
   // Validate required fields
   validateRequiredFields(payload, ['email', 'password']);
@@ -38,87 +34,92 @@ export async function handleLogin(
 
   console.log(`[login] Authenticating user: ${email}`);
 
+  // Initialize Supabase admin client
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
+
   try {
-    // Call Bubble login workflow
-    const url = `${bubbleAuthBaseUrl}/wf/login-user`;
-    console.log(`[login] Calling Bubble API: ${url}`);
+    // ========== AUTHENTICATE VIA SUPABASE AUTH ==========
+    console.log('[login] Signing in via Supabase Auth...');
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${bubbleApiKey}`
-      },
-      body: JSON.stringify({
-        email,
-        password
-      })
+    const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
+      email: email.toLowerCase(),
+      password
     });
 
-    console.log(`[login] Bubble response status: ${response.status} ${response.statusText}`);
+    if (authError) {
+      console.error(`[login] Auth error:`, authError.message);
 
-    const data = await response.json();
-    console.log(`[login] Bubble response:`, JSON.stringify(data, null, 2));
-
-    // Check if login was successful
-    if (!response.ok || data.status !== 'success') {
-      console.error(`[login] Login failed:`, data.reason || data.message);
-
-      // Return user-friendly error message
-      const errorMessage = data.message || 'Login failed. Please check your credentials.';
-      throw new BubbleApiError(errorMessage, response.status, data.reason);
-    }
-
-    // Extract response data
-    const token = data.response?.token;
-    const userId = data.response?.user_id;
-    const expires = data.response?.expires;
-
-    if (!token || !userId) {
-      console.error(`[login] Missing token or user_id in response:`, data);
-      throw new BubbleApiError('Login response missing required fields', 500);
-    }
-
-    console.log(`[login] ✅ Bubble login successful`);
-    console.log(`[login]    Bubble User ID: ${userId}`);
-    console.log(`[login]    Token expires in: ${expires} seconds`);
-
-    // Look up user in Supabase by bubble_id to get the Supabase _id
-    console.log(`[login] Looking up user in Supabase by bubble_id...`);
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
+      // Map common auth errors to user-friendly messages
+      if (authError.message.includes('Invalid login credentials')) {
+        throw new BubbleApiError('Invalid email or password. Please try again.', 401);
       }
-    });
+      if (authError.message.includes('Email not confirmed')) {
+        throw new BubbleApiError('Please verify your email address before logging in.', 401);
+      }
 
-    const { data: userData, error: userError } = await supabase
+      throw new BubbleApiError(authError.message, 401);
+    }
+
+    if (!authData.session || !authData.user) {
+      console.error(`[login] No session returned from auth`);
+      throw new BubbleApiError('Authentication failed. Please try again.', 401);
+    }
+
+    const { session, user: authUser } = authData;
+    console.log(`[login] ✅ Supabase Auth successful`);
+    console.log(`[login]    Auth User ID: ${authUser.id}`);
+    console.log(`[login]    Email: ${authUser.email}`);
+
+    // ========== FETCH USER PROFILE ==========
+    console.log('[login] Fetching user profile from public.user table...');
+
+    // First try to find user by email
+    const { data: userProfile, error: profileError } = await supabaseAdmin
       .from('user')
-      .select('_id')
-      .eq('bubble_id', userId)
-      .single();
+      .select('_id, email, "First Name", "Last Name", "Profile Photo", "Account - Host / Landlord", "Account - Guest"')
+      .eq('email', email.toLowerCase())
+      .maybeSingle();
 
-    if (userError) {
-      console.error(`[login] Supabase query error:`, userError);
-      throw new SupabaseSyncError(`Failed to fetch user from Supabase: ${userError.message}`, userError);
+    if (profileError) {
+      console.error(`[login] Profile fetch error:`, profileError.message);
+      // Don't fail login - user might exist in auth but not in public.user yet
     }
 
-    if (!userData) {
-      console.error(`[login] User not found in Supabase by bubble_id: ${userId}`);
-      throw new SupabaseSyncError(`User not found in Supabase with bubble_id: ${userId}`);
-    }
+    // Get user_id from profile or user_metadata
+    let userId = userProfile?._id || authUser.user_metadata?.user_id || authUser.id;
+    let userType = authUser.user_metadata?.user_type || 'Guest';
+    let hostAccountId = userProfile?.['Account - Host / Landlord'] || authUser.user_metadata?.host_account_id;
+    let guestAccountId = userProfile?.['Account - Guest'] || authUser.user_metadata?.guest_account_id;
 
-    const supabaseId = userData._id;
-    console.log(`[login]    Supabase _id: ${supabaseId}`);
+    console.log(`[login] ✅ User profile loaded`);
+    console.log(`[login]    User ID (_id): ${userId}`);
+    console.log(`[login]    User Type: ${userType}`);
+    console.log(`[login]    Host Account ID: ${hostAccountId}`);
+    console.log(`[login]    Guest Account ID: ${guestAccountId}`);
+
+    // ========== RETURN SESSION DATA ==========
+    const { access_token, refresh_token, expires_in } = session;
+
     console.log(`[login] ========== LOGIN COMPLETE ==========`);
 
-    // Return authentication data with Supabase _id as user_id
     return {
-      token,
-      user_id: supabaseId,
-      bubble_id: userId,
-      expires
+      access_token,
+      refresh_token,
+      expires_in,
+      user_id: userId,
+      supabase_user_id: authUser.id,
+      user_type: userType,
+      host_account_id: hostAccountId,
+      guest_account_id: guestAccountId,
+      email: authUser.email,
+      firstName: userProfile?.['First Name'] || '',
+      lastName: userProfile?.['Last Name'] || '',
+      profilePhoto: userProfile?.['Profile Photo'] || null
     };
 
   } catch (error) {

@@ -239,6 +239,16 @@ export const routes = [
     hasDynamicSegment: false
   },
 
+  // ===== AUTH PAGES =====
+  {
+    path: '/reset-password',
+    file: 'reset-password.html',
+    aliases: ['/reset-password.html'],
+    protected: false,
+    cloudflareInternal: false,
+    hasDynamicSegment: false
+  },
+
   // ===== ERROR PAGES =====
   {
     path: '/404',

@@ -41,7 +41,7 @@ The Split Lease signup flow registers new users through a multi-step form that c
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ┌─────────────────────┐     ┌────────────────────┐                         │
-│  │ bubble-auth-proxy   │────▶│  handlers/signup.ts│                         │
+│  │ auth-user   │────▶│  handlers/signup.ts│                         │
 │  │ index.ts (Router)   │     │  (Signup Handler)  │                         │
 │  └─────────────────────┘     └────────────────────┘                         │
 │                                       │                                      │
@@ -336,7 +336,7 @@ export async function signupUser(email, password, retype, additionalData = {}) {
     }
 
     // Call Edge Function
-    const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
       body: {
         action: 'signup',
         payload: {
@@ -378,9 +378,9 @@ export async function signupUser(email, password, retype, additionalData = {}) {
 
 ---
 
-### Step 6: Edge Function Router (bubble-auth-proxy/index.ts)
+### Step 6: Edge Function Router (auth-user/index.ts)
 
-**File**: `supabase/functions/bubble-auth-proxy/index.ts`
+**File**: `supabase/functions/auth-user/index.ts`
 
 #### Request Format
 ```json
@@ -418,7 +418,7 @@ case 'signup':
 
 ### Step 7: Signup Handler (handlers/signup.ts)
 
-**File**: `supabase/functions/bubble-auth-proxy/handlers/signup.ts`
+**File**: `supabase/functions/auth-user/handlers/signup.ts`
 
 This handler performs a **three-step atomic operation**:
 
@@ -857,8 +857,8 @@ useEffect(() => {
 ### Backend
 | File | Purpose |
 |------|---------|
-| `supabase/functions/bubble-auth-proxy/index.ts` | Auth router |
-| `supabase/functions/bubble-auth-proxy/handlers/signup.ts` | Signup handler |
+| `supabase/functions/auth-user/index.ts` | Auth router |
+| `supabase/functions/auth-user/handlers/signup.ts` | Signup handler |
 | `supabase/functions/_shared/errors.ts` | Error classes |
 | `supabase/functions/_shared/validation.ts` | Input validation |
 
