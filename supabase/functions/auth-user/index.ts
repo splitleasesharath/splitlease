@@ -2,18 +2,18 @@
  * Auth User - Authentication Router
  * Split Lease - Edge Function
  *
- * Routes authentication requests to Bubble.io auth workflows
+ * Routes authentication requests to appropriate handlers
  * NO USER AUTHENTICATION REQUIRED - These ARE the auth endpoints
  *
  * Supported Actions:
- * - login: User login (email/password)
- * - signup: New user registration
- * - logout: User logout (invalidate token)
- * - validate: Validate token and fetch user data
+ * - login: User login (email/password) - via Bubble
+ * - signup: New user registration - via Supabase Auth (native)
+ * - logout: User logout (invalidate token) - via Bubble
+ * - validate: Validate token and fetch user data - via Bubble + Supabase
  *
  * Security:
  * - NO user authentication on these endpoints (you can't require auth to log in!)
- * - API key stored server-side in Supabase Secrets
+ * - API keys stored server-side in Supabase Secrets
  * - Validates request format only
  */
 
@@ -66,21 +66,23 @@ Deno.serve(async (req) => {
 
     console.log(`[auth-user] Action: ${action}`);
 
-    // Get Bubble auth configuration from secrets
+    // Get configuration from secrets
     const bubbleAuthBaseUrl = Deno.env.get('BUBBLE_API_BASE_URL');
     const bubbleApiKey = Deno.env.get('BUBBLE_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!bubbleAuthBaseUrl || !bubbleApiKey) {
-      throw new Error('Bubble API configuration missing in secrets');
-    }
-
+    // Supabase config is required for all actions
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Supabase configuration missing in secrets');
     }
 
-    console.log(`[auth-user] Using Bubble Auth Base URL: ${bubbleAuthBaseUrl}`);
+    // Bubble config is required for login, logout, validate (but NOT signup - now uses Supabase Auth)
+    if (action !== 'signup' && (!bubbleAuthBaseUrl || !bubbleApiKey)) {
+      throw new Error('Bubble API configuration missing in secrets');
+    }
+
+    console.log(`[auth-user] Action: ${action}, Supabase URL: ${supabaseUrl}`);
 
     // Route to appropriate handler
     let result;
@@ -91,7 +93,8 @@ Deno.serve(async (req) => {
         break;
 
       case 'signup':
-        result = await handleSignup(bubbleAuthBaseUrl, bubbleApiKey, supabaseUrl, supabaseServiceKey, payload);
+        // Signup now uses Supabase Auth natively (no Bubble dependency)
+        result = await handleSignup(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       case 'logout':
