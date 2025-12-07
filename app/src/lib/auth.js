@@ -102,6 +102,10 @@ export function checkSplitLeaseCookies() {
  * Lightweight authentication status check
  * Checks auth state (not tokens) and validates session
  *
+ * Supports both:
+ * - Supabase Auth sessions (native signup)
+ * - Legacy Bubble auth (tokens in localStorage)
+ *
  * No fallback mechanisms - returns boolean directly
  * On failure: returns false without fallback logic
  *
@@ -127,7 +131,37 @@ export async function checkAuthStatus() {
     return true;
   }
 
-  // Check auth state (not tokens directly)
+  // Check Supabase Auth session (for native Supabase signups)
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (session && !error) {
+      console.log('✅ User authenticated via Supabase Auth session');
+      console.log('   User ID:', session.user?.id);
+      console.log('   Email:', session.user?.email);
+
+      // Sync Supabase session to our storage for consistency
+      const userId = session.user?.user_metadata?.user_id || session.user?.id;
+      const userType = session.user?.user_metadata?.user_type;
+
+      setSecureAuthToken(session.access_token);
+      if (userId) {
+        setSecureSessionId(userId);
+        setAuthState(true, userId);
+      }
+      if (userType) {
+        setSecureUserType(userType);
+      }
+
+      isUserLoggedInState = true;
+      return true;
+    }
+  } catch (err) {
+    console.log('⚠️ Supabase session check failed:', err.message);
+    // Continue to check legacy auth
+  }
+
+  // Check auth state (not tokens directly) - legacy Bubble auth
   const authState = getAuthState();
 
   if (authState) {
@@ -135,7 +169,7 @@ export async function checkAuthStatus() {
     const hasTokens = await hasValidTokens();
 
     if (hasTokens) {
-      console.log('✅ User authenticated via secure storage');
+      console.log('✅ User authenticated via secure storage (legacy)');
       isUserLoggedInState = true;
       return true;
     }
