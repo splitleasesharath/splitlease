@@ -80,7 +80,7 @@ export async function uploadPhoto(photo, listingId, index) {
   let blob;
   let extension;
 
-  // Handle File object (preferred) or data URL
+  // Handle File object (preferred), data URL, blob URL, or existing URL
   if (photo.file instanceof File) {
     blob = photo.file;
     extension = photo.file.name.split('.').pop().toLowerCase() || 'jpg';
@@ -89,12 +89,23 @@ export async function uploadPhoto(photo, listingId, index) {
     const mimeType = getMimeFromDataUrl(photo.url);
     blob = dataUrlToBlob(photo.url);
     extension = getExtensionFromMime(mimeType);
+  } else if (photo.url && photo.url.startsWith('blob:')) {
+    // Convert blob URL to blob by fetching it
+    console.log(`[PhotoUpload] Converting blob URL to blob for photo ${index + 1}`);
+    try {
+      const response = await fetch(photo.url);
+      blob = await response.blob();
+      extension = getExtensionFromMime(blob.type) || 'jpg';
+    } catch (fetchError) {
+      console.error(`[PhotoUpload] Failed to fetch blob URL for photo ${index + 1}:`, fetchError);
+      throw new Error(`Failed to process photo ${index + 1}: Could not read blob URL`);
+    }
   } else if (photo.url && (photo.url.startsWith('http://') || photo.url.startsWith('https://'))) {
-    // Already a URL, no upload needed
+    // Already a URL (Supabase storage), no upload needed
     console.log(`[PhotoUpload] Photo ${index + 1} already has a URL, skipping upload`);
     return {
       url: photo.url,
-      path: null,
+      path: photo.storagePath || null,
       isExisting: true
     };
   } else {
