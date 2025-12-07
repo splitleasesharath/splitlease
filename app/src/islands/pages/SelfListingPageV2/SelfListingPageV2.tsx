@@ -593,6 +593,8 @@ export function SelfListingPageV2() {
         night3: nightlyPricesRef.current[2],
         night4: nightlyPricesRef.current[3],
         night5: nightlyPricesRef.current[4],
+        night6: nightlyPricesRef.current[5],
+        night7: nightlyPricesRef.current[6],
       },
     } : null;
 
