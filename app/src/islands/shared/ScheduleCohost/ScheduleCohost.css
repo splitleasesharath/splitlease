@@ -361,11 +361,18 @@
   font-weight: 700;
 }
 
+.schedule-cohost-calendar-day--has-slots {
+  background-color: var(--sc-purple-light);
+  color: var(--sc-purple-text);
+  font-weight: 700;
+}
+
 .schedule-cohost-calendar-day--today {
   border: 2px solid var(--sc-purple-border);
 }
 
-.schedule-cohost-calendar-day--today.schedule-cohost-calendar-day--selected {
+.schedule-cohost-calendar-day--today.schedule-cohost-calendar-day--selected,
+.schedule-cohost-calendar-day--today.schedule-cohost-calendar-day--has-slots {
   border: none;
 }
 

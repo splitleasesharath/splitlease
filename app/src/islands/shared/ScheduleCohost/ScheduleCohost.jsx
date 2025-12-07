@@ -425,7 +425,7 @@ export default function ScheduleCohost({
     return date < today;
   };
 
-  // Check if a date is selected
+  // Check if a date is the currently active/selected date
   const isSelectedDate = (date) => {
     if (!selectedDate) return false;
     return (
@@ -433,6 +433,18 @@ export default function ScheduleCohost({
       date.getMonth() === selectedDate.getMonth() &&
       date.getFullYear() === selectedDate.getFullYear()
     );
+  };
+
+  // Check if a date has any time slots selected
+  const hasSelectedSlots = (date) => {
+    return selectedTimeSlots.some((slot) => {
+      const slotDate = slot.dateTime;
+      return (
+        slotDate.getDate() === date.getDate() &&
+        slotDate.getMonth() === date.getMonth() &&
+        slotDate.getFullYear() === date.getFullYear()
+      );
+    });
   };
 
   // Format month/year for display
@@ -545,6 +557,7 @@ export default function ScheduleCohost({
                   const isOtherMonth = !isCurrentMonth(date);
                   const isPast = isPastDate(date);
                   const isSelected = isSelectedDate(date);
+                  const hasSlots = hasSelectedSlots(date);
                   const isTodayDate = isToday(date);
                   const isClickable = !isOtherMonth && !isPast;
 
@@ -552,7 +565,7 @@ export default function ScheduleCohost({
                     <button
                       key={index}
                       type="button"
-                      className={`schedule-cohost-calendar-day ${isOtherMonth ? 'schedule-cohost-calendar-day--other' : ''} ${isPast ? 'schedule-cohost-calendar-day--past' : ''} ${isSelected ? 'schedule-cohost-calendar-day--selected' : ''} ${isTodayDate ? 'schedule-cohost-calendar-day--today' : ''}`}
+                      className={`schedule-cohost-calendar-day ${isOtherMonth ? 'schedule-cohost-calendar-day--other' : ''} ${isPast ? 'schedule-cohost-calendar-day--past' : ''} ${isSelected ? 'schedule-cohost-calendar-day--selected' : ''} ${hasSlots && !isSelected ? 'schedule-cohost-calendar-day--has-slots' : ''} ${isTodayDate ? 'schedule-cohost-calendar-day--today' : ''}`}
                       onClick={() => isClickable && handleDateClick(date)}
                       disabled={!isClickable}
                     >
