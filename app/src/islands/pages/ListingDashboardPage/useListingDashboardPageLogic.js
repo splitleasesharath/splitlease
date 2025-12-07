@@ -710,6 +710,9 @@ export default function useListingDashboardPageLogic() {
   /**
    * Start the AI generation process for all fields
    * This runs each generation task sequentially to show progress
+   *
+   * IMPORTANT: Order matters! We first load all data (amenities, neighborhood, rules, safety)
+   * THEN generate the title and description so they have full context for better results.
    */
   const handleStartAIGeneration = useCallback(async () => {
     if (!listing) {
@@ -721,49 +724,55 @@ export default function useListingDashboardPageLogic() {
     const listingId = getListingIdFromUrl();
     const generatedResults = {};
 
+    // Track enriched data as we load it - this will be used for AI title/description generation
+    let enrichedAmenities = {
+      inUnit: listing.inUnitAmenities?.map(a => a.name) || [],
+      building: listing.buildingAmenities?.map(a => a.name) || [],
+    };
+    let enrichedNeighborhood = listing.location?.hoodsDisplay || '';
+
     try {
       console.log('🤖 Starting AI Import Assistant generation...');
+      console.log('📋 Step 1: Loading common features and data first...');
 
-      // Extract listing data for AI generation
-      const listingData = {
-        listingName: listing.title || '',
-        address: `${listing.location?.city || ''}, ${listing.location?.state || ''}`,
-        neighborhood: listing.location?.hoodsDisplay || '',
-        typeOfSpace: listing.features?.typeOfSpace?.label || '',
-        bedrooms: listing.features?.bedrooms ?? 0,
-        beds: listing.features?.bedrooms ?? 0,
-        bathrooms: listing.features?.bathrooms ?? 0,
-        kitchenType: listing.features?.kitchenType?.display || '',
-        amenitiesInsideUnit: listing.inUnitAmenities?.map(a => a.name) || [],
-        amenitiesOutsideUnit: listing.buildingAmenities?.map(a => a.name) || [],
-      };
+      // ========================================
+      // PHASE 1: Load all data first (so AI has full context)
+      // ========================================
 
-      // 1. Generate Listing Name
-      setAiGenerationStatus(prev => ({ ...prev, name: 'loading' }));
+      // 1. Load Common In-Unit Amenities
+      setAiGenerationStatus(prev => ({ ...prev, inUnitAmenities: 'loading' }));
       try {
-        const generatedName = await generateListingTitle(listingData);
-        if (generatedName) {
-          generatedResults.name = generatedName;
-          await updateListing(listingId, { Name: generatedName });
+        const commonAmenities = await getCommonInUnitAmenities();
+        if (commonAmenities.length > 0) {
+          const currentAmenities = listing.inUnitAmenities?.map(a => a.name) || [];
+          const newAmenities = [...new Set([...currentAmenities, ...commonAmenities])];
+          enrichedAmenities.inUnit = newAmenities;
+          generatedResults.inUnitAmenities = newAmenities;
+          generatedResults.inUnitAmenitiesCount = commonAmenities.length;
+          await updateListing(listingId, { 'Features - Amenities In-Unit': newAmenities });
         }
-        setAiGenerationStatus(prev => ({ ...prev, name: 'complete' }));
+        setAiGenerationStatus(prev => ({ ...prev, inUnitAmenities: 'complete' }));
       } catch (err) {
-        console.error('❌ Error generating name:', err);
-        setAiGenerationStatus(prev => ({ ...prev, name: 'complete' }));
+        console.error('❌ Error loading in-unit amenities:', err);
+        setAiGenerationStatus(prev => ({ ...prev, inUnitAmenities: 'complete' }));
       }
 
-      // 2. Generate Description
-      setAiGenerationStatus(prev => ({ ...prev, description: 'loading' }));
+      // 2. Load Common Building Amenities
+      setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'loading' }));
       try {
-        const generatedDescription = await generateListingDescription(listingData);
-        if (generatedDescription) {
-          generatedResults.description = generatedDescription;
-          await updateListing(listingId, { Description: generatedDescription });
+        const commonAmenities = await getCommonBuildingAmenities();
+        if (commonAmenities.length > 0) {
+          const currentAmenities = listing.buildingAmenities?.map(a => a.name) || [];
+          const newAmenities = [...new Set([...currentAmenities, ...commonAmenities])];
+          enrichedAmenities.building = newAmenities;
+          generatedResults.buildingAmenities = newAmenities;
+          generatedResults.buildingAmenitiesCount = commonAmenities.length;
+          await updateListing(listingId, { 'Features - Amenities In-Building': newAmenities });
         }
-        setAiGenerationStatus(prev => ({ ...prev, description: 'complete' }));
+        setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'complete' }));
       } catch (err) {
-        console.error('❌ Error generating description:', err);
-        setAiGenerationStatus(prev => ({ ...prev, description: 'complete' }));
+        console.error('❌ Error loading building amenities:', err);
+        setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'complete' }));
       }
 
       // 3. Load Neighborhood Description
@@ -775,6 +784,7 @@ export default function useListingDashboardPageLogic() {
           if (neighborhood && neighborhood.description) {
             generatedResults.neighborhood = neighborhood.description;
             generatedResults.neighborhoodName = neighborhood.neighborhoodName;
+            enrichedNeighborhood = neighborhood.neighborhoodName || enrichedNeighborhood;
             await updateListing(listingId, { 'Description - Neighborhood': neighborhood.description });
           }
         }
@@ -784,41 +794,7 @@ export default function useListingDashboardPageLogic() {
         setAiGenerationStatus(prev => ({ ...prev, neighborhood: 'complete' }));
       }
 
-      // 4. Load Common In-Unit Amenities
-      setAiGenerationStatus(prev => ({ ...prev, inUnitAmenities: 'loading' }));
-      try {
-        const commonAmenities = await getCommonInUnitAmenities();
-        if (commonAmenities.length > 0) {
-          const currentAmenities = listing.inUnitAmenities?.map(a => a.name) || [];
-          const newAmenities = [...new Set([...currentAmenities, ...commonAmenities])];
-          generatedResults.inUnitAmenities = newAmenities;
-          generatedResults.inUnitAmenitiesCount = commonAmenities.length;
-          await updateListing(listingId, { 'Features - Amenities In-Unit': newAmenities });
-        }
-        setAiGenerationStatus(prev => ({ ...prev, inUnitAmenities: 'complete' }));
-      } catch (err) {
-        console.error('❌ Error loading in-unit amenities:', err);
-        setAiGenerationStatus(prev => ({ ...prev, inUnitAmenities: 'complete' }));
-      }
-
-      // 5. Load Common Building Amenities
-      setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'loading' }));
-      try {
-        const commonAmenities = await getCommonBuildingAmenities();
-        if (commonAmenities.length > 0) {
-          const currentAmenities = listing.buildingAmenities?.map(a => a.name) || [];
-          const newAmenities = [...new Set([...currentAmenities, ...commonAmenities])];
-          generatedResults.buildingAmenities = newAmenities;
-          generatedResults.buildingAmenitiesCount = commonAmenities.length;
-          await updateListing(listingId, { 'Features - Amenities In-Building': newAmenities });
-        }
-        setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'complete' }));
-      } catch (err) {
-        console.error('❌ Error loading building amenities:', err);
-        setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'complete' }));
-      }
-
-      // 6. Load Common House Rules
+      // 4. Load Common House Rules
       setAiGenerationStatus(prev => ({ ...prev, houseRules: 'loading' }));
       try {
         const commonRules = await getCommonHouseRules();
@@ -835,7 +811,7 @@ export default function useListingDashboardPageLogic() {
         setAiGenerationStatus(prev => ({ ...prev, houseRules: 'complete' }));
       }
 
-      // 7. Load Common Safety Features
+      // 5. Load Common Safety Features
       setAiGenerationStatus(prev => ({ ...prev, safetyFeatures: 'loading' }));
       try {
         const commonFeatures = await getCommonSafetyFeatures();
@@ -850,6 +826,56 @@ export default function useListingDashboardPageLogic() {
       } catch (err) {
         console.error('❌ Error loading safety features:', err);
         setAiGenerationStatus(prev => ({ ...prev, safetyFeatures: 'complete' }));
+      }
+
+      // ========================================
+      // PHASE 2: Generate AI content with enriched data
+      // ========================================
+
+      console.log('📋 Step 2: Generating AI content with enriched data...');
+
+      // Build enriched listing data for AI generation (using all loaded amenities)
+      const enrichedListingData = {
+        listingName: listing.title || '',
+        address: `${listing.location?.city || ''}, ${listing.location?.state || ''}`,
+        neighborhood: enrichedNeighborhood,
+        typeOfSpace: listing.features?.typeOfSpace?.label || '',
+        bedrooms: listing.features?.bedrooms ?? 0,
+        beds: listing.features?.bedrooms ?? 0,
+        bathrooms: listing.features?.bathrooms ?? 0,
+        kitchenType: listing.features?.kitchenType?.display || '',
+        amenitiesInsideUnit: enrichedAmenities.inUnit,
+        amenitiesOutsideUnit: enrichedAmenities.building,
+      };
+
+      console.log('🤖 Generating AI content with enriched data:', enrichedListingData);
+
+      // 6. Generate Description (uses AI - better with full amenities)
+      setAiGenerationStatus(prev => ({ ...prev, description: 'loading' }));
+      try {
+        const generatedDescription = await generateListingDescription(enrichedListingData);
+        if (generatedDescription) {
+          generatedResults.description = generatedDescription;
+          await updateListing(listingId, { Description: generatedDescription });
+        }
+        setAiGenerationStatus(prev => ({ ...prev, description: 'complete' }));
+      } catch (err) {
+        console.error('❌ Error generating description:', err);
+        setAiGenerationStatus(prev => ({ ...prev, description: 'complete' }));
+      }
+
+      // 7. Generate Listing Name (uses AI - better with full context)
+      setAiGenerationStatus(prev => ({ ...prev, name: 'loading' }));
+      try {
+        const generatedName = await generateListingTitle(enrichedListingData);
+        if (generatedName) {
+          generatedResults.name = generatedName;
+          await updateListing(listingId, { Name: generatedName });
+        }
+        setAiGenerationStatus(prev => ({ ...prev, name: 'complete' }));
+      } catch (err) {
+        console.error('❌ Error generating name:', err);
+        setAiGenerationStatus(prev => ({ ...prev, name: 'complete' }));
       }
 
       console.log('✅ AI Import Assistant generation complete:', generatedResults);

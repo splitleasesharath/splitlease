@@ -3,6 +3,7 @@ import Footer from '../../shared/Footer';
 import { EditListingDetails } from '../../shared/EditListingDetails/EditListingDetails';
 import ScheduleCohost from '../../shared/ScheduleCohost';
 import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal';
+import AIImportAssistantModal from '../../shared/AIImportAssistantModal';
 import useListingDashboardPageLogic from './useListingDashboardPageLogic';
 import {
   NavigationHeader,
@@ -47,6 +48,15 @@ export default function ListingDashboardPage() {
     handleCloseImportReviews,
     handleSubmitImportReviews,
     isImportingReviews,
+    // AI Import Assistant
+    showAIImportAssistant,
+    handleCloseAIImportAssistant,
+    handleAIImportComplete,
+    handleStartAIGeneration,
+    aiGenerationStatus,
+    isAIGenerating,
+    isAIComplete,
+    aiGeneratedData,
     handleSetCoverPhoto,
     handleDeletePhoto,
     handleReorderPhotos,
@@ -272,6 +282,18 @@ export default function ListingDashboardPage() {
         currentUserEmail={currentUser?.email || ''}
         listingId={listing?.id}
         isLoading={isImportingReviews}
+      />
+
+      {/* AI Import Assistant Modal */}
+      <AIImportAssistantModal
+        isOpen={showAIImportAssistant}
+        onClose={handleCloseAIImportAssistant}
+        onComplete={handleAIImportComplete}
+        generationStatus={aiGenerationStatus}
+        isGenerating={isAIGenerating}
+        isComplete={isAIComplete}
+        generatedData={aiGeneratedData}
+        onStartGeneration={handleStartAIGeneration}
       />
     </>
   );
