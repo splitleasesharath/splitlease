@@ -12,18 +12,20 @@ import { validateDayIndices, validateNightIndices } from "./dayConversion.ts";
 /**
  * Validate input for creating a new proposal
  * Throws ValidationError if any required field is missing or invalid
+ *
+ * NOTE: Uses camelCase to match frontend payload format
  */
 export function validateCreateProposalInput(input: CreateProposalInput): void {
   // ─────────────────────────────────────────────────────────
   // Required Identifiers
   // ─────────────────────────────────────────────────────────
 
-  if (!input.listing_id || typeof input.listing_id !== "string") {
-    throw new ValidationError("listing_id is required and must be a string");
+  if (!input.listingId || typeof input.listingId !== "string") {
+    throw new ValidationError("listingId is required and must be a string");
   }
 
-  if (!input.guest_id || typeof input.guest_id !== "string") {
-    throw new ValidationError("guest_id is required and must be a string");
+  if (!input.guestId || typeof input.guestId !== "string") {
+    throw new ValidationError("guestId is required and must be a string");
   }
 
   // ─────────────────────────────────────────────────────────
@@ -31,52 +33,56 @@ export function validateCreateProposalInput(input: CreateProposalInput): void {
   // ─────────────────────────────────────────────────────────
 
   if (
-    typeof input.estimated_booking_total !== "number" ||
-    input.estimated_booking_total < 0
+    typeof input.estimatedBookingTotal !== "number" ||
+    input.estimatedBookingTotal < 0
   ) {
     throw new ValidationError(
-      "estimated_booking_total must be a non-negative number"
+      "estimatedBookingTotal must be a non-negative number"
     );
   }
 
-  if (!input.guest_flexibility || typeof input.guest_flexibility !== "string") {
-    throw new ValidationError(
-      "guest_flexibility is required and must be a string"
-    );
+  // Optional guest preferences (guestFlexibility, preferredGender)
+  // Tech-debt: These should be collected from user in the UI
+  if (
+    input.guestFlexibility !== undefined &&
+    typeof input.guestFlexibility !== "string"
+  ) {
+    throw new ValidationError("guestFlexibility must be a string if provided");
   }
 
-  if (!input.preferred_gender || typeof input.preferred_gender !== "string") {
-    throw new ValidationError(
-      "preferred_gender is required and must be a string"
-    );
+  if (
+    input.preferredGender !== undefined &&
+    typeof input.preferredGender !== "string"
+  ) {
+    throw new ValidationError("preferredGender must be a string if provided");
   }
 
   // ─────────────────────────────────────────────────────────
   // Date Validation
   // ─────────────────────────────────────────────────────────
 
-  if (!input.move_in_start_range) {
-    throw new ValidationError("move_in_start_range is required");
+  if (!input.moveInStartRange) {
+    throw new ValidationError("moveInStartRange is required");
   }
 
-  if (!input.move_in_end_range) {
-    throw new ValidationError("move_in_end_range is required");
+  if (!input.moveInEndRange) {
+    throw new ValidationError("moveInEndRange is required");
   }
 
-  const startDate = new Date(input.move_in_start_range);
-  const endDate = new Date(input.move_in_end_range);
+  const startDate = new Date(input.moveInStartRange);
+  const endDate = new Date(input.moveInEndRange);
 
   if (isNaN(startDate.getTime())) {
-    throw new ValidationError("move_in_start_range must be a valid ISO date");
+    throw new ValidationError("moveInStartRange must be a valid ISO date");
   }
 
   if (isNaN(endDate.getTime())) {
-    throw new ValidationError("move_in_end_range must be a valid ISO date");
+    throw new ValidationError("moveInEndRange must be a valid ISO date");
   }
 
   if (startDate > endDate) {
     throw new ValidationError(
-      "move_in_start_range must be before or equal to move_in_end_range"
+      "moveInStartRange must be before or equal to moveInEndRange"
     );
   }
 
@@ -85,20 +91,20 @@ export function validateCreateProposalInput(input: CreateProposalInput): void {
   // ─────────────────────────────────────────────────────────
 
   if (
-    typeof input.reservation_span_weeks !== "number" ||
-    input.reservation_span_weeks < 1
+    typeof input.reservationSpanWeeks !== "number" ||
+    input.reservationSpanWeeks < 1
   ) {
     throw new ValidationError(
-      "reservation_span_weeks must be a positive number"
+      "reservationSpanWeeks must be a positive number"
     );
   }
 
   if (
-    !input.reservation_span ||
-    typeof input.reservation_span !== "string"
+    !input.reservationSpan ||
+    typeof input.reservationSpan !== "string"
   ) {
     throw new ValidationError(
-      "reservation_span is required and must be a string"
+      "reservationSpan is required and must be a string"
     );
   }
 
@@ -106,42 +112,42 @@ export function validateCreateProposalInput(input: CreateProposalInput): void {
   // Day/Night Selection Validation (Bubble format: 1-7)
   // ─────────────────────────────────────────────────────────
 
-  if (!Array.isArray(input.days_selected) || input.days_selected.length === 0) {
-    throw new ValidationError("days_selected must be a non-empty array");
+  if (!Array.isArray(input.daysSelected) || input.daysSelected.length === 0) {
+    throw new ValidationError("daysSelected must be a non-empty array");
   }
 
-  if (!validateDayIndices(input.days_selected, "bubble")) {
+  if (!validateDayIndices(input.daysSelected, "bubble")) {
     throw new ValidationError(
-      "days_selected must contain integer values 1-7 (Bubble format: Sun=1, Sat=7)"
+      "daysSelected must contain integer values 1-7 (Bubble format: Sun=1, Sat=7)"
     );
   }
 
   if (
-    !Array.isArray(input.nights_selected) ||
-    input.nights_selected.length === 0
+    !Array.isArray(input.nightsSelected) ||
+    input.nightsSelected.length === 0
   ) {
-    throw new ValidationError("nights_selected must be a non-empty array");
+    throw new ValidationError("nightsSelected must be a non-empty array");
   }
 
-  if (!validateNightIndices(input.nights_selected, "bubble")) {
+  if (!validateNightIndices(input.nightsSelected, "bubble")) {
     throw new ValidationError(
-      "nights_selected must contain integer values 1-7 (Bubble format)"
+      "nightsSelected must contain integer values 1-7 (Bubble format)"
     );
   }
 
   // Check-in/out validation
   if (
-    typeof input.check_in !== "number" ||
-    !validateDayIndices([input.check_in], "bubble")
+    typeof input.checkIn !== "number" ||
+    !validateDayIndices([input.checkIn], "bubble")
   ) {
-    throw new ValidationError("check_in must be an integer value 1-7");
+    throw new ValidationError("checkIn must be an integer value 1-7");
   }
 
   if (
-    typeof input.check_out !== "number" ||
-    !validateDayIndices([input.check_out], "bubble")
+    typeof input.checkOut !== "number" ||
+    !validateDayIndices([input.checkOut], "bubble")
   ) {
-    throw new ValidationError("check_out must be an integer value 1-7");
+    throw new ValidationError("checkOut must be an integer value 1-7");
   }
 
   // ─────────────────────────────────────────────────────────
@@ -149,25 +155,25 @@ export function validateCreateProposalInput(input: CreateProposalInput): void {
   // ─────────────────────────────────────────────────────────
 
   if (
-    typeof input.proposal_price !== "number" ||
-    input.proposal_price < 0
+    typeof input.proposalPrice !== "number" ||
+    input.proposalPrice < 0
   ) {
-    throw new ValidationError("proposal_price must be a non-negative number");
+    throw new ValidationError("proposalPrice must be a non-negative number");
   }
 
   // Optional pricing fields
   if (
-    input.four_week_rent !== undefined &&
-    typeof input.four_week_rent !== "number"
+    input.fourWeekRent !== undefined &&
+    typeof input.fourWeekRent !== "number"
   ) {
-    throw new ValidationError("four_week_rent must be a number if provided");
+    throw new ValidationError("fourWeekRent must be a number if provided");
   }
 
   if (
-    input.host_compensation !== undefined &&
-    typeof input.host_compensation !== "number"
+    input.hostCompensation !== undefined &&
+    typeof input.hostCompensation !== "number"
   ) {
-    throw new ValidationError("host_compensation must be a number if provided");
+    throw new ValidationError("hostCompensation must be a number if provided");
   }
 }
 

@@ -13,49 +13,53 @@
 /**
  * Input for creating a new proposal
  * Maps to Bubble CORE-create_proposal-NEW workflow (37 parameters)
+ *
+ * NOTE: Uses camelCase to match frontend payload format
  */
 export interface CreateProposalInput {
   // Required Identifiers
-  listing_id: string;
-  guest_id: string;
+  listingId: string;
+  guestId: string;
 
   // Required Pricing
-  estimated_booking_total: number;
-  guest_flexibility: string;
-  preferred_gender: string; // → os_gender_type.name
+  estimatedBookingTotal: number;
+
+  // Optional Guest Preferences (tech-debt: should be collected from user)
+  guestFlexibility?: string;
+  preferredGender?: string; // → os_gender_type.name
 
   // Dates & Duration
-  move_in_start_range: string; // ISO date
-  move_in_end_range: string; // ISO date
-  reservation_span_weeks: number;
-  reservation_span: string; // → os_stay_periods.name
-  actual_weeks?: number;
+  moveInStartRange: string; // ISO date
+  moveInEndRange: string; // ISO date
+  reservationSpanWeeks: number;
+  reservationSpan: string; // → os_stay_periods.name
+  actualWeeks?: number;
 
   // Day/Night Selection (Bubble indexing: 1-7, Sun=1)
-  days_selected: number[];
-  nights_selected: number[];
-  check_in: number;
-  check_out: number;
+  daysSelected: number[];
+  nightsSelected: number[];
+  checkIn: number;
+  checkOut: number;
 
   // Pricing Details
-  proposal_price: number;
-  four_week_rent?: number;
-  four_week_compensation?: number;
-  host_compensation?: number;
+  proposalPrice: number;
+  fourWeekRent?: number;
+  fourWeekCompensation?: number;
+  hostCompensation?: number;
 
   // Guest Information
   comment?: string;
-  need_for_space?: string;
-  about_me?: string;
-  special_needs?: string;
+  needForSpace?: string;
+  aboutMe?: string;
+  specialNeeds?: string;
 
   // Optional Overrides
   status?: string; // → os_proposal_status.name
-  suggested_reason?: string;
-  origin_proposal_id?: string;
-  move_in_range_text?: string;
-  flexible_move_in?: boolean;
-  number_of_matches?: number;
+  suggestedReason?: string;
+  originProposalId?: string;
+  moveInRangeText?: string;
+  flexibleMoveIn?: boolean;
+  numberOfMatches?: number;
 }
 
 /**
@@ -104,15 +108,16 @@ export interface GetProposalInput {
 
 /**
  * Response after creating a proposal
+ * NOTE: Uses camelCase to match frontend expectations
  */
 export interface CreateProposalResponse {
-  proposal_id: string;
+  proposalId: string;
   status: string;
-  order_ranking: number;
-  listing_id: string;
-  guest_id: string;
-  host_id: string;
-  created_at: string;
+  orderRanking: number;
+  listingId: string;
+  guestId: string;
+  hostId: string;
+  createdAt: string;
 }
 
 /**
