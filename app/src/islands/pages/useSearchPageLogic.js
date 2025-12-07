@@ -234,7 +234,12 @@ export function useSearchPageLogic() {
         }
       })
 
-      const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds))
+      console.log('📷 fetchAllActiveListings: Collected', allPhotoIds.size, 'unique photo IDs')
+      const photoIdsArray = Array.from(allPhotoIds)
+      console.log('📷 fetchAllActiveListings: Sample photo IDs:', photoIdsArray.slice(0, 3))
+
+      const photoMap = await fetchPhotoUrls(photoIdsArray)
+      console.log('📷 fetchAllActiveListings: photoMap has', Object.keys(photoMap).length, 'entries')
 
       // Extract photos per listing
       const resolvedPhotos = {}
@@ -383,7 +388,12 @@ export function useSearchPageLogic() {
         }
       })
 
-      const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds))
+      console.log('📷 fetchListings: Collected', allPhotoIds.size, 'unique photo IDs')
+      const photoIdsArray = Array.from(allPhotoIds)
+      console.log('📷 fetchListings: Sample photo IDs:', photoIdsArray.slice(0, 3))
+
+      const photoMap = await fetchPhotoUrls(photoIdsArray)
+      console.log('📷 fetchListings: photoMap has', Object.keys(photoMap).length, 'entries')
 
       // Extract photos per listing
       const resolvedPhotos = {}
