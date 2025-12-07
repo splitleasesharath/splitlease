@@ -2600,8 +2600,13 @@ export default function ViewSplitLeasePage() {
           reservationSpan={reservationSpan}
           pricingBreakdown={priceBreakdown}
           zatConfig={zatConfig}
-          hasExistingUserData={false}
-          existingUserData={null}
+          hasExistingUserData={!!(loggedInUserData?.aboutMe || loggedInUserData?.needForSpace)}
+          existingUserData={loggedInUserData ? {
+            needForSpace: loggedInUserData.needForSpace || '',
+            aboutYourself: loggedInUserData.aboutMe || '',
+            hasUniqueRequirements: !!loggedInUserData.specialNeeds,
+            uniqueRequirements: loggedInUserData.specialNeeds || ''
+          } : null}
           onClose={() => setIsProposalModalOpen(false)}
           onSubmit={handleProposalSubmit}
         />

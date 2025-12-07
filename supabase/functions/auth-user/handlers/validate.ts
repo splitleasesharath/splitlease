@@ -63,7 +63,7 @@ export async function handleValidate(
     // Query by bubble_id since that's what Bubble login returns and stores in browser
     const { data: userData, error: userError } = await supabase
       .from('user')
-      .select('_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord"')
+      .select('_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs"')
       .eq('bubble_id', user_id)
       .single();
 
@@ -96,7 +96,11 @@ export async function handleValidate(
       email: userEmail,
       profilePhoto: profilePhoto || null,
       userType: userData['Type - User Current'] || null,
-      accountHostId: userData['Account - Host / Landlord'] || null
+      accountHostId: userData['Account - Host / Landlord'] || null,
+      // User profile fields for proposal prefilling
+      aboutMe: userData['About Me / Bio'] || null,
+      needForSpace: userData['need for Space'] || null,
+      specialNeeds: userData['special needs'] || null
     };
 
     console.log(`[validate] ✅ Validation complete`);
