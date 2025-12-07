@@ -61,7 +61,15 @@ export default function SecondaryActions({ onAIAssistant }) {
     setIsDropdownOpen(false);
     const sectionElement = document.getElementById(sectionId);
     if (sectionElement) {
-      sectionElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      // Calculate position with offset to ensure title is visible
+      const headerOffset = 80; // Account for fixed header or padding
+      const elementPosition = sectionElement.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
     }
   };
 
