@@ -10,7 +10,7 @@
  * - Supports post-meeting rating
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   generateCalendarDays,
   generateTimeSlots,
@@ -169,6 +169,9 @@ export default function ScheduleCohost({
   const [loadingMessage, setLoadingMessage] = useState('');
   const [toasts, setToasts] = useState([]);
 
+  // Ref for time slots section to scroll to
+  const timeSlotsRef = useRef(null);
+
   // Prevent background scroll when modal is open
   useEffect(() => {
     const originalOverflow = document.body.style.overflow;
@@ -231,6 +234,13 @@ export default function ScheduleCohost({
     setSelectedDate(date);
     // Clear time slots when date changes
     setSelectedTimeSlots([]);
+
+    // Scroll to time slots section after a brief delay to allow render
+    setTimeout(() => {
+      if (timeSlotsRef.current) {
+        timeSlotsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
   };
 
   // Time slot selection (max 3)
@@ -556,7 +566,7 @@ export default function ScheduleCohost({
 
             {/* Time Slots Section */}
             {selectedDate && (
-              <div className="schedule-cohost-timeslots">
+              <div className="schedule-cohost-timeslots" ref={timeSlotsRef}>
                 <div className="schedule-cohost-timeslots-header">
                   <div className="schedule-cohost-timeslots-title">
                     <label className="schedule-cohost-label">
