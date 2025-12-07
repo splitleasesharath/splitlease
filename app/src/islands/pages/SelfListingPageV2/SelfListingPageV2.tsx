@@ -387,8 +387,8 @@ export function SelfListingPageV2() {
   // Handle night selection change from HostScheduleSelector
   const handleNightSelectionChange = (nights: NightId[]) => {
     updateFormData({ selectedNights: nights });
-    // Clear night selector validation error when at least one night is selected
-    if (nights.length > 0 && validationErrors.nightSelector) {
+    // Clear night selector validation error when at least 2 nights are selected
+    if (nights.length >= 2 && validationErrors.nightSelector) {
       setValidationErrors(prev => ({ ...prev, nightSelector: false }));
     }
   };
@@ -399,7 +399,7 @@ export function SelfListingPageV2() {
     const weekdayNights: NightId[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
     const isWeekdays = count === 5 && weekdayNights.every(n => formData.selectedNights.includes(n));
 
-    if (count === 0) return { text: 'Select at least 1 day', error: true };
+    if (count < 2) return { text: 'Select at least 2 nights', error: true };
     if (isWeekdays) return { text: 'Weekdays Only (You keep weekends!)', error: false };
     return { text: `${count} Nights / Week`, error: false };
   };
@@ -456,8 +456,8 @@ export function SelfListingPageV2() {
 
     switch (step) {
       case 3:
-        if (formData.leaseStyle === 'nightly' && formData.selectedNights.length === 0) {
-          showToast('Please select at least one night', 'error', 4000);
+        if (formData.leaseStyle === 'nightly' && formData.selectedNights.length < 2) {
+          showToast('Please select at least 2 nights', 'error', 4000);
           setValidationErrors({ nightSelector: true });
           scrollToFirstError('nightSelector');
           return false;
