@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case 'login':
-        result = await handleLogin(bubbleAuthBaseUrl, bubbleApiKey, payload);
+        result = await handleLogin(bubbleAuthBaseUrl, bubbleApiKey, supabaseUrl, supabaseServiceKey, payload);
         break;
 
       case 'signup':
