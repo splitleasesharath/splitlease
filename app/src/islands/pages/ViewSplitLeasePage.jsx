@@ -1075,10 +1075,10 @@ export default function ViewSplitLeasePage() {
 
       console.log('📋 Edge Function payload:', edgeFunctionPayload);
 
-      // Call the Edge Function
-      const { data, error } = await supabase.functions.invoke('bubble-proxy', {
+      // Call the proposal Edge Function (Supabase-native)
+      const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
-          action: 'create_proposal',
+          action: 'create',
           payload: edgeFunctionPayload
         }
       });

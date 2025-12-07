@@ -31,25 +31,19 @@ import {
 } from "../lib/calculations.ts";
 import { determineInitialStatus, ProposalStatusName } from "../lib/status.ts";
 
-/**
- * Generate a Bubble-compatible ID
- * Format: {timestamp}x{random}
- */
-function generateBubbleId(): string {
-  const timestamp = Date.now();
-  const random = Math.floor(Math.random() * 1000000000);
-  return `${timestamp}x${random}`;
-}
+// ID generation is now done via RPC: generate_bubble_id()
 
 /**
  * Handle create proposal request
+ *
+ * NOTE: Uses camelCase input to match frontend payload format
  */
 export async function handleCreate(
   payload: Record<string, unknown>,
-  user: UserContext,
+  user: UserContext | null,
   supabase: SupabaseClient
 ): Promise<CreateProposalResponse> {
-  console.log(`[proposal:create] Starting create for user: ${user.email}`);
+  console.log(`[proposal:create] Starting create for user: ${user?.email || 'public'}`);
 
   // ================================================
   // VALIDATION
@@ -58,7 +52,7 @@ export async function handleCreate(
   const input = payload as unknown as CreateProposalInput;
   validateCreateProposalInput(input);
 
-  console.log(`[proposal:create] Validated input for listing: ${input.listing_id}`);
+  console.log(`[proposal:create] Validated input for listing: ${input.listingId}`);
 
   // ================================================
   // FETCH RELATED DATA
@@ -89,12 +83,12 @@ export async function handleCreate(
       "💰Monthly Host Rate"
     `
     )
-    .eq("_id", input.listing_id)
+    .eq("_id", input.listingId)
     .single();
 
   if (listingError || !listing) {
     console.error(`[proposal:create] Listing fetch failed:`, listingError);
-    throw new ValidationError(`Listing not found: ${input.listing_id}`);
+    throw new ValidationError(`Listing not found: ${input.listingId}`);
   }
 
   const listingData = listing as unknown as ListingData;
@@ -116,12 +110,12 @@ export async function handleCreate(
       "Tasks Completed"
     `
     )
-    .eq("_id", input.guest_id)
+    .eq("_id", input.guestId)
     .single();
 
   if (guestError || !guest) {
     console.error(`[proposal:create] Guest fetch failed:`, guestError);
-    throw new ValidationError(`Guest not found: ${input.guest_id}`);
+    throw new ValidationError(`Guest not found: ${input.guestId}`);
   }
 
   const guestData = guest as unknown as GuestData;
@@ -179,25 +173,25 @@ export async function handleCreate(
   // Calculate complementary nights (Step 4)
   const complementaryNights = calculateComplementaryNights(
     listingData["Nights Available (List of Nights)"] || [],
-    input.nights_selected
+    input.nightsSelected
   );
 
   // Calculate compensation (Steps 13-18)
   const rentalType = ((listingData["rental type"] || "nightly").toLowerCase()) as RentalType;
   const compensation = calculateCompensation(
     rentalType,
-    (input.reservation_span || "other") as ReservationSpan,
-    input.nights_selected.length,
+    (input.reservationSpan || "other") as ReservationSpan,
+    input.nightsSelected.length,
     listingData["💰Weekly Host Rate"] || 0,
-    input.proposal_price,
-    input.reservation_span_weeks
+    input.proposalPrice,
+    input.reservationSpanWeeks
   );
 
   // Calculate move-out date
   const moveOutDate = calculateMoveOutDate(
-    new Date(input.move_in_start_range),
-    input.reservation_span_weeks,
-    input.nights_selected.length
+    new Date(input.moveInStartRange),
+    input.reservationSpanWeeks,
+    input.nightsSelected.length
   );
 
   // Determine initial status (Steps 5-7)
@@ -213,7 +207,15 @@ export async function handleCreate(
   // STEP 1: CREATE PROPOSAL RECORD
   // ================================================
 
-  const proposalId = generateBubbleId();
+  // Generate Bubble-compatible ID using RPC
+  const { data: proposalId, error: idError } = await supabase.rpc('generate_bubble_id');
+  if (idError || !proposalId) {
+    console.error(`[proposal:create] ID generation failed:`, idError);
+    throw new SupabaseSyncError('Failed to generate proposal ID');
+  }
+
+  console.log(`[proposal:create] Generated proposal ID: ${proposalId}`);
+
   const now = new Date().toISOString();
   const historyEntry = `Proposal created on ${new Date().toLocaleString("en-US", {
     month: "2-digit",
@@ -224,55 +226,59 @@ export async function handleCreate(
     hour12: true,
   })}`;
 
+  // Default values for optional fields (tech-debt: should be collected from user)
+  const guestFlexibility = input.guestFlexibility || "Flexible";
+  const preferredGender = input.preferredGender || "any";
+
   const proposalData = {
     _id: proposalId,
 
     // Core relationships
-    Listing: input.listing_id,
-    Guest: input.guest_id,
+    Listing: input.listingId,
+    Guest: input.guestId,
     "Host - Account": listingData["Host / Landlord"],
-    "Created By": input.guest_id,
+    "Created By": input.guestId,
 
     // Guest info
     "Guest email": guestData["email as text"],
-    "Guest flexibility": input.guest_flexibility,
-    "preferred gender": input.preferred_gender,
-    "need for space": input.need_for_space || null,
-    "About yourself": input.about_me || null,
-    "Special needs": input.special_needs || null,
+    "Guest flexibility": guestFlexibility,
+    "preferred gender": preferredGender,
+    "need for space": input.needForSpace || null,
+    "About yourself": input.aboutMe || null,
+    "Special needs": input.specialNeeds || null,
     Comment: input.comment || null,
 
     // Dates
-    "Move in range start": input.move_in_start_range,
-    "Move in range end": input.move_in_end_range,
+    "Move in range start": input.moveInStartRange,
+    "Move in range end": input.moveInEndRange,
     "Move-out": moveOutDate.toISOString(),
-    "move-in range (text)": input.move_in_range_text || null,
+    "move-in range (text)": input.moveInRangeText || null,
 
     // Duration
-    "Reservation Span": input.reservation_span,
-    "Reservation Span (Weeks)": input.reservation_span_weeks,
-    "actual weeks during reservation span": input.actual_weeks || input.reservation_span_weeks,
+    "Reservation Span": input.reservationSpan,
+    "Reservation Span (Weeks)": input.reservationSpanWeeks,
+    "actual weeks during reservation span": input.actualWeeks || input.reservationSpanWeeks,
     "duration in months": compensation.duration_months,
 
     // Day/Night selection
-    "Days Selected": input.days_selected,
-    "Nights Selected (Nights list)": input.nights_selected,
-    "nights per week (num)": input.nights_selected.length,
-    "check in day": input.check_in,
-    "check out day": input.check_out,
+    "Days Selected": input.daysSelected,
+    "Nights Selected (Nights list)": input.nightsSelected,
+    "nights per week (num)": input.nightsSelected.length,
+    "check in day": input.checkIn,
+    "check out day": input.checkOut,
     "Days Available": listingData["Days Available (List of Days)"],
     "Complementary Nights": complementaryNights,
 
     // Pricing
-    "proposal nightly price": input.proposal_price,
-    "4 week rent": input.four_week_rent || compensation.four_week_rent,
-    "Total Price for Reservation (guest)": input.estimated_booking_total,
+    "proposal nightly price": input.proposalPrice,
+    "4 week rent": input.fourWeekRent || compensation.four_week_rent,
+    "Total Price for Reservation (guest)": input.estimatedBookingTotal,
     "Total Compensation (proposal - host)": compensation.total_compensation,
-    "host compensation": input.host_compensation || compensation.total_compensation,
-    "4 week compensation": input.four_week_compensation || compensation.four_week_compensation,
+    "host compensation": input.hostCompensation || compensation.total_compensation,
+    "4 week compensation": input.fourWeekCompensation || compensation.four_week_compensation,
     "cleaning fee": listingData["💰Cleaning Cost / Maintenance Fee"] || 0,
     "damage deposit": listingData["💰Damage Deposit"] || 0,
-    "nightly price for map (text)": formatPriceForDisplay(input.proposal_price),
+    "nightly price for map (text)": formatPriceForDisplay(input.proposalPrice),
 
     // From listing
     "rental type": listingData["rental type"],
@@ -294,9 +300,9 @@ export async function handleCreate(
     "host email": hostUserData["email as text"],
 
     // Suggestion fields
-    "suggested reason (benefits)": input.suggested_reason || null,
-    "origin proposal of this suggestion": input.origin_proposal_id || null,
-    "number of matches": input.number_of_matches || null,
+    "suggested reason (benefits)": input.suggestedReason || null,
+    "origin proposal of this suggestion": input.originProposalId || null,
+    "number of matches": input.numberOfMatches || null,
 
     // Timestamps
     "Created Date": now,
@@ -321,8 +327,8 @@ export async function handleCreate(
   // ================================================
 
   const guestUpdates: Record<string, unknown> = {
-    "flexibility (last known)": input.guest_flexibility,
-    "Recent Days Selected": input.days_selected,
+    "flexibility (last known)": guestFlexibility,
+    "Recent Days Selected": input.daysSelected,
     "Modified Date": now,
   };
 
@@ -332,27 +338,27 @@ export async function handleCreate(
 
   // Add listing to favorites (Step 2)
   const currentFavorites = guestData["Favorited Listings"] || [];
-  if (!currentFavorites.includes(input.listing_id)) {
-    guestUpdates["Favorited Listings"] = [...currentFavorites, input.listing_id];
+  if (!currentFavorites.includes(input.listingId)) {
+    guestUpdates["Favorited Listings"] = [...currentFavorites, input.listingId];
   }
 
   // Profile enrichment (Steps 20-22) - only if empty
   const tasksCompleted = guestData["Tasks Completed"] || [];
 
-  if (!guestData["About Me / Bio"] && !tasksCompleted.includes("bio") && input.about_me) {
-    guestUpdates["About Me / Bio"] = input.about_me;
+  if (!guestData["About Me / Bio"] && !tasksCompleted.includes("bio") && input.aboutMe) {
+    guestUpdates["About Me / Bio"] = input.aboutMe;
   }
-  if (!guestData["need for Space"] && !tasksCompleted.includes("need_for_space") && input.need_for_space) {
-    guestUpdates["need for Space"] = input.need_for_space;
+  if (!guestData["need for Space"] && !tasksCompleted.includes("need_for_space") && input.needForSpace) {
+    guestUpdates["need for Space"] = input.needForSpace;
   }
-  if (!guestData["special needs"] && !tasksCompleted.includes("special_needs") && input.special_needs) {
-    guestUpdates["special needs"] = input.special_needs;
+  if (!guestData["special needs"] && !tasksCompleted.includes("special_needs") && input.specialNeeds) {
+    guestUpdates["special needs"] = input.specialNeeds;
   }
 
   const { error: guestUpdateError } = await supabase
     .from("user")
     .update(guestUpdates)
-    .eq("_id", input.guest_id);
+    .eq("_id", input.guestId);
 
   if (guestUpdateError) {
     console.error(`[proposal:create] Guest update failed:`, guestUpdateError);
@@ -388,17 +394,17 @@ export async function handleCreate(
 
   // These are placeholder logs - actual async calls will be implemented in Phase 4
   console.log(`[proposal:create] [ASYNC] Would trigger: proposal-communications`, {
-    proposal_id: proposalId,
-    guest_id: input.guest_id,
-    host_id: hostAccountData.User,
+    proposalId: proposalId,
+    guestId: input.guestId,
+    hostId: hostAccountData.User,
   });
 
   console.log(`[proposal:create] [ASYNC] Would trigger: proposal-summary (ai-gateway)`, {
-    proposal_id: proposalId,
+    proposalId: proposalId,
   });
 
   console.log(`[proposal:create] [ASYNC] Would trigger: proposal-suggestions`, {
-    proposal_id: proposalId,
+    proposalId: proposalId,
   });
 
   // ================================================
@@ -408,12 +414,12 @@ export async function handleCreate(
   console.log(`[proposal:create] Complete, returning response`);
 
   return {
-    proposal_id: proposalId,
+    proposalId: proposalId,
     status: status,
-    order_ranking: orderRanking,
-    listing_id: input.listing_id,
-    guest_id: input.guest_id,
-    host_id: hostAccountData.User,
-    created_at: now,
+    orderRanking: orderRanking,
+    listingId: input.listingId,
+    guestId: input.guestId,
+    hostId: hostAccountData.User,
+    createdAt: now,
   };
 }
