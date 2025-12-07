@@ -42,27 +42,41 @@ export async function createListing(formData) {
 
   console.log('[ListingService] ✅ Generated listing _id:', generatedId);
 
-  // Step 2: Upload photos to Supabase Storage
+  // Step 2: Process photos - they should already be uploaded to Supabase Storage
+  // The Section6Photos component now uploads directly, so we just format them here
   let uploadedPhotos = [];
   if (formData.photos?.photos?.length > 0) {
-    console.log('[ListingService] Uploading photos to Supabase Storage...');
-    try {
-      // Use generated _id for photo storage path
-      uploadedPhotos = await uploadPhotos(formData.photos.photos, generatedId);
-      console.log('[ListingService] ✅ Photos uploaded:', uploadedPhotos.length);
-    } catch (uploadError) {
-      console.error('[ListingService] ⚠️ Photo upload failed:', uploadError);
-      // Continue with data URLs as fallback
+    console.log('[ListingService] Processing photos...');
+
+    // Check if photos already have Supabase URLs (uploaded during form editing)
+    const allPhotosHaveUrls = formData.photos.photos.every(
+      (p) => p.url && (p.url.startsWith('http://') || p.url.startsWith('https://'))
+    );
+
+    if (allPhotosHaveUrls) {
+      // Photos are already uploaded - just format them
+      console.log('[ListingService] ✅ Photos already uploaded to storage');
       uploadedPhotos = formData.photos.photos.map((p, i) => ({
         id: p.id,
         url: p.url,
         Photo: p.url,
         'Photo (thumbnail)': p.url,
-        caption: p.caption,
+        storagePath: p.storagePath || null,
+        caption: p.caption || '',
         displayOrder: p.displayOrder ?? i,
         SortOrder: p.displayOrder ?? i,
         toggleMainPhoto: i === 0
       }));
+    } else {
+      // Legacy path: Some photos may still need uploading (shouldn't happen with new flow)
+      console.log('[ListingService] Uploading remaining photos to Supabase Storage...');
+      try {
+        uploadedPhotos = await uploadPhotos(formData.photos.photos, generatedId);
+        console.log('[ListingService] ✅ Photos uploaded:', uploadedPhotos.length);
+      } catch (uploadError) {
+        console.error('[ListingService] ❌ Photo upload failed:', uploadError);
+        throw new Error('Failed to upload photos: ' + uploadError.message);
+      }
     }
   }
 
