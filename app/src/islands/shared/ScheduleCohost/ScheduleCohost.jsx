@@ -169,6 +169,16 @@ export default function ScheduleCohost({
   const [loadingMessage, setLoadingMessage] = useState('');
   const [toasts, setToasts] = useState([]);
 
+  // Prevent background scroll when modal is open
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, []);
+
   // Generate calendar days for current month
   const calendarDays = useMemo(() => {
     return generateCalendarDays(currentMonth);
