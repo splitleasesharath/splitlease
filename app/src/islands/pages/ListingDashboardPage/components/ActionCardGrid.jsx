@@ -110,42 +110,53 @@ const FileCheckIcon = () => (
 );
 
 export default function ActionCardGrid({ counts, onCardClick }) {
-  const cards = [
+  // Define all cards with visibility condition
+  // Cards for proposals, virtual meetings, and leases only show when count > 0
+  const allCards = [
     {
       id: 'preview',
       icon: <EyeIcon />,
       label: 'Preview Listing',
+      visible: true, // Always visible
     },
     {
       id: 'copy-link',
       icon: <LinkIcon />,
       label: 'Copy Listing Link',
+      visible: true, // Always visible
     },
     {
       id: 'proposals',
       icon: <FileTextIcon />,
       label: 'Proposals',
       badge: counts.proposals > 0,
+      visible: counts.proposals > 0, // Only show if there are proposals
     },
     {
       id: 'meetings',
       icon: <CalendarIcon />,
       label: 'Virtual Meetings',
       badge: counts.virtualMeetings > 0,
+      visible: counts.virtualMeetings > 0, // Only show if there are virtual meetings
     },
     {
       id: 'manage',
       icon: <SettingsIcon />,
       label: 'Manage Listing',
       badge: true,
+      visible: true, // Always visible
     },
     {
       id: 'leases',
       icon: <FileCheckIcon />,
       label: 'Leases',
       badge: counts.leases > 0,
+      visible: counts.leases > 0, // Only show if there are leases
     },
   ];
+
+  // Filter to only visible cards
+  const visibleCards = allCards.filter((card) => card.visible);
 
   const handleClick = (cardId) => {
     if (onCardClick) {
@@ -155,7 +166,7 @@ export default function ActionCardGrid({ counts, onCardClick }) {
 
   return (
     <div className="listing-dashboard-action-grid">
-      {cards.map((card) => (
+      {visibleCards.map((card) => (
         <ActionCard
           key={card.id}
           icon={card.icon}
