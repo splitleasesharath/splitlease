@@ -1,6 +1,6 @@
 /**
  * Validate Handler - Validate session and fetch user data
- * Split Lease - bubble-auth-proxy
+ * Split Lease - auth-user
  *
  * Flow:
  * 1. Get token and user_id from payload

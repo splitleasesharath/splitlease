@@ -34,7 +34,7 @@
 [INTENT]: Authentication functions
 [EXPORTS]: loginUser, logoutUser, checkAuthStatus, validateTokenAndFetchUser
 [DEPENDS_ON]: secureStorage, supabase
-[API]: bubble-auth-proxy Edge Function
+[API]: auth-user Edge Function
 
 ---
 

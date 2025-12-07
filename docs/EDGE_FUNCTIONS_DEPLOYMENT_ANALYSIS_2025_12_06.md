@@ -22,7 +22,7 @@ Three functions provide identical authentication services:
 
 | Function | Version | Updated | Status |
 |----------|---------|---------|--------|
-| bubble-auth-proxy | 38 | 2025-11-26 | Original |
+| auth-user | 38 | 2025-11-26 | Original |
 | auth-user | 2 | 2025-12-06 | Newer, modular |
 | zap-auth-user | 1 | 2025-12-06 | New (purpose unclear) |
 

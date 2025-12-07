@@ -1,6 +1,6 @@
 /**
  * Logout Handler - Invalidate user session via Bubble
- * Split Lease - bubble-auth-proxy
+ * Split Lease - auth-user
  *
  * Flow:
  * 1. Get token from payload

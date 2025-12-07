@@ -32,7 +32,7 @@ The Split Lease login flow authenticates users via a multi-layer architecture th
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                              │
 │  ┌─────────────────────┐     ┌────────────────────┐                         │
-│  │ bubble-auth-proxy   │────▶│  handlers/login.ts │                         │
+│  │ auth-user   │────▶│  handlers/login.ts │                         │
 │  │ index.ts (Router)   │     │  (Login Handler)   │                         │
 │  └─────────────────────┘     └────────────────────┘                         │
 │                                       │                                      │
@@ -135,7 +135,7 @@ export async function loginUser(email, password) {
     }
 
     // Call Edge Function
-    const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
       body: {
         action: 'login',
         payload: { email, password }
@@ -177,16 +177,16 @@ export async function loginUser(email, password) {
 
 #### Key Operations
 1. **Input Validation**: Check email and password are provided
-2. **Edge Function Call**: Invoke `bubble-auth-proxy` with action `login`
+2. **Edge Function Call**: Invoke `auth-user` with action `login`
 3. **Token Storage**: Store token, session ID, and auth state
 4. **User Data Fetch**: Validate token and fetch user profile
 5. **User Type Storage**: Cache user type for UI decisions
 
 ---
 
-### Step 3: Edge Function Router (bubble-auth-proxy/index.ts)
+### Step 3: Edge Function Router (auth-user/index.ts)
 
-**File**: `supabase/functions/bubble-auth-proxy/index.ts`
+**File**: `supabase/functions/auth-user/index.ts`
 
 The Edge Function routes the login request to the appropriate handler.
 
@@ -236,7 +236,7 @@ Deno.serve(async (req) => {
 
 ### Step 4: Login Handler (handlers/login.ts)
 
-**File**: `supabase/functions/bubble-auth-proxy/handlers/login.ts`
+**File**: `supabase/functions/auth-user/handlers/login.ts`
 
 The login handler communicates with the Bubble.io API.
 
@@ -395,7 +395,7 @@ const [showLoginPassword, setShowLoginPassword] = useState(false);
 ### 2. Magic Link Login (Passwordless)
 ```javascript
 const handleMagicLink = async () => {
-  const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+  const { data, error } = await supabase.functions.invoke('auth-user', {
     body: {
       action: 'magic-link',
       payload: { email: loginData.email }
@@ -477,7 +477,7 @@ export async function validateTokenAndFetchUser() {
     return null;
   }
 
-  const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
+  const { data, error } = await supabase.functions.invoke('auth-user', {
     body: {
       action: 'validate',
       payload: { token, user_id: userId }
@@ -517,9 +517,9 @@ export async function validateTokenAndFetchUser() {
 ### Backend
 | File | Purpose |
 |------|---------|
-| `supabase/functions/bubble-auth-proxy/index.ts` | Auth router |
-| `supabase/functions/bubble-auth-proxy/handlers/login.ts` | Login handler |
-| `supabase/functions/bubble-auth-proxy/handlers/validate.ts` | Token validation |
+| `supabase/functions/auth-user/index.ts` | Auth router |
+| `supabase/functions/auth-user/handlers/login.ts` | Login handler |
+| `supabase/functions/auth-user/handlers/validate.ts` | Token validation |
 | `supabase/functions/_shared/errors.ts` | Error classes |
 | `supabase/functions/_shared/validation.ts` | Input validation |
 

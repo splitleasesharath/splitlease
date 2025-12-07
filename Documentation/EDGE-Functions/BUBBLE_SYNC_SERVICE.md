@@ -92,7 +92,7 @@ If any step fails, the entire operation fails. Clients can retry the full operat
 | Edge Function | Purpose | Uses BubbleSyncService |
 |---------------|---------|------------------------|
 | `bubble-proxy` | General API proxy | Yes (via handlers) |
-| `bubble-auth-proxy` | Authentication | Partial (manual fetch) |
+| `auth-user` | Authentication | Partial (manual fetch) |
 | `ai-gateway` | AI completions | No |
 | `ai-signup-guest` | AI signup | No |
 | `bubble_sync` | Reverse sync (Supabase→Bubble) | No (uses `bubblePush.ts`) |

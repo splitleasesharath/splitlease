@@ -27,7 +27,7 @@
 | Function | Endpoint | Actions | Examples |
 |----------|----------|---------|----------|
 | **bubble-proxy** | `/bubble-proxy` | create_listing, get_listing, send_message, upload_photos, toggle_favorite, submit_listing, signup_ai | [Requests](#bubble-proxy-requests) |
-| **bubble-auth-proxy** | `/bubble-auth-proxy` | login, signup, logout, validate | [Requests](#bubble-auth-proxy-requests) |
+| **auth-user** | `/auth-user` | login, signup, logout, validate | [Requests](#auth-user-requests) |
 | **ai-gateway** | `/ai-gateway` | complete, stream | [Requests](#ai-gateway-requests) |
 
 ---
@@ -137,11 +137,11 @@ curl -X POST https://project.supabase.co/functions/v1/bubble-proxy \
 
 ---
 
-## bubble-auth-proxy Requests
+## auth-user Requests
 
 ### Login
 ```bash
-curl -X POST https://project.supabase.co/functions/v1/bubble-auth-proxy \
+curl -X POST https://project.supabase.co/functions/v1/auth-user \
   -H "Content-Type: application/json" \
   -d '{
     "action": "login",
@@ -166,7 +166,7 @@ curl -X POST https://project.supabase.co/functions/v1/bubble-auth-proxy \
 
 ### Signup
 ```bash
-curl -X POST https://project.supabase.co/functions/v1/bubble-auth-proxy \
+curl -X POST https://project.supabase.co/functions/v1/auth-user \
   -H "Content-Type: application/json" \
   -d '{
     "action": "signup",
@@ -187,7 +187,7 @@ curl -X POST https://project.supabase.co/functions/v1/bubble-auth-proxy \
 
 ### Validate Token
 ```bash
-curl -X POST https://project.supabase.co/functions/v1/bubble-auth-proxy \
+curl -X POST https://project.supabase.co/functions/v1/auth-user \
   -H "Content-Type: application/json" \
   -d '{
     "action": "validate",
@@ -199,7 +199,7 @@ curl -X POST https://project.supabase.co/functions/v1/bubble-auth-proxy \
 
 ### Logout
 ```bash
-curl -X POST https://project.supabase.co/functions/v1/bubble-auth-proxy \
+curl -X POST https://project.supabase.co/functions/v1/auth-user \
   -H "Content-Type: application/json" \
   -d '{
     "action": "logout",

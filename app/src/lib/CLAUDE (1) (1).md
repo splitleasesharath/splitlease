@@ -32,7 +32,7 @@
 ### auth.js
 [INTENT]: Authentication functions (login, logout, validate, checkStatus)
 [IMPORTS]: ./secureStorage, ./supabase
-[DEPENDENCIES]: supabase/functions/bubble-auth-proxy/
+[DEPENDENCIES]: supabase/functions/auth-user/
 [EXPORTS]: loginUser, logoutUser, checkAuthStatus, validateTokenAndFetchUser
 
 ### availabilityValidation.js
@@ -42,7 +42,7 @@
 ### bubbleAPI.js
 [INTENT]: Bubble API client routing through Edge Functions
 [IMPORTS]: ./supabase
-[DEPENDENCIES]: supabase/functions/bubble-proxy/, bubble-auth-proxy/
+[DEPENDENCIES]: supabase/functions/bubble-proxy/, auth-user/
 
 ### config.js
 [INTENT]: Application configuration and environment values
