@@ -9,6 +9,7 @@ import { generateListingDescription, generateListingTitle } from '../../../lib/a
 import { getCommonHouseRules } from './services/houseRulesService';
 import { getCommonSafetyFeatures } from './services/safetyFeaturesService';
 import { getCommonInUnitAmenities, getCommonBuildingAmenities } from './services/amenitiesService';
+import { getNeighborhoodByZipCode } from './services/neighborhoodService';
 import { uploadPhoto } from '../../../lib/photoUpload';
 
 /**
@@ -29,6 +30,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
   const [isLoadingBuildingAmenities, setIsLoadingBuildingAmenities] = useState(false);
   const [isLoadingRules, setIsLoadingRules] = useState(false);
   const [isLoadingSafetyFeatures, setIsLoadingSafetyFeatures] = useState(false);
+  const [isLoadingNeighborhood, setIsLoadingNeighborhood] = useState(false);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -271,9 +273,34 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     }
   }, [formData, listing, updateListing, onSave, showToast]);
 
-  const loadNeighborhoodTemplate = useCallback(() => {
-    handleInputChange('Description - Neighborhood', NEIGHBORHOOD_TEMPLATE);
-  }, [handleInputChange]);
+  const loadNeighborhoodTemplate = useCallback(async () => {
+    // Get ZIP code from form data or listing
+    const zipCode = formData['Location - Zip Code'] || listing?.['Location - Zip Code'];
+
+    if (!zipCode) {
+      showToast('Missing ZIP code', 'Please add a ZIP code first to load the neighborhood template', 'error');
+      return;
+    }
+
+    setIsLoadingNeighborhood(true);
+    try {
+      const neighborhood = await getNeighborhoodByZipCode(zipCode);
+
+      if (neighborhood && neighborhood.description) {
+        handleInputChange('Description - Neighborhood', neighborhood.description);
+        showToast('Template loaded!', `Loaded description for ${neighborhood.neighborhoodName || 'neighborhood'}`);
+      } else {
+        // Fall back to static template if no neighborhood found
+        handleInputChange('Description - Neighborhood', NEIGHBORHOOD_TEMPLATE);
+        showToast('Default template loaded', `No specific neighborhood found for ZIP: ${zipCode}`);
+      }
+    } catch (error) {
+      console.error('[loadNeighborhoodTemplate] Error:', error);
+      showToast('Error loading template', 'Please try again', 'error');
+    } finally {
+      setIsLoadingNeighborhood(false);
+    }
+  }, [formData, listing, handleInputChange, showToast]);
 
   /**
    * Extract listing data from current form/listing for AI generation
@@ -532,6 +559,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     isLoadingBuildingAmenities,
     isLoadingRules,
     isLoadingSafetyFeatures,
+    isLoadingNeighborhood,
     isUploadingPhotos,
     toast,
     expandedSections,

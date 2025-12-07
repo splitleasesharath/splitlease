@@ -39,6 +39,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
     isLoadingBuildingAmenities,
     isLoadingRules,
     isLoadingSafetyFeatures,
+    isLoadingNeighborhood,
     isUploadingPhotos,
     toast,
     expandedSections,
@@ -273,13 +274,17 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
         </div>
       </div>
       <div className={`eld-collapsible-content ${!expandedSections.neighborhood ? 'collapsed' : ''}`}>
-        <button
-          className="eld-btn eld-btn-secondary"
-          style={{ marginBottom: '12px' }}
-          onClick={loadNeighborhoodTemplate}
-        >
-          Load Template
-        </button>
+        <div className="eld-label-with-action" style={{ marginBottom: '12px' }}>
+          <label className="eld-form-label">Neighborhood Description</label>
+          <button
+            type="button"
+            className="eld-btn-link"
+            onClick={loadNeighborhoodTemplate}
+            disabled={isLoadingNeighborhood}
+          >
+            {isLoadingNeighborhood ? 'loading...' : 'load template'}
+          </button>
+        </div>
         <div className="eld-form-field">
           <textarea
             className="eld-form-textarea"
