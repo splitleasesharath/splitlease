@@ -12,23 +12,175 @@
  *
  * Mirrors Bubble workflow: CORE-create_proposal-NEW
  * Migration: 2025-12-06 - Bubble → Supabase native
+ *
+ * NOTE: Calculation functions are inlined here to avoid cross-function imports
+ * which can cause deployment issues with the Supabase MCP tool.
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 import { ValidationError } from '../../_shared/errors.ts';
 
-// Import calculation utilities from proposal Edge Function
-import {
-  calculateCompensation,
-  calculateMoveOutDate,
-  calculateComplementaryNights,
-  calculateComplementaryDays,
-  calculateOrderRanking,
-  formatPriceForDisplay,
-} from '../../proposal/lib/calculations.ts';
-import { determineInitialStatus, ProposalStatusName } from '../../proposal/lib/status.ts';
-import { RentalType, ReservationSpan } from '../../proposal/lib/types.ts';
+// ============================================================================
+// INLINED TYPES (from proposal/lib/types.ts)
+// ============================================================================
+
+type RentalType = 'nightly' | 'weekly' | 'monthly';
+type ReservationSpan = '1_week' | '2_weeks' | '1_month' | '2_months' | '3_months' | '6_months' | '1_year' | 'other';
+
+type ProposalStatusName =
+  | 'sl_submitted_awaiting_rental_app'
+  | 'guest_submitted_awaiting_rental_app'
+  | 'sl_submitted_pending_confirmation'
+  | 'host_review'
+  | 'host_counteroffer'
+  | 'accepted_drafting_lease'
+  | 'lease_docs_for_review'
+  | 'lease_docs_for_signatures'
+  | 'lease_signed_awaiting_payment'
+  | 'payment_submitted_lease_activated'
+  | 'cancelled_by_guest'
+  | 'rejected_by_host'
+  | 'cancelled_by_sl'
+  | 'guest_ignored_suggestion';
+
+interface CompensationResult {
+  total_compensation: number;
+  duration_months: number;
+  four_week_rent: number;
+  four_week_compensation: number;
+}
+
+// ============================================================================
+// INLINED CALCULATION FUNCTIONS (from proposal/lib/calculations.ts)
+// ============================================================================
+
+function roundToTwoDecimals(value: number): number {
+  return Math.round(value * 100) / 100;
+}
+
+function calculateCompensation(
+  rentalType: RentalType,
+  _reservationSpan: ReservationSpan,
+  nightsPerWeek: number,
+  weeklyRate: number,
+  nightlyPrice: number,
+  weeks: number
+): CompensationResult {
+  let totalCompensation = 0;
+  let durationMonths = 0;
+  let fourWeekRent = 0;
+  let fourWeekCompensation = 0;
+
+  switch (rentalType) {
+    case 'nightly':
+      totalCompensation = nightlyPrice * nightsPerWeek * weeks;
+      fourWeekRent = nightlyPrice * nightsPerWeek * 4;
+      fourWeekCompensation = fourWeekRent;
+      durationMonths = weeks / 4;
+      break;
+    case 'weekly':
+      totalCompensation = weeklyRate * weeks;
+      fourWeekRent = weeklyRate * 4;
+      fourWeekCompensation = fourWeekRent;
+      durationMonths = weeks / 4;
+      break;
+    case 'monthly':
+      durationMonths = weeks / 4;
+      totalCompensation = weeklyRate * weeks;
+      fourWeekRent = weeklyRate * 4;
+      fourWeekCompensation = fourWeekRent;
+      break;
+    default:
+      totalCompensation = nightlyPrice * nightsPerWeek * weeks;
+      fourWeekRent = nightlyPrice * nightsPerWeek * 4;
+      fourWeekCompensation = fourWeekRent;
+      durationMonths = weeks / 4;
+  }
+
+  return {
+    total_compensation: roundToTwoDecimals(totalCompensation),
+    duration_months: roundToTwoDecimals(durationMonths),
+    four_week_rent: roundToTwoDecimals(fourWeekRent),
+    four_week_compensation: roundToTwoDecimals(fourWeekCompensation),
+  };
+}
+
+function calculateMoveOutDate(
+  moveInStart: Date,
+  reservationSpanWeeks: number,
+  nightsCount: number
+): Date {
+  const daysToAdd = (reservationSpanWeeks - 1) * 7 + nightsCount;
+  const moveOut = new Date(moveInStart);
+  moveOut.setDate(moveOut.getDate() + daysToAdd);
+  return moveOut;
+}
+
+function calculateComplementaryNights(
+  availableNights: number[],
+  selectedNights: number[]
+): number[] {
+  if (!availableNights || !Array.isArray(availableNights)) return [];
+  if (!selectedNights || !Array.isArray(selectedNights)) return availableNights;
+  return availableNights.filter((night) => !selectedNights.includes(night));
+}
+
+function calculateComplementaryDays(
+  availableDays: number[],
+  selectedDays: number[]
+): number[] {
+  if (!availableDays || !Array.isArray(availableDays)) return [];
+  if (!selectedDays || !Array.isArray(selectedDays)) return availableDays;
+  return availableDays.filter((day) => !selectedDays.includes(day));
+}
+
+function calculateOrderRanking(existingProposalsCount: number): number {
+  return (existingProposalsCount || 0) + 1;
+}
+
+function formatPriceForDisplay(price: number): string {
+  return '$' + Math.round(price).toLocaleString('en-US');
+}
+
+// ============================================================================
+// INLINED STATUS FUNCTIONS (from proposal/lib/status.ts)
+// ============================================================================
+
+const STATUS_TRANSITIONS: Record<ProposalStatusName, ProposalStatusName[]> = {
+  sl_submitted_awaiting_rental_app: ['host_review', 'cancelled_by_sl', 'guest_ignored_suggestion'],
+  guest_submitted_awaiting_rental_app: ['host_review', 'cancelled_by_guest'],
+  sl_submitted_pending_confirmation: ['host_review', 'cancelled_by_sl'],
+  host_review: ['host_counteroffer', 'accepted_drafting_lease', 'rejected_by_host', 'cancelled_by_guest'],
+  host_counteroffer: ['accepted_drafting_lease', 'cancelled_by_guest', 'rejected_by_host'],
+  accepted_drafting_lease: ['lease_docs_for_review', 'cancelled_by_guest', 'cancelled_by_sl'],
+  lease_docs_for_review: ['lease_docs_for_signatures', 'cancelled_by_guest', 'cancelled_by_sl'],
+  lease_docs_for_signatures: ['lease_signed_awaiting_payment', 'cancelled_by_guest', 'cancelled_by_sl'],
+  lease_signed_awaiting_payment: ['payment_submitted_lease_activated', 'cancelled_by_guest', 'cancelled_by_sl'],
+  payment_submitted_lease_activated: [],
+  cancelled_by_guest: [],
+  rejected_by_host: [],
+  cancelled_by_sl: [],
+  guest_ignored_suggestion: [],
+};
+
+function isValidStatus(status: string): status is ProposalStatusName {
+  return status in STATUS_TRANSITIONS;
+}
+
+function determineInitialStatus(
+  hasRentalApplication: boolean,
+  rentalAppSubmitted: boolean,
+  overrideStatus?: ProposalStatusName
+): ProposalStatusName {
+  if (overrideStatus && isValidStatus(overrideStatus)) {
+    return overrideStatus;
+  }
+  if (hasRentalApplication && rentalAppSubmitted) {
+    return 'host_review';
+  }
+  return 'guest_submitted_awaiting_rental_app';
+}
 
 // ============================================================================
 // TYPES
