@@ -240,7 +240,7 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
   const calendarDays = getCalendarDays();
 
   return (
-    <div className="listing-dashboard-availability">
+    <div id="availability" className="listing-dashboard-availability">
       {/* First Availability Section - Settings */}
       <div className="listing-dashboard-section">
         <div className="listing-dashboard-section__header">

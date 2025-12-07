@@ -147,7 +147,7 @@ export default function PhotosSection({ listing, onAddPhotos, onDeletePhoto, onS
   };
 
   return (
-    <div className="listing-dashboard-section">
+    <div id="photos" className="listing-dashboard-section">
       {/* Section Header */}
       <div className="listing-dashboard-section__header">
         <h2 className="listing-dashboard-section__title">Photos</h2>

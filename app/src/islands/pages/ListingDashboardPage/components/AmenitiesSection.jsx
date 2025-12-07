@@ -76,7 +76,7 @@ export default function AmenitiesSection({ listing, onEdit }) {
   const getIcon = (name) => amenityIcons[name] || <DefaultIcon />;
 
   return (
-    <div className="listing-dashboard-section">
+    <div id="amenities" className="listing-dashboard-section">
       {/* Section Header */}
       <div className="listing-dashboard-section__header">
         <h2 className="listing-dashboard-section__title">Amenities</h2>

@@ -135,8 +135,6 @@ export default function ListingDashboardPage() {
 
             {/* Secondary Actions */}
             <SecondaryActions
-              listingId={listing.id}
-              onCopyLink={handleCopyLink}
               onAIAssistant={handleAIAssistant}
             />
 

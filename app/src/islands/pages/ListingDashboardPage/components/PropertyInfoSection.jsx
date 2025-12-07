@@ -41,7 +41,7 @@ function formatDate(date) {
 
 export default function PropertyInfoSection({ listing, onDescriptionChange, onImportReviews }) {
   return (
-    <div className="listing-dashboard-property">
+    <div id="property-info" className="listing-dashboard-property">
       {/* Section Header */}
       <h2 className="listing-dashboard-property__title">Property Info</h2>
 
