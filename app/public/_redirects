@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2025-12-07T23:06:01.832Z
+# Generated: 2025-12-07T23:15:36.138Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -34,10 +34,9 @@
 /  /index.html  200
 /index.html  /index.html  200
 
-# /search
-/search  /search.html  200
-/search/  /search.html  200
-/search.html  /search.html  200
+# /search → search.html
+/search  /_internal/search-view  200
+/search/  /_internal/search-view  200
 
 # /search-test
 /search-test  /search-test.html  200

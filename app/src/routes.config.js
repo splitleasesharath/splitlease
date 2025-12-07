@@ -45,7 +45,8 @@ export const routes = [
     file: 'search.html',
     aliases: ['/search.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'search-view',
     hasDynamicSegment: false
   },
   {
