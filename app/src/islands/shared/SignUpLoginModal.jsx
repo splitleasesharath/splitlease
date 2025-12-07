@@ -664,19 +664,27 @@ export default function SignUpLoginModal({
       // Call the password reset workflow via Edge Function
       const { data, error: fnError } = await supabase.functions.invoke('auth-user', {
         body: {
-          action: 'reset-password',
-          payload: { email: resetEmail }
+          action: 'request_password_reset',
+          payload: {
+            email: resetEmail,
+            redirectTo: `${window.location.origin}/reset-password`
+          }
         }
       });
 
-      if (fnError || !data?.success) {
-        setError('Unable to send reset email. Please try again.');
-      } else {
-        alert('Password reset email sent! Please check your inbox.');
-        goToLogin();
+      if (fnError) {
+        // Don't expose error details - always show success for security
+        console.error('Password reset error:', fnError);
       }
+
+      // Always show success message to prevent email enumeration
+      alert('If an account with that email exists, a password reset link has been sent. Please check your inbox.');
+      goToLogin();
     } catch (err) {
-      setError('Unable to send reset email. Please try again.');
+      console.error('Password reset error:', err);
+      // Still show success message for security
+      alert('If an account with that email exists, a password reset link has been sent. Please check your inbox.');
+      goToLogin();
     }
 
     setIsLoading(false);
