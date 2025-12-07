@@ -83,8 +83,10 @@ function generateRedirects() {
       lines.push(`${basePath}/  /_internal/${route.internalName}  200`);
       lines.push('');
     } else {
-      // Only add explicit rewrite for .html extension
+      // Add rewrites for both clean URL and .html extension
       lines.push(`# ${basePath}`);
+      lines.push(`${basePath}  /${route.file}  200`);
+      lines.push(`${basePath}/  /${route.file}  200`);
       lines.push(`${basePath}.html  /${route.file}  200`);
       lines.push('');
     }
