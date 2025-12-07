@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { HostScheduleSelector } from '../../../shared/HostScheduleSelector';
+import InformationalText from '../../../shared/InformationalText';
 
 // Rental type options with descriptions
 const RENTAL_TYPES = [
@@ -85,6 +86,71 @@ export default function PricingEditSection({
 
   // Saving state
   const [isSaving, setIsSaving] = useState(false);
+
+  // Informational text state
+  const [activeInfoTooltip, setActiveInfoTooltip] = useState(null);
+
+  // Refs for informational text tooltips
+  const pricingControlsInfoRef = useRef(null);
+  const damageDepositInfoRef = useRef(null);
+  const maintenanceFeeInfoRef = useRef(null);
+  const nightsPerWeekInfoRef = useRef(null);
+  const weeklyCompInfoRefs = {
+    2: useRef(null),
+    3: useRef(null),
+    4: useRef(null),
+    5: useRef(null),
+  };
+  const weeklyPricingInfoRef = useRef(null);
+  const monthlyCompInfoRef = useRef(null);
+  const monthlyAgreementInfoRef = useRef(null);
+
+  // Informational text content
+  const infoContent = {
+    pricingControls: {
+      title: 'Pricing Controls',
+      content: 'Set your pricing preferences for your listing based on your chosen rental style. Your rates determine how much you earn when guests book.',
+    },
+    damageDeposit: {
+      title: 'Damage Deposit',
+      content: 'A refundable security deposit to cover potential damages during the stay. This protects your property and is returned to the guest if no damage occurs.',
+      expandedContent: 'The minimum damage deposit is $500. This amount is held during the stay and refunded within 7 days after checkout, minus any deductions for damages.',
+    },
+    maintenanceFee: {
+      title: 'Maintenance Fee',
+      content: 'A recurring monthly fee to cover cleaning and maintenance costs between guest stays.',
+      expandedContent: 'This fee helps ensure your property stays in top condition. It covers regular cleaning, minor repairs, and general upkeep.',
+    },
+    nightsPerWeek: {
+      title: 'Nights Per Week',
+      content: 'Set the minimum and maximum number of nights guests can book per week. This gives you control over your schedule while maximizing occupancy.',
+    },
+    weeklyComp: (nights) => ({
+      title: `${nights}-Night Occupancy`,
+      content: `Set the weekly rate you want to receive when guests book ${nights} nights per week.`,
+      expandedContent: `Your nightly rate at ${nights} nights/week will be calculated by dividing your weekly compensation by ${nights}. Higher occupancy typically means lower per-night rates but more total earnings.`,
+    }),
+    weeklyPricing: {
+      title: 'Weekly Rate',
+      content: 'Set the weekly rate for your listing. This is the total amount you\'ll receive for each week a guest stays.',
+    },
+    monthlyComp: {
+      title: 'Monthly Compensation',
+      content: 'Set the monthly rate for your listing. This should be between $1,000 and $10,000.',
+      expandedContent: 'Your monthly rate is the total you\'ll receive each month. Split Lease handles all guest payments and ensures consistent monthly income.',
+    },
+    monthlyAgreement: {
+      title: 'Monthly Model Agreement',
+      content: 'Our Split Lease Monthly model helps guests meet rent obligations through a subsidy. For financial stability, we may need to sublease unused nights.',
+      expandedContent: 'If this arrangement isn\'t ideal for you, consider our Nightly or Weekly models which don\'t require this provision. These offer more flexibility in how your space is used.',
+    },
+  };
+
+  // Handle info tooltip toggle
+  const handleInfoClick = (tooltipId, ref) => (e) => {
+    e.stopPropagation();
+    setActiveInfoTooltip(activeInfoTooltip === tooltipId ? null : tooltipId);
+  };
 
   // Update selected nights when rental type changes
   useEffect(() => {
@@ -284,14 +350,23 @@ export default function PricingEditSection({
             <div className="pricing-edit-title">
               <h2>Pricing Controls</h2>
               <button
+                ref={pricingControlsInfoRef}
                 className="pricing-edit-help"
-                onClick={() =>
-                  alert(
-                    'Set your pricing preferences for your listing based on your chosen rental style.'
-                  )
-                }
+                onClick={handleInfoClick('pricingControls')}
+                aria-label="Learn more about pricing controls"
               >
-                ?
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
               </button>
             </div>
             <button
@@ -359,14 +434,23 @@ export default function PricingEditSection({
               <label>
                 Damage Deposit*
                 <button
+                  ref={damageDepositInfoRef}
                   className="pricing-edit-field__help"
-                  onClick={() =>
-                    alert(
-                      'A refundable security deposit to cover potential damages during the stay.'
-                    )
-                  }
+                  onClick={handleInfoClick('damageDeposit')}
+                  aria-label="Learn more about damage deposit"
                 >
-                  ?
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
                 </button>
               </label>
               <input
@@ -384,14 +468,23 @@ export default function PricingEditSection({
               <label>
                 Monthly Maintenance Fee
                 <button
+                  ref={maintenanceFeeInfoRef}
                   className="pricing-edit-field__help"
-                  onClick={() =>
-                    alert(
-                      'A recurring fee to cover cleaning and maintenance costs.'
-                    )
-                  }
+                  onClick={handleInfoClick('maintenanceFee')}
+                  aria-label="Learn more about maintenance fee"
                 >
-                  ?
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
                 </button>
               </label>
               <input
@@ -445,14 +538,23 @@ export default function PricingEditSection({
                 <label>
                   Ideal # of Nights Per Week
                   <button
+                    ref={nightsPerWeekInfoRef}
                     className="pricing-edit-field__help"
-                    onClick={() =>
-                      alert(
-                        'Set the minimum and maximum number of nights guests can book per week.'
-                      )
-                    }
+                    onClick={handleInfoClick('nightsPerWeek')}
+                    aria-label="Learn more about nights per week"
                   >
-                    ?
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
                   </button>
                 </label>
                 <div className="pricing-edit-nights-range__inputs">
@@ -491,14 +593,23 @@ export default function PricingEditSection({
                           Your Compensation / Week @ {nights} nights / week
                           occupancy
                           <button
+                            ref={weeklyCompInfoRefs[nights]}
                             className="pricing-edit-field__help"
-                            onClick={() =>
-                              alert(
-                                `Set the weekly rate you want to receive when guests book ${nights} nights per week.`
-                              )
-                            }
+                            onClick={handleInfoClick(`weeklyComp${nights}`)}
+                            aria-label={`Learn more about ${nights}-night pricing`}
                           >
-                            ?
+                            <svg
+                              width="12"
+                              height="12"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                              <line x1="12" y1="17" x2="12.01" y2="17" />
+                            </svg>
                           </button>
                         </label>
                         <input
@@ -549,12 +660,23 @@ export default function PricingEditSection({
                 <label>
                   Weekly Pricing*
                   <button
+                    ref={weeklyPricingInfoRef}
                     className="pricing-edit-field__help"
-                    onClick={() =>
-                      alert('Set the weekly rate for your listing.')
-                    }
+                    onClick={handleInfoClick('weeklyPricing')}
+                    aria-label="Learn more about weekly pricing"
                   >
-                    ?
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
                   </button>
                 </label>
                 <input
@@ -575,12 +697,23 @@ export default function PricingEditSection({
                 <label>
                   Monthly Host Compensation*
                   <button
+                    ref={monthlyCompInfoRef}
                     className="pricing-edit-field__help"
-                    onClick={() =>
-                      alert('Set the monthly rate for your listing.')
-                    }
+                    onClick={handleInfoClick('monthlyComp')}
+                    aria-label="Learn more about monthly compensation"
                   >
-                    ?
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
                   </button>
                 </label>
                 <input
@@ -609,14 +742,23 @@ export default function PricingEditSection({
                     require this provision.
                   </p>
                   <button
+                    ref={monthlyAgreementInfoRef}
                     className="pricing-edit-field__help"
-                    onClick={() =>
-                      alert(
-                        'Learn more about our Monthly rental model and how it works.'
-                      )
-                    }
+                    onClick={handleInfoClick('monthlyAgreement')}
+                    aria-label="Learn more about monthly model agreement"
                   >
-                    ?
+                    <svg
+                      width="12"
+                      height="12"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                      <line x1="12" y1="17" x2="12.01" y2="17" />
+                    </svg>
                   </button>
                 </div>
                 <div className="pricing-edit-agreement__options">
@@ -648,6 +790,85 @@ export default function PricingEditSection({
           )}
         </div>
       </div>
+
+      {/* Informational Text Tooltips */}
+      <InformationalText
+        isOpen={activeInfoTooltip === 'pricingControls'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={pricingControlsInfoRef}
+        title={infoContent.pricingControls.title}
+        content={infoContent.pricingControls.content}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'damageDeposit'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={damageDepositInfoRef}
+        title={infoContent.damageDeposit.title}
+        content={infoContent.damageDeposit.content}
+        expandedContent={infoContent.damageDeposit.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'maintenanceFee'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={maintenanceFeeInfoRef}
+        title={infoContent.maintenanceFee.title}
+        content={infoContent.maintenanceFee.content}
+        expandedContent={infoContent.maintenanceFee.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'nightsPerWeek'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={nightsPerWeekInfoRef}
+        title={infoContent.nightsPerWeek.title}
+        content={infoContent.nightsPerWeek.content}
+      />
+
+      {/* Weekly Compensation Info Tooltips */}
+      {[2, 3, 4, 5].map((nights) => (
+        <InformationalText
+          key={`weeklyComp${nights}`}
+          isOpen={activeInfoTooltip === `weeklyComp${nights}`}
+          onClose={() => setActiveInfoTooltip(null)}
+          triggerRef={weeklyCompInfoRefs[nights]}
+          title={infoContent.weeklyComp(nights).title}
+          content={infoContent.weeklyComp(nights).content}
+          expandedContent={infoContent.weeklyComp(nights).expandedContent}
+          showMoreAvailable={true}
+        />
+      ))}
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'weeklyPricing'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={weeklyPricingInfoRef}
+        title={infoContent.weeklyPricing.title}
+        content={infoContent.weeklyPricing.content}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'monthlyComp'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={monthlyCompInfoRef}
+        title={infoContent.monthlyComp.title}
+        content={infoContent.monthlyComp.content}
+        expandedContent={infoContent.monthlyComp.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'monthlyAgreement'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={monthlyAgreementInfoRef}
+        title={infoContent.monthlyAgreement.title}
+        content={infoContent.monthlyAgreement.content}
+        expandedContent={infoContent.monthlyAgreement.expandedContent}
+        showMoreAvailable={true}
+      />
     </div>
   );
 }

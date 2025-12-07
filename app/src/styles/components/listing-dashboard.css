@@ -2107,20 +2107,22 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  background-color: #f3f4f6;
-  border: 1px solid var(--ld-border-color);
+  background-color: transparent;
+  border: none;
   border-radius: 50%;
-  color: var(--ld-text-secondary);
-  font-size: 14px;
-  font-weight: 600;
+  color: #9CA3AF;
   cursor: pointer;
   transition: all 0.2s;
+  padding: 0;
 }
 
 .pricing-edit-help:hover {
-  background-color: var(--ld-accent-purple);
-  color: white;
-  border-color: var(--ld-accent-purple);
+  color: var(--ld-accent-purple);
+}
+
+.pricing-edit-help svg {
+  width: 16px;
+  height: 16px;
 }
 
 /* Save button */
@@ -2266,20 +2268,23 @@
   justify-content: center;
   width: 18px;
   height: 18px;
-  background-color: #f3f4f6;
-  border: 1px solid var(--ld-border-color);
+  background-color: transparent;
+  border: none;
   border-radius: 50%;
-  color: var(--ld-text-secondary);
-  font-size: 11px;
-  font-weight: 600;
+  color: #9CA3AF;
   cursor: pointer;
   transition: all 0.2s;
+  padding: 0;
+  flex-shrink: 0;
 }
 
 .pricing-edit-field__help:hover {
-  background-color: var(--ld-accent-purple);
-  color: white;
-  border-color: var(--ld-accent-purple);
+  color: var(--ld-accent-purple);
+}
+
+.pricing-edit-field__help svg {
+  width: 14px;
+  height: 14px;
 }
 
 .pricing-edit-field input,
