@@ -34,7 +34,9 @@ import {
   getUserType as getSecureUserType,
   clearAllAuthData,
   hasValidTokens,
-  migrateFromLegacyStorage
+  migrateFromLegacyStorage,
+  getFirstName as getSecureFirstName,
+  getAvatarUrl as getSecureAvatarUrl
 } from './secureStorage.js';
 
 // ============================================================================
@@ -321,6 +323,26 @@ export function getStoredUsername() {
     return window.currentUsername || null;
   }
   return null;
+}
+
+// ============================================================================
+// User Profile Getters (Proxied from secureStorage)
+// ============================================================================
+
+/**
+ * Get first name
+ * @returns {string|null} First name or null
+ */
+export function getFirstName() {
+  return getSecureFirstName();
+}
+
+/**
+ * Get avatar URL
+ * @returns {string|null} Avatar URL or null
+ */
+export function getAvatarUrl() {
+  return getSecureAvatarUrl();
 }
 
 // ============================================================================
@@ -911,6 +933,16 @@ export async function logoutUser() {
   }
 
   console.log('🔓 Attempting logout via Edge Function...');
+
+  // Sign out from Supabase Auth client explicitly
+  // This ensures the client-side session is cleared from localStorage
+  try {
+    await supabase.auth.signOut();
+    console.log('✅ Signed out from Supabase Auth client');
+  } catch (err) {
+    console.warn('⚠️ Error signing out from Supabase Auth client:', err);
+    // Continue with legacy logout...
+  }
 
   try {
     const { data, error } = await supabase.functions.invoke('auth-user', {
