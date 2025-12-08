@@ -2226,11 +2226,12 @@
   background: var(--v2-primary-light);
 }
 
-/* QR Code Image from PythonAnywhere API */
-.qr-code-image {
-  max-width: 200px;
-  height: auto;
-  border-radius: 8px;
+/* QR Code Hint Text */
+.qr-hint {
+  margin: 10px 0 0 0;
+  font-size: 0.85rem;
+  color: var(--v2-text-sub);
+  text-align: center;
 }
 
 /* Disabled button states */
