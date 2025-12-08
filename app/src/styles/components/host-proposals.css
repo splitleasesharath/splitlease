@@ -1,0 +1,1001 @@
+/* ========================================
+   Host Proposals Page Styles
+   ======================================== */
+
+/* ========================================
+   PAGE LAYOUT
+   ======================================== */
+
+.host-proposals-page {
+  min-height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-light);
+  padding: var(--spacing-2xl) 0;
+}
+
+.host-proposals-page .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-lg);
+  width: 100%;
+}
+
+/* ========================================
+   LOADING STATE
+   ======================================== */
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  min-height: 300px;
+}
+
+.loading-state .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary-purple);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-state p {
+  margin-top: 1rem;
+  color: var(--text-gray);
+  font-size: var(--text-base);
+}
+
+/* ========================================
+   ERROR STATE
+   ======================================== */
+
+.error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+  min-height: 300px;
+}
+
+.error-state .error-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #FEE2E2;
+  color: #991B1B;
+  border-radius: 50%;
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.error-state h2 {
+  font-size: var(--text-xl);
+  color: var(--text-dark);
+  margin-bottom: 0.5rem;
+}
+
+.error-state .error-message {
+  color: var(--text-gray);
+  margin-bottom: 1.5rem;
+}
+
+.retry-button {
+  background-color: var(--primary-purple);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--rounded-lg);
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background-color var(--transition-base);
+}
+
+.retry-button:hover {
+  background-color: var(--primary-purple-hover);
+}
+
+/* ========================================
+   LISTING SELECTOR
+   ======================================== */
+
+.listing-selector {
+  padding: var(--spacing-lg) 0;
+}
+
+.listing-selector-header {
+  margin-bottom: var(--spacing-sm);
+}
+
+.listings-label {
+  font-family: var(--font-inter);
+  font-size: var(--text-base);
+  color: var(--primary-purple);
+  font-weight: 500;
+}
+
+.listing-dropdown {
+  width: 100%;
+  max-width: 800px;
+  padding: var(--spacing-lg);
+  font-family: var(--font-inter);
+  font-size: var(--text-md);
+  color: var(--text-dark);
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--rounded-md);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%234D4D4D' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+  padding-right: 40px;
+}
+
+.listing-dropdown:focus {
+  outline: none;
+  border-color: var(--primary-purple);
+  box-shadow: 0 0 0 2px rgba(49, 19, 93, 0.1);
+}
+
+.listing-dropdown:hover {
+  border-color: var(--primary-purple);
+}
+
+.proposal-count {
+  margin-top: var(--spacing-lg);
+  font-family: var(--font-inter);
+  font-size: var(--text-base);
+  color: var(--text-gray);
+  text-align: right;
+}
+
+.proposal-count strong {
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+/* ========================================
+   PROPOSAL GRID
+   ======================================== */
+
+.proposal-grid-container {
+  padding: var(--spacing-lg) 0;
+}
+
+.proposal-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-2xl);
+}
+
+.complementary-schedules {
+  margin-top: var(--spacing-4xl);
+  text-align: center;
+  font-family: var(--font-inter);
+  font-size: var(--text-base);
+  color: var(--text-gray);
+  cursor: pointer;
+}
+
+.complementary-schedules:hover {
+  color: var(--primary-purple);
+}
+
+.complementary-schedules strong {
+  font-weight: 700;
+}
+
+.complementary-schedules em {
+  font-style: italic;
+}
+
+/* ========================================
+   PROPOSAL CARD
+   ======================================== */
+
+.proposal-card {
+  background-color: var(--bg-white);
+  border: 1px solid var(--border-color);
+  border-radius: var(--rounded-2xl);
+  padding: var(--spacing-lg);
+  cursor: pointer;
+  transition: transform var(--transition-base), box-shadow var(--transition-base);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.proposal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Header */
+.proposal-card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  position: relative;
+}
+
+.avatar-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.delete-button {
+  background-color: #991B1B;
+  color: white;
+  padding: 4px 12px;
+  border-radius: var(--rounded-sm);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+  white-space: nowrap;
+}
+
+.delete-button:hover {
+  background-color: #b91c1c;
+}
+
+.status-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--rounded-sm);
+  font-size: var(--text-base);
+  font-family: var(--font-inter);
+  font-weight: 400;
+}
+
+.status-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.guest-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* Body */
+.proposal-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.proposal-title {
+  font-family: var(--font-inter);
+  font-size: var(--text-md);
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0;
+}
+
+.listing-description {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+  margin: 0;
+}
+
+.schedule-text {
+  font-size: var(--text-sm-md);
+  color: var(--text-gray);
+  margin: var(--spacing-xs) 0;
+}
+
+/* Details Section */
+.proposal-card-details {
+  background-color: var(--bg-light);
+  border-radius: var(--rounded-lg);
+  padding: var(--spacing-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: auto;
+}
+
+.proposal-card-details .detail-row {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+}
+
+.proposal-card-details .detail-row strong {
+  font-weight: 700;
+  color: var(--text-dark);
+}
+
+.proposal-card-details .detail-row.pricing {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+.original-price {
+  text-decoration: line-through;
+  color: var(--text-light-gray);
+  font-size: var(--text-sm-md);
+}
+
+.current-price {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+/* ========================================
+   DAY INDICATOR
+   ======================================== */
+
+.day-indicator {
+  display: flex;
+  gap: 3px;
+}
+
+.day-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--border-color);
+  border-radius: 2px;
+}
+
+.day-box.active {
+  background-color: var(--primary-purple);
+}
+
+/* Small size (cards) */
+.day-indicator--small .day-box {
+  width: 24px;
+  height: 8px;
+}
+
+/* Medium size (modal header) */
+.day-indicator--medium .day-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-gray);
+}
+
+.day-indicator--medium .day-box.active {
+  color: white;
+}
+
+/* Large size */
+.day-indicator--large .day-box {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-gray);
+}
+
+.day-indicator--large .day-box.active {
+  color: white;
+}
+
+.day-label {
+  user-select: none;
+}
+
+/* ========================================
+   EMPTY STATE
+   ======================================== */
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem var(--spacing-lg);
+  min-height: 400px;
+}
+
+.empty-state-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.empty-state-icon {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.empty-state-icon svg {
+  width: 48px;
+  height: 48px;
+}
+
+.empty-state-title {
+  font-family: var(--font-inter);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  color: var(--text-gray);
+  margin: 0 0 var(--spacing-lg) 0;
+  line-height: 1.25;
+}
+
+.empty-state-subtitle {
+  font-family: var(--font-inter);
+  font-size: var(--text-lg);
+  font-weight: 400;
+  color: var(--text-gray);
+  margin: 0 0 var(--spacing-2xl) 0;
+  line-height: 1.25;
+}
+
+.empty-state-button {
+  background-color: var(--primary-purple);
+  color: white;
+  font-family: var(--font-inter);
+  font-size: var(--text-xl);
+  font-weight: 500;
+  padding: var(--spacing-lg) var(--spacing-4xl);
+  border: none;
+  border-radius: var(--rounded-2xl);
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+}
+
+.empty-state-button:hover {
+  background-color: var(--primary-purple-hover);
+}
+
+/* ========================================
+   MODAL BACKDROP
+   ======================================== */
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 300;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-slow), visibility var(--transition-slow);
+}
+
+.modal-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ========================================
+   PROPOSAL MODAL
+   ======================================== */
+
+.proposal-modal {
+  position: fixed;
+  top: 0;
+  right: -700px;
+  width: 100%;
+  max-width: 650px;
+  height: 100vh;
+  background-color: var(--bg-white);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-modal);
+  display: flex;
+  flex-direction: column;
+  transition: right var(--transition-slow);
+  overflow: hidden;
+}
+
+.proposal-modal.open {
+  right: 0;
+}
+
+/* Close Button */
+.modal-close {
+  position: absolute;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--text-gray);
+  border-radius: 50%;
+  transition: background-color var(--transition-base);
+  z-index: 10;
+}
+
+.modal-close:hover {
+  background-color: var(--bg-light);
+}
+
+/* Modal Content */
+.modal-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--spacing-2xl);
+  padding-top: var(--spacing-4xl);
+}
+
+/* Header */
+.modal-header {
+  margin-bottom: var(--spacing-2xl);
+}
+
+.modal-title {
+  font-family: var(--font-inter);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.modal-schedule {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.modal-schedule .schedule-text {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+}
+
+/* Proposal Details */
+.proposal-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-2xl);
+}
+
+.proposal-details .detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) 0;
+}
+
+.detail-label {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+}
+
+.detail-value {
+  font-size: var(--text-base);
+  color: var(--text-dark);
+  font-weight: 500;
+  text-align: right;
+}
+
+.detail-value .bullet {
+  color: #3B82F6;
+  margin-right: 4px;
+}
+
+.detail-value .original-value {
+  text-decoration: line-through;
+  color: var(--text-light-gray);
+  margin-right: var(--spacing-sm);
+  font-weight: 400;
+}
+
+.total-row {
+  border-top: 1px solid var(--border-color);
+  padding-top: var(--spacing-lg);
+  margin-top: var(--spacing-sm);
+}
+
+.total-row .total {
+  font-size: var(--text-md);
+  font-weight: 700;
+}
+
+/* Collapsible Sections */
+.collapsible-section {
+  border: 1px solid var(--border-color);
+  border-radius: var(--rounded-lg);
+  margin-bottom: var(--spacing-lg);
+  overflow: hidden;
+}
+
+.section-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-lg);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--text-dark);
+  transition: background-color var(--transition-base);
+}
+
+.section-header:hover {
+  background-color: var(--bg-light);
+}
+
+.chevron {
+  transition: transform var(--transition-base);
+}
+
+.chevron.open {
+  transform: rotate(180deg);
+}
+
+.section-content {
+  padding: 0 var(--spacing-lg) var(--spacing-lg);
+}
+
+/* Guest Details */
+.guest-details-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.guest-profile {
+  display: flex;
+  gap: var(--spacing-lg);
+  align-items: flex-start;
+}
+
+.guest-avatar-large {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.guest-info {
+  flex: 1;
+}
+
+.guest-name {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0 0 var(--spacing-sm) 0;
+}
+
+.send-message-btn {
+  background-color: var(--primary-purple);
+  color: white;
+  padding: var(--spacing-xs) var(--spacing-lg);
+  border-radius: var(--rounded-sm);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+}
+
+.send-message-btn:hover {
+  background-color: var(--primary-purple-hover);
+}
+
+.guest-bio {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.verification-badges {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.verification-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  background-color: var(--bg-light);
+  border-radius: var(--rounded-sm);
+  font-size: var(--text-sm);
+}
+
+.verification-label {
+  color: var(--text-gray);
+}
+
+.verification-status {
+  color: var(--text-light-gray);
+}
+
+.verification-item.verified .verification-status {
+  color: #065F46;
+}
+
+/* Status Content */
+.status-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+/* Progress Tracker */
+.progress-tracker {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0;
+}
+
+.progress-row {
+  display: contents;
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex: 1;
+  min-width: 0;
+}
+
+.step-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--border-color);
+  transition: background-color var(--transition-base);
+  flex-shrink: 0;
+}
+
+.progress-step.completed .step-circle {
+  background-color: var(--primary-purple);
+}
+
+.progress-step.cancelled .step-circle {
+  background-color: #991B1B;
+}
+
+.step-label {
+  font-size: 9px;
+  color: var(--text-gray);
+  text-align: center;
+  max-width: 70px;
+  line-height: 1.2;
+}
+
+.progress-line {
+  width: 20px;
+  height: 2px;
+  background-color: var(--border-color);
+  margin-top: 11px;
+  flex-shrink: 0;
+}
+
+/* Status Box */
+.status-box {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  border-radius: var(--rounded-sm);
+  border-left: 3px solid;
+  font-size: var(--text-sm-md);
+}
+
+/* Virtual Meeting Content */
+.virtual-meeting-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.virtual-meeting-header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  font-size: var(--text-base);
+  color: var(--text-gray);
+}
+
+.virtual-meeting-header svg {
+  flex-shrink: 0;
+  color: var(--primary-purple);
+}
+
+.time-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}
+
+.time-slot {
+  padding: var(--spacing-xs) var(--spacing-lg);
+  background-color: var(--bg-light);
+  border: 1px solid var(--border-color);
+  border-radius: var(--rounded-2xl);
+  font-size: var(--text-sm);
+  color: var(--text-gray);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.time-slot:hover {
+  background-color: var(--primary-purple);
+  color: white;
+  border-color: var(--primary-purple);
+}
+
+.choose-meeting-btn {
+  background-color: var(--primary-purple);
+  color: white;
+  padding: var(--spacing-sm) var(--spacing-2xl);
+  border-radius: var(--rounded-sm);
+  font-size: var(--text-base);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: background-color var(--transition-base);
+}
+
+.choose-meeting-btn:hover {
+  background-color: var(--primary-purple-hover);
+}
+
+/* Action Buttons */
+.modal-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-lg);
+  background-color: var(--bg-light);
+  border-top: 1px solid var(--border-color);
+}
+
+.action-btn {
+  flex: 1;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  border-radius: var(--rounded-sm);
+  font-size: var(--text-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.action-btn.reject {
+  background-color: transparent;
+  color: #991B1B;
+  border: 1px solid #991B1B;
+}
+
+.action-btn.reject:hover {
+  background-color: #FEE2E2;
+}
+
+.action-btn.accept {
+  background-color: #065F46;
+  color: white;
+  border: none;
+}
+
+.action-btn.accept:hover {
+  background-color: #047857;
+}
+
+.action-btn.modify,
+.action-btn.primary {
+  background-color: var(--primary-purple);
+  color: white;
+  border: none;
+}
+
+.action-btn.modify:hover,
+.action-btn.primary:hover {
+  background-color: var(--primary-purple-hover);
+}
+
+.action-btn.secondary {
+  background-color: #6B7280;
+  color: white;
+  border: none;
+}
+
+.action-btn.secondary:hover {
+  background-color: #4b5563;
+}
+
+/* ========================================
+   RESPONSIVE STYLES
+   ======================================== */
+
+@media (max-width: 1024px) {
+  .proposal-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .host-proposals-page {
+    padding: var(--spacing-lg) 0;
+  }
+
+  .host-proposals-page .container {
+    padding: 0 var(--spacing-lg);
+  }
+
+  .listing-dropdown {
+    font-size: var(--text-base);
+    padding: var(--spacing-sm) var(--spacing-lg);
+  }
+
+  .proposal-card {
+    padding: var(--spacing-sm);
+  }
+
+  .proposal-title {
+    font-size: var(--text-base);
+  }
+
+  .listing-description,
+  .schedule-text {
+    font-size: var(--text-sm);
+  }
+
+  .proposal-modal {
+    max-width: 100%;
+    right: -100%;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .action-btn {
+    width: 100%;
+  }
+
+  .step-label {
+    font-size: 8px;
+    max-width: 50px;
+  }
+
+  .progress-line {
+    width: 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .proposal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .verification-badges {
+    grid-template-columns: 1fr;
+  }
+}
