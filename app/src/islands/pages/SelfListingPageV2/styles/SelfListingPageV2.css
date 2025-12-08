@@ -2226,6 +2226,13 @@
   background: var(--v2-primary-light);
 }
 
+/* QR Code Image from PythonAnywhere API */
+.qr-code-image {
+  max-width: 200px;
+  height: auto;
+  border-radius: 8px;
+}
+
 /* Disabled button states */
 .btn-copy:disabled {
   opacity: 0.6;

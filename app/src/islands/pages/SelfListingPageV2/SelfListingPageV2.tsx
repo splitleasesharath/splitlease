@@ -13,7 +13,6 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
 import Header from '../../shared/Header.jsx';
 import Footer from '../../shared/Footer.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
@@ -174,6 +173,7 @@ export function SelfListingPageV2() {
   // Continue on Phone modal state
   const [showContinueOnPhoneModal, setShowContinueOnPhoneModal] = useState(false);
   const [continueOnPhoneLink, setContinueOnPhoneLink] = useState<string | null>(null);
+  const [qrCodeImageUrl, setQrCodeImageUrl] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [userPhoneNumber, setUserPhoneNumber] = useState<string | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
@@ -624,9 +624,52 @@ export function SelfListingPageV2() {
     }
   };
 
+  // Generate QR code using PythonAnywhere API
+  const generateQRCode = async (link: string): Promise<string | null> => {
+    try {
+      // First, shorten the URL
+      const shortenResponse = await fetch('https://www.leasesplit.com/shorten', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: link }),
+      });
+
+      let qrData = link;
+      if (shortenResponse.ok) {
+        const shortenResult = await shortenResponse.json();
+        if (shortenResult.short_url) {
+          qrData = shortenResult.short_url;
+        }
+      }
+
+      // Generate QR code with the URL
+      const qrResponse = await fetch('https://www.leasesplit.com/qr/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          data: qrData,
+          text: 'Upload Photos',
+        }),
+      });
+
+      if (!qrResponse.ok) {
+        throw new Error('Failed to generate QR code');
+      }
+
+      // Convert the image blob to a data URL
+      const blob = await qrResponse.blob();
+      const imageUrl = URL.createObjectURL(blob);
+      return imageUrl;
+    } catch (error) {
+      console.error('QR code generation failed:', error);
+      return null;
+    }
+  };
+
   // Save draft to Supabase draft_listings table and generate continue link
   const saveDraftAndGenerateLink = async () => {
     setIsSavingDraft(true);
+    setQrCodeImageUrl(null); // Reset QR code while generating
     try {
       // Get current Supabase Auth user
       const { data: { user } } = await supabase.auth.getUser();
@@ -679,6 +722,12 @@ export function SelfListingPageV2() {
       const link = `${baseUrl}?draft=${savedDraftId}&step=7`;
       setContinueOnPhoneLink(link);
 
+      // Generate QR code using PythonAnywhere API
+      const qrImageUrl = await generateQRCode(link);
+      if (qrImageUrl) {
+        setQrCodeImageUrl(qrImageUrl);
+      }
+
       return link;
     } catch (error: any) {
       console.error('Failed to save draft listing:', error);
@@ -705,6 +754,12 @@ export function SelfListingPageV2() {
         const link = `${baseUrl}?session=${sessionId}`;
         setContinueOnPhoneLink(link);
         setDraftListingId(sessionId);
+
+        // Generate QR code using PythonAnywhere API
+        const qrImageUrl = await generateQRCode(link);
+        if (qrImageUrl) {
+          setQrCodeImageUrl(qrImageUrl);
+        }
 
         return link;
       }
@@ -743,15 +798,20 @@ export function SelfListingPageV2() {
 
   // Submit handler
   const handleSubmit = async () => {
-    const loggedIn = await checkAuthStatus();
+    // Use validateTokenAndFetchUser to match Header's auth check behavior
+    // This ensures consistency - if Header shows logged out, we show the modal
+    const userData = await validateTokenAndFetchUser();
+    const loggedIn = !!userData;
     setIsLoggedIn(loggedIn);
 
     if (!loggedIn) {
+      console.log('[SelfListingPageV2] User not logged in, showing auth modal');
       setShowAuthModal(true);
       setPendingSubmit(true);
       return;
     }
 
+    console.log('[SelfListingPageV2] User is logged in, proceeding with submission');
     setIsSubmitting(true);
 
     try {
@@ -1729,18 +1789,17 @@ export function SelfListingPageV2() {
                   <div className="spinner"></div>
                   <p>Generating QR code...</p>
                 </div>
+              ) : qrCodeImageUrl ? (
+                <img
+                  src={qrCodeImageUrl}
+                  alt="QR Code to continue on phone"
+                  className="qr-code-image"
+                />
               ) : continueOnPhoneLink ? (
-                <>
-                  <QRCodeSVG
-                    value={continueOnPhoneLink}
-                    size={140}
-                    level="M"
-                    includeMargin={true}
-                    bgColor="#ffffff"
-                    fgColor="#1f2937"
-                  />
-                  <p className="qr-hint">Scan to upload photos from your phone</p>
-                </>
+                <div className="qr-loading">
+                  <div className="spinner"></div>
+                  <p>Loading QR code...</p>
+                </div>
               ) : (
                 <div className="qr-error">
                   <p>Failed to generate QR code</p>
