@@ -55,7 +55,7 @@
 
 ### SignUpLoginModal.jsx
 [INTENT]: Authentication modal for login/signup
-[API_DEPENDENCY]: supabase/functions/bubble-auth-proxy/
+[API_DEPENDENCY]: supabase/functions/auth-user/
 
 ### Button.jsx
 [INTENT]: Reusable button with variants

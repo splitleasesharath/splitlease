@@ -1,6 +1,6 @@
 export default function DescriptionSection({ listing, onEditLodging, onEditNeighborhood }) {
   return (
-    <div className="listing-dashboard-descriptions">
+    <div id="description" className="listing-dashboard-descriptions">
       {/* Description of Lodging */}
       <div className="listing-dashboard-section">
         <div className="listing-dashboard-section__header">

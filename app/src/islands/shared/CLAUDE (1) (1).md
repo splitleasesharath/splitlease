@@ -105,7 +105,7 @@
 
 ### SignUpLoginModal.jsx
 [INTENT]: Authentication modal for login/signup
-[DEPENDENCIES]: supabase/functions/bubble-auth-proxy/
+[DEPENDENCIES]: supabase/functions/auth-user/
 
 ### Toast.jsx
 [INTENT]: Notification toast with auto-dismiss

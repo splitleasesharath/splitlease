@@ -150,7 +150,7 @@ await logoutUser()
 ### Supabase Edge Functions (Preferred)
 All Bubble API calls are proxied through Edge Functions:
 - `bubble-proxy` → General Bubble API calls
-- `bubble-auth-proxy` → Authentication (login, signup, logout, validate)
+- `auth-user` → Authentication (native Supabase Auth for login/signup, Bubble for logout/validate)
 
 ### Why Edge Functions?
 - API keys stored server-side in Supabase Secrets

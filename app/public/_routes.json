@@ -5,6 +5,8 @@
   ],
   "exclude": [
     "/guest-proposals",
-    "/guest-proposals/*"
+    "/guest-proposals/*",
+    "/host-proposals",
+    "/host-proposals/*"
   ]
 }

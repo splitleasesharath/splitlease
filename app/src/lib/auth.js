@@ -32,10 +32,6 @@ import {
   getUserId as getPublicUserId,
   setUserType as setSecureUserType,
   getUserType as getSecureUserType,
-  setFirstName as setSecureFirstName,
-  getFirstName as getSecureFirstName,
-  setAvatarUrl as setSecureAvatarUrl,
-  getAvatarUrl as getSecureAvatarUrl,
   clearAllAuthData,
   hasValidTokens,
   migrateFromLegacyStorage
@@ -287,46 +283,6 @@ export function setUserType(userType) {
   }
 }
 
-/**
- * Get first name from storage (for optimistic UI)
- *
- * @returns {string|null} First name if exists, null otherwise
- */
-export function getFirstName() {
-  return getSecureFirstName();
-}
-
-/**
- * Store first name (for optimistic UI)
- *
- * @param {string} firstName - First name to store
- */
-export function setFirstName(firstName) {
-  if (firstName) {
-    setSecureFirstName(firstName);
-  }
-}
-
-/**
- * Get avatar URL from storage (for optimistic UI)
- *
- * @returns {string|null} Avatar URL if exists, null otherwise
- */
-export function getAvatarUrl() {
-  return getSecureAvatarUrl();
-}
-
-/**
- * Store avatar URL (for optimistic UI)
- *
- * @param {string} avatarUrl - Avatar URL to store
- */
-export function setAvatarUrl(avatarUrl) {
-  if (avatarUrl) {
-    setSecureAvatarUrl(avatarUrl);
-  }
-}
-
 // ============================================================================
 // User Information
 // ============================================================================
@@ -455,18 +411,17 @@ export function resetAuthCheckAttempts() {
 
 /**
  * Login user via Supabase Edge Function (auth-user)
- * Uses Supabase Auth natively - stores session tokens for authentication
- * Automatically persists session after successful login
+ * Stores token and user_id in localStorage on success
  *
- * ✅ MIGRATED TO SUPABASE AUTH: No longer uses Bubble for login
- * Authenticates via Supabase Auth and returns session tokens
+ * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
+ * API key is stored server-side in Supabase Secrets
  *
  * @param {string} email - User email
  * @param {string} password - User password
- * @returns {Promise<Object>} Response object with status, user_id, or error
+ * @returns {Promise<Object>} Response object with status, token, user_id, or error
  */
 export async function loginUser(email, password) {
-  console.log('🔐 Attempting login via Supabase Auth for:', email);
+  console.log('🔐 Attempting login via Edge Function for:', email);
 
   try {
     const { data, error } = await supabase.functions.invoke('auth-user', {
@@ -484,6 +439,7 @@ export async function loginUser(email, password) {
       console.error('   Error context:', error.context);
 
       // Extract detailed error from response body if available
+      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
       let errorMessage = 'Failed to authenticate. Please try again.';
 
       if (error.context?.body) {
@@ -500,6 +456,7 @@ export async function loginUser(email, password) {
         }
       }
 
+      // Also check if data was returned despite the error (some edge cases)
       if (data?.error) {
         errorMessage = data.error;
       }
@@ -518,32 +475,32 @@ export async function loginUser(email, password) {
       };
     }
 
-    // Extract Supabase session data
+    // Extract Supabase session data (login now returns same format as signup)
     const {
       access_token,
       refresh_token,
       expires_in,
       user_id,
+      host_account_id,
+      guest_account_id,
       supabase_user_id,
       user_type
     } = data.data;
 
-    // IMPORTANT: Clear any existing auth data before setting new user's data
-    // This ensures we don't mix data from a previous user
-    clearAuthData();
-
     // Set Supabase session using the client
     // This stores the session in localStorage and enables authenticated requests
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token,
-      refresh_token
-    });
+    if (access_token && refresh_token) {
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token,
+        refresh_token
+      });
 
-    if (sessionError) {
-      console.error('❌ Failed to set Supabase session:', sessionError.message);
-      // Continue anyway - tokens are still valid, just not in client state
-    } else {
-      console.log('✅ Supabase session set successfully');
+      if (sessionError) {
+        console.error('❌ Failed to set Supabase session:', sessionError.message);
+        // Continue anyway - tokens are still valid, just not in client state
+      } else {
+        console.log('✅ Supabase session set successfully');
+      }
     }
 
     // Store access_token as auth token for backward compatibility
@@ -553,7 +510,7 @@ export async function loginUser(email, password) {
     // Set auth state with user ID (public, non-sensitive)
     setAuthState(true, user_id);
 
-    // Store user type if provided
+    // Store user type
     if (user_type) {
       setUserType(user_type);
     }
@@ -575,6 +532,8 @@ export async function loginUser(email, password) {
     return {
       success: true,
       user_id: user_id,
+      host_account_id: host_account_id,
+      guest_account_id: guest_account_id,
       supabase_user_id: supabase_user_id,
       user_type: user_type,
       expires_in: expires_in
@@ -705,10 +664,6 @@ export async function signupUser(email, password, retype, additionalData = null)
       user_type
     } = data.data;
 
-    // IMPORTANT: Clear any existing auth data before setting new user's data
-    // This ensures we don't mix data from a previous user
-    clearAuthData();
-
     // Set Supabase session using the client
     // This stores the session in localStorage and enables authenticated requests
     const { error: sessionError } = await supabase.auth.setSession({
@@ -733,11 +688,6 @@ export async function signupUser(email, password, retype, additionalData = null)
     // Store user type
     if (user_type) {
       setUserType(user_type);
-    }
-
-    // Store first name for optimistic UI (we have it from the signup form)
-    if (additionalData?.firstName) {
-      setFirstName(additionalData.firstName);
     }
 
     // Update login state
@@ -787,8 +737,36 @@ export async function signupUser(email, password, retype, additionalData = null)
  * @returns {Promise<Object|null>} User data object with firstName, fullName, email, profilePhoto, userType, etc. or null if invalid
  */
 export async function validateTokenAndFetchUser() {
-  const token = getAuthToken();
-  const userId = getSessionId();
+  let token = getAuthToken();
+  let userId = getSessionId();
+
+  // If no legacy token/userId, check for Supabase Auth session and sync it
+  if (!token || !userId) {
+    console.log('[Auth] No legacy token found, checking for Supabase Auth session...');
+
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (session && !error) {
+        console.log('[Auth] ✅ Found Supabase Auth session, syncing to secure storage');
+        token = session.access_token;
+        userId = session.user?.user_metadata?.user_id || session.user?.id;
+
+        // Sync to secure storage for consistency
+        setSecureAuthToken(token);
+        if (userId) {
+          setSecureSessionId(userId);
+          setAuthState(true, userId);
+        }
+        const userType = session.user?.user_metadata?.user_type;
+        if (userType) {
+          setSecureUserType(userType);
+        }
+      }
+    } catch (err) {
+      console.log('[Auth] Error checking Supabase session:', err.message);
+    }
+  }
 
   if (!token || !userId) {
     console.log('[Auth] No token or user ID found - user not logged in');
@@ -854,14 +832,6 @@ export async function validateTokenAndFetchUser() {
       console.log('✅ User type loaded from cache:', userType);
     }
 
-    // Cache first name and avatar for optimistic UI on next page load
-    if (userData.firstName) {
-      setFirstName(userData.firstName);
-    }
-    if (userData.profilePhoto) {
-      setAvatarUrl(userData.profilePhoto);
-    }
-
     const userDataObject = {
       userId: userData.userId,
       firstName: userData.firstName || null,
@@ -872,7 +842,11 @@ export async function validateTokenAndFetchUser() {
       // Host account ID for fetching host-specific data (listings, etc.)
       accountHostId: userData.accountHostId || null,
       // Also include with Bubble field naming for backwards compatibility
-      'Account - Host / Landlord': userData.accountHostId || null
+      'Account - Host / Landlord': userData.accountHostId || null,
+      // User profile fields for proposal prefilling
+      aboutMe: userData.aboutMe || null,
+      needForSpace: userData.needForSpace || null,
+      specialNeeds: userData.specialNeeds || null
     };
 
     console.log('✅ User data validated:', userDataObject.firstName, '- Type:', userDataObject.userType);
@@ -973,6 +947,163 @@ export async function logoutUser() {
     return {
       success: true,
       message: 'Logged out locally (network error)'
+    };
+  }
+}
+
+// ============================================================================
+// Password Reset Functions
+// ============================================================================
+
+/**
+ * Request password reset email via Edge Function (auth-user)
+ * Always returns success to prevent email enumeration
+ *
+ * Uses Edge Functions - API keys stored server-side
+ *
+ * @param {string} email - User's email address
+ * @returns {Promise<Object>} Response object with success status and message
+ */
+export async function requestPasswordReset(email) {
+  console.log('🔐 Requesting password reset for:', email);
+
+  if (!email) {
+    return {
+      success: false,
+      error: 'Email is required.'
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
+      body: {
+        action: 'request_password_reset',
+        payload: {
+          email,
+          redirectTo: `${window.location.origin}/reset-password`
+        }
+      }
+    });
+
+    if (error) {
+      console.error('❌ Password reset request failed:', error);
+      // Don't expose error details - always show generic message
+      return {
+        success: true, // Return success even on error to prevent email enumeration
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      };
+    }
+
+    console.log('✅ Password reset request processed');
+    return {
+      success: true,
+      message: data?.data?.message || 'If an account with that email exists, a password reset link has been sent.'
+    };
+
+  } catch (error) {
+    console.error('❌ Password reset error:', error);
+    return {
+      success: true, // Return success even on error to prevent email enumeration
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    };
+  }
+}
+
+/**
+ * Update password after clicking reset link
+ * Must be called when user has active session from PASSWORD_RECOVERY event
+ *
+ * Uses Edge Functions - API keys stored server-side
+ *
+ * @param {string} newPassword - New password to set
+ * @returns {Promise<Object>} Response object with success status
+ */
+export async function updatePassword(newPassword) {
+  console.log('🔐 Updating password...');
+
+  if (!newPassword) {
+    return {
+      success: false,
+      error: 'New password is required.'
+    };
+  }
+
+  if (newPassword.length < 4) {
+    return {
+      success: false,
+      error: 'Password must be at least 4 characters long.'
+    };
+  }
+
+  // Get current session (from PASSWORD_RECOVERY event)
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    console.error('❌ No active session for password update');
+    return {
+      success: false,
+      error: 'Invalid or expired reset link. Please request a new password reset.'
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
+      body: {
+        action: 'update_password',
+        payload: {
+          password: newPassword,
+          access_token: session.access_token
+        }
+      }
+    });
+
+    if (error) {
+      console.error('❌ Password update failed:', error);
+
+      // Extract detailed error from response body if available
+      let errorMessage = 'Failed to update password. Please try again.';
+
+      if (error.context?.body) {
+        try {
+          const errorBody = typeof error.context.body === 'string'
+            ? JSON.parse(error.context.body)
+            : error.context.body;
+          if (errorBody?.error) {
+            errorMessage = errorBody.error;
+          }
+        } catch (parseErr) {
+          // Silent - use default message
+        }
+      }
+
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+
+    if (!data.success && data.error) {
+      return {
+        success: false,
+        error: data.error
+      };
+    }
+
+    console.log('✅ Password updated successfully');
+
+    // Clear existing auth data - user should log in with new password
+    clearAuthData();
+
+    return {
+      success: true,
+      message: data?.data?.message || 'Password updated successfully.'
+    };
+
+  } catch (error) {
+    console.error('❌ Password update error:', error);
+    return {
+      success: false,
+      error: 'Network error. Please check your connection and try again.'
     };
   }
 }

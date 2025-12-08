@@ -45,7 +45,8 @@ export const routes = [
     file: 'search.html',
     aliases: ['/search.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'search-view',
     hasDynamicSegment: false
   },
   {
@@ -189,6 +190,17 @@ export const routes = [
 
   // ===== HOST/LISTING MANAGEMENT =====
   {
+    path: '/host-proposals',
+    file: 'host-proposals.html',
+    aliases: ['/host-proposals.html'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'host-proposals-view',
+    hasDynamicSegment: true,
+    dynamicPattern: '/host-proposals/:userId',
+    excludeFromFunctions: true
+  },
+  {
     path: '/self-listing',
     file: 'self-listing.html',
     aliases: ['/self-listing.html'],
@@ -235,6 +247,16 @@ export const routes = [
     file: 'rental-application.html',
     aliases: ['/rental-application.html'],
     protected: true,
+    cloudflareInternal: false,
+    hasDynamicSegment: false
+  },
+
+  // ===== AUTH PAGES =====
+  {
+    path: '/reset-password',
+    file: 'reset-password.html',
+    aliases: ['/reset-password.html'],
+    protected: false,
     cloudflareInternal: false,
     hasDynamicSegment: false
   },

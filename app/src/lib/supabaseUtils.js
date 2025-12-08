@@ -53,18 +53,34 @@ export function parseJsonArray(value) {
  * @returns {Promise<Object>} Map of photo ID to photo URL
  */
 export async function fetchPhotoUrls(photoIds) {
+  console.log('🔍 fetchPhotoUrls called with', photoIds?.length || 0, 'photo IDs');
+
   if (!photoIds || photoIds.length === 0) {
+    console.log('⚠️ fetchPhotoUrls: No photo IDs provided, returning empty map');
     return {};
   }
 
+  console.log('🔍 fetchPhotoUrls: Sample IDs:', photoIds.slice(0, 3));
+
   try {
+    console.log('🔍 fetchPhotoUrls: Querying listing_photo table...');
     const { data, error } = await supabase
       .from('listing_photo')
       .select('_id, Photo')
       .in('_id', photoIds);
 
+    console.log('🔍 fetchPhotoUrls: Query completed', {
+      dataLength: data?.length || 0,
+      error: error?.message || null
+    });
+
     if (error) {
       console.error('❌ Error fetching photos:', error);
+      return {};
+    }
+
+    if (!data || data.length === 0) {
+      console.warn('⚠️ fetchPhotoUrls: Query returned no data for', photoIds.length, 'IDs');
       return {};
     }
 
@@ -81,7 +97,7 @@ export async function fetchPhotoUrls(photoIds) {
       }
     });
 
-    console.log(`✅ Fetched ${Object.keys(photoMap).length} photo URLs`);
+    console.log(`✅ Fetched ${Object.keys(photoMap).length} photo URLs from ${data.length} records`);
     return photoMap;
   } catch (error) {
     console.error('❌ Error in fetchPhotoUrls:', error);

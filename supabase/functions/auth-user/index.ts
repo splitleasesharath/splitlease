@@ -9,12 +9,15 @@
  * - login: User login (email/password) - via Supabase Auth (native)
  * - signup: New user registration - via Supabase Auth (native)
  * - logout: User logout (invalidate token) - via Bubble (legacy)
- * - validate: Validate token and fetch user data - via Supabase
+ * - validate: Validate token and fetch user data - via Bubble + Supabase
+ * - request_password_reset: Send password reset email - via Supabase Auth (native)
+ * - update_password: Update password after reset link clicked - via Supabase Auth (native)
  *
  * Security:
  * - NO user authentication on these endpoints (you can't require auth to log in!)
  * - API keys stored server-side in Supabase Secrets
  * - Validates request format only
+ * - Password reset always returns success to prevent email enumeration
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -27,6 +30,8 @@ import { handleLogin } from './handlers/login.ts';
 import { handleSignup } from './handlers/signup.ts';
 import { handleLogout } from './handlers/logout.ts';
 import { handleValidate } from './handlers/validate.ts';
+import { handleRequestPasswordReset } from './handlers/resetPassword.ts';
+import { handleUpdatePassword } from './handlers/updatePassword.ts';
 
 console.log('[auth-user] Edge Function started');
 
@@ -61,7 +66,7 @@ Deno.serve(async (req) => {
     const { action, payload } = body;
 
     // Validate action is supported
-    const allowedActions = ['login', 'signup', 'logout', 'validate'];
+    const allowedActions = ['login', 'signup', 'logout', 'validate', 'request_password_reset', 'update_password'];
     validateAction(action, allowedActions);
 
     console.log(`[auth-user] Action: ${action}`);
@@ -77,9 +82,8 @@ Deno.serve(async (req) => {
       throw new Error('Supabase configuration missing in secrets');
     }
 
-    // Bubble config is only required for logout (legacy - still uses Bubble)
-    // Login, signup, and validate now use Supabase Auth natively
-    if (action === 'logout' && (!bubbleAuthBaseUrl || !bubbleApiKey)) {
+    // Bubble config is required for logout, validate (but NOT login/signup - now use Supabase Auth)
+    if ((action === 'logout' || action === 'validate') && (!bubbleAuthBaseUrl || !bubbleApiKey)) {
       throw new Error('Bubble API configuration missing in secrets');
     }
 
@@ -95,18 +99,26 @@ Deno.serve(async (req) => {
         break;
 
       case 'signup':
-        // Signup uses Supabase Auth natively (no Bubble dependency)
+        // Signup now uses Supabase Auth natively (no Bubble dependency)
         result = await handleSignup(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       case 'logout':
-        // Logout still uses Bubble (legacy)
         result = await handleLogout(bubbleAuthBaseUrl, bubbleApiKey, payload);
         break;
 
       case 'validate':
-        // Validate uses Supabase only (no Bubble dependency)
         result = await handleValidate(bubbleAuthBaseUrl, bubbleApiKey, supabaseUrl, supabaseServiceKey, payload);
+        break;
+
+      case 'request_password_reset':
+        // Password reset request uses Supabase Auth natively (no Bubble dependency)
+        result = await handleRequestPasswordReset(supabaseUrl, supabaseServiceKey, payload);
+        break;
+
+      case 'update_password':
+        // Password update uses Supabase Auth natively (no Bubble dependency)
+        result = await handleUpdatePassword(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       default:

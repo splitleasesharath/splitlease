@@ -24,7 +24,7 @@ Deep dive into how everything works:
 | Function | Purpose | Handlers | Auth | Status |
 |----------|---------|----------|------|--------|
 | **bubble-proxy** | General Bubble API proxy | 9 handlers | Optional per action | Active |
-| **bubble-auth-proxy** | Authentication system | 4 handlers | None (IS auth) | Active |
+| **auth-user** | Native Supabase Auth (login/signup) + Bubble (logout/validate) | 4 handlers | None (IS auth) | Active |
 | **ai-gateway** | AI completions service | 2 handlers | Optional per prompt | Active |
 | **ai-signup-guest** | AI-powered guest signup | 1 handler | None | Active |
 | **slack** | Slack notifications | 1 handler | None | Active |
@@ -158,7 +158,7 @@ HTTP Status Codes:
 
 **Edge Function Code**:
 - `supabase/functions/bubble-proxy/index.ts` - Main router
-- `supabase/functions/bubble-auth-proxy/index.ts` - Auth router
+- `supabase/functions/auth-user/index.ts` - Auth router (native Supabase Auth)
 - `supabase/functions/ai-gateway/index.ts` - AI router
 - `supabase/functions/_shared/bubbleSync.ts` - Core sync service
 - `supabase/functions/_shared/errors.ts` - Error handling

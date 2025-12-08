@@ -189,7 +189,7 @@ Configured in Supabase Dashboard > Project Settings > Secrets:
 |-------|-------|
 | Build fails | Node version is 18, run `npm install` in app/ |
 | Edge Function errors | Verify secrets in Supabase Dashboard |
-| Auth issues | Check bubble-auth-proxy logs |
+| Auth issues | Check auth-user Edge Function logs |
 | Empty queries | Check RLS policies |
 
 ---

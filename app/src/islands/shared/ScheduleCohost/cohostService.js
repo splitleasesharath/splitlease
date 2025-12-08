@@ -7,10 +7,11 @@
 import { supabase } from '../../../lib/supabase';
 
 /**
- * Generate 42 calendar days (6 weeks x 7 days) for a given month
+ * Generate calendar days for a given month
+ * Dynamically calculates the number of weeks needed (5 or 6)
  * Includes padding from previous and next months
  * @param {Date} month - Any date within the target month
- * @returns {Date[]} Array of 42 dates for the calendar grid
+ * @returns {Date[]} Array of dates for the calendar grid
  */
 export function generateCalendarDays(month) {
   const year = month.getFullYear();
@@ -21,12 +22,22 @@ export function generateCalendarDays(month) {
   // Day of week for first day (0 = Sunday, 6 = Saturday)
   const startDayOfWeek = firstDayOfMonth.getDay();
 
+  // Last day of the month
+  const lastDayOfMonth = new Date(year, monthIndex + 1, 0);
+  const daysInMonth = lastDayOfMonth.getDate();
+
+  // Calculate total cells needed (padding + days in month)
+  const totalCells = startDayOfWeek + daysInMonth;
+  // Round up to nearest week (multiple of 7)
+  const weeksNeeded = Math.ceil(totalCells / 7);
+  const totalDays = weeksNeeded * 7;
+
   // Calculate the first date to show (may be in previous month)
   const startDate = new Date(firstDayOfMonth);
   startDate.setDate(startDate.getDate() - startDayOfWeek);
 
   const days = [];
-  for (let i = 0; i < 42; i++) {
+  for (let i = 0; i < totalDays; i++) {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
     days.push(date);
