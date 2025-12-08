@@ -6,10 +6,10 @@
  * NO USER AUTHENTICATION REQUIRED - These ARE the auth endpoints
  *
  * Supported Actions:
- * - login: User login (email/password) - via Bubble
+ * - login: User login (email/password) - via Supabase Auth (native)
  * - signup: New user registration - via Supabase Auth (native)
- * - logout: User logout (invalidate token) - via Bubble
- * - validate: Validate token and fetch user data - via Bubble + Supabase
+ * - logout: User logout (invalidate token) - via Bubble (legacy)
+ * - validate: Validate token and fetch user data - via Supabase
  *
  * Security:
  * - NO user authentication on these endpoints (you can't require auth to log in!)
@@ -77,8 +77,9 @@ Deno.serve(async (req) => {
       throw new Error('Supabase configuration missing in secrets');
     }
 
-    // Bubble config is required for login, logout, validate (but NOT signup - now uses Supabase Auth)
-    if (action !== 'signup' && (!bubbleAuthBaseUrl || !bubbleApiKey)) {
+    // Bubble config is only required for logout (legacy - still uses Bubble)
+    // Login, signup, and validate now use Supabase Auth natively
+    if (action === 'logout' && (!bubbleAuthBaseUrl || !bubbleApiKey)) {
       throw new Error('Bubble API configuration missing in secrets');
     }
 
@@ -89,19 +90,22 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case 'login':
-        result = await handleLogin(bubbleAuthBaseUrl, bubbleApiKey, payload);
+        // Login now uses Supabase Auth natively (no Bubble dependency)
+        result = await handleLogin(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       case 'signup':
-        // Signup now uses Supabase Auth natively (no Bubble dependency)
+        // Signup uses Supabase Auth natively (no Bubble dependency)
         result = await handleSignup(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       case 'logout':
+        // Logout still uses Bubble (legacy)
         result = await handleLogout(bubbleAuthBaseUrl, bubbleApiKey, payload);
         break;
 
       case 'validate':
+        // Validate uses Supabase only (no Bubble dependency)
         result = await handleValidate(bubbleAuthBaseUrl, bubbleApiKey, supabaseUrl, supabaseServiceKey, payload);
         break;
 

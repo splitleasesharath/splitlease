@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
+import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
-import { getUserType as getStoredUserType } from '../../lib/secureStorage.js';
+import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import SignUpLoginModal from './SignUpLoginModal.jsx';
@@ -24,39 +24,52 @@ export default function Header({ autoShowLogin = false }) {
   // CreateDuplicateListingModal State
   const [showListPropertyModal, setShowListPropertyModal] = useState(false);
 
-  // Lazy-load token validation after page is completely loaded
-  // Only runs if a token exists in sessionStorage
+  // Optimistic UI: Show cached auth state immediately, validate in background
   useEffect(() => {
-    const validateAuth = async () => {
-      // Check if token exists first - skip validation if no token
-      const token = getAuthToken();
-      if (!token) {
-        console.log('[Header] No token found - skipping validation');
-        setAuthChecked(true);
-        return;
-      }
+    // Step 1: Synchronously check cached auth state for instant UI
+    const isAuthenticated = getAuthState();
+    const token = getAuthToken();
 
-      // Token exists - wait for page to be completely loaded before validating
-      if (document.readyState !== 'complete') {
-        window.addEventListener('load', () => {
-          performAuthValidation();
-        });
-      } else {
-        // Page already loaded, validate immediately
-        performAuthValidation();
-      }
-    };
+    if (!token || !isAuthenticated) {
+      // Not logged in - show logged-out state immediately
+      console.log('[Header] No auth state - showing logged-out UI');
+      setAuthChecked(true);
+      return;
+    }
 
-    const performAuthValidation = async () => {
+    // Step 2: Show optimistic logged-in state with cached data
+    const cachedFirstName = getFirstName();
+    const cachedAvatarUrl = getAvatarUrl();
+    const cachedUserType = getStoredUserType();
+
+    if (cachedFirstName) {
+      // Set optimistic user data for immediate display
+      setCurrentUser({
+        firstName: cachedFirstName,
+        profilePhoto: cachedAvatarUrl,
+        userType: cachedUserType,
+        _isOptimistic: true // Flag to indicate this is cached data
+      });
+      setUserType(cachedUserType);
+      console.log('[Header] Showing optimistic UI for:', cachedFirstName);
+    }
+
+    // Mark as checked so UI renders (with optimistic or no data)
+    setAuthChecked(true);
+
+    // Step 3: Validate in background and update with real data
+    const performBackgroundValidation = async () => {
       try {
         const userData = await validateTokenAndFetchUser();
 
         if (userData) {
-          // Token is valid, user is logged in
+          // Token is valid - update with real user data
           setCurrentUser(userData);
+          console.log('[Header] Background validation successful:', userData.firstName);
         } else {
-          // Token is invalid or not present
+          // Token is invalid - clear optimistic state
           setCurrentUser(null);
+          console.log('[Header] Background validation failed - clearing auth');
 
           // If on a protected page and token validation failed:
           // - If autoShowLogin is true, show the modal (don't redirect)
@@ -71,13 +84,16 @@ export default function Header({ autoShowLogin = false }) {
       } catch (error) {
         console.error('Auth validation error:', error);
         setCurrentUser(null);
-      } finally {
-        setAuthChecked(true);
       }
     };
 
-    validateAuth();
-  }, []);
+    // Run validation after page load to not block rendering
+    if (document.readyState === 'complete') {
+      performBackgroundValidation();
+    } else {
+      window.addEventListener('load', performBackgroundValidation, { once: true });
+    }
+  }, [autoShowLogin]);
 
   // Monitor user type from localStorage for conditional header visibility
   useEffect(() => {

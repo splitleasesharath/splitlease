@@ -34,7 +34,9 @@ const STATE_KEYS = {
   IS_AUTHENTICATED: 'sl_auth_state',
   USER_ID: 'sl_user_id',
   USER_TYPE: 'sl_user_type',
-  SESSION_VALID: 'sl_session_valid'
+  SESSION_VALID: 'sl_session_valid',
+  FIRST_NAME: 'sl_first_name',
+  AVATAR_URL: 'sl_avatar_url'
 };
 
 /**
@@ -147,6 +149,42 @@ export function getUserType() {
 }
 
 /**
+ * Set first name (for optimistic UI display)
+ * @param {string} firstName - User's first name
+ */
+export function setFirstName(firstName) {
+  if (firstName) {
+    localStorage.setItem(STATE_KEYS.FIRST_NAME, firstName);
+  }
+}
+
+/**
+ * Get first name
+ * @returns {string|null} First name or null
+ */
+export function getFirstName() {
+  return localStorage.getItem(STATE_KEYS.FIRST_NAME);
+}
+
+/**
+ * Set avatar URL (for optimistic UI display)
+ * @param {string} avatarUrl - User's profile photo URL
+ */
+export function setAvatarUrl(avatarUrl) {
+  if (avatarUrl) {
+    localStorage.setItem(STATE_KEYS.AVATAR_URL, avatarUrl);
+  }
+}
+
+/**
+ * Get avatar URL
+ * @returns {string|null} Avatar URL or null
+ */
+export function getAvatarUrl() {
+  return localStorage.getItem(STATE_KEYS.AVATAR_URL);
+}
+
+/**
  * Set session validity (public state)
  * @param {boolean} isValid - Whether session is valid
  */
@@ -175,6 +213,8 @@ export function clearAllAuthData() {
   localStorage.removeItem(STATE_KEYS.USER_ID);
   localStorage.removeItem(STATE_KEYS.USER_TYPE);
   localStorage.removeItem(STATE_KEYS.SESSION_VALID);
+  localStorage.removeItem(STATE_KEYS.FIRST_NAME);
+  localStorage.removeItem(STATE_KEYS.AVATAR_URL);
   // Also clear legacy last activity key if present
   localStorage.removeItem('sl_last_activity');
 
@@ -184,6 +224,17 @@ export function clearAllAuthData() {
   localStorage.removeItem('splitlease_last_auth');
   localStorage.removeItem('splitlease_user_type');
   localStorage.removeItem('userEmail');
+  localStorage.removeItem('splitlease_supabase_user_id');
+
+  // Clear Supabase auth storage (keys follow pattern: sb-<project-ref>-auth-token)
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith('sb-') || key.startsWith('supabase.'))) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach(key => localStorage.removeItem(key));
 
   // Clear cookies
   document.cookie = 'loggedIn=false; path=/; max-age=0';

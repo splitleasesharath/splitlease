@@ -32,6 +32,10 @@ import {
   getUserId as getPublicUserId,
   setUserType as setSecureUserType,
   getUserType as getSecureUserType,
+  setFirstName as setSecureFirstName,
+  getFirstName as getSecureFirstName,
+  setAvatarUrl as setSecureAvatarUrl,
+  getAvatarUrl as getSecureAvatarUrl,
   clearAllAuthData,
   hasValidTokens,
   migrateFromLegacyStorage
@@ -283,6 +287,46 @@ export function setUserType(userType) {
   }
 }
 
+/**
+ * Get first name from storage (for optimistic UI)
+ *
+ * @returns {string|null} First name if exists, null otherwise
+ */
+export function getFirstName() {
+  return getSecureFirstName();
+}
+
+/**
+ * Store first name (for optimistic UI)
+ *
+ * @param {string} firstName - First name to store
+ */
+export function setFirstName(firstName) {
+  if (firstName) {
+    setSecureFirstName(firstName);
+  }
+}
+
+/**
+ * Get avatar URL from storage (for optimistic UI)
+ *
+ * @returns {string|null} Avatar URL if exists, null otherwise
+ */
+export function getAvatarUrl() {
+  return getSecureAvatarUrl();
+}
+
+/**
+ * Store avatar URL (for optimistic UI)
+ *
+ * @param {string} avatarUrl - Avatar URL to store
+ */
+export function setAvatarUrl(avatarUrl) {
+  if (avatarUrl) {
+    setSecureAvatarUrl(avatarUrl);
+  }
+}
+
 // ============================================================================
 // User Information
 // ============================================================================
@@ -411,17 +455,18 @@ export function resetAuthCheckAttempts() {
 
 /**
  * Login user via Supabase Edge Function (auth-user)
- * Stores token and user_id in localStorage on success
+ * Uses Supabase Auth natively - stores session tokens for authentication
+ * Automatically persists session after successful login
  *
- * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
- * API key is stored server-side in Supabase Secrets
+ * ✅ MIGRATED TO SUPABASE AUTH: No longer uses Bubble for login
+ * Authenticates via Supabase Auth and returns session tokens
  *
  * @param {string} email - User email
  * @param {string} password - User password
- * @returns {Promise<Object>} Response object with status, token, user_id, or error
+ * @returns {Promise<Object>} Response object with status, user_id, or error
  */
 export async function loginUser(email, password) {
-  console.log('🔐 Attempting login via Edge Function for:', email);
+  console.log('🔐 Attempting login via Supabase Auth for:', email);
 
   try {
     const { data, error } = await supabase.functions.invoke('auth-user', {
@@ -439,7 +484,6 @@ export async function loginUser(email, password) {
       console.error('   Error context:', error.context);
 
       // Extract detailed error from response body if available
-      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
       let errorMessage = 'Failed to authenticate. Please try again.';
 
       if (error.context?.body) {
@@ -456,7 +500,6 @@ export async function loginUser(email, password) {
         }
       }
 
-      // Also check if data was returned despite the error (some edge cases)
       if (data?.error) {
         errorMessage = data.error;
       }
@@ -475,25 +518,66 @@ export async function loginUser(email, password) {
       };
     }
 
-    // Store token and user_id in secure storage
-    setAuthToken(data.data.token);
-    setSessionId(data.data.user_id);
+    // Extract Supabase session data
+    const {
+      access_token,
+      refresh_token,
+      expires_in,
+      user_id,
+      supabase_user_id,
+      user_type
+    } = data.data;
+
+    // IMPORTANT: Clear any existing auth data before setting new user's data
+    // This ensures we don't mix data from a previous user
+    clearAuthData();
+
+    // Set Supabase session using the client
+    // This stores the session in localStorage and enables authenticated requests
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token,
+      refresh_token
+    });
+
+    if (sessionError) {
+      console.error('❌ Failed to set Supabase session:', sessionError.message);
+      // Continue anyway - tokens are still valid, just not in client state
+    } else {
+      console.log('✅ Supabase session set successfully');
+    }
+
+    // Store access_token as auth token for backward compatibility
+    setAuthToken(access_token);
+    setSessionId(user_id);
 
     // Set auth state with user ID (public, non-sensitive)
-    setAuthState(true, data.data.user_id);
+    setAuthState(true, user_id);
+
+    // Store user type if provided
+    if (user_type) {
+      setUserType(user_type);
+    }
 
     // Update login state
     isUserLoggedInState = true;
 
-    console.log('✅ Login successful');
-    console.log('   User ID:', data.data.user_id);
-    console.log('   User Email:', email);
-    console.log('   Token expires in:', data.data.expires, 'seconds');
+    console.log('✅ Login successful (Supabase Auth)');
+    console.log('   User ID (_id):', user_id);
+    console.log('   Supabase Auth ID:', supabase_user_id);
+    console.log('   User Type:', user_type);
+    console.log('   Session expires in:', expires_in, 'seconds');
+
+    // Store Supabase user ID for reference
+    if (supabase_user_id) {
+      localStorage.setItem('splitlease_supabase_user_id', supabase_user_id);
+    }
 
     return {
       success: true,
-      user_id: data.data.user_id,
-      expires: data.data.expires
+      user_id: user_id,
+      supabase_user_id: supabase_user_id,
+      user_type: user_type,
+      expires_in: expires_in
     };
 
   } catch (error) {
@@ -621,6 +705,10 @@ export async function signupUser(email, password, retype, additionalData = null)
       user_type
     } = data.data;
 
+    // IMPORTANT: Clear any existing auth data before setting new user's data
+    // This ensures we don't mix data from a previous user
+    clearAuthData();
+
     // Set Supabase session using the client
     // This stores the session in localStorage and enables authenticated requests
     const { error: sessionError } = await supabase.auth.setSession({
@@ -645,6 +733,11 @@ export async function signupUser(email, password, retype, additionalData = null)
     // Store user type
     if (user_type) {
       setUserType(user_type);
+    }
+
+    // Store first name for optimistic UI (we have it from the signup form)
+    if (additionalData?.firstName) {
+      setFirstName(additionalData.firstName);
     }
 
     // Update login state
@@ -759,6 +852,14 @@ export async function validateTokenAndFetchUser() {
       }
     } else {
       console.log('✅ User type loaded from cache:', userType);
+    }
+
+    // Cache first name and avatar for optimistic UI on next page load
+    if (userData.firstName) {
+      setFirstName(userData.firstName);
+    }
+    if (userData.profilePhoto) {
+      setAvatarUrl(userData.profilePhoto);
     }
 
     const userDataObject = {

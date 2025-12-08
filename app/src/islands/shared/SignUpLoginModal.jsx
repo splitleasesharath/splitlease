@@ -24,7 +24,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { loginUser, signupUser } from '../../lib/auth.js';
+import { loginUser, signupUser, validateTokenAndFetchUser } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
 
 // ============================================================================
@@ -633,9 +633,13 @@ export default function SignUpLoginModal({
 
     const result = await loginUser(loginData.email, loginData.password);
 
-    setIsLoading(false);
-
     if (result.success) {
+      // Fetch and cache user data before reload for optimistic UI
+      // This ensures the next page load has the correct user's firstName cached
+      await validateTokenAndFetchUser();
+
+      setIsLoading(false);
+
       if (onAuthSuccess) {
         onAuthSuccess(result);
       }
@@ -644,6 +648,7 @@ export default function SignUpLoginModal({
         window.location.reload();
       }
     } else {
+      setIsLoading(false);
       setError(result.error || 'Login failed. Please check your credentials.');
     }
   };

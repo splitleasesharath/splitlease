@@ -1,10 +1,12 @@
 /**
  * Validate Handler - Validate session and fetch user data
- * Split Lease - bubble-auth-proxy
+ * Split Lease - auth-user
  *
  * Flow:
  * 1. Get token and user_id from payload
  * 2. Fetch user data from Supabase database (validates user exists)
+ *    - First tries lookup by _id (native Supabase signups)
+ *    - Falls back to bubble_id (legacy Bubble users)
  * 3. Return user profile data
  *
  * Note: Token validation against Bubble is skipped because:
@@ -39,7 +41,7 @@ export async function handleValidate(
   validateRequiredFields(payload, ['token', 'user_id']);
   const { token, user_id } = payload;
 
-  console.log(`[validate] Validating session for user (bubble_id): ${user_id}`);
+  console.log(`[validate] Validating session for user_id: ${user_id}`);
 
   try {
     // Token validation against Bubble Data API is skipped because:
@@ -60,12 +62,29 @@ export async function handleValidate(
       }
     });
 
-    // Query by bubble_id since that's what Bubble login returns and stores in browser
-    const { data: userData, error: userError } = await supabase
+    // Select all fields to avoid URL encoding issues with special characters in column names
+    // The Supabase client has issues with columns containing "/" in their names
+
+    // First try lookup by _id (native Supabase signups store user_id as _id)
+    console.log(`[validate] Trying lookup by _id first...`);
+    let { data: userData, error: userError } = await supabase
       .from('user')
-      .select('_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord"')
-      .eq('bubble_id', user_id)
-      .single();
+      .select('*')
+      .eq('_id', user_id)
+      .maybeSingle();
+
+    // If not found by _id, try bubble_id (legacy Bubble users)
+    if (!userData && !userError) {
+      console.log(`[validate] Not found by _id, trying bubble_id...`);
+      const bubbleResult = await supabase
+        .from('user')
+        .select('*')
+        .eq('bubble_id', user_id)
+        .maybeSingle();
+
+      userData = bubbleResult.data;
+      userError = bubbleResult.error;
+    }
 
     if (userError) {
       console.error(`[validate] Supabase query error:`, userError);
@@ -73,9 +92,11 @@ export async function handleValidate(
     }
 
     if (!userData) {
-      console.error(`[validate] User not found in Supabase by bubble_id: ${user_id}`);
-      throw new SupabaseSyncError(`User not found with bubble_id: ${user_id}`);
+      console.error(`[validate] User not found in Supabase by _id or bubble_id: ${user_id}`);
+      throw new SupabaseSyncError(`User not found with id: ${user_id}`);
     }
+
+    console.log(`[validate] User found via ${userData._id === user_id ? '_id' : 'bubble_id'} lookup`);
 
     // Step 2: Format user data
     console.log(`[validate] User found: ${userData['Name - First']}`);
