@@ -1,80 +1,37 @@
 /**
- * Logout Handler - Invalidate user session via Bubble
+ * Logout Handler - Invalidate user session
  * Split Lease - auth-user
  *
  * Flow:
- * 1. Get token from payload
- * 2. Call Bubble logout workflow (BUBBLE_API_BASE_URL/wf/logout-user)
- * 3. Return success (always succeeds locally even if Bubble API fails)
+ * 1. Return success immediately
  *
- * EXCEPTION TO NO FALLBACK:
- * Logout should always succeed locally even if Bubble API call fails.
- * This ensures users can always clear their local session.
+ * NOTE:
+ * We have migrated to Supabase Auth.
+ * Session invalidation happens client-side via supabase.auth.signOut().
+ * This handler is kept for backward compatibility and potential future server-side cleanup.
  *
- * @param bubbleAuthBaseUrl - Base URL for Bubble auth API
- * @param bubbleApiKey - API key for Bubble
  * @param payload - Request payload {token}
  * @returns {message: string}
  */
 
-import { BubbleApiError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 
 export async function handleLogout(
-  bubbleAuthBaseUrl: string,
-  bubbleApiKey: string,
   payload: any
 ): Promise<any> {
   console.log('[logout] ========== LOGOUT REQUEST ==========');
 
-  // Validate required fields
-  validateRequiredFields(payload, ['token']);
-  const { token } = payload;
-
-  console.log(`[logout] Invalidating session...`);
-
-  try {
-    // Call Bubble logout workflow
-    const url = `${bubbleAuthBaseUrl}/wf/logout-user`;
-    console.log(`[logout] Calling Bubble API: ${url}`);
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      }
-    });
-
-    console.log(`[logout] Bubble response status: ${response.status} ${response.statusText}`);
-
-    if (response.ok) {
-      console.log(`[logout] ✅ Logout successful (Bubble API confirmed)`);
-      console.log(`[logout] ========== LOGOUT COMPLETE ==========`);
-
-      return {
-        success: true,
-        message: 'Logout successful'
-      };
-    } else {
-      // Bubble API returned error, but we still succeed locally
-      console.log(`[logout] ⚠️ Bubble API returned error, but logout succeeds locally`);
-      console.log(`[logout] ========== LOGOUT COMPLETE (LOCAL) ==========`);
-
-      return {
-        success: true,
-        message: 'Logged out locally'
-      };
-    }
-
-  } catch (error) {
-    // Network error or other failure - still succeed locally
-    console.error(`[logout] ⚠️ Logout API error (but succeeding locally):`, error);
-    console.log(`[logout] ========== LOGOUT COMPLETE (LOCAL) ==========`);
-
-    return {
-      success: true,
-      message: 'Logged out locally (network error)'
-    };
+  // We don't strictly need the token anymore since we aren't calling Bubble,
+  // but we'll keep the validation to maintain API contract
+  if (payload && payload.token) {
+    console.log(`[logout] Token provided (unused in new flow)`);
   }
+
+  console.log(`[logout] Logout successful (no server-side action required)`);
+  console.log(`[logout] ========== LOGOUT COMPLETE ==========`);
+
+  return {
+    success: true,
+    message: 'Logout successful'
+  };
 }

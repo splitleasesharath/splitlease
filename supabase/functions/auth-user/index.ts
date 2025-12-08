@@ -82,8 +82,8 @@ Deno.serve(async (req) => {
       throw new Error('Supabase configuration missing in secrets');
     }
 
-    // Bubble config is required for logout, validate (but NOT login/signup - now use Supabase Auth)
-    if ((action === 'logout' || action === 'validate') && (!bubbleAuthBaseUrl || !bubbleApiKey)) {
+    // Bubble config is required for validate (but NOT login/signup/logout - now use Supabase Auth)
+    if ((action === 'validate') && (!bubbleAuthBaseUrl || !bubbleApiKey)) {
       throw new Error('Bubble API configuration missing in secrets');
     }
 
@@ -104,7 +104,8 @@ Deno.serve(async (req) => {
         break;
 
       case 'logout':
-        result = await handleLogout(bubbleAuthBaseUrl, bubbleApiKey, payload);
+        // Logout now happens client-side (Supabase Auth), this is just a stub
+        result = await handleLogout(payload);
         break;
 
       case 'validate':
