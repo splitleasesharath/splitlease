@@ -214,6 +214,7 @@ class ListingLocalStore {
 
   /**
    * Manually save draft to localStorage
+   * Photos are stored as Supabase URLs (not data URLs), so we only save metadata
    */
   saveDraft(): boolean {
     try {
@@ -225,6 +226,18 @@ class ListingLocalStore {
           blockedDates: this.state.data.rules.blockedDates.map((d) =>
             d instanceof Date ? d.toISOString() : d
           ),
+        },
+        // Clean up photos - remove File objects (not serializable) and only keep URL/metadata
+        photos: {
+          ...this.state.data.photos,
+          photos: this.state.data.photos.photos.map((photo) => ({
+            id: photo.id,
+            url: photo.url,
+            caption: photo.caption,
+            displayOrder: photo.displayOrder,
+            storagePath: photo.storagePath,
+            // Exclude: file, isUploading, uploadError (transient state)
+          })),
         },
       };
 
@@ -267,6 +280,17 @@ class ListingLocalStore {
           blockedDates: this.state.data.rules.blockedDates.map((d) =>
             d instanceof Date ? d.toISOString() : d
           ),
+        },
+        // Clean up photos - only save URL/metadata, not transient state
+        photos: {
+          ...this.state.data.photos,
+          photos: this.state.data.photos.photos.map((photo) => ({
+            id: photo.id,
+            url: photo.url,
+            caption: photo.caption,
+            displayOrder: photo.displayOrder,
+            storagePath: photo.storagePath,
+          })),
         },
       };
 

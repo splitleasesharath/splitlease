@@ -1,21 +1,6 @@
-// Icon components (inline SVGs)
-const LinkIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-  </svg>
-);
+import { useState, useRef, useEffect } from 'react';
 
+// Icon components (inline SVGs)
 const SparklesIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -36,38 +21,72 @@ const SparklesIcon = () => (
   </svg>
 );
 
-export default function SecondaryActions({ listingId, onCopyLink, onAIAssistant }) {
-  const handleCopyLink = () => {
-    const listingUrl = listingId
-      ? `${window.location.origin}/view-split-lease?id=${listingId}`
-      : window.location.href;
+const ChevronDownIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
 
-    navigator.clipboard.writeText(listingUrl).then(() => {
-      alert('Listing link copied to clipboard!');
-      onCopyLink?.();
-    });
-  };
+const SECTIONS = [
+  { id: 'property-info', label: 'Property Info' },
+  { id: 'description', label: 'Description' },
+  { id: 'amenities', label: 'Amenities' },
+  { id: 'details', label: 'Details' },
+  { id: 'pricing', label: 'Pricing & Lease Style' },
+  { id: 'rules', label: 'Rules' },
+  { id: 'availability', label: 'Availability' },
+  { id: 'photos', label: 'Photos' },
+  { id: 'cancellation-policy', label: 'Cancellation Policy' },
+];
+
+export default function SecondaryActions({ onAIAssistant }) {
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const handleAIAssistant = () => {
     onAIAssistant?.();
   };
 
+  const handleSectionSelect = (sectionId) => {
+    setIsDropdownOpen(false);
+    const sectionElement = document.getElementById(sectionId);
+    if (sectionElement) {
+      // Calculate position with offset to ensure title is visible
+      const headerOffset = 80; // Account for fixed header or padding
+      const elementPosition = sectionElement.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <div className="listing-dashboard-secondary">
-      {/* Copy Listing Link */}
-      <button
-        onClick={handleCopyLink}
-        className="listing-dashboard-secondary__link-btn"
-      >
-        <LinkIcon />
-        <span>Copy Listing Link</span>
-      </button>
-
-      {/* Center Text */}
-      <span className="listing-dashboard-secondary__divider">
-        create chatgpt suggestions
-      </span>
-
       {/* AI Import Assistant Button */}
       <button
         onClick={handleAIAssistant}
@@ -77,8 +96,29 @@ export default function SecondaryActions({ listingId, onCopyLink, onAIAssistant 
         <span>AI Import Assistant</span>
       </button>
 
-      {/* Choose Section */}
-      <span className="listing-dashboard-secondary__label">CHOOSE A SECTION</span>
+      {/* Choose Section Dropdown */}
+      <div className="listing-dashboard-secondary__dropdown" ref={dropdownRef}>
+        <button
+          className="listing-dashboard-secondary__dropdown-btn"
+          onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+        >
+          <span>Choose a Section</span>
+          <ChevronDownIcon />
+        </button>
+        {isDropdownOpen && (
+          <div className="listing-dashboard-secondary__dropdown-menu">
+            {SECTIONS.map((section) => (
+              <button
+                key={section.id}
+                className="listing-dashboard-secondary__dropdown-item"
+                onClick={() => handleSectionSelect(section.id)}
+              >
+                {section.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

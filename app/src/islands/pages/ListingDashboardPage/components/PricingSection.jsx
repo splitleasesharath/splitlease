@@ -18,7 +18,7 @@ export default function PricingSection({ listing, onEdit }) {
   };
 
   return (
-    <div className="listing-dashboard-section">
+    <div id="pricing" className="listing-dashboard-section">
       {/* Section Header */}
       <div className="listing-dashboard-section__header">
         <h2 className="listing-dashboard-section__title">Pricing and Lease Style</h2>

@@ -33,8 +33,9 @@ export default function InformationalText({
       const triggerRect = triggerRef.current.getBoundingClientRect();
       const tooltipRect = tooltipRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
 
-      // Center the panel relative to the trigger
+      // Center the panel relative to the trigger (using viewport coordinates for fixed positioning)
       let left = triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2);
 
       // Adjust if tooltip goes off right edge
@@ -47,13 +48,25 @@ export default function InformationalText({
         left = 16;
       }
 
-      // Place panel below the trigger
-      const top = triggerRect.bottom + window.scrollY + 10;
+      // Place panel below the trigger (using viewport coordinates)
+      let top = triggerRect.bottom + 10;
 
-      setPosition({ top, left: left + window.scrollX });
+      // If tooltip would go off bottom of viewport, place it above the trigger instead
+      if (top + tooltipRect.height > viewportHeight - 16) {
+        top = triggerRect.top - tooltipRect.height - 10;
+      }
+
+      // Ensure it doesn't go off the top
+      if (top < 16) {
+        top = 16;
+      }
+
+      setPosition({ top, left });
     };
 
-    updatePosition();
+    // Use requestAnimationFrame to ensure the tooltip is rendered before calculating position
+    requestAnimationFrame(updatePosition);
+
     window.addEventListener('resize', updatePosition);
     window.addEventListener('scroll', updatePosition, true);
 
@@ -152,7 +165,7 @@ export default function InformationalText({
     <div
       ref={tooltipRef}
       style={{
-        position: 'absolute',
+        position: 'fixed',
         top: `${position.top}px`,
         left: `${position.left}px`,
         background: 'white',
@@ -160,9 +173,9 @@ export default function InformationalText({
         boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)',
         border: '1px solid #e5e7eb',
         padding: '1rem',
-        width: '100%',
+        width: 'calc(100% - 32px)',
         maxWidth: '28rem',
-        zIndex: 10000,
+        zIndex: 10001,
         animation: 'fadeIn 0.15s ease-out'
       }}
       onClick={(e) => e.stopPropagation()}

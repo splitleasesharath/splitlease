@@ -7,10 +7,28 @@
 /view-split-lease/*
   Content-Type: text/html; charset=utf-8
 
+# Preview Split Lease pages - serve as HTML (uses _internal pattern)
+/preview-split-lease
+  Content-Type: text/html; charset=utf-8
+/preview-split-lease/*
+  Content-Type: text/html; charset=utf-8
+
+# Guest Proposals pages - serve as HTML (uses _internal pattern)
+/guest-proposals
+  Content-Type: text/html; charset=utf-8
+/guest-proposals/*
+  Content-Type: text/html; charset=utf-8
+
 # Help Center pages - serve as HTML
 /help-center
   Content-Type: text/html; charset=utf-8
 /help-center/*
+  Content-Type: text/html; charset=utf-8
+
+# Search page - serve as HTML (uses _internal pattern)
+/search
+  Content-Type: text/html; charset=utf-8
+/search/*
   Content-Type: text/html; charset=utf-8
 
 # Internal files (no extension) - serve as HTML

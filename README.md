@@ -47,7 +47,7 @@ Split Lease is a flexible rental marketplace for NYC properties enabling:
 - **19 Entry Points**: JSX files mounting React components to HTML pages
 - **35+ React Components**: Shared components with isolated state management
 - **93 Database Tables**: Supabase PostgreSQL tables for all data
-- **4 Edge Functions**: bubble-proxy, bubble-auth-proxy, ai-gateway, ai-signup-guest
+- **4 Edge Functions**: bubble-proxy, auth-user, ai-gateway, ai-signup-guest
 - **40+ Claude Commands**: Custom slash commands for deployment, testing, and development
 
 ---
@@ -91,7 +91,7 @@ Frontend (app/) ──> Page Components ──> Shared Components
 | Function | Purpose |
 |----------|---------|
 | `bubble-proxy` | General Bubble API proxy for listing, messaging, photos, referral, signup |
-| `bubble-auth-proxy` | Authentication proxy for login, signup, logout, token validation |
+| `auth-user` | Authentication (native Supabase Auth for login/signup, Bubble for logout/validate) |
 | `ai-gateway` | AI service gateway routing to completion or streaming handlers |
 | `ai-signup-guest` | AI-powered guest signup flow with personalized market research |
 
@@ -410,7 +410,7 @@ Split Lease/
 ├── supabase/                               # Edge Functions and database config
 │   ├── functions/                          # Supabase Edge Functions
 │   │   ├── bubble-proxy/                   # General Bubble API proxy
-│   │   ├── bubble-auth-proxy/              # Authentication proxy
+│   │   ├── auth-user/                      # Native Supabase Auth
 │   │   ├── ai-gateway/                     # AI service gateway
 │   │   ├── ai-signup-guest/                # AI signup flow
 │   │   └── _shared/                        # Shared utilities

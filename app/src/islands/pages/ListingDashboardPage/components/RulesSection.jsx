@@ -60,7 +60,7 @@ export default function RulesSection({ listing, onEdit }) {
   const getIcon = (name) => ruleIcons[name] || <DefaultIcon />;
 
   return (
-    <div className="listing-dashboard-section">
+    <div id="rules" className="listing-dashboard-section">
       {/* Section Header */}
       <div className="listing-dashboard-section__header">
         <h2 className="listing-dashboard-section__title">Rules</h2>

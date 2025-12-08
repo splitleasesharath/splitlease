@@ -9,7 +9,7 @@
 
 | Function | Purpose | Public Access | Auth Method | Status |
 |----------|---------|---------------|------------|--------|
-| `bubble-auth-proxy` | Login/Signup/Token validation | YES (login/signup) | N/A (is auth) | ✅ Working |
+| `auth-user` | Login/Signup/Token validation | YES (login/signup) | N/A (is auth) | ✅ Working |
 | `bubble-proxy` | General API calls | PARTIAL (whitelist) | JWT optional | ✅ Working |
 | `ai-gateway` | AI prompts | PARTIAL (whitelist) | JWT optional | ✅ Working |
 
@@ -155,7 +155,7 @@ Handler executes
 Request to Edge Function
     ↓
 Which function?
-    ├─ bubble-auth-proxy? → Skip auth check (IS auth)
+    ├─ auth-user? → Skip auth check (IS auth)
     ├─ bubble-proxy?      → Check PUBLIC_ACTIONS
     │   ├─ In whitelist? → Skip auth (public action)
     │   └─ Not in list?  → Require Authorization header
@@ -325,7 +325,7 @@ console.log('Is public?', PUBLIC_ACTIONS.includes(action));
 
 | File | Purpose |
 |------|---------|
-| `supabase/functions/bubble-auth-proxy/index.ts` | Auth router |
+| `supabase/functions/auth-user/index.ts` | Auth router |
 | `supabase/functions/bubble-proxy/index.ts` | API router (PUBLIC_ACTIONS defined here) |
 | `supabase/functions/ai-gateway/index.ts` | AI router (PUBLIC_PROMPTS defined here) |
 | `supabase/functions/_shared/cors.ts` | CORS headers |

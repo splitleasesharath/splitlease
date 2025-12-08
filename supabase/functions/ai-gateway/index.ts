@@ -36,7 +36,7 @@ import "./prompts/_registry.ts";
 const ALLOWED_ACTIONS = ["complete", "stream"];
 
 // Prompts that don't require authentication (public prompts)
-const PUBLIC_PROMPTS = ["listing-description", "echo-test"];
+const PUBLIC_PROMPTS = ["listing-description", "listing-title", "echo-test"];
 
 // ─────────────────────────────────────────────────────────────
 // Main Handler

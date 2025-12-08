@@ -16,7 +16,7 @@
   justify-content: center;
   align-items: center;
   padding: var(--spacing-xl, 24px);
-  overflow-y: auto;
+  overflow: hidden; /* Prevent overlay from scrolling - only popup body should scroll */
   z-index: 10000; /* Above header (z-index: 9999) */
 }
 
@@ -24,10 +24,14 @@
 .eld-popup-container {
   width: 100%;
   max-width: 720px;
+  max-height: calc(100vh - 48px); /* Constrain height to viewport minus padding */
   background: white;
   border-radius: var(--radius-lg, 10px);
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   animation: eld-slideIn 300ms ease;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Prevent container from overflowing */
 }
 
 @keyframes eld-slideIn {
@@ -48,6 +52,7 @@
   justify-content: space-between;
   padding: var(--spacing-lg, 16px);
   border-bottom: 1px solid var(--color-border, #E5E7EB);
+  flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 .eld-popup-header h2 {
@@ -82,13 +87,15 @@
   font-size: 13px;
   color: var(--color-text-secondary, #6B7280);
   background: white;
+  flex-shrink: 0; /* Prevent subtitle from shrinking */
 }
 
 /* Popup Body */
 .eld-popup-body {
   padding: var(--spacing-lg, 16px);
-  max-height: calc(100vh - 250px);
+  flex: 1; /* Take remaining space in flex container */
   overflow-y: auto;
+  overscroll-behavior: contain; /* Prevent scroll chaining to parent elements */
 }
 
 /* Form Elements */
@@ -240,6 +247,8 @@
   justify-content: flex-end;
   padding: var(--spacing-lg, 16px);
   border-top: 1px solid var(--color-border, #E5E7EB);
+  flex-shrink: 0; /* Prevent button group from shrinking */
+  background: white; /* Ensure background when scrolling */
 }
 
 /* Buttons */

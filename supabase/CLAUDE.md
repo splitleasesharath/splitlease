@@ -13,7 +13,7 @@ The project has **5 main Edge Functions**:
 | Function | Purpose | JWT Auth |
 |----------|---------|----------|
 | `bubble-proxy` | General Bubble API proxy for listings, messaging, photos, favorites | No (optional per action) |
-| `bubble-auth-proxy` | Authentication (login, signup, logout, validate) | No |
+| `auth-user` | Authentication (native Supabase Auth for login/signup, Bubble for logout/validate) | No |
 | `ai-gateway` | AI completions with OpenAI (streaming + non-streaming) | Optional per prompt |
 | `ai-signup-guest` | AI-powered guest signup flow | No |
 | `slack` | Slack integration (FAQ inquiries to Slack channels) | No |
@@ -51,14 +51,13 @@ supabase/
     │       ├── signup.ts          # AI signup
     │       └── submitListing.ts   # Full listing submission
     │
-    ├── bubble-auth-proxy/         # Authentication proxy
+    ├── auth-user/                 # Native Supabase Auth (login/signup) + Bubble (logout/validate)
     │   ├── index.ts               # Main router
-    │   ├── deno.json              # Import map
     │   └── handlers/
-    │       ├── login.ts           # User login
-    │       ├── logout.ts          # User logout
-    │       ├── signup.ts          # User registration
-    │       └── validate.ts        # Token validation
+    │       ├── login.ts           # User login (Supabase Auth native)
+    │       ├── logout.ts          # User logout (Bubble legacy)
+    │       ├── signup.ts          # User registration (Supabase Auth native)
+    │       └── validate.ts        # Token validation (Bubble legacy)
     │
     ├── ai-gateway/                # AI service gateway
     │   ├── index.ts               # Main router
@@ -218,25 +217,30 @@ const stream = await stream(messages, options);
 
 ---
 
-## bubble-auth-proxy Actions
+## auth-user Actions
 
-**Endpoint**: `POST /functions/v1/bubble-auth-proxy`
+**Endpoint**: `POST /functions/v1/auth-user`
 
-| Action | Handler | Bubble Workflow | Description |
-|--------|---------|-----------------|-------------|
-| `login` | `login.ts` | `/wf/login-user` | Authenticate user, returns token |
-| `signup` | `signup.ts` | Signup workflow | Register new user + sync to Supabase |
-| `logout` | `logout.ts` | Logout workflow | Invalidate token |
-| `validate` | `validate.ts` | Validate workflow | Validate token + fetch user data |
+| Action | Handler | Backend | Description |
+|--------|---------|---------|-------------|
+| `login` | `login.ts` | Supabase Auth (native) | Authenticate user via signInWithPassword |
+| `signup` | `signup.ts` | Supabase Auth (native) | Register new user + create profile in public.user |
+| `logout` | `logout.ts` | Bubble (legacy) | Invalidate token |
+| `validate` | `validate.ts` | Bubble + Supabase | Validate token + fetch user data |
 
-### Login Response
+### Login/Signup Response
 ```json
 {
   "success": true,
   "data": {
-    "token": "...",
+    "access_token": "...",
+    "refresh_token": "...",
+    "expires_in": 3600,
     "user_id": "...",
-    "expires": 3600
+    "supabase_user_id": "...",
+    "user_type": "Host|Guest",
+    "host_account_id": "...",
+    "guest_account_id": "..."
   }
 }
 ```
@@ -315,9 +319,9 @@ Configure in **Supabase Dashboard > Project Settings > Secrets**:
 
 | Secret | Value | Used By |
 |--------|-------|---------|
-| `BUBBLE_API_BASE_URL` | `https://app.split.lease/version-test/api/1.1` | bubble-proxy, bubble-auth-proxy |
+| `BUBBLE_API_BASE_URL` | `https://app.split.lease/version-test/api/1.1` | bubble-proxy, auth-user (logout/validate) |
 | `BUBBLE_API_KEY` | See secrets setup | All Bubble API calls |
-| `SUPABASE_SERVICE_ROLE_KEY` | From Supabase Dashboard | Server-side operations (bypasses RLS) |
+| `SUPABASE_SERVICE_ROLE_KEY` | From Supabase Dashboard | Server-side operations, auth-user |
 | `OPENAI_API_KEY` | From OpenAI | ai-gateway |
 | `SLACK_WEBHOOK_ACQUISITION` | Slack webhook URL | slack (acquisition channel) |
 | `SLACK_WEBHOOK_GENERAL` | Slack webhook URL | slack (general channel) |
@@ -388,11 +392,10 @@ verify_jwt = false
 import_map = "./functions/bubble-proxy/deno.json"
 entrypoint = "./functions/bubble-proxy/index.ts"
 
-[functions.bubble-auth-proxy]
+[functions.auth-user]
 enabled = true
 verify_jwt = false
-import_map = "./functions/bubble-auth-proxy/deno.json"
-entrypoint = "./functions/bubble-auth-proxy/index.ts"
+entrypoint = "./functions/auth-user/index.ts"
 
 [functions.ai-signup-guest]
 enabled = true
@@ -420,7 +423,7 @@ supabase functions serve
 
 # View function logs
 supabase functions logs bubble-proxy
-supabase functions logs bubble-auth-proxy
+supabase functions logs auth-user
 supabase functions logs ai-gateway
 ```
 

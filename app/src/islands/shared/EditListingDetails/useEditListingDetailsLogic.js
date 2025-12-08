@@ -3,12 +3,13 @@
  * Following the Hollow Component Pattern - all business logic is in this hook
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { NEIGHBORHOOD_TEMPLATE } from './constants';
 import { generateListingDescription, generateListingTitle } from '../../../lib/aiService';
 import { getCommonHouseRules } from './services/houseRulesService';
 import { getCommonSafetyFeatures } from './services/safetyFeaturesService';
 import { getCommonInUnitAmenities, getCommonBuildingAmenities } from './services/amenitiesService';
+import { getNeighborhoodByZipCode } from './services/neighborhoodService';
 import { uploadPhoto } from '../../../lib/photoUpload';
 
 /**
@@ -22,6 +23,7 @@ import { uploadPhoto } from '../../../lib/photoUpload';
  */
 export function useEditListingDetailsLogic({ listing, editSection, onClose, onSave, updateListing }) {
   const [formData, setFormData] = useState({});
+  const formDataInitializedRef = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingTitle, setIsGeneratingTitle] = useState(false);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
@@ -29,6 +31,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
   const [isLoadingBuildingAmenities, setIsLoadingBuildingAmenities] = useState(false);
   const [isLoadingRules, setIsLoadingRules] = useState(false);
   const [isLoadingSafetyFeatures, setIsLoadingSafetyFeatures] = useState(false);
+  const [isLoadingNeighborhood, setIsLoadingNeighborhood] = useState(false);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -54,20 +57,34 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
 
   // Lock body scroll when modal is open
   useEffect(() => {
-    // Store original overflow value
+    // Store original body styles
     const originalOverflow = document.body.style.overflow;
-    // Lock scroll
-    document.body.style.overflow = 'hidden';
+    const originalPosition = document.body.style.position;
+    const originalTop = document.body.style.top;
+    const originalWidth = document.body.style.width;
+    const scrollY = window.scrollY;
 
-    // Cleanup: restore original overflow when component unmounts
+    // Lock scroll by fixing the body position
+    document.body.style.overflow = 'hidden';
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.width = '100%';
+
+    // Cleanup: restore original styles and scroll position when component unmounts
     return () => {
       document.body.style.overflow = originalOverflow;
+      document.body.style.position = originalPosition;
+      document.body.style.top = originalTop;
+      document.body.style.width = originalWidth;
+      // Restore scroll position
+      window.scrollTo(0, scrollY);
     };
   }, []);
 
-  // Initialize form data from listing
+  // Initialize form data from listing (only once on initial mount)
+  // This prevents formData from being reset when listing is refreshed after autosave
   useEffect(() => {
-    if (!listing) return;
+    if (!listing || formDataInitializedRef.current) return;
 
     setFormData({
       Name: listing.Name,
@@ -95,6 +112,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
       'Maximum Nights': listing['Maximum Nights'],
       'Cancellation Policy': listing['Cancellation Policy']
     });
+    formDataInitializedRef.current = true;
   }, [listing]);
 
   // Auto-dismiss toast after 3 seconds
@@ -131,10 +149,10 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     // Update local state
     setFormData(prev => ({ ...prev, [field]: newArray }));
 
-    // Autosave to database
+    // Autosave to database but don't trigger parent refresh (avoids scroll jump)
+    // Parent will refresh listing when modal is closed
     try {
-      const updatedListing = await updateListing(listing._id, { [field]: newArray });
-      onSave(updatedListing);
+      await updateListing(listing._id, { [field]: newArray });
       showToast(item, `${itemType} ${isChecked ? 'added' : 'removed'}!`);
     } catch (error) {
       console.error('Autosave error:', error);
@@ -142,7 +160,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
       // Revert on error
       setFormData(prev => ({ ...prev, [field]: currentArray }));
     }
-  }, [formData, listing, updateListing, onSave, showToast]);
+  }, [formData, listing, updateListing, showToast]);
 
   const handleSave = useCallback(async () => {
     setIsLoading(true);
@@ -179,8 +197,9 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
       const newRules = [...new Set([...selectedRules, ...commonRules])];
       setFormData(prev => ({ ...prev, 'Features - House Rules': newRules }));
 
-      const updated = await updateListing(listing._id, { 'Features - House Rules': newRules });
-      onSave(updated);
+      // Save to database but don't trigger parent refresh (avoids scroll jump)
+      // Parent will refresh listing when modal is closed
+      await updateListing(listing._id, { 'Features - House Rules': newRules });
       showToast('Common rules loaded!', `${commonRules.length} rules added`);
     } catch (e) {
       console.error('[loadCommonRules] Error:', e);
@@ -188,7 +207,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     } finally {
       setIsLoadingRules(false);
     }
-  }, [formData, listing, updateListing, onSave, showToast]);
+  }, [formData, listing, updateListing, showToast]);
 
   const loadCommonSafetyFeatures = useCallback(async () => {
     setIsLoadingSafetyFeatures(true);
@@ -206,8 +225,9 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
       const newFeatures = [...new Set([...currentFeatures, ...commonFeatures])];
       setFormData(prev => ({ ...prev, 'Features - Safety': newFeatures }));
 
-      const updated = await updateListing(listing._id, { 'Features - Safety': newFeatures });
-      onSave(updated);
+      // Save to database but don't trigger parent refresh (avoids scroll jump)
+      // Parent will refresh listing when modal is closed
+      await updateListing(listing._id, { 'Features - Safety': newFeatures });
       showToast('Common safety features loaded!', `${commonFeatures.length} features added`);
     } catch (e) {
       console.error('[loadCommonSafetyFeatures] Error:', e);
@@ -215,7 +235,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     } finally {
       setIsLoadingSafetyFeatures(false);
     }
-  }, [formData, listing, updateListing, onSave, showToast]);
+  }, [formData, listing, updateListing, showToast]);
 
   const loadCommonInUnitAmenities = useCallback(async () => {
     setIsLoadingInUnitAmenities(true);
@@ -233,8 +253,9 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
       const newAmenities = [...new Set([...currentAmenities, ...commonAmenities])];
       setFormData(prev => ({ ...prev, 'Features - Amenities In-Unit': newAmenities }));
 
-      const updated = await updateListing(listing._id, { 'Features - Amenities In-Unit': newAmenities });
-      onSave(updated);
+      // Save to database but don't trigger parent refresh (avoids scroll jump)
+      // Parent will refresh listing when modal is closed
+      await updateListing(listing._id, { 'Features - Amenities In-Unit': newAmenities });
       showToast('Common in-unit amenities loaded!', `${commonAmenities.length} amenities added`);
     } catch (e) {
       console.error('[loadCommonInUnitAmenities] Error:', e);
@@ -242,7 +263,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     } finally {
       setIsLoadingInUnitAmenities(false);
     }
-  }, [formData, listing, updateListing, onSave, showToast]);
+  }, [formData, listing, updateListing, showToast]);
 
   const loadCommonBuildingAmenities = useCallback(async () => {
     setIsLoadingBuildingAmenities(true);
@@ -260,8 +281,9 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
       const newAmenities = [...new Set([...currentAmenities, ...commonAmenities])];
       setFormData(prev => ({ ...prev, 'Features - Amenities In-Building': newAmenities }));
 
-      const updated = await updateListing(listing._id, { 'Features - Amenities In-Building': newAmenities });
-      onSave(updated);
+      // Save to database but don't trigger parent refresh (avoids scroll jump)
+      // Parent will refresh listing when modal is closed
+      await updateListing(listing._id, { 'Features - Amenities In-Building': newAmenities });
       showToast('Common building amenities loaded!', `${commonAmenities.length} amenities added`);
     } catch (e) {
       console.error('[loadCommonBuildingAmenities] Error:', e);
@@ -269,11 +291,36 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     } finally {
       setIsLoadingBuildingAmenities(false);
     }
-  }, [formData, listing, updateListing, onSave, showToast]);
+  }, [formData, listing, updateListing, showToast]);
 
-  const loadNeighborhoodTemplate = useCallback(() => {
-    handleInputChange('Description - Neighborhood', NEIGHBORHOOD_TEMPLATE);
-  }, [handleInputChange]);
+  const loadNeighborhoodTemplate = useCallback(async () => {
+    // Get ZIP code from form data or listing
+    const zipCode = formData['Location - Zip Code'] || listing?.['Location - Zip Code'];
+
+    if (!zipCode) {
+      showToast('Missing ZIP code', 'Please add a ZIP code first to load the neighborhood template', 'error');
+      return;
+    }
+
+    setIsLoadingNeighborhood(true);
+    try {
+      const neighborhood = await getNeighborhoodByZipCode(zipCode);
+
+      if (neighborhood && neighborhood.description) {
+        handleInputChange('Description - Neighborhood', neighborhood.description);
+        showToast('Template loaded!', `Loaded description for ${neighborhood.neighborhoodName || 'neighborhood'}`);
+      } else {
+        // Fall back to static template if no neighborhood found
+        handleInputChange('Description - Neighborhood', NEIGHBORHOOD_TEMPLATE);
+        showToast('Default template loaded', `No specific neighborhood found for ZIP: ${zipCode}`);
+      }
+    } catch (error) {
+      console.error('[loadNeighborhoodTemplate] Error:', error);
+      showToast('Error loading template', 'Please try again', 'error');
+    } finally {
+      setIsLoadingNeighborhood(false);
+    }
+  }, [formData, listing, handleInputChange, showToast]);
 
   /**
    * Extract listing data from current form/listing for AI generation
@@ -532,6 +579,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     isLoadingBuildingAmenities,
     isLoadingRules,
     isLoadingSafetyFeatures,
+    isLoadingNeighborhood,
     isUploadingPhotos,
     toast,
     expandedSections,

@@ -93,36 +93,46 @@ const FileCheckIcon = () => (
 );
 
 export default function NavigationHeader({ activeTab, onTabChange, counts, onBackClick }) {
-  const tabs = [
+  // Define all tabs with visibility condition
+  // Tabs for proposals, virtual meetings, and leases only show when count > 0
+  const allTabs = [
     {
       id: 'preview',
       label: 'Preview Listing',
       icon: <EyeIcon />,
+      visible: true, // Always visible
     },
     {
       id: 'manage',
       label: 'Manage Listing',
       icon: <FileTextIcon />,
+      visible: true, // Always visible
     },
     {
       id: 'proposals',
       label: 'Proposals',
       icon: <FileTextIcon />,
       badge: counts.proposals,
+      visible: counts.proposals > 0, // Only show if there are proposals
     },
     {
       id: 'virtual-meetings',
       label: 'Virtual Meetings',
       icon: <CalendarIcon />,
       badge: counts.virtualMeetings,
+      visible: counts.virtualMeetings > 0, // Only show if there are virtual meetings
     },
     {
       id: 'leases',
       label: 'Leases',
       icon: <FileCheckIcon />,
       badge: counts.leases,
+      visible: counts.leases > 0, // Only show if there are leases
     },
   ];
+
+  // Filter to only visible tabs
+  const visibleTabs = allTabs.filter((tab) => tab.visible);
 
   return (
     <div className="listing-dashboard-nav">
@@ -139,7 +149,7 @@ export default function NavigationHeader({ activeTab, onTabChange, counts, onBac
 
       {/* Tab Navigation */}
       <div className="listing-dashboard-nav__tabs">
-        {tabs.map((tab) => (
+        {visibleTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => onTabChange(tab.id)}

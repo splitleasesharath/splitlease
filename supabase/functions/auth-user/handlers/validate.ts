@@ -1,16 +1,17 @@
 /**
  * Validate Handler - Validate session and fetch user data
- * Split Lease - bubble-auth-proxy
+ * Split Lease - auth-user
  *
  * Flow:
  * 1. Get token and user_id from payload
- * 2. Fetch user data from Supabase database (validates user exists)
- * 3. Return user profile data
+ * 2. Check if user_id is a Supabase UUID (native auth) or Bubble _id (legacy)
+ * 3. For Supabase Auth: validate session token and get user from auth + database
+ * 4. For Bubble Auth: fetch user data from Supabase database by _id
+ * 5. Return user profile data
  *
- * Note: Token validation against Bubble is skipped because:
- * - The token was validated when login succeeded
- * - Bubble will reject expired tokens on actual API calls
- * - The Bubble Data API may not accept workflow-issued tokens
+ * Supports both:
+ * - Native Supabase Auth users (UUID format user IDs)
+ * - Legacy Bubble Auth users (Bubble _id format)
  *
  * NO FALLBACK - If user not found, operation fails
  *
@@ -26,6 +27,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { BubbleApiError, SupabaseSyncError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 
+// Helper to check if a string is a valid UUID format (Supabase Auth user ID)
+function isUUID(str: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
 export async function handleValidate(
   bubbleAuthBaseUrl: string,
   bubbleApiKey: string,
@@ -39,32 +46,112 @@ export async function handleValidate(
   validateRequiredFields(payload, ['token', 'user_id']);
   const { token, user_id } = payload;
 
-  console.log(`[validate] Validating session for user (bubble_id): ${user_id}`);
+  // Detect if this is a Supabase Auth user (UUID) or legacy Bubble user
+  const isSupabaseAuthUser = isUUID(user_id);
+  console.log(`[validate] User ID: ${user_id}`);
+  console.log(`[validate] Auth type: ${isSupabaseAuthUser ? 'Supabase Auth (native)' : 'Bubble (legacy)'}`);
+
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 
   try {
-    // Token validation against Bubble Data API is skipped because:
-    // 1. Workflow-issued tokens may not work with Data API privacy rules
-    // 2. The token was already validated when login succeeded
-    // 3. Bubble will reject expired tokens on actual API calls
-    // 4. We verify the user exists in Supabase below
-    console.log(`[validate] Skipping Bubble token validation (trusting login-issued token)`);
+    // Handle Supabase Auth users (native authentication)
+    if (isSupabaseAuthUser) {
+      console.log(`[validate] Validating Supabase Auth session...`);
+
+      // Validate the token by getting the user from Supabase Auth
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+
+      if (authError || !authUser) {
+        console.error(`[validate] Supabase Auth validation failed:`, authError);
+        throw new BubbleApiError('Invalid or expired session', 401, authError);
+      }
+
+      console.log(`[validate] ✅ Supabase Auth session valid for: ${authUser.email}`);
+
+      // Try to find user in the user table by email
+      const { data: userData, error: userError } = await supabase
+        .from('user')
+        .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs"')
+        .eq('email', authUser.email)
+        .maybeSingle();
+
+      if (userError) {
+        console.error(`[validate] Error querying user table:`, userError);
+      }
+
+      // Build user data from Supabase Auth + user table (if found)
+      const userMetadata = authUser.user_metadata || {};
+
+      // If user found in user table, merge data
+      if (userData) {
+        console.log(`[validate] Found user in database: ${userData['Name - First'] || userData.email}`);
+
+        let profilePhoto = userData['Profile Photo'];
+        if (profilePhoto && profilePhoto.startsWith('//')) {
+          profilePhoto = 'https:' + profilePhoto;
+        }
+
+        const userDataObject = {
+          userId: userData._id || user_id,
+          supabaseUserId: authUser.id,
+          firstName: userData['Name - First'] || userMetadata.first_name || null,
+          fullName: userData['Name - Full'] || userMetadata.full_name || null,
+          email: userData['email'] || userData['email as text'] || authUser.email,
+          profilePhoto: profilePhoto || null,
+          userType: userData['Type - User Current'] || userMetadata.user_type || null,
+          accountHostId: userData['Account - Host / Landlord'] || null,
+          aboutMe: userData['About Me / Bio'] || null,
+          needForSpace: userData['need for Space'] || null,
+          specialNeeds: userData['special needs'] || null
+        };
+
+        console.log(`[validate] ✅ Validation complete (Supabase Auth + DB)`);
+        console.log(`[validate]    User: ${userDataObject.firstName || userDataObject.email}`);
+        console.log(`[validate]    Type: ${userDataObject.userType}`);
+        console.log(`[validate] ========== VALIDATION COMPLETE ==========`);
+
+        return userDataObject;
+      }
+
+      // User not in user table yet - return data from Supabase Auth only
+      console.log(`[validate] User not found in database, using Supabase Auth data`);
+
+      const userDataObject = {
+        userId: user_id,
+        supabaseUserId: authUser.id,
+        firstName: userMetadata.first_name || null,
+        fullName: userMetadata.full_name || null,
+        email: authUser.email,
+        profilePhoto: null,
+        userType: userMetadata.user_type || null,
+        accountHostId: null,
+        aboutMe: null,
+        needForSpace: null,
+        specialNeeds: null
+      };
+
+      console.log(`[validate] ✅ Validation complete (Supabase Auth only)`);
+      console.log(`[validate]    Email: ${userDataObject.email}`);
+      console.log(`[validate]    Type: ${userDataObject.userType}`);
+      console.log(`[validate] ========== VALIDATION COMPLETE ==========`);
+
+      return userDataObject;
+    }
+
+    // Handle legacy Bubble Auth users
+    console.log(`[validate] Validating legacy Bubble session...`);
     console.log(`[validate] Token present: ${token ? 'yes' : 'no'}`);
 
-    // Step 1: Fetch user data from Supabase (validates user exists)
-    console.log(`[validate] Fetching user data from Supabase...`);
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
-
-    // Query by bubble_id since that's what Bubble login returns and stores in browser
+    // Query by _id (the primary key stored in browser after login/signup)
     const { data: userData, error: userError } = await supabase
       .from('user')
-      .select('_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord"')
-      .eq('bubble_id', user_id)
+      .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs"')
+      .eq('_id', user_id)
       .single();
 
     if (userError) {
@@ -73,11 +160,11 @@ export async function handleValidate(
     }
 
     if (!userData) {
-      console.error(`[validate] User not found in Supabase by bubble_id: ${user_id}`);
-      throw new SupabaseSyncError(`User not found with bubble_id: ${user_id}`);
+      console.error(`[validate] User not found in Supabase by _id: ${user_id}`);
+      throw new SupabaseSyncError(`User not found with _id: ${user_id}`);
     }
 
-    // Step 2: Format user data
+    // Format user data
     console.log(`[validate] User found: ${userData['Name - First']}`);
 
     // Handle protocol-relative URLs for profile photos
@@ -96,10 +183,13 @@ export async function handleValidate(
       email: userEmail,
       profilePhoto: profilePhoto || null,
       userType: userData['Type - User Current'] || null,
-      accountHostId: userData['Account - Host / Landlord'] || null
+      accountHostId: userData['Account - Host / Landlord'] || null,
+      aboutMe: userData['About Me / Bio'] || null,
+      needForSpace: userData['need for Space'] || null,
+      specialNeeds: userData['special needs'] || null
     };
 
-    console.log(`[validate] ✅ Validation complete`);
+    console.log(`[validate] ✅ Validation complete (Bubble legacy)`);
     console.log(`[validate]    User: ${userDataObject.firstName}`);
     console.log(`[validate]    Type: ${userDataObject.userType}`);
     console.log(`[validate] ========== VALIDATION COMPLETE ==========`);

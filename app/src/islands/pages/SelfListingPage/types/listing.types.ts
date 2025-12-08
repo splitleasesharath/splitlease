@@ -139,6 +139,9 @@ export interface PhotoData {
   file?: File;
   caption?: string;
   displayOrder: number;
+  storagePath?: string; // Supabase storage path for deletion
+  isUploading?: boolean; // Track upload state
+  uploadError?: string; // Track upload errors
 }
 
 export interface Photos {

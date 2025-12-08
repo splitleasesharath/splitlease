@@ -102,6 +102,10 @@ export function checkSplitLeaseCookies() {
  * Lightweight authentication status check
  * Checks auth state (not tokens) and validates session
  *
+ * Supports both:
+ * - Supabase Auth sessions (native signup)
+ * - Legacy Bubble auth (tokens in localStorage)
+ *
  * No fallback mechanisms - returns boolean directly
  * On failure: returns false without fallback logic
  *
@@ -127,7 +131,37 @@ export async function checkAuthStatus() {
     return true;
   }
 
-  // Check auth state (not tokens directly)
+  // Check Supabase Auth session (for native Supabase signups)
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (session && !error) {
+      console.log('✅ User authenticated via Supabase Auth session');
+      console.log('   User ID:', session.user?.id);
+      console.log('   Email:', session.user?.email);
+
+      // Sync Supabase session to our storage for consistency
+      const userId = session.user?.user_metadata?.user_id || session.user?.id;
+      const userType = session.user?.user_metadata?.user_type;
+
+      setSecureAuthToken(session.access_token);
+      if (userId) {
+        setSecureSessionId(userId);
+        setAuthState(true, userId);
+      }
+      if (userType) {
+        setSecureUserType(userType);
+      }
+
+      isUserLoggedInState = true;
+      return true;
+    }
+  } catch (err) {
+    console.log('⚠️ Supabase session check failed:', err.message);
+    // Continue to check legacy auth
+  }
+
+  // Check auth state (not tokens directly) - legacy Bubble auth
   const authState = getAuthState();
 
   if (authState) {
@@ -135,7 +169,7 @@ export async function checkAuthStatus() {
     const hasTokens = await hasValidTokens();
 
     if (hasTokens) {
-      console.log('✅ User authenticated via secure storage');
+      console.log('✅ User authenticated via secure storage (legacy)');
       isUserLoggedInState = true;
       return true;
     }
@@ -441,25 +475,68 @@ export async function loginUser(email, password) {
       };
     }
 
-    // Store token and user_id in secure storage
-    setAuthToken(data.data.token);
-    setSessionId(data.data.user_id);
+    // Extract Supabase session data (login now returns same format as signup)
+    const {
+      access_token,
+      refresh_token,
+      expires_in,
+      user_id,
+      host_account_id,
+      guest_account_id,
+      supabase_user_id,
+      user_type
+    } = data.data;
+
+    // Set Supabase session using the client
+    // This stores the session in localStorage and enables authenticated requests
+    if (access_token && refresh_token) {
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token,
+        refresh_token
+      });
+
+      if (sessionError) {
+        console.error('❌ Failed to set Supabase session:', sessionError.message);
+        // Continue anyway - tokens are still valid, just not in client state
+      } else {
+        console.log('✅ Supabase session set successfully');
+      }
+    }
+
+    // Store access_token as auth token for backward compatibility
+    setAuthToken(access_token);
+    setSessionId(user_id);
 
     // Set auth state with user ID (public, non-sensitive)
-    setAuthState(true, data.data.user_id);
+    setAuthState(true, user_id);
+
+    // Store user type
+    if (user_type) {
+      setUserType(user_type);
+    }
 
     // Update login state
     isUserLoggedInState = true;
 
-    console.log('✅ Login successful');
-    console.log('   User ID:', data.data.user_id);
-    console.log('   User Email:', email);
-    console.log('   Token expires in:', data.data.expires, 'seconds');
+    console.log('✅ Login successful (Supabase Auth)');
+    console.log('   User ID (_id):', user_id);
+    console.log('   Supabase Auth ID:', supabase_user_id);
+    console.log('   User Type:', user_type);
+    console.log('   Session expires in:', expires_in, 'seconds');
+
+    // Store Supabase user ID for reference
+    if (supabase_user_id) {
+      localStorage.setItem('splitlease_supabase_user_id', supabase_user_id);
+    }
 
     return {
       success: true,
-      user_id: data.data.user_id,
-      expires: data.data.expires
+      user_id: user_id,
+      host_account_id: host_account_id,
+      guest_account_id: guest_account_id,
+      supabase_user_id: supabase_user_id,
+      user_type: user_type,
+      expires_in: expires_in
     };
 
   } catch (error) {
@@ -473,11 +550,11 @@ export async function loginUser(email, password) {
 
 /**
  * Sign up new user via Supabase Edge Function (auth-user)
- * Stores token and user_id in localStorage on success
+ * Uses Supabase Auth natively - stores session tokens for authentication
  * Automatically logs in the user after successful signup
  *
- * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
- * API key is stored server-side in Supabase Secrets
+ * ✅ MIGRATED TO SUPABASE AUTH: No longer uses Bubble for signup
+ * Creates user in Supabase Auth + public.user + account_host + account_guest
  *
  * @param {string} email - User email
  * @param {string} password - User password
@@ -488,10 +565,10 @@ export async function loginUser(email, password) {
  * @param {string} additionalData.userType - 'Host' or 'Guest'
  * @param {string} additionalData.birthDate - ISO date string (YYYY-MM-DD)
  * @param {string} additionalData.phoneNumber - User's phone number
- * @returns {Promise<Object>} Response object with status, token, user_id, or error
+ * @returns {Promise<Object>} Response object with status, user_id, or error
  */
 export async function signupUser(email, password, retype, additionalData = null) {
-  console.log('📝 Attempting signup via Edge Function for:', email);
+  console.log('📝 Attempting signup via Supabase Auth for:', email);
 
   // Client-side validation
   if (!email || !password || !retype) {
@@ -541,7 +618,6 @@ export async function signupUser(email, password, retype, additionalData = null)
       console.error('   Error context:', error.context);
 
       // Extract detailed error from response body if available
-      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
       let errorMessage = 'Failed to create account. Please try again.';
 
       if (error.context?.body) {
@@ -558,7 +634,6 @@ export async function signupUser(email, password, retype, additionalData = null)
         }
       }
 
-      // Also check if data was returned despite the error (some edge cases)
       if (data?.error) {
         errorMessage = data.error;
       }
@@ -577,32 +652,68 @@ export async function signupUser(email, password, retype, additionalData = null)
       };
     }
 
-    // Store token and user_id in secure storage
-    setAuthToken(data.data.token);
-    setSessionId(data.data.user_id);
+    // Extract Supabase session data
+    const {
+      access_token,
+      refresh_token,
+      expires_in,
+      user_id,
+      host_account_id,
+      guest_account_id,
+      supabase_user_id,
+      user_type
+    } = data.data;
+
+    // Set Supabase session using the client
+    // This stores the session in localStorage and enables authenticated requests
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token,
+      refresh_token
+    });
+
+    if (sessionError) {
+      console.error('❌ Failed to set Supabase session:', sessionError.message);
+      // Continue anyway - tokens are still valid, just not in client state
+    } else {
+      console.log('✅ Supabase session set successfully');
+    }
+
+    // Store access_token as auth token for backward compatibility with existing code
+    setAuthToken(access_token);
+    setSessionId(user_id);
 
     // Set auth state with user ID (public, non-sensitive)
-    setAuthState(true, data.data.user_id);
+    setAuthState(true, user_id);
+
+    // Store user type
+    if (user_type) {
+      setUserType(user_type);
+    }
 
     // Update login state
     isUserLoggedInState = true;
 
-    console.log('✅ Signup successful');
-    console.log('   User ID:', data.data.user_id);
-    console.log('   User Email:', email);
-    console.log('   Token expires in:', data.data.expires, 'seconds');
+    console.log('✅ Signup successful (Supabase Auth)');
+    console.log('   User ID (_id):', user_id);
+    console.log('   Supabase Auth ID:', supabase_user_id);
+    console.log('   Host Account ID:', host_account_id);
+    console.log('   Guest Account ID:', guest_account_id);
+    console.log('   User Type:', user_type);
+    console.log('   Session expires in:', expires_in, 'seconds');
 
-    // Store Supabase user ID if returned (for future hybrid auth migration)
-    if (data.data.supabase_user_id) {
-      localStorage.setItem('splitlease_supabase_user_id', data.data.supabase_user_id);
-      console.log('   Supabase User ID:', data.data.supabase_user_id);
+    // Store Supabase user ID for reference
+    if (supabase_user_id) {
+      localStorage.setItem('splitlease_supabase_user_id', supabase_user_id);
     }
 
     return {
       success: true,
-      user_id: data.data.user_id,
-      expires: data.data.expires,
-      supabase_user_id: data.data.supabase_user_id || null
+      user_id: user_id,
+      host_account_id: host_account_id,
+      guest_account_id: guest_account_id,
+      supabase_user_id: supabase_user_id,
+      user_type: user_type,
+      expires_in: expires_in
     };
 
   } catch (error) {
@@ -626,8 +737,36 @@ export async function signupUser(email, password, retype, additionalData = null)
  * @returns {Promise<Object|null>} User data object with firstName, fullName, email, profilePhoto, userType, etc. or null if invalid
  */
 export async function validateTokenAndFetchUser() {
-  const token = getAuthToken();
-  const userId = getSessionId();
+  let token = getAuthToken();
+  let userId = getSessionId();
+
+  // If no legacy token/userId, check for Supabase Auth session and sync it
+  if (!token || !userId) {
+    console.log('[Auth] No legacy token found, checking for Supabase Auth session...');
+
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (session && !error) {
+        console.log('[Auth] ✅ Found Supabase Auth session, syncing to secure storage');
+        token = session.access_token;
+        userId = session.user?.user_metadata?.user_id || session.user?.id;
+
+        // Sync to secure storage for consistency
+        setSecureAuthToken(token);
+        if (userId) {
+          setSecureSessionId(userId);
+          setAuthState(true, userId);
+        }
+        const userType = session.user?.user_metadata?.user_type;
+        if (userType) {
+          setSecureUserType(userType);
+        }
+      }
+    } catch (err) {
+      console.log('[Auth] Error checking Supabase session:', err.message);
+    }
+  }
 
   if (!token || !userId) {
     console.log('[Auth] No token or user ID found - user not logged in');
@@ -703,7 +842,11 @@ export async function validateTokenAndFetchUser() {
       // Host account ID for fetching host-specific data (listings, etc.)
       accountHostId: userData.accountHostId || null,
       // Also include with Bubble field naming for backwards compatibility
-      'Account - Host / Landlord': userData.accountHostId || null
+      'Account - Host / Landlord': userData.accountHostId || null,
+      // User profile fields for proposal prefilling
+      aboutMe: userData.aboutMe || null,
+      needForSpace: userData.needForSpace || null,
+      specialNeeds: userData.specialNeeds || null
     };
 
     console.log('✅ User data validated:', userDataObject.firstName, '- Type:', userDataObject.userType);
@@ -804,6 +947,163 @@ export async function logoutUser() {
     return {
       success: true,
       message: 'Logged out locally (network error)'
+    };
+  }
+}
+
+// ============================================================================
+// Password Reset Functions
+// ============================================================================
+
+/**
+ * Request password reset email via Edge Function (auth-user)
+ * Always returns success to prevent email enumeration
+ *
+ * Uses Edge Functions - API keys stored server-side
+ *
+ * @param {string} email - User's email address
+ * @returns {Promise<Object>} Response object with success status and message
+ */
+export async function requestPasswordReset(email) {
+  console.log('🔐 Requesting password reset for:', email);
+
+  if (!email) {
+    return {
+      success: false,
+      error: 'Email is required.'
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
+      body: {
+        action: 'request_password_reset',
+        payload: {
+          email,
+          redirectTo: `${window.location.origin}/reset-password`
+        }
+      }
+    });
+
+    if (error) {
+      console.error('❌ Password reset request failed:', error);
+      // Don't expose error details - always show generic message
+      return {
+        success: true, // Return success even on error to prevent email enumeration
+        message: 'If an account with that email exists, a password reset link has been sent.'
+      };
+    }
+
+    console.log('✅ Password reset request processed');
+    return {
+      success: true,
+      message: data?.data?.message || 'If an account with that email exists, a password reset link has been sent.'
+    };
+
+  } catch (error) {
+    console.error('❌ Password reset error:', error);
+    return {
+      success: true, // Return success even on error to prevent email enumeration
+      message: 'If an account with that email exists, a password reset link has been sent.'
+    };
+  }
+}
+
+/**
+ * Update password after clicking reset link
+ * Must be called when user has active session from PASSWORD_RECOVERY event
+ *
+ * Uses Edge Functions - API keys stored server-side
+ *
+ * @param {string} newPassword - New password to set
+ * @returns {Promise<Object>} Response object with success status
+ */
+export async function updatePassword(newPassword) {
+  console.log('🔐 Updating password...');
+
+  if (!newPassword) {
+    return {
+      success: false,
+      error: 'New password is required.'
+    };
+  }
+
+  if (newPassword.length < 4) {
+    return {
+      success: false,
+      error: 'Password must be at least 4 characters long.'
+    };
+  }
+
+  // Get current session (from PASSWORD_RECOVERY event)
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    console.error('❌ No active session for password update');
+    return {
+      success: false,
+      error: 'Invalid or expired reset link. Please request a new password reset.'
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('auth-user', {
+      body: {
+        action: 'update_password',
+        payload: {
+          password: newPassword,
+          access_token: session.access_token
+        }
+      }
+    });
+
+    if (error) {
+      console.error('❌ Password update failed:', error);
+
+      // Extract detailed error from response body if available
+      let errorMessage = 'Failed to update password. Please try again.';
+
+      if (error.context?.body) {
+        try {
+          const errorBody = typeof error.context.body === 'string'
+            ? JSON.parse(error.context.body)
+            : error.context.body;
+          if (errorBody?.error) {
+            errorMessage = errorBody.error;
+          }
+        } catch (parseErr) {
+          // Silent - use default message
+        }
+      }
+
+      return {
+        success: false,
+        error: errorMessage
+      };
+    }
+
+    if (!data.success && data.error) {
+      return {
+        success: false,
+        error: data.error
+      };
+    }
+
+    console.log('✅ Password updated successfully');
+
+    // Clear existing auth data - user should log in with new password
+    clearAuthData();
+
+    return {
+      success: true,
+      message: data?.data?.message || 'Password updated successfully.'
+    };
+
+  } catch (error) {
+    console.error('❌ Password update error:', error);
+    return {
+      success: false,
+      error: 'Network error. Please check your connection and try again.'
     };
   }
 }

@@ -2,19 +2,22 @@
  * Auth User - Authentication Router
  * Split Lease - Edge Function
  *
- * Routes authentication requests to Bubble.io auth workflows
+ * Routes authentication requests to appropriate handlers
  * NO USER AUTHENTICATION REQUIRED - These ARE the auth endpoints
  *
  * Supported Actions:
- * - login: User login (email/password)
- * - signup: New user registration
- * - logout: User logout (invalidate token)
- * - validate: Validate token and fetch user data
+ * - login: User login (email/password) - via Supabase Auth (native)
+ * - signup: New user registration - via Supabase Auth (native)
+ * - logout: User logout (invalidate token) - via Bubble (legacy)
+ * - validate: Validate token and fetch user data - via Bubble + Supabase
+ * - request_password_reset: Send password reset email - via Supabase Auth (native)
+ * - update_password: Update password after reset link clicked - via Supabase Auth (native)
  *
  * Security:
  * - NO user authentication on these endpoints (you can't require auth to log in!)
- * - API key stored server-side in Supabase Secrets
+ * - API keys stored server-side in Supabase Secrets
  * - Validates request format only
+ * - Password reset always returns success to prevent email enumeration
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -27,6 +30,8 @@ import { handleLogin } from './handlers/login.ts';
 import { handleSignup } from './handlers/signup.ts';
 import { handleLogout } from './handlers/logout.ts';
 import { handleValidate } from './handlers/validate.ts';
+import { handleRequestPasswordReset } from './handlers/resetPassword.ts';
+import { handleUpdatePassword } from './handlers/updatePassword.ts';
 
 console.log('[auth-user] Edge Function started');
 
@@ -61,37 +66,41 @@ Deno.serve(async (req) => {
     const { action, payload } = body;
 
     // Validate action is supported
-    const allowedActions = ['login', 'signup', 'logout', 'validate'];
+    const allowedActions = ['login', 'signup', 'logout', 'validate', 'request_password_reset', 'update_password'];
     validateAction(action, allowedActions);
 
     console.log(`[auth-user] Action: ${action}`);
 
-    // Get Bubble auth configuration from secrets
+    // Get configuration from secrets
     const bubbleAuthBaseUrl = Deno.env.get('BUBBLE_API_BASE_URL');
     const bubbleApiKey = Deno.env.get('BUBBLE_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!bubbleAuthBaseUrl || !bubbleApiKey) {
-      throw new Error('Bubble API configuration missing in secrets');
-    }
-
+    // Supabase config is required for all actions
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Supabase configuration missing in secrets');
     }
 
-    console.log(`[auth-user] Using Bubble Auth Base URL: ${bubbleAuthBaseUrl}`);
+    // Bubble config is required for logout, validate (but NOT login/signup - now use Supabase Auth)
+    if ((action === 'logout' || action === 'validate') && (!bubbleAuthBaseUrl || !bubbleApiKey)) {
+      throw new Error('Bubble API configuration missing in secrets');
+    }
+
+    console.log(`[auth-user] Action: ${action}, Supabase URL: ${supabaseUrl}`);
 
     // Route to appropriate handler
     let result;
 
     switch (action) {
       case 'login':
-        result = await handleLogin(bubbleAuthBaseUrl, bubbleApiKey, payload);
+        // Login now uses Supabase Auth natively (no Bubble dependency)
+        result = await handleLogin(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       case 'signup':
-        result = await handleSignup(bubbleAuthBaseUrl, bubbleApiKey, supabaseUrl, supabaseServiceKey, payload);
+        // Signup now uses Supabase Auth natively (no Bubble dependency)
+        result = await handleSignup(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       case 'logout':
@@ -100,6 +109,16 @@ Deno.serve(async (req) => {
 
       case 'validate':
         result = await handleValidate(bubbleAuthBaseUrl, bubbleApiKey, supabaseUrl, supabaseServiceKey, payload);
+        break;
+
+      case 'request_password_reset':
+        // Password reset request uses Supabase Auth natively (no Bubble dependency)
+        result = await handleRequestPasswordReset(supabaseUrl, supabaseServiceKey, payload);
+        break;
+
+      case 'update_password':
+        // Password update uses Supabase Auth natively (no Bubble dependency)
+        result = await handleUpdatePassword(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       default:

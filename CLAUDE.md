@@ -68,7 +68,7 @@ Frontend (app/) ──> Page Components ──> Shared Components
 
 ### /supabase
 [INTENT]: Backend infrastructure with Edge Functions and database configuration
-[EDGE_FUNCTIONS]: bubble-proxy, bubble-auth-proxy, ai-gateway, ai-signup-guest
+[EDGE_FUNCTIONS]: bubble-proxy, auth-user, ai-gateway, ai-signup-guest
 [SHARED_UTILITIES]: cors.ts, errors.ts, validation.ts, bubbleSync.ts, openai.ts, types.ts
 
 ### /docs
@@ -116,10 +116,10 @@ Frontend (app/) ──> Page Components ──> Shared Components
 [HANDLERS]: listing.ts, messaging.ts, photos.ts, referral.ts, signup.ts
 [DEPENDENCIES]: _shared/bubbleSync, _shared/cors, _shared/validation
 
-### supabase/functions/bubble-auth-proxy
-[INTENT]: Authentication proxy handling login, signup, logout, and token validation
+### supabase/functions/auth-user
+[INTENT]: Native Supabase Auth for login/signup, with legacy Bubble support for logout/validate
 [HANDLERS]: login.ts, signup.ts, logout.ts, validate.ts
-[DEPENDENCIES]: _shared/bubbleSync, _shared/cors
+[DEPENDENCIES]: Supabase Auth (native), _shared/cors, _shared/errors
 
 ### supabase/functions/ai-gateway
 [INTENT]: AI service gateway routing requests to completion or streaming handlers
@@ -142,15 +142,11 @@ Frontend (app/) ──> Page Components ──> Shared Components
 
 ### BUBBLE_API_BASE_URL
 [VALUE]: https://app.split.lease/version-test/api/1.1
-[USED_BY]: bubble-proxy, bubble-auth-proxy
+[USED_BY]: bubble-proxy, auth-user (logout/validate only)
 
 ### BUBBLE_API_KEY
 [VALUE]: See supabase/SECRETS_SETUP.md
 [USED_BY]: All Bubble API calls
-
-### BUBBLE_AUTH_BASE_URL
-[VALUE]: https://upgradefromstr.bubbleapps.io/api/1.1
-[USED_BY]: bubble-auth-proxy
 
 ### SUPABASE_SERVICE_ROLE_KEY
 [VALUE]: From Supabase Dashboard
@@ -272,7 +268,7 @@ Frontend (app/) ──> Page Components ──> Shared Components
 [STATUS]: In progress
 
 ### Completed Migrations
-[AUTH]: login, signup, logout, validate via bubble-auth-proxy
+[AUTH]: login, signup via native Supabase Auth (auth-user), logout/validate via Bubble (legacy)
 [API_PROXY]: General Bubble API calls via bubble-proxy
 [AI_GATEWAY]: AI service gateway via ai-gateway
 
@@ -349,8 +345,8 @@ Frontend (app/) ──> Page Components ──> Shared Components
 [CHECK_3]: Test locally: supabase functions serve
 
 ### Authentication Issues
-[CHECK_1]: Check bubble-auth-proxy Edge Function logs
-[CHECK_2]: Verify BUBBLE_AUTH_BASE_URL secret is correct
+[CHECK_1]: Check auth-user Edge Function logs
+[CHECK_2]: Verify Supabase Auth configuration in Dashboard
 [CHECK_3]: Check browser console for detailed error messages
 
 ### Database Connection
