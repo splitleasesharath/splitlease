@@ -737,8 +737,36 @@ export async function signupUser(email, password, retype, additionalData = null)
  * @returns {Promise<Object|null>} User data object with firstName, fullName, email, profilePhoto, userType, etc. or null if invalid
  */
 export async function validateTokenAndFetchUser() {
-  const token = getAuthToken();
-  const userId = getSessionId();
+  let token = getAuthToken();
+  let userId = getSessionId();
+
+  // If no legacy token/userId, check for Supabase Auth session and sync it
+  if (!token || !userId) {
+    console.log('[Auth] No legacy token found, checking for Supabase Auth session...');
+
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+
+      if (session && !error) {
+        console.log('[Auth] ✅ Found Supabase Auth session, syncing to secure storage');
+        token = session.access_token;
+        userId = session.user?.user_metadata?.user_id || session.user?.id;
+
+        // Sync to secure storage for consistency
+        setSecureAuthToken(token);
+        if (userId) {
+          setSecureSessionId(userId);
+          setAuthState(true, userId);
+        }
+        const userType = session.user?.user_metadata?.user_type;
+        if (userType) {
+          setSecureUserType(userType);
+        }
+      }
+    } catch (err) {
+      console.log('[Auth] Error checking Supabase session:', err.message);
+    }
+  }
 
   if (!token || !userId) {
     console.log('[Auth] No token or user ID found - user not logged in');

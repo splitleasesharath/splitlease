@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2025-12-07T23:36:51.271Z
+# Generated: 2025-12-08T00:42:42.689Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -27,6 +27,11 @@
 
 # /help-center/:category → help-center-category.html (wildcard only, base handled separately)
 /help-center/*  /_internal/help-center-category-view  200
+
+# /host-proposals → host-proposals.html
+/host-proposals  /_internal/host-proposals-view  200
+/host-proposals/  /_internal/host-proposals-view  200
+/host-proposals/*  /_internal/host-proposals-view  200
 
 # ===== STATIC PAGES =====
 

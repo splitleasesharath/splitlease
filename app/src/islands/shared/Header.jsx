@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 import { getUserType as getStoredUserType } from '../../lib/secureStorage.js';
+import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import SignUpLoginModal from './SignUpLoginModal.jsx';
@@ -25,18 +26,32 @@ export default function Header({ autoShowLogin = false }) {
   const [showListPropertyModal, setShowListPropertyModal] = useState(false);
 
   // Lazy-load token validation after page is completely loaded
-  // Only runs if a token exists in sessionStorage
+  // Checks both legacy tokens and Supabase Auth sessions
   useEffect(() => {
     const validateAuth = async () => {
-      // Check if token exists first - skip validation if no token
+      // Check if legacy token exists
       const token = getAuthToken();
+
+      // Also check for Supabase Auth session (for native auth users)
+      let hasSupabaseSession = false;
       if (!token) {
-        console.log('[Header] No token found - skipping validation');
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          hasSupabaseSession = !!session;
+        } catch (err) {
+          console.log('[Header] Error checking Supabase session:', err.message);
+        }
+      }
+
+      if (!token && !hasSupabaseSession) {
+        console.log('[Header] No token or Supabase session found - skipping validation');
         setAuthChecked(true);
         return;
       }
 
-      // Token exists - wait for page to be completely loaded before validating
+      console.log(`[Header] Auth found (legacy token: ${!!token}, Supabase session: ${hasSupabaseSession}) - validating...`);
+
+      // Token or session exists - wait for page to be completely loaded before validating
       if (document.readyState !== 'complete') {
         window.addEventListener('load', () => {
           performAuthValidation();
