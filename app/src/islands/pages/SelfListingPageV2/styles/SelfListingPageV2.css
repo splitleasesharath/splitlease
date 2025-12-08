@@ -2095,8 +2095,141 @@
 }
 
 .modal-actions .btn-next {
-  max-width: 200px;
+  max-width: 250px;
   margin: 0 auto;
+}
+
+/* Phone Input Section */
+.phone-input-section {
+  text-align: left;
+  margin-bottom: 20px;
+}
+
+.phone-input-section label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--v2-text-main);
+  margin-bottom: 8px;
+}
+
+.phone-input-row {
+  display: flex;
+  gap: 10px;
+}
+
+.phone-input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 2px solid var(--v2-border);
+  border-radius: 10px;
+  font-size: 1rem;
+  color: var(--v2-text-main);
+  background: white;
+  transition: border-color 0.2s;
+}
+
+.phone-input:focus {
+  outline: none;
+  border-color: var(--v2-primary);
+}
+
+.phone-input::placeholder {
+  color: #9ca3af;
+}
+
+.btn-send-link {
+  padding: 12px 20px;
+  background: var(--v2-primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.btn-send-link:hover:not(:disabled) {
+  background: var(--v2-primary-light);
+}
+
+.btn-send-link:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.phone-hint {
+  font-size: 0.75rem;
+  color: var(--v2-primary);
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* QR Code Loading State */
+.qr-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px;
+  gap: 15px;
+}
+
+.qr-loading .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--v2-border);
+  border-top-color: var(--v2-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.qr-loading p {
+  margin: 0;
+  color: var(--v2-text-sub);
+  font-size: 0.85rem;
+}
+
+/* QR Code Error State */
+.qr-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+}
+
+.qr-error p {
+  margin: 0;
+  color: var(--v2-text-sub);
+}
+
+.btn-retry {
+  padding: 8px 16px;
+  background: var(--v2-primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-retry:hover {
+  background: var(--v2-primary-light);
+}
+
+/* Disabled button states */
+.btn-copy:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Mobile adjustments for Continue on Phone Modal */
@@ -2112,11 +2245,13 @@
     height: 100px;
   }
 
-  .link-copy-row {
+  .link-copy-row,
+  .phone-input-row {
     flex-direction: column;
   }
 
-  .btn-copy {
+  .btn-copy,
+  .btn-send-link {
     width: 100%;
   }
 }

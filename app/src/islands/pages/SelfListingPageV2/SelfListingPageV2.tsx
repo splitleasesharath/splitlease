@@ -13,13 +13,15 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import Header from '../../shared/Header.jsx';
 import Footer from '../../shared/Footer.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import Toast, { useToast } from '../../shared/Toast.jsx';
 import { HostScheduleSelector } from '../../shared/HostScheduleSelector/HostScheduleSelector.jsx';
-import { checkAuthStatus } from '../../../lib/auth.js';
-import { createListing } from '../../../lib/listingService.js';
+import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
+import { createListing, saveDraft } from '../../../lib/listingService.js';
+import { supabase } from '../../../lib/supabase.js';
 import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode } from '../../../lib/nycZipCodes';
 import './styles/SelfListingPageV2.css';
 import '../../../styles/components/toast.css';
@@ -171,6 +173,11 @@ export function SelfListingPageV2() {
 
   // Continue on Phone modal state
   const [showContinueOnPhoneModal, setShowContinueOnPhoneModal] = useState(false);
+  const [continueOnPhoneLink, setContinueOnPhoneLink] = useState<string | null>(null);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [userPhoneNumber, setUserPhoneNumber] = useState<string | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [draftListingId, setDraftListingId] = useState<string | null>(null);
 
   // Toast notifications
   const { toasts, showToast, removeToast } = useToast();
@@ -206,9 +213,90 @@ export function SelfListingPageV2() {
     }));
   }, [formData, currentStep]);
 
-  // Check auth status on mount
+  // Check auth status on mount and fetch user phone if logged in
   useEffect(() => {
-    checkAuthStatus().then(setIsLoggedIn);
+    const initAuth = async () => {
+      const loggedIn = await checkAuthStatus();
+      setIsLoggedIn(loggedIn);
+
+      if (loggedIn) {
+        try {
+          const userData = await validateTokenAndFetchUser();
+          if (userData?.phoneNumber) {
+            setUserPhoneNumber(userData.phoneNumber);
+            setPhoneNumber(userData.phoneNumber);
+          }
+        } catch (err) {
+          console.log('Could not fetch user data for phone number');
+        }
+      }
+    };
+    initAuth();
+  }, []);
+
+  // Handle URL parameters for continuing from another device
+  useEffect(() => {
+    const loadDraftFromUrl = async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const draftId = urlParams.get('draft');
+      const sessionId = urlParams.get('session');
+      const step = urlParams.get('step');
+
+      if (draftId) {
+        // Try to load from Supabase listing_drafts table
+        try {
+          const { data, error } = await supabase
+            .from('listing_drafts')
+            .select('form_data, current_step')
+            .eq('id', draftId)
+            .single();
+
+          if (!error && data) {
+            setFormData(data.form_data);
+            if (data.form_data.nightlyPrices) {
+              nightlyPricesRef.current = data.form_data.nightlyPrices;
+            }
+            setCurrentStep(data.current_step || 7);
+            setDraftListingId(draftId);
+          }
+        } catch (err) {
+          console.log('Could not load draft from database:', err);
+        }
+      } else if (sessionId) {
+        // Try to load from localStorage (fallback)
+        const storedData = localStorage.getItem(`${STORAGE_KEY}_session_${sessionId}`);
+        if (storedData) {
+          try {
+            const parsed = JSON.parse(storedData);
+            if (parsed.formData) {
+              setFormData(parsed.formData);
+              if (parsed.formData.nightlyPrices) {
+                nightlyPricesRef.current = parsed.formData.nightlyPrices;
+              }
+            }
+            setCurrentStep(parsed.currentStep || 7);
+            setDraftListingId(sessionId);
+          } catch (err) {
+            console.log('Could not parse localStorage draft:', err);
+          }
+        }
+      }
+
+      // If step parameter is provided, go to that step
+      if (step) {
+        const stepNum = parseInt(step, 10);
+        if (stepNum >= 1 && stepNum <= 8) {
+          setCurrentStep(stepNum);
+        }
+      }
+
+      // Clear the URL parameters to avoid confusion on refresh
+      if (draftId || sessionId) {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    };
+
+    loadDraftFromUrl();
   }, []);
 
   // Calculate nightly prices based on base rate and discount
@@ -536,26 +624,109 @@ export function SelfListingPageV2() {
     }
   };
 
-  // Generate a shareable link for continuing on phone
-  const generateContinueLink = () => {
-    // Save current progress to localStorage with a unique session ID
-    const sessionId = `sl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const continueData = {
-      formData,
-      currentStep,
-      sessionId,
-      createdAt: new Date().toISOString(),
-    };
-    localStorage.setItem(`${STORAGE_KEY}_session_${sessionId}`, JSON.stringify(continueData));
+  // Save draft to Supabase draft_listings table and generate continue link
+  const saveDraftAndGenerateLink = async () => {
+    setIsSavingDraft(true);
+    try {
+      // Get current Supabase Auth user
+      const { data: { user } } = await supabase.auth.getUser();
 
-    // Return the URL with session parameter
-    const baseUrl = window.location.origin + window.location.pathname;
-    return `${baseUrl}?session=${sessionId}`;
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Prepare draft data
+      const draftData = {
+        user_id: user.id,
+        form_data: {
+          ...formData,
+          nightlyPrices: nightlyPricesRef.current,
+        },
+        current_step: 7, // Photos step
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      let savedDraftId = draftListingId;
+
+      if (draftListingId) {
+        // Update existing draft
+        const { error } = await supabase
+          .from('listing_drafts')
+          .update({
+            form_data: draftData.form_data,
+            current_step: draftData.current_step,
+            updated_at: draftData.updated_at,
+          })
+          .eq('id', draftListingId);
+
+        if (error) throw error;
+      } else {
+        // Create new draft
+        const { data, error } = await supabase
+          .from('listing_drafts')
+          .insert(draftData)
+          .select('id')
+          .single();
+
+        if (error) throw error;
+        savedDraftId = data.id;
+        setDraftListingId(savedDraftId);
+      }
+
+      // Generate the continue link with draft ID and photos step
+      const baseUrl = window.location.origin + window.location.pathname;
+      const link = `${baseUrl}?draft=${savedDraftId}&step=7`;
+      setContinueOnPhoneLink(link);
+
+      return link;
+    } catch (error: any) {
+      console.error('Failed to save draft listing:', error);
+
+      // If the listing_drafts table doesn't exist, fall back to localStorage-based approach
+      if (error?.message?.includes('listing_drafts') || error?.code === '42P01') {
+        console.log('Falling back to localStorage-based draft saving');
+        // Generate a unique session ID
+        const sessionId = `draft_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+        // Save to localStorage
+        const draftData = {
+          formData: {
+            ...formData,
+            nightlyPrices: nightlyPricesRef.current,
+          },
+          currentStep: 7,
+          createdAt: new Date().toISOString(),
+        };
+        localStorage.setItem(`${STORAGE_KEY}_session_${sessionId}`, JSON.stringify(draftData));
+
+        // Generate link with session ID
+        const baseUrl = window.location.origin + window.location.pathname;
+        const link = `${baseUrl}?session=${sessionId}`;
+        setContinueOnPhoneLink(link);
+        setDraftListingId(sessionId);
+
+        return link;
+      }
+
+      showToast('Failed to save progress. Please try again.', 'error', 4000);
+      return null;
+    } finally {
+      setIsSavingDraft(false);
+    }
   };
 
   // Handle Continue on Phone button click
-  const handleContinueOnPhone = () => {
+  const handleContinueOnPhone = async () => {
+    // Check if user is logged in - need to be logged in to save draft
+    if (!isLoggedIn) {
+      showToast('Please log in to save your progress and continue on phone', 'info', 4000);
+      setShowAuthModal(true);
+      return;
+    }
     setShowContinueOnPhoneModal(true);
+    // Start saving draft immediately when modal opens
+    await saveDraftAndGenerateLink();
   };
 
   // Auth success handler
@@ -749,9 +920,6 @@ export function SelfListingPageV2() {
       </div>
       <div className="btn-group">
         <button className="btn-next" onClick={nextStep}>Continue</button>
-        <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
-          <span className="btn-icon-phone">📱</span> Continue on Phone
-        </button>
       </div>
     </div>
   );
@@ -787,12 +955,7 @@ export function SelfListingPageV2() {
       </div>
       <div className="btn-group">
         <button className="btn-next" onClick={nextStep}>Continue</button>
-        <div className="btn-row-secondary">
-          <button className="btn-back" onClick={prevStep}>Back</button>
-          <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
-            <span className="btn-icon-phone">📱</span> Continue on Phone
-          </button>
-        </div>
+        <button className="btn-back" onClick={prevStep}>Back</button>
       </div>
     </div>
   );
@@ -913,12 +1076,7 @@ export function SelfListingPageV2() {
 
         <div className="btn-group">
           <button className="btn-next" onClick={nextStep}>Continue</button>
-          <div className="btn-row-secondary">
-            <button className="btn-back" onClick={prevStep}>Back</button>
-            <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
-              <span className="btn-icon-phone">📱</span> Continue on Phone
-            </button>
-          </div>
+          <button className="btn-back" onClick={prevStep}>Back</button>
         </div>
       </div>
     );
@@ -1033,12 +1191,7 @@ export function SelfListingPageV2() {
 
         <div className="btn-group">
           <button className="btn-next" onClick={nextStep}>Continue</button>
-          <div className="btn-row-secondary">
-            <button className="btn-back" onClick={prevStep}>Back</button>
-            <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
-              <span className="btn-icon-phone">📱</span> Continue on Phone
-            </button>
-          </div>
+          <button className="btn-back" onClick={prevStep}>Back</button>
         </div>
       </div>
     );
@@ -1140,12 +1293,7 @@ export function SelfListingPageV2() {
 
       <div className="btn-group">
         <button className="btn-next" onClick={nextStep}>Continue</button>
-        <div className="btn-row-secondary">
-          <button className="btn-back" onClick={prevStep}>Back</button>
-          <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
-            <span className="btn-icon-phone">📱</span> Continue on Phone
-          </button>
-        </div>
+        <button className="btn-back" onClick={prevStep}>Back</button>
       </div>
     </div>
     );
@@ -1231,12 +1379,7 @@ export function SelfListingPageV2() {
 
       <div className="btn-group">
         <button className="btn-next" onClick={nextStep}>Continue</button>
-        <div className="btn-row-secondary">
-          <button className="btn-back" onClick={prevStep}>Back</button>
-          <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
-            <span className="btn-icon-phone">📱</span> Continue on Phone
-          </button>
-        </div>
+        <button className="btn-back" onClick={prevStep}>Back</button>
       </div>
     </div>
   );
@@ -1382,21 +1525,24 @@ export function SelfListingPageV2() {
 
   // Render Step 8: Review
   const renderStep8 = () => {
-    let price: number;
+    let priceDisplay: string;
     let freq: string;
     let schedule: string;
 
     if (formData.leaseStyle === 'nightly') {
-      price = Math.round(formData.weeklyTotal);
-      freq = 'Week';
+      // Show price range: max (night 1) to min (night 7)
+      const maxPrice = nightlyPricesRef.current[0] || formData.nightlyBaseRate;
+      const minPrice = nightlyPricesRef.current[6] || maxPrice;
+      priceDisplay = `$${minPrice} - $${maxPrice}`;
+      freq = 'Night';
       schedule = getScheduleText().text;
     } else if (formData.leaseStyle === 'weekly') {
-      price = formData.price;
+      priceDisplay = `$${formData.price}`;
       freq = formData.frequency;
       const pattern = WEEKLY_PATTERNS.find(p => p.value === formData.weeklyPattern);
       schedule = `Weekly: ${pattern?.label || formData.weeklyPattern}`;
     } else {
-      price = formData.price;
+      priceDisplay = `$${formData.price}`;
       freq = formData.frequency;
       schedule = 'Monthly Agreement';
     }
@@ -1472,7 +1618,7 @@ export function SelfListingPageV2() {
             {/* Pricing Highlight */}
             <div className="review-pricing-box">
               <div className="review-price-main">
-                <span className="review-price-amount">${price}</span>
+                <span className="review-price-amount">{priceDisplay}</span>
                 <span className="review-price-period">/ {freq}</span>
               </div>
               <div className="review-schedule-badge">{schedule}</div>
@@ -1518,55 +1664,127 @@ export function SelfListingPageV2() {
 
   // Continue on Phone Modal
   const renderContinueOnPhoneModal = () => {
-    const continueLink = generateContinueLink();
-
     const copyToClipboard = () => {
-      navigator.clipboard.writeText(continueLink).then(() => {
+      if (!continueOnPhoneLink) return;
+      navigator.clipboard.writeText(continueOnPhoneLink).then(() => {
         showToast('Link copied to clipboard!', 'success', 3000);
       }).catch(() => {
         showToast('Failed to copy link', 'error', 3000);
       });
     };
 
+    const handleCloseModal = () => {
+      setShowContinueOnPhoneModal(false);
+      setContinueOnPhoneLink(null);
+    };
+
+    const formatPhoneNumber = (value: string) => {
+      // Remove all non-digits
+      const digits = value.replace(/\D/g, '');
+      // Format as (XXX) XXX-XXXX
+      if (digits.length <= 3) return digits;
+      if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`;
+      return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`;
+    };
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const formatted = formatPhoneNumber(e.target.value);
+      setPhoneNumber(formatted);
+    };
+
+    const handleSendLink = () => {
+      // For now, just show a toast - SMS sending would require backend integration
+      const cleanPhone = phoneNumber.replace(/\D/g, '');
+      if (cleanPhone.length !== 10) {
+        showToast('Please enter a valid 10-digit phone number', 'error', 4000);
+        return;
+      }
+      showToast('Magic link will be sent to your phone shortly!', 'success', 4000);
+      // TODO: Call edge function to send SMS with continueOnPhoneLink
+    };
+
     return (
-      <div className="success-modal-overlay" onClick={() => setShowContinueOnPhoneModal(false)}>
+      <div className="success-modal-overlay" onClick={handleCloseModal}>
         <div className="continue-phone-modal" onClick={(e) => e.stopPropagation()}>
           <button
             className="modal-close-btn"
-            onClick={() => setShowContinueOnPhoneModal(false)}
+            onClick={handleCloseModal}
             aria-label="Close modal"
           >
             ×
           </button>
           <div className="continue-phone-icon">📱</div>
           <h2>Continue on Your Phone</h2>
-          <p>Your progress has been saved. Scan the QR code or copy the link below to continue on your mobile device.</p>
+          <p>
+            {isSavingDraft
+              ? 'Saving your progress...'
+              : 'Your progress has been saved! Scan the QR code or enter your phone number to receive a magic link.'}
+          </p>
 
+          {/* QR Code Section */}
           <div className="qr-placeholder">
             <div className="qr-code-box">
-              {/* Simple QR-like visual - in production, use a QR code library */}
-              <svg viewBox="0 0 100 100" className="qr-visual">
-                <rect x="10" y="10" width="25" height="25" fill="#1f2937" />
-                <rect x="65" y="10" width="25" height="25" fill="#1f2937" />
-                <rect x="10" y="65" width="25" height="25" fill="#1f2937" />
-                <rect x="40" y="40" width="20" height="20" fill="#1f2937" />
-                <rect x="15" y="15" width="15" height="15" fill="white" />
-                <rect x="70" y="15" width="15" height="15" fill="white" />
-                <rect x="15" y="70" width="15" height="15" fill="white" />
-                <rect x="20" y="20" width="5" height="5" fill="#1f2937" />
-                <rect x="75" y="20" width="5" height="5" fill="#1f2937" />
-                <rect x="20" y="75" width="5" height="5" fill="#1f2937" />
-              </svg>
-              <p className="qr-hint">Point your phone camera here</p>
+              {isSavingDraft ? (
+                <div className="qr-loading">
+                  <div className="spinner"></div>
+                  <p>Generating QR code...</p>
+                </div>
+              ) : continueOnPhoneLink ? (
+                <>
+                  <QRCodeSVG
+                    value={continueOnPhoneLink}
+                    size={140}
+                    level="M"
+                    includeMargin={true}
+                    bgColor="#ffffff"
+                    fgColor="#1f2937"
+                  />
+                  <p className="qr-hint">Scan to upload photos from your phone</p>
+                </>
+              ) : (
+                <div className="qr-error">
+                  <p>Failed to generate QR code</p>
+                  <button onClick={saveDraftAndGenerateLink} className="btn-retry">
+                    Retry
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
+          {/* Phone Number Input Section */}
+          <div className="phone-input-section">
+            <label>Or send link to your phone:</label>
+            <div className="phone-input-row">
+              <input
+                type="tel"
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                placeholder="(555) 555-5555"
+                className="phone-input"
+                maxLength={14}
+              />
+              <button
+                type="button"
+                className="btn-send-link"
+                onClick={handleSendLink}
+                disabled={isSavingDraft || !continueOnPhoneLink}
+              >
+                Send Link
+              </button>
+            </div>
+            {userPhoneNumber && phoneNumber === userPhoneNumber && (
+              <p className="phone-hint">Using your account phone number</p>
+            )}
+          </div>
+
+          {/* Copy Link Section */}
           <div className="continue-link-section">
             <label>Or copy this link:</label>
             <div className="link-copy-row">
               <input
                 type="text"
-                value={continueLink}
+                value={continueOnPhoneLink || 'Generating link...'}
                 readOnly
                 className="continue-link-input"
               />
@@ -1574,6 +1792,7 @@ export function SelfListingPageV2() {
                 type="button"
                 className="btn-copy"
                 onClick={copyToClipboard}
+                disabled={!continueOnPhoneLink}
               >
                 Copy
               </button>
@@ -1583,9 +1802,9 @@ export function SelfListingPageV2() {
           <div className="modal-actions">
             <button
               className="btn-next btn-secondary"
-              onClick={() => setShowContinueOnPhoneModal(false)}
+              onClick={handleCloseModal}
             >
-              Continue Here
+              Continue Here Instead
             </button>
           </div>
         </div>
