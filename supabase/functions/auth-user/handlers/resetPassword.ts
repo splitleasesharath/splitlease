@@ -57,8 +57,8 @@ export async function handleRequestPasswordReset(
   };
 
   try {
-    // Default redirect URL for Split Lease
-    const resetRedirectUrl = redirectTo || 'https://app.split.lease/reset-password';
+    // Default redirect URL for Split Lease (production domain is split.lease, not app.split.lease)
+    const resetRedirectUrl = redirectTo || 'https://split.lease/reset-password';
     debugInfo.redirectUrl = resetRedirectUrl;
 
     console.log(`[reset-password] Redirect URL: ${resetRedirectUrl}`);

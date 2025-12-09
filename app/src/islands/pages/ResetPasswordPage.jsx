@@ -10,12 +10,26 @@
  * 5. Password is updated via Edge Function
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { updatePassword } from '../../lib/auth.js';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import '../../styles/reset-password.css';
+
+/**
+ * Extract returnTo URL from query params
+ * Security: Only accept relative paths (starting with /) to prevent open redirects
+ */
+const getReturnToUrl = () => {
+  const params = new URLSearchParams(window.location.search);
+  const returnTo = params.get('returnTo');
+  // Validate it's a relative path (security: prevent open redirect attacks)
+  if (returnTo && returnTo.startsWith('/')) {
+    return returnTo;
+  }
+  return '/'; // Default to home
+};
 
 export default function ResetPasswordPage() {
   const [newPassword, setNewPassword] = useState('');
@@ -23,6 +37,7 @@ export default function ResetPasswordPage() {
   const [status, setStatus] = useState('loading'); // loading, ready, success, error
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [returnTo] = useState(getReturnToUrl); // Capture returnTo once on mount
 
   useEffect(() => {
     console.log('ResetPasswordPage: Initializing...');
@@ -110,6 +125,10 @@ export default function ResetPasswordPage() {
 
     if (result.success) {
       setStatus('success');
+      // Auto-redirect after showing success message
+      setTimeout(() => {
+        window.location.href = returnTo;
+      }, 2500); // 2.5 second delay to show success message
     } else {
       setError(result.error || 'Failed to update password. Please try again.');
     }
@@ -185,8 +204,9 @@ export default function ResetPasswordPage() {
             <div className="success-state">
               <div className="success-icon">&#10003;</div>
               <p className="success-message">Your password has been updated successfully!</p>
-              <a href="/signup-login" className="btn-primary">
-                Sign In
+              <p className="redirect-notice">Redirecting you back...</p>
+              <a href={returnTo} className="btn-primary">
+                Continue Now
               </a>
             </div>
           )}
