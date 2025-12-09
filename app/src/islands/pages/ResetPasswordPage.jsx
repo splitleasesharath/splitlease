@@ -27,6 +27,16 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     console.log('ResetPasswordPage: Initializing...');
 
+    // Log URL hash for debugging (don't log full token for security, just presence)
+    const hasHash = !!window.location.hash;
+    const hasToken = window.location.hash.includes('access_token');
+    const hasType = window.location.hash.includes('type=recovery');
+    console.log(`URL Check: Hash=${hasHash}, Token=${hasToken}, Type=${hasType}`);
+
+    if (!hasHash) {
+         console.warn('No URL hash found. Ensure you clicked the link from the email.');
+    }
+
     // Listen for PASSWORD_RECOVERY event from Supabase
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('Auth event:', event);
@@ -34,7 +44,7 @@ export default function ResetPasswordPage() {
       if (event === 'PASSWORD_RECOVERY') {
         console.log('PASSWORD_RECOVERY event received');
         setStatus('ready');
-      } else if (event === 'SIGNED_IN' && status === 'loading') {
+      } else if (event === 'SIGNED_IN') {
         // User might already have session from reset link
         console.log('SIGNED_IN event - user has session');
         setStatus('ready');
@@ -42,7 +52,8 @@ export default function ResetPasswordPage() {
     });
 
     // Check if we already have a session (in case event already fired)
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) console.error('Session check error:', error);
       console.log('Checking existing session:', session ? 'found' : 'none');
 
       if (session) {
@@ -53,12 +64,21 @@ export default function ResetPasswordPage() {
           setStatus((currentStatus) => {
             if (currentStatus === 'loading') {
               console.log('No session detected after timeout');
+              // If we have the token in URL but Supabase didn't pick it up, it might be an initialization race condition
+              // But we can't manually set session from hash easily without Supabase doing it.
+              
+              if (hasToken && hasType) {
+                  setError('Verifying token... If this persists, please try clicking the link again.');
+                  // Force a re-check or reload could be dangerous (loops), so just show error
+                  return 'error';
+              }
+              
               setError('Invalid or expired reset link. Please request a new password reset.');
               return 'error';
             }
             return currentStatus;
           });
-        }, 3000);
+        }, 4000); // Increased timeout to 4s
 
         return () => clearTimeout(timeoutId);
       }

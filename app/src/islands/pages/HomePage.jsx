@@ -525,6 +525,16 @@ export default function HomePage() {
   const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]);
 
+  // SAFETY NET: Check for password reset redirect
+  // If user lands on home page with recovery token, redirect to reset-password page
+  useEffect(() => {
+    if (window.location.hash && window.location.hash.includes('type=recovery')) {
+      console.log('Detected password reset token on home page, redirecting...');
+      // Preserve the hash so ResetPasswordPage can read it
+      window.location.href = `/reset-password.html${window.location.hash}`;
+    }
+  }, []);
+
   // Check authentication status on mount
   useEffect(() => {
     checkAuthStatus(); // Async function, but we don't need to wait for it
