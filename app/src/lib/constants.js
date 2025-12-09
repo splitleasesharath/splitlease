@@ -13,10 +13,10 @@
 export const AUTHORIZED_DOMAIN = 'app.split.lease';
 export const BUBBLE_API_URL = 'https://app.split.lease';
 export const SIGNUP_LOGIN_URL = 'https://app.split.lease/signup-login';
-export const SEARCH_URL = '/search.html';
+export const SEARCH_URL = '/search';
 export const VIEW_LISTING_URL = '/view-split-lease';
 export const ACCOUNT_PROFILE_URL = 'https://app.split.lease/account-profile';
-export const FAQ_URL = '/faq.html';
+export const FAQ_URL = '/faq';
 
 // API Endpoints (DEPRECATED - Now proxied through Edge Functions)
 // These constants are kept for reference only
