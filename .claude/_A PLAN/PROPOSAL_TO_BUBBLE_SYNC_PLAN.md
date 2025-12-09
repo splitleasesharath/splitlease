@@ -1,8 +1,12 @@
 # Proposal to Bubble Sync Plan
 
 **Created**: 2025-12-09
-**Status**: Ready for Review
+**Updated**: 2025-12-09 (Post-refactor alignment)
+**Status**: Ready for Implementation
 **Objective**: Propagate proposal creation from native Supabase back to Bubble via Data API
+
+> **Recent Refactor (commit 9978710)**: Proposal creation now EXCLUSIVELY uses the `proposal` Edge Function.
+> The duplicate `bubble-proxy/handlers/proposal.ts` has been removed. All changes go in `supabase/functions/proposal/`.
 
 ---
 
@@ -62,20 +66,49 @@ Tables Modified:
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Existing bubble_sync Infrastructure
+### Current Edge Function Structure (Post-Refactor)
 
 ```
-supabase/functions/bubble_sync/
-├── index.ts                     # Router with process_queue_data_api action
-├── handlers/
-│   ├── processQueueDataApi.ts   # Main queue processor for Data API
-│   └── ...
-└── lib/
-    ├── bubbleDataApi.ts         # createRecord, updateRecord, deleteRecord
-    ├── fieldMapping.ts          # Field name transformations
-    ├── tableMapping.ts          # Table name mappings
-    ├── transformer.ts           # Type conversions
-    └── queueManager.ts          # Queue operations (addToQueue, etc.)
+supabase/functions/
+├── proposal/                    # DEDICATED proposal operations (commit 9978710)
+│   ├── index.ts                 # Router: create, update, get, suggest
+│   ├── actions/
+│   │   ├── create.ts            # ← ADD BUBBLE SYNC HERE
+│   │   ├── update.ts
+│   │   ├── get.ts
+│   │   └── suggest.ts
+│   └── lib/
+│       ├── types.ts
+│       ├── validators.ts
+│       ├── calculations.ts
+│       ├── status.ts
+│       ├── dayConversion.ts
+│       └── bubbleSync.ts        # ← NEW FILE TO CREATE
+│
+├── listing/                     # DEDICATED listing operations (commit 9978710)
+│   ├── index.ts
+│   └── handlers/
+│       ├── create.ts
+│       ├── get.ts
+│       └── submit.ts
+│
+├── bubble_sync/                 # Existing Supabase → Bubble infrastructure
+│   ├── index.ts
+│   ├── handlers/
+│   │   └── processQueueDataApi.ts
+│   └── lib/
+│       ├── bubbleDataApi.ts     # createRecord, updateRecord (can reuse)
+│       ├── fieldMapping.ts
+│       ├── tableMapping.ts
+│       └── queueManager.ts
+│
+└── bubble-proxy/                # Simplified after refactor
+    └── handlers/
+        ├── aiInquiry.ts         # Renamed from signup.ts (commit 9978710)
+        ├── favorites.ts
+        ├── messaging.ts
+        ├── photos.ts
+        └── referral.ts
 ```
 
 ---
@@ -86,44 +119,49 @@ supabase/functions/bubble_sync/
 
 **File**: `supabase/functions/proposal/actions/create.ts`
 
-After the native Supabase operations complete successfully, add a call to orchestrate Bubble sync.
+The current `create.ts` already has placeholder comments for async workflows at line ~392-408.
+Add the Bubble sync call in the same area, **BEFORE the RETURN RESPONSE section**.
 
 ```typescript
 // ================================================
-// AFTER: RETURN RESPONSE (line ~415)
+// LOCATION: After line 408, before "RETURN RESPONSE" section
 // ADD: TRIGGER BUBBLE SYNC
 // ================================================
 
-// Import at top of file
+// Import at top of file (add to existing imports)
 import { triggerBubbleSync } from '../lib/bubbleSync.ts';
 
-// After all Supabase operations complete, before returning:
-// IMPORTANT: Use bubble_id for ALL Bubble API operations
+// Insert this block after the "[ASYNC] Would trigger: proposal-suggestions" log
+// and before the "RETURN RESPONSE" section:
 
-await triggerBubbleSync(serviceClient, {
+// ================================================
+// BUBBLE SYNC (Supabase → Bubble Data API)
+// ================================================
+
+await triggerBubbleSync(supabase, {
   // Phase 1: CREATE operations (POST - no bubble_id yet, will receive it)
   creates: [
     {
       table: 'proposal',
-      supabaseId: proposalId,      // Our internal ID (for updating Supabase after)
-      data: proposalData,          // The full proposal data object
+      supabaseId: proposalId,      // Our generated ID (for updating Supabase after)
+      data: proposalData,          // The full proposal data object built above
     }
   ],
   // Phase 2: UPDATE operations (PATCH - MUST use bubble_id from existing records)
   updates: [
     {
       table: 'user',
-      bubbleId: guestData._id,     // Guest's bubble_id from Supabase record
+      bubbleId: guestData._id,     // Guest's _id IS their bubble_id (synced from Bubble)
       data: {
         'Proposals List': updatedGuestProposals,
-        'Favorited Listings': guestUpdates['Favorited Listings'],
+        'Favorited Listings': guestUpdates['Favorited Listings'] || currentFavorites,
         'flexibility (last known)': guestFlexibility,
         'Recent Days Selected': input.daysSelected,
       }
     },
     {
       table: 'user',
-      bubbleId: hostUserData._id,  // Host's bubble_id from Supabase record
+      bubbleId: hostUserData._id,  // Host's _id IS their bubble_id (synced from Bubble)
       data: {
         'Proposals List': [...hostProposals, proposalId],
       }
@@ -131,10 +169,21 @@ await triggerBubbleSync(serviceClient, {
   ]
 });
 
-// NOTE: The guest and host user records already exist in Bubble.
-// Their _id field in Supabase IS their bubble_id (synced from Bubble).
-// Always use this _id when making PATCH requests to Bubble.
+console.log(`[proposal:create] Bubble sync triggered`);
+
+// ================================================
+// RETURN RESPONSE (existing code at line ~416)
+// ================================================
 ```
+
+**Key Variables Available at Insertion Point:**
+- `proposalId` - Generated via `generate_bubble_id()` RPC
+- `proposalData` - Full proposal object to sync
+- `guestData._id` - Guest's bubble_id (already in Supabase from Bubble)
+- `hostUserData._id` - Host's bubble_id (already in Supabase from Bubble)
+- `updatedGuestProposals` - Updated proposals list array
+- `guestUpdates` - Object containing Favorited Listings update
+- `hostProposals` - Host's existing proposals list
 
 ### Phase 2: Create Bubble Sync Orchestrator
 
