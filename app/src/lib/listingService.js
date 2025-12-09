@@ -260,6 +260,7 @@ function mapFormDataToListingTable(formData, userId, generatedId) {
     // Section 4: Pricing
     '💰Damage Deposit': formData.pricing?.damageDeposit || 0,
     '💰Cleaning Cost / Maintenance Fee': formData.pricing?.maintenanceFee || 0,
+    '💰Extra Charges': formData.pricing?.extraCharges || null,
     '💰Weekly Host Rate': formData.pricing?.weeklyCompensation || null,
     '💰Monthly Host Rate': formData.pricing?.monthlyCompensation || null,
 
@@ -484,6 +485,7 @@ function mapFormDataToListingTableForUpdate(formData) {
   if (formData.pricing) {
     if (formData.pricing.damageDeposit !== undefined) updateData['💰Damage Deposit'] = formData.pricing.damageDeposit;
     if (formData.pricing.maintenanceFee !== undefined) updateData['💰Cleaning Cost / Maintenance Fee'] = formData.pricing.maintenanceFee;
+    if (formData.pricing.extraCharges !== undefined) updateData['💰Extra Charges'] = formData.pricing.extraCharges;
     if (formData.pricing.weeklyCompensation !== undefined) updateData['💰Weekly Host Rate'] = formData.pricing.weeklyCompensation;
     if (formData.pricing.monthlyCompensation !== undefined) updateData['💰Monthly Host Rate'] = formData.pricing.monthlyCompensation;
     if (formData.pricing.nightlyPricing) {

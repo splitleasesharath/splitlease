@@ -894,6 +894,7 @@ export function SelfListingPageV2() {
       pricing: {
         damageDeposit: data.leaseStyle === 'nightly' ? 500 : data.securityDeposit,
         maintenanceFee: data.leaseStyle === 'nightly' ? 0 : data.cleaningFee,
+        extraCharges: data.leaseStyle !== 'nightly' && !data.utilitiesIncluded ? data.utilityCost : null,
         weeklyCompensation: data.leaseStyle === 'weekly' ? data.price : null,
         monthlyCompensation: data.leaseStyle === 'monthly' ? data.price : null,
         nightlyPricing: nightlyPricing,
