@@ -1045,6 +1045,9 @@ export async function requestPasswordReset(email) {
  * Update password after clicking reset link
  * Must be called when user has active session from PASSWORD_RECOVERY event
  *
+ * After successful password update, the user remains logged in with their
+ * existing session synced to secure storage.
+ *
  * Uses Edge Functions - API keys stored server-side
  *
  * @param {string} newPassword - New password to set
@@ -1123,8 +1126,27 @@ export async function updatePassword(newPassword) {
 
     console.log('✅ Password updated successfully');
 
-    // Clear existing auth data - user should log in with new password
-    clearAuthData();
+    // Keep user logged in by syncing the Supabase session to secure storage
+    // The user has proven account ownership by accessing their email
+    const userId = session.user?.user_metadata?.user_id || session.user?.id;
+    const userType = session.user?.user_metadata?.user_type;
+
+    // Store session tokens
+    setSecureAuthToken(session.access_token);
+    if (userId) {
+      setSecureSessionId(userId);
+      setAuthState(true, userId);
+    }
+    if (userType) {
+      setSecureUserType(userType);
+    }
+
+    // Update login state
+    isUserLoggedInState = true;
+
+    console.log('✅ User session preserved after password update');
+    console.log('   User ID:', userId);
+    console.log('   User Type:', userType);
 
     return {
       success: true,
