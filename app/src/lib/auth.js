@@ -896,8 +896,15 @@ export async function validateTokenAndFetchUser() {
 export function isProtectedPage() {
   const protectedPaths = [
     '/guest-proposals',
+    '/host-proposals',
     '/account-profile',
-    '/host-dashboard'
+    '/host-dashboard',
+    '/self-listing',
+    '/listing-dashboard',
+    '/host-overview',
+    '/favorite-listings',
+    '/rental-application',
+    '/preview-split-lease'
   ];
 
   // Normalize path by removing .html extension for consistent matching
