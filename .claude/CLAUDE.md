@@ -1,199 +1,110 @@
 # Split Lease - Project Overview
 
-**REPOSITORY**: https://github.com/splitleasesharath/splitlease
-**BRANCH**: main
+Flexible Rental Marketplace for NYC Properties | React 20 + Vite | Supabase | Cloudflare Pages
 
 ---
 
-## What is Split Lease?
-
-Flexible Rental Marketplace for NYC Properties enabling:
-- **Split Scheduling**: Property owners list spaces for specific days/weeks
-- **Repeat Stays**: Guests rent rooms on selected days (claimed "45% less than Airbnb")
-- **Proposal System**: Guests submit proposals with custom terms
-- **Virtual Meetings**: Video calls between hosts and guests
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 20 + Vite (Islands Architecture) |
-| Backend | Supabase (PostgreSQL + Edge Functions) |
-| Legacy Backend | Bubble.io (migrating to Edge Functions) |
-| Deployment | Cloudflare Pages |
-| Node Version | 20 |
-
----
-
-## Quick Commands
+## Quick Start
 
 ```bash
-npm run dev      # Start dev server at http://localhost:5173
+npm run dev      # http://localhost:5173
 npm run build    # Production build
-/deploy          # Claude slash command for deployment
+/deploy          # Claude slash command
 ```
 
 ---
 
-## Project Structure
+## Documentation Index
 
-```
-Split Lease/
-├── app/                    # React frontend application
-├── supabase/               # Edge Functions and database config
-├── docs/                   # Migration plans and documentation
-├── Documentation/          # Database tables, option sets, and routing guides
-├── .claude/                # Claude Code configuration and commands
-└── Context/                # Architecture reference guides
-```
+### Architecture & Code Guides
+| File | Description |
+|------|-------------|
+| [app/CLAUDE.md](../app/CLAUDE.md) | Frontend: React, components, islands pattern |
+| [supabase/CLAUDE.md](../supabase/CLAUDE.md) | Backend: Edge Functions, shared utilities |
+| [DATABASE_SCHEMA_OVERVIEW.md](../DATABASE_SCHEMA_OVERVIEW.md) | Complete Supabase table schemas (93 tables) |
 
----
+### .claude/Documentation/
 
-## Context Files
+#### Auth
+| File | Description |
+|------|-------------|
+| [Documentation/Auth/LOGIN_FLOW.md](./Documentation/Auth/LOGIN_FLOW.md) | Login flow, UI states, validation |
+| [Documentation/Auth/SIGNUP_FLOW.md](./Documentation/Auth/SIGNUP_FLOW.md) | Guest/host signup flow |
 
-For detailed information, see these context files:
+#### CORE-Functions
+| File | Description |
+|------|-------------|
+| [Documentation/CORE-Functions/README.md](./Documentation/CORE-Functions/README.md) | Core functions overview |
+| [Documentation/CORE-Functions/QUICK_REFERENCE.md](./Documentation/CORE-Functions/QUICK_REFERENCE.md) | Quick reference for core functions |
+| [Documentation/CORE-Functions/ARCHITECTURE_ANALYSIS.md](./Documentation/CORE-Functions/ARCHITECTURE_ANALYSIS.md) | Architecture analysis |
+| [Documentation/CORE-Functions/VISUAL_GUIDE.md](./Documentation/CORE-Functions/VISUAL_GUIDE.md) | Visual guide to core functions |
 
-### Frontend Application
-- **[../app/CLAUDE.md](../app/CLAUDE.md)** - React app architecture, components, islands pattern, and frontend conventions
+#### Database
+| File | Description |
+|------|-------------|
+| [Documentation/Database/REFERENCE_TABLES_FK_FIELDS.md](./Documentation/Database/REFERENCE_TABLES_FK_FIELDS.md) | Reference tables and foreign key fields |
 
-### Backend Infrastructure
-- **[../supabase/CLAUDE.md](../supabase/CLAUDE.md)** - Edge Functions architecture, shared utilities (bubbleSync, errors, validation, cors, openai), action-based routing, authentication patterns, deployment commands, and configuration
+#### EDGE-Functions
+| File | Description |
+|------|-------------|
+| [Documentation/EDGE-Functions/BUBBLE_SYNC_SERVICE.md](./Documentation/EDGE-Functions/BUBBLE_SYNC_SERVICE.md) | Bubble sync service documentation |
 
-### Logic Architecture
-- **[../app/src/logic/CLAUDE.md](../app/src/logic/CLAUDE.md)** - Four-layer logic system (calculators, rules, processors, workflows)
+#### Pages
+| File | Description |
+|------|-------------|
+| [Documentation/Pages/GUEST_PROPOSALS_QUICK_REFERENCE.md](./Documentation/Pages/GUEST_PROPOSALS_QUICK_REFERENCE.md) | Guest proposals page |
+| [Documentation/Pages/LISTING_DASHBOARD_PAGE_CONTEXT.md](./Documentation/Pages/LISTING_DASHBOARD_PAGE_CONTEXT.md) | Listing dashboard page context |
 
-### Database & Data References
-- **[../DATABASE_SCHEMA_OVERVIEW.md](../DATABASE_SCHEMA_OVERVIEW.md)** - Complete Supabase table schemas (93 tables)
-- **[../Documentation/Database/DATABASE_TABLES_DETAILED.md](../Documentation/Database/DATABASE_TABLES_DETAILED.md)** - Detailed database table documentation with field descriptions
-- **[../Documentation/Database/DATABASE_OPTION_SETS_QUICK_REFERENCE.md](../Documentation/Database/DATABASE_OPTION_SETS_QUICK_REFERENCE.md)** - Quick reference for database option sets
-- **[../Documentation/Database/OPTION_SETS_DETAILED.md](../Documentation/Database/OPTION_SETS_DETAILED.md)** - Comprehensive option sets documentation with values and usage
-### Routing
-- **[../Documentation/Routing/ROUTING_GUIDE.md](../Documentation/Routing/ROUTING_GUIDE.md)** - **MUST READ** when adding new pages or modifying routes. Single source of truth for all routing configuration.
-
-### Authentication Flows
-- **[../Documentation/Auth/LOGIN_FLOW.md](../Documentation/Auth/LOGIN_FLOW.md)** - Complete login flow documentation with UI states, validation, and API integration
-- **[../Documentation/Auth/SIGNUP_FLOW.md](../Documentation/Auth/SIGNUP_FLOW.md)** - Complete signup flow documentation including guest/host registration
-
-### Page Quick References
-Located in `Documentation/Pages/` - Quick reference guides for individual pages:
-- **[../Documentation/Pages/ABOUT_US_QUICK_REFERENCE.md](../Documentation/Pages/ABOUT_US_QUICK_REFERENCE.md)** - About Us page structure and content
-- **[../Documentation/Pages/ACCOUNT_PROFILE_QUICK_REFERENCE.md](../Documentation/Pages/ACCOUNT_PROFILE_QUICK_REFERENCE.md)** - Account profile page with user settings
-- **[../Documentation/Pages/CAREERS_QUICK_REFERENCE.md](../Documentation/Pages/CAREERS_QUICK_REFERENCE.md)** - Careers page documentation
-- **[../Documentation/Pages/FAQ_QUICK_REFERENCE.md](../Documentation/Pages/FAQ_QUICK_REFERENCE.md)** - FAQ page structure
-- **[../Documentation/Pages/FAVORITE_LISTINGS_QUICK_REFERENCE.md](../Documentation/Pages/FAVORITE_LISTINGS_QUICK_REFERENCE.md)** - User's favorite listings page
-- **[../Documentation/Pages/GUEST_PROPOSALS_QUICK_REFERENCE.md](../Documentation/Pages/GUEST_PROPOSALS_QUICK_REFERENCE.md)** - Guest proposals management page
-- **[../Documentation/Pages/GUEST_SUCCESS_QUICK_REFERENCE.md](../Documentation/Pages/GUEST_SUCCESS_QUICK_REFERENCE.md)** - Guest success/onboarding page
-- **[../Documentation/Pages/404_QUICK_REFERENCE.md](../Documentation/Pages/404_QUICK_REFERENCE.md)** - 404 error page
-
-### Migration Documentation
-- **[../docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md](../docs/MIGRATION_PLAN_BUBBLE_TO_EDGE.md)** - Bubble.io to Edge Functions migration
+#### Routing
+| File | Description |
+|------|-------------|
+| [Documentation/Routing/ROUTING_GUIDE.md](./Documentation/Routing/ROUTING_GUIDE.md) | **MUST READ** for adding/modifying routes |
 
 ---
 
-## Core Architecture Patterns
+## Critical Patterns
 
-### Four-Layer Logic System
-Located in `app/src/logic/`:
-1. **Calculators** - Pure math functions (`calculate*`, `get*`)
+### Day Indexing
+| System | Sun | Mon | Tue | Wed | Thu | Fri | Sat |
+|--------|-----|-----|-----|-----|-----|-----|-----|
+| JavaScript | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+| Bubble API | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+
+Use `adaptDaysFromBubble()` / `adaptDaysToBubble()` at system boundaries.
+
+### Unique ID Generation
+```typescript
+const { data: newId } = await supabaseAdmin.rpc('generate_bubble_id');
+```
+
+### Four-Layer Logic (`app/src/logic/`)
+1. **Calculators** - Pure math (`calculate*`, `get*`)
 2. **Rules** - Boolean predicates (`can*`, `is*`, `has*`, `should*`)
 3. **Processors** - Data transformation (`adapt*`, `extract*`, `process*`)
 4. **Workflows** - Orchestration (`*Workflow`)
 
-### Hollow Component Pattern
-UI components delegate all business logic to custom hooks.
-Example: `ViewSplitLeasePage.jsx` uses `useViewSplitLeasePageLogic.js`
+---
 
-### Day Indexing (CRITICAL)
-| System | Sun | Mon | Tue | Wed | Thu | Fri | Sat |
-|--------|-----|-----|-----|-----|-----|-----|-----|
-| JavaScript (internal) | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
-| Bubble API | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+## Rules
 
-Always convert at system boundaries using `adaptDaysFromBubble()` / `adaptDaysToBubble()`.
+**DO**: Use Edge Functions for Bubble API | Store secrets in Supabase Dashboard | Commit after changes | Run `npm run generate-routes` after route changes
 
-### Unique ID Generation (CRITICAL)
-When creating new rows in Supabase tables, use the `generate_bubble_id()` RPC function to generate Bubble-compatible unique IDs:
+**DON'T**: Expose API keys in frontend | Call Bubble API directly | `git push --force` | Modify tables without instruction | Add fallback mechanisms
 
-```typescript
-const { data: newId, error } = await supabaseAdmin.rpc('generate_bubble_id');
+---
+
+## Environment
+
+### app/.env
 ```
-
-This ensures IDs match Bubble's format for data compatibility during the migration period.
-
----
-
-## Core Principles
-
-### No Fallback Mechanisms
-When encountering errors, return null or throw descriptive errors. Never add fallback logic or workarounds.
-
-### Match Solution to Scale
-Build for current requirements, not hypothetical future needs. Avoid over-engineering.
-
-### Be Direct
-Choose simple, direct solutions over clever abstractions. Code should do exactly what it says.
-
----
-
-## Essential Rules
-
-### DO
-- Use Edge Functions for all Bubble API calls
-- Store API keys in Supabase Dashboard Secrets
-- Follow four-layer logic architecture
-- Commit after each meaningful change
-- Convert days at system boundaries
-- **Follow [ROUTING_GUIDE.md](../Documentation/Routing/ROUTING_GUIDE.md) when adding/modifying routes** - run `npm run generate-routes` after changes
-
-### DON'T
-- Never expose API keys in frontend code
-- Never call Bubble API directly from frontend
-- Never `git push --force`
-- Never modify Supabase tables without explicit instruction
-- Never add fallback mechanisms
-
----
-
-## Git Workflow
-
-- **Main branch**: `main` (production)
-- **Staging branch**: `development`
-- **Commit style**: Conventional (feat, fix, chore, docs)
-- **Rule**: Commit after each change, don't push unless asked
-
----
-
-## Environment Variables
-
-### Frontend (app/.env)
-```
-VITE_SUPABASE_URL=<supabase-project-url>
-VITE_SUPABASE_ANON_KEY=<supabase-anon-key>
-VITE_GOOGLE_MAPS_API_KEY=<google-maps-api-key>
+VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY, VITE_GOOGLE_MAPS_API_KEY
 ```
 
 ### Supabase Secrets
-Configured in Supabase Dashboard > Project Settings > Secrets:
-- `BUBBLE_API_BASE_URL`
-- `BUBBLE_API_KEY`
-- `OPENAI_API_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
+```
+BUBBLE_API_BASE_URL, BUBBLE_API_KEY, OPENAI_API_KEY, SUPABASE_SERVICE_ROLE_KEY
+```
 
 ---
 
-## Troubleshooting
-
-| Issue | Check |
-|-------|-------|
-| Build fails | Node version is 18, run `npm install` in app/ |
-| Edge Function errors | Verify secrets in Supabase Dashboard |
-| Auth issues | Check auth-user Edge Function logs |
-| Empty queries | Check RLS policies |
-
----
-
-**VERSION**: 3.3 (Lightweight)
-**LAST_UPDATED**: 2025-12-04
-**STATUS**: Added ROUTING_GUIDE.md reference for route management
+**VERSION**: 4.0 | **UPDATED**: 2025-12-09

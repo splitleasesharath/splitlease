@@ -397,3 +397,13 @@ entrypoint = "./functions/communications/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/pricing/index.ts"
+
+[functions.bubble_sync]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/bubble_sync/index.ts"
+
+[functions.listing]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/listing/index.ts"

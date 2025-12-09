@@ -666,13 +666,17 @@ export default function SignUpLoginModal({
     setIsLoading(true);
 
     try {
+      // Capture current page to return user after password reset
+      const currentPath = window.location.pathname + window.location.search;
+      const returnToParam = encodeURIComponent(currentPath);
+
       // Call the password reset workflow via Edge Function
       const { data, error: fnError } = await supabase.functions.invoke('auth-user', {
         body: {
           action: 'request_password_reset',
           payload: {
             email: resetEmail,
-            redirectTo: `${window.location.origin}/reset-password`
+            redirectTo: `${window.location.origin}/reset-password?returnTo=${returnToParam}`
           }
         }
       });

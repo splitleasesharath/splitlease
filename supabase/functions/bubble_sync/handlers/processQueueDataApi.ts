@@ -27,6 +27,8 @@ import {
     QueueItemWithConfig,
     ProcessResult,
 } from '../lib/queueManager.ts';
+import { handleSyncSignupAtomic } from './syncSignupAtomic.ts';
+import { handlePropagateListingFK } from './propagateListingFK.ts';
 
 export interface ProcessQueueDataApiPayload {
     batch_size?: number;
@@ -78,8 +80,29 @@ export async function handleProcessQueueDataApi(
             result.processed++;
 
             try {
-                await processItemDataApi(supabase, bubbleConfig, item);
-                result.success++;
+                // ========== DETECT SIGNUP_ATOMIC OPERATION ==========
+                if (item.operation === 'SIGNUP_ATOMIC') {
+                    console.log('[processQueueDataApi] Detected SIGNUP_ATOMIC operation');
+
+                    // Mark as processing
+                    await markAsProcessing(supabase, item.id);
+
+                    // Route to atomic signup handler
+                    const syncResult = await handleSyncSignupAtomic(
+                        supabase,
+                        bubbleConfig,
+                        item.payload
+                    );
+
+                    // Mark as completed
+                    await markAsCompleted(supabase, item.id, syncResult);
+
+                    result.success++;
+                } else {
+                    // Standard single-record sync
+                    await processItemDataApi(supabase, bubbleConfig, item);
+                    result.success++;
+                }
             } catch (error) {
                 if (error.message?.includes('skipped')) {
                     result.skipped++;
@@ -148,6 +171,32 @@ async function processItemDataApi(
                     item.record_id,
                     newBubbleId
                 );
+
+                // FK Propagation: Update account_host.Listings in Bubble for listing table
+                if (item.table_name === 'listing') {
+                    // Get the host's user ID from payload
+                    // Could be in 'Created By', 'Host / Landlord', or 'User' field
+                    const userId = (item.payload?.['Created By'] as string) ||
+                                   (item.payload?.['Host / Landlord'] as string) ||
+                                   (item.payload?.['User'] as string);
+
+                    if (userId) {
+                        try {
+                            console.log(`[processQueueDataApi] Starting FK propagation for listing`);
+                            const fkResult = await handlePropagateListingFK(supabase, bubbleConfig, {
+                                listing_id: item.record_id,
+                                listing_bubble_id: newBubbleId,
+                                user_id: userId
+                            });
+                            console.log(`[processQueueDataApi] FK propagation result:`, fkResult);
+                        } catch (fkError) {
+                            // Log but don't fail - listing was created successfully
+                            console.warn(`[processQueueDataApi] FK propagation failed (non-fatal):`, fkError);
+                        }
+                    } else {
+                        console.warn(`[processQueueDataApi] No user ID found in listing payload, skipping FK propagation`);
+                    }
+                }
 
                 bubbleResponse = { id: newBubbleId, operation: 'CREATE' };
                 console.log(`[processQueueDataApi] Created in Bubble, ID: ${newBubbleId}`);
@@ -228,9 +277,11 @@ async function processItemDataApi(
 }
 
 /**
- * Update Supabase record with the Bubble _id after creation
+ * Update Supabase record with the Bubble-assigned ID after creation
  *
- * This is crucial for maintaining the link between Supabase and Bubble records.
+ * CRITICAL: Updates the `bubble_id` column, NOT the `_id` column.
+ * - `_id` = Supabase primary key (generated via RPC, must not change)
+ * - `bubble_id` = Bubble's assigned ID (populated after Bubble POST response)
  */
 async function updateSupabaseBubbleId(
     supabase: SupabaseClient,
@@ -238,38 +289,19 @@ async function updateSupabaseBubbleId(
     recordId: string,
     bubbleId: string
 ): Promise<void> {
-    console.log(`[processQueueDataApi] Updating Supabase ${tableName}/${recordId} with _id: ${bubbleId}`);
+    console.log(`[processQueueDataApi] Updating ${tableName}/${recordId} with bubble_id: ${bubbleId}`);
 
-    // The record_id in our queue could be:
-    // 1. An existing _id (if record came from Bubble originally)
-    // 2. A Supabase UUID (if record originated in Supabase)
-
-    // Try to update by _id first (most common case)
-    const { error: idError } = await supabase
+    // Update the bubble_id field (NOT _id - that's the Supabase primary key)
+    const { error } = await supabase
         .from(tableName)
-        .update({ _id: bubbleId })
+        .update({ bubble_id: bubbleId })
         .eq('_id', recordId);
 
-    if (!idError) {
-        console.log(`[processQueueDataApi] Updated _id successfully`);
-        return;
-    }
-
-    // If that didn't work, try by supabase_id if it exists
-    // This handles the case where the record was created in Supabase first
-    console.log(`[processQueueDataApi] Trying alternative update approach...`);
-
-    // Try by any unique identifier we might have
-    const { error: altError } = await supabase
-        .from(tableName)
-        .update({ _id: bubbleId })
-        .or(`_id.eq.${recordId},id.eq.${recordId}`);
-
-    if (altError) {
-        console.error(`[processQueueDataApi] Failed to update Supabase with bubble_id:`, altError);
-        // Don't throw - the Bubble record was created successfully
-        // This is a best-effort update
+    if (error) {
+        console.error(`[processQueueDataApi] Failed to update bubble_id:`, error);
+        // Don't throw - Bubble record was created successfully
+        // This is a tracking update failure, not a sync failure
     } else {
-        console.log(`[processQueueDataApi] Updated via alternative approach`);
+        console.log(`[processQueueDataApi] Updated bubble_id successfully`);
     }
 }

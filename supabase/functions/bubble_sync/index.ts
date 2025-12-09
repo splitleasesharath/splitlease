@@ -34,6 +34,7 @@ import { handleRetryFailed } from './handlers/retryFailed.ts';
 import { handleGetStatus } from './handlers/getStatus.ts';
 import { handleCleanup } from './handlers/cleanup.ts';
 import { handleBuildRequest } from './handlers/buildRequest.ts';
+import { handleSyncSignupAtomic } from './handlers/syncSignupAtomic.ts';
 
 const ALLOWED_ACTIONS = [
     'process_queue',
@@ -42,7 +43,8 @@ const ALLOWED_ACTIONS = [
     'retry_failed',
     'get_status',
     'cleanup',
-    'build_request'
+    'build_request',
+    'sync_signup_atomic'
 ];
 
 Deno.serve(async (req: Request) => {
@@ -133,6 +135,10 @@ Deno.serve(async (req: Request) => {
             case 'build_request':
                 // Preview request without executing
                 result = await handleBuildRequest(dataApiConfig, payload);
+                break;
+            case 'sync_signup_atomic':
+                // Atomic signup sync handler
+                result = await handleSyncSignupAtomic(supabase, dataApiConfig, payload);
                 break;
             default:
                 throw new Error(`Unhandled action: ${action}`);

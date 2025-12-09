@@ -323,7 +323,7 @@ export default function Header({ autoShowLogin = false }) {
               aria-label="Host with Us menu"
             >
               <a
-                href="/list-with-us.html"
+                href="/list-with-us"
                 className="dropdown-item"
                 role="menuitem"
               >
@@ -350,7 +350,7 @@ export default function Header({ autoShowLogin = false }) {
                 <span className="dropdown-title">List Property</span>
               </a>
               <a
-                href="/policies.html"
+                href="/policies"
                 className="dropdown-item"
                 role="menuitem"
               >
@@ -358,7 +358,7 @@ export default function Header({ autoShowLogin = false }) {
                 <span className="dropdown-desc">Review most important policies</span>
               </a>
               <a
-                href="/faq.html?section=hosts"
+                href="/faq?section=hosts"
                 className="dropdown-item"
                 role="menuitem"
               >
@@ -447,7 +447,7 @@ export default function Header({ autoShowLogin = false }) {
                 <span className="dropdown-desc">Explore other guests' feedback</span>
               </a>
               <a
-                href="/faq.html?section=travelers"
+                href="/faq?section=travelers"
                 className="dropdown-item"
                 role="menuitem"
               >

@@ -341,5 +341,42 @@ export async function handleSignup(
       `Failed to register user: ${error.message}`,
       500
     );
+  } finally {
+    // ========== QUEUE BUBBLE SYNC (BACKEND-TO-BACKEND) ==========
+    // Only queue if signup was successful
+    if (generatedUserId && generatedHostId && generatedGuestId) {
+      console.log('[signup] Queueing Bubble sync for background processing...');
+
+      try {
+        // Insert into sync_queue (backend database operation)
+        const { data: queueItem, error: queueError } = await supabaseAdmin
+          .from('sync_queue')
+          .insert({
+            table_name: 'SIGNUP_ATOMIC',           // Special marker
+            record_id: generatedUserId,            // Primary record ID
+            operation: 'SIGNUP_ATOMIC',            // Special operation type
+            payload: {
+              user_id: generatedUserId,
+              host_account_id: generatedHostId,
+              guest_account_id: generatedGuestId
+            },
+            status: 'pending',
+            idempotency_key: `signup_atomic:${generatedUserId}:${Date.now()}`
+          })
+          .select('id')
+          .single();
+
+        if (queueError) {
+          console.error('[signup] Failed to queue Bubble sync:', queueError);
+          // Log but don't fail signup - can be retried manually
+        } else {
+          console.log('[signup] ✅ Bubble sync queued:', queueItem.id);
+          console.log('[signup] Queue processing will handle sync in background');
+        }
+      } catch (err) {
+        console.error('[signup] Error queueing Bubble sync:', err);
+        // Log but don't fail signup
+      }
+    }
   }
 }
