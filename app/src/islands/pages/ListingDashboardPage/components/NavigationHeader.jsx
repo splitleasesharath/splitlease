@@ -39,23 +39,6 @@ const ListIcon = () => (
   </svg>
 );
 
-const EyeIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-    <circle cx="12" cy="12" r="3" />
-  </svg>
-);
-
 const FileTextIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -130,18 +113,6 @@ export default function NavigationHeader({ activeTab, onTabChange, counts, onBac
       id: 'all-listings',
       label: 'All My Listings',
       icon: <ListIcon />,
-      visible: true, // Always visible
-    },
-    {
-      id: 'preview',
-      label: 'Preview Listing',
-      icon: <EyeIcon />,
-      visible: true, // Always visible
-    },
-    {
-      id: 'manage',
-      label: 'Manage Listing',
-      icon: <FileTextIcon />,
       visible: true, // Always visible
     },
     {
