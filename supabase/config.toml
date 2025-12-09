@@ -407,3 +407,8 @@ entrypoint = "./functions/bubble_sync/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/listing/index.ts"
+
+[functions.ai-gateway]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/ai-gateway/index.ts"
