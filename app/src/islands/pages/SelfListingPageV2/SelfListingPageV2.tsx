@@ -185,6 +185,46 @@ export function SelfListingPageV2() {
   // Validation errors for highlighting fields
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
 
+  // Access control state - guests should not access this page
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
+
+  // Access control: Redirect guest users to index page
+  // This page is accessible to: logged-out users OR host users
+  // Guest users should be redirected to the index page
+  useEffect(() => {
+    const checkAccess = async () => {
+      console.log('🔐 SelfListingPageV2: Checking access control...');
+
+      const loggedIn = await checkAuthStatus();
+
+      if (!loggedIn) {
+        // Logged out users can access - allow
+        console.log('✅ SelfListingPageV2: User is logged out - access allowed');
+        setIsCheckingAccess(false);
+        return;
+      }
+
+      // User is logged in - check their type
+      const userData = await validateTokenAndFetchUser();
+      const userType = userData?.userType;
+
+      console.log('🔐 SelfListingPageV2: User type:', userType);
+
+      if (userType === 'Guest') {
+        // Guest users should not access this page - redirect to index
+        console.log('❌ SelfListingPageV2: Guest user detected - redirecting to index');
+        window.location.href = '/';
+        return;
+      }
+
+      // Host users (or any other type) can access
+      console.log('✅ SelfListingPageV2: Host user - access allowed');
+      setIsCheckingAccess(false);
+    };
+
+    checkAccess();
+  }, []);
+
   // Load draft and step from localStorage
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
@@ -1831,6 +1871,21 @@ export function SelfListingPageV2() {
       default: return renderStep1();
     }
   };
+
+  // Show loading state while checking access
+  if (isCheckingAccess) {
+    return (
+      <div className="self-listing-v2-page">
+        <Header />
+        <main className="self-listing-v2-main">
+          <div className="container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+            <p>Loading...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="self-listing-v2-page">
