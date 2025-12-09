@@ -1058,8 +1058,8 @@ export default function ViewSplitLeasePage() {
         nightsSelected: nightsInBubbleFormat,
         reservationSpan: reservationSpanText,
         reservationSpanWeeks: reservationSpanWeeks,
-        checkInDay: checkInDayBubble,
-        checkOutDay: checkOutDayBubble,
+        checkIn: checkInDayBubble,
+        checkOut: checkOutDayBubble,
         proposalPrice: proposalData.pricePerNight,
         fourWeekRent: proposalData.pricePerFourWeeks,
         hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now
