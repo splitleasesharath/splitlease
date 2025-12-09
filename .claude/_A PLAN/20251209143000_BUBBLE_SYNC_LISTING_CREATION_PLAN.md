@@ -1,6 +1,7 @@
 # Bubble Sync: Listing Creation Propagation Plan
 
 **Created**: 2025-12-09 14:30:00
+**Updated**: 2025-12-09 15:00:00
 **Status**: Planning
 **Priority**: HIGH
 **Scope**: Propagate native Supabase listing creation to Bubble via Data API
@@ -13,6 +14,71 @@ When a listing is created natively in Supabase (via `listingService.js`), we nee
 
 1. **Phase 1 - CREATE**: POST the listing to Bubble, receive `bubble_id`, update Supabase
 2. **Phase 2 - FK PROPAGATION**: Update `account_host.Listings` array in Bubble using the received `bubble_id`
+
+---
+
+## ID Strategy Clarification
+
+| Field | Purpose | Origin |
+|-------|---------|--------|
+| `_id` | Supabase primary key | Generated via `generate_bubble_id()` RPC |
+| `bubble_id` | Bubble's primary key for that record | Assigned by Bubble on POST, returned in response |
+
+**Key Points**:
+- `_id` is for Supabase operations ONLY
+- `bubble_id` is for Bubble operations ONLY
+- When calling Bubble APIs (PUT/PATCH), always use `bubble_id`, never `_id`
+- `bubble_id` starts as NULL and is populated after Bubble POST response
+
+---
+
+## Sync Trigger Mechanism (RECOMMENDED)
+
+### Approach: Database Trigger + Queue + Edge Function Processing
+
+This approach uses the existing `sync_queue` infrastructure while keeping sync logic in Edge Functions (not frontend).
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│  SYNC TRIGGER FLOW                                                       │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                          │
+│  1. listingService.js creates listing                                    │
+│     INSERT INTO listing (..., bubble_id = NULL)                         │
+│                                                                          │
+│  2. Database Trigger fires (on INSERT where bubble_id IS NULL)          │
+│     INSERT INTO sync_queue (table_name='listing', operation='INSERT')   │
+│                                                                          │
+│  3. listingService.js calls Edge Function (non-blocking)                │
+│     supabase.functions.invoke('bubble_sync', {                          │
+│       action: 'process_queue_data_api',                                 │
+│       payload: { table_filter: 'listing' }                              │
+│     })                                                                   │
+│                                                                          │
+│  4. Edge Function processes sync_queue                                   │
+│     - Fetch pending items for 'listing' table                           │
+│     - POST to Bubble Data API                                           │
+│     - Receive bubble_id in response                                     │
+│     - UPDATE Supabase listing.bubble_id = response.id                   │
+│     - Process FK propagation (account_host.Listings)                    │
+│     - Mark queue item as completed                                      │
+│                                                                          │
+│  5. If sync fails:                                                       │
+│     - Queue item marked as 'failed' with retry_count++                  │
+│     - Can be retried later via 'retry_failed' action                    │
+│     - Listing still exists in Supabase (acceptable)                     │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Why This Approach?
+
+| Requirement | How It's Met |
+|-------------|--------------|
+| Sync from Edge Functions, not frontend | ✅ listingService.js only triggers, Edge Function does sync |
+| Use Supabase queues | ✅ Uses existing `sync_queue` table |
+| Queue not mandatory | ✅ Queue provides tracking/retry, but sync is immediate |
+| Error handling: retry later | ✅ Failed items stay in queue for retry |
 
 ---
 
@@ -32,15 +98,16 @@ Step 6: linkListingToHost() → UPDATE account_host.Listings array (NON-BLOCKING
 Step 7: Return listing
 ```
 
-### Key Schema Facts
+### Key Schema Facts (VERIFIED)
 
 | Table | `_id` Column | `bubble_id` Column |
 |-------|--------------|-------------------|
 | `listing` | TEXT, NOT NULL (PK) | TEXT, NULLABLE |
 | `account_host` | TEXT, NOT NULL (PK) | TEXT, NULLABLE |
 
-- `_id` = Generated via `generate_bubble_id()` RPC (looks like Bubble format but is NOT from Bubble)
-- `bubble_id` = NULL initially, populated AFTER Bubble POST returns the real Bubble-assigned ID
+- `_id` = Supabase primary key (generated via RPC, NOT from Bubble)
+- `bubble_id` = NULL initially, populated AFTER Bubble POST returns the Bubble-assigned ID
+- For existing hosts created via Bubble, `account_host.bubble_id` is already populated (from signup)
 
 ### Recent Architecture Changes (commit 9978710)
 
@@ -140,212 +207,322 @@ The `listing` Edge Function now has proper handlers:
 
 ---
 
-## Implementation Plan
+## Critical Bug Fix Required
 
-### Phase 1: Add New Action to bubble_sync Edge Function
+### Issue in `processQueueDataApi.ts`
 
-**File**: `supabase/functions/bubble_sync/index.ts`
+**File**: `supabase/functions/bubble_sync/handlers/processQueueDataApi.ts`
+**Lines**: 248-251
 
-Add new action: `sync_new_listing`
-
+**Current (WRONG)**:
 ```typescript
-case 'sync_new_listing':
-  result = await handleSyncNewListing(payload);
-  break;
+const { error: idError } = await supabase
+    .from(tableName)
+    .update({ _id: bubbleId })  // ❌ WRONG - updating _id
+    .eq('_id', recordId);
 ```
 
-### Phase 2: Create Handler for New Listing Sync
+**Should Be**:
+```typescript
+const { error: idError } = await supabase
+    .from(tableName)
+    .update({ bubble_id: bubbleId })  // ✅ CORRECT - updating bubble_id
+    .eq('_id', recordId);
+```
 
-**New File**: `supabase/functions/bubble_sync/handlers/syncNewListing.ts`
+**Reason**:
+- `_id` is the Supabase primary key (must not change after creation)
+- `bubble_id` is where Bubble's assigned ID should be stored
+- After Bubble POST returns an ID, we store it in `bubble_id`, not `_id`
+
+---
+
+## Implementation Plan
+
+### Phase 1: Create Database Trigger for sync_queue
+
+**New Migration**: `supabase/migrations/YYYYMMDD_listing_sync_trigger.sql`
+
+```sql
+-- ============================================================================
+-- Trigger: Auto-add listing INSERT to sync_queue
+-- Only fires when bubble_id IS NULL (new Supabase-originated listings)
+-- ============================================================================
+
+CREATE OR REPLACE FUNCTION trigger_listing_sync_queue()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Only queue if bubble_id is NULL (not yet synced to Bubble)
+    IF NEW.bubble_id IS NULL THEN
+        INSERT INTO sync_queue (
+            table_name,
+            record_id,
+            operation,
+            payload,
+            status,
+            idempotency_key
+        ) VALUES (
+            'listing',
+            NEW._id,
+            'INSERT',
+            to_jsonb(NEW),
+            'pending',
+            'listing:' || NEW._id || ':' || extract(epoch from now())::text
+        )
+        ON CONFLICT ON CONSTRAINT idx_sync_queue_pending_unique
+        DO UPDATE SET
+            payload = EXCLUDED.payload,
+            created_at = NOW();
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Create the trigger
+CREATE TRIGGER listing_bubble_sync_trigger
+    AFTER INSERT ON listing
+    FOR EACH ROW
+    EXECUTE FUNCTION trigger_listing_sync_queue();
+
+-- Also enable sync_config for listing table
+UPDATE sync_config
+SET enabled = TRUE, sync_on_insert = TRUE
+WHERE supabase_table = 'listing';
+```
+
+### Phase 2: Fix processQueueDataApi.ts Bug
+
+**File**: `supabase/functions/bubble_sync/handlers/processQueueDataApi.ts`
+
+Fix the `updateSupabaseBubbleId` function to update `bubble_id` instead of `_id`:
+
+```typescript
+async function updateSupabaseBubbleId(
+    supabase: SupabaseClient,
+    tableName: string,
+    recordId: string,
+    bubbleId: string
+): Promise<void> {
+    console.log(`[processQueueDataApi] Updating ${tableName}/${recordId} with bubble_id: ${bubbleId}`);
+
+    // Update the bubble_id field (NOT _id)
+    const { error } = await supabase
+        .from(tableName)
+        .update({ bubble_id: bubbleId })
+        .eq('_id', recordId);
+
+    if (error) {
+        console.error(`[processQueueDataApi] Failed to update bubble_id:`, error);
+        // Don't throw - Bubble record was created successfully
+        // This is a tracking update failure, not a sync failure
+    } else {
+        console.log(`[processQueueDataApi] ✅ Updated bubble_id successfully`);
+    }
+}
+```
+
+### Phase 3: Add FK Propagation Handler for Listing
+
+**New File**: `supabase/functions/bubble_sync/handlers/propagateListingFK.ts`
+
+This handler updates `account_host.Listings` in Bubble after a listing is created.
 
 ```typescript
 /**
- * Sync New Listing to Bubble
+ * Propagate Listing FK to account_host in Bubble
  *
- * Called after a listing is created natively in Supabase.
- *
- * Flow:
- * 1. Fetch listing from Supabase (by _id)
- * 2. Transform fields for Bubble Data API
- * 3. POST to Bubble /obj/listing
- * 4. Update Supabase listing.bubble_id with response
- * 5. Update account_host.Listings in Bubble (FK propagation)
+ * Called after listing is created in Bubble to update the host's Listings array.
  */
 
-interface SyncNewListingPayload {
-  listing_id: string;    // The Supabase _id
-  user_id: string;       // The host's user _id (for account_host lookup)
+import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { BubbleDataApiConfig, getRecord, updateRecord } from '../lib/bubbleDataApi.ts';
+
+export interface PropagateListingFKPayload {
+    listing_id: string;      // Supabase _id of the listing
+    listing_bubble_id: string; // Bubble-assigned ID of the listing
+    user_id: string;         // Host's user _id (to find account_host)
 }
 
-export async function handleSyncNewListing(
-  payload: Record<string, unknown>
-): Promise<SyncNewListingResult> {
-  // Implementation details below
+export async function handlePropagateListingFK(
+    supabase: SupabaseClient,
+    bubbleConfig: BubbleDataApiConfig,
+    payload: PropagateListingFKPayload
+): Promise<{ success: boolean; host_updated: boolean }> {
+    const { listing_id, listing_bubble_id, user_id } = payload;
+
+    console.log('[propagateListingFK] Starting FK propagation');
+    console.log('[propagateListingFK] Listing _id:', listing_id);
+    console.log('[propagateListingFK] Listing bubble_id:', listing_bubble_id);
+    console.log('[propagateListingFK] User _id:', user_id);
+
+    // Step 1: Find host's account_host record in Supabase
+    const { data: hostAccount, error: hostError } = await supabase
+        .from('account_host')
+        .select('_id, bubble_id, Listings')
+        .eq('User', user_id)
+        .single();
+
+    if (hostError || !hostAccount) {
+        console.warn('[propagateListingFK] ⚠️ No account_host found for user:', user_id);
+        return { success: true, host_updated: false };
+    }
+
+    // Step 2: Check if host has bubble_id
+    if (!hostAccount.bubble_id) {
+        console.warn('[propagateListingFK] ⚠️ Host account has no bubble_id, skipping FK propagation');
+        return { success: true, host_updated: false };
+    }
+
+    console.log('[propagateListingFK] Host bubble_id:', hostAccount.bubble_id);
+
+    // Step 3: Fetch current Listings array from Bubble
+    let currentListings: string[] = [];
+    try {
+        const hostBubbleData = await getRecord(bubbleConfig, 'account_host', hostAccount.bubble_id);
+        currentListings = (hostBubbleData?.Listings as string[]) || [];
+        console.log('[propagateListingFK] Current Bubble Listings:', currentListings.length);
+    } catch (fetchError) {
+        console.warn('[propagateListingFK] ⚠️ Failed to fetch host from Bubble, using empty array');
+    }
+
+    // Step 4: Append new listing's bubble_id if not already present
+    if (!currentListings.includes(listing_bubble_id)) {
+        currentListings.push(listing_bubble_id);
+        console.log('[propagateListingFK] Adding listing to array, new count:', currentListings.length);
+    } else {
+        console.log('[propagateListingFK] Listing already in array, skipping');
+        return { success: true, host_updated: false };
+    }
+
+    // Step 5: PATCH account_host in Bubble
+    try {
+        await updateRecord(
+            bubbleConfig,
+            'account_host',
+            hostAccount.bubble_id,
+            { Listings: currentListings }
+        );
+        console.log('[propagateListingFK] ✅ Host Listings updated in Bubble');
+
+        // Step 6: Also update Supabase account_host.Listings for consistency
+        await supabase
+            .from('account_host')
+            .update({ Listings: currentListings })
+            .eq('_id', hostAccount._id);
+
+        return { success: true, host_updated: true };
+    } catch (updateError) {
+        console.error('[propagateListingFK] ❌ Failed to update host Listings:', updateError);
+        return { success: false, host_updated: false };
+    }
 }
 ```
 
-### Phase 3: Detailed Handler Implementation
+### Phase 4: Integrate FK Propagation into Queue Processing
 
-#### Step 1: Fetch Listing from Supabase
+**File**: `supabase/functions/bubble_sync/handlers/processQueueDataApi.ts`
+
+Add FK propagation call after successful INSERT for listing table:
 
 ```typescript
-// Fetch the listing that was just created
-const { data: listing, error: fetchError } = await supabase
-  .from('listing')
-  .select('*')
-  .eq('_id', listing_id)
-  .single();
+case 'INSERT': {
+    // Create new record in Bubble
+    const newBubbleId = await createRecord(
+        bubbleConfig,
+        item.table_name,
+        item.payload,
+        item.sync_config?.field_mapping || undefined
+    );
 
-if (fetchError || !listing) {
-  throw new Error(`Listing not found: ${listing_id}`);
-}
+    // Update Supabase record with the new bubble_id
+    await updateSupabaseBubbleId(
+        supabase,
+        item.table_name,
+        item.record_id,
+        newBubbleId
+    );
 
-// Verify bubble_id is NULL (not yet synced)
-if (listing.bubble_id) {
-  console.log('[syncNewListing] Listing already synced, bubble_id:', listing.bubble_id);
-  return { already_synced: true, bubble_id: listing.bubble_id };
-}
-```
+    // ===== NEW: FK Propagation for listing table =====
+    if (item.table_name === 'listing') {
+        const userId = item.payload?.['Created By'] as string ||
+                       item.payload?.['Host / Landlord'] as string;
 
-#### Step 2: Transform Fields for Bubble
+        if (userId) {
+            try {
+                await handlePropagateListingFK(supabase, bubbleConfig, {
+                    listing_id: item.record_id,
+                    listing_bubble_id: newBubbleId,
+                    user_id: userId
+                });
+            } catch (fkError) {
+                console.warn('[processQueueDataApi] FK propagation failed:', fkError);
+                // Don't fail the main sync - listing was created successfully
+            }
+        }
+    }
+    // ===== END FK Propagation =====
 
-```typescript
-import { transformRecordForBubble } from '../lib/transformer.ts';
-import { applyFieldMappingToBubble, BUBBLE_READ_ONLY_FIELDS } from '../lib/fieldMapping.ts';
-
-// Transform data types (day indices, booleans, etc.)
-const transformedData = transformRecordForBubble(listing, 'listing');
-
-// Apply field name mapping and remove read-only fields
-const bubbleData = applyFieldMappingToBubble(transformedData, 'listing');
-
-// Explicitly remove fields Bubble manages
-delete bubbleData['_id'];           // Bubble will assign its own
-delete bubbleData['Created Date'];  // Bubble manages
-delete bubbleData['Modified Date']; // Bubble manages
-delete bubbleData['bubble_id'];     // Not a Bubble field
-```
-
-#### Step 3: POST to Bubble Data API
-
-```typescript
-import { BubbleDataApiClient } from '../lib/bubbleDataApi.ts';
-
-const bubbleClient = new BubbleDataApiClient(bubbleBaseUrl, bubbleApiKey);
-
-// POST /obj/listing
-const createResponse = await bubbleClient.create('listing', bubbleData);
-
-if (!createResponse.success || !createResponse.id) {
-  throw new Error(`Bubble POST failed: ${createResponse.error}`);
-}
-
-const bubbleId = createResponse.id;
-console.log('[syncNewListing] ✅ Created in Bubble with ID:', bubbleId);
-```
-
-#### Step 4: Update Supabase with bubble_id
-
-```typescript
-// Update the listing with the Bubble-assigned ID
-const { error: updateError } = await supabase
-  .from('listing')
-  .update({ bubble_id: bubbleId })
-  .eq('_id', listing_id);
-
-if (updateError) {
-  console.error('[syncNewListing] ⚠️ Failed to update bubble_id:', updateError);
-  // Don't throw - the Bubble record exists, just tracking failed
+    bubbleResponse = { id: newBubbleId, operation: 'CREATE' };
+    console.log(`[processQueueDataApi] Created in Bubble, ID: ${newBubbleId}`);
+    break;
 }
 ```
 
-#### Step 5: FK Propagation - Update account_host.Listings in Bubble
-
-```typescript
-// Fetch host's account_host record from Supabase
-const { data: hostAccount, error: hostError } = await supabase
-  .from('account_host')
-  .select('_id, bubble_id, Listings')
-  .eq('User', user_id)
-  .single();
-
-if (hostError || !hostAccount) {
-  console.warn('[syncNewListing] ⚠️ No account_host found for user:', user_id);
-  return { bubble_id: bubbleId, host_updated: false };
-}
-
-// Check if host has bubble_id (required for Bubble update)
-if (!hostAccount.bubble_id) {
-  console.warn('[syncNewListing] ⚠️ Host account has no bubble_id, skipping FK propagation');
-  return { bubble_id: bubbleId, host_updated: false };
-}
-
-// Fetch current Listings array from Bubble
-const hostBubbleData = await bubbleClient.get('account_host', hostAccount.bubble_id);
-const currentListings = (hostBubbleData?.Listings as string[]) || [];
-
-// Append new listing's bubble_id
-if (!currentListings.includes(bubbleId)) {
-  currentListings.push(bubbleId);
-}
-
-// PATCH account_host in Bubble
-const patchResponse = await bubbleClient.update(
-  'account_host',
-  hostAccount.bubble_id,
-  { Listings: currentListings }
-);
-
-if (!patchResponse.success) {
-  console.error('[syncNewListing] ⚠️ Failed to update host Listings:', patchResponse.error);
-}
-
-console.log('[syncNewListing] ✅ Host Listings updated in Bubble');
-```
-
-### Phase 4: Update listingService.js to Trigger Sync
+### Phase 5: Update listingService.js to Trigger Sync
 
 **File**: `app/src/lib/listingService.js`
 
-Add sync trigger after Step 5 (link to host):
+Add sync trigger after successful insert (non-blocking):
 
 ```javascript
-// Step 6: Trigger Bubble sync (NON-BLOCKING)
-// This queues the listing for propagation to Bubble
-try {
-  await triggerBubbleSync(data._id, userId);
-  console.log('[ListingService] ✅ Bubble sync triggered');
-} catch (syncError) {
-  console.error('[ListingService] ⚠️ Bubble sync trigger failed:', syncError);
-  // Continue - listing exists in Supabase, sync will retry later
+// After Step 5 (INSERT into listing) succeeds...
+
+// Step 6: Link listing to account_host in Supabase (existing, NON-BLOCKING)
+if (userId) {
+    try {
+        await linkListingToHost(userId, data._id);
+        console.log('[ListingService] ✅ Listing linked to host account');
+    } catch (linkError) {
+        console.error('[ListingService] ⚠️ Failed to link listing to host:', linkError);
+    }
 }
 
+// Step 7: Trigger Bubble sync (NEW, NON-BLOCKING)
+// The database trigger already added the listing to sync_queue
+// This call processes the queue immediately
+triggerBubbleSync().catch(syncError => {
+    console.error('[ListingService] ⚠️ Bubble sync trigger failed:', syncError);
+    // Don't throw - listing exists in Supabase, sync will retry later
+});
+
 return data;
-```
 
-New function:
+// ...
 
-```javascript
 /**
- * Trigger Bubble sync for a newly created listing
- * Calls the bubble_sync Edge Function asynchronously
+ * Trigger Bubble sync for pending listings
+ * Calls the bubble_sync Edge Function to process the queue
  */
-async function triggerBubbleSync(listingId, userId) {
-  const { data, error } = await supabase.functions.invoke('bubble_sync', {
-    body: {
-      action: 'sync_new_listing',
-      payload: {
-        listing_id: listingId,
-        user_id: userId
-      }
+async function triggerBubbleSync() {
+    console.log('[ListingService] Triggering Bubble sync...');
+
+    const { data, error } = await supabase.functions.invoke('bubble_sync', {
+        body: {
+            action: 'process_queue_data_api',
+            payload: {
+                table_filter: 'listing',
+                batch_size: 1  // Process just the new listing
+            }
+        }
+    });
+
+    if (error) {
+        throw new Error(`Bubble sync failed: ${error.message}`);
     }
-  });
 
-  if (error) {
-    throw new Error(`Bubble sync failed: ${error.message}`);
-  }
-
-  return data;
+    console.log('[ListingService] ✅ Bubble sync result:', data);
+    return data;
 }
 ```
 
@@ -409,24 +586,26 @@ If implementing full queue-based retry:
 
 | File | Purpose |
 |------|---------|
-| `supabase/functions/bubble_sync/handlers/syncNewListing.ts` | Main handler for new listing sync |
+| `supabase/functions/bubble_sync/handlers/propagateListingFK.ts` | FK propagation handler for account_host.Listings |
+| `supabase/migrations/YYYYMMDD_listing_sync_trigger.sql` | Database trigger for auto-queueing listing INSERTs |
 
 ### Modified Files
 
 | File | Changes |
 |------|---------|
-| `supabase/functions/bubble_sync/index.ts` | Add `sync_new_listing` action route |
-| `supabase/functions/bubble_sync/lib/bubbleDataApi.ts` | Ensure `create()`, `update()`, `get()` methods exist |
+| `supabase/functions/bubble_sync/handlers/processQueueDataApi.ts` | Fix `updateSupabaseBubbleId()` to update `bubble_id` (not `_id`), add FK propagation call |
 | `app/src/lib/listingService.js` | Add `triggerBubbleSync()` call after listing creation |
 
 ### Reference Files (Read-Only)
 
 | File | Purpose |
 |------|---------|
+| `supabase/functions/bubble_sync/lib/bubbleDataApi.ts` | Bubble Data API client (already has `createRecord`, `updateRecord`, `getRecord`) |
 | `supabase/functions/bubble_sync/lib/transformer.ts` | Field type transformations |
 | `supabase/functions/bubble_sync/lib/fieldMapping.ts` | Field name mappings |
 | `supabase/functions/bubble_sync/lib/tableMapping.ts` | Table name mappings |
-| `supabase/functions/bubble_sync/lib/queueManager.ts` | Queue operations (if using queue) |
+| `supabase/functions/bubble_sync/lib/queueManager.ts` | Queue operations |
+| `supabase/migrations/20251205_create_sync_queue_tables.sql` | sync_queue and sync_config table definitions |
 | `Documentation/Database/REFERENCE_TABLES_FK_FIELDS.md` | FK relationships reference |
 
 ---
@@ -477,22 +656,67 @@ If issues arise:
 
 ---
 
-## Timeline
+## Implementation Summary
 
-| Phase | Description | Estimate |
-|-------|-------------|----------|
-| Phase 1 | Add action route to bubble_sync | 15 min |
-| Phase 2 | Create syncNewListing handler | 2 hrs |
-| Phase 3 | Update bubbleDataApi if needed | 30 min |
-| Phase 4 | Update listingService.js | 30 min |
-| Phase 5 | Testing | 1-2 hrs |
-| **Total** | | **4-5 hrs** |
+### Order of Implementation
+
+1. **Phase 1**: Create database trigger migration (listing → sync_queue)
+2. **Phase 2**: Fix `processQueueDataApi.ts` bug (`_id` → `bubble_id`)
+3. **Phase 3**: Create `propagateListingFK.ts` handler
+4. **Phase 4**: Integrate FK propagation into `processQueueDataApi.ts`
+5. **Phase 5**: Update `listingService.js` to trigger sync
+6. **Phase 6**: Deploy Edge Function and run migration
+7. **Phase 7**: Testing
+
+### Sequence Diagram
+
+```
+listingService.js                 Supabase DB              bubble_sync EF           Bubble API
+      │                               │                         │                       │
+      │  1. INSERT listing            │                         │                       │
+      │──────────────────────────────>│                         │                       │
+      │                               │                         │                       │
+      │                               │ 2. TRIGGER: INSERT      │                       │
+      │                               │    into sync_queue      │                       │
+      │                               │                         │                       │
+      │  3. invoke('bubble_sync')     │                         │                       │
+      │───────────────────────────────────────────────────────>│                       │
+      │                               │                         │                       │
+      │                               │ 4. SELECT from          │                       │
+      │                               │<───────────────────────│                       │
+      │                               │    sync_queue           │                       │
+      │                               │                         │                       │
+      │                               │                         │ 5. POST /obj/listing  │
+      │                               │                         │──────────────────────>│
+      │                               │                         │                       │
+      │                               │                         │ 6. { id: bubble_id }  │
+      │                               │                         │<──────────────────────│
+      │                               │                         │                       │
+      │                               │ 7. UPDATE listing       │                       │
+      │                               │<───────────────────────│                       │
+      │                               │    SET bubble_id = ...  │                       │
+      │                               │                         │                       │
+      │                               │                         │ 8. GET account_host   │
+      │                               │                         │──────────────────────>│
+      │                               │                         │                       │
+      │                               │                         │ 9. PATCH account_host │
+      │                               │                         │──────────────────────>│
+      │                               │                         │    (add to Listings)  │
+      │                               │                         │                       │
+      │                               │ 10. Mark completed      │                       │
+      │                               │<───────────────────────│                       │
+      │                               │                         │                       │
+      │  11. Return { success }       │                         │                       │
+      │<──────────────────────────────────────────────────────│                       │
+      │                               │                         │                       │
+```
 
 ---
 
 ## Document Version
 
-- **Version**: 1.0
-- **Last Updated**: 2025-12-09 14:30:00
+- **Version**: 2.0
+- **Last Updated**: 2025-12-09 15:15:00
 - **Author**: Claude Opus 4.5
+- **Status**: Ready for Implementation
 
