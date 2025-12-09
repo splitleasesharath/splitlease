@@ -36,12 +36,14 @@ import { handleReferral } from './handlers/referral.ts';
 import { handleAiInquiry } from './handlers/aiInquiry.ts';
 import { handleFavorites } from './handlers/favorites.ts';
 import { handleGetFavorites } from './handlers/getFavorites.ts';
+import { handleParseProfile } from './handlers/parseProfile.ts';
 
 console.log('[bubble-proxy] Edge Function started');
 
 // Actions that don't require authentication
 // upload_photos is public because photos are uploaded in Section 6 before user signup in Section 7
-const PUBLIC_ACTIONS = ['send_message', 'ai_inquiry', 'upload_photos', 'toggle_favorite', 'get_favorites'];
+// parse_profile is public because it's called during AI signup flow before full auth
+const PUBLIC_ACTIONS = ['send_message', 'ai_inquiry', 'upload_photos', 'toggle_favorite', 'get_favorites', 'parse_profile'];
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -77,6 +79,7 @@ Deno.serve(async (req) => {
       'ai_inquiry',
       'toggle_favorite',
       'get_favorites',
+      'parse_profile',
     ];
     validateAction(action, allowedActions);
 
@@ -166,6 +169,10 @@ Deno.serve(async (req) => {
 
       case 'get_favorites':
         result = await handleGetFavorites(payload);
+        break;
+
+      case 'parse_profile':
+        result = await handleParseProfile(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       default:

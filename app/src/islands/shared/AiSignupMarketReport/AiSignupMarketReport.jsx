@@ -240,8 +240,9 @@ async function submitSignup(data) {
   // ========== STEP 1: Create User Account ==========
   console.log('[AiSignupMarketReport] Step 1: Creating user account...');
 
+  let signupResult = null;
   try {
-    const signupResult = await signupUser(
+    signupResult = await signupUser(
       data.email,
       generatedPassword,
       generatedPassword, // retype (same as password)
@@ -321,17 +322,113 @@ async function submitSignup(data) {
     console.log('[AiSignupMarketReport] Result:', JSON.stringify(result, null, 2));
     console.log('[AiSignupMarketReport] ================================');
 
+    // ========== STEP 3: Parse Profile with AI (GPT-4) ==========
+    // This parses the freeform text and extracts structured data
+    // Also auto-favorites matching listings
+    console.log('[AiSignupMarketReport] Step 3: Parsing profile with AI...');
+
+    let parseResult = null;
+    try {
+      parseResult = await parseProfileWithAI({
+        user_id: signupResult?.user_id || result.data?._id,
+        email: data.email,
+        text_inputted: data.marketResearchText,
+      });
+
+      if (parseResult?.success) {
+        console.log('[AiSignupMarketReport] ✅ Profile parsed successfully');
+        console.log('[AiSignupMarketReport] Extracted data:', parseResult.data?.extracted_data);
+        console.log('[AiSignupMarketReport] Favorited listings:', parseResult.data?.favorited_listings?.length || 0);
+      } else {
+        console.warn('[AiSignupMarketReport] ⚠️ Profile parsing returned unsuccessful result');
+      }
+    } catch (parseError) {
+      // Don't fail the whole signup if parsing fails
+      console.warn('[AiSignupMarketReport] ⚠️ Profile parsing error (non-fatal):', parseError.message);
+    }
+
     return {
       success: true,
       data: result.data,
       generatedPassword: generatedPassword, // Include for reference (will be sent via email)
-      extractedName: extractedName
+      extractedName: extractedName,
+      parseResult: parseResult, // Include parsing result
     };
   } catch (error) {
     console.error('[AiSignupMarketReport] ========== EXCEPTION ==========');
     console.error('[AiSignupMarketReport] Error:', error);
     console.error('[AiSignupMarketReport] Error message:', error.message);
     console.error('[AiSignupMarketReport] ==================================');
+    throw error;
+  }
+}
+
+/**
+ * Parse user profile using AI (GPT-4)
+ * Calls the bubble-proxy edge function with parse_profile action
+ *
+ * This extracts structured data from freeform text:
+ * - Biography, Special Needs, Need for Space, Reasons to Host
+ * - Credit Score, Name, Transportation
+ * - Preferred boroughs, neighborhoods, days, weekly schedule
+ *
+ * Also auto-favorites listings that match user preferences
+ *
+ * @param {Object} data - Data for parsing
+ * @param {string} data.user_id - User ID to update
+ * @param {string} data.email - User email
+ * @param {string} data.text_inputted - Freeform text to parse
+ * @returns {Promise<Object>} - Parsing result with extracted data
+ */
+async function parseProfileWithAI(data) {
+  if (!data.user_id) {
+    console.warn('[AiSignupMarketReport] Skipping profile parsing - no user_id');
+    return null;
+  }
+
+  if (!data.text_inputted) {
+    console.warn('[AiSignupMarketReport] Skipping profile parsing - no text_inputted');
+    return null;
+  }
+
+  console.log('[AiSignupMarketReport] ========== PARSE PROFILE REQUEST ==========');
+  console.log('[AiSignupMarketReport] User ID:', data.user_id);
+  console.log('[AiSignupMarketReport] Email:', data.email);
+  console.log('[AiSignupMarketReport] Text length:', data.text_inputted.length);
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/bubble-proxy`;
+
+  try {
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'parse_profile',
+        payload: {
+          user_id: data.user_id,
+          email: data.email,
+          text_inputted: data.text_inputted,
+        },
+      }),
+    });
+
+    console.log('[AiSignupMarketReport] Parse response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AiSignupMarketReport] Parse error response:', errorText);
+      throw new Error(`Failed to parse profile: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('[AiSignupMarketReport] Parse result:', JSON.stringify(result, null, 2));
+
+    return result;
+  } catch (error) {
+    console.error('[AiSignupMarketReport] Parse profile error:', error);
     throw error;
   }
 }
