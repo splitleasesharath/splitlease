@@ -59,12 +59,25 @@ export const NORMALIZED_USER_TYPES = {
 
 /**
  * Normalize the raw Supabase user type to a simple enum
- * @param {string} rawUserType - Raw value from "Type - User Current" field
+ * Handles both legacy Bubble format and new Supabase Auth format:
+ * - Legacy: "A Host (I have a space available to rent)", "A Guest (I would like to rent a space)"
+ * - Supabase Auth: "Host", "Guest"
+ *
+ * @param {string} rawUserType - Raw value from "Type - User Current" field or Supabase Auth metadata
  * @returns {string} Normalized user type (GUEST, HOST, or TRIAL_HOST)
  */
 export function normalizeUserType(rawUserType) {
   if (!rawUserType) return NORMALIZED_USER_TYPES.GUEST;
 
+  // Handle exact matches for Supabase Auth format (simple strings)
+  if (rawUserType === 'Host') {
+    return NORMALIZED_USER_TYPES.HOST;
+  }
+  if (rawUserType === 'Guest') {
+    return NORMALIZED_USER_TYPES.GUEST;
+  }
+
+  // Handle legacy Bubble format (full strings with descriptions)
   if (rawUserType === USER_TYPES.HOST || (rawUserType.includes('Host') && !rawUserType.includes('Trial'))) {
     return NORMALIZED_USER_TYPES.HOST;
   }
@@ -173,7 +186,23 @@ export function useLoggedInAvatarData(userId) {
       }
 
       // Get normalized user type
-      const rawUserType = userData?.['Type - User Current'] || '';
+      // First try from legacy user table, then fallback to Supabase Auth session
+      let rawUserType = userData?.['Type - User Current'] || '';
+
+      // If no user type from legacy table, check Supabase Auth session
+      // This handles users who signed up via native Supabase Auth (not legacy Bubble)
+      if (!rawUserType) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user?.user_metadata?.user_type) {
+            rawUserType = session.user.user_metadata.user_type;
+            console.log('[useLoggedInAvatarData] Got user type from Supabase Auth metadata:', rawUserType);
+          }
+        } catch (err) {
+          console.log('[useLoggedInAvatarData] Could not get Supabase Auth session:', err.message);
+        }
+      }
+
       const normalizedType = normalizeUserType(rawUserType);
 
       // Get proposals count from Proposals List array
