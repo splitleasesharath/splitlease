@@ -93,7 +93,9 @@ export default function ListingDashboardPage() {
           <div className="listing-dashboard__container">
             <div className="listing-dashboard__error">
               <p>Error: {error}</p>
-              <button onClick={() => window.location.reload()}>Retry</button>
+              <button onClick={() => (window.location.href = '/host-overview')}>
+                Go to My Listings
+              </button>
             </div>
           </div>
         </div>

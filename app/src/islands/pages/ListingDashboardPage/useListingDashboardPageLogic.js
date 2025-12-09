@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { validateTokenAndFetchUser } from '../../../lib/auth';
-import { mockListing, mockCounts } from './data/mockListing';
 import { generateListingDescription, generateListingTitle } from '../../../lib/aiService';
 import { getCommonHouseRules } from '../../shared/EditListingDetails/services/houseRulesService';
 import { getCommonSafetyFeatures } from '../../shared/EditListingDetails/services/safetyFeaturesService';
@@ -445,10 +444,9 @@ export default function useListingDashboardPageLogic() {
     if (listingId) {
       fetchListing(listingId);
     } else {
-      // Use mock data if no ID provided (for development)
-      console.log('⚠️ No listing ID in URL, using mock data');
-      setListing(mockListing);
-      setCounts(mockCounts);
+      // No listing ID provided - show error
+      console.error('❌ No listing ID in URL');
+      setError('No listing ID provided. Please access this page from your listings.');
       setIsLoading(false);
     }
   }, [fetchListing, getListingIdFromUrl]);

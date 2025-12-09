@@ -805,7 +805,7 @@ export function SelfListingPageV2() {
       const result = await createListing(listingData);
 
       console.log('[SelfListingPageV2] Listing created:', result);
-      setCreatedListingId(result.id);
+      setCreatedListingId(result._id);
       setSubmitSuccess(true);
       localStorage.removeItem(STORAGE_KEY);
     } catch (error) {
