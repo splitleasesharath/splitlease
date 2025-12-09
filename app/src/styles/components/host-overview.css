@@ -391,13 +391,35 @@
 
 /* Listing Card */
 .listing-card {
-  background-color: var(--ho-color-white);
+  background-color: #F8F8F8;
+  padding: 0;
+  overflow: hidden;
+  max-width: 700px;
 }
 
 .listing-card__content {
   display: flex;
+  flex-direction: row;
+  gap: 0;
+  min-height: 100%;
+}
+
+.listing-card__left {
+  flex: 0 0 auto;
+  width: 55%;
+  display: flex;
   flex-direction: column;
   gap: var(--ho-spacing-lg);
+  padding: var(--ho-spacing-2xl);
+  background-color: var(--ho-color-white);
+}
+
+.listing-card__right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--ho-spacing-xl);
 }
 
 .listing-card__header {
@@ -468,6 +490,72 @@
   display: flex;
   gap: var(--ho-spacing-md);
   flex-wrap: wrap;
+}
+
+/* Listing Card Pricing */
+.listing-card__pricing {
+  text-align: center;
+}
+
+.listing-card__pricing--empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.listing-card__pricing-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: var(--ho-spacing-sm);
+}
+
+.listing-card__price {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--ho-color-text-primary);
+  line-height: 1.1;
+}
+
+.listing-card__period {
+  font-size: 14px;
+  color: var(--ho-color-text-secondary);
+}
+
+.listing-card__pricing-label {
+  font-size: 12px;
+  color: var(--ho-color-text-secondary);
+  margin-bottom: var(--ho-spacing-sm);
+  padding-bottom: var(--ho-spacing-sm);
+  border-bottom: 1px solid var(--ho-color-border-light);
+}
+
+.listing-card__pricing-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--ho-spacing-xs);
+}
+
+.listing-card__pricing-item {
+  display: flex;
+  justify-content: center;
+  gap: var(--ho-spacing-xs);
+  font-size: 12px;
+}
+
+.listing-card__pricing-item .label {
+  color: var(--ho-color-text-secondary);
+}
+
+.listing-card__pricing-item .value {
+  font-weight: 600;
+  color: var(--ho-color-text-primary);
+}
+
+.listing-card__pricing-empty {
+  font-size: 14px;
+  color: var(--ho-color-text-secondary);
+  font-style: italic;
 }
 
 /* Claim Listing Card */
@@ -1023,6 +1111,23 @@
 
   /* Card responsive */
   .host-card {
+    padding: var(--ho-spacing-lg);
+  }
+
+  .listing-card {
+    padding: 0;
+  }
+
+  .listing-card__content {
+    flex-direction: column;
+  }
+
+  .listing-card__left {
+    padding: var(--ho-spacing-lg);
+  }
+
+  .listing-card__right {
+    width: auto;
     padding: var(--ho-spacing-lg);
   }
 
