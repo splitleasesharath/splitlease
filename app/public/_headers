@@ -31,6 +31,12 @@
 /search/*
   Content-Type: text/html; charset=utf-8
 
+# Reset Password page - serve as HTML (uses _internal pattern)
+/reset-password
+  Content-Type: text/html; charset=utf-8
+/reset-password/*
+  Content-Type: text/html; charset=utf-8
+
 # Internal files (no extension) - serve as HTML
 /_internal/*
   Content-Type: text/html; charset=utf-8
