@@ -230,7 +230,8 @@ export const routes = [
     file: 'listing-dashboard.html',
     aliases: ['/listing-dashboard.html'],
     protected: true,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'listing-dashboard-view',
     hasDynamicSegment: false
   },
   {
@@ -238,7 +239,8 @@ export const routes = [
     file: 'host-overview.html',
     aliases: ['/host-overview.html'],
     protected: true,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'host-overview-view',
     hasDynamicSegment: false
   },
 

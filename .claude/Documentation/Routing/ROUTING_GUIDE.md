@@ -250,7 +250,9 @@ For every route with `cloudflareInternal: true`, add to `app/public/_headers`:
 - `/view-split-lease`, `/preview-split-lease`
 - `/guest-proposals`, `/host-proposals`
 - `/search`, `/help-center`
-- `/reset-password`
+- `/reset-password`, `/self-listing-v2`
+- `/faq`, `/policies`, `/list-with-us`, `/why-split-lease`
+- `/careers`, `/about-us`, `/guest-success`, `/host-success`
 - `/_internal/*` (catch-all, but explicit routes are more reliable)
 
 ---

@@ -81,6 +81,14 @@
 /host-success
   Content-Type: text/html; charset=utf-8
 
+# Listing Dashboard page - serve as HTML (uses _internal pattern)
+/listing-dashboard
+  Content-Type: text/html; charset=utf-8
+
+# Host Overview page - serve as HTML (uses _internal pattern)
+/host-overview
+  Content-Type: text/html; charset=utf-8
+
 # Internal files (no extension) - serve as HTML
 /_internal/*
   Content-Type: text/html; charset=utf-8
