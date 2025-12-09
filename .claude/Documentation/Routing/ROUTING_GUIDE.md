@@ -225,6 +225,34 @@ Using `cloudflareInternal: true`:
 - Cloudflare serves this file directly without normalization
 - No 308 redirects, URL parameters preserved
 
+### CRITICAL: Content-Type Headers for cloudflareInternal Routes
+
+**Routes using `cloudflareInternal: true` MUST have explicit Content-Type headers in `app/public/_headers`**, otherwise Cloudflare will serve the `_internal/*` files as binary downloads instead of HTML pages.
+
+For every route with `cloudflareInternal: true`, add to `app/public/_headers`:
+
+```
+# [Route Name] - serve as HTML (uses _internal pattern)
+/your-route
+  Content-Type: text/html; charset=utf-8
+/your-route/*
+  Content-Type: text/html; charset=utf-8
+```
+
+**Why this happens**: Files in `_internal/` have no `.html` extension. Without explicit Content-Type headers, Cloudflare cannot determine the MIME type and defaults to binary/octet-stream, causing browsers to download the file instead of rendering it.
+
+**Symptoms of missing Content-Type header**:
+- Browser downloads a file instead of showing the page
+- Downloaded file has no extension (e.g., "reset-password" instead of HTML)
+- Works in development but fails in production
+
+**Existing routes with required headers** (in `_headers`):
+- `/view-split-lease`, `/preview-split-lease`
+- `/guest-proposals`, `/host-proposals`
+- `/search`, `/help-center`
+- `/reset-password`
+- `/_internal/*` (catch-all, but explicit routes are more reliable)
+
 ---
 
 ## How To: Add a Protected Route
@@ -406,6 +434,24 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/your-route
 
 ## Troubleshooting
 
+### Problem: Page Downloads as File Instead of Rendering
+
+**Symptom**: Browser downloads a file (e.g., "reset-password") instead of showing the page
+
+**Cause**: Missing Content-Type header for `cloudflareInternal` route
+
+**Solution**:
+1. Add Content-Type header to `app/public/_headers`:
+   ```
+   /your-route
+     Content-Type: text/html; charset=utf-8
+   /your-route/*
+     Content-Type: text/html; charset=utf-8
+   ```
+2. Rebuild and redeploy: `npm run build` then deploy
+
+**Why**: Files in `_internal/` have no `.html` extension, so Cloudflare can't determine the MIME type without explicit headers.
+
 ### Problem: 308 Redirect Loop
 
 **Symptom**: Page redirects infinitely or loses URL parameters
@@ -415,8 +461,9 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/your-route
 **Solution**:
 1. Set `cloudflareInternal: true` in route config
 2. Add `internalName: 'your-page-view'`
-3. Regenerate routes: `npm run generate-routes`
-4. Rebuild: `npm run build`
+3. Add Content-Type header to `app/public/_headers` (see above)
+4. Regenerate routes: `npm run generate-routes`
+5. Rebuild: `npm run build`
 
 ### Problem: Route Works in Dev, 404 in Production
 
@@ -526,7 +573,7 @@ Before Route Registry, routes were defined in 4 places:
 
 ## Keywords for Search
 
-routing, routes, redirects, _redirects, _routes.json, cloudflare, pages, functions, vite, middleware, 308, redirect loop, clean URLs, dynamic routes, URL parameters, query string, navigation, protected routes, authentication, _internal, listing-view, help-center, guest-proposals, route registry, single source of truth, generate-routes, prebuild, handleRouting
+routing, routes, redirects, _redirects, _routes.json, cloudflare, pages, functions, vite, middleware, 308, redirect loop, clean URLs, dynamic routes, URL parameters, query string, navigation, protected routes, authentication, _internal, listing-view, help-center, guest-proposals, route registry, single source of truth, generate-routes, prebuild, handleRouting, Content-Type, _headers, binary download, file download, MIME type, text/html, cloudflareInternal
 
 ---
 
