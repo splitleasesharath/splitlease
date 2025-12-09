@@ -49,6 +49,38 @@
 /self-listing-v2/*
   Content-Type: text/html; charset=utf-8
 
+# FAQ page - serve as HTML (uses _internal pattern)
+/faq
+  Content-Type: text/html; charset=utf-8
+
+# Policies page - serve as HTML (uses _internal pattern)
+/policies
+  Content-Type: text/html; charset=utf-8
+
+# List With Us page - serve as HTML (uses _internal pattern)
+/list-with-us
+  Content-Type: text/html; charset=utf-8
+
+# Why Split Lease page - serve as HTML (uses _internal pattern)
+/why-split-lease
+  Content-Type: text/html; charset=utf-8
+
+# Careers page - serve as HTML (uses _internal pattern)
+/careers
+  Content-Type: text/html; charset=utf-8
+
+# About Us page - serve as HTML (uses _internal pattern)
+/about-us
+  Content-Type: text/html; charset=utf-8
+
+# Guest Success page - serve as HTML (uses _internal pattern)
+/guest-success
+  Content-Type: text/html; charset=utf-8
+
+# Host Success page - serve as HTML (uses _internal pattern)
+/host-success
+  Content-Type: text/html; charset=utf-8
+
 # Internal files (no extension) - serve as HTML
 /_internal/*
   Content-Type: text/html; charset=utf-8

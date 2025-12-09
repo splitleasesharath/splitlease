@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2025-12-09T13:31:56.681Z
+# Generated: 2025-12-09T13:43:49.223Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -52,45 +52,37 @@
 /help-center  /_internal/help-center-view  200
 /help-center/  /_internal/help-center-view  200
 
-# /faq
-/faq  /faq.html  200
-/faq/  /faq.html  200
-/faq.html  /faq.html  200
+# /faq → faq.html
+/faq  /_internal/faq-view  200
+/faq/  /_internal/faq-view  200
 
-# /policies
-/policies  /policies.html  200
-/policies/  /policies.html  200
-/policies.html  /policies.html  200
+# /policies → policies.html
+/policies  /_internal/policies-view  200
+/policies/  /_internal/policies-view  200
 
-# /list-with-us
-/list-with-us  /list-with-us.html  200
-/list-with-us/  /list-with-us.html  200
-/list-with-us.html  /list-with-us.html  200
+# /list-with-us → list-with-us.html
+/list-with-us  /_internal/list-with-us-view  200
+/list-with-us/  /_internal/list-with-us-view  200
 
-# /why-split-lease
-/why-split-lease  /why-split-lease.html  200
-/why-split-lease/  /why-split-lease.html  200
-/why-split-lease.html  /why-split-lease.html  200
+# /why-split-lease → why-split-lease.html
+/why-split-lease  /_internal/why-split-lease-view  200
+/why-split-lease/  /_internal/why-split-lease-view  200
 
-# /careers
-/careers  /careers.html  200
-/careers/  /careers.html  200
-/careers.html  /careers.html  200
+# /careers → careers.html
+/careers  /_internal/careers-view  200
+/careers/  /_internal/careers-view  200
 
-# /about-us
-/about-us  /about-us.html  200
-/about-us/  /about-us.html  200
-/about-us.html  /about-us.html  200
+# /about-us → about-us.html
+/about-us  /_internal/about-us-view  200
+/about-us/  /_internal/about-us-view  200
 
-# /guest-success
-/guest-success  /guest-success.html  200
-/guest-success/  /guest-success.html  200
-/guest-success.html  /guest-success.html  200
+# /guest-success → guest-success.html
+/guest-success  /_internal/guest-success-view  200
+/guest-success/  /_internal/guest-success-view  200
 
-# /host-success
-/host-success  /host-success.html  200
-/host-success/  /host-success.html  200
-/host-success.html  /host-success.html  200
+# /host-success → host-success.html
+/host-success  /_internal/host-success-view  200
+/host-success/  /_internal/host-success-view  200
 
 # /self-listing
 /self-listing  /self-listing.html  200

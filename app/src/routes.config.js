@@ -126,7 +126,8 @@ export const routes = [
     file: 'faq.html',
     aliases: ['/faq.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'faq-view',
     hasDynamicSegment: false
   },
   {
@@ -134,7 +135,8 @@ export const routes = [
     file: 'policies.html',
     aliases: ['/policies.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'policies-view',
     hasDynamicSegment: false
   },
   {
@@ -142,7 +144,8 @@ export const routes = [
     file: 'list-with-us.html',
     aliases: ['/list-with-us.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'list-with-us-view',
     hasDynamicSegment: false
   },
   {
@@ -150,7 +153,8 @@ export const routes = [
     file: 'why-split-lease.html',
     aliases: ['/why-split-lease.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'why-split-lease-view',
     hasDynamicSegment: false
   },
   {
@@ -158,7 +162,8 @@ export const routes = [
     file: 'careers.html',
     aliases: ['/careers.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'careers-view',
     hasDynamicSegment: false
   },
   {
@@ -166,7 +171,8 @@ export const routes = [
     file: 'about-us.html',
     aliases: ['/about-us.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'about-us-view',
     hasDynamicSegment: false
   },
 
@@ -176,7 +182,8 @@ export const routes = [
     file: 'guest-success.html',
     aliases: ['/guest-success.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'guest-success-view',
     hasDynamicSegment: false
   },
   {
@@ -184,7 +191,8 @@ export const routes = [
     file: 'host-success.html',
     aliases: ['/host-success.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'host-success-view',
     hasDynamicSegment: false
   },
 
