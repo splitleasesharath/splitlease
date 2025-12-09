@@ -30,6 +30,7 @@ import {
   formatPriceForDisplay,
 } from "../lib/calculations.ts";
 import { determineInitialStatus, ProposalStatusName } from "../lib/status.ts";
+import { enqueueBubbleSync, triggerQueueProcessing } from "../lib/bubbleSyncQueue.ts";
 
 // ID generation is now done via RPC: generate_bubble_id()
 
@@ -406,6 +407,67 @@ export async function handleCreate(
   console.log(`[proposal:create] [ASYNC] Would trigger: proposal-suggestions`, {
     proposalId: proposalId,
   });
+
+  // ================================================
+  // ENQUEUE BUBBLE SYNC (Supabase → Bubble via sync_queue)
+  // ================================================
+
+  // Enqueue sync items for sequential processing by bubble_sync Edge Function
+  // Order matters: CREATE proposal first, then UPDATE users
+  try {
+    await enqueueBubbleSync(supabase, {
+      // Correlation ID to group related sync items
+      correlationId: proposalId,
+
+      items: [
+        // Item 1: CREATE proposal in Bubble (processed first)
+        {
+          sequence: 1,
+          table: 'proposal',
+          recordId: proposalId,
+          operation: 'INSERT',
+          payload: proposalData,
+          // bubble_id will be retrieved from POST response and stored
+        },
+
+        // Item 2: UPDATE guest user in Bubble (processed second)
+        {
+          sequence: 2,
+          table: 'user',
+          recordId: guestData._id,           // This IS the guest's bubble_id
+          operation: 'UPDATE',
+          bubbleId: guestData._id,           // Explicit bubble_id for PATCH
+          payload: {
+            'Proposals List': updatedGuestProposals,
+            'Favorited Listings': guestUpdates['Favorited Listings'] || currentFavorites,
+            'flexibility (last known)': guestFlexibility,
+            'Recent Days Selected': input.daysSelected,
+          }
+        },
+
+        // Item 3: UPDATE host user in Bubble (processed third)
+        {
+          sequence: 3,
+          table: 'user',
+          recordId: hostUserData._id,        // This IS the host's bubble_id
+          operation: 'UPDATE',
+          bubbleId: hostUserData._id,        // Explicit bubble_id for PATCH
+          payload: {
+            'Proposals List': [...hostProposals, proposalId],
+          }
+        }
+      ]
+    });
+
+    console.log(`[proposal:create] Bubble sync items enqueued (correlation: ${proposalId})`);
+
+    // Trigger queue processing (fire and forget)
+    triggerQueueProcessing();
+
+  } catch (syncError) {
+    // Log but don't fail - items can be manually requeued if needed
+    console.error(`[proposal:create] Failed to enqueue Bubble sync (non-blocking):`, syncError);
+  }
 
   // ================================================
   // RETURN RESPONSE
