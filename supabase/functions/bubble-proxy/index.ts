@@ -7,15 +7,18 @@
  * Other actions require authentication via Supabase Auth
  *
  * Supported Actions:
- * - create_listing: Create new listing (with Supabase sync) - NO AUTH REQUIRED
- * - get_listing: Fetch listing data from Bubble - NO AUTH REQUIRED
  * - send_message: Send message to host (no sync) - NO AUTH REQUIRED
- * - signup_ai: AI-powered signup (atomic sync) - NO AUTH REQUIRED
- * - upload_photos: Upload listing photos (atomic sync)
- * - submit_referral: Submit referral (atomic sync)
- * - submit_listing: Full listing submission with all form data - AUTH REQUIRED
+ * - ai_inquiry: AI-powered market research inquiry (atomic sync) - NO AUTH REQUIRED
+ * - upload_photos: Upload listing photos (atomic sync) - NO AUTH REQUIRED
+ * - submit_referral: Submit referral (atomic sync) - AUTH REQUIRED
  * - toggle_favorite: Add/remove listing from user's favorites - NO AUTH REQUIRED (uses Bubble user ID)
- * - create_proposal: Create a new proposal on Supabase - NO AUTH REQUIRED (uses Bubble user ID)
+ * - get_favorites: Get user's favorited listings - NO AUTH REQUIRED (uses Bubble user ID)
+ *
+ * DEPRECATED - Moved to dedicated edge functions:
+ * - create_proposal: Use POST /functions/v1/proposal with action: "create"
+ * - create_listing: Use POST /functions/v1/listing with action: "create"
+ * - get_listing: Use POST /functions/v1/listing with action: "get"
+ * - submit_listing: Use POST /functions/v1/listing with action: "submit"
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -27,22 +30,18 @@ import { validateAction, validateRequiredFields } from '../_shared/validation.ts
 import { EdgeFunctionRequest } from '../_shared/types.ts';
 
 // Import handlers
-import { handleListingCreate } from './handlers/listing.ts';
-import { handleGetListing } from './handlers/getListing.ts';
 import { handlePhotoUpload } from './handlers/photos.ts';
 import { handleSendMessage } from './handlers/messaging.ts';
 import { handleReferral } from './handlers/referral.ts';
-import { handleAiSignup } from './handlers/signup.ts';
-import { handleSubmitListing } from './handlers/submitListing.ts';
+import { handleAiInquiry } from './handlers/aiInquiry.ts';
 import { handleFavorites } from './handlers/favorites.ts';
 import { handleGetFavorites } from './handlers/getFavorites.ts';
-import { handleCreateProposal } from './handlers/proposal.ts';
 
 console.log('[bubble-proxy] Edge Function started');
 
 // Actions that don't require authentication
 // upload_photos is public because photos are uploaded in Section 6 before user signup in Section 7
-const PUBLIC_ACTIONS = ['create_listing', 'get_listing', 'send_message', 'signup_ai', 'upload_photos', 'toggle_favorite', 'get_favorites', 'create_proposal'];
+const PUBLIC_ACTIONS = ['send_message', 'ai_inquiry', 'upload_photos', 'toggle_favorite', 'get_favorites'];
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -72,16 +71,12 @@ Deno.serve(async (req) => {
 
     // Validate action is supported
     const allowedActions = [
-      'create_listing',
-      'get_listing',
       'upload_photos',
       'send_message',
       'submit_referral',
-      'signup_ai',
-      'submit_listing',
+      'ai_inquiry',
       'toggle_favorite',
       'get_favorites',
-      'create_proposal',
     ];
     validateAction(action, allowedActions);
 
@@ -149,14 +144,6 @@ Deno.serve(async (req) => {
     let result;
 
     switch (action) {
-      case 'create_listing':
-        result = await handleListingCreate(syncService, payload, user);
-        break;
-
-      case 'get_listing':
-        result = await handleGetListing(syncService, payload, user);
-        break;
-
       case 'upload_photos':
         result = await handlePhotoUpload(syncService, payload, user);
         break;
@@ -169,12 +156,8 @@ Deno.serve(async (req) => {
         result = await handleReferral(syncService, payload, user);
         break;
 
-      case 'signup_ai':
-        result = await handleAiSignup(syncService, payload, user);
-        break;
-
-      case 'submit_listing':
-        result = await handleSubmitListing(syncService, payload, user);
+      case 'ai_inquiry':
+        result = await handleAiInquiry(syncService, payload, user);
         break;
 
       case 'toggle_favorite':
@@ -183,10 +166,6 @@ Deno.serve(async (req) => {
 
       case 'get_favorites':
         result = await handleGetFavorites(payload);
-        break;
-
-      case 'create_proposal':
-        result = await handleCreateProposal(payload);
         break;
 
       default:
