@@ -43,6 +43,12 @@
 /reset-password/*
   Content-Type: text/html; charset=utf-8
 
+# Self Listing V2 page - serve as HTML (uses _internal pattern)
+/self-listing-v2
+  Content-Type: text/html; charset=utf-8
+/self-listing-v2/*
+  Content-Type: text/html; charset=utf-8
+
 # Internal files (no extension) - serve as HTML
 /_internal/*
   Content-Type: text/html; charset=utf-8
