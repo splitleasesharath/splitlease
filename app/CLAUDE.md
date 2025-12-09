@@ -472,16 +472,16 @@ import { canCancelProposal, canModifyProposal } from 'src/logic/rules/proposals/
 
 ```bash
 # Install dependencies
-npm install
+bun install
 
 # Development server
-npm run dev
+bun run dev
 
 # Production build
-npm run build
+bun run build
 
 # Preview production build
-npm run preview
+bun run preview
 ```
 
 ### Environment Variables
