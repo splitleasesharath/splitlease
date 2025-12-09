@@ -27,6 +27,7 @@ import {
     QueueItemWithConfig,
     ProcessResult,
 } from '../lib/queueManager.ts';
+import { handleSyncSignupAtomic } from './syncSignupAtomic.ts';
 
 export interface ProcessQueueDataApiPayload {
     batch_size?: number;
@@ -78,8 +79,29 @@ export async function handleProcessQueueDataApi(
             result.processed++;
 
             try {
-                await processItemDataApi(supabase, bubbleConfig, item);
-                result.success++;
+                // ========== DETECT SIGNUP_ATOMIC OPERATION ==========
+                if (item.operation === 'SIGNUP_ATOMIC') {
+                    console.log('[processQueueDataApi] Detected SIGNUP_ATOMIC operation');
+
+                    // Mark as processing
+                    await markAsProcessing(supabase, item.id);
+
+                    // Route to atomic signup handler
+                    const syncResult = await handleSyncSignupAtomic(
+                        supabase,
+                        bubbleConfig,
+                        item.payload
+                    );
+
+                    // Mark as completed
+                    await markAsCompleted(supabase, item.id, syncResult);
+
+                    result.success++;
+                } else {
+                    // Standard single-record sync
+                    await processItemDataApi(supabase, bubbleConfig, item);
+                    result.success++;
+                }
             } catch (error) {
                 if (error.message?.includes('skipped')) {
                     result.skipped++;
