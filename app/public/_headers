@@ -19,6 +19,12 @@
 /guest-proposals/*
   Content-Type: text/html; charset=utf-8
 
+# Host Proposals pages - serve as HTML (uses _internal pattern)
+/host-proposals
+  Content-Type: text/html; charset=utf-8
+/host-proposals/*
+  Content-Type: text/html; charset=utf-8
+
 # Help Center pages - serve as HTML
 /help-center
   Content-Type: text/html; charset=utf-8
@@ -35,6 +41,12 @@
 /reset-password
   Content-Type: text/html; charset=utf-8
 /reset-password/*
+  Content-Type: text/html; charset=utf-8
+
+# Self Listing V2 page - serve as HTML (uses _internal pattern)
+/self-listing-v2
+  Content-Type: text/html; charset=utf-8
+/self-listing-v2/*
   Content-Type: text/html; charset=utf-8
 
 # Internal files (no extension) - serve as HTML

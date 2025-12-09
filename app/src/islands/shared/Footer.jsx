@@ -164,9 +164,9 @@ export default function Footer() {
               >
                 List Property Now
               </a>
-              <a href="/list-with-us.html">How to List</a>
+              <a href="/list-with-us">How to List</a>
               <a href="/host-success">Success Stories</a>
-              <a href="/policies.html">Legal Section</a>
+              <a href="/policies">Legal Section</a>
               <a href="https://app.split.lease/host-guarantee">Guarantees</a>
               <a href="https://app.split.lease/demo-house-manual">Free House Manual</a>
             </div>
@@ -179,16 +179,16 @@ export default function Footer() {
               <a href={SEARCH_URL}>Explore Split Leases</a>
               <a href="/guest-success">Success Stories</a>
               <a href={SIGNUP_LOGIN_URL}>Speak to an Agent</a>
-              <a href="/faq.html?section=travelers">View FAQ</a>
+              <a href="/faq?section=travelers">View FAQ</a>
             </div>
           )}
 
           {/* Company Column */}
           <div className="footer-column">
             <h4>Company</h4>
-            <a href="/faq.html?section=travelers&question=1692211080963x751695924087252700">About Periodic Tenancy</a>
+            <a href="/faq?section=travelers&question=1692211080963x751695924087252700">About Periodic Tenancy</a>
             <a href="/about-us">About the Team</a>
-            <a href="/careers.html">Careers at Split Lease</a>
+            <a href="/careers">Careers at Split Lease</a>
             <a href="https://app.split.lease/knowledge-base/1676496004548x830972865850585500">Blog</a>
           </div>
 

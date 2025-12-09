@@ -213,7 +213,8 @@ export const routes = [
     file: 'self-listing-v2.html',
     aliases: ['/self-listing-v2.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'self-listing-v2-view',
     hasDynamicSegment: false
   },
   {
