@@ -23,13 +23,17 @@ After the `proposal` Edge Function creates a proposal natively in Supabase, we n
 2. BUBBLE SYNC PHASE 1: CREATE (POST)
    └── For each NEW row created in Supabase:
        a. POST to /obj/proposal → Get Bubble _id back
-       b. (If Bubble generates different ID) Update Supabase with Bubble's _id
+       b. Store returned Bubble _id in Supabase `bubble_id` field
+       c. Use this bubble_id for ALL subsequent Bubble operations
 
 3. BUBBLE SYNC PHASE 2: UPDATE (PATCH)
-   └── Update foreign key relationships:
-       a. PATCH /obj/user/{guest_id} → Add proposal to "Proposals List"
-       b. PATCH /obj/user/{host_id} → Add proposal to "Proposals List"
-       c. PATCH /obj/user/{guest_id} → Add listing to "Favorited Listings"
+   └── Update foreign key relationships using bubble_id:
+       a. PATCH /obj/user/{guest_bubble_id} → Add proposal to "Proposals List"
+       b. PATCH /obj/user/{host_bubble_id} → Add proposal to "Proposals List"
+       c. PATCH /obj/user/{guest_bubble_id} → Add listing to "Favorited Listings"
+
+⚠️ IMPORTANT: Always use bubble_id (the ID from Bubble's database) when making
+   PATCH/PUT requests to Bubble. Never use Supabase's internal _id for updates.
 ```
 
 ---
@@ -94,20 +98,22 @@ After the native Supabase operations complete successfully, add a call to orches
 import { triggerBubbleSync } from '../lib/bubbleSync.ts';
 
 // After all Supabase operations complete, before returning:
+// IMPORTANT: Use bubble_id for ALL Bubble API operations
+
 await triggerBubbleSync(serviceClient, {
-  // Phase 1: CREATE operations
+  // Phase 1: CREATE operations (POST - no bubble_id yet, will receive it)
   creates: [
     {
       table: 'proposal',
-      recordId: proposalId,
-      data: proposalData,  // The full proposal data object
+      supabaseId: proposalId,      // Our internal ID (for updating Supabase after)
+      data: proposalData,          // The full proposal data object
     }
   ],
-  // Phase 2: UPDATE operations (foreign key relations)
+  // Phase 2: UPDATE operations (PATCH - MUST use bubble_id from existing records)
   updates: [
     {
       table: 'user',
-      bubbleId: input.guestId,  // Guest's existing Bubble _id
+      bubbleId: guestData._id,     // Guest's bubble_id from Supabase record
       data: {
         'Proposals List': updatedGuestProposals,
         'Favorited Listings': guestUpdates['Favorited Listings'],
@@ -117,13 +123,17 @@ await triggerBubbleSync(serviceClient, {
     },
     {
       table: 'user',
-      bubbleId: hostAccountData.User,  // Host's existing Bubble _id
+      bubbleId: hostUserData._id,  // Host's bubble_id from Supabase record
       data: {
         'Proposals List': [...hostProposals, proposalId],
       }
     }
   ]
 });
+
+// NOTE: The guest and host user records already exist in Bubble.
+// Their _id field in Supabase IS their bubble_id (synced from Bubble).
+// Always use this _id when making PATCH requests to Bubble.
 ```
 
 ### Phase 2: Create Bubble Sync Orchestrator
@@ -534,20 +544,36 @@ ALTER TABLE proposal ADD COLUMN IF NOT EXISTS bubble_id TEXT;
 
 ## Key Decisions
 
-### Decision 1: _id Strategy
-**Question**: Should we use the `generate_bubble_id()` value as the Bubble ID, or let Bubble generate its own?
+### Decision 1: bubble_id Strategy (CRITICAL)
+**Question**: What identifier to use when updating records in Bubble?
 
-**Recommendation**: Use `generate_bubble_id()` as the primary ID everywhere.
+**Answer**: ALWAYS use `bubble_id` when making PATCH/PUT requests to Bubble.
 
-**Rationale**:
-- The RPC generates IDs in Bubble format (`{timestamp}x{random}`)
-- Keeps both systems using the same ID
-- No need to backfill Bubble IDs later
+**Why**:
+- Records already existing in Bubble have their own `_id` assigned by Bubble
+- When synced to Supabase, this Bubble `_id` is stored in Supabase's `_id` field
+- For NEW records created in Supabase first, Bubble assigns its own `_id` on POST
+- We must use Bubble's assigned `_id` for all subsequent updates
 
-**Implementation**: When POSTing to Bubble, we DON'T include `_id` in the body (it's read-only). Bubble will generate its own ID. We then:
-1. Compare Bubble's returned ID with our generated ID
-2. If different, store Bubble's ID in a `bubble_id` field for reference
-3. Continue using our `_id` as the primary key in Supabase
+**Implementation**:
+```
+Phase 1 (CREATE):
+├── POST /obj/proposal (no _id in body - Bubble generates one)
+├── Response: { id: "1733789xxxxxx..." }
+└── Store this bubble_id in Supabase for future reference
+
+Phase 2 (UPDATE):
+├── For existing records (users, listings):
+│   └── Their Supabase _id IS their bubble_id (came from Bubble)
+├── For newly created records (proposal):
+│   └── Use the bubble_id returned from Phase 1 POST
+└── PATCH /obj/{table}/{bubble_id} with updates
+```
+
+**Key Rule**: Never assume Supabase's `_id` equals Bubble's `_id` for new records.
+Always retrieve and use the `bubble_id` from:
+1. The POST response (for new records)
+2. The existing `_id` field (for records that originated in Bubble)
 
 ### Decision 2: Sync Mode
 **Question**: Synchronous or async (queue-based)?
