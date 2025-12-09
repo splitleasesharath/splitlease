@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Lottie from 'lottie-react';
+import { signupUser } from '../../../lib/auth.js';
 
 /**
  * AiSignupMarketReport - Advanced AI-powered market research signup modal
  *
  * Features:
- * - Smart email/phone extraction from freeform text
+ * - Smart email/phone/name extraction from freeform text
  * - Auto-correction for common email typos
  * - Incomplete phone number handling
+ * - Automatic user account creation with generated password (SL{name}77)
  * - Three Lottie animations (parsing, loading, success)
  * - Dynamic form flow based on data quality
  * - Integrated with Bubble.io workflow
@@ -20,6 +22,70 @@ import Lottie from 'lottie-react';
 
 // ============ UTILITY FUNCTIONS ============
 
+/**
+ * Extract a name from freeform text
+ * Looks for common patterns like "I'm [Name]", "My name is [Name]", "I am [Name]"
+ * Also extracts from email local part (before @) as fallback
+ *
+ * @param {string} text - The freeform text to extract name from
+ * @param {string} email - Optional email to use as fallback for name extraction
+ * @returns {string|null} - Extracted name or null if not found
+ */
+function extractName(text, email = null) {
+  if (!text) return null;
+
+  // Patterns to look for name introduction
+  const namePatterns = [
+    /(?:I'm|I am|my name is|this is|hi,? i'm|hello,? i'm|hey,? i'm)\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    /(?:name:?\s*)([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)/i,
+    /(?:^|\s)([A-Z][a-z]+)\s+(?:here|speaking|writing)/i,
+    /(?:send to|contact|reach)\s+(?:me at|at|:)?\s*([A-Z][a-z]+)/i,
+  ];
+
+  for (const pattern of namePatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      // Clean up and return the first name only
+      const fullName = match[1].trim();
+      const firstName = fullName.split(/\s+/)[0];
+      return firstName;
+    }
+  }
+
+  // Fallback: try to extract name from email local part
+  if (email) {
+    const localPart = email.split('@')[0];
+    if (localPart) {
+      // Remove common suffixes like numbers
+      const nameFromEmail = localPart
+        .replace(/[0-9]+$/, '')     // Remove trailing numbers
+        .replace(/[._-]/g, ' ')      // Replace separators with spaces
+        .split(/\s+/)[0];            // Take first part
+
+      // Capitalize first letter
+      if (nameFromEmail && nameFromEmail.length > 1) {
+        return nameFromEmail.charAt(0).toUpperCase() + nameFromEmail.slice(1).toLowerCase();
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Generate a password in the format SL{Name}77
+ *
+ * @param {string} name - The name to include in the password
+ * @returns {string} - Generated password
+ */
+function generatePassword(name) {
+  // Default to "User" if no name is provided
+  const safeName = name ? name.trim() : 'User';
+  // Capitalize first letter, lowercase rest for consistency
+  const formattedName = safeName.charAt(0).toUpperCase() + safeName.slice(1).toLowerCase();
+  return `SL${formattedName}77`;
+}
+
 function extractEmail(text) {
   if (!text) return null;
   const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+[.,][a-zA-Z]{2,}/;
@@ -30,13 +96,43 @@ function extractEmail(text) {
 function extractPhone(text) {
   if (!text) return null;
 
-  const completePhoneRegex = /\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
-  const completeMatch = text.match(completePhoneRegex);
-  if (completeMatch) return completeMatch[0];
+  // Only extract phone numbers that match standard US phone formats
+  // or are explicitly mentioned as phone numbers
+  // This avoids catching budget numbers like "$1500" or "1500"
 
-  const partialPhoneRegex = /\(?\d{1,3}\)?[-.\s]?\d{1,4}[-.\s]?\d{0,4}|\b\d{3,}\b/;
-  const partialMatch = text.match(partialPhoneRegex);
-  return partialMatch ? partialMatch[0] : null;
+  // Standard US phone formats (10 digits with various separators)
+  const standardPhonePatterns = [
+    /\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/,              // (123) 456-7890, 123-456-7890, 123.456.7890
+    /\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/, // +1 (123) 456-7890
+  ];
+
+  for (const pattern of standardPhonePatterns) {
+    const match = text.match(pattern);
+    if (match) return match[0];
+  }
+
+  // Look for numbers explicitly mentioned as phone numbers
+  // e.g., "my phone is 5551234567", "call me at 555-123-4567", "phone: 5551234567"
+  const explicitPhonePatterns = [
+    /(?:phone|call|text|reach|contact|cell|mobile)[:\s]+(?:me\s+)?(?:at\s+)?(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\d{10,11})/i,
+    /(\+?1?[-.\s]?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}|\d{10,11})(?:\s+(?:is my|my)\s+(?:phone|cell|mobile|number))/i,
+  ];
+
+  for (const pattern of explicitPhonePatterns) {
+    const match = text.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+
+  // Match 10-11 digit sequences only (standard US phone number length)
+  // This catches cases like "5551234567" but NOT "1500" (a budget)
+  const tenDigitMatch = text.match(/\b(\d{10,11})\b/);
+  if (tenDigitMatch) {
+    return tenDigitMatch[1];
+  }
+
+  return null;
 }
 
 function validateEmail(email) {
@@ -103,9 +199,19 @@ function autoCorrectEmail(email) {
 
 /**
  * Submit AI signup via Supabase Edge Function (GUEST endpoint)
+ * Also creates a user account with generated password
+ *
  * ✅ MIGRATED: No more hardcoded API key!
  * ✅ UNAUTHENTICATED: Works for guest users without login
+ * ✅ NEW: Creates user account with password format SL{Name}77
  * API key is now stored server-side in Supabase Secrets
+ *
+ * @param {Object} data - Signup data
+ * @param {string} data.email - User email
+ * @param {string} data.phone - User phone (optional)
+ * @param {string} data.marketResearchText - The market research description
+ * @param {string} data.name - Extracted name for account creation
+ * @returns {Promise<Object>} - Result with success status and data
  */
 async function submitSignup(data) {
   // Validate required fields
@@ -119,11 +225,56 @@ async function submitSignup(data) {
     throw new Error('Market research description is required');
   }
 
-  console.log('[AiSignupMarketReport] ========== SIGNUP REQUEST (GUEST ENDPOINT) ==========');
+  // Extract name from text or email for password generation
+  const extractedName = data.name || extractName(data.marketResearchText, data.email);
+  const generatedPassword = generatePassword(extractedName);
+
+  console.log('[AiSignupMarketReport] ========== SIGNUP REQUEST ==========');
   console.log('[AiSignupMarketReport] Email:', data.email);
   console.log('[AiSignupMarketReport] Phone:', data.phone || 'Not provided');
+  console.log('[AiSignupMarketReport] Extracted Name:', extractedName || 'Not found (using default)');
+  console.log('[AiSignupMarketReport] Generated Password:', generatedPassword);
   console.log('[AiSignupMarketReport] Text length:', data.marketResearchText.length);
   console.log('[AiSignupMarketReport] ================================================================');
+
+  // ========== STEP 1: Create User Account ==========
+  console.log('[AiSignupMarketReport] Step 1: Creating user account...');
+
+  try {
+    const signupResult = await signupUser(
+      data.email,
+      generatedPassword,
+      generatedPassword, // retype (same as password)
+      {
+        firstName: extractedName || 'Guest',
+        lastName: '', // Not available from freeform text
+        userType: 'Guest',
+        phoneNumber: data.phone || ''
+      }
+    );
+
+    if (signupResult.success) {
+      console.log('[AiSignupMarketReport] ✅ User account created successfully');
+      console.log('[AiSignupMarketReport] User ID:', signupResult.user_id);
+    } else {
+      // Check if the error is because email already exists
+      if (signupResult.error?.includes('already in use') ||
+          signupResult.error?.includes('USED_EMAIL')) {
+        console.log('[AiSignupMarketReport] ℹ️ User already exists, proceeding with market research submission');
+        // Continue with market research submission even if user already exists
+      } else {
+        console.warn('[AiSignupMarketReport] ⚠️ Account creation failed:', signupResult.error);
+        // Continue with market research submission anyway
+      }
+    }
+  } catch (signupError) {
+    console.warn('[AiSignupMarketReport] ⚠️ Account creation error:', signupError.message);
+    // Continue with market research submission even if signup fails
+    // The user might already exist or there might be a temporary issue
+  }
+
+  // ========== STEP 2: Submit Market Research ==========
+  console.log('[AiSignupMarketReport] Step 2: Submitting market research...');
 
   // Get Supabase URL from environment
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
@@ -166,11 +317,16 @@ async function submitSignup(data) {
 
     const result = await response.json();
     console.log('[AiSignupMarketReport] ========== SUCCESS ==========');
-    console.log('[AiSignupMarketReport] Signup completed successfully');
+    console.log('[AiSignupMarketReport] Market research submitted successfully');
     console.log('[AiSignupMarketReport] Result:', JSON.stringify(result, null, 2));
     console.log('[AiSignupMarketReport] ================================');
 
-    return { success: true, data: result.data };
+    return {
+      success: true,
+      data: result.data,
+      generatedPassword: generatedPassword, // Include for reference (will be sent via email)
+      extractedName: extractedName
+    };
   } catch (error) {
     console.error('[AiSignupMarketReport] ========== EXCEPTION ==========');
     console.error('[AiSignupMarketReport] Error:', error);
@@ -458,6 +614,9 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
       const correctedEmail = extractedEmail ? autoCorrectEmail(extractedEmail) : '';
       const emailCertainty = correctedEmail ? checkEmailCertainty(correctedEmail) : 'uncertain';
 
+      // Extract name from text (for user account creation)
+      const extractedNameFromText = extractName(formData.marketResearchText || '', correctedEmail);
+
       const emailWasCorrected = extractedEmail !== correctedEmail;
       const phoneIsComplete = extractedPhone ? /^\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/.test(extractedPhone) : false;
 
@@ -465,6 +624,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         ...formData,
         email: correctedEmail || formData.email || '',
         phone: extractedPhone || formData.phone || '',
+        name: extractedNameFromText || formData.name || '', // Store extracted name
       };
 
       const shouldAutoSubmit =
@@ -481,6 +641,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
             email: correctedEmail,
             phone: extractedPhone,
             marketResearchText: formData.marketResearchText,
+            name: extractedNameFromText, // Pass extracted name
             timestamp: new Date().toISOString(),
           });
 
@@ -534,6 +695,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         email: formData.email,
         phone: formData.phone,
         marketResearchText: formData.marketResearchText,
+        name: formData.name, // Pass the extracted name
         timestamp: new Date().toISOString(),
       });
 
