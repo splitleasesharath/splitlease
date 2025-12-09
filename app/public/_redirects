@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2025-12-09T03:59:51.932Z
+# Generated: 2025-12-09T10:29:42.065Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -122,10 +122,9 @@
 /rental-application/  /rental-application.html  200
 /rental-application.html  /rental-application.html  200
 
-# /reset-password
-/reset-password  /reset-password.html  200
-/reset-password/  /reset-password.html  200
-/reset-password.html  /reset-password.html  200
+# /reset-password → reset-password.html
+/reset-password  /_internal/reset-password-view  200
+/reset-password/  /_internal/reset-password-view  200
 
 # /404
 /404  /404.html  200

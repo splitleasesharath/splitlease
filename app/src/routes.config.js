@@ -257,7 +257,8 @@ export const routes = [
     file: 'reset-password.html',
     aliases: ['/reset-password.html'],
     protected: false,
-    cloudflareInternal: false,
+    cloudflareInternal: true,  // IMPORTANT: Prevents 308 redirects that strip query params/hash
+    internalName: 'reset-password-view',
     hasDynamicSegment: false
   },
 
