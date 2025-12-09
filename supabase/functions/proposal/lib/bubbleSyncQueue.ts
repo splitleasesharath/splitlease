@@ -32,6 +32,34 @@ interface EnqueuePayload {
 }
 
 /**
+ * Filter out Supabase/internal fields that Bubble API won't recognize
+ *
+ * CRITICAL: This prevents "Unrecognized field: X" errors from Bubble API
+ * Only fields that Bubble actually has should be sent to the API
+ */
+function filterBubbleIncompatibleFields(data: Record<string, unknown>): Record<string, unknown> {
+  const incompatibleFields = new Set([
+    'bubble_id',        // Supabase-only tracking field
+    'created_at',       // Supabase timestamp (Bubble uses 'Created Date')
+    'updated_at',       // Supabase timestamp (Bubble uses 'Modified Date')
+    'sync_status',      // Internal sync status
+    'bubble_sync_error',// Internal error tracking
+    'pending',          // CRITICAL: Was causing 400 errors from Bubble
+    '_internal',        // Internal marker fields
+    'sync_at',          // Internal sync timestamp
+    'last_synced',      // Internal sync tracking
+  ]);
+
+  const filtered: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(data)) {
+    if (!incompatibleFields.has(key) && value !== null && value !== undefined) {
+      filtered[key] = value;
+    }
+  }
+  return filtered;
+}
+
+/**
  * Enqueue multiple sync items to the sync_queue table
  *
  * Items are ordered by sequence number and processed sequentially.
@@ -50,11 +78,15 @@ export async function enqueueBubbleSync(
   for (const item of sortedItems) {
     const idempotencyKey = `${payload.correlationId}:${item.table}:${item.recordId}:${item.sequence}`;
 
+    // CRITICAL: Filter out Bubble-incompatible fields before queuing
+    // This prevents "Unrecognized field: X" errors from Bubble API
+    const cleanPayload = filterBubbleIncompatibleFields(item.payload);
+
     // Build the queue item payload
     // Include _id for the record identifier
     // For UPDATE operations, _id is used as the bubble_id by processQueueDataApi
     const queuePayload = {
-      ...item.payload,
+      ...cleanPayload,
       _id: item.bubbleId || item.recordId,
     };
 
