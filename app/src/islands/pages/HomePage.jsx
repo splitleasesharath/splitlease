@@ -524,16 +524,40 @@ export default function HomePage() {
   // State management
   const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]);
+  
+  // Internal routing state for password reset fallback
+  const [RecoveryComponent, setRecoveryComponent] = useState(null);
 
   // SAFETY NET: Check for password reset redirect
-  // If user lands on home page with recovery token, redirect to reset-password page
+  // If user lands on home page (or via server rewrite) with recovery token
   useEffect(() => {
-    if (window.location.hash && window.location.hash.includes('type=recovery')) {
-      console.log('Detected password reset token on home page, redirecting...');
-      // Preserve the hash so ResetPasswordPage can read it
-      window.location.href = `/reset-password.html${window.location.hash}`;
+    const hash = window.location.hash;
+    if (hash && hash.includes('type=recovery')) {
+      console.log('Detected password reset token.');
+      
+      // If we are at the root, redirect to the specific page to keep URLs clean
+      if (window.location.pathname === '/' || window.location.pathname === '/index.html') {
+         console.log('Redirecting from root to /reset-password...');
+         window.location.href = `/reset-password${hash}`;
+         return;
+      }
+
+      // If we are NOT at root (e.g. /reset-password), but HomePage loaded,
+      // it means the server rewrote the URL to index.html (SPA fallback).
+      // We must render the ResetPasswordPage manually to avoid a redirect loop.
+      console.log('Loading ResetPasswordPage dynamically (SPA fallback)...');
+      import('./ResetPasswordPage.jsx')
+        .then(module => {
+          setRecoveryComponent(() => module.default);
+        })
+        .catch(err => console.error('Failed to load ResetPasswordPage:', err));
     }
   }, []);
+
+  // If we need to render the recovery page instead of home
+  if (RecoveryComponent) {
+    return <RecoveryComponent />;
+  }
 
   // Check authentication status on mount
   useEffect(() => {
