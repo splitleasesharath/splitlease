@@ -45,6 +45,9 @@ export function useHostOverviewPageLogic() {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleteType, setDeleteType] = useState(null);
 
+  // Create listing modal state
+  const [showCreateListingModal, setShowCreateListingModal] = useState(false);
+
   // ============================================================================
   // TOAST NOTIFICATIONS
   // ============================================================================
@@ -419,7 +422,13 @@ export function useHostOverviewPageLogic() {
   // ============================================================================
 
   const handleCreateNewListing = useCallback(() => {
-    window.location.href = '/self-listing-v2';
+    // Show the CreateDuplicateListingModal instead of navigating directly
+    // This allows the user to enter a listing name before being redirected to self-listing (v1)
+    setShowCreateListingModal(true);
+  }, []);
+
+  const handleCloseCreateListingModal = useCallback(() => {
+    setShowCreateListingModal(false);
   }, []);
 
   const handleImportListing = useCallback(() => {
@@ -593,9 +602,11 @@ export function useHostOverviewPageLogic() {
     showDeleteConfirm,
     itemToDelete,
     deleteType,
+    showCreateListingModal,
 
     // Action handlers
     handleCreateNewListing,
+    handleCloseCreateListingModal,
     handleImportListing,
     handleCreateNewManual,
     handleEditListing,
