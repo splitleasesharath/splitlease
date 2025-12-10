@@ -5,6 +5,7 @@ import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 
 export default function CareersPage() {
   const [typeformModalActive, setTypeformModalActive] = useState(false);
+  const [gameModalActive, setGameModalActive] = useState(false);
   const typeformContainerRef = useRef(null);
 
   // Initialize Feather icons when component mounts
@@ -58,17 +59,28 @@ export default function CareersPage() {
     document.body.style.overflow = 'auto';
   };
 
-  // Handle ESC key to close modal
+  const openGameModal = () => {
+    setGameModalActive(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeGameModal = () => {
+    setGameModalActive(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  // Handle ESC key to close modals
   useEffect(() => {
     const handleEscKey = (e) => {
-      if (e.key === 'Escape' && typeformModalActive) {
-        closeTypeformModal();
+      if (e.key === 'Escape') {
+        if (typeformModalActive) closeTypeformModal();
+        if (gameModalActive) closeGameModal();
       }
     };
 
     document.addEventListener('keydown', handleEscKey);
     return () => document.removeEventListener('keydown', handleEscKey);
-  }, [typeformModalActive]);
+  }, [typeformModalActive, gameModalActive]);
 
   return (
     <>
@@ -211,7 +223,7 @@ export default function CareersPage() {
                 Split Lease enables alternating arrangements where multiple guests use the same space on different days. You only pay for the nights you need — whether that's 3 days a week or 5. No traditional lease, no wasted rent, just flexible access.
               </p>
               <div className="section-links">
-                <a href="#" className="section-link">
+                <a href="#" className="section-link" onClick={(e) => { e.preventDefault(); openGameModal(); }}>
                   <i data-feather="play-circle" style={{width: '18px', height: '18px'}}></i>
                   <span>Start with our interactive game</span>
                   <i data-feather="arrow-right"></i>
@@ -558,6 +570,69 @@ export default function CareersPage() {
           <div ref={typeformContainerRef} style={{ width: '100%', height: '100%' }}></div>
         </div>
       </div>
+
+      {/* Modal for Interactive Game */}
+      {gameModalActive && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.8)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeGameModal();
+          }}
+        >
+          <div style={{
+            width: '98vw',
+            height: '98vh',
+            background: 'white',
+            borderRadius: '12px',
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <button
+              onClick={closeGameModal}
+              style={{
+                position: 'absolute',
+                top: '12px',
+                right: '12px',
+                zIndex: 10000,
+                background: '#31135D',
+                color: 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                fontWeight: 'bold'
+              }}
+            >
+              ×
+            </button>
+            <iframe
+              src="/assets/games/schedule-matcher.html"
+              style={{
+                width: '100%',
+                height: '100%',
+                border: 'none'
+              }}
+              title="Schedule Matcher Game"
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

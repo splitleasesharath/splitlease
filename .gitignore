@@ -79,9 +79,7 @@ screenshots/
 # Playwright video recordings
 videos/
 
-# Bun lock files
-bun.lock
-bun.lockb
+# Note: bun.lock files are tracked for reproducible builds
 
 # Agent Context and Tools directories
 input/

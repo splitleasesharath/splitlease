@@ -21,7 +21,7 @@ MAX_BUILD_ATTEMPTS: 3
 
 ### Pre-Deployment: Commit All Changes
 
-0. Kill all existing npm servers
+0. Kill all existing bun/npm servers
 
 1. Navigate to the project root:
    - Run `cd $(git rev-parse --show-toplevel)` to ensure you're in the git root
@@ -39,7 +39,7 @@ MAX_BUILD_ATTEMPTS: 3
 ### Build Phase: Build with Auto-Fix
 
 3. Run the build:
-   - Run `npm run build` with timeout of BUILD_TIMEOUT
+   - Run `bun run build` with timeout of BUILD_TIMEOUT
    - Capture both stdout and stderr output
 
 4. Check build result:
@@ -52,7 +52,7 @@ MAX_BUILD_ATTEMPTS: 3
        - Read the relevant files mentioned in the error
        - Implement a targeted fix for the specific error
        - Commit the fix individually with message: "fix: resolve build error - <brief description>"
-       - Run `npm run build` again
+       - Run `bun run build` again
      - Repeat fix attempts up to MAX_BUILD_ATTEMPTS times
      - If all attempts fail, stop and report the final error to the user
 

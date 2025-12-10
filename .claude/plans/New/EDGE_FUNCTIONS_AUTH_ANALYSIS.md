@@ -10,7 +10,7 @@
 
 The Split Lease project uses a **hybrid authentication model** with three Supabase Edge Functions:
 
-1. **auth-user** - Authentication endpoints (login, signup, logout, validate)
+1. **bubble-auth-proxy** - Authentication endpoints (login, signup, logout, validate)
 2. **bubble-proxy** - General API proxy with public/private action routing
 3. **ai-gateway** - AI service gateway with public prompt support
 
@@ -23,9 +23,9 @@ Authentication is **NOT enforced uniformly**:
 
 ## 1. Current JWT Authentication Implementation
 
-### 1.1 auth-user (No Authentication Required)
+### 1.1 bubble-auth-proxy (No Authentication Required)
 
-**Location:** `/supabase/functions/auth-user/index.ts`
+**Location:** `/supabase/functions/bubble-auth-proxy/index.ts`
 
 The authentication proxy is intentionally **unauthenticated** because it provides the login/signup endpoints themselves:
 
@@ -43,7 +43,7 @@ The authentication proxy is intentionally **unauthenticated** because it provide
 
 **Request Format:**
 ```javascript
-await supabase.functions.invoke('auth-user', {
+await supabase.functions.invoke('bubble-auth-proxy', {
   body: {
     action: 'login',
     payload: {
@@ -328,7 +328,7 @@ export async function loginUser(email, password) {
   console.log('Attempting login via Edge Function for:', email);
 
   try {
-    const { data, error } = await supabase.functions.invoke('auth-user', {
+    const { data, error } = await supabase.functions.invoke('bubble-auth-proxy', {
       body: {
         action: 'login',
         payload: {
@@ -603,7 +603,7 @@ sessionStorage.setItem('__sl_at__', combined);
 ### 6.1 What's Working
 
 ✅ **Login/Signup Workflows**
-- `auth-user` fully functional
+- `bubble-auth-proxy` fully functional
 - Tokens encrypted and stored securely
 - User validation on session restore
 
@@ -747,9 +747,9 @@ VITE_GOOGLE_MAPS_API_KEY=...
 ## 9. Key Files Reference
 
 **Edge Functions:**
-- `supabase/functions/auth-user/index.ts` - Authentication router
-- `supabase/functions/auth-user/handlers/login.ts` - Login handler
-- `supabase/functions/auth-user/handlers/validate.ts` - Token validation
+- `supabase/functions/bubble-auth-proxy/index.ts` - Authentication router
+- `supabase/functions/bubble-auth-proxy/handlers/login.ts` - Login handler
+- `supabase/functions/bubble-auth-proxy/handlers/validate.ts` - Token validation
 - `supabase/functions/bubble-proxy/index.ts` - API proxy router
 - `supabase/functions/ai-gateway/index.ts` - AI service gateway
 
@@ -777,7 +777,7 @@ VITE_GOOGLE_MAPS_API_KEY=...
 │   (React)    │                              │  Edge Fn   │
 └──────┬───────┘                              └────┬───────┘
        │                                           │
-       │  1. Call auth-user                │
+       │  1. Call bubble-auth-proxy                │
        │      action: 'login'                      │
        │      payload: {email, password}           │
        ├──────────────────────────────────────────>│

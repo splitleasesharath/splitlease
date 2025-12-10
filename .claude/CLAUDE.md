@@ -7,8 +7,8 @@ Flexible Rental Marketplace for NYC Properties | React 20 + Vite | Supabase | Cl
 ## Quick Start
 
 ```bash
-npm run dev      # http://localhost:5173
-npm run build    # Production build
+bun run dev      # http://localhost:8000
+bun run build    # Production build
 /deploy          # Claude slash command
 ```
 
@@ -87,7 +87,7 @@ const { data: newId } = await supabaseAdmin.rpc('generate_bubble_id');
 
 ## Rules
 
-**DO**: Use Edge Functions for Bubble API | Store secrets in Supabase Dashboard | Commit after changes | Run `npm run generate-routes` after route changes
+**DO**: Use Edge Functions for Bubble API | Store secrets in Supabase Dashboard | Commit after changes | Run `bun run generate-routes` after route changes
 
 **DON'T**: Expose API keys in frontend | Call Bubble API directly | `git push --force` | Modify tables without instruction | Add fallback mechanisms
 
