@@ -17,6 +17,33 @@ import '../../styles/create-proposal-flow-v2.css';
 // Day name constants for check-in/check-out calculation
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+/**
+ * Custom hook to lock body scroll when a modal/popup is open
+ * Prevents background content from scrolling when popup is visible
+ */
+const useBodyScrollLock = () => {
+  useEffect(() => {
+    // Save original body overflow style
+    const originalOverflow = document.body.style.overflow;
+    const originalPaddingRight = document.body.style.paddingRight;
+
+    // Calculate scrollbar width to prevent layout shift
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
+    // Lock body scroll
+    document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    // Cleanup: restore original styles when component unmounts
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = originalPaddingRight;
+    };
+  }, []);
+};
+
 // localStorage key prefix for proposal draft data
 const PROPOSAL_DRAFT_KEY_PREFIX = 'splitlease_proposal_draft_';
 
@@ -90,6 +117,9 @@ export default function CreateProposalFlowV2({
   onClose,
   onSubmit
 }) {
+  // Lock body scroll when popup is open
+  useBodyScrollLock();
+
   // Get listing ID for localStorage key
   const listingId = listing?._id;
 
