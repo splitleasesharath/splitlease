@@ -22,7 +22,6 @@ export const TABLE_MAPPING = {
 
         // Account tables
         'account_host': 'account_host',
-        'account_guest': 'account_guest',
 
         // Related tables
         'listing_photo': 'listing-photo',
@@ -67,7 +66,6 @@ export const TABLE_MAPPING = {
 
         // Account tables
         'account_host': 'account_host',
-        'account_guest': 'account_guest',
 
         // Related tables
         'listing-photo': 'listing_photo',

@@ -235,13 +235,11 @@ export async function triggerQueueProcessing(
  * @param supabase - Supabase client
  * @param userId - The generated user ID
  * @param hostAccountId - The generated host account ID
- * @param guestAccountId - The generated guest account ID
  */
 export async function enqueueSignupSync(
   supabase: SupabaseClient,
   userId: string,
-  hostAccountId: string,
-  guestAccountId: string
+  hostAccountId: string
 ): Promise<void> {
   await enqueueBubbleSync(supabase, {
     correlationId: `signup:${userId}`,
@@ -253,7 +251,6 @@ export async function enqueueSignupSync(
       payload: {
         user_id: userId,
         host_account_id: hostAccountId,
-        guest_account_id: guestAccountId,
       },
     }],
   });
