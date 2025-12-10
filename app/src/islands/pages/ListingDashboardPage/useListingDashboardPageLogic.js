@@ -230,7 +230,8 @@ function transformListingData(dbListing, photos = [], lookups = {}, isListingTri
       qtyGuests: dbListing['Features - Qty Guests'] || 1,
       bedrooms: dbListing['Features - Qty Bedrooms'] || 0,
       bathrooms: dbListing['Features - Qty Bathrooms'] || 0,
-      squareFootage: dbListing['Features - SQFT Area'] || dbListing['Features - SQFT of Room'] || 0,
+      squareFootage: dbListing['Features - SQFT Area'] || 0,
+      squareFootageRoom: dbListing['Features - SQFT of Room'] || 0,
     },
 
     // Amenities
@@ -316,8 +317,11 @@ export default function useListingDashboardPageLogic() {
   }, []);
 
   // Fetch listing data from Supabase
-  const fetchListing = useCallback(async (listingId) => {
-    setIsLoading(true);
+  // When silent=true, don't show loading state (used for background refreshes after edits)
+  const fetchListing = useCallback(async (listingId, { silent = false } = {}) => {
+    if (!silent) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -432,9 +436,13 @@ export default function useListingDashboardPageLogic() {
       console.log('✅ Listing loaded successfully');
     } catch (err) {
       console.error('❌ Error fetching listing:', err);
-      setError(err.message || 'Failed to load listing');
+      if (!silent) {
+        setError(err.message || 'Failed to load listing');
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -687,11 +695,24 @@ export default function useListingDashboardPageLogic() {
     const tableName = trialCheck ? 'listing_trial' : 'listing';
     const idColumn = trialCheck ? 'id' : '_id';
 
+    // Map UI field names to database column names (handles quirky column names with leading spaces)
+    const fieldMapping = {
+      'First Available': ' First Available', // DB column has leading space
+    };
+
+    // Transform updates to use correct database column names
+    const dbUpdates = {};
+    for (const [key, value] of Object.entries(updates)) {
+      const dbColumnName = fieldMapping[key] || key;
+      dbUpdates[dbColumnName] = value;
+    }
+
     console.log(`📋 Updating ${tableName} table with ${idColumn}=${listingId}`);
+    console.log('📋 DB updates:', dbUpdates);
 
     const { data, error: updateError } = await supabase
       .from(tableName)
-      .update(updates)
+      .update(dbUpdates)
       .eq(idColumn, listingId)
       .select()
       .single();
@@ -1126,16 +1147,20 @@ export default function useListingDashboardPageLogic() {
 
   const handleCloseEdit = useCallback(() => {
     setEditSection(null);
-  }, []);
-
-  // Handle save from edit modal - update local state
-  const handleSaveEdit = useCallback((updatedData) => {
-    // Refresh listing data after save
+    // Silently refresh listing data after modal closes to sync any saved changes
     const listingId = getListingIdFromUrl();
     if (listingId) {
-      fetchListing(listingId);
+      fetchListing(listingId, { silent: true });
     }
   }, [fetchListing, getListingIdFromUrl]);
+
+  // Handle save from edit modal - data is already saved to database
+  // No need to refetch - just close the modal. The user has already seen the success toast.
+  // If they need fresh data, they can refresh the page.
+  const handleSaveEdit = useCallback((updatedData) => {
+    // Data is already persisted by updateListing, nothing more to do
+    // The modal will close automatically after showing the success toast
+  }, []);
 
   // Handle blocked dates change - save to database
   const handleBlockedDatesChange = useCallback(async (newBlockedDates) => {
