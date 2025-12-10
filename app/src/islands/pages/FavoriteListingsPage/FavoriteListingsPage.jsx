@@ -21,6 +21,35 @@ import { fetchPhotoUrls, extractPhotos, fetchHostData, parseAmenities } from '..
 import './FavoriteListingsPage.css';
 
 /**
+ * Fetch informational texts from Supabase
+ */
+async function fetchInformationalTexts() {
+  try {
+    const { data, error } = await supabase
+      .from('informationaltexts')
+      .select('_id, "Information Tag-Title", "Desktop copy", "Mobile copy", "Desktop+ copy", "show more available?"');
+
+    if (error) throw error;
+
+    // Transform data into a map keyed by tag title
+    const textsMap = {};
+    data.forEach(item => {
+      textsMap[item['Information Tag-Title']] = {
+        desktop: item['Desktop copy'],
+        mobile: item['Mobile copy'],
+        desktopPlus: item['Desktop+ copy'],
+        showMore: item['show more available?']
+      };
+    });
+
+    return textsMap;
+  } catch (error) {
+    console.error('Failed to fetch informational texts:', error);
+    return {};
+  }
+}
+
+/**
  * PropertyCard - Individual listing card (matches SearchPage PropertyCard exactly)
  */
 function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, onToggleFavorite, userId }) {
@@ -361,6 +390,9 @@ const FavoriteListingsPage = () => {
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  // Informational texts
+  const [informationalTexts, setInformationalTexts] = useState({});
+
   // Mobile map visibility
   const [mobileMapVisible, setMobileMapVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -442,6 +474,15 @@ const FavoriteListingsPage = () => {
       }
     };
     init();
+  }, []);
+
+  // Fetch informational texts on mount
+  useEffect(() => {
+    const loadInformationalTexts = async () => {
+      const texts = await fetchInformationalTexts();
+      setInformationalTexts(texts);
+    };
+    loadInformationalTexts();
   }, []);
 
   // Check auth and fetch favorites
@@ -869,7 +910,9 @@ const FavoriteListingsPage = () => {
         listing={selectedListing}
         triggerRef={infoModalTriggerRef}
         title="Pricing Information"
-        content=""
+        content={informationalTexts['Price Starts']?.desktop || ''}
+        expandedContent={informationalTexts['Price Starts']?.desktopPlus}
+        showMoreAvailable={informationalTexts['Price Starts']?.showMore}
       />
 
       {/* Mobile Map Modal */}
