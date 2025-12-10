@@ -235,7 +235,7 @@ export async function handleCreate(
     _id: proposalId,
 
     // Core relationships
-    Listing: input.listingId,
+    "Listing ": input.listingId,  // Note: trailing space in column name
     Guest: input.guestId,
     "Host - Account": listingData["Host / Landlord"],
     "Created By": input.guestId,
@@ -245,8 +245,8 @@ export async function handleCreate(
     "Guest flexibility": guestFlexibility,
     "preferred gender": preferredGender,
     "need for space": input.needForSpace || null,
-    "About yourself": input.aboutMe || null,
-    "Special needs": input.specialNeeds || null,
+    about_yourself: input.aboutMe || null,        // snake_case column
+    special_needs: input.specialNeeds || null,    // snake_case column
     Comment: input.comment || null,
 
     // Dates

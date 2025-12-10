@@ -135,7 +135,8 @@ export interface UpdateProposalResponse {
  */
 export interface ProposalData {
   _id: string;
-  Listing: string;
+  "Listing ": string;  // Note: trailing space in column name
+  Listing?: string;    // Alias for backward compatibility
   Guest: string;
   "Host - Account": string;
   Status: string;
@@ -155,8 +156,8 @@ export interface ProposalData {
   "Guest flexibility": string;
   "preferred gender": string;
   "need for space"?: string;
-  "About yourself"?: string;
-  "Special needs"?: string;
+  about_yourself?: string;      // snake_case column
+  special_needs?: string;       // snake_case column
   Comment?: string;
   "Order Ranking": number;
   "Is Finalized": boolean;

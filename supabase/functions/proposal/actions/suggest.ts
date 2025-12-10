@@ -87,7 +87,7 @@ export async function handleSuggest(
     .from("proposal")
     .select(`
       _id,
-      Listing,
+      "Listing ",
       Guest,
       "Days Selected",
       "Nights Selected (Nights list)",
@@ -115,7 +115,7 @@ export async function handleSuggest(
     throw new ValidationError("You can only generate suggestions for your own proposals");
   }
 
-  console.log(`[proposal:suggest] Origin listing: ${originProposal.Listing}`);
+  console.log(`[proposal:suggest] Origin listing: ${originProposal["Listing "]}`);
 
   // ================================================
   // FETCH ORIGIN LISTING (for address matching)
@@ -130,12 +130,12 @@ export async function handleSuggest(
       "Days Available (List of Days)",
       "Nights Available (List of Nights) "
     `)
-    .eq("_id", originProposal.Listing)
+    .eq("_id", originProposal["Listing "])
     .single();
 
   if (listingError || !originListing) {
     console.error(`[proposal:suggest] Origin listing fetch failed:`, listingError);
-    throw new ValidationError(`Origin listing not found: ${originProposal.Listing}`);
+    throw new ValidationError(`Origin listing not found: ${originProposal["Listing "]}`);
   }
 
   // ================================================
@@ -146,7 +146,7 @@ export async function handleSuggest(
   const skippedReasons: string[] = [];
 
   // Exclude origin listing and any specified exclusions
-  const excludeIds = [originProposal.Listing, ...excludeListingIds];
+  const excludeIds = [originProposal["Listing "], ...excludeListingIds];
 
   // Get guest's selected days (convert from Bubble format)
   const guestDaysJS = adaptDaysFromBubble(originProposal["Days Selected"] || []);
@@ -271,7 +271,7 @@ export async function handleSuggest(
     try {
       // Create suggestion proposal with reference to origin
       const suggestionData = {
-        Listing: listing._id,
+        "Listing ": listing._id,  // Note: trailing space in column name
         Guest: originProposal.Guest,
         "Host - Account": listing["Host / Landlord"],
         Status: "sl_submitted_awaiting_rental_app", // Default for suggestions
