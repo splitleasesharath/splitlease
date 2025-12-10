@@ -22,26 +22,19 @@ import {
   getStatusCodeFromError,
 } from "../_shared/errors.ts";
 import { validateRequired, validateAction } from "../_shared/validation.ts";
-import { createErrorCollector, ErrorCollector } from "../_shared/slack.ts";
 
 import { handleComplete } from "./handlers/complete.ts";
 import { handleStream } from "./handlers/stream.ts";
 
-// Import prompt registry to register all prompts
+// Import prompt registry first (initializes the prompts Map)
 import "./prompts/_registry.ts";
-
-// ─────────────────────────────────────────────────────────────
-// Allowed actions
-// ─────────────────────────────────────────────────────────────
+// Import prompt files AFTER registry to avoid circular dependency
+// (ES Module import hoisting would cause TDZ error if imported from _registry.ts)
+import "./prompts/listing-description.ts";
+import "./prompts/listing-title.ts";
 
 const ALLOWED_ACTIONS = ["complete", "stream"];
-
-// Prompts that don't require authentication (public prompts)
 const PUBLIC_PROMPTS = ["listing-description", "listing-title", "echo-test"];
-
-// ─────────────────────────────────────────────────────────────
-// Main Handler
-// ─────────────────────────────────────────────────────────────
 
 console.log("[ai-gateway] Edge Function started");
 
@@ -65,17 +58,10 @@ Deno.serve(async (req: Request) => {
     );
   }
 
-  // Error collector for consolidated error reporting (ONE RUN = ONE LOG)
-  let collector: ErrorCollector | null = null;
-
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    // ─────────────────────────────────────────────────────────
-    // 1. Parse and validate request first (need prompt_key for auth decision)
-    // ─────────────────────────────────────────────────────────
 
     const body: AIGatewayRequest = await req.json();
 
@@ -87,14 +73,7 @@ Deno.serve(async (req: Request) => {
     console.log(`[ai-gateway] Action: ${body.action}`);
     console.log(`[ai-gateway] Prompt: ${body.payload.prompt_key}`);
 
-    // Create error collector after we know the action
-    collector = createErrorCollector('ai-gateway', `${body.action}:${body.payload.prompt_key}`);
-
     const isPublicPrompt = PUBLIC_PROMPTS.includes(body.payload.prompt_key);
-
-    // ─────────────────────────────────────────────────────────
-    // 2. Authenticate user (skip for public prompts)
-    // ─────────────────────────────────────────────────────────
 
     let user = null;
 
@@ -104,7 +83,6 @@ Deno.serve(async (req: Request) => {
         throw new ValidationError("Missing Authorization header");
       }
 
-      // Client for auth validation
       const authClient = createClient(supabaseUrl, supabaseAnonKey, {
         global: { headers: { Authorization: authHeader } },
       });
@@ -121,17 +99,11 @@ Deno.serve(async (req: Request) => {
 
       user = authUser;
       console.log(`[ai-gateway] Authenticated: ${user.email}`);
-      collector.setContext({ userId: user.id });
     } else {
       console.log(`[ai-gateway] Public prompt - skipping authentication`);
     }
 
-    // Service client for data operations (bypasses RLS)
     const serviceClient = createClient(supabaseUrl, supabaseServiceKey);
-
-    // ─────────────────────────────────────────────────────────
-    // 3. Route to handler
-    // ─────────────────────────────────────────────────────────
 
     const context = {
       user,
@@ -152,12 +124,6 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error(`[ai-gateway] ========== ERROR ==========`);
     console.error(`[ai-gateway]`, error);
-
-    // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
-    if (collector) {
-      collector.add(error as Error, 'Fatal error in main handler');
-      collector.reportToSlack();
-    }
 
     const statusCode = getStatusCodeFromError(error as Error);
     const errorResponse = formatErrorResponse(error as Error);

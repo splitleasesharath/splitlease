@@ -151,10 +151,10 @@ registerLoader({
 });
 
 // ─────────────────────────────────────────────────────────────
-// IMPORT CUSTOM PROMPTS HERE
-// Add new prompts by creating files and importing them
+// PROMPT REGISTRATION
 // ─────────────────────────────────────────────────────────────
-
-import "./listing-description.ts";
-import "./listing-title.ts";
-// import "./market-analysis.ts";
+// IMPORTANT: Do NOT import prompt files here!
+// ES Module import hoisting causes circular dependency issues.
+// Prompt files must be imported from index.ts AFTER this registry.
+// See: ReferenceError: Cannot access 'prompts' before initialization
+// ─────────────────────────────────────────────────────────────
