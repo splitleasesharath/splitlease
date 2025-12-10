@@ -1029,7 +1029,7 @@ export default function ViewSplitLeasePage() {
       // Convert days from JS format (0-6) to Bubble format (1-7)
       // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
       const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || selectedDays;
-      const daysInBubbleFormat = adaptDaysToBubble({ jsDays: daysInJsFormat });
+      const daysInBubbleFormat = adaptDaysToBubble({ zeroBasedDays: daysInJsFormat });
 
       // Calculate nights from days (nights = days without the last checkout day)
       // For consecutive days [1,2,3,4,5] (Mon-Fri), nights are [1,2,3,4] (Mon-Thu)
@@ -1058,8 +1058,8 @@ export default function ViewSplitLeasePage() {
         nightsSelected: nightsInBubbleFormat,
         reservationSpan: reservationSpanText,
         reservationSpanWeeks: reservationSpanWeeks,
-        checkInDay: checkInDayBubble,
-        checkOutDay: checkOutDayBubble,
+        checkIn: checkInDayBubble,
+        checkOut: checkOutDayBubble,
         proposalPrice: proposalData.pricePerNight,
         fourWeekRent: proposalData.pricePerFourWeeks,
         hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now

@@ -17,6 +17,7 @@ import {
   SupabaseSyncError,
   AuthenticationError,
 } from "../../_shared/errors.ts";
+import { enqueueBubbleSync, triggerQueueProcessing, filterBubbleIncompatibleFields } from "../../_shared/queueSync.ts";
 import {
   UpdateProposalInput,
   UpdateProposalResponse,
@@ -275,6 +276,38 @@ export async function handleUpdate(
       old_status: proposalData.Status,
       new_status: input.status,
     });
+  }
+
+  // ================================================
+  // ENQUEUE BUBBLE SYNC
+  // ================================================
+
+  // Queue the proposal update for Bubble sync
+  // The proposal's _id IS the bubble_id (same ID in both systems)
+  try {
+    // Filter out internal fields before syncing
+    const cleanUpdates = filterBubbleIncompatibleFields(updates);
+
+    await enqueueBubbleSync(supabase, {
+      correlationId: `proposal_update:${input.proposal_id}:${Date.now()}`,
+      items: [{
+        sequence: 1,
+        table: 'proposal',
+        recordId: input.proposal_id,
+        operation: 'UPDATE',
+        bubbleId: proposalData._id,  // Use existing Bubble ID
+        payload: cleanUpdates,
+      }]
+    });
+
+    console.log(`[proposal:update] Bubble sync queued for proposal: ${input.proposal_id}`);
+
+    // Trigger queue processing (fire-and-forget)
+    // pg_cron will also process the queue as a fallback
+    triggerQueueProcessing();
+  } catch (syncError) {
+    // Log but don't fail the update - sync can be retried
+    console.error(`[proposal:update] Failed to queue Bubble sync (non-blocking):`, syncError);
   }
 
   // ================================================

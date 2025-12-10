@@ -128,7 +128,7 @@ export async function handleSuggest(
       "Location - Address",
       "Location - slightly different address",
       "Days Available (List of Days)",
-      "Nights Available (List of Nights)"
+      "Nights Available (List of Nights) "
     `)
     .eq("_id", originProposal.Listing)
     .single();
@@ -164,7 +164,7 @@ export async function handleSuggest(
         "Host / Landlord",
         "rental type",
         "Days Available (List of Days)",
-        "Nights Available (List of Nights)",
+        "Nights Available (List of Nights) ",
         "Location - Address",
         "Location - slightly different address",
         "Features - House Rules",

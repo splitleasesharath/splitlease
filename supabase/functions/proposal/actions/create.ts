@@ -72,7 +72,7 @@ export async function handleCreate(
       "💰Damage Deposit",
       "Weeks offered",
       "Days Available (List of Days)",
-      "Nights Available (List of Nights)",
+      "Nights Available (List of Nights) ",
       "Location - Address",
       "Location - slightly different address",
       "💰Weekly Host Rate",
@@ -173,7 +173,7 @@ export async function handleCreate(
 
   // Calculate complementary nights (Step 4)
   const complementaryNights = calculateComplementaryNights(
-    listingData["Nights Available (List of Nights)"] || [],
+    listingData["Nights Available (List of Nights) "] || [],
     input.nightsSelected
   );
 

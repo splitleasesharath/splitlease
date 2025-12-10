@@ -2,15 +2,20 @@
  * Listing Creation Handler
  * Priority: CRITICAL
  *
- * Handles listing creation with sync to Supabase:
- * 1. Create listing in Bubble (source of truth) - REQUIRED
- * 2. Fetch full listing data from Bubble - REQUIRED (for listing name)
- * 3. Sync to Supabase (replica) - BEST EFFORT (log errors but don't fail)
- * 4. Return listing data to client
+ * STANDARDIZED FLOW (Supabase-first with queue-based Bubble sync):
+ * 1. Generate Bubble-compatible ID via generate_bubble_id()
+ * 2. Create listing in Supabase (source of truth)
+ * 3. Queue INSERT to Bubble (Data API) for async processing
+ * 4. Return listing data immediately
+ *
+ * This flow matches the proposal and auth-user patterns for uniformity.
+ *
+ * NO FALLBACK PRINCIPLE: Supabase insert must succeed, Bubble sync is queued
  */
 
-import { BubbleSyncService } from '../../_shared/bubbleSync.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateRequiredFields } from '../../_shared/validation.ts';
+import { enqueueBubbleSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
 
 interface CreateListingPayload {
   listing_name: string;
@@ -25,13 +30,13 @@ interface CreateListingResult {
 }
 
 /**
- * Handle listing creation
- * Steps 1-2 must succeed, Step 3 is best-effort
+ * Handle listing creation with Supabase-first pattern
+ * Supabase insert must succeed, Bubble sync is queued for async processing
  */
 export async function handleCreate(
   payload: Record<string, unknown>
 ): Promise<CreateListingResult> {
-  console.log('[listing:create] ========== CREATE LISTING ==========');
+  console.log('[listing:create] ========== CREATE LISTING (SUPABASE-FIRST) ==========');
   console.log('[listing:create] Payload:', JSON.stringify(payload, null, 2));
 
   // Validate required fields
@@ -39,77 +44,110 @@ export async function handleCreate(
 
   const { listing_name, user_email } = payload as CreateListingPayload;
 
-  // Initialize BubbleSyncService
-  const bubbleBaseUrl = Deno.env.get('BUBBLE_API_BASE_URL');
-  const bubbleApiKey = Deno.env.get('BUBBLE_API_KEY');
+  // Get environment variables
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-  if (!bubbleBaseUrl || !bubbleApiKey || !supabaseUrl || !supabaseServiceKey) {
+  if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error('Missing required environment variables');
   }
 
-  const syncService = new BubbleSyncService(
-    bubbleBaseUrl,
-    bubbleApiKey,
-    supabaseUrl,
-    supabaseServiceKey
-  );
-
-  // Build parameters for Bubble workflow
-  const params: Record<string, unknown> = {
-    listing_name: listing_name.trim(),
-  };
-
-  // Include user_email if provided (for logged-in users)
-  if (user_email) {
-    params.user_email = user_email;
-  }
+  // Initialize Supabase admin client
+  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  });
 
   console.log('[listing:create] Creating listing with name:', listing_name);
   console.log('[listing:create] User email:', user_email || 'Not provided (logged out)');
 
   try {
-    // Step 1: Create in Bubble (REQUIRED)
-    console.log('[listing:create] Step 1/3: Creating in Bubble...');
-    const listingId = await syncService.triggerWorkflow(
-      'listing_creation_in_code',  // Bubble workflow name
-      params                       // Workflow parameters
-    );
-    console.log('[listing:create] ✅ Step 1 complete - Listing ID:', listingId);
+    // Step 1: Generate Bubble-compatible ID
+    console.log('[listing:create] Step 1/3: Generating listing ID...');
+    const { data: listingId, error: idError } = await supabase.rpc('generate_bubble_id');
 
-    // Step 2: Fetch full listing data from Bubble (REQUIRED for Name)
-    console.log('[listing:create] Step 2/3: Fetching listing data from Bubble...');
-    let listingData: Record<string, unknown> | null = null;
-    try {
-      listingData = await syncService.fetchBubbleObject('Listing', listingId);
-      console.log('[listing:create] ✅ Step 2 complete - Listing Name:', listingData?.Name);
-    } catch (fetchError) {
-      console.error('[listing:create] ⚠️ Step 2 failed - Could not fetch listing data:', fetchError);
-      // Return minimal data if fetch fails
-      return { _id: listingId, listing_id: listingId, Name: listing_name };
+    if (idError || !listingId) {
+      console.error('[listing:create] ID generation failed:', idError);
+      throw new Error('Failed to generate listing ID');
     }
 
-    // Step 3: Sync to Supabase (BEST EFFORT - don't fail if this fails)
-    console.log('[listing:create] Step 3/3: Syncing to Supabase...');
+    console.log('[listing:create] ✅ Step 1 complete - Listing ID:', listingId);
+
+    // Step 2: Create listing in Supabase
+    console.log('[listing:create] Step 2/3: Creating listing in Supabase...');
+    const now = new Date().toISOString();
+
+    // Build initial listing data
+    const listingData: Record<string, unknown> = {
+      _id: listingId,
+      Name: listing_name.trim(),
+      Status: 'Draft',
+      Active: false,
+      'Created Date': now,
+      'Modified Date': now,
+    };
+
+    // If user_email provided, look up user and attach
+    let hostAccountId: string | null = null;
+    if (user_email) {
+      const { data: userData } = await supabase
+        .from('user')
+        .select('_id, "Account - Host / Landlord"')
+        .eq('email', user_email.toLowerCase())
+        .single();
+
+      if (userData) {
+        hostAccountId = userData['Account - Host / Landlord'] as string;
+        listingData['Host / Landlord'] = hostAccountId;
+        listingData['Created By'] = userData._id;
+        console.log('[listing:create] User found, host account:', hostAccountId);
+      }
+    }
+
+    const { error: insertError } = await supabase
+      .from('listing')
+      .insert(listingData);
+
+    if (insertError) {
+      console.error('[listing:create] Supabase insert failed:', insertError);
+      throw new Error(`Failed to create listing: ${insertError.message}`);
+    }
+
+    console.log('[listing:create] ✅ Step 2 complete - Listing created in Supabase');
+
+    // Step 3: Queue Bubble sync (INSERT operation)
+    console.log('[listing:create] Step 3/3: Queueing Bubble sync...');
     try {
-      // Ensure _id is set for upsert
-      const dataToSync = { ...listingData, _id: listingId };
-      await syncService.syncToSupabase('listing', dataToSync);
-      console.log('[listing:create] ✅ Step 3 complete - Synced to Supabase');
+      await enqueueBubbleSync(supabase, {
+        correlationId: `listing_create:${listingId}`,
+        items: [{
+          sequence: 1,
+          table: 'listing',
+          recordId: listingId,
+          operation: 'INSERT',
+          payload: listingData,
+        }]
+      });
+
+      console.log('[listing:create] ✅ Step 3 complete - Bubble sync queued');
+
+      // Trigger queue processing (fire-and-forget)
+      // pg_cron will also process the queue as a fallback
+      triggerQueueProcessing();
     } catch (syncError) {
-      // Log but don't fail - Supabase sync is best-effort
-      console.error('[listing:create] ⚠️ Step 3 failed - Supabase sync error:', syncError);
-      console.log('[listing:create] Continuing without Supabase sync...');
+      // Log but don't fail - sync can be retried via pg_cron
+      console.error('[listing:create] ⚠️ Step 3 warning - Queue error (non-blocking):', syncError);
     }
 
     console.log('[listing:create] ========== SUCCESS ==========');
 
-    // Return the listing data with ID
+    // Return the listing data
     return {
       _id: listingId,
       listing_id: listingId,
-      Name: (listingData?.Name as string) || listing_name,
+      Name: listing_name.trim(),
       ...listingData
     };
   } catch (error) {

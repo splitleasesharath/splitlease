@@ -42,6 +42,15 @@ export const EXCLUDED_SYNC_FIELDS = new Set([
     // Internal Supabase fields
     'created_at',       // Supabase timestamp (Bubble has 'Created Date')
     'updated_at',       // Supabase timestamp (Bubble has 'Modified Date')
+    'bubble_id',        // Internal sync tracking field
+    'sync_status',      // Internal sync status
+    'bubble_sync_error', // Internal error tracking
+
+    // Supabase-only listing fields (not in Bubble schema)
+    'host_type',        // Supabase-only: host classification
+    'market_strategy',  // Supabase-only: listing visibility strategy
+    'pending',          // Supabase-only: internal status flag
+    '_internal',        // Any internal marker fields
 ]);
 
 /**

@@ -188,7 +188,7 @@ export interface ListingData {
   "💰Damage Deposit": number;
   "Weeks offered": string;
   "Days Available (List of Days)": number[];
-  "Nights Available (List of Nights)": number[];
+  "Nights Available (List of Nights) ": number[];
   "Location - Address": Record<string, unknown>;
   "Location - slightly different address": string;
   "💰Weekly Host Rate": number;
