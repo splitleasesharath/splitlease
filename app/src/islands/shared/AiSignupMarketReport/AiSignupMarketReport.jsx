@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Lottie from 'lottie-react';
 import { signupUser } from '../../../lib/auth.js';
+import Toast, { useToast } from '../Toast.jsx';
 
 /**
  * AiSignupMarketReport - Advanced AI-powered market research signup modal
@@ -672,6 +673,9 @@ function NavigationButtons({ showBack, onBack, onNext, nextLabel, isLoading = fa
 // ============ MAIN COMPONENT ============
 
 export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
+  // Toast notifications (with fallback rendering when no ToastProvider)
+  const { toasts, showToast, removeToast } = useToast();
+
   const [state, setState] = useState({
     currentSection: 'freeform',
     formData: {},
@@ -679,6 +683,9 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
     isLoading: false,
     error: null,
   });
+
+  // Ref to track toast timeout for cleanup
+  const robotsToastTimeoutRef = useRef(null);
 
   const goToSection = useCallback((section) => {
     setState(prev => ({ ...prev, currentSection: section }));
@@ -738,6 +745,25 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
 
       if (shouldAutoSubmit) {
         setEmailCertainty('yes');
+
+        // Show initial toast
+        showToast({
+          title: 'Thank you!',
+          content: 'Creating your account...',
+          type: 'info',
+          duration: 3000
+        });
+
+        // Show second toast after a delay
+        robotsToastTimeoutRef.current = setTimeout(() => {
+          showToast({
+            title: 'Almost there!',
+            content: 'Our robots are still working...',
+            type: 'info',
+            duration: 3000
+          });
+        }, 1500);
+
         try {
           await submitSignup({
             email: correctedEmail,
@@ -747,8 +773,33 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
             timestamp: new Date().toISOString(),
           });
 
+          // Clear the timeout
+          if (robotsToastTimeoutRef.current) {
+            clearTimeout(robotsToastTimeoutRef.current);
+          }
+
+          // Show success toast
+          showToast({
+            title: 'Welcome to Split Lease!',
+            content: 'Your account has been created successfully.',
+            type: 'success',
+            duration: 4000
+          });
+
           goToSection('final');
         } catch (error) {
+          // Clear the timeout
+          if (robotsToastTimeoutRef.current) {
+            clearTimeout(robotsToastTimeoutRef.current);
+          }
+
+          showToast({
+            title: 'Signup Issue',
+            content: error instanceof Error ? error.message : 'Please try again.',
+            type: 'error',
+            duration: 5000
+          });
+
           setError(error instanceof Error ? error.message : 'Signup failed. Please try again.');
           setState(prev => ({
             ...prev,
@@ -766,7 +817,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         emailCertainty: emailCertainty === 'uncertain' ? 'no' : null,
       }));
     }
-  }, [state, goToSection, setEmailCertainty, setError]);
+  }, [state, goToSection, setEmailCertainty, setError, showToast]);
 
   const handleBack = useCallback(() => {
     if (state.currentSection === 'contact') {
@@ -792,6 +843,24 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
     setLoading(true);
     goToSection('loading');
 
+    // Show initial toast
+    showToast({
+      title: 'Thank you!',
+      content: 'Creating your account...',
+      type: 'info',
+      duration: 3000
+    });
+
+    // Show second toast after a delay
+    robotsToastTimeoutRef.current = setTimeout(() => {
+      showToast({
+        title: 'Almost there!',
+        content: 'Our robots are still working...',
+        type: 'info',
+        duration: 3000
+      });
+    }, 1500);
+
     try {
       await submitSignup({
         email: formData.email,
@@ -801,15 +870,40 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         timestamp: new Date().toISOString(),
       });
 
+      // Clear the timeout
+      if (robotsToastTimeoutRef.current) {
+        clearTimeout(robotsToastTimeoutRef.current);
+      }
+
+      // Show success toast
+      showToast({
+        title: 'Welcome to Split Lease!',
+        content: 'Your account has been created successfully.',
+        type: 'success',
+        duration: 4000
+      });
+
       setTimeout(() => {
         goToSection('final');
         setLoading(false);
       }, 1500);
     } catch (error) {
+      // Clear the timeout
+      if (robotsToastTimeoutRef.current) {
+        clearTimeout(robotsToastTimeoutRef.current);
+      }
+
+      showToast({
+        title: 'Signup Issue',
+        content: error instanceof Error ? error.message : 'Please try again.',
+        type: 'error',
+        duration: 5000
+      });
+
       setError(error instanceof Error ? error.message : 'Signup failed. Please try again.');
       goToSection('contact');
     }
-  }, [state, goToSection, setError, setLoading]);
+  }, [state, goToSection, setError, setLoading, showToast]);
 
   const resetFlow = useCallback(() => {
     setState({
@@ -874,6 +968,30 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
     document.addEventListener('keydown', handleEscape);
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
+
+  // Auto-close modal and reload page after success (to show logged-in state)
+  useEffect(() => {
+    if (state.currentSection === 'final' && isOpen) {
+      const autoCloseTimer = setTimeout(() => {
+        onClose();
+        // Short delay before reload to allow toast to be visible
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }, 3500); // 3.5 seconds to read success message
+
+      return () => clearTimeout(autoCloseTimer);
+    }
+  }, [state.currentSection, isOpen, onClose]);
+
+  // Cleanup toast timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (robotsToastTimeoutRef.current) {
+        clearTimeout(robotsToastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (!isOpen) return null;
 
@@ -1380,6 +1498,9 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           }
         }
       `}</style>
+
+      {/* Toast notifications (rendered here as fallback when no ToastProvider) */}
+      {toasts && toasts.length > 0 && <Toast toasts={toasts} onRemove={removeToast} />}
     </div>
   );
 }
