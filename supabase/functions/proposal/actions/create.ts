@@ -235,7 +235,7 @@ export async function handleCreate(
     _id: proposalId,
 
     // Core relationships
-    "Listing ": input.listingId,  // Note: trailing space in column name
+    Listing: input.listingId,
     Guest: input.guestId,
     "Host - Account": listingData["Host / Landlord"],
     "Created By": input.guestId,
@@ -300,10 +300,11 @@ export async function handleCreate(
     "rental application": guestData["Rental Application"],
     "host email": hostUserData["email as text"],
 
-    // Suggestion fields
-    "suggested reason (benefits)": input.suggestedReason || null,
-    "origin proposal of this suggestion": input.originProposalId || null,
-    "number of matches": input.numberOfMatches || null,
+    // Suggestion fields - NOTE: These columns don't exist yet in the proposal table
+    // TODO: Add these columns via migration if suggestion feature is needed
+    // "suggested reason (benefits)": input.suggestedReason || null,
+    // "origin proposal of this suggestion": input.originProposalId || null,
+    // "number of matches": input.numberOfMatches || null,
 
     // Timestamps
     "Created Date": now,

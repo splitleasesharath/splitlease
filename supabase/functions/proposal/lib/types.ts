@@ -135,8 +135,7 @@ export interface UpdateProposalResponse {
  */
 export interface ProposalData {
   _id: string;
-  "Listing ": string;  // Note: trailing space in column name
-  Listing?: string;    // Alias for backward compatibility
+  Listing: string;
   Guest: string;
   "Host - Account": string;
   Status: string;

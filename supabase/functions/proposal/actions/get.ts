@@ -83,9 +83,9 @@ export async function handleGet(
   let guestData;
   let hostData;
 
-  // Fetch listing (column has trailing space: "Listing ")
-  const listingId = proposalData["Listing "] || proposalData.Listing;
-  if (listingId) {
+  // Fetch listing
+  if (proposalData.Listing) {
+    const listingId = proposalData.Listing;
     const { data: listing } = await supabase
       .from("listing")
       .select(`_id, Name, "Location - Address"`)
