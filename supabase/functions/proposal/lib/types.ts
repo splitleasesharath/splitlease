@@ -205,7 +205,7 @@ export interface ListingData {
  */
 export interface GuestData {
   _id: string;
-  "email as text": string;
+  email: string;
   "Rental Application": string | null;
   "Proposals List": string[];
   "Favorited Listings": string[];
@@ -228,7 +228,7 @@ export interface HostAccountData {
  */
 export interface HostUserData {
   _id: string;
-  "email as text": string;
+  email: string;
   "Proposals List": string[];
 }
 

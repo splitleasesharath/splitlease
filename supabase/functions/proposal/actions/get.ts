@@ -27,12 +27,12 @@ interface GetProposalResponse {
   guest?: {
     _id: string;
     "Name - Full": string;
-    "email as text": string;
+    email: string;
   };
   host?: {
     _id: string;
     "Name - Full": string;
-    "email as text": string;
+    email: string;
   };
 }
 
@@ -98,7 +98,7 @@ export async function handleGet(
   if (proposalData.Guest) {
     const { data: guest } = await supabase
       .from("user")
-      .select(`_id, "Name - Full", "email as text"`)
+      .select(`_id, "Name - Full", email`)
       .eq("_id", proposalData.Guest)
       .single();
     guestData = guest;
@@ -115,7 +115,7 @@ export async function handleGet(
     if (hostAccount?.User) {
       const { data: host } = await supabase
         .from("user")
-        .select(`_id, "Name - Full", "email as text"`)
+        .select(`_id, "Name - Full", email`)
         .eq("_id", hostAccount.User)
         .single();
       hostData = host;
