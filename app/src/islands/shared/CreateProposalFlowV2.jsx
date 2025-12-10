@@ -156,6 +156,15 @@ export default function CreateProposalFlowV2({
       }
     });
 
+    // Debug: Log the exact isFirstProposal value and type
+    console.log('🔍 isFirstProposal debug:', {
+      value: isFirstProposal,
+      type: typeof isFirstProposal,
+      strictEquals0: isFirstProposal === 0,
+      strictEqualsTrue: isFirstProposal === true,
+      strictEqualsFalse: isFirstProposal === false
+    });
+
     if (hasSavedDraft) {
       console.log('📂 Loaded saved proposal draft from localStorage:', savedDraft);
     }

@@ -127,19 +127,23 @@ export async function handleValidate(
 
         // Fetch proposal count for this user (to determine if first proposal)
         let proposalCount = 0;
-        const bubbleUserId = userData._id || user_id;
-        if (bubbleUserId) {
+        const bubbleUserIdForProposals = userData._id || user_id;
+        console.log(`[validate] Querying proposals for user ID: ${bubbleUserIdForProposals}`);
+        if (bubbleUserIdForProposals) {
           const { count, error: countError } = await supabase
             .from('proposal')
             .select('*', { count: 'exact', head: true })
-            .eq('Guest', bubbleUserId);
+            .eq('Guest', bubbleUserIdForProposals);
 
+          console.log(`[validate] Proposal query result - count: ${count}, error: ${countError ? countError.message : 'none'}`);
           if (countError) {
             console.warn(`[validate] Could not fetch proposal count:`, countError);
           } else {
-            proposalCount = count || 0;
+            proposalCount = count ?? 0;
             console.log(`[validate] User has ${proposalCount} proposal(s)`);
           }
+        } else {
+          console.log(`[validate] No bubbleUserId available, skipping proposal count`);
         }
 
         const userDataObject = {
@@ -229,18 +233,22 @@ export async function handleValidate(
 
     // Fetch proposal count for this user (to determine if first proposal)
     let proposalCount = 0;
+    console.log(`[validate] Querying proposals for legacy user ID: ${userData._id}`);
     if (userData._id) {
       const { count, error: countError } = await supabase
         .from('proposal')
         .select('*', { count: 'exact', head: true })
         .eq('Guest', userData._id);
 
+      console.log(`[validate] Proposal query result - count: ${count}, error: ${countError ? countError.message : 'none'}`);
       if (countError) {
         console.warn(`[validate] Could not fetch proposal count:`, countError);
       } else {
-        proposalCount = count || 0;
+        proposalCount = count ?? 0;
         console.log(`[validate] User has ${proposalCount} proposal(s)`);
       }
+    } else {
+      console.log(`[validate] No userData._id available, skipping proposal count`);
     }
 
     const userDataObject = {
