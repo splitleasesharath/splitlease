@@ -298,6 +298,7 @@ export async function handleCreate(
 
     // Related records
     "rental application": guestData["Rental Application"],
+    "rental app requested": !!guestData["Rental Application"],  // NOT NULL boolean
     "host email": hostUserData.email,
 
     // Suggestion fields - NOTE: These columns don't exist yet in the proposal table
