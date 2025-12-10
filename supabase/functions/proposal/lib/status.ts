@@ -3,6 +3,9 @@
  * Split Lease - Supabase Edge Functions
  *
  * Implements proposal status logic from Bubble Steps 5-7
+ *
+ * IMPORTANT: Uses Bubble's display format for all status values
+ * to ensure compatibility with Bubble Data API.
  */
 
 import { ProposalStatusName } from "./types.ts";
@@ -11,126 +14,87 @@ import { ProposalStatusName } from "./types.ts";
  * Status transition rules
  * Maps current status to allowed next statuses
  *
- * Based on os_proposal_status option set and business rules
+ * Uses Bubble display format for compatibility with Bubble Data API
  */
 export const STATUS_TRANSITIONS: Record<
   ProposalStatusName,
   ProposalStatusName[]
 > = {
   // Pre-submission states
-  sl_submitted_awaiting_rental_app: [
-    "host_review",
-    "cancelled_by_sl",
-    "guest_ignored_suggestion",
+  "Proposal Submitted for guest by Split Lease - Awaiting Rental Application": [
+    "Host Review",
+    "Proposal Cancelled by Split Lease",
+    "Guest Ignored Suggestion",
   ],
-  guest_submitted_awaiting_rental_app: ["host_review", "cancelled_by_guest"],
-  sl_submitted_pending_confirmation: ["host_review", "cancelled_by_sl"],
+  "Proposal Submitted by guest - Awaiting Rental Application": [
+    "Host Review",
+    "Proposal Cancelled by Guest",
+  ],
+  "Proposal Submitted for guest by Split Lease - Pending Confirmation": [
+    "Host Review",
+    "Proposal Cancelled by Split Lease",
+  ],
 
   // Active workflow states
-  host_review: [
-    "host_counteroffer",
-    "accepted_drafting_lease",
-    "rejected_by_host",
-    "cancelled_by_guest",
+  "Host Review": [
+    "Host Counteroffer Submitted / Awaiting Guest Review",
+    "Proposal or Counteroffer Accepted / Drafting Lease Documents",
+    "Proposal Rejected by Host",
+    "Proposal Cancelled by Guest",
   ],
-  host_counteroffer: [
-    "accepted_drafting_lease",
-    "cancelled_by_guest",
-    "rejected_by_host",
+  "Host Counteroffer Submitted / Awaiting Guest Review": [
+    "Proposal or Counteroffer Accepted / Drafting Lease Documents",
+    "Proposal Cancelled by Guest",
+    "Proposal Rejected by Host",
   ],
-  accepted_drafting_lease: [
-    "lease_docs_for_review",
-    "cancelled_by_guest",
-    "cancelled_by_sl",
+  "Proposal or Counteroffer Accepted / Drafting Lease Documents": [
+    "Lease Documents Sent for Review",
+    "Proposal Cancelled by Guest",
+    "Proposal Cancelled by Split Lease",
   ],
-  lease_docs_for_review: [
-    "lease_docs_for_signatures",
-    "cancelled_by_guest",
-    "cancelled_by_sl",
+  "Lease Documents Sent for Review": [
+    "Lease Documents Sent for Signatures",
+    "Proposal Cancelled by Guest",
+    "Proposal Cancelled by Split Lease",
   ],
-  lease_docs_for_signatures: [
-    "lease_signed_awaiting_payment",
-    "cancelled_by_guest",
-    "cancelled_by_sl",
+  "Lease Documents Sent for Signatures": [
+    "Lease Documents Signed / Awaiting Initial payment",
+    "Proposal Cancelled by Guest",
+    "Proposal Cancelled by Split Lease",
   ],
-  lease_signed_awaiting_payment: [
-    "payment_submitted_lease_activated",
-    "cancelled_by_guest",
-    "cancelled_by_sl",
+  "Lease Documents Signed / Awaiting Initial payment": [
+    "Initial Payment Submitted / Lease activated",
+    "Proposal Cancelled by Guest",
+    "Proposal Cancelled by Split Lease",
   ],
 
   // Terminal states (no transitions out)
-  payment_submitted_lease_activated: [],
-  cancelled_by_guest: [],
-  rejected_by_host: [],
-  cancelled_by_sl: [],
-  guest_ignored_suggestion: [],
+  "Initial Payment Submitted / Lease activated": [],
+  "Proposal Cancelled by Guest": [],
+  "Proposal Rejected by Host": [],
+  "Proposal Cancelled by Split Lease": [],
+  "Guest Ignored Suggestion": [],
 };
 
 /**
- * Status display information
- * Based on os_proposal_status table
+ * Status stage mapping for UI display
+ * Stage 0 = pre-submission, 1-7 = active workflow, -1 = terminal
  */
-export const STATUS_DISPLAY: Record<
-  ProposalStatusName,
-  { display: string; stage: number }
-> = {
-  sl_submitted_awaiting_rental_app: {
-    display: "Proposal Submitted for guest by Split Lease - Awaiting Rental Application",
-    stage: 0,
-  },
-  guest_submitted_awaiting_rental_app: {
-    display: "Proposal Submitted by guest - Awaiting Rental Application",
-    stage: 0,
-  },
-  sl_submitted_pending_confirmation: {
-    display: "Proposal Submitted for guest by Split Lease - Pending Confirmation",
-    stage: 0,
-  },
-  host_review: {
-    display: "Host Review",
-    stage: 1,
-  },
-  host_counteroffer: {
-    display: "Host Counteroffer Submitted / Awaiting Guest Review",
-    stage: 2,
-  },
-  accepted_drafting_lease: {
-    display: "Proposal or Counteroffer Accepted / Drafting Lease Documents",
-    stage: 3,
-  },
-  lease_docs_for_review: {
-    display: "Lease Documents Sent for Review",
-    stage: 4,
-  },
-  lease_docs_for_signatures: {
-    display: "Lease Documents Sent for Signatures",
-    stage: 5,
-  },
-  lease_signed_awaiting_payment: {
-    display: "Lease Documents Signed / Awaiting Initial payment",
-    stage: 6,
-  },
-  payment_submitted_lease_activated: {
-    display: "Initial Payment Submitted / Lease activated",
-    stage: 7,
-  },
-  cancelled_by_guest: {
-    display: "Proposal Cancelled by Guest",
-    stage: -1,
-  },
-  rejected_by_host: {
-    display: "Proposal Rejected by Host",
-    stage: -1,
-  },
-  cancelled_by_sl: {
-    display: "Proposal Cancelled by Split Lease",
-    stage: -1,
-  },
-  guest_ignored_suggestion: {
-    display: "Guest Ignored Suggestion",
-    stage: -1,
-  },
+export const STATUS_STAGES: Record<ProposalStatusName, number> = {
+  "Proposal Submitted for guest by Split Lease - Awaiting Rental Application": 0,
+  "Proposal Submitted by guest - Awaiting Rental Application": 0,
+  "Proposal Submitted for guest by Split Lease - Pending Confirmation": 0,
+  "Host Review": 1,
+  "Host Counteroffer Submitted / Awaiting Guest Review": 2,
+  "Proposal or Counteroffer Accepted / Drafting Lease Documents": 3,
+  "Lease Documents Sent for Review": 4,
+  "Lease Documents Sent for Signatures": 5,
+  "Lease Documents Signed / Awaiting Initial payment": 6,
+  "Initial Payment Submitted / Lease activated": 7,
+  "Proposal Cancelled by Guest": -1,
+  "Proposal Rejected by Host": -1,
+  "Proposal Cancelled by Split Lease": -1,
+  "Guest Ignored Suggestion": -1,
 };
 
 /**
@@ -140,7 +104,7 @@ export const STATUS_DISPLAY: Record<
  * @param hasRentalApplication - Whether the guest has a rental application record
  * @param rentalAppSubmitted - Whether the rental application has been submitted
  * @param overrideStatus - Optional status to use instead of calculated one
- * @returns Initial status for the proposal
+ * @returns Initial status for the proposal (Bubble display format)
  */
 export function determineInitialStatus(
   hasRentalApplication: boolean,
@@ -154,11 +118,11 @@ export function determineInitialStatus(
 
   // Step 5: If rental application is submitted → Host Review
   if (hasRentalApplication && rentalAppSubmitted) {
-    return "host_review";
+    return "Host Review";
   }
 
   // Step 6: If rental application NOT submitted → Awaiting Rental Application
-  return "guest_submitted_awaiting_rental_app";
+  return "Proposal Submitted by guest - Awaiting Rental Application";
 }
 
 /**
@@ -205,10 +169,10 @@ export function isTerminalStatus(status: ProposalStatusName): boolean {
  */
 export function isCancelledStatus(status: ProposalStatusName): boolean {
   return [
-    "cancelled_by_guest",
-    "cancelled_by_sl",
-    "rejected_by_host",
-    "guest_ignored_suggestion",
+    "Proposal Cancelled by Guest",
+    "Proposal Cancelled by Split Lease",
+    "Proposal Rejected by Host",
+    "Guest Ignored Suggestion",
   ].includes(status);
 }
 
@@ -230,17 +194,7 @@ export function isActiveWorkflowStatus(status: ProposalStatusName): boolean {
  * @returns Stage number (0 = pre-submission, 1-7 = active, -1 = terminal)
  */
 export function getStatusStage(status: ProposalStatusName): number {
-  return STATUS_DISPLAY[status]?.stage ?? -1;
-}
-
-/**
- * Get display name for a status
- *
- * @param status - Status to get display name for
- * @returns Human-readable display name
- */
-export function getStatusDisplayName(status: ProposalStatusName): string {
-  return STATUS_DISPLAY[status]?.display ?? status;
+  return STATUS_STAGES[status] ?? -1;
 }
 
 /**
@@ -278,23 +232,26 @@ export function canUserCancel(
 
   // Guest can cancel at most stages
   if (userRole === "guest") {
-    const guestCanCancel = [
-      "sl_submitted_awaiting_rental_app",
-      "guest_submitted_awaiting_rental_app",
-      "sl_submitted_pending_confirmation",
-      "host_review",
-      "host_counteroffer",
-      "accepted_drafting_lease",
-      "lease_docs_for_review",
-      "lease_docs_for_signatures",
-      "lease_signed_awaiting_payment",
+    const guestCanCancel: ProposalStatusName[] = [
+      "Proposal Submitted for guest by Split Lease - Awaiting Rental Application",
+      "Proposal Submitted by guest - Awaiting Rental Application",
+      "Proposal Submitted for guest by Split Lease - Pending Confirmation",
+      "Host Review",
+      "Host Counteroffer Submitted / Awaiting Guest Review",
+      "Proposal or Counteroffer Accepted / Drafting Lease Documents",
+      "Lease Documents Sent for Review",
+      "Lease Documents Sent for Signatures",
+      "Lease Documents Signed / Awaiting Initial payment",
     ];
     return guestCanCancel.includes(currentStatus);
   }
 
   // Host can reject at host_review or host_counteroffer stages
   if (userRole === "host") {
-    const hostCanReject = ["host_review", "host_counteroffer"];
+    const hostCanReject: ProposalStatusName[] = [
+      "Host Review",
+      "Host Counteroffer Submitted / Awaiting Guest Review",
+    ];
     return hostCanReject.includes(currentStatus);
   }
 
@@ -312,13 +269,13 @@ export function getCancellationStatus(
 ): ProposalStatusName {
   switch (userRole) {
     case "guest":
-      return "cancelled_by_guest";
+      return "Proposal Cancelled by Guest";
     case "host":
-      return "rejected_by_host";
+      return "Proposal Rejected by Host";
     case "admin":
-      return "cancelled_by_sl";
+      return "Proposal Cancelled by Split Lease";
     default:
-      return "cancelled_by_sl";
+      return "Proposal Cancelled by Split Lease";
   }
 }
 
@@ -342,8 +299,7 @@ export function createStatusHistoryEntry(
     hour12: true,
   });
 
-  const displayName = getStatusDisplayName(newStatus);
   const actorSuffix = actor ? ` by ${actor}` : "";
 
-  return `Status changed to "${displayName}"${actorSuffix} on ${timestamp}`;
+  return `Status changed to "${newStatus}"${actorSuffix} on ${timestamp}`;
 }

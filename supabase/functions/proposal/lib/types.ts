@@ -263,23 +263,24 @@ export interface UserContext {
 // ============================================
 
 /**
- * Proposal status names from os_proposal_status
+ * Proposal status display values from os_proposal_status
+ * IMPORTANT: Use Bubble's display format for compatibility with Bubble Data API
  */
 export type ProposalStatusName =
-  | "sl_submitted_awaiting_rental_app"
-  | "guest_submitted_awaiting_rental_app"
-  | "sl_submitted_pending_confirmation"
-  | "host_review"
-  | "host_counteroffer"
-  | "accepted_drafting_lease"
-  | "lease_docs_for_review"
-  | "lease_docs_for_signatures"
-  | "lease_signed_awaiting_payment"
-  | "payment_submitted_lease_activated"
-  | "cancelled_by_guest"
-  | "rejected_by_host"
-  | "cancelled_by_sl"
-  | "guest_ignored_suggestion";
+  | "Proposal Submitted for guest by Split Lease - Awaiting Rental Application"
+  | "Proposal Submitted by guest - Awaiting Rental Application"
+  | "Proposal Submitted for guest by Split Lease - Pending Confirmation"
+  | "Host Review"
+  | "Host Counteroffer Submitted / Awaiting Guest Review"
+  | "Proposal or Counteroffer Accepted / Drafting Lease Documents"
+  | "Lease Documents Sent for Review"
+  | "Lease Documents Sent for Signatures"
+  | "Lease Documents Signed / Awaiting Initial payment"
+  | "Initial Payment Submitted / Lease activated"
+  | "Proposal Cancelled by Guest"
+  | "Proposal Rejected by Host"
+  | "Proposal Cancelled by Split Lease"
+  | "Guest Ignored Suggestion";
 
 /**
  * Rental type options
