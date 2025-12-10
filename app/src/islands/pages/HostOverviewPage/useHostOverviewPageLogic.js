@@ -93,7 +93,7 @@ export function useHostOverviewPageLogic() {
       // Fetch listings from multiple sources in parallel:
       // 1. Bubble API (existing synced listings)
       // 2. listing_trial table (new self-listing submissions)
-      // 3. account_host.Listings array (linked listings)
+      // 3. user.Listings array (linked listings)
 
       const fetchPromises = [];
 
@@ -141,18 +141,18 @@ export function useHostOverviewPageLogic() {
         );
       }
 
-      // 3. Fetch listing IDs from account_host.Listings array
-      if (hostAccountId) {
+      // 3. Fetch listing IDs from user.Listings array
+      if (userId) {
         fetchPromises.push(
           supabase
-            .from('account_host')
+            .from('user')
             .select('Listings')
-            .eq('_id', hostAccountId)
+            .eq('_id', userId)
             .maybeSingle()
-            .then(result => ({ type: 'account_host', ...result }))
+            .then(result => ({ type: 'user_listings', ...result }))
             .catch(err => {
-              console.warn('account_host fetch failed:', err);
-              return { type: 'account_host', data: null, error: err };
+              console.warn('user Listings fetch failed:', err);
+              return { type: 'user_listings', data: null, error: err };
             })
         );
       }
@@ -225,9 +225,9 @@ export function useHostOverviewPageLogic() {
         }));
       }
 
-      // Check if we need to fetch additional listings from account_host.Listings
-      const accountHostResult = results.find(r => r?.type === 'account_host');
-      const linkedListingIds = accountHostResult?.data?.Listings || [];
+      // Check if we need to fetch additional listings from user.Listings
+      const userListingsResult = results.find(r => r?.type === 'user_listings');
+      const linkedListingIds = userListingsResult?.data?.Listings || [];
 
       // Fetch any linked listings that aren't already in our results
       const existingIds = new Set([

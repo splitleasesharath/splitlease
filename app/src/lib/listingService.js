@@ -19,7 +19,7 @@ import { uploadPhotos } from './photoUpload.js';
  * 2. Generate Bubble-compatible _id via RPC
  * 3. Upload photos to Supabase Storage
  * 4. Insert directly into listing table with _id as primary key
- * 5. Link listing to account_host using _id
+ * 5. Link listing to user's Listings array using _id
  * 6. Return the complete listing
  *
  * @param {object} formData - Complete form data from SelfListingPage
@@ -106,7 +106,7 @@ export async function createListing(formData) {
 
   console.log('[ListingService] ✅ Listing created in listing table with _id:', data._id);
 
-  // Step 5: Link listing to account_host using _id
+  // Step 5: Link listing to user's Listings array using _id
   if (userId) {
     try {
       await linkListingToHost(userId, data._id);
@@ -124,8 +124,8 @@ export async function createListing(formData) {
 }
 
 /**
- * Link a listing to the host's account_host record
- * Adds the listing _id to the Listings array in account_host
+ * Link a listing to the host's user record
+ * Adds the listing _id to the Listings array in the user table
  *
  * @param {string} userId - The user's Bubble _id
  * @param {string} listingId - The listing's _id (Bubble-compatible ID)
@@ -134,41 +134,41 @@ export async function createListing(formData) {
 async function linkListingToHost(userId, listingId) {
   console.log('[ListingService] Linking listing _id to host:', userId, listingId);
 
-  // First, get the current Listings array
-  const { data: hostData, error: fetchError } = await supabase
-    .from('account_host')
+  // First, get the current Listings array from user table
+  const { data: userData, error: fetchError } = await supabase
+    .from('user')
     .select('_id, Listings')
-    .eq('User', userId)
+    .eq('_id', userId)
     .maybeSingle();
 
   if (fetchError) {
-    console.error('[ListingService] ❌ Error fetching account_host:', fetchError);
+    console.error('[ListingService] ❌ Error fetching user:', fetchError);
     throw fetchError;
   }
 
-  if (!hostData) {
-    console.warn('[ListingService] ⚠️ No account_host found for user:', userId);
+  if (!userData) {
+    console.warn('[ListingService] ⚠️ No user found for userId:', userId);
     return;
   }
 
   // Add the new listing ID to the array
-  const currentListings = hostData.Listings || [];
+  const currentListings = userData.Listings || [];
   if (!currentListings.includes(listingId)) {
     currentListings.push(listingId);
   }
 
-  // Update the account_host with the new Listings array
+  // Update the user with the new Listings array
   const { error: updateError } = await supabase
-    .from('account_host')
+    .from('user')
     .update({ Listings: currentListings })
-    .eq('_id', hostData._id);
+    .eq('_id', userData._id);
 
   if (updateError) {
-    console.error('[ListingService] ❌ Error updating account_host Listings:', updateError);
+    console.error('[ListingService] ❌ Error updating user Listings:', updateError);
     throw updateError;
   }
 
-  console.log('[ListingService] ✅ account_host Listings updated:', currentListings);
+  console.log('[ListingService] ✅ user Listings updated:', currentListings);
 }
 
 /**
