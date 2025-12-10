@@ -46,25 +46,53 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
   const rentalType = listing.rental_type || listing['rental type'] || 'Nightly';
   const monthlyRate = listing.monthly_rate || listing['💰Monthly Host Rate'];
   const weeklyRate = listing.weekly_rate || listing['💰Weekly Host Rate'];
-  const nightlyRate = listing.rate_5_nights || listing['💰Nightly Host Rate for 5 nights'];
   const cleaningFee = listing.cleaning_fee || listing['💰Cleaning Cost / Maintenance Fee'];
   const damageDeposit = listing.damage_deposit || listing['💰Damage Deposit'];
   const nightlyPricing = listing.nightly_pricing;
 
+  // Collect all nightly rates (from both Bubble and listing_trial sources)
+  const nightlyRates = [
+    listing.nightly_rate_2 || listing['💰Nightly Host Rate for 2 nights'],
+    listing.nightly_rate_3 || listing['💰Nightly Host Rate for 3 nights'],
+    listing.nightly_rate_4 || listing['💰Nightly Host Rate for 4 nights'],
+    listing.nightly_rate_5 || listing.rate_5_nights || listing['💰Nightly Host Rate for 5 nights'],
+    listing.nightly_rate_7 || listing['💰Nightly Host Rate for 7 nights']
+  ].filter(rate => rate != null && !isNaN(parseFloat(rate)));
+
+  // Calculate min and max nightly rates
+  const getMinMaxNightlyRates = () => {
+    if (nightlyRates.length === 0) return null;
+    const numericRates = nightlyRates.map(r => parseFloat(r));
+    return {
+      min: Math.min(...numericRates),
+      max: Math.max(...numericRates)
+    };
+  };
+
   // Get the primary rate based on rental type
   const getPrimaryRate = () => {
     if (rentalType === 'Monthly' && monthlyRate) {
-      return { amount: formatCurrency(monthlyRate), period: '/month', label: 'Monthly Rate' };
+      return { amount: formatCurrency(monthlyRate), period: '/month', label: 'Monthly Rate', isRange: false };
     }
     if (rentalType === 'Weekly' && weeklyRate) {
-      return { amount: formatCurrency(weeklyRate), period: '/week', label: 'Weekly Rate' };
+      return { amount: formatCurrency(weeklyRate), period: '/week', label: 'Weekly Rate', isRange: false };
     }
-    // Default to nightly
+    // For nightly listings, show min-max range
+    const minMax = getMinMaxNightlyRates();
+    if (minMax) {
+      if (minMax.min === minMax.max) {
+        return { amount: formatCurrency(minMax.min), period: '/night', label: 'Nightly Rate', isRange: false };
+      }
+      return {
+        amount: `${formatCurrency(minMax.min)} - ${formatCurrency(minMax.max)}`,
+        period: '/night',
+        label: 'Nightly Rate Range',
+        isRange: true
+      };
+    }
+    // Fallback to nightly_pricing if available
     if (nightlyPricing?.oneNightPrice) {
-      return { amount: formatCurrency(nightlyPricing.oneNightPrice), period: '/night', label: 'Nightly Rate' };
-    }
-    if (nightlyRate) {
-      return { amount: formatCurrency(nightlyRate), period: '/night', label: '5-Night Rate' };
+      return { amount: formatCurrency(nightlyPricing.oneNightPrice), period: '/night', label: 'Nightly Rate', isRange: false };
     }
     return null;
   };

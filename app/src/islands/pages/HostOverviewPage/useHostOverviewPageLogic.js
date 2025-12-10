@@ -174,7 +174,19 @@ export function useHostOverviewPageLogic() {
         },
         leasesCount: listing['Leases Count'] || 0,
         proposalsCount: listing['Proposals Count'] || 0,
-        photos: listing['Features - Photos'] || []
+        photos: listing['Features - Photos'] || [],
+        // Pricing fields
+        rental_type: listing['rental type'] || 'Nightly',
+        monthly_rate: listing['💰Monthly Host Rate'],
+        weekly_rate: listing['💰Weekly Host Rate'],
+        // Nightly rates for each night count
+        nightly_rate_2: listing['💰Nightly Host Rate for 2 nights'],
+        nightly_rate_3: listing['💰Nightly Host Rate for 3 nights'],
+        nightly_rate_4: listing['💰Nightly Host Rate for 4 nights'],
+        nightly_rate_5: listing['💰Nightly Host Rate for 5 nights'],
+        nightly_rate_7: listing['💰Nightly Host Rate for 7 nights'],
+        cleaning_fee: listing['💰Cleaning Cost / Maintenance Fee'],
+        damage_deposit: listing['💰Damage Deposit']
       }));
 
       // Process listing_trial listings
@@ -200,6 +212,12 @@ export function useHostOverviewPageLogic() {
           rental_type: listing.rental_type,
           monthly_rate: listing.monthly_rate,
           weekly_rate: listing.weekly_rate,
+          // Individual nightly rates from RPC
+          nightly_rate_2: listing.rate_2_nights,
+          nightly_rate_3: listing.rate_3_nights,
+          nightly_rate_4: listing.rate_4_nights,
+          nightly_rate_5: listing.rate_5_nights,
+          nightly_rate_7: listing.rate_7_nights,
           rate_5_nights: listing.rate_5_nights,
           cleaning_fee: listing.cleaning_fee,
           damage_deposit: listing.damage_deposit,
@@ -246,6 +264,12 @@ export function useHostOverviewPageLogic() {
             rental_type: listing['rental type'],
             monthly_rate: listing['💰Monthly Host Rate'],
             weekly_rate: listing['💰Weekly Host Rate'],
+            // Individual nightly rates
+            nightly_rate_2: listing['💰Nightly Host Rate for 2 nights'],
+            nightly_rate_3: listing['💰Nightly Host Rate for 3 nights'],
+            nightly_rate_4: listing['💰Nightly Host Rate for 4 nights'],
+            nightly_rate_5: listing['💰Nightly Host Rate for 5 nights'],
+            nightly_rate_7: listing['💰Nightly Host Rate for 7 nights'],
             rate_5_nights: listing['💰Nightly Host Rate for 5 nights'],
             cleaning_fee: listing['💰Cleaning Cost / Maintenance Fee'],
             damage_deposit: listing['💰Damage Deposit'],
