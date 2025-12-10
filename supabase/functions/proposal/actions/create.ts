@@ -101,7 +101,7 @@ export async function handleCreate(
     .select(
       `
       _id,
-      "email as text",
+      email,
       "Rental Application",
       "Proposals List",
       "Favorited Listings",
@@ -120,7 +120,7 @@ export async function handleCreate(
   }
 
   const guestData = guest as unknown as GuestData;
-  console.log(`[proposal:create] Found guest: ${guestData["email as text"]}`);
+  console.log(`[proposal:create] Found guest: ${guestData.email}`);
 
   // Fetch Host Account
   const { data: hostAccount, error: hostAccountError } = await supabase
@@ -139,7 +139,7 @@ export async function handleCreate(
   // Fetch Host User
   const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
-    .select(`_id, "email as text", "Proposals List"`)
+    .select(`_id, email, "Proposals List"`)
     .eq("_id", hostAccountData.User)
     .single();
 
@@ -149,7 +149,7 @@ export async function handleCreate(
   }
 
   const hostUserData = hostUser as unknown as HostUserData;
-  console.log(`[proposal:create] Found host: ${hostUserData["email as text"]}`);
+  console.log(`[proposal:create] Found host: ${hostUserData.email}`);
 
   // Fetch Rental Application (if exists)
   let rentalApp: RentalApplicationData | null = null;
@@ -241,7 +241,7 @@ export async function handleCreate(
     "Created By": input.guestId,
 
     // Guest info
-    "Guest email": guestData["email as text"],
+    "Guest email": guestData.email,
     "Guest flexibility": guestFlexibility,
     "preferred gender": preferredGender,
     "need for space": input.needForSpace || null,
@@ -298,7 +298,7 @@ export async function handleCreate(
 
     // Related records
     "rental application": guestData["Rental Application"],
-    "host email": hostUserData["email as text"],
+    "host email": hostUserData.email,
 
     // Suggestion fields - NOTE: These columns don't exist yet in the proposal table
     // TODO: Add these columns via migration if suggestion feature is needed
