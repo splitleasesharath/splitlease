@@ -3,6 +3,16 @@
  */
 
 export default function ReviewSection({ data, listing, onEditUserDetails, onEditMoveIn, onEditDays }) {
+  // Format currency with comma separators for thousands
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount || 0);
+  };
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Not set';
     const date = new Date(dateString);
@@ -45,7 +55,7 @@ export default function ReviewSection({ data, listing, onEditUserDetails, onEdit
       <div className="pricing-section">
         <div className="price-row">
           <span className="price-label">Price per night</span>
-          <span className="price-value">${data.pricePerNight.toFixed(2)}</span>
+          <span className="price-value">{formatCurrency(data.pricePerNight)}</span>
         </div>
 
         <div className="price-row">
@@ -62,12 +72,12 @@ export default function ReviewSection({ data, listing, onEditUserDetails, onEdit
               *excluding Maintenance Fee and Damage Deposit
             </div>
           </span>
-          <span className="price-value">${data.totalPrice.toFixed(2)}</span>
+          <span className="price-value">{formatCurrency(data.totalPrice)}</span>
         </div>
 
         <div className="price-row">
           <span className="price-label">Price per 4 weeks</span>
-          <span className="price-value">${data.pricePerFourWeeks.toFixed(2)}</span>
+          <span className="price-value">{formatCurrency(data.pricePerFourWeeks)}</span>
         </div>
 
         <div className="price-row">
@@ -77,13 +87,13 @@ export default function ReviewSection({ data, listing, onEditUserDetails, onEdit
               *see terms of use
             </a>
           </span>
-          <span className="price-value">+ ${data.damageDeposit.toFixed(2)}</span>
+          <span className="price-value">+ {formatCurrency(data.damageDeposit)}</span>
         </div>
 
         <div className="price-row">
           <span className="price-label">Maintenance Fee / 4 wks</span>
           <span className="price-value">
-            {data.maintenanceFee === 0 ? 'No cleaning fee' : `+ $${data.maintenanceFee.toFixed(2)}`}
+            {data.maintenanceFee === 0 ? 'No cleaning fee' : `+ ${formatCurrency(data.maintenanceFee)}`}
           </span>
         </div>
 
@@ -99,7 +109,7 @@ export default function ReviewSection({ data, listing, onEditUserDetails, onEdit
             </div>
           </div>
           <span className="price-value" style={{ fontSize: '20px', color: '#5B2C6F', fontWeight: '700' }}>
-            ${data.firstFourWeeksTotal.toFixed(2)}
+            {formatCurrency(data.firstFourWeeksTotal)}
           </span>
         </div>
       </div>
