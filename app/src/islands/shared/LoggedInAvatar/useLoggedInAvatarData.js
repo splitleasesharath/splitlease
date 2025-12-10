@@ -147,11 +147,11 @@ export function useLoggedInAvatarData(userId) {
           .eq('_id', userId)
           .single(),
 
-        // 2. Fetch listings created by this user (get IDs and count)
+        // 2. Fetch listings for this user using the same RPC as HostOverview
+        //    This queries both listing_trial and listing tables,
+        //    checking both "Host / Landlord" and "Created By" fields
         supabase
-          .from('listing')
-          .select('_id')
-          .eq('Created By', userId),
+          .rpc('get_host_listings', { host_user_id: userId }),
 
         // 3. Count visits for this user (as guest)
         supabase
@@ -232,9 +232,16 @@ export function useLoggedInAvatarData(userId) {
       }
 
       // Process listings - get count and first listing ID
-      const listings = listingsResult.data || [];
-      const listingsCount = listings.length;
-      const firstListingId = listingsCount === 1 ? listings[0]._id : null;
+      // The RPC returns results from both listing_trial and listing tables
+      // Deduplicate by _id in case the same listing exists in both tables
+      const rawListings = listingsResult.data || [];
+      if (listingsResult.error) {
+        console.warn('[useLoggedInAvatarData] Listings query error:', listingsResult.error);
+      }
+      const uniqueListingIds = [...new Set(rawListings.map(l => l._id || l.id))];
+      const listingsCount = uniqueListingIds.length;
+      const firstListingId = listingsCount === 1 ? (rawListings[0]?._id || rawListings[0]?.id) : null;
+      console.log('[useLoggedInAvatarData] Listings count:', listingsCount, 'raw:', rawListings.length);
 
       const newData = {
         userType: normalizedType,
