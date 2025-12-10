@@ -10,16 +10,10 @@
  */
 
 // Types
-interface SlackBlock {
-  type: string;
-  text?: { type: string; text: string; emoji?: boolean };
-  fields?: { type: string; text: string }[];
-  elements?: { type: string; text: string }[];
-}
+// ─────────────────────────────────────────────────────────────
 
 interface SlackMessage {
   text: string;
-  blocks?: SlackBlock[];
 }
 
 interface CollectedError {
@@ -112,102 +106,72 @@ export class ErrorCollector {
       return;
     }
 
-    const message = this.formatConsolidatedMessage();
+    const message = this.formatPlainTextMessage();
     sendToSlack('database', message);
   }
 
-  private formatConsolidatedMessage(): SlackMessage {
-    const primaryError = this.errors[0].error;
-    const emoji = this.getErrorEmoji(primaryError);
-    const severity = this.getErrorSeverity(primaryError);
+  /**
+   * Format all errors into a simple plain text message
+   */
+  private formatPlainTextMessage(): SlackMessage {
     const errorCount = this.errors.length;
+    const lines: string[] = [];
 
-    const blocks: SlackBlock[] = [
-      {
-        type: 'header',
-        text: {
-          type: 'plain_text',
-          text: `${emoji} ${this.functionName}/${this.action} - ${errorCount} error${errorCount > 1 ? 's' : ''}`,
-          emoji: true,
-        },
-      },
-      {
-        type: 'section',
-        fields: [
-          { type: 'mrkdwn', text: `*Function:*\n\`${this.functionName}\`` },
-          { type: 'mrkdwn', text: `*Action:*\n\`${this.action}\`` },
-          { type: 'mrkdwn', text: `*Severity:*\n${severity}` },
-          { type: 'mrkdwn', text: `*Request ID:*\n\`${this.requestId}\`` },
-        ],
-      },
-      { type: 'divider' },
-    ];
+    // Header line
+    lines.push(`[Edge Function Error] ${this.functionName}/${this.action}`);
+    lines.push('');
 
-    const errorsToShow = this.errors.slice(0, 5);
-    errorsToShow.forEach((collected, index) => {
-      blocks.push({
-        type: 'section',
-        text: {
-          type: 'mrkdwn',
-          text: `*Error ${index + 1}:* \`${collected.error.name}\`\n${collected.context ? `_Context: ${collected.context}_\n` : ''}\`\`\`${collected.error.message}\`\`\``,
-        },
-      });
-    });
-
-    if (this.errors.length > 5) {
-      blocks.push({
-        type: 'context',
-        elements: [
-          { type: 'mrkdwn', text: `_+ ${this.errors.length - 5} more errors (check Supabase logs)_` },
-        ],
-      });
+    // Basic info
+    lines.push(`Request ID: ${this.requestId}`);
+    lines.push(`Timestamp: ${this.startTime}`);
+    if (this.userId) {
+      lines.push(`User ID: ${this.userId}`);
     }
+    lines.push('');
 
-    blocks.push({
-      type: 'context',
-      elements: [
-        {
-          type: 'mrkdwn',
-          text: `Started: ${this.startTime}${this.userId ? ` | User: \`${this.userId}\`` : ''}`,
-        },
-      ],
-    });
+    // Errors
+    if (errorCount === 1) {
+      const err = this.errors[0];
+      lines.push(`Error Type: ${err.error.name}`);
+      lines.push(`Message: ${err.error.message}`);
+      if (err.context) {
+        lines.push(`Context: ${err.context}`);
+      }
+    } else {
+      lines.push(`Total Errors: ${errorCount}`);
+      lines.push('');
+
+      // Show up to 5 errors
+      const errorsToShow = this.errors.slice(0, 5);
+      errorsToShow.forEach((err, index) => {
+        lines.push(`--- Error ${index + 1} ---`);
+        lines.push(`Type: ${err.error.name}`);
+        lines.push(`Message: ${err.error.message}`);
+        if (err.context) {
+          lines.push(`Context: ${err.context}`);
+        }
+        lines.push('');
+      });
+
+      if (errorCount > 5) {
+        lines.push(`... and ${errorCount - 5} more errors (check Supabase logs)`);
+      }
+    }
 
     return {
-      text: `${emoji} Error in ${this.functionName}/${this.action}`,
-      blocks,
+      text: lines.join('\n'),
     };
-  }
-
-  private getErrorEmoji(error: Error): string {
-    switch (error.name) {
-      case 'ValidationError':
-        return '⚠️';
-      case 'AuthenticationError':
-        return '🔐';
-      case 'BubbleApiError':
-        return '🫧';
-      case 'SupabaseSyncError':
-        return '🔄';
-      case 'OpenAIError':
-        return '🤖';
-      default:
-        return '🚨';
-    }
-  }
-
-  private getErrorSeverity(error: Error): string {
-    switch (error.name) {
-      case 'ValidationError':
-        return '🟡 Low (User Input)';
-      case 'AuthenticationError':
-        return '🟠 Medium (Auth)';
-      default:
-        return '🔴 High (System)';
-    }
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Convenience Export
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Create error collector for a request
+ * Convenience function for cleaner imports
+ */
 export function createErrorCollector(functionName: string, action: string): ErrorCollector {
   return new ErrorCollector(functionName, action);
 }
