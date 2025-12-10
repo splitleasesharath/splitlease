@@ -102,3 +102,5 @@ nul
 
 # Implementation directory
 Implementation/
+.temp-cohost-request/
+.temp-host-editing-proposal/

@@ -183,11 +183,41 @@ function transformListingData(dbListing, photos = [], lookups = {}, isListingTri
 
   return {
     id: listingId,
+    _id: listingId, // Alias for compatibility with EditListingDetails modal
 
     // Property Info
     title: dbListing.Name || 'Untitled Listing',
     description: dbListing.Description || '',
     descriptionNeighborhood: dbListing['Description - Neighborhood'] || '',
+
+    // Raw DB fields for EditListingDetails modal compatibility
+    Name: dbListing.Name || '',
+    Description: dbListing.Description || '',
+    'Description - Neighborhood': dbListing['Description - Neighborhood'] || '',
+    'Location - City': dbListing['Location - City'] || '',
+    'Location - State': dbListing['Location - State'] || '',
+    'Location - Zip Code': dbListing['Location - Zip Code'] || '',
+    'Location - Borough': dbListing['Location - Borough'] || '',
+    'Location - Hood': dbListing['Location - Hood'] || '',
+    'Features - Type of Space': dbListing['Features - Type of Space'] || '',
+    'Features - Qty Bedrooms': dbListing['Features - Qty Bedrooms'] || 0,
+    'Features - Qty Bathrooms': dbListing['Features - Qty Bathrooms'] || 0,
+    'Features - Qty Beds': dbListing['Features - Qty Beds'] || 0,
+    'Features - Qty Guests': dbListing['Features - Qty Guests'] || 1,
+    'Features - SQFT Area': dbListing['Features - SQFT Area'] || 0,
+    'Features - SQFT of Room': dbListing['Features - SQFT of Room'] || 0,
+    'Kitchen Type': dbListing['Kitchen Type'] || '',
+    'Features - Parking type': dbListing['Features - Parking type'] || '',
+    'Features - Secure Storage Option': dbListing['Features - Secure Storage Option'] || '',
+    'Features - House Rules': dbListing['Features - House Rules'] || [],
+    'Features - Photos': dbListing['Features - Photos'] || [],
+    'Features - Amenities In-Unit': dbListing['Features - Amenities In-Unit'] || [],
+    'Features - Amenities In-Building': dbListing['Features - Amenities In-Building'] || [],
+    'Features - Safety': dbListing['Features - Safety'] || [],
+    'First Available': dbListing[' First Available'] || '',
+    'Minimum Nights': dbListing['Minimum Nights'] || 2,
+    'Maximum Nights': dbListing['Maximum Nights'] || 7,
+    'Cancellation Policy': dbListing['Cancellation Policy'] || '',
 
     // Location
     location: {
@@ -1155,11 +1185,37 @@ export default function useListingDashboardPageLogic() {
   }, [fetchListing, getListingIdFromUrl]);
 
   // Handle save from edit modal - data is already saved to database
-  // No need to refetch - just close the modal. The user has already seen the success toast.
-  // If they need fresh data, they can refresh the page.
+  // Update local state to reflect the changes immediately
   const handleSaveEdit = useCallback((updatedData) => {
-    // Data is already persisted by updateListing, nothing more to do
-    // The modal will close automatically after showing the success toast
+    // Update local listing state with the saved data
+    if (updatedData && typeof updatedData === 'object') {
+      setListing((prev) => {
+        if (!prev) return prev;
+
+        // Map the raw DB field names back to transformed property names
+        const updates = { ...prev };
+
+        // Update Name/title
+        if (updatedData.Name !== undefined) {
+          updates.title = updatedData.Name;
+          updates.Name = updatedData.Name;
+        }
+
+        // Update Description
+        if (updatedData.Description !== undefined) {
+          updates.description = updatedData.Description;
+          updates.Description = updatedData.Description;
+        }
+
+        // Update other fields as needed
+        if (updatedData['Description - Neighborhood'] !== undefined) {
+          updates.descriptionNeighborhood = updatedData['Description - Neighborhood'];
+          updates['Description - Neighborhood'] = updatedData['Description - Neighborhood'];
+        }
+
+        return updates;
+      });
+    }
   }, []);
 
   // Handle blocked dates change - save to database
