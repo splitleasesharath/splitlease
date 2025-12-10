@@ -26,7 +26,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { loginUser, signupUser, validateTokenAndFetchUser } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
-import { useToast } from './Toast.jsx';
+import Toast, { useToast } from './Toast.jsx';
 
 // ============================================================================
 // Constants
@@ -381,8 +381,8 @@ export default function SignUpLoginModal({
   defaultUserType = null, // 'host' or 'guest' for route-based prefilling
   skipReload = false // When true, don't reload page after auth success (for modal flows)
 }) {
-  // Toast notifications
-  const { showToast } = useToast();
+  // Toast notifications (with fallback rendering when no ToastProvider)
+  const { toasts, showToast, removeToast } = useToast();
 
   // View state
   const [currentView, setCurrentView] = useState(VIEWS.INITIAL);
@@ -598,6 +598,24 @@ export default function SignUpLoginModal({
 
     setIsLoading(true);
 
+    // Show initial toast
+    showToast({
+      title: 'Thank you!',
+      content: 'Creating your account...',
+      type: 'info',
+      duration: 3000
+    });
+
+    // Show second toast after a delay
+    const robotsToastTimeout = setTimeout(() => {
+      showToast({
+        title: 'Almost there!',
+        content: 'Our robots are still working...',
+        type: 'info',
+        duration: 3000
+      });
+    }, 1500);
+
     // Call signup with extended data
     const result = await signupUser(
       signupData.email,
@@ -612,9 +630,17 @@ export default function SignUpLoginModal({
       }
     );
 
+    clearTimeout(robotsToastTimeout);
     setIsLoading(false);
 
     if (result.success) {
+      showToast({
+        title: 'Welcome to Split Lease!',
+        content: 'Your account has been created successfully.',
+        type: 'success',
+        duration: 4000
+      });
+
       if (onAuthSuccess) {
         onAuthSuccess(result);
       }
@@ -625,6 +651,12 @@ export default function SignUpLoginModal({
         }, 500);
       }
     } else {
+      showToast({
+        title: 'Signup Failed',
+        content: result.error || 'Please try again.',
+        type: 'error',
+        duration: 5000
+      });
       setError(result.error || 'Signup failed. Please try again.');
     }
   };
@@ -635,6 +667,24 @@ export default function SignUpLoginModal({
     setError('');
     setIsLoading(true);
 
+    // Show initial toast
+    showToast({
+      title: 'Welcome back!',
+      content: 'Logging you in...',
+      type: 'info',
+      duration: 3000
+    });
+
+    // Show second toast after a delay
+    const robotsToastTimeout = setTimeout(() => {
+      showToast({
+        title: 'Almost there!',
+        content: 'Our robots are still working...',
+        type: 'info',
+        duration: 3000
+      });
+    }, 1500);
+
     const result = await loginUser(loginData.email, loginData.password);
 
     if (result.success) {
@@ -642,7 +692,15 @@ export default function SignUpLoginModal({
       // This ensures the next page load has the correct user's firstName cached
       await validateTokenAndFetchUser();
 
+      clearTimeout(robotsToastTimeout);
       setIsLoading(false);
+
+      showToast({
+        title: 'Login Successful!',
+        content: 'Welcome back to Split Lease.',
+        type: 'success',
+        duration: 4000
+      });
 
       if (onAuthSuccess) {
         onAuthSuccess(result);
@@ -652,7 +710,15 @@ export default function SignUpLoginModal({
         window.location.reload();
       }
     } else {
+      clearTimeout(robotsToastTimeout);
       setIsLoading(false);
+
+      showToast({
+        title: 'Login Failed',
+        content: result.error || 'Please check your credentials.',
+        type: 'error',
+        duration: 5000
+      });
       setError(result.error || 'Login failed. Please check your credentials.');
     }
   };
@@ -1206,22 +1272,27 @@ export default function SignUpLoginModal({
   // ============================================================================
 
   return (
-    <div style={styles.overlay} onClick={handleOverlayClick}>
-      <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
-        {/* Close button */}
-        {!disableClose && (
-          <button style={styles.closeBtn} onClick={onClose} aria-label="Close">
-            &times;
-          </button>
-        )}
+    <>
+      <div style={styles.overlay} onClick={handleOverlayClick}>
+        <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+          {/* Close button */}
+          {!disableClose && (
+            <button style={styles.closeBtn} onClick={onClose} aria-label="Close">
+              &times;
+            </button>
+          )}
 
-        {/* Render current view */}
-        {currentView === VIEWS.INITIAL && renderInitialView()}
-        {currentView === VIEWS.LOGIN && renderLoginView()}
-        {currentView === VIEWS.SIGNUP_STEP1 && renderSignupStep1()}
-        {currentView === VIEWS.SIGNUP_STEP2 && renderSignupStep2()}
-        {currentView === VIEWS.PASSWORD_RESET && renderPasswordResetView()}
+          {/* Render current view */}
+          {currentView === VIEWS.INITIAL && renderInitialView()}
+          {currentView === VIEWS.LOGIN && renderLoginView()}
+          {currentView === VIEWS.SIGNUP_STEP1 && renderSignupStep1()}
+          {currentView === VIEWS.SIGNUP_STEP2 && renderSignupStep2()}
+          {currentView === VIEWS.PASSWORD_RESET && renderPasswordResetView()}
+        </div>
       </div>
-    </div>
+
+      {/* Toast notifications (rendered here as fallback when no ToastProvider) */}
+      {toasts && toasts.length > 0 && <Toast toasts={toasts} onRemove={removeToast} />}
+    </>
   );
 }
