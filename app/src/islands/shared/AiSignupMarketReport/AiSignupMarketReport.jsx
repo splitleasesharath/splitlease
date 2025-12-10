@@ -199,12 +199,62 @@ function autoCorrectEmail(email) {
 }
 
 /**
+ * Queue AI profile parsing via Supabase Edge Function
+ * This is non-blocking - user doesn't wait for GPT-4 to finish
+ *
+ * @param {Object} data - Data for queuing
+ * @param {string} data.user_id - User ID to parse
+ * @param {string} data.email - User email
+ * @param {string} data.freeform_text - Freeform text to parse
+ * @returns {Promise<Object>} - Queue result with job ID
+ */
+async function queueProfileParsing(data) {
+  console.log('[AiSignupMarketReport] Queuing profile parsing (async)...');
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/ai-parse-profile`;
+
+  try {
+    const response = await fetch(edgeFunctionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'queue',
+        payload: {
+          user_id: data.user_id,
+          email: data.email,
+          freeform_text: data.freeform_text,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[AiSignupMarketReport] Queue error:', errorText);
+      // Non-fatal - don't throw, just log
+      return { success: false, error: errorText };
+    }
+
+    const result = await response.json();
+    console.log('[AiSignupMarketReport] ✅ Profile parsing queued successfully');
+    console.log('[AiSignupMarketReport] Job ID:', result.data?.jobId);
+    return result;
+  } catch (error) {
+    console.warn('[AiSignupMarketReport] ⚠️ Queue error (non-fatal):', error.message);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Submit AI signup via Supabase Edge Function (GUEST endpoint)
  * Also creates a user account with generated password
  *
  * ✅ MIGRATED: No more hardcoded API key!
  * ✅ UNAUTHENTICATED: Works for guest users without login
  * ✅ NEW: Creates user account with password format SL{Name}77
+ * ✅ ASYNC QUEUE: Profile parsing happens in background (non-blocking)
  * API key is now stored server-side in Supabase Secrets
  *
  * @param {Object} data - Signup data
@@ -242,6 +292,8 @@ async function submitSignup(data) {
   console.log('[AiSignupMarketReport] Step 1: Creating user account...');
 
   let signupResult = null;
+  let emailAlreadyExists = false;
+
   try {
     signupResult = await signupUser(
       data.email,
@@ -261,21 +313,42 @@ async function submitSignup(data) {
     } else {
       // Check if the error is because email already exists
       if (signupResult.error?.includes('already in use') ||
+          signupResult.error?.includes('already registered') ||
           signupResult.error?.includes('USED_EMAIL')) {
-        console.log('[AiSignupMarketReport] ℹ️ User already exists, proceeding with market research submission');
-        // Continue with market research submission even if user already exists
+        console.log('[AiSignupMarketReport] ℹ️ User already exists - need to login first');
+        emailAlreadyExists = true;
+        // Return special flag for email already exists
+        return {
+          success: false,
+          emailAlreadyExists: true,
+          email: data.email,
+          marketResearchText: data.marketResearchText,
+          error: 'An account with this email already exists. Please log in to continue.',
+        };
       } else {
         console.warn('[AiSignupMarketReport] ⚠️ Account creation failed:', signupResult.error);
-        // Continue with market research submission anyway
+        throw new Error(signupResult.error || 'Account creation failed');
       }
     }
   } catch (signupError) {
-    console.warn('[AiSignupMarketReport] ⚠️ Account creation error:', signupError.message);
-    // Continue with market research submission even if signup fails
-    // The user might already exist or there might be a temporary issue
+    // Check for email exists error from exception
+    if (signupError.message?.includes('already in use') ||
+        signupError.message?.includes('already registered') ||
+        signupError.message?.includes('USED_EMAIL')) {
+      console.log('[AiSignupMarketReport] ℹ️ User already exists (from exception) - need to login first');
+      return {
+        success: false,
+        emailAlreadyExists: true,
+        email: data.email,
+        marketResearchText: data.marketResearchText,
+        error: 'An account with this email already exists. Please log in to continue.',
+      };
+    }
+    console.error('[AiSignupMarketReport] ⚠️ Account creation error:', signupError.message);
+    throw signupError;
   }
 
-  // ========== STEP 2: Submit Market Research ==========
+  // ========== STEP 2: Submit Market Research (save freeform text) ==========
   console.log('[AiSignupMarketReport] Step 2: Submitting market research...');
 
   // Get Supabase URL from environment
@@ -323,29 +396,28 @@ async function submitSignup(data) {
     console.log('[AiSignupMarketReport] Result:', JSON.stringify(result, null, 2));
     console.log('[AiSignupMarketReport] ================================');
 
-    // ========== STEP 3: Parse Profile with AI (GPT-4) ==========
-    // This parses the freeform text and extracts structured data
-    // Also auto-favorites matching listings
-    console.log('[AiSignupMarketReport] Step 3: Parsing profile with AI...');
+    // ========== STEP 3: Queue Profile Parsing (ASYNC - Non-blocking) ==========
+    // User doesn't wait for GPT-4 - it happens in background
+    console.log('[AiSignupMarketReport] Step 3: Queuing profile parsing (async)...');
 
-    let parseResult = null;
-    try {
-      parseResult = await parseProfileWithAI({
-        user_id: signupResult?.user_id || result.data?._id,
+    const userId = signupResult?.user_id || result.data?._id;
+    if (userId) {
+      // Queue the parsing job - this returns immediately
+      queueProfileParsing({
+        user_id: userId,
         email: data.email,
-        text_inputted: data.marketResearchText,
+        freeform_text: data.marketResearchText,
+      }).then(queueResult => {
+        if (queueResult?.success) {
+          console.log('[AiSignupMarketReport] ✅ Parsing job queued:', queueResult.data?.jobId);
+        } else {
+          console.warn('[AiSignupMarketReport] ⚠️ Failed to queue parsing (non-fatal)');
+        }
+      }).catch(err => {
+        console.warn('[AiSignupMarketReport] ⚠️ Queue error (non-fatal):', err.message);
       });
-
-      if (parseResult?.success) {
-        console.log('[AiSignupMarketReport] ✅ Profile parsed successfully');
-        console.log('[AiSignupMarketReport] Extracted data:', parseResult.data?.extracted_data);
-        console.log('[AiSignupMarketReport] Favorited listings:', parseResult.data?.favorited_listings?.length || 0);
-      } else {
-        console.warn('[AiSignupMarketReport] ⚠️ Profile parsing returned unsuccessful result');
-      }
-    } catch (parseError) {
-      // Don't fail the whole signup if parsing fails
-      console.warn('[AiSignupMarketReport] ⚠️ Profile parsing error (non-fatal):', parseError.message);
+    } else {
+      console.warn('[AiSignupMarketReport] ⚠️ No user ID for queuing profile parsing');
     }
 
     return {
@@ -353,7 +425,7 @@ async function submitSignup(data) {
       data: result.data,
       generatedPassword: generatedPassword, // Include for reference (will be sent via email)
       extractedName: extractedName,
-      parseResult: parseResult, // Include parsing result
+      isAsync: true, // Flag indicating parsing is happening in background
     };
   } catch (error) {
     console.error('[AiSignupMarketReport] ========== EXCEPTION ==========');
@@ -616,7 +688,7 @@ function LoadingStage({ message }) {
   );
 }
 
-function FinalMessage({ message }) {
+function FinalMessage({ message, isAsync = false }) {
   return (
     <div className="final-container">
       <div className="final-lottie-wrapper">
@@ -629,9 +701,45 @@ function FinalMessage({ message }) {
       </div>
       <h3 className="final-title">Success!</h3>
       <p className="final-message">{message}</p>
-      <p className="final-sub-message">
-        Check your inbox for the comprehensive market research report.
+      {isAsync ? (
+        <p className="final-sub-message">
+          We're analyzing your preferences in the background. Your personalized market research report will be ready by tomorrow morning!
+        </p>
+      ) : (
+        <p className="final-sub-message">
+          Check your inbox for the comprehensive market research report.
+        </p>
+      )}
+    </div>
+  );
+}
+
+function EmailExistsMessage({ email, onLoginClick }) {
+  return (
+    <div className="final-container">
+      <div className="final-lottie-wrapper" style={{ opacity: 0.7 }}>
+        <LottieAnimation
+          src={LOADING_LOTTIE_URL}
+          loop={true}
+          autoplay={true}
+          className="final-lottie"
+        />
+      </div>
+      <h3 className="final-title">Account Already Exists</h3>
+      <p className="final-message">
+        An account with <strong>{email}</strong> already exists.
       </p>
+      <p className="final-sub-message">
+        Please log in to continue with your market research request.
+      </p>
+      <button
+        type="button"
+        className="nav-next-button"
+        onClick={onLoginClick}
+        style={{ marginTop: '1rem' }}
+      >
+        Log In
+      </button>
     </div>
   );
 }
@@ -682,6 +790,9 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
     emailCertainty: null,
     isLoading: false,
     error: null,
+    emailAlreadyExists: false,
+    existingEmail: null,
+    isAsyncProcessing: false,
   });
 
   // Ref to track toast timeout for cleanup
@@ -765,7 +876,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         }, 1500);
 
         try {
-          await submitSignup({
+          const result = await submitSignup({
             email: correctedEmail,
             phone: extractedPhone,
             marketResearchText: formData.marketResearchText,
@@ -778,6 +889,25 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
             clearTimeout(robotsToastTimeoutRef.current);
           }
 
+          // Check if email already exists
+          if (result.emailAlreadyExists) {
+            showToast({
+              title: 'Account Exists',
+              content: 'Please log in to continue.',
+              type: 'info',
+              duration: 4000
+            });
+
+            setState(prev => ({
+              ...prev,
+              currentSection: 'emailExists',
+              emailAlreadyExists: true,
+              existingEmail: correctedEmail,
+              formData: updatedFormData,
+            }));
+            return;
+          }
+
           // Show success toast
           showToast({
             title: 'Welcome to Split Lease!',
@@ -786,7 +916,11 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
             duration: 4000
           });
 
-          goToSection('final');
+          setState(prev => ({
+            ...prev,
+            currentSection: 'final',
+            isAsyncProcessing: result.isAsync || false,
+          }));
         } catch (error) {
           // Clear the timeout
           if (robotsToastTimeoutRef.current) {
@@ -862,7 +996,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
     }, 1500);
 
     try {
-      await submitSignup({
+      const result = await submitSignup({
         email: formData.email,
         phone: formData.phone,
         marketResearchText: formData.marketResearchText,
@@ -875,6 +1009,25 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
         clearTimeout(robotsToastTimeoutRef.current);
       }
 
+      // Check if email already exists
+      if (result.emailAlreadyExists) {
+        showToast({
+          title: 'Account Exists',
+          content: 'Please log in to continue.',
+          type: 'info',
+          duration: 4000
+        });
+
+        setState(prev => ({
+          ...prev,
+          currentSection: 'emailExists',
+          emailAlreadyExists: true,
+          existingEmail: formData.email,
+          isLoading: false,
+        }));
+        return;
+      }
+
       // Show success toast
       showToast({
         title: 'Welcome to Split Lease!',
@@ -884,8 +1037,12 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
       });
 
       setTimeout(() => {
-        goToSection('final');
-        setLoading(false);
+        setState(prev => ({
+          ...prev,
+          currentSection: 'final',
+          isLoading: false,
+          isAsyncProcessing: result.isAsync || false,
+        }));
       }, 1500);
     } catch (error) {
       // Clear the timeout
@@ -912,8 +1069,21 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
       emailCertainty: null,
       isLoading: false,
       error: null,
+      emailAlreadyExists: false,
+      existingEmail: null,
+      isAsyncProcessing: false,
     });
   }, []);
+
+  // Handle login click for existing email users
+  const handleLoginClick = useCallback(() => {
+    // Close this modal and trigger the login modal in Header
+    onClose();
+    // Dispatch custom event to open login modal
+    window.dispatchEvent(new CustomEvent('openLoginModal', {
+      detail: { email: state.existingEmail }
+    }));
+  }, [onClose, state.existingEmail]);
 
   const getButtonText = useCallback(() => {
     const { formData } = state;
@@ -997,7 +1167,8 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
 
   const showNavigation = state.currentSection !== 'final' &&
                         state.currentSection !== 'loading' &&
-                        state.currentSection !== 'parsing';
+                        state.currentSection !== 'parsing' &&
+                        state.currentSection !== 'emailExists';
 
   return (
     <div
@@ -1058,7 +1229,18 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
 
           {state.currentSection === 'parsing' && <ParsingStage />}
           {state.currentSection === 'loading' && <LoadingStage message="We are processing your request" />}
-          {state.currentSection === 'final' && <FinalMessage message="Tomorrow morning, you'll receive a full report." />}
+          {state.currentSection === 'emailExists' && (
+            <EmailExistsMessage
+              email={state.existingEmail}
+              onLoginClick={handleLoginClick}
+            />
+          )}
+          {state.currentSection === 'final' && (
+            <FinalMessage
+              message="Your account has been created successfully!"
+              isAsync={state.isAsyncProcessing}
+            />
+          )}
         </div>
 
         {/* Error Display */}
