@@ -26,6 +26,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { loginUser, signupUser, validateTokenAndFetchUser } from '../../lib/auth.js';
 import { supabase } from '../../lib/supabase.js';
+import { useToast } from './Toast.jsx';
 
 // ============================================================================
 // Constants
@@ -380,6 +381,9 @@ export default function SignUpLoginModal({
   defaultUserType = null, // 'host' or 'guest' for route-based prefilling
   skipReload = false // When true, don't reload page after auth success (for modal flows)
 }) {
+  // Toast notifications
+  const { showToast } = useToast();
+
   // View state
   const [currentView, setCurrentView] = useState(VIEWS.INITIAL);
 
@@ -687,12 +691,20 @@ export default function SignUpLoginModal({
       }
 
       // Always show success message to prevent email enumeration
-      alert('If an account with that email exists, a password reset link has been sent. Please check your inbox.');
+      showToast({
+        title: 'Check Your Inbox',
+        content: 'If an account with that email exists, a password reset link has been sent.',
+        type: 'info'
+      });
       goToLogin();
     } catch (err) {
       console.error('Password reset error:', err);
       // Still show success message for security
-      alert('If an account with that email exists, a password reset link has been sent. Please check your inbox.');
+      showToast({
+        title: 'Check Your Inbox',
+        content: 'If an account with that email exists, a password reset link has been sent.',
+        type: 'info'
+      });
       goToLogin();
     }
 
@@ -722,7 +734,11 @@ export default function SignUpLoginModal({
       if (fnError || !data?.success) {
         setError('Unable to send magic link. Please try again.');
       } else {
-        alert(`Magic link sent to ${email}! Please check your inbox.`);
+        showToast({
+          title: 'Magic Link Sent',
+          content: `Check your inbox at ${email} for the login link.`,
+          type: 'success'
+        });
       }
     } catch (err) {
       setError('Unable to send magic link. Please try again.');
