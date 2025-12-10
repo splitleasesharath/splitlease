@@ -153,8 +153,8 @@ export default function ListingDashboardPage() {
             {/* Property Info Section */}
             <PropertyInfoSection
               listing={listing}
-              onDescriptionChange={handleDescriptionChange}
               onImportReviews={handleImportReviews}
+              onEdit={() => handleEditSection('name')}
             />
 
             {/* Description Section */}

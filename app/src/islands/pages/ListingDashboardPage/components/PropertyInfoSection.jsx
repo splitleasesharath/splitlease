@@ -39,21 +39,17 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('en-US', options);
 }
 
-export default function PropertyInfoSection({ listing, onDescriptionChange, onImportReviews }) {
+export default function PropertyInfoSection({ listing, onImportReviews, onEdit }) {
   return (
     <div id="property-info" className="listing-dashboard-property">
-      {/* Section Header */}
-      <h2 className="listing-dashboard-property__title">Property Info</h2>
-
-      {/* Input Field */}
-      <div className="listing-dashboard-property__input-wrapper">
-        <textarea
-          placeholder="Type here..."
-          className="listing-dashboard-property__textarea"
-          rows={4}
-          defaultValue={listing.description}
-          onChange={(e) => onDescriptionChange?.(e.target.value)}
-        />
+      {/* Section Header with Edit Button */}
+      <div className="listing-dashboard-property__header">
+        <h2 className="listing-dashboard-property__listing-name">
+          {listing.title || 'Untitled Listing'}
+        </h2>
+        <button className="listing-dashboard-section__edit" onClick={onEdit}>
+          edit
+        </button>
       </div>
 
       {/* Import Reviews Link */}
