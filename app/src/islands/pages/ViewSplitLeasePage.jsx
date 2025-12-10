@@ -15,6 +15,7 @@ import GoogleMap from '../shared/GoogleMap.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
+import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 import { initializeLookups } from '../../lib/dataLookups.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getSessionId } from '../../lib/auth.js';
 import { fetchListingComplete, getListingIdFromUrl, fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
@@ -605,6 +606,8 @@ export default function ViewSplitLeasePage() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingProposalData, setPendingProposalData] = useState(null);
   const [loggedInUserData, setLoggedInUserData] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successProposalId, setSuccessProposalId] = useState(null);
   const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
 
   // Toast notification state
@@ -1096,16 +1099,14 @@ export default function ViewSplitLeasePage() {
       console.log('✅ Proposal submitted successfully:', data);
       console.log('   Proposal ID:', data.data?.proposalId);
 
-      // Show success toast
-      showToast('Proposal submitted successfully!', 'success');
-
+      // Close the create proposal modal
       setIsProposalModalOpen(false);
       setPendingProposalData(null);
 
-      // Redirect to guest proposals page after a short delay to show the toast
-      setTimeout(() => {
-        window.location.href = '/guest-proposals';
-      }, 1500);
+      // Store the proposal ID and show success modal
+      const newProposalId = data.data?.proposalId;
+      setSuccessProposalId(newProposalId);
+      setShowSuccessModal(true);
 
     } catch (error) {
       console.error('❌ Error submitting proposal:', error);
@@ -2624,6 +2625,18 @@ export default function ViewSplitLeasePage() {
           onAuthSuccess={handleAuthSuccess}
           defaultUserType="guest"
           skipReload={true}
+        />
+      )}
+
+      {/* Proposal Success Modal */}
+      {showSuccessModal && (
+        <ProposalSuccessModal
+          proposalId={successProposalId}
+          listingName={listing?.Name}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessProposalId(null);
+          }}
         />
       )}
 
