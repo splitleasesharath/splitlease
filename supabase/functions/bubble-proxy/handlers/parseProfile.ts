@@ -18,6 +18,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { complete } from '../../_shared/openai.ts';
 import { ValidationError } from '../../_shared/errors.ts';
+import { parseJsonArray } from '../../_shared/jsonUtils.ts';
 
 // ============================================================================
 // Types
@@ -248,7 +249,11 @@ async function findAndFavoriteMatchingListings(
   }
 
   // Merge with existing favorites
-  const existingFavorites = userData?.['Favorited Listings'] || [];
+  // CRITICAL: Parse JSONB arrays - Supabase can return as stringified JSON
+  const existingFavorites = parseJsonArray<string>(
+    userData?.['Favorited Listings'],
+    'Favorited Listings'
+  );
   const newFavorites = [...new Set([...existingFavorites, ...listingIds])];
 
   // Update user's favorites
@@ -271,7 +276,11 @@ async function findAndFavoriteMatchingListings(
       .eq('_id', listingId)
       .single();
 
-    const currentUsers = listingData?.['Users that favorite'] || [];
+    // CRITICAL: Parse JSONB arrays - Supabase can return as stringified JSON
+    const currentUsers = parseJsonArray<string>(
+      listingData?.['Users that favorite'],
+      'Users that favorite'
+    );
     if (!currentUsers.includes(userId)) {
       await supabase
         .from('listing')

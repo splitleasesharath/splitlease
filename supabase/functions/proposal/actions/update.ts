@@ -17,6 +17,7 @@ import {
   SupabaseSyncError,
   AuthenticationError,
 } from "../../_shared/errors.ts";
+import { parseJsonArray } from "../../_shared/jsonUtils.ts";
 import { enqueueBubbleSync, triggerQueueProcessing, filterBubbleIncompatibleFields } from "../../_shared/queueSync.ts";
 import {
   UpdateProposalInput,
@@ -131,7 +132,11 @@ export async function handleUpdate(
       input.status as ProposalStatusName,
       isHost ? "host" : isGuest ? "guest" : "admin"
     );
-    const currentHistory = (proposalData as unknown as { History: string[] }).History || [];
+    // CRITICAL: Parse JSONB array - Supabase can return as stringified JSON
+    const currentHistory = parseJsonArray<string>(
+      (proposalData as unknown as { History: unknown }).History,
+      "History"
+    );
     updates.History = [...currentHistory, historyEntry];
   }
 

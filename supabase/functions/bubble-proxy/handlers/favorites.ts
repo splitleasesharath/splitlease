@@ -7,6 +7,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateRequiredFields } from '../../_shared/validation.ts';
+import { parseJsonArray } from '../../_shared/jsonUtils.ts';
 
 interface FavoritesPayload {
   userId: string;
@@ -67,8 +68,12 @@ export async function handleFavorites(
 
     console.log('[Favorites Handler] Current user data:', userData);
 
-    // Parse current favorites (handle null/undefined)
-    const currentFavorites: string[] = userData?.['Favorited Listings'] || [];
+    // Parse current favorites (handle null/undefined AND stringified JSON)
+    // CRITICAL: Supabase JSONB can return as stringified JSON - must parse first
+    const currentFavorites = parseJsonArray<string>(
+      userData?.['Favorited Listings'],
+      'Favorited Listings'
+    );
     console.log('[Favorites Handler] Current favorites:', currentFavorites);
 
     // Step 2: Update favorites array

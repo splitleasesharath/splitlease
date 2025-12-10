@@ -9,6 +9,7 @@
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ValidationError, SupabaseSyncError } from "../../_shared/errors.ts";
+import { parseJsonArray } from "../../_shared/jsonUtils.ts";
 import {
   CreateProposalInput,
   CreateProposalResponse,
@@ -168,7 +169,9 @@ export async function handleCreate(
   // ================================================
 
   // Calculate order ranking
-  const existingProposals = guestData["Proposals List"] || [];
+  // CRITICAL: Parse JSONB arrays - Supabase can return as stringified JSON
+  // Without parsing, spread operator would create character arrays instead of proper arrays
+  const existingProposals = parseJsonArray<string>(guestData["Proposals List"], "Proposals List");
   const orderRanking = calculateOrderRanking(existingProposals.length);
 
   // Calculate complementary nights (Step 4)
@@ -340,13 +343,15 @@ export async function handleCreate(
   guestUpdates["Proposals List"] = updatedGuestProposals;
 
   // Add listing to favorites (Step 2)
-  const currentFavorites = guestData["Favorited Listings"] || [];
+  // CRITICAL: Parse JSONB arrays - Supabase can return as stringified JSON
+  const currentFavorites = parseJsonArray<string>(guestData["Favorited Listings"], "Favorited Listings");
   if (!currentFavorites.includes(input.listingId)) {
     guestUpdates["Favorited Listings"] = [...currentFavorites, input.listingId];
   }
 
   // Profile enrichment (Steps 20-22) - only if empty
-  const tasksCompleted = guestData["Tasks Completed"] || [];
+  // CRITICAL: Parse JSONB arrays - Supabase can return as stringified JSON
+  const tasksCompleted = parseJsonArray<string>(guestData["Tasks Completed"], "Tasks Completed");
 
   if (!guestData["About Me / Bio"] && !tasksCompleted.includes("bio") && input.aboutMe) {
     guestUpdates["About Me / Bio"] = input.aboutMe;
@@ -374,7 +379,8 @@ export async function handleCreate(
   // STEP 3: UPDATE HOST USER
   // ================================================
 
-  const hostProposals = hostUserData["Proposals List"] || [];
+  // CRITICAL: Parse JSONB arrays - Supabase can return as stringified JSON
+  const hostProposals = parseJsonArray<string>(hostUserData["Proposals List"], "Host Proposals List");
 
   const { error: hostUpdateError } = await supabase
     .from("user")
