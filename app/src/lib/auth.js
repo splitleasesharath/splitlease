@@ -868,7 +868,9 @@ export async function validateTokenAndFetchUser() {
       // User profile fields for proposal prefilling
       aboutMe: userData.aboutMe || null,
       needForSpace: userData.needForSpace || null,
-      specialNeeds: userData.specialNeeds || null
+      specialNeeds: userData.specialNeeds || null,
+      // Proposal count for determining first proposal flow
+      proposalCount: userData.proposalCount ?? 0
     };
 
     console.log('✅ User data validated:', userDataObject.firstName, '- Type:', userDataObject.userType);

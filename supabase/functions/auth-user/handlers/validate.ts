@@ -125,6 +125,23 @@ export async function handleValidate(
           profilePhoto = 'https:' + profilePhoto;
         }
 
+        // Fetch proposal count for this user (to determine if first proposal)
+        let proposalCount = 0;
+        const bubbleUserId = userData._id || user_id;
+        if (bubbleUserId) {
+          const { count, error: countError } = await supabase
+            .from('proposal')
+            .select('*', { count: 'exact', head: true })
+            .eq('Guest', bubbleUserId);
+
+          if (countError) {
+            console.warn(`[validate] Could not fetch proposal count:`, countError);
+          } else {
+            proposalCount = count || 0;
+            console.log(`[validate] User has ${proposalCount} proposal(s)`);
+          }
+        }
+
         const userDataObject = {
           userId: userData._id || user_id,
           supabaseUserId: authUser.id,
@@ -136,18 +153,21 @@ export async function handleValidate(
           accountHostId: userData['Account - Host / Landlord'] || null,
           aboutMe: userData['About Me / Bio'] || null,
           needForSpace: userData['need for Space'] || null,
-          specialNeeds: userData['special needs'] || null
+          specialNeeds: userData['special needs'] || null,
+          proposalCount: proposalCount
         };
 
         console.log(`[validate] ✅ Validation complete (Supabase Auth + DB)`);
         console.log(`[validate]    User: ${userDataObject.firstName || userDataObject.email}`);
         console.log(`[validate]    Type: ${userDataObject.userType}`);
+        console.log(`[validate]    Proposals: ${proposalCount}`);
         console.log(`[validate] ========== VALIDATION COMPLETE ==========`);
 
         return userDataObject;
       }
 
       // User not in user table yet - return data from Supabase Auth only
+      // This is a new user, so proposalCount = 0
       console.log(`[validate] User not found in database, using Supabase Auth data`);
 
       const userDataObject = {
@@ -161,12 +181,14 @@ export async function handleValidate(
         accountHostId: null,
         aboutMe: null,
         needForSpace: null,
-        specialNeeds: null
+        specialNeeds: null,
+        proposalCount: 0
       };
 
       console.log(`[validate] ✅ Validation complete (Supabase Auth only)`);
       console.log(`[validate]    Email: ${userDataObject.email}`);
       console.log(`[validate]    Type: ${userDataObject.userType}`);
+      console.log(`[validate]    Proposals: 0 (new user)`);
       console.log(`[validate] ========== VALIDATION COMPLETE ==========`);
 
       return userDataObject;
@@ -205,6 +227,22 @@ export async function handleValidate(
     // Use 'email' column first (more commonly populated), fall back to 'email as text'
     const userEmail = userData['email'] || userData['email as text'] || null;
 
+    // Fetch proposal count for this user (to determine if first proposal)
+    let proposalCount = 0;
+    if (userData._id) {
+      const { count, error: countError } = await supabase
+        .from('proposal')
+        .select('*', { count: 'exact', head: true })
+        .eq('Guest', userData._id);
+
+      if (countError) {
+        console.warn(`[validate] Could not fetch proposal count:`, countError);
+      } else {
+        proposalCount = count || 0;
+        console.log(`[validate] User has ${proposalCount} proposal(s)`);
+      }
+    }
+
     const userDataObject = {
       userId: userData._id,
       firstName: userData['Name - First'] || null,
@@ -215,12 +253,14 @@ export async function handleValidate(
       accountHostId: userData['Account - Host / Landlord'] || null,
       aboutMe: userData['About Me / Bio'] || null,
       needForSpace: userData['need for Space'] || null,
-      specialNeeds: userData['special needs'] || null
+      specialNeeds: userData['special needs'] || null,
+      proposalCount: proposalCount
     };
 
     console.log(`[validate] ✅ Validation complete (Bubble legacy)`);
     console.log(`[validate]    User: ${userDataObject.firstName}`);
     console.log(`[validate]    Type: ${userDataObject.userType}`);
+    console.log(`[validate]    Proposals: ${proposalCount}`);
     console.log(`[validate] ========== VALIDATION COMPLETE ==========`);
 
     return userDataObject;

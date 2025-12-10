@@ -21,7 +21,7 @@ import { fetchPhotoUrls, extractPhotos, fetchHostData, parseAmenities } from '..
 import './FavoriteListingsPage.css';
 
 /**
- * PropertyCard - Individual listing card (matches SearchPage PropertyCard)
+ * PropertyCard - Individual listing card (matches SearchPage PropertyCard exactly)
  */
 function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, onToggleFavorite, userId }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -65,8 +65,10 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
   };
 
   // Calculate dynamic price using default 5 nights (Monday-Friday pattern)
+  // Uses the same formula as priceCalculations.js for Nightly rental type
   const calculateDynamicPrice = () => {
-    const nightsCount = 5;
+    const nightsCount = 5; // Default to 5 nights (Mon-Fri)
+
     const priceFieldMap = {
       2: 'Price 2 nights selected',
       3: 'Price 3 nights selected',
@@ -76,21 +78,35 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
       7: 'Price 7 nights selected'
     };
 
+    // Get the host compensation rate for the selected nights
     let nightlyHostRate = 0;
     if (nightsCount >= 2 && nightsCount <= 7) {
       const fieldName = priceFieldMap[nightsCount];
       nightlyHostRate = listing[fieldName] || 0;
     }
 
+    // Fallback to starting price if no specific rate found
     if (!nightlyHostRate || nightlyHostRate === 0) {
       nightlyHostRate = listing['Starting nightly price'] || listing.price?.starting || 0;
     }
 
+    // Apply the same markup calculation as priceCalculations.js
+    // Step 1: Calculate base price (host rate × nights)
     const basePrice = nightlyHostRate * nightsCount;
+
+    // Step 2: Apply full-time discount (only for 7 nights, 13% discount)
     const fullTimeDiscount = nightsCount === 7 ? basePrice * 0.13 : 0;
+
+    // Step 3: Price after discounts
     const priceAfterDiscounts = basePrice - fullTimeDiscount;
+
+    // Step 4: Apply site markup (17%)
     const siteMarkup = priceAfterDiscounts * 0.17;
+
+    // Step 5: Calculate total price
     const totalPrice = basePrice - fullTimeDiscount + siteMarkup;
+
+    // Step 6: Calculate price per night (guest-facing price)
     const pricePerNight = totalPrice / nightsCount;
 
     return pricePerNight;
@@ -99,43 +115,29 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
   const dynamicPrice = calculateDynamicPrice();
   const startingPrice = listing['Starting nightly price'] || listing.price?.starting || 0;
 
-  // Render amenity icons
-  const renderAmenityIcons = () => {
-    if (!listing.amenities || listing.amenities.length === 0) return null;
-
-    const maxVisible = 6;
-    const visibleAmenities = listing.amenities.slice(0, maxVisible);
-    const hiddenCount = Math.max(0, listing.amenities.length - maxVisible);
-
-    return (
-      <div className="listing-amenities">
-        {visibleAmenities.map((amenity, idx) => (
-          <span key={idx} className="amenity-icon" data-tooltip={amenity.name}>
-            {amenity.icon}
-          </span>
-        ))}
-        {hiddenCount > 0 && (
-          <span className="amenity-more-count" title="Show all amenities">
-            +{hiddenCount} more
-          </span>
-        )}
-      </div>
-    );
-  };
-
   const listingId = listing.id || listing._id;
 
+  // Handle click to pass days-selected parameter at click time (not render time)
+  // This ensures we get the current URL parameter after SearchScheduleSelector has updated it
   const handleCardClick = (e) => {
     if (!listingId) {
       e.preventDefault();
+      console.error('[PropertyCard] No listing ID found', { listing });
       return;
     }
+
+    // Prevent default link behavior - we'll handle navigation manually
     e.preventDefault();
+
+    // Get days-selected from URL at click time (after SearchScheduleSelector has updated it)
     const urlParams = new URLSearchParams(window.location.search);
     const daysSelected = urlParams.get('days-selected');
+
     const url = daysSelected
       ? `/view-split-lease/${listingId}?days-selected=${daysSelected}`
       : `/view-split-lease/${listingId}`;
+
+    console.log('📅 PropertyCard: Opening listing with URL:', url);
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
@@ -148,6 +150,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
       style={{ textDecoration: 'none', color: 'inherit' }}
       onClick={handleCardClick}
     >
+      {/* Image Section */}
       {hasImages && (
         <div className="listing-images">
           <img
@@ -183,84 +186,83 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
         </div>
       )}
 
+      {/* Content Section - F7b Layout */}
       <div className="listing-content">
-        <div className="listing-info">
-          <div
-            className="listing-location"
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              if (onLocationClick) {
-                onLocationClick(listing);
-              }
-            }}
-            style={{ cursor: onLocationClick ? 'pointer' : 'default' }}
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-              <circle cx="12" cy="10" r="3" />
-            </svg>
-            <span className="location-text">{listing.location}</span>
+        {/* Main Info - Left Side */}
+        <div className="listing-main-info">
+          <div className="listing-info-top">
+            <div
+              className="listing-location"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (onLocationClick) {
+                  onLocationClick(listing);
+                }
+              }}
+              style={{ cursor: onLocationClick ? 'pointer' : 'default' }}
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span className="location-text">{listing.location}</span>
+            </div>
+            <h3 className="listing-title">{listing.title}</h3>
           </div>
-          <h3 className="listing-title">{listing.title}</h3>
-          <p className="listing-type">
-            {listing.type}
-            {listing.squareFeet ? ` (${listing.squareFeet} SQFT)` : ''} - {listing.maxGuests} guests max
-          </p>
-          {renderAmenityIcons()}
-          <p className="listing-details">{listing.description}</p>
-        </div>
 
-        <div className="listing-footer">
-          <div className="host-info">
-            {listing.host?.image && (
-              <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
-            )}
-            {!listing.host?.image && (
-              <div className="host-avatar-placeholder">?</div>
-            )}
-            <div className="host-details">
+          {/* Meta Section - Info Dense Style */}
+          <div className="listing-meta">
+            <span className="meta-item"><strong>{listing.type || 'Entire Place'}</strong></span>
+            <span className="meta-item"><strong>{listing.maxGuests}</strong> guests</span>
+            <span className="meta-item"><strong>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`}</strong></span>
+            <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
+          </div>
+
+          {/* Host Row - Bottom Left */}
+          <div className="listing-host-row">
+            <div className="host">
+              {listing.host?.image ? (
+                <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
+              ) : (
+                <div className="host-avatar-placeholder">?</div>
+              )}
               <span className="host-name">
                 {formatHostName(listing.host?.name)}
                 {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
               </span>
-              <button
-                className="message-btn"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onOpenContactModal(listing);
-                }}
-              >
-                Message
-              </button>
             </div>
-          </div>
-
-          <div className="pricing-info">
-            <div
-              ref={priceInfoTriggerRef}
-              className="starting-price"
-              style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+            <button
+              className="message-btn"
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                onOpenInfoModal(listing, priceInfoTriggerRef);
+                onOpenContactModal(listing);
               }}
             >
-              <span>Starting at ${parseFloat(startingPrice).toFixed(2)}/night</span>
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                style={{ color: '#3b82f6', fill: 'currentColor', cursor: 'pointer' }}
-              >
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
               </svg>
-            </div>
-            <div className="full-price">${dynamicPrice.toFixed(2)}/night</div>
-            <div className="availability-text">Message Split Lease for Availability</div>
+              Message
+            </button>
           </div>
+        </div>
+
+        {/* Price Sidebar - Right Side */}
+        <div
+          className="listing-price-sidebar"
+          ref={priceInfoTriggerRef}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onOpenInfoModal(listing, priceInfoTriggerRef);
+          }}
+        >
+          <div className="price-main">${dynamicPrice.toFixed(2)}</div>
+          <div className="price-period">/night</div>
+          <div className="price-divider"></div>
+          <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
+          <div className="availability-note">Message Split Lease<br/>for Availability</div>
         </div>
       </div>
     </a>

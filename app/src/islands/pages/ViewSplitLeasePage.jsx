@@ -2601,7 +2601,7 @@ export default function ViewSplitLeasePage() {
           reservationSpan={reservationSpan}
           pricingBreakdown={priceBreakdown}
           zatConfig={zatConfig}
-          hasExistingUserData={!!(loggedInUserData?.aboutMe || loggedInUserData?.needForSpace)}
+          isFirstProposal={loggedInUserData?.proposalCount === 0}
           existingUserData={loggedInUserData ? {
             needForSpace: loggedInUserData.needForSpace || '',
             aboutYourself: loggedInUserData.aboutMe || '',

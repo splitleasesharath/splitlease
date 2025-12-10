@@ -99,8 +99,8 @@ const clearProposalDraft = (listingId) => {
  * @param {number} reservationSpan - Number of weeks for reservation
  * @param {Object} pricingBreakdown - Pricing breakdown from parent (INITIAL ONLY)
  * @param {Object} zatConfig - ZAT price configuration object
- * @param {boolean} hasExistingUserData - Whether user has previously entered data
- * @param {Object} existingUserData - Previously saved user data
+ * @param {boolean} isFirstProposal - Whether this is the user's first proposal (true = first, false = subsequent)
+ * @param {Object} existingUserData - User's saved profile data for prefilling (aboutMe, needForSpace, specialNeeds)
  * @param {Function} onClose - Callback when modal closes
  * @param {Function} onSubmit - Callback when proposal is submitted
  */
@@ -112,7 +112,7 @@ export default function CreateProposalFlowV2({
   reservationSpan = 13,
   pricingBreakdown = null,
   zatConfig = null,
-  hasExistingUserData = false,
+  isFirstProposal = true,
   existingUserData = null,
   onClose,
   onSubmit
@@ -128,9 +128,10 @@ export default function CreateProposalFlowV2({
   const hasSavedDraft = savedDraft && (savedDraft.needForSpace || savedDraft.aboutYourself);
 
   // Section flow: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
-  // Start at Review if we have existing data OR saved draft with content
+  // First proposal: Start on User Details (section 2) - user needs to fill in their info
+  // Second+ proposals: Start on Review (section 1) - user can quickly submit with existing data
   const [currentSection, setCurrentSection] = useState(
-    (hasExistingUserData || hasSavedDraft) ? 1 : 2
+    isFirstProposal ? 2 : 1
   );
 
   // Internal state for pricing (managed by ListingScheduleSelector in DaysSelectionSection)
@@ -145,6 +146,8 @@ export default function CreateProposalFlowV2({
       daysSelected,
       nightsSelected,
       reservationSpan,
+      isFirstProposal,
+      hasExistingUserData: !!(existingUserData?.needForSpace || existingUserData?.aboutYourself),
       pricingBreakdown: {
         pricePerNight: pricingBreakdown?.pricePerNight,
         fourWeekRent: pricingBreakdown?.fourWeekRent,
@@ -156,6 +159,16 @@ export default function CreateProposalFlowV2({
     if (hasSavedDraft) {
       console.log('📂 Loaded saved proposal draft from localStorage:', savedDraft);
     }
+
+    if (existingUserData) {
+      console.log('👤 User profile data available for prefilling:', {
+        needForSpace: existingUserData.needForSpace ? 'present' : 'empty',
+        aboutYourself: existingUserData.aboutYourself ? 'present' : 'empty',
+        hasUniqueRequirements: existingUserData.hasUniqueRequirements
+      });
+    }
+
+    console.log(`📍 Starting section: ${isFirstProposal ? '2 (User Details - first proposal)' : '1 (Review - returning user)'}`);
   }, []);
 
   // Convert day objects to day names for compatibility
