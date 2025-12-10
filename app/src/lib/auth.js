@@ -874,6 +874,7 @@ export async function validateTokenAndFetchUser() {
     };
 
     console.log('✅ User data validated:', userDataObject.firstName, '- Type:', userDataObject.userType);
+    console.log('📊 User proposalCount from Edge Function:', userData.proposalCount, '→ stored as:', userDataObject.proposalCount);
     isUserLoggedInState = true;
 
     return userDataObject;
