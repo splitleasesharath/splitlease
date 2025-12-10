@@ -107,15 +107,14 @@ export async function createListing(formData) {
   console.log('[ListingService] ✅ Listing created in listing table with _id:', data._id);
 
   // Step 5: Link listing to user's Listings array using _id
-  if (userId) {
-    try {
-      await linkListingToHost(userId, data._id);
-      console.log('[ListingService] ✅ Listing linked to host account');
-    } catch (linkError) {
-      console.error('[ListingService] ⚠️ Failed to link listing to host:', linkError);
-      // Continue - the listing exists, just not linked yet
-    }
+  // This MUST succeed - if it fails, the user won't see their listing
+  if (!userId) {
+    console.error('[ListingService] ❌ No userId provided - cannot link listing to user');
+    throw new Error('User ID is required to create a listing');
   }
+
+  await linkListingToHost(userId, data._id);
+  console.log('[ListingService] ✅ Listing linked to user account');
 
   // NOTE: Bubble sync disabled - see /docs/tech-debt/BUBBLE_SYNC_DISABLED.md
   // The listing is now created directly in Supabase without Bubble synchronization
@@ -147,8 +146,8 @@ async function linkListingToHost(userId, listingId) {
   }
 
   if (!userData) {
-    console.warn('[ListingService] ⚠️ No user found for userId:', userId);
-    return;
+    console.error('[ListingService] ❌ No user found for userId:', userId);
+    throw new Error(`User not found: ${userId}`);
   }
 
   // Add the new listing ID to the array
