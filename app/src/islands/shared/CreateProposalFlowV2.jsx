@@ -7,11 +7,13 @@
  * No price calculations should happen outside of ListingScheduleSelector.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import ReviewSection from './CreateProposalFlowV2Components/ReviewSection.jsx';
 import UserDetailsSection from './CreateProposalFlowV2Components/UserDetailsSection.jsx';
 import MoveInSection from './CreateProposalFlowV2Components/MoveInSection.jsx';
 import DaysSelectionSection from './CreateProposalFlowV2Components/DaysSelectionSection.jsx';
+import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
+import { calculateNightsFromDays } from '../../lib/scheduleSelector/nightCalculations.js';
 import '../../styles/create-proposal-flow-v2.css';
 
 // Day name constants for check-in/check-out calculation
@@ -339,6 +341,59 @@ export default function CreateProposalFlowV2({
     proposalData.hasUniqueRequirements,
     proposalData.uniqueRequirements
   ]);
+
+  // Prepare listing data for price calculation (same structure as DaysSelectionSection)
+  const pricingListing = useMemo(() => {
+    if (!listing) return null;
+    return {
+      id: listing._id,
+      minimumNights: listing['Minimum Nights'] || 2,
+      maximumNights: listing['Maximum Nights'] || 7,
+      'rental type': listing['rental type'] || 'Nightly',
+      'Weeks offered': listing['Weeks offered'] || 'Every week',
+      '💰Unit Markup': listing['💰Unit Markup'] || 0,
+      '💰Nightly Host Rate for 2 nights': listing['💰Nightly Host Rate for 2 nights'],
+      '💰Nightly Host Rate for 3 nights': listing['💰Nightly Host Rate for 3 nights'],
+      '💰Nightly Host Rate for 4 nights': listing['💰Nightly Host Rate for 4 nights'],
+      '💰Nightly Host Rate for 5 nights': listing['💰Nightly Host Rate for 5 nights'],
+      '💰Nightly Host Rate for 7 nights': listing['💰Nightly Host Rate for 7 nights'],
+      '💰Weekly Host Rate': listing['💰Weekly Host Rate'],
+      '💰Monthly Host Rate': listing['💰Monthly Host Rate'],
+      '💰Price Override': listing['💰Price Override'],
+      '💰Cleaning Cost / Maintenance Fee': listing['💰Cleaning Cost / Maintenance Fee'],
+      '💰Damage Deposit': listing['💰Damage Deposit']
+    };
+  }, [listing]);
+
+  // Recalculate prices when reservationSpan changes (mirrors main page behavior)
+  useEffect(() => {
+    // Skip if no days selected or no listing data
+    if (!internalDaysSelected || internalDaysSelected.length < 2 || !pricingListing) {
+      return;
+    }
+
+    console.log('📊 Recalculating prices due to reservationSpan change:', proposalData.reservationSpan);
+
+    // Calculate nights from selected days
+    const selectedNights = calculateNightsFromDays(internalDaysSelected);
+
+    if (selectedNights.length === 0) {
+      return;
+    }
+
+    // Recalculate pricing with new reservation span
+    const newPriceBreakdown = calculatePrice(
+      selectedNights,
+      pricingListing,
+      proposalData.reservationSpan,
+      zatConfig
+    );
+
+    console.log('💰 New price breakdown after reservationSpan change:', newPriceBreakdown);
+
+    // Update internal pricing state (this triggers the existing useEffect to update proposalData)
+    setInternalPricingBreakdown(newPriceBreakdown);
+  }, [proposalData.reservationSpan, pricingListing, zatConfig]);
 
   const updateProposalData = (field, value) => {
     // Handle full pricing breakdown object from DaysSelectionSection
