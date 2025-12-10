@@ -84,8 +84,8 @@ function logEnvironmentDiagnostics(): void {
   const webhookAcq = Deno.env.get('SLACK_WEBHOOK_ACQUISITION');
   const webhookGen = Deno.env.get('SLACK_WEBHOOK_GENERAL');
 
-  console.log('[slack] SLACK_WEBHOOK_ACQUISITION:', webhookAcq ? `SET (${webhookAcq.length} chars, starts with: ${webhookAcq.substring(0, 30)}...)` : 'NOT SET');
-  console.log('[slack] SLACK_WEBHOOK_GENERAL:', webhookGen ? `SET (${webhookGen} chars, starts with: ${webhookGen.substring(0, 30)}...)` : 'NOT SET');
+  console.log('[slack] SLACK_WEBHOOK_ACQUISITION:', webhookAcq ? `SET (${webhookAcq.length} chars)` : 'NOT SET');
+  console.log('[slack] SLACK_WEBHOOK_GENERAL:', webhookGen ? `SET (${webhookGen.length} chars)` : 'NOT SET');
 
   // Check for common Supabase env vars
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -115,11 +115,13 @@ interface DiagnoseResult {
   environment: {
     deno_version: string;
     env_var_count: number;
-    env_var_names: string[];
+    slack_env_vars: string[];
+    all_env_var_names: string[];
     slack_webhook_acquisition: string;
     slack_webhook_general: string;
     supabase_url: string;
     supabase_anon_key: string;
+    supabase_service_role_key: string;
   };
   timestamp: string;
 }
@@ -127,26 +129,32 @@ interface DiagnoseResult {
 /**
  * Diagnose environment and configuration
  * Use this to debug secret loading issues
+ * Returns only env var names (not values for security)
  */
 function handleDiagnose(): DiagnoseResult {
-  console.log('[slack] Running diagnostics...');
+  console.log('[slack] Running diagnostics via API...');
 
-  const envKeys = Object.keys(Deno.env.toObject());
+  const allEnvKeys = Object.keys(Deno.env.toObject());
+  const slackEnvVars = allEnvKeys.filter(key => key.startsWith('SLACK'));
+
   const webhookAcq = Deno.env.get('SLACK_WEBHOOK_ACQUISITION');
   const webhookGen = Deno.env.get('SLACK_WEBHOOK_GENERAL');
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+  const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
   const result: DiagnoseResult = {
     status: (webhookAcq && webhookGen) ? 'healthy' : 'unhealthy',
     environment: {
       deno_version: Deno.version.deno,
-      env_var_count: envKeys.length,
-      env_var_names: envKeys,
+      env_var_count: allEnvKeys.length,
+      slack_env_vars: slackEnvVars,
+      all_env_var_names: allEnvKeys,
       slack_webhook_acquisition: webhookAcq ? `SET (${webhookAcq.length} chars)` : 'NOT SET',
       slack_webhook_general: webhookGen ? `SET (${webhookGen.length} chars)` : 'NOT SET',
       supabase_url: supabaseUrl ? 'SET' : 'NOT SET',
       supabase_anon_key: supabaseAnonKey ? 'SET' : 'NOT SET',
+      supabase_service_role_key: supabaseServiceRoleKey ? 'SET' : 'NOT SET',
     },
     timestamp: new Date().toISOString(),
   };
@@ -178,7 +186,14 @@ async function handleFaqInquiry(payload: FaqInquiryPayload): Promise<{ message: 
   console.log('[slack] Webhook General exists:', !!webhookGeneral);
 
   if (!webhookAcquisition || !webhookGeneral) {
+    const allEnvKeys = Object.keys(Deno.env.toObject());
+    const slackEnvVars = allEnvKeys.filter(key => key.startsWith('SLACK'));
     console.error('[slack] Missing Slack webhook environment variables');
+    console.error('[slack] SLACK_WEBHOOK_ACQUISITION:', webhookAcquisition ? 'SET' : 'NOT SET');
+    console.error('[slack] SLACK_WEBHOOK_GENERAL:', webhookGeneral ? 'SET' : 'NOT SET');
+    console.error('[slack] Available SLACK env vars:', slackEnvVars.length > 0 ? slackEnvVars.join(', ') : 'NONE');
+    console.error('[slack] Total env var count:', allEnvKeys.length);
+    console.error('[slack] All available env vars:', allEnvKeys.join(', '));
     throw new Error('Server configuration error: Slack webhooks not configured');
   }
 
