@@ -26,6 +26,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
+import { createErrorCollector, ErrorCollector } from '../_shared/slack.ts';
 
 import { handleProcessQueue } from './handlers/processQueue.ts';
 import { handleProcessQueueDataApi } from './handlers/processQueueDataApi.ts';
@@ -57,9 +58,18 @@ Deno.serve(async (req: Request) => {
     console.log('[bubble_sync] Method:', req.method);
     console.log('[bubble_sync] URL:', req.url);
 
+    // Error collector for consolidated error reporting (ONE RUN = ONE LOG)
+    let collector: ErrorCollector | null = null;
+    let action = 'unknown';
+
     try {
         // Parse request body
-        const { action, payload } = await req.json();
+        const body = await req.json();
+        action = body.action || 'unknown';
+        const payload = body.payload;
+
+        // Create error collector after we know the action
+        collector = createErrorCollector('bubble_sync', action);
 
         console.log('[bubble_sync] Action:', action);
         console.log('[bubble_sync] Payload:', JSON.stringify(payload, null, 2));
@@ -157,6 +167,12 @@ Deno.serve(async (req: Request) => {
     } catch (error) {
         console.error('[bubble_sync] ========== REQUEST ERROR ==========');
         console.error('[bubble_sync] Error:', error);
+
+        // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
+        if (collector) {
+            collector.add(error as Error, 'Fatal error in main handler');
+            collector.reportToSlack();
+        }
 
         return new Response(
             JSON.stringify({

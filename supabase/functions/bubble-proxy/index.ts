@@ -28,6 +28,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { formatErrorResponse, getStatusCodeFromError, AuthenticationError } from '../_shared/errors.ts';
 import { validateAction, validateRequiredFields } from '../_shared/validation.ts';
 import { EdgeFunctionRequest } from '../_shared/types.ts';
+import { createErrorCollector, ErrorCollector } from '../_shared/slack.ts';
 
 // Import handlers
 import { handlePhotoUpload } from './handlers/photos.ts';
@@ -54,6 +55,10 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Error collector for consolidated error reporting (ONE RUN = ONE LOG)
+  let collector: ErrorCollector | null = null;
+  let action = 'unknown';
+
   try {
     console.log(`[bubble-proxy] ========== NEW REQUEST ==========`);
     console.log(`[bubble-proxy] Method: ${req.method}`);
@@ -69,7 +74,11 @@ Deno.serve(async (req) => {
     console.log(`[bubble-proxy] Request body:`, JSON.stringify(body, null, 2));
 
     validateRequiredFields(body, ['action']);
-    const { action, payload } = body;
+    action = body.action;
+    const { payload } = body;
+
+    // Create error collector after we know the action
+    collector = createErrorCollector('bubble-proxy', action);
 
     // Validate action is supported
     const allowedActions = [
@@ -126,6 +135,9 @@ Deno.serve(async (req) => {
       // Create a guest user object for handlers
       user = { id: 'guest', email: null };
     }
+
+    // Set user context for error reporting
+    collector.setContext({ userId: user.id });
 
     // 3. Initialize BubbleSyncService
     const bubbleBaseUrl = Deno.env.get('BUBBLE_API_BASE_URL');
@@ -199,6 +211,12 @@ Deno.serve(async (req) => {
     console.error('[bubble-proxy] ========== ERROR ==========');
     console.error('[bubble-proxy] Error:', error);
     console.error('[bubble-proxy] Error stack:', error.stack);
+
+    // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
+    if (collector) {
+      collector.add(error as Error, 'Fatal error in main handler');
+      collector.reportToSlack();
+    }
 
     const statusCode = getStatusCodeFromError(error);
     const errorResponse = formatErrorResponse(error);

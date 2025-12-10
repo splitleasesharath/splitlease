@@ -22,6 +22,7 @@ import {
   getStatusCodeFromError,
 } from "../_shared/errors.ts";
 import { validateRequired, validateAction } from "../_shared/validation.ts";
+import { createErrorCollector, ErrorCollector } from "../_shared/slack.ts";
 
 import { handleComplete } from "./handlers/complete.ts";
 import { handleStream } from "./handlers/stream.ts";
@@ -64,6 +65,9 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // Error collector for consolidated error reporting (ONE RUN = ONE LOG)
+  let collector: ErrorCollector | null = null;
+
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -82,6 +86,9 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[ai-gateway] Action: ${body.action}`);
     console.log(`[ai-gateway] Prompt: ${body.payload.prompt_key}`);
+
+    // Create error collector after we know the action
+    collector = createErrorCollector('ai-gateway', `${body.action}:${body.payload.prompt_key}`);
 
     const isPublicPrompt = PUBLIC_PROMPTS.includes(body.payload.prompt_key);
 
@@ -114,6 +121,7 @@ Deno.serve(async (req: Request) => {
 
       user = authUser;
       console.log(`[ai-gateway] Authenticated: ${user.email}`);
+      collector.setContext({ userId: user.id });
     } else {
       console.log(`[ai-gateway] Public prompt - skipping authentication`);
     }
@@ -144,6 +152,12 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error(`[ai-gateway] ========== ERROR ==========`);
     console.error(`[ai-gateway]`, error);
+
+    // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
+    if (collector) {
+      collector.add(error as Error, 'Fatal error in main handler');
+      collector.reportToSlack();
+    }
 
     const statusCode = getStatusCodeFromError(error as Error);
     const errorResponse = formatErrorResponse(error as Error);

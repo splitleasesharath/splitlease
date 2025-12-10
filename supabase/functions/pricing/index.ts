@@ -14,6 +14,7 @@
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createErrorCollector, ErrorCollector } from '../_shared/slack.ts';
 
 // ============ CORS Headers ============
 const corsHeaders = {
@@ -89,6 +90,10 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  // Error collector for consolidated error reporting (ONE RUN = ONE LOG)
+  let collector: ErrorCollector | null = null;
+  let action = 'unknown';
+
   try {
     console.log(`[pricing] ========== NEW REQUEST ==========`);
     console.log(`[pricing] Method: ${req.method}`);
@@ -104,7 +109,11 @@ Deno.serve(async (req: Request) => {
     console.log(`[pricing] Request body:`, JSON.stringify(body, null, 2));
 
     validateRequiredFields(body, ['action']);
-    const { action, payload } = body;
+    action = body.action;
+    const { payload } = body;
+
+    // Create error collector after we know the action
+    collector = createErrorCollector('pricing', action);
 
     // Validate action is supported
     validateAction(action, ALLOWED_ACTIONS);
@@ -141,6 +150,12 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error('[pricing] ========== ERROR ==========');
     console.error('[pricing] Error:', error);
+
+    // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
+    if (collector) {
+      collector.add(error as Error, 'Fatal error in main handler');
+      collector.reportToSlack();
+    }
 
     const statusCode = getStatusCodeFromError(error as Error);
     const errorResponse = formatErrorResponse(error as Error);

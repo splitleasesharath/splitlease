@@ -24,6 +24,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 import { formatErrorResponse, getStatusCodeFromError } from '../_shared/errors.ts';
 import { validateAction, validateRequiredFields } from '../_shared/validation.ts';
+import { createErrorCollector, ErrorCollector } from '../_shared/slack.ts';
 
 // Import handlers
 import { handleLogin } from './handlers/login.ts';
@@ -44,6 +45,10 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Error collector for consolidated error reporting (ONE RUN = ONE LOG)
+  let collector: ErrorCollector | null = null;
+  let action = 'unknown';
+
   try {
     console.log(`[auth-user] ========== NEW AUTH REQUEST ==========`);
     console.log(`[auth-user] Method: ${req.method}`);
@@ -63,7 +68,11 @@ Deno.serve(async (req) => {
     console.log(`[auth-user] Request body:`, JSON.stringify(body, null, 2));
 
     validateRequiredFields(body, ['action']);
-    const { action, payload } = body;
+    action = body.action;
+    const { payload } = body;
+
+    // Create error collector after we know the action
+    collector = createErrorCollector('auth-user', action);
 
     // Validate action is supported
     const allowedActions = ['login', 'signup', 'logout', 'validate', 'request_password_reset', 'update_password'];
@@ -146,6 +155,12 @@ Deno.serve(async (req) => {
     console.error('[auth-user] ========== ERROR ==========');
     console.error('[auth-user] Error:', error);
     console.error('[auth-user] Error stack:', error.stack);
+
+    // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
+    if (collector) {
+      collector.add(error as Error, 'Fatal error in main handler');
+      collector.reportToSlack();
+    }
 
     const statusCode = getStatusCodeFromError(error);
     const errorResponse = formatErrorResponse(error);

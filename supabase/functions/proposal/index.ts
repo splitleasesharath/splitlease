@@ -21,6 +21,7 @@ import {
   getStatusCodeFromError,
 } from "../_shared/errors.ts";
 import { validateRequired, validateAction } from "../_shared/validation.ts";
+import { createErrorCollector, ErrorCollector } from "../_shared/slack.ts";
 
 import { handleCreate } from "./actions/create.ts";
 import { handleUpdate } from "./actions/update.ts";
@@ -69,6 +70,9 @@ Deno.serve(async (req: Request) => {
     );
   }
 
+  // Error collector for consolidated error reporting (ONE RUN = ONE LOG)
+  let collector: ErrorCollector | null = null;
+
   try {
     // ─────────────────────────────────────────────────────────
     // 1. Parse and validate request
@@ -81,6 +85,9 @@ Deno.serve(async (req: Request) => {
     validateAction(body.action, [...ALLOWED_ACTIONS]);
 
     console.log(`[proposal] Action: ${body.action}`);
+
+    // Create error collector after we know the action
+    collector = createErrorCollector('proposal', body.action);
 
     const isPublicAction = PUBLIC_ACTIONS.includes(
       body.action as (typeof PUBLIC_ACTIONS)[number]
@@ -127,6 +134,7 @@ Deno.serve(async (req: Request) => {
 
       user = { id: authUser.id, email: authUser.email || "" };
       console.log(`[proposal] Authenticated: ${user.email}`);
+      collector.setContext({ userId: user.id });
     } else {
       console.log(`[proposal] Public action - skipping authentication`);
     }
@@ -183,6 +191,12 @@ Deno.serve(async (req: Request) => {
   } catch (error) {
     console.error(`[proposal] ========== ERROR ==========`);
     console.error(`[proposal]`, error);
+
+    // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
+    if (collector) {
+      collector.add(error as Error, 'Fatal error in main handler');
+      collector.reportToSlack();
+    }
 
     const statusCode = getStatusCodeFromError(error as Error);
     const errorResponse = formatErrorResponse(error as Error);
