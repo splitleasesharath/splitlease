@@ -501,7 +501,8 @@ function LottieAnimation({ src, loop = true, autoplay = true, className = '' }) 
 // ============ SUB-COMPONENTS ============
 
 const PARSING_LOTTIE_URL = 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1722533720265x199451206376484160/Animation%20-%201722533570126.json';
-const LOADING_LOTTIE_URL = 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1720724605167x733559911663532000/Animation%20-%201720724343172.lottie';
+// Use a JSON lottie instead of .lottie format (which requires special handling)
+const LOADING_LOTTIE_URL = 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1722533720265x199451206376484160/Animation%20-%201722533570126.json';
 const SUCCESS_LOTTIE_URL = 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1745939792891x394981453861459140/Report.json';
 
 function FreeformInput({ value, onChange }) {
@@ -586,6 +587,8 @@ function ParsingStage() {
           autoplay={true}
           className="parsing-lottie"
         />
+        {/* Fallback spinner shown while Lottie loads or if it fails */}
+        <div className="loading-spinner-fallback" />
       </div>
       <h3 className="parsing-message">Analyzing your request...</h3>
       <p className="parsing-sub-message">Please wait while we extract the information</p>
@@ -603,6 +606,8 @@ function LoadingStage({ message }) {
           autoplay={true}
           className="loading-lottie"
         />
+        {/* Fallback spinner shown while Lottie loads or if it fails */}
+        <div className="loading-spinner-fallback" />
       </div>
       <h3 className="loading-message">{message}</h3>
       <p className="loading-sub-message">This will only take a moment...</p>
@@ -961,7 +966,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           <div className="ai-signup-final-button-wrapper">
             <button
               className="ai-signup-final-close-button"
-              onClick={onClose}
+              onClick={() => { window.location.reload(); }}
             >
               Close
             </button>
@@ -1163,6 +1168,10 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           width: 200px;
           height: 200px;
           margin-bottom: 24px;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .parsing-message {
@@ -1192,6 +1201,10 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           width: 200px;
           height: 200px;
           margin-bottom: 24px;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
 
         .loading-message {
@@ -1205,6 +1218,29 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           margin: 0;
           font-size: 14px;
           color: #718096;
+        }
+
+        
+        /* Loading Spinner Fallback - shown underneath Lottie as backup */
+        .loading-spinner-fallback {
+          position: absolute;
+          width: 60px;
+          height: 60px;
+          border: 4px solid #e2e8f0;
+          border-top-color: #31135D;
+          border-radius: 50%;
+          animation: spinner-rotate 1s linear infinite;
+          z-index: 0;
+        }
+
+        /* Hide spinner when Lottie animation is loaded */
+        .parsing-lottie-wrapper > div:first-child:not(:empty) ~ .loading-spinner-fallback,
+        .loading-lottie-wrapper > div:first-child:not(:empty) ~ .loading-spinner-fallback {
+          display: none;
+        }
+
+        @keyframes spinner-rotate {
+          to { transform: rotate(360deg); }
         }
 
         /* Final Message */
