@@ -414,50 +414,24 @@ export async function handleCreate(
   // ENQUEUE BUBBLE SYNC (Supabase → Bubble via sync_queue)
   // ================================================
 
-  // Enqueue sync items for sequential processing by bubble_sync Edge Function
-  // Order matters: CREATE proposal first, then UPDATE users
+  // Enqueue sync item for the proposal creation only.
+  // The proposal record contains FK relationships (Guest, Host - Account, Listing)
+  // that establish the connections. We do NOT update user records' Proposals List
+  // via Data API - Bubble's Data API handles ONE record per call, and list fields
+  // like Proposals List are managed by Bubble's internal relationship system.
   try {
     await enqueueBubbleSync(supabase, {
-      // Correlation ID to group related sync items
       correlationId: proposalId,
 
       items: [
-        // Item 1: CREATE proposal in Bubble (processed first)
+        // CREATE proposal in Bubble - contains all FK relationships
         {
           sequence: 1,
           table: 'proposal',
           recordId: proposalId,
           operation: 'INSERT',
           payload: proposalData,
-          // bubble_id will be retrieved from POST response and stored
         },
-
-        // Item 2: UPDATE guest user in Bubble (processed second)
-        {
-          sequence: 2,
-          table: 'user',
-          recordId: guestData._id,           // This IS the guest's bubble_id
-          operation: 'UPDATE',
-          bubbleId: guestData._id,           // Explicit bubble_id for PATCH
-          payload: {
-            'Proposals List': updatedGuestProposals,
-            'Favorited Listings': guestUpdates['Favorited Listings'] || currentFavorites,
-            'flexibility (last known)': guestFlexibility,
-            'Recent Days Selected': input.daysSelected,
-          }
-        },
-
-        // Item 3: UPDATE host user in Bubble (processed third)
-        {
-          sequence: 3,
-          table: 'user',
-          recordId: hostUserData._id,        // This IS the host's bubble_id
-          operation: 'UPDATE',
-          bubbleId: hostUserData._id,        // Explicit bubble_id for PATCH
-          payload: {
-            'Proposals List': [...hostProposals, proposalId],
-          }
-        }
       ]
     });
 

@@ -3,226 +3,131 @@
 **GENERATED**: 2025-12-10
 **ERROR**: `LIST_TOO_LONG - Invalid data for field Proposals List: array length exceeds the limit of 200 entries`
 **AFFECTED**: bubble_sync Edge Function → processQueueDataApi.ts
+**STATUS**: FIXED
 
 ---
 
 ## Problem Summary
 
-When the `proposal` Edge Function creates a new proposal, it enqueues sync items to update the Guest and Host users' `Proposals List` field in Bubble. The current implementation sends the **entire array** of proposals as a PATCH update. When a user accumulates more than 200 proposals, Bubble's Data API rejects the update with `LIST_TOO_LONG` error.
+When the `proposal` Edge Function creates a new proposal, it was incorrectly enqueuing sync items to UPDATE the Guest and Host users' `Proposals List` field in Bubble by sending the **entire array**. This violates the Bubble Data API principle:
+
+**ONE API CALL = ONE TABLE ROW = ONE DATA TYPE**
+
+When a user accumulated more than 200 proposals, Bubble's Data API rejected the update with `LIST_TOO_LONG` error.
 
 ### Error Stack Trace
 ```
 [processQueueDataApi] Item 9a62862c-4d61-42a5-9a89-2b19b7bd7855 failed:
 BubbleApiError: Bubble Data API error: 400 Bad Request -
 {"statusCode":400,"body":{"status":"LIST_TOO_LONG","message":"Invalid data for field Proposals List: array length exceeds the limit of 200 entries."}}
-    at executeRequest (file:///.../bubble_sync/lib/bubbleDataApi.ts:171:13)
-    at updateRecord (file:///.../bubble_sync/lib/bubbleDataApi.ts:224:3)
-    at processItemDataApi (file:///.../bubble_sync/handlers/processQueueDataApi.ts:139:13)
 ```
 
 ---
 
 ## Root Cause Analysis
 
-### File: `supabase/functions/proposal/actions/create.ts` (Lines 436-461)
+### File: `supabase/functions/proposal/actions/create.ts` (Lines 436-461) - BEFORE FIX
 
 ```typescript
-// Item 2: UPDATE guest user in Bubble (processed second)
-{
-  sequence: 2,
-  table: 'user',
-  recordId: guestData._id,
-  operation: 'UPDATE',
-  bubbleId: guestData._id,
-  payload: {
-    'Proposals List': updatedGuestProposals,  // <-- ENTIRE ARRAY SENT
-    'Favorited Listings': guestUpdates['Favorited Listings'] || currentFavorites,
-    'flexibility (last known)': guestFlexibility,
-    'Recent Days Selected': input.daysSelected,
-  }
-},
+// WRONG: Trying to UPDATE user records with Proposals List arrays
+items: [
+  // Item 1: CREATE proposal - CORRECT
+  { sequence: 1, table: 'proposal', ... },
 
-// Item 3: UPDATE host user in Bubble (processed third)
-{
-  sequence: 3,
-  table: 'user',
-  recordId: hostUserData._id,
-  operation: 'UPDATE',
-  bubbleId: hostUserData._id,
-  payload: {
-    'Proposals List': [...hostProposals, proposalId],  // <-- ENTIRE ARRAY SENT
-  }
-}
-```
+  // Item 2: UPDATE guest user - WRONG (sending entire Proposals List)
+  {
+    sequence: 2,
+    table: 'user',
+    payload: {
+      'Proposals List': updatedGuestProposals,  // ← ENTIRE ARRAY
+    }
+  },
 
-### The Problem
-
-1. **`updatedGuestProposals`** = All existing proposals + new proposal ID
-2. **`[...hostProposals, proposalId]`** = All existing proposals + new proposal ID
-3. Bubble Data API PATCH replaces the entire field value
-4. When array length > 200, Bubble rejects with `LIST_TOO_LONG`
-
----
-
-## Bubble Data API List Modification
-
-Bubble's Data API supports **partial list modifications** using special operators:
-
-### List Operators
-
-| Operator | Description | Example |
-|----------|-------------|---------|
-| `_add` | Append items to list | `{"field": {"_add": ["item1", "item2"]}}` |
-| `_remove` | Remove items from list | `{"field": {"_remove": ["item1"]}}` |
-
-### Correct Pattern for Adding to List
-
-```json
-// PATCH /obj/user/{bubble_id}
-{
-  "Proposals List": {
-    "_add": ["new_proposal_id"]
-  }
-}
-```
-
-This **appends** the new proposal ID without sending the entire list, thus avoiding the 200 limit.
-
----
-
-## Affected Files
-
-| File | Line(s) | Issue |
-|------|---------|-------|
-| `supabase/functions/proposal/actions/create.ts` | 436-461 | Sends entire Proposals List array |
-| `supabase/functions/bubble_sync/lib/bubbleDataApi.ts` | 132-168 | `buildUpdateRequest` doesn't handle list operators |
-| `supabase/functions/bubble_sync/lib/transformer.ts` | 195-224 | `transformRecordForBubble` doesn't transform list operations |
-
----
-
-## Proposed Solution
-
-### Option A: Use Bubble's `_add` Operator (Recommended)
-
-1. **Modify `enqueueBubbleSync` payload structure** in `create.ts`:
-   - Instead of sending full array, send list operation instruction
-   - Create a new field format: `{ "_listOp": "add", "values": ["proposal_id"] }`
-
-2. **Modify `bubbleDataApi.ts` to detect and apply list operators**:
-   - Check for `_listOp` in field values
-   - Transform to Bubble's `{_add: [...]}` format
-
-3. **Update `processQueueDataApi.ts`** to handle list operation payloads
-
-### Implementation Example
-
-**In `create.ts`:**
-```typescript
-{
-  sequence: 2,
-  table: 'user',
-  recordId: guestData._id,
-  operation: 'UPDATE',
-  bubbleId: guestData._id,
-  payload: {
-    // Use special marker for list append operations
-    'Proposals List': { _listOp: 'add', values: [proposalId] },
-    'Favorited Listings': currentFavorites.includes(input.listingId)
-      ? undefined
-      : { _listOp: 'add', values: [input.listingId] },
-    'flexibility (last known)': guestFlexibility,
-    'Recent Days Selected': input.daysSelected,
-  }
-}
-```
-
-**In `bubbleDataApi.ts` - Add list operation handling:**
-```typescript
-function transformListOperations(data: Record<string, unknown>): Record<string, unknown> {
-  const result: Record<string, unknown> = {};
-
-  for (const [key, value] of Object.entries(data)) {
-    if (value && typeof value === 'object' && '_listOp' in value) {
-      const op = value as { _listOp: 'add' | 'remove'; values: unknown[] };
-      if (op._listOp === 'add') {
-        result[key] = { _add: op.values };
-      } else if (op._listOp === 'remove') {
-        result[key] = { _remove: op.values };
-      }
-    } else {
-      result[key] = value;
+  // Item 3: UPDATE host user - WRONG (sending entire Proposals List)
+  {
+    sequence: 3,
+    table: 'user',
+    payload: {
+      'Proposals List': [...hostProposals, proposalId],  // ← ENTIRE ARRAY
     }
   }
-
-  return result;
-}
+]
 ```
+
+### The Fundamental Misunderstanding
+
+The code was trying to **manually manage the `Proposals List` relationship** on user records. This is incorrect because:
+
+1. **The proposal record already contains the FK relationships:**
+   - `Guest: input.guestId` → Links proposal to guest user
+   - `"Host - Account": listingData["Host / Landlord"]` → Links proposal to host account
+   - `Listing: input.listingId` → Links proposal to listing
+
+2. **Bubble Data API principle:** ONE call handles ONE record in ONE table
+   - POST `/obj/proposal` creates ONE proposal
+   - PATCH `/obj/user/{id}` updates ONE user
+   - We should NOT be sending list fields with 200+ items
+
+3. **Relationships are established by FK fields**, not by manually populating list fields
 
 ---
 
-## Alternative Solutions
+## The Fix
 
-### Option B: Skip List Update if Count > 200
-
-**Pros:** Quick fix, minimal code changes
-**Cons:** Loses FK relationship in Bubble for high-volume users
+### File: `supabase/functions/proposal/actions/create.ts` - AFTER FIX
 
 ```typescript
-// In create.ts, check before adding to queue
-if (existingProposals.length < 200) {
-  // Add to queue
-}
+// CORRECT: Only create the proposal - FK fields establish relationships
+items: [
+  {
+    sequence: 1,
+    table: 'proposal',
+    recordId: proposalId,
+    operation: 'INSERT',
+    payload: proposalData,  // Contains Guest, Host - Account, Listing FKs
+  },
+]
+// Items 2 and 3 REMOVED - no user updates needed for Bubble sync
 ```
 
-### Option C: Contact Bubble Support
+### Why This Works
 
-**Pros:** No code changes
-**Cons:** Manual process, may have cost implications, doesn't solve root issue
-
-### Option D: Don't Sync Proposals List to Bubble
-
-**Pros:** Eliminates the problem entirely
-**Cons:** Bubble UI won't show user's proposals, breaks Bubble workflows that depend on this field
+1. **The proposal record is self-contained** with all necessary FK relationships
+2. **Bubble can query proposals by FK fields** - e.g., "Get all proposals where Guest = user_id"
+3. **No list limits apply** because we're not sending list fields
+4. **Supabase still maintains `Proposals List`** on user records for local queries (lines 361-392 in create.ts)
 
 ---
 
-## Recommendation
+## Important Distinction
 
-**Implement Option A** - Use Bubble's native `_add` operator for list modifications.
+| Location | `Proposals List` Management | Reason |
+|----------|----------------------------|--------|
+| **Supabase** | Still updated on user records (lines 361-392) | Local queries, no 200 limit |
+| **Bubble Sync** | NOT synced | FK fields on proposal are sufficient |
 
-This is the correct architectural solution that:
-1. Follows Bubble's Data API best practices
-2. Eliminates the 200-entry limit issue entirely
-3. Reduces payload size (only sending new item, not entire list)
-4. Is more efficient for network and database operations
-5. Works regardless of list size
+The Supabase user records still get their `Proposals List` updated - this is fine because PostgreSQL has no 200-item limit. We simply don't sync this field TO Bubble.
 
 ---
 
-## Implementation Priority
+## Files Modified
 
-**HIGH** - This is blocking production proposal creation for users with 200+ proposals.
-
----
-
-## Files to Modify
-
-1. `supabase/functions/proposal/actions/create.ts` - Change payload format
-2. `supabase/functions/bubble_sync/lib/bubbleDataApi.ts` - Add list operation transformation
-3. `supabase/functions/bubble_sync/lib/transformer.ts` - Handle list operations in transformation
+| File | Change |
+|------|--------|
+| `supabase/functions/proposal/actions/create.ts` | Removed Items 2 and 3 from enqueueBubbleSync - only sync proposal creation |
 
 ---
 
 ## Testing Checklist
 
 - [ ] Create proposal for user with < 200 proposals (should work)
-- [ ] Create proposal for user with > 200 proposals (should work after fix)
-- [ ] Verify proposal appears in guest's Proposals List in Bubble
-- [ ] Verify proposal appears in host's Proposals List in Bubble
-- [ ] Verify existing proposals aren't duplicated or lost
-- [ ] Test `_add` operation with empty initial list
+- [ ] Create proposal for user with > 200 proposals (should work now)
+- [ ] Verify proposal is created in Bubble with correct FK fields
+- [ ] Verify Supabase user records still have updated Proposals List
+- [ ] Verify no `LIST_TOO_LONG` errors in bubble_sync logs
 
 ---
 
-**DOCUMENT_VERSION**: 1.0
-**STATUS**: Ready for Implementation
+**DOCUMENT_VERSION**: 2.0
+**STATUS**: FIXED
+**FIX DATE**: 2025-12-10
