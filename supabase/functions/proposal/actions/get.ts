@@ -9,8 +9,8 @@
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ValidationError } from "../../_shared/errors.ts";
-import { GetProposalInput, ProposalData } from "../lib/types.ts";
-import { getStatusDisplayName, getStatusStage, ProposalStatusName } from "../lib/status.ts";
+import { GetProposalInput, ProposalData, ProposalStatusName } from "../lib/types.ts";
+import { getStatusStage } from "../lib/status.ts";
 
 /**
  * Response structure for get proposal
@@ -126,11 +126,12 @@ export async function handleGet(
   // BUILD RESPONSE
   // ================================================
 
+  // Status is already in Bubble display format (e.g., "Host Review")
   const statusName = proposalData.Status as ProposalStatusName;
 
   const response: GetProposalResponse = {
     proposal: proposalData,
-    status_display: getStatusDisplayName(statusName),
+    status_display: statusName, // Status IS the display name in Bubble format
     status_stage: getStatusStage(statusName),
   };
 
