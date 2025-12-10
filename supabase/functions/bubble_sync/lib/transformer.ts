@@ -71,8 +71,47 @@ export const FIELD_TYPES = {
     EXCLUDED_FIELDS: new Set([
         'password_hash', 'refresh_token', 'access_token',
         'service_role_key', 'api_key'
+    ]),
+
+    // Fields that are Bubble Option Sets of type "Days"
+    // These require conversion from numeric index (1-7) to display name ("Sunday", "Monday", etc.)
+    // Bubble's Data API expects the Option Set display value as a string, not a number
+    OPTION_SET_DAY_FIELDS: new Set([
+        'check in day',
+        'check out day',
+        'hc check in day',
+        'hc check out day',
     ])
 };
+
+/**
+ * Bubble day display names indexed by Bubble day number (1-7)
+ * Used for converting Option Set "Days" fields to their display values
+ */
+const BUBBLE_DAY_DISPLAY_NAMES: Record<number, string> = {
+    1: 'Sunday',
+    2: 'Monday',
+    3: 'Tuesday',
+    4: 'Wednesday',
+    5: 'Thursday',
+    6: 'Friday',
+    7: 'Saturday',
+};
+
+/**
+ * Convert a Bubble day number (1-7) to its display name for Option Set fields
+ * Bubble's Data API expects Option Set values as display strings, not numbers
+ *
+ * @param dayNumber - Bubble day index (1=Sunday, 2=Monday, ..., 7=Saturday)
+ * @returns Display name string (e.g., "Monday") or null if invalid
+ */
+export function convertDayNumberToDisplayName(dayNumber: number): string | null {
+    if (typeof dayNumber !== 'number' || dayNumber < 1 || dayNumber > 7) {
+        console.warn(`[Transformer] Invalid day number for Option Set conversion: ${dayNumber}`);
+        return null;
+    }
+    return BUBBLE_DAY_DISPLAY_NAMES[dayNumber];
+}
 
 /**
  * Convert JavaScript day index (0=Sunday) to Bubble day index (1=Sunday)
@@ -134,6 +173,23 @@ export function transformFieldForBubble(
     // Handle excluded fields
     if (FIELD_TYPES.EXCLUDED_FIELDS.has(key)) {
         return { key: bubbleKey, value: undefined }; // Skip entirely
+    }
+
+    // Handle Option Set "Days" fields - convert number to display name
+    // Bubble's Data API expects Option Set values as display strings (e.g., "Monday"), not numbers
+    if (FIELD_TYPES.OPTION_SET_DAY_FIELDS.has(key)) {
+        if (typeof value === 'number') {
+            const displayName = convertDayNumberToDisplayName(value);
+            console.log(`[Transformer] Converting Option Set day field "${key}": ${value} → "${displayName}"`);
+            return { key: bubbleKey, value: displayName };
+        }
+        // If already a string (e.g., "Monday"), pass through as-is
+        if (typeof value === 'string') {
+            return { key: bubbleKey, value: value };
+        }
+        // Unexpected type - log and pass through
+        console.warn(`[Transformer] Unexpected type for Option Set day field "${key}": ${typeof value}`);
+        return { key: bubbleKey, value: value };
     }
 
     // Handle JSONB fields
