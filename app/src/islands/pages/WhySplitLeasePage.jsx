@@ -116,25 +116,41 @@ export default function WhySplitLeasePage() {
         return;
       }
 
-      // Collect all photo IDs for batch fetching
-      const allPhotoIds = [];
+      // Collect legacy photo IDs (strings) for batch fetching
+      // New format has embedded objects with URLs, no fetch needed
+      const legacyPhotoIds = [];
       listings.forEach(listing => {
-        const photoIds = parseJsonArray(listing['Features - Photos']);
-        if (photoIds && photoIds.length > 0) {
-          allPhotoIds.push(...photoIds.slice(0, 1)); // Only first photo for card
+        const photos = parseJsonArray(listing['Features - Photos']);
+        if (photos && photos.length > 0) {
+          const firstPhoto = photos[0];
+          // Only collect if it's a string ID (legacy format)
+          if (typeof firstPhoto === 'string') {
+            legacyPhotoIds.push(firstPhoto);
+          }
         }
       });
 
-      // Fetch photo URLs
-      const photoMap = await fetchPhotoUrls(allPhotoIds);
+      // Only fetch from listing_photo table if there are legacy photo IDs
+      const photoMap = legacyPhotoIds.length > 0
+        ? await fetchPhotoUrls(legacyPhotoIds)
+        : {};
 
       // Transform listings
       const transformedListings = listings.map(listing => {
-        const photoIds = parseJsonArray(listing['Features - Photos']);
-        const firstPhotoId = photoIds?.[0];
-        const photoUrl = firstPhotoId && photoMap[firstPhotoId]
-          ? photoMap[firstPhotoId]
-          : 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
+        const photos = parseJsonArray(listing['Features - Photos']);
+        const firstPhoto = photos?.[0];
+
+        // Handle both embedded objects (new format) and legacy IDs
+        let photoUrl = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
+        if (typeof firstPhoto === 'object' && firstPhoto !== null) {
+          // New format: extract URL from object
+          let url = firstPhoto.url || firstPhoto.Photo || '';
+          if (url.startsWith('//')) url = 'https:' + url;
+          if (url) photoUrl = url;
+        } else if (typeof firstPhoto === 'string' && photoMap[firstPhoto]) {
+          // Legacy format: look up in photoMap
+          photoUrl = photoMap[firstPhoto];
+        }
 
         const neighborhoodName = getNeighborhoodName(listing['Location - Hood']);
         const boroughName = getBoroughName(listing['Location - Borough']);

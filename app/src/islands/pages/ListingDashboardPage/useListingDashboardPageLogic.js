@@ -414,22 +414,28 @@ export default function useListingDashboardPageLogic() {
           : supabase.from('virtualmeetingschedulesandlinks').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
       ]);
 
-      // For listing_trial, extract photos from inline 'Features - Photos' JSON column
+      // Extract photos from inline 'Features - Photos' JSON column
+      // Works for both listing_trial and regular listing (after migration)
       let photos = [];
-      if (isListingTrial) {
-        const inlinePhotos = safeParseJsonArray(listingData['Features - Photos']);
-        // Transform inline photos to match expected format
+      const inlinePhotos = safeParseJsonArray(listingData['Features - Photos']);
+      const hasEmbeddedObjects = inlinePhotos.length > 0 &&
+        typeof inlinePhotos[0] === 'object' &&
+        inlinePhotos[0] !== null;
+
+      if (isListingTrial || hasEmbeddedObjects) {
+        // Transform inline/embedded photos to match expected format
         photos = inlinePhotos.map((photo, index) => ({
-          _id: `inline_${index}`,
+          _id: photo.id || `inline_${index}`,
           Photo: photo.url || photo.Photo || photo,
           URL: photo.url || photo.Photo || photo,
-          toggleMainPhoto: photo.isCover || index === 0,
+          toggleMainPhoto: photo.toggleMainPhoto ?? photo.isCover ?? (index === 0),
           Type: photo.type || photo.Type || 'Other',
-          SortOrder: photo.sortOrder || index,
+          SortOrder: photo.SortOrder ?? photo.sortOrder ?? index,
           Active: true,
         }));
-        console.log('📷 Inline photos from listing_trial:', photos.length);
+        console.log('📷 Embedded photos from Features - Photos:', photos.length);
       } else {
+        // Legacy: fetch from listing_photo table
         const { data: photosData, error: photosError } = photosResult;
         if (photosError) {
           console.warn('⚠️ Failed to fetch photos:', photosError);

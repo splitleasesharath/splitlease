@@ -182,17 +182,38 @@ export async function fetchListingComplete(listingId) {
       });
       console.log('📷 Inline photos from listing_trial:', sortedPhotos.length);
     } else {
-      // For listing, fetch from listing_photo table
-      const { data: photosData, error: photosError } = await supabase
-        .from('listing_photo')
-        .select('_id, Photo, "Photo (thumbnail)", SortOrder, toggleMainPhoto, Caption')
-        .eq('Listing', listingId)
-        .order('SortOrder', { ascending: true, nullsLast: true });
+      // For listing, first check if photos are embedded in Features - Photos (new format)
+      const embeddedPhotos = parseJsonField(listingData['Features - Photos']);
+      const hasEmbeddedObjects = embeddedPhotos.length > 0 &&
+        typeof embeddedPhotos[0] === 'object' &&
+        embeddedPhotos[0] !== null;
 
-      if (photosError) console.error('Photos fetch error:', photosError);
+      if (hasEmbeddedObjects) {
+        // New format: photos are embedded objects with URLs
+        sortedPhotos = embeddedPhotos.map((photo, index) => ({
+          _id: photo.id || `embedded_${index}`,
+          Photo: photo.Photo || photo.url || '',
+          'Photo (thumbnail)': photo['Photo (thumbnail)'] || photo.Photo || photo.url || '',
+          toggleMainPhoto: photo.toggleMainPhoto ?? (index === 0),
+          SortOrder: photo.SortOrder ?? photo.displayOrder ?? index,
+          Caption: photo.caption || photo.Caption || ''
+        }));
+        console.log('📷 Embedded photos from Features - Photos:', sortedPhotos.length);
+      } else {
+        // Legacy: fetch from listing_photo table
+        const { data: photosData, error: photosError } = await supabase
+          .from('listing_photo')
+          .select('_id, Photo, "Photo (thumbnail)", SortOrder, toggleMainPhoto, Caption')
+          .eq('Listing', listingId)
+          .order('SortOrder', { ascending: true, nullsLast: true });
+
+        if (photosError) console.error('Photos fetch error:', photosError);
+        sortedPhotos = photosData || [];
+        console.log('📷 Photos from listing_photo table:', sortedPhotos.length);
+      }
 
       // Sort photos (main photo first, then by SortOrder, then by _id)
-      sortedPhotos = (photosData || []).sort((a, b) => {
+      sortedPhotos = sortedPhotos.sort((a, b) => {
         if (a.toggleMainPhoto) return -1;
         if (b.toggleMainPhoto) return 1;
         if (a.SortOrder !== null && b.SortOrder === null) return -1;
@@ -200,9 +221,8 @@ export async function fetchListingComplete(listingId) {
         if (a.SortOrder !== null && b.SortOrder !== null) {
           return a.SortOrder - b.SortOrder;
         }
-        return a._id.localeCompare(b._id);
+        return (a._id || '').localeCompare(b._id || '');
       });
-      console.log('📷 Photos from listing_photo table:', sortedPhotos.length);
     }
 
     // 4. Resolve geographic data

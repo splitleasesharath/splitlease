@@ -203,24 +203,61 @@ export async function fetchProposalsByIds(proposalIds) {
     return validProposals.map(p => ({ ...p, listing: null }));
   }
 
-  // Step 3.25: Fetch featured photos for listings
-  console.log(`fetchProposalsByIds: Fetching featured photos for ${listingIds.length} listings`);
+  // Step 3.25: Extract featured photos from embedded format or fetch from listing_photo
+  console.log(`fetchProposalsByIds: Extracting featured photos for ${listingIds.length} listings`);
 
-  const { data: featuredPhotos, error: photoError } = await supabase
-    .from('listing_photo')
-    .select(`
-      _id,
-      "Listing",
-      "Photo"
-    `)
-    .in('"Listing"', listingIds)
-    .eq('"toggleMainPhoto"', true)
-    .eq('"Active"', true);
+  // First, try to extract photos from embedded Features - Photos field (new format)
+  const embeddedPhotoMap = new Map();
+  const listingsNeedingPhotoFetch = [];
 
-  if (photoError) {
-    console.error('fetchProposalsByIds: Error fetching featured photos:', photoError);
-  } else {
-    console.log(`fetchProposalsByIds: Fetched ${(featuredPhotos || []).length} featured photos`);
+  (listings || []).forEach(listing => {
+    const photosField = listing['Features - Photos'];
+    let photos = [];
+
+    // Parse JSON if needed
+    if (Array.isArray(photosField)) {
+      photos = photosField;
+    } else if (typeof photosField === 'string') {
+      try {
+        photos = JSON.parse(photosField);
+      } catch { /* ignore */ }
+    }
+
+    // Check if first photo is an object (new embedded format)
+    if (photos.length > 0 && typeof photos[0] === 'object' && photos[0] !== null) {
+      // Find main photo or use first one
+      const mainPhoto = photos.find(p => p.toggleMainPhoto) || photos[0];
+      let photoUrl = mainPhoto.url || mainPhoto.Photo || '';
+      if (photoUrl.startsWith('//')) photoUrl = 'https:' + photoUrl;
+      if (photoUrl) embeddedPhotoMap.set(listing._id, photoUrl);
+    } else {
+      // Legacy format - need to fetch from listing_photo table
+      listingsNeedingPhotoFetch.push(listing._id);
+    }
+  });
+
+  console.log(`fetchProposalsByIds: Found ${embeddedPhotoMap.size} embedded photos, ${listingsNeedingPhotoFetch.length} need fetch`);
+
+  // Only fetch from listing_photo table for listings without embedded photos
+  let featuredPhotos = [];
+  if (listingsNeedingPhotoFetch.length > 0) {
+    const { data: fetchedPhotos, error: photoError } = await supabase
+      .from('listing_photo')
+      .select(`
+        _id,
+        "Listing",
+        "Photo"
+      `)
+      .in('"Listing"', listingsNeedingPhotoFetch)
+      .eq('"toggleMainPhoto"', true)
+      .eq('"Active"', true);
+
+    if (photoError) {
+      console.error('fetchProposalsByIds: Error fetching featured photos:', photoError);
+    } else {
+      featuredPhotos = fetchedPhotos || [];
+      console.log(`fetchProposalsByIds: Fetched ${featuredPhotos.length} photos from listing_photo table`);
+    }
   }
 
   // Step 3.5: Fetch borough, neighborhood, and house rules names from lookup tables
@@ -400,8 +437,11 @@ export async function fetchProposalsByIds(proposalIds) {
   // Key boroughs and hoods by their _id
   const boroughMap = new Map(boroughs.map(b => [b._id, b['Display Borough']]));
   const hoodMap = new Map(hoods.map(h => [h._id, h['Display']]));
-  // Key featured photos by their Listing ID
-  const featuredPhotoMap = new Map((featuredPhotos || []).map(p => [p.Listing, p.Photo]));
+  // Key featured photos by their Listing ID (merge embedded + fetched photos)
+  const featuredPhotoMap = new Map([
+    ...embeddedPhotoMap.entries(),
+    ...(featuredPhotos || []).map(p => [p.Listing, p.Photo])
+  ]);
   // Key house rules by their _id to get names
   const houseRulesMap = new Map(houseRules.map(r => [r._id, r.Name]));
 

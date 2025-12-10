@@ -184,56 +184,54 @@ export async function fetchHostData(hostIds) {
 }
 
 /**
- * Extract photos from Supabase photos field and convert IDs to URLs
- * @param {Array|string} photosField - Array of photo IDs or JSON string (double-encoded JSONB)
- * @param {Object} photoMap - Map of photo IDs to actual URLs
+ * Extract photos from Supabase photos field.
+ * Handles two formats:
+ * 1. Embedded objects (new): [{id, url, Photo, ...}, ...]
+ * 2. Legacy IDs (deprecated): ["photoId1", "photoId2"]
+ *
+ * @param {Array|string} photosField - Array of photo objects/IDs or JSON string
+ * @param {Object} photoMap - Map of photo IDs to URLs (only needed for legacy format)
  * @param {string} listingId - Listing ID for debugging purposes
  * @returns {Array<string>} Array of photo URLs (empty array if none found)
  */
 export function extractPhotos(photosField, photoMap = {}, listingId = null) {
-  console.log(`📸 Processing photos for listing ${listingId}:`, {
-    photosField,
-    photoFieldType: typeof photosField,
-    photoMapKeys: Object.keys(photoMap).length,
-    photoMapSample: Object.keys(photoMap).slice(0, 3)
-  });
-
   // Handle double-encoded JSONB using the centralized parser
   const photos = parseJsonArray(photosField);
 
   if (photos.length === 0) {
-    console.error(`❌ Listing ${listingId}: Photos array is empty or failed to parse`);
     return []; // Return empty array - NO FALLBACK
   }
 
-  // Convert photo IDs to actual URLs using photoMap
   const photoUrls = [];
-  const missingPhotoIds = [];
 
-  for (const photoId of photos) {
-    if (typeof photoId !== 'string') {
-      console.error(`❌ Listing ${listingId}: Invalid photo ID type:`, typeof photoId, photoId);
+  for (const photo of photos) {
+    // New embedded format: photo is an object with url/Photo field
+    if (typeof photo === 'object' && photo !== null) {
+      // Extract URL from object (prefer 'url' then 'Photo')
+      let photoUrl = photo.url || photo.Photo || null;
+
+      if (photoUrl) {
+        // Add https: protocol if URL starts with //
+        if (photoUrl.startsWith('//')) {
+          photoUrl = 'https:' + photoUrl;
+        }
+        photoUrls.push(photoUrl);
+      }
       continue;
     }
 
-    const url = photoMap[photoId];
-    if (!url) {
-      console.error(`❌ Listing ${listingId}: Photo ID "${photoId}" NOT FOUND in photoMap`);
-      missingPhotoIds.push(photoId);
-    } else {
-      console.log(`✅ Listing ${listingId}: Photo ID "${photoId}" → ${url.substring(0, 60)}...`);
-      photoUrls.push(url);
+    // Legacy format: photo is an ID string - look up in photoMap
+    if (typeof photo === 'string') {
+      const url = photoMap[photo];
+      if (url) {
+        photoUrls.push(url);
+      }
+      continue;
     }
   }
 
-  if (missingPhotoIds.length > 0) {
-    console.error(`❌ Listing ${listingId}: Missing ${missingPhotoIds.length} photo URLs:`, missingPhotoIds);
-  }
-
   if (photoUrls.length === 0) {
-    console.error(`❌ Listing ${listingId}: NO VALID PHOTO URLS RESOLVED - returning empty array`);
-  } else {
-    console.log(`✅ Listing ${listingId}: Resolved ${photoUrls.length} photo URLs`);
+    console.warn(`⚠️ Listing ${listingId}: NO VALID PHOTO URLS RESOLVED`);
   }
 
   return photoUrls; // Return all actual photos

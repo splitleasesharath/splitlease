@@ -918,27 +918,39 @@ export default function SearchPage() {
 
         console.log('📊 fetchAllActiveListings: Supabase returned', data.length, 'active listings');
 
-        // Batch fetch photos for all listings
-        const allPhotoIds = new Set();
+        // Collect legacy photo IDs (strings) for batch fetch
+        // New format has embedded objects with URLs, no fetch needed
+        const legacyPhotoIds = new Set();
         data.forEach(listing => {
           const photosField = listing['Features - Photos'];
+          let photos = [];
+
           if (Array.isArray(photosField)) {
-            photosField.forEach(id => allPhotoIds.add(id));
+            photos = photosField;
           } else if (typeof photosField === 'string') {
             try {
-              const parsed = JSON.parse(photosField);
-              if (Array.isArray(parsed)) {
-                parsed.forEach(id => allPhotoIds.add(id));
-              }
+              photos = JSON.parse(photosField);
             } catch (e) {
               // Ignore parse errors
             }
           }
+
+          // Only collect string IDs (legacy format), not objects (new format)
+          if (Array.isArray(photos)) {
+            photos.forEach(photo => {
+              if (typeof photo === 'string') {
+                legacyPhotoIds.add(photo);
+              }
+            });
+          }
         });
 
-        const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds));
+        // Only fetch from listing_photo table if there are legacy photo IDs
+        const photoMap = legacyPhotoIds.size > 0
+          ? await fetchPhotoUrls(Array.from(legacyPhotoIds))
+          : {};
 
-        // Extract photos per listing
+        // Extract photos per listing (handles both embedded objects and legacy IDs)
         const resolvedPhotos = {};
         data.forEach(listing => {
           resolvedPhotos[listing._id] = extractPhotos(
@@ -1275,27 +1287,39 @@ export default function SearchPage() {
         })));
       }
 
-      // Batch fetch photos for all listings
-      const allPhotoIds = new Set();
+      // Collect legacy photo IDs (strings) for batch fetch
+      // New format has embedded objects with URLs, no fetch needed
+      const legacyPhotoIds = new Set();
       data.forEach(listing => {
         const photosField = listing['Features - Photos'];
+        let photos = [];
+
         if (Array.isArray(photosField)) {
-          photosField.forEach(id => allPhotoIds.add(id));
+          photos = photosField;
         } else if (typeof photosField === 'string') {
           try {
-            const parsed = JSON.parse(photosField);
-            if (Array.isArray(parsed)) {
-              parsed.forEach(id => allPhotoIds.add(id));
-            }
+            photos = JSON.parse(photosField);
           } catch (e) {
             // Ignore parse errors
           }
         }
+
+        // Only collect string IDs (legacy format), not objects (new format)
+        if (Array.isArray(photos)) {
+          photos.forEach(photo => {
+            if (typeof photo === 'string') {
+              legacyPhotoIds.add(photo);
+            }
+          });
+        }
       });
 
-      const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds));
+      // Only fetch from listing_photo table if there are legacy photo IDs
+      const photoMap = legacyPhotoIds.size > 0
+        ? await fetchPhotoUrls(Array.from(legacyPhotoIds))
+        : {};
 
-      // Extract photos per listing
+      // Extract photos per listing (handles both embedded objects and legacy IDs)
       const resolvedPhotos = {};
       data.forEach(listing => {
         resolvedPhotos[listing._id] = extractPhotos(
@@ -1433,27 +1457,39 @@ export default function SearchPage() {
 
       console.log('📊 SearchPage: Fallback query returned', data.length, 'listings');
 
-      // Batch fetch photos for all listings
-      const allPhotoIds = new Set();
+      // Collect legacy photo IDs (strings) for batch fetch
+      // New format has embedded objects with URLs, no fetch needed
+      const legacyPhotoIds = new Set();
       data.forEach(listing => {
         const photosField = listing['Features - Photos'];
+        let photos = [];
+
         if (Array.isArray(photosField)) {
-          photosField.forEach(id => allPhotoIds.add(id));
+          photos = photosField;
         } else if (typeof photosField === 'string') {
           try {
-            const parsed = JSON.parse(photosField);
-            if (Array.isArray(parsed)) {
-              parsed.forEach(id => allPhotoIds.add(id));
-            }
+            photos = JSON.parse(photosField);
           } catch (e) {
             // Ignore parse errors
           }
         }
+
+        // Only collect string IDs (legacy format), not objects (new format)
+        if (Array.isArray(photos)) {
+          photos.forEach(photo => {
+            if (typeof photo === 'string') {
+              legacyPhotoIds.add(photo);
+            }
+          });
+        }
       });
 
-      const photoMap = await fetchPhotoUrls(Array.from(allPhotoIds));
+      // Only fetch from listing_photo table if there are legacy photo IDs
+      const photoMap = legacyPhotoIds.size > 0
+        ? await fetchPhotoUrls(Array.from(legacyPhotoIds))
+        : {};
 
-      // Extract photos per listing
+      // Extract photos per listing (handles both embedded objects and legacy IDs)
       const resolvedPhotos = {};
       data.forEach(listing => {
         resolvedPhotos[listing._id] = extractPhotos(
