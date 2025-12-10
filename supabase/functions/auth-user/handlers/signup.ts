@@ -34,6 +34,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { BubbleApiError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
+import { enqueueSignupSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
 
 interface SignupAdditionalData {
   firstName?: string;
@@ -317,6 +318,24 @@ export async function handleSignup(
     console.log(`[signup]    account_host created: yes`);
     console.log(`[signup]    account_guest created: yes`);
 
+    // ========== QUEUE BUBBLE SYNC ==========
+    // Queue the atomic signup operation for Bubble sync
+    // This will be processed by bubble_sync Edge Function (via pg_cron or HTTP trigger)
+    console.log('[signup] Queueing Bubble sync for background processing...');
+
+    try {
+      await enqueueSignupSync(supabaseAdmin, generatedUserId, generatedHostId, generatedGuestId);
+      console.log('[signup] ✅ Bubble sync queued');
+
+      // Trigger queue processing immediately (fire-and-forget, non-blocking)
+      // This is a backup - pg_cron will also process the queue every minute
+      triggerQueueProcessing();
+      console.log('[signup] Queue processing triggered');
+    } catch (syncQueueError) {
+      // Log but don't fail signup - the queue item can be processed later by pg_cron
+      console.error('[signup] Failed to queue Bubble sync (non-blocking):', syncQueueError);
+    }
+
     // Return session and user data
     return {
       access_token,
@@ -341,42 +360,5 @@ export async function handleSignup(
       `Failed to register user: ${error.message}`,
       500
     );
-  } finally {
-    // ========== QUEUE BUBBLE SYNC (BACKEND-TO-BACKEND) ==========
-    // Only queue if signup was successful
-    if (generatedUserId && generatedHostId && generatedGuestId) {
-      console.log('[signup] Queueing Bubble sync for background processing...');
-
-      try {
-        // Insert into sync_queue (backend database operation)
-        const { data: queueItem, error: queueError } = await supabaseAdmin
-          .from('sync_queue')
-          .insert({
-            table_name: 'SIGNUP_ATOMIC',           // Special marker
-            record_id: generatedUserId,            // Primary record ID
-            operation: 'SIGNUP_ATOMIC',            // Special operation type
-            payload: {
-              user_id: generatedUserId,
-              host_account_id: generatedHostId,
-              guest_account_id: generatedGuestId
-            },
-            status: 'pending',
-            idempotency_key: `signup_atomic:${generatedUserId}:${Date.now()}`
-          })
-          .select('id')
-          .single();
-
-        if (queueError) {
-          console.error('[signup] Failed to queue Bubble sync:', queueError);
-          // Log but don't fail signup - can be retried manually
-        } else {
-          console.log('[signup] ✅ Bubble sync queued:', queueItem.id);
-          console.log('[signup] Queue processing will handle sync in background');
-        }
-      } catch (err) {
-        console.error('[signup] Error queueing Bubble sync:', err);
-        // Log but don't fail signup
-      }
-    }
   }
 }
