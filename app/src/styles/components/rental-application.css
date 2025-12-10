@@ -265,6 +265,10 @@
     background-repeat: no-repeat;
     background-position: right 12px center;
     padding-right: 35px;
+    height: 42px;
+    padding-top: 0;
+    padding-bottom: 0;
+    line-height: 42px;
 }
 
 /* Validation Icon */
