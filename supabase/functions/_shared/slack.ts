@@ -9,10 +9,7 @@
  * WEBHOOK: Uses SLACK_WEBHOOK_DATABASE_WEBHOOK for all error logs
  */
 
-// ─────────────────────────────────────────────────────────────
 // Types
-// ─────────────────────────────────────────────────────────────
-
 interface SlackBlock {
   type: string;
   text?: { type: string; text: string; emoji?: boolean };
@@ -31,10 +28,7 @@ interface CollectedError {
   timestamp: string;
 }
 
-// ─────────────────────────────────────────────────────────────
 // Webhook Configuration
-// ─────────────────────────────────────────────────────────────
-
 export type SlackChannel = 'database' | 'acquisition' | 'general';
 
 const CHANNEL_ENV_MAP: Record<SlackChannel, string> = {
@@ -43,18 +37,10 @@ const CHANNEL_ENV_MAP: Record<SlackChannel, string> = {
   general: 'SLACK_WEBHOOK_GENERAL',
 };
 
-/**
- * Get webhook URL for a channel
- * Returns null if not configured (graceful degradation)
- */
 function getWebhookUrl(channel: SlackChannel): string | null {
   const envVar = CHANNEL_ENV_MAP[channel];
   return Deno.env.get(envVar) || null;
 }
-
-// ─────────────────────────────────────────────────────────────
-// Core Send Function
-// ─────────────────────────────────────────────────────────────
 
 /**
  * Send message to Slack channel
@@ -68,37 +54,18 @@ export function sendToSlack(channel: SlackChannel, message: SlackMessage): void 
     return;
   }
 
-  // Fire and forget - intentionally not awaited
   fetch(webhookUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(message),
   }).catch((e) => {
-    // Log but never throw - error reporting must not cause errors
     console.error('[slack] Failed to send message:', e.message);
   });
 }
 
-// ─────────────────────────────────────────────────────────────
-// Error Collector Class
-// ─────────────────────────────────────────────────────────────
-
 /**
  * ErrorCollector - Accumulates errors during a request lifecycle
- *
  * ONE RUN = ONE LOG (only if errors exist)
- *
- * Usage:
- *   const collector = createErrorCollector('proposal', 'create');
- *
- *   try {
- *     // ... business logic
- *     collector.add(someError, 'During validation');
- *   } catch (error) {
- *     collector.add(error, 'Fatal error');
- *     collector.reportToSlack(); // Fire-and-forget, sends ONE message
- *     return errorResponse;
- *   }
  */
 export class ErrorCollector {
   private functionName: string;
@@ -115,53 +82,31 @@ export class ErrorCollector {
     this.startTime = new Date().toISOString();
   }
 
-  /**
-   * Set optional context for better error reports
-   */
   setContext(options: { userId?: string }): void {
     if (options.userId) this.userId = options.userId;
   }
 
-  /**
-   * Add an error to the collection
-   */
   add(error: Error, context?: string): void {
     this.errors.push({
       error,
       context,
       timestamp: new Date().toISOString(),
     });
-    // Also log to console for Supabase logs
     console.error(`[${this.functionName}] Error collected:`, error.message, context || '');
   }
 
-  /**
-   * Check if any errors were collected
-   */
   hasErrors(): boolean {
     return this.errors.length > 0;
   }
 
-  /**
-   * Get error count
-   */
   getErrorCount(): number {
     return this.errors.length;
   }
 
-  /**
-   * Get the primary (first) error for response formatting
-   */
   getPrimaryError(): Error | null {
     return this.errors.length > 0 ? this.errors[0].error : null;
   }
 
-  /**
-   * Report all collected errors to Slack as ONE consolidated message
-   * Fire-and-forget - does not await, does not throw
-   *
-   * Uses SLACK_WEBHOOK_DATABASE_WEBHOOK channel
-   */
   reportToSlack(): void {
     if (this.errors.length === 0) {
       return;
@@ -171,9 +116,6 @@ export class ErrorCollector {
     sendToSlack('database', message);
   }
 
-  /**
-   * Format all errors into a single Slack message
-   */
   private formatConsolidatedMessage(): SlackMessage {
     const primaryError = this.errors[0].error;
     const emoji = this.getErrorEmoji(primaryError);
@@ -181,7 +123,6 @@ export class ErrorCollector {
     const errorCount = this.errors.length;
 
     const blocks: SlackBlock[] = [
-      // Header
       {
         type: 'header',
         text: {
@@ -190,7 +131,6 @@ export class ErrorCollector {
           emoji: true,
         },
       },
-      // Summary section
       {
         type: 'section',
         fields: [
@@ -200,11 +140,9 @@ export class ErrorCollector {
           { type: 'mrkdwn', text: `*Request ID:*\n\`${this.requestId}\`` },
         ],
       },
-      // Divider
       { type: 'divider' },
     ];
 
-    // Add each error (max 5 to avoid message size limits)
     const errorsToShow = this.errors.slice(0, 5);
     errorsToShow.forEach((collected, index) => {
       blocks.push({
@@ -216,7 +154,6 @@ export class ErrorCollector {
       });
     });
 
-    // If more than 5 errors, add note
     if (this.errors.length > 5) {
       blocks.push({
         type: 'context',
@@ -226,7 +163,6 @@ export class ErrorCollector {
       });
     }
 
-    // Footer with metadata
     blocks.push({
       type: 'context',
       elements: [
@@ -272,14 +208,6 @@ export class ErrorCollector {
   }
 }
 
-// ─────────────────────────────────────────────────────────────
-// Convenience Export
-// ─────────────────────────────────────────────────────────────
-
-/**
- * Create error collector for a request
- * Convenience function for cleaner imports
- */
 export function createErrorCollector(functionName: string, action: string): ErrorCollector {
   return new ErrorCollector(functionName, action);
 }
