@@ -18,7 +18,7 @@ const ArrowLeftIcon = () => (
   </svg>
 );
 
-const EyeIcon = () => (
+const ListIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
     width="20"
@@ -30,8 +30,12 @@ const EyeIcon = () => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
-    <circle cx="12" cy="12" r="3" />
+    <line x1="8" x2="21" y1="6" y2="6" />
+    <line x1="8" x2="21" y1="12" y2="12" />
+    <line x1="8" x2="21" y1="18" y2="18" />
+    <line x1="3" x2="3.01" y1="6" y2="6" />
+    <line x1="3" x2="3.01" y1="12" y2="12" />
+    <line x1="3" x2="3.01" y1="18" y2="18" />
   </svg>
 );
 
@@ -93,19 +97,22 @@ const FileCheckIcon = () => (
 );
 
 export default function NavigationHeader({ activeTab, onTabChange, counts, onBackClick }) {
+  // Handle tab click - special case for all-listings which navigates away
+  const handleTabClick = (tabId) => {
+    if (tabId === 'all-listings') {
+      window.location.href = '/host-overview';
+    } else {
+      onTabChange(tabId);
+    }
+  };
+
   // Define all tabs with visibility condition
   // Tabs for proposals, virtual meetings, and leases only show when count > 0
   const allTabs = [
     {
-      id: 'preview',
-      label: 'Preview Listing',
-      icon: <EyeIcon />,
-      visible: true, // Always visible
-    },
-    {
-      id: 'manage',
-      label: 'Manage Listing',
-      icon: <FileTextIcon />,
+      id: 'all-listings',
+      label: 'All My Listings',
+      icon: <ListIcon />,
       visible: true, // Always visible
     },
     {
@@ -152,7 +159,7 @@ export default function NavigationHeader({ activeTab, onTabChange, counts, onBac
         {visibleTabs.map((tab) => (
           <button
             key={tab.id}
-            onClick={() => onTabChange(tab.id)}
+            onClick={() => handleTabClick(tab.id)}
             className={`listing-dashboard-nav__tab ${
               activeTab === tab.id ? 'listing-dashboard-nav__tab--active' : ''
             }`}

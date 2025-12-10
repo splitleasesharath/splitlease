@@ -503,8 +503,8 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
                 type="number"
                 className="eld-form-input"
                 placeholder="SQFT"
-                value={formData['Features - SQFT Area'] ?? ''}
-                onChange={(e) => handleInputChange('Features - SQFT Area', e.target.value ? parseInt(e.target.value) : null)}
+                value={formData['Features - SQFT of Room'] ?? ''}
+                onChange={(e) => handleInputChange('Features - SQFT of Room', e.target.value ? parseInt(e.target.value) : null)}
               />
             </div>
             <div className="eld-form-field">
@@ -513,12 +513,18 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
                 type="number"
                 className="eld-form-input"
                 placeholder="SQFT"
+                value={formData['Features - SQFT Area'] ?? ''}
+                onChange={(e) => handleInputChange('Features - SQFT Area', e.target.value ? parseInt(e.target.value) : null)}
               />
             </div>
           </div>
           <div className="eld-form-field">
             <label className="eld-form-label">What type of storage do you offer?</label>
-            <select className="eld-form-select">
+            <select
+              className="eld-form-select"
+              value={formData['Features - Secure Storage Option'] || ''}
+              onChange={(e) => handleInputChange('Features - Secure Storage Option', e.target.value)}
+            >
               <option value="">Select storage type</option>
               {STORAGE_TYPES.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
@@ -527,7 +533,11 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           </div>
           <div className="eld-form-field">
             <label className="eld-form-label">What parking options are available?</label>
-            <select className="eld-form-select">
+            <select
+              className="eld-form-select"
+              value={formData['Features - Parking type'] || ''}
+              onChange={(e) => handleInputChange('Features - Parking type', e.target.value)}
+            >
               <option value="">Select parking</option>
               {PARKING_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>

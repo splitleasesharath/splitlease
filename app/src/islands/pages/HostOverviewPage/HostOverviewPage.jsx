@@ -15,6 +15,7 @@
 
 import Header from '../../shared/Header.jsx';
 import Footer from '../../shared/Footer.jsx';
+import CreateDuplicateListingModal from '../../shared/CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 
 // Local components
 import { ListingCard, ClaimListingCard, HouseManualCard, VirtualMeetingCard } from './components/HostOverviewCards.jsx';
@@ -53,9 +54,11 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
     showDeleteConfirm,
     itemToDelete,
     deleteType,
+    showCreateListingModal,
 
     // Action handlers
     handleCreateNewListing,
+    handleCloseCreateListingModal,
     handleImportListing,
     handleCreateNewManual,
     handleEditListing,
@@ -258,6 +261,14 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
 
       {/* Toast Notifications */}
       <ToastContainer toasts={toasts} removeToast={removeToast} />
+
+      {/* Create Listing Modal - redirects to self-listing (v1) page */}
+      <CreateDuplicateListingModal
+        isVisible={showCreateListingModal}
+        onClose={handleCloseCreateListingModal}
+        currentUser={user}
+        existingListings={myListings}
+      />
     </div>
   );
 }

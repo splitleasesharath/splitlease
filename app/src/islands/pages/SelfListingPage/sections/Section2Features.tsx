@@ -1,8 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import type { Features } from '../types/listing.types';
-import { AMENITIES_INSIDE, AMENITIES_OUTSIDE } from '../types/listing.types';
 import { getNeighborhoodByZipCode } from '../utils/neighborhoodService';
-import { getCommonInUnitAmenities, getCommonBuildingAmenities } from '../utils/amenitiesService';
+import { getCommonInUnitAmenities, getCommonBuildingAmenities, getAllInUnitAmenities, getAllBuildingAmenities } from '../utils/amenitiesService';
 import { generateListingDescription, extractListingDataFromDraft } from '../../../../lib/aiService';
 
 interface Section2Props {
@@ -25,6 +24,33 @@ export const Section2Features: React.FC<Section2Props> = ({
   const [isLoadingInUnitAmenities, setIsLoadingInUnitAmenities] = useState(false);
   const [isLoadingBuildingAmenities, setIsLoadingBuildingAmenities] = useState(false);
   const [isLoadingDescription, setIsLoadingDescription] = useState(false);
+
+  // State for amenities fetched from database
+  const [inUnitAmenities, setInUnitAmenities] = useState<string[]>([]);
+  const [buildingAmenities, setBuildingAmenities] = useState<string[]>([]);
+  const [isLoadingAmenityLists, setIsLoadingAmenityLists] = useState(true);
+
+  // Fetch amenities from database on mount
+  useEffect(() => {
+    const fetchAmenities = async () => {
+      setIsLoadingAmenityLists(true);
+      try {
+        const [inUnit, building] = await Promise.all([
+          getAllInUnitAmenities(),
+          getAllBuildingAmenities()
+        ]);
+        setInUnitAmenities(inUnit);
+        setBuildingAmenities(building);
+        console.log('[Section2Features] Loaded amenities from database:', { inUnit: inUnit.length, building: building.length });
+      } catch (error) {
+        console.error('[Section2Features] Error fetching amenities:', error);
+      } finally {
+        setIsLoadingAmenityLists(false);
+      }
+    };
+
+    fetchAmenities();
+  }, []);
 
   // Scroll to first error field
   const scrollToFirstError = useCallback((errorKeys: string[]) => {
@@ -189,26 +215,32 @@ export const Section2Features: React.FC<Section2Props> = ({
               type="button"
               className="btn-link"
               onClick={loadCommonInUnitAmenities}
-              disabled={isLoadingInUnitAmenities}
+              disabled={isLoadingInUnitAmenities || isLoadingAmenityLists}
             >
               {isLoadingInUnitAmenities ? 'loading...' : 'load common'}
             </button>
           </div>
           <div className="checkbox-grid">
-            {AMENITIES_INSIDE.map((amenity) => (
-              <label key={amenity} className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={data.amenitiesInsideUnit.includes(amenity)}
-                  onChange={() => toggleAmenity(amenity, true)}
-                />
-                <span>{amenity}</span>
-              </label>
-            ))}
+            {isLoadingAmenityLists ? (
+              <span className="loading-text">Loading amenities...</span>
+            ) : inUnitAmenities.length === 0 ? (
+              <span className="empty-text">No amenities available</span>
+            ) : (
+              inUnitAmenities.map((amenity) => (
+                <label key={amenity} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={data.amenitiesInsideUnit.includes(amenity)}
+                    onChange={() => toggleAmenity(amenity, true)}
+                  />
+                  <span>{amenity}</span>
+                </label>
+              ))
+            )}
           </div>
         </div>
 
-        {/* Right Column: Amenities Outside Unit */}
+        {/* Right Column: Amenities Outside Unit (In Building) */}
         <div className="form-group">
           <div className="label-with-action">
             <label>Amenities outside Unit (Optional)</label>
@@ -216,22 +248,28 @@ export const Section2Features: React.FC<Section2Props> = ({
               type="button"
               className="btn-link"
               onClick={loadCommonBuildingAmenities}
-              disabled={isLoadingBuildingAmenities}
+              disabled={isLoadingBuildingAmenities || isLoadingAmenityLists}
             >
               {isLoadingBuildingAmenities ? 'loading...' : 'load common'}
             </button>
           </div>
           <div className="checkbox-grid">
-            {AMENITIES_OUTSIDE.map((amenity) => (
-              <label key={amenity} className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={data.amenitiesOutsideUnit.includes(amenity)}
-                  onChange={() => toggleAmenity(amenity, false)}
-                />
-                <span>{amenity}</span>
-              </label>
-            ))}
+            {isLoadingAmenityLists ? (
+              <span className="loading-text">Loading amenities...</span>
+            ) : buildingAmenities.length === 0 ? (
+              <span className="empty-text">No amenities available</span>
+            ) : (
+              buildingAmenities.map((amenity) => (
+                <label key={amenity} className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={data.amenitiesOutsideUnit.includes(amenity)}
+                    onChange={() => toggleAmenity(amenity, false)}
+                  />
+                  <span>{amenity}</span>
+                </label>
+              ))
+            )}
           </div>
         </div>
       </div>

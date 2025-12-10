@@ -1,0 +1,181 @@
+EDGE FUNCTIONS - QUICK REFERENCE TABLE
+Generated: 2025-12-06
+
+================================================================================
+ALL DEPLOYED FUNCTIONS
+================================================================================
+
+Function              Version  Status  JWT      LastUpdated   Purpose
+--------------------  -------  ------  -------  -----------   ----------------------------------------
+bubble-proxy          39       ACTIVE  No       2025-12-04    Listings, photos, messages, favorites
+bubble-auth-proxy     38       ACTIVE  No       2025-11-26    Auth (login, signup, logout, validate)
+ai-gateway            20       ACTIVE  Optional 2025-10-24    OpenAI completions
+ai-signup-guest       18       ACTIVE  No       2025-10-18    AI-powered guest signup
+slack                 10       ACTIVE  No       2025-10-13    FAQ inquiries to Slack
+bubble_sync           2        ACTIVE  Yes      2025-10-24    Bubble synchronization service
+auth-user             2        ACTIVE  Yes      2025-12-06    Auth (newer, modular) [MOST RECENT]
+zap-auth-user         1        ACTIVE  Yes      2025-12-06    Zapier/automation auth [NEW TODAY]
+
+================================================================================
+LISTING OPERATIONS - STATUS
+================================================================================
+
+Operation              Function        Handler                   Status    Conflicts
+-----------------------  ----------------  ------------------------  --------  ----------
+Create listing           bubble-proxy      handleListingCreate()     Working   NONE
+Get listing              bubble-proxy      handleGetListing()        Working   NONE
+Upload photos            bubble-proxy      handlePhotoUpload()       Working   NONE
+Submit listing           bubble-proxy      handleSubmitListing()     Working   NONE
+Create proposal          bubble-proxy?     handleCreateProposal()    UNCLEAR   SEE ALERT
+Toggle favorite          bubble-proxy      handleFavorites()         Working   NONE
+Get favorites            bubble-proxy      handleGetFavorites()      Working   NONE
+
+================================================================================
+AUTHENTICATION OPERATIONS - STATUS
+================================================================================
+
+Operation    Function-OLD      Function-NEW    Status    Issue
+----------   ----------------  ---------------  --------  --------
+Login        bubble-auth-proxy  auth-user       Working   DUPLICATE
+Signup       bubble-auth-proxy  auth-user       Working   DUPLICATE
+Logout       bubble-auth-proxy  auth-user       Working   DUPLICATE
+Validate     bubble-auth-proxy  auth-user       Working   DUPLICATE
+
+ALERT: Both bubble-auth-proxy and auth-user provide identical functionality.
+Frontend needs clarification on which endpoint to call.
+
+================================================================================
+CRITICAL ALERTS
+================================================================================
+
+ALERT 1: DUPLICATE AUTHENTICATION FUNCTIONS
+
+Issue: Three functions provide auth services:
+  - bubble-auth-proxy (v38, Nov 26)
+  - auth-user (v2, Dec 6) [NEWER]
+  - zap-auth-user (v1, Dec 6) [NEW TODAY]
+
+Impact: Frontend may call wrong endpoint or get inconsistent responses
+
+Action Required:
+  1. Check frontend code for endpoint calls
+  2. Consolidate to single implementation
+  3. Deprecate or document dual-endpoint strategy
+
+---
+
+ALERT 2: PROPOSAL HANDLER STATUS UNKNOWN
+
+Issue: Handler exists in bubble-proxy/handlers/proposal.ts but unclear if:
+  - Connected to main router
+  - Orphaned code
+  - Used by separate endpoint
+
+Code Location: bubble-proxy/handlers/proposal.ts (lines 1-535)
+
+Impact: Proposal creation may be broken if not connected
+
+Action Required:
+  1. Check if 'create_proposal' is in router's allowedActions
+  2. If missing, add to router or document why separate
+  3. Verify handler is reachable from frontend
+
+---
+
+ALERT 3: CODE ORGANIZATION INCONSISTENCY
+
+Issue: Different patterns in different functions:
+  - OLD: Utilities inlined in main file (bubble-proxy)
+  - NEW: Modular _shared/ directory (auth-user)
+
+Impact: Maintenance burden, code duplication
+
+Action Required:
+  1. Standardize on modular pattern
+  2. Create shared utilities library
+  3. Refactor older functions
+
+================================================================================
+LISTING DATA FLOW
+================================================================================
+
+User Action
+  ↓
+Frontend calls bubble-proxy
+  ↓
+bubble-proxy validates payload
+  ↓
+Bubble API called (create/update)
+  ↓
+Bubble returns object
+  ↓
+Supabase synced (upsert)
+  ↓
+Frontend receives response
+
+Source of Truth: Bubble
+Replica: Supabase
+Sync Pattern: Write-Read-Write (atomic)
+
+================================================================================
+PROPOSAL DATA FLOW
+================================================================================
+
+Guest submits proposal
+  ↓
+Frontend calls bubble-proxy/create_proposal (?)
+  ↓
+Handler validates payload
+  ↓
+Generate ID via RPC
+  ↓
+Fetch related data from Supabase
+  ↓
+Calculate compensation, dates, status
+  ↓
+Insert proposal (NATIVE, no Bubble)
+  ↓
+Update guest user record
+  ↓
+Update host user record
+  ↓
+Return proposalId, status
+
+Source of Truth: Supabase (NATIVE, no Bubble involved)
+Pattern: Pure Supabase native operation
+
+================================================================================
+TESTING CHECKLIST
+================================================================================
+
+Before deploying listing-related changes:
+
+[ ] Verify bubble-proxy router includes all listing handlers
+[ ] Confirm proposal handler is connected (add to allowedActions if missing)
+[ ] Test create_listing action with sample payload
+[ ] Test get_listing action
+[ ] Test upload_photos action
+[ ] Test submit_listing with complete form data
+[ ] Test proposal creation (if implemented)
+[ ] Verify Supabase sync happens after Bubble operations
+[ ] Confirm error handling works (network errors, validation errors)
+
+================================================================================
+ENVIRONMENT SECRETS REQUIRED
+================================================================================
+
+Configure in Supabase Dashboard > Project Settings > Secrets:
+
+BUBBLE_API_BASE_URL         - bubble-proxy, bubble-auth-proxy
+BUBBLE_API_KEY              - bubble-proxy, bubble-auth-proxy
+SUPABASE_SERVICE_ROLE_KEY   - All functions using admin access
+OPENAI_API_KEY              - ai-gateway
+SLACK_WEBHOOK_ACQUISITION   - slack
+SLACK_WEBHOOK_GENERAL       - slack
+
+================================================================================
+
+Last Updated: 2025-12-06
+Analysis Status: Complete
+Critical Issues: 2 alerts (duplicate auth, proposal handler status)
+

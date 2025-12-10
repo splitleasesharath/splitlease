@@ -252,9 +252,15 @@ export default function Header({ autoShowLogin = false }) {
     const result = await logoutUser();
 
     if (result.success) {
-      console.log('✅ Logout successful - reloading page');
-      // Reload page to reset state and show logged-out view
-      window.location.reload();
+      console.log('✅ Logout successful');
+      // If on a protected page, redirect to home instead of reloading
+      if (isProtectedPage()) {
+        console.log('📍 On protected page - redirecting to home');
+        window.location.href = '/';
+      } else {
+        console.log('📍 On public page - reloading');
+        window.location.reload();
+      }
     } else {
       console.error('❌ Logout failed:', result.error);
     }

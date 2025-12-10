@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { validateTokenAndFetchUser } from '../../../lib/auth';
-import { mockListing, mockCounts } from './data/mockListing';
 import { generateListingDescription, generateListingTitle } from '../../../lib/aiService';
 import { getCommonHouseRules } from '../../shared/EditListingDetails/services/houseRulesService';
 import { getCommonSafetyFeatures } from '../../shared/EditListingDetails/services/safetyFeaturesService';
@@ -184,11 +183,41 @@ function transformListingData(dbListing, photos = [], lookups = {}, isListingTri
 
   return {
     id: listingId,
+    _id: listingId, // Alias for compatibility with EditListingDetails modal
 
     // Property Info
     title: dbListing.Name || 'Untitled Listing',
     description: dbListing.Description || '',
     descriptionNeighborhood: dbListing['Description - Neighborhood'] || '',
+
+    // Raw DB fields for EditListingDetails modal compatibility
+    Name: dbListing.Name || '',
+    Description: dbListing.Description || '',
+    'Description - Neighborhood': dbListing['Description - Neighborhood'] || '',
+    'Location - City': dbListing['Location - City'] || '',
+    'Location - State': dbListing['Location - State'] || '',
+    'Location - Zip Code': dbListing['Location - Zip Code'] || '',
+    'Location - Borough': dbListing['Location - Borough'] || '',
+    'Location - Hood': dbListing['Location - Hood'] || '',
+    'Features - Type of Space': dbListing['Features - Type of Space'] || '',
+    'Features - Qty Bedrooms': dbListing['Features - Qty Bedrooms'] || 0,
+    'Features - Qty Bathrooms': dbListing['Features - Qty Bathrooms'] || 0,
+    'Features - Qty Beds': dbListing['Features - Qty Beds'] || 0,
+    'Features - Qty Guests': dbListing['Features - Qty Guests'] || 1,
+    'Features - SQFT Area': dbListing['Features - SQFT Area'] || 0,
+    'Features - SQFT of Room': dbListing['Features - SQFT of Room'] || 0,
+    'Kitchen Type': dbListing['Kitchen Type'] || '',
+    'Features - Parking type': dbListing['Features - Parking type'] || '',
+    'Features - Secure Storage Option': dbListing['Features - Secure Storage Option'] || '',
+    'Features - House Rules': dbListing['Features - House Rules'] || [],
+    'Features - Photos': dbListing['Features - Photos'] || [],
+    'Features - Amenities In-Unit': dbListing['Features - Amenities In-Unit'] || [],
+    'Features - Amenities In-Building': dbListing['Features - Amenities In-Building'] || [],
+    'Features - Safety': dbListing['Features - Safety'] || [],
+    'First Available': dbListing[' First Available'] || '',
+    'Minimum Nights': dbListing['Minimum Nights'] || 2,
+    'Maximum Nights': dbListing['Maximum Nights'] || 7,
+    'Cancellation Policy': dbListing['Cancellation Policy'] || '',
 
     // Location
     location: {
@@ -231,7 +260,8 @@ function transformListingData(dbListing, photos = [], lookups = {}, isListingTri
       qtyGuests: dbListing['Features - Qty Guests'] || 1,
       bedrooms: dbListing['Features - Qty Bedrooms'] || 0,
       bathrooms: dbListing['Features - Qty Bathrooms'] || 0,
-      squareFootage: dbListing['Features - SQFT Area'] || dbListing['Features - SQFT of Room'] || 0,
+      squareFootage: dbListing['Features - SQFT Area'] || 0,
+      squareFootageRoom: dbListing['Features - SQFT of Room'] || 0,
     },
 
     // Amenities
@@ -317,8 +347,11 @@ export default function useListingDashboardPageLogic() {
   }, []);
 
   // Fetch listing data from Supabase
-  const fetchListing = useCallback(async (listingId) => {
-    setIsLoading(true);
+  // When silent=true, don't show loading state (used for background refreshes after edits)
+  const fetchListing = useCallback(async (listingId, { silent = false } = {}) => {
+    if (!silent) {
+      setIsLoading(true);
+    }
     setError(null);
 
     try {
@@ -433,9 +466,13 @@ export default function useListingDashboardPageLogic() {
       console.log('✅ Listing loaded successfully');
     } catch (err) {
       console.error('❌ Error fetching listing:', err);
-      setError(err.message || 'Failed to load listing');
+      if (!silent) {
+        setError(err.message || 'Failed to load listing');
+      }
     } finally {
-      setIsLoading(false);
+      if (!silent) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -445,10 +482,9 @@ export default function useListingDashboardPageLogic() {
     if (listingId) {
       fetchListing(listingId);
     } else {
-      // Use mock data if no ID provided (for development)
-      console.log('⚠️ No listing ID in URL, using mock data');
-      setListing(mockListing);
-      setCounts(mockCounts);
+      // No listing ID provided - show error
+      console.error('❌ No listing ID in URL');
+      setError('No listing ID provided. Please access this page from your listings.');
       setIsLoading(false);
     }
   }, [fetchListing, getListingIdFromUrl]);
@@ -689,11 +725,24 @@ export default function useListingDashboardPageLogic() {
     const tableName = trialCheck ? 'listing_trial' : 'listing';
     const idColumn = trialCheck ? 'id' : '_id';
 
+    // Map UI field names to database column names (handles quirky column names with leading spaces)
+    const fieldMapping = {
+      'First Available': ' First Available', // DB column has leading space
+    };
+
+    // Transform updates to use correct database column names
+    const dbUpdates = {};
+    for (const [key, value] of Object.entries(updates)) {
+      const dbColumnName = fieldMapping[key] || key;
+      dbUpdates[dbColumnName] = value;
+    }
+
     console.log(`📋 Updating ${tableName} table with ${idColumn}=${listingId}`);
+    console.log('📋 DB updates:', dbUpdates);
 
     const { data, error: updateError } = await supabase
       .from(tableName)
-      .update(updates)
+      .update(dbUpdates)
       .eq(idColumn, listingId)
       .select()
       .single();
@@ -1128,16 +1177,46 @@ export default function useListingDashboardPageLogic() {
 
   const handleCloseEdit = useCallback(() => {
     setEditSection(null);
-  }, []);
-
-  // Handle save from edit modal - update local state
-  const handleSaveEdit = useCallback((updatedData) => {
-    // Refresh listing data after save
+    // Silently refresh listing data after modal closes to sync any saved changes
     const listingId = getListingIdFromUrl();
     if (listingId) {
-      fetchListing(listingId);
+      fetchListing(listingId, { silent: true });
     }
   }, [fetchListing, getListingIdFromUrl]);
+
+  // Handle save from edit modal - data is already saved to database
+  // Update local state to reflect the changes immediately
+  const handleSaveEdit = useCallback((updatedData) => {
+    // Update local listing state with the saved data
+    if (updatedData && typeof updatedData === 'object') {
+      setListing((prev) => {
+        if (!prev) return prev;
+
+        // Map the raw DB field names back to transformed property names
+        const updates = { ...prev };
+
+        // Update Name/title
+        if (updatedData.Name !== undefined) {
+          updates.title = updatedData.Name;
+          updates.Name = updatedData.Name;
+        }
+
+        // Update Description
+        if (updatedData.Description !== undefined) {
+          updates.description = updatedData.Description;
+          updates.Description = updatedData.Description;
+        }
+
+        // Update other fields as needed
+        if (updatedData['Description - Neighborhood'] !== undefined) {
+          updates.descriptionNeighborhood = updatedData['Description - Neighborhood'];
+          updates['Description - Neighborhood'] = updatedData['Description - Neighborhood'];
+        }
+
+        return updates;
+      });
+    }
+  }, []);
 
   // Handle blocked dates change - save to database
   const handleBlockedDatesChange = useCallback(async (newBlockedDates) => {

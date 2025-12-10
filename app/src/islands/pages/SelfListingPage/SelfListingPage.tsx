@@ -13,7 +13,7 @@ import Footer from '../../shared/Footer';
 import SignUpLoginModal from '../../shared/SignUpLoginModal';
 import Toast, { useToast } from '../../shared/Toast';
 import { getListingById } from '../../../lib/bubbleAPI';
-import { checkAuthStatus } from '../../../lib/auth';
+import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth';
 import { createListing } from '../../../lib/listingService';
 import './styles/SelfListingPage.css';
 import '../../../styles/components/toast.css';
@@ -253,6 +253,9 @@ export const SelfListingPage: React.FC = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
 
+  // Access control state - guests should not access this page
+  const [isCheckingAccess, setIsCheckingAccess] = useState(true);
+
   // Success modal state
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [createdListingId, setCreatedListingId] = useState('');
@@ -262,6 +265,43 @@ export const SelfListingPage: React.FC = () => {
 
   // Key to force Header re-render after auth change
   const [headerKey, setHeaderKey] = useState(0);
+
+  // Access control: Redirect guest users to index page
+  // This page is accessible to: logged-out users OR host users
+  // Guest users should be redirected to the index page
+  useEffect(() => {
+    const checkAccess = async () => {
+      console.log('🔐 SelfListingPage: Checking access control...');
+
+      const loggedIn = await checkAuthStatus();
+
+      if (!loggedIn) {
+        // Logged out users can access - allow
+        console.log('✅ SelfListingPage: User is logged out - access allowed');
+        setIsCheckingAccess(false);
+        return;
+      }
+
+      // User is logged in - check their type
+      const userData = await validateTokenAndFetchUser();
+      const userType = userData?.userType;
+
+      console.log('🔐 SelfListingPage: User type:', userType);
+
+      if (userType === 'Guest') {
+        // Guest users should not access this page - redirect to index
+        console.log('❌ SelfListingPage: Guest user detected - redirecting to index');
+        window.location.href = '/';
+        return;
+      }
+
+      // Host users (or any other type) can access
+      console.log('✅ SelfListingPage: Host user - access allowed');
+      setIsCheckingAccess(false);
+    };
+
+    checkAccess();
+  }, []);
 
   // Sync current section with store
   useEffect(() => {
@@ -604,6 +644,19 @@ export const SelfListingPage: React.FC = () => {
   console.log('🎨 SelfListingPage: Rendering component');
   console.log('🎨 Current form data:', formData);
   console.log('🎨 Listing name in form:', formData.spaceSnapshot.listingName);
+
+  // Show loading state while checking access
+  if (isCheckingAccess) {
+    return (
+      <>
+        <Header />
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+          <p>Loading...</p>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>

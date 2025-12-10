@@ -524,7 +524,8 @@ export default function HomePage() {
   // State management
   const [isAIResearchModalOpen, setIsAIResearchModalOpen] = useState(false);
   const [selectedDays, setSelectedDays] = useState([]);
-  
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   // Internal routing state for password reset fallback
   const [RecoveryComponent, setRecoveryComponent] = useState(null);
 
@@ -561,7 +562,11 @@ export default function HomePage() {
 
   // Check authentication status on mount
   useEffect(() => {
-    checkAuthStatus(); // Async function, but we don't need to wait for it
+    const checkAuth = async () => {
+      const loggedIn = await checkAuthStatus();
+      setIsLoggedIn(loggedIn);
+    };
+    checkAuth();
   }, []);
 
   // Mount SearchScheduleSelector component in hero section above Explore Rentals button
@@ -638,12 +643,16 @@ export default function HomePage() {
 
       <Footer />
 
-      <FloatingBadge onClick={handleOpenAIResearchModal} />
+      {!isLoggedIn && (
+        <>
+          <FloatingBadge onClick={handleOpenAIResearchModal} />
 
-      <AiSignupMarketReport
-        isOpen={isAIResearchModalOpen}
-        onClose={handleCloseAIResearchModal}
-      />
+          <AiSignupMarketReport
+            isOpen={isAIResearchModalOpen}
+            onClose={handleCloseAIResearchModal}
+          />
+        </>
+      )}
     </div>
   );
 }

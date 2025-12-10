@@ -73,19 +73,48 @@ export async function handleValidate(
 
       console.log(`[validate] ✅ Supabase Auth session valid for: ${authUser.email}`);
 
-      // Try to find user in the user table by email
-      const { data: userData, error: userError } = await supabase
+      // Build user metadata from Supabase Auth
+      const userMetadata = authUser.user_metadata || {};
+
+      // Try to find user in the user table by email OR by bubble_user_id from metadata
+      const bubbleUserId = userMetadata.bubble_user_id;
+
+      let userData = null;
+      let userError = null;
+
+      // First try by email
+      const { data: userByEmail, error: emailError } = await supabase
         .from('user')
         .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs"')
         .eq('email', authUser.email)
         .maybeSingle();
 
-      if (userError) {
-        console.error(`[validate] Error querying user table:`, userError);
+      if (emailError) {
+        console.error(`[validate] Error querying user table by email:`, emailError);
+        userError = emailError;
       }
 
-      // Build user data from Supabase Auth + user table (if found)
-      const userMetadata = authUser.user_metadata || {};
+      if (userByEmail) {
+        userData = userByEmail;
+        console.log(`[validate] Found user by email: ${userData['Name - First'] || userData.email}`);
+      } else if (bubbleUserId) {
+        // Try by bubble_user_id from metadata
+        console.log(`[validate] User not found by email, trying bubble_user_id: ${bubbleUserId}`);
+        const { data: userByBubbleId, error: bubbleIdError } = await supabase
+          .from('user')
+          .select('_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs"')
+          .eq('_id', bubbleUserId)
+          .maybeSingle();
+
+        if (bubbleIdError) {
+          console.error(`[validate] Error querying user table by bubble_user_id:`, bubbleIdError);
+        }
+
+        if (userByBubbleId) {
+          userData = userByBubbleId;
+          console.log(`[validate] Found user by bubble_user_id: ${userData['Name - First']}`);
+        }
+      }
 
       // If user found in user table, merge data
       if (userData) {

@@ -533,14 +533,15 @@
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: all 0.2s ease;
     flex-shrink: 0;
     white-space: nowrap;
     min-width: 100px;
 }
 
 .listing-host-row .message-btn:hover {
-    background: #250f4a;
+    background: #3d1a75;
+    box-shadow: 0 2px 4px rgba(49, 19, 93, 0.2);
 }
 
 .listing-host-row .message-btn svg {

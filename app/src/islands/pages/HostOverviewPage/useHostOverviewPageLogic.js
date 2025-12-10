@@ -45,6 +45,9 @@ export function useHostOverviewPageLogic() {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [deleteType, setDeleteType] = useState(null);
 
+  // Create listing modal state
+  const [showCreateListingModal, setShowCreateListingModal] = useState(false);
+
   // ============================================================================
   // TOAST NOTIFICATIONS
   // ============================================================================
@@ -94,30 +97,32 @@ export function useHostOverviewPageLogic() {
 
       const fetchPromises = [];
 
-      // 1. Try Bubble API (may fail if no listings exist there)
-      fetchPromises.push(
-        supabase.functions.invoke('bubble-proxy', {
-          body: {
-            endpoint: 'listing',
-            method: 'GET',
-            params: {
-              constraints: JSON.stringify([
-                { key: 'Creator', constraint_type: 'equals', value: hostAccountId },
-                { key: 'Complete', constraint_type: 'equals', value: true }
-              ])
+      // 1. Try Bubble API (only if hostAccountId is available)
+      if (hostAccountId) {
+        fetchPromises.push(
+          supabase.functions.invoke('bubble-proxy', {
+            body: {
+              endpoint: 'listing',
+              method: 'GET',
+              params: {
+                constraints: JSON.stringify([
+                  { key: 'Creator', constraint_type: 'equals', value: hostAccountId },
+                  { key: 'Complete', constraint_type: 'equals', value: true }
+                ])
+              }
             }
-          }
-        }).then(result => {
-          if (result.error) {
-            console.warn('Bubble listings fetch failed:', result.error);
-            return { data: { response: { results: [] } } };
-          }
-          return result;
-        }).catch(err => {
-          console.warn('Bubble listings fetch failed:', err);
-          return { data: { response: { results: [] } } };
-        })
-      );
+          }).then(result => {
+            if (result.error) {
+              console.warn('Bubble listings fetch failed:', result.error);
+              return { type: 'bubble', data: { response: { results: [] } } };
+            }
+            return { type: 'bubble', ...result };
+          }).catch(err => {
+            console.warn('Bubble listings fetch failed:', err);
+            return { type: 'bubble', data: { response: { results: [] } } };
+          })
+        );
+      }
 
       // 2. Fetch from listing_trial where Host / Landlord = userId or Created By = userId
       // Using RPC function to handle column names with special characters
@@ -155,7 +160,7 @@ export function useHostOverviewPageLogic() {
       const results = await Promise.all(fetchPromises);
 
       // Process Bubble listings
-      const bubbleResult = results[0];
+      const bubbleResult = results.find(r => r?.type === 'bubble');
       const bubbleListings = bubbleResult?.data?.response?.results || [];
       const mappedBubbleListings = bubbleListings.map(listing => ({
         id: listing._id,
@@ -182,7 +187,7 @@ export function useHostOverviewPageLogic() {
           name: listing.Name || 'Unnamed Listing',
           Name: listing.Name,
           complete: listing.Complete || false,
-          source: 'listing_trial',
+          source: listing.source || 'listing_trial',
           location: {
             borough: listing['Location - Borough'] || '',
             city: listing['Location - City'] || '',
@@ -190,7 +195,15 @@ export function useHostOverviewPageLogic() {
           },
           leasesCount: 0,
           proposalsCount: 0,
-          photos: listing['Features - Photos'] || []
+          photos: listing['Features - Photos'] || [],
+          // Pricing fields from RPC
+          rental_type: listing.rental_type,
+          monthly_rate: listing.monthly_rate,
+          weekly_rate: listing.weekly_rate,
+          rate_5_nights: listing.rate_5_nights,
+          cleaning_fee: listing.cleaning_fee,
+          damage_deposit: listing.damage_deposit,
+          nightly_pricing: listing.nightly_pricing
         }));
       }
 
@@ -228,7 +241,15 @@ export function useHostOverviewPageLogic() {
             },
             leasesCount: 0,
             proposalsCount: 0,
-            photos: listing['Features - Photos'] || []
+            photos: listing['Features - Photos'] || [],
+            // Pricing fields (using original column names from direct query)
+            rental_type: listing['rental type'],
+            monthly_rate: listing['💰Monthly Host Rate'],
+            weekly_rate: listing['💰Weekly Host Rate'],
+            rate_5_nights: listing['💰Nightly Host Rate for 5 nights'],
+            cleaning_fee: listing['💰Cleaning Cost / Maintenance Fee'],
+            damage_deposit: listing['💰Damage Deposit'],
+            nightly_pricing: listing.nightly_pricing
           }));
           trialListings = [...trialListings, ...mappedMissing];
         }
@@ -419,7 +440,13 @@ export function useHostOverviewPageLogic() {
   // ============================================================================
 
   const handleCreateNewListing = useCallback(() => {
-    window.location.href = '/self-listing-v2';
+    // Show the CreateDuplicateListingModal instead of navigating directly
+    // This allows the user to enter a listing name before being redirected to self-listing (v1)
+    setShowCreateListingModal(true);
+  }, []);
+
+  const handleCloseCreateListingModal = useCallback(() => {
+    setShowCreateListingModal(false);
   }, []);
 
   const handleImportListing = useCallback(() => {
@@ -593,9 +620,11 @@ export function useHostOverviewPageLogic() {
     showDeleteConfirm,
     itemToDelete,
     deleteType,
+    showCreateListingModal,
 
     // Action handlers
     handleCreateNewListing,
+    handleCloseCreateListingModal,
     handleImportListing,
     handleCreateNewManual,
     handleEditListing,

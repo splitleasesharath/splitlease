@@ -26,6 +26,14 @@ export function Card({ children, className = '', onClick, hover = false }) {
   );
 }
 
+// Helper function to format currency
+function formatCurrency(amount) {
+  if (amount === null || amount === undefined) return null;
+  const num = parseFloat(amount);
+  if (isNaN(num)) return null;
+  return `$${num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
 // Listing Card - For host's managed listings
 export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = false }) {
   const listingName = listing.name || listing.Name || 'Unnamed Listing';
@@ -34,61 +42,124 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
   const leasesCount = listing.leasesCount || listing['Leases Count'] || 0;
   const proposalsCount = listing.proposalsCount || listing['Proposals Count'] || 0;
 
+  // Pricing data
+  const rentalType = listing.rental_type || listing['rental type'] || 'Nightly';
+  const monthlyRate = listing.monthly_rate || listing['💰Monthly Host Rate'];
+  const weeklyRate = listing.weekly_rate || listing['💰Weekly Host Rate'];
+  const nightlyRate = listing.rate_5_nights || listing['💰Nightly Host Rate for 5 nights'];
+  const cleaningFee = listing.cleaning_fee || listing['💰Cleaning Cost / Maintenance Fee'];
+  const damageDeposit = listing.damage_deposit || listing['💰Damage Deposit'];
+  const nightlyPricing = listing.nightly_pricing;
+
+  // Get the primary rate based on rental type
+  const getPrimaryRate = () => {
+    if (rentalType === 'Monthly' && monthlyRate) {
+      return { amount: formatCurrency(monthlyRate), period: '/month', label: 'Monthly Rate' };
+    }
+    if (rentalType === 'Weekly' && weeklyRate) {
+      return { amount: formatCurrency(weeklyRate), period: '/week', label: 'Weekly Rate' };
+    }
+    // Default to nightly
+    if (nightlyPricing?.oneNightPrice) {
+      return { amount: formatCurrency(nightlyPricing.oneNightPrice), period: '/night', label: 'Nightly Rate' };
+    }
+    if (nightlyRate) {
+      return { amount: formatCurrency(nightlyRate), period: '/night', label: '5-Night Rate' };
+    }
+    return null;
+  };
+
+  const primaryRate = getPrimaryRate();
+
   return (
     <Card className="listing-card" hover>
       <div className="listing-card__content">
-        <div className="listing-card__header">
-          <div className="listing-card__info">
-            <h3 className="listing-card__name">{listingName}</h3>
-            <p className="listing-card__location">{borough}</p>
-            <p className="listing-card__status">
-              {isComplete ? 'Complete' : 'Draft'}
-            </p>
+        {/* Left side - Info and actions */}
+        <div className="listing-card__left">
+          <div className="listing-card__header">
+            <div className="listing-card__info">
+              <h3 className="listing-card__name">{listingName}</h3>
+              <p className="listing-card__location">{borough}</p>
+              <p className="listing-card__status">
+                {isComplete ? 'Complete' : 'Draft'}
+              </p>
+            </div>
+            <button
+              className="listing-card__delete"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(listing);
+              }}
+              aria-label="Delete listing"
+            >
+              &#128465;
+            </button>
           </div>
-          <button
-            className="listing-card__delete"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(listing);
-            }}
-            aria-label="Delete listing"
-          >
-            &#128465;
-          </button>
+
+          <div className="listing-card__badges">
+            {leasesCount > 0 && (
+              <div className="badge badge--leases">
+                Leases: {leasesCount}
+              </div>
+            )}
+            {proposalsCount > 0 && (
+              <div className="badge badge--proposals">
+                Proposals: {proposalsCount}
+              </div>
+            )}
+          </div>
+
+          <div className="listing-card__actions">
+            <button
+              className="btn btn--primary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(listing);
+              }}
+            >
+              Manage Listing
+            </button>
+            <button
+              className="btn btn--secondary"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPreview(listing);
+              }}
+            >
+              Preview
+            </button>
+          </div>
         </div>
 
-        <div className="listing-card__badges">
-          {leasesCount > 0 && (
-            <div className="badge badge--leases">
-              Leases: {leasesCount}
+        {/* Right side - Pricing */}
+        <div className="listing-card__right">
+          {primaryRate ? (
+            <div className="listing-card__pricing">
+              <div className="listing-card__pricing-main">
+                <span className="listing-card__price">{primaryRate.amount}</span>
+                <span className="listing-card__period">{primaryRate.period}</span>
+              </div>
+              <div className="listing-card__pricing-label">{rentalType} Lease</div>
+              <div className="listing-card__pricing-details">
+                {cleaningFee > 0 && (
+                  <div className="listing-card__pricing-item">
+                    <span className="label">Cleaning:</span>
+                    <span className="value">{formatCurrency(cleaningFee)}</span>
+                  </div>
+                )}
+                {damageDeposit > 0 && (
+                  <div className="listing-card__pricing-item">
+                    <span className="label">Deposit:</span>
+                    <span className="value">{formatCurrency(damageDeposit)}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="listing-card__pricing listing-card__pricing--empty">
+              <span className="listing-card__pricing-empty">No pricing set</span>
             </div>
           )}
-          {proposalsCount > 0 && (
-            <div className="badge badge--proposals">
-              Proposals: {proposalsCount}
-            </div>
-          )}
-        </div>
-
-        <div className="listing-card__actions">
-          <button
-            className="btn btn--primary"
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit(listing);
-            }}
-          >
-            Manage Listing
-          </button>
-          <button
-            className="btn btn--secondary"
-            onClick={(e) => {
-              e.stopPropagation();
-              onPreview(listing);
-            }}
-          >
-            Preview
-          </button>
         </div>
       </div>
     </Card>
