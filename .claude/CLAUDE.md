@@ -44,15 +44,15 @@
 
 ```bash
 # From repository root
-npm install                 # Install dependencies
-npm run dev               # Start dev server on port 8000
-npm run build             # Production build
-npm run preview           # Preview production build
+bun install               # Install dependencies (uses bun.lock)
+bun run dev               # Start dev server on port 8000
+bun run build             # Production build
+bun run preview           # Preview production build
 
 # From app/ directory
 cd app
-npm install
-npm run dev               # http://localhost:8000
+bun install
+bun run dev               # http://localhost:8000
 ```
 
 **Environment Variables Required** (`.env` file):
@@ -337,7 +337,7 @@ Used by:
 **Configuration** (`.pages.toml`):
 ```toml
 [build]
-command = "npm run build"
+command = "bun run build"
 cwd = "app"
 publish = "dist"
 
@@ -348,7 +348,7 @@ NODE_VERSION = "20"
 **Build Flow**:
 1. Push to main branch on GitHub
 2. Cloudflare detects commit
-3. Runs: `npm install && npm run build`
+3. Runs: `bun install && bun run build`
 4. Vite builds to `app/dist/`
 5. Custom Vite plugins organize output
 6. Cloudflare deploys to CDN
