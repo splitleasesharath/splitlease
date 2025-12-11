@@ -1,6 +1,6 @@
 # FAQ Page - Quick Reference
 
-**GENERATED**: 2025-12-04
+**GENERATED**: 2025-12-11
 **PAGE_URL**: `/faq.html` or `/faq?section={tab}&question={id}`
 **ENTRY_POINT**: `app/src/faq.jsx`
 
@@ -32,8 +32,11 @@ faq.jsx (Entry Point)
             |   +-- Footer.jsx
             |
             +-- Supabase Query
-                    +-- zat_faq table
-                    +-- Ordered by Category, sub-category
+            |       +-- zat_faq table
+            |       +-- Ordered by Category, sub-category
+            |
+            +-- Slack Service Integration
+                    +-- sendFaqInquiry (via Cloudflare Pages Function)
 ```
 
 ---
@@ -48,17 +51,22 @@ faq.jsx (Entry Point)
 ### HTML Template
 | File | Purpose |
 |------|---------|
-| `app/public/faq.html` | Static HTML entry with meta tags, stylesheets |
+| `app/public/faq.html` | Static HTML entry with meta tags, stylesheets, Hotjar integration |
 
 ### Page Component
 | File | Purpose |
 |------|---------|
-| `app/src/islands/pages/FAQPage.jsx` | Main component + FAQContent sub-component |
+| `app/src/islands/pages/FAQPage.jsx` | Main component + FAQContent sub-component (411 lines) |
 
 ### Styles
 | File | Purpose |
 |------|---------|
 | `app/src/styles/faq.css` | Complete page styling (852 lines) |
+
+### Services
+| File | Purpose |
+|------|---------|
+| `app/src/lib/slackService.js` | Slack service for FAQ inquiries via Cloudflare Pages Function |
 
 ### Serverless Function
 | File | Purpose |
@@ -182,10 +190,13 @@ function FAQContent({ faqs, openQuestionId }) {
 
   // Auto-open question from URL parameter
   useEffect(() => {
-    if (openQuestionId && faqs?.length > 0) {
+    if (openQuestionId && faqs && faqs.length > 0) {
       const questionIndex = faqs.findIndex(faq =>
+        // First try to match by exact _id
         (faq._id && faq._id.toString() === openQuestionId) ||
-        faq.Question.toLowerCase().includes(openQuestionId)
+        // Then try to match by question text
+        faq.Question.toLowerCase().includes(openQuestionId) ||
+        faq.Question.toLowerCase().replace(/[^a-z0-9]/g, '').includes(openQuestionId.replace(/[^a-z0-9]/g, ''))
       );
 
       if (questionIndex !== -1) {
@@ -208,11 +219,11 @@ function FAQContent({ faqs, openQuestionId }) {
 ```
 faq-section (sub-category group)
     |
-    +-- section-title (sub-category name)
+    +-- section-title (sub-category name, h2)
     |
     +-- accordion-item
             |
-            +-- accordion-header (clickable)
+            +-- accordion-header (clickable, role="button")
             |       +-- accordion-icon (arrow)
             |       +-- h3 (question text)
             |
@@ -233,9 +244,9 @@ faq-section (sub-category group)
 ### Form Fields
 | Field | Required | Validation |
 |-------|----------|------------|
-| `name` | Yes | Non-empty |
+| `name` | Yes | Non-empty (trimmed) |
 | `email` | Yes | Email regex: `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` |
-| `inquiry` | Yes | Non-empty |
+| `inquiry` | Yes | Non-empty (trimmed) |
 
 ### Form Submission Flow
 ```
@@ -244,9 +255,10 @@ faq-section (sub-category group)
 3. User fills form fields
 4. Submit button triggers handleInquirySubmit
 5. Client-side validation (required fields, email format)
-6. POST to /api/faq-inquiry
-7. On success: Show success message, auto-close after 2s
-8. On error: Show error message, keep modal open
+6. Call sendFaqInquiry from slackService.js
+7. sendFaqInquiry POSTs to /api/faq-inquiry (Cloudflare Pages Function)
+8. On success: Show success message, auto-close after 2s
+9. On error: Show error message, keep modal open
 ```
 
 ### Modal States
@@ -256,6 +268,31 @@ faq-section (sub-category group)
 | Submitting | Form disabled, "Sending..." button |
 | Success | Green checkmark + "Thank you!" message |
 | Error | Form + red error banner |
+
+---
+
+## ### SLACK_SERVICE ###
+
+### Module: `app/src/lib/slackService.js`
+
+The FAQ inquiry submission is handled through a dedicated Slack service module that wraps the Cloudflare Pages Function call.
+
+```javascript
+import { sendFaqInquiry } from '../../lib/slackService.js';
+
+// Usage in FAQPage.jsx
+await sendFaqInquiry({ name, email, inquiry });
+```
+
+### Service Features
+- Input validation (trims and checks for empty values)
+- NO FALLBACK policy: throws errors on failure
+- Console logging for debugging
+- Wraps fetch call to `/api/faq-inquiry`
+
+### Why Cloudflare Pages Function?
+Per slackService.js comments:
+> "Switched from Supabase Edge Functions due to known bug where secrets don't propagate to Edge Functions (GitHub issue #38329). Cloudflare Pages Functions work correctly with secrets."
 
 ---
 
@@ -280,6 +317,7 @@ faq-section (sub-category group)
 | 400 | `{ error: "Invalid email address" }` | Email validation failed |
 | 500 | `{ error: "Server configuration error" }` | Missing Slack webhooks |
 | 500 | `{ error: "Failed to send inquiry to Slack" }` | Slack API failed |
+| 500 | `{ error: "Internal server error" }` | Unexpected error |
 
 ### Environment Variables
 | Variable | Purpose |
@@ -304,6 +342,12 @@ const corsHeaders = {
 };
 ```
 
+### Handler Functions
+| Export | Purpose |
+|--------|---------|
+| `onRequestOptions` | Handle CORS preflight requests (204 response) |
+| `onRequestPost` | Handle POST requests with inquiry data |
+
 ---
 
 ## ### CSS_STRUCTURE ###
@@ -314,8 +358,8 @@ const corsHeaders = {
 | `.hero` | Purple header section (background: #31135d) |
 | `.hero-title` | Main heading (clamp 22px-28px) |
 | `.hero-subtitle` | Subheading text |
-| `.tabs-container` | Sticky tab bar (top: 70px) |
-| `.tabs` | Flexbox tab container |
+| `.tabs-container` | Sticky tab bar (top: 70px, z-index: 999) |
+| `.tabs` | Flexbox tab container (max-width: 900px) |
 | `.tab` | Individual tab button (pill style) |
 | `.tab.active` | Active tab (purple background) |
 | `.faq-container` | Main content area (max-width: 900px) |
@@ -330,7 +374,7 @@ const corsHeaders = {
 | `.section-title` | Sub-category heading (purple, border-bottom) |
 | `.accordion-item` | FAQ item container |
 | `.accordion-item.active` | Expanded item |
-| `.accordion-header` | Clickable header row |
+| `.accordion-header` | Clickable header row (role="button") |
 | `.accordion-icon` | Arrow icon (transforms on active) |
 | `.accordion-content` | Collapsible content (max-height transition) |
 | `.accordion-content-inner` | Content padding wrapper |
@@ -338,17 +382,17 @@ const corsHeaders = {
 ### Modal Classes
 | Class | Purpose |
 |-------|---------|
-| `.modal-overlay` | Dark backdrop (rgba(0,0,0,0.5)) |
+| `.modal-overlay` | Dark backdrop (rgba(0,0,0,0.5), z-index: 10000) |
 | `.modal-content` | White modal box (max-width: 500px) |
-| `.modal-close` | X button (32px, top-right) |
-| `.modal-title` | Modal heading |
+| `.modal-close` | X button (40px, top-right) |
+| `.modal-title` | Modal heading (28px) |
 | `.modal-subtitle` | Modal description |
 | `.inquiry-form` | Form container (flex column, gap: 20px) |
 | `.form-group` | Label + input wrapper |
 | `.submit-btn` | Submit button (purple #31135d) |
 | `.error-message-form` | Error banner (red) |
 | `.success-message` | Success state container |
-| `.success-icon` | Green checkmark circle |
+| `.success-icon` | Green checkmark circle (64px) |
 
 ### State Classes
 | Class | Purpose |
@@ -356,6 +400,7 @@ const corsHeaders = {
 | `.loading-container` | Loading state wrapper |
 | `.spinner` | CSS spinner animation |
 | `.error-container` | Error state wrapper |
+| `.error-message` | Error text styling |
 | `.retry-btn` | Retry button |
 
 ---
@@ -364,9 +409,10 @@ const corsHeaders = {
 
 | Breakpoint | Changes |
 |------------|---------|
+| `min-width: 768px` | Hero padding increases |
 | `< 1024px` | Market research widget width reduced (360px) |
 | `< 768px` | Tabs overflow-x scroll, FAQ container margin/padding reduced, widgets hidden |
-| `< 480px` | Compact padding, smaller fonts, accordion header 14px |
+| `< 480px` | Compact padding, smaller fonts, accordion header 14px, modal padding reduced |
 
 ### Mobile Adjustments
 ```css
@@ -380,6 +426,8 @@ const corsHeaders = {
   .faq-container { padding: 16px; margin: 12px; }
   .accordion-header { padding: 14px; }
   .accordion-header h3 { font-size: 14px; }
+  .modal-content { padding: 30px 24px; }
+  .modal-title { font-size: 24px; }
 }
 ```
 
@@ -389,17 +437,18 @@ const corsHeaders = {
 
 | Element | Color | Usage |
 |---------|-------|-------|
-| Primary Purple | `#31135d` | Hero bg, active tab, links, icons |
+| Primary Purple | `#31135d` | Hero bg, active tab, links, icons, buttons |
 | Primary Hover | `#1e0a37` | Button hover states |
 | Section Border | `#F3E5F5` | Section title underline |
 | Text Primary | `#2C2C2C` | Question text |
-| Text Secondary | `#555` | Answer text, descriptions |
+| Text Secondary | `#555` | Answer text, descriptions, inactive tabs |
 | Answer Highlight | `#31135d` | Answer paragraph text |
-| Border | `#E0E0E0` | Tab border, accordion dividers |
-| Background Hover | `#F9F9F9` | Accordion hover state |
+| Border | `#E0E0E0` | Tab border, accordion dividers, tabs-container |
+| Background Hover | `#F9F9F9` | Accordion hover state, active accordion header |
 | Tab Inactive | `#F5F5F5` | Inactive tab background |
 | Success | `#4CAF50` | Success icon, info-box success |
 | Error | `#c33` | Error messages |
+| Error Background | `#fee` | Error banner background |
 
 ---
 
@@ -424,6 +473,12 @@ const handleKeyPress = (e, index) => {
 | Accordion header | `tabIndex` | `0` |
 | Accordion header | `aria-expanded` | `true/false` |
 | Modal close | `aria-label` | `"Close modal"` |
+
+### Form Accessibility
+- Labels associated with inputs via `htmlFor`
+- Required fields marked with `*` in label
+- Disabled state handled with `disabled` attribute
+- Focus styles on inputs (border-color: #31135d, box-shadow)
 
 ---
 
@@ -454,23 +509,43 @@ useEffect(() => {
 ### 2. FAQ Fetch & Grouping
 ```javascript
 async function loadFAQs() {
-  setLoading(true);
-  const { data, error } = await supabase
-    .from('zat_faq')
-    .select('_id, Question, Answer, Category, sub-category')
-    .order('Category', { ascending: true })
-    .order('sub-category', { ascending: true });
+  try {
+    setLoading(true);
+    setError(null);
 
-  // Group by category
-  const grouped = { general: [], travelers: [], hosts: [] };
-  data.forEach(faq => {
-    if (faq.Category === 'General') grouped.general.push(faq);
-    else if (faq.Category === 'Guest') grouped.travelers.push(faq);
-    else if (faq.Category === 'Host') grouped.hosts.push(faq);
-  });
+    const { data, error: fetchError } = await supabase
+      .from('zat_faq')
+      .select('_id, Question, Answer, Category, sub-category')
+      .order('Category', { ascending: true })
+      .order('sub-category', { ascending: true });
 
-  setFaqs(grouped);
-  setLoading(false);
+    if (fetchError) throw fetchError;
+
+    // Map tab names to database Category values
+    const categoryMapping = {
+      'general': 'General',
+      'travelers': 'Guest',
+      'hosts': 'Host'
+    };
+
+    // Group FAQs by category
+    const grouped = { general: [], travelers: [], hosts: [] };
+    data.forEach(faq => {
+      for (const [tabName, dbCategory] of Object.entries(categoryMapping)) {
+        if (faq.Category === dbCategory) {
+          grouped[tabName].push(faq);
+          break;
+        }
+      }
+    });
+
+    setFaqs(grouped);
+  } catch (err) {
+    console.error('Error loading FAQs:', err);
+    setError('Unable to load FAQs. Please try again later.');
+  } finally {
+    setLoading(false);
+  }
 }
 ```
 
@@ -496,6 +571,7 @@ import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { supabase } from '../../lib/supabase.js';
+import { sendFaqInquiry } from '../../lib/slackService.js';
 ```
 
 ---
@@ -504,41 +580,79 @@ import { supabase } from '../../lib/supabase.js';
 
 ```
 FAQPage (parent)
-   Header
-   <section class="hero">
-      <h1 class="hero-title">
-      <p class="hero-subtitle">
-   <div class="tabs-container">
-      <div class="tabs">
-          <button class="tab">General Questions</button>
-          <button class="tab">For Guests</button>
-          <button class="tab">For Hosts</button>
-   <main class="faq-container">
-      Loading State (if loading)
-      Error State (if error)
-      Tab Contents (if !loading && !error)
-          <div class="tab-content">
-             FAQContent faqs={faqs.general}
-          <div class="tab-content">
-             FAQContent faqs={faqs.travelers}
-          <div class="tab-content">
-              FAQContent faqs={faqs.hosts}
-   <section class="bottom-cta">
-      <a class="cta-link" onClick={openInquiryModal}>
-   Inquiry Modal (if showInquiryModal)
-      <div class="modal-overlay">
-         <div class="modal-content">
-             <button class="modal-close">
-             <h2 class="modal-title">
-             <p class="modal-subtitle">
-             Success Message OR Form
-                 <form class="inquiry-form">
-                     Name input
-                     Email input
-                     Inquiry textarea
-                     Error message (if submitError)
-                     <button class="submit-btn">
-   Footer
+   Header
+   <section class="hero">
+      <h1 class="hero-title">Hi there! How can we help you?
+      <p class="hero-subtitle">Select one of our pre-sorted categories
+   <div class="tabs-container">
+      <div class="tabs">
+          <button class="tab" role="tab">General Questions</button>
+          <button class="tab" role="tab">For Guests</button>
+          <button class="tab" role="tab">For Hosts</button>
+   <main class="faq-container">
+      Loading State (if loading)
+         <div class="loading-container">
+            <div class="spinner">
+            <p>Loading FAQs...
+      Error State (if error)
+         <div class="error-container">
+            <p class="error-message">
+            <button class="retry-btn">Retry
+      Tab Contents (if !loading && !error)
+          <div class="tab-content">
+             FAQContent faqs={faqs.general} openQuestionId={...}
+          <div class="tab-content">
+             FAQContent faqs={faqs.travelers} openQuestionId={...}
+          <div class="tab-content">
+              FAQContent faqs={faqs.hosts} openQuestionId={...}
+   <section class="bottom-cta">
+      <a class="cta-link" onClick={openInquiryModal}>Can't find the answer...?
+   Inquiry Modal (if showInquiryModal)
+      <div class="modal-overlay" onClick={closeInquiryModal}>
+         <div class="modal-content" onClick={stopPropagation}>
+             <button class="modal-close" aria-label="Close modal">&times;
+             <h2 class="modal-title">Ask Us a Question
+             <p class="modal-subtitle">We'll get back to you as soon as possible
+             Success Message (if submitSuccess)
+                 <div class="success-message">
+                     <div class="success-icon">checkmark
+                     <p>Thank you! Your inquiry has been sent successfully.
+             Form (if !submitSuccess)
+                 <form class="inquiry-form" onSubmit={handleInquirySubmit}>
+                     <div class="form-group">Name input
+                     <div class="form-group">Email input
+                     <div class="form-group">Inquiry textarea
+                     Error message (if submitError)
+                         <div class="error-message-form">
+                     <button class="submit-btn" disabled={submitting}>
+   Footer
+```
+
+---
+
+## ### HTML_TEMPLATE ###
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Split Lease - FAQ | Frequently Asked Questions</title>
+  <meta name="description" content="Find answers to frequently asked questions about flexible periodic tenancy solutions in NYC.">
+  <link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png">
+  <link rel="stylesheet" href="/src/styles/main.css">
+  <link rel="stylesheet" href="/src/styles/faq.css">
+
+  <!-- Load environment config FIRST - required for Hotjar -->
+  <script type="module" src="/src/lib/config.js"></script>
+  <script type="module" src="/src/lib/hotjar.js"></script>
+</head>
+<body>
+  <div id="faq-page"></div>
+  <script type="module" src="/src/faq.jsx"></script>
+</body>
+</html>
 ```
 
 ---
@@ -551,10 +665,12 @@ FAQPage (parent)
 | Wrong tab selected | Check `section` URL parameter spelling |
 | Question not auto-opening | Verify `question` param matches `_id` or question text |
 | Inquiry not sending | Check Cloudflare env vars for Slack webhooks |
+| Inquiry fails silently | Check browser console for slackService.js logs |
 | Modal not closing | Verify `closeInquiryModal` handler is attached |
 | Accordion not animating | Check CSS `max-height` transition on `.accordion-content` |
 | Deep-link scroll not working | Check `data-question-index` attribute and setTimeout delay |
 | Tab styling broken | Verify `faq.css` is imported in `faq.html` |
+| Hotjar not loading | Verify config.js loads before hotjar.js |
 
 ---
 
@@ -566,7 +682,6 @@ FAQPage (parent)
 | Source CLAUDE.md | `app/src/CLAUDE.md` |
 | Pages CLAUDE.md | `app/src/islands/pages/CLAUDE.md` |
 | Styles CLAUDE.md | `app/src/styles/CLAUDE.md` |
-| Functions CLAUDE.md | `app/functions/CLAUDE.md` |
 | Functions API CLAUDE.md | `app/functions/api/CLAUDE.md` |
 | Database Tables | `Documentation/Database/DATABASE_TABLES_DETAILED.md` |
 | Option Sets | `Documentation/Database/OPTION_SETS_DETAILED.md` |
@@ -606,6 +721,17 @@ These may be future features or were removed from the component.
 
 ---
 
-**VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-04
+## ### CSS_ANIMATIONS ###
+
+| Animation | Purpose | Properties |
+|-----------|---------|------------|
+| `spin` | Loading spinner | rotate 0-360deg, 1s linear infinite |
+| `fadeIn` | Modal overlay | opacity 0-1, 0.2s ease |
+| `slideUp` | Modal content | translateY 30px-0, opacity 0-1, 0.3s ease |
+| `scaleIn` | Success icon | scale 0-1, 0.3s ease |
+
+---
+
+**VERSION**: 2.0
+**LAST_UPDATED**: 2025-12-11
 **STATUS**: Complete documentation of FAQ page architecture
