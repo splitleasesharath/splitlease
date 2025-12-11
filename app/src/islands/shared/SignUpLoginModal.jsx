@@ -686,15 +686,20 @@ export default function SignUpLoginModal({
     }, 1500);
 
     const result = await loginUser(loginData.email, loginData.password);
+    console.log('[SignUpLoginModal] loginUser result:', result);
 
     if (result.success) {
+      console.log('[SignUpLoginModal] Login successful, proceeding with post-login flow...');
+
       // Fetch and cache user data before reload for optimistic UI
       // This ensures the next page load has the correct user's firstName cached
       // Wrapped in try-catch to ensure login completes even if validation fails
       try {
+        console.log('[SignUpLoginModal] Fetching user data...');
         await validateTokenAndFetchUser();
+        console.log('[SignUpLoginModal] User data fetched successfully');
       } catch (validationError) {
-        console.warn('[Login] User data fetch failed, continuing with login:', validationError);
+        console.warn('[SignUpLoginModal] User data fetch failed, continuing with login:', validationError);
         // Don't block login - the page reload will fetch fresh data
       }
 
@@ -708,11 +713,15 @@ export default function SignUpLoginModal({
         duration: 4000
       });
 
+      console.log('[SignUpLoginModal] Calling onAuthSuccess and onClose...');
       if (onAuthSuccess) {
         onAuthSuccess(result);
       }
       onClose();
+
+      console.log('[SignUpLoginModal] skipReload:', skipReload);
       if (!skipReload) {
+        console.log('[SignUpLoginModal] Triggering page reload...');
         window.location.reload();
       }
     } else {
