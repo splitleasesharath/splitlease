@@ -408,10 +408,10 @@ async function processJob(
       throw new Error('No response from GPT-4');
     }
 
-    console.log('[ai-parse-profile] GPT response length:', gptResponse.length);
+    console.log('[ai-parse-profile] GPT response received');
 
     // 5. Extract data
-    const extractedData = extractAllData(gptResponse);
+    const extractedData = extractAllData(gptResponse.content);
     console.log('[ai-parse-profile] Extracted data:', JSON.stringify(extractedData, null, 2));
 
     // 6. Match against database
@@ -427,7 +427,7 @@ async function processJob(
 
     const userUpdate: Record<string, unknown> = {
       'freeform ai signup text': job.freeform_text,
-      'freeform ai signup text (chatgpt generation)': gptResponse,
+      'freeform ai signup text (chatgpt generation)': gptResponse.content,
       'Modified Date': new Date().toISOString(),
     };
 
@@ -493,7 +493,7 @@ async function processJob(
       .update({
         status: 'completed',
         completed_at: new Date().toISOString(),
-        gpt_response: gptResponse,
+        gpt_response: gptResponse.content,
         extracted_data: extractedData,
         matched_ids: matchedIds,
         favorited_listings: favoritedListings,
