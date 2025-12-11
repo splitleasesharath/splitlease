@@ -1,8 +1,9 @@
 # Sign-In Session Wipe Fix - Implementation Plan
 
 **Created**: 2025-12-11 16:30:00
-**Status**: IMPLEMENTED
-**Commit**: d339b6f
+**Updated**: 2025-12-11
+**Status**: IMPLEMENTED (Phase 2)
+**Commits**: d339b6f, [pending]
 
 ---
 
@@ -31,180 +32,123 @@ Key observation: `INITIAL_SESSION` fired (meaning Supabase found a session), but
 
 ---
 
-## Root Cause Analysis
+## Root Cause Analysis (Extended)
 
-### The Login Flow
+### Phase 1: clearOnFailure Issue (Fixed in d339b6f)
 
-```
-SignUpLoginModal.handleLoginSubmit()
-    │
-    ├── 1. loginUser(email, password)
-    │       ├── Calls auth-user Edge Function (action: 'login')
-    │       ├── Edge Function calls Supabase Auth signInWithPassword()
-    │       ├── Returns: access_token, refresh_token, user_id, etc.
-    │       ├── Calls supabase.auth.setSession({ access_token, refresh_token })
-    │       ├── Verifies session is persisted
-    │       └── Stores tokens in secureStorage
-    │
-    ├── 2. validateTokenAndFetchUser()  ← THE PROBLEM
-    │       ├── Gets token and user_id from secureStorage
-    │       ├── Calls auth-user Edge Function (action: 'validate')
-    │       ├── Edge Function queries public.user by _id
-    │       │
-    │       └── IF VALIDATION FAILS:
-    │           ├── clearAuthData()  ← WIPES ENTIRE SESSION!
-    │           └── return null
-    │
-    ├── 3. Close modal
-    │
-    └── 4. Reload page → User is logged out because session was cleared
-```
+The original fix added `clearOnFailure` parameter to `validateTokenAndFetchUser()` and updated `SignUpLoginModal.jsx` to use `{ clearOnFailure: false }`.
 
-### Why Validation Can Fail
+### Phase 2: Race Condition (Fixed in this update)
 
-The validate endpoint (`supabase/functions/auth-user/handlers/validate.ts`) queries:
+The issue persisted because of a **Supabase client initialization race condition**:
 
-```typescript
-const { data: userData, error: userError } = await supabase
-  .from('user')
-  .select('_id, ...')
-  .eq('_id', user_id)  // ← Queries by _id
-  .single();
-```
+1. **Timeline on page load:**
+   - `checkAuthStatus()` runs immediately
+   - Calls `supabase.auth.getSession()` - returns **null** (Supabase hasn't loaded session from localStorage yet)
+   - Calls `setAuthState(false)` - marks user as not authenticated
+   - **THEN** Supabase fires `INITIAL_SESSION` event (session was there all along!)
+   - But by then, UI already shows logged out
 
-This can fail if:
-1. **User profile doesn't exist in public.user table** (user created via Supabase Auth but profile not synced)
-2. **user_id mismatch** - login returns Supabase Auth UUID instead of Bubble-style _id
-3. **Database query error**
-4. **Network error**
-5. **Timing issue** - profile not committed yet
-
-### The Critical Bug
-
-In `validateTokenAndFetchUser()` (auth.js:889-940):
-
-```javascript
-if (error) {
-  clearAuthData();  // ← CLEARS VALID SESSION!
-  return null;
-}
-
-if (!data.success) {
-  clearAuthData();  // ← CLEARS VALID SESSION!
-  return null;
-}
-```
-
-**The session is valid** (we just logged in!), but if the user profile fetch fails, `clearAuthData()` wipes everything including the Supabase session tokens.
+2. **Multiple places calling validateTokenAndFetchUser without clearOnFailure:**
+   - `Header.jsx` line 76: `performBackgroundValidation` called `validateTokenAndFetchUser()` with default `clearOnFailure: true`
+   - `Header.jsx` line 139: `onAuthStateChange` INITIAL_SESSION handler also used default
 
 ---
 
-## Solution Implemented
+## Solution Implemented (Phase 2)
 
-### 1. Add `clearOnFailure` Parameter to `validateTokenAndFetchUser()`
+### 1. Added Wait Logic for Supabase Initialization
 
-**File**: `app/src/lib/auth.js`
+In THREE places, added a brief wait (200ms) before concluding no session exists:
+
+**File: `app/src/lib/auth.js`**
 
 ```javascript
-/**
- * @param {Object} options - Configuration options
- * @param {boolean} options.clearOnFailure - If true, clears auth data when validation fails. Default: true.
- *                                           Set to false when calling immediately after login/signup to preserve
- *                                           the fresh session even if user profile fetch fails.
- */
-export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) {
+// In checkAuthStatus() - lines 147-156
+if (!session && !error) {
+  console.log('🔄 No immediate Supabase session, waiting briefly for initialization...');
+  await new Promise(resolve => setTimeout(resolve, 200));
+  const retryResult = await supabase.auth.getSession();
+  session = retryResult.data?.session;
   // ...
+}
 
-  if (error) {
-    // Only clear auth data if clearOnFailure is true
-    if (clearOnFailure) {
-      clearAuthData();
-    }
-    return null;
-  }
-
-  if (!data.success) {
-    if (clearOnFailure) {
-      console.log('   Clearing auth data...');
-      clearAuthData();
-    } else {
-      console.log('   Preserving session (clearOnFailure=false)');
-    }
-    return null;
-  }
-
-  // ... also in catch block
+// In validateTokenAndFetchUser() - lines 870-878
+if (!session && !error) {
+  console.log('[Auth] 🔄 No immediate session, waiting briefly for Supabase initialization...');
+  await new Promise(resolve => setTimeout(resolve, 200));
+  const retryResult = await supabase.auth.getSession();
+  // ...
 }
 ```
 
-### 2. Update SignUpLoginModal to Preserve Session
-
-**File**: `app/src/islands/shared/SignUpLoginModal.jsx`
+**File: `app/src/islands/shared/Header.jsx`**
 
 ```javascript
-// After successful login, fetch user data but DON'T clear session on failure
-try {
-  console.log('[SignUpLoginModal] Fetching user data...');
-  await validateTokenAndFetchUser({ clearOnFailure: false });
-  console.log('[SignUpLoginModal] User data fetched successfully');
-} catch (validationError) {
-  console.warn('[SignUpLoginModal] User data fetch failed, continuing with login:', validationError);
-  // Session is preserved - page reload will try again
+// In performBackgroundValidation - lines 68-76
+if (!hasSupabaseSession) {
+  console.log('[Header] No immediate Supabase session, waiting briefly for initialization...');
+  await new Promise(resolve => setTimeout(resolve, 200));
+  const { data: retryData } = await supabase.auth.getSession();
+  // ...
+}
+```
+
+### 2. Added clearOnFailure: false to Header.jsx
+
+Both places in Header.jsx now preserve sessions on validation failure:
+
+```javascript
+// Line 97 - performBackgroundValidation
+const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+
+// Line 181 - INITIAL_SESSION handler
+const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+```
+
+### 3. Graceful Fallback on Validation Failure
+
+When `validateTokenAndFetchUser` fails but a Supabase session exists, Header.jsx now uses session data as fallback:
+
+```javascript
+if (hasSupabaseSession && session?.user) {
+  setCurrentUser({
+    firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
+    email: session.user.email,
+    _isFromSession: true
+  });
 }
 ```
 
 ---
 
-## Files Changed
+## Files Changed (Phase 2)
 
-| File | Change |
-|------|--------|
-| `app/src/lib/auth.js` | Added `clearOnFailure` parameter to `validateTokenAndFetchUser()` |
-| `app/src/islands/shared/SignUpLoginModal.jsx` | Pass `{ clearOnFailure: false }` after login |
-
-### Diff Summary
-
-```diff
-// auth.js
--export async function validateTokenAndFetchUser() {
-+export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) {
-
-// On error/failure:
--      clearAuthData();
-+      if (clearOnFailure) {
-+        clearAuthData();
-+      }
-
-// SignUpLoginModal.jsx
--        await validateTokenAndFetchUser();
-+        await validateTokenAndFetchUser({ clearOnFailure: false });
-```
+| File | Changes |
+|------|---------|
+| `app/src/lib/auth.js` | Added 200ms wait logic to `checkAuthStatus()` and `validateTokenAndFetchUser()` |
+| `app/src/islands/shared/Header.jsx` | Added 200ms wait in `performBackgroundValidation`, added `clearOnFailure: false` in both validation calls, added session fallback logic |
 
 ---
 
 ## Behavior After Fix
 
-### Login Flow (Fixed)
+### Login Flow (Complete Fix)
 
 ```
 1. Login succeeds → Session stored in Supabase + secureStorage
-2. validateTokenAndFetchUser({ clearOnFailure: false }) called
-3. IF validation fails:
-   - Session is PRESERVED (not cleared)
-   - Console logs: "Preserving session (clearOnFailure=false)"
-   - return null (but session intact)
-4. Modal closes
-5. Page reloads
-6. Supabase finds session → User stays logged in!
-7. Header's background validation runs and fetches user data
+2. Page reloads
+3. checkAuthStatus() runs:
+   - First getSession() call → may return null (race condition)
+   - Waits 200ms for Supabase to initialize
+   - Retry getSession() → finds session ✓
+   - Returns true, user is authenticated!
+4. Header's performBackgroundValidation:
+   - Same 200ms wait logic
+   - validateTokenAndFetchUser({ clearOnFailure: false })
+   - If validation fails, preserves session and uses fallback
+5. User sees logged-in UI ✓
 ```
-
-### Backward Compatibility
-
-- Default `clearOnFailure: true` maintains existing behavior for:
-  - Header.jsx background validation
-  - Other pages that validate stale sessions
-  - Any code that doesn't pass the option
 
 ---
 
@@ -221,118 +165,29 @@ try {
 | `supabase/functions/auth-user/handlers/login.ts` | Login Edge Function |
 | `supabase/functions/auth-user/handlers/validate.ts` | Validation Edge Function |
 
-### Auth State Storage Keys
-
-```javascript
-// secureStorage.js
-const SECURE_KEYS = {
-  AUTH_TOKEN: '__sl_at__',
-  SESSION_ID: '__sl_sid__',
-  REFRESH_DATA: '__sl_rd__',
-};
-
-const STATE_KEYS = {
-  IS_AUTHENTICATED: 'sl_auth_state',
-  USER_ID: 'sl_user_id',
-  USER_TYPE: 'sl_user_type',
-  // ...
-};
-```
-
-### Supabase Session Storage
-
-Supabase stores session in localStorage with key pattern: `sb-{project-ref}-auth-token`
-
----
-
-## Related Issues
-
-### Potential Future Improvements
-
-1. **Validate endpoint should be more lenient** - Return partial data if user profile not found, rather than failing entirely. The session is valid even if we can't fetch the profile.
-
-2. **Login should ensure user_id consistency** - The login handler falls back to `authUser.id` (UUID) if profile not found by email. This UUID won't match `_id` in the user table.
-
-3. **Consider removing validateTokenAndFetchUser call after login** - Since it's wrapped in try-catch and doesn't block, we could skip it entirely. The page reload triggers validation anyway.
-
-### AiSignupMarketReport Component
-
-The user mentioned changes to AiSignupMarketReport. This component:
-- Uses `signupUser()` directly (not `validateTokenAndFetchUser`)
-- Doesn't have the same issue
-- Signup flow is different from login flow
-
 ---
 
 ## Testing Checklist
 
 - [ ] Sign in with valid credentials → User stays logged in after reload
-- [ ] Sign in when user profile missing in DB → Session preserved, user stays logged in
+- [ ] Sign in when user profile missing in DB → Session preserved, basic UI works
 - [ ] Background validation in Header still works → Stale sessions get cleared
 - [ ] Signup flow still works → New users get logged in
 - [ ] Logout still works → Session properly cleared
+- [ ] Multiple page loads → No flickering between logged-in/logged-out states
 
 ---
 
-## Commit Information
+## Why 200ms Wait?
 
-```
-commit d339b6f
-Author: [Your Name]
-Date:   2025-12-11
+The Supabase JS client loads the session from localStorage asynchronously after `createClient()` is called. This typically completes within 50-150ms. A 200ms wait provides enough buffer to handle the race condition without significantly impacting perceived performance.
 
-fix(auth): prevent session wipe when validateTokenAndFetchUser fails after login
-
-Root cause: After successful login, validateTokenAndFetchUser() was called
-to fetch user profile data. If this failed for any reason (user not found
-in database, network error, etc.), it would call clearAuthData() which
-wiped the entire session including the Supabase auth tokens that were
-just established. This caused the user to appear logged out after reload.
-
-Fix: Add clearOnFailure parameter to validateTokenAndFetchUser():
-- Default: true (backward compatible - still clears on failure for
-  background validation where stale sessions should be cleared)
-- Set to false when called immediately after login/signup to preserve
-  the fresh session even if user profile fetch fails
-```
+If you're seeing issues with 200ms being too short, consider:
+1. Increasing to 300-500ms
+2. Using a polling approach with multiple retries
+3. Implementing a more sophisticated initialization state machine
 
 ---
 
-## Architecture Context
-
-### Day Indexing (Not directly related but important context)
-
-| System | Sun | Mon | Tue | Wed | Thu | Fri | Sat |
-|--------|-----|-----|-----|-----|-----|-----|-----|
-| JavaScript (internal) | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
-| Bubble API (external) | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-
-### Auth Architecture
-
-```
-Frontend (React)
-    │
-    ├── loginUser() ──────────────────┐
-    │                                  │
-    │                                  ▼
-    │                    Supabase Edge Function
-    │                    (auth-user/login.ts)
-    │                           │
-    │                           ├── signInWithPassword()
-    │                           │
-    │                           └── Query public.user by email
-    │                                      │
-    │   ◄─────────────────────────────────┘
-    │   (access_token, refresh_token, user_id)
-    │
-    ├── supabase.auth.setSession()
-    │
-    ├── setAuthToken(), setSessionId(), setAuthState()
-    │
-    └── validateTokenAndFetchUser({ clearOnFailure: false })
-```
-
----
-
-**Document Version**: 1.0
+**Document Version**: 2.0
 **Last Updated**: 2025-12-11

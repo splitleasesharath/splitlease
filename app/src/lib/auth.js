@@ -136,8 +136,24 @@ export async function checkAuthStatus() {
   }
 
   // Check Supabase Auth session (for native Supabase signups)
+  // CRITICAL: Supabase client may not have loaded session from localStorage yet
+  // We need to handle the race condition where getSession() returns null initially
+  // but INITIAL_SESSION fires shortly after with a valid session
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    let { data: { session }, error } = await supabase.auth.getSession();
+
+    // If no session on first check, wait briefly for Supabase to initialize
+    // This handles the race condition on page load
+    if (!session && !error) {
+      console.log('🔄 No immediate Supabase session, waiting briefly for initialization...');
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const retryResult = await supabase.auth.getSession();
+      session = retryResult.data?.session;
+      error = retryResult.error;
+      if (session) {
+        console.log('✅ Found Supabase session after brief wait');
+      }
+    }
 
     if (session && !error) {
       console.log('✅ User authenticated via Supabase Auth session');
@@ -847,7 +863,20 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
     console.log('[Auth] No legacy token found, checking for Supabase Auth session...');
 
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      let { data: { session }, error } = await supabase.auth.getSession();
+
+      // CRITICAL: Supabase client may not have loaded session from localStorage yet
+      // Wait briefly for initialization if no session found
+      if (!session && !error) {
+        console.log('[Auth] 🔄 No immediate session, waiting briefly for Supabase initialization...');
+        await new Promise(resolve => setTimeout(resolve, 200));
+        const retryResult = await supabase.auth.getSession();
+        session = retryResult.data?.session;
+        error = retryResult.error;
+        if (session) {
+          console.log('[Auth] ✅ Found Supabase session after brief wait');
+        }
+      }
 
       if (session && !error) {
         console.log('[Auth] ✅ Found Supabase Auth session, syncing to secure storage');
