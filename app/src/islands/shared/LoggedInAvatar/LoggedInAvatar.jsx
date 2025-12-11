@@ -325,9 +325,9 @@ export default function LoggedInAvatar({
     onNavigate(item.path);
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
     setIsOpen(false);
-    onLogout();
+    await onLogout();
   };
 
   const isActivePath = (itemPath) => {

@@ -81,7 +81,7 @@ export async function handleLogin(
     // First try to find user by email
     const { data: userProfile, error: profileError } = await supabaseAdmin
       .from('user')
-      .select('_id, email, "First Name", "Last Name", "Profile Photo", "Account - Host / Landlord"')
+      .select('_id, email, "Name - First", "Name - Last", "Profile Photo", "Account - Host / Landlord"')
       .eq('email', email.toLowerCase())
       .maybeSingle();
 
@@ -114,8 +114,8 @@ export async function handleLogin(
       user_type: userType,
       host_account_id: hostAccountId,
       email: authUser.email,
-      firstName: userProfile?.['First Name'] || '',
-      lastName: userProfile?.['Last Name'] || '',
+      firstName: userProfile?.['Name - First'] || '',
+      lastName: userProfile?.['Name - Last'] || '',
       profilePhoto: userProfile?.['Profile Photo'] || null
     };
 
