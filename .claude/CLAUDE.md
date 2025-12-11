@@ -64,7 +64,18 @@ For ANY non-trivial task, follow this orchestration pipeline:
 
 For simple questions (not requiring code changes), answer directly without the orchestration pipeline.
 
-### Mandatory Subagent Invocation Rules
+### Lookup Tasks (BYPASS ORCHESTRATION)
+
+For **lookup, exploration, or research tasks** that do NOT modify code, **skip the orchestration pipeline entirely** and invoke the appropriate subagent directly:
+
+| Task Type | Direct Subagent | Examples |
+|-----------|-----------------|----------|
+| Codebase exploration | `codebase-explorer` or `Explore` | "Where is X implemented?", "How does Y work?", "Find all files that Z" |
+| Documentation lookup | `claude-code-guide` | "How do I use Claude Code feature X?", "What MCP tools are available?" |
+
+**No classification, planning, or review needed** — just invoke the lookup subagent and return the result.
+
+### Mandatory Subagent Invocation Rules (For Code-Modifying Tasks)
 
 **You MUST use the Task tool to invoke the appropriate subagent for the following task types:**
 
@@ -75,7 +86,6 @@ For simple questions (not requiring code changes), answer directly without the o
 | Refactoring, cleanup, consolidation | `task-classifier` → `cleanup-planner` → `plan-executor` | Any CLEANUP task |
 | MCP tool invocation (Supabase, Playwright, etc.) | `mcp-tool-specialist` | Any MCP operation |
 | Code/plan review | `input-reviewer` | After implementation |
-| Codebase exploration | `codebase-explorer` or `Explore` | Understanding code structure |
 
 **Violation of these rules is unacceptable.** If uncertain whether a task is "trivial" or "non-trivial," default to using the orchestration pipeline.
 
@@ -203,4 +213,4 @@ supabase functions deploy <name>   # Deploy single function
 
 ---
 
-**VERSION**: 9.0 | **UPDATED**: 2025-12-11
+**VERSION**: 9.1 | **UPDATED**: 2025-12-11
