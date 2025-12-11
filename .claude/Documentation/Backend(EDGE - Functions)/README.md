@@ -119,6 +119,10 @@ Authorization: Bearer {access_token}  // Optional for public actions
 
 ## Deployment
 
+> ⚠️ **CRITICAL REMINDER**: Supabase Edge Functions require **MANUAL DEPLOYMENT** after code changes!
+> Unlike frontend code deployed via Cloudflare Pages, edge functions are NOT auto-deployed.
+> Always run `supabase functions deploy <name>` after modifying edge function code.
+
 ### Local Development
 ```bash
 supabase start                      # Start local Supabase
@@ -132,6 +136,14 @@ supabase functions logs <name>      # View function logs
 supabase functions deploy <name>    # Deploy specific function
 supabase functions deploy           # Deploy all functions
 ```
+
+### Deployment Checklist
+
+- [ ] Test function locally with `supabase functions serve`
+- [ ] Verify all required secrets are configured in Supabase Dashboard
+- [ ] Deploy with `supabase functions deploy <function-name>`
+- [ ] Test deployed function in production
+- [ ] Monitor Slack channel for any error reports
 
 **Secrets**: Configured in Supabase Dashboard > Project Settings > Secrets
 
@@ -150,11 +162,25 @@ supabase functions deploy           # Deploy all functions
 
 ---
 
+## Sequence Diagrams
+
+For visual understanding of complex flows, see [SEQUENCE_DIAGRAMS.md](./SEQUENCE_DIAGRAMS.md):
+
+1. **Authentication Flow** - Login and signup with Bubble sync
+2. **Atomic Sync Pattern** - Write-Read-Write consistency
+3. **Queue-Based Sync Flow** - Async sync via sync_queue
+4. **Proposal Creation Flow** - Complete flow with pricing
+5. **AI Gateway Flow** - Streaming and non-streaming completions
+6. **Signup with Bubble Sync** - User + host + guest account creation
+
+---
+
 ## Related Documentation
 
 - [CLAUDE.md (root)](../../../CLAUDE.md) - Main project context
 - [supabase/CLAUDE.md](../../../supabase/CLAUDE.md) - Backend reference
 - [DATABASE_SCHEMA_OVERVIEW.md](../../../DATABASE_SCHEMA_OVERVIEW.md) - 93 table schemas
+- [SEQUENCE_DIAGRAMS.md](./SEQUENCE_DIAGRAMS.md) - Visual flow diagrams
 
 ---
 
