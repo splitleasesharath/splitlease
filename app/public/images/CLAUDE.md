@@ -1,7 +1,15 @@
-# Images - Public Root Images
+# Images - LLM Reference
 
-**GENERATED**: 2025-11-27
-**PARENT**: app/public/
+**GENERATED**: 2025-12-11
+**SCOPE**: Public root level images
+
+---
+
+## QUICK_STATS
+
+[TOTAL_FILES]: 1
+[FILE_TYPES]: SVG
+[URL_PATH]: `/images/*`
 
 ---
 
@@ -13,28 +21,33 @@
 
 ---
 
+## FILES
+
+### support-centre-icon.svg
+[INTENT]: Support center/help center icon
+[USE_CASE]: Navigation, help center links
+
+---
+
 ## USAGE_PATTERN
 
 ```html
-<img src="/images/example.png" alt="Description" />
+<img src="/images/support-centre-icon.svg" alt="Support Center" />
 ```
 
 ---
 
 ## NOTES
 
-- Prefer using `/assets/images/` for organized asset management
-- This directory may contain legacy images or special-purpose files
-- Keep file names URL-friendly (lowercase, hyphens)
+[PREFERENCE]: Use `/assets/images/` for organized asset management
+[LEGACY]: This directory may contain legacy or special-purpose files
+[DISTINCTION]: Separate from `/assets/images/` for historical reasons
+[OPTIMIZATION]: Compress images before committing
 
 ---
 
-## OPTIMIZATION
+## COMPARISON_WITH_ASSETS
 
-- Compress images before committing
-- Use appropriate formats (WebP for photos, PNG for transparency, SVG for icons)
-- Consider responsive image sizes
-
----
-
-**FILE_TYPES**: PNG, JPG, WebP, SVG
+[ASSETS_IMAGES]: `/assets/images/` - Primary image directory
+[PUBLIC_IMAGES]: `/images/` - Secondary/legacy image directory
+[RECOMMENDATION]: Prefer `/assets/images/` for new assets

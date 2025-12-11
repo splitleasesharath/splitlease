@@ -1,16 +1,16 @@
-# Assets Directory - Static Assets Root
+# Assets Directory - LLM Reference
 
-**GENERATED**: 2025-11-27
+**GENERATED**: 2025-12-11
 **SCOPE**: Static media assets for the application
-**OPTIMIZATION**: Semantic Searchability + Digestibility
 
 ---
 
 ## QUICK_STATS
 
-[TOTAL_SUBDIRECTORIES]: 5
-[ASSET_TYPES]: SVG, PNG, JPG, WebP, JSON (Lottie), PDF
+[TOTAL_FILES]: 48
+[FILE_TYPES]: SVG, PNG, JSON, PDF
 [URL_PATH]: `/assets/*`
+[SUBDIRECTORIES]: 7
 
 ---
 
@@ -26,30 +26,39 @@
 
 ### fonts/
 [INTENT]: Web font files
-[FORMATS]: WOFF, WOFF2, TTF
-[STATUS]: Empty - may use Google Fonts CDN instead
+[STATUS]: Directory exists for custom fonts if needed
+
+### games/
+[INTENT]: Game-related assets
+[STATUS]: Available for interactive features
 
 ### icons/
 [INTENT]: SVG icon assets for UI elements
 [FORMAT]: SVG
-[EXAMPLES]: calendar, user, message, logout, proposals icons
+[FILE_COUNT]: 25
 [USAGE]: `<img src="/assets/icons/icon-name.svg" />`
 
 ### images/
 [INTENT]: UI images, branding, and illustrations
-[FORMATS]: PNG, JPG, WebP, SVG
-[EXAMPLES]: logo, hero images, property icons (bed, bath, car)
+[FORMATS]: PNG, SVG
+[FILE_COUNT]: 13 (including team subdirectory)
 [USAGE]: `<img src="/assets/images/image-name.png" />`
 
 ### lotties/
 [INTENT]: Lottie animation JSON files
 [FORMAT]: JSON (Lottie format)
-[USAGE]: Rendered via lottie-react or similar library
+[FILE_COUNT]: 2
+[USAGE]: Rendered via lottie-react or lottie-player library
 
 ### resources/
 [INTENT]: Downloadable resources and documents
 [FORMAT]: PDF
-[EXAMPLES]: House manual templates, rental agreements
+[FILE_COUNT]: 2
+[EXAMPLES]: Refactoring-UI.pdf, What-Is-MultiLocal.pdf
+
+### videos/
+[INTENT]: Video assets for UI
+[STATUS]: Available for promotional or instructional content
 
 ---
 
@@ -76,20 +85,14 @@ import Lottie from 'lottie-react';
 
 ## ICON_NAMING_CONVENTION
 
-| Pattern | Example |
-|---------|---------|
-| `{name}.svg` | `calendar.svg`, `user.svg` |
-| `{name}-{color}.svg` | `heart-purple.svg`, `key-purple.svg` |
+[PATTERN]: `{name}.svg` or `{name}-{color}.svg`
+[EXAMPLES]: `calendar.svg`, `user-purple.svg`, `heart-purple.svg`
 
 ---
 
 ## OPTIMIZATION_GUIDELINES
 
-- SVGs: Remove unnecessary metadata, optimize paths
-- Images: Compress before committing, prefer WebP
-- Fonts: Use WOFF2 for best compression
-- Lotties: Minify JSON, remove unused properties
-
----
-
-**SUBDIRECTORY_COUNT**: 5
+[SVG]: Remove unnecessary metadata, optimize paths
+[IMAGES]: Compress before committing, prefer WebP for web
+[FONTS]: Use WOFF2 for best compression
+[LOTTIES]: Minify JSON, remove unused properties
