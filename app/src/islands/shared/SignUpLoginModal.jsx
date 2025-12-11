@@ -644,12 +644,17 @@ export default function SignUpLoginModal({
       if (onAuthSuccess) {
         onAuthSuccess(result);
       }
-      onClose();
-      if (!skipReload) {
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      }
+
+      // Delay closing the modal to let the success toast be visible
+      // The toast is rendered inside the modal, so we need to keep it open briefly
+      setTimeout(() => {
+        onClose();
+        if (!skipReload) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 300);
+        }
+      }, 1500); // Show toast for 1.5 seconds before closing
     } else {
       showToast({
         title: 'Signup Failed',

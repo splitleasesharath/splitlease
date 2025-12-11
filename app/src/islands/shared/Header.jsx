@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
@@ -115,11 +115,21 @@ export default function Header({ autoShowLogin = false }) {
   }, [autoShowLogin]);
 
   // Listen for Supabase auth state changes (e.g., signup from another component like ViewSplitLeasePage)
+  // Track if we've already handled a sign-in to prevent duplicate processing
+  const signInHandledRef = useRef(false);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[Header] Auth state changed:', event);
 
-      if (event === 'SIGNED_IN' && session) {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        // Prevent duplicate handling - only process the first sign-in event
+        if (signInHandledRef.current) {
+          console.log('[Header] Sign-in already handled, skipping duplicate event:', event);
+          return;
+        }
+        signInHandledRef.current = true;
+
         // User signed in - fetch and update user data
         // CRITICAL: Use setTimeout to defer the async work and avoid deadlock with setSession()
         // If we await validateTokenAndFetchUser() synchronously, it calls getSession() which
@@ -139,6 +149,8 @@ export default function Header({ autoShowLogin = false }) {
           }
         }, 0);
       } else if (event === 'SIGNED_OUT') {
+        // Reset the flag when user signs out
+        signInHandledRef.current = false;
         // User signed out - trigger page reload/redirect
         // Don't just clear state - the component tree change would interrupt the logout flow
         console.log('[Header] User signed out, reloading page...');
