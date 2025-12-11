@@ -1,6 +1,6 @@
 # Account Profile Page - Quick Reference
 
-**GENERATED**: 2025-12-04
+**GENERATED**: 2025-12-11
 **PAGE_URL**: `/account-profile` or `/account-profile/{userId}`
 **ENTRY_POINT**: `app/src/account-profile.jsx`
 
@@ -20,8 +20,8 @@ account-profile.jsx (Entry Point)
     |
     +-- account-profile.html
             |
-            +-- Inline CSS (820 lines of styling)
-            +-- Vanilla JavaScript (750+ lines)
+            +-- Inline CSS (~830 lines of styling)
+            +-- Vanilla JavaScript (~700+ lines)
             |       +-- Supabase client initialization
             |       +-- User data fetching (fetchUserData)
             |       +-- Profile population (populateUserProfile)
@@ -70,17 +70,13 @@ account-profile.jsx (Entry Point)
 | `app/src/islands/modals/NotificationSettingsModal.jsx` | Email/SMS notification preferences |
 | `app/src/islands/modals/EditPhoneNumberModal.jsx` | Phone number editing modal |
 
-### Logic Layer - Rules
-| File | Purpose |
-|------|---------|
-| `app/src/logic/rules/auth/isProtectedPage.js` | Checks if current page requires auth |
-
 ### Library Utilities
 | File | Purpose |
 |------|---------|
 | `app/src/lib/auth.js` | Authentication (getAuthToken, getSessionId) |
 | `app/src/lib/supabase.js` | Supabase client |
-| `app/src/lib/navigation.js` | goToProfile() navigation function |
+| `app/src/lib/config.js` | Environment configuration |
+| `app/src/lib/hotjar.js` | Hotjar analytics integration |
 
 ### Routes Configuration
 | File | Purpose |
@@ -110,23 +106,12 @@ account-profile.jsx (Entry Point)
 }
 ```
 
-### Navigation Function
-```javascript
-import { goToProfile } from 'lib/navigation.js'
-
-goToProfile(userId)  // Navigates to /account-profile/{userId}
-```
-
 ---
 
 ## ### AUTHENTICATION ###
 
 ### Protected Page Check
-```javascript
-import { isProtectedPage } from 'logic/rules/auth/isProtectedPage.js'
-
-isProtectedPage({ pathname: '/account-profile' })  // => true
-```
+The page is marked as `protected: true` in routes.config.js.
 
 ### Auto Login Modal
 ```javascript
@@ -138,15 +123,15 @@ createRoot(headerRoot).render(<Header autoShowLogin={showLoginModal} />);
 
 ### User ID Retrieval
 ```javascript
-import { getSessionId } from 'lib/auth.js'
+import { getSessionId } from '/src/lib/auth.js';
 
 function getCurrentUserId() {
   const userId = getSessionId();
   if (userId) {
-    console.log(' User ID retrieved:', userId);
+    console.log('User ID retrieved from auth state:', userId);
     return userId;
   }
-  console.log('L No user ID found');
+  console.log('No user ID found - user not authenticated');
   return null;
 }
 ```
@@ -175,12 +160,10 @@ function getUserType(user) {
 ### Conditional Visibility
 | Section | User Type | Visibility |
 |---------|-----------|------------|
-| Transportation dropdown | Guest | Show |
-| Transportation dropdown | Host | Hide |
-| Commonly Stored Items | Guest | Show |
-| Commonly Stored Items | Host | Hide |
-| Your Listings sidebar | Host | Show |
-| Your Listings sidebar | Guest | Hide |
+| Transportation dropdown | Guest-only | Show if NOT a host |
+| Commonly Stored Items | Guest-only | Show if NOT a host |
+| Recent Days Selected | Guest-only | Show if NOT a host |
+| Your Listings sidebar | Host | Show if user has listings |
 
 ---
 
@@ -254,7 +237,11 @@ function populateUserProfile(data) {
 
   // Populate identity fields
   document.getElementById('profileName').textContent = user['Name - Full'] || user['Name - First'];
-  document.getElementById('email').textContent = user['email as text'];
+
+  // Email - tries multiple field names
+  const emailValue = user['email as text'] || user['email'] || user['Email'] || user['authentication.email.email'];
+  document.getElementById('email').textContent = emailValue || 'No email available';
+
   document.getElementById('phoneNumber').textContent = user['Phone Number (as text)'];
 
   // Populate profile photo
@@ -314,8 +301,8 @@ function populateUserProfile(data) {
 | `Recent Days Selected` | jsonb | Array of day names |
 | `profile completeness` | numeric | 0-100 percentage |
 | `Type - User Signup` | text | "Host" or "Guest" |
-| `Account - Guest` | text | FK ’ `account_guest._id` |
-| `Account - Host / Landlord` | text | FK ’ `account_host._id` |
+| `Account - Guest` | text | FK to `account_guest._id` |
+| `Account - Host / Landlord` | text | FK to `account_host._id` |
 
 ### Verification Fields
 | Field | Type | Purpose |
@@ -329,13 +316,13 @@ function populateUserProfile(data) {
 | Field | Type | Purpose |
 |-------|------|---------|
 | `_id` | text | Primary key |
-| `User` | text | FK ’ `user._id` |
+| `User` | text | FK to `user._id` |
 
 ### `account_host` Table
 | Field | Type | Purpose |
 |-------|------|---------|
 | `_id` | text | Primary key |
-| `User` | text | FK ’ `user._id` |
+| `User` | text | FK to `user._id` |
 | `Listings` | jsonb | Array of `listing._id` |
 
 ### `zat_storage` Table
@@ -407,17 +394,23 @@ function ScheduleSelectorWrapper() {
       if (window.userProfileData?.['Recent Days Selected']) {
         const dayNames = window.userProfileData['Recent Days Selected'];
         if (Array.isArray(dayNames)) {
-          const dayIndices = dayNames.map(name => dayMap[name]);
+          const dayIndices = dayNames.map(name => dayMap[name]).filter(idx => idx !== undefined);
           setSelectedDays(dayIndices);
         }
         clearInterval(checkUserData);
       }
     }, 100);
+
+    // Cleanup after 5 seconds if no data found
+    setTimeout(() => clearInterval(checkUserData), 5000);
+    return () => clearInterval(checkUserData);
   }, []);
 
   // Expose changes to vanilla JS
   const handleSelectionChange = (days) => {
-    const dayNames = days.map(day => indexToDayName[day.index]);
+    const dayIndices = days.map(day => day.index);
+    setSelectedDays(dayIndices);
+    const dayNames = dayIndices.map(idx => indexToDayName[idx]);
     if (window.updateRecentDaysSelected) {
       window.updateRecentDaysSelected(dayNames);
     }
@@ -435,30 +428,131 @@ function ScheduleSelectorWrapper() {
 }
 ```
 
-### NotificationSettingsModal
-```jsx
-<NotificationSettingsModal
-  isOpen={isOpen}
-  userId={userId}
-  onClose={() => setIsOpen(false)}
-/>
+### NotificationSettingsWrapper
+```javascript
+function NotificationSettingsWrapper() {
+  const [isOpen, setIsOpen] = useState(false);
+  const userId = getSessionId();
+
+  useEffect(() => {
+    // Expose function to open modal from HTML page
+    window.openNotificationSettings = () => setIsOpen(true);
+
+    // Set up click handler for the notification settings link
+    const handleNotificationSettingsClick = (e) => {
+      const link = document.getElementById('notification-settings-link');
+      if (e.target === link || e.target.closest('#notification-settings-link')) {
+        e.preventDefault();
+        setIsOpen(true);
+      }
+    };
+
+    document.addEventListener('click', handleNotificationSettingsClick);
+    return () => {
+      delete window.openNotificationSettings;
+      document.removeEventListener('click', handleNotificationSettingsClick);
+    };
+  }, []);
+
+  return (
+    <NotificationSettingsModal
+      isOpen={isOpen}
+      userId={userId}
+      onClose={() => setIsOpen(false)}
+    />
+  );
+}
 ```
+
+### NotificationSettingsModal Props
+| Prop | Type | Purpose |
+|------|------|---------|
+| `isOpen` | boolean | Controls modal visibility |
+| `userId` | string | Current user ID |
+| `onClose` | function | Callback when modal closes |
+
+**Features:**
 - Email notifications toggle
 - SMS notifications toggle
-- TODO: Integrate with `core-notification-settings` API
+- TODO: Integrate with `core-notification-settings` API (currently uses simulated API call)
 
-### EditPhoneNumberModal
-```jsx
-<EditPhoneNumberModal
-  isOpen={isOpen}
-  currentPhoneNumber={currentPhoneNumber}
-  onSave={handleSave}
-  onClose={() => setIsOpen(false)}
-/>
+### EditPhoneNumberWrapper
+```javascript
+function EditPhoneNumberWrapper() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [currentPhoneNumber, setCurrentPhoneNumber] = useState('');
+  const userId = getSessionId();
+
+  useEffect(() => {
+    // Expose function to open modal from HTML page
+    window.openEditPhoneNumberModal = (phoneNumber) => {
+      setCurrentPhoneNumber(phoneNumber || '');
+      setIsOpen(true);
+    };
+
+    // Set up click handler for the phone edit button
+    const handlePhoneEditClick = (e) => {
+      const phoneItem = e.target.closest('[data-verification="phone"]');
+      if (phoneItem && e.target.closest('.edit-btn')) {
+        e.preventDefault();
+        const currentPhone = document.getElementById('phoneNumber')?.textContent || '';
+        setCurrentPhoneNumber(currentPhone);
+        setIsOpen(true);
+      }
+    };
+
+    document.addEventListener('click', handlePhoneEditClick);
+    return () => {
+      delete window.openEditPhoneNumberModal;
+      document.removeEventListener('click', handlePhoneEditClick);
+    };
+  }, []);
+
+  const handleSave = async (newPhoneNumber) => {
+    if (!userId) throw new Error('User not authenticated');
+
+    const { error } = await supabase
+      .from('user')
+      .update({ 'Phone Number (as text)': newPhoneNumber })
+      .eq('_id', userId);
+
+    if (error) throw error;
+
+    // Update the displayed phone number in the HTML
+    const phoneNumberElement = document.getElementById('phoneNumber');
+    if (phoneNumberElement) {
+      phoneNumberElement.textContent = newPhoneNumber;
+    }
+
+    if (window.showToast) {
+      window.showToast('Phone number updated successfully!', 'success');
+    }
+  };
+
+  return (
+    <EditPhoneNumberModal
+      isOpen={isOpen}
+      currentPhoneNumber={currentPhoneNumber}
+      onSave={handleSave}
+      onClose={() => setIsOpen(false)}
+    />
+  );
+}
 ```
-- Displays old phone number (disabled)
-- Input for new phone number
+
+### EditPhoneNumberModal Props
+| Prop | Type | Purpose |
+|------|------|---------|
+| `isOpen` | boolean | Controls modal visibility |
+| `currentPhoneNumber` | string | Displays old phone number (disabled) |
+| `onSave` | function | Async callback to save new phone number |
+| `onClose` | function | Callback when modal closes |
+
+**Features:**
+- Displays old phone number (disabled input)
+- Input for new phone number with tel inputMode
 - Saves to `user['Phone Number (as text)']`
+- Design matches Bubble.io popup styling
 
 ---
 
@@ -467,10 +561,10 @@ function ScheduleSelectorWrapper() {
 ### Verification Items
 | Type | Icon | Field Check | Display |
 |------|------|-------------|---------|
-| LinkedIn | = | `Verify - Linked In ID` (truthy) | Verified  / Unverified |
-| Phone | =ñ | `Verify - Phone` (boolean) | Verified  / Unverified |
-| Email | 	 | `is email confirmed` (boolean) | Verified  / Unverified |
-| Identity | >ª | `user verified?` (boolean) | Verified  / Unverified |
+| LinkedIn | Link | `Verify - Linked In ID` (truthy) | Verified / Unverified |
+| Phone | Phone | `Verify - Phone` (boolean) | Verified / Unverified |
+| Email | Envelope | `is email confirmed` (boolean) | Verified / Unverified |
+| Identity | ID | `user verified?` (boolean) | Verified / Unverified |
 
 ### Update Function
 ```javascript
@@ -482,7 +576,7 @@ function updateVerificationStatus(type, isVerified) {
   const verifyBtn = item.querySelector('.verify-btn');
 
   if (isVerified) {
-    statusEl.textContent = 'Verified ';
+    statusEl.textContent = 'Verified';
     statusEl.style.color = '#10b981';
     if (verifyBtn) verifyBtn.style.display = 'none';
   }
@@ -503,7 +597,7 @@ function updateVerificationStatus(type, isVerified) {
   <div class="progress-bar-track">
     <div class="progress-bar-fill" id="progressBarFill" style="width: 0%"></div>
   </div>
-  <a href="#" class="progress-info-link">9 What's this?</a>
+  <a href="#" class="progress-info-link">What's this?</a>
 </div>
 ```
 
@@ -522,6 +616,8 @@ function updateVerificationStatus(type, isVerified) {
 async function populateStorageItemsCheckboxes(userSelectedItems = []) {
   const storageItems = await loadStorageItems();
   const gridContainer = document.getElementById('storedItemsGrid');
+
+  if (!gridContainer || storageItems.length === 0) return;
 
   const gridHTML = storageItems.map(item => {
     const isChecked = userSelectedItems.includes(item._id) ? 'checked' : '';
@@ -554,7 +650,7 @@ async function populateStorageItemsCheckboxes(userSelectedItems = []) {
 }
 
 .checkbox-item input[type="checkbox"]:checked::after {
-  content: '';
+  content: '';
   color: white;
   font-size: 14px;
 }
@@ -586,7 +682,10 @@ document.getElementById('photoFileInput')?.addEventListener('change', async (e) 
   const fileName = `${userId}-${Date.now()}.${fileExt}`;
   const { data, error } = await supabase.storage
     .from('profile-photos')
-    .upload(fileName, file);
+    .upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false
+    });
 
   // Update user profile with new URL
   await supabase
@@ -648,27 +747,8 @@ window.showToast = showToast;
 | Link | Action |
 |------|--------|
 | Payout Settings | TODO: Link to Bubble payout settings |
-| Notification Settings | Opens NotificationSettingsModal via `window.openNotificationSettings()` |
+| Notification Settings | Opens NotificationSettingsModal via React wrapper |
 | Change Password | TODO: Link to password change flow |
-
-### Modal Trigger Pattern
-```javascript
-// In vanilla JS - event delegation
-document.addEventListener('click', (e) => {
-  if (e.target.id === 'notification-settings-link') {
-    e.preventDefault();
-    if (window.openNotificationSettings) {
-      window.openNotificationSettings();
-    }
-  }
-});
-
-// In React island - expose function to window
-useEffect(() => {
-  window.openNotificationSettings = () => setIsOpen(true);
-  return () => delete window.openNotificationSettings;
-}, []);
-```
 
 ---
 
@@ -715,12 +795,6 @@ import NotificationSettingsModal from './islands/modals/NotificationSettingsModa
 import EditPhoneNumberModal from './islands/modals/EditPhoneNumberModal.jsx';
 import { getAuthToken, getSessionId } from './lib/auth.js';
 import { supabase } from './lib/supabase.js';
-
-// Navigation
-import { goToProfile } from 'lib/navigation.js';
-
-// Auth Rules
-import { isProtectedPage } from 'logic/rules/auth/isProtectedPage.js';
 ```
 
 ---
@@ -739,6 +813,18 @@ Functions exposed to window for React-vanilla JS communication:
 
 ---
 
+## ### REACT_ISLAND_ROOT_ELEMENTS ###
+
+| Element ID | Component |
+|------------|-----------|
+| `header-root` | Header |
+| `footer-root` | Footer |
+| `schedule-selector-root` | ScheduleSelectorWrapper |
+| `notification-settings-root` | NotificationSettingsWrapper |
+| `edit-phone-number-root` | EditPhoneNumberWrapper |
+
+---
+
 ## ### TROUBLESHOOTING ###
 
 | Issue | Check |
@@ -751,6 +837,7 @@ Functions exposed to window for React-vanilla JS communication:
 | Verification always "Unverified" | Check user table field values |
 | Photo upload fails | Storage bucket `profile-photos` may not exist |
 | Transportation section visible for Host | Check `applyUserTypeVisibility()` logic |
+| Email shows "No email available" | Check user table for email fields (multiple possible names) |
 
 ---
 
@@ -759,11 +846,12 @@ Functions exposed to window for React-vanilla JS communication:
 | Reference | Path |
 |-----------|------|
 | App CLAUDE.md | `app/CLAUDE.md` |
-| Logic CLAUDE.md | `app/src/logic/CLAUDE.md` |
+| Source CLAUDE.md | `app/src/CLAUDE.md` |
+| Islands CLAUDE.md | `app/src/islands/CLAUDE.md` |
 | Database Schema | `DATABASE_SCHEMA_OVERVIEW.md` |
 | Database Tables Detailed | `Documentation/Database/DATABASE_TABLES_DETAILED.md` |
 | Option Sets | `Documentation/Database/DATABASE_OPTION_SETS_QUICK_REFERENCE.md` |
-| Routing Guide | `Documentation/Database/ROUTING_GUIDE.md` |
+| Routing Guide | `Documentation/Routing/ROUTING_GUIDE.md` |
 | Auth Flow | `Documentation/Auth/LOGIN_FLOW.md` |
 
 ---
@@ -779,6 +867,6 @@ This differs from the pure **Hollow Component Pattern** used in pages like `Gues
 
 ---
 
-**VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-04
+**VERSION**: 2.0
+**LAST_UPDATED**: 2025-12-11
 **STATUS**: Comprehensive after thorough analysis
