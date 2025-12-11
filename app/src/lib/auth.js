@@ -523,6 +523,25 @@ export async function loginUser(email, password) {
       } else {
         console.log('✅ Supabase session set successfully');
       }
+
+      // CRITICAL: Verify the session is actually persisted before proceeding
+      // This fixes a race condition where the page can reload before localStorage is written
+      let verifyAttempts = 0;
+      const maxVerifyAttempts = 5;
+      while (verifyAttempts < maxVerifyAttempts) {
+        const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+        if (verifiedSession && verifiedSession.access_token === access_token) {
+          console.log('✅ Session verified and persisted');
+          break;
+        }
+        verifyAttempts++;
+        console.log(`⏳ Waiting for session to persist (attempt ${verifyAttempts}/${maxVerifyAttempts})...`);
+        await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+      }
+
+      if (verifyAttempts >= maxVerifyAttempts) {
+        console.warn('⚠️ Session may not be fully persisted, but continuing...');
+      }
     }
 
     // Store access_token as auth token for backward compatibility
@@ -698,6 +717,25 @@ export async function signupUser(email, password, retype, additionalData = null)
       // Continue anyway - tokens are still valid, just not in client state
     } else {
       console.log('✅ Supabase session set successfully');
+    }
+
+    // CRITICAL: Verify the session is actually persisted before proceeding
+    // This fixes a race condition where the page can reload before localStorage is written
+    let verifyAttempts = 0;
+    const maxVerifyAttempts = 5;
+    while (verifyAttempts < maxVerifyAttempts) {
+      const { data: { session: verifiedSession } } = await supabase.auth.getSession();
+      if (verifiedSession && verifiedSession.access_token === access_token) {
+        console.log('✅ Session verified and persisted');
+        break;
+      }
+      verifyAttempts++;
+      console.log(`⏳ Waiting for session to persist (attempt ${verifyAttempts}/${maxVerifyAttempts})...`);
+      await new Promise(resolve => setTimeout(resolve, 100)); // Wait 100ms
+    }
+
+    if (verifyAttempts >= maxVerifyAttempts) {
+      console.warn('⚠️ Session may not be fully persisted, but continuing...');
     }
 
     // Store access_token as auth token for backward compatibility with existing code
