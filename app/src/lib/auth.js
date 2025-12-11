@@ -36,7 +36,9 @@ import {
   hasValidTokens,
   migrateFromLegacyStorage,
   getFirstName as getSecureFirstName,
-  getAvatarUrl as getSecureAvatarUrl
+  getAvatarUrl as getSecureAvatarUrl,
+  setFirstName as setSecureFirstName,
+  setAvatarUrl as setSecureAvatarUrl
 } from './secureStorage.js';
 
 // ============================================================================
@@ -972,6 +974,14 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
       // Proposal count for determining first proposal flow
       proposalCount: userData.proposalCount ?? 0
     };
+
+    // Cache firstName and avatarUrl for optimistic UI on page load
+    if (userDataObject.firstName) {
+      setSecureFirstName(userDataObject.firstName);
+    }
+    if (userDataObject.profilePhoto) {
+      setSecureAvatarUrl(userDataObject.profilePhoto);
+    }
 
     console.log('✅ User data validated:', userDataObject.firstName, '- Type:', userDataObject.userType);
     console.log('📊 User proposalCount from Edge Function:', userData.proposalCount, '→ stored as:', userDataObject.proposalCount);
