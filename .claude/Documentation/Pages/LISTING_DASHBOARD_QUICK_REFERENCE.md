@@ -1,12 +1,12 @@
 # Listing Dashboard Page - Quick Reference
 
-**GENERATED**: 2025-12-04
+**GENERATED**: 2025-12-11
 **PAGE_URL**: `/listing-dashboard?id={listingId}`
 **ENTRY_POINT**: `app/src/listing-dashboard.jsx`
 
 ---
 
-## ### ARCHITECTURE_OVERVIEW ###
+## ARCHITECTURE_OVERVIEW
 
 ```
 listing-dashboard.jsx (Entry Point)
@@ -14,39 +14,50 @@ listing-dashboard.jsx (Entry Point)
     +-- ListingDashboardPage.jsx (Hollow Component)
             |
             +-- useListingDashboardPageLogic.js (Business Logic Hook)
-            |       +-- URL parsing for listing ID
-            |       +-- Listing data fetching (mock data)
+            |       +-- URL parsing for listing ID (supports 'id' and 'listing_id')
+            |       +-- Listing data fetching from Supabase (listing_trial or listing tables)
+            |       +-- Lookup table resolution (amenities, safety, rules, etc.)
             |       +-- Tab state management
-            |       +-- Action card handlers
-            |       +-- Form change handlers
+            |       +-- Edit modal state management
+            |       +-- Photo management handlers (set cover, delete, reorder)
+            |       +-- AI Import Assistant integration
+            |       +-- Schedule Cohost modal handlers
+            |       +-- Import Reviews modal handlers
+            |       +-- Blocked dates management
             |
             +-- UI Components
                 +-- Header.jsx (Site navigation)
                 +-- NavigationHeader.jsx (Tab navigation)
-                |       +-- 5 tabs with badges
+                |       +-- 4 conditional tabs (All Listings, Proposals, VMs, Leases)
                 |       +-- Back button
-                +-- AlertBanner.jsx (Expandable promo)
+                +-- AlertBanner.jsx (Schedule Cohost CTA)
                 +-- ActionCardGrid.jsx (6-card grid)
                 |       +-- ActionCard.jsx (clickable cards)
-                +-- SecondaryActions.jsx (Utility bar)
-                |       +-- Copy link
-                |       +-- AI Import Assistant
-                +-- PropertyInfoSection.jsx (Description)
-                |       +-- Description textarea
-                |       +-- Address display
-                |       +-- Status indicator
-                |       +-- Import reviews
-                +-- DetailsSection.jsx (Features)
-                |       +-- Features grid (4 items)
-                |       +-- Safety features grid
-                |       +-- Cancellation policy dropdown
-                |       +-- House Manual CTA
+                +-- SecondaryActions.jsx (AI Import button)
+                +-- PropertyInfoSection.jsx (Title & import reviews)
+                +-- DescriptionSection.jsx (Lodging & neighborhood)
+                +-- AmenitiesSection.jsx (In-unit & building amenities)
+                +-- DetailsSection.jsx (Type, parking, kitchen, storage)
+                +-- PricingSection.jsx (Lease style, pricing, fees)
+                |       +-- HostScheduleSelector (nights available)
+                |       +-- NightlyPricingLegend
+                +-- RulesSection.jsx (House rules)
+                +-- AvailabilitySection.jsx (Calendar & blocked dates)
+                +-- PhotosSection.jsx (Drag-and-drop photos)
+                +-- CancellationPolicySection.jsx (Policy dropdown)
                 +-- Footer.jsx (Site footer)
+            |
+            +-- Modals
+                +-- EditListingDetails (Multi-section edit modal)
+                +-- PricingEditSection (Full-screen pricing edit overlay)
+                +-- ScheduleCohost (Co-host request modal)
+                +-- ImportListingReviewsModal (Reviews import request)
+                +-- AIImportAssistantModal (AI content generation)
 ```
 
 ---
 
-## ### FILE_INVENTORY ###
+## FILE_INVENTORY
 
 ### Entry Point
 | File | Purpose |
@@ -57,32 +68,52 @@ listing-dashboard.jsx (Entry Point)
 | File | Purpose |
 |------|---------|
 | `app/src/islands/pages/ListingDashboardPage/ListingDashboardPage.jsx` | Main hollow component |
-| `app/src/islands/pages/ListingDashboardPage/useListingDashboardPageLogic.js` | Core business logic hook |
+| `app/src/islands/pages/ListingDashboardPage/useListingDashboardPageLogic.js` | Core business logic hook (1300+ lines) |
 | `app/src/islands/pages/ListingDashboardPage/index.js` | Barrel export |
 | `app/src/islands/pages/ListingDashboardPage/CLAUDE.md` | Component documentation |
 
 ### Sub-Components
 | File | Purpose |
 |------|---------|
-| `app/src/islands/pages/ListingDashboardPage/components/NavigationHeader.jsx` | Tab navigation with badges |
+| `app/src/islands/pages/ListingDashboardPage/components/NavigationHeader.jsx` | Tab navigation with conditional badges |
 | `app/src/islands/pages/ListingDashboardPage/components/ActionCard.jsx` | Reusable action card button |
 | `app/src/islands/pages/ListingDashboardPage/components/ActionCardGrid.jsx` | 6-card quick actions grid |
-| `app/src/islands/pages/ListingDashboardPage/components/AlertBanner.jsx` | Expandable co-host promo |
-| `app/src/islands/pages/ListingDashboardPage/components/SecondaryActions.jsx` | Copy link & AI buttons |
-| `app/src/islands/pages/ListingDashboardPage/components/PropertyInfoSection.jsx` | Property description form |
-| `app/src/islands/pages/ListingDashboardPage/components/DetailsSection.jsx` | Features & safety display |
+| `app/src/islands/pages/ListingDashboardPage/components/AlertBanner.jsx` | Schedule Cohost CTA banner |
+| `app/src/islands/pages/ListingDashboardPage/components/SecondaryActions.jsx` | AI Import Assistant button |
+| `app/src/islands/pages/ListingDashboardPage/components/PropertyInfoSection.jsx` | Property name & import reviews |
+| `app/src/islands/pages/ListingDashboardPage/components/DescriptionSection.jsx` | Lodging & neighborhood descriptions |
+| `app/src/islands/pages/ListingDashboardPage/components/AmenitiesSection.jsx` | In-unit & building amenities |
+| `app/src/islands/pages/ListingDashboardPage/components/DetailsSection.jsx` | Features display (type, parking, kitchen, storage) |
+| `app/src/islands/pages/ListingDashboardPage/components/PricingSection.jsx` | Pricing, lease style, HostScheduleSelector |
+| `app/src/islands/pages/ListingDashboardPage/components/PricingEditSection.jsx` | Full-screen pricing edit overlay |
+| `app/src/islands/pages/ListingDashboardPage/components/NightlyPricingLegend.jsx` | Nightly pricing legend component |
+| `app/src/islands/pages/ListingDashboardPage/components/RulesSection.jsx` | House rules display |
+| `app/src/islands/pages/ListingDashboardPage/components/AvailabilitySection.jsx` | Calendar & blocked dates management |
+| `app/src/islands/pages/ListingDashboardPage/components/PhotosSection.jsx` | Drag-and-drop photo management |
+| `app/src/islands/pages/ListingDashboardPage/components/CancellationPolicySection.jsx` | Cancellation policy dropdown |
 | `app/src/islands/pages/ListingDashboardPage/components/index.js` | Component barrel exports |
+
+### Shared Components Used
+| File | Purpose |
+|------|---------|
+| `app/src/islands/shared/Header.jsx` | Site navigation header |
+| `app/src/islands/shared/Footer.jsx` | Site footer |
+| `app/src/islands/shared/EditListingDetails/EditListingDetails.jsx` | Multi-section edit modal |
+| `app/src/islands/shared/ScheduleCohost.jsx` | Co-host scheduling modal |
+| `app/src/islands/shared/ImportListingReviewsModal.jsx` | Reviews import request modal |
+| `app/src/islands/shared/AIImportAssistantModal.jsx` | AI content generation modal |
+| `app/src/islands/shared/HostScheduleSelector.jsx` | Nights available selector |
 
 ### Types & Data
 | File | Purpose |
 |------|---------|
 | `app/src/islands/pages/ListingDashboardPage/types/listing.types.ts` | TypeScript interfaces |
-| `app/src/islands/pages/ListingDashboardPage/data/mockListing.ts` | Mock data for development |
+| `app/src/islands/pages/ListingDashboardPage/data/mockListing.js` | Mock data (legacy, not used in production) |
 
 ### Styles
 | File | Purpose |
 |------|---------|
-| `app/src/styles/components/listing-dashboard.css` | Complete page styling (677 lines) |
+| `app/src/styles/components/listing-dashboard.css` | Complete page styling |
 
 ### HTML
 | File | Purpose |
@@ -91,11 +122,11 @@ listing-dashboard.jsx (Entry Point)
 
 ---
 
-## ### URL_ROUTING ###
+## URL_ROUTING
 
 ```
-/listing-dashboard                  # Default (uses mock data in dev)
-/listing-dashboard?id={listingId}   # Specific listing by ID
+/listing-dashboard?id={listingId}       # Specific listing by ID (UUID or Bubble ID)
+/listing-dashboard?listing_id={id}      # Alternative param name
 ```
 
 ### URL Parser Functions
@@ -103,7 +134,7 @@ listing-dashboard.jsx (Entry Point)
 // In useListingDashboardPageLogic.js
 const getListingIdFromUrl = useCallback(() => {
   const params = new URLSearchParams(window.location.search);
-  return params.get('id');
+  return params.get('id') || params.get('listing_id');
 }, []);
 ```
 
@@ -113,284 +144,340 @@ const getListingIdFromUrl = useCallback(() => {
   path: '/listing-dashboard',
   file: 'listing-dashboard.html',
   aliases: ['/listing-dashboard.html'],
-  protected: true,        // Requires authentication
+  protected: true,
   cloudflareInternal: false,
-  hasDynamicSegment: false
+  hasDynamicSegment: false,
+  internalName: 'listing-dashboard-view',
 }
 ```
 
 ---
 
-## ### TAB_NAVIGATION ###
+## TAB_NAVIGATION
 
-### Tab Types (`listing.types.ts`)
+### Tab Types
 ```typescript
-type TabType = 'preview' | 'manage' | 'proposals' | 'virtual-meetings' | 'leases';
+type TabType = 'all-listings' | 'proposals' | 'virtual-meetings' | 'leases';
 ```
 
 ### Tabs Configuration (`NavigationHeader.jsx`)
-| Tab ID | Label | Icon | Badge |
-|--------|-------|------|-------|
-| `preview` | Preview Listing | EyeIcon | - |
-| `manage` | Manage Listing | FileTextIcon | - |
-| `proposals` | Proposals | FileTextIcon | counts.proposals |
-| `virtual-meetings` | Virtual Meetings | CalendarIcon | counts.virtualMeetings |
-| `leases` | Leases | FileCheckIcon | counts.leases |
+| Tab ID | Label | Icon | Badge | Visible |
+|--------|-------|------|-------|---------|
+| `all-listings` | All My Listings | ListIcon | - | Always |
+| `proposals` | Proposals | FileTextIcon | counts.proposals | Only if count > 0 |
+| `virtual-meetings` | Virtual Meetings | CalendarIcon | counts.virtualMeetings | Only if count > 0 |
+| `leases` | Leases | FileCheckIcon | counts.leases | Only if count > 0 |
 
 ### Tab Click Behavior
 ```javascript
-const handleTabChange = useCallback((tab) => {
-  setActiveTab(tab);
-  switch (tab) {
-    case 'preview':
-      window.open(`/view-split-lease?id=${listing.id}`, '_blank');
-      break;
-    case 'proposals':
-    case 'virtual-meetings':
-    case 'leases':
-      // Future: Navigate to section or page
-      break;
-    default:
-      // Stay on manage tab
-      break;
+const handleTabClick = (tabId) => {
+  if (tabId === 'all-listings') {
+    window.location.href = '/host-overview';
+  } else {
+    onTabChange(tabId);
   }
-}, [listing]);
+};
 ```
 
 ---
 
-## ### ACTION_CARDS ###
+## DATA_FETCHING
 
-### 6-Card Grid (`ActionCardGrid.jsx`)
-| Card ID | Label | Icon | Badge Condition |
-|---------|-------|------|-----------------|
-| `preview` | Preview Listing | EyeIcon | - |
-| `copy-link` | Copy Listing Link | LinkIcon | - |
-| `proposals` | Proposals | FileTextIcon | counts.proposals > 0 |
-| `meetings` | Virtual Meetings | CalendarIcon | counts.virtualMeetings > 0 |
-| `manage` | Manage Listing | SettingsIcon | true (always) |
-| `leases` | Leases | FileCheckIcon | counts.leases > 0 |
+### Dual-Table Support
+The hook supports fetching from both `listing_trial` (new self-listing submissions) and `listing` (Bubble-synced listings):
 
-### Card Click Handler
 ```javascript
-const handleCardClick = useCallback((cardId) => {
-  switch (cardId) {
-    case 'preview':
-      window.open(`/view-split-lease?id=${listing.id}`, '_blank');
-      break;
-    case 'copy-link':
-      // Handled by SecondaryActions
-      break;
-    case 'proposals':
-      setActiveTab('proposals');
-      break;
-    case 'meetings':
-      setActiveTab('virtual-meetings');
-      break;
-    case 'manage':
-      setActiveTab('manage');
-      break;
-    case 'leases':
-      setActiveTab('leases');
-      break;
-  }
-}, [listing]);
+// Try listing_trial first (by id column), then fall back to listing table (by _id column)
+const trialResult = await supabase
+  .from('listing_trial')
+  .select('*')
+  .eq('id', listingId)
+  .maybeSingle();
+
+if (!trialResult.data) {
+  const listingResult = await supabase
+    .from('listing')
+    .select('*')
+    .eq('_id', listingId)
+    .maybeSingle();
+}
+```
+
+### Lookup Tables Fetched
+```javascript
+async function fetchLookupTables() {
+  // Fetches from:
+  // - zat_features_amenity (amenities)
+  // - zfut_safetyfeatures (safety features)
+  // - zat_features_houserule (house rules)
+  // - zat_features_listingtype (listing types)
+  // - zat_features_parkingoptions (parking options)
+  // - zat_features_storageoptions (storage options)
+}
+```
+
+### Related Data Queries
+```javascript
+const [lookups, photosResult, proposalsResult, leasesResult, meetingsResult] = await Promise.all([
+  fetchLookupTables(),
+  supabase.from('listing_photo').select('*').eq('Listing', listingId),
+  supabase.from('proposal').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
+  supabase.from('bookings_leases').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
+  supabase.from('virtualmeetingschedulesandlinks').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
+]);
 ```
 
 ---
 
-## ### DATA_TYPES ###
+## DATA_TRANSFORMATION
 
-### Listing (Main Entity)
-```typescript
-interface Listing {
-  id: string;
-  location: Location;
-  features: Features;
-  rentalType: RentalType;
-  preferredGender: PreferredGender;
-  houseManual?: HouseManual;
-  hostRestrictions?: HostRestrictions;
-  isOnline: boolean;
-  activeSince: Date;
-  monthlyHostRate: number;
-  damageDeposit: number;
-  cleaningCost: number;
-  minimumNights: number;
-  maximumNights: number;
-  idealLeaseMonthsMin: number;
-  idealLeaseMonthsMax: number;
-  idealLeaseWeeksMin: number;
-  idealLeaseWeeksMax: number;
-  earliestRentDate: Date;
-  checkInTime: string;
-  checkOutTime: string;
-  description: string;
-  descriptionNeighborhood: string;
-  createdAt: Date;
-  updatedAt: Date;
-  photos: Photo[];
-  videos: Video[];
-  amenities: Amenity[];
-  safetyFeatures: SafetyFeature[];
-  blockedDates: BlockedDate[];
-}
-```
+### Transformed Listing Structure
+```javascript
+{
+  id: string,                    // listing_trial: 'id', listing: '_id'
+  _id: string,                   // Alias for compatibility
 
-### ListingCounts (Badge Data)
-```typescript
-interface ListingCounts {
-  proposals: number;
-  virtualMeetings: number;
-  leases: number;
-}
-```
+  // Property Info
+  title: string,
+  description: string,
+  descriptionNeighborhood: string,
 
-### Location
-```typescript
-interface Location {
-  id: string;
-  address: string;
-  hoodsDisplay: string;
-  city: string;
-  state: string;
-  country: string;
-  zipCode: string;
-  latitude: number;
-  longitude: number;
-}
-```
+  // Raw DB fields (for EditListingDetails compatibility)
+  Name: string,
+  Description: string,
+  'Description - Neighborhood': string,
+  // ... other raw field mappings
 
-### Features
-```typescript
-interface Features {
-  id: string;
-  typeOfSpace: TypeOfSpace;
-  parkingType: ParkingType;
-  kitchenType: KitchenType;
-  qtyGuests: number;
-  bedrooms?: number;
-  bathrooms?: number;
-  squareFootage?: number;
-}
-```
+  // Location
+  location: {
+    id: string,
+    address: string,
+    hoodsDisplay: string,
+    city: string,
+    state: string,
+    zipCode: string,
+    latitude: number | null,
+    longitude: number | null,
+  },
 
-### Option Set Types
-```typescript
-interface RentalType { id: string; display: string; }
-interface PreferredGender { id: string; display: string; }
-interface TypeOfSpace { id: string; label: string; }
-interface ParkingType { id: string; label: string; }
-interface KitchenType { id: string; display: string; }
-```
+  // Status
+  status: 'Online' | 'Offline',
+  isOnline: boolean,
+  createdAt: Date | null,
+  activeSince: Date | null,
 
-### Related Entities
-```typescript
-interface Photo {
-  id: string;
-  listingId: string;
-  photoType: PhotoType;
-  isCoverPhoto: boolean;
-  imageUrl: string;
-  orderIndex: number;
-  createdAt: Date;
-}
+  // Features
+  features: {
+    typeOfSpace: { id: string, label: string },
+    parkingType: { id: string, label: string },
+    kitchenType: { id: string, display: string },
+    storageType: { id: string, label: string },
+    qtyGuests: number,
+    bedrooms: number,
+    bathrooms: number,
+    squareFootage: number,
+    squareFootageRoom: number,
+  },
 
-interface Amenity {
-  id: string;
-  name: string;
-  category: 'in_unit' | 'building';
-  icon?: string;
-}
+  // Amenities (resolved from lookup tables)
+  inUnitAmenities: Array<{ id: string, name: string, icon: string | null }>,
+  buildingAmenities: Array<{ id: string, name: string, icon: string | null }>,
+  safetyFeatures: Array<{ id: string, name: string, icon: string | null }>,
+  houseRules: Array<{ id: string, name: string, icon: string | null }>,
 
-interface SafetyFeature {
-  id: string;
-  name: string;
-  icon?: string;
-}
+  // Pricing
+  leaseStyle: 'Nightly' | 'Monthly' | string,
+  nightsPerWeekMin: number,
+  nightsPerWeekMax: number,
+  nightsAvailable: string[],     // ['monday', 'tuesday', ...] for HostScheduleSelector
+  availableDays: number[],       // [0, 1, 2, ...] JS day indices
+  pricing: {
+    2: number, 3: number, 4: number, 5: number, 6: number, 7: number
+  },
+  weeklyCompensation: {
+    2: number, 3: number, 4: number, 5: number, 6: number, 7: number
+  },
+  damageDeposit: number,
+  maintenanceFee: number,
+  monthlyHostRate: number,
 
-interface BlockedDate {
-  id: string;
-  listingId: string;
-  blockedDate: Date;
-  status: 'restricted_weekly' | 'blocked_manually' | 'available';
-  createdAt: Date;
+  // Availability
+  leaseTermMin: number,
+  leaseTermMax: number,
+  earliestAvailableDate: Date,
+  checkInTime: string,
+  checkOutTime: string,
+  blockedDates: string[],        // ['2025-01-15', '2025-01-16', ...]
+
+  // Photos
+  photos: Array<{
+    id: string,
+    url: string,
+    isCover: boolean,
+    photoType: string,
+  }>,
+
+  // Other
+  cancellationPolicy: string,
+  virtualTourUrl: string | null,
+  preferredGender: { id: string, display: string },
+  maxGuests: number,
 }
 ```
 
 ---
 
-## ### STATE_MANAGEMENT ###
+## STATE_MANAGEMENT
 
 ### Hook State (`useListingDashboardPageLogic.js`)
 ```javascript
+// Core state
 const [activeTab, setActiveTab] = useState('manage');
 const [listing, setListing] = useState(null);
 const [counts, setCounts] = useState({ proposals: 0, virtualMeetings: 0, leases: 0 });
 const [isLoading, setIsLoading] = useState(true);
 const [error, setError] = useState(null);
+
+// Edit modal state
+const [editSection, setEditSection] = useState(null); // null or section name
+
+// Schedule Cohost
+const [showScheduleCohost, setShowScheduleCohost] = useState(false);
+const [currentUser, setCurrentUser] = useState(null);
+
+// Import Reviews
+const [showImportReviews, setShowImportReviews] = useState(false);
+const [isImportingReviews, setIsImportingReviews] = useState(false);
+
+// AI Import Assistant
+const [showAIImportAssistant, setShowAIImportAssistant] = useState(false);
+const [aiGenerationStatus, setAiGenerationStatus] = useState({...});
+const [isAIGenerating, setIsAIGenerating] = useState(false);
+const [isAIComplete, setIsAIComplete] = useState(false);
+const [aiGeneratedData, setAiGeneratedData] = useState({});
 ```
 
 ### Hook Return Value
 ```javascript
 return {
   // State
-  activeTab,
-  listing,
-  counts,
-  isLoading,
-  error,
+  activeTab, listing, counts, isLoading, error, editSection,
+  showScheduleCohost, showImportReviews, currentUser,
 
-  // Handlers
-  handleTabChange,
-  handleCardClick,
-  handleBackClick,
-  handleDescriptionChange,
-  handleCancellationPolicyChange,
-  handleCopyLink,
-  handleAIAssistant,
+  // Core handlers
+  handleTabChange, handleCardClick, handleBackClick,
+  handleDescriptionChange, handleCancellationPolicyChange,
+  handleCopyLink, handleAIAssistant,
+
+  // Schedule Cohost
+  handleScheduleCohost, handleCloseScheduleCohost, handleCohostRequestSubmitted,
+
+  // Import Reviews
+  handleImportReviews, handleCloseImportReviews, handleSubmitImportReviews, isImportingReviews,
+
+  // AI Import Assistant
+  showAIImportAssistant, handleCloseAIImportAssistant, handleAIImportComplete,
+  handleStartAIGeneration, aiGenerationStatus, isAIGenerating, isAIComplete, aiGeneratedData,
+
+  // Photo management
+  handleSetCoverPhoto, handleDeletePhoto, handleReorderPhotos,
+
+  // Edit modal
+  handleEditSection, handleCloseEdit, handleSaveEdit, updateListing,
+
+  // Blocked dates
+  handleBlockedDatesChange,
 };
 ```
 
 ---
 
-## ### UI_SECTIONS ###
+## EDIT_SECTIONS
 
-### AlertBanner
-- Expandable/collapsible info banner
-- Co-host specialist promotion
-- Dismissible with close button
-- State: `isVisible`, `isExpanded`
-
-### SecondaryActions
-- Copy Listing Link button (uses Clipboard API)
-- "create chatgpt suggestions" divider text
-- AI Import Assistant button
-- "CHOOSE A SECTION" label
-
-### PropertyInfoSection
-- Section title: "Property Info"
-- Description textarea (editable)
-- Import reviews button
-- Address display: `{address} - {hoodsDisplay}`
-- Status indicator: online/offline
-- Active since date
-- "Show my reviews" button
-
-### DetailsSection
-- Section title: "Details" (with cyan top border)
-- Features grid (4 cards):
-  - Type of Space
-  - Transit
-  - Parking
-  - Kitchen
-- Safety Features grid
-- Cancellation Policy dropdown (Flexible/Moderate/Strict)
-- "Complete House Manual" CTA button
+### Available Edit Sections
+| Section | Modal Type | Fields Edited |
+|---------|------------|---------------|
+| `name` | EditListingDetails | Listing name/title |
+| `description` | EditListingDetails | Lodging description |
+| `neighborhood` | EditListingDetails | Neighborhood description |
+| `amenities` | EditListingDetails | In-unit & building amenities |
+| `details` | EditListingDetails | Type of space, bedrooms, bathrooms, kitchen, parking, storage |
+| `pricing` | PricingEditSection | Lease style, nightly rates, fees, nights available |
+| `rules` | EditListingDetails | House rules |
+| `availability` | EditListingDetails | Lease term, first available, check-in/out times |
+| `photos` | EditListingDetails | Photo upload |
 
 ---
 
-## ### CSS_CLASS_REFERENCE ###
+## AI_IMPORT_ASSISTANT
+
+### Generation Status Fields
+```javascript
+{
+  name: 'pending' | 'loading' | 'complete',
+  description: 'pending' | 'loading' | 'complete',
+  neighborhood: 'pending' | 'loading' | 'complete',
+  inUnitAmenities: 'pending' | 'loading' | 'complete',
+  buildingAmenities: 'pending' | 'loading' | 'complete',
+  houseRules: 'pending' | 'loading' | 'complete',
+  safetyFeatures: 'pending' | 'loading' | 'complete',
+}
+```
+
+### Generation Order (Two Phases)
+**Phase 1 - Load Common Features:**
+1. In-Unit Amenities (from `getCommonInUnitAmenities`)
+2. Building Amenities (from `getCommonBuildingAmenities`)
+3. Neighborhood Description (from `getNeighborhoodByZipCode`)
+4. House Rules (from `getCommonHouseRules`)
+5. Safety Features (from `getCommonSafetyFeatures`)
+
+**Phase 2 - Generate AI Content (with enriched data):**
+6. Description (via `generateListingDescription`)
+7. Listing Name (via `generateListingTitle`)
+
+---
+
+## PHOTO_MANAGEMENT
+
+### PhotosSection Features
+- Drag-and-drop reordering
+- Set cover photo (first photo is always cover)
+- Delete photos (soft delete in DB)
+- Photo type selection dropdown
+
+### Photo Types
+```javascript
+const PHOTO_TYPES = [
+  'Dining Room', 'Bathroom', 'Bedroom', 'Kitchen',
+  'Living Room', 'Workspace', 'Other'
+];
+```
+
+### Photo Persistence
+- **listing_trial**: Photos stored inline in `Features - Photos` JSON column
+- **listing**: Photos stored in `listing_photo` table
+
+---
+
+## AVAILABILITY_CALENDAR
+
+### Calendar Features
+- Interactive date blocking/unblocking
+- Range selection mode (click two dates)
+- Individual date selection mode
+- Visual display of blocked dates
+- Legend (Restricted Weekly, Blocked Manually, Available, First Available)
+
+### Blocked Dates Storage
+```javascript
+// Stored as array of date strings: ['2025-01-15', '2025-01-16', ...]
+// Persisted to 'Dates - Blocked' column as JSON
+```
+
+---
+
+## CSS_CLASS_REFERENCE
 
 ### Main Container
 | Class | Purpose |
@@ -402,6 +489,15 @@ return {
 | `.listing-dashboard__error` | Error state container |
 | `.listing-dashboard__not-found` | Not found state container |
 
+### Section Pattern
+| Class | Purpose |
+|-------|---------|
+| `.listing-dashboard-section` | Generic section container |
+| `.listing-dashboard-section__header` | Section header (title + edit button) |
+| `.listing-dashboard-section__title` | Section heading |
+| `.listing-dashboard-section__edit` | Edit button |
+| `.listing-dashboard-section__add-btn` | Add button (e.g., Add Photos) |
+
 ### Navigation Header
 | Class | Purpose |
 |-------|---------|
@@ -411,82 +507,45 @@ return {
 | `.listing-dashboard-nav__tabs` | Tab buttons container |
 | `.listing-dashboard-nav__tab` | Individual tab button |
 | `.listing-dashboard-nav__tab--active` | Active tab state |
-| `.listing-dashboard-nav__badge` | Red notification badge |
+| `.listing-dashboard-nav__badge` | Notification badge |
 
-### Alert Banner
+### Pricing Section
 | Class | Purpose |
 |-------|---------|
-| `.listing-dashboard-alert` | Alert container (blue dashed border) |
-| `.listing-dashboard-alert__icon` | Purple info icon circle |
-| `.listing-dashboard-alert__content` | Text content wrapper |
-| `.listing-dashboard-alert__text` | Main alert text |
-| `.listing-dashboard-alert__expanded` | Expandable content |
-| `.listing-dashboard-alert__toggle` | Show more/less button |
-| `.listing-dashboard-alert__close` | Red close button |
+| `.listing-dashboard-pricing` | Pricing section container |
+| `.listing-dashboard-pricing__left` | Left column (lease style info) |
+| `.listing-dashboard-pricing__right` | Right column (pricing info) |
+| `.listing-dashboard-pricing__days` | Nights/week selector area |
+| `.listing-dashboard-pricing__legend` | Availability legend |
 
-### Action Cards
+### Availability Section
 | Class | Purpose |
 |-------|---------|
-| `.listing-dashboard-action-grid` | Responsive grid container |
-| `.listing-dashboard-action-card` | Individual card button |
-| `.listing-dashboard-action-card__badge` | Red dot indicator |
-| `.listing-dashboard-action-card__icon` | Icon container (64x64) |
-| `.listing-dashboard-action-card__label` | Card text label |
+| `.listing-dashboard-availability` | Availability container |
+| `.listing-dashboard-availability__calendar-container` | Calendar + instructions layout |
+| `.listing-dashboard-availability__calendar` | Calendar widget |
+| `.listing-dashboard-availability__calendar-header` | Month navigation |
+| `.listing-dashboard-availability__calendar-grid` | Date grid |
+| `.listing-dashboard-availability__calendar-day` | Individual day cell |
+| `.listing-dashboard-availability__calendar-day--blocked` | Blocked day styling |
+| `.listing-dashboard-availability__calendar-day--selectable` | Clickable day |
 
-### Secondary Actions
+### Photos Section
 | Class | Purpose |
 |-------|---------|
-| `.listing-dashboard-secondary` | Flex container |
-| `.listing-dashboard-secondary__link-btn` | Copy link button |
-| `.listing-dashboard-secondary__divider` | Center divider text |
-| `.listing-dashboard-secondary__ai-btn` | AI assistant button (pill shape) |
-| `.listing-dashboard-secondary__label` | Section label |
-
-### Property Info
-| Class | Purpose |
-|-------|---------|
-| `.listing-dashboard-property` | Section container |
-| `.listing-dashboard-property__title` | Section heading |
-| `.listing-dashboard-property__input-wrapper` | Textarea container |
-| `.listing-dashboard-property__textarea` | Description textarea |
-| `.listing-dashboard-property__import-btn` | Import reviews link |
-| `.listing-dashboard-property__details` | Address details container |
-| `.listing-dashboard-property__address` | Address paragraph |
-| `.listing-dashboard-property__address-text` | Bold address part |
-| `.listing-dashboard-property__hood` | Hood name (gray) |
-| `.listing-dashboard-property__status` | Status row |
-| `.listing-dashboard-property__status-label` | "Status:" label |
-| `.listing-dashboard-property__status-value--online` | Green online status |
-| `.listing-dashboard-property__status-value--offline` | Red offline status |
-| `.listing-dashboard-property__active-since` | Active date paragraph |
-| `.listing-dashboard-property__date` | Bold date |
-| `.listing-dashboard-property__reviews` | Reviews section |
-| `.listing-dashboard-property__reviews-btn` | Show reviews button |
-
-### Details Section
-| Class | Purpose |
-|-------|---------|
-| `.listing-dashboard-details` | Section container |
-| `.listing-dashboard-details__header` | Header with cyan top border |
-| `.listing-dashboard-details__title` | Section heading |
-| `.listing-dashboard-details__subtitle` | Sub-section heading |
-| `.listing-dashboard-details__features` | Features grid |
-| `.listing-dashboard-details__feature` | Individual feature card |
-| `.listing-dashboard-details__feature-icon` | Feature icon (purple) |
-| `.listing-dashboard-details__feature-content` | Feature text |
-| `.listing-dashboard-details__feature-label` | Feature name |
-| `.listing-dashboard-details__feature-value` | Feature value |
-| `.listing-dashboard-details__safety` | Safety section |
-| `.listing-dashboard-details__safety-grid` | Safety features grid |
-| `.listing-dashboard-details__safety-item` | Safety feature tag |
-| `.listing-dashboard-details__policy` | Cancellation policy section |
-| `.listing-dashboard-details__select` | Policy dropdown |
-| `.listing-dashboard-details__cta` | CTA section |
-| `.listing-dashboard-details__cta-btn` | House Manual button (gradient) |
+| `.listing-dashboard-photos__grid` | Photos grid layout |
+| `.listing-dashboard-photos__card` | Individual photo card |
+| `.listing-dashboard-photos__card--dragging` | Currently dragged card |
+| `.listing-dashboard-photos__card--drag-over` | Drop target card |
+| `.listing-dashboard-photos__image-container` | Image wrapper |
+| `.listing-dashboard-photos__cover-badge` | Cover photo indicator |
+| `.listing-dashboard-photos__actions` | Action buttons container |
+| `.listing-dashboard-photos__star-btn` | Set cover button |
+| `.listing-dashboard-photos__delete-btn` | Delete button |
 
 ---
 
-## ### CSS_VARIABLES ###
+## CSS_VARIABLES
 
 ```css
 :root {
@@ -503,93 +562,7 @@ return {
 
 ---
 
-## ### RESPONSIVE_BREAKPOINTS ###
-
-| Breakpoint | Changes |
-|------------|---------|
-| `>= 1024px` | Action grid 3 columns, features grid 4 columns, safety grid 3 columns |
-| `>= 768px` | Action grid 2 columns, features grid 2 columns, safety grid 2 columns |
-| `< 768px` | Single column layouts |
-| `< 640px` | Reduced padding, smaller tabs, vertical secondary actions |
-
-### Mobile Adjustments (< 640px)
-- Page padding: 16px 8px
-- Card border-radius: 16px
-- Tab padding: 10px 12px, font-size: 13px
-- Action grid gap: 12px
-- Action card padding: 24px
-- Secondary actions: vertical layout
-- Property/details padding: 16px
-- Policy dropdown: 100% width
-
----
-
-## ### DATA_FLOW ###
-
-### 1. Initialize on Mount
-```javascript
-useEffect(() => {
-  const listingId = getListingIdFromUrl();
-  if (listingId) {
-    fetchListing(listingId);
-  } else {
-    // Use mock data if no ID (development)
-    setListing(mockListing);
-    setCounts(mockCounts);
-    setIsLoading(false);
-  }
-}, [fetchListing, getListingIdFromUrl]);
-```
-
-### 2. Fetch Listing (TODO: Replace with API)
-```javascript
-const fetchListing = useCallback(async (listingId) => {
-  setIsLoading(true);
-  setError(null);
-
-  try {
-    // TODO: Replace with actual API call to Supabase Edge Function
-    await new Promise((resolve) => setTimeout(resolve, 500));
-
-    setListing(mockListing);
-    setCounts(mockCounts);
-  } catch (err) {
-    console.error('L Error fetching listing:', err);
-    setError(err.message || 'Failed to load listing');
-  } finally {
-    setIsLoading(false);
-  }
-}, []);
-```
-
-### 3. Update Description
-```javascript
-const handleDescriptionChange = useCallback((newDescription) => {
-  setListing((prev) => ({
-    ...prev,
-    description: newDescription,
-  }));
-  // TODO: Debounce and save to backend
-}, []);
-```
-
-### 4. Copy Link
-```javascript
-const handleCopyLink = () => {
-  const listingUrl = listingId
-    ? `${window.location.origin}/view-split-lease?id=${listingId}`
-    : window.location.href;
-
-  navigator.clipboard.writeText(listingUrl).then(() => {
-    alert('Listing link copied to clipboard!');
-    onCopyLink?.();
-  });
-};
-```
-
----
-
-## ### COMPONENT_PROPS ###
+## COMPONENT_PROPS
 
 ### ListingDashboardPage (Main)
 No external props - self-contained with hook.
@@ -604,41 +577,44 @@ No external props - self-contained with hook.
 />
 ```
 
+### AlertBanner
+```jsx
+<AlertBanner onScheduleCohost={handleScheduleCohost} />
+```
+
 ### ActionCardGrid
 ```jsx
-<ActionCardGrid
-  counts={counts}
-  onCardClick={handleCardClick}
-/>
+<ActionCardGrid counts={counts} onCardClick={handleCardClick} />
 ```
-
-### ActionCard
-```jsx
-<ActionCard
-  icon={<EyeIcon />}
-  label="Preview Listing"
-  onClick={() => handleClick('preview')}
-  badge={false}
-/>
-```
-
-### AlertBanner
-No props - self-contained state.
 
 ### SecondaryActions
 ```jsx
-<SecondaryActions
-  listingId={listing.id}
-  onCopyLink={handleCopyLink}
-  onAIAssistant={handleAIAssistant}
-/>
+<SecondaryActions onAIAssistant={handleAIAssistant} />
 ```
 
 ### PropertyInfoSection
 ```jsx
 <PropertyInfoSection
   listing={listing}
-  onDescriptionChange={handleDescriptionChange}
+  onImportReviews={handleImportReviews}
+  onEdit={() => handleEditSection('name')}
+/>
+```
+
+### DescriptionSection
+```jsx
+<DescriptionSection
+  listing={listing}
+  onEditLodging={() => handleEditSection('description')}
+  onEditNeighborhood={() => handleEditSection('neighborhood')}
+/>
+```
+
+### AmenitiesSection
+```jsx
+<AmenitiesSection
+  listing={listing}
+  onEdit={() => handleEditSection('amenities')}
 />
 ```
 
@@ -646,13 +622,57 @@ No props - self-contained state.
 ```jsx
 <DetailsSection
   listing={listing}
-  onCancellationPolicyChange={handleCancellationPolicyChange}
+  onEdit={() => handleEditSection('details')}
+/>
+```
+
+### PricingSection
+```jsx
+<PricingSection
+  listing={listing}
+  onEdit={() => handleEditSection('pricing')}
+/>
+```
+
+### RulesSection
+```jsx
+<RulesSection
+  listing={listing}
+  onEdit={() => handleEditSection('rules')}
+/>
+```
+
+### AvailabilitySection
+```jsx
+<AvailabilitySection
+  listing={listing}
+  onEdit={() => handleEditSection('availability')}
+  onBlockedDatesChange={handleBlockedDatesChange}
+/>
+```
+
+### PhotosSection
+```jsx
+<PhotosSection
+  listing={listing}
+  onAddPhotos={() => handleEditSection('photos')}
+  onDeletePhoto={handleDeletePhoto}
+  onSetCover={handleSetCoverPhoto}
+  onReorderPhotos={handleReorderPhotos}
+/>
+```
+
+### CancellationPolicySection
+```jsx
+<CancellationPolicySection
+  listing={listing}
+  onPolicyChange={handleCancellationPolicyChange}
 />
 ```
 
 ---
 
-## ### LOADING_STATES ###
+## LOADING_STATES
 
 ### Loading State
 ```jsx
@@ -668,7 +688,9 @@ No props - self-contained state.
 {error && (
   <div className="listing-dashboard__error">
     <p>Error: {error}</p>
-    <button onClick={() => window.location.reload()}>Retry</button>
+    <button onClick={() => (window.location.href = '/host-overview')}>
+      Go to My Listings
+    </button>
   </div>
 )}
 ```
@@ -687,7 +709,7 @@ No props - self-contained state.
 
 ---
 
-## ### NAVIGATION_PATTERNS ###
+## NAVIGATION_PATTERNS
 
 ### Back to All Listings
 ```javascript
@@ -698,33 +720,55 @@ const handleBackClick = useCallback(() => {
 
 ### Preview Listing
 ```javascript
-window.open(`/view-split-lease?id=${listing.id}`, '_blank');
+window.open(`/preview-split-lease.html?id=${listing.id}`, '_blank');
+```
+
+### All My Listings Tab
+```javascript
+window.location.href = '/host-overview';
 ```
 
 ---
 
-## ### TODO_FOR_PRODUCTION ###
+## DATABASE_UPDATE_PATTERN
 
-1. Replace mock data with Supabase Edge Function calls
-2. Implement actual navigation for tab clicks (proposals, VMs, leases)
-3. Connect to authentication system (protected route)
-4. Add form validation and auto-save with debouncing
-5. Implement AI Import Assistant feature
-6. Add listing ID validation and proper error handling
-7. Connect description changes to backend
-8. Connect cancellation policy changes to backend
-9. Implement "Import reviews from other sites" feature
-10. Implement "Show my reviews" feature
-11. Implement "Complete House Manual" workflow
+### updateListing Function
+```javascript
+const updateListing = useCallback(async (listingId, updates) => {
+  // Check if listing_trial or listing table
+  const { data: trialCheck } = await supabase
+    .from('listing_trial')
+    .select('id')
+    .eq('id', listingId)
+    .maybeSingle();
+
+  const tableName = trialCheck ? 'listing_trial' : 'listing';
+  const idColumn = trialCheck ? 'id' : '_id';
+
+  // Field mapping for quirky column names
+  const fieldMapping = {
+    'First Available': ' First Available', // DB column has leading space
+  };
+
+  const { data, error } = await supabase
+    .from(tableName)
+    .update(dbUpdates)
+    .eq(idColumn, listingId)
+    .select()
+    .single();
+}, []);
+```
 
 ---
 
-## ### KEY_IMPORTS ###
+## KEY_IMPORTS
 
 ```javascript
 // Page component
 import ListingDashboardPage from './islands/pages/ListingDashboardPage';
-import { useListingDashboardPageLogic } from './islands/pages/ListingDashboardPage';
+
+// Hook
+import useListingDashboardPageLogic from './islands/pages/ListingDashboardPage/useListingDashboardPageLogic';
 
 // Components
 import {
@@ -733,71 +777,67 @@ import {
   AlertBanner,
   SecondaryActions,
   PropertyInfoSection,
+  DescriptionSection,
+  AmenitiesSection,
   DetailsSection,
+  PricingSection,
+  PricingEditSection,
+  RulesSection,
+  AvailabilitySection,
+  PhotosSection,
+  CancellationPolicySection,
 } from './components';
 
 // Shared components
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
+import { EditListingDetails } from '../../shared/EditListingDetails/EditListingDetails';
+import ScheduleCohost from '../../shared/ScheduleCohost';
+import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal';
+import AIImportAssistantModal from '../../shared/AIImportAssistantModal';
+
+// Services
+import { generateListingDescription, generateListingTitle } from '../../../lib/aiService';
+import { getCommonHouseRules } from '../../shared/EditListingDetails/services/houseRulesService';
+import { getCommonSafetyFeatures } from '../../shared/EditListingDetails/services/safetyFeaturesService';
+import { getCommonInUnitAmenities, getCommonBuildingAmenities } from '../../shared/EditListingDetails/services/amenitiesService';
+import { getNeighborhoodByZipCode } from '../../shared/EditListingDetails/services/neighborhoodService';
 
 // Styles
 import '../../../styles/components/listing-dashboard.css';
-
-// Mock data (development)
-import { mockListing, mockCounts } from './data/mockListing';
 ```
 
 ---
 
-## ### LOGIC_LAYER_DEPENDENCIES ###
+## INLINE_SVG_ICONS
 
-### Processors (Available for Listing Data)
-| File | Purpose |
-|------|---------|
-| `app/src/logic/processors/listing/extractListingCoordinates.js` | Extract lat/lng from JSONB fields |
-| `app/src/logic/processors/listing/parseJsonArrayField.js` | Parse JSON array fields |
-
-### Note on Logic Layer
-The Listing Dashboard page currently uses mock data and does not yet integrate with:
-- Rules layer (no permission checks implemented)
-- Workflows layer (no multi-step processes)
-- Calculators layer (no pricing calculations on this page)
-
-These integrations will be needed when implementing production features.
-
----
-
-## ### INLINE_SVG_ICONS ###
-
-The page uses inline SVG icons instead of external dependencies:
+The page uses inline SVG icons:
 
 | Component | Icons |
 |-----------|-------|
-| NavigationHeader | ArrowLeftIcon, EyeIcon, FileTextIcon, CalendarIcon, FileCheckIcon |
+| NavigationHeader | ArrowLeftIcon, ListIcon, FileTextIcon, CalendarIcon, FileCheckIcon |
 | ActionCardGrid | EyeIcon, LinkIcon, FileTextIcon, CalendarIcon, SettingsIcon, FileCheckIcon |
-| AlertBanner | InfoIcon, CloseIcon |
-| SecondaryActions | LinkIcon, SparklesIcon |
-| PropertyInfoSection | DownloadIcon, StarIcon |
-| DetailsSection | HomeIcon, TrainIcon, CarIcon, KitchenIcon |
+| AvailabilitySection | ChevronLeftIcon, ChevronRightIcon |
+| PhotosSection | StarIcon, TrashIcon, DragHandleIcon |
 
 ---
 
-## ### TROUBLESHOOTING ###
+## TROUBLESHOOTING
 
 | Issue | Check |
 |-------|-------|
-| Page shows loading forever | Check fetchListing timeout, verify mock data import |
-| Tabs not switching | Verify handleTabChange is connected to onTabChange |
-| Badges not showing | Check counts object structure, verify badge > 0 |
-| Copy link not working | Check clipboard API permissions, verify listingId |
-| Description not saving | handleDescriptionChange only updates local state (TODO) |
+| Page shows loading forever | Check Supabase connection, verify listing ID exists in DB |
+| Listing not found | Check if ID is in listing_trial (UUID) or listing (_id Bubble format) |
+| Tabs not showing | Verify counts object - tabs only show when count > 0 |
+| Edit modal not opening | Check editSection state and handleEditSection handler |
+| Photos not displaying | Check photo URL format and image URL construction |
+| Blocked dates not saving | Verify onBlockedDatesChange prop is connected |
+| AI generation failing | Check aiService imports and Supabase Edge Function |
 | Styling broken | Verify CSS import in ListingDashboardPage.jsx |
-| 404 on page load | Check routes.config.js entry, verify HTML file exists |
-| Authentication redirect | Page is protected: true - verify auth status |
 
 ---
 
-## ### RELATED_FILES ###
+## RELATED_FILES
 
 | Reference | Path |
 |-----------|------|
@@ -805,14 +845,13 @@ The page uses inline SVG icons instead of external dependencies:
 | Component CLAUDE.md | `app/src/islands/pages/ListingDashboardPage/CLAUDE.md` |
 | Logic CLAUDE.md | `app/src/logic/CLAUDE.md` |
 | Database Schema | `DATABASE_SCHEMA_OVERVIEW.md` |
-| Database Tables Detailed | `Documentation/DATABASE_TABLES_DETAILED.md` |
-| Option Sets | `Documentation/OPTION_SETS_DETAILED.md` |
-| Routing Guide | `Documentation/ROUTING_GUIDE.md` |
+| Routing Guide | `.claude/Documentation/Routing/ROUTING_GUIDE.md` |
 | Route Registry | `app/src/routes.config.js` |
 | Host Overview Page | `app/src/islands/pages/HostOverviewPage/` |
+| EditListingDetails | `app/src/islands/shared/EditListingDetails/` |
 
 ---
 
-**VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-04
-**STATUS**: Development (using mock data, awaiting production API integration)
+**VERSION**: 2.0
+**LAST_UPDATED**: 2025-12-11
+**STATUS**: Production (fetches from Supabase, dual-table support: listing_trial and listing)
