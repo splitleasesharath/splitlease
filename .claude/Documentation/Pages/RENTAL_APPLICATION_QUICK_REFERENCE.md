@@ -1,6 +1,6 @@
 # Rental Application Page - Quick Reference
 
-**GENERATED**: 2025-12-04
+**GENERATED**: 2025-12-11
 **PAGE_URL**: `/rental-application?proposal={proposalId}`
 **ENTRY_POINT**: `app/src/rental-application.jsx`
 
@@ -57,8 +57,8 @@ rental-application.jsx (Entry Point)
 ### Page Components
 | File | Purpose |
 |------|---------|
-| `app/src/islands/pages/RentalApplicationPage.jsx` | Main hollow component (~1133 lines) |
-| `app/src/islands/pages/useRentalApplicationPageLogic.js` | Core business logic hook (~677 lines) |
+| `app/src/islands/pages/RentalApplicationPage.jsx` | Main hollow component (1133 lines) |
+| `app/src/islands/pages/useRentalApplicationPageLogic.js` | Core business logic hook (677 lines) |
 
 ### HTML Template
 | File | Purpose |
@@ -68,7 +68,7 @@ rental-application.jsx (Entry Point)
 ### Styles
 | File | Purpose |
 |------|---------|
-| `app/src/styles/components/rental-application.css` | Complete page styling (~1027 lines) |
+| `app/src/styles/components/rental-application.css` | Complete page styling (1030 lines) |
 
 ### Related Navigation
 | File | Purpose |
@@ -102,10 +102,12 @@ rental-application.jsx (Entry Point)
 // From lib/navigation.js
 import { goToRentalApplication } from 'lib/navigation.js'
 goToRentalApplication(proposalId)  // /rental-application?proposal={proposalId}
+goToRentalApplication()            // /rental-application (standalone)
 
 // From workflows
 import { navigateToRentalApplication } from 'logic/workflows/proposals/navigationWorkflow.js'
 navigateToRentalApplication(proposalId)  // /rental-app-new-design?proposal={proposalId}
+// NOTE: navigationWorkflow uses legacy URL /rental-app-new-design
 ```
 
 ---
@@ -196,7 +198,7 @@ navigateToRentalApplication(proposalId)  // /rental-app-new-design?proposal={pro
 ### Section 8: Signature
 | Field | Type | Required | Style |
 |-------|------|----------|-------|
-| `signature` | text | Yes | Cursive (Brush Script MT) |
+| `signature` | text | Yes | Cursive (signature-input class) |
 
 ---
 
@@ -288,7 +290,7 @@ const [formData, setFormData] = useState({
   employerPhone: '',
   jobTitle: '',
   monthlyIncome: '',
-  // Business owner fields
+  // Self-employed fields
   businessName: '',
   businessYear: '',
   businessState: '',
@@ -296,16 +298,16 @@ const [formData, setFormData] = useState({
   companyStake: '',
   slForBusiness: '',
   taxForms: '',
-  // Other employment fields
+  // Unemployed/Student fields
   alternateIncome: '',
-  // Special requirements
+  // Special requirements (dropdowns: yes/no/empty)
   hasPets: '',
   isSmoker: '',
   needsParking: '',
   // References
   references: '',
-  showVisualReferences: false,
-  showCreditScore: false,
+  showVisualReferences: false,  // Toggle for visual references upload
+  showCreditScore: false,       // Toggle for credit score upload
   // Signature
   signature: ''
 });
@@ -369,6 +371,7 @@ const calculateProgress = useCallback(() => {
   const employmentStatus = formData.employmentStatus;
   let totalFields = [...REQUIRED_FIELDS];
 
+  // Add conditional fields based on employment status
   if (employmentStatus && CONDITIONAL_REQUIRED_FIELDS[employmentStatus]) {
     totalFields = [...totalFields, ...CONDITIONAL_REQUIRED_FIELDS[employmentStatus]];
   }
@@ -439,7 +442,7 @@ handleFileRemove(uploadKey, fileIndex = null)
 
 ### Verification Handlers
 ```javascript
-// Trigger verification flow
+// Trigger verification flow (simulated)
 handleVerification(service)  // 'linkedin' | 'facebook' | 'id' | 'income'
 ```
 
@@ -473,7 +476,7 @@ useEffect(() => {
   return () => clearTimeout(autoSaveTimeoutRef.current);
 }, [isDirty, autoSave]);
 
-// Save to localStorage
+// Save to localStorage (excludes File objects - cannot be serialized)
 const autoSave = useCallback(() => {
   if (!isDirty) return;
   const dataToSave = { formData, occupants, verificationStatus };
@@ -529,7 +532,7 @@ const { data: userData, error } = await supabase
 | Form Field | User Table Field |
 |------------|------------------|
 | `fullName` | `Name - Full` or `Name - First` + `Name - Last` |
-| `email` | `email` |
+| `email` | `email` or `email as text` |
 | `phone` | `Phone Number (as text)` |
 | `dob` | `Date of Birth` (formatted to YYYY-MM-DD) |
 
@@ -553,6 +556,14 @@ setFormData(prev => ({
 ```javascript
 const validateField = useCallback((fieldName, value) => {
   const trimmedValue = typeof value === 'string' ? value.trim() : value;
+
+  // If empty and not required, skip validation
+  const isRequired = REQUIRED_FIELDS.includes(fieldName) ||
+    (CONDITIONAL_REQUIRED_FIELDS[formData.employmentStatus] || []).includes(fieldName);
+
+  if (!trimmedValue && !isRequired) {
+    return { isValid: true, error: null };
+  }
 
   switch (fieldName) {
     case 'email':
@@ -578,7 +589,7 @@ const validateField = useCallback((fieldName, value) => {
 }, [formData.employmentStatus]);
 ```
 
-### Input Class Helper
+### Input Class Helper (in component)
 ```javascript
 const getInputClassName = (fieldName) => {
   let className = 'form-input';
@@ -749,6 +760,11 @@ PROPOSAL_SUBMITTED_AWAITING_RENTAL_APP: {
   key: 'Proposal Submitted by guest - Awaiting Rental Application',
   actions: ['submit_rental_app', 'cancel_proposal', 'request_vm', 'send_message']
 }
+
+SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP: {
+  key: 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application',
+  actions: ['submit_rental_app', 'cancel_proposal', 'request_vm', 'send_message']
+}
 ```
 
 ### Action Button Mapping
@@ -761,17 +777,18 @@ PROPOSAL_SUBMITTED_AWAITING_RENTAL_APP: {
 ## ### KEY_IMPORTS ###
 
 ```javascript
-// Entry point
+// Entry point (rental-application.jsx)
+import { createRoot } from 'react-dom/client';
 import RentalApplicationPage from './islands/pages/RentalApplicationPage.jsx';
 import { checkAuthStatus } from './lib/auth.js';
 import './styles/components/rental-application.css';
 
-// Page component
+// Page component (RentalApplicationPage.jsx)
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { useRentalApplicationPageLogic } from './useRentalApplicationPageLogic.js';
 
-// Logic hook
+// Logic hook (useRentalApplicationPageLogic.js)
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { checkAuthStatus, getSessionId } from '../../lib/auth.js';
@@ -814,8 +831,8 @@ const submissionData = {
 ```
 
 ### Success Flow
-1. Validate all fields
-2. Submit to API (TODO: Edge Function)
+1. Validate all fields (`validateAllFields()`)
+2. Submit to API (TODO: Edge Function - currently simulated)
 3. Clear localStorage saved data
 4. Show success modal
 5. On modal close: navigate to `/guest-proposals`
@@ -823,6 +840,85 @@ const submissionData = {
 ### Error Handling
 ```javascript
 setSubmitError('Failed to submit application. Please try again.');
+// Or for validation errors:
+setSubmitError('Please fill in all required fields correctly.');
+```
+
+---
+
+## ### COMPONENT_PROPS ###
+
+### RentalApplicationPage Props
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `requireAuth` | boolean | `false` | Whether to show auth modal if not logged in |
+| `isAuthenticated` | boolean | `true` | Whether user is currently authenticated |
+
+### Entry Point Behavior
+```javascript
+// Entry point passes auth status to component
+createRoot(document.getElementById('rental-application-page')).render(
+  <RentalApplicationPage requireAuth={true} isAuthenticated={isLoggedIn} />
+);
+```
+
+---
+
+## ### HOOK_RETURN_VALUES ###
+
+The `useRentalApplicationPageLogic` hook returns:
+
+```javascript
+return {
+  // Form data
+  formData,
+  occupants,
+  verificationStatus,
+  verificationLoading,
+  uploadedFiles,
+
+  // Validation
+  fieldErrors,
+  fieldValid,
+
+  // Computed
+  progress,
+  canSubmit,
+  documentStatus,
+
+  // State
+  isDirty,
+  isSubmitting,
+  submitSuccess,
+  submitError,
+
+  // Constants
+  maxOccupants: MAX_OCCUPANTS,
+  relationshipOptions: RELATIONSHIP_OPTIONS,
+  employmentStatusOptions: EMPLOYMENT_STATUS_OPTIONS,
+
+  // Input handlers
+  handleInputChange,
+  handleInputBlur,
+  handleToggleChange,
+  handleRadioChange,
+
+  // Occupant handlers
+  addOccupant,
+  removeOccupant,
+  updateOccupant,
+
+  // File handlers
+  handleFileUpload,
+  handleFileRemove,
+
+  // Verification handlers
+  handleVerification,
+
+  // Form handlers
+  handleSubmit,
+  closeSuccessModal
+};
 ```
 
 ---
@@ -839,6 +935,7 @@ setSubmitError('Failed to submit application. Please try again.');
 | Validation not triggering | Check handleInputBlur is called onBlur |
 | Employment fields not showing | Check employmentStatus value |
 | Styling broken | Verify CSS import in entry point |
+| Files not persisting | Files cannot be saved to localStorage, only form data persists |
 
 ---
 
@@ -852,10 +949,13 @@ setSubmitError('Failed to submit application. Please try again.');
 | Routes Config | `app/src/routes.config.js` |
 | Navigation Utils | `app/src/lib/navigation.js` |
 | Proposal Statuses | `app/src/logic/constants/proposalStatuses.js` |
+| Proposal Stages | `app/src/logic/constants/proposalStages.js` |
+| Proposal Rules | `app/src/logic/rules/proposals/proposalRules.js` |
+| Navigation Workflow | `app/src/logic/workflows/proposals/navigationWorkflow.js` |
 | Guest Proposals Reference | `Documentation/Pages/GUEST_PROPOSALS_QUICK_REFERENCE.md` |
 
 ---
 
-**VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-04
-**STATUS**: Comprehensive - Initial documentation
+**VERSION**: 2.0
+**LAST_UPDATED**: 2025-12-11
+**STATUS**: Comprehensive - Updated to match current implementation
