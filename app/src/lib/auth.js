@@ -446,6 +446,15 @@ export async function loginUser(email, password) {
   console.log('🔐 Attempting login via Edge Function for:', email);
 
   try {
+    // CRITICAL: Sign out before login to clear any stale session
+    // The Supabase client automatically attaches Authorization headers to functions.invoke
+    // If the existing session has an expired token that needs refresh and refresh fails,
+    // the invoke call hangs indefinitely. Since auth-user has verify_jwt=false, we don't
+    // need any token, so clearing the session first ensures the call completes.
+    console.log('🔄 Clearing any existing session before login...');
+    await supabase.auth.signOut();
+    console.log('✅ Session cleared, proceeding with login');
+
     const { data, error } = await supabase.functions.invoke('auth-user', {
       body: {
         action: 'login',
@@ -674,6 +683,15 @@ export async function signupUser(email, password, retype, additionalData = null)
   }
 
   try {
+    // CRITICAL: Sign out before signup to clear any stale session
+    // The Supabase client automatically attaches Authorization headers to functions.invoke
+    // If the existing session has an expired token that needs refresh and refresh fails,
+    // the invoke call hangs indefinitely. Since auth-user has verify_jwt=false, we don't
+    // need any token, so clearing the session first ensures the call completes.
+    console.log('🔄 Clearing any existing session before signup...');
+    await supabase.auth.signOut();
+    console.log('✅ Session cleared, proceeding with signup');
+
     const { data, error } = await supabase.functions.invoke('auth-user', {
       body: {
         action: 'signup',
