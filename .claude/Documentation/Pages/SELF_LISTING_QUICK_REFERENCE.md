@@ -1,6 +1,6 @@
 # Self Listing Page - Quick Reference Guide
 
-**GENERATED**: 2025-12-04
+**GENERATED**: 2025-12-11
 **URL**: /self-listing
 **ENTRY_POINT**: `app/src/self-listing.jsx`
 **HTML_PAGE**: `app/public/self-listing.html`
@@ -29,23 +29,24 @@
 
 ### Purpose
 Multi-step wizard form enabling hosts to create new property listings. Implements a 7-section progressive form with:
-- Draft auto-saving to localStorage
+- Draft auto-saving to localStorage (debounced 1-second delay)
 - Section validation before proceeding
-- AI-powered description generation
-- Dynamic pricing calculations
-- Photo upload with drag-and-drop reordering
-- Final submission to Supabase + Bubble sync
+- AI-powered description generation via ai-gateway Edge Function
+- Dynamic pricing calculations with decay algorithm
+- Photo upload directly to Supabase Storage with drag-and-drop reordering
+- Final submission directly to Supabase `listing` table (Bubble sync disabled)
 
 ### Core Features
 | Feature | Description |
 |---------|-------------|
 | **7-Section Wizard** | Space Snapshot, Features, Lease Styles, Pricing, Rules, Photos, Review |
-| **Draft Persistence** | Auto-saves to localStorage with debounced updates |
-| **Google Maps Integration** | Address autocomplete with coordinate extraction |
+| **Draft Persistence** | Auto-saves to localStorage with 1-second debounce |
+| **Google Maps Integration** | Address autocomplete restricted to NYC + Hudson County NJ |
 | **AI Description Generation** | OpenAI-powered listing descriptions via ai-gateway |
-| **Dynamic Pricing Slider** | Shadow DOM slider for nightly pricing with decay calculation |
-| **Photo Management** | Upload, reorder (drag-and-drop), delete photos |
-| **Dual Database Submission** | Writes to Supabase listing_trial + syncs to Bubble |
+| **Nightly Price Slider** | Interactive slider with decay calculation for multi-night discounts |
+| **Photo Management** | Direct upload to Supabase Storage, drag-and-drop reordering |
+| **Auth-Aware Submission** | Shows SignUpLoginModal for unauthenticated users |
+| **Access Control** | Blocks guest users, allows hosts and logged-out users |
 
 ---
 
@@ -58,42 +59,54 @@ self-listing.jsx (entry point)
     |
     SelfListingPage.tsx (main orchestrator)
     |
-    +-- Header (sticky with Save Draft button)
+    +-- Header (shared, with re-render key for auth changes)
+    |
+    +-- Page Header (sticky with Save Draft button)
     |
     +-- Navigation Sidebar
-    |   +-- Progress Circle (circular SVG)
-    |   +-- Section Nav Items (clickable navigation)
+    |   +-- Progress Circle (circular SVG, 6 sections max)
+    |   +-- Section Nav Items (clickable, with lock/complete states)
     |
     +-- Main Content (active section)
-        |
-        +-- Section1SpaceSnapshot.tsx
-        |   +-- Google Maps Autocomplete
-        |
-        +-- Section2Features.tsx
-        |   +-- AI Description Generator (aiService.js)
-        |   +-- Neighborhood Template Loader
-        |
-        +-- Section3LeaseStyles.tsx
-        |   +-- HostScheduleSelector (for Nightly)
-        |   +-- Weekly Pattern Selector
-        |   +-- Monthly Agreement
-        |
-        +-- Section4Pricing.tsx
-        |   +-- NightlyPriceSlider (Shadow DOM)
-        |   +-- Weekly/Monthly Compensation
-        |
-        +-- Section5Rules.tsx
-        |   +-- Block Dates Calendar
-        |   +-- House Rules Checkboxes
-        |
-        +-- Section6Photos.tsx
-        |   +-- File Upload
-        |   +-- Drag-and-Drop Reordering
-        |
-        +-- Section7Review.tsx
-            +-- Collapsible Summary Cards
-            +-- Safety Features
-            +-- Submit Button
+    |   |
+    |   +-- Section1SpaceSnapshot.tsx
+    |   |   +-- Google Maps Autocomplete (NYC + Hudson County NJ)
+    |   |   +-- NYC/NJ ZIP code validation
+    |   |
+    |   +-- Section2Features.tsx
+    |   |   +-- Dynamic amenities from Supabase zat_features_amenity
+    |   |   +-- AI Description Generator (aiService.js)
+    |   |   +-- Neighborhood Template Loader
+    |   |
+    |   +-- Section3LeaseStyles.tsx
+    |   |   +-- HostScheduleSelector (for Nightly)
+    |   |   +-- Weekly Pattern Selector
+    |   |   +-- Monthly Subsidy Agreement
+    |   |
+    |   +-- Section4Pricing.tsx
+    |   |   +-- NightlyPriceSlider
+    |   |   +-- Weekly/Monthly Compensation inputs
+    |   |
+    |   +-- Section5Rules.tsx
+    |   |   +-- Block Dates Calendar (range + individual modes)
+    |   |   +-- House Rules Checkboxes
+    |   |   +-- Duration constraints (6-52 weeks)
+    |   |
+    |   +-- Section6Photos.tsx
+    |   |   +-- Direct upload to Supabase Storage
+    |   |   +-- Drag-and-Drop Reordering
+    |   |   +-- 5MB per photo limit
+    |   |
+    |   +-- Section7Review.tsx
+    |       +-- Collapsible Summary Cards
+    |       +-- Safety Features Selection
+    |       +-- Optional details (sqft, availability date)
+    |
+    +-- Footer (shared)
+    |
+    +-- SignUpLoginModal (for auth during submission)
+    |
+    +-- SuccessModal (loading + success states)
 ```
 
 ### Data Flow Architecture
@@ -105,22 +118,30 @@ User Input
 Section Component (onChange callback)
     |
     v
-SelfListingPage (state update)
+SelfListingPage (calls store update function)
     |
     v
-useListingStore (Zustand)  <--->  localStorage (listingLocalStore)
+listingLocalStore (singleton class)  <--->  localStorage ('selfListingDraft')
     |
     v
-prepareListingSubmission.ts (data transformation)
+useListingStore hook (React state sync)
     |
     v
-listingService.js (createListing)
+Submit: stageForSubmission() validates all fields
     |
-    +--> Supabase listing_trial (primary storage)
+    v
+listingService.createListing()
     |
-    +--> bubble-proxy Edge Function (sync to Bubble)
+    +-- Generate Bubble-compatible _id via RPC
     |
-    +--> Supabase listing table (keeps both in sync)
+    +-- Process photos (already in Supabase Storage)
+    |
+    +-- Insert directly into Supabase `listing` table
+    |
+    +-- Link listing to user's Listings array
+    |
+    v
+Success: Clear localStorage, show SuccessModal
 ```
 
 ---
@@ -130,33 +151,34 @@ listingService.js (createListing)
 ```
 app/src/islands/pages/SelfListingPage/
 |
-+-- SelfListingPage.tsx          # Main orchestrator component
++-- SelfListingPage.tsx          # Main orchestrator component (850 lines)
 +-- index.ts                     # Barrel exports
 |
 +-- components/
-|   +-- NightlyPriceSlider.tsx   # Shadow DOM pricing slider
+|   +-- NightlyPriceSlider.tsx   # Interactive pricing slider
 |   +-- CLAUDE.md
 |
 +-- sections/
-|   +-- Section1SpaceSnapshot.tsx  # Property basics, address
-|   +-- Section2Features.tsx       # Amenities, descriptions
-|   +-- Section3LeaseStyles.tsx    # Rental type selection
-|   +-- Section4Pricing.tsx        # Pricing configuration
-|   +-- Section5Rules.tsx          # Rules, blocked dates
-|   +-- Section6Photos.tsx         # Photo upload
-|   +-- Section7Review.tsx         # Review & submit
+|   +-- Section1SpaceSnapshot.tsx  # Property basics, address (693 lines)
+|   +-- Section2Features.tsx       # Amenities, descriptions (344 lines)
+|   +-- Section3LeaseStyles.tsx    # Rental type selection (301 lines)
+|   +-- Section4Pricing.tsx        # Pricing configuration (229 lines)
+|   +-- Section5Rules.tsx          # Rules, blocked dates (571 lines)
+|   +-- Section6Photos.tsx         # Photo upload (415 lines)
+|   +-- Section7Review.tsx         # Review & submit (370 lines)
 |
 +-- store/
-|   +-- useListingStore.ts         # Zustand store definition
-|   +-- listingLocalStore.ts       # localStorage persistence
-|   +-- prepareListingSubmission.ts # Data transformation
+|   +-- index.ts                   # Module exports
+|   +-- useListingStore.ts         # React hook for store access
+|   +-- listingLocalStore.ts       # Singleton store class with localStorage
+|   +-- prepareListingSubmission.ts # Data transformation for API
 |   +-- CLAUDE.md
 |
 +-- styles/
 |   +-- SelfListingPage.css        # All page styles
 |
 +-- types/
-|   +-- listing.types.ts           # TypeScript definitions
+|   +-- listing.types.ts           # TypeScript definitions + constants
 |   +-- CLAUDE.md
 |
 +-- utils/
@@ -168,74 +190,105 @@ app/src/islands/pages/SelfListingPage/
 Related Files:
 |
 +-- app/src/lib/
-|   +-- listingService.js          # Database operations
+|   +-- listingService.js          # Database operations (direct to listing table)
 |   +-- aiService.js               # AI description generation
 |   +-- supabase.js                # Supabase client
+|   +-- photoUpload.js             # Photo upload utilities
+|   +-- nycZipCodes.js             # NYC/NJ ZIP code validation
 |
 +-- app/src/islands/shared/
     +-- HostScheduleSelector/      # Night selection component
+    +-- SignUpLoginModal/          # Auth modal
+    +-- Header.jsx                 # Site header
+    +-- Footer.jsx                 # Site footer
+    +-- Toast/                     # Toast notifications
 ```
 
 ---
 
 ## State Management
 
-### Zustand Store: `useListingStore.ts`
+### Store Architecture: `listingLocalStore.ts`
+
+The store is a singleton class (not Zustand) with localStorage persistence:
 
 ```typescript
-interface ListingStore {
-  // Form data
-  formData: ListingFormData;
+class ListingLocalStore {
+  private state: StoreState;
+  private listeners: Set<(state: StoreState) => void>;
+  private autoSaveTimer: ReturnType<typeof setTimeout> | null;
+  private readonly AUTO_SAVE_DELAY = 1000; // 1 second debounce
+}
 
-  // Navigation
-  currentSection: number;
-  completedSections: number[];
-
-  // Submission state
-  isSubmitting: boolean;
-  submitError: string | null;
-
-  // Actions
-  setSpaceSnapshot: (data: SpaceSnapshot) => void;
-  setFeatures: (data: Features) => void;
-  setLeaseStyles: (data: LeaseStylesConfig) => void;
-  setPricing: (data: Pricing) => void;
-  setRules: (data: Rules) => void;
-  setPhotos: (data: Photos) => void;
-  setReviewData: (data: ReviewData) => void;
-
-  // Navigation actions
-  setCurrentSection: (section: number) => void;
-  markSectionComplete: (section: number) => void;
-  goToNextSection: () => void;
-  goToPrevSection: () => void;
-
-  // Persistence
-  saveDraft: () => void;
-  loadDraft: () => void;
-  clearDraft: () => void;
-
-  // Submission
-  submitListing: () => Promise<void>;
+interface StoreState {
+  data: ListingFormData;
+  lastSaved: Date | null;
+  isDirty: boolean;
+  stagingStatus: 'not_staged' | 'staged' | 'submitting' | 'submitted' | 'failed';
+  errors: string[];
 }
 ```
 
-### localStorage Persistence: `listingLocalStore.ts`
+### Storage Keys
 
 ```typescript
-const STORAGE_KEY = 'selfListingDraft';
+const STORAGE_KEYS = {
+  DRAFT: 'selfListingDraft',
+  STAGED: 'selfListingStagedForSubmission',
+  LAST_SAVED: 'selfListingLastSaved',
+  USER_ID: 'selfListingUserId',
+};
+```
 
-// Functions exported:
-export function saveDraftToLocal(formData: ListingFormData): void
-export function loadDraftFromLocal(): ListingFormData | null
-export function clearDraftFromLocal(): void
-export function hasDraft(): boolean
+### React Hook: `useListingStore.ts`
+
+```typescript
+interface UseListingStoreReturn {
+  // State
+  formData: ListingFormData;
+  lastSaved: Date | null;
+  isDirty: boolean;
+  stagingStatus: StoreState['stagingStatus'];
+  errors: string[];
+
+  // Update functions
+  updateFormData: (data: Partial<ListingFormData>) => void;
+  updateSpaceSnapshot: (data: ListingFormData['spaceSnapshot']) => void;
+  updateFeatures: (data: ListingFormData['features']) => void;
+  updateLeaseStyles: (data: ListingFormData['leaseStyles']) => void;
+  updatePricing: (data: ListingFormData['pricing']) => void;
+  updateRules: (data: ListingFormData['rules']) => void;
+  updatePhotos: (data: ListingFormData['photos']) => void;
+  updateReview: (data: ListingFormData['review']) => void;
+
+  // Navigation
+  setCurrentSection: (section: number) => void;
+  markSectionComplete: (section: number) => void;
+
+  // Persistence
+  saveDraft: () => boolean;
+  stageForSubmission: () => { success: boolean; errors: string[] };
+  getStagedData: () => ListingFormData | null;
+
+  // Submission status
+  markSubmitting: () => void;
+  markSubmitted: () => void;
+  markSubmissionFailed: (error: string) => void;
+  clearStagingError: () => void;
+
+  // Utilities
+  reset: () => void;
+  validate: () => string[];
+  getDebugSummary: () => object;
+}
 ```
 
 ### Form Data Structure: `ListingFormData`
 
 ```typescript
 interface ListingFormData {
+  id?: string;
+  userId?: string;
   spaceSnapshot: SpaceSnapshot;   // Section 1
   features: Features;             // Section 2
   leaseStyles: LeaseStylesConfig; // Section 3
@@ -243,6 +296,14 @@ interface ListingFormData {
   rules: Rules;                   // Section 5
   photos: Photos;                 // Section 6
   review: ReviewData;             // Section 7
+
+  // Status fields
+  currentSection: number;
+  completedSections: number[];
+  isDraft: boolean;
+  isSubmitted: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 ```
 
@@ -254,21 +315,31 @@ interface ListingFormData {
 
 **Purpose**: Collect basic property information and location
 
+**Props**:
+```typescript
+interface Section1Props {
+  data: SpaceSnapshot;
+  onChange: (data: SpaceSnapshot) => void;
+  onNext: () => void;
+  isLoadingInitialData?: boolean;
+}
+```
+
 **Fields**:
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `listingName` | string | Yes | Name for the listing |
+| `listingName` | string | Yes | Name for the listing (max 35 chars) |
 | `typeOfSpace` | enum | Yes | 'Private Room', 'Shared Room', 'Entire Place' |
 | `bedrooms` | number | Yes | Number of bedrooms (0 = Studio) |
-| `beds` | number | Yes | Number of beds |
+| `beds` | number | No | Number of beds (1-7) |
 | `bathrooms` | number | Yes | Number of bathrooms (supports .5) |
-| `typeOfKitchen` | enum | No | 'Full Kitchen', 'Kitchenette', 'No Kitchen', 'Shared Kitchen' |
-| `typeOfParking` | enum | No | 'Street Parking', 'Driveway', 'Garage', 'None' |
-| `address` | Address | Yes | Full address with coordinates |
+| `typeOfKitchen` | enum | Yes | Kitchen type options |
+| `typeOfParking` | enum | Yes | Parking type options |
+| `address` | AddressData | Yes | Full address with coordinates |
 
 **Address Sub-structure**:
 ```typescript
-interface Address {
+interface AddressData {
   fullAddress: string;
   number: string;
   street: string;
@@ -276,24 +347,34 @@ interface Address {
   state: string;
   zip: string;
   neighborhood: string;
-  latitude: number | null;
-  longitude: number | null;
+  latitude?: number;
+  longitude?: number;
   validated: boolean;
 }
 ```
 
 **Key Features**:
-- Google Maps Places Autocomplete integration
+- Google Maps Places Autocomplete with NYC + Hudson County NJ restriction
+- Uses `isValidServiceArea()` from `nycZipCodes.js` for validation
 - Auto-extracts: street number, street name, city, state, ZIP, coordinates
-- Address validation state tracking
-
-**Code Location**: `app/src/islands/pages/SelfListingPage/sections/Section1SpaceSnapshot.tsx`
+- Manual address entry fallback option
 
 ---
 
 ### Section 2: Features (`Section2Features.tsx`)
 
 **Purpose**: Collect amenities and property descriptions
+
+**Props**:
+```typescript
+interface Section2Props {
+  data: Features;
+  onChange: (data: Features) => void;
+  onNext: () => void;
+  onBack: () => void;
+  zipCode?: string;
+}
+```
 
 **Fields**:
 | Field | Type | Required | Description |
@@ -303,39 +384,33 @@ interface Address {
 | `descriptionOfLodging` | string | Yes | Main property description |
 | `neighborhoodDescription` | string | No | Neighborhood description |
 
-**Amenity Constants** (from `listing.types.ts`):
-```typescript
-const AMENITIES_INSIDE = [
-  'Air Conditioning', 'Heating', 'WiFi', 'TV', 'Washer', 'Dryer',
-  'Kitchen', 'Microwave', 'Refrigerator', 'Dishwasher', 'Oven',
-  'Coffee Maker', 'Iron', 'Hair Dryer', 'Desk', 'Closet',
-  'Private Bathroom', 'Balcony', 'Patio'
-];
-
-const AMENITIES_OUTSIDE = [
-  'Gym', 'Pool', 'Hot Tub', 'Doorman', 'Elevator', 'Laundry Room',
-  'Bike Storage', 'Parking', 'Rooftop', 'BBQ Area', 'Garden',
-  'Security System', 'Package Room', 'Concierge'
-];
-```
-
 **Key Features**:
-- "Load Common" buttons fetch pre-set amenities from Supabase
-- AI description generation via `loadTemplate()` function
+- Amenities fetched dynamically from Supabase `zat_features_amenity` table
+- "Load Common" buttons fetch pre-set amenities (`pre-set? = true`)
+- AI description generation via `generateListingDescription()` from `aiService.js`
 - Neighborhood template loader based on ZIP code
 
 **Services Used**:
-- `amenitiesService.ts` - `getCommonInUnitAmenities()`, `getCommonBuildingAmenities()`
-- `neighborhoodService.ts` - `getNeighborhoodByZipCode(zipCode)`
-- `aiService.js` - `generateListingDescription(listingData)`
-
-**Code Location**: `app/src/islands/pages/SelfListingPage/sections/Section2Features.tsx`
+- `getAllInUnitAmenities()` / `getAllBuildingAmenities()` - Full amenity lists
+- `getCommonInUnitAmenities()` / `getCommonBuildingAmenities()` - Pre-set amenities
+- `getNeighborhoodByZipCode(zipCode)` - Neighborhood lookup
+- `generateListingDescription(listingData)` - AI generation
 
 ---
 
 ### Section 3: Lease Styles (`Section3LeaseStyles.tsx`)
 
 **Purpose**: Configure rental frequency and availability
+
+**Props**:
+```typescript
+interface Section3Props {
+  data: LeaseStylesConfig;
+  onChange: (data: LeaseStylesConfig) => void;
+  onNext: () => void;
+  onBack: () => void;
+}
+```
 
 **Fields**:
 | Field | Type | Required | Description |
@@ -368,20 +443,26 @@ type WeeklyPattern =
 
 **Key Features**:
 - Visual rental type cards (Nightly, Weekly, Monthly)
-- HostScheduleSelector component for night selection
-- Auto-complete to 7 nights when 6 are selected
+- Uses `HostScheduleSelector` component for night selection
+- Converts between boolean-based nights and NightId[] array formats
 - Monthly subsidy agreement with inline explanation
-
-**Components Used**:
-- `HostScheduleSelector` from `app/src/islands/shared/HostScheduleSelector/`
-
-**Code Location**: `app/src/islands/pages/SelfListingPage/sections/Section3LeaseStyles.tsx`
 
 ---
 
 ### Section 4: Pricing (`Section4Pricing.tsx`)
 
 **Purpose**: Configure pricing based on rental type
+
+**Props**:
+```typescript
+interface Section4Props {
+  data: Pricing;
+  rentalType: RentalType;
+  onChange: (data: Pricing) => void;
+  onNext: () => void;
+  onBack: () => void;
+}
+```
 
 **Fields**:
 | Field | Type | Required | Description |
@@ -413,21 +494,26 @@ interface NightlyPricing {
 ```
 
 **Key Features**:
-- NightlyPriceSlider component (Shadow DOM for isolation)
-- Real-time price calculation with decay algorithm: `n[k] = n[k-1] * decay`
+- NightlyPriceSlider component with decay algorithm: `n[k] = n[k-1] * decay`
+- Default decay: 0.956 (about 4.4% discount per additional night)
 - Visual slider showing night 1 and night 5 prices
-- Price table showing all 7 nights with cumulative totals
-
-**Components Used**:
-- `NightlyPriceSlider` from `app/src/islands/pages/SelfListingPage/components/NightlyPriceSlider.tsx`
-
-**Code Location**: `app/src/islands/pages/SelfListingPage/sections/Section4Pricing.tsx`
 
 ---
 
 ### Section 5: Rules (`Section5Rules.tsx`)
 
 **Purpose**: Configure house rules, check-in/out times, and blocked dates
+
+**Props**:
+```typescript
+interface Section5Props {
+  data: Rules;
+  rentalType: RentalType;
+  onChange: (data: Rules) => void;
+  onNext: () => void;
+  onBack: () => void;
+}
+```
 
 **Fields**:
 | Field | Type | Required | Description |
@@ -442,29 +528,27 @@ interface NightlyPricing {
 | `houseRules` | string[] | No | Selected house rules |
 | `blockedDates` | Date[] | No | Dates when unavailable |
 
-**House Rules Constants**:
-```typescript
-const HOUSE_RULES = [
-  'No Parties', 'No Smoking Inside', 'No Smoking on Property',
-  'No Pets', 'Quiet Hours', 'No Overnight Guests',
-  'Wash Your Dishes', 'Lock Doors', 'Remove Shoes Indoors',
-  'Recycle', 'Conserve Water', 'No Cooking Strong-Smelling Foods'
-];
-```
-
 **Key Features**:
-- Interactive calendar for blocking dates
-- Range selection mode and individual date selection mode
+- Interactive calendar for blocking dates (range + individual selection modes)
 - "Load Common" button for popular house rules
+- Duration unit adapts based on rental type (weeks for Nightly/Weekly, months for Monthly)
 - Link to standard cancellation policy
-
-**Code Location**: `app/src/islands/pages/SelfListingPage/sections/Section5Rules.tsx`
 
 ---
 
 ### Section 6: Photos (`Section6Photos.tsx`)
 
 **Purpose**: Upload and manage property photos
+
+**Props**:
+```typescript
+interface Section6Props {
+  data: Photos;
+  onChange: (data: Photos) => void;
+  onNext: () => void;
+  onBack: () => void;
+}
+```
 
 **Fields**:
 | Field | Type | Required | Description |
@@ -475,22 +559,24 @@ const HOUSE_RULES = [
 **PhotoData Structure**:
 ```typescript
 interface PhotoData {
-  id: string;           // Unique identifier
-  url: string;          // Data URL (base64) or remote URL
-  file?: File;          // Original File object (for upload)
-  caption?: string;     // Optional caption
-  displayOrder: number; // Sort order (0 = cover photo)
+  id: string;
+  url: string;
+  file?: File;
+  caption?: string;
+  displayOrder: number;
+  storagePath?: string;   // Supabase storage path for deletion
+  isUploading?: boolean;  // Track upload state
+  uploadError?: string;   // Track upload errors
 }
 ```
 
 **Key Features**:
-- File input accepts images (JPG, PNG, HEIC)
+- Direct upload to Supabase Storage bucket `listing-photos`
+- Path format: `listings/{draftId}/{index}_{timestamp}.{ext}`
+- 5MB per photo limit
 - Drag-and-drop reordering
 - First photo automatically marked as cover
-- Progress indicator showing X of Y minimum
-- Mobile upload continuation option
-
-**Code Location**: `app/src/islands/pages/SelfListingPage/sections/Section6Photos.tsx`
+- Draft ID generated via `generate_bubble_id` RPC or local fallback
 
 ---
 
@@ -498,36 +584,49 @@ interface PhotoData {
 
 **Purpose**: Final review and submission
 
-**Fields** (ReviewData):
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `safetyFeatures` | string[] | No | Selected safety features |
-| `squareFootage` | number | No | Property size in sq ft |
-| `firstDayAvailable` | string | No | ISO date string |
-| `previousReviewsLink` | string | No | Link to external reviews |
-| `agreedToTerms` | boolean | No | Terms agreement |
-| `optionalNotes` | string | No | Additional notes |
+**Props**:
+```typescript
+interface Section7Props {
+  formData: ListingFormData;
+  reviewData: ReviewData;
+  onChange: (data: ReviewData) => void;
+  onSubmit: () => void;
+  onBack: () => void;
+  onNavigateToSection?: (sectionNum: number) => void;
+  isSubmitting: boolean;
+}
+```
 
-**Safety Features Constants**:
+**ReviewData Structure**:
+```typescript
+interface ReviewData {
+  optionalNotes?: string;
+  agreedToTerms: boolean;
+  safetyFeatures?: string[];
+  squareFootage?: number;
+  firstDayAvailable?: string;
+  previousReviewsLink?: string;
+}
+```
+
+**Safety Features (from listing.types.ts)**:
 ```typescript
 const SAFETY_FEATURES = [
-  'Smoke Detector', 'Carbon Monoxide Detector', 'Fire Extinguisher',
-  'First Aid Kit', 'Security Camera', 'Deadbolt Lock',
-  'Window Locks', 'Safe', 'Emergency Exit', 'Alarm System'
+  'Smoke Detector',
+  'Carbon Monoxide Detector',
+  'Fire Extinguisher',
+  'First Aid Kit',
+  'Fire Sprinklers',
+  'Lock on Bedroom Door'
 ];
 ```
 
 **Key Features**:
-- Collapsible summary cards for each section
-- "Edit Section" buttons navigate back to any section
-- Optional details section (safety, square footage, availability)
-- Fixed bottom navigation with pulsing submit button
-- Submission overlay with spinner
-
-**Services Used**:
-- `safetyService.ts` - `getCommonSafetyFeatures()`
-
-**Code Location**: `app/src/islands/pages/SelfListingPage/sections/Section7Review.tsx`
+- Collapsible summary cards for each section with "Edit Section" buttons
+- Optional details: safety features, square footage, availability date, review import link
+- "Load Common" button for safety features from Supabase
+- Fixed bottom navigation with Submit button
+- Terms agreement handled via SignUpLoginModal during submission
 
 ---
 
@@ -540,137 +639,93 @@ const SAFETY_FEATURES = [
 ```typescript
 // Rental Types
 type RentalType = 'Nightly' | 'Weekly' | 'Monthly';
-type WeeklyPattern = 'One week on, one week off' | 'Two weeks on, two weeks off' | 'One week on, three weeks off';
+type LeaseStyle = 'traditional' | 'flex' | 'subsidy';
 
 // Space Types
-type SpaceType = 'Private Room' | 'Shared Room' | 'Entire Place';
-type KitchenType = 'Full Kitchen' | 'Kitchenette' | 'No Kitchen' | 'Shared Kitchen';
-type ParkingType = 'Street Parking' | 'Driveway' | 'Garage' | 'None';
+type SpaceType = 'Private Room' | 'Entire Place' | 'Shared Room';
+
+// Kitchen Types
+type KitchenType = 'Full Kitchen' | 'Kitchenette' | 'No Kitchen' | 'Kitchen Not Accessible';
+
+// Parking Types
+type ParkingType =
+  | 'Street Parking'
+  | 'No Parking'
+  | 'Off-Street Parking'
+  | 'Attached Garage'
+  | 'Detached Garage'
+  | 'Nearby Parking Structure';
 
 // Policy Types
 type CancellationPolicy = 'Standard' | 'Additional Host Restrictions';
-type GenderPreference = 'No Preference' | 'Male' | 'Female' | 'Other/Non Defined';
+type GenderPreference = 'Male' | 'Female' | 'Other/Non Defined' | 'No Preference';
 
-// Night Selection
-interface AvailableNights {
-  sunday: boolean;
-  monday: boolean;
-  tuesday: boolean;
-  wednesday: boolean;
-  thursday: boolean;
-  friday: boolean;
-  saturday: boolean;
-}
+// Weekly Pattern Options
+type WeeklyPattern =
+  | 'One week on, one week off'
+  | 'Two weeks on, two weeks off'
+  | 'One week on, three weeks off';
+```
 
-// Address Structure
-interface Address {
-  fullAddress: string;
-  number: string;
-  street: string;
-  city: string;
-  state: string;
-  zip: string;
-  neighborhood: string;
-  latitude: number | null;
-  longitude: number | null;
-  validated: boolean;
-}
+### Constants (from listing.types.ts)
 
-// Section Data Types
-interface SpaceSnapshot {
-  listingName: string;
-  typeOfSpace: SpaceType;
-  bedrooms: number;
-  beds: number;
-  bathrooms: number;
-  typeOfKitchen: KitchenType;
-  typeOfParking: ParkingType;
-  address: Address;
-}
+```typescript
+// In-Unit Amenities (28 items)
+const AMENITIES_INSIDE = [
+  'Air Conditioned', 'Bedding', 'Closet', 'Coffee Maker', 'Dedicated Workspace',
+  'Dishwasher', 'Dryer', 'Fireplace', 'Hair Dryer', 'Hangers', 'Iron/Ironing Board',
+  'Locked Door', 'Patio/Backyard', 'TV', 'Washer', 'WiFi', 'Microwave', 'Refrigerator',
+  'Oven/Stove', 'Kitchen Utensils', 'Dishes & Silverware', 'Cooking Basics', 'Cable TV',
+  'Heating', 'Hot Water', 'Essentials', 'Private Entrance', 'Lockbox'
+];
 
-interface Features {
-  amenitiesInsideUnit: string[];
-  amenitiesOutsideUnit: string[];
-  descriptionOfLodging: string;
-  neighborhoodDescription: string;
-}
+// Building Amenities (24 items)
+const AMENITIES_OUTSIDE = [
+  'BBQ Grill', 'Bike Storage', 'Common Outdoor Space', 'Doorman', 'Elevator', 'Gym',
+  'Hot Tub', 'Pool (Indoor)', 'Pool (Outdoor)', 'Laundry Room', 'Wheelchair Accessible',
+  'Free Parking', 'Paid Parking', 'EV Charger', 'Security Cameras', 'Smoke Alarm',
+  'Carbon Monoxide Alarm', 'Fire Extinguisher', 'First Aid Kit', 'Pets Allowed',
+  'Pet Friendly Common Areas', '24-Hour Security', 'Concierge', 'Package Receiving'
+];
 
-interface LeaseStylesConfig {
-  rentalType: RentalType;
-  availableNights?: AvailableNights;
-  weeklyPattern?: WeeklyPattern;
-  subsidyAgreement?: boolean;
-}
+// House Rules (30 items)
+const HOUSE_RULES = [
+  'Clear Common Areas', 'Conserve Water', "Don't Move Furniture", 'Flush Toilet Paper ONLY',
+  'Lock Doors', 'Maximum Occupancy', 'No Access On Off Days', 'No Candles', 'No Drinking',
+  'No Drugs', 'No Entertaining', 'No Food in Bedroom', 'No Guests', 'No Overnight Guests',
+  'No Package Delivery', 'No Parties', 'No Pets', 'No Shoes Inside', 'No Smoking Inside',
+  'No Smoking Outside', 'Quiet Hours', 'Not Suitable for Children', 'Off Limit Areas',
+  'Recycle', 'Take Out Trash', 'Wash Your Dishes', 'Respect Neighbors', 'No Loud Music',
+  'Clean Up After Yourself', 'Turn Off Lights'
+];
+```
 
-interface NightlyPricing {
-  oneNightPrice: number;
-  decayPerNight: number;
-  fiveNightTotal: number;
-  calculatedRates: {
-    night1: number;
-    night2: number;
-    night3: number;
-    night4: number;
-    night5: number;
-    cumulativeNight2: number;
-    cumulativeNight3: number;
-    cumulativeNight4: number;
-    cumulativeNight5: number;
-  };
-}
+### Default Values
 
-interface Pricing {
-  nightlyPricing?: NightlyPricing;
-  weeklyCompensation?: number;
-  monthlyCompensation?: number;
-  damageDeposit: number;
-  maintenanceFee: number;
-}
-
-interface Rules {
-  cancellationPolicy: CancellationPolicy;
-  preferredGender: GenderPreference;
-  numberOfGuests: number;
-  checkInTime: string;
-  checkOutTime: string;
-  idealMinDuration: number;
-  idealMaxDuration: number;
-  houseRules: string[];
-  blockedDates: Date[];
-}
-
-interface PhotoData {
-  id: string;
-  url: string;
-  file?: File;
-  caption?: string;
-  displayOrder: number;
-}
-
-interface Photos {
-  photos: PhotoData[];
-  minRequired: number;
-}
-
-interface ReviewData {
-  safetyFeatures: string[];
-  squareFootage?: number;
-  firstDayAvailable?: string;
-  previousReviewsLink?: string;
-  agreedToTerms: boolean;
-  optionalNotes?: string;
-}
-
-// Complete Form Data
-interface ListingFormData {
-  spaceSnapshot: SpaceSnapshot;
-  features: Features;
-  leaseStyles: LeaseStylesConfig;
-  pricing: Pricing;
-  rules: Rules;
-  photos: Photos;
-  review: ReviewData;
-}
+```typescript
+const DEFAULT_LISTING_DATA: ListingFormData = {
+  spaceSnapshot: {
+    listingName: '',
+    typeOfSpace: '',
+    bedrooms: 2,
+    typeOfKitchen: '',
+    beds: 2,
+    typeOfParking: '',
+    bathrooms: 2.5,
+    address: { fullAddress: '', number: '', street: '', city: '', state: '', zip: '', neighborhood: '', validated: false }
+  },
+  features: { amenitiesInsideUnit: [], amenitiesOutsideUnit: [], descriptionOfLodging: '', neighborhoodDescription: '' },
+  leaseStyles: { rentalType: 'Monthly', subsidyAgreement: false },
+  pricing: { damageDeposit: 500, maintenanceFee: 0 },
+  rules: {
+    cancellationPolicy: '', preferredGender: 'No Preference', numberOfGuests: 2,
+    checkInTime: '2:00 PM', checkOutTime: '11:00 AM',
+    idealMinDuration: 6, idealMaxDuration: 52, houseRules: [], blockedDates: []
+  },
+  photos: { photos: [], minRequired: 3 },
+  review: { agreedToTerms: false, safetyFeatures: [], squareFootage: undefined, firstDayAvailable: '', previousReviewsLink: '' },
+  currentSection: 1, completedSections: [], isDraft: true, isSubmitted: false
+};
 ```
 
 ---
@@ -696,26 +751,26 @@ function extractListingDataFromDraft() {
 ### Listing Service (`app/src/lib/listingService.js`)
 
 ```javascript
-// Create new listing (Supabase + Bubble sync)
+// Create new listing directly in listing table
 async function createListing(formData) {
-  // 1. Insert into listing_trial (Supabase)
-  // 2. Sync to Bubble via bubble-proxy
-  // 3. Update listing_trial with Bubble _id
-  // 4. Sync to listing table
-  // Returns: created listing record
+  // 1. Generate Bubble-compatible _id via RPC (generate_bubble_id)
+  // 2. Process photos (already uploaded to Supabase Storage)
+  // 3. Insert directly into listing table
+  // 4. Link listing to user's Listings array
+  // Returns: created listing record with _id
 }
 
 // Update existing listing
-async function updateListing(id, formData)
+async function updateListing(listingId, formData)
 
-// Get listing by ID
-async function getListingTrialById(id)
+// Get listing by _id
+async function getListingById(listingId)
 
-// Save draft
+// Save draft (creates/updates listing with isDraft: true)
 async function saveDraft(formData, existingId = null)
 
 // Map form data to database columns
-function mapFormDataToDatabase(formData)
+function mapFormDataToListingTable(formData, userId, generatedId)
 
 // Map database record to form data
 function mapDatabaseToFormData(dbRecord)
@@ -724,18 +779,20 @@ function mapDatabaseToFormData(dbRecord)
 ### Amenities Service (`utils/amenitiesService.ts`)
 
 ```typescript
-// Get pre-set amenities by type
-async function getCommonAmenitiesByType(type: string): Promise<string[]>
+// Get ALL amenities by type (for checkbox lists)
+async function getAllAmenitiesByType(type: string): Promise<string[]>
   // Queries: zat_features_amenity table
+  // Filters: pending = false, 'Type - Amenity Categories' = type
+
+async function getAllInUnitAmenities(): Promise<string[]>
+async function getAllBuildingAmenities(): Promise<string[]>
+
+// Get common (pre-set) amenities
+async function getCommonAmenitiesByType(type: string): Promise<string[]>
   // Filters: 'pre-set?' = true, 'Type - Amenity Categories' = type
 
-// Get common in-unit amenities
 async function getCommonInUnitAmenities(): Promise<string[]>
-  // Returns amenities where type = 'In Unit'
-
-// Get common building amenities
 async function getCommonBuildingAmenities(): Promise<string[]>
-  // Returns amenities where type = 'In Building'
 ```
 
 ### Neighborhood Service (`utils/neighborhoodService.ts`)
@@ -745,10 +802,6 @@ async function getCommonBuildingAmenities(): Promise<string[]>
 async function getNeighborhoodByZipCode(zipCode: string): Promise<Neighborhood | null>
   // Uses RPC function: get_neighborhood_by_zip
   // Returns: { neighborhood_name, description, zips }
-
-// Extract ZIP from address string
-function extractZipCode(address: string): string
-  // Regex: /\b(\d{5})(-\d{4})?\b/
 ```
 
 ### Safety Service (`utils/safetyService.ts`)
@@ -758,6 +811,16 @@ function extractZipCode(address: string): string
 async function getCommonSafetyFeatures(): Promise<string[]>
   // Queries: zfut_safetyfeatures table
   // Filters: 'pre-set?' = true
+```
+
+### Photo Upload (`app/src/lib/photoUpload.js`)
+
+```javascript
+// Upload photos to Supabase Storage
+async function uploadPhotos(photos, listingId)
+
+// Delete single photo from storage
+async function deletePhoto(storagePath)
 ```
 
 ---
@@ -770,31 +833,40 @@ async function getCommonSafetyFeatures(): Promise<string[]>
 1. User clicks "Submit Listing" in Section 7
    |
    v
-2. Section7Review.tsx calls onSubmit()
+2. SelfListingPage.handleSubmit() checks auth status
    |
-   v
-3. SelfListingPage.tsx handleSubmit()
-   |
-   v
-4. prepareListingSubmission.ts transforms data
-   |
-   v
-5. listingService.js createListing()
-   |
-   +-- Insert into Supabase listing_trial
-   |
-   +-- Call bubble-proxy Edge Function
+   +-- Not logged in: Show SignUpLoginModal, set pendingSubmit
    |   |
-   |   +-- POST to Bubble API
-   |   |
-   |   +-- Return Bubble _id
+   |   v
+   |   User completes auth -> handleAuthSuccess() -> proceedWithSubmitAfterAuth()
    |
-   +-- Update listing_trial with Bubble _id
-   |
-   +-- Sync to Supabase listing table
+   +-- Logged in: proceedWithSubmit()
+       |
+       v
+3. stageForSubmission() validates all fields
    |
    v
-6. Redirect to success page or show error
+4. Show SuccessModal with loading state
+   |
+   v
+5. listingService.createListing(formData)
+   |
+   +-- Generate Bubble-compatible _id via RPC
+   |
+   +-- Process photos (already in storage)
+   |
+   +-- Insert into listing table
+   |
+   +-- Link to user's Listings array
+   |
+   v
+6. markSubmitted() clears localStorage
+   |
+   v
+7. Update SuccessModal with listing ID (transitions to success)
+   |
+   v
+8. User clicks "Go to Dashboard" or "Preview Listing"
 ```
 
 ### Day Indexing Convention
@@ -804,20 +876,20 @@ async function getCommonSafetyFeatures(): Promise<string[]>
 | System | Sun | Mon | Tue | Wed | Thu | Fri | Sat |
 |--------|-----|-----|-----|-----|-----|-----|-----|
 | **Internal (JS/React)** | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
-| **Bubble API** | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| **Database (Bubble-compatible)** | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
 
 **Conversion in listingService.js**:
 ```javascript
-// Internal -> Bubble (for database storage)
+// Internal boolean object -> Database 1-based array
 function mapAvailableNightsToArray(availableNights) {
   const dayMapping = {
     sunday: 1, monday: 2, tuesday: 3, wednesday: 4,
     thursday: 5, friday: 6, saturday: 7
   };
-  // Returns 1-based array for Bubble
+  // Returns sorted 1-based array for database
 }
 
-// Bubble -> Internal (for form loading)
+// Database 1-based array -> Internal boolean object
 function mapArrayToAvailableNights(daysArray) {
   const dayMapping = {
     1: 'sunday', 2: 'monday', 3: 'tuesday', 4: 'wednesday',
@@ -838,13 +910,15 @@ function mapArrayToAvailableNights(daysArray) {
 ### CSS Variables Used
 
 ```css
-/* Primary brand color */
---primary: #6b46c1;
---primary-hover: #553399;
-
-/* From global variables.css */
+/* Primary brand colors */
 --color-primary: #31135d;
 --color-primary-hover: #1f0b38;
+--color-secondary: #5B21B6;
+
+/* Success modal colors */
+#10B981 /* Green success icon */
+#5B21B6 /* Purple buttons */
+#4C1D95 /* Purple button hover */
 ```
 
 ### Key CSS Classes
@@ -854,11 +928,11 @@ function mapArrayToAvailableNights(daysArray) {
 | `.self-listing-page` | Root container |
 | `.listing-header` | Sticky header with Save Draft |
 | `.navigation-sidebar` | Left sidebar with progress |
-| `.progress-circle` | Circular progress indicator |
+| `.progress-circle` | Circular SVG progress indicator |
 | `.nav-item` | Section navigation button |
 | `.nav-item.active` | Currently active section |
-| `.nav-item.completed` | Completed section |
-| `.nav-item.locked` | Locked section |
+| `.nav-item.completed` | Completed section (green check) |
+| `.nav-item.locked` | Locked section (lock icon) |
 | `.main-content` | Main content area |
 | `.section-container` | Section wrapper |
 | `.section-title` | Section heading |
@@ -879,9 +953,10 @@ function mapArrayToAvailableNights(daysArray) {
 | `.review-fixed-navigation` | Fixed bottom nav |
 | `.block-dates-layout` | Side-by-side calendar layout |
 | `.date-picker-container` | Calendar modal/inline |
-| `.calendar-day` | Calendar day cell |
 | `.calendar-day.in-range` | Selected date |
 | `.calendar-day.blocked` | Already blocked |
+| `.optional-details-section` | Optional fields section in review |
+| `.optional-fields-grid` | Two-column optional fields layout |
 
 ### Responsive Breakpoints
 
@@ -894,7 +969,7 @@ function mapArrayToAvailableNights(daysArray) {
   .listing-container { grid-template-columns: 1fr; }
   .navigation-sidebar { position: static; }
   .block-dates-layout { grid-template-columns: 1fr; }
-  /* Calendar becomes popup modal */
+  /* Calendar becomes popup modal on mobile */
 }
 
 @media (max-width: 768px) {
@@ -912,30 +987,45 @@ function mapArrayToAvailableNights(daysArray) {
 
 | Table | Purpose |
 |-------|---------|
-| `listing_trial` | Primary storage for self-listing submissions |
-| `listing` | Main listing table (synced after Bubble) |
+| `listing` | Primary storage for listings (direct insert, no Bubble sync) |
+| `user` | User records (Listings array updated) |
 | `zat_features_amenity` | Amenity lookup table |
 | `zat_geo_hood_mediumlevel` | Neighborhood data |
 | `zfut_safetyfeatures` | Safety features lookup |
 
+### Supabase Storage
+
+| Bucket | Purpose |
+|--------|---------|
+| `listing-photos` | Photo storage for listings |
+
 ### Edge Functions Called
 
-| Function | Action | Purpose |
-|----------|--------|---------|
-| `bubble-proxy` | `sync_listing_to_bubble` | Create listing in Bubble |
-| `ai-gateway` | `complete` | Generate AI description |
+| Function | Purpose |
+|----------|---------|
+| `ai-gateway` | Generate AI description via OpenAI |
 
-### Database Column Mapping
+### RPC Functions Used
 
-Key column names in `listing_trial` / `listing`:
+| Function | Purpose |
+|----------|---------|
+| `generate_bubble_id` | Generate Bubble-compatible unique IDs |
+| `get_neighborhood_by_zip` | Lookup neighborhood by ZIP code |
+
+### Database Column Mapping (listing table)
+
+Key column names in `listing` table:
 
 ```javascript
 {
   // Identity
-  '_id': 'Bubble unique ID',
-  'id': 'Supabase UUID',
+  '_id': 'Bubble-compatible unique ID (generated via RPC)',
 
-  // Space
+  // User/Host reference
+  'Created By': 'userId',
+  'Host / Landlord': 'userId',
+
+  // Section 1: Space Snapshot
   'Name': 'listingName',
   'Features - Type of Space': 'typeOfSpace',
   'Features - Qty Bedrooms': 'bedrooms',
@@ -944,52 +1034,56 @@ Key column names in `listing_trial` / `listing`:
   'Kitchen Type': 'typeOfKitchen',
   'Features - Parking type': 'typeOfParking',
 
-  // Location
-  'Location - Address': 'address (JSONB)',
+  // Location (stored as JSONB with validated flag)
+  'Location - Address': '{ address, number, street, lat, lng, validated }',
   'Location - City': 'city',
   'Location - State': 'state',
   'Location - Zip Code': 'zip',
-  'Location - Coordinates': '{ lat, lng }',
   'neighborhood (manual input by user)': 'neighborhood',
 
-  // Features
+  // Section 2: Features
   'Features - Amenities In-Unit': '[]',
   'Features - Amenities In-Building': '[]',
   'Description': 'descriptionOfLodging',
   'Description - Neighborhood': 'neighborhoodDescription',
 
-  // Lease Style
+  // Section 3: Lease Style
   'rental type': 'Nightly | Weekly | Monthly',
-  'Days Available (List of Days)': '[1-7] array',
+  'Days Available (List of Days)': '[1-7] array (1-based)',
+  'Nights Available (List of Nights) ': '["Monday", "Tuesday", ...] array',
+  'Weeks offered': 'weeklyPattern',
 
-  // Pricing
-  '=°Damage Deposit': 'number',
-  '=°Cleaning Cost / Maintenance Fee': 'number',
-  '=°Weekly Host Rate': 'number',
-  '=°Monthly Host Rate': 'number',
-  '=°Nightly Host Rate for X nights': 'calculated rates',
+  // Section 4: Pricing
+  'ðŸ’°Damage Deposit': 'number',
+  'ðŸ’°Cleaning Cost / Maintenance Fee': 'number',
+  'ðŸ’°Weekly Host Rate': 'number',
+  'ðŸ’°Monthly Host Rate': 'number',
+  'ðŸ’°Nightly Host Rate for X nights': 'calculated rates (2-7 nights)',
 
-  // Rules
+  // Section 5: Rules
   'Cancellation Policy': 'string',
   'Preferred Gender': 'string',
   'Features - Qty Guests': 'number',
   'NEW Date Check-in Time': 'string',
   'NEW Date Check-out Time': 'string',
+  'Minimum Months': 'idealMinDuration',
+  'Maximum Months': 'idealMaxDuration',
   'Features - House Rules': '[]',
   'Dates - Blocked': '[]',
 
-  // Photos
-  'Features - Photos': '[{ id, url, caption, displayOrder }]',
+  // Section 6: Photos
+  'Features - Photos': '[{ id, url, Photo, Photo (thumbnail), caption, displayOrder, SortOrder, toggleMainPhoto, storagePath }]',
 
-  // Review
+  // Section 7: Review
   'Features - Safety': '[]',
   'Features - SQFT Area': 'number',
-  ' First Available': 'date string',
+  ' First Available': 'date string (note leading space)',
+  'Source Link': 'previousReviewsLink',
 
   // Status
-  'Active': 'boolean (false for new)',
-  'Approved': 'boolean (false for new)',
-  'Complete': 'boolean'
+  'Active': 'false (pending review)',
+  'Approved': 'false (pending review)',
+  'Complete': 'isSubmitted'
 }
 ```
 
@@ -1002,12 +1096,10 @@ Key column names in `listing_trial` / `listing`:
 Each section implements its own validation:
 
 ```typescript
-// Section template
 const validateForm = (): string[] => {
   const newErrors: Record<string, string> = {};
   const errorOrder: string[] = [];
 
-  // Validate fields
   if (!data.requiredField) {
     newErrors.requiredField = 'Field is required';
     errorOrder.push('requiredField');
@@ -1051,7 +1143,6 @@ const loadCommonItems = async () => {
   try {
     const items = await getCommonItemsFromSupabase();
     if (items.length > 0) {
-      // Merge with existing, deduplicate
       handleChange('field', [...new Set([...data.field, ...items])]);
     } else {
       alert('No common items found.');
@@ -1066,15 +1157,17 @@ const loadCommonItems = async () => {
 
 ### 4. Draft Auto-Save Pattern
 
+In `listingLocalStore.ts`:
+
 ```typescript
-// In useListingStore.ts
-useEffect(() => {
-  // Debounced auto-save on any form change
-  const timer = setTimeout(() => {
-    saveDraftToLocal(formData);
-  }, 1000);
-  return () => clearTimeout(timer);
-}, [formData]);
+private scheduleAutoSave(): void {
+  if (this.autoSaveTimer) {
+    clearTimeout(this.autoSaveTimer);
+  }
+  this.autoSaveTimer = setTimeout(() => {
+    this.saveDraft();
+  }, this.AUTO_SAVE_DELAY); // 1000ms
+}
 ```
 
 ### 5. Section Component Props Pattern
@@ -1090,8 +1183,38 @@ interface SectionProps<T> {
   // Optional additional props
   rentalType?: RentalType;
   zipCode?: string;
-  formData?: ListingFormData;
+  isLoadingInitialData?: boolean;
 }
+```
+
+### 6. Auth-Aware Submission Pattern
+
+```typescript
+const handleSubmit = async () => {
+  const loggedIn = await checkAuthStatus();
+
+  if (!loggedIn) {
+    setPendingSubmit(true);
+    setShowAuthModal(true);
+    return;
+  }
+
+  proceedWithSubmit();
+};
+
+const handleAuthSuccess = (result) => {
+  setShowAuthModal(false);
+  // Set agreedToTerms since user agreed during signup
+  updateReview({ ...formData.review, agreedToTerms: true });
+  // Force Header re-render
+  setHeaderKey(prev => prev + 1);
+
+  if (pendingSubmit) {
+    setPendingSubmit(false);
+    setShowSuccessModal(true);
+    setTimeout(() => proceedWithSubmitAfterAuth(), 300);
+  }
+};
 ```
 
 ---
@@ -1103,31 +1226,34 @@ interface SectionProps<T> {
 1. **Update types** in `listing.types.ts`
 2. **Add field** to section component JSX
 3. **Add validation** if required
-4. **Update store** initial state
-5. **Update mapping** in `listingService.js` for database storage
+4. **Update DEFAULT_LISTING_DATA** in `listing.types.ts`
+5. **Update mapping** in `listingService.js` (`mapFormDataToListingTable`)
 
 ### Adding a New Amenity/House Rule
 
-1. Edit constants in `listing.types.ts`:
+Amenities are now fetched from Supabase `zat_features_amenity` table. To add:
+1. Add record to `zat_features_amenity` table in Supabase
+2. Set `pending = false` and appropriate `Type - Amenity Categories`
+3. Set `pre-set? = true` if it should appear in "Load Common"
+
+House rules are defined in `listing.types.ts`:
 ```typescript
-const AMENITIES_INSIDE = [
+const HOUSE_RULES = [
   // ... existing
-  'New Amenity',
+  'New Rule',
 ];
 ```
 
 ### Modifying Pricing Slider
 
-The `NightlyPriceSlider` uses Shadow DOM for style isolation. Key parameters:
-- `initialP1`: Starting 1-night price
-- `initialDecay`: Decay factor (0.7-1.0)
-- `onPricesChange`: Callback with calculated prices
-
-Location: `app/src/islands/pages/SelfListingPage/components/NightlyPriceSlider.tsx`
+The `NightlyPriceSlider` is in `components/NightlyPriceSlider.tsx`. Key parameters:
+- `initialP1`: Starting 1-night price (default 99)
+- `initialDecay`: Decay factor (default 0.956)
+- `onPricesChange`: Callback with calculated prices object
 
 ### Changing Minimum Photo Requirement
 
-In `SelfListingPage.tsx` initial state:
+In `listing.types.ts` DEFAULT_LISTING_DATA:
 ```typescript
 photos: {
   photos: [],
@@ -1140,9 +1266,9 @@ photos: {
 1. Create `Section8NewSection.tsx` in `sections/`
 2. Add type definition in `listing.types.ts`
 3. Update `ListingFormData` interface
-4. Add section to store initial state
-5. Add navigation item in `SelfListingPage.tsx`
-6. Update section count and progress calculation
+4. Update `DEFAULT_LISTING_DATA`
+5. Add section to `sections` array in `SelfListingPage.tsx`
+6. Update progress calculation (currently hardcoded to 6 sections)
 
 ---
 
@@ -1150,33 +1276,46 @@ photos: {
 
 ### Common Issues
 
-1. **Address not validating**: Check Google Maps API key in `.env`
-2. **AI description failing**: Check ai-gateway Edge Function logs
-3. **Photos not uploading**: Check file size limits, valid image types
-4. **Submission failing**: Check Supabase and Bubble API credentials
+1. **Address not validating**: Check Google Maps API key, verify ZIP is in NYC/Hudson County NJ
+2. **AI description failing**: Check ai-gateway Edge Function logs in Supabase
+3. **Photos not uploading**: Check file size (5MB limit), verify Supabase Storage bucket exists
+4. **Submission failing**: Check user auth status, verify generate_bubble_id RPC exists
 5. **Draft not loading**: Clear localStorage `selfListingDraft` key
 
 ### Console Logging
 
 Key log prefixes to search for:
 - `[ListingService]` - Database operations
-- `[aiService]` - AI generation
 - `[Section2Features]` - Features section
-- `Supabase response` - Direct Supabase queries
+- `ðŸ“‚ ListingLocalStore` - Store operations
+- `ðŸ“¦ ListingLocalStore` - Staging operations
+- `ðŸ’¾ ListingLocalStore` - Save operations
+- `[SelfListingPage]` - Main component
 
 ### LocalStorage Keys
 
 - `selfListingDraft` - Complete form draft data
+- `selfListingStagedForSubmission` - Staged data awaiting submission
+- `selfListingLastSaved` - Last save timestamp
+- `selfListingDraftId` - Draft ID for photo uploads
+- `pendingListingName` - Temp key from CreateDuplicateListingModal
+
+### Debug Summary
+
+```typescript
+const { getDebugSummary } = useListingStore();
+console.log(getDebugSummary());
+// Returns: { hasData, listingName, completedSections, currentSection, photosCount, stagingStatus, lastSaved, isDirty, errorsCount }
+```
 
 ---
 
 ## Related Documentation
 
-- [App CLAUDE.md](../../app/CLAUDE.md) - Frontend architecture overview
-- [Logic CLAUDE.md](../../app/src/logic/CLAUDE.md) - Four-layer logic system
-- [Supabase CLAUDE.md](../../supabase/CLAUDE.md) - Edge Functions documentation
-- [DATABASE_SCHEMA_OVERVIEW.md](../../DATABASE_SCHEMA_OVERVIEW.md) - Table schemas
-- [HostScheduleSelector](../../app/src/islands/shared/HostScheduleSelector/) - Night selector component
+- [App CLAUDE.md](../../../../app/CLAUDE.md) - Frontend architecture overview
+- [Supabase CLAUDE.md](../../../../supabase/CLAUDE.md) - Edge Functions documentation
+- [DATABASE_SCHEMA_OVERVIEW.md](../../../../DATABASE_SCHEMA_OVERVIEW.md) - Table schemas
+- [HostScheduleSelector](../../shared/HostScheduleSelector/) - Night selector component
 
 ---
 
@@ -1186,16 +1325,18 @@ Key log prefixes to search for:
 |----------|------|
 | Main Component | `app/src/islands/pages/SelfListingPage/SelfListingPage.tsx` |
 | Type Definitions | `app/src/islands/pages/SelfListingPage/types/listing.types.ts` |
-| Zustand Store | `app/src/islands/pages/SelfListingPage/store/useListingStore.ts` |
-| localStorage Helper | `app/src/islands/pages/SelfListingPage/store/listingLocalStore.ts` |
+| Store Hook | `app/src/islands/pages/SelfListingPage/store/useListingStore.ts` |
+| Store Class | `app/src/islands/pages/SelfListingPage/store/listingLocalStore.ts` |
 | Database Service | `app/src/lib/listingService.js` |
 | AI Service | `app/src/lib/aiService.js` |
+| Photo Upload | `app/src/lib/photoUpload.js` |
+| NYC ZIP Validation | `app/src/lib/nycZipCodes.js` |
 | CSS Styles | `app/src/islands/pages/SelfListingPage/styles/SelfListingPage.css` |
 | Entry Point | `app/src/self-listing.jsx` |
 | HTML Page | `app/public/self-listing.html` |
 
 ---
 
-**DOCUMENT_VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-04
-**STATUS**: Complete Quick Reference Guide
+**DOCUMENT_VERSION**: 2.0
+**LAST_UPDATED**: 2025-12-11
+**STATUS**: Complete Quick Reference Guide - Updated to reflect current implementation
