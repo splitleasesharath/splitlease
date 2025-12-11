@@ -1,7 +1,7 @@
 # AI Signup Async Migration
 
 **Date**: 2025-12-10
-**Status**: Implemented, pending deployment
+**Status**: DEPLOYED via Supabase MCP
 **Purpose**: Migrate AI-powered profile parsing from blocking sync to async queue pattern
 
 ---

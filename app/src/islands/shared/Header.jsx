@@ -114,6 +114,37 @@ export default function Header({ autoShowLogin = false }) {
     checkSupabaseAndValidate();
   }, [autoShowLogin]);
 
+  // Listen for Supabase auth state changes (e.g., signup from another component like ViewSplitLeasePage)
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('[Header] Auth state changed:', event);
+
+      if (event === 'SIGNED_IN' && session) {
+        // User signed in - fetch and update user data
+        console.log('[Header] User signed in, updating UI...');
+        try {
+          const userData = await validateTokenAndFetchUser();
+          if (userData) {
+            setCurrentUser(userData);
+            setUserType(getStoredUserType());
+            console.log('[Header] UI updated for:', userData.firstName);
+          }
+        } catch (error) {
+          console.error('[Header] Error updating user data after sign in:', error);
+        }
+      } else if (event === 'SIGNED_OUT') {
+        // User signed out - clear state
+        console.log('[Header] User signed out, clearing UI...');
+        setCurrentUser(null);
+        setUserType(null);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
   // Monitor user type from localStorage for conditional header visibility
   useEffect(() => {
     // Function to read user type from localStorage using secureStorage module
