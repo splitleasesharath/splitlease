@@ -37,134 +37,363 @@ Split Lease/
 ├── app/                                    # React frontend application
 │   ├── public/                             # Static assets & HTML entry points
 │   │   ├── index.html                      # Homepage
+│   │   ├── index-dev.html                  # Development homepage
 │   │   ├── search.html                     # Search listings
+│   │   ├── search-test.html                # Search test page
 │   │   ├── view-split-lease.html           # Listing detail (dynamic: /view-split-lease/:id)
+│   │   ├── preview-split-lease.html        # Listing preview
 │   │   ├── guest-proposals.html            # Guest proposal dashboard
 │   │   ├── host-proposals.html             # Host proposal dashboard
 │   │   ├── self-listing.html               # Host listing creation wizard
+│   │   ├── self-listing-v2.html            # Host listing creation wizard v2
 │   │   ├── listing-dashboard.html          # Host listing management
+│   │   ├── host-overview.html              # Host overview dashboard
 │   │   ├── account-profile.html            # User profile
+│   │   ├── favorite-listings.html          # User favorite listings
+│   │   ├── rental-application.html         # Rental application form
+│   │   ├── reset-password.html             # Password reset page
+│   │   ├── faq.html                        # FAQ page
+│   │   ├── help-center.html                # Help center
+│   │   ├── help-center-category.html       # Help center category
+│   │   ├── policies.html                   # Legal policies
+│   │   ├── about-us.html                   # About us page
+│   │   ├── careers.html                    # Careers page
+│   │   ├── list-with-us.html               # Host signup landing
+│   │   ├── why-split-lease.html            # Marketing page
+│   │   ├── guest-success.html              # Guest success stories
+│   │   ├── host-success.html               # Host success stories
+│   │   ├── 404.html                        # Not found page
+│   │   ├── _internal-test.html             # Internal testing
+│   │   ├── logged-in-avatar-demo.html      # Avatar demo
+│   │   ├── listing-card-demo.html          # Card demo
+│   │   ├── listing-card-f.html             # Card variant
 │   │   ├── _redirects                      # Cloudflare routing (auto-generated)
 │   │   ├── _headers                        # Cloudflare security headers
 │   │   └── assets/                         # Images, fonts, Lottie animations
 │   │
 │   ├── src/
 │   │   ├── routes.config.js                # ⭐ ROUTE REGISTRY - Single source of truth
+│   │   │
+│   │   ├── # Entry Points (29 total)
 │   │   ├── main.jsx                        # Entry: HomePage
 │   │   ├── search.jsx                      # Entry: SearchPage
+│   │   ├── search-test.jsx                 # Entry: SearchPageTest
 │   │   ├── view-split-lease.jsx            # Entry: ViewSplitLeasePage
+│   │   ├── preview-split-lease.jsx         # Entry: PreviewSplitLeasePage
 │   │   ├── guest-proposals.jsx             # Entry: GuestProposalsPage
+│   │   ├── host-proposals.jsx              # Entry: HostProposalsPage
 │   │   ├── self-listing.jsx                # Entry: SelfListingPage
-│   │   ├── [17 more entry points...]
+│   │   ├── self-listing-v2.jsx             # Entry: SelfListingPageV2
+│   │   ├── listing-dashboard.jsx           # Entry: ListingDashboardPage
+│   │   ├── host-overview.jsx               # Entry: HostOverviewPage
+│   │   ├── account-profile.jsx             # Entry: AccountProfilePage
+│   │   ├── favorite-listings.jsx           # Entry: FavoriteListingsPage
+│   │   ├── rental-application.jsx          # Entry: RentalApplicationPage
+│   │   ├── reset-password.jsx              # Entry: ResetPasswordPage
+│   │   ├── faq.jsx                         # Entry: FAQPage
+│   │   ├── help-center.jsx                 # Entry: HelpCenterPage
+│   │   ├── help-center-category.jsx        # Entry: HelpCenterCategoryPage
+│   │   ├── policies.jsx                    # Entry: PoliciesPage
+│   │   ├── about-us.jsx                    # Entry: AboutUsPage
+│   │   ├── careers.jsx                     # Entry: CareersPage
+│   │   ├── list-with-us.jsx                # Entry: ListWithUsPage
+│   │   ├── why-split-lease.jsx             # Entry: WhySplitLeasePage
+│   │   ├── guest-success.jsx               # Entry: GuestSuccessPage
+│   │   ├── host-success.jsx                # Entry: HostSuccessPage
+│   │   ├── 404.jsx                         # Entry: NotFoundPage
+│   │   ├── _internal-test.jsx              # Entry: InternalTestPage
+│   │   ├── logged-in-avatar-demo.jsx       # Entry: LoggedInAvatarDemo
+│   │   └── listing-schedule-selector.jsx   # Entry: ListingScheduleSelector
 │   │   │
 │   │   ├── islands/                        # React components (Islands Architecture)
 │   │   │   ├── pages/                      # Page-level components
 │   │   │   │   ├── HomePage.jsx
 │   │   │   │   ├── SearchPage.jsx
+│   │   │   │   ├── SearchPageTest.jsx
 │   │   │   │   ├── ViewSplitLeasePage.jsx
+│   │   │   │   ├── ViewSplitLeasePage-old.jsx
+│   │   │   │   ├── PreviewSplitLeasePage.jsx
 │   │   │   │   ├── GuestProposalsPage.jsx
-│   │   │   │   ├── HostProposalsPage/      # Complex page with sub-components
+│   │   │   │   ├── FAQPage.jsx
+│   │   │   │   ├── PoliciesPage.jsx
+│   │   │   │   ├── CareersPage.jsx
+│   │   │   │   ├── ListWithUsPage.jsx
+│   │   │   │   ├── WhySplitLeasePage.jsx
+│   │   │   │   ├── GuestSuccessPage.jsx
+│   │   │   │   ├── HostSuccessPage.jsx
+│   │   │   │   ├── HelpCenterPage.jsx
+│   │   │   │   ├── HelpCenterCategoryPage.jsx
+│   │   │   │   ├── RentalApplicationPage.jsx
+│   │   │   │   ├── ResetPasswordPage.jsx
+│   │   │   │   ├── NotFoundPage.jsx
+│   │   │   │   ├── InternalTestPage.jsx
+│   │   │   │   ├── SelfListingPage.jsx
+│   │   │   │   ├── SelfListingPageV2.jsx
+│   │   │   │   │
+│   │   │   │   ├── # Page Logic Hooks
+│   │   │   │   ├── useSearchPageLogic.js
+│   │   │   │   ├── useViewSplitLeasePageLogic.js
+│   │   │   │   ├── useGuestProposalsPageLogic.js
+│   │   │   │   ├── useRentalApplicationPageLogic.js
+│   │   │   │   │
+│   │   │   │   ├── proposals/              # Shared proposal components
+│   │   │   │   │   ├── ProposalCard.jsx
+│   │   │   │   │   ├── ProposalSelector.jsx
+│   │   │   │   │   ├── ProgressTracker.jsx
+│   │   │   │   │   ├── VirtualMeetingsSection.jsx
+│   │   │   │   │   └── useGuestProposalsPageLogic.js
+│   │   │   │   │
+│   │   │   │   ├── HostProposalsPage/      # Host proposals with sub-components
 │   │   │   │   │   ├── index.jsx
+│   │   │   │   │   ├── HostProposalsPage.jsx
 │   │   │   │   │   ├── useHostProposalsPageLogic.js
 │   │   │   │   │   ├── ProposalCard.jsx
-│   │   │   │   │   └── ProposalDetailsModal.jsx
-│   │   │   │   ├── SelfListingPage/        # Multi-step wizard
-│   │   │   │   │   ├── sections/           # Form sections (7 steps)
+│   │   │   │   │   ├── ProposalDetailsModal.jsx
+│   │   │   │   │   ├── ProposalGrid.jsx
+│   │   │   │   │   ├── ListingSelector.jsx
+│   │   │   │   │   ├── DayIndicator.jsx
+│   │   │   │   │   ├── EmptyState.jsx
+│   │   │   │   │   ├── formatters.js
+│   │   │   │   │   └── types.js
+│   │   │   │   │
+│   │   │   │   ├── HostOverviewPage/       # Host overview dashboard
+│   │   │   │   │   ├── HostOverviewPage.jsx
+│   │   │   │   │   ├── useHostOverviewPageLogic.js
+│   │   │   │   │   └── components/
+│   │   │   │   │       ├── index.js
+│   │   │   │   │       ├── HostOverviewButton.jsx
+│   │   │   │   │       ├── HostOverviewCards.jsx
+│   │   │   │   │       ├── HostOverviewModals.jsx
+│   │   │   │   │       └── HostOverviewToast.jsx
+│   │   │   │   │
+│   │   │   │   ├── ListingDashboardPage/   # Listing management
+│   │   │   │   │   ├── index.js
+│   │   │   │   │   ├── ListingDashboardPage.jsx
+│   │   │   │   │   ├── useListingDashboardPageLogic.js
 │   │   │   │   │   ├── components/
-│   │   │   │   │   ├── store/              # Form state management
-│   │   │   │   │   └── utils/
-│   │   │   │   ├── ListingDashboardPage/
-│   │   │   │   │   ├── components/         # Section components
+│   │   │   │   │   │   ├── index.js
+│   │   │   │   │   │   ├── ActionCard.jsx
+│   │   │   │   │   │   ├── ActionCardGrid.jsx
+│   │   │   │   │   │   ├── AlertBanner.jsx
+│   │   │   │   │   │   ├── AmenitiesSection.jsx
+│   │   │   │   │   │   ├── AvailabilitySection.jsx
+│   │   │   │   │   │   ├── CancellationPolicySection.jsx
+│   │   │   │   │   │   ├── DescriptionSection.jsx
+│   │   │   │   │   │   ├── DetailsSection.jsx
+│   │   │   │   │   │   ├── NavigationHeader.jsx
+│   │   │   │   │   │   ├── NightlyPricingLegend.jsx
+│   │   │   │   │   │   ├── PhotosSection.jsx
+│   │   │   │   │   │   ├── PricingSection.jsx
+│   │   │   │   │   │   ├── PricingEditSection.jsx
+│   │   │   │   │   │   ├── PropertyInfoSection.jsx
+│   │   │   │   │   │   ├── RulesSection.jsx
+│   │   │   │   │   │   └── SecondaryActions.jsx
 │   │   │   │   │   └── data/
-│   │   │   │   └── FavoriteListingsPage/
+│   │   │   │   │       └── mockListing.js
+│   │   │   │   │
+│   │   │   │   ├── FavoriteListingsPage/   # User favorites
+│   │   │   │   │   ├── index.js
+│   │   │   │   │   ├── FavoriteListingsPage.jsx
+│   │   │   │   │   ├── favoritesApi.js
+│   │   │   │   │   ├── formatters.js
+│   │   │   │   │   ├── types.js
+│   │   │   │   │   └── components/
+│   │   │   │   │       ├── EmptyState.jsx
+│   │   │   │   │       ├── FavoriteButton.jsx
+│   │   │   │   │       ├── ListingCard.jsx
+│   │   │   │   │       ├── MapView.jsx
+│   │   │   │   │       └── SplitScheduleSelector.jsx
+│   │   │   │   │
+│   │   │   │   └── AboutUsPage/
+│   │   │   │       └── AboutUsPage.jsx
 │   │   │   │
-│   │   │   ├── shared/                     # Reusable components
+│   │   │   ├── shared/                     # Reusable components (50+)
 │   │   │   │   ├── Header.jsx
 │   │   │   │   ├── Footer.jsx
-│   │   │   │   ├── Modal.jsx
 │   │   │   │   ├── Toast.jsx
+│   │   │   │   ├── Button.jsx
+│   │   │   │   ├── DayButton.jsx
+│   │   │   │   ├── PriceDisplay.jsx
+│   │   │   │   ├── ErrorOverlay.jsx
+│   │   │   │   ├── InformationalText.jsx
+│   │   │   │   ├── ExternalReviews.jsx
 │   │   │   │   ├── GoogleMap.jsx
-│   │   │   │   ├── ListingCard/
+│   │   │   │   ├── ContactHostMessaging.jsx
+│   │   │   │   ├── SignUpLoginModal.jsx
 │   │   │   │   ├── ListingScheduleSelector.jsx
+│   │   │   │   ├── ListingScheduleSelectorV2.jsx
 │   │   │   │   ├── SearchScheduleSelector.jsx
+│   │   │   │   ├── AuthAwareSearchScheduleSelector.jsx
 │   │   │   │   ├── CreateProposalFlowV2.jsx        # Multi-step proposal wizard
+│   │   │   │   │
 │   │   │   │   ├── CreateProposalFlowV2Components/
 │   │   │   │   │   ├── UserDetailsSection.jsx
 │   │   │   │   │   ├── DaysSelectionSection.jsx
 │   │   │   │   │   ├── MoveInSection.jsx
 │   │   │   │   │   └── ReviewSection.jsx
-│   │   │   │   ├── AiSignupMarketReport/           # AI-powered signup
+│   │   │   │   │
+│   │   │   │   ├── ListingCard/
+│   │   │   │   │   └── ListingCardForMap.jsx
+│   │   │   │   │
+│   │   │   │   ├── AiSignupMarketReport/
+│   │   │   │   │   ├── AiSignupMarketReport.jsx
+│   │   │   │   │   ├── Example.jsx
+│   │   │   │   │   └── TestPage.jsx
+│   │   │   │   │
+│   │   │   │   ├── AIImportAssistantModal/
+│   │   │   │   │   └── AIImportAssistantModal.jsx
+│   │   │   │   │
 │   │   │   │   ├── EditListingDetails/
+│   │   │   │   │   └── EditListingDetails.jsx
+│   │   │   │   │
 │   │   │   │   ├── FavoriteButton/
+│   │   │   │   │   └── FavoriteButton.jsx
+│   │   │   │   │
 │   │   │   │   ├── HostScheduleSelector/
+│   │   │   │   │   ├── HostScheduleSelector.jsx
+│   │   │   │   │   └── SimpleHostScheduleSelector.jsx
+│   │   │   │   │
+│   │   │   │   ├── HostEditingProposal/
+│   │   │   │   │   ├── HostEditingProposal.jsx
+│   │   │   │   │   ├── FormInputs.jsx
+│   │   │   │   │   ├── ScheduleSelector.jsx
+│   │   │   │   │   └── ReservationPriceBreakdown.jsx
+│   │   │   │   │
+│   │   │   │   ├── ImportListingModal/
+│   │   │   │   │   └── ImportListingModal.jsx
+│   │   │   │   │
+│   │   │   │   ├── ImportListingReviewsModal/
+│   │   │   │   │   └── ImportListingReviewsModal.jsx
+│   │   │   │   │
+│   │   │   │   ├── CreateDuplicateListingModal/
+│   │   │   │   │   └── CreateDuplicateListingModal.jsx
+│   │   │   │   │
 │   │   │   │   ├── LoggedInAvatar/
+│   │   │   │   │   └── LoggedInAvatar.jsx
+│   │   │   │   │
+│   │   │   │   ├── ScheduleCohost/
+│   │   │   │   │   └── ScheduleCohost.jsx
+│   │   │   │   │
+│   │   │   │   ├── SubmitListingPhotos/
+│   │   │   │   │   ├── SubmitListingPhotos.jsx
+│   │   │   │   │   └── DeletePhotoModal.jsx
+│   │   │   │   │
 │   │   │   │   └── VirtualMeetingManager/
+│   │   │   │       ├── VirtualMeetingManager.jsx
+│   │   │   │       ├── BookVirtualMeeting.jsx
+│   │   │   │       ├── BookTimeSlot.jsx
+│   │   │   │       ├── CancelVirtualMeetings.jsx
+│   │   │   │       ├── DetailsOfProposalAndVM.jsx
+│   │   │   │       └── RespondToVMRequest.jsx
 │   │   │   │
-│   │   │   └── modals/                     # Modal components
+│   │   │   └── modals/                     # Modal components (13 total)
 │   │   │       ├── CancelProposalModal.jsx
+│   │   │       ├── CompareTermsModal.jsx
 │   │   │       ├── EditProposalModal.jsx
+│   │   │       ├── EditPhoneNumberModal.jsx
+│   │   │       ├── GuestEditingProposalModal.jsx
 │   │   │       ├── HostProfileModal.jsx
 │   │   │       ├── MapModal.jsx
+│   │   │       ├── NotificationSettingsModal.jsx
 │   │   │       ├── ProposalDetailsModal.jsx
+│   │   │       ├── ProposalSuccessModal.jsx
 │   │   │       └── VirtualMeetingModal.jsx
 │   │   │
 │   │   ├── logic/                          # ⭐ FOUR-LAYER BUSINESS LOGIC
+│   │   │   ├── index.js                    # Main export barrel
+│   │   │   │
+│   │   │   ├── constants/                  # Business constants
+│   │   │   │   ├── proposalStages.js
+│   │   │   │   └── proposalStatuses.js
+│   │   │   │
 │   │   │   ├── calculators/                # Pure math functions
+│   │   │   │   ├── index.js
 │   │   │   │   ├── pricing/
 │   │   │   │   │   ├── calculateFourWeekRent.js
+│   │   │   │   │   ├── calculateGuestFacingPrice.js
 │   │   │   │   │   ├── calculatePricingBreakdown.js
 │   │   │   │   │   ├── calculateReservationTotal.js
 │   │   │   │   │   └── getNightlyRateByFrequency.js
 │   │   │   │   └── scheduling/
 │   │   │   │       ├── calculateCheckInOutDays.js
-│   │   │   │       ├── calculateNightsFromDays.js
-│   │   │   │       └── calculateNextAvailableCheckIn.js
+│   │   │   │       ├── calculateNextAvailableCheckIn.js
+│   │   │   │       └── calculateNightsFromDays.js
 │   │   │   │
 │   │   │   ├── rules/                      # Boolean predicates
+│   │   │   │   ├── index.js
 │   │   │   │   ├── auth/
 │   │   │   │   │   ├── isProtectedPage.js
 │   │   │   │   │   └── isSessionValid.js
+│   │   │   │   ├── pricing/
+│   │   │   │   │   └── isValidDayCountForPricing.js
 │   │   │   │   ├── proposals/
+│   │   │   │   │   ├── canAcceptProposal.js
 │   │   │   │   │   ├── canCancelProposal.js
 │   │   │   │   │   ├── canEditProposal.js
-│   │   │   │   │   ├── canAcceptProposal.js
-│   │   │   │   │   └── proposalRules.js
+│   │   │   │   │   ├── determineProposalStage.js
+│   │   │   │   │   ├── proposalRules.js
+│   │   │   │   │   ├── useProposalButtonStates.js
+│   │   │   │   │   └── virtualMeetingRules.js
 │   │   │   │   ├── scheduling/
-│   │   │   │   │   ├── isScheduleContiguous.js
-│   │   │   │   │   └── isDateBlocked.js
+│   │   │   │   │   ├── isDateBlocked.js
+│   │   │   │   │   ├── isDateInRange.js
+│   │   │   │   │   └── isScheduleContiguous.js
+│   │   │   │   ├── search/
+│   │   │   │   │   ├── hasListingPhotos.js
+│   │   │   │   │   ├── isValidPriceTier.js
+│   │   │   │   │   ├── isValidSortOption.js
+│   │   │   │   │   └── isValidWeekPattern.js
 │   │   │   │   └── users/
+│   │   │   │       ├── hasProfilePhoto.js
+│   │   │   │       ├── isGuest.js
 │   │   │   │       ├── isHost.js
-│   │   │   │       └── isGuest.js
+│   │   │   │       └── shouldShowFullName.js
 │   │   │   │
 │   │   │   ├── processors/                 # Data transformation
+│   │   │   │   ├── index.js
+│   │   │   │   ├── display/
+│   │   │   │   │   └── formatHostName.js
 │   │   │   │   ├── external/               # ⭐ API BOUNDARY ADAPTERS
-│   │   │   │   │   ├── adaptDaysFromBubble.js    # Bubble → JS (1-7 → 0-6)
-│   │   │   │   │   └── adaptDaysToBubble.js      # JS → Bubble (0-6 → 1-7)
+│   │   │   │   │   ├── adaptDayFromBubble.js     # Single day Bubble → JS
+│   │   │   │   │   ├── adaptDayToBubble.js       # Single day JS → Bubble
+│   │   │   │   │   ├── adaptDaysFromBubble.js    # Array Bubble → JS (1-7 → 0-6)
+│   │   │   │   │   └── adaptDaysToBubble.js      # Array JS → Bubble (0-6 → 1-7)
 │   │   │   │   ├── listing/
-│   │   │   │   │   └── extractListingCoordinates.js
+│   │   │   │   │   ├── extractListingCoordinates.js
+│   │   │   │   │   └── parseJsonArrayField.js
 │   │   │   │   ├── proposal/
 │   │   │   │   │   └── processProposalData.js
+│   │   │   │   ├── proposals/
+│   │   │   │   │   └── processProposalData.js
 │   │   │   │   └── user/
+│   │   │   │       ├── processProfilePhotoUrl.js
 │   │   │   │       ├── processUserData.js
-│   │   │   │       └── processUserDisplayName.js
+│   │   │   │       ├── processUserDisplayName.js
+│   │   │   │       └── processUserInitials.js
 │   │   │   │
 │   │   │   └── workflows/                  # Orchestration
+│   │   │       ├── index.js
 │   │   │       ├── auth/
 │   │   │       │   ├── checkAuthStatusWorkflow.js
 │   │   │       │   └── validateTokenWorkflow.js
 │   │   │       ├── booking/
 │   │   │       │   ├── acceptProposalWorkflow.js
-│   │   │       │   └── cancelProposalWorkflow.js
+│   │   │       │   ├── cancelProposalWorkflow.js
+│   │   │       │   └── loadProposalDetailsWorkflow.js
 │   │   │       ├── proposals/
+│   │   │       │   ├── cancelProposalWorkflow.js
 │   │   │       │   ├── counterofferWorkflow.js
+│   │   │       │   ├── navigationWorkflow.js
 │   │   │       │   └── virtualMeetingWorkflow.js
 │   │   │       └── scheduling/
+│   │   │           ├── validateMoveInDateWorkflow.js
 │   │   │           └── validateScheduleWorkflow.js
 │   │   │
 │   │   ├── lib/                            # Utilities & Infrastructure
-│   │   │   ├── auth.js                     # Authentication (34KB - comprehensive)
+│   │   │   ├── auth.js                     # Authentication (comprehensive)
 │   │   │   ├── supabase.js                 # Supabase client init
 │   │   │   ├── supabaseUtils.js            # Query helpers, batch fetching
+│   │   │   ├── config.js                   # App configuration
 │   │   │   ├── constants.js                # App constants (days, prices, patterns)
 │   │   │   ├── dataLookups.js              # Cached lookups (neighborhoods, amenities)
 │   │   │   ├── navigation.js               # Route helpers (goToListing, getListingUrl)
@@ -179,20 +408,69 @@ Split Lease/
 │   │   │   ├── aiService.js                # AI completions client
 │   │   │   ├── secureStorage.js            # Encrypted token storage
 │   │   │   ├── photoUpload.js              # Photo upload handling
+│   │   │   ├── proposalDataFetcher.js      # Proposal data fetching
+│   │   │   ├── availabilityValidation.js   # Availability validation
+│   │   │   ├── informationalTextsFetcher.js # Info text fetching
+│   │   │   ├── slackService.js             # Slack notification client
+│   │   │   ├── hotjar.js                   # Hotjar analytics
+│   │   │   │
+│   │   │   ├── constants/                  # Constant definitions
+│   │   │   │   ├── proposalStages.js
+│   │   │   │   └── proposalStatuses.js
+│   │   │   │
+│   │   │   ├── proposals/                  # Proposal utilities
+│   │   │   │   ├── dataTransformers.js
+│   │   │   │   ├── statusButtonConfig.js
+│   │   │   │   ├── urlParser.js
+│   │   │   │   └── userProposalQueries.js
+│   │   │   │
 │   │   │   └── scheduleSelector/           # Schedule picker logic
+│   │   │       ├── dayHelpers.js
 │   │   │       ├── nightCalculations.js
-│   │   │       ├── validators.js
-│   │   │       └── priceCalculations.js
+│   │   │       ├── priceCalculations.js
+│   │   │       └── validators.js
 │   │   │
-│   │   ├── styles/                         # CSS
+│   │   ├── styles/                         # CSS (40+ files)
 │   │   │   ├── variables.css               # CSS custom properties (colors, spacing)
 │   │   │   ├── main.css                    # Global base styles
+│   │   │   ├── careers.css
+│   │   │   ├── faq.css
+│   │   │   ├── help-center.css
+│   │   │   ├── list-with-us.css
+│   │   │   ├── listing-schedule-selector.css
+│   │   │   ├── create-proposal-flow-v2.css
+│   │   │   ├── reset-password.css
+│   │   │   ├── why-split-lease.css
 │   │   │   └── components/                 # Component-specific styles
 │   │   │       ├── header.css
 │   │   │       ├── footer.css
 │   │   │       ├── modal.css
+│   │   │       ├── toast.css
+│   │   │       ├── hero.css
 │   │   │       ├── listings.css
-│   │   │       └── search-page.css
+│   │   │       ├── search-page.css
+│   │   │       ├── guest-proposals.css
+│   │   │       ├── host-proposals.css
+│   │   │       ├── host-overview.css
+│   │   │       ├── listing-dashboard.css
+│   │   │       ├── rental-application.css
+│   │   │       ├── benefits.css
+│   │   │       ├── floating-badge.css
+│   │   │       ├── guest-success.css
+│   │   │       ├── host-success.css
+│   │   │       ├── import-listing-modal.css
+│   │   │       ├── ai-import-assistant-modal.css
+│   │   │       ├── edit-listing-details.css
+│   │   │       ├── create-listing-modal.css
+│   │   │       ├── local-section.css
+│   │   │       ├── mobile.css
+│   │   │       ├── not-found.css
+│   │   │       ├── policies.css
+│   │   │       ├── schedule.css
+│   │   │       ├── support.css
+│   │   │       ├── testimonials.css
+│   │   │       ├── utilities.css
+│   │   │       └── value-props.css
 │   │   │
 │   │   └── config/
 │   │       └── proposalStatusConfig.js     # Proposal status mappings
@@ -201,29 +479,32 @@ Split Lease/
 │   │   └── view-split-lease/[id].js        # Dynamic route handler
 │   │
 │   ├── vite.config.js                      # Build config with routing plugins
-│   └── package.json                        # Dependencies (React, Supabase, Framer Motion)
+│   └── package.json                        # Dependencies
 │
 ├── supabase/                               # Backend
 │   ├── config.toml                         # Supabase local config
-│   └── functions/                          # Edge Functions (Deno 2)
-│       ├── _shared/                        # Shared utilities
+│   └── functions/                          # Edge Functions (Deno 2) - 11 functions
+│       ├── _shared/                        # Shared utilities (10 files)
 │       │   ├── cors.ts                     # CORS headers
 │       │   ├── errors.ts                   # Custom error classes
 │       │   ├── validation.ts               # Input validation
+│       │   ├── types.ts                    # TypeScript interfaces
+│       │   ├── aiTypes.ts                  # AI-specific types
 │       │   ├── bubbleSync.ts               # BubbleSyncService class
+│       │   ├── queueSync.ts                # Queue sync utilities
+│       │   ├── jsonUtils.ts                # JSON helpers
 │       │   ├── openai.ts                   # OpenAI wrapper
-│       │   ├── slack.ts                    # Slack integration
-│       │   └── types.ts                    # TypeScript interfaces
+│       │   └── slack.ts                    # Slack integration
 │       │
 │       ├── auth-user/                      # Authentication
 │       │   ├── index.ts                    # Router
 │       │   └── handlers/
 │       │       ├── login.ts                # Supabase Auth login
 │       │       ├── signup.ts               # Supabase Auth signup
-│       │       ├── logout.ts               # Bubble logout (legacy)
+│       │       ├── logout.ts               # Logout handler
 │       │       ├── validate.ts             # Token validation
-│       │       ├── resetPassword.ts
-│       │       └── updatePassword.ts
+│       │       ├── resetPassword.ts        # Password reset
+│       │       └── updatePassword.ts       # Password update
 │       │
 │       ├── bubble-proxy/                   # Bubble API proxy
 │       │   ├── index.ts                    # Router
@@ -233,65 +514,156 @@ Split Lease/
 │       │       ├── messaging.ts            # Send messages
 │       │       ├── photos.ts               # Upload photos
 │       │       ├── referral.ts             # Submit referrals
-│       │       └── listingSync.ts          # Listing sync
+│       │       ├── listingSync.ts          # Listing sync
+│       │       ├── parseProfile.ts         # Profile parsing
+│       │       └── aiInquiry.ts            # AI inquiry handling
 │       │
 │       ├── listing/                        # Listing operations
-│       │   ├── index.ts
+│       │   ├── index.ts                    # Router
 │       │   └── handlers/
-│       │       ├── create.ts
-│       │       ├── get.ts
-│       │       └── submit.ts
+│       │       ├── create.ts               # Create listing
+│       │       ├── get.ts                  # Get listing
+│       │       └── submit.ts               # Submit listing
 │       │
 │       ├── proposal/                       # Proposal operations
-│       │   ├── index.ts
+│       │   ├── index.ts                    # Router
 │       │   ├── actions/
-│       │   │   ├── create.ts
-│       │   │   ├── get.ts
-│       │   │   ├── update.ts
-│       │   │   └── suggest.ts
+│       │   │   ├── create.ts               # Create proposal
+│       │   │   ├── get.ts                  # Get proposal
+│       │   │   ├── update.ts               # Update proposal
+│       │   │   └── suggest.ts              # Suggest proposal
 │       │   └── lib/
-│       │       ├── calculations.ts
-│       │       ├── dayConversion.ts
-│       │       ├── validators.ts
-│       │       └── status.ts
+│       │       ├── calculations.ts         # Price calculations
+│       │       ├── dayConversion.ts        # Day index conversion
+│       │       ├── validators.ts           # Validation logic
+│       │       ├── status.ts               # Status management
+│       │       ├── types.ts                # Type definitions
+│       │       └── bubbleSyncQueue.ts      # Bubble sync queue
 │       │
 │       ├── ai-gateway/                     # AI completions
-│       │   ├── index.ts
+│       │   ├── index.ts                    # Router
 │       │   ├── handlers/
 │       │   │   ├── complete.ts             # Non-streaming
 │       │   │   └── stream.ts               # SSE streaming
 │       │   └── prompts/
-│       │       ├── _registry.ts
-│       │       ├── listing-description.ts
-│       │       └── proposal-summary.ts
+│       │       ├── _registry.ts            # Prompt registry
+│       │       ├── _template.ts            # Prompt template
+│       │       ├── listing-description.ts  # Listing descriptions
+│       │       ├── listing-title.ts        # Listing titles
+│       │       └── proposal-summary.ts     # Proposal summaries
 │       │
 │       ├── bubble_sync/                    # Bubble↔Supabase sync
-│       │   ├── index.ts
+│       │   ├── index.ts                    # Router
 │       │   ├── handlers/
+│       │   │   ├── buildRequest.ts         # Build sync request
+│       │   │   ├── cleanup.ts              # Queue cleanup
+│       │   │   ├── getStatus.ts            # Get sync status
+│       │   │   ├── processQueue.ts         # Process sync queue
+│       │   │   ├── processQueueDataApi.ts  # Process via Data API
+│       │   │   ├── propagateListingFK.ts   # Propagate FKs
+│       │   │   ├── retryFailed.ts          # Retry failed syncs
+│       │   │   ├── syncSingle.ts           # Sync single record
+│       │   │   └── syncSignupAtomic.ts     # Atomic signup sync
 │       │   └── lib/
-│       │       ├── bubbleDataApi.ts
-│       │       ├── fieldMapping.ts
-│       │       └── tableMapping.ts
+│       │       ├── bubbleDataApi.ts        # Bubble Data API client
+│       │       ├── bubblePush.ts           # Push to Bubble
+│       │       ├── fieldMapping.ts         # Field mapping
+│       │       ├── tableMapping.ts         # Table mapping
+│       │       ├── transformer.ts          # Data transformer
+│       │       └── queueManager.ts         # Queue management
+│       │
+│       ├── communications/                 # Communications
+│       │   └── index.ts                    # Router
+│       │
+│       ├── pricing/                        # Pricing calculations
+│       │   └── index.ts                    # Router
 │       │
 │       ├── slack/                          # Slack notifications
-│       │   └── index.ts
+│       │   └── index.ts                    # Main handler
 │       │
-│       └── ai-signup-guest/                # AI-powered signup
-│           └── index.ts
+│       ├── ai-signup-guest/                # AI-powered guest signup
+│       │   └── index.ts                    # Main handler
+│       │
+│       └── ai-parse-profile/               # AI profile parsing
+│           └── index.ts                    # Main handler
 │
 ├── .claude/                                # Claude Code configuration
 │   ├── CLAUDE.md                           # This file
-│   ├── commands/                           # Custom slash commands
+│   │
+│   ├── commands/                           # Custom slash commands (6 commands)
+│   │   ├── deploy.md                       # Deployment command
+│   │   ├── generate_claude.md              # Generate CLAUDE.md
+│   │   ├── preview.md                      # Preview command
+│   │   ├── prime.md                        # Prime context
+│   │   ├── splitlease.md                   # Split Lease context
+│   │   └── supabase.md                     # Supabase commands
+│   │
 │   ├── plans/                              # Implementation plans
-│   │   ├── New/                            # Active plans
-│   │   ├── Done/                           # Completed plans
-│   │   └── Documents/                      # Analysis dumps
+│   │   ├── New/                            # Active plans (80+ files)
+│   │   ├── Done/                           # Completed plans (65+ files)
+│   │   ├── Documents/                      # Analysis documents (30+ files)
+│   │   └── Deprecated/                     # Deprecated context
+│   │       └── Context/
+│   │           ├── Database/
+│   │           └── Option Sets/
+│   │
 │   └── Documentation/                      # Detailed docs by domain
-│       ├── Auth/                           # Login/signup flows
+│       ├── Auth/                           # Authentication docs
+│       │   ├── LOGIN_FLOW.md
+│       │   ├── SIGNUP_FLOW.md
+│       │   └── AUTH_USER_EDGE_FUNCTION.md
+│       │
 │       ├── Backend(EDGE - Functions)/      # Edge function docs
-│       ├── Database/                       # Table schemas, FK fields
-│       ├── Pages/                          # Page-specific docs
-│       └── Routing/                        # ROUTING_GUIDE.md
+│       │   ├── README.md
+│       │   ├── QUICK_REFERENCE.md
+│       │   ├── SEQUENCE_DIAGRAMS.md
+│       │   ├── AUTH_USER.md
+│       │   ├── BUBBLE_PROXY.md
+│       │   ├── BUBBLE_SYNC.md
+│       │   ├── AI_GATEWAY.md
+│       │   ├── AI_SIGNUP_GUEST.md
+│       │   ├── LISTING.md
+│       │   ├── PROPOSAL.md
+│       │   ├── SLACK.md
+│       │   └── SHARED_UTILITIES.md
+│       │
+│       ├── Database/                       # Database docs
+│       │   ├── REFERENCE_TABLES_FK_FIELDS.md
+│       │   ├── DATABASE_TABLES_DETAILED.md
+│       │   ├── DATABASE_OPTION_SETS_QUICK_REFERENCE.md
+│       │   └── OPTION_SETS_DETAILED.md
+│       │
+│       ├── External/                       # External integrations
+│       │   ├── GOOGLE_MAPS_API_IMPLEMENTATION.md
+│       │   └── HOTJAR_IMPLEMENTATION.md
+│       │
+│       ├── Pages/                          # Page-specific docs (28 pages)
+│       │   ├── HOME_QUICK_REFERENCE.md
+│       │   ├── SEARCH_QUICK_REFERENCE.md
+│       │   ├── VIEW_SPLIT_LEASE_QUICK_REFERENCE.md
+│       │   ├── GUEST_PROPOSALS_QUICK_REFERENCE.md
+│       │   ├── SELF_LISTING_QUICK_REFERENCE.md
+│       │   ├── LISTING_DASHBOARD_QUICK_REFERENCE.md
+│       │   ├── LISTING_DASHBOARD_PAGE_CONTEXT.md
+│       │   ├── HOST_OVERVIEW_QUICK_REFERENCE.md
+│       │   ├── FAVORITE_LISTINGS_QUICK_REFERENCE.md
+│       │   ├── RENTAL_APPLICATION_QUICK_REFERENCE.md
+│       │   ├── ACCOUNT_PROFILE_QUICK_REFERENCE.md
+│       │   ├── FAQ_QUICK_REFERENCE.md
+│       │   ├── HELP_CENTER_QUICK_REFERENCE.md
+│       │   ├── POLICIES_QUICK_REFERENCE.md
+│       │   ├── ABOUT_US_QUICK_REFERENCE.md
+│       │   ├── CAREERS_QUICK_REFERENCE.md
+│       │   ├── LIST_WITH_US_QUICK_REFERENCE.md
+│       │   ├── WHY_SPLIT_LEASE_QUICK_REFERENCE.md
+│       │   ├── GUEST_SUCCESS_QUICK_REFERENCE.md
+│       │   ├── HOST_SUCCESS_QUICK_REFERENCE.md
+│       │   ├── 404_QUICK_REFERENCE.md
+│       │   ├── INDEX_DEV_QUICK_REFERENCE.md
+│       │   └── SEARCH_TEST_QUICK_REFERENCE.md
+│       │
+│       └── Routing/
+│           └── ROUTING_GUIDE.md            # **MUST READ** for routes
 │
 └── DATABASE_SCHEMA_OVERVIEW.md             # Complete Supabase schemas (93 tables)
 ```
@@ -348,16 +720,22 @@ Split Lease/
                                │
                                ↓
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                    SUPABASE EDGE FUNCTIONS                               │
+│                    SUPABASE EDGE FUNCTIONS (11 functions)                │
 ├─────────────────────────────────────────────────────────────────────────┤
 │  POST /functions/v1/{function}                                           │
 │  Body: { "action": "...", "payload": {...} }                            │
 │                                                                          │
-│  auth-user/     → Supabase Auth (login/signup) + Bubble (logout/validate)│
-│  bubble-proxy/  → Proxies Bubble API calls (favorites, messaging, photos)│
-│  listing/       → Listing CRUD with Supabase                             │
-│  proposal/      → Proposal operations with Bubble sync                   │
-│  ai-gateway/    → OpenAI completions (streaming + non-streaming)         │
+│  auth-user/        → Supabase Auth (login/signup/reset)                 │
+│  bubble-proxy/     → Proxies Bubble API calls                           │
+│  listing/          → Listing CRUD with Supabase                         │
+│  proposal/         → Proposal operations with Bubble sync               │
+│  ai-gateway/       → OpenAI completions (streaming + non-streaming)     │
+│  ai-signup-guest/  → AI-powered guest signup                            │
+│  ai-parse-profile/ → AI profile parsing                                 │
+│  bubble_sync/      → Bubble↔Supabase bidirectional sync                 │
+│  communications/   → Communication handling                              │
+│  pricing/          → Pricing calculations                                │
+│  slack/            → Slack notifications                                 │
 └──────────────────────────────┬──────────────────────────────────────────┘
                                │
               ┌────────────────┴────────────────┐
@@ -446,32 +824,58 @@ function ViewSplitLeasePage() {
 |------|-------------|
 | [Auth/LOGIN_FLOW.md](./Documentation/Auth/LOGIN_FLOW.md) | Login flow, UI states, validation |
 | [Auth/SIGNUP_FLOW.md](./Documentation/Auth/SIGNUP_FLOW.md) | Guest/host signup flow |
+| [Auth/AUTH_USER_EDGE_FUNCTION.md](./Documentation/Auth/AUTH_USER_EDGE_FUNCTION.md) | Auth Edge Function details |
 
 #### Backend (EDGE Functions)
 | File | Description |
 |------|-------------|
 | [Backend(EDGE - Functions)/README.md](./Documentation/Backend(EDGE%20-%20Functions)/README.md) | Edge functions overview |
 | [Backend(EDGE - Functions)/QUICK_REFERENCE.md](./Documentation/Backend(EDGE%20-%20Functions)/QUICK_REFERENCE.md) | Quick reference |
-| [Backend(EDGE - Functions)/ARCHITECTURE_ANALYSIS.md](./Documentation/Backend(EDGE%20-%20Functions)/ARCHITECTURE_ANALYSIS.md) | Architecture analysis |
-| [Backend(EDGE - Functions)/BUBBLE_SYNC_SERVICE.md](./Documentation/Backend(EDGE%20-%20Functions)/BUBBLE_SYNC_SERVICE.md) | BubbleSyncService class |
+| [Backend(EDGE - Functions)/SEQUENCE_DIAGRAMS.md](./Documentation/Backend(EDGE%20-%20Functions)/SEQUENCE_DIAGRAMS.md) | Sequence diagrams |
+| [Backend(EDGE - Functions)/AUTH_USER.md](./Documentation/Backend(EDGE%20-%20Functions)/AUTH_USER.md) | Auth user function |
+| [Backend(EDGE - Functions)/BUBBLE_PROXY.md](./Documentation/Backend(EDGE%20-%20Functions)/BUBBLE_PROXY.md) | Bubble proxy function |
+| [Backend(EDGE - Functions)/BUBBLE_SYNC.md](./Documentation/Backend(EDGE%20-%20Functions)/BUBBLE_SYNC.md) | Bubble sync function |
+| [Backend(EDGE - Functions)/AI_GATEWAY.md](./Documentation/Backend(EDGE%20-%20Functions)/AI_GATEWAY.md) | AI gateway function |
+| [Backend(EDGE - Functions)/AI_SIGNUP_GUEST.md](./Documentation/Backend(EDGE%20-%20Functions)/AI_SIGNUP_GUEST.md) | AI signup guest function |
+| [Backend(EDGE - Functions)/LISTING.md](./Documentation/Backend(EDGE%20-%20Functions)/LISTING.md) | Listing function |
+| [Backend(EDGE - Functions)/PROPOSAL.md](./Documentation/Backend(EDGE%20-%20Functions)/PROPOSAL.md) | Proposal function |
+| [Backend(EDGE - Functions)/SLACK.md](./Documentation/Backend(EDGE%20-%20Functions)/SLACK.md) | Slack function |
+| [Backend(EDGE - Functions)/SHARED_UTILITIES.md](./Documentation/Backend(EDGE%20-%20Functions)/SHARED_UTILITIES.md) | Shared utilities |
 
 #### Database
 | File | Description |
 |------|-------------|
 | [Database/REFERENCE_TABLES_FK_FIELDS.md](./Documentation/Database/REFERENCE_TABLES_FK_FIELDS.md) | Reference tables and FK fields |
 | [Database/DATABASE_TABLES_DETAILED.md](./Documentation/Database/DATABASE_TABLES_DETAILED.md) | Detailed table documentation |
+| [Database/DATABASE_OPTION_SETS_QUICK_REFERENCE.md](./Documentation/Database/DATABASE_OPTION_SETS_QUICK_REFERENCE.md) | Option sets quick reference |
 | [Database/OPTION_SETS_DETAILED.md](./Documentation/Database/OPTION_SETS_DETAILED.md) | Option sets documentation |
+
+#### External Integrations
+| File | Description |
+|------|-------------|
+| [External/GOOGLE_MAPS_API_IMPLEMENTATION.md](./Documentation/External/GOOGLE_MAPS_API_IMPLEMENTATION.md) | Google Maps integration guide |
+| [External/HOTJAR_IMPLEMENTATION.md](./Documentation/External/HOTJAR_IMPLEMENTATION.md) | Hotjar analytics implementation |
 
 #### Routing
 | File | Description |
 |------|-------------|
 | [Routing/ROUTING_GUIDE.md](./Documentation/Routing/ROUTING_GUIDE.md) | **MUST READ** for adding/modifying routes |
 
-#### Pages
+#### Pages (28 documented)
 | File | Description |
 |------|-------------|
+| [Pages/HOME_QUICK_REFERENCE.md](./Documentation/Pages/HOME_QUICK_REFERENCE.md) | Homepage |
+| [Pages/SEARCH_QUICK_REFERENCE.md](./Documentation/Pages/SEARCH_QUICK_REFERENCE.md) | Search page |
+| [Pages/VIEW_SPLIT_LEASE_QUICK_REFERENCE.md](./Documentation/Pages/VIEW_SPLIT_LEASE_QUICK_REFERENCE.md) | Listing detail page |
 | [Pages/GUEST_PROPOSALS_QUICK_REFERENCE.md](./Documentation/Pages/GUEST_PROPOSALS_QUICK_REFERENCE.md) | Guest proposals page |
+| [Pages/SELF_LISTING_QUICK_REFERENCE.md](./Documentation/Pages/SELF_LISTING_QUICK_REFERENCE.md) | Self listing wizard |
+| [Pages/LISTING_DASHBOARD_QUICK_REFERENCE.md](./Documentation/Pages/LISTING_DASHBOARD_QUICK_REFERENCE.md) | Listing dashboard |
 | [Pages/LISTING_DASHBOARD_PAGE_CONTEXT.md](./Documentation/Pages/LISTING_DASHBOARD_PAGE_CONTEXT.md) | Listing dashboard context |
+| [Pages/HOST_OVERVIEW_QUICK_REFERENCE.md](./Documentation/Pages/HOST_OVERVIEW_QUICK_REFERENCE.md) | Host overview |
+| [Pages/FAVORITE_LISTINGS_QUICK_REFERENCE.md](./Documentation/Pages/FAVORITE_LISTINGS_QUICK_REFERENCE.md) | Favorite listings |
+| [Pages/RENTAL_APPLICATION_QUICK_REFERENCE.md](./Documentation/Pages/RENTAL_APPLICATION_QUICK_REFERENCE.md) | Rental application |
+| [Pages/ACCOUNT_PROFILE_QUICK_REFERENCE.md](./Documentation/Pages/ACCOUNT_PROFILE_QUICK_REFERENCE.md) | Account profile |
+| ...and 17 more page references |
 
 ---
 
@@ -519,16 +923,40 @@ SLACK_WEBHOOK_ACQUISITION, SLACK_WEBHOOK_GENERAL
 | Add/modify routes | `app/src/routes.config.js` |
 | Vite build config | `app/vite.config.js` |
 | App constants | `app/src/lib/constants.js` |
+| App configuration | `app/src/lib/config.js` |
 | Authentication | `app/src/lib/auth.js` |
 | Supabase client | `app/src/lib/supabase.js` |
+| Supabase utilities | `app/src/lib/supabaseUtils.js` |
 | Data lookups (neighborhoods, amenities) | `app/src/lib/dataLookups.js` |
 | Navigation helpers | `app/src/lib/navigation.js` |
 | Day index conversion | `app/src/logic/processors/external/adaptDays*.js` |
 | Proposal business rules | `app/src/logic/rules/proposals/` |
 | Pricing calculations | `app/src/logic/calculators/pricing/` |
+| Proposal data fetching | `app/src/lib/proposalDataFetcher.js` |
+| Proposal utilities | `app/src/lib/proposals/` |
 | Edge Function shared code | `supabase/functions/_shared/` |
 | Bubble sync service | `supabase/functions/_shared/bubbleSync.ts` |
+| Slack service | `app/src/lib/slackService.js` |
+| Hotjar analytics | `app/src/lib/hotjar.js` |
 
 ---
 
-**VERSION**: 6.0 | **UPDATED**: 2025-12-11
+## Statistics
+
+| Category | Count |
+|----------|-------|
+| HTML Entry Points | 31 |
+| JSX Entry Points | 29 |
+| Page Components | 25+ |
+| Shared Components | 50+ |
+| Modal Components | 13 |
+| Logic Layer Files | 55+ |
+| Library Utilities | 32 |
+| Edge Functions | 11 |
+| Shared Edge Utilities | 10 |
+| CSS Files | 40+ |
+| Documentation Files | 100+ |
+
+---
+
+**VERSION**: 7.0 | **UPDATED**: 2025-12-11
