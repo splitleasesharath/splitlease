@@ -224,8 +224,10 @@ function ViewSplitLeasePage() {
 #### External Integrations
 | File | Description |
 |------|-------------|
-| [External/GOOGLE_MAPS_API_IMPLEMENTATION.md](./Documentation/External/GOOGLE_MAPS_API_IMPLEMENTATION.md) | Google Maps integration guide |
-| [External/HOTJAR_IMPLEMENTATION.md](./Documentation/External/HOTJAR_IMPLEMENTATION.md) | Hotjar analytics implementation |
+| [External/GOOGLE_MAPS_API_IMPLEMENTATION.md](./Documentation/External/GOOGLE_MAPS_API_IMPLEMENTATION.md) | Google Maps JavaScript API, Places Autocomplete, borough configs, marker styling |
+| [External/HOTJAR_IMPLEMENTATION.md](./Documentation/External/HOTJAR_IMPLEMENTATION.md) | **REQUIRED** for new pages - inline tracking script implementation |
+
+> **IMPORTANT**: When creating new HTML pages, you **MUST** add the Hotjar tracking snippet. See [HOTJAR_IMPLEMENTATION.md](./Documentation/External/HOTJAR_IMPLEMENTATION.md) for the required inline script.
 
 #### Routing
 | File | Description |
@@ -259,6 +261,7 @@ function ViewSplitLeasePage() {
 - Commit after each meaningful change
 - Convert day indices at system boundaries
 - Use the four-layer logic architecture
+- **Add Hotjar tracking to ALL new HTML pages** (see below)
 
 ### DON'T
 - Expose API keys in frontend code
@@ -267,6 +270,29 @@ function ViewSplitLeasePage() {
 - Modify database tables without explicit instruction
 - Add fallback mechanisms or compatibility layers when things fail
 - Over-engineer for hypothetical future needs
+- Create new HTML pages without Hotjar tracking
+
+### Creating New HTML Pages (MANDATORY)
+
+When creating a new HTML page in `app/public/`, you **MUST** include the Hotjar tracking snippet in the `<head>` section:
+
+```html
+<!-- Hotjar Tracking Code for split.lease -->
+<script>
+  (function(h,o,t,j,a,r){
+      h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
+      h._hjSettings={hjid:6581463,hjsv:6};
+      a=o.getElementsByTagName('head')[0];
+      r=o.createElement('script');r.async=1;
+      r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
+      a.appendChild(r);
+  })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
+</script>
+```
+
+**Placement**: After CSS `<link>` tags, before any other `<script>` tags.
+
+**Reference**: [External/HOTJAR_IMPLEMENTATION.md](./Documentation/External/HOTJAR_IMPLEMENTATION.md) for full documentation.
 
 ---
 
@@ -330,4 +356,4 @@ SLACK_WEBHOOK_ACQUISITION, SLACK_WEBHOOK_GENERAL
 
 ---
 
-**VERSION**: 7.0 | **UPDATED**: 2025-12-11
+**VERSION**: 7.1 | **UPDATED**: 2025-12-11
