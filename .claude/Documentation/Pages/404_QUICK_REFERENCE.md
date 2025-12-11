@@ -1,6 +1,6 @@
 # 404 Not Found Page - Quick Reference
 
-**GENERATED**: 2025-12-04
+**GENERATED**: 2025-12-11
 **PAGE_URL**: `/404` or `/404.html` (also served for any non-existent route)
 **ENTRY_POINT**: `app/src/404.jsx`
 
@@ -62,7 +62,7 @@
 | File | Purpose |
 |------|---------|
 | `app/src/routes.config.js` | Route registry (path: `/404`) |
-| `app/public/_redirects` | Cloudflare Pages routing rules |
+| `app/public/_redirects` | Cloudflare Pages routing rules (auto-generated) |
 
 ---
 
@@ -88,7 +88,9 @@
 
 ### Cloudflare Native 404 Support
 ```
-# From _redirects
+# From _redirects (auto-generated)
+/404  /404.html  200
+/404/  /404.html  200
 /404.html  /404.html  200
 
 # Note: Cloudflare Pages automatically serves /404.html for not found routes
@@ -118,6 +120,8 @@
   <meta name="robots" content="noindex, nofollow" />
   <link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png" />
   <link rel="stylesheet" href="/src/styles/main.css" />
+
+  <!-- Load environment config FIRST - required for Hotjar -->
   <script type="module" src="/src/lib/config.js"></script>
   <script type="module" src="/src/lib/hotjar.js"></script>
 </head>
@@ -174,10 +178,20 @@ export default function NotFoundPage() {
 
           {/* Primary action buttons */}
           <div className="not-found-actions">
-            <Button variant="primary" size="large" onClick={() => window.location.href = '/'}>
+            <Button
+              variant="primary"
+              size="large"
+              onClick={() => window.location.href = '/'}
+              aria-label="Return to homepage"
+            >
               Go Home
             </Button>
-            <Button variant="outline" size="large" onClick={() => window.location.href = '/search'}>
+            <Button
+              variant="outline"
+              size="large"
+              onClick={() => window.location.href = '/search'}
+              aria-label="Browse available listings"
+            >
               Search Listings
             </Button>
           </div>
@@ -185,9 +199,9 @@ export default function NotFoundPage() {
           {/* Helpful navigation links */}
           <nav className="not-found-links" aria-label="Additional navigation">
             <a href="/faq.html">FAQ</a>
-            <span className="separator">...</span>
+            <span className="separator" aria-hidden="true">&#8226;</span>
             <a href="/list-with-us.html">List With Us</a>
-            <span className="separator">...</span>
+            <span className="separator" aria-hidden="true">&#8226;</span>
             <a href="/why-split-lease.html">Why Split Lease</a>
           </nav>
         </div>
@@ -222,7 +236,7 @@ export default function NotFoundPage() {
 |          [Go Home]    [Search Listings]                     |
 |          (Primary)       (Outline)                          |
 |                                                             |
-|           FAQ  ...  List With Us  ...  Why Split Lease      |
+|           FAQ  *  List With Us  *  Why Split Lease          |
 |                   (Navigation links)                        |
 |                                                             |
 +-------------------------------------------------------------+
@@ -239,30 +253,31 @@ export default function NotFoundPage() {
 |------|-------|
 | `variant` | `"primary"` |
 | `size` | `"large"` |
-| `onClick` | `window.location.href = '/'` |
-| `aria-label` | "Return to homepage" |
+| `onClick` | `() => window.location.href = '/'` |
+| `aria-label` | `"Return to homepage"` |
 
 ### Secondary Button: Search Listings
 | Prop | Value |
 |------|-------|
 | `variant` | `"outline"` |
 | `size` | `"large"` |
-| `onClick` | `window.location.href = '/search'` |
-| `aria-label` | "Browse available listings" |
+| `onClick` | `() => window.location.href = '/search'` |
+| `aria-label` | `"Browse available listings"` |
 
 ### Button Component Props Reference
 ```typescript
 interface ButtonProps {
-  variant: 'primary' | 'secondary' | 'ghost' | 'outline';
-  size: 'small' | 'medium' | 'large';
-  loading?: boolean;
-  disabled?: boolean;
-  fullWidth?: boolean;
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline';  // default: 'primary'
+  size?: 'small' | 'medium' | 'large';                       // default: 'medium'
+  loading?: boolean;                                          // default: false
+  disabled?: boolean;                                         // default: false
+  fullWidth?: boolean;                                        // default: false
   icon?: React.ReactElement;
-  iconPosition?: 'left' | 'right';
+  iconPosition?: 'left' | 'right';                           // default: 'left'
   onClick?: () => void;
-  className?: string;
-  type?: 'button' | 'submit' | 'reset';
+  className?: string;                                         // default: ''
+  type?: 'button' | 'submit' | 'reset';                      // default: 'button'
 }
 ```
 
@@ -273,56 +288,61 @@ interface ButtonProps {
 ### Container Classes
 | Class | Purpose | Key Styles |
 |-------|---------|------------|
-| `.not-found-container` | Main container | min-height, flex center, purple gradient bg |
+| `.not-found-container` | Main container | min-height calc, flex center, purple gradient bg |
 | `.not-found-content` | Content wrapper | max-width 600px, text-center, fadeInUp animation |
 
 ### Typography Classes
 | Class | Purpose | Key Styles |
 |-------|---------|------------|
-| `.not-found-title` | "404" number | 120px font, bold, purple color |
-| `.not-found-heading` | "Page Not Found" | 32px (--text-3xl), semibold |
-| `.not-found-text` | Description paragraph | 18px (--text-lg), medium gray |
+| `.not-found-title` | "404" number | 120px font, bold, purple color, 0.9 opacity |
+| `.not-found-heading` | "Page Not Found" | var(--text-3xl), 600 weight |
+| `.not-found-text` | Description paragraph | var(--text-lg), medium gray, 1.6 line-height |
 
 ### Action Classes
 | Class | Purpose | Key Styles |
 |-------|---------|------------|
 | `.not-found-actions` | Button container | flex row, gap, center, wrap |
-| `.not-found-links` | Nav links container | flex row, gap, center |
+| `.not-found-links` | Nav links container | flex row, gap, center, var(--text-sm) |
 | `.not-found-links a` | Individual links | purple color, 500 weight, no decoration |
-| `.not-found-links .separator` | Dot separator | light gray, user-select: none |
+| `.not-found-links .separator` | Bullet separator | light gray, user-select: none |
 
 ---
 
 ## ### CSS_VARIABLES_USED ###
 
 ### Colors
-| Variable | Value | Usage |
-|----------|-------|-------|
-| `--primary-purple` | #31135D | 404 title, link colors |
-| `--text-dark` | #1a1a1a | Heading color |
-| `--text-medium` | #666666 | Description text |
-| `--text-light-gray` | #9ca3af | Separator dots |
+| Variable | Usage |
+|----------|-------|
+| `--primary-purple` | 404 title color, link colors |
+| `--text-dark` | Heading color |
+| `--text-medium` | Description text |
+| `--text-light-gray` | Separator bullets |
 
 ### Spacing
-| Variable | Value | Usage |
-|----------|-------|-------|
-| `--spacing-lg` | 16px | Container padding, title margin |
-| `--spacing-md` | 12px | Heading margin |
-| `--spacing-2xl` | 24px | Description margin, actions margin |
-| `--spacing-3xl` | 28px | Container top/bottom padding |
-| `--gap-md` | 0.75rem | Button gap, links gap |
+| Variable | Usage |
+|----------|-------|
+| `--spacing-lg` | Container padding, title margin-bottom |
+| `--spacing-md` | Heading margin-bottom |
+| `--spacing-2xl` | Container padding, description/actions margin |
+| `--spacing-3xl` | Container top/bottom padding |
+| `--gap-md` | Button gap, links gap |
+| `--gap-sm` | Tablet/mobile button and links gap |
 
 ### Typography
-| Variable | Value | Usage |
-|----------|-------|-------|
-| `--text-3xl` | 32px | Heading font-size |
-| `--text-lg` | 18px | Description font-size |
-| `--text-sm` | 12px | Links font-size |
+| Variable | Usage |
+|----------|-------|
+| `--text-3xl` | Heading font-size (desktop) |
+| `--text-2xl` | Heading font-size (tablet) |
+| `--text-xl` | Heading font-size (mobile) |
+| `--text-lg` | Description font-size (desktop) |
+| `--text-base` | Description font-size (tablet) |
+| `--text-sm` | Links font-size (desktop) |
+| `--text-xs` | Links font-size (mobile) |
 
 ### Border Radius
-| Variable | Value | Usage |
-|----------|-------|-------|
-| `--rounded-sm` | 4px | Focus outline border-radius |
+| Variable | Usage |
+|----------|-------|
+| `--rounded-sm` | Focus outline border-radius |
 
 ---
 
@@ -356,8 +376,8 @@ interface ButtonProps {
 
 | Breakpoint | Changes |
 |------------|---------|
-| `< 768px` (Tablet) | Container padding reduced, 404 title 80px, heading 28px, text 14px, buttons stack vertically full-width, links wrap |
-| `< 480px` (Mobile) | 404 title 64px, heading 20px, links font-size 11px |
+| `<= 768px` (Tablet) | Container padding reduced, 404 title 80px, heading --text-2xl, text --text-base, buttons stack vertically full-width, links wrap with --gap-sm |
+| `<= 480px` (Mobile) | 404 title 64px, heading --text-xl, links --text-xs |
 
 ### Tablet Styles (max-width: 768px)
 ```css
@@ -380,11 +400,17 @@ interface ButtonProps {
 .not-found-actions {
   flex-direction: column;
   width: 100%;
+  gap: var(--gap-sm);
 }
 
 .not-found-actions button {
   width: 100%;
   justify-content: center;
+}
+
+.not-found-links {
+  flex-wrap: wrap;
+  gap: var(--gap-sm);
 }
 ```
 
@@ -414,7 +440,7 @@ interface ButtonProps {
 | `<nav>` (links) | `aria-label` | "Additional navigation" |
 | Go Home button | `aria-label` | "Return to homepage" |
 | Search button | `aria-label` | "Browse available listings" |
-| `.separator` | `aria-hidden` | "true" |
+| `.separator` spans | `aria-hidden` | "true" |
 
 ### Reduced Motion Support
 ```css
@@ -475,7 +501,7 @@ After build, `404.html` is placed in `dist/` root for Cloudflare Pages native 40
 
 ### Direct 404 Access
 1. User visits `/404` or `/404.html`
-2. Cloudflare matches `_redirects` rule: `/404.html  /404.html  200`
+2. Cloudflare matches `_redirects` rule: `/404  /404.html  200`
 3. Returns 200 status (not 404) for direct access
 
 ---
@@ -545,6 +571,13 @@ background: linear-gradient(
 | Text Align | center |
 | Animation | fadeInUp 0.6s ease-out |
 
+### Description Text
+| Property | Value |
+|----------|-------|
+| Max Width | 480px |
+| Line Height | 1.6 |
+| Margin | auto (centered) |
+
 ---
 
 ## ### TROUBLESHOOTING ###
@@ -557,6 +590,7 @@ background: linear-gradient(
 | Animation not playing | Check `prefers-reduced-motion` setting |
 | Header/Footer missing | Verify imports in NotFoundPage.jsx |
 | Page shows 404 status on direct access | Expected - Cloudflare serves with 200 for direct `/404` access |
+| Hotjar not loading | Verify config.js loads before hotjar.js |
 
 ---
 
@@ -571,6 +605,7 @@ background: linear-gradient(
 | Cloudflare Redirects | `app/public/_redirects` |
 | CSS Variables | `app/src/styles/variables.css` |
 | Button Component | `app/src/islands/shared/Button.jsx` |
+| Vite Config | `app/vite.config.js` |
 
 ---
 
@@ -588,6 +623,6 @@ The 404 page follows the same architectural pattern as other simple static pages
 
 ---
 
-**VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-04
-**STATUS**: Complete documentation after thorough analysis
+**VERSION**: 1.1
+**LAST_UPDATED**: 2025-12-11
+**STATUS**: Complete documentation updated to match current implementation
