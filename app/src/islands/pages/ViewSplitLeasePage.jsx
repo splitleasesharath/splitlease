@@ -609,6 +609,7 @@ export default function ViewSplitLeasePage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successProposalId, setSuccessProposalId] = useState(null);
   const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
+  const [existingProposalForListing, setExistingProposalForListing] = useState(null);
 
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -857,6 +858,53 @@ export default function ViewSplitLeasePage() {
       document.title = `${listing.Name} | Split Lease`;
     }
   }, [listing]);
+
+  // ============================================================================
+  // CHECK FOR EXISTING PROPOSAL
+  // ============================================================================
+
+  useEffect(() => {
+    // Check if logged-in user already has a proposal for this listing
+    async function checkExistingProposal() {
+      if (!loggedInUserData?.userId || !listing?._id) {
+        setExistingProposalForListing(null);
+        return;
+      }
+
+      try {
+        console.log('🔍 ViewSplitLeasePage: Checking for existing proposals for listing:', listing._id);
+
+        const { data: existingProposals, error } = await supabase
+          .from('proposal')
+          .select('_id, "Status", "Created Date"')
+          .eq('"Guest"', loggedInUserData.userId)
+          .eq('"Listing"', listing._id)
+          .neq('"Status"', 'Proposal Cancelled by Guest')
+          .or('"Deleted".is.null,"Deleted".eq.false')
+          .order('"Created Date"', { ascending: false })
+          .limit(1);
+
+        if (error) {
+          console.error('Error checking for existing proposals:', error);
+          setExistingProposalForListing(null);
+          return;
+        }
+
+        if (existingProposals && existingProposals.length > 0) {
+          console.log('📋 ViewSplitLeasePage: User already has a proposal for this listing:', existingProposals[0]);
+          setExistingProposalForListing(existingProposals[0]);
+        } else {
+          console.log('✅ ViewSplitLeasePage: No existing proposal found for this listing');
+          setExistingProposalForListing(null);
+        }
+      } catch (err) {
+        console.error('Error checking for existing proposals:', err);
+        setExistingProposalForListing(null);
+      }
+    }
+
+    checkExistingProposal();
+  }, [loggedInUserData?.userId, listing?._id]);
 
   // ============================================================================
   // COMPUTED VALUES
@@ -2299,7 +2347,7 @@ export default function ViewSplitLeasePage() {
           {/* Create Proposal Button */}
           <button
             onClick={(e) => {
-              if (scheduleValidation?.valid && pricingBreakdown?.valid) {
+              if (scheduleValidation?.valid && pricingBreakdown?.valid && !existingProposalForListing) {
                 e.target.style.transform = 'scale(0.98)';
                 setTimeout(() => {
                   e.target.style.transform = '';
@@ -2307,43 +2355,71 @@ export default function ViewSplitLeasePage() {
                 handleCreateProposal();
               }
             }}
-            disabled={!scheduleValidation?.valid || !pricingBreakdown?.valid}
+            disabled={!scheduleValidation?.valid || !pricingBreakdown?.valid || !!existingProposalForListing}
             style={{
               width: '100%',
               padding: '14px',
-              background: scheduleValidation?.valid && pricingBreakdown?.valid
-                ? 'linear-gradient(135deg, #31135d 0%, #31135d 100%)'
-                : '#D1D5DB',
+              background: existingProposalForListing
+                ? '#D1D5DB'
+                : scheduleValidation?.valid && pricingBreakdown?.valid
+                  ? 'linear-gradient(135deg, #31135d 0%, #31135d 100%)'
+                  : '#D1D5DB',
               color: 'white',
               border: 'none',
               borderRadius: '10px',
               fontSize: '16px',
               fontWeight: '700',
-              cursor: scheduleValidation?.valid && pricingBreakdown?.valid ? 'pointer' : 'not-allowed',
+              cursor: existingProposalForListing || !scheduleValidation?.valid || !pricingBreakdown?.valid ? 'not-allowed' : 'pointer',
               transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-              boxShadow: scheduleValidation?.valid && pricingBreakdown?.valid
+              boxShadow: !existingProposalForListing && scheduleValidation?.valid && pricingBreakdown?.valid
                 ? '0 4px 14px rgba(49, 19, 93, 0.4)'
                 : 'none',
               position: 'relative',
               overflow: 'hidden'
             }}
             onMouseEnter={(e) => {
-              if (scheduleValidation?.valid && pricingBreakdown?.valid) {
+              if (!existingProposalForListing && scheduleValidation?.valid && pricingBreakdown?.valid) {
                 e.target.style.transform = 'translateY(-2px)';
                 e.target.style.boxShadow = '0 8px 24px rgba(49, 19, 93, 0.5)';
               }
             }}
             onMouseLeave={(e) => {
-              if (scheduleValidation?.valid && pricingBreakdown?.valid) {
+              if (!existingProposalForListing && scheduleValidation?.valid && pricingBreakdown?.valid) {
                 e.target.style.transform = '';
                 e.target.style.boxShadow = '0 4px 14px rgba(49, 19, 93, 0.4)';
               }
             }}
           >
-            {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
-              ? `Create Proposal at $${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}/night`
-              : 'Update Split Schedule Above'}
+            {existingProposalForListing
+              ? 'Proposal Already Exists'
+              : pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
+                ? `Create Proposal at $${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}/night`
+                : 'Update Split Schedule Above'}
           </button>
+
+          {/* Link to existing proposal */}
+          {existingProposalForListing && loggedInUserData?.userId && (
+            <a
+              href={`/guest-proposals/${loggedInUserData.userId}?proposal=${existingProposalForListing._id}`}
+              style={{
+                display: 'block',
+                textAlign: 'center',
+                marginTop: '12px',
+                color: '#31135d',
+                fontSize: '14px',
+                fontWeight: '500',
+                textDecoration: 'none'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.textDecoration = 'underline';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.textDecoration = 'none';
+              }}
+            >
+              View your proposal in Dashboard
+            </a>
+          )}
         </div>
       </main>
 
