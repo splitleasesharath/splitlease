@@ -1,6 +1,6 @@
 # Careers Page - Quick Reference
 
-**GENERATED**: 2025-12-04
+**GENERATED**: 2025-12-11
 **PAGE_URL**: `/careers` or `/careers.html`
 **ENTRY_POINT**: `app/src/careers.jsx`
 
@@ -15,19 +15,21 @@ careers.jsx (Entry Point)
             |
             +-- State Management
             |       +-- typeformModalActive (boolean)
+            |       +-- gameModalActive (boolean)
             |       +-- typeformContainerRef (ref)
             |
             +-- Effects
             |       +-- Feather icons initialization
             |       +-- Typeform embed loading
-            |       +-- ESC key handler for modal
+            |       +-- ESC key handler for modals
             |
             +-- UI Sections
             |   +-- Header.jsx (Site navigation)
             |   +-- Hero Section (Video background)
-            |   +-- Mission Section (User example cards)
+            |   +-- Mission Section (User example cards + Game modal link)
             |   +-- Company Journey Video Section
             |   +-- Values Section (4-value grid)
+            |   +-- Why We'll Win Section (Future vision)
             |   +-- How We Work Section (3-step process)
             |   +-- What's Inside Section (6 resources)
             |   +-- Resources Section (PDF downloads)
@@ -35,6 +37,7 @@ careers.jsx (Entry Point)
             |   +-- Footer.jsx (Site footer)
             |
             +-- Typeform Modal (Application form embed)
+            +-- Game Modal (Schedule Matcher iframe)
 ```
 
 ---
@@ -49,7 +52,7 @@ careers.jsx (Entry Point)
 ### Page Component
 | File | Purpose |
 |------|---------|
-| `app/src/islands/pages/CareersPage.jsx` | Main page component (~560 lines) |
+| `app/src/islands/pages/CareersPage.jsx` | Main page component (~639 lines) |
 
 ### Shared Components
 | File | Purpose |
@@ -60,7 +63,7 @@ careers.jsx (Entry Point)
 ### Styles
 | File | Purpose |
 |------|---------|
-| `app/src/styles/careers.css` | Complete page styling (~960 lines) |
+| `app/src/styles/careers.css` | Complete page styling (~957 lines) |
 | `app/src/styles/main.css` | Base global styles |
 
 ### HTML Entry
@@ -72,6 +75,11 @@ careers.jsx (Entry Point)
 | File | Purpose |
 |------|---------|
 | `app/src/lib/constants.js` | SIGNUP_LOGIN_URL (imported but unused) |
+
+### Assets
+| File | Purpose |
+|------|---------|
+| `/assets/games/schedule-matcher.html` | Interactive game embedded in game modal |
 
 ---
 
@@ -95,6 +103,7 @@ careers: resolve(__dirname, 'public/careers.html')
 ### useState Hooks
 ```javascript
 const [typeformModalActive, setTypeformModalActive] = useState(false);
+const [gameModalActive, setGameModalActive] = useState(false);
 ```
 
 ### useRef Hooks
@@ -112,6 +121,16 @@ const openTypeformModal = () => {
 const closeTypeformModal = () => {
   setTypeformModalActive(false);
   document.body.style.overflow = 'auto';    // Restore scroll
+};
+
+const openGameModal = () => {
+  setGameModalActive(true);
+  document.body.style.overflow = 'hidden';
+};
+
+const closeGameModal = () => {
+  setGameModalActive(false);
+  document.body.style.overflow = 'auto';
 };
 ```
 
@@ -163,18 +182,19 @@ useEffect(() => {
 }, [typeformModalActive]);
 ```
 
-### 4. ESC Key Handler
+### 4. ESC Key Handler (Handles Both Modals)
 ```javascript
 useEffect(() => {
   const handleEscKey = (e) => {
-    if (e.key === 'Escape' && typeformModalActive) {
-      closeTypeformModal();
+    if (e.key === 'Escape') {
+      if (typeformModalActive) closeTypeformModal();
+      if (gameModalActive) closeGameModal();
     }
   };
 
   document.addEventListener('keydown', handleEscKey);
   return () => document.removeEventListener('keydown', handleEscKey);
-}, [typeformModalActive]);
+}, [typeformModalActive, gameModalActive]);
 ```
 
 ---
@@ -199,7 +219,7 @@ useEffect(() => {
 | `.mission-examples` | 3 user example cards (Sarah, Marcus, Jenna) |
 | `.example-card` | Card with avatar, pattern, review, timeline |
 | `.mission-content` | Section title + description |
-| `.section-links` | Links to interactive game, academic article |
+| `.section-links` | Links to interactive game (opens modal), academic article |
 
 ### 3. Company Journey Video Section
 | Element | Description |
@@ -217,28 +237,35 @@ useEffect(() => {
 | `.value-item` | Card with icon, title, description |
 | **Values**: | Speed, Build what's needed, Machine leverage, Always upgrading |
 
-### 5. How We Work Section
+### 5. Why We'll Win Section (NEW)
+| Element | Description |
+|---------|-------------|
+| `.content-section` | White background section |
+| `.section-header` | Section label, title, description |
+| **Content**: | Future vision combining pretotyping, AI, and consumer behavior research |
+
+### 6. How We Work Section
 | Element | Description |
 |---------|-------------|
 | `.process-steps` | Vertical step list |
 | `.step-item` | Card with numbered circle + content |
-| **Steps**: | Apply ’ Show us your thinking ’ Join the trial |
+| **Steps**: | Apply -> Show us your thinking -> Join the trial |
 
-### 6. What's Inside Section
+### 7. What's Inside Section
 | Element | Description |
 |---------|-------------|
 | `.resources-list` | 2-column grid of resource items |
 | `.resource-item` | Icon + text description |
 | **Resources**: | Library, Typeform modules, Loom recordings, Slack knowledge, AI tools, Quiz |
 
-### 7. Resources Section
+### 8. Resources Section
 | Element | Description |
 |---------|-------------|
 | `.resources-grid` | 2-column grid of PDF cards |
 | `.resource-card` | Clickable card linking to PDF |
 | **PDFs**: | What-Is-MultiLocal.pdf, Refactoring-UI.pdf |
 
-### 8. Open Roles Section
+### 9. Open Roles Section
 | Element | Description |
 |---------|-------------|
 | `#roles` | Anchor ID for hero CTA |
@@ -258,7 +285,7 @@ useEffect(() => {
 | Location | Lives in Philly |
 | Pattern | Mon-Wed in NYC |
 | Quote | "Before Split Lease, my life was a nightmare..." |
-| Timeline |    ¡¡¡¡ |
+| Timeline | Active days: Mon, Tue, Wed |
 
 ### Marcus
 | Field | Value |
@@ -266,7 +293,7 @@ useEffect(() => {
 | Location | Lives in Boston |
 | Pattern | Thu-Sun in NYC |
 | Quote | "I was burning out from the weekly grind..." |
-| Timeline | ¡¡¡     |
+| Timeline | Active days: Thu, Fri, Sat, Sun |
 
 ### Jenna
 | Field | Value |
@@ -274,7 +301,7 @@ useEffect(() => {
 | Location | Lives in DC |
 | Pattern | Mon-Thu in NYC |
 | Quote | "I thought I had to choose between my career and quality of life..." |
-| Timeline |     ¡¡¡ |
+| Timeline | Active days: Mon, Tue, Wed, Thu |
 
 ### Hover Behavior
 - Header (avatar + name) fades out
@@ -289,9 +316,19 @@ useEffect(() => {
 | Value | Icon | Description |
 |-------|------|-------------|
 | Speed and iteration | zap | We ship fast, test quickly, and improve daily |
-| Build what's needed | globe | No skyscrapers in small towns  we stay balanced |
+| Build what's needed | globe | No skyscrapers in small towns - we stay balanced |
 | Machine leverage | users | We automate busy work to focus on what matters most |
 | Always upgrading | book | We delete the old to make space for new ideas |
+
+---
+
+## ### WHY_WELL_WIN_CONTENT ###
+
+| Field | Value |
+|-------|-------|
+| Label | WHY WE'LL WIN |
+| Title | Built for the Future |
+| Description | The world is changing fast - and so are the ways people live. We're combining pretotyping, AI, and insights from consumer behavior research to design products that meet real human needs. When flexibility becomes the new normal, we'll be ready. |
 
 ---
 
@@ -302,6 +339,8 @@ useEffect(() => {
 | 1 | Apply | Submit your application and answer a few quick questions |
 | 2 | Show us your thinking | Record a short usability test video |
 | 3 | Join the trial | Work with us for 3 weeks, collaborate on real projects |
+
+**Post-steps note**: Everyone who completes a usability test gets access to our knowledge base - a library filled with product ideas, team resources, and ways to stay connected with us.
 
 ---
 
@@ -332,6 +371,68 @@ useEffect(() => {
   Apply Now
   <i data-feather="arrow-right"></i>
 </button>
+```
+
+---
+
+## ### GAME_MODAL_INTEGRATION ###
+
+### Modal Configuration
+| Setting | Value |
+|---------|-------|
+| Game Source | `/assets/games/schedule-matcher.html` |
+| Modal Size | 98vw x 98vh |
+| Background | rgba(0, 0, 0, 0.8) |
+| Border Radius | 12px |
+
+### Modal Structure
+```jsx
+{gameModalActive && (
+  <div
+    style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: 'rgba(0, 0, 0, 0.8)',
+      zIndex: 9999,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    }}
+    onClick={(e) => {
+      if (e.target === e.currentTarget) closeGameModal();
+    }}
+  >
+    <div style={{
+      width: '98vw',
+      height: '98vh',
+      background: 'white',
+      borderRadius: '12px',
+      position: 'relative',
+      overflow: 'hidden'
+    }}>
+      <button onClick={closeGameModal} style={{ /* close button styles */ }}>
+        x
+      </button>
+      <iframe
+        src="/assets/games/schedule-matcher.html"
+        style={{ width: '100%', height: '100%', border: 'none' }}
+        title="Schedule Matcher Game"
+      />
+    </div>
+  </div>
+)}
+```
+
+### Modal Trigger
+```jsx
+<a href="#" className="section-link" onClick={(e) => { e.preventDefault(); openGameModal(); }}>
+  <i data-feather="play-circle" style={{width: '18px', height: '18px'}}></i>
+  <span>Start with our interactive game</span>
+  <i data-feather="arrow-right"></i>
+</a>
 ```
 
 ---
@@ -473,7 +574,7 @@ useEffect(() => {
 | `.play-button-overlay.hidden` | Hidden after click |
 | `.video-caption` | 14px italic caption |
 
-### Modal
+### Modal (Typeform)
 | Class | Purpose |
 |-------|---------|
 | `.modal` | Fixed overlay (hidden by default) |
@@ -530,6 +631,7 @@ useEffect(() => {
 | Asset | Path | Usage |
 |-------|------|-------|
 | Time-lapse video | `/assets/videos/time-lapse.mp4` | Hero + Company video |
+| Schedule Matcher game | `/assets/games/schedule-matcher.html` | Interactive game modal |
 | MultiLocal PDF | `/assets/resources/What-Is-MultiLocal.pdf` | Downloadable resource |
 | Refactoring UI PDF | `/assets/resources/Refactoring-UI.pdf` | Downloadable resource |
 | Sarah avatar | Unsplash (external) | Example card |
@@ -544,7 +646,7 @@ useEffect(() => {
 |------|----------|
 | `zap` | Hero badge, Values (Speed) |
 | `arrow-right` | CTA button, Section links, Apply button |
-| `play-circle` | Mission section link |
+| `play-circle` | Mission section link (game modal trigger) |
 | `book-open` | Mission section link, What's Inside |
 | `edit-3` | Company section link |
 | `globe` | Values (Build what's needed) |
@@ -588,10 +690,13 @@ import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Join Split Lease: We're redefining the way people live, work, and share space.">
+  <meta name="description" content="Join Split Lease: We're redefining the way people live, work, and share space. Building tools for multilocal living.">
   <title>Careers at Split Lease | Join Our Team</title>
+  <link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png">
 
   <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&display=swap" rel="stylesheet">
 
@@ -628,18 +733,26 @@ Page Load
     +-- Render page sections
     |
     +-- User clicks "Apply Now" button
-            |
-            +-- openTypeformModal()
-                    |
-                    +-- Set typeformModalActive = true
-                    +-- Disable body scroll
-                    +-- useEffect triggers Typeform embed load
-                    +-- Re-initialize Feather icons
+    |       |
+    |       +-- openTypeformModal()
+    |               |
+    |               +-- Set typeformModalActive = true
+    |               +-- Disable body scroll
+    |               +-- useEffect triggers Typeform embed load
+    |               +-- Re-initialize Feather icons
+    |
+    +-- User clicks "Start with our interactive game" link
+    |       |
+    |       +-- openGameModal()
+    |               |
+    |               +-- Set gameModalActive = true
+    |               +-- Disable body scroll
+    |               +-- Render game iframe
     |
     +-- User presses ESC or clicks backdrop
             |
-            +-- closeTypeformModal()
-                    +-- Set typeformModalActive = false
+            +-- closeTypeformModal() or closeGameModal()
+                    +-- Set respective modal state = false
                     +-- Restore body scroll
 ```
 
@@ -652,8 +765,10 @@ Page Load
 | Icons not appearing | Verify Feather script loaded, check `window.feather.replace()` |
 | Typeform not loading | Check form ID, verify SDK script loaded |
 | Modal not closing | Check ESC handler, verify backdrop click handler |
+| Game modal not opening | Check `openGameModal` function, verify click handler on link |
+| Game iframe blank | Verify `/assets/games/schedule-matcher.html` exists |
 | Video not playing | Check video file path, verify browser autoplay policy |
-| Styles broken | Verify CSS imports in HTML, check career.css loading |
+| Styles broken | Verify CSS imports in HTML, check careers.css loading |
 | Layout issues | Check responsive breakpoint CSS |
 | PDF download fails | Verify files exist in `/assets/resources/` |
 | Hover effects not working | Check CSS transition and transform properties |
@@ -687,8 +802,16 @@ Unlike other pages, the Careers page does not use localStorage or URL parameters
 ### External Images
 User avatar images are loaded from Unsplash URLs. These are external dependencies and may change or become unavailable.
 
+### Two Modal Systems
+The page uses two different modal implementations:
+1. **Typeform Modal**: Uses CSS classes (`.modal`, `.modal.active`) for visibility
+2. **Game Modal**: Uses conditional rendering (`{gameModalActive && ...}`) with inline styles
+
+### Interactive Game
+The "Start with our interactive game" link now opens a modal containing the Schedule Matcher game (`/assets/games/schedule-matcher.html`) instead of navigating away from the page.
+
 ---
 
-**VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-04
-**STATUS**: Comprehensive documentation of Careers page
+**VERSION**: 2.0
+**LAST_UPDATED**: 2025-12-11
+**STATUS**: Comprehensive documentation of Careers page (updated to reflect current implementation)
