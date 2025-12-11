@@ -1,6 +1,6 @@
 # About Us Page - Quick Reference
 
-**GENERATED**: 2025-12-04
+**GENERATED**: 2025-12-11
 **PAGE_URL**: `/about-us`
 **ENTRY_POINT**: `app/src/about-us.jsx`
 
@@ -45,7 +45,7 @@ about-us.jsx (Entry Point)
 ### HTML Entry
 | File | Purpose |
 |------|---------|
-| `app/public/about-us.html` | Static HTML with meta tags, fonts |
+| `app/public/about-us.html` | Static HTML with meta tags, fonts, Hotjar integration |
 
 ### Page Components
 | File | Purpose |
@@ -74,8 +74,8 @@ about-us.jsx (Entry Point)
 ### Configuration
 | File | Purpose |
 |------|---------|
-| `app/src/routes.config.js` | Route definition (lines 154-160) |
-| `app/vite.config.js` | Vite build entry (line 281) |
+| `app/src/routes.config.js` | Route definition (lines 170-177) |
+| `app/vite.config.js` | Vite build entry |
 | `app/public/_redirects` | Cloudflare redirect rules |
 
 ---
@@ -95,7 +95,8 @@ about-us.jsx (Entry Point)
   file: 'about-us.html',
   aliases: ['/about-us.html'],
   protected: false,
-  cloudflareInternal: false,
+  cloudflareInternal: true,
+  internalName: 'about-us-view',
   hasDynamicSegment: false
 }
 ```
@@ -158,7 +159,7 @@ goToAboutUs()  // window.location.href = '/about-us'
 ```
 - Class: `.about-team-section`
 - Background: Light blue (`--about-section-bg-light: #F0F8FF`)
-- Grid: 4 columns ’ 3 ’ 2 ’ 1 (responsive)
+- Grid: 4 columns -> 3 -> 2 -> 1 (responsive)
 
 ### Section 4: Features Grid
 ```
@@ -174,7 +175,7 @@ goToAboutUs()  // window.location.href = '/about-us'
 ```
 - Class: `.about-features-section`
 - Background: Light blue (`--about-section-bg-light`)
-- Grid: 3 columns ’ 1 (mobile)
+- Grid: 3 columns -> 1 (mobile)
 - Icons: Inline SVG (64x64px, purple #4B47CE)
 
 ---
@@ -219,10 +220,10 @@ function formatImageUrl(imageUrl) {
 ### 4. Render States
 | State | Component | Display |
 |-------|-----------|---------|
-| `isLoading: true` | `<TeamSkeleton />` × 4 | Animated skeleton cards |
+| `isLoading: true` | `<TeamSkeleton />` x 4 | Animated skeleton cards |
 | `error: string` | Error message | "Unable to load team members..." |
 | `teamMembers.length === 0` | Empty state | "No team members to display." |
-| `teamMembers.length > 0` | `<TeamCard />` × n | Team member cards |
+| `teamMembers.length > 0` | `<TeamCard />` x n | Team member cards |
 
 ---
 
@@ -279,12 +280,13 @@ const { data, error } = await supabase
 - **Image error**: Falls back to purple background (#4B47CE)
 - **Hover effect**: Lifts card by 5px (`transform: translateY(-5px)`)
 - **Cursor**: Pointer if clickable, default otherwise
+- **Data attribute**: `data-member-id` for tracking/testing
 
 ### CSS Dimensions
 | Element | Size |
 |---------|------|
 | Card min-height | 302px |
-| Image container | 144px × 144px (circular) |
+| Image container | 144px x 144px (circular) |
 | Name font | 24px, bold (#31135D) |
 | Title font | 18px, regular (#31135D) |
 | Title max-width | 175px |
@@ -408,10 +410,10 @@ const { data, error } = await supabase
 
 | Breakpoint | Changes |
 |------------|---------|
-| `d 954px` | Team grid: 4 ’ 3 columns |
-| `d 760px` | Mission & section headings: 36px ’ 30px |
-| `d 700px` | Team grid: 3 ’ 2 columns, Features: 3 ’ 1 column, Section padding reduced, Story text: 20px ’ 18px |
-| `d 530px` | Team grid: 2 ’ 1 column, Headings: 30px ’ 26px |
+| `<= 954px` | Team grid: 4 -> 3 columns |
+| `<= 760px` | Mission & section headings: 36px -> 30px |
+| `<= 700px` | Team grid: 3 -> 2 columns, Features: 3 -> 1 column, Section padding reduced, Story text: 20px -> 18px |
+| `<= 530px` | Team grid: 2 -> 1 column, Headings: 30px -> 26px |
 
 ### Mobile Padding
 ```css
@@ -548,6 +550,16 @@ input: {
 <script type="module" src="/src/about-us.jsx"></script>
 ```
 
+### HTML Head Elements
+```html
+<meta name="description" content="About Split Lease - Our mission is to make repeat travel flexible, fast and affordable. Learn about our team and why we created Split Lease.">
+<title>About Us | Split Lease</title>
+<link rel="icon" type="image/png" href="/assets/images/split-lease-purple-circle.png">
+<link rel="stylesheet" href="/src/styles/main.css">
+<script type="module" src="/src/lib/config.js"></script>
+<script type="module" src="/src/lib/hotjar.js"></script>
+```
+
 ---
 
 ## ### FONTS ###
@@ -665,7 +677,7 @@ console.error('[AboutUsPage] Unexpected error:', err);
 | Pages CLAUDE.md | `app/src/islands/pages/CLAUDE.md` |
 | Database Schema | `DATABASE_SCHEMA_OVERVIEW.md` |
 | Database Tables | `Documentation/Database/DATABASE_TABLES_DETAILED.md` |
-| Routing Guide | `Documentation/ROUTING_GUIDE.md` |
+| Routing Guide | `Documentation/Routing/ROUTING_GUIDE.md` |
 
 ---
 
@@ -676,9 +688,9 @@ console.error('[AboutUsPage] Unexpected error:', err);
 
 ### Story Pain Points
 1. We needed to be in the city part of the time
-2. But we weren't willing to give up our primary residences
-3. Random nights at hotels and Airbnbs add up
-4. Carrying a suitcase around everywhere does not make you feel like a local
+2. But we weren't willing to give up our primary residences.
+3. Random nights at hotels and Airbnbs add up.
+4. Carrying a suitcase around everywhere does not make you feel like a local.
 
 ### Feature Descriptions
 | Feature | Description |
@@ -689,6 +701,6 @@ console.error('[AboutUsPage] Unexpected error:', err);
 
 ---
 
-**VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-04
-**STATUS**: Comprehensive initial documentation
+**VERSION**: 1.1
+**LAST_UPDATED**: 2025-12-11
+**STATUS**: Updated to match current implementation
