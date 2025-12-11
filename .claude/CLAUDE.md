@@ -203,4 +203,4 @@ supabase functions deploy <name>   # Deploy single function
 
 ---
 
-**VERSION**: 8.0 | **UPDATED**: 2025-12-11
+**VERSION**: 9.0 | **UPDATED**: 2025-12-11
