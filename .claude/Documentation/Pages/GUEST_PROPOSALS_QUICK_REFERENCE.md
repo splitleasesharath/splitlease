@@ -1,6 +1,6 @@
 # Guest Proposals Page - Quick Reference
 
-**GENERATED**: 2025-12-04
+**GENERATED**: 2025-12-11
 **PAGE_URL**: `/guest-proposals` or `/guest-proposals?proposal={proposalId}`
 **ENTRY_POINT**: `app/src/guest-proposals.jsx`
 
@@ -32,16 +32,16 @@ const [authState, setAuthState] = useState({
 
 ### Auth Check Flow (Two-Step Pattern)
 ```
-1. Page loads → authState.isChecking = true
+1. Page loads -> authState.isChecking = true
 2. Clean legacy URL patterns (cleanLegacyUserIdFromUrl)
 3. Step 1: Lightweight auth check (checkAuthStatus)
-   ├─ Not authenticated → redirect to / (NOT_AUTHENTICATED)
-   └─ Authenticated → continue to Step 2
+   |- Not authenticated -> redirect to / (NOT_AUTHENTICATED)
+   |- Authenticated -> continue to Step 2
 4. Step 2: Validate token AND fetch user data (validateTokenAndFetchUser)
-   ├─ Token invalid → redirect to / (TOKEN_INVALID)
-   └─ Valid → get userType from response
-       ├─ Not Guest → redirect to / (NOT_GUEST)
-       └─ Is Guest → load proposals
+   |- Token invalid -> redirect to / (TOKEN_INVALID)
+   |- Valid -> get userType from response
+       |- Not Guest -> redirect to / (NOT_GUEST)
+       |- Is Guest -> load proposals
 ```
 
 **IMPORTANT**: This two-step pattern prevents race conditions where `getUserType()`
@@ -60,8 +60,9 @@ const isAuthenticated = await checkAuthStatus()
 const userData = await validateTokenAndFetchUser()
 // userData = { userId, firstName, fullName, email, profilePhoto, userType }
 
-// Get userType from the validated response (NOT from sync storage)
-const userType = userData.userType  // 'Host' or 'Guest'
+// Check userType - handles both 'Guest' and 'A Guest (I would like to rent a space)'
+const userType = userData.userType
+const isGuest = userType === 'Guest' || userType?.includes('Guest')
 
 // Get user ID from secure session storage
 const userId = getSessionId()
@@ -90,24 +91,25 @@ guest-proposals.jsx (Entry Point)
             |       +-- Two-step auth (checkAuthStatus + validateTokenAndFetchUser)
             |       +-- User ID from session (NOT URL)
             |       +-- Proposal fetching via userProposalQueries
-            |       +-- Virtual meeting management
+            |       +-- Status button config from os_proposal_status table
             |       +-- Modal state management
             |       +-- Navigation handlers
             |
             +-- UI Components
                 +-- Header.jsx (Site navigation)
+                +-- Footer.jsx (Site footer)
                 +-- ProposalSelector.jsx (Dropdown)
-                +-- VirtualMeetingsSection.jsx (Active VMs)
                 +-- ProposalCard.jsx (Main display)
                 |       +-- Two-column layout
-                |       +-- ProgressTracker.jsx (6 stages)
-                |       +-- Status banner
-                |       +-- Action buttons (dynamic)
+                |       +-- InlineProgressTracker (6 stages)
+                |       +-- StatusBanner
+                |       +-- Action buttons (dynamic from buttonConfig)
                 |       +-- Pricing bar
+                +-- VirtualMeetingsSection.jsx (Active VMs)
                 +-- Modals
                     +-- GuestEditingProposalModal.jsx
                     +-- HostProfileModal.jsx
-                    +-- MapModal.jsx
+                    +-- VirtualMeetingManager.jsx
 ```
 
 ---
@@ -117,76 +119,58 @@ guest-proposals.jsx (Entry Point)
 ### Entry Point
 | File | Purpose |
 |------|---------|
-| `app/src/guest-proposals.jsx` | Mounts GuestProposalsPage to #root |
+| `app/src/guest-proposals.jsx` | Mounts GuestProposalsPage to #root, imports CSS |
 
 ### Page Components
 | File | Purpose |
 |------|---------|
-| `app/src/islands/pages/GuestProposalsPage.jsx` | Main hollow component |
+| `app/src/islands/pages/GuestProposalsPage.jsx` | Main hollow component with LoadingState, ErrorState, EmptyState |
 | `app/src/islands/pages/proposals/useGuestProposalsPageLogic.js` | Core business logic hook |
 
 ### Sub-Components
 | File | Purpose |
 |------|---------|
-| `app/src/islands/pages/proposals/ProposalCard.jsx` | Two-column card with host overlay |
+| `app/src/islands/pages/proposals/ProposalCard.jsx` | Two-column card with host overlay, inline progress tracker |
 | `app/src/islands/pages/proposals/ProposalSelector.jsx` | Dropdown for proposal selection |
-| `app/src/islands/pages/proposals/VirtualMeetingsSection.jsx` | Active virtual meetings display |
-| `app/src/islands/pages/proposals/ProgressTracker.jsx` | 6-stage horizontal tracker |
+| `app/src/islands/pages/proposals/VirtualMeetingsSection.jsx` | Active virtual meetings display with state-aware UI |
+| `app/src/islands/pages/proposals/ProgressTracker.jsx` | Standalone progress tracker (not currently used - inline version in ProposalCard) |
 
 ### Modals
 | File | Purpose |
 |------|---------|
 | `app/src/islands/modals/GuestEditingProposalModal.jsx` | Edit proposal terms + cancel |
 | `app/src/islands/modals/HostProfileModal.jsx` | Host verification & listings |
-| `app/src/islands/modals/MapModal.jsx` | Listing location map |
+| `app/src/islands/shared/VirtualMeetingManager/VirtualMeetingManager.jsx` | VM request/respond/details/cancel modal |
 
 ### Logic Layer - Constants
 | File | Purpose |
 |------|---------|
-| `app/src/logic/constants/proposalStatuses.js` | 20+ status configs with actions |
-| `app/src/logic/constants/proposalStages.js` | 6 progress stages (1-6) |
+| `app/src/logic/constants/proposalStatuses.js` | 20+ status configs with actions, usualOrder |
+| `app/src/logic/constants/proposalStages.js` | 6 progress stages (1-6) with helpers |
 
 ### Logic Layer - Rules (Pillar II)
 | File | Purpose |
 |------|---------|
-| `app/src/logic/rules/proposals/proposalRules.js` | canCancel, canModify, canAccept |
-| `app/src/logic/rules/proposals/virtualMeetingRules.js` | VM state machine (5 states) |
-| `app/src/logic/rules/proposals/useProposalButtonStates.js` | Button visibility hook |
-| `app/src/logic/rules/proposals/canCancelProposal.js` | Cancel permission check |
-| `app/src/logic/rules/proposals/canEditProposal.js` | Edit permission check |
-| `app/src/logic/rules/proposals/determineProposalStage.js` | Stage determination |
-
-### Logic Layer - Processors (Pillar III)
-| File | Purpose |
-|------|---------|
-| `app/src/logic/processors/proposals/processProposalData.js` | Raw -> clean data transform |
-
-### Logic Layer - Workflows (Pillar IV)
-| File | Purpose |
-|------|---------|
-| `app/src/logic/workflows/proposals/cancelProposalWorkflow.js` | 7 cancel variations |
-| `app/src/logic/workflows/proposals/navigationWorkflow.js` | Page navigation handlers |
-| `app/src/logic/workflows/proposals/counterofferWorkflow.js` | Accept/decline counteroffer |
-| `app/src/logic/workflows/proposals/virtualMeetingWorkflow.js` | VM request/response flow |
+| `app/src/logic/rules/proposals/virtualMeetingRules.js` | VM state machine (6 states) |
 
 ### Library Utilities
 | File | Purpose |
 |------|---------|
-| `app/src/lib/proposals/userProposalQueries.js` | Session-based Supabase proposal queries |
+| `app/src/lib/proposals/userProposalQueries.js` | Session-based Supabase proposal queries with nested fetches |
 | `app/src/lib/proposals/dataTransformers.js` | Data transformation utilities |
-| `app/src/lib/proposals/statusButtonConfig.js` | Status -> button mapping |
+| `app/src/lib/proposals/statusButtonConfig.js` | os_proposal_status table cache + button config |
 | `app/src/lib/proposals/urlParser.js` | Session-based user ID + URL proposal ID |
 
 ### Authentication Utilities
 | File | Purpose |
 |------|---------|
-| `app/src/lib/auth.js` | checkAuthStatus, getUserType |
+| `app/src/lib/auth.js` | checkAuthStatus, validateTokenAndFetchUser |
 | `app/src/lib/secureStorage.js` | getSessionId (user ID from session) |
 
 ### Styles
 | File | Purpose |
 |------|---------|
-| `app/src/styles/components/guest-proposals.css` | Complete page styling (1475 lines) |
+| `app/src/styles/components/guest-proposals.css` | Complete page styling |
 
 ---
 
@@ -202,8 +186,8 @@ guest-proposals.jsx (Entry Point)
 ### Legacy URL Patterns (Auto-Cleaned)
 These patterns are automatically cleaned and redirected:
 ```
-/guest-proposals/{userId}         → /guest-proposals
-/guest-proposals?user={userId}    → /guest-proposals
+/guest-proposals/{userId}         -> /guest-proposals
+/guest-proposals?user={userId}    -> /guest-proposals
 ```
 
 ### URL Parser Functions
@@ -233,31 +217,34 @@ updateUrlWithProposal(proposalId)  // Updates to /guest-proposals?proposal={id}
 
 ### Status Configuration (`proposalStatuses.js`)
 Each status defines:
-- `key`: Database value
-- `color`: UI theme (red/yellow/blue/green/gray)
+- `key`: Database value (exact string from Bubble)
+- `color`: UI theme (red/yellow/blue/green/gray/purple)
 - `label`: Display text
 - `stage`: Progress stage (1-6) or null
-- `usualOrder`: Bubble ordering (1-7 active, 99 terminal)
+- `usualOrder`: Bubble ordering (0-7 active, 99 terminal)
 - `actions`: Available action identifiers
+- `isSuggestedBySL`: Boolean for Split Lease suggested proposals
 
 ### Key Statuses
-| Status Key | Stage | Color | Actions |
-|------------|-------|-------|---------|
-| `Pending` | 1 | blue | cancel, request_vm, send_message |
-| `Proposal Submitted by guest - Awaiting Rental Application` | 1 | blue | submit_rental_app, cancel, vm |
-| `Proposal Submitted for guest by Split Lease - Awaiting Rental Application` | 1 | purple | submit_rental_app, cancel, vm |
-| `Rental Application Submitted` | 2 | blue | vm, cancel, message |
-| `Host Review` | 3 | blue | vm, cancel, message |
-| `Host Counteroffer Submitted / Awaiting Guest Review` | 3 | yellow | review, accept, decline, vm |
-| `Proposal or Counteroffer Accepted / Drafting Lease Documents` | 4 | green | vm, message |
-| `Reviewing Documents` | 4 | blue | review_documents, vm |
-| `Lease Documents Sent for Review` | 4 | blue | review_documents, vm |
-| `Lease Documents Sent for Signatures` | 5 | green | sign_documents, vm |
-| `Lease Documents Signed / Awaiting Initial payment` | 6 | green | submit_payment, vm |
-| `Initial Payment Submitted / Lease activated` | 6 | green | view_lease, house_manual |
-| `Proposal Cancelled by Guest` | null | red | view_listing, explore |
-| `Proposal Rejected by Host` | null | red | view_listing, explore |
-| `Expired` | null | gray | view_listing, explore |
+| Status Key | Stage | Color | usualOrder |
+|------------|-------|-------|------------|
+| `Pending` | 1 | blue | 1 |
+| `Host Review` | 3 | blue | 2 |
+| `Proposal Submitted by guest - Awaiting Rental Application` | 1 | blue | 3 |
+| `Proposal Submitted for guest by Split Lease - Awaiting Rental Application` | 1 | purple | 3 |
+| `Proposal Submitted for guest by Split Lease - Pending Confirmation` | 1 | purple | 3 |
+| `Rental Application Submitted` | 2 | blue | 3 |
+| `Host Counteroffer Submitted / Awaiting Guest Review` | 3 | yellow | 4 |
+| `Proposal or Counteroffer Accepted / Drafting Lease Documents` | 4 | green | 5 |
+| `Reviewing Documents` | 4 | blue | 5 |
+| `Lease Documents Sent for Review` | 4 | blue | 6 |
+| `Lease Documents Sent for Signatures` | 5 | green | 6 |
+| `Lease Documents Signed / Awaiting Initial payment` | 6 | green | 6 |
+| `Initial Payment Submitted / Lease activated` | 6 | green | 7 |
+| `Proposal Cancelled by Guest` | null | red | 99 |
+| `Proposal Cancelled by Split Lease` | null | red | 99 |
+| `Proposal Rejected by Host` | null | red | 99 |
+| `Expired` | null | gray | 99 |
 
 ### Status Helper Functions
 ```javascript
@@ -273,6 +260,65 @@ import {
   isSuggestedProposal
 } from 'logic/constants/proposalStatuses.js'
 ```
+
+---
+
+## ### DYNAMIC_BUTTON_SYSTEM ###
+
+### os_proposal_status Table Integration
+Button labels and visibility are now driven by the `os_proposal_status` Supabase table:
+
+```javascript
+import {
+  fetchStatusConfigurations,
+  getButtonConfigForProposal,
+  isStatusConfigCacheReady,
+  getGuestAction1Label,
+  getGuestAction2Label,
+  shouldHideVirtualMeetingButton
+} from 'lib/proposals/statusButtonConfig.js'
+
+// Fetch and cache on page load
+await fetchStatusConfigurations()
+
+// Get complete button config for a proposal
+const buttonConfig = getButtonConfigForProposal(proposal)
+// Returns:
+{
+  guestAction1: { visible, label, action, style },
+  guestAction2: { visible, label, action, style },
+  cancelButton: { visible, label, action, style, disabled },
+  vmButton: { visible, label, action, style, disabled },
+  sortOrder,
+  isTerminal,
+  isCounteroffer,
+  isSLSuggested
+}
+```
+
+### Button Visibility Rules
+- **VM Button**: Hidden for rejected, cancelled by SL, activated, or SL-suggested proposals
+- **Guest Action 1**: Based on os_proposal_status.guest_action_1, hidden if reminders >= 3 or docs finalized
+- **Guest Action 2**: Based on os_proposal_status.guest_action_2, hidden if ID docs already submitted
+- **Cancel Button**: Shows "Delete" for terminal, "Reject Modified Terms" for counteroffer, "See House Manual" for late-stage with manual, "Reject Proposal" for SL-suggested
+
+### Guest Action Button Types
+| Label | Action | Button Class |
+|-------|--------|--------------|
+| Interested | confirm_interest | btn-interested |
+| Submit Rental App | submit_rental_app | btn-primary-action |
+| Modify Proposal | modify_proposal | btn-modify-proposal |
+| Accept Host Terms | accept_counteroffer | btn-accept-counteroffer |
+| Remind Split Lease | remind_sl | btn-remind |
+| Review Documents | review_documents | btn-primary-action |
+| Resend Lease Docs | resend_lease_docs | btn-primary-action |
+| Submit Initial Payment | submit_payment | btn-primary-action |
+| Go to Leases | go_to_leases | btn-go-to-leases |
+| Delete Proposal | delete_proposal | btn-delete-proposal |
+| Not Interested | reject_suggestion | btn-not-interested |
+| Review Host Terms | review_counteroffer | btn-review-terms |
+| See Details | see_details | btn-see-details |
+| Verify Your Identity | verify_identity | btn-verify-identity |
 
 ---
 
@@ -305,20 +351,33 @@ import {
 } from 'logic/constants/proposalStages.js'
 ```
 
+### Inline Progress Tracker Colors
+Per-stage color logic in ProposalCard.jsx:
+```javascript
+const PROGRESS_COLORS = {
+  purple: '#6D31C2',    // Completed stage
+  green: '#1F8E16',     // Current/Active stage (action needed)
+  red: '#DB2E2E',       // Cancelled/Rejected (ALL stages turn red)
+  lightPurple: '#B6B7E9', // Pending/Waiting state
+  gray: '#DEDEDE',      // Inactive/Future stage
+  labelGray: '#9CA3AF'  // Inactive label color
+}
+```
+
 ---
 
 ## ### VIRTUAL_MEETING_STATES ###
 
-5-state machine (`virtualMeetingRules.js`):
+6-state machine (`virtualMeetingRules.js`):
 
 | State | Description | Button Text | Button Style |
 |-------|-------------|-------------|--------------|
-| `no_meeting` | No VM exists | "Request Virtual Meeting" | primary |
-| `requested_by_guest` | Guest requested, waiting | "Meeting Requested" | disabled |
-| `requested_by_host` | Host requested | "Respond to Virtual Meeting" | secondary |
-| `booked_awaiting_confirmation` | Booked, not confirmed | "View Meeting Details" | secondary |
-| `confirmed` | Confirmed by Split Lease | "Join Virtual Meeting" | success |
-| `declined` | VM declined | "Request Alternative Meeting" | warning |
+| `NO_MEETING` | No VM exists | "Request Virtual Meeting" | primary |
+| `REQUESTED_BY_GUEST` | Guest requested, waiting | "Meeting Requested" | disabled |
+| `REQUESTED_BY_HOST` | Host requested | "Respond to Virtual Meeting" | secondary |
+| `BOOKED_AWAITING_CONFIRMATION` | Booked, not confirmed | "View Meeting Details" | secondary |
+| `CONFIRMED` | Confirmed by Split Lease | "Join Virtual Meeting" | success |
+| `DECLINED` | VM declined | "Request Alternative Meeting" | warning |
 
 ### VM Rule Functions
 ```javascript
@@ -341,63 +400,15 @@ const vmInfo = getVMStateInfo(virtualMeeting, currentUserId)
 // Returns: { state, showButton, buttonText, buttonStyle, buttonDisabled, canRequest, canRespond, canJoin, canViewDetails, canCancel }
 ```
 
----
-
-## ### PROPOSAL_RULES ###
-
-### Permission Checks (`proposalRules.js`)
-```javascript
-import {
-  canCancelProposal,          // Can guest cancel?
-  canModifyProposal,          // Can guest edit terms?
-  hasReviewableCounteroffer,  // Has counteroffer to review?
-  canAcceptCounteroffer,      // Can accept CO?
-  canDeclineCounteroffer,     // Can decline CO?
-  canSubmitRentalApplication, // Can submit rental app?
-  canReviewDocuments,         // Can review docs?
-  canRequestVirtualMeeting,   // Can request VM?
-  canSendMessage,             // Can send message?
-  isProposalActive,           // Is proposal active?
-  isProposalCancelled,        // Is cancelled?
-  isProposalRejected,         // Is rejected?
-  isLeaseActivated,           // Is lease activated?
-  requiresSpecialCancellationConfirmation, // Usual Order > 5 + house manual
-  getCancelButtonText,        // Get cancel button text
-  getCancellationReasonOptions // Get reason options
-} from 'logic/rules/proposals/proposalRules.js'
-```
-
----
-
-## ### BUTTON_STATES_HOOK ###
-
-`useProposalButtonStates` computes 4 button groups:
-
-```javascript
-import { useProposalButtonStates } from 'logic/rules/proposals/useProposalButtonStates.js'
-
-const buttonStates = useProposalButtonStates({
-  proposal,
-  virtualMeeting,
-  guest,
-  listing,
-  currentUserId
-})
-
-// Returns:
-{
-  virtualMeeting: { visible, label, disabled, fontColor, bold, tooltip },
-  guestAction1: { visible, label, backgroundColor },
-  guestAction2: { visible, label },
-  cancelProposal: { visible, label, backgroundColor }
-}
-```
-
-### Button Visibility Rules
-- **VM Button**: Hidden for rejected, cancelled by SL, activated, or SL-suggested proposals
-- **Guest Action 1**: Based on status config, hidden if reminders > 3 or docs not finalized
-- **Guest Action 2**: Based on status config, hidden if ID docs not submitted
-- **Cancel Proposal**: Shows "Delete" for terminal, "Reject Terms" for counteroffer, "See House Manual" for late-stage with manual
+### VM Button Configuration in ProposalCard
+8 Bubble conditionals mapped to React state:
+1. Other party requested -> "Respond to Virtual Meeting Request" (view: respond)
+2. Current user requested -> "Virtual Meeting Requested" (disabled)
+3. Button pressed -> visual feedback (handled by CSS)
+4. Booked but not confirmed -> "Virtual Meeting Accepted" (disabled)
+5. Booked and confirmed -> "Meeting confirmed" (view: details)
+6. Meeting declined -> "Virtual Meeting Declined" (view: request, red style)
+7-8. Hidden for rejected/cancelled/activated/SL-suggested statuses
 
 ---
 
@@ -406,41 +417,36 @@ const buttonStates = useProposalButtonStates({
 ### Complete Data Flow (Session-Based)
 ```
 1. Auth Check (Two-Step Pattern)
-   └─ checkAuthStatus() → validateTokenAndFetchUser() → get userType from response
+   |- checkAuthStatus() -> validateTokenAndFetchUser() -> get userType from response
 
 2. Get User ID from Session
-   └─ getUserIdFromSession() → getSessionId() from secure storage
+   |- getUserIdFromSession() -> getSessionId() from secure storage
 
-3. Fetch User with Proposals List
-   └─ fetchUserWithProposalList(userId)
-       └─ SELECT _id, "Name - First", "Proposals List" FROM user
+3. Fetch Status Configurations (parallel)
+   |- fetchStatusConfigurations() -> caches os_proposal_status table
 
-4. Extract Proposal IDs
-   └─ extractProposalIds(user) → parse "Proposals List" JSONB
+4. Fetch User with Proposals List
+   |- fetchUserWithProposalList(userId)
+       |- SELECT _id, "Name - First", "Proposals List" FROM user
 
-5. Fetch Proposals by IDs
-   └─ fetchProposalsByIds(proposalIds)
-       ├─ Fetch proposals from 'proposal' table
-       ├─ Fetch listings from 'listing' table
-       ├─ Fetch hosts from 'user' table (via Host / Landlord)
-       ├─ Fetch guests from 'user' table
-       ├─ Fetch boroughs from 'zat_geo_borough_toplevel'
-       ├─ Fetch neighborhoods from 'zat_geo_hood_mediumlevel'
-       ├─ Fetch house rules from 'zat_features_houserule'
-       ├─ Fetch featured photos from 'listing_photo'
-       └─ Fetch virtual meetings from 'virtualmeetingschedulesandlinks'
+5. Extract Proposal IDs
+   |- extractProposalIds(user) -> parse "Proposals List" JSONB
 
-6. Enrich & Return
-   └─ Manual joins to create enriched proposal objects
-```
+6. Fetch Proposals by IDs
+   |- fetchProposalsByIds(proposalIds)
+       |- Fetch proposals from 'proposal' table
+       |- Filter out Deleted=true and "Proposal Cancelled by Guest"
+       |- Fetch listings from 'listing' table
+       |- Extract/fetch featured photos
+       |- Fetch boroughs from 'zat_geo_borough_toplevel'
+       |- Fetch neighborhoods from 'zat_geo_hood_mediumlevel'
+       |- Fetch house rules from 'zat_features_houserule'
+       |- Fetch hosts from 'user' table (via "Host / Landlord")
+       |- Fetch guests from 'user' table
+       |- Fetch virtual meetings from 'virtualmeetingschedulesandlinks'
 
-### 1. Fetch Proposals (Session-Based)
-```javascript
-// In useGuestProposalsPageLogic.js
-import { fetchUserProposalsFromUrl } from 'lib/proposals/userProposalQueries.js'
-
-// User ID comes from session, NOT passed as parameter
-const { user, proposals, selectedProposal } = await fetchUserProposalsFromUrl()
+7. Enrich & Return
+   |- Manual joins to create enriched proposal objects with nested data
 ```
 
 ### Main Query Function
@@ -453,77 +459,49 @@ export async function fetchUserProposalsFromUrl() {
     throw new Error('NOT_AUTHENTICATED');
   }
 
-  // Step 2-6: Fetch and enrich data...
+  // Steps 2-7: Fetch and enrich data...
   return { user, proposals, selectedProposal };
 }
 ```
 
-### 2. Transform Data
+### Data Transformations
 ```javascript
-import {
-  processProposalData,
-  processListingData,
-  processHostData,
-  processVirtualMeetingData,
-  getProposalDisplayText,
-  getEffectiveTerms,
-  formatPrice,
-  formatDate,
-  formatDateTime
-} from 'logic/processors/proposals/processProposalData.js'
+import { transformProposalData, getProposalDisplayText } from 'lib/proposals/dataTransformers.js'
 
-const cleanProposal = processProposalData(rawProposal)
-const terms = getEffectiveTerms(cleanProposal)  // Uses counteroffer if exists
+const cleanProposal = transformProposalData(rawProposal)
 const displayText = getProposalDisplayText(cleanProposal) // "Host - Listing"
-```
-
-### 3. Display in UI
-```jsx
-<ProposalCard
-  proposal={selectedProposal}
-  listing={proposal.listing}
-  host={proposal.host}
-  virtualMeeting={proposal.virtualMeeting}
-  currentUserId={userId}
-  onViewListing={handleViewListing}
-  onMessage={handleMessage}
-  onHostProfile={handleHostProfile}
-  onMapClick={handleMapClick}
-  onEditProposal={handleEditProposal}
-  onCancelProposal={handleCancelProposal}
-  onVirtualMeetingAction={handleVMAction}
-/>
 ```
 
 ---
 
 ## ### PROPOSALCARD_STRUCTURE ###
 
-Two-column layout:
+Two-column layout with integrated progress tracker:
 
 ```
 +-------------------------------------------------------------+
 | [Status Banner - Dynamic based on status]                   |
 +---------------------------------+---------------------------+
 | LEFT COLUMN                     | RIGHT COLUMN              |
-| - Listing title (purple link)   | - Listing photo           |
-| - Location                      | - Host avatar overlay     |
-| - [View Listing] [Map] buttons  | - Host name badge         |
-| - Schedule pattern text         | - [Host Profile] [Message]|
-| - Day badges (M T W T F S S)    |                           |
+| - Listing title                 | - Listing photo           |
+| - Location (hood, borough)      | - Host avatar overlay     |
+| - [View Listing] [View Map]     | - Host name badge         |
+| - Check-in/out day range        | - [Host Profile]          |
+| - Duration (weeks)              | - [Send a Message]        |
+| - Day badges (S M T W T F S)    |                           |
+| - Warning icon if unavailable   |                           |
 | - Check-in/out times            |                           |
-| - Move-in date                  |                           |
+| - Move-in/Move-out dates        |                           |
 | - House Rules (collapsible)     |                           |
 +---------------------------------+---------------------------+
 | PRICING BAR                                                 |
-| Nightly: $xxx | 4-week: $x,xxx | Fee: $xx | Deposit: $xxx   |
-+-------------------------------------------------------------+
-| ACTION BUTTONS (Dynamic based on status + VM state)         |
+| Original (strikethrough if counteroffer) | Total | Fee | Deposit | Nightly |
+| ACTION BUTTONS (Dynamic from buttonConfig)                  |
 | [VM Button] [Guest Action 1] [Guest Action 2] [Cancel]      |
 +-------------------------------------------------------------+
-| PROGRESS TRACKER (6 stages)                                 |
+| INLINE PROGRESS TRACKER (6 stages)                          |
 | o---o---o---o---o---o                                       |
-| 1   2   3   4   5   6                                       |
+| Labels with dynamic colors based on status                  |
 +-------------------------------------------------------------+
 ```
 
@@ -536,18 +514,36 @@ Two-column layout:
 |--------|--------|--------|---------|-----|----------|
 | **Bubble** (stored) | 1 | 2 | 3 | ... | 7 |
 | **JavaScript** (display) | 0 | 1 | 2 | ... | 6 |
+| **Text format** | "Sunday" | "Monday" | "Tuesday" | ... | "Saturday" |
 
 ### Conversion in ProposalCard.jsx
 ```javascript
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S']  // 0-indexed
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
 
 function getAllDaysWithSelection(daysSelected) {
-  const selectedSet = new Set(daysSelected || [])
-  return DAY_LETTERS.map((letter, index) => ({
-    index,
-    letter,
-    selected: selectedSet.has(index + 1)  // Bubble day (1-indexed)
-  }))
+  const days = daysSelected || [];
+
+  // Determine if text format or numeric indices
+  const isTextFormat = days.length > 0 && typeof days[0] === 'string';
+
+  if (isTextFormat) {
+    // Text format: ["Monday", "Tuesday", etc.]
+    const selectedSet = new Set(days);
+    return DAY_LETTERS.map((letter, index) => ({
+      index,
+      letter,
+      selected: selectedSet.has(DAY_NAMES[index])
+    }));
+  } else {
+    // Numeric format: Bubble 1-indexed [2, 3, 4, 5, 6] for Mon-Fri
+    const selectedSet = new Set(days);
+    return DAY_LETTERS.map((letter, index) => ({
+      index,
+      letter,
+      selected: selectedSet.has(index + 1)  // Convert to Bubble 1-indexed
+    }));
+  }
 }
 ```
 
@@ -589,119 +585,38 @@ function getAllDaysWithSelection(daysSelected) {
 | `.btn-remind` | Remind SL | Green |
 | `.btn-verify-identity` | Verify ID | Blue |
 | `.btn-see-details` | Info | Blue outline |
-
----
-
-## ### WORKFLOWS ###
-
-### Cancel Proposal
-7 variations from Bubble.io:
-```javascript
-import {
-  determineCancellationCondition,
-  executeCancelProposal,
-  cancelProposalFromCompareTerms
-} from 'logic/workflows/proposals/cancelProposalWorkflow.js'
-
-// Check if cancellation is allowed
-const condition = determineCancellationCondition(proposal)
-// Returns: { condition, workflow, allowCancel, requiresConfirmation, confirmationMessage }
-// Conditions: 'standard', 'high_order_with_manual', 'already_cancelled', 'not_cancellable'
-
-// Execute cancellation
-const result = await executeCancelProposal(proposalId, reason)
-```
-
-### Navigation
-```javascript
-import {
-  navigateToListing,
-  navigateToMessaging,
-  navigateToRentalApplication,
-  navigateToDocumentReview,
-  navigateToLeaseDocuments,
-  navigateToHouseManual,
-  navigateToSearch,
-  openExternalLink,
-  updateUrlWithProposal,
-  getProposalIdFromUrl
-} from 'logic/workflows/proposals/navigationWorkflow.js'
-```
-
----
-
-## ### GUESTEDITINGPROPOSALMODAL ###
-
-3-view state machine:
-- `'general'` - View proposal details
-- `'editing'` - Edit schedule/financial terms
-- `'cancel'` - Cancel confirmation
-
-### Features:
-- DayNightSelector - Day/Night toggle grid
-- Move-in date picker with calendar
-- Flexible move-in range textarea
-- Reservation span dropdown (2 weeks to 12 months + custom)
-- ReservationPriceBreakdown - Price details display
-- House rules (collapsible)
-- CancelProposalModalInner - Cancel with reason input
-
-### Reservation Span Options
-```javascript
-const RESERVATION_SPAN_OPTIONS = [
-  { id: '2-weeks', display: '2 weeks', weeks: 2 },
-  { id: '4-weeks', display: '4 weeks', weeks: 4 },
-  { id: '1-month', display: '1 month', months: 1 },
-  { id: '2-months', display: '2 months', months: 2 },
-  { id: '3-months', display: '3 months', months: 3 },
-  { id: '6-months', display: '6 months', months: 6 },
-  { id: '12-months', display: '12 months', months: 12 },
-  { id: 'other', display: 'Other (wks)', type: 'other' }
-]
-```
-
-### Props
-```jsx
-<GuestEditingProposalModal
-  proposal={proposal}
-  listing={listing}
-  user={user}
-  initialView="general"
-  isVisible={true}
-  isInternalUsage={false}
-  pageWidth={1200}
-  onClose={handleClose}
-  onProposalUpdate={handleUpdate}
-  onProposalCancel={handleCancel}
-  onAlert={handleAlert}
-  pricePerNight={150}
-  totalPriceForReservation={2400}
-  priceRentPer4Weeks={1680}
-/>
-```
+| `.btn-reject-proposal` | Reject SL proposal | Red |
 
 ---
 
 ## ### VIRTUAL_MEETINGS_SECTION ###
 
-Displays proposals with active virtual meetings at top of page:
+Displays proposals with active virtual meetings below the main proposal card:
 
 ```jsx
 <VirtualMeetingsSection
-  proposalsWithVM={proposalsWithVM}
-  currentUserId={userId}
-  onSelectProposal={handleSelectProposal}
-  onVMAction={handleVMAction}
+  proposals={proposals}
+  currentUserId={user?._id}
 />
 ```
 
-### VM Card Structure:
+### VM Filter Conditions (from Bubble)
+- virtual meeting isn't empty
+- Status <> Proposal Cancelled by Guest
+- Status <> Proposal Rejected by Host
+- Status <> Proposal Cancelled by Split Lease
+- booked date > current OR suggested dates any item > current
+- meeting declined is no
+
+### VM Card Structure (State-Aware):
 - Host profile icon (48x48px rounded)
-- Title with listing name
-- State badge (Waiting/Pending/Confirmed)
-- Message row with icon
-- Suggested timeslots or booked date pills
-- Action bar (Cancel/Respond/Details/Join buttons)
+- Title with host name + listing name
+- State badge (Awaiting Response/Pending Confirmation/Confirmed)
+- Message row with calendar icon
+- Suggested timeslots OR booked date pill
+- Action bar (dynamic based on VM state):
+  - Respond/Requested/Details/Join primary button
+  - Cancel button (hidden when confirmed)
 
 ### CSS Classes
 | Class | Purpose |
@@ -719,30 +634,58 @@ Displays proposals with active virtual meetings at top of page:
 
 ---
 
-## ### HOSTPROFILEMODAL ###
+## ### GUESTEDITINGPROPOSALMODAL ###
 
-Shows host verification badges and featured listing:
+3-view state machine:
+- `'general'` - View proposal details
+- `'editing'` - Edit schedule/financial terms
+- `'cancel'` - Cancel confirmation
 
+### Features:
+- DayNightSelector - Day/Night toggle grid
+- Move-in date picker with calendar
+- Flexible move-in range textarea
+- Reservation span dropdown
+- ReservationPriceBreakdown - Price details display
+- House rules (collapsible)
+- CancelProposalModalInner - Cancel with reason input
+
+### Props
 ```jsx
-<HostProfileModal
-  host={host}
+<GuestEditingProposalModal
+  proposal={proposal}
   listing={listing}
+  user={{ type: 'guest' }}
+  initialView="general"
+  isVisible={true}
   onClose={handleClose}
+  pricePerNight={150}
+  totalPriceForReservation={2400}
+  priceRentPer4Weeks={1680}
 />
 ```
 
-### Verification Items Displayed:
-- LinkedIn (verified/unverified)
-- Phone Number (verified/unverified)
-- Email (verified/unverified)
-- Identity (verified/unverified)
+---
 
-### Includes:
-- Host photo or initial placeholder
-- Verification list with icons
-- Featured listing card
-- ExternalReviews component
-- Purple close button
+## ### VIRTUALMEETINGMANAGER ###
+
+Integrated modal for all VM actions:
+
+```jsx
+<VirtualMeetingManager
+  proposal={proposal}
+  initialView={vmInitialView}  // 'request' | 'respond' | 'details' | 'cancel'
+  currentUser={currentUser}
+  onClose={handleVMModalClose}
+  onSuccess={handleVMSuccess}
+/>
+```
+
+Views:
+- `request`: Request new VM or suggest alternative times
+- `respond`: Respond to host's suggested times
+- `details`: View booked/confirmed meeting details
+- `cancel`: Cancel VM request
 
 ---
 
@@ -760,27 +703,21 @@ import { useGuestProposalsPageLogic } from './proposals/useGuestProposalsPageLog
 import ProposalCard from './proposals/ProposalCard'
 import ProposalSelector from './proposals/ProposalSelector'
 import VirtualMeetingsSection from './proposals/VirtualMeetingsSection'
-import ProgressTracker from './proposals/ProgressTracker'
 
 // Modals
 import GuestEditingProposalModal from '../modals/GuestEditingProposalModal'
 import HostProfileModal from '../modals/HostProfileModal'
+import VirtualMeetingManager from '../shared/VirtualMeetingManager/VirtualMeetingManager'
 
 // Status config
 import { getStatusConfig, PROPOSAL_STATUSES } from 'logic/constants/proposalStatuses.js'
 import { PROPOSAL_STAGES, getStageById } from 'logic/constants/proposalStages.js'
 
 // Rules
-import { canCancelProposal, canModifyProposal } from 'logic/rules/proposals/proposalRules.js'
 import { getVMStateInfo, VM_STATES } from 'logic/rules/proposals/virtualMeetingRules.js'
-import { useProposalButtonStates } from 'logic/rules/proposals/useProposalButtonStates.js'
 
-// Processors
-import { processProposalData, getEffectiveTerms } from 'logic/processors/proposals/processProposalData.js'
-
-// Workflows
-import { executeCancelProposal, determineCancellationCondition } from 'logic/workflows/proposals/cancelProposalWorkflow.js'
-import { navigateToListing, navigateToMessaging } from 'logic/workflows/proposals/navigationWorkflow.js'
+// Status button config (database-driven)
+import { fetchStatusConfigurations, getButtonConfigForProposal, shouldHideVirtualMeetingButton } from 'lib/proposals/statusButtonConfig.js'
 
 // Queries (session-based)
 import { fetchUserProposalsFromUrl } from 'lib/proposals/userProposalQueries.js'
@@ -812,7 +749,7 @@ const {
   currentStage,        // Current progress stage (1-6)
   formattedStages,     // Formatted stages for progress tracker
   proposalOptions,     // Dropdown options [{ id, label }]
-  buttonConfig,        // Dynamic button configuration
+  buttonConfig,        // Dynamic button configuration from os_proposal_status
 
   // UI state
   isLoading,  // Combined: authState.isChecking || dataLoading
@@ -826,15 +763,21 @@ const {
 
 ---
 
-## ### RESPONSIVE_BREAKPOINTS ###
+## ### STATUS_BANNER_CONFIGS ###
 
-| Breakpoint | Changes |
-|------------|---------|
-| `< 900px` | Card columns stack vertically, listing photo 280px height |
-| `< 768px` | Full-width dropdown, pricing bar stacks, action buttons vertical, progress connector 40px |
-| `< 480px` | Day badges 36px, progress labels hidden, listing actions stack |
-| `< 380px` | Compact date display in modal |
-| `< 350px` | Extra compact labels in price breakdown |
+Banner configurations in ProposalCard.jsx:
+
+| Status | Background | Border | Text Color | Type |
+|--------|------------|--------|------------|------|
+| Proposal Submitted - Awaiting Rental App | #FBECEC | #CC0000 | #CC0000 | warning |
+| SL Suggested proposals | #F3E8FF | #4B0082 | #4B0082 | suggested |
+| Rental Application Submitted | #EBF5FF | #3B82F6 | #1D4ED8 | info |
+| Host Counteroffer | #FEF3C7 | #F59E0B | #92400E | warning |
+| Accepted/Drafting | #E1FFE1 | #1E561A | #1BA54E | success |
+| Cancelled by SL | #FBECEC | #D34337 | #CC0000 | cancelled |
+| Cancelled by Guest | #F3F4F6 | #9CA3AF | #6B7280 | cancelled |
+| Rejected by Host | #FBECEC | #D34337 | #CC0000 | rejected |
+| Expired | #F3F4F6 | #9CA3AF | #6B7280 | expired |
 
 ---
 
@@ -842,17 +785,22 @@ const {
 
 ### Supabase Tables
 - `proposal` - Main proposal data
-- `user` / `users` - Guest and host data
+- `user` - Guest and host data (separate fetches)
 - `listing` - Property details
 - `virtualmeetingschedulesandlinks` - VM records
+- `os_proposal_status` - Button labels and sort order
+- `zat_geo_borough_toplevel` - Borough names
+- `zat_geo_hood_mediumlevel` - Neighborhood names
+- `zat_features_houserule` - House rule names
+- `listing_photo` - Featured photos (legacy format)
 
 ### Key Proposal Fields
 | Field | Purpose |
 |-------|---------|
 | `_id` | Unique identifier |
 | `Status` | Current status string |
-| `Days Selected` | Array of Bubble days [1-7] |
-| `Nights Selected (Nights list)` | Array of night indices |
+| `Deleted` | Soft delete flag |
+| `Days Selected` | Array of Bubble days [1-7] or day names |
 | `Reservation Span (Weeks)` | Number of weeks |
 | `Move in range start` / `end` | Move-in date range |
 | `Total Price for Reservation (guest)` | Total price |
@@ -864,40 +812,10 @@ const {
 | `Guest` | Guest user ID |
 | `Listing` | Listing ID |
 | `virtual meeting` | VM record ID |
-
----
-
-## ### CONDITIONAL_PATTERNS ###
-
-### Pattern: Early Return (First Match Wins)
-```javascript
-const getVmButtonState = () => {
-  if (vmDeclined) return { label: 'Declined' }     // Check 1
-  if (vmConfirmed) return { label: 'Confirmed' }   // Check 2
-  if (vmBooked) return { label: 'Accepted' }       // Check 3
-  return { label: 'Request' }                      // Default
-}
-```
-
-### Pattern: Bottom Wins (Last Match Wins)
-```javascript
-const getButtonState = () => {
-  let state = { label: 'Default' }
-  if (condition1) state = { label: 'Override 1' }
-  if (condition2) state = { label: 'Override 2' }  // Wins if both true
-  return state
-}
-```
-
-### JSX Conditional Rendering
-```jsx
-{/* Independent conditions */}
-{!isTerminal && <VMButton />}
-{status?.includes('Drafting') && <RemindButton />}
-
-{/* Mutually exclusive - ternary chain */}
-{isTerminal ? <DeleteButton /> : hasCounteroffer ? <RejectTermsButton /> : <CancelButton />}
-```
+| `House Rules` | JSON array of house rule IDs |
+| `rental application` | Rental app reference |
+| `remindersByGuest (number)` | Count of reminders sent |
+| `guest documents review finalized?` | Boolean for docs review |
 
 ---
 
@@ -908,14 +826,15 @@ const getButtonState = () => {
 | Redirected to home (timing) | Auth uses two-step: `checkAuthStatus()` then `validateTokenAndFetchUser()` |
 | Redirected to home | Check auth status (must be logged in as Guest) |
 | No proposals showing | Verify session has user ID, check Supabase RLS |
-| Buttons not appearing | Check status config via `getStatusConfig()` |
-| VM button wrong state | Verify `virtualMeeting` object populated |
-| Progress not updating | Check `stage` value in status config |
+| Buttons not appearing | Check buttonConfig from os_proposal_status table |
+| VM button wrong state | Verify `virtualMeeting` object populated, check vmConfig useMemo |
+| Progress not updating | Check `usualOrder` value in status config |
 | Modal not opening | Verify modal state handlers in parent |
 | Styling broken | Check CSS import in guest-proposals.jsx |
-| Day badges all gray | Check `Days Selected` array format |
+| Day badges all gray | Check `Days Selected` array format (text vs numeric) |
 | Counteroffer not showing | Verify `counter offer happened` is true |
-| Wrong price displayed | Check `getEffectiveTerms()` for counteroffer |
+| Wrong price displayed | Check counteroffer fields for `hc *` values |
+| House rules not showing | Check `houseRules` array on proposal (resolved names) |
 
 ---
 
@@ -926,13 +845,17 @@ const getButtonState = () => {
 | App CLAUDE.md | `app/CLAUDE.md` |
 | Logic CLAUDE.md | `app/src/logic/CLAUDE.md` |
 | Database Schema | `DATABASE_SCHEMA_OVERVIEW.md` |
-| Database Tables Detailed | `Documentation/DATABASE_TABLES_DETAILED.md` |
-| Option Sets | `Documentation/OPTION_SETS_DETAILED.md` |
-| Routing Guide | `Documentation/ROUTING_GUIDE.md` |
+| Routing Guide | `.claude/Documentation/Routing/ROUTING_GUIDE.md` |
 
 ---
 
-**VERSION**: 3.1
-**LAST_UPDATED**: 2025-12-04
-**STATUS**: Session-based authentication with two-step auth pattern
-**MAJOR_CHANGE**: Fixed auth timing race condition - now uses `validateTokenAndFetchUser()` to get userType from async response instead of sync storage read
+**VERSION**: 4.0
+**LAST_UPDATED**: 2025-12-11
+**STATUS**: Session-based authentication with two-step auth pattern and database-driven button config
+**MAJOR_CHANGES**:
+- Added VirtualMeetingManager component (replaces separate VM modals)
+- Added database-driven button system via os_proposal_status table
+- Updated VM button logic with 8 Bubble conditionals
+- Added inline progress tracker with per-stage color logic
+- Updated data flow to include featured photo extraction and house rules resolution
+- Added support for both text and numeric day formats
