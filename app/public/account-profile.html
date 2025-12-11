@@ -1164,25 +1164,9 @@
                     console.log('Could not fetch reviews:', reviewError);
                 }
 
-                // Fetch guest account data if user is a guest
-                let guestData = null;
-                if (userData['Account - Guest']) {
-                    const { data: guest, error: guestError } = await supabase
-                        .from('account_guest')
-                        .select('*')
-                        .eq('_id', userData['Account - Guest'])
-                        .single();
-
-                    if (!guestError && guest) {
-                        guestData = guest;
-                        console.log('Guest data retrieved:', guestData);
-                    }
-                }
-
                 return {
                     user: userData,
                     host: hostData,
-                    guest: guestData,
                     listings: listings,
                     reviews: reviews
                 };
@@ -1204,7 +1188,7 @@
 
         // Populate the page with user data
         function populateUserProfile(data) {
-            const { user, host, guest, listings, reviews } = data;
+            const { user, host, listings, reviews } = data;
 
             // Phase 4: Detect user type and apply conditional visibility
             const userType = getUserType(user);
@@ -1540,19 +1524,22 @@
 
         // Phase 4.1: Detect user type (HOST, GUEST, or both)
         function getUserType(user) {
-            // Check signup type
+            // Check signup type and current type
             const signupType = user['Type - User Signup']; // "Host" or "Guest"
+            const currentType = user['Type - User Current']; // "Host" or "Guest"
 
-            // Check if user has active accounts
+            // Check if user has host account
             const hasHostAccount = !!user['Account - Host / Landlord'];
-            const hasGuestAccount = !!user['Account - Guest'];
+
+            // Determine guest status from user type fields (since account_guest table was removed)
+            const isGuestType = currentType === 'Guest' || signupType === 'Guest';
 
             return {
                 signupType: signupType,
                 isHost: hasHostAccount,
-                isGuest: hasGuestAccount,
-                isDualRole: hasHostAccount && hasGuestAccount,
-                primaryRole: signupType || (hasHostAccount ? 'Host' : 'Guest')
+                isGuest: isGuestType,
+                isDualRole: hasHostAccount && isGuestType,
+                primaryRole: currentType || signupType || (hasHostAccount ? 'Host' : 'Guest')
             };
         }
 

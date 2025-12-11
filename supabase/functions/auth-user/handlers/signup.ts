@@ -10,16 +10,13 @@
  * 5. Generate Supabase IDs using generate_bubble_id():
  *    - user_id (primary _id for user table)
  *    - host_account_id (primary _id for account_host table)
- *    - guest_account_id (primary _id for account_guest table)
  * 6. Create Supabase Auth user (auth.users table)
  * 7. Sign in user to get session tokens
  * 8. Insert account_host row with generated ID
- * 9. Insert account_guest row with generated ID
- * 10. Insert user profile into public.user table with:
+ * 9. Insert user profile into public.user table with:
  *    - _id = generated user_id
  *    - Account - Host / Landlord = host_account_id
- *    - Account - Guest = guest_account_id
- * 11. Return session tokens and user data
+ * 10. Return session tokens and user data
  *
  * NO FALLBACK - If any operation fails, entire signup fails
  * Uses Supabase Auth natively - no Bubble dependency
@@ -28,7 +25,7 @@
  * @param supabaseServiceKey - Supabase service role key for admin operations
  * @param payload - Request payload {email, password, retype, additionalData?}
  *   additionalData may include: firstName, lastName, userType, birthDate, phoneNumber
- * @returns {access_token, refresh_token, user_id, host_account_id, guest_account_id, supabase_user_id, expires_in}
+ * @returns {access_token, refresh_token, user_id, host_account_id, supabase_user_id, expires_in}
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -134,16 +131,14 @@ export async function handleSignup(
 
     const { data: generatedUserId, error: userIdError } = await supabaseAdmin.rpc('generate_bubble_id');
     const { data: generatedHostId, error: hostIdError } = await supabaseAdmin.rpc('generate_bubble_id');
-    const { data: generatedGuestId, error: guestIdError } = await supabaseAdmin.rpc('generate_bubble_id');
 
-    if (userIdError || hostIdError || guestIdError) {
-      console.error('[signup] Failed to generate IDs:', userIdError || hostIdError || guestIdError);
+    if (userIdError || hostIdError) {
+      console.error('[signup] Failed to generate IDs:', userIdError || hostIdError);
       throw new BubbleApiError('Failed to generate unique IDs', 500);
     }
 
     console.log(`[signup]    Generated User ID: ${generatedUserId}`);
     console.log(`[signup]    Generated Host Account ID: ${generatedHostId}`);
-    console.log(`[signup]    Generated Guest Account ID: ${generatedGuestId}`);
 
     // ========== CREATE SUPABASE AUTH USER ==========
     console.log('[signup] Creating Supabase Auth user...');
@@ -155,7 +150,6 @@ export async function handleSignup(
       user_metadata: {
         user_id: generatedUserId,
         host_account_id: generatedHostId,
-        guest_account_id: generatedGuestId,
         first_name: firstName,
         last_name: lastName,
         user_type: userType,
@@ -238,36 +232,7 @@ export async function handleSignup(
 
     console.log('[signup] ✅ account_host record created:', generatedHostId);
 
-    // Step 2: Insert into account_guest table
-    console.log('[signup] Creating account_guest record...');
-
-    const guestAccountRecord = {
-      '_id': generatedGuestId,
-      'User': generatedUserId,
-      'Email': email,
-      'Created Date': now,
-      'Modified Date': now,
-      'bubble_id': null
-    };
-
-    const { error: guestInsertError } = await supabaseAdmin
-      .from('account_guest')
-      .insert(guestAccountRecord);
-
-    if (guestInsertError) {
-      console.error('[signup] Failed to insert into account_guest:', guestInsertError.message);
-      // Clean up: delete host account and auth user
-      await supabaseAdmin.from('account_host').delete().eq('_id', generatedHostId);
-      await supabaseAdmin.auth.admin.deleteUser(supabaseUserId!);
-      throw new BubbleApiError(
-        `Failed to create guest account: ${guestInsertError.message}`,
-        500
-      );
-    }
-
-    console.log('[signup] ✅ account_guest record created:', generatedGuestId);
-
-    // Step 3: Insert into public.user table
+    // Step 2: Insert into public.user table
     console.log('[signup] Inserting into public.user table...');
 
     const userRecord = {
@@ -283,7 +248,6 @@ export async function handleSignup(
       'Type - User Current': userType || 'Guest',
       'Type - User Signup': userType || 'Guest',
       'Account - Host / Landlord': generatedHostId,
-      'Account - Guest': generatedGuestId,
       'Created Date': now,
       'Modified Date': now,
       'authentication': {}, // Required jsonb field
@@ -298,8 +262,7 @@ export async function handleSignup(
 
     if (userInsertError) {
       console.error('[signup] Failed to insert into public.user:', userInsertError.message);
-      // Clean up: delete guest account, host account, and auth user
-      await supabaseAdmin.from('account_guest').delete().eq('_id', generatedGuestId);
+      // Clean up: delete host account and auth user
       await supabaseAdmin.from('account_host').delete().eq('_id', generatedHostId);
       await supabaseAdmin.auth.admin.deleteUser(supabaseUserId!);
       throw new BubbleApiError(
@@ -312,11 +275,9 @@ export async function handleSignup(
     console.log(`[signup] ========== SIGNUP COMPLETE ==========`);
     console.log(`[signup]    User ID (_id): ${generatedUserId}`);
     console.log(`[signup]    Host Account ID: ${generatedHostId}`);
-    console.log(`[signup]    Guest Account ID: ${generatedGuestId}`);
     console.log(`[signup]    Supabase Auth ID: ${supabaseUserId}`);
     console.log(`[signup]    public.user created: yes`);
     console.log(`[signup]    account_host created: yes`);
-    console.log(`[signup]    account_guest created: yes`);
 
     // ========== QUEUE BUBBLE SYNC ==========
     // Queue the atomic signup operation for Bubble sync
@@ -324,7 +285,7 @@ export async function handleSignup(
     console.log('[signup] Queueing Bubble sync for background processing...');
 
     try {
-      await enqueueSignupSync(supabaseAdmin, generatedUserId, generatedHostId, generatedGuestId);
+      await enqueueSignupSync(supabaseAdmin, generatedUserId, generatedHostId);
       console.log('[signup] ✅ Bubble sync queued');
 
       // Trigger queue processing immediately (fire-and-forget, non-blocking)
@@ -343,7 +304,6 @@ export async function handleSignup(
       expires_in,
       user_id: generatedUserId,
       host_account_id: generatedHostId,
-      guest_account_id: generatedGuestId,
       supabase_user_id: supabaseUserId,
       user_type: userType
     };

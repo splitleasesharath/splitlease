@@ -18,7 +18,7 @@
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { BubbleApiError } from '../../_shared/errors.ts';
+import { BubbleApiError, SupabaseSyncError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 
 export async function handleLogin(
@@ -81,7 +81,7 @@ export async function handleLogin(
     // First try to find user by email
     const { data: userProfile, error: profileError } = await supabaseAdmin
       .from('user')
-      .select('_id, email, "First Name", "Last Name", "Profile Photo", "Account - Host / Landlord", "Account - Guest"')
+      .select('_id, email, "First Name", "Last Name", "Profile Photo", "Account - Host / Landlord"')
       .eq('email', email.toLowerCase())
       .maybeSingle();
 
@@ -94,13 +94,11 @@ export async function handleLogin(
     let userId = userProfile?._id || authUser.user_metadata?.user_id || authUser.id;
     let userType = authUser.user_metadata?.user_type || 'Guest';
     let hostAccountId = userProfile?.['Account - Host / Landlord'] || authUser.user_metadata?.host_account_id;
-    let guestAccountId = userProfile?.['Account - Guest'] || authUser.user_metadata?.guest_account_id;
 
     console.log(`[login] ✅ User profile loaded`);
     console.log(`[login]    User ID (_id): ${userId}`);
     console.log(`[login]    User Type: ${userType}`);
     console.log(`[login]    Host Account ID: ${hostAccountId}`);
-    console.log(`[login]    Guest Account ID: ${guestAccountId}`);
 
     // ========== RETURN SESSION DATA ==========
     const { access_token, refresh_token, expires_in } = session;
@@ -115,7 +113,6 @@ export async function handleLogin(
       supabase_user_id: authUser.id,
       user_type: userType,
       host_account_id: hostAccountId,
-      guest_account_id: guestAccountId,
       email: authUser.email,
       firstName: userProfile?.['First Name'] || '',
       lastName: userProfile?.['Last Name'] || '',

@@ -412,3 +412,8 @@ entrypoint = "./functions/listing/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/ai-gateway/index.ts"
+
+[functions.ai-parse-profile]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/ai-parse-profile/index.ts"
