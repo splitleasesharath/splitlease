@@ -1,8 +1,8 @@
 # Listing Dashboard Page - Complete Context Documentation
 
-**SOURCE**: Bubble.io Production App (https://app.split.lease/version-live/listing-dashboard/)
-**CAPTURED**: December 4, 2025
-**PURPOSE**: Reference for replicating the page in the React-based app
+**SOURCE**: React Implementation (`app/src/islands/pages/ListingDashboardPage/`)
+**UPDATED**: December 11, 2025
+**STATUS**: Production-Ready (fetches from Supabase database)
 
 ---
 
@@ -10,473 +10,717 @@
 
 The Listing Dashboard is a **host-facing page** for managing individual property listings. It displays comprehensive information about a listing and provides edit capabilities for each section.
 
-**URL Pattern**: `/listing-dashboard/{listing_id}`
-**Example**: `/listing-dashboard/1743790812920x538927313033625600`
+**URL Pattern**: `/listing-dashboard?id={listing_id}` or `/listing-dashboard?listing_id={listing_id}`
+**Entry Point**: `app/src/listing-dashboard.jsx`
+**Main Component**: `app/src/islands/pages/ListingDashboardPage/ListingDashboardPage.jsx`
 
 ---
 
-## 1. HEADER / NAVIGATION BAR
+## Architecture
 
-### Top Navigation Bar (Sticky)
-- **Logo**: Split Lease logo (links to home)
-- **"All Listings" button**: Back navigation with left arrow icon
-- **Tab Navigation**:
-  - "Preview Listing" button
-  - "Pricing/Lease Style" button
-  - "Proposals" button with **badge count** (e.g., "3")
-  - "Virtual Meetings" button with **badge count** (e.g., "1")
-- **Right side**:
-  - Notification bell icon with badge count
-  - User avatar with name ("Rod")
+### Component Pattern: Hollow Component
 
-### Alert Banner (Below nav)
-- **Icon**: Purple circle with info icon
-- **Text**: "Need help setting up? **Ask a Specialist Co-host!**"
-- **Dismissible**: Yes (X button)
+The page follows the **Hollow Component Pattern** where all business logic is delegated to a custom hook:
 
-### Secondary Actions Bar
-- **"Copy Listing Link"** button with link icon
-- **Dropdown**: "CHOOSE A SECTION" - allows jumping to specific sections:
-  - Address
-  - Pricing & Lease Style
-  - Details
-  - Rules
-  - Availability
-  - Photos
+```jsx
+// ListingDashboardPage.jsx - Pure rendering, no business logic
+export default function ListingDashboardPage() {
+  const {
+    listing,
+    counts,
+    isLoading,
+    error,
+    handleEditSection,
+    // ... all state and handlers from hook
+  } = useListingDashboardPageLogic();
 
----
+  return (/* JSX */);
+}
+```
 
-## 2. PROPERTY INFO SECTION
+### File Structure
 
-### Header
-- **Title**: "Property Info"
-- **Edit button**: "edit" link (right-aligned)
-
-### Content
-- **Title/Description textarea** (disabled/read-only):
-  - Shows listing title: "Sunny, Spacious One-Bedroom Apartment with Modern Finishes and City Views in Downtown Harlem, Featuring Doorman, Laundry Room, and Common Outdoor Space"
-- **Import reviews link**: Icon + "Import reviews from other sites"
-
-### Listing Details
-- **Address**: "157 E 115th St, New York, NY 10029, USA"
-- **Neighborhood**: "East Harlem"
-- **Status**: "Listing In Split Lease Review" (or "Listing is online/offline")
-- **Created date**: "Listing was created on: Apr 4, 2025"
-
----
-
-## 3. AMENITIES SECTION
-
-### Header
-- **Title**: "Amenities"
-- **Edit button**: "edit" link
-
-### Content - Two Columns
-
-#### In-unit Amenities
-Grid of amenities with icons:
-- Air Conditioned
-- Closet
-- Hangers
-- Towels and Linens
-- TV
-- WiFi
-
-#### Building / Neighborhood Amenities
-Grid of amenities with icons:
-- Doorman
-- Laundry Room
-- Package Room
-- Elevator
-- Common Outdoor Space
-- Bike Storage
+```
+ListingDashboardPage/
+├── ListingDashboardPage.jsx         # Main page component
+├── useListingDashboardPageLogic.js  # Business logic hook (1300+ lines)
+├── index.js                         # Barrel export
+├── CLAUDE.md                        # Component documentation
+├── components/
+│   ├── index.js                     # Barrel exports
+│   ├── NavigationHeader.jsx         # Tab navigation with badges
+│   ├── ActionCard.jsx               # Reusable action card
+│   ├── ActionCardGrid.jsx           # Quick actions grid
+│   ├── AlertBanner.jsx              # Dismissible info banner
+│   ├── SecondaryActions.jsx         # AI Assistant button
+│   ├── PropertyInfoSection.jsx      # Title, address, status
+│   ├── DescriptionSection.jsx       # Lodging & neighborhood descriptions
+│   ├── AmenitiesSection.jsx         # In-unit & building amenities
+│   ├── DetailsSection.jsx           # Property specs & safety features
+│   ├── PricingSection.jsx           # Lease style, pricing, fees
+│   ├── PricingEditSection.jsx       # Full-screen pricing editor
+│   ├── NightlyPricingLegend.jsx     # Pricing tier display
+│   ├── RulesSection.jsx             # House rules & guest restrictions
+│   ├── AvailabilitySection.jsx      # Lease terms, dates, calendar
+│   ├── PhotosSection.jsx            # Photo grid with drag-drop
+│   └── CancellationPolicySection.jsx # Policy selector
+├── data/
+│   └── mockListing.js               # Mock data (deprecated)
+└── types/
+    └── listing.types.ts             # TypeScript interfaces
+```
 
 ---
 
-## 4. DESCRIPTION SECTIONS
+## 1. NAVIGATION HEADER
 
-### Description of Lodging
-- **Header**: "Description of Lodging" + "edit" link
-- **Content**: Multi-paragraph text describing the property
-  - Example: "Sunny and spacious two-bedroom haven nestled in the vibrant heart of downtown! This stunning apartment boasts an open-concept living area..."
+### NavigationHeader Component
+**File**: `components/NavigationHeader.jsx`
 
-### Neighborhood Description
-- **Header**: "Neighborhood Description" + "edit" link
-- **Content**: Multi-paragraph text describing the neighborhood
-  - Example: "Nestled within a vibrant community, this neighborhood offers a delightful blend of urban convenience and suburban serenity..."
+**Features**:
+- Back button ("All Listings") - navigates to `/host-overview`
+- Tab navigation with dynamic visibility based on counts:
+  - "All My Listings" - always visible
+  - "Proposals" - visible when `counts.proposals > 0`, shows badge
+  - "Virtual Meetings" - visible when `counts.virtualMeetings > 0`, shows badge
+  - "Leases" - visible when `counts.leases > 0`, shows badge
+- Active tab styling
 
----
-
-## 5. PRICING AND LEASE STYLE SECTION
-
-### Header
-- **Title**: "Pricing and Lease Style"
-- **Edit button**: "edit" link
-
-### Content - Two Columns
-
-#### Left Column - Lease Style Info
-- **Selected Lease Style**: "Nightly"
-- **Nights / Week**: "2 to 7"
-- **Day Selector** (visual week display):
-  - S M T W T F S buttons
-  - Legend: "Available" indicator
-  - Text: "All nights available"
-
-#### Right Column - Pricing Info
-- **Occupancy Compensation per Week**:
-  - @2 nights/wk: $700
-  - @3 nights/wk: $525
-  - @4 nights/wk: $700
-  - @5 nights/wk: $875
-  - @6 nights/wk: $1,050
-  - @7 nights/wk: $1,225
-
-- **Additional Charges**:
-  - Damage Deposit: $500
-  - Maintenance Fee: $250
+**Props**:
+```typescript
+interface NavigationHeaderProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  counts: { proposals: number; virtualMeetings: number; leases: number };
+  onBackClick: () => void;
+}
+```
 
 ---
 
-## 6. RULES SECTION
+## 2. ALERT BANNER
 
-### Header
-- **Title**: "Rules"
-- **Edit button**: "edit" link
+### AlertBanner Component
+**File**: `components/AlertBanner.jsx`
 
-### Content - Grid Layout
+**Features**:
+- Purple info banner with CTA
+- Text: "Need help setting up? Ask a Specialist Co-host!"
+- Dismissible (X button)
+- Opens Schedule Cohost modal on click
 
-#### House Rules (with icons)
-- Take Out Trash
-- No Food In Sink
-- Lock Doors
-- Wash Your Dishes
-- No Smoking Inside
-- No Candles
-
-#### Guest Restrictions
-- Gender Preferred: Female (with icon)
-- 2 max guests allowed (with icon)
+**Props**:
+```typescript
+interface AlertBannerProps {
+  onScheduleCohost: () => void;
+}
+```
 
 ---
 
-## 7. DETAILS SECTION
+## 3. ACTION CARD GRID
 
-### Header
-- **Title**: "Details"
-- **Edit button**: "edit" link
+### ActionCardGrid Component
+**File**: `components/ActionCardGrid.jsx`
 
-### Content
+**Features**:
+- Responsive grid of quick action cards
+- Cards with conditional visibility:
+  - "Preview Listing" - always visible
+  - "Copy Listing Link" - always visible
+  - "Proposals" - visible when `counts.proposals > 0`
+  - "Virtual Meetings" - visible when `counts.virtualMeetings > 0`
+  - "Manage Listing" - always visible
+  - "Leases" - visible when `counts.leases > 0`
+- Each card has icon + label
+- Badge indicator for items with counts
 
-#### Property Specs
-- **Type of Space**: "Entire Place"
-- **Bedrooms**: 1 bedrooms (with bed icon)
-- **Bathrooms**: 1 bathrooms (with bath icon)
-- **Size**: 200 sq.ft. (with size icon)
-
-#### Additional Details (with icons)
-- Storage: "In a locked closet"
-- Parking: "Street Parking"
-- Kitchen: "Kitchenette"
-
-#### Safety Features
-Grid with icons:
-- Smoke Detector
-- Carbon Monoxide Detector
-- First Aid Kit
-- Fire Sprinklers
-- Lock on Bedroom Door
-- Fire Extinguisher
+**Props**:
+```typescript
+interface ActionCardGridProps {
+  counts: { proposals: number; virtualMeetings: number; leases: number };
+  onCardClick: (cardId: string) => void;
+}
+```
 
 ---
 
-## 8. CANCELLATION POLICY SECTION
+## 4. SECONDARY ACTIONS
 
-### Header
-- **Title**: "Cancellation Policy"
+### SecondaryActions Component
+**File**: `components/SecondaryActions.jsx`
 
-### Content
-- **Dropdown selector** with options:
-  - Standard (selected)
+**Features**:
+- AI Import Assistant button - opens modal to auto-generate listing content
+- Additional utility actions
+
+**Props**:
+```typescript
+interface SecondaryActionsProps {
+  onAIAssistant: () => void;
+}
+```
+
+---
+
+## 5. PROPERTY INFO SECTION
+
+### PropertyInfoSection Component
+**File**: `components/PropertyInfoSection.jsx`
+
+**Features**:
+- Listing title display with edit button
+- Import reviews button (opens modal)
+- Address display with neighborhood
+- Status indicator (Online/Offline with color coding)
+- Active since date
+- "Show my reviews" button
+
+**Props**:
+```typescript
+interface PropertyInfoSectionProps {
+  listing: Listing;
+  onImportReviews: () => void;
+  onEdit: () => void;
+}
+```
+
+**Data Displayed**:
+- `listing.title` - Property title
+- `listing.location.address` - Full address
+- `listing.location.hoodsDisplay` - Neighborhood
+- `listing.isOnline` - Status indicator
+- `listing.activeSince` - Date formatted
+
+---
+
+## 6. DESCRIPTION SECTION
+
+### DescriptionSection Component
+**File**: `components/DescriptionSection.jsx`
+
+**Features**:
+- Two subsections with individual edit buttons:
+  1. "Description of Lodging" - property description
+  2. "Neighborhood Description" - area description
+- Plain text display
+
+**Props**:
+```typescript
+interface DescriptionSectionProps {
+  listing: Listing;
+  onEditLodging: () => void;
+  onEditNeighborhood: () => void;
+}
+```
+
+---
+
+## 7. AMENITIES SECTION
+
+### AmenitiesSection Component
+**File**: `components/AmenitiesSection.jsx`
+
+**Features**:
+- Two-column layout:
+  1. In-unit amenities (WiFi, TV, Air Conditioned, etc.)
+  2. Building/Neighborhood amenities (Doorman, Elevator, etc.)
+- Icon mapping for common amenities
+- Grid display with icon + label for each amenity
+
+**Props**:
+```typescript
+interface AmenitiesSectionProps {
+  listing: Listing;
+  onEdit: () => void;
+}
+```
+
+**Data Structure**:
+```typescript
+{
+  inUnitAmenities: Array<{ id: string; name: string; icon?: string }>;
+  buildingAmenities: Array<{ id: string; name: string; icon?: string }>;
+}
+```
+
+---
+
+## 8. DETAILS SECTION
+
+### DetailsSection Component
+**File**: `components/DetailsSection.jsx`
+
+**Features**:
+- Property specs row:
+  - Type of Space (Entire Place, Private Room, etc.)
+  - Bedrooms count with icon
+  - Bathrooms count with icon
+  - Square footage with icon
+- Additional features row:
+  - Storage type with icon
+  - Parking type with icon
+  - Kitchen type with icon
+- Safety features grid with icons
+
+**Props**:
+```typescript
+interface DetailsSectionProps {
+  listing: Listing;
+  onEdit: () => void;
+}
+```
+
+---
+
+## 9. PRICING SECTION
+
+### PricingSection Component
+**File**: `components/PricingSection.jsx`
+
+**Features**:
+- Left column - Lease style info:
+  - Selected lease style (Nightly/Monthly)
+  - Nights per week range (for nightly)
+  - HostScheduleSelector component (display-only, shows available nights)
+- Right column - Pricing info:
+  - For monthly: Monthly host rate
+  - For nightly: NightlyPricingLegend component with tiered pricing
+  - Additional charges (Damage Deposit, Maintenance Fee)
+- Edit button opens PricingEditSection full-screen overlay
+
+**Props**:
+```typescript
+interface PricingSectionProps {
+  listing: Listing;
+  onEdit: () => void;
+}
+```
+
+### PricingEditSection Component
+**File**: `components/PricingEditSection.jsx`
+
+**Features**:
+- Full-screen overlay editor
+- Editable pricing tiers
+- Night selection
+- Save/Cancel functionality
+
+---
+
+## 10. RULES SECTION
+
+### RulesSection Component
+**File**: `components/RulesSection.jsx`
+
+**Features**:
+- House rules grid with icons:
+  - Take Out Trash
+  - No Food In Sink
+  - Lock Doors
+  - Wash Your Dishes
+  - No Smoking Inside
+  - No Candles
+- Guest restrictions:
+  - Gender Preferred (with icon)
+  - Max guests allowed (with icon)
+
+**Props**:
+```typescript
+interface RulesSectionProps {
+  listing: Listing;
+  onEdit: () => void;
+}
+```
+
+---
+
+## 11. AVAILABILITY SECTION
+
+### AvailabilitySection Component
+**File**: `components/AvailabilitySection.jsx`
+
+**Features**:
+Two availability sub-sections:
+
+**Settings Section**:
+- Lease term range inputs (6-52 weeks)
+- Earliest available date picker
+- Check-in/Check-out time dropdowns
+
+**Calendar Section**:
+- Left side:
+  - Instructions text
+  - Mode toggle (Range / Individual dates)
+  - Range start indicator when selecting
+  - List of blocked dates with remove buttons
+  - "Show more/less" for long lists
+- Right side:
+  - Interactive calendar with month navigation
+  - Clickable dates for current/future months
+  - Visual indicators for blocked dates
+  - Legend (Restricted Weekly, Blocked Manually, Available, First Available)
+
+**Props**:
+```typescript
+interface AvailabilitySectionProps {
+  listing: Listing;
+  onEdit: () => void;
+  onBlockedDatesChange: (dates: string[]) => void;
+}
+```
+
+**State Management**:
+- `blockedDates` - Array of date strings (YYYY-MM-DD format)
+- `dateSelectionMode` - 'range' or 'individual'
+- `rangeStart` - Date for range selection start
+- Changes persist to database via `handleBlockedDatesChange`
+
+---
+
+## 12. PHOTOS SECTION
+
+### PhotosSection Component
+**File**: `components/PhotosSection.jsx`
+
+**Features**:
+- "Add Photos" button (opens edit modal)
+- Drag hint text (when multiple photos)
+- Photo grid with drag-and-drop reordering
+- Each photo card has:
+  - Drag handle icon
+  - Image preview (with error handling)
+  - Cover Photo badge (first photo)
+  - Star button (set as cover)
+  - Delete button (trash icon)
+  - Photo type dropdown (Bedroom, Kitchen, etc.)
+- Empty state with CTA
+
+**Props**:
+```typescript
+interface PhotosSectionProps {
+  listing: Listing;
+  onAddPhotos: () => void;
+  onDeletePhoto: (photoId: string) => void;
+  onSetCover: (photoId: string) => void;
+  onReorderPhotos: (fromIndex: number, toIndex: number) => void;
+}
+```
+
+**Photo Types**:
+- Dining Room, Bathroom, Bedroom, Kitchen, Living Room, Workspace, Other
+
+---
+
+## 13. CANCELLATION POLICY SECTION
+
+### CancellationPolicySection Component
+**File**: `components/CancellationPolicySection.jsx`
+
+**Features**:
+- Policy dropdown selector:
+  - Standard
   - Additional Host Restrictions
-- **Link**: "Standard Policy" (links to cancellation policy page)
+- Link to full policy page
+
+**Props**:
+```typescript
+interface CancellationPolicySectionProps {
+  listing: Listing;
+  onPolicyChange: (policy: string) => void;
+}
+```
 
 ---
 
-## 9. LISTING AVAILABILITY SECTION (First)
+## DATA FETCHING
 
-### Header
-- **Title**: "Listing Availability"
+### Hook: useListingDashboardPageLogic
 
-### Content
+**Data Sources**:
+- Primary: `listing_trial` table (for new self-listings)
+- Fallback: `listing` table (for Bubble-synced listings)
 
-#### Lease Term
-- **Label**: "What is the ideal Lease Term? (Enter between 6 and 52 weeks.)"
-- **Inputs**: Two number inputs with dash between (e.g., "6" - "52")
+**Fetch Flow**:
+1. Get listing ID from URL params
+2. Try `listing_trial` table by `id` column
+3. If not found, try `listing` table by `_id` column
+4. Fetch lookup tables in parallel (amenities, safety features, house rules, etc.)
+5. Fetch related data (photos, proposals count, leases count, meetings count)
+6. Transform data to component-friendly format
 
-#### Earliest Available Date
-- **Label**: "What is the earliest date someone could rent from you?"
-- **Date Picker**: Calendar input showing selected date (e.g., "12/05/2025")
+**Lookup Tables Fetched**:
+- `zat_features_amenity` - Amenities with names and icons
+- `zfut_safetyfeatures` - Safety features
+- `zat_features_houserule` - House rules
+- `zat_features_listingtype` - Property types
+- `zat_features_parkingoptions` - Parking options
+- `zat_features_storageoptions` - Storage options
 
-#### Check In/Out Times
-- **Check In Time**: Dropdown (1:00 pm, 2:00 pm, 3:00 pm, 4:00 pm)
-- **Check Out Time**: Dropdown (10:00 am, 11:00 am, 12:00 pm, 1:00 pm)
-
----
-
-## 10. LISTING AVAILABILITY SECTION (Calendar)
-
-### Header
-- **Title**: "Listing Availability"
-
-### Content
-
-#### Left Side - Instructions
-- **Text**: "Add or remove blocked dates by selecting a range or individual days."
-- **Toggle**: Radio buttons - "Range" / "Individual dates"
-- **Info Display**:
-  - "Nights Available per week"
-  - "Dates Blocked by You" - "You don't have any future date blocked yet"
-
-#### Right Side - Calendar
-- **Month Navigation**: Left/Right arrows + Month/Year dropdown
-- **Week Headers**: Sun, Mon, Tue, Wed, Thu, Fri, Sat
-- **Calendar Grid**: Clickable date cells
-
-#### Legend
-- **M** Restricted Weekly (orange)
-- **M** Blocked Manually (red/blocked)
-- **M** Available (green)
-- **M** First Available (special indicator)
+**Related Data Counts**:
+- `proposal` - Proposals for this listing
+- `bookings_leases` - Active leases
+- `virtualmeetingschedulesandlinks` - Scheduled meetings
 
 ---
 
-## 11. PHOTOS SECTION
+## LISTING DATA TRANSFORMATION
 
-### Header
-- **Title**: "Photos"
-- **Add button**: "Add Photos" button (purple)
+### transformListingData Function
 
-### Content - Photo Grid
-6 photos displayed in a 3x2 grid:
+Converts database fields to component-friendly format:
 
-Each photo card has:
-- **Image thumbnail**
-- **Cover Photo badge** (only on first photo)
-- **Star icon** (to set as cover)
-- **Delete button** (trash icon)
-- **Photo Type dropdown**:
-  - Dining Room
-  - Bathroom
-  - Bedroom
-  - Kitchen
-  - Living Room
-  - Workspace
-  - Other
-
----
-
-## 12. VIRTUAL TOUR SECTION
-
-### Header
-- **Title**: "Virtual Tour"
-- **Upload button**: "Upload Virtual Tour" button (purple)
-
----
-
-## 13. FOOTER
-
-Standard Split Lease footer with:
-
-### Columns
-1. **For Hosts**
-   - List Property Now
-   - How to List
-   - Legal Section
-   - House Manual
-   - View FAQ
-
-2. **Company**
-   - About Periodic Tenancy
-   - About the Team
-   - Careers at Split Lease
-   - View Blog
-   - Emergency assistance (button)
-
-3. **Refer a Friend**
-   - Text: "You get $50 and they get $50 *after their first booking"
-   - Toggle: Text / Email / Link
-   - Input field + "Share now" button
-
-4. **Import Listing**
-   - Text: "Import your listing from another site"
-   - URL input
-   - Email input (pre-filled with user email)
-   - Submit button
-
-### App Download Section
-- iPhone mockup with app
-- "Now you can change your nights on the go."
-- App Store download button
-
-- Alexa device image
-- "Voice-controlled concierge, at your service."
-- Amazon button
-- "Alexa, enable Split Lease"
-
-### Bottom Bar
-- Terms of Use link
-- "Made with love in New York City"
-- "© 2025 SplitLease"
-
----
-
-## DATA FIELDS REFERENCE
-
-### Listing Object Fields Used
 ```javascript
 {
-  id: string,                    // Listing ID
-  title: string,                 // Property title/headline
-  description: string,           // Description of lodging
-  neighborhoodDescription: string,
+  // Identifiers
+  id: string,                    // listing_trial.id or listing._id
+  _id: string,                   // Alias for compatibility
+
+  // Property Info
+  title: string,                 // Name field
+  description: string,           // Description field
+  descriptionNeighborhood: string,
 
   // Location
-  address: string,               // Full street address
-  neighborhood: string,          // e.g., "East Harlem"
+  location: {
+    id: string,
+    address: string,
+    hoodsDisplay: string,        // Neighborhood name
+    city: string,
+    state: string,
+    zipCode: string,
+    latitude: number,
+    longitude: number,
+  },
 
   // Status
-  status: string,                // "In Review", "Online", "Offline"
-  createdDate: Date,
+  status: 'Online' | 'Offline',
   isOnline: boolean,
+  createdAt: Date,
+  activeSince: Date,
 
-  // Property Details
-  typeOfSpace: string,           // "Entire Place", "Private Room", etc.
-  bedrooms: number,
-  bathrooms: number,
-  squareFeet: number,
-  storageType: string,           // "In a locked closet", etc.
-  parkingType: string,           // "Street Parking", etc.
-  kitchenType: string,           // "Full Kitchen", "Kitchenette", etc.
+  // Features
+  features: {
+    typeOfSpace: { id: string, label: string },
+    parkingType: { id: string, label: string },
+    kitchenType: { id: string, display: string },
+    storageType: { id: string, label: string },
+    qtyGuests: number,
+    bedrooms: number,
+    bathrooms: number,
+    squareFootage: number,
+  },
 
-  // Amenities (arrays)
-  inUnitAmenities: string[],     // ["Air Conditioned", "WiFi", ...]
-  buildingAmenities: string[],   // ["Doorman", "Elevator", ...]
-  safetyFeatures: string[],      // ["Smoke Detector", ...]
+  // Arrays (resolved from IDs to objects with names)
+  inUnitAmenities: Array<{ id: string, name: string, icon?: string }>,
+  buildingAmenities: Array<{ id: string, name: string, icon?: string }>,
+  safetyFeatures: Array<{ id: string, name: string, icon?: string }>,
+  houseRules: Array<{ id: string, name: string, icon?: string }>,
 
-  // Rules
-  houseRules: string[],          // ["No Smoking", "No Candles", ...]
-  genderPreferred: string,       // "Female", "Male", "Any"
+  // Guest Preferences
+  preferredGender: { id: string, display: string },
   maxGuests: number,
 
   // Pricing
-  leaseStyle: string,            // "Nightly"
-  nightsPerWeekMin: number,      // 2
-  nightsPerWeekMax: number,      // 7
-  availableDays: number[],       // [0,1,2,3,4,5,6] (all days)
-  pricing: {
-    2: number,                   // Price for 2 nights
-    3: number,
-    4: number,
-    5: number,
-    6: number,
-    7: number,
-  },
+  leaseStyle: 'Nightly' | 'Monthly',
+  nightsPerWeekMin: number,
+  nightsPerWeekMax: number,
+  availableDays: number[],       // 0-6 (JS format)
+  nightsAvailable: string[],     // Night IDs for HostScheduleSelector
+  pricing: { [nights: number]: number },
+  weeklyCompensation: { [nights: number]: number },
   damageDeposit: number,
   maintenanceFee: number,
+  monthlyHostRate: number,
 
   // Availability
-  leaseTermMin: number,          // weeks (6)
-  leaseTermMax: number,          // weeks (52)
+  leaseTermMin: number,          // Weeks
+  leaseTermMax: number,          // Weeks
   earliestAvailableDate: Date,
-  checkInTime: string,           // "1:00 pm"
-  checkOutTime: string,          // "1:00 pm"
-  blockedDates: Date[],
+  checkInTime: string,
+  checkOutTime: string,
+  blockedDates: string[],        // YYYY-MM-DD format
 
   // Cancellation
-  cancellationPolicy: string,    // "Standard", "Additional Host Restrictions"
+  cancellationPolicy: string,
 
-  // Photos
+  // Media
   photos: Array<{
+    id: string,
     url: string,
     isCover: boolean,
-    photoType: string,           // "Bedroom", "Kitchen", etc.
+    photoType: string,
   }>,
-
-  // Virtual Tour
   virtualTourUrl: string,
 }
 ```
 
-### Badge Counts
+---
+
+## EDIT FUNCTIONALITY
+
+### Edit Modal System
+
+The page uses the shared `EditListingDetails` component for most sections:
+
+```jsx
+<EditListingDetails
+  listing={/* mapped listing data */}
+  editSection={editSection}  // 'name', 'description', 'amenities', etc.
+  onClose={handleCloseEdit}
+  onSave={handleSaveEdit}
+  updateListing={updateListing}
+/>
+```
+
+**Edit Sections**:
+- `name` - Property title
+- `description` - Lodging description
+- `neighborhood` - Neighborhood description
+- `amenities` - In-unit and building amenities
+- `details` - Property specs, safety features
+- `pricing` - Uses PricingEditSection (full-screen overlay)
+- `rules` - House rules, guest restrictions
+- `availability` - Lease terms, dates
+- `photos` - Photo management
+
+### updateListing Function
+
+Saves changes to database:
+- Determines correct table (`listing_trial` or `listing`)
+- Maps UI field names to database column names
+- Handles quirky column names (e.g., leading space in ` First Available`)
+
+---
+
+## AI IMPORT ASSISTANT
+
+### Feature Overview
+
+The AI Import Assistant auto-generates listing content in sequence:
+
+**Generation Order**:
+1. Load Common In-Unit Amenities
+2. Load Common Building Amenities
+3. Load Neighborhood Description (by zip code)
+4. Load Common House Rules
+5. Load Common Safety Features
+6. Generate AI Description (with enriched data)
+7. Generate AI Title (with enriched data)
+
+**State**:
 ```javascript
 {
-  proposals: number,             // e.g., 3
-  virtualMeetings: number,       // e.g., 1
-  notifications: number,         // Bell icon badge
+  showAIImportAssistant: boolean,
+  aiGenerationStatus: {
+    name: 'pending' | 'loading' | 'complete',
+    description: 'pending' | 'loading' | 'complete',
+    neighborhood: 'pending' | 'loading' | 'complete',
+    inUnitAmenities: 'pending' | 'loading' | 'complete',
+    buildingAmenities: 'pending' | 'loading' | 'complete',
+    houseRules: 'pending' | 'loading' | 'complete',
+    safetyFeatures: 'pending' | 'loading' | 'complete',
+  },
+  isAIGenerating: boolean,
+  isAIComplete: boolean,
+  aiGeneratedData: object,
 }
 ```
 
 ---
 
-## UI PATTERNS
+## MODALS
 
-### Section Pattern
-Each section follows this pattern:
-```
-┌─────────────────────────────────────────┐
-│ Section Title                    [edit] │
-├─────────────────────────────────────────┤
-│                                         │
-│  Content...                             │
-│                                         │
-└─────────────────────────────────────────┘
-```
+### Schedule Cohost Modal
+- Component: `ScheduleCohost`
+- Opens from Alert Banner
+- Allows hosts to request specialist co-host assistance
 
-### Edit Mode
-- Sections have "edit" links that likely open edit modals or inline editing
-- Some fields are disabled/read-only in view mode
+### Import Listing Reviews Modal
+- Component: `ImportListingReviewsModal`
+- Opens from Property Info section
+- Sends request to Slack via Edge Function
 
-### Icons
-- Using consistent icon set throughout
-- Icons appear before text labels in lists
-- Action icons (edit, delete, star) appear on hover or always visible
-
-### Color Scheme
-- **Primary Purple**: #31135d (buttons, accents)
-- **Success Green**: For "Available" indicators
-- **Warning Orange**: For "Restricted" dates
-- **Error Red**: For "Blocked" dates
-- **Gray**: For disabled/inactive states
+### AI Import Assistant Modal
+- Component: `AIImportAssistantModal`
+- Opens from Secondary Actions
+- Shows generation progress with status indicators
 
 ---
 
-## COMPARISON WITH CURRENT IMPLEMENTATION
+## STYLING
 
-### Currently Implemented (React App)
-- ✅ Header with navigation
-- ✅ Footer
-- ✅ Navigation tabs with badges
-- ✅ Action cards grid
-- ✅ Property Info section (basic)
-- ✅ Details section (basic)
-- ⚠️ Using mock data
+**File**: `app/src/styles/components/listing-dashboard.css`
 
-### Missing/Needs Implementation
-- ❌ Amenities section (In-unit + Building)
-- ❌ Description of Lodging section
-- ❌ Neighborhood Description section
-- ❌ Pricing and Lease Style section (detailed)
-- ❌ Rules section (house rules + restrictions)
-- ❌ Cancellation Policy dropdown
-- ❌ Listing Availability (lease term, dates, times)
-- ❌ Calendar with blocked dates
-- ❌ Photos section with grid and management
-- ❌ Virtual Tour section
-- ❌ Edit functionality for each section
-- ❌ Real data fetching from Supabase/Bubble API
+### CSS Class Naming
+- BEM convention with `listing-dashboard-*` prefix
+- Modifier classes use `--` pattern
+
+### Key Classes
+```css
+.listing-dashboard                    /* Main container */
+.listing-dashboard__container         /* Content wrapper */
+.listing-dashboard__card              /* Card container */
+.listing-dashboard-nav                /* Navigation header */
+.listing-dashboard-nav__tab           /* Tab button */
+.listing-dashboard-nav__badge         /* Notification badge */
+.listing-dashboard-section            /* Section container */
+.listing-dashboard-section__header    /* Section header with title + edit */
+.listing-dashboard-section__title     /* Section title */
+.listing-dashboard-section__edit      /* Edit button */
+.listing-dashboard-section__add-btn   /* Add button (purple) */
+```
+
+### Color Variables
+```css
+--ld-primary-contrast: #f1ffff
+--ld-success: #31135d
+--ld-background: #f7f8f9
+--ld-text-primary: #1c274c
+--ld-text-secondary: #6b7280
+--ld-accent-purple: #6b4fbb
+```
+
+### Responsive Breakpoints
+- Mobile-first approach
+- `768px` - Tablet
+- `1024px` - Desktop
 
 ---
 
-**DOCUMENT VERSION**: 1.0
-**STATUS**: Reference Documentation
+## IMPLEMENTATION STATUS
+
+### Fully Implemented
+- Header with navigation
+- Footer
+- Navigation tabs with dynamic badges
+- Action cards grid with conditional visibility
+- Property Info section with edit
+- Description sections (Lodging + Neighborhood) with edit
+- Amenities section (In-unit + Building) with edit
+- Details section (specs + safety) with edit
+- Pricing section (Nightly + Monthly) with edit
+- Rules section (house rules + restrictions) with edit
+- Availability section (settings + interactive calendar)
+- Photos section (grid, drag-drop, cover photo, delete)
+- Cancellation Policy dropdown
+- Edit modal integration (EditListingDetails)
+- Pricing edit full-screen overlay
+- Real data fetching from Supabase (listing + listing_trial)
+- Lookup table resolution for IDs to names
+- Photo management (set cover, delete, reorder)
+- Blocked dates management with persistence
+- AI Import Assistant modal
+- Import Reviews modal (sends to Slack)
+- Schedule Cohost modal
+
+### Not Yet Implemented
+- Virtual Tour section (video upload)
+- Reviews display section
+- Tab navigation to Proposals/Meetings/Leases pages
+
+---
+
+**DOCUMENT VERSION**: 2.0
+**STATUS**: Production Implementation Documentation
+

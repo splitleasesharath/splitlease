@@ -1,29 +1,75 @@
-# Images - Static Assets
+# Images - LLM Reference
 
-**GENERATED**: 2025-11-27
-**PARENT**: app/public/assets/
+**GENERATED**: 2025-12-11
+**SCOPE**: UI images and branding assets
+
+---
+
+## QUICK_STATS
+
+[TOTAL_FILES]: 13
+[FILE_TYPES]: PNG, SVG
+[URL_PATH]: `/assets/images/*`
 
 ---
 
 ## DIRECTORY_INTENT
 
 [PURPOSE]: UI images and branding assets
-[FORMATS]: PNG, JPG, WebP
+[FORMATS]: PNG, SVG
 [USAGE]: Referenced via `/assets/images/` path
 
 ---
 
-## KEY_ASSETS
+## FILES
+
+### Property Features Icons
+
+#### bath.svg
+[INTENT]: Bathroom count icon for property listings
+
+#### bed.svg
+[INTENT]: Bedroom count icon for property listings
+
+#### calendar.svg
+[INTENT]: Date/scheduling icon
+
+#### car.svg
+[INTENT]: Parking availability icon
+
+#### fridge.svg
+[INTENT]: Kitchen/appliance amenity icon
+
+#### lock.svg
+[INTENT]: Security/privacy feature icon
+
+#### sleeping.svg
+[INTENT]: Sleeping arrangements icon
+
+#### walking.svg
+[INTENT]: Walkability/location icon
 
 ### Branding
-- Logo images (various sizes and formats)
-- Hero images for landing pages
-- Marketing graphics
 
-### UI Elements
-- Placeholder images
-- Background patterns
-- Feature illustrations
+#### logo.png
+[INTENT]: Split Lease logo for header/branding
+
+#### split-lease-purple-circle.png
+[INTENT]: Circular logo variant in brand purple
+
+### Hero Section
+
+#### hero-left.png
+[INTENT]: Left side hero section image
+
+#### hero-right.png
+[INTENT]: Right side hero section image
+
+### Subdirectories
+
+#### team/
+[INTENT]: Team member photos and bios
+[FILE_COUNT]: 1 (placeholder.svg)
 
 ---
 
@@ -34,17 +80,22 @@
 ```
 
 ```css
-background-image: url('/assets/images/hero-bg.jpg');
+background-image: url('/assets/images/hero-left.png');
 ```
+
+---
+
+## ASSET_CATEGORIES
+
+[PROPERTY_ICONS]: bed, bath, car, fridge, sleeping, walking
+[BRANDING]: logo.png, split-lease-purple-circle.png
+[HERO]: hero-left.png, hero-right.png
+[UI_ICONS]: calendar, lock
 
 ---
 
 ## OPTIMIZATION
 
-- Use WebP format when possible for smaller file sizes
-- Provide multiple sizes for responsive images
-- Compress images before committing
-
----
-
-**FILE_TYPES**: PNG, JPG, WebP
+[PNG]: Compressed for web delivery
+[SVG]: Optimized vector graphics
+[RESPONSIVE]: Use multiple sizes when applicable
