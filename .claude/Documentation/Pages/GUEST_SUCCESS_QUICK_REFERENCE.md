@@ -1,7 +1,7 @@
 # Guest Success Page - Quick Reference
 
-**GENERATED**: 2025-12-04
-**PAGE_URL**: `/guest-success.html`
+**GENERATED**: 2025-12-11
+**PAGE_URL**: `/guest-success`
 **ENTRY_POINT**: `app/src/guest-success.jsx`
 
 ---
@@ -123,13 +123,13 @@ Unlike most pages in Split Lease, GuestSuccessPage does NOT follow the Hollow Co
 
 | # | Name | Profession | Use Case |
 |---|------|------------|----------|
-| 1 | Richard Thornton | Lawyer | Long commute solution (90 min ’ 10 min walk) |
+| 1 | Richard Thornton | Lawyer | Long commute solution (90 min to 10 min walk) |
 | 2 | Arvind Chopra | Business Owner | Business travel housing (Tampa to Bronx) |
 | 3 | Blaire Price | Nursing Student | Clinical rotation housing |
 | 4 | Natasha S. | Para-Legal | Learning pod / homeschool space during pandemic |
 
 ### Avatar URLs
-All avatars served from Bubble CDN:
+All avatars served from Bubble CDN with image optimization:
 ```
 https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=192,h=,f=auto,dpr=1,fit=contain/...
 ```
@@ -151,7 +151,7 @@ GuestSuccessPage
           +-- onFindSplitLease -> handleFindSplitLease()
 
 handleFindSplitLease():
-    window.location.href = SEARCH_URL  // '/search.html'
+    window.location.href = SEARCH_URL  // '/search'
 ```
 
 ---
@@ -161,7 +161,7 @@ handleFindSplitLease():
 ### Single Navigation Path
 ```javascript
 const handleFindSplitLease = () => {
-  window.location.href = SEARCH_URL;  // '/search.html'
+  window.location.href = SEARCH_URL;  // '/search'
 };
 ```
 
@@ -267,7 +267,7 @@ useEffect(() => {
 | Class | Style |
 |-------|-------|
 | `.guest-success-btn-primary` | White bg, purple text, shadow, hover lift |
-| `.guest-success-btn-secondary` | Purple bg (#5B21B6), white text, hover lift |
+| `.guest-success-btn-secondary` | Purple bg (--primary-purple), white text, hover lift |
 
 ### Stories Section
 | Class | Purpose |
@@ -333,7 +333,7 @@ import Footer from '../shared/Footer.jsx';
 
 // Constants
 import { SEARCH_URL } from '../../lib/constants.js';
-// SEARCH_URL = '/search.html'
+// SEARCH_URL = '/search'
 ```
 
 ---
@@ -392,6 +392,7 @@ Loading: lazy
 
 ```javascript
 useEffect(() => {
+  console.log('Success Stories page loaded successfully');
   const loadTime = performance.now();
   console.log(`Page loaded in ${loadTime.toFixed(2)}ms`);
 }, []);
@@ -420,7 +421,7 @@ useEffect(() => {
 | Logic Hook | None | useGuestProposalsPageLogic |
 | Data Source | Hardcoded inline | Supabase queries |
 | API Calls | None | Multiple (proposals, VMs) |
-| State Complexity | Minimal (1 useState) | High (20+ states) |
+| State Complexity | Minimal (1 useState per StoryCard) | High (20+ states) |
 | Modals | None | 3+ modals |
 | Authentication | Not required | Required (URL user ID) |
 | Lines of Code | ~180 | ~500+ |
@@ -451,6 +452,6 @@ Potential improvements (not implemented):
 
 ---
 
-**VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-04
+**VERSION**: 1.1
+**LAST_UPDATED**: 2025-12-11
 **STATUS**: Comprehensive documentation

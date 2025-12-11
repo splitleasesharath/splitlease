@@ -1,6 +1,6 @@
 # Why Split Lease Page - Quick Reference
 
-**GENERATED**: 2025-12-04
+**GENERATED**: 2025-12-11
 **PAGE_URL**: `/why-split-lease`
 **ENTRY_POINT**: `app/src/why-split-lease.jsx`
 
@@ -15,7 +15,7 @@ why-split-lease.jsx (Entry Point)
             |
             +-- State Management (inline hooks)
             |       +-- Dynamic text rotation (scenarios)
-            |       +-- Schedule selector state (selectedDays)
+            |       +-- Schedule selector state (selectedDays + selectedDaysRef)
             |       +-- Borough filter state (selectedBorough)
             |       +-- Featured listings data (featuredListings)
             |
@@ -53,7 +53,7 @@ why-split-lease.jsx (Entry Point)
 ### Page Component
 | File | Purpose |
 |------|---------|
-| `app/src/islands/pages/WhySplitLeasePage.jsx` | Main component with inline logic (766 lines) |
+| `app/src/islands/pages/WhySplitLeasePage.jsx` | Main component with inline logic (789 lines) |
 
 ### HTML Template
 | File | Purpose |
@@ -63,7 +63,7 @@ why-split-lease.jsx (Entry Point)
 ### Styles
 | File | Purpose |
 |------|---------|
-| `app/src/styles/why-split-lease.css` | Complete page styling (1747 lines) |
+| `app/src/styles/why-split-lease.css` | Complete page styling (1746 lines) |
 
 ### Shared Components Used
 | File | Purpose |
@@ -109,7 +109,9 @@ const [currentScenarioIndex, setCurrentScenarioIndex] = useState(0);
 const [fadeOut, setFadeOut] = useState(false);
 
 // Schedule selector - 0-based day indices
-const [selectedDays, setSelectedDays] = useState([1, 2, 3]); // Mon, Tue, Wed default
+// Uses ref to ensure latest value at click time (avoids stale closure issues)
+const selectedDaysRef = useRef([1, 2, 3]); // Mon, Tue, Wed default
+const [selectedDays, setSelectedDays] = useState([1, 2, 3]);
 
 // Borough filter
 const [boroughs, setBoroughs] = useState([]);
@@ -146,13 +148,23 @@ useEffect(() => {
     await initializeLookups();
 
     // Load NYC boroughs for filter
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('zat_geo_borough_toplevel')
       .select('_id, "Display Borough"')
       .order('"Display Borough"', { ascending: true });
 
+    if (error) throw error;
+
     // Filter to main NYC boroughs only
     const boroughList = data
+      .filter(b => b['Display Borough'] && b['Display Borough'].trim())
+      .map(b => ({
+        id: b._id,
+        name: b['Display Borough'].trim(),
+        value: b['Display Borough'].trim().toLowerCase()
+          .replace(/\s+county\s+nj/i, '')
+          .replace(/\s+/g, '-')
+      }))
       .filter(b => ['manhattan', 'brooklyn', 'queens', 'bronx', 'staten-island'].includes(b.value));
 
     setBoroughs(boroughList);
@@ -164,35 +176,80 @@ useEffect(() => {
 ### 2. Fetch Featured Listings (on borough change)
 ```javascript
 const fetchFeaturedListings = useCallback(async () => {
-  let query = supabase
-    .from('listing')
-    .select(`
-      _id, "Name", "Location - Borough", "Location - Hood",
-      "Location - Address", "Features - Photos",
-      "Features - Qty Bedrooms", "Features - Qty Bathrooms",
-      "Features - Amenities In-Unit", "Days Available (List of Days)",
-      "Standarized Minimum Nightly Price (Filter)"
-    `)
-    .eq('"Complete"', true)
-    .or('"Active".eq.true,"Active".is.null')
-    .limit(3);
+  if (boroughs.length === 0) return;
 
-  // Apply borough filter if not "all"
-  if (selectedBorough !== 'all') {
-    query = query.eq('"Location - Borough"', borough.id);
+  setIsLoadingListings(true);
+  try {
+    let query = supabase
+      .from('listing')
+      .select(`
+        _id, "Name", "Location - Borough", "Location - Hood",
+        "Location - Address", "Features - Photos",
+        "Features - Qty Bedrooms", "Features - Qty Bathrooms",
+        "Features - Amenities In-Unit", "Days Available (List of Days)",
+        "Standarized Minimum Nightly Price (Filter)"
+      `)
+      .eq('"Complete"', true)
+      .or('"Active".eq.true,"Active".is.null')
+      .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null');
+
+    // Apply borough filter if not "all"
+    if (selectedBorough !== 'all') {
+      const borough = boroughs.find(b => b.value === selectedBorough);
+      if (borough) {
+        query = query.eq('"Location - Borough"', borough.id);
+      }
+    }
+
+    query = query.limit(3);
+    const { data: listings, error } = await query;
+
+    // Handle photo URLs (both new embedded objects and legacy IDs)
+    // Transform listings with location lookups
+  } catch (err) {
+    console.error('Failed to fetch featured listings:', err);
+    setFeaturedListings([]);
+  } finally {
+    setIsLoadingListings(false);
   }
-
-  const { data: listings } = await query;
-
-  // Fetch photo URLs and transform data
-  const photoMap = await fetchPhotoUrls(allPhotoIds);
-  const transformedListings = listings.map(/* transform */);
-
-  setFeaturedListings(transformedListings);
 }, [boroughs, selectedBorough]);
 ```
 
-### 3. Dynamic Text Rotation Effect
+### 3. Photo Handling (Dual Format Support)
+```javascript
+// Collect legacy photo IDs (strings) for batch fetching
+// New format has embedded objects with URLs, no fetch needed
+const legacyPhotoIds = [];
+listings.forEach(listing => {
+  const photos = parseJsonArray(listing['Features - Photos']);
+  if (photos && photos.length > 0) {
+    const firstPhoto = photos[0];
+    // Only collect if it's a string ID (legacy format)
+    if (typeof firstPhoto === 'string') {
+      legacyPhotoIds.push(firstPhoto);
+    }
+  }
+});
+
+// Only fetch from listing_photo table if there are legacy photo IDs
+const photoMap = legacyPhotoIds.length > 0
+  ? await fetchPhotoUrls(legacyPhotoIds)
+  : {};
+
+// Transform listings - handle both formats
+let photoUrl = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
+if (typeof firstPhoto === 'object' && firstPhoto !== null) {
+  // New format: extract URL from object
+  let url = firstPhoto.url || firstPhoto.Photo || '';
+  if (url.startsWith('//')) url = 'https:' + url;
+  if (url) photoUrl = url;
+} else if (typeof firstPhoto === 'string' && photoMap[firstPhoto]) {
+  // Legacy format: look up in photoMap
+  photoUrl = photoMap[firstPhoto];
+}
+```
+
+### 4. Dynamic Text Rotation Effect
 ```javascript
 useEffect(() => {
   const interval = setInterval(() => {
@@ -207,21 +264,26 @@ useEffect(() => {
 }, [scenarios.length]);
 ```
 
-### 4. Schedule Selection Handler
+### 5. Schedule Selection Handler (with Ref Pattern)
 ```javascript
 const handleSelectionChange = (days) => {
   // days is array of day objects: { id, singleLetter, fullName, index }
   const dayIndices = days.map(d => d.index);
+  // Update both state and ref to ensure we have the latest value
   setSelectedDays(dayIndices);
+  selectedDaysRef.current = dayIndices;
 };
 
 const handleExploreSpaces = () => {
-  if (selectedDays.length === 0) {
+  // Use ref to get the latest selection (avoids stale closure issues)
+  const currentSelection = selectedDaysRef.current;
+
+  if (currentSelection.length === 0) {
     alert('Please select at least one night per week');
     return;
   }
-  // Convert 0-based to 1-based for URL
-  const oneBased = selectedDays.map(idx => idx + 1);
+  // Convert 0-based indices to 1-based for URL (0->1, 1->2, etc.)
+  const oneBased = currentSelection.map(idx => idx + 1);
   const daysParam = oneBased.join(',');
   window.location.href = `${SEARCH_URL}?days-selected=${daysParam}`;
 };
@@ -289,8 +351,6 @@ const handleExploreSpaces = () => {
 |   |  [SearchScheduleSelector Component]          |   |
 |   |  [S] [M] [T] [W] [T] [F] [S]                  |   |
 |   |       *   *   *                              |   |
-|   |                                              |   |
-|   |  Check-in: Monday  Check-out: Wednesday      |   |
 |   |                                              |   |
 |   |  [See NYC Spaces for This Schedule]          |   |
 |   +----------------------------------------------+   |
@@ -469,7 +529,7 @@ const handleExploreSpaces = () => {
 <SearchScheduleSelector
   initialSelection={selectedDays}        // [1, 2, 3] (Mon-Wed default)
   onSelectionChange={handleSelectionChange}
-  onError={(error) => console.error(...)}
+  onError={(error) => console.error('Schedule selector error:', error)}
   updateUrl={false}                       // Don't update URL from this page
   minDays={2}                             // Minimum 2 nights required
   requireContiguous={true}                // Days must be adjacent
@@ -490,7 +550,7 @@ const handleExploreSpaces = () => {
 ### URL Parameter Conversion
 ```javascript
 // When navigating to search page:
-const oneBased = selectedDays.map(idx => idx + 1); // 0-based -> 1-based
+const oneBased = selectedDaysRef.current.map(idx => idx + 1); // 0-based -> 1-based
 const daysParam = oneBased.join(',');
 window.location.href = `${SEARCH_URL}?days-selected=${daysParam}`;
 // Example: [1, 2, 3] (Mon-Wed) -> "2,3,4" in URL
@@ -506,7 +566,7 @@ window.location.href = `${SEARCH_URL}?days-selected=${daysParam}`;
   id: listing._id,
   title: listing['Name'] || 'NYC Space',
   location: 'Neighborhood, Borough',  // From lookups
-  image: photoUrl,                    // From fetchPhotoUrls
+  image: photoUrl,                    // From fetchPhotoUrls or embedded object
   bedrooms: number,
   bathrooms: number,
   availableDays: [],                  // Day names or indices
@@ -547,7 +607,7 @@ window.location.href = `${SEARCH_URL}?days-selected=${daysParam}`;
 
 ```javascript
 // React hooks
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 // Shared components
 import Header from '../shared/Header.jsx';
@@ -573,6 +633,7 @@ import { getNeighborhoodName, getBoroughName, initializeLookups } from '../../li
 | `zat_geo_borough_toplevel` | NYC boroughs for filter pills |
 | `listing` | Featured listings data |
 | `zat_geo_hood_mediumlevel` | Neighborhood name lookup (via dataLookups) |
+| `listing_photo` | Legacy photo URL lookup (via fetchPhotoUrls) |
 
 ### Listing Query Fields
 ```sql
@@ -604,11 +665,12 @@ LIMIT 3
 |-------|-------|
 | No listings showing | Check Supabase connection, verify Complete=true listings exist |
 | Borough filter not working | Verify borough IDs match zat_geo_borough_toplevel._id |
-| Photos not loading | Check fetchPhotoUrls utility, verify photo IDs exist |
+| Photos not loading | Check photo format (new embedded vs legacy), verify photo IDs exist |
 | Day selection not working | Check SearchScheduleSelector props, verify minDays |
 | Text not rotating | Check scenarios array length, verify interval is running |
 | Floating people not animating | Check CSS animations, verify browser compatibility |
 | Search redirect broken | Verify SEARCH_URL constant, check URL parameter format |
+| Stale day selection on click | Ensure selectedDaysRef is being updated alongside state |
 
 ---
 
@@ -626,6 +688,6 @@ LIMIT 3
 
 ---
 
-**VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-04
+**VERSION**: 1.1
+**LAST_UPDATED**: 2025-12-11
 **STATUS**: Comprehensive - Full page analysis complete
