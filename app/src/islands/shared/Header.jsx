@@ -116,22 +116,28 @@ export default function Header({ autoShowLogin = false }) {
 
   // Listen for Supabase auth state changes (e.g., signup from another component like ViewSplitLeasePage)
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[Header] Auth state changed:', event);
 
       if (event === 'SIGNED_IN' && session) {
         // User signed in - fetch and update user data
-        console.log('[Header] User signed in, updating UI...');
-        try {
-          const userData = await validateTokenAndFetchUser();
-          if (userData) {
-            setCurrentUser(userData);
-            setUserType(getStoredUserType());
-            console.log('[Header] UI updated for:', userData.firstName);
+        // CRITICAL: Use setTimeout to defer the async work and avoid deadlock with setSession()
+        // If we await validateTokenAndFetchUser() synchronously, it calls getSession() which
+        // can't complete until setSession() finishes, but setSession() waits for this listener
+        console.log('[Header] User signed in, deferring UI update to avoid deadlock...');
+        setTimeout(async () => {
+          try {
+            console.log('[Header] Now updating UI...');
+            const userData = await validateTokenAndFetchUser();
+            if (userData) {
+              setCurrentUser(userData);
+              setUserType(getStoredUserType());
+              console.log('[Header] UI updated for:', userData.firstName);
+            }
+          } catch (error) {
+            console.error('[Header] Error updating user data after sign in:', error);
           }
-        } catch (error) {
-          console.error('[Header] Error updating user data after sign in:', error);
-        }
+        }, 0);
       } else if (event === 'SIGNED_OUT') {
         // User signed out - trigger page reload/redirect
         // Don't just clear state - the component tree change would interrupt the logout flow
