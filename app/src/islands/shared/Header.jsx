@@ -18,22 +18,39 @@ export default function Header({ autoShowLogin = false }) {
   const [authModalInitialView, setAuthModalInitialView] = useState('initial'); // 'initial', 'login', 'signup'
 
   // User Authentication State
-  const [currentUser, setCurrentUser] = useState(null);
-  const [authChecked, setAuthChecked] = useState(false);
-  const [userType, setUserType] = useState(null);
+  // CRITICAL: Initialize with cached data synchronously to prevent flickering
+  // If we have cached firstName, we're likely logged in - show optimistic UI immediately
+  const cachedFirstName = getFirstName();
+  const cachedAvatarUrl = getAvatarUrl();
+  const cachedUserType = getStoredUserType();
+  const hasCachedAuth = !!(cachedFirstName && getAuthState());
+
+  const [currentUser, setCurrentUser] = useState(() => {
+    // Return optimistic user data if we have cached auth
+    if (hasCachedAuth) {
+      return {
+        firstName: cachedFirstName,
+        profilePhoto: cachedAvatarUrl,
+        userType: cachedUserType,
+        _isOptimistic: true
+      };
+    }
+    return null;
+  });
+  const [authChecked, setAuthChecked] = useState(hasCachedAuth); // If we have cache, consider it checked
+  const [userType, setUserType] = useState(cachedUserType);
 
   // CreateDuplicateListingModal State
   const [showListPropertyModal, setShowListPropertyModal] = useState(false);
 
-  // Optimistic UI: Show cached auth state immediately, validate in background
-  // Checks both legacy tokens and Supabase Auth sessions
+  // Background validation: Validate cached auth state and update with real data
+  // The optimistic UI is already set synchronously in useState initializer above
   useEffect(() => {
-    // Step 1: Synchronously check cached auth state for instant UI
-    const isAuthenticated = getAuthState();
     const token = getAuthToken();
 
-    // Also check for Supabase Auth session (for native auth users)
-    const checkSupabaseAndValidate = async () => {
+    // Background validation function
+    const performBackgroundValidation = async () => {
+      // First, check for Supabase Auth session if no legacy token
       let hasSupabaseSession = false;
       if (!token) {
         try {
@@ -44,75 +61,56 @@ export default function Header({ autoShowLogin = false }) {
         }
       }
 
-      if (!token && !hasSupabaseSession && !isAuthenticated) {
-        // Not logged in - show logged-out state immediately
-        console.log('[Header] No auth state - showing logged-out UI');
+      // If no auth at all, ensure we show logged-out state
+      if (!token && !hasSupabaseSession && !hasCachedAuth) {
+        console.log('[Header] No auth state - confirming logged-out UI');
         setAuthChecked(true);
+        setCurrentUser(null);
         return;
       }
 
-      console.log(`[Header] Auth found (legacy token: ${!!token}, Supabase session: ${hasSupabaseSession}, cached auth: ${isAuthenticated}) - validating...`);
+      console.log(`[Header] Auth found (legacy token: ${!!token}, Supabase session: ${hasSupabaseSession}, cached auth: ${hasCachedAuth}) - validating...`);
 
-      // Step 2: Show optimistic logged-in state with cached data
-      const cachedFirstName = getFirstName();
-      const cachedAvatarUrl = getAvatarUrl();
-      const cachedUserType = getStoredUserType();
+      // Validate token and get fresh user data
+      try {
+        const userData = await validateTokenAndFetchUser();
 
-      if (cachedFirstName) {
-        // Set optimistic user data for immediate display
-        setCurrentUser({
-          firstName: cachedFirstName,
-          profilePhoto: cachedAvatarUrl,
-          userType: cachedUserType,
-          _isOptimistic: true // Flag to indicate this is cached data
-        });
-        setUserType(cachedUserType);
-        console.log('[Header] Showing optimistic UI for:', cachedFirstName);
-      }
-
-      // Mark as checked so UI renders (with optimistic or no data)
-      setAuthChecked(true);
-
-      // Step 3: Validate in background and update with real data
-      const performBackgroundValidation = async () => {
-        try {
-          const userData = await validateTokenAndFetchUser();
-
-          if (userData) {
-            // Token is valid - update with real user data
-            setCurrentUser(userData);
-            console.log('[Header] Background validation successful:', userData.firstName);
-          } else {
-            // Token is invalid - clear optimistic state
-            setCurrentUser(null);
-            console.log('[Header] Background validation failed - clearing auth');
-
-            // If on a protected page and token validation failed:
-            // - If autoShowLogin is true, show the modal (don't redirect)
-            // - Otherwise, redirect to home
-            if (isProtectedPage() && !autoShowLogin) {
-              console.log('⚠️ Invalid token on protected page - redirecting to home');
-              window.location.replace('/');
-            } else if (isProtectedPage() && autoShowLogin) {
-              console.log('⚠️ Invalid token on protected page - auth modal will be shown');
-            }
-          }
-        } catch (error) {
-          console.error('Auth validation error:', error);
+        if (userData) {
+          // Token is valid - update with real user data
+          setCurrentUser(userData);
+          setUserType(getStoredUserType());
+          console.log('[Header] Background validation successful:', userData.firstName);
+        } else {
+          // Token is invalid - clear optimistic state
           setCurrentUser(null);
-        }
-      };
+          console.log('[Header] Background validation failed - clearing auth');
 
-      // Run validation after page load to not block rendering
-      if (document.readyState === 'complete') {
-        performBackgroundValidation();
-      } else {
-        window.addEventListener('load', performBackgroundValidation, { once: true });
+          // If on a protected page and token validation failed:
+          // - If autoShowLogin is true, show the modal (don't redirect)
+          // - Otherwise, redirect to home
+          if (isProtectedPage() && !autoShowLogin) {
+            console.log('⚠️ Invalid token on protected page - redirecting to home');
+            window.location.replace('/');
+          } else if (isProtectedPage() && autoShowLogin) {
+            console.log('⚠️ Invalid token on protected page - auth modal will be shown');
+          }
+        }
+      } catch (error) {
+        console.error('Auth validation error:', error);
+        setCurrentUser(null);
       }
+
+      // Mark validation as complete
+      setAuthChecked(true);
     };
 
-    checkSupabaseAndValidate();
-  }, [autoShowLogin]);
+    // Run validation after page load to not block rendering
+    if (document.readyState === 'complete') {
+      performBackgroundValidation();
+    } else {
+      window.addEventListener('load', performBackgroundValidation, { once: true });
+    }
+  }, [autoShowLogin, hasCachedAuth]);
 
   // Listen for Supabase auth state changes (e.g., signup from another component like ViewSplitLeasePage)
   useEffect(() => {
