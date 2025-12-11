@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
 import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
@@ -52,10 +52,29 @@ export default function Header({ autoShowLogin = false }) {
     const performBackgroundValidation = async () => {
       // First, check for Supabase Auth session if no legacy token
       let hasSupabaseSession = false;
+      let session = null;
       if (!token) {
         try {
-          const { data: { session } } = await supabase.auth.getSession();
+          // CRITICAL: Supabase client may not have loaded session from localStorage yet
+          // Give it a moment to initialize before checking
+          // The onAuthStateChange listener will fire INITIAL_SESSION when ready
+          const { data } = await supabase.auth.getSession();
+          session = data?.session;
           hasSupabaseSession = !!session;
+
+          // If no session on first check, wait briefly for Supabase to initialize
+          // This handles the race condition where getSession() returns null but
+          // INITIAL_SESSION fires shortly after with a valid session
+          if (!hasSupabaseSession) {
+            console.log('[Header] No immediate Supabase session, waiting briefly for initialization...');
+            await new Promise(resolve => setTimeout(resolve, 200));
+            const { data: retryData } = await supabase.auth.getSession();
+            session = retryData?.session;
+            hasSupabaseSession = !!session;
+            if (hasSupabaseSession) {
+              console.log('[Header] ✅ Found Supabase session after brief wait');
+            }
+          }
         } catch (err) {
           console.log('[Header] Error checking Supabase session:', err.message);
         }
@@ -72,8 +91,10 @@ export default function Header({ autoShowLogin = false }) {
       console.log(`[Header] Auth found (legacy token: ${!!token}, Supabase session: ${hasSupabaseSession}, cached auth: ${hasCachedAuth}) - validating...`);
 
       // Validate token and get fresh user data
+      // CRITICAL: Use clearOnFailure: false to preserve valid Supabase sessions
+      // even if user profile fetch fails (e.g., network error, user not in DB yet)
       try {
-        const userData = await validateTokenAndFetchUser();
+        const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
 
         if (userData) {
           // Token is valid - update with real user data
@@ -81,23 +102,42 @@ export default function Header({ autoShowLogin = false }) {
           setUserType(getStoredUserType());
           console.log('[Header] Background validation successful:', userData.firstName);
         } else {
-          // Token is invalid - clear optimistic state
-          setCurrentUser(null);
-          console.log('[Header] Background validation failed - clearing auth');
+          // Validation failed but session may still be valid
+          // Only clear UI state, not the underlying session
+          console.log('[Header] Background validation returned no user data');
 
-          // If on a protected page and token validation failed:
-          // - If autoShowLogin is true, show the modal (don't redirect)
-          // - Otherwise, redirect to home
-          if (isProtectedPage() && !autoShowLogin) {
-            console.log('⚠️ Invalid token on protected page - redirecting to home');
-            window.location.replace('/');
-          } else if (isProtectedPage() && autoShowLogin) {
-            console.log('⚠️ Invalid token on protected page - auth modal will be shown');
+          // If we have a Supabase session, keep trying - don't give up
+          if (hasSupabaseSession) {
+            console.log('[Header] Supabase session exists - preserving auth state');
+            // Set basic user info from session if available
+            if (session?.user) {
+              setCurrentUser({
+                firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
+                email: session.user.email,
+                _isFromSession: true
+              });
+            }
+          } else {
+            setCurrentUser(null);
+            console.log('[Header] Background validation failed - clearing auth UI');
+
+            // If on a protected page and token validation failed:
+            // - If autoShowLogin is true, show the modal (don't redirect)
+            // - Otherwise, redirect to home
+            if (isProtectedPage() && !autoShowLogin) {
+              console.log('⚠️ Invalid token on protected page - redirecting to home');
+              window.location.replace('/');
+            } else if (isProtectedPage() && autoShowLogin) {
+              console.log('⚠️ Invalid token on protected page - auth modal will be shown');
+            }
           }
         }
       } catch (error) {
         console.error('Auth validation error:', error);
-        setCurrentUser(null);
+        // Don't clear user if we have a session - just log the error
+        if (!hasSupabaseSession) {
+          setCurrentUser(null);
+        }
       }
 
       // Mark validation as complete
@@ -113,11 +153,21 @@ export default function Header({ autoShowLogin = false }) {
   }, [autoShowLogin, hasCachedAuth]);
 
   // Listen for Supabase auth state changes (e.g., signup from another component like ViewSplitLeasePage)
+  // Track if we've already handled a sign-in to prevent duplicate processing
+  const signInHandledRef = useRef(false);
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       console.log('[Header] Auth state changed:', event);
 
-      if (event === 'SIGNED_IN' && session) {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session) {
+        // Prevent duplicate handling - only process the first sign-in event
+        if (signInHandledRef.current) {
+          console.log('[Header] Sign-in already handled, skipping duplicate event:', event);
+          return;
+        }
+        signInHandledRef.current = true;
+
         // User signed in - fetch and update user data
         // CRITICAL: Use setTimeout to defer the async work and avoid deadlock with setSession()
         // If we await validateTokenAndFetchUser() synchronously, it calls getSession() which
@@ -126,17 +176,33 @@ export default function Header({ autoShowLogin = false }) {
         setTimeout(async () => {
           try {
             console.log('[Header] Now updating UI...');
-            const userData = await validateTokenAndFetchUser();
+            // CRITICAL: Use clearOnFailure: false to preserve the valid Supabase session
+            // even if user profile fetch fails (network error, user not in DB, etc.)
+            const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
             if (userData) {
               setCurrentUser(userData);
               setUserType(getStoredUserType());
+              setAuthChecked(true);
               console.log('[Header] UI updated for:', userData.firstName);
+            } else {
+              // Validation failed but we have a valid session - set basic info from session
+              console.log('[Header] User profile fetch failed, using session data');
+              if (session?.user) {
+                setCurrentUser({
+                  firstName: session.user.user_metadata?.first_name || session.user.email?.split('@')[0] || 'User',
+                  email: session.user.email,
+                  _isFromSession: true
+                });
+                setAuthChecked(true);
+              }
             }
           } catch (error) {
             console.error('[Header] Error updating user data after sign in:', error);
           }
         }, 0);
       } else if (event === 'SIGNED_OUT') {
+        // Reset the flag when user signs out
+        signInHandledRef.current = false;
         // User signed out - trigger page reload/redirect
         // Don't just clear state - the component tree change would interrupt the logout flow
         console.log('[Header] User signed out, reloading page...');

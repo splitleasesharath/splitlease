@@ -7,7 +7,8 @@
     "generate-routes": "node scripts/generate-redirects.js",
     "prebuild": "bun run generate-routes",
     "build": "vite build",
-    "preview": "vite preview --port 8000"
+    "preview": "vite preview --port 8000",
+    "deploy": "wrangler pages deploy dist --project-name splitlease"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

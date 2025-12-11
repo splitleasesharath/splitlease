@@ -136,8 +136,24 @@ export async function checkAuthStatus() {
   }
 
   // Check Supabase Auth session (for native Supabase signups)
+  // CRITICAL: Supabase client may not have loaded session from localStorage yet
+  // We need to handle the race condition where getSession() returns null initially
+  // but INITIAL_SESSION fires shortly after with a valid session
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    let { data: { session }, error } = await supabase.auth.getSession();
+
+    // If no session on first check, wait briefly for Supabase to initialize
+    // This handles the race condition on page load
+    if (!session && !error) {
+      console.log('🔄 No immediate Supabase session, waiting briefly for initialization...');
+      await new Promise(resolve => setTimeout(resolve, 200));
+      const retryResult = await supabase.auth.getSession();
+      session = retryResult.data?.session;
+      error = retryResult.error;
+      if (session) {
+        console.log('✅ Found Supabase session after brief wait');
+      }
+    }
 
     if (session && !error) {
       console.log('✅ User authenticated via Supabase Auth session');
@@ -832,9 +848,13 @@ export async function signupUser(email, password, retype, additionalData = null)
  * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
  * API key is stored server-side in Supabase Secrets
  *
+ * @param {Object} options - Configuration options
+ * @param {boolean} options.clearOnFailure - If true, clears auth data when validation fails. Default: true.
+ *                                           Set to false when calling immediately after login/signup to preserve
+ *                                           the fresh session even if user profile fetch fails.
  * @returns {Promise<Object|null>} User data object with firstName, fullName, email, profilePhoto, userType, etc. or null if invalid
  */
-export async function validateTokenAndFetchUser() {
+export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) {
   let token = getAuthToken();
   let userId = getSessionId();
 
@@ -843,7 +863,20 @@ export async function validateTokenAndFetchUser() {
     console.log('[Auth] No legacy token found, checking for Supabase Auth session...');
 
     try {
-      const { data: { session }, error } = await supabase.auth.getSession();
+      let { data: { session }, error } = await supabase.auth.getSession();
+
+      // CRITICAL: Supabase client may not have loaded session from localStorage yet
+      // Wait briefly for initialization if no session found
+      if (!session && !error) {
+        console.log('[Auth] 🔄 No immediate session, waiting briefly for Supabase initialization...');
+        await new Promise(resolve => setTimeout(resolve, 200));
+        const retryResult = await supabase.auth.getSession();
+        session = retryResult.data?.session;
+        error = retryResult.error;
+        if (session) {
+          console.log('[Auth] ✅ Found Supabase session after brief wait');
+        }
+      }
 
       if (session && !error) {
         console.log('[Auth] ✅ Found Supabase Auth session, syncing to secure storage');
@@ -914,15 +947,25 @@ export async function validateTokenAndFetchUser() {
         }
       }
 
-      clearAuthData();
+      // Only clear auth data if clearOnFailure is true
+      // This allows callers to preserve fresh sessions even when validation fails
+      if (clearOnFailure) {
+        clearAuthData();
+      }
       isUserLoggedInState = false;
       return null;
     }
 
     if (!data.success) {
-      console.log('❌ Token validation failed - clearing auth data');
+      console.log('❌ Token validation failed');
       console.log('   Reason:', data.error || 'Unknown');
-      clearAuthData();
+      // Only clear auth data if clearOnFailure is true
+      if (clearOnFailure) {
+        console.log('   Clearing auth data...');
+        clearAuthData();
+      } else {
+        console.log('   Preserving session (clearOnFailure=false)');
+      }
       isUserLoggedInState = false;
       return null;
     }
@@ -977,7 +1020,10 @@ export async function validateTokenAndFetchUser() {
 
   } catch (error) {
     console.error('❌ Token validation error:', error);
-    clearAuthData();
+    // Only clear auth data if clearOnFailure is true
+    if (clearOnFailure) {
+      clearAuthData();
+    }
     isUserLoggedInState = false;
     return null;
   }

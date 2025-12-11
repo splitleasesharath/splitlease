@@ -644,12 +644,17 @@ export default function SignUpLoginModal({
       if (onAuthSuccess) {
         onAuthSuccess(result);
       }
-      onClose();
-      if (!skipReload) {
-        setTimeout(() => {
-          window.location.reload();
-        }, 500);
-      }
+
+      // Delay closing the modal to let the success toast be visible
+      // The toast is rendered inside the modal, so we need to keep it open briefly
+      setTimeout(() => {
+        onClose();
+        if (!skipReload) {
+          setTimeout(() => {
+            window.location.reload();
+          }, 300);
+        }
+      }, 1500); // Show toast for 1.5 seconds before closing
     } else {
       showToast({
         title: 'Signup Failed',
@@ -693,10 +698,11 @@ export default function SignUpLoginModal({
 
       // Fetch and cache user data before reload for optimistic UI
       // This ensures the next page load has the correct user's firstName cached
-      // Wrapped in try-catch to ensure login completes even if validation fails
+      // CRITICAL: Use clearOnFailure: false to preserve the fresh session even if validation fails
+      // The session was just established by login - don't let a failed user profile fetch clear it
       try {
         console.log('[SignUpLoginModal] Fetching user data...');
-        await validateTokenAndFetchUser();
+        await validateTokenAndFetchUser({ clearOnFailure: false });
         console.log('[SignUpLoginModal] User data fetched successfully');
       } catch (validationError) {
         console.warn('[SignUpLoginModal] User data fetch failed, continuing with login:', validationError);
