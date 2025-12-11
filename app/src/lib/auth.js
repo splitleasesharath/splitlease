@@ -830,9 +830,13 @@ export async function signupUser(email, password, retype, additionalData = null)
  * ✅ MIGRATED: Now uses Edge Functions instead of direct Bubble API calls
  * API key is stored server-side in Supabase Secrets
  *
+ * @param {Object} options - Configuration options
+ * @param {boolean} options.clearOnFailure - If true, clears auth data when validation fails. Default: true.
+ *                                           Set to false when calling immediately after login/signup to preserve
+ *                                           the fresh session even if user profile fetch fails.
  * @returns {Promise<Object|null>} User data object with firstName, fullName, email, profilePhoto, userType, etc. or null if invalid
  */
-export async function validateTokenAndFetchUser() {
+export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) {
   let token = getAuthToken();
   let userId = getSessionId();
 
@@ -912,15 +916,25 @@ export async function validateTokenAndFetchUser() {
         }
       }
 
-      clearAuthData();
+      // Only clear auth data if clearOnFailure is true
+      // This allows callers to preserve fresh sessions even when validation fails
+      if (clearOnFailure) {
+        clearAuthData();
+      }
       isUserLoggedInState = false;
       return null;
     }
 
     if (!data.success) {
-      console.log('❌ Token validation failed - clearing auth data');
+      console.log('❌ Token validation failed');
       console.log('   Reason:', data.error || 'Unknown');
-      clearAuthData();
+      // Only clear auth data if clearOnFailure is true
+      if (clearOnFailure) {
+        console.log('   Clearing auth data...');
+        clearAuthData();
+      } else {
+        console.log('   Preserving session (clearOnFailure=false)');
+      }
       isUserLoggedInState = false;
       return null;
     }
@@ -967,7 +981,10 @@ export async function validateTokenAndFetchUser() {
 
   } catch (error) {
     console.error('❌ Token validation error:', error);
-    clearAuthData();
+    // Only clear auth data if clearOnFailure is true
+    if (clearOnFailure) {
+      clearAuthData();
+    }
     isUserLoggedInState = false;
     return null;
   }
