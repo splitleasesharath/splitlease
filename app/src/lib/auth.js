@@ -446,79 +446,51 @@ export async function loginUser(email, password) {
   console.log('🔐 Attempting login via Edge Function for:', email);
 
   try {
-    // CRITICAL: Sign out before login to clear any stale session
-    // The Supabase client automatically attaches Authorization headers to functions.invoke
-    // If the existing session has an expired token that needs refresh and refresh fails,
-    // the invoke call hangs indefinitely. Since auth-user has verify_jwt=false, we don't
-    // need any token, so clearing the session first ensures the call completes.
-    console.log('🔄 Clearing any existing session before login...');
-    await supabase.auth.signOut();
-    console.log('✅ Session cleared, proceeding with login');
+    // CRITICAL: Use direct fetch to bypass Supabase client session handling
+    // The Supabase client's functions.invoke can hang indefinitely when there's a stale
+    // session because it tries to refresh the token before making requests. Since auth-user
+    // has verify_jwt=false, we don't need any auth token. Using direct fetch bypasses this.
+    console.log('🔄 Using direct fetch to bypass Supabase client session handling...');
 
-    const { data, error } = await supabase.functions.invoke('auth-user', {
-      body: {
+    // Clear localStorage directly to avoid signOut() hanging
+    try {
+      const storageKey = `sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]}-auth-token`;
+      if (storageKey && storageKey !== 'sb-undefined-auth-token') {
+        localStorage.removeItem(storageKey);
+        console.log('✅ Cleared auth token from localStorage');
+      }
+    } catch (clearErr) {
+      console.warn('⚠️ Could not clear localStorage:', clearErr);
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    console.log('📡 Calling auth-user edge function via direct fetch...');
+    const response = await fetch(`${supabaseUrl}/functions/v1/auth-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${supabaseAnonKey}` // Use anon key, not user token
+      },
+      body: JSON.stringify({
         action: 'login',
         payload: {
           email,
           password
         }
-      }
+      })
     });
 
-    if (error) {
-      console.error('❌ Edge Function error:', error);
-      console.error('   Error context:', error.context);
+    const data = await response.json();
+    console.log('📡 Response status:', response.status);
+    console.log('📡 Response data:', data);
 
-      // Extract detailed error from response body if available
-      // Supabase wraps non-2xx responses in a generic error, but the body may contain details
-      let errorMessage = 'Failed to authenticate. Please try again.';
-
-      // In newer Supabase JS versions, error.context is the Response object
-      // We need to read the body using .json() or .text()
-      if (error.context && typeof error.context.json === 'function') {
-        try {
-          const errorBody = await error.context.json();
-          console.error('   Error body from Response:', errorBody);
-          if (errorBody?.error) {
-            errorMessage = errorBody.error;
-            console.error('   Detailed error from response:', errorMessage);
-          }
-        } catch (parseErr) {
-          console.error('   Could not parse error body:', parseErr);
-          // Try reading as text as fallback
-          try {
-            const errorText = await error.context.text();
-            console.error('   Error text:', errorText);
-            if (errorText) {
-              const parsed = JSON.parse(errorText);
-              if (parsed?.error) {
-                errorMessage = parsed.error;
-              }
-            }
-          } catch (textErr) {
-            console.error('   Could not read error text:', textErr);
-          }
-        }
-      } else if (error.context?.body) {
-        // Fallback for older Supabase JS versions
-        try {
-          const errorBody = typeof error.context.body === 'string'
-            ? JSON.parse(error.context.body)
-            : error.context.body;
-          if (errorBody?.error) {
-            errorMessage = errorBody.error;
-            console.error('   Detailed error from response:', errorMessage);
-          }
-        } catch (parseErr) {
-          console.error('   Could not parse error body:', parseErr);
-        }
-      }
-
-      // Also check if data was returned despite the error (some edge cases)
-      if (data?.error) {
-        errorMessage = data.error;
-      }
-
+    // Handle HTTP errors
+    if (!response.ok) {
+      console.error('❌ Edge Function HTTP error:', response.status);
+      const errorMessage = data?.error || `HTTP ${response.status}: Failed to authenticate`;
       return {
         success: false,
         error: errorMessage
@@ -683,80 +655,55 @@ export async function signupUser(email, password, retype, additionalData = null)
   }
 
   try {
-    // CRITICAL: Sign out before signup to clear any stale session
-    // The Supabase client automatically attaches Authorization headers to functions.invoke
-    // If the existing session has an expired token that needs refresh and refresh fails,
-    // the invoke call hangs indefinitely. Since auth-user has verify_jwt=false, we don't
-    // need any token, so clearing the session first ensures the call completes.
-    console.log('🔄 Clearing any existing session before signup...');
-    await supabase.auth.signOut();
-    console.log('✅ Session cleared, proceeding with signup');
+    // CRITICAL: Use direct fetch to bypass Supabase client session handling
+    // The Supabase client's functions.invoke can hang indefinitely when there's a stale
+    // session because it tries to refresh the token before making requests. Since auth-user
+    // has verify_jwt=false, we don't need any auth token. Using direct fetch bypasses this.
+    console.log('🔄 Using direct fetch to bypass Supabase client session handling...');
 
-    const { data, error } = await supabase.functions.invoke('auth-user', {
-      body: {
+    // Clear localStorage directly to avoid signOut() hanging
+    try {
+      const storageKey = `sb-${import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0]}-auth-token`;
+      if (storageKey && storageKey !== 'sb-undefined-auth-token') {
+        localStorage.removeItem(storageKey);
+        console.log('✅ Cleared auth token from localStorage');
+      }
+    } catch (clearErr) {
+      console.warn('⚠️ Could not clear localStorage:', clearErr);
+    }
+
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    console.log('📡 Calling auth-user edge function via direct fetch...');
+    const response = await fetch(`${supabaseUrl}/functions/v1/auth-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': supabaseAnonKey,
+        'Authorization': `Bearer ${supabaseAnonKey}` // Use anon key, not user token
+      },
+      body: JSON.stringify({
         action: 'signup',
         payload
-      }
+      })
     });
 
-    if (error) {
-      console.error('❌ Edge Function error:', error);
-      console.error('   Error context:', error.context);
+    const data = await response.json();
+    console.log('📡 Response status:', response.status);
+    console.log('📡 Response data:', data);
 
-      // Extract detailed error from response body if available
-      let errorMessage = 'Failed to create account. Please try again.';
-
-      // In newer Supabase JS versions, error.context is the Response object
-      // We need to read the body using .json() or .text()
-      if (error.context && typeof error.context.json === 'function') {
-        try {
-          const errorBody = await error.context.json();
-          console.error('   Error body from Response:', errorBody);
-          if (errorBody?.error) {
-            errorMessage = errorBody.error;
-            console.error('   Detailed error from response:', errorMessage);
-          }
-        } catch (parseErr) {
-          console.error('   Could not parse error body:', parseErr);
-          // Try reading as text as fallback
-          try {
-            const errorText = await error.context.text();
-            console.error('   Error text:', errorText);
-            if (errorText) {
-              const parsed = JSON.parse(errorText);
-              if (parsed?.error) {
-                errorMessage = parsed.error;
-              }
-            }
-          } catch (textErr) {
-            console.error('   Could not read error text:', textErr);
-          }
-        }
-      } else if (error.context?.body) {
-        // Fallback for older Supabase JS versions
-        try {
-          const errorBody = typeof error.context.body === 'string'
-            ? JSON.parse(error.context.body)
-            : error.context.body;
-          if (errorBody?.error) {
-            errorMessage = errorBody.error;
-            console.error('   Detailed error from response:', errorMessage);
-          }
-        } catch (parseErr) {
-          console.error('   Could not parse error body:', parseErr);
-        }
-      }
-
-      if (data?.error) {
-        errorMessage = data.error;
-      }
-
+    // Handle HTTP errors
+    if (!response.ok) {
+      console.error('❌ Edge Function HTTP error:', response.status);
+      const errorMessage = data?.error || `HTTP ${response.status}: Failed to create account`;
       return {
         success: false,
         error: errorMessage
       };
     }
 
+    // Handle error in response body
     if (!data.success) {
       console.error('❌ Signup failed:', data.error);
       return {
@@ -766,7 +713,6 @@ export async function signupUser(email, password, retype, additionalData = null)
     }
 
     console.log('✅ Edge Function returned successfully');
-    console.log('   Response data:', data);
 
     // Extract Supabase session data
     const {
