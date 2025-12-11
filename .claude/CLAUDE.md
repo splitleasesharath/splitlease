@@ -10,6 +10,8 @@ React 18 + Vite Islands Architecture | Supabase Edge Functions | Cloudflare Page
 
 ## Task Orchestration Workflow (MANDATORY)
 
+> **⚠️ ENFORCEMENT RULE**: For ANY non-trivial task, you MUST invoke the appropriate subagent using the Task tool. Direct implementation without subagent orchestration is PROHIBITED. This is not optional guidance—it is a hard requirement.
+
 For ANY non-trivial task, follow this orchestration pipeline:
 
 ```
@@ -61,6 +63,21 @@ For ANY non-trivial task, follow this orchestration pipeline:
 ### Simple Questions
 
 For simple questions (not requiring code changes), answer directly without the orchestration pipeline.
+
+### Mandatory Subagent Invocation Rules
+
+**You MUST use the Task tool to invoke the appropriate subagent for the following task types:**
+
+| Task Type | Required Subagent | When to Use |
+|-----------|-------------------|-------------|
+| New feature, enhancement, code change | `task-classifier` → `implementation-planner` → `plan-executor` | Any BUILD task |
+| Bug investigation, error analysis | `task-classifier` → `debug-analyst` → `plan-executor` | Any DEBUG task |
+| Refactoring, cleanup, consolidation | `task-classifier` → `cleanup-planner` → `plan-executor` | Any CLEANUP task |
+| MCP tool invocation (Supabase, Playwright, etc.) | `mcp-tool-specialist` | Any MCP operation |
+| Code/plan review | `input-reviewer` | After implementation |
+| Codebase exploration | `codebase-explorer` or `Explore` | Understanding code structure |
+
+**Violation of these rules is unacceptable.** If uncertain whether a task is "trivial" or "non-trivial," default to using the orchestration pipeline.
 
 ---
 
@@ -150,16 +167,22 @@ supabase functions deploy <name>   # Deploy single function
 
 ## Rules
 
-### DO
-- Follow the orchestration pipeline for non-trivial tasks
+### DO (MANDATORY)
+- **ALWAYS invoke subagents via Task tool for non-trivial tasks** — This is non-negotiable
+- **ALWAYS use `task-classifier` as the first step** for BUILD/DEBUG/CLEANUP tasks
+- **ALWAYS use `mcp-tool-specialist`** for any MCP tool invocation (Supabase, Playwright, etc.)
+- **ALWAYS use `input-reviewer`** after completing implementations
+- Follow the complete orchestration pipeline for non-trivial tasks
 - Use Edge Functions for all Bubble API calls
 - Run `bun run generate-routes` after route changes
 - Commit after each meaningful change
 - Convert day indices at system boundaries
 - Use the four-layer logic architecture
-- Invoke MCPs through mcp-tool-specialist subagent
 
-### DON'T
+### DON'T (PROHIBITED)
+- **NEVER implement non-trivial code changes directly** — Use the subagent pipeline
+- **NEVER invoke MCP tools directly** — Route through `mcp-tool-specialist`
+- **NEVER skip the classification step** for tasks that modify code
 - Expose API keys in frontend code
 - Call Bubble API directly from frontend
 - `git push --force` or push to main without review
