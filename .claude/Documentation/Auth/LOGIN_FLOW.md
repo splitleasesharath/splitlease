@@ -1,59 +1,61 @@
 # Split Lease - Login Flow Documentation
 
-**GENERATED**: 2025-12-04
-**VERSION**: 1.0.0
+**GENERATED**: 2025-12-11
+**VERSION**: 2.0.0
 **STATUS**: Production
+**BACKEND**: Supabase Auth (Native) - No Bubble Dependency
 
 ---
 
 ## Overview
 
-The Split Lease login flow authenticates users via a multi-layer architecture that routes through Supabase Edge Functions to the Bubble.io backend. This document provides a comprehensive guide to the entire login process from UI interaction to token storage.
+The Split Lease login flow authenticates users via Supabase Auth natively. This is a complete migration from the previous Bubble-based authentication system. Users authenticate through the Edge Function which proxies to Supabase Auth, returning JWT session tokens.
 
 ---
 
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            FRONTEND (React)                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌─────────────────────┐     ┌────────────────────┐     ┌────────────────┐  │
-│  │  SignUpLoginModal   │────▶│    auth.js         │────▶│ secureStorage  │  │
-│  │  (UI Component)     │     │  (loginUser fn)    │     │ (Token Store)  │  │
-│  └─────────────────────┘     └────────────────────┘     └────────────────┘  │
-│                                       │                                      │
-└───────────────────────────────────────│──────────────────────────────────────┘
-                                        │
-                                        ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        SUPABASE EDGE FUNCTION                                │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌─────────────────────┐     ┌────────────────────┐                         │
-│  │ auth-user   │────▶│  handlers/login.ts │                         │
-│  │ index.ts (Router)   │     │  (Login Handler)   │                         │
-│  └─────────────────────┘     └────────────────────┘                         │
-│                                       │                                      │
-└───────────────────────────────────────│──────────────────────────────────────┘
-                                        │
-                                        ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          BUBBLE.IO BACKEND                                   │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │              /api/1.1/wf/login-user Workflow                          │   │
-│  │                                                                       │   │
-│  │  1. Validate email format                                            │   │
-│  │  2. Check user exists in database                                    │   │
-│  │  3. Verify password hash                                             │   │
-│  │  4. Generate authentication token                                    │   │
-│  │  5. Return: { token, user_id, expires }                              │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
++---------------------------------------------------------------------------+
+|                            FRONTEND (React)                                |
++---------------------------------------------------------------------------+
+|                                                                            |
+|  +---------------------+     +--------------------+     +----------------+ |
+|  |  SignUpLoginModal   |---->|    auth.js         |---->| secureStorage  | |
+|  |  (UI Component)     |     |  (loginUser fn)    |     | (Token Store)  | |
+|  +---------------------+     +--------------------+     +----------------+ |
+|                                       |                                    |
++---------------------------------------------------------------------------+
+                                        |
+                                        v
++---------------------------------------------------------------------------+
+|                        SUPABASE EDGE FUNCTION                              |
++---------------------------------------------------------------------------+
+|                                                                            |
+|  +---------------------+     +------------------------+                    |
+|  | auth-user/index.ts  |---->|  handlers/login.ts     |                    |
+|  | (Router)            |     |  (Supabase Auth Native)|                    |
+|  +---------------------+     +------------------------+                    |
+|                                       |                                    |
++---------------------------------------------------------------------------+
+                                        |
+                   +--------------------+--------------------+
+                   |                                         |
+                   v                                         v
+     +------------------------+              +------------------------+
+     |   SUPABASE AUTH        |              |   SUPABASE DATABASE    |
+     |   (auth.users)         |              |   (public.user)        |
+     +------------------------+              +------------------------+
+     |                        |              |                        |
+     | signInWithPassword()   |              | SELECT user profile    |
+     | Returns:               |              | by email               |
+     | - access_token         |              |                        |
+     | - refresh_token        |              | Returns:               |
+     | - expires_in           |              | - _id                  |
+     | - user metadata        |              | - Name - First         |
+     |                        |              | - Profile Photo        |
+     +------------------------+              | - Account - Host       |
+                                             +------------------------+
 ```
 
 ---
@@ -147,25 +149,25 @@ export async function loginUser(email, password) {
       return { success: false, error: errorMsg };
     }
 
-    // Extract response data
-    const { token, user_id, expires } = data.data;
+    // Extract response data (Supabase Auth tokens)
+    const { access_token, refresh_token, user_id, user_type, expires_in } = data.data;
 
     // Store authentication tokens
-    setAuthToken(token);
+    setAuthToken(access_token);
     setSessionId(user_id);
     setAuthState(true, user_id);
 
-    // Fetch and store user type
-    const userData = await validateTokenAndFetchUser();
-    if (userData?.userType) {
-      setUserType(userData.userType);
+    // Store user type
+    if (user_type) {
+      setUserType(user_type);
     }
 
     return {
       success: true,
-      token,
+      access_token,
+      refresh_token,
       userId: user_id,
-      userData
+      userType: user_type
     };
 
   } catch (error) {
@@ -178,9 +180,8 @@ export async function loginUser(email, password) {
 #### Key Operations
 1. **Input Validation**: Check email and password are provided
 2. **Edge Function Call**: Invoke `auth-user` with action `login`
-3. **Token Storage**: Store token, session ID, and auth state
-4. **User Data Fetch**: Validate token and fetch user profile
-5. **User Type Storage**: Cache user type for UI decisions
+3. **Token Storage**: Store access_token, session ID, and auth state
+4. **User Type Storage**: Cache user type for UI decisions
 
 ---
 
@@ -214,16 +215,16 @@ Deno.serve(async (req) => {
   const { action, payload } = body;
 
   // Validate action
-  const allowedActions = ['login', 'signup', 'logout', 'validate'];
+  const allowedActions = ['login', 'signup', 'logout', 'validate', 'request_password_reset', 'update_password'];
   validateAction(action, allowedActions);
 
-  // Get Bubble API configuration from secrets
-  const bubbleAuthBaseUrl = Deno.env.get('BUBBLE_API_BASE_URL');
-  const bubbleApiKey = Deno.env.get('BUBBLE_API_KEY');
+  // Get Supabase configuration from secrets
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-  // Route to login handler
+  // Route to login handler (Supabase Auth Native)
   if (action === 'login') {
-    const result = await handleLogin(bubbleAuthBaseUrl, bubbleApiKey, payload);
+    const result = await handleLogin(supabaseUrl, supabaseServiceKey, payload);
     return new Response(JSON.stringify({ success: true, data: result }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -238,64 +239,88 @@ Deno.serve(async (req) => {
 
 **File**: `supabase/functions/auth-user/handlers/login.ts`
 
-The login handler communicates with the Bubble.io API.
+The login handler authenticates via Supabase Auth natively (no Bubble dependency).
 
 #### Handler Function
 ```typescript
 export async function handleLogin(
-  bubbleAuthBaseUrl: string,
-  bubbleApiKey: string,
+  supabaseUrl: string,
+  supabaseServiceKey: string,
   payload: any
 ): Promise<any> {
   // Validate required fields
   validateRequiredFields(payload, ['email', 'password']);
   const { email, password } = payload;
 
-  // Call Bubble login workflow
-  const url = `${bubbleAuthBaseUrl}/wf/login-user`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${bubbleApiKey}`
-    },
-    body: JSON.stringify({ email, password })
+  // Initialize Supabase admin client
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+    auth: { autoRefreshToken: false, persistSession: false }
   });
 
-  const data = await response.json();
+  // ========== AUTHENTICATE VIA SUPABASE AUTH ==========
+  const { data: authData, error: authError } = await supabaseAdmin.auth.signInWithPassword({
+    email: email.toLowerCase(),
+    password
+  });
 
-  // Check if login was successful
-  if (!response.ok || data.status !== 'success') {
-    throw new BubbleApiError(
-      data.message || 'Login failed. Please check your credentials.',
-      response.status,
-      data.reason
-    );
+  if (authError) {
+    // Map common auth errors to user-friendly messages
+    if (authError.message.includes('Invalid login credentials')) {
+      throw new BubbleApiError('Invalid email or password. Please try again.', 401);
+    }
+    if (authError.message.includes('Email not confirmed')) {
+      throw new BubbleApiError('Please verify your email address before logging in.', 401);
+    }
+    throw new BubbleApiError(authError.message, 401);
   }
 
-  // Extract response data
-  const token = data.response?.token;
-  const userId = data.response?.user_id;
-  const expires = data.response?.expires;
+  const { session, user: authUser } = authData;
 
-  if (!token || !userId) {
-    throw new BubbleApiError('Login response missing required fields', 500);
-  }
+  // ========== FETCH USER PROFILE ==========
+  const { data: userProfile, error: profileError } = await supabaseAdmin
+    .from('user')
+    .select('_id, email, "First Name", "Last Name", "Profile Photo", "Account - Host / Landlord"')
+    .eq('email', email.toLowerCase())
+    .maybeSingle();
 
-  // Return authentication data
-  return { token, user_id: userId, expires };
+  // Get user_id from profile or user_metadata
+  let userId = userProfile?._id || authUser.user_metadata?.user_id || authUser.id;
+  let userType = authUser.user_metadata?.user_type || 'Guest';
+  let hostAccountId = userProfile?.['Account - Host / Landlord'] || authUser.user_metadata?.host_account_id;
+
+  // ========== RETURN SESSION DATA ==========
+  return {
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+    expires_in: session.expires_in,
+    user_id: userId,
+    supabase_user_id: authUser.id,
+    user_type: userType,
+    host_account_id: hostAccountId,
+    email: authUser.email,
+    firstName: userProfile?.['First Name'] || '',
+    lastName: userProfile?.['Last Name'] || '',
+    profilePhoto: userProfile?.['Profile Photo'] || null
+  };
 }
 ```
 
-#### Bubble API Response Format
+#### Supabase Auth Response Format
 ```json
 {
-  "status": "success",
-  "response": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "success": true,
+  "data": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refresh_token": "abc123...",
+    "expires_in": 3600,
     "user_id": "1234567890x123456789",
-    "expires": 2592000
+    "supabase_user_id": "uuid-from-supabase-auth",
+    "user_type": "Guest",
+    "host_account_id": "host_id_here",
+    "email": "user@example.com",
+    "firstName": "John",
+    "lastName": "Doe",
+    "profilePhoto": "https://..."
   }
 }
 ```
@@ -311,9 +336,9 @@ After successful login, tokens are stored in localStorage.
 #### Storage Keys
 ```javascript
 const SECURE_KEYS = {
-  AUTH_TOKEN: '__sl_at__',     // Auth token
+  AUTH_TOKEN: '__sl_at__',     // Access token (JWT)
   SESSION_ID: '__sl_sid__',    // Session/user ID
-  REFRESH_DATA: '__sl_rd__',   // Refresh token data (future)
+  REFRESH_DATA: '__sl_rd__',   // Refresh token data
 };
 
 const STATE_KEYS = {
@@ -326,18 +351,14 @@ const STATE_KEYS = {
 
 #### Storage Functions Called
 ```javascript
-// Store auth token
-setAuthToken(token);
-// localStorage.setItem('__sl_at__', token);
+// Store access token (JWT)
+setAuthToken(access_token);
 
 // Store session ID (user ID)
 setSessionId(userId);
-// localStorage.setItem('__sl_sid__', userId);
 
 // Set auth state
 setAuthState(true, userId);
-// localStorage.setItem('sl_auth_state', 'true');
-// localStorage.setItem('sl_user_id', userId);
 ```
 
 ---
@@ -362,16 +383,16 @@ const [error, setError] = useState('');
 | Error Scenario | User Message |
 |----------------|--------------|
 | Empty email/password | "Email and password are required." |
-| Invalid credentials | "Login failed. Please check your credentials." |
+| Invalid credentials | "Invalid email or password. Please try again." |
+| Email not confirmed | "Please verify your email address before logging in." |
 | Network error | "An unexpected error occurred." |
 | Server error | "Login failed. Please try again later." |
-| User not found | "Login failed. Please check your credentials." |
 
 ### Error Response Format (Edge Function)
 ```json
 {
   "success": false,
-  "error": "Login failed. Please check your credentials."
+  "error": "Invalid email or password. Please try again."
 }
 ```
 
@@ -392,23 +413,7 @@ const [showLoginPassword, setShowLoginPassword] = useState(false);
 </button>
 ```
 
-### 2. Magic Link Login (Passwordless)
-```javascript
-const handleMagicLink = async () => {
-  const { data, error } = await supabase.functions.invoke('auth-user', {
-    body: {
-      action: 'magic-link',
-      payload: { email: loginData.email }
-    }
-  });
-
-  if (!error && data?.success) {
-    alert(`Magic link sent to ${loginData.email}!`);
-  }
-};
-```
-
-### 3. Forgot Password
+### 2. Forgot Password
 ```javascript
 const goToPasswordReset = () => {
   setCurrentView(VIEWS.PASSWORD_RESET);
@@ -449,12 +454,6 @@ After login, session validation occurs on subsequent page loads.
 ### checkAuthStatus Function
 ```javascript
 export async function checkAuthStatus() {
-  // Check cookies first (cross-domain compatibility)
-  const cookies = getSplitLeaseCookies();
-  if (cookies.isLoggedIn) {
-    return true;
-  }
-
   // Check secure storage
   const authState = getAuthState();
   const hasTokens = hasValidTokens();
@@ -518,7 +517,7 @@ export async function validateTokenAndFetchUser() {
 | File | Purpose |
 |------|---------|
 | `supabase/functions/auth-user/index.ts` | Auth router |
-| `supabase/functions/auth-user/handlers/login.ts` | Login handler |
+| `supabase/functions/auth-user/handlers/login.ts` | Login handler (Supabase Auth Native) |
 | `supabase/functions/auth-user/handlers/validate.ts` | Token validation |
 | `supabase/functions/_shared/errors.ts` | Error classes |
 | `supabase/functions/_shared/validation.ts` | Input validation |
@@ -527,12 +526,13 @@ export async function validateTokenAndFetchUser() {
 
 ## Security Considerations
 
-### 1. Token Storage
-- Tokens stored in localStorage (persists across sessions)
-- Token expiry managed entirely by Bubble API (no client-side expiration)
+### 1. JWT Token Storage
+- Access tokens stored in localStorage (persists across sessions)
+- Refresh tokens enable session renewal
+- Token expiry managed by Supabase Auth (configurable)
 
 ### 2. API Key Protection
-- Bubble API key stored server-side in Supabase Secrets
+- Supabase service role key stored server-side in Edge Function secrets
 - Never exposed to frontend code
 - All API calls proxied through Edge Functions
 
@@ -552,6 +552,20 @@ export const corsHeaders = {
 
 ---
 
+## Authentication Backend Comparison
+
+| Feature | Old (Bubble) | New (Supabase Auth) |
+|---------|--------------|---------------------|
+| Authentication | Bubble Workflow API | Supabase signInWithPassword |
+| Token Type | Bubble Token | JWT (access + refresh) |
+| Token Expiry | Server-controlled | Configurable (default 1 hour) |
+| Password Reset | N/A | Native Supabase Auth |
+| Email Verification | N/A | Native Supabase Auth |
+| User Metadata | Bubble Database | auth.users + public.user |
+| Session Management | Cookie-based | JWT-based |
+
+---
+
 ## Testing Checklist
 
 - [ ] Valid email and password logs in successfully
@@ -559,15 +573,17 @@ export const corsHeaders = {
 - [ ] Invalid password shows appropriate error
 - [ ] Empty fields show validation error
 - [ ] Password visibility toggle works
-- [ ] Magic link option appears after email entered
 - [ ] Forgot password link works
 - [ ] Page reloads after successful login
 - [ ] User data displayed after login (avatar, name)
 - [ ] Session persists across page refresh
 - [ ] Logout clears all stored data
+- [ ] JWT tokens stored correctly
+- [ ] Refresh token works for session renewal
 
 ---
 
-**DOCUMENT_VERSION**: 1.0.0
-**LAST_UPDATED**: 2025-12-04
+**DOCUMENT_VERSION**: 2.0.0
+**LAST_UPDATED**: 2025-12-11
 **AUTHOR**: Claude Code
+**MIGRATION**: Bubble -> Supabase Auth (Native)
