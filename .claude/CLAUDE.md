@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 React 18 + Vite Islands Architecture | Supabase Edge Functions | Cloudflare Pages
 
----
+ALWAYS USE THE CODEBASE EXPLORER SUBAGENT
 
 ## Commands
 
