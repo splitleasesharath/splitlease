@@ -1,294 +1,188 @@
-# Edge Functions Documentation
+# Supabase Edge Functions Documentation
 
-**Location**: `supabase/functions/`
-**Runtime**: Deno 2
-**Updated**: 2025-12-04
-
----
-
-## Quick Navigation
-
-### For Getting Started
-Start here if you're new to the Edge Functions architecture:
-- **[QUICK_REFERENCE.md](./QUICK_REFERENCE.md)** - Copy-paste templates, curl examples, common patterns
-
-### For Understanding the Architecture
-Deep dive into how everything works:
-- **[ARCHITECTURE_ANALYSIS.md](./ARCHITECTURE_ANALYSIS.md)** - Complete breakdown of patterns, handlers, and utilities
-- **[VISUAL_GUIDE.md](./VISUAL_GUIDE.md)** - Diagrams and visual explanations
+**GENERATED**: 2025-12-11
+**SCOPE**: Supabase Edge Functions for Split Lease Platform
+**RUNTIME**: Deno 2
 
 ---
 
-## Five Edge Functions Overview
+## Overview
 
-| Function | Purpose | Handlers | Auth | Status |
-|----------|---------|----------|------|--------|
-| **bubble-proxy** | General Bubble API proxy | 9 handlers | Optional per action | Active |
-| **auth-user** | Native Supabase Auth (login/signup) + Bubble (logout/validate) | 4 handlers | None (IS auth) | Active |
-| **ai-gateway** | AI completions service | 2 handlers | Optional per prompt | Active |
-| **ai-signup-guest** | AI-powered guest signup | 1 handler | None | Active |
-| **slack** | Slack notifications | 1 handler | None | Active |
+Split Lease uses Supabase Edge Functions (Deno 2) as the backend API layer, serving as a proxy between the React frontend and both Supabase (PostgreSQL) and Bubble.io (legacy backend).
 
----
+### Architecture Principles
 
-## Architecture at a Glance
+| Principle | Description |
+|-----------|-------------|
+| **NO_FALLBACK** | All functions fail fast without fallback logic or default values |
+| **ATOMIC_OPERATIONS** | Write-Read-Write pattern ensures data consistency |
+| **ERROR_COLLECTION** | One request = one Slack log (consolidated reporting) |
+| **QUEUE_BASED_SYNC** | Async sync via `sync_queue` table for non-blocking ops |
+| **ACTION_ROUTING** | All functions use `{ action, payload }` request pattern |
 
-**Every Edge Function**:
-1. Receives `{action, payload}`
-2. Validates and authenticates (if required)
-3. Routes to appropriate handler
-4. Returns `{success, data|error}` with HTTP status
+### Quick Stats
 
-**Key Principles**:
-- **No Fallback Mechanism** - Real data or errors, never defaults
-- **Atomic Operations** - Write to Bubble, read full data, sync to Supabase
-- **Action-Based Routing** - Standardized dispatch pattern across all functions
-- **Strict Validation** - Fail fast on invalid input
-- **Service Layering** - Handlers delegate to reusable services
+- **Total Edge Functions**: 10
+- **Total Shared Utilities**: 9
+- **Primary Language**: TypeScript
+- **Runtime**: Deno 2
 
 ---
 
-## Core Services (Shared Utilities)
+## Edge Functions Index
 
-Located in `supabase/functions/_shared/`:
-
-| Service | Purpose |
-|---------|---------|
-| **bubbleSync.ts** | Atomic Write-Read-Write pattern for data sync |
-| **errors.ts** | Custom error classes and HTTP status mapping |
-| **validation.ts** | Input validation utilities |
-| **cors.ts** | CORS headers configuration |
-| **types.ts** | TypeScript interfaces |
-| **aiTypes.ts** | AI-specific types and prompt registry |
-| **openai.ts** | OpenAI API wrapper |
+| Function | Purpose | Auth Required | Endpoint |
+|----------|---------|---------------|----------|
+| [auth-user](./AUTH_USER.md) | Authentication (login, signup, password reset) | No | `/functions/v1/auth-user` |
+| [bubble-proxy](./BUBBLE_PROXY.md) | Bubble API proxy (messaging, photos, favorites) | Mixed | `/functions/v1/bubble-proxy` |
+| [ai-gateway](./AI_GATEWAY.md) | OpenAI proxy with prompt templating | Mixed | `/functions/v1/ai-gateway` |
+| [proposal](./PROPOSAL.md) | Proposal CRUD operations | Mixed | `/functions/v1/proposal` |
+| [listing](./LISTING.md) | Listing CRUD operations | Mixed | `/functions/v1/listing` |
+| [bubble_sync](./BUBBLE_SYNC.md) | Supabase-to-Bubble sync queue processor | No | `/functions/v1/bubble_sync` |
+| [ai-signup-guest](./AI_SIGNUP_GUEST.md) | AI-powered guest signup flow | No | `/functions/v1/ai-signup-guest` |
+| [ai-parse-profile](./AI_PARSE_PROFILE.md) | AI profile parsing during signup | No | `/functions/v1/ai-parse-profile` |
+| [slack](./SLACK.md) | Slack integration for FAQ inquiries | No | `/functions/v1/slack` |
+| [communications](./COMMUNICATIONS.md) | Future email/SMS (placeholder) | No | `/functions/v1/communications` |
+| [pricing](./PRICING.md) | Future pricing calculations (placeholder) | No | `/functions/v1/pricing` |
 
 ---
 
-## Request Format (Universal)
+## Shared Utilities
 
-All functions accept POST requests with this structure:
+| Utility | File | Purpose |
+|---------|------|---------|
+| BubbleSyncService | `_shared/bubbleSync.ts` | Core atomic sync (Write-Read-Write pattern) |
+| QueueSync | `_shared/queueSync.ts` | Standardized queue-based sync |
+| Slack | `_shared/slack.ts` | Centralized error reporting to Slack |
+| Errors | `_shared/errors.ts` | Custom error classes with HTTP status |
+| Validation | `_shared/validation.ts` | Input validation utilities |
+| CORS | `_shared/cors.ts` | CORS headers configuration |
+| OpenAI | `_shared/openai.ts` | OpenAI API wrapper |
+| Types | `_shared/types.ts` | General TypeScript interfaces |
+| AI Types | `_shared/aiTypes.ts` | AI-specific TypeScript types |
 
+---
+
+## Standard Request/Response Format
+
+### Request
 ```json
+POST /functions/v1/{function-name}
+Content-Type: application/json
+Authorization: Bearer {access_token}  // Optional for public actions
+
 {
   "action": "action_name",
-  "payload": { /* action-specific data */ }
+  "payload": {
+    "field1": "value1",
+    "field2": "value2"
+  }
 }
 ```
 
-With optional Authorization header:
-```
-Authorization: Bearer <jwt_token>
-```
-
----
-
-## Response Format (Standard)
-
-Success:
+### Success Response
 ```json
 {
   "success": true,
-  "data": { /* handler result */ }
+  "data": {
+    "result_field1": "value1",
+    "result_field2": "value2"
+  }
 }
 ```
 
-Error:
+### Error Response
 ```json
 {
   "success": false,
-  "error": "Descriptive error message"
+  "error": "Error message describing what went wrong"
 }
 ```
 
-HTTP Status Codes:
-- `200` - Success
-- `400` - ValidationError (bad input)
-- `401` - AuthenticationError (missing/invalid token)
-- `500` - Server error (Bubble, Supabase, OpenAI failures)
+---
+
+## Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `SUPABASE_URL` | Supabase project URL | Yes (auto) |
+| `SUPABASE_ANON_KEY` | Supabase anon key | Yes (auto) |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key for admin ops | Yes (secret) |
+| `BUBBLE_API_BASE_URL` | Bubble API base URL | Yes (secret) |
+| `BUBBLE_API_KEY` | Bubble API key | Yes (secret) |
+| `OPENAI_API_KEY` | OpenAI API key | Yes (secret) |
+| `SLACK_WEBHOOK_DATABASE_WEBHOOK` | Slack webhook for errors | Yes (secret) |
+| `SLACK_WEBHOOK_ACQUISITION` | Slack webhook for acquisition | Optional |
+| `SLACK_WEBHOOK_GENERAL` | Slack webhook for general | Optional |
 
 ---
 
-## Getting Started: Add a New Handler
+## Deployment
 
-1. Create handler file: `supabase/functions/bubble-proxy/handlers/myAction.ts`
-2. Implement handler function (see QUICK_REFERENCE.md for template)
-3. Import in `index.ts`: `import { handleMyAction } from './handlers/myAction.ts'`
-4. Add action to `allowedActions` array
-5. Add case to switch statement
-6. If public: Add to `PUBLIC_ACTIONS` array
-7. Test locally: `supabase functions serve`
-8. Deploy: `supabase functions deploy bubble-proxy`
+> ⚠️ **CRITICAL REMINDER**: Supabase Edge Functions require **MANUAL DEPLOYMENT** after code changes!
+> Unlike frontend code deployed via Cloudflare Pages, edge functions are NOT auto-deployed.
+> Always run `supabase functions deploy <name>` after modifying edge function code.
 
----
-
-## Document Structure
-
-### QUICK_REFERENCE.md (15 KB)
-**Best for**: Developers who want to quickly get things done
-- Curl examples for all main actions
-- Copy-paste handler templates
-- Common patterns and mistakes
-- Debugging tips
-- Where to find things
-
-### ARCHITECTURE_ANALYSIS.md (30 KB)
-**Best for**: Understanding how everything works
-- Detailed breakdown of each function's routing logic
-- Handler organization patterns
-- Shared utilities deep dive
-- Error handling flow
-- Request-response lifecycle
-- Design principles explained
-- Handler file structure
-
-### VISUAL_GUIDE.md (28 KB)
-**Best for**: Visual learners
-- System architecture diagram
-- Request flow diagrams for each function
-- BubbleSyncService pattern visualization
-- Layered architecture diagram
-- Service dependencies
-- Error handling flowchart
-- Authentication decision tree
-- Handler addition step-by-step
-
----
-
-## Key Files in the Project
-
-**Edge Function Code**:
-- `supabase/functions/bubble-proxy/index.ts` - Main router
-- `supabase/functions/auth-user/index.ts` - Auth router (native Supabase Auth)
-- `supabase/functions/ai-gateway/index.ts` - AI router
-- `supabase/functions/_shared/bubbleSync.ts` - Core sync service
-- `supabase/functions/_shared/errors.ts` - Error handling
-
-**Configuration**:
-- `supabase/config.toml` - Function definitions
-- `supabase/SECRETS_SETUP.md` - Secret configuration
-- `supabase/CLAUDE.md` - Supabase-specific documentation
-
-**Other Documentation**:
-- `CLAUDE.md` - Root project guide
-- `app/CLAUDE.md` - Frontend documentation
-- `app/src/logic/CLAUDE.md` - Four-layer logic system
-
----
-
-## Common Tasks
-
-### View Function Logs
+### Local Development
 ```bash
-supabase functions logs bubble-proxy --tail
+supabase start                      # Start local Supabase
+supabase functions serve            # Serve all functions
+supabase functions serve <name>     # Serve specific function
+supabase functions logs <name>      # View function logs
 ```
 
-### Test Function Locally
+### Production Deployment
 ```bash
-supabase start
-supabase functions serve
-# In another terminal:
-curl -X POST http://localhost:54321/functions/v1/bubble-proxy \
-  -H "Content-Type: application/json" \
-  -d '{"action": "create_listing", "payload": {"listing_name": "Test"}}'
+supabase functions deploy <name>    # Deploy specific function
+supabase functions deploy           # Deploy all functions
 ```
 
-### Deploy Function
-```bash
-supabase functions deploy bubble-proxy
-```
+### Deployment Checklist
 
-### Set Secrets
-```bash
-supabase secrets set BUBBLE_API_KEY=abc123
-supabase secrets set OPENAI_API_KEY=sk-...
-```
+- [ ] Test function locally with `supabase functions serve`
+- [ ] Verify all required secrets are configured in Supabase Dashboard
+- [ ] Deploy with `supabase functions deploy <function-name>`
+- [ ] Test deployed function in production
+- [ ] Monitor Slack channel for any error reports
+
+**Secrets**: Configured in Supabase Dashboard > Project Settings > Secrets
 
 ---
 
-## Design Principles (Core)
+## Critical Notes
 
-### 1. No Fallback Mechanism
-Real data or nothing. No fallback logic, hardcoded values, or workarounds.
-
-```typescript
-// CORRECT
-if (!data) {
-  throw new BubbleApiError('Data not found', 404);
-}
-return data;
-
-// WRONG
-if (!data) {
-  return { fallback: 'default' };  // NO!
-}
-```
-
-### 2. Atomic Operations
-Write-Read-Write pattern ensures Supabase stays in sync with Bubble.
-
-1. Create in Bubble (source of truth)
-2. Fetch full data from Bubble
-3. Sync to Supabase (replica)
-4. Return to client
-
-### 3. Standardized Routing
-All functions use action-based dispatch with the same structure.
-
-### 4. Authentication Flexibility
-- Public actions work without auth
-- Protected actions require Authorization header
-- Handlers receive authenticated user or guest object
-
-### 5. Service Layering
-- Router handles request/auth/dispatch
-- Handlers implement business logic
-- Services provide reusable utilities
+| Topic | Detail |
+|-------|--------|
+| **Day Indexing** | JavaScript: Sun=0 to Sat=6 \| Bubble: Sun=1 to Sat=7 |
+| **Unique ID Gen** | Use `supabaseAdmin.rpc('generate_bubble_id')` |
+| **Bubble = Primary** | Bubble is source of truth, Supabase is replica |
+| **Sync Pattern** | Create in Bubble first, then sync to Supabase |
+| **Queue Processing** | Async sync via `sync_queue`, processed by cron |
+| **CORS** | All functions return CORS headers |
 
 ---
 
-## Troubleshooting
+## Sequence Diagrams
 
-### Issue: "Unknown action" error
-**Solution**: Check that action is in `allowedActions` array and has a case in switch statement
+For visual understanding of complex flows, see [SEQUENCE_DIAGRAMS.md](./SEQUENCE_DIAGRAMS.md):
 
-### Issue: Auth not working
-**Solution**: For public actions, ensure action is in `PUBLIC_ACTIONS` array; for protected actions, ensure Authorization header is sent
-
-### Issue: Supabase sync failing silently
-**Solution**: This is by design (best-effort); check `supabase/functions/_shared/bubbleSync.ts` to see which operations are critical vs best-effort
-
-### Issue: Secrets not accessible
-**Solution**: Set in Supabase Dashboard > Project Settings > Secrets, not in .env files
-
-### Issue: CORS errors in browser
-**Solution**: All functions return CORS headers automatically from `_shared/cors.ts`
+1. **Authentication Flow** - Login and signup with Bubble sync
+2. **Atomic Sync Pattern** - Write-Read-Write consistency
+3. **Queue-Based Sync Flow** - Async sync via sync_queue
+4. **Proposal Creation Flow** - Complete flow with pricing
+5. **AI Gateway Flow** - Streaming and non-streaming completions
+6. **Signup with Bubble Sync** - User + host + guest account creation
 
 ---
 
 ## Related Documentation
 
-- **Project Root Guide**: See `CLAUDE.md` in project root
-- **Supabase Guide**: See `supabase/CLAUDE.md` for detailed Supabase docs
-- **Frontend Guide**: See `app/CLAUDE.md` for React frontend
-- **Logic Architecture**: See `app/src/logic/CLAUDE.md` for four-layer logic system
-- **Database Schema**: See `DATABASE_SCHEMA_OVERVIEW.md` for table definitions
+- [CLAUDE.md (root)](../../../CLAUDE.md) - Main project context
+- [supabase/CLAUDE.md](../../../supabase/CLAUDE.md) - Backend reference
+- [DATABASE_SCHEMA_OVERVIEW.md](../../../DATABASE_SCHEMA_OVERVIEW.md) - 93 table schemas
+- [SEQUENCE_DIAGRAMS.md](./SEQUENCE_DIAGRAMS.md) - Visual flow diagrams
 
 ---
 
-## Version & Status
-
-**Document Version**: 3.0
-**Last Updated**: 2025-12-04
-**Status**: Complete and ready for use
-
-**Included Files**:
-- QUICK_REFERENCE.md - Quick lookup for common tasks
-- ARCHITECTURE_ANALYSIS.md - Complete architecture breakdown
-- VISUAL_GUIDE.md - Visual diagrams and explanations
-- README.md - This navigation guide
-
-**Next Steps**:
-- Read QUICK_REFERENCE.md if adding a new handler
-- Read ARCHITECTURE_ANALYSIS.md for deep understanding
-- Check VISUAL_GUIDE.md if you prefer visual learning
-
+**VERSION**: 1.0
+**LAST_UPDATED**: 2025-12-11

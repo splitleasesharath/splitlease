@@ -1,68 +1,77 @@
 # Split Lease - Signup Flow Documentation
 
-**GENERATED**: 2025-12-04
-**VERSION**: 1.0.0
+**GENERATED**: 2025-12-11
+**VERSION**: 2.0.0
 **STATUS**: Production
+**BACKEND**: Supabase Auth (Native) - No Bubble Dependency
 
 ---
 
 ## Overview
 
-The Split Lease signup flow registers new users through a multi-step form that collects user information, creates accounts in both Bubble.io and Supabase, and automatically logs the user in. This document provides a comprehensive guide to the entire signup process.
+The Split Lease signup flow registers new users through a multi-step form that collects user information, creates accounts in Supabase Auth and public.user/account_host tables, and automatically logs the user in. This is a complete migration from the previous Bubble-based registration system.
 
 ---
 
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                            FRONTEND (React)                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                     SignUpLoginModal.jsx                             │    │
-│  │  ┌────────────────┐     ┌────────────────┐                          │    │
-│  │  │  Step 1        │────▶│  Step 2        │                          │    │
-│  │  │  Name + Email  │     │  DOB + Phone   │                          │    │
-│  │  │                │     │  + Password    │                          │    │
-│  │  └────────────────┘     └────────────────┘                          │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
-│                                       │                                      │
-│  ┌─────────────────────┐             │                                      │
-│  │    auth.js          │◀────────────┘                                      │
-│  │  (signupUser fn)    │                                                    │
-│  └─────────────────────┘                                                    │
-│            │                                                                 │
-└────────────│─────────────────────────────────────────────────────────────────┘
-             │
-             ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        SUPABASE EDGE FUNCTION                                │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌─────────────────────┐     ┌────────────────────┐                         │
-│  │ auth-user   │────▶│  handlers/signup.ts│                         │
-│  │ index.ts (Router)   │     │  (Signup Handler)  │                         │
-│  └─────────────────────┘     └────────────────────┘                         │
-│                                       │                                      │
-└───────────────────────────────────────│──────────────────────────────────────┘
-                                        │
-         ┌──────────────────────────────┼──────────────────────────────────┐
-         │                              │                                   │
-         ▼                              ▼                                   ▼
-┌─────────────────┐          ┌─────────────────┐            ┌─────────────────┐
-│  BUBBLE.IO      │          │  SUPABASE AUTH  │            │  SUPABASE DB    │
-│  Backend        │          │  (auth.users)   │            │  (public.user)  │
-├─────────────────┤          ├─────────────────┤            ├─────────────────┤
-│                 │          │                 │            │                 │
-│  /wf/signup-user│          │  createUser()   │            │  upsert()       │
-│                 │          │  (with metadata)│            │                 │
-│  Returns:       │          │                 │            │  User profile   │
-│  - token        │          │  Stores:        │            │  synced from    │
-│  - user_id      │          │  - bubble_id    │            │  Bubble         │
-│  - expires      │          │  - name         │            │                 │
-│                 │          │  - user_type    │            │                 │
-└─────────────────┘          └─────────────────┘            └─────────────────┘
++---------------------------------------------------------------------------+
+|                            FRONTEND (React)                                |
++---------------------------------------------------------------------------+
+|                                                                            |
+|  +---------------------------------------------------------------------+   |
+|  |                     SignUpLoginModal.jsx                            |   |
+|  |  +----------------+     +----------------+                          |   |
+|  |  |  Step 1        |---->|  Step 2        |                          |   |
+|  |  |  Name + Email  |     |  DOB + Phone   |                          |   |
+|  |  |                |     |  + Password    |                          |   |
+|  |  +----------------+     +----------------+                          |   |
+|  +---------------------------------------------------------------------+   |
+|                                       |                                    |
+|  +---------------------+              |                                    |
+|  |    auth.js          |<-------------+                                    |
+|  |  (signupUser fn)    |                                                   |
+|  +---------------------+                                                   |
+|            |                                                               |
++---------------------------------------------------------------------------+
+             |
+             v
++---------------------------------------------------------------------------+
+|                        SUPABASE EDGE FUNCTION                              |
++---------------------------------------------------------------------------+
+|                                                                            |
+|  +---------------------+     +------------------------+                    |
+|  | auth-user/index.ts  |---->| handlers/signup.ts     |                    |
+|  | (Router)            |     | (Supabase Auth Native) |                    |
+|  +---------------------+     +------------------------+                    |
+|                                       |                                    |
++---------------------------------------------------------------------------+
+                                        |
+         +------------------------------+------------------------------+
+         |                              |                              |
+         v                              v                              v
++------------------+         +------------------+         +------------------+
+|  SUPABASE AUTH   |         |  PUBLIC.USER     |         | ACCOUNT_HOST     |
+|  (auth.users)    |         |  (user profile)  |         | (host account)   |
++------------------+         +------------------+         +------------------+
+|                  |         |                  |         |                  |
+| createUser()     |         | INSERT record    |         | INSERT record    |
+| with metadata:   |         | _id = user_id    |         | _id = host_id    |
+| - user_id        |         | email, name      |         | User = user_id   |
+| - host_account_id|         | phone, DOB       |         |                  |
+| - user_type      |         | user_type        |         |                  |
++------------------+         +------------------+         +------------------+
+                                        |
+                                        v
+                             +------------------+
+                             |   SYNC_QUEUE     |
+                             | (Bubble Sync)    |
+                             +------------------+
+                             | Async background |
+                             | sync to Bubble   |
+                             | (non-blocking)   |
+                             +------------------+
 ```
 
 ---
@@ -72,50 +81,50 @@ The Split Lease signup flow registers new users through a multi-step form that c
 ### Form Steps Overview
 
 ```
-┌──────────────────────────────────────────────────────────────────────────┐
-│                          SIGNUP STEP 1                                    │
-│                       "Nice To Meet You!"                                │
-├──────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  Fields:                                                                 │
-│  ┌────────────────────────────────────────────────────────────────────┐ │
-│  │  First Name *     [                    ]                           │ │
-│  │  Last Name *      [                    ]                           │ │
-│  │  Email *          [                    ]                           │ │
-│  └────────────────────────────────────────────────────────────────────┘ │
-│                                                                          │
-│  Note: *Must match your government ID                                   │
-│                                                                          │
-│                    [ Continue ]                                         │
-│                                                                          │
-│              Have an account? Log In                                    │
-└──────────────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│                          SIGNUP STEP 2                                    │
-│                       "Hi, {firstName}!"                                 │
-├──────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│  Fields:                                                                 │
-│  ┌────────────────────────────────────────────────────────────────────┐ │
-│  │  I am signing up to be *   [ A Guest (I would like to rent) ▼]    │ │
-│  │                                                                    │ │
-│  │  Birth Date *              [Month▼] [Day▼] [Year▼]                │ │
-│  │                                                                    │ │
-│  │  Phone Number *            [                    ]                  │ │
-│  │                                                                    │ │
-│  │  Password *                [                    ] 👁               │ │
-│  │                                                                    │ │
-│  │  Re-enter Password *       [                    ] 👁               │ │
-│  └────────────────────────────────────────────────────────────────────┘ │
-│                                                                          │
-│  By signing up, you agree to Terms, Privacy Policy, and Guidelines.     │
-│                                                                          │
-│                    [ Agree and Sign Up ]                                │
-│                                                                          │
-│  ← Go Back                                                              │
-└──────────────────────────────────────────────────────────────────────────┘
++------------------------------------------------------------------------+
+|                          SIGNUP STEP 1                                  |
+|                       "Nice To Meet You!"                              |
++------------------------------------------------------------------------+
+|                                                                        |
+|  Fields:                                                               |
+|  +------------------------------------------------------------------+ |
+|  |  First Name *     [                    ]                         | |
+|  |  Last Name *      [                    ]                         | |
+|  |  Email *          [                    ]                         | |
+|  +------------------------------------------------------------------+ |
+|                                                                        |
+|  Note: *Must match your government ID                                 |
+|                                                                        |
+|                    [ Continue ]                                        |
+|                                                                        |
+|              Have an account? Log In                                  |
++------------------------------------------------------------------------+
+                              |
+                              v
++------------------------------------------------------------------------+
+|                          SIGNUP STEP 2                                  |
+|                       "Hi, {firstName}!"                               |
++------------------------------------------------------------------------+
+|                                                                        |
+|  Fields:                                                               |
+|  +------------------------------------------------------------------+ |
+|  |  I am signing up to be *   [ A Guest (I would like to rent) v]  | |
+|  |                                                                  | |
+|  |  Birth Date *              [Month v] [Day v] [Year v]           | |
+|  |                                                                  | |
+|  |  Phone Number *            [                    ]                | |
+|  |                                                                  | |
+|  |  Password *                [                    ] [eye]          | |
+|  |                                                                  | |
+|  |  Re-enter Password *       [                    ] [eye]          | |
+|  +------------------------------------------------------------------+ |
+|                                                                        |
+|  By signing up, you agree to Terms, Privacy Policy, and Guidelines.   |
+|                                                                        |
+|                    [ Agree and Sign Up ]                              |
+|                                                                        |
+|  <- Go Back                                                           |
++------------------------------------------------------------------------+
 ```
 
 ---
@@ -354,18 +363,20 @@ export async function signupUser(email, password, retype, additionalData = {}) {
     }
 
     // Extract response data
-    const { token, user_id, expires, supabase_user_id } = data.data;
+    const { access_token, refresh_token, user_id, host_account_id, supabase_user_id, user_type, expires_in } = data.data;
 
     // Store authentication tokens (auto-login after signup)
-    setAuthToken(token);
+    setAuthToken(access_token);
     setSessionId(user_id);
     setAuthState(true, user_id);
     setUserType(additionalData.userType || 'Guest');
 
     return {
       success: true,
-      token,
+      access_token,
+      refresh_token,
       userId: user_id,
+      hostAccountId: host_account_id,
       supabaseUserId: supabase_user_id
     };
 
@@ -404,13 +415,8 @@ export async function signupUser(email, password, retype, additionalData = {}) {
 #### Router to Signup Handler
 ```typescript
 case 'signup':
-  result = await handleSignup(
-    bubbleAuthBaseUrl,
-    bubbleApiKey,
-    supabaseUrl,
-    supabaseServiceKey,
-    payload
-  );
+  // Signup now uses Supabase Auth natively (no Bubble dependency)
+  result = await handleSignup(supabaseUrl, supabaseServiceKey, payload);
   break;
 ```
 
@@ -420,13 +426,12 @@ case 'signup':
 
 **File**: `supabase/functions/auth-user/handlers/signup.ts`
 
-This handler performs a **three-step atomic operation**:
+This handler performs a **multi-step atomic operation** entirely within Supabase (no Bubble dependency).
 
-#### Full Handler Implementation
+#### Complete Handler Flow
+
 ```typescript
 export async function handleSignup(
-  bubbleAuthBaseUrl: string,
-  bubbleApiKey: string,
   supabaseUrl: string,
   supabaseServiceKey: string,
   payload: any
@@ -446,157 +451,160 @@ export async function handleSignup(
 
   // Client-side validation
   if (password.length < 4) {
-    throw new Error('Password must be at least 4 characters long.');
+    throw new BubbleApiError('Password must be at least 4 characters long.', 400);
   }
 
   if (password !== retype) {
-    throw new Error('The two passwords do not match!');
+    throw new BubbleApiError('The two passwords do not match!', 400);
   }
 
-  // ========== STEP 1: BUBBLE SIGNUP ==========
-  const url = `${bubbleAuthBaseUrl}/wf/signup-user`;
-
-  const requestBody = {
-    email,
-    password,
-    retype,
-    firstName,
-    lastName,
-    userType,
-    birthDate,
-    phoneNumber
-  };
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${bubbleApiKey}`
-    },
-    body: JSON.stringify(requestBody)
-  });
-
-  const data = await response.json();
-
-  // Check if signup was successful
-  if (!response.ok || data.status !== 'success') {
-    // Map Bubble error reasons to user-friendly messages
-    let errorMessage = data.message || 'Signup failed. Please try again.';
-
-    if (data.reason === 'NOT_VALID_EMAIL') {
-      errorMessage = 'Please enter a valid email address.';
-    } else if (data.reason === 'USED_EMAIL') {
-      errorMessage = 'This email is already in use.';
-    } else if (data.reason === 'DO_NOT_MATCH') {
-      errorMessage = 'The two passwords do not match!';
-    }
-
-    throw new BubbleApiError(errorMessage, response.status, data.reason);
+  // Email format validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    throw new BubbleApiError('Please enter a valid email address.', 400);
   }
 
-  // Extract Bubble response
-  const token = data.response?.token;
-  const userId = data.response?.user_id;
-  const expires = data.response?.expires;
-
-  if (!token || !userId) {
-    throw new BubbleApiError('Signup response missing required fields', 500);
-  }
-
-  // ========== STEP 2: SUPABASE AUTH USER CREATION ==========
-  let supabaseUserId = null;
-
+  // Initialize Supabase admin client
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
     auth: { autoRefreshToken: false, persistSession: false }
   });
 
-  // Check if user already exists
-  const { data: allUsers } = await supabaseAdmin.auth.admin.listUsers();
-  const existingAuthUser = allUsers?.users?.find(u => u.email === email);
+  // ========== STEP 1: CHECK FOR EXISTING USER ==========
+  // Check in public.user table
+  const { data: existingUser } = await supabaseAdmin
+    .from('user')
+    .select('_id, email')
+    .eq('email', email.toLowerCase())
+    .maybeSingle();
 
-  if (existingAuthUser) {
-    // Update existing user's metadata
-    supabaseUserId = existingAuthUser.id;
-    await supabaseAdmin.auth.admin.updateUserById(existingAuthUser.id, {
-      user_metadata: {
-        ...existingAuthUser.user_metadata,
-        bubble_user_id: userId,
-        first_name: firstName,
-        last_name: lastName,
-        user_type: userType
-      }
-    });
-  } else {
-    // Create new Supabase Auth user
-    const { data: supabaseUser, error: supabaseError } =
-      await supabaseAdmin.auth.admin.createUser({
-        email: email,
-        password: password,
-        email_confirm: true,
-        user_metadata: {
-          bubble_user_id: userId,
-          first_name: firstName,
-          last_name: lastName,
-          user_type: userType,
-          birth_date: birthDate,
-          phone_number: phoneNumber
-        }
-      });
-
-    if (!supabaseError) {
-      supabaseUserId = supabaseUser.user?.id;
-    }
+  if (existingUser) {
+    throw new BubbleApiError('This email is already in use.', 400, 'USED_EMAIL');
   }
 
-  // ========== STEP 3: PUBLIC.USER TABLE INSERT ==========
+  // Check in Supabase Auth
+  const { data: authUsers } = await supabaseAdmin.auth.admin.listUsers();
+  const existingAuthUser = authUsers?.users?.find(u => u.email?.toLowerCase() === email.toLowerCase());
+
+  if (existingAuthUser) {
+    throw new BubbleApiError('This email is already in use.', 400, 'USED_EMAIL');
+  }
+
+  // ========== STEP 2: GENERATE BUBBLE-STYLE IDs ==========
+  const { data: generatedUserId } = await supabaseAdmin.rpc('generate_bubble_id');
+  const { data: generatedHostId } = await supabaseAdmin.rpc('generate_bubble_id');
+
+  // ========== STEP 3: CREATE SUPABASE AUTH USER ==========
+  const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+    email: email,
+    password: password,
+    email_confirm: true, // Auto-confirm for immediate login
+    user_metadata: {
+      user_id: generatedUserId,
+      host_account_id: generatedHostId,
+      first_name: firstName,
+      last_name: lastName,
+      user_type: userType,
+      birth_date: birthDate,
+      phone_number: phoneNumber
+    }
+  });
+
+  if (authError) {
+    if (authError.message.includes('already registered')) {
+      throw new BubbleApiError('This email is already in use.', 400, 'USED_EMAIL');
+    }
+    throw new BubbleApiError(`Failed to create account: ${authError.message}`, 500);
+  }
+
+  const supabaseUserId = authData.user?.id;
+
+  // ========== STEP 4: SIGN IN TO GET SESSION TOKENS ==========
+  const { data: sessionData, error: signInError } = await supabaseAdmin.auth.signInWithPassword({
+    email: email,
+    password: password
+  });
+
+  if (signInError || !sessionData.session) {
+    // Clean up auth user on failure
+    await supabaseAdmin.auth.admin.deleteUser(supabaseUserId!);
+    throw new BubbleApiError('Failed to create session. Please try again.', 500);
+  }
+
+  const { access_token, refresh_token, expires_in } = sessionData.session;
+
+  // ========== STEP 5: CREATE DATABASE RECORDS ==========
   const now = new Date().toISOString();
   const fullName = [firstName, lastName].filter(Boolean).join(' ') || null;
 
-  let dateOfBirth = null;
-  if (birthDate) {
-    try {
-      dateOfBirth = new Date(birthDate).toISOString();
-    } catch (e) {
-      // Skip invalid date
-    }
+  // Insert into account_host table
+  const hostAccountRecord = {
+    '_id': generatedHostId,
+    'User': generatedUserId,
+    'HasClaimedListing': false,
+    'Receptivity': 0,
+    'Created Date': now,
+    'Modified Date': now,
+    'bubble_id': null
+  };
+
+  const { error: hostInsertError } = await supabaseAdmin
+    .from('account_host')
+    .insert(hostAccountRecord);
+
+  if (hostInsertError) {
+    await supabaseAdmin.auth.admin.deleteUser(supabaseUserId!);
+    throw new BubbleApiError(`Failed to create host account: ${hostInsertError.message}`, 500);
   }
 
+  // Insert into public.user table
   const userRecord = {
-    '_id': userId,
-    'email as text': email,
+    '_id': generatedUserId,
+    'bubble_id': null,
+    'email': email.toLowerCase(),
+    'email as text': email.toLowerCase(),
     'Name - First': firstName || null,
     'Name - Last': lastName || null,
     'Name - Full': fullName,
-    'Date of Birth': dateOfBirth,
+    'Date of Birth': birthDate ? new Date(birthDate).toISOString() : null,
     'Phone Number (as text)': phoneNumber || null,
     'Type - User Current': userType || 'Guest',
     'Type - User Signup': userType || 'Guest',
+    'Account - Host / Landlord': generatedHostId,
     'Created Date': now,
     'Modified Date': now,
     'authentication': {},
     'user_signed_up': true
   };
 
-  const { error: insertError } = await supabaseAdmin
+  const { error: userInsertError } = await supabaseAdmin
     .from('user')
-    .upsert(userRecord, { onConflict: '_id' })
-    .select('_id')
-    .single();
+    .insert(userRecord);
 
-  if (insertError) {
-    throw new BubbleApiError(
-      `Failed to create user profile: ${insertError.message}`,
-      500,
-      insertError
-    );
+  if (userInsertError) {
+    // Clean up: delete host account and auth user
+    await supabaseAdmin.from('account_host').delete().eq('_id', generatedHostId);
+    await supabaseAdmin.auth.admin.deleteUser(supabaseUserId!);
+    throw new BubbleApiError(`Failed to create user profile: ${userInsertError.message}`, 500);
   }
 
-  // Return authentication data
+  // ========== STEP 6: QUEUE BUBBLE SYNC (NON-BLOCKING) ==========
+  try {
+    await enqueueSignupSync(supabaseAdmin, generatedUserId, generatedHostId);
+    triggerQueueProcessing(); // Fire-and-forget
+  } catch (syncQueueError) {
+    // Log but don't fail signup - queue item will be processed later by pg_cron
+    console.error('[signup] Failed to queue Bubble sync (non-blocking):', syncQueueError);
+  }
+
+  // Return session and user data
   return {
-    token,
-    user_id: userId,
-    expires,
-    supabase_user_id: supabaseUserId
+    access_token,
+    refresh_token,
+    expires_in,
+    user_id: generatedUserId,
+    host_account_id: generatedHostId,
+    supabase_user_id: supabaseUserId,
+    user_type: userType
   };
 }
 ```
@@ -607,49 +615,40 @@ export async function handleSignup(
 
 ```
 User Input                   Edge Function                    Backends
-──────────                   ─────────────                    ────────
+----------                   -------------                    --------
 
-┌──────────────┐
-│  firstName   │
-│  lastName    │
-│  email       │──────────────────────────────────────────────▶ Bubble.io
-│  password    │                                                /wf/signup-user
-│  retype      │                                                     │
-│  userType    │                                                     │
-│  birthDate   │                                                     ▼
-│  phoneNumber │                                              ┌──────────────┐
-└──────────────┘                                              │   Creates    │
-       │                                                      │   User in    │
-       │                                                      │   Bubble DB  │
-       │                                                      └──────┬───────┘
-       │                                                             │
-       │                                                             │
-       ▼                                                             │
-┌──────────────┐                                                     │
-│  signup.ts   │◀────────────────────────────────────────────────────┘
-│  (Handler)   │         Returns: { token, user_id, expires }
-└──────────────┘
-       │
-       ├──────────────────────────────────────────────────────▶ Supabase Auth
-       │                                                        createUser()
-       │                                                             │
-       │                                                             ▼
-       │                                                      ┌──────────────┐
-       │                                                      │   Creates    │
-       │                                                      │  auth.users  │
-       │                                                      │    record    │
-       │                                                      └──────────────┘
-       │
-       └──────────────────────────────────────────────────────▶ Supabase DB
-                                                                public.user
-                                                                  upsert()
-                                                                     │
-                                                                     ▼
-                                                              ┌──────────────┐
-                                                              │   Creates    │
-                                                              │  public.user │
-                                                              │    record    │
-                                                              └──────────────┘
++---------------+
+|  firstName    |
+|  lastName     |
+|  email        |
+|  password     |----------------------------------> Supabase Auth
+|  retype       |                                    createUser()
+|  userType     |                                         |
+|  birthDate    |                                         |
+|  phoneNumber  |                                         v
++---------------+                                  +--------------+
+       |                                           |   Creates    |
+       |                                           |   auth.users |
+       |                                           |    record    |
+       |                                           +--------------+
+       |                                                  |
+       v                                                  v
++--------------+                                  +--------------+
+|  signup.ts   |<---------------------------------|   Returns    |
+|  (Handler)   |         Session tokens           |   session    |
++--------------+                                  +--------------+
+       |
+       +----------------------------------------> Supabase DB
+       |                                          account_host
+       |                                          INSERT record
+       |                                               |
+       +----------------------------------------> Supabase DB
+       |                                          public.user
+       |                                          INSERT record
+       |                                               |
+       +----------------------------------------> sync_queue
+                                                  Bubble Sync
+                                                  (async, non-blocking)
 ```
 
 ---
@@ -660,19 +659,34 @@ User Input                   Edge Function                    Backends
 
 | Column | Type | Description |
 |--------|------|-------------|
-| `_id` | `text` (PK) | Bubble user ID |
-| `email as text` | `text` | User email |
+| `_id` | `text` (PK) | Generated Bubble-style ID |
+| `email` | `text` | User email |
+| `email as text` | `text` | User email (legacy field) |
 | `Name - First` | `text` | First name |
 | `Name - Last` | `text` | Last name |
 | `Name - Full` | `text` | Full name (computed) |
 | `Date of Birth` | `timestamp` | Birth date |
 | `Phone Number (as text)` | `text` | Phone number |
-| `Type - User Current` | `text` | Current user type |
+| `Type - User Current` | `text` | Current user type (Host/Guest) |
 | `Type - User Signup` | `text` | Signup user type |
+| `Account - Host / Landlord` | `text` | FK to account_host._id |
 | `Created Date` | `timestamp` | Creation timestamp |
 | `Modified Date` | `timestamp` | Last modified timestamp |
 | `authentication` | `jsonb` | Auth metadata |
 | `user_signed_up` | `boolean` | Signup complete flag |
+| `bubble_id` | `text` | Bubble user ID (synced later) |
+
+### account_host Table (Supabase)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `_id` | `text` (PK) | Generated Bubble-style ID |
+| `User` | `text` | FK to user._id |
+| `HasClaimedListing` | `boolean` | Whether host has claimed a listing |
+| `Receptivity` | `number` | Host receptivity score |
+| `Created Date` | `timestamp` | Creation timestamp |
+| `Modified Date` | `timestamp` | Last modified timestamp |
+| `bubble_id` | `text` | Bubble ID (synced later) |
 
 ### auth.users Table (Supabase Auth)
 
@@ -680,13 +694,30 @@ User Input                   Edge Function                    Backends
 |-------|-------------|
 | `id` | Supabase Auth UUID |
 | `email` | User email |
-| `email_confirmed_at` | Auto-confirmed |
-| `user_metadata.bubble_user_id` | Bubble user ID |
+| `email_confirmed_at` | Auto-confirmed on signup |
+| `user_metadata.user_id` | Generated user._id |
+| `user_metadata.host_account_id` | Generated account_host._id |
 | `user_metadata.first_name` | First name |
 | `user_metadata.last_name` | Last name |
 | `user_metadata.user_type` | "Host" or "Guest" |
 | `user_metadata.birth_date` | ISO date string |
 | `user_metadata.phone_number` | Phone number |
+
+---
+
+## ID Generation
+
+### Bubble-Style IDs
+
+Split Lease uses Bubble-compatible IDs for interoperability:
+
+```typescript
+// Generate IDs using the database function
+const { data: generatedUserId } = await supabaseAdmin.rpc('generate_bubble_id');
+const { data: generatedHostId } = await supabaseAdmin.rpc('generate_bubble_id');
+```
+
+**Example ID Format**: `1733904567890x123456789012345` (timestamp + random)
 
 ---
 
@@ -709,8 +740,8 @@ User Input                   Edge Function                    Backends
 
 ### Backend Errors (Edge Function)
 
-| Bubble Error Reason | User Message |
-|--------------------|--------------|
+| Error Reason | User Message |
+|--------------|--------------|
 | `NOT_VALID_EMAIL` | "Please enter a valid email address." |
 | `USED_EMAIL` | "This email is already in use." |
 | `DO_NOT_MATCH` | "The two passwords do not match!" |
@@ -732,7 +763,7 @@ User Input                   Edge Function                    Backends
 After successful signup, the user is automatically logged in:
 ```javascript
 // Store authentication tokens
-setAuthToken(token);
+setAuthToken(access_token);
 setSessionId(user_id);
 setAuthState(true, user_id);
 setUserType(additionalData.userType || 'Guest');
@@ -754,91 +785,52 @@ if (onAuthSuccess) {
 }
 ```
 
+### 4. Bubble Sync (Background)
+The signup is queued for background sync to Bubble:
+```typescript
+await enqueueSignupSync(supabaseAdmin, generatedUserId, generatedHostId);
+triggerQueueProcessing(); // Non-blocking, fire-and-forget
+```
+
 ---
 
-## Route-Based User Type Prefilling
+## Atomic Rollback
 
-The modal can be initialized with a default user type based on the current route:
+If any step fails during signup, all previous steps are rolled back:
 
-```javascript
-// Usage in parent component
-<SignUpLoginModal
-  isOpen={showModal}
-  onClose={() => setShowModal(false)}
-  defaultUserType="host" // or "guest"
-/>
+```typescript
+try {
+  // Create auth user
+  const authData = await supabaseAdmin.auth.admin.createUser(...);
 
-// Inside modal
-useEffect(() => {
-  if (isOpen && defaultUserType) {
-    setSignupData(prev => ({
-      ...prev,
-      userType: defaultUserType === 'host' ? USER_TYPES.HOST : USER_TYPES.GUEST
-    }));
+  // Get session
+  const sessionData = await supabaseAdmin.auth.signInWithPassword(...);
+  if (signInError) {
+    // Rollback: delete auth user
+    await supabaseAdmin.auth.admin.deleteUser(supabaseUserId);
+    throw error;
   }
-}, [isOpen, defaultUserType]);
-```
 
----
+  // Create host account
+  const hostInsertResult = await supabaseAdmin.from('account_host').insert(...);
+  if (hostInsertError) {
+    // Rollback: delete auth user
+    await supabaseAdmin.auth.admin.deleteUser(supabaseUserId);
+    throw error;
+  }
 
-## UI Components
-
-### Password Visibility Toggle
-```jsx
-<div style={styles.passwordWrapper}>
-  <input
-    type={showPassword ? 'text' : 'password'}
-    value={signupData.password}
-    onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-    required
-    minLength={4}
-  />
-  <button
-    type="button"
-    onClick={() => setShowPassword(!showPassword)}
-    style={styles.togglePasswordBtn}
-  >
-    <EyeIcon open={showPassword} />
-  </button>
-</div>
-```
-
-### Password Match Indicator
-```jsx
-<input
-  style={{
-    ...styles.input,
-    ...(passwordMismatch ? styles.inputError : {}),
-    ...(signupData.confirmPassword && !passwordMismatch ? styles.inputSuccess : {})
-  }}
-/>
-{passwordMismatch && (
-  <p style={styles.inlineError}>The passwords don't match</p>
-)}
-```
-
-### Date Selector
-```jsx
-<div style={styles.dateInputsRow}>
-  <select value={signupData.birthMonth} onChange={...}>
-    <option value="">Month</option>
-    {months.map((month, idx) => (
-      <option key={month} value={idx + 1}>{month}</option>
-    ))}
-  </select>
-  <select value={signupData.birthDay} onChange={...}>
-    <option value="">Day</option>
-    {getDaysInMonth(signupData.birthMonth, signupData.birthYear).map(day => (
-      <option key={day} value={day}>{day}</option>
-    ))}
-  </select>
-  <select value={signupData.birthYear} onChange={...}>
-    <option value="">Year</option>
-    {years.map(year => (
-      <option key={year} value={year}>{year}</option>
-    ))}
-  </select>
-</div>
+  // Create user record
+  const userInsertResult = await supabaseAdmin.from('user').insert(...);
+  if (userInsertError) {
+    // Rollback: delete host account and auth user
+    await supabaseAdmin.from('account_host').delete().eq('_id', generatedHostId);
+    await supabaseAdmin.auth.admin.deleteUser(supabaseUserId);
+    throw error;
+  }
+} catch (error) {
+  // Error already handled with rollback above
+  throw error;
+}
 ```
 
 ---
@@ -858,9 +850,10 @@ useEffect(() => {
 | File | Purpose |
 |------|---------|
 | `supabase/functions/auth-user/index.ts` | Auth router |
-| `supabase/functions/auth-user/handlers/signup.ts` | Signup handler |
+| `supabase/functions/auth-user/handlers/signup.ts` | Signup handler (Supabase Native) |
 | `supabase/functions/_shared/errors.ts` | Error classes |
 | `supabase/functions/_shared/validation.ts` | Input validation |
+| `supabase/functions/_shared/queueSync.ts` | Bubble sync queue utilities |
 
 ---
 
@@ -869,44 +862,42 @@ useEffect(() => {
 ### 1. Password Requirements
 - Minimum 4 characters
 - Confirmation required (retype)
-- Never stored in plain text
+- Never stored in plain text (Supabase Auth handles hashing)
 
 ### 2. Age Verification
 - Calculated from DOB fields
 - Must be 18+ to register
 - Validated on frontend before submission
 
-### 3. Email Verification
-- Email auto-confirmed in Supabase Auth
-- Bubble handles primary validation
-- Unique email constraint enforced
+### 3. Email Auto-Confirmation
+- Email is auto-confirmed in Supabase Auth (`email_confirm: true`)
+- No email verification step required
+- Enables immediate login after signup
 
 ### 4. API Key Protection
-- Bubble API key stored server-side
-- Service role key used for admin operations
-- All API calls proxied through Edge Functions
+- Supabase service role key stored server-side in Edge Function secrets
+- Used for admin operations (createUser, deleteUser)
+- Never exposed to frontend code
 
-### 5. Data Integrity
-- BLOCKING operation for public.user insert
-- Operation fails entirely if any step fails
-- No partial registrations
+### 5. Atomic Operations
+- All steps must succeed or all are rolled back
+- No partial registrations possible
+- Ensures data consistency
 
 ---
 
-## Terms and Conditions
+## Authentication Backend Comparison
 
-The signup form displays a terms agreement:
-
-```jsx
-<p style={styles.termsText}>
-  By signing up or logging in, you agree to the Split Lease{' '}
-  <a href="/terms" target="_blank">Terms of Use</a>,{' '}
-  <a href="/privacy" target="_blank">Privacy Policy</a> and{' '}
-  <a href="/guidelines" target="_blank">Community Guidelines</a>.
-</p>
-```
-
-By clicking "Agree and Sign Up", the user accepts these terms.
+| Feature | Old (Bubble) | New (Supabase Auth) |
+|---------|--------------|---------------------|
+| User Creation | Bubble Workflow API | Supabase Admin createUser |
+| Token Type | Bubble Token | JWT (access + refresh) |
+| Password Hashing | Bubble | Supabase Auth (bcrypt) |
+| Email Verification | N/A | Auto-confirmed |
+| ID Generation | Bubble-managed | generate_bubble_id() RPC |
+| User Profile | Bubble Database | public.user table |
+| Host Account | Bubble Database | account_host table |
+| Bubble Sync | Synchronous | Async via sync_queue |
 
 ---
 
@@ -930,21 +921,24 @@ By clicking "Agree and Sign Up", the user accepts these terms.
 - [ ] Password visibility toggle works
 
 ### Backend Integration
-- [ ] Bubble user created successfully
-- [ ] Supabase Auth user created
+- [ ] Supabase Auth user created successfully
+- [ ] account_host record created
 - [ ] public.user record created
-- [ ] Token returned and stored
+- [ ] JWT tokens returned and stored
 - [ ] Auto-login works after signup
 - [ ] Duplicate email shows appropriate error
+- [ ] Rollback works on failure
 
 ### Post-Signup
 - [ ] Page reloads after signup
 - [ ] User shown as logged in
 - [ ] User type stored correctly
 - [ ] Can immediately access authenticated features
+- [ ] Bubble sync queued (non-blocking)
 
 ---
 
-**DOCUMENT_VERSION**: 1.0.0
-**LAST_UPDATED**: 2025-12-04
+**DOCUMENT_VERSION**: 2.0.0
+**LAST_UPDATED**: 2025-12-11
 **AUTHOR**: Claude Code
+**MIGRATION**: Bubble -> Supabase Auth (Native)
