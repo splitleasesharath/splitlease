@@ -161,6 +161,74 @@
   transform: translateY(-1px);
 }
 
+/* Listing CTA Buttons Container */
+.listing-cta-buttons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* Create Proposal Button */
+.create-proposal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: #5b21b6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.create-proposal-btn:hover {
+  background: #4c1d95;
+  transform: translateY(-1px);
+}
+
+.create-proposal-btn svg {
+  flex-shrink: 0;
+}
+
+/* View Proposal Button */
+.view-proposal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  background: #059669;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.view-proposal-btn:hover {
+  background: #047857;
+  transform: translateY(-1px);
+}
+
+.view-proposal-btn svg {
+  flex-shrink: 0;
+}
+
+/* Adjust host row for multi-button layout */
+.favorites-page .listing-host-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .toast {
@@ -178,5 +246,16 @@
   /* Hide hamburger menu on mobile */
   .favorites-page .hamburger-menu {
     display: none;
+  }
+
+  /* Stack CTA buttons vertically on mobile */
+  .listing-cta-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .listing-cta-buttons button {
+    width: 100%;
+    justify-content: center;
   }
 }
