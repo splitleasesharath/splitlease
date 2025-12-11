@@ -747,6 +747,9 @@ export async function signupUser(email, password, retype, additionalData = null)
       };
     }
 
+    console.log('✅ Edge Function returned successfully');
+    console.log('   Response data:', data);
+
     // Extract Supabase session data
     const {
       access_token,
@@ -759,12 +762,27 @@ export async function signupUser(email, password, retype, additionalData = null)
       user_type
     } = data.data;
 
+    console.log('📋 Extracted session data:');
+    console.log('   access_token:', access_token ? `${access_token.substring(0, 20)}...` : 'MISSING');
+    console.log('   refresh_token:', refresh_token ? `${refresh_token.substring(0, 20)}...` : 'MISSING');
+    console.log('   user_id:', user_id);
+    console.log('   user_type:', user_type);
+
     // Set Supabase session using the client
     // This stores the session in localStorage and enables authenticated requests
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token,
-      refresh_token
-    });
+    console.log('🔐 About to call setSession...');
+    let sessionError = null;
+    try {
+      const result = await supabase.auth.setSession({
+        access_token,
+        refresh_token
+      });
+      sessionError = result.error;
+      console.log('🔐 setSession completed, error:', sessionError);
+    } catch (setSessionErr) {
+      console.error('🔐 setSession threw an exception:', setSessionErr);
+      sessionError = setSessionErr;
+    }
 
     if (sessionError) {
       console.error('❌ Failed to set Supabase session:', sessionError.message);
