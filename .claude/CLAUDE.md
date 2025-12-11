@@ -59,6 +59,7 @@ For ANY non-trivial task, follow this orchestration pipeline:
 | `cleanup-planner` | Plan refactoring/cleanup | opus | [agents/cleanup-planner.md](./agents/cleanup-planner.md) |
 | `plan-executor` | Execute plans from .claude/plans/ | opus | [agents/plan-executor.md](./agents/plan-executor.md) |
 | `input-reviewer` | Review/judge implementations | opus | [agents/input-reviewer.md](./agents/input-reviewer.md) |
+| `context-lookup` | Read-only codebase analysis | haiku | [agents/context-lookup.md](./agents/context-lookup.md) |
 
 ### Simple Questions
 
@@ -70,10 +71,13 @@ For **lookup, exploration, or research tasks** that do NOT modify code, **skip t
 
 | Task Type | Direct Subagent | Examples |
 |-----------|-----------------|----------|
-| Codebase exploration | `codebase-explorer` or `Explore` | "Where is X implemented?", "How does Y work?", "Find all files that Z" |
+| Codebase lookup/analysis | `context-lookup` | "Where is X implemented?", "How does Y work?", "What depends on Z?" |
+| Codebase exploration | `codebase-explorer` or `Explore` | "Give me an overview of directory X", "What's the project structure?" |
 | Documentation lookup | `claude-code-guide` | "How do I use Claude Code feature X?", "What MCP tools are available?" |
 
 **No classification, planning, or review needed** — just invoke the lookup subagent and return the result.
+
+> **Preferred agent for most lookups**: Use `context-lookup` (haiku model) for fast, read-only information retrieval. It is optimized for answering questions about existing code without modification.
 
 ### Mandatory Subagent Invocation Rules (For Code-Modifying Tasks)
 
@@ -213,4 +217,4 @@ supabase functions deploy <name>   # Deploy single function
 
 ---
 
-**VERSION**: 9.1 | **UPDATED**: 2025-12-11
+**VERSION**: 9.2 | **UPDATED**: 2025-12-11
