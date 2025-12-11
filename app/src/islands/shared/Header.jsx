@@ -133,10 +133,14 @@ export default function Header({ autoShowLogin = false }) {
           console.error('[Header] Error updating user data after sign in:', error);
         }
       } else if (event === 'SIGNED_OUT') {
-        // User signed out - clear state
-        console.log('[Header] User signed out, clearing UI...');
-        setCurrentUser(null);
-        setUserType(null);
+        // User signed out - trigger page reload/redirect
+        // Don't just clear state - the component tree change would interrupt the logout flow
+        console.log('[Header] User signed out, reloading page...');
+        if (isProtectedPage()) {
+          window.location.href = '/';
+        } else {
+          window.location.reload();
+        }
       }
     });
 
