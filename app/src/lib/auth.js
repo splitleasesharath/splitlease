@@ -464,7 +464,34 @@ export async function loginUser(email, password) {
       // Supabase wraps non-2xx responses in a generic error, but the body may contain details
       let errorMessage = 'Failed to authenticate. Please try again.';
 
-      if (error.context?.body) {
+      // In newer Supabase JS versions, error.context is the Response object
+      // We need to read the body using .json() or .text()
+      if (error.context && typeof error.context.json === 'function') {
+        try {
+          const errorBody = await error.context.json();
+          console.error('   Error body from Response:', errorBody);
+          if (errorBody?.error) {
+            errorMessage = errorBody.error;
+            console.error('   Detailed error from response:', errorMessage);
+          }
+        } catch (parseErr) {
+          console.error('   Could not parse error body:', parseErr);
+          // Try reading as text as fallback
+          try {
+            const errorText = await error.context.text();
+            console.error('   Error text:', errorText);
+            if (errorText) {
+              const parsed = JSON.parse(errorText);
+              if (parsed?.error) {
+                errorMessage = parsed.error;
+              }
+            }
+          } catch (textErr) {
+            console.error('   Could not read error text:', textErr);
+          }
+        }
+      } else if (error.context?.body) {
+        // Fallback for older Supabase JS versions
         try {
           const errorBody = typeof error.context.body === 'string'
             ? JSON.parse(error.context.body)
@@ -661,7 +688,34 @@ export async function signupUser(email, password, retype, additionalData = null)
       // Extract detailed error from response body if available
       let errorMessage = 'Failed to create account. Please try again.';
 
-      if (error.context?.body) {
+      // In newer Supabase JS versions, error.context is the Response object
+      // We need to read the body using .json() or .text()
+      if (error.context && typeof error.context.json === 'function') {
+        try {
+          const errorBody = await error.context.json();
+          console.error('   Error body from Response:', errorBody);
+          if (errorBody?.error) {
+            errorMessage = errorBody.error;
+            console.error('   Detailed error from response:', errorMessage);
+          }
+        } catch (parseErr) {
+          console.error('   Could not parse error body:', parseErr);
+          // Try reading as text as fallback
+          try {
+            const errorText = await error.context.text();
+            console.error('   Error text:', errorText);
+            if (errorText) {
+              const parsed = JSON.parse(errorText);
+              if (parsed?.error) {
+                errorMessage = parsed.error;
+              }
+            }
+          } catch (textErr) {
+            console.error('   Could not read error text:', textErr);
+          }
+        }
+      } else if (error.context?.body) {
+        // Fallback for older Supabase JS versions
         try {
           const errorBody = typeof error.context.body === 'string'
             ? JSON.parse(error.context.body)
@@ -851,7 +905,19 @@ export async function validateTokenAndFetchUser() {
       console.error('   Error context:', error.context);
 
       // Extract detailed error for logging
-      if (error.context?.body) {
+      // In newer Supabase JS versions, error.context is the Response object
+      if (error.context && typeof error.context.json === 'function') {
+        try {
+          const errorBody = await error.context.json();
+          console.error('   Error body from Response:', errorBody);
+          if (errorBody?.error) {
+            console.error('   Detailed error from response:', errorBody.error);
+          }
+        } catch (parseErr) {
+          // Silent - just for logging
+        }
+      } else if (error.context?.body) {
+        // Fallback for older Supabase JS versions
         try {
           const errorBody = typeof error.context.body === 'string'
             ? JSON.parse(error.context.body)
@@ -1146,7 +1212,19 @@ export async function updatePassword(newPassword) {
       // Extract detailed error from response body if available
       let errorMessage = 'Failed to update password. Please try again.';
 
-      if (error.context?.body) {
+      // In newer Supabase JS versions, error.context is the Response object
+      if (error.context && typeof error.context.json === 'function') {
+        try {
+          const errorBody = await error.context.json();
+          console.error('   Error body from Response:', errorBody);
+          if (errorBody?.error) {
+            errorMessage = errorBody.error;
+          }
+        } catch (parseErr) {
+          // Silent - use default message
+        }
+      } else if (error.context?.body) {
+        // Fallback for older Supabase JS versions
         try {
           const errorBody = typeof error.context.body === 'string'
             ? JSON.parse(error.context.body)
