@@ -1,6 +1,6 @@
 # Policies Page - Quick Reference
 
-**GENERATED**: 2025-12-04
+**GENERATED**: 2025-12-11
 **PAGE_URL**: `/policies.html#{policy-slug}`
 **ENTRY_POINT**: `app/src/policies.jsx`
 
@@ -11,7 +11,7 @@
 ```
 policies.jsx (Entry Point)
     |
-    +-- PoliciesPage.jsx (Functional Component)
+    +-- PoliciesPage.jsx (Functional Component - 241 lines)
             |
             +-- Internal State Management
             |       +-- policies (array of policy documents)
@@ -49,7 +49,7 @@ policies.jsx (Entry Point)
 ### Page Component
 | File | Purpose |
 |------|---------|
-| `app/src/islands/pages/PoliciesPage.jsx` | Main functional component (~240 lines) |
+| `app/src/islands/pages/PoliciesPage.jsx` | Main functional component (241 lines) |
 
 ### Shared Components (Imported)
 | File | Purpose |
@@ -94,15 +94,18 @@ window.location.hash = policy.slug
 // Listens for browser back/forward navigation
 useEffect(() => {
   function handleHashChange() {
-    const hash = window.location.hash.substring(1)
+    const hash = window.location.hash.substring(1);
     if (hash && policies.length > 0) {
-      const policy = policies.find(p => p.slug === hash)
-      if (policy) setCurrentPolicy(policy)
+      const policy = policies.find(p => p.slug === hash);
+      if (policy) {
+        setCurrentPolicy(policy);
+      }
     }
   }
-  window.addEventListener('hashchange', handleHashChange)
-  return () => window.removeEventListener('hashchange', handleHashChange)
-}, [policies])
+
+  window.addEventListener('hashchange', handleHashChange);
+  return () => window.removeEventListener('hashchange', handleHashChange);
+}, [policies]);
 ```
 
 ---
@@ -130,7 +133,7 @@ const { data, error } = await supabase
   .from('zat_policiesdocuments')
   .select('*')
   .eq('Active', true)
-  .order('Name', { ascending: true })
+  .order('Name', { ascending: true });
 ```
 
 ---
@@ -151,7 +154,7 @@ function transformSupabaseDocument(supabaseDoc) {
     createdDate: supabaseDoc['Created Date'],
     modifiedDate: supabaseDoc['Modified Date'],
     createdBy: supabaseDoc['Created By']
-  }
+  };
 }
 ```
 
@@ -161,7 +164,7 @@ function generateSlug(name) {
   return name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .replace(/^-+|-+$/g, '');
 }
 ```
 
@@ -184,11 +187,11 @@ function generateSlug(name) {
 2. Fetch policies from Supabase (loading=true)
 3. Transform data with transformSupabaseDocument()
 4. Check URL hash for specific policy
-5. If hash exists ’ setCurrentPolicy(matching policy)
-6. Else ’ setCurrentPolicy(first policy), set hash
+5. If hash exists and matches a policy -> setCurrentPolicy(matching policy)
+6. Else if no hash -> setCurrentPolicy(first policy), set hash
 7. loading=false
-8. User clicks sidebar ’ handlePolicyClick()
-9. Hash change ’ listener updates currentPolicy
+8. User clicks sidebar -> handlePolicyClick()
+9. Hash change -> listener updates currentPolicy
 ```
 
 ---
@@ -200,70 +203,88 @@ function generateSlug(name) {
 useEffect(() => {
   async function fetchPolicies() {
     try {
-      setLoading(true)
+      setLoading(true);
+      console.log('Fetching policies from Supabase...');
+
       const { data, error } = await supabase
         .from('zat_policiesdocuments')
         .select('*')
         .eq('Active', true)
-        .order('Name', { ascending: true })
+        .order('Name', { ascending: true });
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
 
-      const transformedPolicies = data.map(transformSupabaseDocument)
-      setPolicies(transformedPolicies)
+      console.log('Fetched policies:', data);
+      const transformedPolicies = data.map(transformSupabaseDocument);
+      setPolicies(transformedPolicies);
 
-      // Load from hash or default to first
-      const hash = window.location.hash.substring(1)
+      // Load policy based on URL hash or default to first
+      const hash = window.location.hash.substring(1);
       if (hash) {
-        const policy = transformedPolicies.find(p => p.slug === hash)
-        if (policy) setCurrentPolicy(policy)
-      } else if (transformedPolicies.length > 0) {
-        setCurrentPolicy(transformedPolicies[0])
-        window.location.hash = transformedPolicies[0].slug
+        const policy = transformedPolicies.find(p => p.slug === hash);
+        if (policy) {
+          setCurrentPolicy(policy);
+          return;
+        }
+      }
+
+      // Load first policy by default ONLY if no hash was provided
+      if (!hash && transformedPolicies.length > 0) {
+        setCurrentPolicy(transformedPolicies[0]);
+        window.location.hash = transformedPolicies[0].slug;
       }
     } catch (err) {
-      setError('Failed to load policies. Please refresh the page.')
+      console.error('Error fetching policies:', err);
+      setError('Failed to load policies. Please refresh the page.');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
-  fetchPolicies()
-}, [])
+
+  fetchPolicies();
+}, []);
 ```
 
 ### 2. Hash Change Listener
 ```javascript
 useEffect(() => {
   function handleHashChange() {
-    const hash = window.location.hash.substring(1)
+    const hash = window.location.hash.substring(1);
     if (hash && policies.length > 0) {
-      const policy = policies.find(p => p.slug === hash)
-      if (policy) setCurrentPolicy(policy)
+      const policy = policies.find(p => p.slug === hash);
+      if (policy) {
+        setCurrentPolicy(policy);
+      }
     }
   }
-  window.addEventListener('hashchange', handleHashChange)
-  return () => window.removeEventListener('hashchange', handleHashChange)
-}, [policies])
+
+  window.addEventListener('hashchange', handleHashChange);
+  return () => window.removeEventListener('hashchange', handleHashChange);
+}, [policies]);
 ```
 
 ### 3. Scroll Handler (Back to Top)
 ```javascript
 useEffect(() => {
   function handleScroll() {
-    setShowBackToTop(window.pageYOffset > 300)
+    setShowBackToTop(window.pageYOffset > 300);
   }
-  window.addEventListener('scroll', handleScroll, { passive: true })
-  return () => window.removeEventListener('scroll', handleScroll)
-}, [])
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  return () => window.removeEventListener('scroll', handleScroll);
+}, []);
 ```
 
 ### 4. Document Title Update
 ```javascript
 useEffect(() => {
   if (currentPolicy) {
-    document.title = `${currentPolicy.name} | Split Lease`
+    document.title = `${currentPolicy.name} | Split Lease`;
   }
-}, [currentPolicy])
+}, [currentPolicy]);
 ```
 
 ---
@@ -273,19 +294,19 @@ useEffect(() => {
 ### handlePolicyClick()
 ```javascript
 const handlePolicyClick = (policy) => {
-  setCurrentPolicy(policy)
-  window.location.hash = policy.slug
+  setCurrentPolicy(policy);
+  window.location.hash = policy.slug;
 
-  // Only scroll if header is not visible
-  const header = document.querySelector('.policies-content-header')
+  // Only scroll if the document header is not visible
+  const header = document.querySelector('.policies-content-header');
   if (header) {
-    const rect = header.getBoundingClientRect()
-    const isVisible = rect.top >= 0 && rect.top < window.innerHeight
+    const rect = header.getBoundingClientRect();
+    const isVisible = rect.top >= 0 && rect.top < window.innerHeight;
     if (!isVisible) {
-      header.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      header.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }
-}
+};
 ```
 
 ### scrollToTop()
@@ -294,8 +315,8 @@ const scrollToTop = () => {
   window.scrollTo({
     top: 0,
     behavior: 'smooth'
-  })
-}
+  });
+};
 ```
 
 ---
@@ -349,10 +370,12 @@ const scrollToTop = () => {
             <a
               key={policy.id}
               href={`#${policy.slug}`}
-              className={`policies-nav-item ${currentPolicy?.slug === policy.slug ? 'active' : ''}`}
+              className={`policies-nav-item ${
+                currentPolicy?.slug === policy.slug ? 'active' : ''
+              }`}
               onClick={(e) => {
-                e.preventDefault()
-                handlePolicyClick(policy)
+                e.preventDefault();
+                handlePolicyClick(policy);
               }}
             >
               {policy.name}
@@ -417,35 +440,35 @@ const scrollToTop = () => {
 ### Layout Classes
 | Class | Purpose | Key Styles |
 |-------|---------|------------|
-| `.policies-page-container` | Page container | `flex column`, `min-height: 100vh`, `margin-top: header-height` |
-| `.policies-content-wrapper` | Two-column wrapper | `flex row`, `width: 80%`, `gap: 40px` |
+| `.policies-page-container` | Page container | `flex column`, `min-height: 100vh`, `margin-top: var(--header-height, 70px)` |
+| `.policies-content-wrapper` | Two-column wrapper | `flex row`, `width: 80%`, `gap: 40px`, `padding: 0 24px` |
 
 ### Sidebar Classes
 | Class | Purpose | Key Styles |
 |-------|---------|------------|
-| `.policies-sidebar` | Sidebar container | `width: 25%`, `position: sticky`, `top: 100px` |
-| `.policies-sidebar-title` | "Contents" heading | `font-size: 24px`, `font-weight: 700`, `border-bottom` |
+| `.policies-sidebar` | Sidebar container | `width: 25%`, `position: sticky`, `top: calc(var(--header-height, 70px) + 30px)`, `border: 1px solid var(--border-color)` |
+| `.policies-sidebar-title` | "Contents" heading | `font-size: 24px`, `font-weight: 700`, `border-bottom: 2px solid` |
 | `.policies-sidebar-nav` | Navigation container | `flex column` |
-| `.policies-nav-item` | Nav link default | `font-size: 18px`, `color: #868E96`, `padding: 12.5px 0` |
-| `.policies-nav-item:hover` | Nav link hover | `color: #4A2B6B` |
-| `.policies-nav-item.active` | Nav link active | `color: #4A2B6B`, `font-weight: 600`, `text-decoration: underline` |
+| `.policies-nav-item` | Nav link default | `font-size: 18px`, `color: #868E96`, `padding: 12.5px 0`, `letter-spacing: -1px` |
+| `.policies-nav-item:hover` | Nav link hover | `color: var(--primary-purple, #4A2B6B)` |
+| `.policies-nav-item.active` | Nav link active | `color: var(--primary-purple, #4A2B6B)`, `font-weight: 600`, `text-decoration: underline` |
 
 ### Main Content Classes
 | Class | Purpose | Key Styles |
 |-------|---------|------------|
-| `.policies-main-content` | Main content area | `width: 70%`, `padding: 40px` |
+| `.policies-main-content` | Main content area | `width: 70%`, `padding: 40px`, `border: 1px solid var(--border-color)` |
 | `.policies-content-header` | Title + download row | `flex space-between`, `margin-bottom: 30px` |
-| `.policies-page-title` | Policy title | `font-size: 36px`, `text-align: center` |
-| `.policies-download-link` | PDF download icon | `font-size: 24px`, `color: #4A2B6B` |
-| `.policies-pdf-container` | PDF viewer wrapper | `width: 95%`, `margin: 0 auto`, `box-shadow` |
+| `.policies-page-title` | Policy title | `font-size: 36px`, `text-align: center`, `flex: 1` |
+| `.policies-download-link` | PDF download icon | `font-size: 24px`, `color: var(--primary-purple, #4A2B6B)`, `padding: 12px` |
+| `.policies-pdf-container` | PDF viewer wrapper | `width: 95%`, `margin: 0 auto`, `box-shadow`, `border-radius: var(--rounded-md)` |
 
 ### Utility Classes
 | Class | Purpose | Key Styles |
 |-------|---------|------------|
-| `.policies-back-to-top` | Back to top button | `opacity: 0`, `visibility: hidden` |
+| `.policies-back-to-top` | Back to top button | `opacity: 0`, `visibility: hidden`, `margin: 40px auto` |
 | `.policies-back-to-top.visible` | Visible state | `opacity: 1`, `visibility: visible` |
-| `.policies-loading` | Loading state | `min-height: 400px`, `flex center` |
-| `.policies-error` | Error state | `color: #EF4444`, `text-align: center` |
+| `.policies-loading` | Loading state | `min-height: 400px`, `flex center`, `color: var(--text-gray)` |
+| `.policies-error` | Error state | `color: var(--error, #EF4444)`, `text-align: center`, `padding: 40px` |
 
 ---
 
@@ -470,7 +493,7 @@ const scrollToTop = () => {
   }
 
   .policies-sidebar {
-    position: static;  /* Remove sticky */
+    position: static;
     width: 100%;
     margin-bottom: 24px;
   }
@@ -523,7 +546,7 @@ if (loading) {
         <div className="policies-loading">Loading policies...</div>
       </div>
     </div>
-  )
+  );
 }
 ```
 
@@ -536,7 +559,7 @@ if (error) {
         <div className="policies-error">{error}</div>
       </div>
     </div>
-  )
+  );
 }
 ```
 
@@ -555,14 +578,14 @@ if (error) {
 
 ```javascript
 // React hooks
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
 
 // Shared components
-import Header from '../shared/Header.jsx'
-import Footer from '../shared/Footer.jsx'
+import Header from '../shared/Header.jsx';
+import Footer from '../shared/Footer.jsx';
 
 // Supabase client
-import { supabase } from '../../lib/supabase.js'
+import { supabase } from '../../lib/supabase.js';
 ```
 
 ---
@@ -607,6 +630,7 @@ import { supabase } from '../../lib/supabase.js'
 | Focus States | CSS transitions on `:hover` |
 | Dynamic Title | `document.title` updates with policy name |
 | Smooth Scroll | `scrollIntoView({ behavior: 'smooth' })` |
+| Iframe Title | Descriptive `title` attribute for screen readers |
 
 ---
 
@@ -655,6 +679,6 @@ This is appropriate given the page's simpler requirements:
 
 ---
 
-**VERSION**: 1.0
-**LAST_UPDATED**: 2025-12-04
-**STATUS**: Complete documentation after analysis
+**VERSION**: 1.1
+**LAST_UPDATED**: 2025-12-11
+**STATUS**: Updated to match current implementation
