@@ -690,7 +690,13 @@ export default function SignUpLoginModal({
     if (result.success) {
       // Fetch and cache user data before reload for optimistic UI
       // This ensures the next page load has the correct user's firstName cached
-      await validateTokenAndFetchUser();
+      // Wrapped in try-catch to ensure login completes even if validation fails
+      try {
+        await validateTokenAndFetchUser();
+      } catch (validationError) {
+        console.warn('[Login] User data fetch failed, continuing with login:', validationError);
+        // Don't block login - the page reload will fetch fresh data
+      }
 
       clearTimeout(robotsToastTimeout);
       setIsLoading(false);
