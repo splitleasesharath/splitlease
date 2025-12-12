@@ -145,17 +145,24 @@ export default function CreateProposalFlowV2({
   const savedDraft = getSavedProposalDraft(listingId);
   const hasSavedDraft = savedDraft && (savedDraft.needForSpace || savedDraft.aboutYourself);
 
-  // Determine which flow to use based on isFirstProposal and useFullFlow
-  // - First proposal + full flow (FavoriteListingsPage): User Details -> Days -> Move-in -> Review
-  // - First proposal + short flow (ViewSplitLeasePage): User Details -> Review
-  // - Returning user: Start on Review (hub-and-spoke)
+  // Determine which flow to use based on useFullFlow and isFirstProposal
+  // - useFullFlow=true (FavoriteListingsPage): ALWAYS use full flow for ALL users
+  //   User Details -> Days -> Move-in -> Review (ignores isFirstProposal)
+  // - useFullFlow=false (ViewSplitLeasePage):
+  //   - First proposal: User Details -> Review (short flow)
+  //   - Returning user: Start on Review (hub-and-spoke)
   const activeFlow = useFullFlow ? FULL_FIRST_PROPOSAL_FLOW : SHORT_FIRST_PROPOSAL_FLOW;
 
+  // Determine if we should use sequential flow
+  // - useFullFlow=true: ALWAYS sequential (for FavoriteListingsPage)
+  // - useFullFlow=false: Only sequential for first-time users (for ViewSplitLeasePage)
+  const useSequentialFlow = useFullFlow || isFirstProposal;
+
   const [currentSection, setCurrentSection] = useState(
-    isFirstProposal ? activeFlow[0] : RETURNING_USER_START
+    useSequentialFlow ? activeFlow[0] : RETURNING_USER_START
   );
 
-  // Track position in the flow for first-time users (0 = first step, 1 = second step, etc.)
+  // Track position in the flow for sequential navigation (0 = first step, 1 = second step, etc.)
   const [flowStepIndex, setFlowStepIndex] = useState(0);
 
   // Internal state for pricing (managed by ListingScheduleSelector in DaysSelectionSection)
@@ -201,8 +208,8 @@ export default function CreateProposalFlowV2({
       });
     }
 
-    console.log(`📍 Starting flow: ${isFirstProposal
-      ? `First proposal - sequential flow [${FIRST_PROPOSAL_FLOW.join(' -> ')}], starting at step 1 (section ${FIRST_PROPOSAL_FLOW[0]})`
+    console.log(`📍 Starting flow: ${useSequentialFlow
+      ? `Sequential flow (${useFullFlow ? 'full' : 'short'}) [${activeFlow.join(' -> ')}], starting at step 1 (section ${activeFlow[0]})`
       : '1 (Review - returning user, hub-and-spoke model)'
     }`);
   }, []);
@@ -477,41 +484,41 @@ export default function CreateProposalFlowV2({
     setCurrentSection(4);
   };
 
-  // Navigation - sequential for first-time users, hub-and-spoke for returning users
+  // Navigation - sequential when useSequentialFlow=true, hub-and-spoke otherwise
   const handleNext = () => {
     if (!validateCurrentSection()) return;
 
-    if (isFirstProposal) {
-      // Sequential flow for first-time users (flow depends on useFullFlow prop)
+    if (useSequentialFlow) {
+      // Sequential flow (full flow for FavoriteListingsPage, short flow for first-time on ViewSplitLeasePage)
       const nextIndex = flowStepIndex + 1;
       if (nextIndex < activeFlow.length) {
         setFlowStepIndex(nextIndex);
         setCurrentSection(activeFlow[nextIndex]);
-        console.log(`📍 First proposal (${useFullFlow ? 'full' : 'short'} flow): Moving to step ${nextIndex + 1} (section ${activeFlow[nextIndex]})`);
+        console.log(`📍 Sequential flow (${useFullFlow ? 'full' : 'short'}): Moving to step ${nextIndex + 1} (section ${activeFlow[nextIndex]})`);
       }
       // If at last step (Review), handleSubmit will be called instead
     } else {
-      // Hub-and-spoke for returning users: always return to Review
+      // Hub-and-spoke for returning users on ViewSplitLeasePage: always return to Review
       setCurrentSection(1);
-      console.log('📍 Returning user: Back to Review section');
+      console.log('📍 Returning user (hub-and-spoke): Back to Review section');
     }
   };
 
   const handleBack = () => {
-    if (isFirstProposal) {
-      // Sequential back navigation for first-time users (flow depends on useFullFlow prop)
+    if (useSequentialFlow) {
+      // Sequential back navigation (flow depends on useFullFlow prop)
       if (flowStepIndex > 0) {
         const prevIndex = flowStepIndex - 1;
         setFlowStepIndex(prevIndex);
         setCurrentSection(activeFlow[prevIndex]);
-        console.log(`📍 First proposal (${useFullFlow ? 'full' : 'short'} flow): Going back to step ${prevIndex + 1} (section ${activeFlow[prevIndex]})`);
+        console.log(`📍 Sequential flow (${useFullFlow ? 'full' : 'short'}): Going back to step ${prevIndex + 1} (section ${activeFlow[prevIndex]})`);
       }
       // If at first step (User Details), no back navigation available
     } else {
-      // Hub-and-spoke for returning users: from any edit section, return to Review
+      // Hub-and-spoke for returning users on ViewSplitLeasePage: from any edit section, return to Review
       if (currentSection !== 1) {
         setCurrentSection(1);
-        console.log('📍 Returning user: Back to Review section');
+        console.log('📍 Returning user (hub-and-spoke): Back to Review section');
       }
     }
   };
@@ -664,9 +671,9 @@ export default function CreateProposalFlowV2({
 
         <div className="navigation-buttons">
           {/* Show back button:
-              - For first-time users: show if not on first step (flowStepIndex > 0)
-              - For returning users: show if not on Review section (currentSection !== 1) */}
-          {(isFirstProposal ? flowStepIndex > 0 : currentSection !== 1) && (
+              - For sequential flow: show if not on first step (flowStepIndex > 0)
+              - For hub-and-spoke: show if not on Review section (currentSection !== 1) */}
+          {(useSequentialFlow ? flowStepIndex > 0 : currentSection !== 1) && (
             <button className="nav-button back" onClick={handleBack}>
               Go back
             </button>
@@ -678,9 +685,9 @@ export default function CreateProposalFlowV2({
           ) : (
             <button className="nav-button next" onClick={handleNext}>
               {/* Button text based on flow position:
-                  - For first-time users: "Review Proposal" on the step before Review, "Next" otherwise
-                  - For returning users: "Next" on User Details, "Yes, Continue" on other sections */}
-              {isFirstProposal
+                  - For sequential flow: "Review Proposal" on the step before Review, "Next" otherwise
+                  - For hub-and-spoke: "Next" on User Details, "Yes, Continue" on other sections */}
+              {useSequentialFlow
                 ? (flowStepIndex === activeFlow.length - 2 ? 'Review Proposal' : 'Next')
                 : (currentSection === 2 ? 'Next' : 'Yes, Continue')}
             </button>
