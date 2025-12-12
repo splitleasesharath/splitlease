@@ -376,7 +376,7 @@ function ErrorState({ message }) {
  * - 4 photos: 2x2 grid
  * - 5+ photos: Classic Pinterest layout (large left + 4 smaller right)
  */
-function PhotoGallery({ photos, listingName, onPhotoClick }) {
+function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
   const photoCount = photos.length;
 
   // Determine grid style based on photo count
@@ -385,44 +385,44 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
       return {
         display: 'grid',
         gridTemplateColumns: '1fr',
-        gridTemplateRows: '400px',
-        gap: '10px'
+        gridTemplateRows: isMobile ? '250px' : '400px',
+        gap: isMobile ? '8px' : '10px'
       };
     } else if (photoCount === 2) {
       return {
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gridTemplateRows: '400px',
-        gap: '10px'
+        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+        gridTemplateRows: isMobile ? '200px 200px' : '400px',
+        gap: isMobile ? '8px' : '10px'
       };
     } else if (photoCount === 3) {
       return {
         display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gridTemplateRows: '200px 200px',
-        gap: '10px'
+        gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr',
+        gridTemplateRows: isMobile ? '250px 150px 150px' : '200px 200px',
+        gap: isMobile ? '8px' : '10px'
       };
     } else if (photoCount === 4) {
       return {
         display: 'grid',
-        gridTemplateColumns: '2fr 1fr',
-        gridTemplateRows: '133px 133px 133px',
-        gap: '10px'
+        gridTemplateColumns: isMobile ? '1fr 1fr' : '2fr 1fr',
+        gridTemplateRows: isMobile ? '150px 150px' : '133px 133px 133px',
+        gap: isMobile ? '8px' : '10px'
       };
     } else {
       // 5+ photos
       return {
         display: 'grid',
-        gridTemplateColumns: '2fr 1fr 1fr',
-        gridTemplateRows: '200px 200px',
-        gap: '10px'
+        gridTemplateColumns: isMobile ? '1fr 1fr' : '2fr 1fr 1fr',
+        gridTemplateRows: isMobile ? '180px 180px' : '200px 200px',
+        gap: isMobile ? '8px' : '10px'
       };
     }
   };
 
   const imageStyle = {
     cursor: 'pointer',
-    borderRadius: '12px',
+    borderRadius: isMobile ? '8px' : '12px',
     overflow: 'hidden',
     position: 'relative'
   };
@@ -470,7 +470,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
       <div style={getGridStyle()}>
         <div
           onClick={() => onPhotoClick(0)}
-          style={{ ...imageStyle, gridRow: '1 / 3' }}
+          style={{ ...imageStyle, gridRow: isMobile ? 'auto' : '1 / 3' }}
         >
           <img
             src={photos[0].Photo}
@@ -496,7 +496,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
       <div style={getGridStyle()}>
         <div
           onClick={() => onPhotoClick(0)}
-          style={{ ...imageStyle, gridRow: '1 / 4' }}
+          style={{ ...imageStyle, gridRow: isMobile ? 'auto' : '1 / 4' }}
         >
           <img
             src={photos[0].Photo}
@@ -517,12 +517,15 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
     );
   }
 
-  // 5+ photos - Classic Pinterest layout
+  // 5+ photos - Classic Pinterest layout (2-column on mobile)
+  // On mobile: show only first 4 photos in 2x2 grid
+  const photosToShow = isMobile ? photos.slice(1, 5) : photos.slice(1, 5);
+
   return (
     <div style={getGridStyle()}>
       <div
         onClick={() => onPhotoClick(0)}
-        style={{ ...imageStyle, gridRow: '1 / 3' }}
+        style={{ ...imageStyle, gridRow: isMobile ? 'auto' : '1 / 3' }}
       >
         <img
           src={photos[0].Photo}
@@ -530,7 +533,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
           style={imgStyle}
         />
       </div>
-      {photos.slice(1, 5).map((photo, idx) => (
+      {photosToShow.map((photo, idx) => (
         <div key={photo._id} onClick={() => onPhotoClick(idx + 1)} style={imageStyle}>
           <img
             src={photo['Photo (thumbnail)'] || photo.Photo}
@@ -545,24 +548,24 @@ function PhotoGallery({ photos, listingName, onPhotoClick }) {
               }}
               style={{
                 position: 'absolute',
-                bottom: '12px',
-                right: '12px',
+                bottom: isMobile ? '8px' : '12px',
+                right: isMobile ? '8px' : '12px',
                 background: 'white',
                 border: 'none',
-                padding: '8px 12px',
-                borderRadius: '8px',
+                padding: isMobile ? '6px 10px' : '8px 12px',
+                borderRadius: isMobile ? '6px' : '8px',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
                 cursor: 'pointer',
                 fontWeight: '600',
-                fontSize: '0.875rem',
+                fontSize: isMobile ? '0.75rem' : '0.875rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px'
               }}
             >
               <svg
-                width="16"
-                height="16"
+                width={isMobile ? '14' : '16'}
+                height={isMobile ? '14' : '16'}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -1302,28 +1305,35 @@ export default function ViewSplitLeasePage() {
       )}
 
       <main style={{
-        maxWidth: '1400px',
+        maxWidth: isMobile ? '100%' : '1400px',
         margin: '0 auto',
-        padding: '2rem',
-        paddingTop: 'calc(100px + 2rem)', // Increased from 80px to prevent header overlap
+        padding: isMobile ? '1rem' : '2rem',
+        paddingTop: isMobile ? 'calc(80px + 1rem)' : 'calc(100px + 2rem)',
         display: 'grid',
         gridTemplateColumns: isMobile ? '1fr' : '1fr 440px',
-        gap: '2rem'
+        gap: isMobile ? '1.5rem' : '2rem',
+        boxSizing: 'border-box',
+        width: '100%'
       }}>
 
         {/* LEFT COLUMN - CONTENT */}
-        <div className="left-column">
+        <div className="left-column" style={{
+          minWidth: 0,
+          width: '100%',
+          boxSizing: 'border-box',
+          overflow: 'hidden'
+        }}>
 
           {/* Photo Gallery - Magazine Editorial Style */}
-          <section style={{ marginBottom: '2rem' }}>
+          <section style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
             {listing.photos && listing.photos.length > 0 ? (
-              <PhotoGallery photos={listing.photos} listingName={listing.Name} onPhotoClick={handlePhotoClick} />
+              <PhotoGallery photos={listing.photos} listingName={listing.Name} onPhotoClick={handlePhotoClick} isMobile={isMobile} />
             ) : (
               <div style={{
                 width: '100%',
-                height: '400px',
+                height: isMobile ? '250px' : '400px',
                 background: COLORS.BG_LIGHT,
-                borderRadius: '12px',
+                borderRadius: isMobile ? '8px' : '12px',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -1335,20 +1345,21 @@ export default function ViewSplitLeasePage() {
           </section>
 
           {/* Listing Header */}
-          <section style={{ marginBottom: '2rem' }}>
+          <section style={{ marginBottom: isMobile ? '1.5rem' : '2rem' }}>
             <h1 style={{
-              fontSize: '2rem',
+              fontSize: isMobile ? '1.5rem' : '2rem',
               fontWeight: '700',
-              marginBottom: '1rem',
+              marginBottom: isMobile ? '0.75rem' : '1rem',
               color: COLORS.TEXT_DARK
             }}>
               {listing.Name}
             </h1>
             <div style={{
               display: 'flex',
-              gap: '1rem',
+              gap: isMobile ? '0.5rem' : '1rem',
               flexWrap: 'wrap',
-              color: COLORS.TEXT_LIGHT
+              color: COLORS.TEXT_LIGHT,
+              fontSize: isMobile ? '0.875rem' : '1rem'
             }}>
               {listing.resolvedNeighborhood && listing.resolvedBorough && (
                 <span
@@ -1377,51 +1388,51 @@ export default function ViewSplitLeasePage() {
 
           {/* Features Grid */}
           <section style={{
-            marginBottom: '2rem',
+            marginBottom: isMobile ? '1.5rem' : '2rem',
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-            gap: '1rem'
+            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(150px, 1fr))',
+            gap: isMobile ? '0.5rem' : '1rem'
           }}>
             {listing['Kitchen Type'] && (
-              <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
-                  <img src="/assets/images/fridge.svg" alt="Kitchen" style={{ width: '2rem', height: '2rem' }} />
+              <div style={{ textAlign: 'center', padding: isMobile ? '0.75rem' : '1rem', background: COLORS.BG_LIGHT, borderRadius: isMobile ? '6px' : '8px' }}>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: isMobile ? '1.5rem' : '2rem' }}>
+                  <img src="/assets/images/fridge.svg" alt="Kitchen" style={{ width: isMobile ? '1.5rem' : '2rem', height: isMobile ? '1.5rem' : '2rem' }} />
                 </div>
-                <div>{listing['Kitchen Type']}</div>
+                <div style={{ fontSize: isMobile ? '0.8125rem' : '1rem' }}>{listing['Kitchen Type']}</div>
               </div>
             )}
             {listing['Features - Qty Bathrooms'] !== null && (
-              <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
-                  <img src="/assets/images/bath.svg" alt="Bathroom" style={{ width: '2rem', height: '2rem' }} />
+              <div style={{ textAlign: 'center', padding: isMobile ? '0.75rem' : '1rem', background: COLORS.BG_LIGHT, borderRadius: isMobile ? '6px' : '8px' }}>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: isMobile ? '1.5rem' : '2rem' }}>
+                  <img src="/assets/images/bath.svg" alt="Bathroom" style={{ width: isMobile ? '1.5rem' : '2rem', height: isMobile ? '1.5rem' : '2rem' }} />
                 </div>
-                <div>{listing['Features - Qty Bathrooms']} Bathroom(s)</div>
+                <div style={{ fontSize: isMobile ? '0.8125rem' : '1rem' }}>{listing['Features - Qty Bathrooms']} Bathroom(s)</div>
               </div>
             )}
             {listing['Features - Qty Bedrooms'] !== null && (
-              <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
-                  <img src="/assets/images/sleeping.svg" alt="Bedroom" style={{ width: '2rem', height: '2rem' }} />
+              <div style={{ textAlign: 'center', padding: isMobile ? '0.75rem' : '1rem', background: COLORS.BG_LIGHT, borderRadius: isMobile ? '6px' : '8px' }}>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: isMobile ? '1.5rem' : '2rem' }}>
+                  <img src="/assets/images/sleeping.svg" alt="Bedroom" style={{ width: isMobile ? '1.5rem' : '2rem', height: isMobile ? '1.5rem' : '2rem' }} />
                 </div>
-                <div>{listing['Features - Qty Bedrooms'] === 0 ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedroom${listing['Features - Qty Bedrooms'] === 1 ? '' : 's'}`}</div>
+                <div style={{ fontSize: isMobile ? '0.8125rem' : '1rem' }}>{listing['Features - Qty Bedrooms'] === 0 ? 'Studio' : `${listing['Features - Qty Bedrooms']} Bedroom${listing['Features - Qty Bedrooms'] === 1 ? '' : 's'}`}</div>
               </div>
             )}
             {listing['Features - Qty Beds'] !== null && (
-              <div style={{ textAlign: 'center', padding: '1rem', background: COLORS.BG_LIGHT, borderRadius: '8px' }}>
-                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: '2rem' }}>
-                  <img src="/assets/images/bed.svg" alt="Bed" style={{ width: '2rem', height: '2rem' }} />
+              <div style={{ textAlign: 'center', padding: isMobile ? '0.75rem' : '1rem', background: COLORS.BG_LIGHT, borderRadius: isMobile ? '6px' : '8px' }}>
+                <div style={{ marginBottom: '0.5rem', display: 'flex', justifyContent: 'center', alignItems: 'center', height: isMobile ? '1.5rem' : '2rem' }}>
+                  <img src="/assets/images/bed.svg" alt="Bed" style={{ width: isMobile ? '1.5rem' : '2rem', height: isMobile ? '1.5rem' : '2rem' }} />
                 </div>
-                <div>{listing['Features - Qty Beds']} Bed(s)</div>
+                <div style={{ fontSize: isMobile ? '0.8125rem' : '1rem' }}>{listing['Features - Qty Beds']} Bed(s)</div>
               </div>
             )}
           </section>
 
           {/* Description */}
-          <section style={{ marginBottom: '1.5rem' }}>
+          <section style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
             <h2 style={{
-              fontSize: '1.125rem',
+              fontSize: isMobile ? '1rem' : '1.125rem',
               fontWeight: '600',
-              marginBottom: '0.75rem',
+              marginBottom: isMobile ? '0.5rem' : '0.75rem',
               color: COLORS.TEXT_DARK
             }}>
               Description of Lodging
@@ -1456,19 +1467,19 @@ export default function ViewSplitLeasePage() {
 
           {/* Storage Section */}
           {listing.storageOption && (
-            <section style={{ marginBottom: '1.5rem' }}>
+            <section style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.125rem',
+                fontSize: isMobile ? '1rem' : '1.125rem',
                 fontWeight: '600',
-                marginBottom: '0.75rem',
+                marginBottom: isMobile ? '0.5rem' : '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Storage
               </h2>
               <div style={{
-                padding: '1.5rem',
+                padding: isMobile ? '1rem' : '1.5rem',
                 background: COLORS.BG_LIGHT,
-                borderRadius: '12px'
+                borderRadius: isMobile ? '8px' : '12px'
               }}>
                 <div style={{
                   display: 'flex',
@@ -1506,11 +1517,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Neighborhood Description */}
           {listing['Description - Neighborhood'] && (
-            <section style={{ marginBottom: '1.5rem' }}>
+            <section style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.125rem',
+                fontSize: isMobile ? '1rem' : '1.125rem',
                 fontWeight: '600',
-                marginBottom: '0.75rem',
+                marginBottom: isMobile ? '0.5rem' : '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Neighborhood
@@ -1547,11 +1558,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Commute Section */}
           {(listing.parkingOption || listing['Time to Station (commute)']) && (
-            <section ref={commuteSectionRef} style={{ marginBottom: '1.5rem' }}>
+            <section ref={commuteSectionRef} style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.125rem',
+                fontSize: isMobile ? '1rem' : '1.125rem',
                 fontWeight: '600',
-                marginBottom: '0.75rem',
+                marginBottom: isMobile ? '0.5rem' : '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Commute
@@ -1613,11 +1624,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Amenities Section */}
           {(listing.amenitiesInUnit?.length > 0 || listing.safetyFeatures?.length > 0) && (
-            <section ref={amenitiesSectionRef} style={{ marginBottom: '1.5rem' }}>
+            <section ref={amenitiesSectionRef} style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.125rem',
+                fontSize: isMobile ? '1rem' : '1.125rem',
                 fontWeight: '600',
-                marginBottom: '0.75rem',
+                marginBottom: isMobile ? '0.5rem' : '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Amenities
@@ -1625,11 +1636,11 @@ export default function ViewSplitLeasePage() {
 
               {listing.amenitiesInUnit?.length > 0 && (
                 <div style={{ marginBottom: '1rem' }}>
-                  <h3 style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem', color: COLORS.TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.5px' }}>In-Unit</h3>
+                  <h3 style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', fontWeight: '600', marginBottom: '0.5rem', color: COLORS.TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.5px' }}>In-Unit</h3>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: '0.75rem'
+                    gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(140px, 1fr))' : 'repeat(auto-fill, minmax(200px, 1fr))',
+                    gap: isMobile ? '0.5rem' : '0.75rem'
                   }}>
                     {listing.amenitiesInUnit.map(amenity => (
                       <div
@@ -1638,13 +1649,13 @@ export default function ViewSplitLeasePage() {
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.5rem',
-                          padding: '0.5rem'
+                          padding: isMobile ? '0.375rem' : '0.5rem'
                         }}
                       >
                         {amenity.icon && (
-                          <img src={amenity.icon} alt="" style={{ width: '24px', height: '24px' }} />
+                          <img src={amenity.icon} alt="" style={{ width: isMobile ? '20px' : '24px', height: isMobile ? '20px' : '24px' }} />
                         )}
-                        <span style={{ fontSize: '0.875rem' }}>{amenity.name}</span>
+                        <span style={{ fontSize: isMobile ? '0.8125rem' : '0.875rem' }}>{amenity.name}</span>
                       </div>
                     ))}
                   </div>
@@ -1653,11 +1664,11 @@ export default function ViewSplitLeasePage() {
 
               {listing.safetyFeatures?.length > 0 && (
                 <div>
-                  <h3 style={{ fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem', color: COLORS.TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Safety Features</h3>
+                  <h3 style={{ fontSize: isMobile ? '0.75rem' : '0.875rem', fontWeight: '600', marginBottom: '0.5rem', color: COLORS.TEXT_LIGHT, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Safety Features</h3>
                   <div style={{
                     display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-                    gap: '0.75rem'
+                    gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(140px, 1fr))' : 'repeat(auto-fill, minmax(200px, 1fr))',
+                    gap: isMobile ? '0.5rem' : '0.75rem'
                   }}>
                     {listing.safetyFeatures.map(feature => (
                       <div
@@ -1666,13 +1677,13 @@ export default function ViewSplitLeasePage() {
                           display: 'flex',
                           alignItems: 'center',
                           gap: '0.5rem',
-                          padding: '0.5rem'
+                          padding: isMobile ? '0.375rem' : '0.5rem'
                         }}
                       >
                         {feature.icon && (
-                          <img src={feature.icon} alt="" style={{ width: '24px', height: '24px' }} />
+                          <img src={feature.icon} alt="" style={{ width: isMobile ? '20px' : '24px', height: isMobile ? '20px' : '24px' }} />
                         )}
-                        <span style={{ fontSize: '0.875rem' }}>{feature.name}</span>
+                        <span style={{ fontSize: isMobile ? '0.8125rem' : '0.875rem' }}>{feature.name}</span>
                       </div>
                     ))}
                   </div>
@@ -1683,11 +1694,11 @@ export default function ViewSplitLeasePage() {
 
           {/* House Rules */}
           {listing.houseRules?.length > 0 && (
-            <section ref={houseRulesSectionRef} style={{ marginBottom: '1.5rem' }}>
+            <section ref={houseRulesSectionRef} style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.125rem',
+                fontSize: isMobile ? '1rem' : '1.125rem',
                 fontWeight: '600',
-                marginBottom: '0.75rem',
+                marginBottom: isMobile ? '0.5rem' : '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 House Rules
@@ -1700,13 +1711,13 @@ export default function ViewSplitLeasePage() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: '0.5rem',
-                      padding: '0.5rem'
+                      padding: isMobile ? '0.375rem' : '0.5rem'
                     }}
                   >
                     {rule.icon && (
-                      <img src={rule.icon} alt="" style={{ width: '24px', height: '24px' }} />
+                      <img src={rule.icon} alt="" style={{ width: isMobile ? '20px' : '24px', height: isMobile ? '20px' : '24px' }} />
                     )}
-                    <span>{rule.name}</span>
+                    <span style={{ fontSize: isMobile ? '0.875rem' : '1rem' }}>{rule.name}</span>
                   </div>
                 ))}
               </div>
@@ -1714,18 +1725,18 @@ export default function ViewSplitLeasePage() {
           )}
 
           {/* Map Section */}
-          <section ref={mapSectionRef} style={{ marginBottom: '1.5rem' }}>
+          <section ref={mapSectionRef} style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
             <h2 style={{
-              fontSize: '1.125rem',
+              fontSize: isMobile ? '1rem' : '1.125rem',
               fontWeight: '600',
-              marginBottom: '0.75rem',
+              marginBottom: isMobile ? '0.5rem' : '0.75rem',
               color: COLORS.TEXT_DARK
             }}>
               Map
             </h2>
             <div style={{
-              height: '400px',
-              borderRadius: '12px',
+              height: isMobile ? '300px' : '400px',
+              borderRadius: isMobile ? '8px' : '12px',
               overflow: 'hidden',
               border: `1px solid ${COLORS.BG_LIGHT}`,
               position: 'relative',
@@ -1758,11 +1769,11 @@ export default function ViewSplitLeasePage() {
 
           {/* Host Section */}
           {listing.host && (
-            <section style={{ marginBottom: '1.5rem' }}>
+            <section style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.125rem',
+                fontSize: isMobile ? '1rem' : '1.125rem',
                 fontWeight: '600',
-                marginBottom: '0.75rem',
+                marginBottom: isMobile ? '0.5rem' : '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Meet Your Host
@@ -1771,37 +1782,37 @@ export default function ViewSplitLeasePage() {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
-                padding: '1rem',
+                padding: isMobile ? '0.75rem' : '1rem',
                 background: COLORS.BG_LIGHT,
-                borderRadius: '10px'
+                borderRadius: isMobile ? '8px' : '10px'
               }}>
                 {listing.host['Profile Photo'] && (
                   <img
                     src={listing.host['Profile Photo']}
                     alt={listing.host['Name - First']}
                     style={{
-                      width: '48px',
-                      height: '48px',
+                      width: isMobile ? '40px' : '48px',
+                      height: isMobile ? '40px' : '48px',
                       borderRadius: '50%',
                       objectFit: 'cover'
                     }}
                   />
                 )}
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.9375rem', fontWeight: '600', marginBottom: '0.125rem' }}>
+                  <div style={{ fontSize: isMobile ? '0.875rem' : '0.9375rem', fontWeight: '600', marginBottom: '0.125rem' }}>
                     {listing.host['Name - First']} {listing.host['Name - Last']?.charAt(0)}.
                   </div>
-                  <div style={{ color: COLORS.TEXT_LIGHT, fontSize: '0.8125rem' }}>Host</div>
+                  <div style={{ color: COLORS.TEXT_LIGHT, fontSize: isMobile ? '0.75rem' : '0.8125rem' }}>Host</div>
                 </div>
                 <button
                   onClick={() => setShowContactHostModal(true)}
                   style={{
-                    padding: '0.5rem 1rem',
+                    padding: isMobile ? '0.375rem 0.75rem' : '0.5rem 1rem',
                     background: COLORS.PRIMARY,
                     color: 'white',
                     border: 'none',
                     borderRadius: '6px',
-                    fontSize: '0.875rem',
+                    fontSize: isMobile ? '0.8125rem' : '0.875rem',
                     fontWeight: '600',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
@@ -1822,8 +1833,8 @@ export default function ViewSplitLeasePage() {
                   }}
                 >
                   <svg
-                    width="16"
-                    height="16"
+                    width={isMobile ? '14' : '16'}
+                    height={isMobile ? '14' : '16'}
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -1841,25 +1852,25 @@ export default function ViewSplitLeasePage() {
 
           {/* Cancellation Policy */}
           {listing.cancellationPolicy && (
-            <section style={{ marginBottom: '1.5rem' }}>
+            <section style={{ marginBottom: isMobile ? '1.25rem' : '1.5rem' }}>
               <h2 style={{
-                fontSize: '1.125rem',
+                fontSize: isMobile ? '1rem' : '1.125rem',
                 fontWeight: '600',
-                marginBottom: '0.75rem',
+                marginBottom: isMobile ? '0.5rem' : '0.75rem',
                 color: COLORS.TEXT_DARK
               }}>
                 Cancellation Policy
               </h2>
               <div style={{
-                padding: '1.5rem',
+                padding: isMobile ? '1rem' : '1.5rem',
                 background: COLORS.BG_LIGHT,
-                borderRadius: '12px',
+                borderRadius: isMobile ? '8px' : '12px',
                 border: `1px solid ${COLORS.BG_LIGHT}`
               }}>
                 <div style={{
-                  fontSize: '1.125rem',
+                  fontSize: isMobile ? '1rem' : '1.125rem',
                   fontWeight: '600',
-                  marginBottom: '1rem',
+                  marginBottom: isMobile ? '0.75rem' : '1rem',
                   color: COLORS.PRIMARY
                 }}>
                   {listing.cancellationPolicy.display}
