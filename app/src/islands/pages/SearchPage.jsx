@@ -19,6 +19,7 @@ import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyType
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
 import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
 import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
+import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 
 // ============================================================================
 // Utility Functions
@@ -844,6 +845,7 @@ export default function SearchPage() {
   const [informationalTexts, setInformationalTexts] = useState({});
   const [isCreateProposalModalOpen, setIsCreateProposalModalOpen] = useState(false);
   const [selectedListingForProposal, setSelectedListingForProposal] = useState(null);
+  const [selectedDayObjectsForProposal, setSelectedDayObjectsForProposal] = useState([]);
 
   // Refs
   const mapRef = useRef(null);
@@ -1919,7 +1921,30 @@ export default function SearchPage() {
 
   // Create Proposal modal handlers
   const handleOpenCreateProposalModal = (listing) => {
+    // Get default schedule from URL params or use default weekdays
+    const urlParams = new URLSearchParams(window.location.search);
+    const daysParam = urlParams.get('days-selected');
+
+    let initialDays = [];
+    if (daysParam) {
+      try {
+        const oneBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+        initialDays = oneBased
+          .filter(d => d >= 1 && d <= 7)
+          .map(d => d - 1)  // Convert to 0-based
+          .map(dayIndex => createDay(dayIndex, true));
+      } catch (e) {
+        console.warn('Failed to parse days from URL:', e);
+      }
+    }
+
+    // Default to weekdays (Mon-Fri) if no URL selection
+    if (initialDays.length === 0) {
+      initialDays = [1, 2, 3, 4, 5].map(dayIndex => createDay(dayIndex, true));
+    }
+
     setSelectedListingForProposal(listing);
+    setSelectedDayObjectsForProposal(initialDays);
     setIsCreateProposalModalOpen(true);
   };
 
@@ -2440,8 +2465,8 @@ export default function SearchPage() {
         <CreateProposalFlowV2
           listing={transformListingForProposal(selectedListingForProposal)}
           moveInDate=""
-          daysSelected={[]}
-          nightsSelected={0}
+          daysSelected={selectedDayObjectsForProposal}
+          nightsSelected={selectedDayObjectsForProposal.length > 0 ? selectedDayObjectsForProposal.length - 1 : 0}
           reservationSpan={13}
           pricingBreakdown={null}
           zatConfig={zatConfig}
