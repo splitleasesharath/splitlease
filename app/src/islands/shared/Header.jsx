@@ -50,34 +50,33 @@ export default function Header({ autoShowLogin = false }) {
 
     // Background validation function
     const performBackgroundValidation = async () => {
-      // First, check for Supabase Auth session if no legacy token
+      // ALWAYS check for Supabase Auth session (regardless of legacy token)
+      // This ensures we have the session for fallback if validation fails
       let hasSupabaseSession = false;
       let session = null;
-      if (!token) {
-        try {
-          // CRITICAL: Supabase client may not have loaded session from localStorage yet
-          // Give it a moment to initialize before checking
-          // The onAuthStateChange listener will fire INITIAL_SESSION when ready
-          const { data } = await supabase.auth.getSession();
-          session = data?.session;
-          hasSupabaseSession = !!session;
+      try {
+        // CRITICAL: Supabase client may not have loaded session from localStorage yet
+        // Give it a moment to initialize before checking
+        // The onAuthStateChange listener will fire INITIAL_SESSION when ready
+        const { data } = await supabase.auth.getSession();
+        session = data?.session;
+        hasSupabaseSession = !!session;
 
-          // If no session on first check, wait briefly for Supabase to initialize
-          // This handles the race condition where getSession() returns null but
-          // INITIAL_SESSION fires shortly after with a valid session
-          if (!hasSupabaseSession) {
-            console.log('[Header] No immediate Supabase session, waiting briefly for initialization...');
-            await new Promise(resolve => setTimeout(resolve, 200));
-            const { data: retryData } = await supabase.auth.getSession();
-            session = retryData?.session;
-            hasSupabaseSession = !!session;
-            if (hasSupabaseSession) {
-              console.log('[Header] ✅ Found Supabase session after brief wait');
-            }
+        // If no session on first check, wait briefly for Supabase to initialize
+        // This handles the race condition where getSession() returns null but
+        // INITIAL_SESSION fires shortly after with a valid session
+        if (!hasSupabaseSession) {
+          console.log('[Header] No immediate Supabase session, waiting briefly for initialization...');
+          await new Promise(resolve => setTimeout(resolve, 200));
+          const { data: retryData } = await supabase.auth.getSession();
+          session = retryData?.session;
+          hasSupabaseSession = !!session;
+          if (hasSupabaseSession) {
+            console.log('[Header] ✅ Found Supabase session after brief wait');
           }
-        } catch (err) {
-          console.log('[Header] Error checking Supabase session:', err.message);
         }
+      } catch (err) {
+        console.log('[Header] Error checking Supabase session:', err.message);
       }
 
       // If no auth at all, ensure we show logged-out state
@@ -600,10 +599,18 @@ export default function Header({ autoShowLogin = false }) {
                 id: currentUser.userId || currentUser.id || '',
                 name: `${currentUser.firstName} ${currentUser.lastName || ''}`.trim(),
                 email: currentUser.email || '',
-                userType: userType === 'A Host (I have a space available to rent)' ? 'HOST'
-                  : userType === 'Trial Host' ? 'TRIAL_HOST'
-                  : userType === 'A Guest (I would like to rent a space)' ? 'GUEST'
-                  : 'HOST',
+                userType: (() => {
+                  // Normalize user type to 'HOST', 'GUEST', or 'TRIAL_HOST'
+                  // Handles both legacy Bubble format and new Supabase Auth format
+                  if (!userType) return 'GUEST';
+                  if (userType === 'Host' || userType === 'A Host (I have a space available to rent)' || userType === 'Split Lease') return 'HOST';
+                  if (userType === 'Trial Host') return 'TRIAL_HOST';
+                  if (userType === 'Guest' || userType === 'A Guest (I would like to rent a space)') return 'GUEST';
+                  // Fallback: check if it contains 'Host' (but not 'Trial')
+                  if (userType.includes('Host') && !userType.includes('Trial')) return 'HOST';
+                  if (userType.includes('Trial')) return 'TRIAL_HOST';
+                  return 'GUEST';
+                })(),
                 avatarUrl: currentUser.profilePhoto?.startsWith('//')
                   ? `https:${currentUser.profilePhoto}`
                   : currentUser.profilePhoto,

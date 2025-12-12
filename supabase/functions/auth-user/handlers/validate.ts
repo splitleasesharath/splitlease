@@ -60,12 +60,67 @@ export async function handleValidate(
       }
     });
 
-    // Query by _id (the primary key stored in browser after login/signup)
-    const { data: userData, error: userError } = await supabase
+    // Query by _id first (the primary key stored in browser after login/signup)
+    // If that fails, get email from token and query by email
+    let userData = null;
+    let userError = null;
+
+    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs"';
+
+    // First attempt: query by _id (Bubble-style ID)
+    console.log(`[validate] Attempting to find user by _id: ${user_id}`);
+    const { data: userDataById, error: errorById } = await supabase
       .from('user')
-      .select('_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord"')
+      .select(userSelectFields)
       .eq('_id', user_id)
-      .single();
+      .maybeSingle();
+
+    if (userDataById) {
+      userData = userDataById;
+      console.log(`[validate] User found by _id`);
+    } else {
+      // Second attempt: use token to get email from Supabase Auth, then query by email
+      console.log(`[validate] User not found by _id, trying to get email from token...`);
+
+      // Verify the token and get user info from Supabase Auth
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+
+      if (authError) {
+        console.error(`[validate] Failed to get user from token:`, authError.message);
+        userError = authError;
+      } else if (authUser?.email) {
+        console.log(`[validate] Got email from token: ${authUser.email}, querying by email...`);
+
+        // Query by email
+        const { data: userDataByEmail, error: errorByEmail } = await supabase
+          .from('user')
+          .select(userSelectFields)
+          .eq('email', authUser.email)
+          .maybeSingle();
+
+        if (userDataByEmail) {
+          userData = userDataByEmail;
+          console.log(`[validate] User found by email`);
+        } else if (!userDataByEmail) {
+          // Try 'email as text' column as fallback
+          const { data: userDataByEmailText, error: errorByEmailText } = await supabase
+            .from('user')
+            .select(userSelectFields)
+            .eq('email as text', authUser.email)
+            .maybeSingle();
+
+          if (userDataByEmailText) {
+            userData = userDataByEmailText;
+            console.log(`[validate] User found by 'email as text'`);
+          } else {
+            userError = errorByEmail || errorByEmailText || errorById;
+          }
+        }
+      } else {
+        console.error(`[validate] No email found in auth user`);
+        userError = errorById;
+      }
+    }
 
     if (userError) {
       console.error(`[validate] Supabase query error:`, userError);
@@ -73,8 +128,8 @@ export async function handleValidate(
     }
 
     if (!userData) {
-      console.error(`[validate] User not found in Supabase by _id: ${user_id}`);
-      throw new SupabaseSyncError(`User not found with _id: ${user_id}`);
+      console.error(`[validate] User not found in Supabase by _id or email: ${user_id}`);
+      throw new SupabaseSyncError(`User not found with _id or email: ${user_id}`);
     }
 
     // Step 2: Format user data

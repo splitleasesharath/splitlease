@@ -52,7 +52,8 @@ export default function LoggedInAvatar({
   const dropdownRef = useRef(null);
 
   // Fetch user data from Supabase for menu conditionals
-  const { data: supabaseData, loading: dataLoading } = useLoggedInAvatarData(user.id);
+  // Pass the userType from props as a fallback in case Supabase query doesn't return it
+  const { data: supabaseData, loading: dataLoading } = useLoggedInAvatarData(user.id, user.userType);
 
   // Get menu visibility based on Supabase data
   const menuVisibility = getMenuVisibility(supabaseData, currentPath);
