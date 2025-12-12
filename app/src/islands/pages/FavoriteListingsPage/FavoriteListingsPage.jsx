@@ -1292,6 +1292,7 @@ const FavoriteListingsPage = () => {
           pricingBreakdown={priceBreakdown}
           zatConfig={zatConfig}
           isFirstProposal={!loggedInUserData || loggedInUserData.proposalCount === 0}
+          useFullFlow={true}
           existingUserData={loggedInUserData ? {
             needForSpace: loggedInUserData.needForSpace || '',
             aboutYourself: loggedInUserData.aboutMe || '',

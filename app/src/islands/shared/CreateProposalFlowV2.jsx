@@ -21,8 +21,15 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 
 // Flow order constants for step navigation
 // Section IDs: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
-// First-time users must complete sections in this order: User Details -> Days -> Move-in -> Review
-const FIRST_PROPOSAL_FLOW = [2, 4, 3, 1];
+
+// FULL flow (for pages where days/move-in NOT pre-selected, e.g., FavoriteListingsPage):
+// User Details -> Days -> Move-in -> Review
+const FULL_FIRST_PROPOSAL_FLOW = [2, 4, 3, 1];
+
+// SHORT flow (for pages where days/move-in ARE pre-selected, e.g., ViewSplitLeasePage):
+// User Details -> Review
+const SHORT_FIRST_PROPOSAL_FLOW = [2, 1];
+
 // Returning users start at Review and can edit any section (hub-and-spoke model)
 const RETURNING_USER_START = 1;
 
@@ -109,6 +116,7 @@ const clearProposalDraft = (listingId) => {
  * @param {Object} pricingBreakdown - Pricing breakdown from parent (INITIAL ONLY)
  * @param {Object} zatConfig - ZAT price configuration object
  * @param {boolean} isFirstProposal - Whether this is the user's first proposal (true = first, false = subsequent)
+ * @param {boolean} useFullFlow - Whether to use full sequential flow (days + move-in steps). Default false = short flow (User Info -> Review)
  * @param {Object} existingUserData - User's saved profile data for prefilling (aboutMe, needForSpace, specialNeeds)
  * @param {Function} onClose - Callback when modal closes
  * @param {Function} onSubmit - Callback when proposal is submitted
@@ -122,6 +130,7 @@ export default function CreateProposalFlowV2({
   pricingBreakdown = null,
   zatConfig = null,
   isFirstProposal = true,
+  useFullFlow = false,
   existingUserData = null,
   onClose,
   onSubmit
@@ -136,11 +145,14 @@ export default function CreateProposalFlowV2({
   const savedDraft = getSavedProposalDraft(listingId);
   const hasSavedDraft = savedDraft && (savedDraft.needForSpace || savedDraft.aboutYourself);
 
-  // Section flow: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
-  // First proposal: Start on User Details (section 2) - user needs to fill in their info
-  // Second+ proposals: Start on Review (section 1) - user can quickly submit with existing data
+  // Determine which flow to use based on isFirstProposal and useFullFlow
+  // - First proposal + full flow (FavoriteListingsPage): User Details -> Days -> Move-in -> Review
+  // - First proposal + short flow (ViewSplitLeasePage): User Details -> Review
+  // - Returning user: Start on Review (hub-and-spoke)
+  const activeFlow = useFullFlow ? FULL_FIRST_PROPOSAL_FLOW : SHORT_FIRST_PROPOSAL_FLOW;
+
   const [currentSection, setCurrentSection] = useState(
-    isFirstProposal ? FIRST_PROPOSAL_FLOW[0] : RETURNING_USER_START
+    isFirstProposal ? activeFlow[0] : RETURNING_USER_START
   );
 
   // Track position in the flow for first-time users (0 = first step, 1 = second step, etc.)
@@ -470,12 +482,12 @@ export default function CreateProposalFlowV2({
     if (!validateCurrentSection()) return;
 
     if (isFirstProposal) {
-      // Sequential flow for first-time users: 2 -> 4 -> 3 -> 1
+      // Sequential flow for first-time users (flow depends on useFullFlow prop)
       const nextIndex = flowStepIndex + 1;
-      if (nextIndex < FIRST_PROPOSAL_FLOW.length) {
+      if (nextIndex < activeFlow.length) {
         setFlowStepIndex(nextIndex);
-        setCurrentSection(FIRST_PROPOSAL_FLOW[nextIndex]);
-        console.log(`📍 First proposal: Moving to step ${nextIndex + 1} (section ${FIRST_PROPOSAL_FLOW[nextIndex]})`);
+        setCurrentSection(activeFlow[nextIndex]);
+        console.log(`📍 First proposal (${useFullFlow ? 'full' : 'short'} flow): Moving to step ${nextIndex + 1} (section ${activeFlow[nextIndex]})`);
       }
       // If at last step (Review), handleSubmit will be called instead
     } else {
@@ -487,12 +499,12 @@ export default function CreateProposalFlowV2({
 
   const handleBack = () => {
     if (isFirstProposal) {
-      // Sequential back navigation for first-time users
+      // Sequential back navigation for first-time users (flow depends on useFullFlow prop)
       if (flowStepIndex > 0) {
         const prevIndex = flowStepIndex - 1;
         setFlowStepIndex(prevIndex);
-        setCurrentSection(FIRST_PROPOSAL_FLOW[prevIndex]);
-        console.log(`📍 First proposal: Going back to step ${prevIndex + 1} (section ${FIRST_PROPOSAL_FLOW[prevIndex]})`);
+        setCurrentSection(activeFlow[prevIndex]);
+        console.log(`📍 First proposal (${useFullFlow ? 'full' : 'short'} flow): Going back to step ${prevIndex + 1} (section ${activeFlow[prevIndex]})`);
       }
       // If at first step (User Details), no back navigation available
     } else {
@@ -669,7 +681,7 @@ export default function CreateProposalFlowV2({
                   - For first-time users: "Review Proposal" on the step before Review, "Next" otherwise
                   - For returning users: "Next" on User Details, "Yes, Continue" on other sections */}
               {isFirstProposal
-                ? (flowStepIndex === FIRST_PROPOSAL_FLOW.length - 2 ? 'Review Proposal' : 'Next')
+                ? (flowStepIndex === activeFlow.length - 2 ? 'Review Proposal' : 'Next')
                 : (currentSection === 2 ? 'Next' : 'Yes, Continue')}
             </button>
           )}

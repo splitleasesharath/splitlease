@@ -601,51 +601,51 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
             <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
           </div>
 
-          {/* Host Row - Bottom Left */}
-          <div className="listing-host-row">
-            <div className="host">
-              {listing.host?.image ? (
-                <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
-              ) : (
-                <div className="host-avatar-placeholder">?</div>
-              )}
-              <span className="host-name">
-                {formatHostName(listing.host?.name)}
-                {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
-              </span>
-            </div>
-            <button
-              className="message-btn"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onOpenContactModal(listing);
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-              </svg>
-              Message
-            </button>
-            {showCreateProposalButton && (
+          {/* Host Row - Bottom Left (stacked: avatar on top, name below, buttons at bottom) */}
+          <div className="listing-host-row listing-host-row--stacked">
+            {listing.host?.image ? (
+              <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
+            ) : (
+              <div className="host-avatar-placeholder">?</div>
+            )}
+            <span className="host-name">
+              {formatHostName(listing.host?.name)}
+              {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
+            </span>
+            <div className="host-buttons">
               <button
-                className="create-proposal-btn"
+                className="message-btn"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  onOpenCreateProposalModal(listing);
+                  onOpenContactModal(listing);
                 }}
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                  <polyline points="14 2 14 8 20 8"></polyline>
-                  <line x1="16" y1="13" x2="8" y2="13"></line>
-                  <line x1="16" y1="17" x2="8" y2="17"></line>
-                  <polyline points="10 9 9 9 8 9"></polyline>
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
                 </svg>
-                Create Proposal
+                Message
               </button>
-            )}
+              {showCreateProposalButton && (
+                <button
+                  className="create-proposal-btn"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onOpenCreateProposalModal(listing);
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                  Create Proposal
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

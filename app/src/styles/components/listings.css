@@ -581,6 +581,40 @@
     flex-shrink: 0;
 }
 
+/* Stacked Host Row Layout - avatar on top, name below, buttons at bottom */
+.listing-host-row.listing-host-row--stacked {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.listing-host-row--stacked .host-avatar,
+.listing-host-row--stacked .host-avatar-placeholder {
+    width: 32px;
+    height: 32px;
+}
+
+.listing-host-row--stacked .host-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+    max-width: 100%;
+}
+
+.listing-host-row--stacked .host-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.listing-host-row--stacked .message-btn,
+.listing-host-row--stacked .create-proposal-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: auto;
+}
+
 /* Price Sidebar - Right Side (F7b Layout) */
 .listing-price-sidebar {
     width: 150px;
