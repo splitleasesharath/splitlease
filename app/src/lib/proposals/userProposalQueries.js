@@ -187,6 +187,7 @@ export async function fetchProposalsByIds(proposalIds) {
       "Name",
       "Description",
       "Location - Address",
+      "Location - slightly different address",
       "Location - Borough",
       "Location - Hood",
       "Features - Photos",

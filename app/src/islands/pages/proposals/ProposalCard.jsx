@@ -23,6 +23,7 @@ import { navigateToMessaging } from '../../../logic/workflows/proposals/navigati
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
+import MapModal from '../../modals/MapModal.jsx';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -538,6 +539,36 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const listing = proposal.listing;
   const host = listing?.host;
 
+  // Extract location for map modal
+  // Priority: 'Location - slightly different address' (privacy) → 'Location - Address' (fallback)
+  const getListingAddress = () => {
+    if (!listing) return null;
+
+    // Try 'Location - slightly different address' first (privacy-adjusted)
+    let locationData = listing['Location - slightly different address'];
+    if (!locationData) {
+      // Fallback to main address
+      locationData = listing['Location - Address'];
+    }
+
+    if (!locationData) return null;
+
+    // Parse if it's a JSON string
+    if (typeof locationData === 'string') {
+      try {
+        locationData = JSON.parse(locationData);
+      } catch (e) {
+        console.warn('ProposalCard: Failed to parse location data:', e);
+        return null;
+      }
+    }
+
+    // Return the address string from the JSONB object
+    return locationData?.address || null;
+  };
+
+  const mapAddress = getListingAddress();
+
   // Extract data
   const listingName = listing?.Name || 'Listing';
   const location = [listing?.hoodName, listing?.boroughName]
@@ -610,6 +641,9 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   // Virtual Meeting Manager modal state
   const [showVMModal, setShowVMModal] = useState(false);
   const [vmInitialView, setVmInitialView] = useState('');
+
+  // Map modal state
+  const [showMapModal, setShowMapModal] = useState(false);
 
   // Status and progress - derive dynamically from statusConfig
   const status = proposal.Status;
@@ -785,7 +819,10 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
               >
                 View Listing
               </a>
-              <button className="btn-action btn-map">
+              <button
+                className="btn-action btn-map"
+                onClick={() => setShowMapModal(true)}
+              >
                 View Map
               </button>
             </div>
@@ -1110,6 +1147,15 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           currentUser={currentUser}
           onClose={handleVMModalClose}
           onSuccess={handleVMSuccess}
+        />
+      )}
+
+      {/* Map Modal */}
+      {showMapModal && (
+        <MapModal
+          listing={listing}
+          address={mapAddress}
+          onClose={() => setShowMapModal(false)}
         />
       )}
     </div>
