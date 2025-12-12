@@ -22,6 +22,7 @@ import { shouldHideVirtualMeetingButton } from '../../../lib/proposals/statusBut
 import { navigateToMessaging } from '../../../logic/workflows/proposals/navigationWorkflow.js';
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
+import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 
 // Day abbreviations for schedule display (single letter like Bubble)
@@ -617,7 +618,9 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
   // Proposal details modal state (GuestEditingProposalModal)
   const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false);
-  const [proposalModalInitialView, setProposalModalInitialView] = useState('general');
+
+  // Cancel proposal modal state
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   // Virtual Meeting Manager modal state
   const [showVMModal, setShowVMModal] = useState(false);
@@ -754,16 +757,31 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
     };
   }, [virtualMeeting, currentUserId, status]);
 
-  // Handler for opening proposal details modal with specific view
-  const openProposalModal = (view = 'general') => {
-    setProposalModalInitialView(view);
+  // Handler for opening proposal details modal
+  const openProposalModal = () => {
     setShowProposalDetailsModal(true);
   };
 
   // Handler for closing proposal details modal
   const closeProposalModal = () => {
     setShowProposalDetailsModal(false);
-    setProposalModalInitialView('general'); // Reset to default view
+  };
+
+  // Handler for opening cancel proposal modal
+  const openCancelModal = () => {
+    setShowCancelModal(true);
+  };
+
+  // Handler for closing cancel proposal modal
+  const closeCancelModal = () => {
+    setShowCancelModal(false);
+  };
+
+  // Handler for confirming proposal cancellation
+  const handleCancelConfirm = async (reason) => {
+    console.log('[ProposalCard] Cancel confirmed with reason:', reason);
+    // TODO: Implement actual cancel API call here
+    closeCancelModal();
   };
 
   // Handler for VM button click
@@ -957,13 +975,13 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 )}
                 <button
                   className="btn-action-bar btn-modify-proposal"
-                  onClick={() => openProposalModal('general')}
+                  onClick={openProposalModal}
                 >
                   Modify Proposal
                 </button>
                 <button
                   className="btn-action-bar btn-cancel-proposal"
-                  onClick={() => openProposalModal('cancel')}
+                  onClick={openCancelModal}
                 >
                   Cancel Proposal
                 </button>
@@ -1006,7 +1024,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                   onClick={() => {
                     // Handle different actions
                     if (buttonConfig.guestAction1.action === 'modify_proposal') {
-                      openProposalModal('general');
+                      openProposalModal();
                     }
                     // TODO: Add handlers for other actions (remind_sl, accept_counteroffer, etc.)
                   }}
@@ -1030,7 +1048,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 onClick={() => {
                   // Handle different actions
                   if (buttonConfig.guestAction2.action === 'see_details') {
-                    openProposalModal('general');
+                    openProposalModal();
                   }
                   // TODO: Add handlers for other actions (reject_suggestion, review_counteroffer, verify_identity)
                 }}
@@ -1060,8 +1078,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                              buttonConfig.cancelButton.action === 'delete_proposal' ||
                              buttonConfig.cancelButton.action === 'reject_counteroffer' ||
                              buttonConfig.cancelButton.action === 'reject_proposal') {
-                    // Open GuestEditingProposalModal with cancel view
-                    openProposalModal('cancel');
+                    // Open cancel proposal modal
+                    openCancelModal();
                   }
                 }}
               >
@@ -1096,7 +1114,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           proposal={proposal}
           listing={listing}
           user={{ type: 'guest' }}
-          initialView={proposalModalInitialView}
+          initialView="general"
           isVisible={showProposalDetailsModal}
           onClose={closeProposalModal}
           pricePerNight={nightlyPrice}
@@ -1104,6 +1122,15 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           priceRentPer4Weeks={proposal['Price Rent per 4 weeks'] || (nightlyPrice * nightsPerWeek * 4)}
         />
       )}
+
+      {/* Cancel Proposal Modal */}
+      <CancelProposalModal
+        isOpen={showCancelModal}
+        proposal={proposal}
+        buttonText="Cancel Proposal"
+        onClose={closeCancelModal}
+        onConfirm={handleCancelConfirm}
+      />
 
       {/* Virtual Meeting Manager Modal */}
       {showVMModal && (
