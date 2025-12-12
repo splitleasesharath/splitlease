@@ -75,15 +75,35 @@ export async function createVirtualMeetingRequest(
   isAlternativeTimes = false,
   timezoneString = 'America/New_York'
 ) {
-  const data = {
-    proposal: proposalId,
-    times_selected: timesSelected.map(toISOString),
-    requested_by: requestedById,
-    is_alternative_times: isAlternativeTimes,
-    timezone_string: timezoneString,
-  };
+  try {
+    const { data: responseData, error } = await supabase.functions.invoke('virtual-meeting', {
+      body: {
+        action: 'create',
+        payload: {
+          proposalId,
+          timesSelected: timesSelected.map(toISOString),
+          requestedById,
+          isAlternativeTimes,
+          timezoneString,
+        },
+      },
+    });
 
-  return proxyRequest('CORE-create-virtual-meeting', data);
+    if (error) {
+      throw new Error(error.message || 'Failed to create virtual meeting');
+    }
+
+    return {
+      status: 'success',
+      data: responseData?.data,
+    };
+  } catch (error) {
+    console.error('API Error (create-virtual-meeting):', error);
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
 }
 
 /**
