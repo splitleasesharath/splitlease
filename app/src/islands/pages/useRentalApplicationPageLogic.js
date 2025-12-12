@@ -2,23 +2,27 @@
  * useRentalApplicationPageLogic - Business logic hook for RentalApplicationPage
  *
  * This hook contains ALL business logic for the rental application form:
- * - Form state management
+ * - Form state management (via localStorage-backed store)
  * - Validation logic
  * - Progress tracking
  * - File upload handling
  * - Verification status tracking
- * - Auto-save functionality
- * - Form submission
+ * - Auto-save functionality (delegated to store)
+ * - Form submission (via Edge Function)
  *
  * Architecture (per Four-Layer Logic Architecture):
  * - State management and orchestration
  * - Delegates validation to rules
  * - Handles data transformation
+ *
+ * UPDATED: Now uses localStorage-backed store for persistence
+ * and submits via bubble-proxy Edge Function (submit_rental_application action)
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase.js';
-import { checkAuthStatus, getSessionId } from '../../lib/auth.js';
+import { checkAuthStatus, getSessionId, getAuthToken } from '../../lib/auth.js';
+import { useRentalApplicationStore } from './RentalApplicationPage/store/index.ts';
 
 // Required fields for base progress calculation
 const REQUIRED_FIELDS = [
@@ -70,68 +74,37 @@ const EMPLOYMENT_STATUS_OPTIONS = [
 ];
 
 const MAX_OCCUPANTS = 6;
-const AUTO_SAVE_DELAY = 500;
-const STORAGE_KEY = 'rentalApplicationData';
-const STORAGE_TIMESTAMP_KEY = 'rentalApplicationTimestamp';
 
 export function useRentalApplicationPageLogic() {
   // ============================================================================
-  // STATE
+  // STORE INTEGRATION
   // ============================================================================
 
-  // Form data state
-  const [formData, setFormData] = useState({
-    // Personal Information
-    fullName: '',
-    dob: '',
-    email: '',
-    phone: '',
-    // Current Address
-    currentAddress: '',
-    apartmentUnit: '',
-    lengthResided: '',
-    renting: '',
-    // Employment Information
-    employmentStatus: '',
-    // Employed fields
-    employerName: '',
-    employerPhone: '',
-    jobTitle: '',
-    monthlyIncome: '',
-    // Self-employed fields
-    businessName: '',
-    businessYear: '',
-    businessState: '',
-    monthlyIncomeSelf: '',
-    companyStake: '',
-    slForBusiness: '',
-    taxForms: '',
-    // Unemployed/Student fields
-    alternateIncome: '',
-    // Special requirements (dropdowns: yes/no/empty)
-    hasPets: '',
-    isSmoker: '',
-    needsParking: '',
-    // References
-    references: '',
-    showVisualReferences: false,  // Toggle for visual references upload
-    showCreditScore: false,       // Toggle for credit score upload
-    // Signature
-    signature: ''
-  });
+  // Use the localStorage-backed store for form data, occupants, and verification status
+  const store = useRentalApplicationStore();
 
-  // Occupants state
-  const [occupants, setOccupants] = useState([]);
+  // Destructure store state for convenience
+  const {
+    formData,
+    occupants,
+    verificationStatus,
+    isDirty,
+    lastSaved,
+    updateFormData,
+    updateField,
+    setOccupants,
+    addOccupant: storeAddOccupant,
+    removeOccupant: storeRemoveOccupant,
+    updateOccupant: storeUpdateOccupant,
+    updateVerificationStatus,
+    reset: resetStore,
+  } = store;
 
-  // Verification status
-  const [verificationStatus, setVerificationStatus] = useState({
-    linkedin: false,
-    facebook: false,
-    id: false,
-    income: false
-  });
+  // ============================================================================
+  // LOCAL STATE (non-persistent)
+  // ============================================================================
 
-  // Verification loading states
+  // Verification loading states (transient, not persisted)
   const [verificationLoading, setVerificationLoading] = useState({
     linkedin: false,
     facebook: false,
@@ -139,7 +112,7 @@ export function useRentalApplicationPageLogic() {
     income: false
   });
 
-  // File uploads
+  // File uploads (cannot be serialized to localStorage)
   const [uploadedFiles, setUploadedFiles] = useState({
     employmentProof: null,
     alternateGuarantee: null,
@@ -152,14 +125,13 @@ export function useRentalApplicationPageLogic() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [fieldValid, setFieldValid] = useState({});
 
-  // Form state
-  const [isDirty, setIsDirty] = useState(false);
+  // Form submission state
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
-  // Auto-save timeout ref
-  const autoSaveTimeoutRef = useRef(null);
+  // Track if user data has been pre-populated
+  const hasPrePopulated = useRef(false);
 
   // ============================================================================
   // COMPUTED VALUES
@@ -268,11 +240,7 @@ export function useRentalApplicationPageLogic() {
   // ============================================================================
 
   const handleInputChange = useCallback((fieldName, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: value
-    }));
-    setIsDirty(true);
+    updateField(fieldName, value);
 
     // Clear error for this field
     setFieldErrors(prev => {
@@ -280,7 +248,7 @@ export function useRentalApplicationPageLogic() {
       delete next[fieldName];
       return next;
     });
-  }, []);
+  }, [updateField]);
 
   const handleInputBlur = useCallback((fieldName) => {
     const value = formData[fieldName];
@@ -300,23 +268,16 @@ export function useRentalApplicationPageLogic() {
   }, [formData, validateField]);
 
   const handleToggleChange = useCallback((fieldName) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: !prev[fieldName]
-    }));
-    setIsDirty(true);
-  }, []);
+    const currentValue = formData[fieldName];
+    updateField(fieldName, !currentValue);
+  }, [formData, updateField]);
 
   const handleRadioChange = useCallback((fieldName, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [fieldName]: value
-    }));
-    setIsDirty(true);
-  }, []);
+    updateField(fieldName, value);
+  }, [updateField]);
 
   // ============================================================================
-  // HANDLERS - Occupants
+  // HANDLERS - Occupants (delegated to store)
   // ============================================================================
 
   const addOccupant = useCallback(() => {
@@ -331,24 +292,19 @@ export function useRentalApplicationPageLogic() {
       relationship: ''
     };
 
-    setOccupants(prev => [...prev, newOccupant]);
-    setIsDirty(true);
-  }, [occupants.length]);
+    storeAddOccupant(newOccupant);
+  }, [occupants.length, storeAddOccupant]);
 
   const removeOccupant = useCallback((occupantId) => {
-    setOccupants(prev => prev.filter(occ => occ.id !== occupantId));
-    setIsDirty(true);
-  }, []);
+    storeRemoveOccupant(occupantId);
+  }, [storeRemoveOccupant]);
 
   const updateOccupant = useCallback((occupantId, field, value) => {
-    setOccupants(prev => prev.map(occ =>
-      occ.id === occupantId ? { ...occ, [field]: value } : occ
-    ));
-    setIsDirty(true);
-  }, []);
+    storeUpdateOccupant(occupantId, field, value);
+  }, [storeUpdateOccupant]);
 
   // ============================================================================
-  // HANDLERS - File Uploads
+  // HANDLERS - File Uploads (local state, not persisted)
   // ============================================================================
 
   const handleFileUpload = useCallback((uploadKey, files, multiple = false) => {
@@ -365,7 +321,6 @@ export function useRentalApplicationPageLogic() {
         [uploadKey]: files[0]
       }));
     }
-    setIsDirty(true);
   }, []);
 
   const handleFileRemove = useCallback((uploadKey, fileIndex = null) => {
@@ -382,7 +337,6 @@ export function useRentalApplicationPageLogic() {
         [uploadKey]: null
       }));
     }
-    setIsDirty(true);
   }, []);
 
   // ============================================================================
@@ -396,73 +350,20 @@ export function useRentalApplicationPageLogic() {
     // In production, this would be real OAuth flows or verification services
     await new Promise(resolve => setTimeout(resolve, 1500));
 
-    setVerificationStatus(prev => ({ ...prev, [service]: true }));
+    updateVerificationStatus(service, true);
     setVerificationLoading(prev => ({ ...prev, [service]: false }));
-    setIsDirty(true);
-  }, []);
+  }, [updateVerificationStatus]);
 
   // ============================================================================
-  // AUTO-SAVE
+  // PRE-POPULATION (User Data)
   // ============================================================================
-
-  const autoSave = useCallback(() => {
-    if (!isDirty) return;
-
-    const dataToSave = {
-      formData,
-      occupants,
-      verificationStatus,
-      // Note: Files cannot be serialized to localStorage
-    };
-
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
-      localStorage.setItem(STORAGE_TIMESTAMP_KEY, new Date().toISOString());
-      console.log('Auto-saved at', new Date().toLocaleTimeString());
-    } catch (error) {
-      console.error('❌ Auto-save failed:', error);
-    }
-
-    setIsDirty(false);
-  }, [isDirty, formData, occupants, verificationStatus]);
-
-  // Debounced auto-save on changes
-  useEffect(() => {
-    if (isDirty) {
-      clearTimeout(autoSaveTimeoutRef.current);
-      autoSaveTimeoutRef.current = setTimeout(autoSave, AUTO_SAVE_DELAY);
-    }
-
-    return () => clearTimeout(autoSaveTimeoutRef.current);
-  }, [isDirty, autoSave]);
-
-  // Load saved data on mount
-  useEffect(() => {
-    const savedData = localStorage.getItem(STORAGE_KEY);
-    if (!savedData) return;
-
-    try {
-      const parsed = JSON.parse(savedData);
-
-      if (parsed.formData) {
-        setFormData(prev => ({ ...prev, ...parsed.formData }));
-      }
-      if (parsed.occupants) {
-        setOccupants(parsed.occupants);
-      }
-      if (parsed.verificationStatus) {
-        setVerificationStatus(parsed.verificationStatus);
-      }
-
-      console.log('✅ Loaded saved rental application data');
-    } catch (error) {
-      console.error('❌ Error loading saved data:', error);
-    }
-  }, []);
 
   // Pre-populate form with user data when logged in
   useEffect(() => {
     async function fetchAndPopulateUserData() {
+      // Only run once
+      if (hasPrePopulated.current) return;
+
       try {
         // Check if user is authenticated
         const isAuthenticated = await checkAuthStatus();
@@ -481,7 +382,6 @@ export function useRentalApplicationPageLogic() {
         console.log('[RentalApplication] Fetching user data for pre-population...');
 
         // Fetch user data from Supabase
-        // Using select('*') to ensure we get all available email fields
         const { data: userData, error } = await supabase
           .from('user')
           .select('*')
@@ -524,24 +424,30 @@ export function useRentalApplicationPageLogic() {
           }
         }
 
-        // Pre-populate form fields (only if not already filled)
-        setFormData(prev => ({
-          ...prev,
-          // Only populate if field is empty (preserve any manually entered data)
-          fullName: prev.fullName || fullName || '',
-          email: prev.email || userEmail || '',
-          phone: prev.phone || userData['Phone Number (as text)'] || '',
-          dob: prev.dob || dob || ''
-        }));
+        // Pre-populate form fields (only if not already filled in store)
+        const updates = {};
+        if (!formData.fullName && fullName) updates.fullName = fullName;
+        if (!formData.email && userEmail) updates.email = userEmail;
+        if (!formData.phone && userData['Phone Number (as text)']) updates.phone = userData['Phone Number (as text)'];
+        if (!formData.dob && dob) updates.dob = dob;
 
-        console.log('✅ Pre-populated rental application with user data');
+        if (Object.keys(updates).length > 0) {
+          updateFormData(updates);
+          console.log('[RentalApplication] Pre-populated with user data:', updates);
+        }
+
+        hasPrePopulated.current = true;
       } catch (error) {
         console.error('[RentalApplication] Error in fetchAndPopulateUserData:', error);
       }
     }
 
     fetchAndPopulateUserData();
-  }, []);
+  }, [formData, updateFormData]);
+
+  // ============================================================================
+  // NAVIGATION WARNING
+  // ============================================================================
 
   // Warn on navigation when dirty
   useEffect(() => {
@@ -558,7 +464,7 @@ export function useRentalApplicationPageLogic() {
   }, [isDirty]);
 
   // ============================================================================
-  // FORM SUBMISSION
+  // FORM SUBMISSION (via Edge Function)
   // ============================================================================
 
   const handleSubmit = useCallback(async (event) => {
@@ -577,38 +483,53 @@ export function useRentalApplicationPageLogic() {
     setSubmitError(null);
 
     try {
-      // Collect all form data for submission
-      const submissionData = {
+      // Get auth token for Edge Function call
+      const token = getAuthToken();
+      if (!token) {
+        throw new Error('You must be logged in to submit a rental application.');
+      }
+
+      // Prepare submission payload
+      const submissionPayload = {
         ...formData,
         occupants,
         verificationStatus,
-        // File uploads would be handled separately via multipart form
-        hasEmploymentProof: uploadedFiles.employmentProof !== null,
-        hasAlternateGuarantee: uploadedFiles.alternateGuarantee !== null,
-        hasCreditScore: uploadedFiles.creditScore !== null,
-        referenceDocumentCount: uploadedFiles.references.length
       };
 
-      // TODO: Submit to API via Edge Function
-      // In production, this would call the bubble-proxy edge function
-      console.log('📝 Submitting rental application:', submissionData);
+      console.log('[RentalApplication] Submitting via Edge Function:', submissionPayload);
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call the bubble-proxy Edge Function with submit_rental_application action
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bubble-proxy`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          action: 'submit_rental_application',
+          payload: submissionPayload,
+        }),
+      });
 
-      // Clear saved data on successful submission
-      localStorage.removeItem(STORAGE_KEY);
-      localStorage.removeItem(STORAGE_TIMESTAMP_KEY);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Submission failed');
+      }
+
+      console.log('[RentalApplication] Submission successful:', result);
+
+      // Clear localStorage on successful submission
+      resetStore();
 
       setSubmitSuccess(true);
-      setIsDirty(false);
     } catch (error) {
-      console.error('❌ Submission failed:', error);
-      setSubmitError('Failed to submit application. Please try again.');
+      console.error('[RentalApplication] Submission failed:', error);
+      setSubmitError(error.message || 'Failed to submit application. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  }, [formData, occupants, verificationStatus, uploadedFiles, validateAllFields]);
+  }, [formData, occupants, verificationStatus, validateAllFields, resetStore]);
 
   // ============================================================================
   // MODAL HANDLERS
@@ -625,7 +546,7 @@ export function useRentalApplicationPageLogic() {
   // ============================================================================
 
   return {
-    // Form data
+    // Form data (from store)
     formData,
     occupants,
     verificationStatus,
@@ -646,6 +567,7 @@ export function useRentalApplicationPageLogic() {
     isSubmitting,
     submitSuccess,
     submitError,
+    lastSaved,
 
     // Constants
     maxOccupants: MAX_OCCUPANTS,

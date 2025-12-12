@@ -19,6 +19,13 @@ import '../../styles/create-proposal-flow-v2.css';
 // Day name constants for check-in/check-out calculation
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+// Flow order constants for step navigation
+// Section IDs: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
+// First-time users must complete sections in this order: User Details -> Days -> Move-in -> Review
+const FIRST_PROPOSAL_FLOW = [2, 4, 3, 1];
+// Returning users start at Review and can edit any section (hub-and-spoke model)
+const RETURNING_USER_START = 1;
+
 /**
  * Custom hook to lock body scroll when a modal/popup is open
  * Prevents background content from scrolling when popup is visible
@@ -133,8 +140,11 @@ export default function CreateProposalFlowV2({
   // First proposal: Start on User Details (section 2) - user needs to fill in their info
   // Second+ proposals: Start on Review (section 1) - user can quickly submit with existing data
   const [currentSection, setCurrentSection] = useState(
-    isFirstProposal ? 2 : 1
+    isFirstProposal ? FIRST_PROPOSAL_FLOW[0] : RETURNING_USER_START
   );
+
+  // Track position in the flow for first-time users (0 = first step, 1 = second step, etc.)
+  const [flowStepIndex, setFlowStepIndex] = useState(0);
 
   // Internal state for pricing (managed by ListingScheduleSelector in DaysSelectionSection)
   const [internalPricingBreakdown, setInternalPricingBreakdown] = useState(pricingBreakdown);
@@ -452,10 +462,23 @@ export default function CreateProposalFlowV2({
     setCurrentSection(4);
   };
 
-  // Navigation - always return to Review (Section 1) after any edit
+  // Navigation - sequential for first-time users, hub-and-spoke for returning users
   const handleNext = () => {
-    if (validateCurrentSection()) {
-      setCurrentSection(1); // Always go back to Review
+    if (!validateCurrentSection()) return;
+
+    if (isFirstProposal) {
+      // Sequential flow for first-time users: 2 -> 4 -> 3 -> 1
+      const nextIndex = flowStepIndex + 1;
+      if (nextIndex < FIRST_PROPOSAL_FLOW.length) {
+        setFlowStepIndex(nextIndex);
+        setCurrentSection(FIRST_PROPOSAL_FLOW[nextIndex]);
+        console.log(`📍 First proposal: Moving to step ${nextIndex + 1} (section ${FIRST_PROPOSAL_FLOW[nextIndex]})`);
+      }
+      // If at last step (Review), handleSubmit will be called instead
+    } else {
+      // Hub-and-spoke for returning users: always return to Review
+      setCurrentSection(1);
+      console.log('📍 Returning user: Back to Review section');
     }
   };
 

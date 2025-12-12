@@ -65,7 +65,7 @@ export async function handleValidate(
     let userData = null;
     let userError = null;
 
-    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs"';
+    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs", "Proposals List"';
 
     // First attempt: query by _id (Bubble-style ID)
     console.log(`[validate] Attempting to find user by _id: ${user_id}`);
@@ -144,25 +144,10 @@ export async function handleValidate(
     // Use 'email' column first (more commonly populated), fall back to 'email as text'
     const userEmail = userData['email'] || userData['email as text'] || null;
 
-    // Step 3: Count user's proposals (for showing/hiding Create Proposal CTA)
-    let proposalCount = 0;
-    try {
-      const { count, error: countError } = await supabase
-        .from('proposal')
-        .select('*', { count: 'exact', head: true })
-        .eq('Created By', userData._id);
-
-      if (!countError && count !== null) {
-        proposalCount = count;
-        console.log(`[validate] User has ${proposalCount} proposal(s)`);
-      } else if (countError) {
-        console.warn(`[validate] Could not fetch proposal count:`, countError.message);
-        // Non-fatal: continue without proposal count
-      }
-    } catch (countErr) {
-      console.warn(`[validate] Error counting proposals:`, countErr);
-      // Non-fatal: continue without proposal count
-    }
+    // Get proposal count from user's "Proposals List" array
+    const proposalsList = userData['Proposals List'];
+    const proposalCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
+    console.log(`[validate] User has ${proposalCount} proposal(s)`);
 
     const userDataObject = {
       userId: userData._id,
