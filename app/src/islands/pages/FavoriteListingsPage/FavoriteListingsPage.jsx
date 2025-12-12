@@ -905,30 +905,52 @@ const FavoriteListingsPage = () => {
         throw new Error('User session not found');
       }
 
-      // Convert days to Bubble format (1-7)
-      const bubbleDays = adaptDaysToBubble({
-        zeroBasedDays: proposalData.daysSelectedObjects.map(d => d.dayOfWeek)
-      });
+      // Convert days from JS format (0-6) to Bubble format (1-7)
+      const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || [];
+      const daysInBubbleFormat = adaptDaysToBubble({ zeroBasedDays: daysInJsFormat });
 
-      // Build payload
+      // Calculate nights from days (nights = days without the last checkout day)
+      const sortedDays = [...daysInBubbleFormat].sort((a, b) => a - b);
+      const nightsInBubbleFormat = sortedDays.slice(0, -1); // Remove last day (checkout day)
+
+      // Get check-in and check-out days in Bubble format (numbers 1-7)
+      const checkInDayBubble = sortedDays[0];
+      const checkOutDayBubble = sortedDays[sortedDays.length - 1];
+
+      // Format reservation span text
+      const reservationSpanWeeks = proposalData.reservationSpan || 13;
+      const reservationSpanText = reservationSpanWeeks === 13
+        ? '13 weeks (3 months)'
+        : reservationSpanWeeks === 20
+          ? '20 weeks (approx. 5 months)'
+          : `${reservationSpanWeeks} weeks`;
+
+      // Build payload matching ViewSplitLeasePage format
       const payload = {
-        listingId: selectedListingForProposal._id || selectedListingForProposal.id,
         guestId: guestId,
-        moveInDate: proposalData.moveInDate,
-        checkInDay: proposalData.checkInDay,
-        checkOutDay: proposalData.checkOutDay,
-        daysSelected: bubbleDays,
-        reservationSpan: proposalData.reservationSpan,
-        pricePerNight: proposalData.pricePerNight,
-        totalPrice: proposalData.totalPrice,
-        needForSpace: proposalData.needForSpace,
-        aboutYourself: proposalData.aboutYourself,
-        hasUniqueRequirements: proposalData.hasUniqueRequirements,
-        uniqueRequirements: proposalData.uniqueRequirements || '',
-        moveInRange: proposalData.moveInRange || ''
+        listingId: selectedListingForProposal._id || selectedListingForProposal.id,
+        moveInStartRange: proposalData.moveInDate,
+        moveInEndRange: proposalData.moveInDate, // Same as start if no flexibility
+        daysSelected: daysInBubbleFormat,
+        nightsSelected: nightsInBubbleFormat,
+        reservationSpan: reservationSpanText,
+        reservationSpanWeeks: reservationSpanWeeks,
+        checkIn: checkInDayBubble,
+        checkOut: checkOutDayBubble,
+        proposalPrice: proposalData.pricePerNight,
+        fourWeekRent: proposalData.pricePerFourWeeks,
+        hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now
+        needForSpace: proposalData.needForSpace || '',
+        aboutMe: proposalData.aboutYourself || '',
+        estimatedBookingTotal: proposalData.totalPrice,
+        // Optional fields
+        specialNeeds: proposalData.hasUniqueRequirements ? proposalData.uniqueRequirements : '',
+        moveInRangeText: proposalData.moveInRange || '',
+        flexibleMoveIn: !!proposalData.moveInRange,
+        fourWeekCompensation: proposalData.pricePerFourWeeks
       };
 
-      console.log('Submitting proposal:', payload);
+      console.log('📋 Submitting proposal:', payload);
 
       const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
@@ -937,11 +959,18 @@ const FavoriteListingsPage = () => {
         }
       });
 
-      if (error || !data?.success) {
-        throw new Error(data?.error || error?.message || 'Failed to submit proposal');
+      if (error) {
+        console.error('❌ Edge Function error:', error);
+        throw new Error(error.message || 'Failed to submit proposal');
       }
 
-      console.log('Proposal submitted successfully:', data);
+      if (!data?.success) {
+        console.error('❌ Proposal submission failed:', data?.error);
+        throw new Error(data?.error || 'Failed to submit proposal');
+      }
+
+      console.log('✅ Proposal submitted successfully:', data);
+      console.log('   Proposal ID:', data.data?.proposalId);
 
       setIsProposalModalOpen(false);
       setPendingProposalData(null);
@@ -960,7 +989,7 @@ const FavoriteListingsPage = () => {
       showToast('Proposal submitted successfully!', 'success');
 
     } catch (error) {
-      console.error('Error submitting proposal:', error);
+      console.error('❌ Error submitting proposal:', error);
       showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
     } finally {
       setIsSubmittingProposal(false);
