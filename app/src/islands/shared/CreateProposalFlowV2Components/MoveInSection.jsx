@@ -2,6 +2,58 @@
  * MoveInSection - Adjust move-in date and reservation length
  */
 
+/**
+ * Check if weeks offered is a non-standard pattern (not every week)
+ */
+function isAlternatingSchedule(weeksOffered) {
+  if (!weeksOffered) return false;
+  const pattern = weeksOffered.toLowerCase();
+  return pattern.includes('1 on') || pattern.includes('2 on') ||
+         pattern.includes('1on') || pattern.includes('2on') ||
+         pattern.includes('one week on') || pattern.includes('two week');
+}
+
+/**
+ * Get human-readable description of the weeks offered pattern
+ */
+function getWeeksOfferedDescription(weeksOffered) {
+  if (!weeksOffered) return null;
+  const pattern = weeksOffered.toLowerCase();
+
+  if (pattern.includes('1 on 1 off') || pattern.includes('1on1off') ||
+      (pattern.includes('one week on') && pattern.includes('one week off')) ||
+      (pattern.includes('1 week on') && pattern.includes('1 week off'))) {
+    return {
+      label: '1 week on / 1 week off',
+      explanation: 'You will occupy the space every other week. Prices are calculated for actual weeks of occupancy only.',
+      actualWeeksPer4: 2
+    };
+  }
+
+  if (pattern.includes('2 on 2 off') || pattern.includes('2on2off') ||
+      pattern.includes('two weeks on') ||
+      (pattern.includes('two week') && pattern.includes('two week')) ||
+      (pattern.includes('2 week on') && pattern.includes('2 week off'))) {
+    return {
+      label: '2 weeks on / 2 weeks off',
+      explanation: 'You will occupy the space for 2 weeks, then off for 2 weeks. Prices are calculated for actual weeks of occupancy only.',
+      actualWeeksPer4: 2
+    };
+  }
+
+  if (pattern.includes('1 on 3 off') || pattern.includes('1on3off') ||
+      (pattern.includes('one week on') && pattern.includes('three week')) ||
+      (pattern.includes('1 week on') && pattern.includes('3 week off'))) {
+    return {
+      label: '1 week on / 3 weeks off',
+      explanation: 'You will occupy the space 1 week per month. Prices are calculated for actual weeks of occupancy only.',
+      actualWeeksPer4: 1
+    };
+  }
+
+  return null;
+}
+
 export default function MoveInSection({ data, updateData, listing, errors = {} }) {
   const reservationOptions = [
     { value: 6, label: '6 weeks' },
@@ -85,6 +137,41 @@ export default function MoveInSection({ data, updateData, listing, errors = {} }
           </select>
         </div>
       </div>
+
+      {/* Alternating Schedule Notice */}
+      {(() => {
+        const weeksOffered = listing?.['Weeks offered'] || listing?.weeks_offered;
+        const scheduleInfo = getWeeksOfferedDescription(weeksOffered);
+        if (scheduleInfo) {
+          return (
+            <div className="schedule-notice" style={{
+              backgroundColor: '#FFF3CD',
+              border: '1px solid #FFECB5',
+              borderRadius: '8px',
+              padding: '12px 16px',
+              marginTop: '16px',
+              marginBottom: '16px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                <span style={{ fontSize: '20px' }}>📅</span>
+                <div>
+                  <div style={{ fontWeight: '600', color: '#856404', marginBottom: '4px' }}>
+                    Alternating Schedule: {scheduleInfo.label}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#664D03' }}>
+                    {scheduleInfo.explanation}
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#664D03', marginTop: '8px', fontStyle: 'italic' }}>
+                    For a {data.reservationSpan}-week reservation span, you will occupy approximately{' '}
+                    <strong>{Math.ceil(scheduleInfo.actualWeeksPer4 * (data.reservationSpan / 4))} weeks</strong> total.
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        }
+        return null;
+      })()}
 
       {listing?.['Dates - Blocked'] && listing['Dates - Blocked'].length > 0 && (
         <div className="blocked-dates-notice">
