@@ -28,8 +28,8 @@ import { handleSubmit } from "./handlers/submit.ts";
 // ─────────────────────────────────────────────────────────────
 
 const ALLOWED_ACTIONS = ["submit"] as const;
-// Submit requires authentication
-const PUBLIC_ACTIONS: string[] = [];
+// Submit is public to support legacy Bubble token users (user_id comes from payload)
+const PUBLIC_ACTIONS: string[] = ["submit"];
 
 type Action = (typeof ALLOWED_ACTIONS)[number];
 
@@ -144,10 +144,13 @@ Deno.serve(async (req: Request) => {
 
     switch (body.action) {
       case "submit":
-        if (!userId) {
-          throw new AuthenticationError("User ID required for submit action");
+        // For public action, get user_id from payload (supports legacy Bubble token users)
+        const submitUserId = userId || (body.payload.user_id as string);
+        if (!submitUserId) {
+          throw new AuthenticationError("User ID required for submit action (provide in payload or via JWT)");
         }
-        result = await handleSubmit(body.payload, supabaseAdmin, userId);
+        console.log(`[rental-application] Using user_id: ${submitUserId} (from ${userId ? 'JWT' : 'payload'})`);
+        result = await handleSubmit(body.payload, supabaseAdmin, submitUserId);
         break;
 
       default:

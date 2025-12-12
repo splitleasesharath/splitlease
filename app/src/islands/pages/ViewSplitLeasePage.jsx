@@ -379,50 +379,108 @@ function ErrorState({ message }) {
 function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
   const photoCount = photos.length;
 
-  // Determine grid style based on photo count
+  // On mobile: always show single image with "Show all" button
+  if (isMobile) {
+    return (
+      <div style={{ position: 'relative' }}>
+        <div
+          onClick={() => onPhotoClick(0)}
+          style={{
+            cursor: 'pointer',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            height: '280px'
+          }}
+        >
+          <img
+            src={photos[0].Photo}
+            alt={`${listingName} - main`}
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              display: 'block'
+            }}
+          />
+        </div>
+        {photoCount > 1 && (
+          <button
+            onClick={() => onPhotoClick(0)}
+            style={{
+              position: 'absolute',
+              bottom: '12px',
+              right: '12px',
+              background: 'white',
+              border: 'none',
+              padding: '8px 14px',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="3" y="3" width="7" height="7" rx="1" />
+              <rect x="14" y="3" width="7" height="7" rx="1" />
+              <rect x="3" y="14" width="7" height="7" rx="1" />
+              <rect x="14" y="14" width="7" height="7" rx="1" />
+            </svg>
+            Show all {photoCount}
+          </button>
+        )}
+      </div>
+    );
+  }
+
+  // Desktop: Determine grid style based on photo count
   const getGridStyle = () => {
     if (photoCount === 1) {
       return {
         display: 'grid',
         gridTemplateColumns: '1fr',
-        gridTemplateRows: isMobile ? '250px' : '400px',
-        gap: isMobile ? '8px' : '10px'
+        gridTemplateRows: '400px',
+        gap: '10px'
       };
     } else if (photoCount === 2) {
       return {
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
-        gridTemplateRows: isMobile ? '200px 200px' : '400px',
-        gap: isMobile ? '8px' : '10px'
+        gridTemplateColumns: '1fr 1fr',
+        gridTemplateRows: '400px',
+        gap: '10px'
       };
     } else if (photoCount === 3) {
       return {
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr',
-        gridTemplateRows: isMobile ? '250px 150px 150px' : '200px 200px',
-        gap: isMobile ? '8px' : '10px'
+        gridTemplateColumns: '2fr 1fr',
+        gridTemplateRows: '200px 200px',
+        gap: '10px'
       };
     } else if (photoCount === 4) {
       return {
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr 1fr' : '2fr 1fr',
-        gridTemplateRows: isMobile ? '150px 150px' : '133px 133px 133px',
-        gap: isMobile ? '8px' : '10px'
+        gridTemplateColumns: '2fr 1fr',
+        gridTemplateRows: '133px 133px 133px',
+        gap: '10px'
       };
     } else {
       // 5+ photos
       return {
         display: 'grid',
-        gridTemplateColumns: isMobile ? '1fr 1fr' : '2fr 1fr 1fr',
-        gridTemplateRows: isMobile ? '180px 180px' : '200px 200px',
-        gap: isMobile ? '8px' : '10px'
+        gridTemplateColumns: '2fr 1fr 1fr',
+        gridTemplateRows: '200px 200px',
+        gap: '10px'
       };
     }
   };
 
+  // Desktop only styles (mobile handled above)
   const imageStyle = {
     cursor: 'pointer',
-    borderRadius: isMobile ? '8px' : '12px',
+    borderRadius: '12px',
     overflow: 'hidden',
     position: 'relative'
   };
@@ -470,7 +528,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
       <div style={getGridStyle()}>
         <div
           onClick={() => onPhotoClick(0)}
-          style={{ ...imageStyle, gridRow: isMobile ? 'auto' : '1 / 3' }}
+          style={{ ...imageStyle, gridRow: '1 / 3' }}
         >
           <img
             src={photos[0].Photo}
@@ -496,7 +554,7 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
       <div style={getGridStyle()}>
         <div
           onClick={() => onPhotoClick(0)}
-          style={{ ...imageStyle, gridRow: isMobile ? 'auto' : '1 / 4' }}
+          style={{ ...imageStyle, gridRow: '1 / 4' }}
         >
           <img
             src={photos[0].Photo}
@@ -517,15 +575,14 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
     );
   }
 
-  // 5+ photos - Classic Pinterest layout (2-column on mobile)
-  // On mobile: show only first 4 photos in 2x2 grid
-  const photosToShow = isMobile ? photos.slice(1, 5) : photos.slice(1, 5);
+  // 5+ photos - Classic Pinterest layout (desktop only, mobile handled above)
+  const photosToShow = photos.slice(1, 5);
 
   return (
     <div style={getGridStyle()}>
       <div
         onClick={() => onPhotoClick(0)}
-        style={{ ...imageStyle, gridRow: isMobile ? 'auto' : '1 / 3' }}
+        style={{ ...imageStyle, gridRow: '1 / 3' }}
       >
         <img
           src={photos[0].Photo}
@@ -548,24 +605,24 @@ function PhotoGallery({ photos, listingName, onPhotoClick, isMobile }) {
               }}
               style={{
                 position: 'absolute',
-                bottom: isMobile ? '8px' : '12px',
-                right: isMobile ? '8px' : '12px',
+                bottom: '12px',
+                right: '12px',
                 background: 'white',
                 border: 'none',
-                padding: isMobile ? '6px 10px' : '8px 12px',
-                borderRadius: isMobile ? '6px' : '8px',
+                padding: '8px 12px',
+                borderRadius: '8px',
                 boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
                 cursor: 'pointer',
                 fontWeight: '600',
-                fontSize: isMobile ? '0.75rem' : '0.875rem',
+                fontSize: '0.875rem',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '4px'
               }}
             >
               <svg
-                width={isMobile ? '14' : '16'}
-                height={isMobile ? '14' : '16'}
+                width="16"
+                height="16"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"

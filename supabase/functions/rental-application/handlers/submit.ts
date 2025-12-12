@@ -97,17 +97,42 @@ export async function handleSubmit(
 
   // ================================================
   // FETCH USER DATA (to get Bubble _id for linking)
+  // Supports both:
+  // - Supabase Auth user IDs (UUID format) - look up by supabase_user_id
+  // - Legacy Bubble user IDs (17-char alphanumeric) - look up by _id directly
   // ================================================
 
-  const { data: userData, error: userError } = await supabase
-    .from('user')
-    .select('_id, email, "Rental Application"')
-    .eq('supabase_user_id', userId)
-    .single();
+  // Detect if userId is a UUID (Supabase Auth) or Bubble ID (alphanumeric)
+  const isSupabaseUUID = userId.includes('-') && userId.length === 36;
+
+  let userData;
+  let userError;
+
+  if (isSupabaseUUID) {
+    // Supabase Auth user - look up by supabase_user_id
+    console.log(`[RentalApp:submit] Looking up user by supabase_user_id: ${userId}`);
+    const result = await supabase
+      .from('user')
+      .select('_id, email, "Rental Application"')
+      .eq('supabase_user_id', userId)
+      .single();
+    userData = result.data;
+    userError = result.error;
+  } else {
+    // Legacy Bubble user - look up by _id directly
+    console.log(`[RentalApp:submit] Looking up user by _id (legacy): ${userId}`);
+    const result = await supabase
+      .from('user')
+      .select('_id, email, "Rental Application"')
+      .eq('_id', userId)
+      .single();
+    userData = result.data;
+    userError = result.error;
+  }
 
   if (userError || !userData) {
     console.error(`[RentalApp:submit] User fetch failed:`, userError);
-    throw new ValidationError(`User not found for Supabase ID: ${userId}`);
+    throw new ValidationError(`User not found for ID: ${userId}`);
   }
 
   const bubbleUserId = userData._id;

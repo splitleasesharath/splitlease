@@ -585,28 +585,37 @@ export function useRentalApplicationPageLogic() {
     setSubmitError(null);
 
     try {
-      // Get auth token for Edge Function call
+      // Get auth token and user ID for Edge Function call
       const token = getAuthToken();
-      if (!token) {
+      const userId = getSessionId();
+
+      if (!userId) {
         throw new Error('You must be logged in to submit a rental application.');
       }
 
-      // Prepare submission payload
+      // Prepare submission payload with user_id for legacy auth support
       const submissionPayload = {
         ...formData,
         occupants,
         verificationStatus,
+        user_id: userId, // Include user_id in payload for legacy Bubble token users
       };
 
       console.log('[RentalApplication] Submitting via Edge Function:', submissionPayload);
+      console.log('[RentalApplication] User ID:', userId);
+
+      // Build headers - include auth token if available
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
 
       // Call the rental-application Edge Function (Supabase only, no Bubble sync)
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
+        headers,
         body: JSON.stringify({
           action: 'submit',
           payload: submissionPayload,

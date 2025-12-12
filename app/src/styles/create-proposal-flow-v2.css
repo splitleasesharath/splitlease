@@ -14,7 +14,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 10000; /* Above header (9999) */
   padding: 80px 20px 20px 20px; /* Extra top padding to clear site header */
 }
 
@@ -562,30 +562,175 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .create-proposal-popup {
+    padding: 0;
+    align-items: flex-end;
+  }
+
   .proposal-container {
     width: 100%;
+    max-width: 100%;
     max-height: 95vh;
+    border-radius: 20px 20px 0 0;
+    margin: 0;
+  }
+
+  .proposal-header {
+    padding: 16px 16px 12px;
+  }
+
+  .proposal-header-top {
+    margin-bottom: 10px;
+  }
+
+  .proposal-title {
+    font-size: 18px;
+    gap: 8px;
+  }
+
+  .proposal-subtitle {
+    font-size: 13px;
+  }
+
+  .proposal-content {
+    padding: 16px;
+    min-height: auto;
+  }
+
+  .section {
+    margin-bottom: 20px;
+  }
+
+  .field-group {
+    margin-bottom: 16px;
+  }
+
+  .field-label {
+    font-size: 13px;
+    margin-bottom: 6px;
+  }
+
+  .field-input,
+  .field-textarea {
+    padding: 10px 12px;
+    font-size: 16px; /* Prevents iOS zoom on focus */
+  }
+
+  .field-textarea {
+    min-height: 80px;
   }
 
   .navigation-buttons {
     flex-direction: column;
+    padding: 16px;
+    gap: 10px;
   }
 
   .nav-button {
     width: 100%;
+    padding: 14px 20px;
+    font-size: 15px;
+  }
+
+  .pricing-section {
+    padding: 14px;
+    margin-top: 16px;
+  }
+
+  .price-row {
+    padding: 8px 0;
+  }
+
+  .price-label,
+  .price-value {
+    font-size: 13px;
+  }
+
+  .price-row:last-child {
+    font-size: 15px;
   }
 
   .review-field {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 12px 0;
+  }
+
+  .review-value {
+    text-align: left;
   }
 
   .edit-link {
     margin-left: 0;
+    justify-self: start;
   }
 
   .day-selector {
     justify-content: center;
+    gap: 6px;
+  }
+
+  .day-button {
+    padding: 8px 12px;
+    font-size: 13px;
+    min-width: 36px;
+  }
+
+  .user-details-section .form-group,
+  .move-in-section .form-group {
+    margin-bottom: 18px;
+  }
+
+  .user-details-section .form-label,
+  .move-in-section .form-label {
+    font-size: 13px;
+  }
+
+  .user-details-section .form-textarea {
+    font-size: 16px; /* Prevents iOS zoom */
+  }
+
+  .date-picker,
+  .form-input,
+  .form-select {
+    font-size: 16px; /* Prevents iOS zoom */
+    padding: 10px 12px;
+  }
+
+  .form-select {
+    padding-left: 36px;
+  }
+
+  .helper-text {
+    font-size: 12px;
+  }
+
+  .checkbox-group {
+    gap: 8px;
+  }
+
+  .checkbox-group input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+
+  .selection-summary {
+    padding: 10px;
+  }
+
+  .selection-summary p {
+    font-size: 13px;
+  }
+
+  .blocked-dates-notice {
+    padding: 12px;
+  }
+
+  .blocked-dates-notice h4 {
+    font-size: 13px;
+  }
+
+  .confirmation-checkboxes {
+    padding: 12px;
   }
 }
