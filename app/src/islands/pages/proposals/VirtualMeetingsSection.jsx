@@ -143,7 +143,7 @@ function normalizeVMObject(vm) {
     // Normalized fields for virtualMeetingRules.js
     meetingDeclined: vm['meeting declined'] ?? vm.meetingDeclined ?? false,
     bookedDate: vm['booked date'] ?? vm.bookedDate ?? null,
-    confirmedBySplitlease: vm['confirmed by splitlease'] ?? vm.confirmedBySplitlease ?? false,
+    confirmedBySplitlease: vm['confirmedBySplitLease'] ?? vm.confirmedBySplitlease ?? false,
     requestedBy: vm['requested by'] ?? vm.requestedBy ?? null,
     meetingLink: vm['meeting link'] ?? vm.meetingLink ?? null,
     suggestedDates: vm['suggested dates and times'] ?? vm.suggestedDates ?? []

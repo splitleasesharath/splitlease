@@ -24,6 +24,7 @@ import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
+import MapModal from '../../modals/MapModal.jsx';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -552,6 +553,36 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const listing = proposal.listing;
   const host = listing?.host;
 
+  // Extract location for map modal
+  // Priority: 'Location - slightly different address' (privacy) → 'Location - Address' (fallback)
+  const getListingAddress = () => {
+    if (!listing) return null;
+
+    // Try 'Location - slightly different address' first (privacy-adjusted)
+    let locationData = listing['Location - slightly different address'];
+    if (!locationData) {
+      // Fallback to main address
+      locationData = listing['Location - Address'];
+    }
+
+    if (!locationData) return null;
+
+    // Parse if it's a JSON string
+    if (typeof locationData === 'string') {
+      try {
+        locationData = JSON.parse(locationData);
+      } catch (e) {
+        console.warn('ProposalCard: Failed to parse location data:', e);
+        return null;
+      }
+    }
+
+    // Return the address string from the JSONB object
+    return locationData?.address || null;
+  };
+
+  const mapAddress = getListingAddress();
+
   // Extract data
   const listingName = listing?.Name || 'Listing';
   const location = [listing?.hoodName, listing?.boroughName]
@@ -618,13 +649,18 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
   // Proposal details modal state (GuestEditingProposalModal)
   const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false);
-
-  // Cancel proposal modal state
-  const [showCancelModal, setShowCancelModal] = useState(false);
+  // Initial view for the proposal details modal ('general' | 'editing' | 'cancel')
+  const [proposalDetailsModalInitialView, setProposalDetailsModalInitialView] = useState('general');
 
   // Virtual Meeting Manager modal state
   const [showVMModal, setShowVMModal] = useState(false);
   const [vmInitialView, setVmInitialView] = useState('');
+
+  // Map modal state
+  const [showMapModal, setShowMapModal] = useState(false);
+
+  // Cancel proposal modal state
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   // Status and progress - derive dynamically from statusConfig
   const status = proposal.Status;
@@ -827,7 +863,10 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
               >
                 View Listing
               </a>
-              <button className="btn-action btn-map">
+              <button
+                className="btn-action btn-map"
+                onClick={() => setShowMapModal(true)}
+              >
                 View Map
               </button>
             </div>
@@ -975,13 +1014,19 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 )}
                 <button
                   className="btn-action-bar btn-modify-proposal"
-                  onClick={openProposalModal}
+                  onClick={() => {
+                    setProposalDetailsModalInitialView('general');
+                    setShowProposalDetailsModal(true);
+                  }}
                 >
                   Modify Proposal
                 </button>
                 <button
                   className="btn-action-bar btn-cancel-proposal"
-                  onClick={openCancelModal}
+                  onClick={() => {
+                    setProposalDetailsModalInitialView('cancel');
+                    setShowProposalDetailsModal(true);
+                  }}
                 >
                   Cancel Proposal
                 </button>
@@ -1024,7 +1069,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                   onClick={() => {
                     // Handle different actions
                     if (buttonConfig.guestAction1.action === 'modify_proposal') {
-                      openProposalModal();
+                      setProposalDetailsModalInitialView('general');
+                      setShowProposalDetailsModal(true);
                     }
                     // TODO: Add handlers for other actions (remind_sl, accept_counteroffer, etc.)
                   }}
@@ -1048,7 +1094,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 onClick={() => {
                   // Handle different actions
                   if (buttonConfig.guestAction2.action === 'see_details') {
-                    openProposalModal();
+                    setProposalDetailsModalInitialView('general');
+                    setShowProposalDetailsModal(true);
                   }
                   // TODO: Add handlers for other actions (reject_suggestion, review_counteroffer, verify_identity)
                 }}
@@ -1074,12 +1121,15 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                   if (buttonConfig.cancelButton.action === 'see_house_manual') {
                     // Navigate to house manual or open modal
                     // TODO: Implement house manual navigation
-                  } else if (buttonConfig.cancelButton.action === 'cancel_proposal' ||
-                             buttonConfig.cancelButton.action === 'delete_proposal' ||
-                             buttonConfig.cancelButton.action === 'reject_counteroffer' ||
-                             buttonConfig.cancelButton.action === 'reject_proposal') {
-                    // Open cancel proposal modal
-                    openCancelModal();
+                  } else if (
+                    buttonConfig.cancelButton.action === 'cancel_proposal' ||
+                    buttonConfig.cancelButton.action === 'delete_proposal' ||
+                    buttonConfig.cancelButton.action === 'reject_counteroffer' ||
+                    buttonConfig.cancelButton.action === 'reject_proposal'
+                  ) {
+                    // Open GuestEditingProposalModal in cancel view
+                    setProposalDetailsModalInitialView('cancel');
+                    setShowProposalDetailsModal(true);
                   }
                 }}
               >
@@ -1114,9 +1164,19 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           proposal={proposal}
           listing={listing}
           user={{ type: 'guest' }}
-          initialView="general"
+          initialView={proposalDetailsModalInitialView}
           isVisible={showProposalDetailsModal}
-          onClose={closeProposalModal}
+          onClose={() => {
+            setShowProposalDetailsModal(false);
+            setProposalDetailsModalInitialView('general'); // Reset for next open
+          }}
+          onProposalCancel={(reason) => {
+            // Handle cancellation - reload page to show updated status
+            console.log('Proposal cancelled with reason:', reason);
+            setShowProposalDetailsModal(false);
+            setProposalDetailsModalInitialView('general');
+            window.location.reload();
+          }}
           pricePerNight={nightlyPrice}
           totalPriceForReservation={totalPrice}
           priceRentPer4Weeks={proposal['Price Rent per 4 weeks'] || (nightlyPrice * nightsPerWeek * 4)}
@@ -1140,6 +1200,15 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           currentUser={currentUser}
           onClose={handleVMModalClose}
           onSuccess={handleVMSuccess}
+        />
+      )}
+
+      {/* Map Modal */}
+      {showMapModal && (
+        <MapModal
+          listing={listing}
+          address={mapAddress}
+          onClose={() => setShowMapModal(false)}
         />
       )}
     </div>

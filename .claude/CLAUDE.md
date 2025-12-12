@@ -2,9 +2,131 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# Split Lease - Flexible Rental Marketplace
+# Split Lease - Orchestrator Guide
 
 React 18 + Vite Islands Architecture | Supabase Edge Functions | Cloudflare Pages
+
+---
+
+## Task Orchestration Workflow (MANDATORY)
+
+> **⚠️ ENFORCEMENT RULE**: For ANY non-trivial task, you MUST invoke the appropriate subagent using the Task tool. Direct implementation without subagent orchestration is PROHIBITED. This is not optional guidance—it is a hard requirement.
+
+For ANY non-trivial task, follow this orchestration pipeline:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        TASK ORCHESTRATION PIPELINE                          │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Phase 1: CLASSIFY → task-classifier (haiku)                                │
+│     Input: Raw user request                                                 │
+│     Output: BUILD | DEBUG | CLEANUP | DESIGN classification + reformatted   │
+│                                                                             │
+│  Phase 2: PLAN → Based on classification:                                   │
+│     ├─ BUILD   → implementation-planner (opus)                              │
+│     ├─ DEBUG   → debug-analyst (opus)                                       │
+│     ├─ CLEANUP → cleanup-planner (opus)                                     │
+│     └─ DESIGN  → design-planner (opus)                                      │
+│     Input: Classified task + miniCLAUDE.md (or largeCLAUDE.md for complex)  │
+│     Output: Plan file in .claude/plans/New/                                 │
+│                                                                             │
+│  Phase 3: EXECUTE → plan-executor (opus)                                    │
+│     Input: Plan path + referenced files from plan                           │
+│     Output: Implemented changes + changelog                                 │
+│                                                                             │
+│  Phase 4: REVIEW → input-reviewer (opus)                                    │
+│     Input: Changelog + plan file + original query                           │
+│     Output: Verdict (PASS | NEEDS ATTENTION | FAIL)                         │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+> **⚠️ LOCKED PIPELINE RULE**: Once `task-classifier` is invoked, ALL 4 phases MUST execute in sequence. You are **PROHIBITED** from invoking ANY other subagent (such as `mcp-tool-specialist`, `context-lookup`, `codebase-explorer`, etc.) until the pipeline completes Phase 4. The pipeline is a sealed unit — no external agents may be injected mid-sequence.
+
+### Phase Transition Rules (STRICT)
+
+> **⛔ PHASE 1 → PHASE 2 CONSTRAINT**: Once `task-classifier` returns a classification, you MUST invoke **ONLY** the designated planner for that classification. No other subagent may be invoked.
+
+| Classification Result | ONLY Permitted Next Subagent |
+|----------------------|------------------------------|
+| `BUILD` | `implementation-planner` — nothing else |
+| `DEBUG` | `debug-analyst` — nothing else |
+| `CLEANUP` | `cleanup-planner` — nothing else |
+| `DESIGN` | `design-planner` — nothing else |
+
+**Prohibited actions after receiving classification:**
+- ❌ Invoking `mcp-tool-specialist` for "additional context"
+- ❌ Invoking `context-lookup` to "gather more information"
+- ❌ Invoking `codebase-explorer` to "understand the codebase better"
+- ❌ Invoking any other subagent for any reason
+- ❌ Performing direct tool calls (Grep, Glob, Read) instead of proceeding to the planner
+
+**The classification output IS the input for the planner.** Proceed immediately to Phase 2 with the designated planner.
+
+### Context Selection Guide
+
+| Task Complexity | Context File to Use |
+|-----------------|---------------------|
+| Single file change, simple feature | [miniCLAUDE.md](./Documentation/miniCLAUDE.md) |
+| Multi-file changes, complex features | [largeCLAUDE.md](./Documentation/largeCLAUDE.md) |
+| Database/Edge Function changes | largeCLAUDE.md + relevant docs |
+
+### Agent Reference
+
+| Agent | Purpose | Model | Location |
+|-------|---------|-------|----------|
+| `task-classifier` | Classify as BUILD/DEBUG/CLEANUP/DESIGN | haiku | [agents/task-classifier.md](./agents/task-classifier.md) |
+| `implementation-planner` | Plan new features/changes | opus | [agents/implementation-planner.md](./agents/implementation-planner.md) |
+| `debug-analyst` | Investigate bugs/issues | opus | [agents/debug-analyst.md](./agents/debug-analyst.md) |
+| `cleanup-planner` | Plan refactoring/cleanup | opus | [agents/cleanup-planner.md](./agents/cleanup-planner.md) |
+| `design-planner` | Plan UI/UX implementations | opus | [agents/design-planner.md](./agents/design-planner.md) |
+| `plan-executor` | Execute plans from .claude/plans/ | opus | [agents/plan-executor.md](./agents/plan-executor.md) |
+| `input-reviewer` | Review/judge implementations | opus | [agents/input-reviewer.md](./agents/input-reviewer.md) |
+| `context-lookup` | Read-only codebase analysis | haiku | [agents/context-lookup.md](./agents/context-lookup.md) |
+
+### Simple Questions
+
+For simple questions (not requiring code changes), answer directly without the orchestration pipeline.
+
+### Lookup Tasks (BYPASS ORCHESTRATION)
+
+For **lookup, exploration, or research tasks** that do NOT modify code, **skip the orchestration pipeline entirely** and invoke the appropriate subagent directly:
+
+| Task Type | Direct Subagent | Examples |
+|-----------|-----------------|----------|
+| Codebase lookup/analysis | `context-lookup` | "Where is X implemented?", "How does Y work?", "What depends on Z?" |
+| Codebase exploration | `codebase-explorer` or `Explore` | "Give me an overview of directory X", "What's the project structure?" |
+| Documentation lookup | `claude-code-guide` | "How do I use Claude Code feature X?", "What MCP tools are available?" |
+
+**No classification, planning, or review needed** — just invoke the lookup subagent and return the result.
+
+> **Preferred agent for most lookups**: Use `context-lookup` (haiku model) for fast, read-only information retrieval. It is optimized for answering questions about existing code without modification.
+
+### Mandatory Subagent Invocation Rules (For Code-Modifying Tasks)
+
+**You MUST use the Task tool to invoke the appropriate subagent for the following task types:**
+
+| Task Type | Required Subagent Chain (ALL 4 PHASES) | When to Use |
+|-----------|----------------------------------------|-------------|
+| New feature, enhancement, code change | `task-classifier` → `implementation-planner` → `plan-executor` → `input-reviewer` | Any BUILD task |
+| Bug investigation, error analysis | `task-classifier` → `debug-analyst` → `plan-executor` → `input-reviewer` | Any DEBUG task |
+| Refactoring, cleanup, consolidation | `task-classifier` → `cleanup-planner` → `plan-executor` → `input-reviewer` | Any CLEANUP task |
+| UI/UX implementation from visual references | `task-classifier` → `design-planner` → `plan-executor` → `input-reviewer` | Any DESIGN task |
+
+> **⛔ LOCKED PIPELINE**: Once `task-classifier` begins, you MUST complete all 4 phases. You are **PROHIBITED** from invoking any other subagent (e.g., `mcp-tool-specialist`, `context-lookup`, `codebase-explorer`) until the pipeline completes.
+
+### Subagents Outside the Pipeline
+
+These subagents may ONLY be invoked **before** starting the pipeline or **after** the pipeline completes Phase 4:
+
+| Subagent | When to Use |
+|----------|-------------|
+| `mcp-tool-specialist` | Any MCP operation (Supabase, Playwright, etc.) — NEVER mid-pipeline |
+| `context-lookup` | Read-only codebase analysis — NEVER mid-pipeline |
+| `codebase-explorer` / `Explore` | Codebase exploration — NEVER mid-pipeline |
+
+**Violation of these rules is unacceptable.** If uncertain whether a task is "trivial" or "non-trivial," default to using the orchestration pipeline.
 
 ---
 
@@ -28,288 +150,52 @@ supabase functions deploy <name>   # Deploy single function
 
 ---
 
-## Project Map
+## Architecture Quick Reference
 
-### Complete Directory Structure
-
-> For the full directory tree, see: [Documentation/Architecture/DIRECTORY_STRUCTURE.md](./Documentation/Architecture/DIRECTORY_STRUCTURE.md)
-
-### Key Dependencies
-
-| Package | Purpose |
-|---------|---------|
-| `react` 18.2 | UI library |
-| `@supabase/supabase-js` | Database client |
-| `@react-google-maps/api` | Google Maps integration |
-| `framer-motion` | Animations |
-| `lucide-react` | Icons |
-| `date-fns` / `date-fns-tz` | Date handling |
-| `react-hook-form` + `zod` | Form validation |
-| `lottie-react` | Lottie animations |
-
-### Architectural Decisions
-
+### Core Patterns
 | Pattern | Description |
 |---------|-------------|
 | **Islands Architecture** | Each page is an independent React root, not a SPA |
 | **Hollow Components** | Page components contain NO logic, delegate to `useXxxPageLogic` hooks |
-| **Four-Layer Logic** | Business logic in `logic/` separated into calculators→rules→processors→workflows |
-| **Route Registry** | Single file (`routes.config.js`) defines all routes, generates Cloudflare configs |
-| **Edge Function Proxy** | All Bubble API calls go through Edge Functions (API keys server-side) |
-| **Action-Based Routing** | Edge Functions use `{ action, payload }` pattern, not REST |
-
----
-
-## Architecture Overview
-
-### Data Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           FRONTEND (app/)                                │
-├─────────────────────────────────────────────────────────────────────────┤
-│  Entry Points (*.jsx)                                                    │
-│       ↓                                                                  │
-│  Page Components (islands/pages/)                                        │
-│       ↓ (Hollow Component Pattern)                                       │
-│  Page Logic Hooks (useXxxPageLogic)                                      │
-│       ↓                                                                  │
-│  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                    LOGIC LAYER (logic/)                          │    │
-│  │  Calculators → Rules → Processors → Workflows                    │    │
-│  │  (pure math)   (bool)   (transform)   (orchestrate)              │    │
-│  └─────────────────────────────────────────────────────────────────┘    │
-│       ↓                                                                  │
-│  Library Utilities (lib/)                                                │
-│  - auth.js, supabase.js, bubbleAPI.js                                   │
-└──────────────────────────────┬──────────────────────────────────────────┘
-                               │
-                               ↓
-┌─────────────────────────────────────────────────────────────────────────┐
-│                    SUPABASE EDGE FUNCTIONS (11 functions)                │
-├─────────────────────────────────────────────────────────────────────────┤
-│  POST /functions/v1/{function}                                           │
-│  Body: { "action": "...", "payload": {...} }                            │
-│                                                                          │
-│  auth-user/        → Supabase Auth (login/signup/reset)                 │
-│  bubble-proxy/     → Proxies Bubble API calls                           │
-│  listing/          → Listing CRUD with Supabase                         │
-│  proposal/         → Proposal operations with Bubble sync               │
-│  ai-gateway/       → OpenAI completions (streaming + non-streaming)     │
-│  ai-signup-guest/  → AI-powered guest signup                            │
-│  ai-parse-profile/ → AI profile parsing                                 │
-│  bubble_sync/      → Bubble↔Supabase bidirectional sync                 │
-│  communications/   → Communication handling                              │
-│  pricing/          → Pricing calculations                                │
-│  slack/            → Slack notifications                                 │
-└──────────────────────────────┬──────────────────────────────────────────┘
-                               │
-              ┌────────────────┴────────────────┐
-              ↓                                 ↓
-┌──────────────────────────┐    ┌──────────────────────────┐
-│   SUPABASE (PostgreSQL)  │    │   BUBBLE.IO (Legacy)     │
-│   93 tables              │    │   Source of truth for:   │
-│   - listing              │    │   - proposals            │
-│   - user                 │    │   - workflows            │
-│   - proposal (replica)   │    │                          │
-│   - zat_* (lookups)      │    │                          │
-└──────────────────────────┘    └──────────────────────────┘
-```
-
-### Route Registry System
-**Single Source of Truth**: `app/src/routes.config.js`
-
-- All routes defined in one file
-- Auto-generates `_redirects` and `_routes.json` via `bun run generate-routes`
-- Vite dev/preview servers read from registry
-- Run `bun run generate-routes` after adding/modifying routes
-
-### Four-Layer Logic (`app/src/logic/`)
-| Layer | Purpose | Naming | Example |
-|-------|---------|--------|---------|
-| **Calculators** | Pure math | `calculate*`, `get*` | `calculateFourWeekRent.js` |
-| **Rules** | Boolean predicates | `can*`, `is*`, `has*`, `should*` | `canCancelProposal.js` |
-| **Processors** | Data transformation | `adapt*`, `extract*`, `process*` | `adaptDaysFromBubble.js` |
-| **Workflows** | Orchestration | `*Workflow` | `cancelProposalWorkflow.js` |
-
-### Edge Functions Pattern
-```typescript
-POST /functions/v1/{function-name}
-Body: { "action": "action_name", "payload": { ... } }
-Response: { "success": true, "data": { ... } } | { "success": false, "error": "..." }
-```
-
----
-
-## Critical Patterns
+| **Four-Layer Logic** | `calculators` → `rules` → `processors` → `workflows` |
+| **Edge Function Proxy** | All Bubble API calls go through Edge Functions |
+| **Action-Based Routing** | Edge Functions use `{ action, payload }` pattern |
 
 ### Day Indexing (CRITICAL)
 | System | Sun | Mon | Tue | Wed | Thu | Fri | Sat |
 |--------|-----|-----|-----|-----|-----|-----|-----|
-| JavaScript (internal) | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
-| Bubble API (external) | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+| JavaScript | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+| Bubble API | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
 
-**Always convert at API boundaries:**
-```javascript
-import { adaptDaysFromBubble } from 'src/logic/processors/external/adaptDaysFromBubble.js'
-import { adaptDaysToBubble } from 'src/logic/processors/external/adaptDaysToBubble.js'
-
-const jsDays = adaptDaysFromBubble({ bubbleDays: [2, 3, 4, 5, 6] }) // → [1, 2, 3, 4, 5]
-const bubbleDays = adaptDaysToBubble({ jsDays: [1, 2, 3, 4, 5] }) // → [2, 3, 4, 5, 6]
-```
-
-### Unique ID Generation
-```typescript
-const { data: newId } = await supabaseAdmin.rpc('generate_bubble_id');
-```
-
-### Hollow Component Pattern
-Pages delegate ALL logic to hooks:
-```jsx
-function ViewSplitLeasePage() {
-  const { listing, selectedDays, handleDaySelection } = useViewSplitLeasePageLogic()
-  return <div>{/* Pure rendering */}</div>
-}
-```
+**Always convert at API boundaries** using `adaptDaysFromBubble` / `adaptDaysToBubble`.
 
 ---
 
-## Documentation Index
+## Documentation Hierarchy
 
-### Architecture & Code Guides
-| File | Description |
-|------|-------------|
-| [app/CLAUDE.md](../app/CLAUDE.md) | Frontend: React, components, islands pattern |
-| [supabase/CLAUDE.md](../supabase/CLAUDE.md) | Backend: Edge Functions, shared utilities |
-| [DATABASE_SCHEMA_OVERVIEW.md](../DATABASE_SCHEMA_OVERVIEW.md) | Complete Supabase table schemas (93 tables) |
+### Primary Context Files
+| File | Use For |
+|------|---------|
+| [miniCLAUDE.md](./Documentation/miniCLAUDE.md) | Quick reference, simple tasks |
+| [largeCLAUDE.md](./Documentation/largeCLAUDE.md) | Full context, complex tasks |
 
-### .claude/Documentation/
+### Domain-Specific Documentation
+| Domain | Location |
+|--------|----------|
+| Architecture | [Documentation/Architecture/](./Documentation/Architecture/) |
+| Auth Flows | [Documentation/Auth/](./Documentation/Auth/) |
+| Edge Functions | [Documentation/Backend(EDGE - Functions)/](./Documentation/Backend(EDGE%20-%20Functions)/) |
+| Database | [Documentation/Database/](./Documentation/Database/) |
+| External APIs | [Documentation/External/](./Documentation/External/) |
+| Pages | [Documentation/Pages/](./Documentation/Pages/) |
+| Routing | [Documentation/Routing/](./Documentation/Routing/) |
 
-#### Architecture
-| File | Description |
-|------|-------------|
-| [Architecture/DIRECTORY_STRUCTURE.md](./Documentation/Architecture/DIRECTORY_STRUCTURE.md) | Complete project directory tree |
-
-#### Auth
-| File | Description |
-|------|-------------|
-| [Auth/LOGIN_FLOW.md](./Documentation/Auth/LOGIN_FLOW.md) | Login flow, UI states, validation |
-| [Auth/SIGNUP_FLOW.md](./Documentation/Auth/SIGNUP_FLOW.md) | Guest/host signup flow |
-| [Auth/AUTH_USER_EDGE_FUNCTION.md](./Documentation/Auth/AUTH_USER_EDGE_FUNCTION.md) | Auth Edge Function details |
-
-#### Backend (EDGE Functions)
-| File | Description |
-|------|-------------|
-| [Backend(EDGE - Functions)/README.md](./Documentation/Backend(EDGE%20-%20Functions)/README.md) | Edge functions overview |
-| [Backend(EDGE - Functions)/QUICK_REFERENCE.md](./Documentation/Backend(EDGE%20-%20Functions)/QUICK_REFERENCE.md) | Quick reference |
-| [Backend(EDGE - Functions)/SEQUENCE_DIAGRAMS.md](./Documentation/Backend(EDGE%20-%20Functions)/SEQUENCE_DIAGRAMS.md) | Sequence diagrams |
-| [Backend(EDGE - Functions)/AUTH_USER.md](./Documentation/Backend(EDGE%20-%20Functions)/AUTH_USER.md) | Auth user function |
-| [Backend(EDGE - Functions)/BUBBLE_PROXY.md](./Documentation/Backend(EDGE%20-%20Functions)/BUBBLE_PROXY.md) | Bubble proxy function |
-| [Backend(EDGE - Functions)/BUBBLE_SYNC.md](./Documentation/Backend(EDGE%20-%20Functions)/BUBBLE_SYNC.md) | Bubble sync function |
-| [Backend(EDGE - Functions)/AI_GATEWAY.md](./Documentation/Backend(EDGE%20-%20Functions)/AI_GATEWAY.md) | AI gateway function |
-| [Backend(EDGE - Functions)/AI_SIGNUP_GUEST.md](./Documentation/Backend(EDGE%20-%20Functions)/AI_SIGNUP_GUEST.md) | AI signup guest function |
-| [Backend(EDGE - Functions)/LISTING.md](./Documentation/Backend(EDGE%20-%20Functions)/LISTING.md) | Listing function |
-| [Backend(EDGE - Functions)/PROPOSAL.md](./Documentation/Backend(EDGE%20-%20Functions)/PROPOSAL.md) | Proposal function |
-| [Backend(EDGE - Functions)/SLACK.md](./Documentation/Backend(EDGE%20-%20Functions)/SLACK.md) | Slack function |
-| [Backend(EDGE - Functions)/SHARED_UTILITIES.md](./Documentation/Backend(EDGE%20-%20Functions)/SHARED_UTILITIES.md) | Shared utilities |
-
-#### Database
-| File | Description |
-|------|-------------|
-| [Database/REFERENCE_TABLES_FK_FIELDS.md](./Documentation/Database/REFERENCE_TABLES_FK_FIELDS.md) | Reference tables and FK fields |
-| [Database/DATABASE_TABLES_DETAILED.md](./Documentation/Database/DATABASE_TABLES_DETAILED.md) | Detailed table documentation |
-| [Database/DATABASE_OPTION_SETS_QUICK_REFERENCE.md](./Documentation/Database/DATABASE_OPTION_SETS_QUICK_REFERENCE.md) | Option sets quick reference |
-| [Database/OPTION_SETS_DETAILED.md](./Documentation/Database/OPTION_SETS_DETAILED.md) | Option sets documentation |
-
-#### External Integrations
-| File | Description |
-|------|-------------|
-| [External/GOOGLE_MAPS_API_IMPLEMENTATION.md](./Documentation/External/GOOGLE_MAPS_API_IMPLEMENTATION.md) | Google Maps JavaScript API, Places Autocomplete, borough configs, marker styling |
-| [External/HOTJAR_IMPLEMENTATION.md](./Documentation/External/HOTJAR_IMPLEMENTATION.md) | **REQUIRED** for new pages - inline tracking script implementation |
-
-> **IMPORTANT**: When creating new HTML pages, you **MUST** add the Hotjar tracking snippet. See [HOTJAR_IMPLEMENTATION.md](./Documentation/External/HOTJAR_IMPLEMENTATION.md) for the required inline script.
-
-#### Routing
-| File | Description |
-|------|-------------|
-| [Routing/ROUTING_GUIDE.md](./Documentation/Routing/ROUTING_GUIDE.md) | **MUST READ** for adding/modifying routes |
-
-#### Pages (28 documented)
-| File | Description |
-|------|-------------|
-| [Pages/HOME_QUICK_REFERENCE.md](./Documentation/Pages/HOME_QUICK_REFERENCE.md) | Homepage |
-| [Pages/SEARCH_QUICK_REFERENCE.md](./Documentation/Pages/SEARCH_QUICK_REFERENCE.md) | Search page |
-| [Pages/VIEW_SPLIT_LEASE_QUICK_REFERENCE.md](./Documentation/Pages/VIEW_SPLIT_LEASE_QUICK_REFERENCE.md) | Listing detail page |
-| [Pages/GUEST_PROPOSALS_QUICK_REFERENCE.md](./Documentation/Pages/GUEST_PROPOSALS_QUICK_REFERENCE.md) | Guest proposals page |
-| [Pages/SELF_LISTING_QUICK_REFERENCE.md](./Documentation/Pages/SELF_LISTING_QUICK_REFERENCE.md) | Self listing wizard |
-| [Pages/LISTING_DASHBOARD_QUICK_REFERENCE.md](./Documentation/Pages/LISTING_DASHBOARD_QUICK_REFERENCE.md) | Listing dashboard |
-| [Pages/LISTING_DASHBOARD_PAGE_CONTEXT.md](./Documentation/Pages/LISTING_DASHBOARD_PAGE_CONTEXT.md) | Listing dashboard context |
-| [Pages/HOST_OVERVIEW_QUICK_REFERENCE.md](./Documentation/Pages/HOST_OVERVIEW_QUICK_REFERENCE.md) | Host overview |
-| [Pages/FAVORITE_LISTINGS_QUICK_REFERENCE.md](./Documentation/Pages/FAVORITE_LISTINGS_QUICK_REFERENCE.md) | Favorite listings |
-| [Pages/RENTAL_APPLICATION_QUICK_REFERENCE.md](./Documentation/Pages/RENTAL_APPLICATION_QUICK_REFERENCE.md) | Rental application |
-| [Pages/ACCOUNT_PROFILE_QUICK_REFERENCE.md](./Documentation/Pages/ACCOUNT_PROFILE_QUICK_REFERENCE.md) | Account profile |
-| ...and 17 more page references |
-
----
-
-## Rules
-
-### DO
-- Use Edge Functions for all Bubble API calls (never expose API keys in frontend)
-- Store secrets in Supabase Dashboard > Project Settings > Secrets
-- Run `bun run generate-routes` after route changes
-- Commit after each meaningful change
-- Convert day indices at system boundaries
-- Use the four-layer logic architecture
-- **Add Hotjar tracking to ALL new HTML pages** (see below)
-
-### DON'T
-- Expose API keys in frontend code
-- Call Bubble API directly from frontend
-- `git push --force` or push to main without review
-- Modify database tables without explicit instruction
-- Add fallback mechanisms or compatibility layers when things fail
-- Over-engineer for hypothetical future needs
-- Create new HTML pages without Hotjar tracking
-
-### Creating New HTML Pages (MANDATORY)
-
-When creating a new HTML page in `app/public/`, you **MUST** include the Hotjar tracking snippet in the `<head>` section:
-
-```html
-<!-- Hotjar Tracking Code for split.lease -->
-<script>
-  (function(h,o,t,j,a,r){
-      h.hj=h.hj||function(){(h.hj.q=h.hj.q||[]).push(arguments)};
-      h._hjSettings={hjid:6581463,hjsv:6};
-      a=o.getElementsByTagName('head')[0];
-      r=o.createElement('script');r.async=1;
-      r.src=t+h._hjSettings.hjid+j+h._hjSettings.hjsv;
-      a.appendChild(r);
-  })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
-</script>
-```
-
-**Placement**: After CSS `<link>` tags, before any other `<script>` tags.
-
-**Reference**: [External/HOTJAR_IMPLEMENTATION.md](./Documentation/External/HOTJAR_IMPLEMENTATION.md) for full documentation.
-
----
-
-## Environment Variables
-
-### app/.env
-```
-VITE_SUPABASE_URL=<supabase-project-url>
-VITE_SUPABASE_ANON_KEY=<supabase-anon-key>
-VITE_GOOGLE_MAPS_API_KEY=<google-maps-api-key>
-```
-
-### Supabase Secrets (Dashboard)
-```
-BUBBLE_API_BASE_URL, BUBBLE_API_KEY, OPENAI_API_KEY, SUPABASE_SERVICE_ROLE_KEY,
-SLACK_WEBHOOK_ACQUISITION, SLACK_WEBHOOK_GENERAL
-```
+### Code-Level Guides
+| Guide | Location |
+|-------|----------|
+| Frontend | [app/CLAUDE.md](../app/CLAUDE.md) |
+| Backend | [supabase/CLAUDE.md](../supabase/CLAUDE.md) |
+| Database Schema | [DATABASE_SCHEMA_OVERVIEW.md](../DATABASE_SCHEMA_OVERVIEW.md) |
 
 ---
 
@@ -317,43 +203,53 @@ SLACK_WEBHOOK_ACQUISITION, SLACK_WEBHOOK_GENERAL
 
 | What you need | Where to find it |
 |---------------|------------------|
-| Add/modify routes | `app/src/routes.config.js` |
-| Vite build config | `app/vite.config.js` |
-| App constants | `app/src/lib/constants.js` |
-| App configuration | `app/src/lib/config.js` |
+| Routes | `app/src/routes.config.js` |
 | Authentication | `app/src/lib/auth.js` |
 | Supabase client | `app/src/lib/supabase.js` |
-| Supabase utilities | `app/src/lib/supabaseUtils.js` |
-| Data lookups (neighborhoods, amenities) | `app/src/lib/dataLookups.js` |
-| Navigation helpers | `app/src/lib/navigation.js` |
-| Day index conversion | `app/src/logic/processors/external/adaptDays*.js` |
-| Proposal business rules | `app/src/logic/rules/proposals/` |
+| Day conversion | `app/src/logic/processors/external/adaptDays*.js` |
+| Business rules | `app/src/logic/rules/` |
 | Pricing calculations | `app/src/logic/calculators/pricing/` |
-| Proposal data fetching | `app/src/lib/proposalDataFetcher.js` |
-| Proposal utilities | `app/src/lib/proposals/` |
-| Edge Function shared code | `supabase/functions/_shared/` |
-| Bubble sync service | `supabase/functions/_shared/bubbleSync.ts` |
-| Slack service | `app/src/lib/slackService.js` |
-| Hotjar analytics | `app/src/lib/hotjar.js` |
+| Edge Functions | `supabase/functions/` |
+| Shared Edge utilities | `supabase/functions/_shared/` |
 
 ---
 
-## Statistics
+## Rules
 
-| Category | Count |
-|----------|-------|
-| HTML Entry Points | 31 |
-| JSX Entry Points | 29 |
-| Page Components | 25+ |
-| Shared Components | 50+ |
-| Modal Components | 13 |
-| Logic Layer Files | 55+ |
-| Library Utilities | 32 |
-| Edge Functions | 11 |
-| Shared Edge Utilities | 10 |
-| CSS Files | 40+ |
-| Documentation Files | 100+ |
+### DO (MANDATORY)
+- **ALWAYS invoke subagents via Task tool for non-trivial tasks** — This is non-negotiable
+- **ALWAYS use `task-classifier` as the first step** for BUILD/DEBUG/CLEANUP/DESIGN tasks
+- **ALWAYS complete ALL 4 phases** once the pipeline starts — no early exit
+- **NEVER inject external subagents mid-pipeline** — the 4-phase sequence is sealed
+- **ALWAYS use `mcp-tool-specialist`** for any MCP tool invocation (only before or after pipeline)
+- Use Edge Functions for all Bubble API calls
+- Run `bun run generate-routes` after route changes
+- Commit after each meaningful change
+- Convert day indices at system boundaries
+- Use the four-layer logic architecture
+
+### DON'T (PROHIBITED)
+- **NEVER implement non-trivial code changes directly** — Use the subagent pipeline
+- **NEVER invoke MCP tools directly** — Route through `mcp-tool-specialist`
+- **NEVER skip the classification step** for tasks that modify code
+- Expose API keys in frontend code
+- Call Bubble API directly from frontend
+- `git push --force` or push to main without review
+- Modify database tables without explicit instruction
+- Add fallback mechanisms when things fail
+- Over-engineer for hypothetical future needs
 
 ---
 
-**VERSION**: 7.1 | **UPDATED**: 2025-12-11
+## Plans Directory Structure
+
+```
+.claude/plans/
+├── New/        # Active plans awaiting execution
+├── Done/       # Completed plans (moved after execution)
+└── Documents/  # Analysis documents (prefix: YYYYMMDDHHMMSS)
+```
+
+---
+
+**VERSION**: 9.5 | **UPDATED**: 2025-12-12

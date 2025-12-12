@@ -417,3 +417,9 @@ entrypoint = "./functions/ai-gateway/index.ts"
 enabled = true
 verify_jwt = false
 entrypoint = "./functions/ai-parse-profile/index.ts"
+
+[functions.virtual-meeting]
+enabled = true
+verify_jwt = false
+import_map = "./functions/virtual-meeting/deno.json"
+entrypoint = "./functions/virtual-meeting/index.ts"
