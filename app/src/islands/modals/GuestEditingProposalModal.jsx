@@ -385,7 +385,7 @@ function CancelProposalModalInner({
             className="cpm-button cpm-button--secondary"
             onClick={handleCancelClick}
           >
-            Cancel
+            Back
           </button>
           <button
             type="button"
