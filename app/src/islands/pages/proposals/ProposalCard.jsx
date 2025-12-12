@@ -20,6 +20,7 @@ import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers
 import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
 import { shouldHideVirtualMeetingButton } from '../../../lib/proposals/statusButtonConfig.js';
 import { navigateToMessaging } from '../../../logic/workflows/proposals/navigationWorkflow.js';
+import { goToRentalApplication } from '../../../lib/navigation.js';
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
@@ -1097,6 +1098,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                     if (buttonConfig.guestAction1.action === 'modify_proposal') {
                       setProposalDetailsModalInitialView('general');
                       setShowProposalDetailsModal(true);
+                    } else if (buttonConfig.guestAction1.action === 'submit_rental_app') {
+                      goToRentalApplication(proposal._id);
                     }
                     // TODO: Add handlers for other actions (remind_sl, accept_counteroffer, etc.)
                   }}
