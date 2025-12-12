@@ -38,6 +38,7 @@ import { handleAiInquiry } from './handlers/aiInquiry.ts';
 import { handleFavorites } from './handlers/favorites.ts';
 import { handleGetFavorites } from './handlers/getFavorites.ts';
 import { handleParseProfile } from './handlers/parseProfile.ts';
+import { handleSubmitRentalApplication } from './handlers/submitRentalApplication.ts';
 
 console.log('[bubble-proxy] Edge Function started');
 
@@ -89,6 +90,7 @@ Deno.serve(async (req) => {
       'toggle_favorite',
       'get_favorites',
       'parse_profile',
+      'submit_rental_application',
     ];
     validateAction(action, allowedActions);
 
@@ -186,6 +188,15 @@ Deno.serve(async (req) => {
       case 'parse_profile':
         result = await handleParseProfile(supabaseUrl, supabaseServiceKey, payload);
         break;
+
+      case 'submit_rental_application': {
+        // Create admin client for rental application handler
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+          auth: { persistSession: false },
+        });
+        result = await handleSubmitRentalApplication(payload, supabaseAdmin, user.id);
+        break;
+      }
 
       default:
         // This should never happen due to validateAction above
