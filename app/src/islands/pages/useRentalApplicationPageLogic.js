@@ -498,15 +498,15 @@ export function useRentalApplicationPageLogic() {
 
       console.log('[RentalApplication] Submitting via Edge Function:', submissionPayload);
 
-      // Call the bubble-proxy Edge Function with submit_rental_application action
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bubble-proxy`, {
+      // Call the rental-application Edge Function (Supabase only, no Bubble sync)
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
-          action: 'submit_rental_application',
+          action: 'submit',
           payload: submissionPayload,
         }),
       });

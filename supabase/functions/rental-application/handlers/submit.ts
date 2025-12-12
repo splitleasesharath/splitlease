@@ -2,15 +2,15 @@
  * Submit Rental Application Handler
  * Split Lease - Supabase Edge Functions
  *
- * Creates a rental application record, links it to the user, and batch-updates
- * all existing proposals to reference the new rental application.
+ * Creates a rental application record in Supabase, links it to the user,
+ * and batch-updates all existing proposals to reference the new rental application.
  *
+ * SUPABASE ONLY: This handler does NOT sync to Bubble
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ValidationError, SupabaseSyncError } from "../../_shared/errors.ts";
-import { enqueueBubbleSync, triggerQueueProcessing } from "../../_shared/queueSync.ts";
 
 interface RentalApplicationPayload {
   // Personal Information
@@ -61,19 +61,14 @@ interface RentalApplicationPayload {
   signature: string;
 }
 
-interface User {
-  id: string;
-  email?: string | null;
-}
-
 /**
  * Handle rental application submission
  *
  * @param payload - The rental application form data
  * @param supabase - Supabase client (admin)
- * @param userId - The authenticated user's ID (from auth)
+ * @param userId - The authenticated user's Supabase Auth ID
  */
-export async function handleSubmitRentalApplication(
+export async function handleSubmit(
   payload: Record<string, unknown>,
   supabase: SupabaseClient,
   userId: string
@@ -101,7 +96,7 @@ export async function handleSubmitRentalApplication(
   console.log(`[RentalApp:submit] Validated input for: ${input.email}`);
 
   // ================================================
-  // FETCH USER DATA (to get Bubble _id)
+  // FETCH USER DATA (to get Bubble _id for linking)
   // ================================================
 
   const { data: userData, error: userError } = await supabase
@@ -116,7 +111,7 @@ export async function handleSubmitRentalApplication(
   }
 
   const bubbleUserId = userData._id;
-  console.log(`[RentalApp:submit] Found user with Bubble ID: ${bubbleUserId}`);
+  console.log(`[RentalApp:submit] Found user with ID: ${bubbleUserId}`);
 
   // ================================================
   // CHECK FOR EXISTING RENTAL APPLICATION
@@ -124,12 +119,11 @@ export async function handleSubmitRentalApplication(
 
   if (userData["Rental Application"]) {
     console.log(`[RentalApp:submit] User already has rental application: ${userData["Rental Application"]}`);
-    // Option A: Allow updating existing application (UPSERT behavior)
     // For now, we'll create a new one anyway - the user can manage duplicates
   }
 
   // ================================================
-  // GENERATE BUBBLE-COMPATIBLE ID
+  // GENERATE UNIQUE ID
   // ================================================
 
   const { data: rentalAppId, error: idError } = await supabase.rpc('generate_bubble_id');
@@ -148,10 +142,14 @@ export async function handleSubmitRentalApplication(
 
   // Determine monthly income based on employment status
   let monthlyIncomeValue: number | null = null;
-  if (input.employmentStatus === 'employed' && input.monthlyIncome) {
-    monthlyIncomeValue = parseInt(input.monthlyIncome) || null;
-  } else if (input.employmentStatus === 'self-employed' && input.monthlyIncomeSelf) {
-    monthlyIncomeValue = parseInt(input.monthlyIncomeSelf) || null;
+  if (input.employmentStatus === 'full-time' || input.employmentStatus === 'part-time') {
+    if (input.monthlyIncome) {
+      monthlyIncomeValue = parseInt(input.monthlyIncome) || null;
+    }
+  } else if (input.employmentStatus === 'business-owner' || input.employmentStatus === 'self-employed') {
+    if (input.monthlyIncomeSelf) {
+      monthlyIncomeValue = parseInt(input.monthlyIncomeSelf) || null;
+    }
   }
 
   const rentalAppData: Record<string, unknown> = {
@@ -225,7 +223,7 @@ export async function handleSubmitRentalApplication(
 
   if (userUpdateError) {
     console.error(`[RentalApp:submit] User update failed:`, userUpdateError);
-    // Non-blocking - continue
+    // Non-blocking - the rental app was created successfully
   } else {
     console.log(`[RentalApp:submit] User updated with rental application reference`);
   }
@@ -236,7 +234,7 @@ export async function handleSubmitRentalApplication(
 
   let proposalsUpdated = 0;
 
-  // Fetch all proposals where Guest equals the user's Bubble ID
+  // Fetch all proposals where Guest equals the user's ID
   const { data: userProposals, error: proposalsFetchError } = await supabase
     .from('proposal')
     .select('_id')
@@ -254,7 +252,6 @@ export async function handleSubmitRentalApplication(
       .from('proposal')
       .update({
         'rental application': rentalAppId,
-        'rental app requested': true,
         'Modified Date': now,
       })
       .in('_id', proposalIds);
@@ -268,73 +265,6 @@ export async function handleSubmitRentalApplication(
     }
   } else {
     console.log(`[RentalApp:submit] No proposals found to update`);
-  }
-
-  // ================================================
-  // ENQUEUE BUBBLE SYNC
-  // ================================================
-
-  try {
-    const syncItems: Array<{
-      sequence: number;
-      table: string;
-      recordId: string;
-      operation: 'INSERT' | 'UPDATE';
-      payload: Record<string, unknown>;
-    }> = [];
-
-    // 1. INSERT rental application
-    syncItems.push({
-      sequence: 1,
-      table: 'rentalapplication',
-      recordId: rentalAppId,
-      operation: 'INSERT',
-      payload: rentalAppData,
-    });
-
-    // 2. UPDATE user record
-    syncItems.push({
-      sequence: 2,
-      table: 'user',
-      recordId: bubbleUserId,
-      operation: 'UPDATE',
-      payload: {
-        'Rental Application': rentalAppId,
-        'Modified Date': now,
-      },
-    });
-
-    // 3. UPDATE each proposal
-    if (userProposals && userProposals.length > 0) {
-      for (let i = 0; i < userProposals.length; i++) {
-        const proposal = userProposals[i] as { _id: string };
-        syncItems.push({
-          sequence: 3 + i,
-          table: 'proposal',
-          recordId: proposal._id,
-          operation: 'UPDATE',
-          payload: {
-            'rental application': rentalAppId,
-            'rental app requested': true,
-            'Modified Date': now,
-          },
-        });
-      }
-    }
-
-    await enqueueBubbleSync(supabase, {
-      correlationId: `rental-app:${rentalAppId}`,
-      items: syncItems,
-    });
-
-    console.log(`[RentalApp:submit] Bubble sync items enqueued (${syncItems.length} items)`);
-
-    // Trigger queue processing (fire and forget)
-    triggerQueueProcessing();
-
-  } catch (syncError) {
-    // Log but don't fail - items can be manually requeued if needed
-    console.error(`[RentalApp:submit] Failed to enqueue Bubble sync (non-blocking):`, syncError);
   }
 
   // ================================================
