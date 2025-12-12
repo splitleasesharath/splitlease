@@ -16,7 +16,7 @@ import { useLoggedInAvatarData, getMenuVisibility, NORMALIZED_USER_TYPES } from 
  * Menu Visibility Rules (from Bubble.io conditionals):
  * 1. My Profile - ALWAYS visible
  * 2. My Proposals - ALWAYS visible (all users)
- * 3. Proposals Suggested - GUEST only
+ * 3. Proposals Suggested - GUEST only AND has proposals with "suggested by SL" status
  * 4. My Listings - HOST and TRIAL_HOST only
  * 5. Virtual Meetings - When user HAS proposals (proposalsCount > 0)
  * 6. House Manuals & Visits - GUEST: visits < 1, HOST: house manuals = 0

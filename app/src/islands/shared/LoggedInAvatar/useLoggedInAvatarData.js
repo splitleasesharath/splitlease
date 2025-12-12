@@ -9,7 +9,7 @@
  * GUEST (wants to rent a space):
  *   ✓ My Profile - ALWAYS
  *   ✓ My Proposals - ALWAYS (their proposals as guest)
- *   ✓ My Proposals Suggested - ALWAYS (GUEST only feature)
+ *   ✓ My Proposals Suggested - Conditional (suggestedProposalsCount > 0)
  *   ✗ My Listings - HIDDEN
  *   ✓ Virtual Meetings - Conditional (proposalsCount > 0) - requires proposals to exist
  *   ✓ House Manuals & Visits - Conditional (visits < 1)
@@ -37,6 +37,15 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase.js';
+
+/**
+ * Proposal statuses that indicate a proposal was suggested by Split Lease
+ * Used to determine visibility of "Proposals Suggested" menu item
+ */
+const SUGGESTED_PROPOSAL_STATUSES = [
+  'Proposal Submitted for guest by Split Lease - Awaiting Rental Application',
+  'Proposal Submitted for guest by Split Lease - Pending Confirmation'
+];
 
 /**
  * User type constants matching Supabase "Type - User Current" field values
@@ -109,7 +118,8 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
     virtualMeetingsCount: 0,
     leasesCount: 0,
     favoritesCount: 0,
-    unreadMessagesCount: 0
+    unreadMessagesCount: 0,
+    suggestedProposalsCount: 0
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -133,7 +143,8 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         visitsResult,
         virtualMeetingsResult,
         leasesResult,
-        messagesResult
+        messagesResult,
+        suggestedProposalsResult
       ] = await Promise.all([
         // 1. Fetch user data (type, proposals list, account host reference)
         supabase
@@ -177,7 +188,16 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .from('message')
           .select('_id', { count: 'exact', head: true })
           .eq('Recipient', userId)
-          .eq('Read', false)
+          .eq('Read', false),
+
+        // 7. Check for proposals suggested by Split Lease
+        //    These are proposals created by SL agent on behalf of the guest
+        supabase
+          .from('proposal')
+          .select('_id', { count: 'exact', head: true })
+          .eq('Guest', userId)
+          .in('Status', SUGGESTED_PROPOSAL_STATUSES)
+          .or('"Deleted".is.null,"Deleted".eq.false')
       ]);
 
       // Process user data
@@ -267,7 +287,8 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         virtualMeetingsCount: virtualMeetingsResult.count || 0,
         leasesCount: leasesResult.count || 0,
         favoritesCount,
-        unreadMessagesCount: messagesResult.count || 0
+        unreadMessagesCount: messagesResult.count || 0,
+        suggestedProposalsCount: suggestedProposalsResult.count || 0
       };
 
       console.log('[useLoggedInAvatarData] Data fetched:', newData);
@@ -297,7 +318,15 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
  * @returns {Object} Visibility flags for each menu section
  */
 export function getMenuVisibility(data, currentPath = '') {
-  const { userType, proposalsCount, visitsCount, houseManualsCount, favoritesCount, leasesCount } = data;
+  const {
+    userType,
+    proposalsCount,
+    visitsCount,
+    houseManualsCount,
+    favoritesCount,
+    leasesCount,
+    suggestedProposalsCount
+  } = data;
 
   const isGuest = userType === NORMALIZED_USER_TYPES.GUEST;
   const isHost = userType === NORMALIZED_USER_TYPES.HOST;
@@ -313,9 +342,9 @@ export function getMenuVisibility(data, currentPath = '') {
     //    - Hosts see proposals received from guests
     myProposals: true,
 
-    // 3. My Proposals Suggested - GUEST only
-    //    This helps guests discover listings to submit proposals to
-    myProposalsSuggested: isGuest,
+    // 3. My Proposals Suggested - GUEST only AND must have suggested proposals
+    //    Only shows when user has proposals created by Split Lease agent
+    myProposalsSuggested: isGuest && suggestedProposalsCount > 0,
 
     // 4. My Listings - HOST and TRIAL_HOST only
     //    Guests don't see this option
