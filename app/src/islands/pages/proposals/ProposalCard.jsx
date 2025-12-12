@@ -659,6 +659,9 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   // Map modal state
   const [showMapModal, setShowMapModal] = useState(false);
 
+  // Cancel proposal modal state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
   // Status and progress - derive dynamically from statusConfig
   const status = proposal.Status;
   const currentStatusConfig = statusConfig || getStatusConfig(status);
