@@ -24,6 +24,10 @@ import { supabase } from '../../lib/supabase.js';
 import { checkAuthStatus, getSessionId, getAuthToken } from '../../lib/auth.js';
 import { useRentalApplicationStore } from './RentalApplicationPage/store/index.ts';
 
+// Extend window interface for Google Maps
+// @ts-ignore
+window.google = window.google || {};
+
 // Required fields for base progress calculation
 const REQUIRED_FIELDS = [
   'fullName',
@@ -132,6 +136,10 @@ export function useRentalApplicationPageLogic() {
 
   // Track if user data has been pre-populated
   const hasPrePopulated = useRef(false);
+
+  // Address autocomplete refs
+  const addressInputRef = useRef(null);
+  const autocompleteRef = useRef(null);
 
   // ============================================================================
   // COMPUTED VALUES
@@ -446,6 +454,100 @@ export function useRentalApplicationPageLogic() {
   }, [formData, updateFormData]);
 
   // ============================================================================
+  // GOOGLE PLACES AUTOCOMPLETE (for Current Address)
+  // ============================================================================
+
+  // Initialize Google Maps Autocomplete for address field
+  useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 50; // Try for 5 seconds
+
+    const initAutocomplete = () => {
+      // Check for Google Maps AND the Places library
+      if (!window.google || !window.google.maps || !window.google.maps.places) {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          setTimeout(initAutocomplete, 100);
+        } else {
+          console.error('[RentalApplication] Google Maps API failed to load');
+        }
+        return;
+      }
+
+      if (!addressInputRef.current) {
+        setTimeout(initAutocomplete, 100);
+        return;
+      }
+
+      try {
+        console.log('[RentalApplication] Initializing Google Maps Autocomplete...');
+
+        // Create autocomplete restricted to US addresses only
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          addressInputRef.current,
+          {
+            types: ['address'], // Restrict to addresses only
+            componentRestrictions: { country: 'us' }, // US addresses only
+            fields: ['address_components', 'formatted_address', 'geometry', 'place_id']
+          }
+        );
+
+        console.log('[RentalApplication] Google Maps Autocomplete initialized (US addresses)');
+
+        // Prevent autocomplete from selecting on Enter key
+        window.google.maps.event.addDomListener(addressInputRef.current, 'keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+          }
+        });
+
+        autocompleteRef.current = autocomplete;
+
+        // Listen for place selection
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          console.log('[RentalApplication] Place selected:', place);
+
+          // If user just pressed Enter without selecting, don't do anything
+          if (!place.place_id) {
+            console.log('[RentalApplication] No place_id - user did not select from dropdown');
+            return;
+          }
+
+          if (!place.formatted_address) {
+            console.error('[RentalApplication] Invalid place selected');
+            return;
+          }
+
+          // Update the currentAddress field with the formatted address
+          updateField('currentAddress', place.formatted_address);
+
+          // Clear any validation errors
+          setFieldErrors(prev => {
+            const next = { ...prev };
+            delete next['currentAddress'];
+            return next;
+          });
+          setFieldValid(prev => ({ ...prev, currentAddress: true }));
+
+          console.log('[RentalApplication] Address updated:', place.formatted_address);
+        });
+      } catch (error) {
+        console.error('[RentalApplication] Error initializing Google Maps Autocomplete:', error);
+      }
+    };
+
+    initAutocomplete();
+
+    return () => {
+      // Cleanup autocomplete listeners
+      if (autocompleteRef.current && window.google && window.google.maps) {
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
+  }, [updateField]);
+
+  // ============================================================================
   // NAVIGATION WARNING
   // ============================================================================
 
@@ -594,6 +696,9 @@ export function useRentalApplicationPageLogic() {
 
     // Form handlers
     handleSubmit,
-    closeSuccessModal
+    closeSuccessModal,
+
+    // Refs (for address autocomplete)
+    addressInputRef
   };
 }

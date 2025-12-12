@@ -69,7 +69,10 @@ export default function RentalApplicationPage({ requireAuth = false, isAuthentic
 
     // Form handlers
     handleSubmit,
-    closeSuccessModal
+    closeSuccessModal,
+
+    // Refs
+    addressInputRef
   } = useRentalApplicationPageLogic();
 
   // ============================================================================
@@ -238,14 +241,16 @@ export default function RentalApplicationPage({ requireAuth = false, isAuthentic
                   </label>
                   <div className="input-wrapper">
                     <input
+                      ref={addressInputRef}
                       type="text"
                       id="currentAddress"
                       className={getInputClassName('currentAddress')}
-                      placeholder="Enter your current address"
+                      placeholder="Start typing your address..."
                       value={formData.currentAddress}
                       onChange={(e) => handleInputChange('currentAddress', e.target.value)}
                       onBlur={() => handleInputBlur('currentAddress')}
                       required
+                      autoComplete="off"
                     />
                     <span className="validation-icon" />
                   </div>
