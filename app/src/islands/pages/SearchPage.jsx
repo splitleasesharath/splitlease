@@ -603,20 +603,24 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
             <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
           </div>
 
-          {/* Host Row - Bottom Left (stacked: avatar on top, name below, buttons at bottom) */}
-          <div className="listing-host-row listing-host-row--stacked">
-            {listing.host?.image ? (
-              <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
-            ) : (
-              <div className="host-avatar-placeholder">?</div>
-            )}
-            <span className="host-name">
-              {formatHostName(listing.host?.name)}
-              {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
-            </span>
-            <div className="host-buttons">
+          {/* Host Row - Two-line layout: avatar+name on line 1, buttons on line 2 */}
+          <div className="listing-host-section">
+            {/* Line 1: Host Profile (avatar + name) */}
+            <div className="host-profile">
+              {listing.host?.image ? (
+                <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
+              ) : (
+                <div className="host-avatar-placeholder">?</div>
+              )}
+              <span className="host-name">
+                {formatHostName(listing.host?.name)}
+                {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
+              </span>
+            </div>
+            {/* Line 2: Action Buttons */}
+            <div className="action-buttons">
               <button
-                className="message-btn"
+                className="action-button secondary"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
@@ -632,39 +636,25 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               {showCreateProposalButton && (
                 proposalForListing ? (
                   <button
-                    className="view-proposal-btn"
+                    className="action-button primary"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       window.location.href = `/guest-proposals?proposal=${proposalForListing._id}`;
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                      <polyline points="14 2 14 8 20 8" />
-                      <line x1="16" y1="13" x2="8" y2="13" />
-                      <line x1="16" y1="17" x2="8" y2="17" />
-                      <polyline points="10 9 9 9 8 9" />
-                    </svg>
                     View Proposal
                   </button>
                 ) : (
                   <button
-                    className="create-proposal-btn"
+                    className="action-button primary"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
                       onOpenCreateProposalModal(listing);
                     }}
                   >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <line x1="16" y1="13" x2="8" y2="13"></line>
-                      <line x1="16" y1="17" x2="8" y2="17"></line>
-                      <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                    Create Proposal
+                    New Proposal
                   </button>
                 )
               )}

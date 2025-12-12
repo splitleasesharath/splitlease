@@ -653,6 +653,111 @@
     min-width: auto;
 }
 
+/* Two-line Host Section Layout (matching FavoriteListingsPage) */
+.listing-host-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.listing-host-section .host-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.listing-host-section .host-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.listing-host-section .host-avatar-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6C5CE7 0%, #8A7FF9 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.listing-host-section .host-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #424242;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.listing-host-section .verified-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    background: #4A90E2;
+    border-radius: 50%;
+    color: white;
+    font-size: 10px;
+}
+
+.listing-host-section .action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.listing-host-section .action-button {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.listing-host-section .action-button.primary {
+    background: #6C5CE7;
+    color: white;
+    border: none;
+}
+
+.listing-host-section .action-button.primary:hover {
+    background: #7C6CF7;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+}
+
+.listing-host-section .action-button.secondary {
+    background: white;
+    color: #6C5CE7;
+    border: 2px solid #6C5CE7;
+}
+
+.listing-host-section .action-button.secondary:hover {
+    background: #F0F4FF;
+    box-shadow: 0 2px 4px rgba(108, 92, 231, 0.15);
+}
+
+.listing-host-section .action-button svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
 /* Price Sidebar - Right Side (F7b Layout) */
 .listing-price-sidebar {
     width: 150px;
