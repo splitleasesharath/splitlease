@@ -43,6 +43,25 @@ For ANY non-trivial task, follow this orchestration pipeline:
 
 > **⚠️ LOCKED PIPELINE RULE**: Once `task-classifier` is invoked, ALL 4 phases MUST execute in sequence. You are **PROHIBITED** from invoking ANY other subagent (such as `mcp-tool-specialist`, `context-lookup`, `codebase-explorer`, etc.) until the pipeline completes Phase 4. The pipeline is a sealed unit — no external agents may be injected mid-sequence.
 
+### Phase Transition Rules (STRICT)
+
+> **⛔ PHASE 1 → PHASE 2 CONSTRAINT**: Once `task-classifier` returns a classification, you MUST invoke **ONLY** the designated planner for that classification. No other subagent may be invoked.
+
+| Classification Result | ONLY Permitted Next Subagent |
+|----------------------|------------------------------|
+| `BUILD` | `implementation-planner` — nothing else |
+| `DEBUG` | `debug-analyst` — nothing else |
+| `CLEANUP` | `cleanup-planner` — nothing else |
+
+**Prohibited actions after receiving classification:**
+- ❌ Invoking `mcp-tool-specialist` for "additional context"
+- ❌ Invoking `context-lookup` to "gather more information"
+- ❌ Invoking `codebase-explorer` to "understand the codebase better"
+- ❌ Invoking any other subagent for any reason
+- ❌ Performing direct tool calls (Grep, Glob, Read) instead of proceeding to the planner
+
+**The classification output IS the input for the planner.** Proceed immediately to Phase 2 with the designated planner.
+
 ### Context Selection Guide
 
 | Task Complexity | Context File to Use |
@@ -229,4 +248,4 @@ supabase functions deploy <name>   # Deploy single function
 
 ---
 
-**VERSION**: 9.4 | **UPDATED**: 2025-12-12
+**VERSION**: 9.5 | **UPDATED**: 2025-12-12
