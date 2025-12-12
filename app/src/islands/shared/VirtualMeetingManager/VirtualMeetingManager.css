@@ -3,6 +3,15 @@
  * Based on Split Lease design system
  */
 
+@import url('https://fonts.googleapis.com/css2?family=Alata&display=swap');
+
+:root {
+  --vm-purple-accent: rgb(92, 32, 182);
+  --vm-disabled-gray: rgb(221, 221, 221);
+  --vm-selected-slots-bg: rgb(247, 248, 249);
+  --vm-submit-disabled: rgb(104, 104, 104);
+}
+
 /* ============================================
    MAIN CONTAINER & OVERLAY
    ============================================ */
@@ -35,6 +44,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  font-family: 'Alata', sans-serif;
 }
 
 /* ============================================
@@ -69,13 +79,18 @@
 }
 
 .vm-close-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
   background: none;
   border: none;
   font-size: 24px;
   color: #6b7280;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 8px;
   transition: color 0.2s;
+  line-height: 1;
+  z-index: 10;
 }
 
 .vm-close-btn:hover {
@@ -198,24 +213,27 @@
 }
 
 .vm-button-success {
-  background: var(--color-success, #00C851);
-  color: white;
+  background: #ffffff;
+  color: #333333;
   padding: 12px 24px;
   border-radius: 8px;
-  border: none;
+  border: 2px solid var(--vm-purple-accent, rgb(92, 32, 182));
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.2s;
   width: 100%;
+  font-family: 'Alata', sans-serif;
 }
 
 .vm-button-success:hover:not(:disabled) {
-  background: #00a541;
+  background: #f5f5f5;
 }
 
 .vm-button-success:disabled {
-  background: #ccc;
+  background: var(--vm-submit-disabled, rgb(104, 104, 104));
+  color: white;
+  border-color: var(--vm-submit-disabled, rgb(104, 104, 104));
   cursor: not-allowed;
 }
 
