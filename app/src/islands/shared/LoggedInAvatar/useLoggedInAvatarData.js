@@ -95,9 +95,10 @@ export function normalizeUserType(rawUserType) {
 /**
  * Custom hook to fetch menu-related user data from Supabase
  * @param {string} userId - The user's _id from Bubble/Supabase
+ * @param {string} fallbackUserType - Fallback user type from props/secureStorage (already normalized: 'HOST', 'GUEST', 'TRIAL_HOST')
  * @returns {Object} { data, loading, error, refetch }
  */
-export function useLoggedInAvatarData(userId) {
+export function useLoggedInAvatarData(userId, fallbackUserType = null) {
   const [data, setData] = useState({
     userType: NORMALIZED_USER_TYPES.GUEST,
     proposalsCount: 0,
@@ -203,7 +204,20 @@ export function useLoggedInAvatarData(userId) {
         }
       }
 
-      const normalizedType = normalizeUserType(rawUserType);
+      // Use the fallback user type from props/secureStorage if we still don't have one
+      // This ensures we trust the validated user type from login/validate flow
+      let normalizedType;
+      if (rawUserType) {
+        normalizedType = normalizeUserType(rawUserType);
+      } else if (fallbackUserType && Object.values(NORMALIZED_USER_TYPES).includes(fallbackUserType)) {
+        // Fallback is already normalized, use it directly
+        normalizedType = fallbackUserType;
+        console.log('[useLoggedInAvatarData] Using fallback user type from props:', fallbackUserType);
+      } else {
+        // Last resort: default to GUEST
+        normalizedType = NORMALIZED_USER_TYPES.GUEST;
+        console.warn('[useLoggedInAvatarData] No user type found, defaulting to GUEST');
+      }
 
       // Get proposals count from Proposals List array
       const proposalsList = userData?.['Proposals List'];
@@ -265,7 +279,7 @@ export function useLoggedInAvatarData(userId) {
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, fallbackUserType]);
 
   useEffect(() => {
     fetchData();

@@ -600,10 +600,18 @@ export default function Header({ autoShowLogin = false }) {
                 id: currentUser.userId || currentUser.id || '',
                 name: `${currentUser.firstName} ${currentUser.lastName || ''}`.trim(),
                 email: currentUser.email || '',
-                userType: userType === 'A Host (I have a space available to rent)' ? 'HOST'
-                  : userType === 'Trial Host' ? 'TRIAL_HOST'
-                  : userType === 'A Guest (I would like to rent a space)' ? 'GUEST'
-                  : 'HOST',
+                userType: (() => {
+                  // Normalize user type to 'HOST', 'GUEST', or 'TRIAL_HOST'
+                  // Handles both legacy Bubble format and new Supabase Auth format
+                  if (!userType) return 'GUEST';
+                  if (userType === 'Host' || userType === 'A Host (I have a space available to rent)' || userType === 'Split Lease') return 'HOST';
+                  if (userType === 'Trial Host') return 'TRIAL_HOST';
+                  if (userType === 'Guest' || userType === 'A Guest (I would like to rent a space)') return 'GUEST';
+                  // Fallback: check if it contains 'Host' (but not 'Trial')
+                  if (userType.includes('Host') && !userType.includes('Trial')) return 'HOST';
+                  if (userType.includes('Trial')) return 'TRIAL_HOST';
+                  return 'GUEST';
+                })(),
                 avatarUrl: currentUser.profilePhoto?.startsWith('//')
                   ? `https:${currentUser.profilePhoto}`
                   : currentUser.profilePhoto,
