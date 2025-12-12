@@ -310,7 +310,7 @@
 .toggle-option {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 6px;
     cursor: pointer;
 }
 
@@ -318,14 +318,17 @@
     width: 18px;
     height: 18px;
     margin: 0;
+    padding: 0;
     flex-shrink: 0;
+    vertical-align: middle;
     accent-color: var(--rental-app-primary);
     cursor: pointer;
 }
 
 .toggle-label {
     font-size: 14px;
-    line-height: 18px;
+    line-height: 1;
+    vertical-align: middle;
     color: var(--rental-app-text-primary);
 }
 
