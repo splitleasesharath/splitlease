@@ -370,7 +370,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
 
@@ -627,6 +627,25 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               </svg>
               Message
             </button>
+            {showCreateProposalButton && (
+              <button
+                className="create-proposal-btn"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenCreateProposalModal(listing);
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                Create Proposal
+              </button>
+            )}
           </div>
         </div>
 
@@ -654,7 +673,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal }) {
 
   const sentinelRef = useRef(null);
 
@@ -704,6 +723,8 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             userId={userId}
             onToggleFavorite={onToggleFavorite}
             onRequireAuth={onRequireAuth}
+            showCreateProposalButton={showCreateProposalButton}
+            onOpenCreateProposalModal={onOpenCreateProposalModal}
           />
         );
       })}
@@ -1942,6 +1963,15 @@ export default function SearchPage() {
     };
   }, []);
 
+  // Determine if "Create Proposal" button should be visible
+  // Conditions: logged in AND is a guest AND has 1+ existing proposals
+  const showCreateProposalButton = useMemo(() => {
+    if (!isLoggedIn || !currentUser) return false;
+    const userIsGuest = isGuest({ userType: currentUser.userType });
+    const hasExistingProposals = (currentUser.proposalCount ?? 0) > 0;
+    return userIsGuest && hasExistingProposals;
+  }, [isLoggedIn, currentUser]);
+
   // Render
   return (
     <div className="search-page">
@@ -2131,6 +2161,8 @@ export default function SearchPage() {
                         setAuthModalView('signup');
                         setIsAuthModalOpen(true);
                       }}
+                      showCreateProposalButton={showCreateProposalButton}
+                      onOpenCreateProposalModal={handleOpenCreateProposalModal}
                     />
                   </div>
                 )}
@@ -2154,6 +2186,8 @@ export default function SearchPage() {
                   setAuthModalView('signup');
                   setIsAuthModalOpen(true);
                 }}
+                showCreateProposalButton={showCreateProposalButton}
+                onOpenCreateProposalModal={handleOpenCreateProposalModal}
               />
             )}
           </div>
@@ -2302,6 +2336,21 @@ export default function SearchPage() {
           console.log('Auth successful from SearchPage');
         }}
       />
+      {isCreateProposalModalOpen && selectedListingForProposal && (
+        <CreateProposalFlowV2
+          listing={transformListingForProposal(selectedListingForProposal)}
+          moveInDate=""
+          daysSelected={[]}
+          nightsSelected={0}
+          reservationSpan={13}
+          pricingBreakdown={null}
+          zatConfig={null}
+          isFirstProposal={(currentUser?.proposalCount ?? 0) === 0}
+          existingUserData={null}
+          onClose={handleCloseCreateProposalModal}
+          onSubmit={handleCreateProposalSubmit}
+        />
+      )}
 
       {/* Mobile Map Modal - Fullscreen map view for mobile devices */}
       {mobileMapVisible && (

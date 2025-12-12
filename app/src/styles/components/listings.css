@@ -550,6 +550,37 @@
     flex-shrink: 0;
 }
 
+/* Create Proposal Button - Next to Message button */
+.listing-host-row .create-proposal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #31135D;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.listing-host-row .create-proposal-btn:hover {
+    background: #4a1d8c;
+    box-shadow: 0 2px 4px rgba(49, 19, 93, 0.2);
+}
+
+.listing-host-row .create-proposal-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
 /* Price Sidebar - Right Side (F7b Layout) */
 .listing-price-sidebar {
     width: 150px;
