@@ -250,7 +250,8 @@ export const routes = [
     file: 'favorite-listings.html',
     aliases: ['/favorite-listings.html'],
     protected: true,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'favorite-listings-view',
     hasDynamicSegment: false
   },
   {

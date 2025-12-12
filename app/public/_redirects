@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2025-12-12T18:07:29.449Z
+# Generated: 2025-12-12T19:43:14.229Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -101,10 +101,9 @@
 /host-overview  /_internal/host-overview-view  200
 /host-overview/  /_internal/host-overview-view  200
 
-# /favorite-listings
-/favorite-listings  /favorite-listings.html  200
-/favorite-listings/  /favorite-listings.html  200
-/favorite-listings.html  /favorite-listings.html  200
+# /favorite-listings → favorite-listings.html
+/favorite-listings  /_internal/favorite-listings-view  200
+/favorite-listings/  /_internal/favorite-listings-view  200
 
 # /rental-application
 /rental-application  /rental-application.html  200
