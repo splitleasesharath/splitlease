@@ -197,6 +197,7 @@ export async function handleCreate(
   const { error: proposalUpdateError } = await supabase
     .from("proposal")
     .update({
+      "request virtual meeting": "guest",
       "virtual meeting": virtualMeetingId,
       "Modified Date": now,
     })
@@ -206,7 +207,7 @@ export async function handleCreate(
     console.error(`[virtual-meeting:create] Proposal update failed:`, proposalUpdateError);
     // Non-blocking - continue (VM was created successfully)
   } else {
-    console.log(`[virtual-meeting:create] Proposal updated with VM link`);
+    console.log(`[virtual-meeting:create] Proposal updated with VM link and request status`);
   }
 
   // ================================================
