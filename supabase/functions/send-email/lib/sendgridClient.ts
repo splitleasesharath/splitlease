@@ -7,8 +7,6 @@
 
 import type { SendGridMailRequest, SendGridResponse } from './types.ts';
 
-const SENDGRID_API_URL = 'https://api.sendgrid.com/v3/mail/send';
-
 /**
  * Build SendGrid mail request body
  */
@@ -56,13 +54,14 @@ export function buildSendGridRequestBody(params: {
  */
 export async function sendEmail(
   apiKey: string,
+  emailEndpoint: string,
   requestBody: SendGridMailRequest
 ): Promise<SendGridResponse> {
   console.log('[sendgridClient] Sending email via SendGrid...');
   console.log('[sendgridClient] To:', requestBody.personalizations[0].to[0].email);
   console.log('[sendgridClient] Subject:', requestBody.personalizations[0].subject);
 
-  const response = await fetch(SENDGRID_API_URL, {
+  const response = await fetch(emailEndpoint, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,

@@ -50,6 +50,7 @@ export async function handleSend(
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
+  const sendgridEmailEndpoint = Deno.env.get('SENDGRID_EMAIL_ENDPOINT');
 
   if (!supabaseUrl || !supabaseServiceKey) {
     throw new Error('Missing Supabase environment variables');
@@ -57,6 +58,10 @@ export async function handleSend(
 
   if (!sendgridApiKey) {
     throw new Error('Missing SENDGRID_API_KEY environment variable');
+  }
+
+  if (!sendgridEmailEndpoint) {
+    throw new Error('Missing SENDGRID_EMAIL_ENDPOINT environment variable');
   }
 
   // Initialize Supabase client
@@ -120,7 +125,7 @@ export async function handleSend(
     htmlContent: processedHtml,
   });
 
-  const sendGridResponse = await sendEmail(sendgridApiKey, sendGridBody);
+  const sendGridResponse = await sendEmail(sendgridApiKey, sendgridEmailEndpoint, sendGridBody);
 
   if (!isSuccessResponse(sendGridResponse)) {
     const errorMessage = typeof sendGridResponse.body === 'object'

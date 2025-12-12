@@ -40,13 +40,19 @@ interface RequestBody {
 // Health Check Handler
 // ─────────────────────────────────────────────────────────────
 
-function handleHealth(): { status: string; timestamp: string; actions: string[] } {
-  const sendgridConfigured = !!Deno.env.get('SENDGRID_API_KEY');
+function handleHealth(): { status: string; timestamp: string; actions: string[]; secrets: Record<string, boolean> } {
+  const sendgridApiKeyConfigured = !!Deno.env.get('SENDGRID_API_KEY');
+  const sendgridEndpointConfigured = !!Deno.env.get('SENDGRID_EMAIL_ENDPOINT');
+  const allConfigured = sendgridApiKeyConfigured && sendgridEndpointConfigured;
 
   return {
-    status: sendgridConfigured ? 'healthy' : 'unhealthy (missing SENDGRID_API_KEY)',
+    status: allConfigured ? 'healthy' : 'unhealthy (missing secrets)',
     timestamp: new Date().toISOString(),
     actions: [...ALLOWED_ACTIONS],
+    secrets: {
+      SENDGRID_API_KEY: sendgridApiKeyConfigured,
+      SENDGRID_EMAIL_ENDPOINT: sendgridEndpointConfigured,
+    },
   };
 }
 
