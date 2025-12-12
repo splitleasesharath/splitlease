@@ -1939,12 +1939,13 @@ export default function ViewSplitLeasePage() {
           )}
         </div>
 
-        {/* RIGHT COLUMN - BOOKING WIDGET */}
+        {/* RIGHT COLUMN - BOOKING WIDGET (hidden on mobile) */}
         <div
           className="booking-widget"
           style={{
-            position: isMobile ? 'static' : 'sticky',
-            top: isMobile ? 'auto' : 'calc(80px + 20px)',
+            display: isMobile ? 'none' : 'block',
+            position: 'sticky',
+            top: 'calc(80px + 20px)',
             alignSelf: 'flex-start',
             maxHeight: 'calc(100vh - 80px - 40px)',
             overflowY: 'auto',
