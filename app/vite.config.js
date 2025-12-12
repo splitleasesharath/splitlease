@@ -44,15 +44,10 @@ function handleRouting(req, publicPrefix = '') {
       return;
     }
 
-    // Check dynamic segments (e.g., /view-split-lease/123)
+    // Check dynamic segments (e.g., /view-split-lease/123, /account-profile/userId)
+    // The dynamic segment (ID) is read from window.location.pathname by client-side JS
     if (route.hasDynamicSegment && urlPath.startsWith(basePath + '/')) {
-      // For account-profile, preserve the full path including user ID
-      if (route.path === '/account-profile') {
-        const pathAfterPrefix = url.substring('/account-profile'.length);
-        req.url = `${publicPrefix}/${route.file}${pathAfterPrefix}`;
-      } else {
-        req.url = `${publicPrefix}/${route.file}`;
-      }
+      req.url = `${publicPrefix}/${route.file}${queryString}`;
       return;
     }
 
