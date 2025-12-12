@@ -144,6 +144,26 @@ export async function handleValidate(
     // Use 'email' column first (more commonly populated), fall back to 'email as text'
     const userEmail = userData['email'] || userData['email as text'] || null;
 
+    // Step 3: Count user's proposals (for showing/hiding Create Proposal CTA)
+    let proposalCount = 0;
+    try {
+      const { count, error: countError } = await supabase
+        .from('proposal')
+        .select('*', { count: 'exact', head: true })
+        .eq('Created By', userData._id);
+
+      if (!countError && count !== null) {
+        proposalCount = count;
+        console.log(`[validate] User has ${proposalCount} proposal(s)`);
+      } else if (countError) {
+        console.warn(`[validate] Could not fetch proposal count:`, countError.message);
+        // Non-fatal: continue without proposal count
+      }
+    } catch (countErr) {
+      console.warn(`[validate] Error counting proposals:`, countErr);
+      // Non-fatal: continue without proposal count
+    }
+
     const userDataObject = {
       userId: userData._id,
       firstName: userData['Name - First'] || null,
@@ -155,12 +175,15 @@ export async function handleValidate(
       // User profile fields for proposal prefilling
       aboutMe: userData['About Me / Bio'] || null,
       needForSpace: userData['need for Space'] || null,
-      specialNeeds: userData['special needs'] || null
+      specialNeeds: userData['special needs'] || null,
+      // Proposal count for showing/hiding Create Proposal CTA on search page
+      proposalCount: proposalCount
     };
 
     console.log(`[validate] ✅ Validation complete`);
     console.log(`[validate]    User: ${userDataObject.firstName}`);
     console.log(`[validate]    Type: ${userDataObject.userType}`);
+    console.log(`[validate]    Proposals: ${userDataObject.proposalCount}`);
     console.log(`[validate] ========== VALIDATION COMPLETE ==========`);
 
     return userDataObject;
