@@ -29,39 +29,52 @@ const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 /**
- * Get check-in/out day range text (e.g., "Friday to Monday")
- * Handles both text day names (from Supabase) and numeric indices (legacy Bubble format)
+ * Convert a day value to a day name
+ * Handles multiple formats:
+ * - String day names: "Monday", "Friday", etc. (returned as-is)
+ * - Numeric strings from Supabase: "2", "6" (Bubble 1-indexed, where 1=Sunday, 2=Monday, etc.)
+ * - Numeric values: 2, 6 (Bubble 1-indexed)
+ *
+ * @param {string|number} dayValue - The day value to convert
+ * @returns {string} The day name or empty string if invalid
  */
+function convertDayValueToName(dayValue) {
+  if (dayValue === null || dayValue === undefined) return '';
+
+  // If it's a number, convert from Bubble 1-indexed to day name
+  if (typeof dayValue === 'number') {
+    return DAY_NAMES[dayValue - 1] || '';
+  }
+
+  // If it's a string, check if it's a numeric string or a day name
+  if (typeof dayValue === 'string') {
+    const trimmed = dayValue.trim();
+
+    // Check if it's a numeric string (e.g., "2", "6")
+    const numericValue = parseInt(trimmed, 10);
+    if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+      // It's a numeric string, convert from Bubble 1-indexed to day name
+      return DAY_NAMES[numericValue - 1] || '';
+    }
+
+    // It's already a day name string (e.g., "Monday")
+    return trimmed;
+  }
+
+  return '';
+}
+
 function getCheckInOutRange(proposal) {
   const checkInDay = proposal['check in day'];
   const checkOutDay = proposal['check out day'];
 
   if (!checkInDay || !checkOutDay) return null;
 
-  // Handle both formats:
-  // - Text format from Supabase: "Monday", "Friday", etc.
-  // - Numeric format from legacy Bubble: 1=Sunday, 7=Saturday
-  let checkInName, checkOutName;
+  // Convert both values to day names using unified conversion function
+  const checkInName = convertDayValueToName(checkInDay);
+  const checkOutName = convertDayValueToName(checkOutDay);
 
-  if (typeof checkInDay === 'string') {
-    // Already a day name string
-    checkInName = checkInDay;
-  } else if (typeof checkInDay === 'number') {
-    // Convert from Bubble 1-indexed to day name
-    checkInName = DAY_NAMES[checkInDay - 1] || '';
-  } else {
-    checkInName = '';
-  }
-
-  if (typeof checkOutDay === 'string') {
-    // Already a day name string
-    checkOutName = checkOutDay;
-  } else if (typeof checkOutDay === 'number') {
-    // Convert from Bubble 1-indexed to day name
-    checkOutName = DAY_NAMES[checkOutDay - 1] || '';
-  } else {
-    checkOutName = '';
-  }
+  if (!checkInName || !checkOutName) return null;
 
   return `${checkInName} to ${checkOutName}`;
 }
