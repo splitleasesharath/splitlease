@@ -317,12 +317,15 @@
 .toggle-option input[type="radio"] {
     width: 18px;
     height: 18px;
+    margin: 0;
+    flex-shrink: 0;
     accent-color: var(--rental-app-primary);
     cursor: pointer;
 }
 
 .toggle-label {
     font-size: 14px;
+    line-height: 18px;
     color: var(--rental-app-text-primary);
 }
 
