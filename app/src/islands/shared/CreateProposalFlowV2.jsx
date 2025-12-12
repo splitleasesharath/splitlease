@@ -473,16 +473,38 @@ export default function CreateProposalFlowV2({
   };
 
   // Edit handlers - take user to specific section from Review
+  // When in sequential flow, we need to update flowStepIndex to match the section being edited
   const handleEditUserDetails = () => {
     setCurrentSection(2);
+    if (useSequentialFlow) {
+      const stepIndex = activeFlow.indexOf(2);
+      if (stepIndex !== -1) {
+        setFlowStepIndex(stepIndex);
+        console.log(`📝 Edit: Jumping to User Details (section 2), flowStepIndex set to ${stepIndex}`);
+      }
+    }
   };
 
   const handleEditMoveIn = () => {
     setCurrentSection(3);
+    if (useSequentialFlow) {
+      const stepIndex = activeFlow.indexOf(3);
+      if (stepIndex !== -1) {
+        setFlowStepIndex(stepIndex);
+        console.log(`📝 Edit: Jumping to Move-in (section 3), flowStepIndex set to ${stepIndex}`);
+      }
+    }
   };
 
   const handleEditDays = () => {
     setCurrentSection(4);
+    if (useSequentialFlow) {
+      const stepIndex = activeFlow.indexOf(4);
+      if (stepIndex !== -1) {
+        setFlowStepIndex(stepIndex);
+        console.log(`📝 Edit: Jumping to Days Selection (section 4), flowStepIndex set to ${stepIndex}`);
+      }
+    }
   };
 
   // Navigation - sequential when useSequentialFlow=true, hub-and-spoke otherwise
