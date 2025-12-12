@@ -525,13 +525,13 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    background: #31135D;
-    color: white;
-    border: none;
+    background: white;
+    color: #6C5CE7;
+    border: 2px solid #6C5CE7;
     padding: 8px 18px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
@@ -540,14 +540,15 @@
 }
 
 .listing-host-row .message-btn:hover {
-    background: #3d1a75;
-    box-shadow: 0 2px 4px rgba(49, 19, 93, 0.2);
+    background: #F0F4FF;
+    box-shadow: 0 2px 4px rgba(108, 92, 231, 0.15);
 }
 
 .listing-host-row .message-btn svg {
     width: 14px;
     height: 14px;
     flex-shrink: 0;
+    stroke: #6C5CE7;
 }
 
 /* Create Proposal Button - Next to Message button */
@@ -556,13 +557,13 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    background: #31135D;
+    background: #6C5CE7;
     color: white;
     border: none;
     padding: 8px 18px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
@@ -571,8 +572,8 @@
 }
 
 .listing-host-row .create-proposal-btn:hover {
-    background: #4a1d8c;
-    box-shadow: 0 2px 4px rgba(49, 19, 93, 0.2);
+    background: #7C6CF7;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
 }
 
 .listing-host-row .create-proposal-btn svg {
@@ -587,23 +588,23 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    background: #059669;
+    background: #6C5CE7;
     color: white;
     border: none;
-    border-radius: 6px;
-    padding: 8px 14px;
-    font-size: 12px;
-    font-weight: 500;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: all 0.2s ease;
     flex-shrink: 0;
     white-space: nowrap;
     min-width: 100px;
 }
 
 .listing-host-row .view-proposal-btn:hover {
-    background: #047857;
-    box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
+    background: #7C6CF7;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
 }
 
 .listing-host-row .view-proposal-btn svg {
@@ -909,20 +910,23 @@
 
 .message-btn {
     padding: 6px 12px;
-    background: #4A90E2;
-    color: white;
-    border: none;
-    border-radius: 4px;
+    background: white;
+    color: #6C5CE7;
+    border: 2px solid #6C5CE7;
+    border-radius: 8px;
     font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.3s;
-    width: 80px;
+    transition: all 0.2s ease;
+    width: auto;
+    min-width: 80px;
     text-align: center;
     align-self: flex-start;
 }
 
 .message-btn:hover {
-    background: #357ABD;
+    background: #F0F4FF;
+    box-shadow: 0 2px 4px rgba(108, 92, 231, 0.15);
 }
 
 /* Pricing Info */
@@ -1179,8 +1183,8 @@
         font-size: 13px;
         white-space: nowrap;
         margin-left: auto;
-        font-weight: 500;
-        border-radius: 6px;
+        font-weight: 600;
+        border-radius: 8px;
     }
 
     .pricing-info {
