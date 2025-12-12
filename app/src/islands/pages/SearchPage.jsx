@@ -13,7 +13,7 @@ import { isGuest } from '../../logic/rules/users/isGuest.js';
 import { supabase } from '../../lib/supabase.js';
 import { fetchProposalsByGuest } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
-import { checkAuthStatus, validateTokenAndFetchUser, getUserId, logoutUser } from '../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
@@ -21,6 +21,8 @@ import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJson
 import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
+import { adaptDaysToBubble } from '../../logic/processors/external/adaptDaysToBubble.js';
+import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 
 // ============================================================================
 // Utility Functions
@@ -896,6 +898,11 @@ export default function SearchPage() {
   // Proposal flow state
   const [zatConfig, setZatConfig] = useState(null);
   const [loggedInUserData, setLoggedInUserData] = useState(null);
+  const [pendingProposalData, setPendingProposalData] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [successProposalId, setSuccessProposalId] = useState(null);
+  const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
+  const [showAuthModalForProposal, setShowAuthModalForProposal] = useState(false);
 
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -1988,28 +1995,184 @@ export default function SearchPage() {
     setSelectedListingForProposal(null);
   };
 
-  const handleCreateProposalSubmit = async (proposalData) => {
-    console.log('Creating proposal from Search page:', proposalData);
-    // Close the modal and show a success toast
-    // Full implementation would call the proposal Edge Function
-    setIsCreateProposalModalOpen(false);
+  // Submit proposal to backend (after auth is confirmed)
+  const submitProposal = async (proposalData) => {
+    setIsSubmittingProposal(true);
 
-    // Update proposalsByListingId map with the new proposal
-    // This enables immediate UI update (button changes from "Create" to "View")
-    if (proposalData && selectedListingForProposal) {
-      const listingId = selectedListingForProposal.id || selectedListingForProposal._id;
-      if (listingId && proposalData._id) {
-        setProposalsByListingId(prev => {
-          const updated = new Map(prev);
-          updated.set(listingId, proposalData);
-          console.log(`[SearchPage] Added proposal ${proposalData._id} to listing ${listingId}`);
-          return updated;
-        });
+    try {
+      // Get the guest ID (Bubble user _id)
+      const guestId = loggedInUserData?.userId || getSessionId();
+
+      if (!guestId) {
+        throw new Error('User ID not found. Please log in again.');
       }
+
+      console.log('[SearchPage] Submitting proposal to Edge Function...');
+      console.log('   Guest ID:', guestId);
+      console.log('   Listing ID:', selectedListingForProposal?.id || selectedListingForProposal?._id);
+
+      // Convert days from JS format (0-6) to Bubble format (1-7)
+      // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
+      const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || [];
+      const daysInBubbleFormat = adaptDaysToBubble({ zeroBasedDays: daysInJsFormat });
+
+      // Calculate nights from days (nights = days without the last checkout day)
+      // For consecutive days [1,2,3,4,5] (Mon-Fri), nights are [1,2,3,4] (Mon-Thu)
+      const sortedDays = [...daysInBubbleFormat].sort((a, b) => a - b);
+      const nightsInBubbleFormat = sortedDays.slice(0, -1); // Remove last day (checkout day)
+
+      // Get check-in and check-out days in Bubble format
+      const checkInDayBubble = sortedDays[0];
+      const checkOutDayBubble = sortedDays[sortedDays.length - 1];
+
+      // Format reservation span text
+      const reservationSpanWeeks = proposalData.reservationSpan || 13;
+      const reservationSpanText = reservationSpanWeeks === 13
+        ? '13 weeks (3 months)'
+        : reservationSpanWeeks === 20
+          ? '20 weeks (approx. 5 months)'
+          : `${reservationSpanWeeks} weeks`;
+
+      // Build the Edge Function payload
+      const edgeFunctionPayload = {
+        guestId: guestId,
+        listingId: selectedListingForProposal?.id || selectedListingForProposal?._id,
+        moveInStartRange: proposalData.moveInDate,
+        moveInEndRange: proposalData.moveInDate, // Same as start if no flexibility
+        daysSelected: daysInBubbleFormat,
+        nightsSelected: nightsInBubbleFormat,
+        reservationSpan: reservationSpanText,
+        reservationSpanWeeks: reservationSpanWeeks,
+        checkIn: checkInDayBubble,
+        checkOut: checkOutDayBubble,
+        proposalPrice: proposalData.pricePerNight,
+        fourWeekRent: proposalData.pricePerFourWeeks,
+        hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now
+        needForSpace: proposalData.needForSpace || '',
+        aboutMe: proposalData.aboutYourself || '',
+        estimatedBookingTotal: proposalData.totalPrice,
+        // Optional fields
+        specialNeeds: proposalData.hasUniqueRequirements ? proposalData.uniqueRequirements : '',
+        moveInRangeText: proposalData.moveInRange || '',
+        flexibleMoveIn: !!proposalData.moveInRange,
+        fourWeekCompensation: proposalData.pricePerFourWeeks
+      };
+
+      console.log('[SearchPage] Edge Function payload:', edgeFunctionPayload);
+
+      // Call the proposal Edge Function (Supabase-native)
+      const { data, error } = await supabase.functions.invoke('proposal', {
+        body: {
+          action: 'create',
+          payload: edgeFunctionPayload
+        }
+      });
+
+      if (error) {
+        console.error('[SearchPage] Edge Function error:', error);
+        throw new Error(error.message || 'Failed to submit proposal');
+      }
+
+      if (!data?.success) {
+        console.error('[SearchPage] Proposal submission failed:', data?.error);
+        throw new Error(data?.error || 'Failed to submit proposal');
+      }
+
+      console.log('[SearchPage] Proposal submitted successfully:', data);
+      console.log('   Proposal ID:', data.data?.proposalId);
+
+      // Close the create proposal modal
+      setIsCreateProposalModalOpen(false);
+      setPendingProposalData(null);
+
+      // Store the proposal ID and show success modal
+      const newProposalId = data.data?.proposalId;
+      setSuccessProposalId(newProposalId);
+      setShowSuccessModal(true);
+
+      // Update proposalsByListingId map with the new proposal
+      // This enables immediate UI update (button changes from "Create" to "View")
+      if (newProposalId && selectedListingForProposal) {
+        const listingId = selectedListingForProposal.id || selectedListingForProposal._id;
+        if (listingId) {
+          setProposalsByListingId(prev => {
+            const updated = new Map(prev);
+            updated.set(listingId, { _id: newProposalId });
+            console.log(`[SearchPage] Added proposal ${newProposalId} to listing ${listingId}`);
+            return updated;
+          });
+        }
+      }
+
+    } catch (error) {
+      console.error('[SearchPage] Error submitting proposal:', error);
+      showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
+      // Keep the modal open on error so user can retry
+    } finally {
+      setIsSubmittingProposal(false);
+    }
+  };
+
+  // Handle proposal submission - checks auth first
+  const handleCreateProposalSubmit = async (proposalData) => {
+    console.log('[SearchPage] Proposal submission initiated:', proposalData);
+
+    // Check if user is logged in
+    const isAuthenticated = await checkAuthStatus();
+
+    if (!isAuthenticated) {
+      console.log('[SearchPage] User not logged in, showing auth modal');
+      // Store the proposal data for later submission
+      setPendingProposalData(proposalData);
+      // Close the proposal modal
+      setIsCreateProposalModalOpen(false);
+      // Open auth modal
+      setShowAuthModalForProposal(true);
+      return;
     }
 
-    setSelectedListingForProposal(null);
-    showToast('Proposal submitted successfully!', 'success');
+    // User is logged in, proceed with submission
+    console.log('[SearchPage] User is logged in, submitting proposal');
+    await submitProposal(proposalData);
+  };
+
+  // Handle successful authentication for proposal submission
+  const handleAuthSuccessForProposal = async (authResult) => {
+    console.log('[SearchPage] Auth success for proposal:', authResult);
+
+    // Close the auth modal
+    setShowAuthModalForProposal(false);
+
+    // Update the logged-in user data
+    try {
+      const userData = await validateTokenAndFetchUser();
+      if (userData) {
+        setLoggedInUserData({
+          ...userData,
+          userId: getSessionId()
+        });
+        setIsLoggedIn(true);
+        setCurrentUser({
+          id: getSessionId(),
+          name: userData.fullName || userData.firstName || '',
+          email: userData.email || '',
+          userType: userData.userType || 'GUEST',
+          avatarUrl: userData.profilePhoto || null
+        });
+        console.log('[SearchPage] User data updated after auth:', userData.firstName);
+      }
+    } catch (err) {
+      console.error('[SearchPage] Error fetching user data after auth:', err);
+    }
+
+    // If there's a pending proposal, submit it now
+    if (pendingProposalData) {
+      console.log('[SearchPage] Submitting pending proposal after auth');
+      // Small delay to ensure auth state is fully updated
+      setTimeout(async () => {
+        await submitProposal(pendingProposalData);
+      }, 500);
+    }
   };
 
   // Transform listing data from SearchPage format to CreateProposalFlowV2 expected format
@@ -2515,6 +2678,34 @@ export default function SearchPage() {
           } : null}
           onClose={handleCloseCreateProposalModal}
           onSubmit={handleCreateProposalSubmit}
+        />
+      )}
+
+      {/* Auth Modal for Proposal Submission (when user is not logged in) */}
+      {showAuthModalForProposal && (
+        <SignUpLoginModal
+          isOpen={showAuthModalForProposal}
+          onClose={() => {
+            setShowAuthModalForProposal(false);
+            setPendingProposalData(null);
+          }}
+          initialView="signup-step1"
+          onAuthSuccess={handleAuthSuccessForProposal}
+          defaultUserType="guest"
+          skipReload={true}
+        />
+      )}
+
+      {/* Proposal Success Modal */}
+      {showSuccessModal && (
+        <ProposalSuccessModal
+          proposalId={successProposalId}
+          listingName={selectedListingForProposal?.title || selectedListingForProposal?.Name}
+          onClose={() => {
+            setShowSuccessModal(false);
+            setSuccessProposalId(null);
+            setSelectedListingForProposal(null);
+          }}
         />
       )}
 
