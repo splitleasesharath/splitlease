@@ -60,12 +60,37 @@ export async function handleValidate(
       }
     });
 
-    // Query by _id (the primary key stored in browser after login/signup)
-    const { data: userData, error: userError } = await supabase
+    // Query by _id first (the primary key stored in browser after login/signup)
+    // If that fails, try supabase_user_id (for cases where UUID is passed instead of Bubble _id)
+    let userData = null;
+    let userError = null;
+
+    // First attempt: query by _id (Bubble-style ID)
+    const { data: userDataById, error: errorById } = await supabase
       .from('user')
-      .select('_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord"')
+      .select('_id, bubble_id, supabase_user_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs"')
       .eq('_id', user_id)
-      .single();
+      .maybeSingle();
+
+    if (userDataById) {
+      userData = userDataById;
+      console.log(`[validate] User found by _id`);
+    } else {
+      // Second attempt: query by supabase_user_id (Supabase Auth UUID)
+      console.log(`[validate] User not found by _id, trying supabase_user_id...`);
+      const { data: userDataByUuid, error: errorByUuid } = await supabase
+        .from('user')
+        .select('_id, bubble_id, supabase_user_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs"')
+        .eq('supabase_user_id', user_id)
+        .maybeSingle();
+
+      if (userDataByUuid) {
+        userData = userDataByUuid;
+        console.log(`[validate] User found by supabase_user_id`);
+      } else {
+        userError = errorById || errorByUuid;
+      }
+    }
 
     if (userError) {
       console.error(`[validate] Supabase query error:`, userError);
@@ -73,8 +98,8 @@ export async function handleValidate(
     }
 
     if (!userData) {
-      console.error(`[validate] User not found in Supabase by _id: ${user_id}`);
-      throw new SupabaseSyncError(`User not found with _id: ${user_id}`);
+      console.error(`[validate] User not found in Supabase by _id or supabase_user_id: ${user_id}`);
+      throw new SupabaseSyncError(`User not found with _id or supabase_user_id: ${user_id}`);
     }
 
     // Step 2: Format user data

@@ -712,6 +712,7 @@ export default function SignUpLoginModal({
       clearTimeout(robotsToastTimeout);
       setIsLoading(false);
 
+      // Show success toast
       showToast({
         title: 'Login Successful!',
         content: 'Welcome back to Split Lease.',
@@ -723,13 +724,21 @@ export default function SignUpLoginModal({
       if (onAuthSuccess) {
         onAuthSuccess(result);
       }
-      onClose();
 
-      console.log('[SignUpLoginModal] skipReload:', skipReload);
-      if (!skipReload) {
-        console.log('[SignUpLoginModal] Triggering page reload...');
-        window.location.reload();
-      }
+      // Close modal after a brief delay to let toast render
+      setTimeout(() => {
+        onClose();
+
+        console.log('[SignUpLoginModal] skipReload:', skipReload);
+        if (!skipReload) {
+          // Delay reload to allow user to see success message and Header to update
+          console.log('[SignUpLoginModal] Scheduling page reload in 1.5s...');
+          setTimeout(() => {
+            console.log('[SignUpLoginModal] Triggering page reload...');
+            window.location.reload();
+          }, 1500);
+        }
+      }, 500);
     } else {
       clearTimeout(robotsToastTimeout);
       setIsLoading(false);
