@@ -617,6 +617,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
   // Proposal details modal state (GuestEditingProposalModal)
   const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false);
+  const [proposalModalInitialView, setProposalModalInitialView] = useState('general');
 
   // Virtual Meeting Manager modal state
   const [showVMModal, setShowVMModal] = useState(false);
@@ -752,6 +753,18 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
       className: 'btn-vm-request'
     };
   }, [virtualMeeting, currentUserId, status]);
+
+  // Handler for opening proposal details modal with specific view
+  const openProposalModal = (view = 'general') => {
+    setProposalModalInitialView(view);
+    setShowProposalDetailsModal(true);
+  };
+
+  // Handler for closing proposal details modal
+  const closeProposalModal = () => {
+    setShowProposalDetailsModal(false);
+    setProposalModalInitialView('general'); // Reset to default view
+  };
 
   // Handler for VM button click
   const handleVMButtonClick = () => {
@@ -944,11 +957,14 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 )}
                 <button
                   className="btn-action-bar btn-modify-proposal"
-                  onClick={() => setShowProposalDetailsModal(true)}
+                  onClick={() => openProposalModal('general')}
                 >
                   Modify Proposal
                 </button>
-                <button className="btn-action-bar btn-cancel-proposal">
+                <button
+                  className="btn-action-bar btn-cancel-proposal"
+                  onClick={() => openProposalModal('cancel')}
+                >
                   Cancel Proposal
                 </button>
               </>
@@ -990,7 +1006,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                   onClick={() => {
                     // Handle different actions
                     if (buttonConfig.guestAction1.action === 'modify_proposal') {
-                      setShowProposalDetailsModal(true);
+                      openProposalModal('general');
                     }
                     // TODO: Add handlers for other actions (remind_sl, accept_counteroffer, etc.)
                   }}
@@ -1014,7 +1030,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 onClick={() => {
                   // Handle different actions
                   if (buttonConfig.guestAction2.action === 'see_details') {
-                    setShowProposalDetailsModal(true);
+                    openProposalModal('general');
                   }
                   // TODO: Add handlers for other actions (reject_suggestion, review_counteroffer, verify_identity)
                 }}
@@ -1040,8 +1056,13 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                   if (buttonConfig.cancelButton.action === 'see_house_manual') {
                     // Navigate to house manual or open modal
                     // TODO: Implement house manual navigation
+                  } else if (buttonConfig.cancelButton.action === 'cancel_proposal' ||
+                             buttonConfig.cancelButton.action === 'delete_proposal' ||
+                             buttonConfig.cancelButton.action === 'reject_counteroffer' ||
+                             buttonConfig.cancelButton.action === 'reject_proposal') {
+                    // Open GuestEditingProposalModal with cancel view
+                    openProposalModal('cancel');
                   }
-                  // TODO: Add handlers for cancel, delete, reject actions
                 }}
               >
                 {buttonConfig.cancelButton.label}
@@ -1075,9 +1096,9 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           proposal={proposal}
           listing={listing}
           user={{ type: 'guest' }}
-          initialView="general"
+          initialView={proposalModalInitialView}
           isVisible={showProposalDetailsModal}
-          onClose={() => setShowProposalDetailsModal(false)}
+          onClose={closeProposalModal}
           pricePerNight={nightlyPrice}
           totalPriceForReservation={totalPrice}
           priceRentPer4Weeks={proposal['Price Rent per 4 weeks'] || (nightlyPrice * nightsPerWeek * 4)}
