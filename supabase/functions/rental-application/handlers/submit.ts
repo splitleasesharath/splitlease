@@ -272,21 +272,27 @@ export async function handleSubmit(
     const proposalIds = userProposals.map((p: { _id: string }) => p._id);
     console.log(`[RentalApp:submit] Found ${proposalIds.length} proposals to update`);
 
-    // Batch update proposals
+    // Batch update proposals with rental application reference AND status change to Host Review
+    // Only update proposals that are in "Awaiting Rental Application" status
     const { error: proposalsUpdateError } = await supabase
       .from('proposal')
       .update({
         'rental application': rentalAppId,
+        'Status': 'Host Review',
         'Modified Date': now,
       })
-      .in('_id', proposalIds);
+      .in('_id', proposalIds)
+      .in('Status', [
+        'Proposal Submitted by guest - Awaiting Rental Application',
+        'Proposal Submitted for guest by Split Lease - Awaiting Rental Application',
+      ]);
 
     if (proposalsUpdateError) {
       console.error(`[RentalApp:submit] Proposals update failed:`, proposalsUpdateError);
       // Non-blocking - continue
     } else {
       proposalsUpdated = proposalIds.length;
-      console.log(`[RentalApp:submit] Updated ${proposalsUpdated} proposals with rental application reference`);
+      console.log(`[RentalApp:submit] Updated ${proposalsUpdated} proposals with rental application reference and status to Host Review`);
     }
   } else {
     console.log(`[RentalApp:submit] No proposals found to update`);
