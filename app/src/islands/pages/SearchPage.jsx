@@ -12,6 +12,7 @@ import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
 import { isGuest } from '../../logic/rules/users/isGuest.js';
 import { supabase } from '../../lib/supabase.js';
 import { fetchProposalsByGuest } from '../../lib/proposalDataFetcher.js';
+import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getUserId, logoutUser } from '../../lib/auth.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
@@ -887,6 +888,10 @@ export default function SearchPage() {
   // Proposals state - Map of listing ID to proposal object
   const [proposalsByListingId, setProposalsByListingId] = useState(new Map());
 
+  // Proposal flow state
+  const [zatConfig, setZatConfig] = useState(null);
+  const [loggedInUserData, setLoggedInUserData] = useState(null);
+
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
@@ -913,6 +918,19 @@ export default function SearchPage() {
     loadInformationalTexts();
   }, []);
 
+  // Fetch ZAT price configuration on mount
+  useEffect(() => {
+    const loadZatConfig = async () => {
+      try {
+        const config = await fetchZatPriceConfiguration();
+        setZatConfig(config);
+      } catch (error) {
+        console.warn('Failed to load ZAT config:', error);
+      }
+    };
+    loadZatConfig();
+  }, []);
+
   // Check authentication status and fetch user data
   useEffect(() => {
     const checkAuth = async () => {
@@ -934,11 +952,11 @@ export default function SearchPage() {
               proposalCount: userData.proposalCount ?? 0
             });
 
-            // Fetch favorites and proposals list from Supabase
+            // Fetch favorites, proposals list, and profile data from Supabase
             if (userId) {
               const { data: userRecord, error } = await supabase
                 .from('user')
-                .select('"Favorited Listings", "Proposals List"')
+                .select('"Favorited Listings", "Proposals List", "About Me / Bio", "need for Space", "special needs"')
                 .eq('_id', userId)
                 .single();
 
@@ -971,6 +989,14 @@ export default function SearchPage() {
                   ...prev,
                   proposalCount: proposalCount
                 }));
+
+                // Set logged in user data for proposal form prefilling
+                setLoggedInUserData({
+                  aboutMe: userRecord['About Me / Bio'] || '',
+                  needForSpace: userRecord['need for Space'] || '',
+                  specialNeeds: userRecord['special needs'] || '',
+                  proposalCount: proposalCount
+                });
 
                 // Fetch user's proposals to check if any exist for specific listings
                 const userIsGuest = isGuest({ userType: userData.userType });
@@ -2428,9 +2454,15 @@ export default function SearchPage() {
           nightsSelected={0}
           reservationSpan={13}
           pricingBreakdown={null}
-          zatConfig={null}
-          isFirstProposal={(currentUser?.proposalCount ?? 0) === 0}
-          existingUserData={null}
+          zatConfig={zatConfig}
+          isFirstProposal={!loggedInUserData || loggedInUserData.proposalCount === 0}
+          useFullFlow={true}
+          existingUserData={loggedInUserData ? {
+            needForSpace: loggedInUserData.needForSpace || '',
+            aboutYourself: loggedInUserData.aboutMe || '',
+            hasUniqueRequirements: !!loggedInUserData.specialNeeds,
+            uniqueRequirements: loggedInUserData.specialNeeds || ''
+          } : null}
           onClose={handleCloseCreateProposalModal}
           onSubmit={handleCreateProposalSubmit}
         />
