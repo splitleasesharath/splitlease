@@ -173,7 +173,7 @@ export default function LoggedInAvatar({
         id: 'profile',
         label: 'My Profile',
         icon: '/assets/icons/user-purple.svg',
-        path: '/account-profile',
+        path: `/account-profile/${user.id}`,
       });
     }
 
