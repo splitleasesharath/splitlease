@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
@@ -8,6 +8,8 @@ import AuthAwareSearchScheduleSelector from '../shared/AuthAwareSearchScheduleSe
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import FavoriteButton from '../shared/FavoriteButton';
+import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
+import { isGuest } from '../../logic/rules/users/isGuest.js';
 import { supabase } from '../../lib/supabase.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getUserId, logoutUser } from '../../lib/auth.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
@@ -804,6 +806,8 @@ export default function SearchPage() {
   const [selectedListing, setSelectedListing] = useState(null);
   const [infoModalTriggerRef, setInfoModalTriggerRef] = useState(null);
   const [informationalTexts, setInformationalTexts] = useState({});
+  const [isCreateProposalModalOpen, setIsCreateProposalModalOpen] = useState(false);
+  const [selectedListingForProposal, setSelectedListingForProposal] = useState(null);
 
   // Refs
   const mapRef = useRef(null);
@@ -878,7 +882,8 @@ export default function SearchPage() {
               name: userData.fullName || userData.firstName || '',
               email: userData.email || '',
               userType: userData.userType || 'GUEST',
-              avatarUrl: userData.profilePhoto || null
+              avatarUrl: userData.profilePhoto || null,
+              proposalCount: userData.proposalCount ?? 0
             });
 
             // Fetch favorites from Supabase
@@ -1806,6 +1811,48 @@ export default function SearchPage() {
 
   const handleCloseAIResearchModal = () => {
     setIsAIResearchModalOpen(false);
+  };
+
+  // Create Proposal modal handlers
+  const handleOpenCreateProposalModal = (listing) => {
+    setSelectedListingForProposal(listing);
+    setIsCreateProposalModalOpen(true);
+  };
+
+  const handleCloseCreateProposalModal = () => {
+    setIsCreateProposalModalOpen(false);
+    setSelectedListingForProposal(null);
+  };
+
+  const handleCreateProposalSubmit = async (proposalData) => {
+    console.log('Creating proposal from Search page:', proposalData);
+    // Close the modal and show a success toast
+    // Full implementation would call the proposal Edge Function
+    setIsCreateProposalModalOpen(false);
+    setSelectedListingForProposal(null);
+    showToast('Proposal submitted successfully!', 'success');
+  };
+
+  // Transform listing data from SearchPage format to CreateProposalFlowV2 expected format
+  const transformListingForProposal = (listing) => {
+    if (!listing) return null;
+    return {
+      _id: listing.id,
+      Name: listing.title,
+      'Minimum Nights': 2,
+      'Maximum Nights': 7,
+      'rental type': 'Nightly',
+      'Weeks offered': listing.weeks_offered || 'Every week',
+      '💰Unit Markup': 0,
+      '💰Nightly Host Rate for 2 nights': listing['Price 2 nights selected'],
+      '💰Nightly Host Rate for 3 nights': listing['Price 3 nights selected'],
+      '💰Nightly Host Rate for 4 nights': listing['Price 4 nights selected'],
+      '💰Nightly Host Rate for 5 nights': listing['Price 5 nights selected'],
+      '💰Nightly Host Rate for 7 nights': listing['Price 7 nights selected'],
+      '💰Cleaning Cost / Maintenance Fee': 0,
+      '💰Damage Deposit': 0,
+      host: listing.host
+    };
   };
 
   // Show toast notification
