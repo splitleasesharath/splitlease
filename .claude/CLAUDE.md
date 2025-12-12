@@ -21,12 +21,13 @@ For ANY non-trivial task, follow this orchestration pipeline:
 │                                                                             │
 │  Phase 1: CLASSIFY → task-classifier (haiku)                                │
 │     Input: Raw user request                                                 │
-│     Output: BUILD | DEBUG | CLEANUP classification + reformatted task       │
+│     Output: BUILD | DEBUG | CLEANUP | DESIGN classification + reformatted   │
 │                                                                             │
 │  Phase 2: PLAN → Based on classification:                                   │
 │     ├─ BUILD   → implementation-planner (opus)                              │
 │     ├─ DEBUG   → debug-analyst (opus)                                       │
-│     └─ CLEANUP → cleanup-planner (opus)                                     │
+│     ├─ CLEANUP → cleanup-planner (opus)                                     │
+│     └─ DESIGN  → design-planner (opus)                                      │
 │     Input: Classified task + miniCLAUDE.md (or largeCLAUDE.md for complex)  │
 │     Output: Plan file in .claude/plans/New/                                 │
 │                                                                             │
@@ -52,6 +53,7 @@ For ANY non-trivial task, follow this orchestration pipeline:
 | `BUILD` | `implementation-planner` — nothing else |
 | `DEBUG` | `debug-analyst` — nothing else |
 | `CLEANUP` | `cleanup-planner` — nothing else |
+| `DESIGN` | `design-planner` — nothing else |
 
 **Prohibited actions after receiving classification:**
 - ❌ Invoking `mcp-tool-specialist` for "additional context"
@@ -74,10 +76,11 @@ For ANY non-trivial task, follow this orchestration pipeline:
 
 | Agent | Purpose | Model | Location |
 |-------|---------|-------|----------|
-| `task-classifier` | Classify as BUILD/DEBUG/CLEAN | haiku | [agents/task-classifier.md](./agents/task-classifier.md) |
+| `task-classifier` | Classify as BUILD/DEBUG/CLEANUP/DESIGN | haiku | [agents/task-classifier.md](./agents/task-classifier.md) |
 | `implementation-planner` | Plan new features/changes | opus | [agents/implementation-planner.md](./agents/implementation-planner.md) |
 | `debug-analyst` | Investigate bugs/issues | opus | [agents/debug-analyst.md](./agents/debug-analyst.md) |
 | `cleanup-planner` | Plan refactoring/cleanup | opus | [agents/cleanup-planner.md](./agents/cleanup-planner.md) |
+| `design-planner` | Plan UI/UX implementations | opus | [agents/design-planner.md](./agents/design-planner.md) |
 | `plan-executor` | Execute plans from .claude/plans/ | opus | [agents/plan-executor.md](./agents/plan-executor.md) |
 | `input-reviewer` | Review/judge implementations | opus | [agents/input-reviewer.md](./agents/input-reviewer.md) |
 | `context-lookup` | Read-only codebase analysis | haiku | [agents/context-lookup.md](./agents/context-lookup.md) |
@@ -109,6 +112,7 @@ For **lookup, exploration, or research tasks** that do NOT modify code, **skip t
 | New feature, enhancement, code change | `task-classifier` → `implementation-planner` → `plan-executor` → `input-reviewer` | Any BUILD task |
 | Bug investigation, error analysis | `task-classifier` → `debug-analyst` → `plan-executor` → `input-reviewer` | Any DEBUG task |
 | Refactoring, cleanup, consolidation | `task-classifier` → `cleanup-planner` → `plan-executor` → `input-reviewer` | Any CLEANUP task |
+| UI/UX implementation from visual references | `task-classifier` → `design-planner` → `plan-executor` → `input-reviewer` | Any DESIGN task |
 
 > **⛔ LOCKED PIPELINE**: Once `task-classifier` begins, you MUST complete all 4 phases. You are **PROHIBITED** from invoking any other subagent (e.g., `mcp-tool-specialist`, `context-lookup`, `codebase-explorer`) until the pipeline completes.
 
@@ -214,7 +218,7 @@ supabase functions deploy <name>   # Deploy single function
 
 ### DO (MANDATORY)
 - **ALWAYS invoke subagents via Task tool for non-trivial tasks** — This is non-negotiable
-- **ALWAYS use `task-classifier` as the first step** for BUILD/DEBUG/CLEANUP tasks
+- **ALWAYS use `task-classifier` as the first step** for BUILD/DEBUG/CLEANUP/DESIGN tasks
 - **ALWAYS complete ALL 4 phases** once the pipeline starts — no early exit
 - **NEVER inject external subagents mid-pipeline** — the 4-phase sequence is sealed
 - **ALWAYS use `mcp-tool-specialist`** for any MCP tool invocation (only before or after pipeline)
@@ -248,4 +252,4 @@ supabase functions deploy <name>   # Deploy single function
 
 ---
 
-**VERSION**: 9.4 | **UPDATED**: 2025-12-12
+**VERSION**: 9.5 | **UPDATED**: 2025-12-12
