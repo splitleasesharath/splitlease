@@ -73,3 +73,15 @@ export interface UserContext {
   id: string;
   email: string;
 }
+
+export interface DeleteVirtualMeetingInput {
+  virtualMeetingId: string;  // Required: _id of the virtual meeting to delete
+  proposalId: string;        // Required: _id of the associated proposal
+}
+
+export interface DeleteVirtualMeetingResponse {
+  deleted: boolean;
+  virtualMeetingId: string;
+  proposalId: string;
+  deletedAt: string;
+}

@@ -53,3 +53,20 @@ export function validateCreateVirtualMeetingInput(input: unknown): void {
     throw new ValidationError('isAlternativeTimes must be a boolean if provided');
   }
 }
+
+/**
+ * Validate the delete virtual meeting input payload
+ * @param input - The raw input to validate
+ * @throws ValidationError if input is invalid
+ */
+export function validateDeleteVirtualMeetingInput(input: unknown): void {
+  const data = input as Record<string, unknown>;
+
+  if (!data.virtualMeetingId || typeof data.virtualMeetingId !== 'string') {
+    throw new ValidationError('virtualMeetingId is required and must be a string');
+  }
+
+  if (!data.proposalId || typeof data.proposalId !== 'string') {
+    throw new ValidationError('proposalId is required and must be a string');
+  }
+}

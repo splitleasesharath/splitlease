@@ -122,10 +122,32 @@ export async function declineVirtualMeeting(proposalId) {
  * @returns {Promise<{status: string, data?: any, message?: string}>}
  */
 export async function cancelVirtualMeeting(meetingId, proposalId) {
-  return proxyRequest('cancel-virtual-meeting', {
-    meeting_id: meetingId,
-    proposal: proposalId,
-  });
+  try {
+    const { data: responseData, error } = await supabase.functions.invoke('virtual-meeting', {
+      body: {
+        action: 'delete',
+        payload: {
+          virtualMeetingId: meetingId,
+          proposalId: proposalId,
+        },
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to cancel virtual meeting');
+    }
+
+    return {
+      status: 'success',
+      data: responseData?.data,
+    };
+  } catch (error) {
+    console.error('API Error (cancel-virtual-meeting):', error);
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
 }
 
 /**

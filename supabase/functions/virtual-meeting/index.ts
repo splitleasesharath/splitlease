@@ -21,14 +21,15 @@ import { validateRequired, validateAction } from "../_shared/validation.ts";
 import { createErrorCollector, ErrorCollector } from "../_shared/slack.ts";
 
 import { handleCreate } from "./handlers/create.ts";
+import { handleDelete } from "./handlers/delete.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ["create"] as const;
-// NOTE: 'create' is public until Supabase auth migration is complete
-const PUBLIC_ACTIONS = ["create"] as const;
+const ALLOWED_ACTIONS = ["create", "delete"] as const;
+// NOTE: 'create' and 'delete' are public until Supabase auth migration is complete
+const PUBLIC_ACTIONS = ["create", "delete"] as const;
 
 type Action = (typeof ALLOWED_ACTIONS)[number];
 
@@ -149,6 +150,10 @@ Deno.serve(async (req: Request) => {
     switch (body.action) {
       case "create":
         result = await handleCreate(body.payload, user, serviceClient);
+        break;
+
+      case "delete":
+        result = await handleDelete(body.payload, user, serviceClient);
         break;
 
       default:
