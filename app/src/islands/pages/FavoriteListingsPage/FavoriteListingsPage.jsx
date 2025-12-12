@@ -605,16 +605,18 @@ const FavoriteListingsPage = () => {
           try {
             const { data: userProposalData, error: propError } = await supabase
               .from('user')
-              .select('"About Me", "Need for Space", "Special Needs", "Proposal Count"')
+              .select('"About Me / Bio", "need for Space", "special needs", "Proposals List"')
               .eq('_id', sessionId)
               .single();
 
             if (!propError && userProposalData) {
+              const proposalsList = userProposalData['Proposals List'];
+              const proposalCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
               setLoggedInUserData({
-                aboutMe: userProposalData['About Me'] || '',
-                needForSpace: userProposalData['Need for Space'] || '',
-                specialNeeds: userProposalData['Special Needs'] || '',
-                proposalCount: userProposalData['Proposal Count'] || 0
+                aboutMe: userProposalData['About Me / Bio'] || '',
+                needForSpace: userProposalData['need for Space'] || '',
+                specialNeeds: userProposalData['special needs'] || '',
+                proposalCount: proposalCount
               });
             }
           } catch (e) {
@@ -990,16 +992,18 @@ const FavoriteListingsPage = () => {
         // Also fetch user's proposal data for future proposals
         const { data: userProposalData } = await supabase
           .from('user')
-          .select('"About Me", "Need for Space", "Special Needs", "Proposal Count"')
+          .select('"About Me / Bio", "need for Space", "special needs", "Proposals List"')
           .eq('_id', sessionId)
           .single();
 
         if (userProposalData) {
+          const proposalsList = userProposalData['Proposals List'];
+          const proposalCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
           setLoggedInUserData({
-            aboutMe: userProposalData['About Me'] || '',
-            needForSpace: userProposalData['Need for Space'] || '',
-            specialNeeds: userProposalData['Special Needs'] || '',
-            proposalCount: userProposalData['Proposal Count'] || 0
+            aboutMe: userProposalData['About Me / Bio'] || '',
+            needForSpace: userProposalData['need for Space'] || '',
+            specialNeeds: userProposalData['special needs'] || '',
+            proposalCount: proposalCount
           });
         }
       }
