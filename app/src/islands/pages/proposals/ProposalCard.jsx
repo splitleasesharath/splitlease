@@ -412,15 +412,23 @@ function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}
 
   // Stage 2: Rental App Submitted
   if (stageIndex === 1) {
-    // Green when awaiting rental app
-    if (!hasRentalApp ||
-        normalizedStatus === 'Proposal Submitted by guest - Awaiting Rental Application' ||
+    // Green when awaiting rental app - these statuses mean rental app is NOT yet submitted
+    if (normalizedStatus === 'Proposal Submitted by guest - Awaiting Rental Application' ||
         normalizedStatus === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application' ||
-        normalizedStatus === 'Proposal Submitted for guest by Split Lease - Pending Confirmation') {
+        normalizedStatus === 'Proposal Submitted for guest by Split Lease - Pending Confirmation' ||
+        normalizedStatus === 'Pending' ||
+        normalizedStatus === 'Pending Confirmation') {
       return PROGRESS_COLORS.green;
     }
-    // Purple when past this stage
-    if (usualOrder >= 1) {
+    // Purple when rental app has been submitted (status moved past awaiting rental app)
+    if (hasRentalApp ||
+        normalizedStatus === 'Rental Application Submitted' ||
+        normalizedStatus === 'Host Review' ||
+        normalizedStatus.includes('Counteroffer') ||
+        normalizedStatus.includes('Accepted') ||
+        normalizedStatus.includes('Lease Documents') ||
+        normalizedStatus.includes('Payment') ||
+        normalizedStatus.includes('activated')) {
       return PROGRESS_COLORS.purple;
     }
     return PROGRESS_COLORS.gray;
@@ -428,7 +436,7 @@ function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}
 
   // Stage 3: Host Review
   if (stageIndex === 2) {
-    // Green when in host review with rental app submitted
+    // Green when actively in host review with rental app submitted
     if (normalizedStatus === 'Host Review' && hasRentalApp) {
       return PROGRESS_COLORS.green;
     }
@@ -436,10 +444,15 @@ function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}
     if (normalizedStatus === 'Host Counteroffer Submitted / Awaiting Guest Review') {
       return PROGRESS_COLORS.green;
     }
-    // Purple when past this stage
-    if (usualOrder >= 3) {
+    // Purple when host review is complete (proposal accepted or further along)
+    if (normalizedStatus.includes('Accepted') ||
+        normalizedStatus.includes('Drafting') ||
+        normalizedStatus.includes('Lease Documents') ||
+        normalizedStatus.includes('Payment') ||
+        normalizedStatus.includes('activated')) {
       return PROGRESS_COLORS.purple;
     }
+    // Gray for all other cases (including awaiting rental app)
     return PROGRESS_COLORS.gray;
   }
 
