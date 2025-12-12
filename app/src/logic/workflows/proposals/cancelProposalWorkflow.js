@@ -14,7 +14,6 @@
  *
  * All cancellations result in:
  * - Status: 'Proposal Cancelled by Guest'
- * - Deleted: true (soft delete)
  * - Modified Date: current timestamp
  * - Optional: reason for cancellation
  */
@@ -101,7 +100,6 @@ export async function executeCancelProposal(proposalId, reason = null) {
 
   const updateData = {
     'Status': 'Proposal Cancelled by Guest',
-    'Deleted': true, // Soft delete - don't remove from database
     'Modified Date': now
   };
 

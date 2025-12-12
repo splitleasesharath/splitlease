@@ -14,6 +14,7 @@
  */
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
+import { executeCancelProposal } from '../../logic/workflows/proposals/cancelProposalWorkflow.js'
 import './GuestEditingProposalModal.css'
 
 // ============================================================================
@@ -384,7 +385,7 @@ function CancelProposalModalInner({
             className="cpm-button cpm-button--secondary"
             onClick={handleCancelClick}
           >
-            Cancel
+            Back
           </button>
           <button
             type="button"
@@ -891,15 +892,44 @@ export default function GuestEditingProposalModal({
   }, [])
 
   // Handle cancel proposal confirmation
-  const handleConfirmCancel = useCallback((reason) => {
-    onProposalCancel?.(reason)
-    onAlert?.({
-      text: 'Proposal cancelled',
-      alertType: 'information',
-      showOnLive: true
-    })
-    handleClose()
-  }, [onProposalCancel, onAlert, handleClose])
+  const handleConfirmCancel = useCallback(async (reason) => {
+    // Get proposal ID from the proposal object
+    const proposalId = proposal?._id;
+
+    if (!proposalId) {
+      onAlert?.({
+        text: 'Unable to cancel: proposal ID not found',
+        alertType: 'error',
+        showOnLive: true
+      });
+      return;
+    }
+
+    try {
+      // Execute the cancellation in Supabase
+      await executeCancelProposal(proposalId, reason || undefined);
+
+      // Notify parent component
+      onProposalCancel?.(reason);
+
+      // Show success message
+      onAlert?.({
+        text: 'Proposal cancelled successfully',
+        alertType: 'success',
+        showOnLive: true
+      });
+
+      // Close the modal
+      handleClose();
+    } catch (error) {
+      console.error('[GuestEditingProposalModal] Error cancelling proposal:', error);
+      onAlert?.({
+        text: `Failed to cancel proposal: ${error.message}`,
+        alertType: 'error',
+        showOnLive: true
+      });
+    }
+  }, [proposal, onProposalCancel, onAlert, handleClose])
 
   // Handle cancel modal dismiss
   const handleDismissCancel = useCallback(() => {

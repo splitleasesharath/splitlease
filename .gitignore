@@ -64,8 +64,8 @@ trees/
 # Claude hooks logs
 logs/
 
-# Agent output directories
-agents/
+# Agent output directories (root level only, not .claude/agents/)
+/agents/
 
 claude-max-output.json
 claude-max-output.jsonl
