@@ -23,8 +23,9 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 // Section IDs: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
 
 // FULL flow (for pages where days/move-in NOT pre-selected, e.g., FavoriteListingsPage):
-// User Details -> Days -> Move-in -> Review
-const FULL_FIRST_PROPOSAL_FLOW = [2, 4, 3, 1];
+// User Details -> Move-in (reservation span) -> Days -> Review
+// Move-in comes before Days so reservation span is set for accurate price calculations
+const FULL_FIRST_PROPOSAL_FLOW = [2, 3, 4, 1];
 
 // SHORT flow (for pages where days/move-in ARE pre-selected, e.g., ViewSplitLeasePage):
 // User Details -> Review

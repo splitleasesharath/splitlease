@@ -534,7 +534,38 @@ const FavoriteListingsPage = () => {
       images: images || [],
       description: `${(dbListing['Features - Qty Bedrooms'] || 0) === 0 ? 'Studio' : `${dbListing['Features - Qty Bedrooms']} bedroom`} • ${dbListing['Features - Qty Bathrooms'] || 0} bathroom`,
       weeks_offered: dbListing['Weeks offered'] || 'Every week',
-      isNew: false
+      isNew: false,
+
+      // Original pricing fields for CreateProposalFlowV2 / DaysSelectionSection
+      '💰Nightly Host Rate for 2 nights': dbListing['💰Nightly Host Rate for 2 nights'],
+      '💰Nightly Host Rate for 3 nights': dbListing['💰Nightly Host Rate for 3 nights'],
+      '💰Nightly Host Rate for 4 nights': dbListing['💰Nightly Host Rate for 4 nights'],
+      '💰Nightly Host Rate for 5 nights': dbListing['💰Nightly Host Rate for 5 nights'],
+      '💰Nightly Host Rate for 7 nights': dbListing['💰Nightly Host Rate for 7 nights'],
+      '💰Weekly Host Rate': dbListing['💰Weekly Host Rate'],
+      '💰Monthly Host Rate': dbListing['💰Monthly Host Rate'],
+      '💰Price Override': dbListing['💰Price Override'],
+      '💰Cleaning Cost / Maintenance Fee': dbListing['💰Cleaning Cost / Maintenance Fee'],
+      '💰Damage Deposit': dbListing['💰Damage Deposit'],
+      '💰Unit Markup': dbListing['💰Unit Markup'],
+      'rental type': dbListing['rental type'],
+      'Weeks offered': dbListing['Weeks offered'],
+
+      // Availability fields for schedule selector
+      ' First Available': dbListing[' First Available'],
+      'Last Available': dbListing['Last Available'],
+      '# of nights available': dbListing['# of nights available'],
+      'Active': dbListing['Active'],
+      'Approved': dbListing['Approved'],
+      'Dates - Blocked': dbListing['Dates - Blocked'],
+      'Complete': dbListing['Complete'],
+      'confirmedAvailability': dbListing['confirmedAvailability'],
+      'NEW Date Check-in Time': dbListing['NEW Date Check-in Time'],
+      'NEW Date Check-out Time': dbListing['NEW Date Check-out Time'],
+      'Nights Available (numbers)': dbListing['Nights Available (numbers)'],
+      'Minimum Nights': dbListing['Minimum Nights'],
+      'Maximum Nights': dbListing['Maximum Nights'],
+      'Days Available (List of Days)': dbListing['Days Available (List of Days)']
     };
   }, []);
 
