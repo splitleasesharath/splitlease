@@ -2805,8 +2805,8 @@ export default function ViewSplitLeasePage() {
         />
       )}
 
-      {/* Mobile Bottom Booking Bar */}
-      {isMobile && (
+      {/* Mobile Bottom Booking Bar - hide when proposal modal is open */}
+      {isMobile && !isProposalModalOpen && (
         <>
           {/* Overlay when expanded */}
           {mobileBookingExpanded && (
