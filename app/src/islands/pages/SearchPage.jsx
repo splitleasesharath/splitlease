@@ -907,16 +907,17 @@ export default function SearchPage() {
               proposalCount: userData.proposalCount ?? 0
             });
 
-            // Fetch favorites from Supabase
+            // Fetch favorites and proposals list from Supabase
             if (userId) {
-              const { data: userFavorites, error } = await supabase
+              const { data: userRecord, error } = await supabase
                 .from('user')
-                .select('"Favorited Listings"')
+                .select('"Favorited Listings", "Proposals List"')
                 .eq('_id', userId)
                 .single();
 
-              if (!error && userFavorites) {
-                const favorites = userFavorites['Favorited Listings'];
+              if (!error && userRecord) {
+                // Handle favorites
+                const favorites = userRecord['Favorited Listings'];
                 if (Array.isArray(favorites)) {
                   // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
                   const validFavorites = favorites.filter(id =>
@@ -932,6 +933,17 @@ export default function SearchPage() {
                   setFavoritesCount(0);
                   setFavoritedListingIds(new Set());
                 }
+
+                // Handle proposals count for Create Proposal CTA
+                const proposalsList = userRecord['Proposals List'];
+                const proposalCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
+                console.log('[SearchPage] Proposals count from user table:', proposalCount);
+
+                // Update currentUser with actual proposal count
+                setCurrentUser(prev => ({
+                  ...prev,
+                  proposalCount: proposalCount
+                }))
               }
             }
           }
