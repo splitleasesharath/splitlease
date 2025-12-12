@@ -4,12 +4,18 @@
  */
 
 @import url('https://fonts.googleapis.com/css2?family=Alata&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap');
 
 :root {
   --vm-purple-accent: rgb(92, 32, 182);
   --vm-disabled-gray: rgb(221, 221, 221);
   --vm-selected-slots-bg: rgb(247, 248, 249);
   --vm-submit-disabled: rgb(104, 104, 104);
+  /* Cancel Modal specific */
+  --vm-cancel-purple: #6f34bf;
+  --vm-cancel-danger: #c82333;
+  --vm-cancel-gray: #424242;
+  --vm-cancel-card-bg: #f7f8f9;
 }
 
 /* ============================================
@@ -55,8 +61,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
-  gap: 12px;
+  margin-bottom: 12px;
+  gap: 8px;
 }
 
 .vm-header-title {
@@ -67,34 +73,35 @@
 }
 
 .vm-icon {
-  font-size: 24px;
+  font-size: 20px;
   display: inline-block;
 }
 
 .vm-title {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   color: #1f2937;
   margin: 0;
+  font-family: 'Inter', sans-serif;
 }
 
 .vm-close-btn {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 12px;
+  right: 12px;
   background: none;
   border: none;
-  font-size: 24px;
-  color: #6b7280;
+  font-size: 20px;
+  color: var(--vm-cancel-purple, #6f34bf);
   cursor: pointer;
-  padding: 8px;
+  padding: 4px;
   transition: color 0.2s;
   line-height: 1;
   z-index: 10;
 }
 
 .vm-close-btn:hover {
-  color: #000;
+  color: #5a2a9e;
 }
 
 .vm-back-btn {
@@ -123,10 +130,10 @@
 }
 
 .vm-warning-text {
-  color: #dc2626;
+  color: var(--vm-cancel-gray, #424242);
   font-size: 14px;
-  margin-bottom: 16px;
-  font-weight: 500;
+  margin-bottom: 12px;
+  font-weight: 400;
 }
 
 /* ============================================
@@ -135,8 +142,9 @@
 
 .vm-button-group {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   margin-top: 16px;
+  justify-content: center;
 }
 
 .vm-button-primary {
@@ -179,37 +187,48 @@
 }
 
 .vm-button-danger {
-  background: #dc2626;
+  background: var(--vm-cancel-danger, #c82333);
   color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
+  padding: 0;
+  width: 128px;
+  height: 32px;
+  border-radius: 20px;
   border: none;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
   cursor: pointer;
   transition: background 0.2s;
-  flex: 1;
+  flex: none;
 }
 
 .vm-button-danger:hover {
-  background: #c41e1e;
+  background: #a71d2a;
+}
+
+.vm-button-danger:disabled {
+  background: #ccc;
+  cursor: not-allowed;
 }
 
 .vm-button-outline {
   background: white;
-  color: #3b82f6;
-  padding: 12px 24px;
-  border-radius: 8px;
-  border: 2px solid #3b82f6;
+  color: var(--vm-cancel-purple, #6f34bf);
+  padding: 0;
+  width: 128px;
+  height: 32px;
+  border-radius: 20px;
+  border: 2px solid var(--vm-cancel-purple, #6f34bf);
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
+  font-family: 'DM Sans', sans-serif;
   cursor: pointer;
   transition: all 0.2s;
-  flex: 1;
+  flex: none;
 }
 
 .vm-button-outline:hover {
-  background: #eff6ff;
+  background: #f5f0ff;
 }
 
 .vm-button-success {
@@ -360,15 +379,15 @@
    ============================================ */
 
 .vm-cancel-container {
-  padding: 8px 0;
+  padding: 4px 0;
 }
 
 .vm-meeting-info-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
-  background: #f9fafb;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  background: var(--vm-cancel-card-bg, #f7f8f9);
 }
 
 .vm-meeting-info-content {
@@ -378,7 +397,8 @@
 }
 
 .vm-meeting-info-icon {
-  font-size: 32px;
+  font-size: 24px;
+  color: var(--vm-cancel-purple, #6f34bf);
 }
 
 .vm-meeting-info-details {
@@ -386,16 +406,17 @@
 }
 
 .vm-meeting-info-title {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 400;
+  font-family: 'Roboto', sans-serif;
   color: #1f2937;
-  margin: 0 0 8px 0;
+  margin: 0 0 4px 0;
 }
 
 .vm-meeting-info-listing {
-  font-size: 14px;
-  color: #6b7280;
-  margin: 4px 0;
+  font-size: 12px;
+  color: var(--vm-cancel-gray, #424242);
+  margin: 2px 0;
 }
 
 .vm-meeting-info-date {
