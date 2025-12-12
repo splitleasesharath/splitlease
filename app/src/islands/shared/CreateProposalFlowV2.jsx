@@ -166,6 +166,10 @@ export default function CreateProposalFlowV2({
   // Track position in the flow for sequential navigation (0 = first step, 1 = second step, etc.)
   const [flowStepIndex, setFlowStepIndex] = useState(0);
 
+  // Track if we're editing from Review (hub-and-spoke pattern)
+  // When true, "Next" returns directly to Review instead of continuing sequence
+  const [isEditingFromReview, setIsEditingFromReview] = useState(false);
+
   // Internal state for pricing (managed by ListingScheduleSelector in DaysSelectionSection)
   const [internalPricingBreakdown, setInternalPricingBreakdown] = useState(pricingBreakdown);
   const [internalDaysSelected, setInternalDaysSelected] = useState(daysSelected);
@@ -473,43 +477,41 @@ export default function CreateProposalFlowV2({
   };
 
   // Edit handlers - take user to specific section from Review
-  // When in sequential flow, we need to update flowStepIndex to match the section being edited
+  // Sets isEditingFromReview flag so "Next" returns directly to Review (hub-and-spoke pattern)
   const handleEditUserDetails = () => {
     setCurrentSection(2);
-    if (useSequentialFlow) {
-      const stepIndex = activeFlow.indexOf(2);
-      if (stepIndex !== -1) {
-        setFlowStepIndex(stepIndex);
-        console.log(`📝 Edit: Jumping to User Details (section 2), flowStepIndex set to ${stepIndex}`);
-      }
-    }
+    setIsEditingFromReview(true);
+    console.log('📝 Edit: Jumping to User Details (section 2) from Review');
   };
 
   const handleEditMoveIn = () => {
     setCurrentSection(3);
-    if (useSequentialFlow) {
-      const stepIndex = activeFlow.indexOf(3);
-      if (stepIndex !== -1) {
-        setFlowStepIndex(stepIndex);
-        console.log(`📝 Edit: Jumping to Move-in (section 3), flowStepIndex set to ${stepIndex}`);
-      }
-    }
+    setIsEditingFromReview(true);
+    console.log('📝 Edit: Jumping to Move-in (section 3) from Review');
   };
 
   const handleEditDays = () => {
     setCurrentSection(4);
-    if (useSequentialFlow) {
-      const stepIndex = activeFlow.indexOf(4);
-      if (stepIndex !== -1) {
-        setFlowStepIndex(stepIndex);
-        console.log(`📝 Edit: Jumping to Days Selection (section 4), flowStepIndex set to ${stepIndex}`);
-      }
-    }
+    setIsEditingFromReview(true);
+    console.log('📝 Edit: Jumping to Days Selection (section 4) from Review');
   };
 
-  // Navigation - sequential when useSequentialFlow=true, hub-and-spoke otherwise
+  // Navigation - handles both sequential flow and hub-and-spoke editing from Review
   const handleNext = () => {
     if (!validateCurrentSection()) return;
+
+    // If we're editing from Review (hub-and-spoke), return directly to Review
+    if (isEditingFromReview) {
+      setCurrentSection(1);
+      setIsEditingFromReview(false);
+      // Also update flowStepIndex to point to Review section
+      const reviewIndex = activeFlow.indexOf(1);
+      if (reviewIndex !== -1) {
+        setFlowStepIndex(reviewIndex);
+      }
+      console.log('📍 Edit complete: Returning to Review section');
+      return;
+    }
 
     if (useSequentialFlow) {
       // Sequential flow (full flow for FavoriteListingsPage, short flow for first-time on ViewSplitLeasePage)
@@ -528,6 +530,18 @@ export default function CreateProposalFlowV2({
   };
 
   const handleBack = () => {
+    // If editing from Review, "Go back" should also return to Review
+    if (isEditingFromReview) {
+      setCurrentSection(1);
+      setIsEditingFromReview(false);
+      const reviewIndex = activeFlow.indexOf(1);
+      if (reviewIndex !== -1) {
+        setFlowStepIndex(reviewIndex);
+      }
+      console.log('📍 Edit cancelled: Returning to Review section');
+      return;
+    }
+
     if (useSequentialFlow) {
       // Sequential back navigation (flow depends on useFullFlow prop)
       if (flowStepIndex > 0) {
@@ -694,11 +708,12 @@ export default function CreateProposalFlowV2({
 
         <div className="navigation-buttons">
           {/* Show back button:
+              - When editing from Review: always show (to cancel and return)
               - For sequential flow: show if not on first step (flowStepIndex > 0)
               - For hub-and-spoke: show if not on Review section (currentSection !== 1) */}
-          {(useSequentialFlow ? flowStepIndex > 0 : currentSection !== 1) && (
+          {(isEditingFromReview || (useSequentialFlow ? flowStepIndex > 0 : currentSection !== 1)) && (
             <button className="nav-button back" onClick={handleBack}>
-              Go back
+              {isEditingFromReview ? 'Cancel' : 'Go back'}
             </button>
           )}
           {currentSection === 1 ? (
@@ -707,12 +722,15 @@ export default function CreateProposalFlowV2({
             </button>
           ) : (
             <button className="nav-button next" onClick={handleNext}>
-              {/* Button text based on flow position:
+              {/* Button text based on context:
+                  - When editing from Review: "Save & Review"
                   - For sequential flow: "Review Proposal" on the step before Review, "Next" otherwise
                   - For hub-and-spoke: "Next" on User Details, "Yes, Continue" on other sections */}
-              {useSequentialFlow
-                ? (flowStepIndex === activeFlow.length - 2 ? 'Review Proposal' : 'Next')
-                : (currentSection === 2 ? 'Next' : 'Yes, Continue')}
+              {isEditingFromReview
+                ? 'Save & Review'
+                : useSequentialFlow
+                  ? (flowStepIndex === activeFlow.length - 2 ? 'Review Proposal' : 'Next')
+                  : (currentSection === 2 ? 'Next' : 'Yes, Continue')}
             </button>
           )}
         </div>
