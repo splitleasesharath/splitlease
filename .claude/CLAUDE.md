@@ -19,36 +19,29 @@ For ANY non-trivial task, follow this orchestration pipeline:
 │                        TASK ORCHESTRATION PIPELINE                          │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  1. CLASSIFY → task-classifier (haiku)                                      │
+│  Phase 1: CLASSIFY → task-classifier (haiku)                                │
 │     Input: Raw user request                                                 │
 │     Output: BUILD | DEBUG | CLEANUP classification + reformatted task       │
 │                                                                             │
-│  2. PLAN → Based on classification (TERMINAL STEP):                         │
-│     ├─ BUILD  → implementation-planner (opus)                               │
-│     ├─ DEBUG  → debug-analyst (opus)                                        │
+│  Phase 2: PLAN → Based on classification:                                   │
+│     ├─ BUILD   → implementation-planner (opus)                              │
+│     ├─ DEBUG   → debug-analyst (opus)                                       │
 │     └─ CLEANUP → cleanup-planner (opus)                                     │
 │     Input: Classified task + miniCLAUDE.md (or largeCLAUDE.md for complex)  │
 │     Output: Plan file in .claude/plans/New/                                 │
 │                                                                             │
-│  ⛔ STOP HERE — Do NOT invoke any additional subagents after the planner.   │
-│     The orchestrator returns control to the user after the plan is created. │
-│                                                                             │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                     OPTIONAL (User-Initiated Only)                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  3. EXECUTE → plan-executor (opus) — Only when user explicitly requests     │
+│  Phase 3: EXECUTE → plan-executor (opus)                                    │
 │     Input: Plan path + referenced files from plan                           │
 │     Output: Implemented changes + changelog                                 │
 │                                                                             │
-│  4. REVIEW → input-reviewer (opus) — Only when user explicitly requests     │
+│  Phase 4: REVIEW → input-reviewer (opus)                                    │
 │     Input: Changelog + plan file + original query                           │
 │     Output: Verdict (PASS | NEEDS ATTENTION | FAIL)                         │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-> **⚠️ CRITICAL**: After `task-classifier` returns, invoke ONLY the corresponding planner subagent. Do NOT automatically chain to `plan-executor` or `input-reviewer`. The pipeline terminates after the planner produces its output.
+> **⚠️ LOCKED PIPELINE RULE**: Once `task-classifier` is invoked, ALL 4 phases MUST execute in sequence. You are **PROHIBITED** from invoking ANY other subagent (such as `mcp-tool-specialist`, `context-lookup`, `codebase-explorer`, etc.) until the pipeline completes Phase 4. The pipeline is a sealed unit — no external agents may be injected mid-sequence.
 
 ### Context Selection Guide
 
@@ -92,19 +85,23 @@ For **lookup, exploration, or research tasks** that do NOT modify code, **skip t
 
 **You MUST use the Task tool to invoke the appropriate subagent for the following task types:**
 
-| Task Type | Required Subagent Chain | When to Use |
-|-----------|-------------------------|-------------|
-| New feature, enhancement, code change | `task-classifier` → `implementation-planner` (STOP) | Any BUILD task |
-| Bug investigation, error analysis | `task-classifier` → `debug-analyst` (STOP) | Any DEBUG task |
-| Refactoring, cleanup, consolidation | `task-classifier` → `cleanup-planner` (STOP) | Any CLEANUP task |
-| MCP tool invocation (Supabase, Playwright, etc.) | `mcp-tool-specialist` | Any MCP operation |
+| Task Type | Required Subagent Chain (ALL 4 PHASES) | When to Use |
+|-----------|----------------------------------------|-------------|
+| New feature, enhancement, code change | `task-classifier` → `implementation-planner` → `plan-executor` → `input-reviewer` | Any BUILD task |
+| Bug investigation, error analysis | `task-classifier` → `debug-analyst` → `plan-executor` → `input-reviewer` | Any DEBUG task |
+| Refactoring, cleanup, consolidation | `task-classifier` → `cleanup-planner` → `plan-executor` → `input-reviewer` | Any CLEANUP task |
 
-> **⛔ NO FURTHER SUBAGENTS**: After the planner subagent completes, the pipeline STOPS. Do NOT automatically invoke `plan-executor` or `input-reviewer`. These are only used when the user explicitly requests execution or review.
+> **⛔ LOCKED PIPELINE**: Once `task-classifier` begins, you MUST complete all 4 phases. You are **PROHIBITED** from invoking any other subagent (e.g., `mcp-tool-specialist`, `context-lookup`, `codebase-explorer`) until the pipeline completes.
 
-| Optional Subagent | When to Use |
-|-------------------|-------------|
-| `plan-executor` | Only when user explicitly says "execute the plan" or similar |
-| `input-reviewer` | Only when user explicitly requests a review |
+### Subagents Outside the Pipeline
+
+These subagents may ONLY be invoked **before** starting the pipeline or **after** the pipeline completes Phase 4:
+
+| Subagent | When to Use |
+|----------|-------------|
+| `mcp-tool-specialist` | Any MCP operation (Supabase, Playwright, etc.) — NEVER mid-pipeline |
+| `context-lookup` | Read-only codebase analysis — NEVER mid-pipeline |
+| `codebase-explorer` / `Explore` | Codebase exploration — NEVER mid-pipeline |
 
 **Violation of these rules is unacceptable.** If uncertain whether a task is "trivial" or "non-trivial," default to using the orchestration pipeline.
 
@@ -199,8 +196,9 @@ supabase functions deploy <name>   # Deploy single function
 ### DO (MANDATORY)
 - **ALWAYS invoke subagents via Task tool for non-trivial tasks** — This is non-negotiable
 - **ALWAYS use `task-classifier` as the first step** for BUILD/DEBUG/CLEANUP tasks
-- **ALWAYS use `mcp-tool-specialist`** for any MCP tool invocation (Supabase, Playwright, etc.)
-- **STOP after the planner subagent** — Do NOT auto-chain to `plan-executor` or `input-reviewer`
+- **ALWAYS complete ALL 4 phases** once the pipeline starts — no early exit
+- **NEVER inject external subagents mid-pipeline** — the 4-phase sequence is sealed
+- **ALWAYS use `mcp-tool-specialist`** for any MCP tool invocation (only before or after pipeline)
 - Use Edge Functions for all Bubble API calls
 - Run `bun run generate-routes` after route changes
 - Commit after each meaningful change
@@ -231,4 +229,4 @@ supabase functions deploy <name>   # Deploy single function
 
 ---
 
-**VERSION**: 9.3 | **UPDATED**: 2025-12-12
+**VERSION**: 9.4 | **UPDATED**: 2025-12-12
