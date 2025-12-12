@@ -456,11 +456,18 @@ const GoogleMap = forwardRef(({
         googleMapsLoaded: !!(window.google && window.google.maps),
         simpleMode,
         hasFilteredListings: filteredListings.length > 0,
-        hasListings: listings.length > 0
+        hasListings: listings.length > 0,
+        mapAlreadyExists: !!googleMapRef.current
       });
 
       if (!mapRef.current || !window.google) {
         console.warn('⚠️ GoogleMap: Cannot initialize - missing mapRef or Google Maps API');
+        return;
+      }
+
+      // Don't recreate map if it already exists
+      if (googleMapRef.current) {
+        console.log('⏭️ GoogleMap: Map already exists, skipping re-initialization');
         return;
       }
 
@@ -507,6 +514,8 @@ const GoogleMap = forwardRef(({
       });
 
       googleMapRef.current = map;
+      // Reset marker signature so markers are recreated on new map instance
+      lastMarkersUpdateRef.current = null;
       setMapLoaded(true);
       console.log('✅ GoogleMap: Map initialized successfully with zoom controls enabled');
     };
