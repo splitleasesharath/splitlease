@@ -520,11 +520,14 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
           const stageColor = getStageColor(index, status, usualOrder, isTerminal, proposal);
           const prevStageColor = index > 0 ? getStageColor(index - 1, status, usualOrder, isTerminal, proposal) : null;
 
-          // Connector color: always purple when filled (green only appears on dots, not lines)
-          // If previous stage is completed/active, connector should be purple; otherwise gray
-          const connectorColor = prevStageColor && prevStageColor !== PROGRESS_COLORS.gray
-            ? (prevStageColor === PROGRESS_COLORS.red ? PROGRESS_COLORS.red : PROGRESS_COLORS.purple)
-            : PROGRESS_COLORS.gray;
+          // Connector color: purple ONLY if previous dot is purple (completed)
+          // Green dot is the "current action" - line after it should be gray
+          // Everything after the green dot should be gray
+          const connectorColor = prevStageColor === PROGRESS_COLORS.purple
+            ? PROGRESS_COLORS.purple
+            : prevStageColor === PROGRESS_COLORS.red
+              ? PROGRESS_COLORS.red
+              : PROGRESS_COLORS.gray;
 
           return (
             <div key={stage.id} className="progress-node-wrapper">
