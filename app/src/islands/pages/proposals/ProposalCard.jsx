@@ -320,13 +320,20 @@ function StatusBanner({ status, cancelReason, isCounteroffer }) {
 // ============================================================================
 
 /**
- * Get dynamic stage labels based on status
+ * Get dynamic stage labels based on status and rental app submission state
  * Labels change to reflect completion (e.g., "Host Review" -> "Host Review Complete")
+ * Stage 2 shows "Submit Rental Application" when rental app not submitted
+ *
+ * @param {string} status - Proposal status
+ * @param {Object} proposal - Proposal object to check rental application status
  */
-function getStageLabels(status) {
+function getStageLabels(status, proposal = {}) {
+  // Check if rental application is submitted by checking the proposal and user
+  const hasRentalApp = proposal['rental application'] || proposal?.user?.['rental application'];
+
   const baseLabels = [
     'Proposal Submitted',
-    'Rental App Submitted',
+    hasRentalApp ? 'Rental App Submitted' : 'Submit Rental Application',
     'Host Review',
     'Review Documents',
     'Lease Documents',
@@ -513,8 +520,11 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
           const stageColor = getStageColor(index, status, usualOrder, isTerminal, proposal);
           const prevStageColor = index > 0 ? getStageColor(index - 1, status, usualOrder, isTerminal, proposal) : null;
 
-          // Connector color: use the color of the stage it leads to if completed, otherwise gray
-          const connectorColor = stageColor !== PROGRESS_COLORS.gray ? stageColor : PROGRESS_COLORS.gray;
+          // Connector color: always purple when filled (green only appears on dots, not lines)
+          // If previous stage is completed/active, connector should be purple; otherwise gray
+          const connectorColor = prevStageColor && prevStageColor !== PROGRESS_COLORS.gray
+            ? (prevStageColor === PROGRESS_COLORS.red ? PROGRESS_COLORS.red : PROGRESS_COLORS.purple)
+            : PROGRESS_COLORS.gray;
 
           return (
             <div key={stage.id} className="progress-node-wrapper">
@@ -682,7 +692,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const statusColor = currentStatusConfig?.color || 'blue';
   const isTerminal = isTerminalStatus(status);
   const isCompleted = isCompletedStatus(status);
-  const stageLabels = getStageLabels(status);
+  const stageLabels = getStageLabels(status, proposal);
 
   // Warning: some nights unavailable
   const someNightsUnavailable = proposal['some nights unavailable'];
