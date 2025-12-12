@@ -189,7 +189,10 @@ export default function CreateProposalFlowV2({
       });
     }
 
-    console.log(`📍 Starting section: ${isFirstProposal ? '2 (User Details - first proposal)' : '1 (Review - returning user)'}`);
+    console.log(`📍 Starting flow: ${isFirstProposal
+      ? `First proposal - sequential flow [${FIRST_PROPOSAL_FLOW.join(' -> ')}], starting at step 1 (section ${FIRST_PROPOSAL_FLOW[0]})`
+      : '1 (Review - returning user, hub-and-spoke model)'
+    }`);
   }, []);
 
   // Convert day objects to day names for compatibility
@@ -483,12 +486,21 @@ export default function CreateProposalFlowV2({
   };
 
   const handleBack = () => {
-    if (currentSection === 1) {
-      // From Review, go to User Details to edit
-      setCurrentSection(2);
+    if (isFirstProposal) {
+      // Sequential back navigation for first-time users
+      if (flowStepIndex > 0) {
+        const prevIndex = flowStepIndex - 1;
+        setFlowStepIndex(prevIndex);
+        setCurrentSection(FIRST_PROPOSAL_FLOW[prevIndex]);
+        console.log(`📍 First proposal: Going back to step ${prevIndex + 1} (section ${FIRST_PROPOSAL_FLOW[prevIndex]})`);
+      }
+      // If at first step (User Details), no back navigation available
     } else {
-      // From any edit section, go back to Review
-      setCurrentSection(1);
+      // Hub-and-spoke for returning users: from any edit section, return to Review
+      if (currentSection !== 1) {
+        setCurrentSection(1);
+        console.log('📍 Returning user: Back to Review section');
+      }
     }
   };
 
@@ -639,7 +651,10 @@ export default function CreateProposalFlowV2({
         </div>
 
         <div className="navigation-buttons">
-          {currentSection !== 2 && (
+          {/* Show back button:
+              - For first-time users: show if not on first step (flowStepIndex > 0)
+              - For returning users: show if not on Review section (currentSection !== 1) */}
+          {(isFirstProposal ? flowStepIndex > 0 : currentSection !== 1) && (
             <button className="nav-button back" onClick={handleBack}>
               Go back
             </button>
@@ -650,7 +665,12 @@ export default function CreateProposalFlowV2({
             </button>
           ) : (
             <button className="nav-button next" onClick={handleNext}>
-              {currentSection === 2 ? 'Next' : 'Yes, Continue'}
+              {/* Button text based on flow position:
+                  - For first-time users: "Review Proposal" on the step before Review, "Next" otherwise
+                  - For returning users: "Next" on User Details, "Yes, Continue" on other sections */}
+              {isFirstProposal
+                ? (flowStepIndex === FIRST_PROPOSAL_FLOW.length - 2 ? 'Review Proposal' : 'Next')
+                : (currentSection === 2 ? 'Next' : 'Yes, Continue')}
             </button>
           )}
         </div>
