@@ -581,6 +581,37 @@
     flex-shrink: 0;
 }
 
+/* View Proposal Button - For listings with existing proposals */
+.listing-host-row .view-proposal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.listing-host-row .view-proposal-btn:hover {
+    background: #047857;
+    box-shadow: 0 2px 4px rgba(5, 150, 105, 0.2);
+}
+
+.listing-host-row .view-proposal-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
 /* Stacked Host Row Layout - avatar on top, name below, buttons at bottom */
 .listing-host-row.listing-host-row--stacked {
     flex-direction: column;
@@ -610,6 +641,12 @@
 
 .listing-host-row--stacked .message-btn,
 .listing-host-row--stacked .create-proposal-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: auto;
+}
+
+.listing-host-row--stacked .view-proposal-btn {
     padding: 6px 12px;
     font-size: 12px;
     min-width: auto;

@@ -11,6 +11,7 @@ import FavoriteButton from '../shared/FavoriteButton';
 import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
 import { isGuest } from '../../logic/rules/users/isGuest.js';
 import { supabase } from '../../lib/supabase.js';
+import { fetchProposalsByGuest } from '../../lib/proposalDataFetcher.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getUserId, logoutUser } from '../../lib/auth.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
@@ -370,7 +371,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
 
@@ -626,24 +627,45 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
                 </svg>
                 Message
               </button>
+              {/* Proposal CTAs - Show Create or View based on existing proposal */}
               {showCreateProposalButton && (
-                <button
-                  className="create-proposal-btn"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onOpenCreateProposalModal(listing);
-                  }}
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                  </svg>
-                  Create Proposal
-                </button>
+                proposalForListing ? (
+                  <button
+                    className="view-proposal-btn"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      window.location.href = `/guest-proposals?proposal=${proposalForListing._id}`;
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    View Proposal
+                  </button>
+                ) : (
+                  <button
+                    className="create-proposal-btn"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onOpenCreateProposalModal(listing);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="16" y1="13" x2="8" y2="13"></line>
+                      <line x1="16" y1="17" x2="8" y2="17"></line>
+                      <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Create Proposal
+                  </button>
+                )
               )}
             </div>
           </div>
@@ -673,7 +695,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId }) {
 
   const sentinelRef = useRef(null);
 
@@ -707,6 +729,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
       {listings.map((listing, index) => {
         const listingId = listing.id || listing._id;
         const isFavorited = favoritedListingIds?.has(listingId);
+        const proposalForListing = proposalsByListingId?.get(listingId) || null;
         return (
           <PropertyCard
             key={listing.id}
@@ -725,6 +748,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             onRequireAuth={onRequireAuth}
             showCreateProposalButton={showCreateProposalButton}
             onOpenCreateProposalModal={onOpenCreateProposalModal}
+            proposalForListing={proposalForListing}
           />
         );
       })}
@@ -860,6 +884,9 @@ export default function SearchPage() {
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [favoritedListingIds, setFavoritedListingIds] = useState(new Set());
 
+  // Proposals state - Map of listing ID to proposal object
+  const [proposalsByListingId, setProposalsByListingId] = useState(new Map());
+
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
@@ -943,7 +970,35 @@ export default function SearchPage() {
                 setCurrentUser(prev => ({
                   ...prev,
                   proposalCount: proposalCount
-                }))
+                }));
+
+                // Fetch user's proposals to check if any exist for specific listings
+                const userIsGuest = isGuest({ userType: userData.userType });
+                if (userIsGuest && userId && proposalCount > 0) {
+                  try {
+                    const proposals = await fetchProposalsByGuest(userId);
+                    console.log(`[SearchPage] Loaded ${proposals.length} proposals for user`);
+
+                    // Create a map of listing ID to proposal (only include non-terminal proposals)
+                    const proposalsMap = new Map();
+                    proposals.forEach(proposal => {
+                      const listingId = proposal.Listing;
+                      if (listingId) {
+                        // If multiple proposals exist for same listing, keep the most recent one
+                        // (proposals are already sorted by Created Date descending)
+                        if (!proposalsMap.has(listingId)) {
+                          proposalsMap.set(listingId, proposal);
+                        }
+                      }
+                    });
+
+                    setProposalsByListingId(proposalsMap);
+                    console.log(`[SearchPage] Mapped ${proposalsMap.size} listings with proposals`);
+                  } catch (proposalErr) {
+                    console.warn('[SearchPage] Failed to fetch proposals (non-critical):', proposalErr);
+                    // Don't fail the page if proposals can't be loaded - just show Create Proposal for all
+                  }
+                }
               }
             }
           }
@@ -1862,6 +1917,21 @@ export default function SearchPage() {
     // Close the modal and show a success toast
     // Full implementation would call the proposal Edge Function
     setIsCreateProposalModalOpen(false);
+
+    // Update proposalsByListingId map with the new proposal
+    // This enables immediate UI update (button changes from "Create" to "View")
+    if (proposalData && selectedListingForProposal) {
+      const listingId = selectedListingForProposal.id || selectedListingForProposal._id;
+      if (listingId && proposalData._id) {
+        setProposalsByListingId(prev => {
+          const updated = new Map(prev);
+          updated.set(listingId, proposalData);
+          console.log(`[SearchPage] Added proposal ${proposalData._id} to listing ${listingId}`);
+          return updated;
+        });
+      }
+    }
+
     setSelectedListingForProposal(null);
     showToast('Proposal submitted successfully!', 'success');
   };
@@ -2175,6 +2245,7 @@ export default function SearchPage() {
                       }}
                       showCreateProposalButton={showCreateProposalButton}
                       onOpenCreateProposalModal={handleOpenCreateProposalModal}
+                      proposalsByListingId={proposalsByListingId}
                     />
                   </div>
                 )}
@@ -2200,6 +2271,7 @@ export default function SearchPage() {
                 }}
                 showCreateProposalButton={showCreateProposalButton}
                 onOpenCreateProposalModal={handleOpenCreateProposalModal}
+                proposalsByListingId={proposalsByListingId}
               />
             )}
           </div>
