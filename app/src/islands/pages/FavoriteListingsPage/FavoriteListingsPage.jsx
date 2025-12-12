@@ -25,6 +25,7 @@ import { getNeighborhoodName, getBoroughName, getPropertyTypeLabel, initializeLo
 import { fetchPhotoUrls, extractPhotos, fetchHostData, parseAmenities } from '../../../lib/supabaseUtils.js';
 import { adaptDaysToBubble } from '../../../logic/processors/external/adaptDaysToBubble.js';
 import { createDay } from '../../../lib/scheduleSelector/dayHelpers.js';
+import { calculateNextAvailableCheckIn } from '../../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import './FavoriteListingsPage.css';
 import '../../../styles/create-proposal-flow-v2.css';
 
@@ -876,20 +877,30 @@ const FavoriteListingsPage = () => {
       initialDays = [1, 2, 3, 4, 5].map(dayIndex => createDay(dayIndex, true));
     }
 
-    // Calculate default move-in date (2 weeks from now on the first selected day)
+    // Calculate minimum move-in date (2 weeks from today)
     const today = new Date();
     const twoWeeksFromNow = new Date(today);
     twoWeeksFromNow.setDate(today.getDate() + 14);
+    const minMoveInDate = twoWeeksFromNow.toISOString().split('T')[0];
 
-    // Find the next occurrence of the first selected day after 2 weeks
-    const firstSelectedDay = initialDays[0]?.dayOfWeek ?? 1;
-    while (twoWeeksFromNow.getDay() !== firstSelectedDay) {
-      twoWeeksFromNow.setDate(twoWeeksFromNow.getDate() + 1);
+    // Calculate smart default move-in date using shared calculator
+    let smartMoveInDate = minMoveInDate;
+    if (initialDays.length > 0) {
+      try {
+        const selectedDayIndices = initialDays.map(d => d.dayOfWeek);
+        smartMoveInDate = calculateNextAvailableCheckIn({
+          selectedDayIndices,
+          minDate: minMoveInDate
+        });
+      } catch (err) {
+        console.error('Error calculating smart move-in date:', err);
+        smartMoveInDate = minMoveInDate;
+      }
     }
 
     setSelectedListingForProposal(listing);
     setSelectedDayObjects(initialDays);
-    setMoveInDate(twoWeeksFromNow.toISOString().split('T')[0]);
+    setMoveInDate(smartMoveInDate);
     setReservationSpan(13);
     setPriceBreakdown(null); // Will be calculated by ListingScheduleSelector
     setIsProposalModalOpen(true);

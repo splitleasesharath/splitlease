@@ -1956,8 +1956,30 @@ export default function SearchPage() {
       initialDays = [1, 2, 3, 4, 5].map(dayIndex => createDay(dayIndex, true));
     }
 
+    // Calculate minimum move-in date (2 weeks from today)
+    const today = new Date();
+    const twoWeeksFromNow = new Date(today);
+    twoWeeksFromNow.setDate(today.getDate() + 14);
+    const minMoveInDate = twoWeeksFromNow.toISOString().split('T')[0];
+
+    // Calculate smart default move-in date using shared calculator
+    let smartMoveInDate = minMoveInDate;
+    if (initialDays.length > 0) {
+      try {
+        const selectedDayIndices = initialDays.map(d => d.dayOfWeek);
+        smartMoveInDate = calculateNextAvailableCheckIn({
+          selectedDayIndices,
+          minDate: minMoveInDate
+        });
+      } catch (err) {
+        console.error('Error calculating smart move-in date:', err);
+        smartMoveInDate = minMoveInDate;
+      }
+    }
+
     setSelectedListingForProposal(listing);
     setSelectedDayObjectsForProposal(initialDays);
+    setMoveInDateForProposal(smartMoveInDate);
     setIsCreateProposalModalOpen(true);
   };
 
@@ -2477,7 +2499,7 @@ export default function SearchPage() {
       {isCreateProposalModalOpen && selectedListingForProposal && (
         <CreateProposalFlowV2
           listing={transformListingForProposal(selectedListingForProposal)}
-          moveInDate=""
+          moveInDate={moveInDateForProposal}
           daysSelected={selectedDayObjectsForProposal}
           nightsSelected={selectedDayObjectsForProposal.length > 0 ? selectedDayObjectsForProposal.length - 1 : 0}
           reservationSpan={13}
