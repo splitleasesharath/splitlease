@@ -89,6 +89,10 @@
 /host-overview
   Content-Type: text/html; charset=utf-8
 
+# Favorite Listings page - serve as HTML (uses _internal pattern)
+/favorite-listings
+  Content-Type: text/html; charset=utf-8
+
 # Internal files (no extension) - serve as HTML
 /_internal/*
   Content-Type: text/html; charset=utf-8

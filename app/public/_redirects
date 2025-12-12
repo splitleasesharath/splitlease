@@ -101,10 +101,9 @@
 /host-overview  /_internal/host-overview-view  200
 /host-overview/  /_internal/host-overview-view  200
 
-# /favorite-listings
-/favorite-listings  /favorite-listings.html  200
-/favorite-listings/  /favorite-listings.html  200
-/favorite-listings.html  /favorite-listings.html  200
+# /favorite-listings → favorite-listings.html
+/favorite-listings  /_internal/favorite-listings-view  200
+/favorite-listings/  /_internal/favorite-listings-view  200
 
 # /rental-application
 /rental-application  /rental-application.html  200

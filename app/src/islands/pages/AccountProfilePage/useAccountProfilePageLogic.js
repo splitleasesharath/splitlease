@@ -1,0 +1,692 @@
+/**
+ * useAccountProfilePageLogic - Logic Hook for AccountProfilePage
+ *
+ * Orchestrates all business logic for the Account Profile page.
+ * Supports two views:
+ * - Editor View: User viewing/editing their own profile
+ * - Public View: User viewing someone else's profile (read-only)
+ *
+ * ARCHITECTURE: Hollow Component Pattern
+ * - Manages all React state (useState, useEffect, useCallback, useMemo)
+ * - Component using this hook is "hollow" (presentation only)
+ */
+
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { supabase } from '../../../lib/supabase.js';
+import { getSessionId, checkAuthStatus } from '../../../lib/auth.js';
+
+// ============================================================================
+// CONSTANTS
+// ============================================================================
+
+const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/**
+ * Profile strength calculation weights
+ * Total = 100%
+ */
+const PROFILE_STRENGTH_WEIGHTS = {
+  profilePhoto: 20,
+  bio: 15,
+  firstName: 5,
+  lastName: 5,
+  jobTitle: 5,
+  emailVerified: 10,
+  phoneVerified: 10,
+  govIdVerified: 15,
+  linkedinVerified: 15
+};
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Extract user ID from URL path
+ * Expected format: /account-profile/:userId
+ */
+function getUserIdFromUrl() {
+  const pathname = window.location.pathname;
+  const match = pathname.match(/\/account-profile\/([^/]+)/);
+  return match ? match[1] : null;
+}
+
+/**
+ * Calculate profile strength percentage
+ */
+function calculateProfileStrength(profileData, verifications) {
+  let strength = 0;
+
+  if (profileData?.profilePhoto) {
+    strength += PROFILE_STRENGTH_WEIGHTS.profilePhoto;
+  }
+  if (profileData?.bio && profileData.bio.trim().length > 0) {
+    strength += PROFILE_STRENGTH_WEIGHTS.bio;
+  }
+  if (profileData?.firstName && profileData.firstName.trim().length > 0) {
+    strength += PROFILE_STRENGTH_WEIGHTS.firstName;
+  }
+  if (profileData?.lastName && profileData.lastName.trim().length > 0) {
+    strength += PROFILE_STRENGTH_WEIGHTS.lastName;
+  }
+  if (profileData?.jobTitle && profileData.jobTitle.trim().length > 0) {
+    strength += PROFILE_STRENGTH_WEIGHTS.jobTitle;
+  }
+  if (verifications?.email) {
+    strength += PROFILE_STRENGTH_WEIGHTS.emailVerified;
+  }
+  if (verifications?.phone) {
+    strength += PROFILE_STRENGTH_WEIGHTS.phoneVerified;
+  }
+  if (verifications?.govId) {
+    strength += PROFILE_STRENGTH_WEIGHTS.govIdVerified;
+  }
+  if (verifications?.linkedin) {
+    strength += PROFILE_STRENGTH_WEIGHTS.linkedinVerified;
+  }
+
+  return Math.min(100, Math.round(strength));
+}
+
+/**
+ * Generate next action suggestions based on profile completeness
+ */
+function generateNextActions(profileData, verifications) {
+  const actions = [];
+
+  if (!profileData?.profilePhoto) {
+    actions.push({
+      id: 'photo',
+      text: 'Add a profile photo',
+      points: 20,
+      icon: 'camera'
+    });
+  }
+  if (!verifications?.govId) {
+    actions.push({
+      id: 'govId',
+      text: 'Verify your identity',
+      points: 15,
+      icon: 'shield'
+    });
+  }
+  if (!verifications?.linkedin) {
+    actions.push({
+      id: 'linkedin',
+      text: 'Connect your LinkedIn',
+      points: 15,
+      icon: 'linkedin'
+    });
+  }
+  if (!profileData?.bio || profileData.bio.trim().length === 0) {
+    actions.push({
+      id: 'bio',
+      text: 'Write a short bio',
+      points: 15,
+      icon: 'edit'
+    });
+  }
+  if (!verifications?.phone) {
+    actions.push({
+      id: 'phone',
+      text: 'Verify your phone number',
+      points: 10,
+      icon: 'phone'
+    });
+  }
+
+  // Return top 3 suggestions
+  return actions.slice(0, 3);
+}
+
+/**
+ * Convert day names array to day indices (0-6)
+ * @param {string[]} dayNames - Array of day names ['Monday', 'Tuesday', ...]
+ * @returns {number[]} Array of day indices [1, 2, ...]
+ */
+function dayNamesToIndices(dayNames) {
+  if (!Array.isArray(dayNames)) return [];
+  return dayNames
+    .map(name => DAY_NAMES.indexOf(name))
+    .filter(idx => idx !== -1);
+}
+
+/**
+ * Convert day indices to day names
+ * @param {number[]} indices - Array of day indices [1, 2, ...]
+ * @returns {string[]} Array of day names ['Monday', 'Tuesday', ...]
+ */
+function indicesToDayNames(indices) {
+  if (!Array.isArray(indices)) return [];
+  return indices
+    .filter(idx => idx >= 0 && idx <= 6)
+    .map(idx => DAY_NAMES[idx]);
+}
+
+// ============================================================================
+// MAIN HOOK
+// ============================================================================
+
+export function useAccountProfilePageLogic() {
+  // ============================================================================
+  // STATE
+  // ============================================================================
+
+  // Core state
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  // User identity
+  const [loggedInUserId, setLoggedInUserId] = useState(null);
+  const [profileUserId, setProfileUserId] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Profile data from database
+  const [profileData, setProfileData] = useState(null);
+
+  // Form state (for editor view)
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    jobTitle: '',
+    bio: '',
+    needForSpace: '',
+    specialNeeds: '',
+    selectedDays: [], // 0-indexed day indices
+    transportationType: '',
+    goodGuestReasons: [], // Array of IDs
+    storageItems: [] // Array of IDs
+  });
+
+  // Form validation
+  const [formErrors, setFormErrors] = useState({});
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Reference data
+  const [goodGuestReasonsList, setGoodGuestReasonsList] = useState([]);
+  const [storageItemsList, setStorageItemsList] = useState([]);
+  const [transportationOptions] = useState([
+    { value: '', label: 'Select transportation...' },
+    { value: 'car', label: 'Car' },
+    { value: 'public_transit', label: 'Public Transit' },
+    { value: 'bicycle', label: 'Bicycle' },
+    { value: 'walking', label: 'Walking' },
+    { value: 'rideshare', label: 'Rideshare (Uber/Lyft)' },
+    { value: 'other', label: 'Other' }
+  ]);
+
+  // UI state
+  const [showNotificationModal, setShowNotificationModal] = useState(false);
+  const [showPhoneEditModal, setShowPhoneEditModal] = useState(false);
+
+  // ============================================================================
+  // COMPUTED VALUES
+  // ============================================================================
+
+  /**
+   * Determine if current user is viewing their own profile (editor view)
+   * or someone else's profile (public view)
+   */
+  const isEditorView = useMemo(() => {
+    return isAuthenticated && loggedInUserId && profileUserId && loggedInUserId === profileUserId;
+  }, [isAuthenticated, loggedInUserId, profileUserId]);
+
+  const isPublicView = useMemo(() => {
+    return !isEditorView;
+  }, [isEditorView]);
+
+  /**
+   * Extract verifications from profile data
+   */
+  const verifications = useMemo(() => {
+    if (!profileData) return { email: false, phone: false, govId: false, linkedin: false };
+
+    return {
+      email: profileData['is email confirmed'] === true,
+      phone: profileData['Verify - Phone'] === true,
+      govId: profileData['user verified?'] === true,
+      linkedin: !!profileData['Verify - Linked In ID']
+    };
+  }, [profileData]);
+
+  /**
+   * Calculate profile strength (0-100)
+   */
+  const profileStrength = useMemo(() => {
+    const profileInfo = {
+      profilePhoto: profileData?.['Profile Photo'],
+      bio: formData.bio || profileData?.['About Me'],
+      firstName: formData.firstName || profileData?.['First Name'],
+      lastName: formData.lastName || profileData?.['Last Name'],
+      jobTitle: formData.jobTitle || profileData?.['Job Title']
+    };
+    return calculateProfileStrength(profileInfo, verifications);
+  }, [profileData, formData, verifications]);
+
+  /**
+   * Generate next action suggestions
+   */
+  const nextActions = useMemo(() => {
+    const profileInfo = {
+      profilePhoto: profileData?.['Profile Photo'],
+      bio: formData.bio || profileData?.['About Me'],
+      firstName: formData.firstName || profileData?.['First Name'],
+      lastName: formData.lastName || profileData?.['Last Name'],
+      jobTitle: formData.jobTitle || profileData?.['Job Title']
+    };
+    return generateNextActions(profileInfo, verifications);
+  }, [profileData, formData, verifications]);
+
+  /**
+   * Display name for sidebar
+   */
+  const displayName = useMemo(() => {
+    const first = formData.firstName || profileData?.['First Name'] || '';
+    const last = formData.lastName || profileData?.['Last Name'] || '';
+    return `${first} ${last}`.trim() || 'Your Name';
+  }, [formData.firstName, formData.lastName, profileData]);
+
+  /**
+   * Display job title for sidebar
+   */
+  const displayJobTitle = useMemo(() => {
+    return formData.jobTitle || profileData?.['Job Title'] || '';
+  }, [formData.jobTitle, profileData]);
+
+  // ============================================================================
+  // DATA FETCHING
+  // ============================================================================
+
+  /**
+   * Fetch reference data (good guest reasons, storage items)
+   */
+  const fetchReferenceData = useCallback(async () => {
+    try {
+      // Fetch good guest reasons
+      const { data: reasons, error: reasonsError } = await supabase
+        .from('zat_goodguestreasons')
+        .select('_id, name')
+        .order('name');
+
+      if (reasonsError) {
+        console.error('Error fetching good guest reasons:', reasonsError);
+      } else {
+        setGoodGuestReasonsList(reasons || []);
+      }
+
+      // Fetch storage items
+      const { data: storage, error: storageError } = await supabase
+        .from('zat_storage')
+        .select('_id, Name')
+        .order('Name');
+
+      if (storageError) {
+        console.error('Error fetching storage items:', storageError);
+      } else {
+        setStorageItemsList(storage || []);
+      }
+    } catch (err) {
+      console.error('Error fetching reference data:', err);
+    }
+  }, []);
+
+  /**
+   * Fetch user profile data
+   */
+  const fetchProfileData = useCallback(async (userId) => {
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('user')
+        .select('*')
+        .eq('_id', userId)
+        .single();
+
+      if (userError) {
+        throw new Error('User not found');
+      }
+
+      setProfileData(userData);
+
+      // Initialize form data from profile
+      setFormData({
+        firstName: userData['First Name'] || '',
+        lastName: userData['Last Name'] || '',
+        jobTitle: userData['Job Title'] || '',
+        bio: userData['About Me'] || '',
+        needForSpace: userData['Guest Account (Profile) - Need for Space'] || '',
+        specialNeeds: userData['Guest Account (Profile) - Special Needs?'] || '',
+        selectedDays: dayNamesToIndices(userData['Recent Days Selected'] || []),
+        transportationType: userData['Transportation'] || '',
+        goodGuestReasons: userData['Good Guest Reasons'] || [],
+        storageItems: userData['storage'] || []
+      });
+
+      return userData;
+    } catch (err) {
+      throw err;
+    }
+  }, []);
+
+  // ============================================================================
+  // INITIALIZATION
+  // ============================================================================
+
+  useEffect(() => {
+    async function initialize() {
+      try {
+        // Extract profile user ID from URL
+        const urlUserId = getUserIdFromUrl();
+        if (!urlUserId) {
+          throw new Error('No user ID provided in URL');
+        }
+        setProfileUserId(urlUserId);
+
+        // Check authentication status
+        const isAuth = await checkAuthStatus();
+        setIsAuthenticated(isAuth);
+
+        // Get logged-in user ID
+        const sessionId = getSessionId();
+        setLoggedInUserId(sessionId);
+
+        // Fetch reference data
+        await fetchReferenceData();
+
+        // Fetch profile data
+        await fetchProfileData(urlUserId);
+
+        setLoading(false);
+      } catch (err) {
+        console.error('Error initializing profile page:', err);
+        setError(err.message);
+        setLoading(false);
+      }
+    }
+
+    initialize();
+  }, [fetchReferenceData, fetchProfileData]);
+
+  // ============================================================================
+  // FORM HANDLERS
+  // ============================================================================
+
+  /**
+   * Handle field change
+   */
+  const handleFieldChange = useCallback((field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+    setIsDirty(true);
+
+    // Clear error for this field
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
+  }, [formErrors]);
+
+  /**
+   * Handle day selection toggle
+   */
+  const handleDayToggle = useCallback((dayIndex) => {
+    setFormData(prev => {
+      const currentDays = prev.selectedDays;
+      const newDays = currentDays.includes(dayIndex)
+        ? currentDays.filter(d => d !== dayIndex)
+        : [...currentDays, dayIndex].sort((a, b) => a - b);
+
+      return { ...prev, selectedDays: newDays };
+    });
+    setIsDirty(true);
+  }, []);
+
+  /**
+   * Handle chip selection toggle (for reasons and storage items)
+   */
+  const handleChipToggle = useCallback((field, id) => {
+    setFormData(prev => {
+      const currentItems = prev[field];
+      const newItems = currentItems.includes(id)
+        ? currentItems.filter(i => i !== id)
+        : [...currentItems, id];
+
+      return { ...prev, [field]: newItems };
+    });
+    setIsDirty(true);
+  }, []);
+
+  /**
+   * Validate form before save
+   */
+  const validateForm = useCallback(() => {
+    const errors = {};
+
+    if (!formData.firstName.trim()) {
+      errors.firstName = 'First name is required';
+    }
+
+    // Add more validations as needed
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [formData]);
+
+  /**
+   * Save profile changes
+   */
+  const handleSave = useCallback(async () => {
+    if (!isEditorView || !profileUserId) {
+      console.error('Cannot save: not in editor view or no user ID');
+      return { success: false, error: 'Cannot save changes' };
+    }
+
+    if (!validateForm()) {
+      return { success: false, error: 'Please fix validation errors' };
+    }
+
+    setSaving(true);
+
+    try {
+      const updateData = {
+        'First Name': formData.firstName.trim(),
+        'Last Name': formData.lastName.trim(),
+        'Job Title': formData.jobTitle.trim(),
+        'About Me': formData.bio.trim(),
+        'Guest Account (Profile) - Need for Space': formData.needForSpace.trim(),
+        'Guest Account (Profile) - Special Needs?': formData.specialNeeds.trim(),
+        'Recent Days Selected': indicesToDayNames(formData.selectedDays),
+        'Transportation': formData.transportationType,
+        'Good Guest Reasons': formData.goodGuestReasons,
+        'storage': formData.storageItems
+      };
+
+      const { error: updateError } = await supabase
+        .from('user')
+        .update(updateData)
+        .eq('_id', profileUserId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Refresh profile data
+      await fetchProfileData(profileUserId);
+      setIsDirty(false);
+      setSaving(false);
+
+      return { success: true };
+    } catch (err) {
+      console.error('Error saving profile:', err);
+      setSaving(false);
+      return { success: false, error: err.message };
+    }
+  }, [isEditorView, profileUserId, formData, validateForm, fetchProfileData]);
+
+  /**
+   * Cancel changes and reset form
+   */
+  const handleCancel = useCallback(() => {
+    if (profileData) {
+      setFormData({
+        firstName: profileData['First Name'] || '',
+        lastName: profileData['Last Name'] || '',
+        jobTitle: profileData['Job Title'] || '',
+        bio: profileData['About Me'] || '',
+        needForSpace: profileData['Guest Account (Profile) - Need for Space'] || '',
+        specialNeeds: profileData['Guest Account (Profile) - Special Needs?'] || '',
+        selectedDays: dayNamesToIndices(profileData['Recent Days Selected'] || []),
+        transportationType: profileData['Transportation'] || '',
+        goodGuestReasons: profileData['Good Guest Reasons'] || [],
+        storageItems: profileData['storage'] || []
+      });
+      setFormErrors({});
+      setIsDirty(false);
+    }
+  }, [profileData]);
+
+  /**
+   * Preview public profile
+   */
+  const handlePreviewProfile = useCallback(() => {
+    // Open public view in new tab (just reload page for now)
+    // In the future, could implement a preview mode
+    console.log('Preview profile clicked');
+  }, []);
+
+  // ============================================================================
+  // VERIFICATION HANDLERS
+  // ============================================================================
+
+  const handleVerifyEmail = useCallback(() => {
+    // Trigger email verification flow
+    console.log('Verify email clicked');
+  }, []);
+
+  const handleVerifyPhone = useCallback(() => {
+    setShowPhoneEditModal(true);
+  }, []);
+
+  const handleVerifyGovId = useCallback(() => {
+    // Trigger government ID verification flow
+    console.log('Verify government ID clicked');
+  }, []);
+
+  const handleConnectLinkedIn = useCallback(() => {
+    // Trigger LinkedIn OAuth flow
+    console.log('Connect LinkedIn clicked');
+  }, []);
+
+  const handleEditPhone = useCallback(() => {
+    setShowPhoneEditModal(true);
+  }, []);
+
+  // ============================================================================
+  // SETTINGS HANDLERS
+  // ============================================================================
+
+  const handleOpenNotificationSettings = useCallback(() => {
+    setShowNotificationModal(true);
+  }, []);
+
+  const handleCloseNotificationModal = useCallback(() => {
+    setShowNotificationModal(false);
+  }, []);
+
+  const handleClosePhoneEditModal = useCallback(() => {
+    setShowPhoneEditModal(false);
+  }, []);
+
+  const handleChangePassword = useCallback(() => {
+    // Navigate to password reset page
+    window.location.href = '/reset-password';
+  }, []);
+
+  // ============================================================================
+  // PHOTO HANDLERS
+  // ============================================================================
+
+  const handleCoverPhotoChange = useCallback(async (file) => {
+    // TODO: Implement cover photo upload
+    console.log('Cover photo change:', file);
+  }, []);
+
+  const handleAvatarChange = useCallback(async (file) => {
+    // TODO: Implement avatar upload
+    console.log('Avatar change:', file);
+  }, []);
+
+  // ============================================================================
+  // RETURN API
+  // ============================================================================
+
+  return {
+    // Core state
+    loading,
+    saving,
+    error,
+
+    // View mode
+    isEditorView,
+    isPublicView,
+    isAuthenticated,
+
+    // Profile data
+    profileData,
+    profileUserId,
+    loggedInUserId,
+
+    // Computed display values
+    displayName,
+    displayJobTitle,
+    verifications,
+    profileStrength,
+    nextActions,
+
+    // Form state
+    formData,
+    formErrors,
+    isDirty,
+
+    // Reference data
+    goodGuestReasonsList,
+    storageItemsList,
+    transportationOptions,
+
+    // Form handlers
+    handleFieldChange,
+    handleDayToggle,
+    handleChipToggle,
+
+    // Save/Cancel
+    handleSave,
+    handleCancel,
+    handlePreviewProfile,
+
+    // Verification handlers
+    handleVerifyEmail,
+    handleVerifyPhone,
+    handleVerifyGovId,
+    handleConnectLinkedIn,
+    handleEditPhone,
+
+    // Settings handlers
+    handleOpenNotificationSettings,
+    handleChangePassword,
+
+    // Photo handlers
+    handleCoverPhotoChange,
+    handleAvatarChange,
+
+    // Modal state
+    showNotificationModal,
+    handleCloseNotificationModal,
+    showPhoneEditModal,
+    handleClosePhoneEditModal
+  };
+}

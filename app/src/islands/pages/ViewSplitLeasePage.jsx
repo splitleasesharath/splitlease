@@ -2690,7 +2690,12 @@ export default function ViewSplitLeasePage() {
           reservationSpan={reservationSpan}
           pricingBreakdown={priceBreakdown}
           zatConfig={zatConfig}
-          isFirstProposal={!loggedInUserData || loggedInUserData.proposalCount === 0}
+          // For ViewSplitLeasePage: User starts on REVIEW if they have proposals OR filled user info
+          // This ensures returning users with existing data go straight to review (hub-and-spoke model)
+          isFirstProposal={
+            !loggedInUserData ||
+            (loggedInUserData.proposalCount === 0 && !loggedInUserData.needForSpace && !loggedInUserData.aboutMe)
+          }
           existingUserData={loggedInUserData ? {
             needForSpace: loggedInUserData.needForSpace || '',
             aboutYourself: loggedInUserData.aboutMe || '',

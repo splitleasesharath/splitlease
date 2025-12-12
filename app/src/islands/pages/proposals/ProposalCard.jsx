@@ -320,13 +320,20 @@ function StatusBanner({ status, cancelReason, isCounteroffer }) {
 // ============================================================================
 
 /**
- * Get dynamic stage labels based on status
+ * Get dynamic stage labels based on status and rental app submission state
  * Labels change to reflect completion (e.g., "Host Review" -> "Host Review Complete")
+ * Stage 2 shows "Submit Rental Application" when rental app not submitted
+ *
+ * @param {string} status - Proposal status
+ * @param {Object} proposal - Proposal object to check rental application status
  */
-function getStageLabels(status) {
+function getStageLabels(status, proposal = {}) {
+  // Check if rental application is submitted by checking the proposal and user
+  const hasRentalApp = proposal['rental application'] || proposal?.user?.['rental application'];
+
   const baseLabels = [
     'Proposal Submitted',
-    'Rental App Submitted',
+    hasRentalApp ? 'Rental App Submitted' : 'Submit Rental Application',
     'Host Review',
     'Review Documents',
     'Lease Documents',
@@ -412,15 +419,23 @@ function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}
 
   // Stage 2: Rental App Submitted
   if (stageIndex === 1) {
-    // Green when awaiting rental app
-    if (!hasRentalApp ||
-        normalizedStatus === 'Proposal Submitted by guest - Awaiting Rental Application' ||
+    // Green when awaiting rental app - these statuses mean rental app is NOT yet submitted
+    if (normalizedStatus === 'Proposal Submitted by guest - Awaiting Rental Application' ||
         normalizedStatus === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application' ||
-        normalizedStatus === 'Proposal Submitted for guest by Split Lease - Pending Confirmation') {
+        normalizedStatus === 'Proposal Submitted for guest by Split Lease - Pending Confirmation' ||
+        normalizedStatus === 'Pending' ||
+        normalizedStatus === 'Pending Confirmation') {
       return PROGRESS_COLORS.green;
     }
-    // Purple when past this stage
-    if (usualOrder >= 1) {
+    // Purple when rental app has been submitted (status moved past awaiting rental app)
+    if (hasRentalApp ||
+        normalizedStatus === 'Rental Application Submitted' ||
+        normalizedStatus === 'Host Review' ||
+        normalizedStatus.includes('Counteroffer') ||
+        normalizedStatus.includes('Accepted') ||
+        normalizedStatus.includes('Lease Documents') ||
+        normalizedStatus.includes('Payment') ||
+        normalizedStatus.includes('activated')) {
       return PROGRESS_COLORS.purple;
     }
     return PROGRESS_COLORS.gray;
@@ -428,7 +443,7 @@ function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}
 
   // Stage 3: Host Review
   if (stageIndex === 2) {
-    // Green when in host review with rental app submitted
+    // Green when actively in host review with rental app submitted
     if (normalizedStatus === 'Host Review' && hasRentalApp) {
       return PROGRESS_COLORS.green;
     }
@@ -436,10 +451,15 @@ function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}
     if (normalizedStatus === 'Host Counteroffer Submitted / Awaiting Guest Review') {
       return PROGRESS_COLORS.green;
     }
-    // Purple when past this stage
-    if (usualOrder >= 3) {
+    // Purple when host review is complete (proposal accepted or further along)
+    if (normalizedStatus.includes('Accepted') ||
+        normalizedStatus.includes('Drafting') ||
+        normalizedStatus.includes('Lease Documents') ||
+        normalizedStatus.includes('Payment') ||
+        normalizedStatus.includes('activated')) {
       return PROGRESS_COLORS.purple;
     }
+    // Gray for all other cases (including awaiting rental app)
     return PROGRESS_COLORS.gray;
   }
 
@@ -500,8 +520,14 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
           const stageColor = getStageColor(index, status, usualOrder, isTerminal, proposal);
           const prevStageColor = index > 0 ? getStageColor(index - 1, status, usualOrder, isTerminal, proposal) : null;
 
-          // Connector color: use the color of the stage it leads to if completed, otherwise gray
-          const connectorColor = stageColor !== PROGRESS_COLORS.gray ? stageColor : PROGRESS_COLORS.gray;
+          // Connector color: purple ONLY if previous dot is purple (completed)
+          // Green dot is the "current action" - line after it should be gray
+          // Everything after the green dot should be gray
+          const connectorColor = prevStageColor === PROGRESS_COLORS.purple
+            ? PROGRESS_COLORS.purple
+            : prevStageColor === PROGRESS_COLORS.red
+              ? PROGRESS_COLORS.red
+              : PROGRESS_COLORS.gray;
 
           return (
             <div key={stage.id} className="progress-node-wrapper">
@@ -669,7 +695,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   const statusColor = currentStatusConfig?.color || 'blue';
   const isTerminal = isTerminalStatus(status);
   const isCompleted = isCompletedStatus(status);
-  const stageLabels = getStageLabels(status);
+  const stageLabels = getStageLabels(status, proposal);
 
   // Warning: some nights unavailable
   const someNightsUnavailable = proposal['some nights unavailable'];

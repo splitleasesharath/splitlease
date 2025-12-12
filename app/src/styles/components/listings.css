@@ -525,13 +525,13 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    background: #31135D;
-    color: white;
-    border: none;
+    background: white;
+    color: #6C5CE7;
+    border: 2px solid #6C5CE7;
     padding: 8px 18px;
-    border-radius: 6px;
+    border-radius: 8px;
     font-size: 13px;
-    font-weight: 500;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
@@ -540,13 +540,273 @@
 }
 
 .listing-host-row .message-btn:hover {
-    background: #3d1a75;
-    box-shadow: 0 2px 4px rgba(49, 19, 93, 0.2);
+    background: #F0F4FF;
+    box-shadow: 0 2px 4px rgba(108, 92, 231, 0.15);
 }
 
 .listing-host-row .message-btn svg {
     width: 14px;
     height: 14px;
+    flex-shrink: 0;
+    stroke: #6C5CE7;
+}
+
+/* Create Proposal Button - Next to Message button */
+.listing-host-row .create-proposal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #6C5CE7;
+    color: white;
+    border: none;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.listing-host-row .create-proposal-btn:hover {
+    background: #7C6CF7;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+}
+
+.listing-host-row .create-proposal-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* View Proposal Button - For listings with existing proposals */
+.listing-host-row .view-proposal-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    background: #6C5CE7;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    white-space: nowrap;
+    min-width: 100px;
+}
+
+.listing-host-row .view-proposal-btn:hover {
+    background: #7C6CF7;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+}
+
+.listing-host-row .view-proposal-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* Stacked Host Row Layout - avatar on top, name below, buttons at bottom */
+.listing-host-row.listing-host-row--stacked {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.listing-host-row--stacked .host-avatar,
+.listing-host-row--stacked .host-avatar-placeholder {
+    width: 32px;
+    height: 32px;
+}
+
+.listing-host-row--stacked .host-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: #333;
+    max-width: 100%;
+}
+
+.listing-host-row--stacked .host-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+.listing-host-row--stacked .message-btn,
+.listing-host-row--stacked .create-proposal-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: auto;
+}
+
+.listing-host-row--stacked .view-proposal-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-width: auto;
+}
+
+/* Two-line Host Section Layout (matching FavoriteListingsPage) */
+.listing-host-section {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 8px;
+}
+
+.listing-host-section .host-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.listing-host-section .host-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.listing-host-section .host-avatar-placeholder {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6C5CE7 0%, #8A7FF9 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.listing-host-section .host-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #424242;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.listing-host-section .verified-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    background: #4A90E2;
+    border-radius: 50%;
+    color: white;
+    font-size: 10px;
+}
+
+.listing-host-section .action-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.listing-host-section .action-button {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.listing-host-section .action-button.primary {
+    background: #6C5CE7;
+    color: white;
+    border: none;
+}
+
+.listing-host-section .action-button.primary:hover {
+    background: #7C6CF7;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+}
+
+.listing-host-section .action-button.secondary {
+    background: white;
+    color: #6C5CE7;
+    border: 2px solid #6C5CE7;
+}
+
+.listing-host-section .action-button.secondary:hover {
+    background: #F0F4FF;
+    box-shadow: 0 2px 4px rgba(108, 92, 231, 0.15);
+}
+
+.listing-host-section .action-button svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* Create Proposal Button - in listing-host-section */
+.listing-host-section .create-proposal-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 8px 14px;
+    background: #6C5CE7;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.listing-host-section .create-proposal-btn:hover {
+    background: #4c1d95;
+    transform: translateY(-1px);
+}
+
+.listing-host-section .create-proposal-btn svg {
+    flex-shrink: 0;
+}
+
+/* View Proposal Button - in listing-host-section */
+.listing-host-section .view-proposal-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 8px 14px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.listing-host-section .view-proposal-btn:hover {
+    background: #047857;
+    transform: translateY(-1px);
+}
+
+.listing-host-section .view-proposal-btn svg {
     flex-shrink: 0;
 }
 
@@ -807,20 +1067,23 @@
 
 .message-btn {
     padding: 6px 12px;
-    background: #4A90E2;
-    color: white;
-    border: none;
-    border-radius: 4px;
+    background: white;
+    color: #6C5CE7;
+    border: 2px solid #6C5CE7;
+    border-radius: 8px;
     font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.3s;
-    width: 80px;
+    transition: all 0.2s ease;
+    width: auto;
+    min-width: 80px;
     text-align: center;
     align-self: flex-start;
 }
 
 .message-btn:hover {
-    background: #357ABD;
+    background: #F0F4FF;
+    box-shadow: 0 2px 4px rgba(108, 92, 231, 0.15);
 }
 
 /* Pricing Info */
@@ -1077,8 +1340,8 @@
         font-size: 13px;
         white-space: nowrap;
         margin-left: auto;
-        font-weight: 500;
-        border-radius: 6px;
+        font-weight: 600;
+        border-radius: 8px;
     }
 
     .pricing-info {

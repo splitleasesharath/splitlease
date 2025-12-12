@@ -456,11 +456,18 @@ const GoogleMap = forwardRef(({
         googleMapsLoaded: !!(window.google && window.google.maps),
         simpleMode,
         hasFilteredListings: filteredListings.length > 0,
-        hasListings: listings.length > 0
+        hasListings: listings.length > 0,
+        mapAlreadyExists: !!googleMapRef.current
       });
 
       if (!mapRef.current || !window.google) {
         console.warn('⚠️ GoogleMap: Cannot initialize - missing mapRef or Google Maps API');
+        return;
+      }
+
+      // Don't recreate map if it already exists
+      if (googleMapRef.current) {
+        console.log('⏭️ GoogleMap: Map already exists, skipping re-initialization');
         return;
       }
 
@@ -507,6 +514,8 @@ const GoogleMap = forwardRef(({
       });
 
       googleMapRef.current = map;
+      // Reset marker signature so markers are recreated on new map instance
+      lastMarkersUpdateRef.current = null;
       setMapLoaded(true);
       console.log('✅ GoogleMap: Map initialized successfully with zoom controls enabled');
     };
@@ -853,6 +862,8 @@ const GoogleMap = forwardRef(({
       priceTag.dataset.color = color;
       priceTag.style.cssText = `
         position: absolute;
+        left: 0;
+        top: 0;
         background: ${color};
         color: white;
         padding: 6px 12px;
@@ -868,6 +879,11 @@ const GoogleMap = forwardRef(({
         z-index: ${color === '#31135D' ? '1002' : '1001'};
         will-change: transform;
         pointer-events: auto;
+        display: block;
+        visibility: visible;
+        opacity: 1;
+        min-width: 50px;
+        text-align: center;
       `;
 
       // HOVER EFFECTS TEMPORARILY REMOVED TO ISOLATE BUNCHING BUG
@@ -884,22 +900,44 @@ const GoogleMap = forwardRef(({
       const panes = this.getPanes();
       // Use overlayMouseTarget pane for clickable overlays (sits above map tiles)
       panes.overlayMouseTarget.appendChild(priceTag);
+      console.log('📍 MarkerOverlay.onAdd: marker appended to DOM', {
+        listingId: listing.id,
+        price: price,
+        innerHTML: priceTag.innerHTML,
+        paneType: 'overlayMouseTarget',
+        divExists: !!this.div
+      });
     };
 
     markerOverlay.draw = function() {
-      if (!this.div) return;
+      if (!this.div) {
+        console.warn('📍 MarkerOverlay.draw: div not found for listing:', listing.id);
+        return;
+      }
 
       // Immediate rendering without RAF - no lazy loading
       const projection = this.getProjection();
-      if (!projection) return;
+      if (!projection) {
+        console.warn('📍 MarkerOverlay.draw: projection not available for listing:', listing.id);
+        return;
+      }
 
       const position = projection.fromLatLngToDivPixel(
         new window.google.maps.LatLng(coordinates.lat, coordinates.lng)
       );
 
-      if (this.div) {
+      console.log('📍 MarkerOverlay.draw: positioning marker', {
+        listingId: listing.id,
+        coordinates: { lat: coordinates.lat, lng: coordinates.lng },
+        pixelPosition: position ? { x: position.x, y: position.y } : null
+      });
+
+      if (this.div && position) {
         // Use transform3d for GPU acceleration
         this.div.style.transform = `translate3d(${position.x}px, ${position.y}px, 0) translate(-50%, -50%)`;
+        // Also set left/top as fallback
+        this.div.style.left = '0px';
+        this.div.style.top = '0px';
       }
     };
 
@@ -910,8 +948,20 @@ const GoogleMap = forwardRef(({
       }
     };
 
-    markerOverlay.setMap(map);
-    markerOverlay.listingId = listing.id;
+    try {
+      markerOverlay.setMap(map);
+      markerOverlay.listingId = listing.id;
+      console.log('📍 createPriceMarker: marker set on map', {
+        listingId: listing.id,
+        hasDiv: !!markerOverlay.div,
+        mapSet: markerOverlay.getMap() === map
+      });
+    } catch (error) {
+      console.error('📍 createPriceMarker: error setting map', {
+        listingId: listing.id,
+        error: error.message
+      });
+    }
 
     return markerOverlay;
   };

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import InformationalText from '../shared/InformationalText.jsx';
@@ -8,13 +8,19 @@ import AuthAwareSearchScheduleSelector from '../shared/AuthAwareSearchScheduleSe
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import FavoriteButton from '../shared/FavoriteButton';
+import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
+import { isGuest } from '../../logic/rules/users/isGuest.js';
 import { supabase } from '../../lib/supabase.js';
+import { fetchProposalsByGuest } from '../../lib/proposalDataFetcher.js';
+import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getUserId, logoutUser } from '../../lib/auth.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
 import { initializeLookups, getNeighborhoodName, getBoroughName, getPropertyTypeLabel, isInitialized } from '../../lib/dataLookups.js';
 import { parseUrlToFilters, updateUrlParams, watchUrlChanges, hasUrlFilters } from '../../lib/urlParams.js';
 import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJsonArray } from '../../lib/supabaseUtils.js';
 import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
+import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
+import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 
 // ============================================================================
 // Utility Functions
@@ -368,7 +374,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
 
@@ -599,9 +605,10 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
             <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
           </div>
 
-          {/* Host Row - Bottom Left */}
-          <div className="listing-host-row">
-            <div className="host">
+          {/* Host Row - Two-line layout: avatar+name on line 1, buttons on line 2 */}
+          <div className="listing-host-section">
+            {/* Line 1: Host Profile (avatar + name) */}
+            <div className="host-profile">
               {listing.host?.image ? (
                 <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
               ) : (
@@ -612,19 +619,59 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
                 {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
               </span>
             </div>
-            <button
-              className="message-btn"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onOpenContactModal(listing);
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
-              </svg>
-              Message
-            </button>
+            {/* Line 2: Action Buttons */}
+            <div className="action-buttons">
+              <button
+                className="action-button secondary"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onOpenContactModal(listing);
+                }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                </svg>
+                Message
+              </button>
+              {/* Proposal CTAs - Show Create or View based on existing proposal */}
+              {showCreateProposalButton && (
+                proposalForListing ? (
+                  <button
+                    className="view-proposal-btn"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      window.location.href = `/guest-proposals?proposal=${proposalForListing._id}`;
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                      <polyline points="14 2 14 8 20 8" />
+                      <line x1="16" y1="13" x2="8" y2="13" />
+                      <line x1="16" y1="17" x2="8" y2="17" />
+                      <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    View Proposal
+                  </button>
+                ) : (
+                  <button
+                    className="create-proposal-btn"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onOpenCreateProposalModal(listing);
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Create Proposal
+                  </button>
+                )
+              )}
+            </div>
           </div>
         </div>
 
@@ -652,7 +699,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId }) {
 
   const sentinelRef = useRef(null);
 
@@ -686,6 +733,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
       {listings.map((listing, index) => {
         const listingId = listing.id || listing._id;
         const isFavorited = favoritedListingIds?.has(listingId);
+        const proposalForListing = proposalsByListingId?.get(listingId) || null;
         return (
           <PropertyCard
             key={listing.id}
@@ -702,6 +750,9 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             userId={userId}
             onToggleFavorite={onToggleFavorite}
             onRequireAuth={onRequireAuth}
+            showCreateProposalButton={showCreateProposalButton}
+            onOpenCreateProposalModal={onOpenCreateProposalModal}
+            proposalForListing={proposalForListing}
           />
         );
       })}
@@ -804,6 +855,10 @@ export default function SearchPage() {
   const [selectedListing, setSelectedListing] = useState(null);
   const [infoModalTriggerRef, setInfoModalTriggerRef] = useState(null);
   const [informationalTexts, setInformationalTexts] = useState({});
+  const [isCreateProposalModalOpen, setIsCreateProposalModalOpen] = useState(false);
+  const [selectedListingForProposal, setSelectedListingForProposal] = useState(null);
+  const [selectedDayObjectsForProposal, setSelectedDayObjectsForProposal] = useState([]);
+  const [moveInDateForProposal, setMoveInDateForProposal] = useState('');
 
   // Refs
   const mapRef = useRef(null);
@@ -835,6 +890,13 @@ export default function SearchPage() {
   const [favoritesCount, setFavoritesCount] = useState(0);
   const [favoritedListingIds, setFavoritedListingIds] = useState(new Set());
 
+  // Proposals state - Map of listing ID to proposal object
+  const [proposalsByListingId, setProposalsByListingId] = useState(new Map());
+
+  // Proposal flow state
+  const [zatConfig, setZatConfig] = useState(null);
+  const [loggedInUserData, setLoggedInUserData] = useState(null);
+
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
@@ -861,6 +923,19 @@ export default function SearchPage() {
     loadInformationalTexts();
   }, []);
 
+  // Fetch ZAT price configuration on mount
+  useEffect(() => {
+    const loadZatConfig = async () => {
+      try {
+        const config = await fetchZatPriceConfiguration();
+        setZatConfig(config);
+      } catch (error) {
+        console.warn('Failed to load ZAT config:', error);
+      }
+    };
+    loadZatConfig();
+  }, []);
+
   // Check authentication status and fetch user data
   useEffect(() => {
     const checkAuth = async () => {
@@ -878,19 +953,21 @@ export default function SearchPage() {
               name: userData.fullName || userData.firstName || '',
               email: userData.email || '',
               userType: userData.userType || 'GUEST',
-              avatarUrl: userData.profilePhoto || null
+              avatarUrl: userData.profilePhoto || null,
+              proposalCount: userData.proposalCount ?? 0
             });
 
-            // Fetch favorites from Supabase
+            // Fetch favorites, proposals list, and profile data from Supabase
             if (userId) {
-              const { data: userFavorites, error } = await supabase
+              const { data: userRecord, error } = await supabase
                 .from('user')
-                .select('"Favorited Listings"')
+                .select('"Favorited Listings", "Proposals List", "About Me / Bio", "need for Space", "special needs"')
                 .eq('_id', userId)
                 .single();
 
-              if (!error && userFavorites) {
-                const favorites = userFavorites['Favorited Listings'];
+              if (!error && userRecord) {
+                // Handle favorites
+                const favorites = userRecord['Favorited Listings'];
                 if (Array.isArray(favorites)) {
                   // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
                   const validFavorites = favorites.filter(id =>
@@ -905,6 +982,53 @@ export default function SearchPage() {
                 } else {
                   setFavoritesCount(0);
                   setFavoritedListingIds(new Set());
+                }
+
+                // Handle proposals count for Create Proposal CTA
+                const proposalsList = userRecord['Proposals List'];
+                const proposalCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
+                console.log('[SearchPage] Proposals count from user table:', proposalCount);
+
+                // Update currentUser with actual proposal count
+                setCurrentUser(prev => ({
+                  ...prev,
+                  proposalCount: proposalCount
+                }));
+
+                // Set logged in user data for proposal form prefilling
+                setLoggedInUserData({
+                  aboutMe: userRecord['About Me / Bio'] || '',
+                  needForSpace: userRecord['need for Space'] || '',
+                  specialNeeds: userRecord['special needs'] || '',
+                  proposalCount: proposalCount
+                });
+
+                // Fetch user's proposals to check if any exist for specific listings
+                const userIsGuest = isGuest({ userType: userData.userType });
+                if (userIsGuest && userId && proposalCount > 0) {
+                  try {
+                    const proposals = await fetchProposalsByGuest(userId);
+                    console.log(`[SearchPage] Loaded ${proposals.length} proposals for user`);
+
+                    // Create a map of listing ID to proposal (only include non-terminal proposals)
+                    const proposalsMap = new Map();
+                    proposals.forEach(proposal => {
+                      const listingId = proposal.Listing;
+                      if (listingId) {
+                        // If multiple proposals exist for same listing, keep the most recent one
+                        // (proposals are already sorted by Created Date descending)
+                        if (!proposalsMap.has(listingId)) {
+                          proposalsMap.set(listingId, proposal);
+                        }
+                      }
+                    });
+
+                    setProposalsByListingId(proposalsMap);
+                    console.log(`[SearchPage] Mapped ${proposalsMap.size} listings with proposals`);
+                  } catch (proposalErr) {
+                    console.warn('[SearchPage] Failed to fetch proposals (non-critical):', proposalErr);
+                    // Don't fail the page if proposals can't be loaded - just show Create Proposal for all
+                  }
                 }
               }
             }
@@ -1808,6 +1932,108 @@ export default function SearchPage() {
     setIsAIResearchModalOpen(false);
   };
 
+  // Create Proposal modal handlers
+  const handleOpenCreateProposalModal = (listing) => {
+    // Get default schedule from URL params or use default weekdays
+    const urlParams = new URLSearchParams(window.location.search);
+    const daysParam = urlParams.get('days-selected');
+
+    let initialDays = [];
+    if (daysParam) {
+      try {
+        const oneBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+        initialDays = oneBased
+          .filter(d => d >= 1 && d <= 7)
+          .map(d => d - 1)  // Convert to 0-based
+          .map(dayIndex => createDay(dayIndex, true));
+      } catch (e) {
+        console.warn('Failed to parse days from URL:', e);
+      }
+    }
+
+    // Default to weekdays (Mon-Fri) if no URL selection
+    if (initialDays.length === 0) {
+      initialDays = [1, 2, 3, 4, 5].map(dayIndex => createDay(dayIndex, true));
+    }
+
+    // Calculate minimum move-in date (2 weeks from today)
+    const today = new Date();
+    const twoWeeksFromNow = new Date(today);
+    twoWeeksFromNow.setDate(today.getDate() + 14);
+    const minMoveInDate = twoWeeksFromNow.toISOString().split('T')[0];
+
+    // Calculate smart default move-in date using shared calculator
+    let smartMoveInDate = minMoveInDate;
+    if (initialDays.length > 0) {
+      try {
+        const selectedDayIndices = initialDays.map(d => d.dayOfWeek);
+        smartMoveInDate = calculateNextAvailableCheckIn({
+          selectedDayIndices,
+          minDate: minMoveInDate
+        });
+      } catch (err) {
+        console.error('Error calculating smart move-in date:', err);
+        smartMoveInDate = minMoveInDate;
+      }
+    }
+
+    setSelectedListingForProposal(listing);
+    setSelectedDayObjectsForProposal(initialDays);
+    setMoveInDateForProposal(smartMoveInDate);
+    setIsCreateProposalModalOpen(true);
+  };
+
+  const handleCloseCreateProposalModal = () => {
+    setIsCreateProposalModalOpen(false);
+    setSelectedListingForProposal(null);
+  };
+
+  const handleCreateProposalSubmit = async (proposalData) => {
+    console.log('Creating proposal from Search page:', proposalData);
+    // Close the modal and show a success toast
+    // Full implementation would call the proposal Edge Function
+    setIsCreateProposalModalOpen(false);
+
+    // Update proposalsByListingId map with the new proposal
+    // This enables immediate UI update (button changes from "Create" to "View")
+    if (proposalData && selectedListingForProposal) {
+      const listingId = selectedListingForProposal.id || selectedListingForProposal._id;
+      if (listingId && proposalData._id) {
+        setProposalsByListingId(prev => {
+          const updated = new Map(prev);
+          updated.set(listingId, proposalData);
+          console.log(`[SearchPage] Added proposal ${proposalData._id} to listing ${listingId}`);
+          return updated;
+        });
+      }
+    }
+
+    setSelectedListingForProposal(null);
+    showToast('Proposal submitted successfully!', 'success');
+  };
+
+  // Transform listing data from SearchPage format to CreateProposalFlowV2 expected format
+  const transformListingForProposal = (listing) => {
+    if (!listing) return null;
+    return {
+      _id: listing.id,
+      Name: listing.title,
+      'Minimum Nights': 2,
+      'Maximum Nights': 7,
+      'rental type': 'Nightly',
+      'Weeks offered': listing.weeks_offered || 'Every week',
+      '💰Unit Markup': 0,
+      '💰Nightly Host Rate for 2 nights': listing['Price 2 nights selected'],
+      '💰Nightly Host Rate for 3 nights': listing['Price 3 nights selected'],
+      '💰Nightly Host Rate for 4 nights': listing['Price 4 nights selected'],
+      '💰Nightly Host Rate for 5 nights': listing['Price 5 nights selected'],
+      '💰Nightly Host Rate for 7 nights': listing['Price 7 nights selected'],
+      '💰Cleaning Cost / Maintenance Fee': 0,
+      '💰Damage Deposit': 0,
+      host: listing.host
+    };
+  };
+
   // Show toast notification
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });
@@ -1894,6 +2120,15 @@ export default function SearchPage() {
       roots.forEach(root => root.unmount());
     };
   }, []);
+
+  // Determine if "Create Proposal" button should be visible
+  // Conditions: logged in AND is a guest AND has 1+ existing proposals
+  const showCreateProposalButton = useMemo(() => {
+    if (!isLoggedIn || !currentUser) return false;
+    const userIsGuest = isGuest({ userType: currentUser.userType });
+    const hasExistingProposals = (currentUser.proposalCount ?? 0) > 0;
+    return userIsGuest && hasExistingProposals;
+  }, [isLoggedIn, currentUser]);
 
   // Render
   return (
@@ -2084,6 +2319,9 @@ export default function SearchPage() {
                         setAuthModalView('signup');
                         setIsAuthModalOpen(true);
                       }}
+                      showCreateProposalButton={showCreateProposalButton}
+                      onOpenCreateProposalModal={handleOpenCreateProposalModal}
+                      proposalsByListingId={proposalsByListingId}
                     />
                   </div>
                 )}
@@ -2107,6 +2345,9 @@ export default function SearchPage() {
                   setAuthModalView('signup');
                   setIsAuthModalOpen(true);
                 }}
+                showCreateProposalButton={showCreateProposalButton}
+                onOpenCreateProposalModal={handleOpenCreateProposalModal}
+                proposalsByListingId={proposalsByListingId}
               />
             )}
           </div>
@@ -2255,6 +2496,27 @@ export default function SearchPage() {
           console.log('Auth successful from SearchPage');
         }}
       />
+      {isCreateProposalModalOpen && selectedListingForProposal && (
+        <CreateProposalFlowV2
+          listing={transformListingForProposal(selectedListingForProposal)}
+          moveInDate={moveInDateForProposal}
+          daysSelected={selectedDayObjectsForProposal}
+          nightsSelected={selectedDayObjectsForProposal.length > 0 ? selectedDayObjectsForProposal.length - 1 : 0}
+          reservationSpan={13}
+          pricingBreakdown={null}
+          zatConfig={zatConfig}
+          isFirstProposal={!loggedInUserData || loggedInUserData.proposalCount === 0}
+          useFullFlow={true}
+          existingUserData={loggedInUserData ? {
+            needForSpace: loggedInUserData.needForSpace || '',
+            aboutYourself: loggedInUserData.aboutMe || '',
+            hasUniqueRequirements: !!loggedInUserData.specialNeeds,
+            uniqueRequirements: loggedInUserData.specialNeeds || ''
+          } : null}
+          onClose={handleCloseCreateProposalModal}
+          onSubmit={handleCreateProposalSubmit}
+        />
+      )}
 
       {/* Mobile Map Modal - Fullscreen map view for mobile devices */}
       {mobileMapVisible && (

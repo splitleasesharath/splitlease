@@ -19,6 +19,21 @@ import '../../styles/create-proposal-flow-v2.css';
 // Day name constants for check-in/check-out calculation
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+// Flow order constants for step navigation
+// Section IDs: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
+
+// FULL flow (for pages where days/move-in NOT pre-selected, e.g., FavoriteListingsPage):
+// User Details -> Move-in (reservation span) -> Days -> Review
+// Move-in comes before Days so reservation span is set for accurate price calculations
+const FULL_FIRST_PROPOSAL_FLOW = [2, 3, 4, 1];
+
+// SHORT flow (for pages where days/move-in ARE pre-selected, e.g., ViewSplitLeasePage):
+// User Details -> Review
+const SHORT_FIRST_PROPOSAL_FLOW = [2, 1];
+
+// Returning users start at Review and can edit any section (hub-and-spoke model)
+const RETURNING_USER_START = 1;
+
 /**
  * Custom hook to lock body scroll when a modal/popup is open
  * Prevents background content from scrolling when popup is visible
@@ -102,6 +117,7 @@ const clearProposalDraft = (listingId) => {
  * @param {Object} pricingBreakdown - Pricing breakdown from parent (INITIAL ONLY)
  * @param {Object} zatConfig - ZAT price configuration object
  * @param {boolean} isFirstProposal - Whether this is the user's first proposal (true = first, false = subsequent)
+ * @param {boolean} useFullFlow - Whether to use full sequential flow (days + move-in steps). Default false = short flow (User Info -> Review)
  * @param {Object} existingUserData - User's saved profile data for prefilling (aboutMe, needForSpace, specialNeeds)
  * @param {Function} onClose - Callback when modal closes
  * @param {Function} onSubmit - Callback when proposal is submitted
@@ -115,6 +131,7 @@ export default function CreateProposalFlowV2({
   pricingBreakdown = null,
   zatConfig = null,
   isFirstProposal = true,
+  useFullFlow = false,
   existingUserData = null,
   onClose,
   onSubmit
@@ -129,12 +146,29 @@ export default function CreateProposalFlowV2({
   const savedDraft = getSavedProposalDraft(listingId);
   const hasSavedDraft = savedDraft && (savedDraft.needForSpace || savedDraft.aboutYourself);
 
-  // Section flow: 1 = Review, 2 = User Details, 3 = Move-in, 4 = Days Selection
-  // First proposal: Start on User Details (section 2) - user needs to fill in their info
-  // Second+ proposals: Start on Review (section 1) - user can quickly submit with existing data
+  // Determine which flow to use based on useFullFlow and isFirstProposal
+  // - useFullFlow=true (FavoriteListingsPage): ALWAYS use full flow for ALL users
+  //   User Details -> Days -> Move-in -> Review (ignores isFirstProposal)
+  // - useFullFlow=false (ViewSplitLeasePage):
+  //   - First proposal: User Details -> Review (short flow)
+  //   - Returning user: Start on Review (hub-and-spoke)
+  const activeFlow = useFullFlow ? FULL_FIRST_PROPOSAL_FLOW : SHORT_FIRST_PROPOSAL_FLOW;
+
+  // Determine if we should use sequential flow
+  // - useFullFlow=true: ALWAYS sequential (for FavoriteListingsPage)
+  // - useFullFlow=false: Only sequential for first-time users (for ViewSplitLeasePage)
+  const useSequentialFlow = useFullFlow || isFirstProposal;
+
   const [currentSection, setCurrentSection] = useState(
-    isFirstProposal ? 2 : 1
+    useSequentialFlow ? activeFlow[0] : RETURNING_USER_START
   );
+
+  // Track position in the flow for sequential navigation (0 = first step, 1 = second step, etc.)
+  const [flowStepIndex, setFlowStepIndex] = useState(0);
+
+  // Track if we're editing from Review (hub-and-spoke pattern)
+  // When true, "Next" returns directly to Review instead of continuing sequence
+  const [isEditingFromReview, setIsEditingFromReview] = useState(false);
 
   // Internal state for pricing (managed by ListingScheduleSelector in DaysSelectionSection)
   const [internalPricingBreakdown, setInternalPricingBreakdown] = useState(pricingBreakdown);
@@ -179,7 +213,10 @@ export default function CreateProposalFlowV2({
       });
     }
 
-    console.log(`📍 Starting section: ${isFirstProposal ? '2 (User Details - first proposal)' : '1 (Review - returning user)'}`);
+    console.log(`📍 Starting flow: ${useSequentialFlow
+      ? `Sequential flow (${useFullFlow ? 'full' : 'short'}) [${activeFlow.join(' -> ')}], starting at step 1 (section ${activeFlow[0]})`
+      : '1 (Review - returning user, hub-and-spoke model)'
+    }`);
   }, []);
 
   // Convert day objects to day names for compatibility
@@ -440,32 +477,86 @@ export default function CreateProposalFlowV2({
   };
 
   // Edit handlers - take user to specific section from Review
+  // Sets isEditingFromReview flag so "Next" returns directly to Review (hub-and-spoke pattern)
   const handleEditUserDetails = () => {
     setCurrentSection(2);
+    setIsEditingFromReview(true);
+    console.log('📝 Edit: Jumping to User Details (section 2) from Review');
   };
 
   const handleEditMoveIn = () => {
     setCurrentSection(3);
+    setIsEditingFromReview(true);
+    console.log('📝 Edit: Jumping to Move-in (section 3) from Review');
   };
 
   const handleEditDays = () => {
     setCurrentSection(4);
+    setIsEditingFromReview(true);
+    console.log('📝 Edit: Jumping to Days Selection (section 4) from Review');
   };
 
-  // Navigation - always return to Review (Section 1) after any edit
+  // Navigation - handles both sequential flow and hub-and-spoke editing from Review
   const handleNext = () => {
-    if (validateCurrentSection()) {
-      setCurrentSection(1); // Always go back to Review
+    if (!validateCurrentSection()) return;
+
+    // If we're editing from Review (hub-and-spoke), return directly to Review
+    if (isEditingFromReview) {
+      setCurrentSection(1);
+      setIsEditingFromReview(false);
+      // Also update flowStepIndex to point to Review section
+      const reviewIndex = activeFlow.indexOf(1);
+      if (reviewIndex !== -1) {
+        setFlowStepIndex(reviewIndex);
+      }
+      console.log('📍 Edit complete: Returning to Review section');
+      return;
+    }
+
+    if (useSequentialFlow) {
+      // Sequential flow (full flow for FavoriteListingsPage, short flow for first-time on ViewSplitLeasePage)
+      const nextIndex = flowStepIndex + 1;
+      if (nextIndex < activeFlow.length) {
+        setFlowStepIndex(nextIndex);
+        setCurrentSection(activeFlow[nextIndex]);
+        console.log(`📍 Sequential flow (${useFullFlow ? 'full' : 'short'}): Moving to step ${nextIndex + 1} (section ${activeFlow[nextIndex]})`);
+      }
+      // If at last step (Review), handleSubmit will be called instead
+    } else {
+      // Hub-and-spoke for returning users on ViewSplitLeasePage: always return to Review
+      setCurrentSection(1);
+      console.log('📍 Returning user (hub-and-spoke): Back to Review section');
     }
   };
 
   const handleBack = () => {
-    if (currentSection === 1) {
-      // From Review, go to User Details to edit
-      setCurrentSection(2);
-    } else {
-      // From any edit section, go back to Review
+    // If editing from Review, "Go back" should also return to Review
+    if (isEditingFromReview) {
       setCurrentSection(1);
+      setIsEditingFromReview(false);
+      const reviewIndex = activeFlow.indexOf(1);
+      if (reviewIndex !== -1) {
+        setFlowStepIndex(reviewIndex);
+      }
+      console.log('📍 Edit cancelled: Returning to Review section');
+      return;
+    }
+
+    if (useSequentialFlow) {
+      // Sequential back navigation (flow depends on useFullFlow prop)
+      if (flowStepIndex > 0) {
+        const prevIndex = flowStepIndex - 1;
+        setFlowStepIndex(prevIndex);
+        setCurrentSection(activeFlow[prevIndex]);
+        console.log(`📍 Sequential flow (${useFullFlow ? 'full' : 'short'}): Going back to step ${prevIndex + 1} (section ${activeFlow[prevIndex]})`);
+      }
+      // If at first step (User Details), no back navigation available
+    } else {
+      // Hub-and-spoke for returning users on ViewSplitLeasePage: from any edit section, return to Review
+      if (currentSection !== 1) {
+        setCurrentSection(1);
+        console.log('📍 Returning user (hub-and-spoke): Back to Review section');
+      }
     }
   };
 
@@ -616,9 +707,13 @@ export default function CreateProposalFlowV2({
         </div>
 
         <div className="navigation-buttons">
-          {currentSection !== 2 && (
+          {/* Show back button:
+              - When editing from Review: always show (to cancel and return)
+              - For sequential flow: show if not on first step (flowStepIndex > 0)
+              - For hub-and-spoke: show if not on Review section (currentSection !== 1) */}
+          {(isEditingFromReview || (useSequentialFlow ? flowStepIndex > 0 : currentSection !== 1)) && (
             <button className="nav-button back" onClick={handleBack}>
-              Go back
+              {isEditingFromReview ? 'Cancel' : 'Go back'}
             </button>
           )}
           {currentSection === 1 ? (
@@ -627,7 +722,15 @@ export default function CreateProposalFlowV2({
             </button>
           ) : (
             <button className="nav-button next" onClick={handleNext}>
-              {currentSection === 2 ? 'Next' : 'Yes, Continue'}
+              {/* Button text based on context:
+                  - When editing from Review: "Save & Review"
+                  - For sequential flow: "Review Proposal" on the step before Review, "Next" otherwise
+                  - For hub-and-spoke: "Next" on User Details, "Yes, Continue" on other sections */}
+              {isEditingFromReview
+                ? 'Save & Review'
+                : useSequentialFlow
+                  ? (flowStepIndex === activeFlow.length - 2 ? 'Review Proposal' : 'Next')
+                  : (currentSection === 2 ? 'Next' : 'Yes, Continue')}
             </button>
           )}
         </div>

@@ -65,7 +65,7 @@ export async function handleValidate(
     let userData = null;
     let userError = null;
 
-    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs"';
+    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs", "Proposals List"';
 
     // First attempt: query by _id (Bubble-style ID)
     console.log(`[validate] Attempting to find user by _id: ${user_id}`);
@@ -144,6 +144,11 @@ export async function handleValidate(
     // Use 'email' column first (more commonly populated), fall back to 'email as text'
     const userEmail = userData['email'] || userData['email as text'] || null;
 
+    // Get proposal count from user's "Proposals List" array
+    const proposalsList = userData['Proposals List'];
+    const proposalCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
+    console.log(`[validate] User has ${proposalCount} proposal(s)`);
+
     const userDataObject = {
       userId: userData._id,
       firstName: userData['Name - First'] || null,
@@ -155,12 +160,15 @@ export async function handleValidate(
       // User profile fields for proposal prefilling
       aboutMe: userData['About Me / Bio'] || null,
       needForSpace: userData['need for Space'] || null,
-      specialNeeds: userData['special needs'] || null
+      specialNeeds: userData['special needs'] || null,
+      // Proposal count for showing/hiding Create Proposal CTA on search page
+      proposalCount: proposalCount
     };
 
     console.log(`[validate] ✅ Validation complete`);
     console.log(`[validate]    User: ${userDataObject.firstName}`);
     console.log(`[validate]    Type: ${userDataObject.userType}`);
+    console.log(`[validate]    Proposals: ${userDataObject.proposalCount}`);
     console.log(`[validate] ========== VALIDATION COMPLETE ==========`);
 
     return userDataObject;
