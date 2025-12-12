@@ -59,6 +59,15 @@ async function fetchInformationalTexts() {
 function MobileFilterBar({ onFilterClick, onMapClick, isMapVisible }) {
   return (
     <div className="mobile-filter-bar">
+      <a href="/" className="mobile-logo-link" aria-label="Go to homepage">
+        <img
+          src="/assets/images/split-lease-purple-circle.png"
+          alt="Split Lease Logo"
+          className="mobile-logo-icon"
+          width="28"
+          height="28"
+        />
+      </a>
       <button className="filter-toggle-btn" onClick={onFilterClick}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
           <path d="M4 6h16M4 12h16M4 18h16" strokeWidth="2" strokeLinecap="round" />

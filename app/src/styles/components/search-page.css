@@ -705,6 +705,21 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
+/* Mobile Logo Link - Only visible on mobile */
+.mobile-logo-link {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.mobile-logo-icon {
+  display: block;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
 /* Mobile Schedule Selector - Hide on desktop */
 .mobile-schedule-selector {
   display: none;
@@ -753,6 +768,13 @@
     left: 0;
     right: 0;
     z-index: 100;
+    align-items: center;
+  }
+
+  /* Show mobile logo on mobile */
+  .mobile-logo-link {
+    display: flex;
+    margin-right: 0.5rem;
   }
 
   /* Hide hamburger menu on mobile */
