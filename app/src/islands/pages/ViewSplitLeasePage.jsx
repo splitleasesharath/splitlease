@@ -718,6 +718,7 @@ export default function ViewSplitLeasePage() {
   // Responsive state
   const [isMobile, setIsMobile] = useState(false);
   const [shouldLoadMap, setShouldLoadMap] = useState(false);
+  const [mobileBookingExpanded, setMobileBookingExpanded] = useState(false);
 
   // Section references for navigation
   const mapRef = useRef(null);
@@ -2802,6 +2803,380 @@ export default function ViewSplitLeasePage() {
           expandedContent={informationalTexts['Reservation Span'].desktopPlus}
           showMoreAvailable={informationalTexts['Reservation Span'].showMore}
         />
+      )}
+
+      {/* Mobile Bottom Booking Bar */}
+      {isMobile && (
+        <>
+          {/* Overlay when expanded */}
+          {mobileBookingExpanded && (
+            <div
+              onClick={() => setMobileBookingExpanded(false)}
+              style={{
+                position: 'fixed',
+                inset: 0,
+                background: 'rgba(0, 0, 0, 0.5)',
+                zIndex: 9998
+              }}
+            />
+          )}
+
+          {/* Bottom Bar */}
+          <div
+            style={{
+              position: 'fixed',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              background: 'white',
+              boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.15)',
+              zIndex: 9999,
+              borderTopLeftRadius: mobileBookingExpanded ? '20px' : '0',
+              borderTopRightRadius: mobileBookingExpanded ? '20px' : '0',
+              transition: 'all 0.3s ease',
+              maxHeight: mobileBookingExpanded ? '80vh' : 'auto',
+              overflowY: mobileBookingExpanded ? 'auto' : 'hidden'
+            }}
+          >
+            {/* Collapsed View */}
+            {!mobileBookingExpanded ? (
+              <div style={{ padding: '12px 16px' }}>
+                {/* Schedule Selector Row */}
+                {scheduleSelectorListing && (
+                  <div style={{ marginBottom: '12px' }}>
+                    <ListingScheduleSelector
+                      listing={scheduleSelectorListing}
+                      initialSelectedDays={selectedDayObjects}
+                      limitToFiveNights={false}
+                      reservationSpan={reservationSpan}
+                      zatConfig={zatConfig}
+                      onSelectionChange={handleScheduleChange}
+                      onPriceChange={handlePriceChange}
+                      showPricing={false}
+                    />
+                  </div>
+                )}
+
+                {/* Price and Continue Row */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '12px'
+                }}>
+                  {/* Price Info */}
+                  <div style={{ flex: 1 }}>
+                    <div style={{
+                      fontSize: '18px',
+                      fontWeight: '700',
+                      color: '#31135d'
+                    }}>
+                      {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
+                        ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
+                        : 'Select Days'}
+                      <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: '500' }}>/night</span>
+                    </div>
+                    <div style={{
+                      fontSize: '14px',
+                      color: '#374151',
+                      fontWeight: '600'
+                    }}>
+                      Total: {pricingBreakdown?.valid && pricingBreakdown?.reservationTotal
+                        ? formatPrice(pricingBreakdown.reservationTotal)
+                        : '—'}
+                    </div>
+                  </div>
+
+                  {/* Continue Button */}
+                  <button
+                    onClick={() => setMobileBookingExpanded(true)}
+                    style={{
+                      padding: '12px 24px',
+                      background: '#31135d',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '10px',
+                      fontSize: '16px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Expanded View */
+              <div style={{ padding: '20px 16px', paddingBottom: '24px' }}>
+                {/* Header with close button */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: '16px'
+                }}>
+                  <h3 style={{
+                    fontSize: '18px',
+                    fontWeight: '700',
+                    color: '#111827',
+                    margin: 0
+                  }}>
+                    Complete Your Booking
+                  </h3>
+                  <button
+                    onClick={() => setMobileBookingExpanded(false)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      fontSize: '24px',
+                      cursor: 'pointer',
+                      color: '#6B7280',
+                      padding: '4px'
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* Price Display */}
+                <div style={{
+                  background: 'linear-gradient(135deg, #f8f9ff 0%, #faf5ff 100%)',
+                  padding: '12px',
+                  borderRadius: '12px',
+                  marginBottom: '16px',
+                  border: '1px solid #e9d5ff'
+                }}>
+                  <div style={{
+                    fontSize: '24px',
+                    fontWeight: '800',
+                    color: '#31135d'
+                  }}>
+                    {pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
+                      ? `$${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}`
+                      : 'Select Days'}
+                    <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: '500' }}>/night</span>
+                  </div>
+                </div>
+
+                {/* Move-in Date */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    color: '#31135d',
+                    marginBottom: '8px',
+                    display: 'block',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Ideal Move-In
+                  </label>
+                  <input
+                    type="date"
+                    value={moveInDate || ''}
+                    min={minMoveInDate}
+                    onChange={(e) => setMoveInDate(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px solid #E5E7EB',
+                      borderRadius: '10px',
+                      fontSize: '16px',
+                      fontWeight: '500',
+                      color: '#111827',
+                      boxSizing: 'border-box'
+                    }}
+                  />
+                </div>
+
+                {/* Weekly Schedule Selector */}
+                {scheduleSelectorListing && (
+                  <div style={{
+                    marginBottom: '16px',
+                    padding: '12px',
+                    background: '#f9fafb',
+                    borderRadius: '12px',
+                    border: '1px solid #E5E7EB'
+                  }}>
+                    <ListingScheduleSelector
+                      listing={scheduleSelectorListing}
+                      initialSelectedDays={selectedDayObjects}
+                      limitToFiveNights={false}
+                      reservationSpan={reservationSpan}
+                      zatConfig={zatConfig}
+                      onSelectionChange={handleScheduleChange}
+                      onPriceChange={handlePriceChange}
+                      showPricing={false}
+                    />
+                  </div>
+                )}
+
+                {/* Reservation Span */}
+                <div style={{ marginBottom: '16px' }}>
+                  <label style={{
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    color: '#31135d',
+                    marginBottom: '8px',
+                    display: 'block',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>
+                    Reservation Span
+                  </label>
+                  <select
+                    value={reservationSpan}
+                    onChange={(e) => setReservationSpan(Number(e.target.value))}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      border: '2px solid #E5E7EB',
+                      borderRadius: '10px',
+                      fontSize: '16px',
+                      fontWeight: '500',
+                      color: '#111827',
+                      background: 'white',
+                      boxSizing: 'border-box'
+                    }}
+                  >
+                    {[6, 7, 8, 9, 10, 12, 13, 16, 17, 20, 22, 26].map(weeks => (
+                      <option key={weeks} value={weeks}>
+                        {weeks} weeks {weeks >= 12 ? `(${Math.floor(weeks / 4)} months)` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Strict Mode */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  marginBottom: '16px',
+                  padding: '12px',
+                  background: '#f8f9ff',
+                  borderRadius: '10px',
+                  border: '1px solid #e9d5ff'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={strictMode}
+                    onChange={() => setStrictMode(!strictMode)}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      cursor: 'pointer',
+                      accentColor: '#31135d'
+                    }}
+                  />
+                  <label style={{
+                    fontSize: '14px',
+                    color: '#111827',
+                    fontWeight: '500'
+                  }}>
+                    Strict (no negotiation on exact move in)
+                  </label>
+                </div>
+
+                {/* Price Breakdown */}
+                <div style={{
+                  marginBottom: '16px',
+                  padding: '12px',
+                  background: '#f9fafb',
+                  borderRadius: '10px',
+                  border: '1px solid #E5E7EB'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '8px',
+                    fontSize: '15px'
+                  }}>
+                    <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Rent</span>
+                    <span style={{ color: '#111827', fontWeight: '700' }}>
+                      {pricingBreakdown?.valid && pricingBreakdown?.fourWeekRent
+                        ? formatPrice(pricingBreakdown.fourWeekRent)
+                        : '—'}
+                    </span>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingTop: '8px',
+                    borderTop: '1px solid #E5E7EB'
+                  }}>
+                    <span style={{ fontSize: '16px', fontWeight: '700', color: '#111827' }}>
+                      Reservation Total
+                    </span>
+                    <span style={{
+                      fontSize: '20px',
+                      fontWeight: '800',
+                      color: '#31135d'
+                    }}>
+                      {pricingBreakdown?.valid && pricingBreakdown?.reservationTotal
+                        ? formatPrice(pricingBreakdown.reservationTotal)
+                        : '—'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Create Proposal Button */}
+                <button
+                  onClick={() => {
+                    if (scheduleValidation?.valid && pricingBreakdown?.valid && !existingProposalForListing) {
+                      handleCreateProposal();
+                    }
+                  }}
+                  disabled={!scheduleValidation?.valid || !pricingBreakdown?.valid || !!existingProposalForListing}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    background: existingProposalForListing
+                      ? '#D1D5DB'
+                      : scheduleValidation?.valid && pricingBreakdown?.valid
+                        ? '#31135d'
+                        : '#D1D5DB',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '10px',
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    cursor: existingProposalForListing || !scheduleValidation?.valid || !pricingBreakdown?.valid ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {existingProposalForListing
+                    ? 'Proposal Already Exists'
+                    : pricingBreakdown?.valid && pricingBreakdown?.pricePerNight
+                      ? `Create Proposal at $${Number.isInteger(pricingBreakdown.pricePerNight) ? pricingBreakdown.pricePerNight : pricingBreakdown.pricePerNight.toFixed(2)}/night`
+                      : 'Update Split Schedule Above'}
+                </button>
+
+                {/* Link to existing proposal */}
+                {existingProposalForListing && loggedInUserData?.userId && (
+                  <a
+                    href={`/guest-proposals/${loggedInUserData.userId}?proposal=${existingProposalForListing._id}`}
+                    style={{
+                      display: 'block',
+                      textAlign: 'center',
+                      marginTop: '12px',
+                      color: '#31135d',
+                      fontSize: '14px',
+                      fontWeight: '500'
+                    }}
+                  >
+                    View your proposal in Dashboard
+                  </a>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Spacer to prevent content from being hidden behind fixed bar */}
+          <div style={{ height: mobileBookingExpanded ? '0' : '140px' }} />
+        </>
       )}
 
       <Footer />
