@@ -507,7 +507,17 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
       : `/view-split-lease/${listingId}`;
 
     console.log('📅 PropertyCard: Opening listing with URL:', url);
-    window.open(url, '_blank', 'noopener,noreferrer');
+
+    // Detect mobile viewport (matches CSS breakpoint at 768px)
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+      // On mobile, navigate in the same tab for better UX and to avoid popup blockers
+      window.location.href = url;
+    } else {
+      // On desktop, open in new tab
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
   };
 
   return (
