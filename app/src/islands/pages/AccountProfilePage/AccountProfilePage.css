@@ -154,21 +154,21 @@
   height: 24px;
 }
 
-/* Avatar */
-.avatar-container {
+/* Profile Avatar (namespaced to avoid conflict with LoggedInAvatar) */
+.profile-avatar-container {
   position: relative;
   display: flex;
   justify-content: center;
   margin-top: -60px;
 }
 
-.avatar-wrapper {
+.profile-avatar-wrapper {
   position: relative;
   width: 120px;
   height: 120px;
 }
 
-.avatar-image {
+.profile-avatar-image {
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -178,7 +178,7 @@
   background-color: var(--sl-bg-body);
 }
 
-.avatar-placeholder {
+.profile-avatar-placeholder {
   width: 120px;
   height: 120px;
   border-radius: 50%;
@@ -190,14 +190,14 @@
   justify-content: center;
 }
 
-.avatar-placeholder svg {
+.profile-avatar-placeholder svg {
   width: 48px;
   height: 48px;
   color: var(--sl-primary);
 }
 
-/* Avatar Edit Badge */
-.avatar-edit-badge {
+/* Profile Avatar Edit Badge */
+.profile-avatar-edit-badge {
   position: absolute;
   bottom: 4px;
   right: 4px;
@@ -213,18 +213,18 @@
   transition: transform 0.2s ease;
 }
 
-.avatar-edit-badge:hover {
+.profile-avatar-edit-badge:hover {
   transform: scale(1.1);
 }
 
-.avatar-edit-badge svg {
+.profile-avatar-edit-badge svg {
   width: 18px;
   height: 18px;
   color: white;
 }
 
-/* Avatar Verified Badge */
-.avatar-verified-badge {
+/* Profile Avatar Verified Badge */
+.profile-avatar-verified-badge {
   position: absolute;
   bottom: 4px;
   right: 4px;
@@ -238,7 +238,7 @@
   border: 2px solid white;
 }
 
-.avatar-verified-badge svg {
+.profile-avatar-verified-badge svg {
   width: 16px;
   height: 16px;
   color: white;

@@ -79,7 +79,7 @@ export default function ProfileSidebar({
       />
 
       {/* Avatar */}
-      <div className="avatar-container">
+      <div className="profile-avatar-container">
         <AvatarWithBadge
           imageUrl={avatarUrl}
           isEditorView={isEditorView}

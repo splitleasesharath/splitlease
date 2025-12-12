@@ -36,16 +36,16 @@ export default function AvatarWithBadge({
   };
 
   return (
-    <div className="avatar-wrapper">
+    <div className="profile-avatar-wrapper">
       {/* Avatar Image */}
       {imageUrl ? (
         <img
           src={imageUrl}
           alt="Profile photo"
-          className="avatar-image"
+          className="profile-avatar-image"
         />
       ) : (
-        <div className="avatar-placeholder">
+        <div className="profile-avatar-placeholder">
           <User size={48} />
         </div>
       )}
@@ -55,7 +55,7 @@ export default function AvatarWithBadge({
         // Editor View: Camera badge for upload
         <>
           <button
-            className="avatar-edit-badge"
+            className="profile-avatar-edit-badge"
             onClick={handleBadgeClick}
             aria-label="Change profile photo"
           >
@@ -72,7 +72,7 @@ export default function AvatarWithBadge({
         </>
       ) : isVerified ? (
         // Public View: Verified badge
-        <div className="avatar-verified-badge" title="Identity verified">
+        <div className="profile-avatar-verified-badge" title="Identity verified">
           <Check size={16} />
         </div>
       ) : null}
