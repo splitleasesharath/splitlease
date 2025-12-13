@@ -760,6 +760,18 @@
 }
 
 @media (max-width: 768px) {
+  /* Hide map column on mobile - map is accessed via mobile-map-modal */
+  .map-column {
+    display: none;
+  }
+
+  /* Ensure listings column takes full height without map column */
+  .listings-column {
+    flex: 1 1 100%;
+    height: auto;
+    min-height: 100vh;
+  }
+
   /* Show mobile filter bar */
   .mobile-filter-bar {
     display: flex;
