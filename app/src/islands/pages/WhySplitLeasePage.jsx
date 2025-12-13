@@ -706,7 +706,7 @@ export default function WhySplitLeasePage() {
                 <p className="testimonial-quote">
                   "I work with NYC clients regularly and needed a consistent place to stay. Split Lease gave me the consistency I needed without the commitment I didn't. Saved $24K last year and never had a booking nightmare."
                 </p>
-                <a href="#" className="testimonial-link">
+                <a href="/guest-success" className="testimonial-link">
                   Read full story
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -723,7 +723,7 @@ export default function WhySplitLeasePage() {
                 <p className="testimonial-quote">
                   "Every week I'm in NYC for client meetings. Split Lease is my second home—literally. Same apartment, same key, zero hassle. It's transformed how I work and live."
                 </p>
-                <a href="#" className="testimonial-link">
+                <a href="/guest-success" className="testimonial-link">
                   Read full story
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -740,7 +740,7 @@ export default function WhySplitLeasePage() {
                 <p className="testimonial-quote">
                   "I live in Boston but have custody every weekend. Split Lease gave me a consistent place for my kids—their clothes, toys, and favorite books are always there. They call it 'Dad's NYC home.' Worth every penny for that stability."
                 </p>
-                <a href="#" className="testimonial-link">
+                <a href="/guest-success" className="testimonial-link">
                   Read full story
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -757,7 +757,7 @@ export default function WhySplitLeasePage() {
                 <p className="testimonial-quote">
                   "My program has me in NYC every Tuesday-Thursday. Split Lease saved me from drowning in hotel costs or commuting 4 hours daily. I can focus on my studies, not logistics. My textbooks and study materials stay there—it's my second dorm."
                 </p>
-                <a href="#" className="testimonial-link">
+                <a href="/guest-success" className="testimonial-link">
                   Read full story
                   <svg viewBox="0 0 24 24" fill="none">
                     <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
