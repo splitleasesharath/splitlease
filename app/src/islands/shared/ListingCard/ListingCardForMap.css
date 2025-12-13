@@ -61,15 +61,158 @@
   }
 }
 
+/* ========================================
+   MOBILE OPTIMIZATION - 768px
+   Target: 25-30% size reduction
+   ======================================== */
+
 @media (max-width: 768px) {
+  /* Container - reduced width */
   .listing-card-for-map-container {
-    width: 320px;
+    width: 280px;
+    border-radius: 10px;
+  }
+
+  /* Image - reduced height */
+  .listing-card-image-container {
+    height: 140px;
+  }
+
+  /* Close button - tighter positioning */
+  .listing-card-close-btn {
+    top: 4px;
+    right: 4px;
+    padding: 3px;
+  }
+
+  /* Favorite button - tighter positioning */
+  .listing-card-for-map-container .favorite-button-shared {
+    top: 4px;
+    left: 4px;
+  }
+
+  /* Gallery controls - smaller buttons */
+  .listing-card-gallery-btn {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  /* NEW badge - smaller */
+  .listing-card-new-badge {
+    top: 6px;
+    right: 30px;
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+  }
+
+  /* Content section - reduced padding and gap */
+  .listing-card-content {
+    padding: 8px;
+    gap: 4px;
+  }
+
+  /* Header row - reduced spacing */
+  .listing-card-header-row {
+    gap: 6px;
+    margin-bottom: 1px;
+  }
+
+  /* Title - slightly smaller */
+  .listing-card-title {
+    font-size: 13px;
+  }
+
+  /* Price - reduced size */
+  .listing-card-price-highlight {
+    font-size: 16px;
+  }
+
+  .listing-card-price-subtext {
+    font-size: 10px;
+    margin-top: -1px;
+  }
+
+  /* Location - smaller */
+  .listing-card-location {
+    font-size: 11px;
+    gap: 2px;
+  }
+
+  /* Features row - tighter spacing */
+  .listing-card-features-row {
+    gap: 8px;
+    margin-top: 1px;
+  }
+
+  .listing-card-feature-item {
+    font-size: 11px;
+    gap: 2px;
+  }
+
+  /* Divider - reduced margin */
+  .listing-card-divider {
+    margin: 5px 0;
+  }
+
+  /* Action row - tighter spacing */
+  .listing-card-action-row {
+    gap: 6px;
+    margin-top: 2px;
+  }
+
+  /* Action buttons - smaller */
+  .listing-card-view-details-btn,
+  .listing-card-send-message-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+    border-radius: 5px;
+  }
+
+  /* Arrow - proportionally smaller */
+  .listing-card-arrow {
+    bottom: -8px;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 8px solid #FFFFFF;
+  }
+
+  .listing-card-arrow-border {
+    bottom: -9px;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 9px solid #E0E0E0;
   }
 }
 
+/* ========================================
+   MOBILE OPTIMIZATION - 480px (Small screens)
+   Target: Additional 5% reduction
+   ======================================== */
+
 @media (max-width: 480px) {
   .listing-card-for-map-container {
-    width: 280px;
+    width: 250px;
+    border-radius: 8px;
+  }
+
+  .listing-card-image-container {
+    height: 120px;
+  }
+
+  .listing-card-content {
+    padding: 6px;
+    gap: 3px;
+  }
+
+  .listing-card-title {
+    font-size: 12px;
+  }
+
+  .listing-card-price-highlight {
+    font-size: 14px;
   }
 }
 
