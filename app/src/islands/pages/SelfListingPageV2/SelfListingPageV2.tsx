@@ -857,7 +857,7 @@ export function SelfListingPageV2() {
         typeOfSpace: data.typeOfSpace || 'Entire Place',
         bedrooms: parseInt(data.bedrooms) || 1,
         beds: parseInt(data.bedrooms) || 1,
-        bathrooms: data.bathrooms === 'Shared' ? 1 : Math.floor(parseFloat(data.bathrooms)) || 1,
+        bathrooms: data.bathrooms === 'Shared' ? 1 : parseFloat(data.bathrooms) || 1,
         typeOfKitchen: 'Full Kitchen',
         typeOfParking: 'No Parking',
         address: {
