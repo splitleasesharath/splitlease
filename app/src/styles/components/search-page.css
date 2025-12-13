@@ -921,9 +921,49 @@
     transform: scale(0.95);
   }
 
-  /* Add padding-top to account for close button */
+  /* Add padding-top to account for close button and padding-bottom for apply button */
   .inline-filters.active {
     padding-top: 4rem;
+    padding-bottom: 6rem; /* Space for fixed apply button */
+  }
+
+  /* Mobile Apply Filters Button Container */
+  .mobile-filter-apply-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    z-index: 2002;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Mobile Apply Filters Button */
+  .mobile-filter-apply-btn {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: #5b21b6;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-filter-apply-btn:hover {
+    background: #4c1d95;
+  }
+
+  .mobile-filter-apply-btn:active {
+    background: #3b1578;
+    transform: scale(0.98);
   }
 
   /* Improve filter group labels on mobile - maintain floating label design */

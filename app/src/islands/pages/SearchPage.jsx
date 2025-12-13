@@ -907,6 +907,16 @@ export default function SearchPage() {
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  // Calculate active filter count for mobile apply button
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedNeighborhoods.length > 0) count++;
+    if (weekPattern !== 'every-week') count++;
+    if (priceTier !== 'all') count++;
+    if (sortBy !== 'recommended') count++;
+    return count;
+  }, [selectedNeighborhoods, weekPattern, priceTier, sortBy]);
+
   // Flag to prevent URL update on initial load
   const isInitialMount = useRef(true);
 
@@ -2434,6 +2444,18 @@ export default function SearchPage() {
                 <option value="recent">Recently Added</option>
               </select>
             </div>
+
+            {/* Apply Filters Button - Mobile Only */}
+            {filterPanelActive && (
+              <div className="mobile-filter-apply-container">
+                <button
+                  className="mobile-filter-apply-btn"
+                  onClick={() => setFilterPanelActive(false)}
+                >
+                  {activeFilterCount > 0 ? `Apply Filters (${activeFilterCount})` : 'Apply Filters'}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Listings count */}
