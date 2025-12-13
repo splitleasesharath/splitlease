@@ -284,6 +284,17 @@ export const routes = [
     hasDynamicSegment: false
   },
 
+  // ===== MESSAGING =====
+  {
+    path: '/messages',
+    file: 'messages.html',
+    aliases: ['/messages.html', '/messaging-app'],
+    protected: true,
+    cloudflareInternal: true,
+    internalName: 'messages-view',
+    hasDynamicSegment: false
+  },
+
   // ===== INTERNAL/DEV PAGES =====
   {
     path: '/_internal-test',
