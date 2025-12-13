@@ -1,5 +1,8 @@
 -- Extract placeholders from email templates and update the Placeholders field
 -- Run this in Supabase SQL Editor (Dashboard > SQL Editor > New query)
+--
+-- Placeholder format: $placeholder$ (single dollar signs, allows spaces)
+-- Examples: $to$, $from email$, $body text$, $logo url$
 
 -- First, verify the column exists (creates it if not)
 DO $$
@@ -14,30 +17,37 @@ BEGIN
     END IF;
 END $$;
 
--- Function to extract placeholders from HTML content
-CREATE OR REPLACE FUNCTION extract_placeholders(html_content text)
+-- Function to extract placeholders from JSON/HTML content
+-- Pattern: $word$ or $word word$ (single $ delimiters, alphanumeric with spaces/underscores)
+CREATE OR REPLACE FUNCTION extract_email_placeholders(content text)
 RETURNS text[] AS $$
 DECLARE
-    matches text[];
     unique_matches text[];
 BEGIN
-    IF html_content IS NULL THEN
+    IF content IS NULL THEN
         RETURN ARRAY[]::text[];
     END IF;
 
-    -- Extract all $$placeholder$$ patterns
+    -- Extract all $placeholder$ patterns (single $, allows spaces and underscores)
+    -- Pattern matches: $ followed by word chars/spaces, followed by $
     SELECT ARRAY(
         SELECT DISTINCT match[1]
-        FROM regexp_matches(html_content, '\$\$[a-zA-Z0-9_]+\$\$', 'g') AS match
+        FROM regexp_matches(content, E'\\$([a-zA-Z][a-zA-Z0-9_ ]*)\\$', 'g') AS match
+    ) INTO unique_matches;
+
+    -- Convert back to full placeholder format with $ delimiters
+    SELECT ARRAY(
+        SELECT '$' || unnest || '$'
+        FROM unnest(unique_matches)
     ) INTO unique_matches;
 
     RETURN COALESCE(unique_matches, ARRAY[]::text[]);
 END;
 $$ LANGUAGE plpgsql;
 
--- Update all rows with extracted placeholders
+-- Update all rows with extracted placeholders from Email Template JSON field
 UPDATE zat_email_html_template_eg_sendbasicemailwf_
-SET "Placeholders" = extract_placeholders("HTML");
+SET "Placeholders" = extract_email_placeholders("Email Template JSON");
 
 -- Verify the results
 SELECT
@@ -48,5 +58,5 @@ SELECT
 FROM zat_email_html_template_eg_sendbasicemailwf_
 ORDER BY "Template Name";
 
--- Clean up the function (optional - comment out if you want to keep it)
--- DROP FUNCTION IF EXISTS extract_placeholders(text);
+-- Optional: Clean up the function after use
+-- DROP FUNCTION IF EXISTS extract_email_placeholders(text);

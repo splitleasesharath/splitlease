@@ -36,17 +36,18 @@ console.log('Using key type:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SERVICE_
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TABLE_NAME = 'zat_email_html_template_eg_sendbasicemailwf_';
-const PLACEHOLDER_REGEX = /\$\$[a-zA-Z0-9_]+\$\$/g;
+// Single $ delimiters, allows spaces and underscores: $to$, $from email$, $body text$
+const PLACEHOLDER_REGEX = /\$[a-zA-Z][a-zA-Z0-9_ ]*\$/g;
 
 /**
- * Extract unique placeholders from HTML content
- * @param {string} html - HTML template content
- * @returns {string[]} - Array of unique placeholders
+ * Extract unique placeholders from template content
+ * @param {string} content - Email template JSON content
+ * @returns {string[]} - Array of unique placeholders (e.g., ['$to$', '$from email$'])
  */
-function extractPlaceholders(html) {
-  if (!html) return [];
+function extractPlaceholders(content) {
+  if (!content) return [];
 
-  const matches = html.match(PLACEHOLDER_REGEX);
+  const matches = content.match(PLACEHOLDER_REGEX);
   if (!matches) return [];
 
   // Deduplicate by converting to Set and back to array
@@ -87,13 +88,14 @@ async function main() {
   for (const template of templates) {
     // Use flexible column name access - try both patterns
     const templateName = template['Template Name'] || template['template_name'] || template['template name'] || 'Unknown';
-    const htmlContent = template['HTML'] || template['html'] || template['Html'] || '';
+    // Use Email Template JSON field (contains the full template with placeholders)
+    const jsonContent = template['Email Template JSON'] || template['email_template_json'] || '';
     const templateId = template['_id'] || template['id'];
 
     console.log(`Processing: ${templateName} (${templateId})`);
 
-    // Extract placeholders
-    const placeholders = extractPlaceholders(htmlContent);
+    // Extract placeholders from JSON content
+    const placeholders = extractPlaceholders(jsonContent);
     console.log(`  Found ${placeholders.length} placeholders: ${placeholders.join(', ') || '(none)'}`);
 
     results.push({
