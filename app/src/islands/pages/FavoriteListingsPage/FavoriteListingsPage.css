@@ -279,7 +279,7 @@
   .favorites-page .mobile-map-row {
     display: flex;
     position: fixed;
-    top: 56px; /* Below header row with small gap */
+    top: 60px; /* Below header row with visible gap */
     left: 0;
     right: 0;
     z-index: 99;
@@ -314,7 +314,7 @@
   .favorites-page .mobile-schedule-selector {
     display: block;
     position: fixed;
-    top: 106px; /* Below header (56px) + map row (50px) */
+    top: 110px; /* Below header (60px) + map row (50px) */
     left: 0;
     right: 0;
     z-index: 98;
@@ -325,7 +325,7 @@
 
   /* Adjust listings column padding to account for all 3 fixed rows */
   .favorites-page .listings-column {
-    padding-top: 195px; /* Header (56px) + Map row (50px) + Schedule selector (89px) */
+    padding-top: 200px; /* Header (60px) + Map row (50px) + Schedule selector (90px) */
   }
 
   /* Show hamburger menu on mobile for logged out users */
