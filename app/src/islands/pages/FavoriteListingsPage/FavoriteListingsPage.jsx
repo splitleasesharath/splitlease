@@ -1150,8 +1150,8 @@ const FavoriteListingsPage = () => {
       <main className="two-column-layout">
         {/* LEFT COLUMN: Listings */}
         <section className="listings-column">
-          {/* Mobile Filter Bar - Header row with logo, explore, and auth */}
-          <div className="mobile-filter-bar">
+          {/* ROW 1: Mobile Header - Logo, Explore Rentals, Avatar */}
+          <div className="mobile-filter-bar mobile-header-row">
             <a href="/" className="mobile-logo-link" aria-label="Go to homepage">
               <img
                 src="/assets/images/split-lease-purple-circle.png"
@@ -1168,13 +1168,6 @@ const FavoriteListingsPage = () => {
               </svg>
               <span>Explore Rentals</span>
             </a>
-            <button className="map-toggle-btn" onClick={() => setMobileMapVisible(true)}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
-                <path d="M9 3v18M15 3v18M3 9h18M3 15h18" strokeWidth="2" />
-              </svg>
-              <span>Map</span>
-            </button>
 
             {/* Mobile Header Actions - Auth-aware elements */}
             <div className="mobile-header-actions">
@@ -1226,7 +1219,18 @@ const FavoriteListingsPage = () => {
             </div>
           </div>
 
-          {/* Mobile Schedule Selector */}
+          {/* ROW 2: Map Button Row */}
+          <div className="mobile-map-row">
+            <button className="map-toggle-btn" onClick={() => setMobileMapVisible(true)}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
+                <path d="M9 3v18M15 3v18M3 9h18M3 15h18" strokeWidth="2" />
+              </svg>
+              <span>Map</span>
+            </button>
+          </div>
+
+          {/* ROW 3: Mobile Schedule Selector with Check-in/Check-out */}
           <div className="mobile-schedule-selector">
             <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
               {/* AuthAwareSearchScheduleSelector will be mounted here on mobile */}

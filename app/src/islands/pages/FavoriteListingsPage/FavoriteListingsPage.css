@@ -241,6 +241,11 @@
   stroke: #FF6B35;
 }
 
+/* Mobile Map Row - Hidden on desktop */
+.mobile-map-row {
+  display: none;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
   .toast {
@@ -253,6 +258,54 @@
 
   .toast.show {
     transform: translateY(0);
+  }
+
+  /* ROW 1: Header row adjustments */
+  .favorites-page .mobile-header-row {
+    justify-content: flex-start;
+  }
+
+  .favorites-page .mobile-header-row .explore-rentals-btn {
+    flex: 1;
+    max-width: none;
+  }
+
+  /* ROW 2: Map Button Row */
+  .favorites-page .mobile-map-row {
+    display: flex;
+    padding: 0.5rem 1rem;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .favorites-page .mobile-map-row .map-toggle-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1rem;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .favorites-page .mobile-map-row .map-toggle-btn:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+  }
+
+  /* ROW 3: Schedule Selector - ensure it displays */
+  .favorites-page .mobile-schedule-selector {
+    display: block;
+    padding: 0.75rem 1rem;
+    background: white;
+    border-bottom: 1px solid #e5e7eb;
   }
 
   /* Show hamburger menu on mobile for logged out users */
