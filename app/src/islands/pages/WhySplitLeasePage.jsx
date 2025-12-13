@@ -654,7 +654,12 @@ export default function WhySplitLeasePage() {
                 Workspace included<br />
                 <strong>✓ Storage: Leave all your belongings</strong>
               </div>
-              <div className="pricing-savings-badge">Save $2,200/month</div>
+              <a
+                href={`${SEARCH_URL}?borough=manhattan&pricetier=under-200&days-selected=2,3,4`}
+                className="pricing-savings-badge pricing-savings-badge-clickable"
+              >
+                Save $2,200/month →
+              </a>
             </div>
 
             <div className="pricing-card">
