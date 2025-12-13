@@ -1,5 +1,9 @@
--- Extract placeholders from email templates and update the Placeholders field
+-- Extract placeholders from email templates and update the Placeholder field
 -- Run this in Supabase SQL Editor (Dashboard > SQL Editor > New query)
+--
+-- Table: zat_email_html_template_eg_sendbasicemailwf_
+-- Input field: Email Template JSON
+-- Target field: Placeholder
 --
 -- Placeholder format: $placeholder$ (single dollar signs, allows spaces)
 -- Examples: $to$, $from email$, $body text$, $logo url$
@@ -10,10 +14,10 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns
         WHERE table_name = 'zat_email_html_template_eg_sendbasicemailwf_'
-        AND column_name = 'Placeholders'
+        AND column_name = 'Placeholder'
     ) THEN
         ALTER TABLE zat_email_html_template_eg_sendbasicemailwf_
-        ADD COLUMN "Placeholders" text[];
+        ADD COLUMN "Placeholder" text[];
     END IF;
 END $$;
 
@@ -47,16 +51,14 @@ $$ LANGUAGE plpgsql;
 
 -- Update all rows with extracted placeholders from Email Template JSON field
 UPDATE zat_email_html_template_eg_sendbasicemailwf_
-SET "Placeholders" = extract_email_placeholders("Email Template JSON");
+SET "Placeholder" = extract_email_placeholders("Email Template JSON");
 
 -- Verify the results
 SELECT
     "_id",
-    "Template Name",
-    "Placeholders",
-    array_length("Placeholders", 1) as placeholder_count
-FROM zat_email_html_template_eg_sendbasicemailwf_
-ORDER BY "Template Name";
+    "Placeholder",
+    array_length("Placeholder", 1) as placeholder_count
+FROM zat_email_html_template_eg_sendbasicemailwf_;
 
 -- Optional: Clean up the function after use
 -- DROP FUNCTION IF EXISTS extract_email_placeholders(text);
