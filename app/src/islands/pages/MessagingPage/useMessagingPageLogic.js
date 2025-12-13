@@ -10,6 +10,8 @@
  * - Fetch messages when thread selected
  * - Message sending handler
  * - Real-time state management
+ *
+ * DEV MODE: Set USE_MOCK_DATA to true to bypass auth and use mock data
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -17,6 +19,101 @@ import { checkAuthStatus } from '../../../lib/auth.js';
 import { supabase } from '../../../lib/supabase.js';
 
 const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/messages`;
+
+// ============================================================================
+// DEV MODE: Toggle this to bypass auth and use mock data
+// ============================================================================
+const USE_MOCK_DATA = true;
+
+const MOCK_THREADS = [
+  {
+    _id: 'thread_1',
+    contact_name: 'Sarah Johnson',
+    contact_avatar: null,
+    property_name: 'Cozy Studio in Williamsburg',
+    last_message_preview: 'Looking forward to meeting you!',
+    last_message_time: '2:30 PM',
+    unread_count: 2,
+    is_with_splitbot: false,
+  },
+  {
+    _id: 'thread_2',
+    contact_name: 'Michael Chen',
+    contact_avatar: null,
+    property_name: 'Spacious 1BR in East Village',
+    last_message_preview: 'The dates work perfectly for me.',
+    last_message_time: 'Yesterday',
+    unread_count: 0,
+    is_with_splitbot: false,
+  },
+  {
+    _id: 'thread_3',
+    contact_name: 'Split Bot',
+    contact_avatar: null,
+    property_name: null,
+    last_message_preview: 'Your proposal has been submitted!',
+    last_message_time: 'Dec 10',
+    unread_count: 0,
+    is_with_splitbot: true,
+  },
+];
+
+const MOCK_MESSAGES = {
+  thread_1: [
+    {
+      _id: 'msg_1',
+      message_body: 'Hi! I saw your listing and I\'m very interested in the space.',
+      sender_name: 'You',
+      sender_type: 'guest',
+      is_outgoing: true,
+      timestamp: 'Dec 12, 2:15 PM',
+    },
+    {
+      _id: 'msg_2',
+      message_body: 'Thanks for reaching out! The space is available for your dates. Would you like to schedule a viewing?',
+      sender_name: 'Sarah Johnson',
+      sender_type: 'host',
+      is_outgoing: false,
+      timestamp: 'Dec 12, 2:25 PM',
+    },
+    {
+      _id: 'msg_3',
+      message_body: 'Looking forward to meeting you!',
+      sender_name: 'Sarah Johnson',
+      sender_type: 'host',
+      is_outgoing: false,
+      timestamp: 'Dec 12, 2:30 PM',
+    },
+  ],
+  thread_2: [
+    {
+      _id: 'msg_4',
+      message_body: 'Hi Michael, are you available for a split lease starting January?',
+      sender_name: 'You',
+      sender_type: 'guest',
+      is_outgoing: true,
+      timestamp: 'Dec 11, 10:00 AM',
+    },
+    {
+      _id: 'msg_5',
+      message_body: 'The dates work perfectly for me.',
+      sender_name: 'Michael Chen',
+      sender_type: 'host',
+      is_outgoing: false,
+      timestamp: 'Dec 11, 11:30 AM',
+    },
+  ],
+  thread_3: [
+    {
+      _id: 'msg_6',
+      message_body: 'Your proposal has been submitted! The host has 48 hours to respond.',
+      sender_name: 'Split Bot',
+      sender_type: 'splitbot',
+      is_outgoing: false,
+      timestamp: 'Dec 10, 3:00 PM',
+    },
+  ],
+};
 
 export function useMessagingPageLogic() {
   // ============================================================================
@@ -53,6 +150,17 @@ export function useMessagingPageLogic() {
   // ============================================================================
   useEffect(() => {
     async function init() {
+      // DEV MODE: Skip auth and use mock data
+      if (USE_MOCK_DATA) {
+        console.log('🔧 DEV MODE: Using mock data, skipping auth');
+        setAuthState({ isChecking: false, shouldRedirect: false });
+        setUser({ email: 'demo@splitlease.com', id: 'demo_user' });
+        setThreads(MOCK_THREADS);
+        setIsLoading(false);
+        initialLoadDone.current = true;
+        return;
+      }
+
       try {
         // checkAuthStatus() returns a boolean, not an object
         const isAuthenticated = await checkAuthStatus();
@@ -164,6 +272,23 @@ export function useMessagingPageLogic() {
    * Fetch messages for a specific thread
    */
   async function fetchMessages(threadId) {
+    // DEV MODE: Use mock messages
+    if (USE_MOCK_DATA) {
+      setIsLoadingMessages(true);
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 300));
+      const mockMsgs = MOCK_MESSAGES[threadId] || [];
+      const thread = MOCK_THREADS.find(t => t._id === threadId);
+      setMessages(mockMsgs);
+      setThreadInfo({
+        contact_name: thread?.contact_name || 'Unknown',
+        contact_avatar: thread?.contact_avatar,
+        property_name: thread?.property_name,
+      });
+      setIsLoadingMessages(false);
+      return;
+    }
+
     try {
       setIsLoadingMessages(true);
 
@@ -210,6 +335,26 @@ export function useMessagingPageLogic() {
    */
   async function sendMessage() {
     if (!messageInput.trim() || !selectedThread || isSending) return;
+
+    // DEV MODE: Simulate sending
+    if (USE_MOCK_DATA) {
+      setIsSending(true);
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Add the new message to messages
+      const newMsg = {
+        _id: `msg_${Date.now()}`,
+        message_body: messageInput.trim(),
+        sender_name: 'You',
+        sender_type: 'guest',
+        is_outgoing: true,
+        timestamp: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+      };
+      setMessages(prev => [...prev, newMsg]);
+      setMessageInput('');
+      setIsSending(false);
+      return;
+    }
 
     try {
       setIsSending(true);
