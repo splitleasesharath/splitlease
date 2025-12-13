@@ -55,17 +55,24 @@ export async function handleSendMessage(
     throw new ValidationError('Message body cannot be empty');
   }
 
-  // Get user's Bubble ID from public.user table
+  // Get user's Bubble ID from public.user table by email
+  // Email is the common identifier between auth.users and public.user
+  if (!user.email) {
+    console.error('[sendMessage] No email in auth token');
+    throw new ValidationError('Could not find user profile. Please try logging in again.');
+  }
+
   const { data: userData, error: userError } = await supabaseAdmin
     .from('user')
     .select('_id')
-    .eq('supabase_user_id', user.id)
+    .ilike('email', user.email)
     .single();
 
   if (userError || !userData?._id) {
-    console.error('[sendMessage] User lookup failed:', userError);
+    console.error('[sendMessage] User lookup failed:', userError?.message);
     throw new ValidationError('Could not find user profile. Please try logging in again.');
   }
+  console.log('[sendMessage] Found user by email');
 
   const senderBubbleId = typedPayload.sender_id || userData._id;
   console.log('[sendMessage] Sender Bubble ID:', senderBubbleId);

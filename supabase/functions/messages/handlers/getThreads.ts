@@ -40,17 +40,24 @@ export async function handleGetThreads(
   console.log('[getThreads] ========== GET THREADS ==========');
   console.log('[getThreads] User:', user.email);
 
-  // Get user's Bubble ID from public.user table
+  // Get user's Bubble ID from public.user table by email
+  // Email is the common identifier between auth.users and public.user
+  if (!user.email) {
+    console.error('[getThreads] No email in auth token');
+    throw new ValidationError('Could not find user profile. Please try logging in again.');
+  }
+
   const { data: userData, error: userError } = await supabaseAdmin
     .from('user')
     .select('_id, "User Type"')
-    .eq('supabase_user_id', user.id)
+    .ilike('email', user.email)
     .single();
 
   if (userError || !userData?._id) {
-    console.error('[getThreads] User lookup failed:', userError);
+    console.error('[getThreads] User lookup failed:', userError?.message);
     throw new ValidationError('Could not find user profile. Please try logging in again.');
   }
+  console.log('[getThreads] Found user by email');
 
   const userBubbleId = userData._id;
   const userType = userData['User Type'] || '';
