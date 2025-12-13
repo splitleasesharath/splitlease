@@ -54,9 +54,11 @@ export function useMessagingPageLogic() {
   useEffect(() => {
     async function init() {
       try {
-        const authResult = await checkAuthStatus();
+        // checkAuthStatus() returns a boolean, not an object
+        const isAuthenticated = await checkAuthStatus();
 
-        if (!authResult.isAuthenticated) {
+        if (!isAuthenticated) {
+          console.log('❌ Messaging: User not authenticated, redirecting to home');
           setAuthState({ isChecking: false, shouldRedirect: true });
           // Redirect after short delay to show loading state
           setTimeout(() => {
@@ -65,7 +67,12 @@ export function useMessagingPageLogic() {
           return;
         }
 
-        setUser(authResult.user);
+        // Get user data from Supabase session
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+        }
+
         setAuthState({ isChecking: false, shouldRedirect: false });
 
         // Fetch threads after auth is confirmed
