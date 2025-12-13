@@ -17,7 +17,6 @@
  */
 
 import Header from '../../shared/Header.jsx';
-import Footer from '../../shared/Footer.jsx';
 import { useMessagingPageLogic } from './useMessagingPageLogic.js';
 import ThreadSidebar from './components/ThreadSidebar.jsx';
 import MessageThread from './components/MessageThread.jsx';
@@ -83,13 +82,14 @@ function EmptyState() {
 
 function NoThreadSelectedState() {
   return (
-    <div className="messaging-no-thread-state">
-      <div className="messaging-no-thread-icon">
-        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+    <div className="no-thread-selected">
+      <div className="no-thread-selected__icon">
+        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
         </svg>
       </div>
-      <p>Select a conversation to view messages</p>
+      <h3>Select a Conversation</h3>
+      <p>Send and receive messages.</p>
     </div>
   );
 }
@@ -134,7 +134,6 @@ export default function MessagingPage() {
             <LoadingState />
           </div>
         </main>
-        <Footer />
       </>
     );
   }
@@ -197,8 +196,6 @@ export default function MessagingPage() {
           )}
         </div>
       </main>
-
-      <Footer />
     </>
   );
 }

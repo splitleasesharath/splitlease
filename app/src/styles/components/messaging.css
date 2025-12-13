@@ -30,7 +30,7 @@
   --color-border: #CCCCCC;
   --color-text-secondary: #999999;
   --color-background: #FFFFFF;
-  --color-sidebar-bg: #F5F5F5;
+  --color-sidebar-bg: #F8F7F6;
   --color-splitbot-bg: #F0F0F0;
   --messaging-sidebar-width: 30%;
   --messaging-content-width: 70%;
@@ -41,10 +41,12 @@
    ========================================================================== */
 
 .messaging-page {
-  min-height: calc(100vh - 80px);
+  height: calc(100vh - 80px);
+  max-height: calc(100vh - 80px);
   background-color: var(--color-background);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .messaging-layout {
@@ -145,6 +147,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   margin-top: 0.125rem;
+}
+
+.thread-card__property-prefix {
+  color: var(--color-primary-purple);
+  font-weight: 500;
 }
 
 .thread-card__preview {
@@ -579,17 +586,24 @@
   color: var(--color-text-secondary);
   text-align: center;
   padding: 2rem;
+  background-color: var(--color-background);
 }
 
 .no-thread-selected__icon {
   width: 80px;
   height: 80px;
-  margin-bottom: 1.5rem;
-  opacity: 0.5;
+  margin-bottom: 1rem;
+  color: var(--color-text-secondary);
+  opacity: 0.4;
+}
+
+.no-thread-selected__icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .no-thread-selected h3 {
-  font-size: 1.25rem;
+  font-size: 1.375rem;
   font-weight: 600;
   color: var(--color-message-incoming-text);
   margin: 0 0 0.5rem;
@@ -597,6 +611,8 @@
 
 .no-thread-selected p {
   margin: 0;
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
 }
 
 /* ==========================================================================

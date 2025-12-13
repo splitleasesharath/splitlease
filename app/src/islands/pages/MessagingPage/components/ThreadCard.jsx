@@ -75,7 +75,9 @@ export default function ThreadCard({ thread, isSelected, onClick }) {
           {thread.contact_name || 'Unknown Contact'}
         </span>
         {thread.property_name && (
-          <span className="thread-card__property">{thread.property_name}</span>
+          <span className="thread-card__property">
+            <span className="thread-card__property-prefix">Split:</span> {thread.property_name}
+          </span>
         )}
         <p className="thread-card__preview">
           {thread.last_message_preview || 'No messages yet'}
