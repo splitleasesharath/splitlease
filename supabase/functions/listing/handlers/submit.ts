@@ -17,6 +17,8 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 import { enqueueBubbleSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
+import { parseJsonArray } from '../../_shared/jsonUtils.ts';
+import { handleCreateMockupProposal } from './createMockupProposal.ts';
 
 /**
  * Listing submission data structure from frontend
@@ -264,7 +266,7 @@ export async function handleSubmit(
 
   try {
     // Step 1: Verify listing exists
-    console.log('[listing:submit] Step 1/4: Verifying listing exists...');
+    console.log('[listing:submit] Step 1/5: Verifying listing exists...');
     const { data: existingListing, error: fetchError } = await supabase
       .from('listing')
       .select('_id, Name, Status')
@@ -279,7 +281,7 @@ export async function handleSubmit(
     console.log('[listing:submit] ✅ Step 1 complete - Listing exists:', existingListing.Name);
 
     // Step 2: Look up user and get host account
-    console.log('[listing:submit] Step 2/4: Looking up user...');
+    console.log('[listing:submit] Step 2/5: Looking up user...');
     const { data: userData } = await supabase
       .from('user')
       .select('_id, "Account - Host / Landlord"')
@@ -298,7 +300,7 @@ export async function handleSubmit(
     }
 
     // Step 3: Update listing in Supabase
-    console.log('[listing:submit] Step 3/4: Updating listing in Supabase...');
+    console.log('[listing:submit] Step 3/5: Updating listing in Supabase...');
     const now = new Date().toISOString();
 
     // Map frontend fields to Supabase columns
@@ -332,7 +334,7 @@ export async function handleSubmit(
     console.log('[listing:submit] ✅ Step 3 complete - Listing updated in Supabase');
 
     // Step 4: Queue Bubble sync (UPDATE operation)
-    console.log('[listing:submit] Step 4/4: Queueing Bubble sync...');
+    console.log('[listing:submit] Step 4/5: Queueing Bubble sync...');
     try {
       await enqueueBubbleSync(supabase, {
         correlationId: `listing_submit:${listing_id}:${Date.now()}`,
@@ -357,6 +359,53 @@ export async function handleSubmit(
     } catch (syncError) {
       // Log but don't fail - sync can be retried via pg_cron
       console.error('[listing:submit] ⚠️ Step 4 warning - Queue error (non-blocking):', syncError);
+    }
+
+    // Step 5: Check if first listing and create mockup proposal
+    if (hostAccountId && createdById) {
+      try {
+        console.log('[listing:submit] Step 5/5: Checking for first listing...');
+
+        // Get host account to check listings count
+        const { data: hostAccountData } = await supabase
+          .from('account_host')
+          .select('Listings')
+          .eq('_id', hostAccountId)
+          .single();
+
+        const listings = parseJsonArray<string>(hostAccountData?.Listings, 'account_host.Listings');
+
+        if (listings.length === 1) {
+          console.log('[listing:submit] First listing detected, creating mockup proposal');
+
+          // Get host user email if not available
+          let hostEmailToUse = user_email;
+          if (!hostEmailToUse) {
+            const { data: hostUserData } = await supabase
+              .from('user')
+              .select('email')
+              .eq('_id', createdById)
+              .single();
+            hostEmailToUse = hostUserData?.email || '';
+          }
+
+          await handleCreateMockupProposal(supabase, {
+            listingId: listing_id,
+            hostAccountId: hostAccountId,
+            hostUserId: createdById,
+            hostEmail: hostEmailToUse,
+          });
+
+          console.log('[listing:submit] ✅ Step 5 complete - Mockup proposal created');
+        } else {
+          console.log(`[listing:submit] ⏭️ Step 5 skipped - Not first listing (count: ${listings.length})`);
+        }
+      } catch (mockupError) {
+        // Non-blocking - log but don't fail listing submission
+        console.warn('[listing:submit] ⚠️ Mockup proposal creation failed (non-blocking):', mockupError);
+      }
+    } else {
+      console.log('[listing:submit] ⏭️ Step 5 skipped - Missing host account or user ID');
     }
 
     console.log('[listing:submit] ========== SUCCESS ==========');

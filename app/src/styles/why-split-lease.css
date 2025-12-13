@@ -1347,6 +1347,19 @@ body {
     margin-top: 16px;
 }
 
+.pricing-savings-badge.pricing-savings-badge-clickable {
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.pricing-savings-badge.pricing-savings-badge-clickable:hover {
+    background: #059669;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
 .pricing-explanation-text {
     max-width: 800px;
     margin: 0 auto;

@@ -220,7 +220,9 @@ function mapFormDataToListingTable(formData, userId, generatedId) {
     'Features - Type of Space': formData.spaceSnapshot?.typeOfSpace || null,
     'Features - Qty Bedrooms': formData.spaceSnapshot?.bedrooms || null,
     'Features - Qty Beds': formData.spaceSnapshot?.beds || null,
-    'Features - Qty Bathrooms': formData.spaceSnapshot?.bathrooms || null,
+    'Features - Qty Bathrooms': formData.spaceSnapshot?.bathrooms
+      ? Number(formData.spaceSnapshot.bathrooms)
+      : null,
     'Kitchen Type': formData.spaceSnapshot?.typeOfKitchen || null,
     'Features - Parking type': formData.spaceSnapshot?.typeOfParking || null,
 
@@ -444,7 +446,7 @@ function mapFormDataToListingTableForUpdate(formData) {
     if (formData.spaceSnapshot.typeOfSpace !== undefined) updateData['Features - Type of Space'] = formData.spaceSnapshot.typeOfSpace;
     if (formData.spaceSnapshot.bedrooms !== undefined) updateData['Features - Qty Bedrooms'] = formData.spaceSnapshot.bedrooms;
     if (formData.spaceSnapshot.beds !== undefined) updateData['Features - Qty Beds'] = formData.spaceSnapshot.beds;
-    if (formData.spaceSnapshot.bathrooms !== undefined) updateData['Features - Qty Bathrooms'] = formData.spaceSnapshot.bathrooms;
+    if (formData.spaceSnapshot.bathrooms !== undefined) updateData['Features - Qty Bathrooms'] = Number(formData.spaceSnapshot.bathrooms);
     if (formData.spaceSnapshot.typeOfKitchen !== undefined) updateData['Kitchen Type'] = formData.spaceSnapshot.typeOfKitchen;
     if (formData.spaceSnapshot.typeOfParking !== undefined) updateData['Features - Parking type'] = formData.spaceSnapshot.typeOfParking;
 
@@ -707,7 +709,9 @@ function mapFormDataToDatabase(formData, userId = null) {
     'Features - Type of Space': formData.spaceSnapshot?.typeOfSpace || null,
     'Features - Qty Bedrooms': formData.spaceSnapshot?.bedrooms || null,
     'Features - Qty Beds': formData.spaceSnapshot?.beds || null,
-    'Features - Qty Bathrooms': formData.spaceSnapshot?.bathrooms || null,
+    'Features - Qty Bathrooms': formData.spaceSnapshot?.bathrooms
+      ? Number(formData.spaceSnapshot.bathrooms)
+      : null,
     'Kitchen Type': formData.spaceSnapshot?.typeOfKitchen || null,
     'Features - Parking type': formData.spaceSnapshot?.typeOfParking || null,
 

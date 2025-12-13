@@ -2237,8 +2237,8 @@ export default function ViewSplitLeasePage() {
             </label>
           </div>
 
-          {/* Weekly Schedule Selector */}
-          {scheduleSelectorListing && (
+          {/* Weekly Schedule Selector - Only render on desktop to prevent race conditions with mobile instances */}
+          {!isMobile && scheduleSelectorListing && (
             <div style={{
               marginBottom: '14px',
               padding: '12px',

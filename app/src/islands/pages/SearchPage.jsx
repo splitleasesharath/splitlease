@@ -63,8 +63,19 @@ async function fetchInformationalTexts() {
 
 /**
  * MobileFilterBar - Sticky filter button for mobile
+ * Includes auth-aware elements: favorites link and LoggedInAvatar for logged-in users
  */
-function MobileFilterBar({ onFilterClick, onMapClick, isMapVisible }) {
+function MobileFilterBar({
+  onFilterClick,
+  onMapClick,
+  isMapVisible,
+  isLoggedIn,
+  currentUser,
+  favoritesCount,
+  onNavigate,
+  onLogout,
+  onOpenAuthModal
+}) {
   return (
     <div className="mobile-filter-bar">
       <a href="/" className="mobile-logo-link" aria-label="Go to homepage">
@@ -89,6 +100,44 @@ function MobileFilterBar({ onFilterClick, onMapClick, isMapVisible }) {
         </svg>
         <span>{isMapVisible ? 'Show Listings' : 'Map'}</span>
       </button>
+
+      {/* Mobile Header Actions - Auth-aware elements */}
+      <div className="mobile-header-actions">
+        {isLoggedIn && currentUser ? (
+          <>
+            {/* Favorites Heart with Count */}
+            <a href="/favorite-listings" className="mobile-favorites-link" aria-label="My Favorite Listings">
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="#5b21b6"
+                stroke="none"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </a>
+
+            {/* Logged In Avatar */}
+            <LoggedInAvatar
+              user={currentUser}
+              currentPath="/search"
+              onNavigate={onNavigate}
+              onLogout={onLogout}
+              size="small"
+            />
+          </>
+        ) : (
+          /* Sign In button for logged out users */
+          <button
+            className="mobile-signin-btn"
+            onClick={onOpenAuthModal}
+            aria-label="Sign In"
+          >
+            Sign In
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -906,6 +955,16 @@ export default function SearchPage() {
 
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+
+  // Calculate active filter count for mobile apply button
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (selectedNeighborhoods.length > 0) count++;
+    if (weekPattern !== 'every-week') count++;
+    if (priceTier !== 'all') count++;
+    if (sortBy !== 'recommended') count++;
+    return count;
+  }, [selectedNeighborhoods, weekPattern, priceTier, sortBy]);
 
   // Flag to prevent URL update on initial load
   const isInitialMount = useRef(true);
@@ -2329,6 +2388,15 @@ export default function SearchPage() {
             onFilterClick={() => setFilterPanelActive(!filterPanelActive)}
             onMapClick={() => setMobileMapVisible(true)}
             isMapVisible={mobileMapVisible}
+            isLoggedIn={isLoggedIn}
+            currentUser={currentUser}
+            favoritesCount={favoritesCount}
+            onNavigate={handleNavigate}
+            onLogout={handleLogout}
+            onOpenAuthModal={() => {
+              setAuthModalView('login');
+              setIsAuthModalOpen(true);
+            }}
           />
 
           {/* Mobile Schedule Selector - Always visible on mobile */}
@@ -2434,6 +2502,18 @@ export default function SearchPage() {
                 <option value="recent">Recently Added</option>
               </select>
             </div>
+
+            {/* Apply Filters Button - Mobile Only */}
+            {filterPanelActive && (
+              <div className="mobile-filter-apply-container">
+                <button
+                  className="mobile-filter-apply-btn"
+                  onClick={() => setFilterPanelActive(false)}
+                >
+                  {activeFilterCount > 0 ? `Apply Filters (${activeFilterCount})` : 'Apply Filters'}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Listings count */}
