@@ -169,9 +169,8 @@ export async function handleCreate(
   // ================================================
 
   // Calculate order ranking
-  // CRITICAL: Parse JSONB arrays - Supabase can return as stringified JSON
-  // Without parsing, spread operator would create character arrays instead of proper arrays
-  const existingProposals = parseJsonArray<string>(guestData["Proposals List"], "Proposals List");
+  // After migration, "Proposals List" is a native text[] array - no parsing needed
+  const existingProposals: string[] = guestData["Proposals List"] || [];
   const orderRanking = calculateOrderRanking(existingProposals.length);
 
   // Calculate complementary nights (Step 4)
@@ -379,8 +378,8 @@ export async function handleCreate(
   // STEP 3: UPDATE HOST USER
   // ================================================
 
-  // CRITICAL: Parse JSONB arrays - Supabase can return as stringified JSON
-  const hostProposals = parseJsonArray<string>(hostUserData["Proposals List"], "Host Proposals List");
+  // After migration, "Proposals List" is a native text[] array - no parsing needed
+  const hostProposals: string[] = hostUserData["Proposals List"] || [];
 
   const { error: hostUpdateError } = await supabase
     .from("user")

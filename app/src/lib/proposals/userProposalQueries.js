@@ -53,36 +53,22 @@ export async function fetchUserWithProposalList(userId) {
 /**
  * STEP 2: Extract proposal IDs from user's Proposals List
  *
+ * After migration, Proposals List is a native text[] array.
+ * Supabase client returns text[] as JavaScript array directly.
+ *
  * @param {Object} user - User object with Proposals List
  * @returns {Array<string>} Array of proposal IDs
  */
 export function extractProposalIds(user) {
   const proposalsList = user['Proposals List'];
 
-  if (!proposalsList) {
-    console.warn('extractProposalIds: User has no Proposals List field');
+  if (!proposalsList || !Array.isArray(proposalsList)) {
+    console.warn('extractProposalIds: User has no Proposals List or invalid format');
     return [];
   }
 
-  // Handle JSONB array parsing
-  let proposalIds = [];
-
-  if (Array.isArray(proposalsList)) {
-    proposalIds = proposalsList;
-  } else if (typeof proposalsList === 'string') {
-    try {
-      proposalIds = JSON.parse(proposalsList);
-    } catch (e) {
-      console.error('extractProposalIds: Failed to parse Proposals List:', e);
-      return [];
-    }
-  } else {
-    console.error('extractProposalIds: Proposals List is not an array or string:', typeof proposalsList);
-    return [];
-  }
-
-  console.log(`extractProposalIds: Extracted ${proposalIds.length} proposal IDs from user's Proposals List`);
-  return proposalIds;
+  console.log(`extractProposalIds: Extracted ${proposalsList.length} proposal IDs from user's Proposals List`);
+  return proposalsList;
 }
 
 /**
