@@ -423,3 +423,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/virtual-meeting/deno.json"
 entrypoint = "./functions/virtual-meeting/index.ts"
+
+[functions.send-email]
+enabled = true
+verify_jwt = false
+import_map = "./functions/send-email/deno.json"
+entrypoint = "./functions/send-email/index.ts"
