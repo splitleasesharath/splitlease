@@ -43,6 +43,7 @@
 .messaging-page {
   height: calc(100vh - 80px);
   max-height: calc(100vh - 80px);
+  margin-top: 80px;
   background-color: var(--color-background);
   display: flex;
   flex-direction: column;
