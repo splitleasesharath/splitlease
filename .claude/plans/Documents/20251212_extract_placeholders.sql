@@ -5,8 +5,8 @@
 -- Input field: Email Template JSON
 -- Target field: Placeholder
 --
--- Placeholder format: $placeholder$ (single dollar signs, allows spaces)
--- Examples: $to$, $from email$, $body text$, $logo url$
+-- Placeholder format: $$placeholder$$ (double dollar signs)
+-- Examples: $$to$$, $$from email$$, $$body text$$, $$logo url$$
 
 -- First, verify the column exists (creates it if not)
 DO $$
@@ -22,7 +22,7 @@ BEGIN
 END $$;
 
 -- Function to extract placeholders from JSON/HTML content
--- Pattern: $word$ or $word word$ (single $ delimiters, alphanumeric with spaces/underscores)
+-- Pattern: $$word$$ or $$word word$$ (double $ delimiters, alphanumeric with spaces/underscores)
 CREATE OR REPLACE FUNCTION extract_email_placeholders(content text)
 RETURNS text[] AS $$
 DECLARE
@@ -32,16 +32,16 @@ BEGIN
         RETURN ARRAY[]::text[];
     END IF;
 
-    -- Extract all $placeholder$ patterns (single $, allows spaces and underscores)
-    -- Pattern matches: $ followed by word chars/spaces, followed by $
+    -- Extract all $$placeholder$$ patterns (double $, allows spaces and underscores)
+    -- Pattern matches: $$ followed by word chars/spaces, followed by $$
     SELECT ARRAY(
         SELECT DISTINCT match[1]
-        FROM regexp_matches(content, E'\\$([a-zA-Z][a-zA-Z0-9_ ]*)\\$', 'g') AS match
+        FROM regexp_matches(content, E'\\$\\$([a-zA-Z][a-zA-Z0-9_ ]*)\\$\\$', 'g') AS match
     ) INTO unique_matches;
 
-    -- Convert back to full placeholder format with $ delimiters
+    -- Convert back to full placeholder format with $$ delimiters
     SELECT ARRAY(
-        SELECT '$' || unnest || '$'
+        SELECT '$$' || unnest || '$$'
         FROM unnest(unique_matches)
     ) INTO unique_matches;
 
