@@ -429,3 +429,15 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/send-email/deno.json"
 entrypoint = "./functions/send-email/index.ts"
+
+[functions.workflow-enqueue]
+enabled = true
+verify_jwt = false
+import_map = "./functions/workflow-enqueue/deno.json"
+entrypoint = "./functions/workflow-enqueue/index.ts"
+
+[functions.workflow-orchestrator]
+enabled = true
+verify_jwt = false
+import_map = "./functions/workflow-orchestrator/deno.json"
+entrypoint = "./functions/workflow-orchestrator/index.ts"
