@@ -61,22 +61,22 @@ export async function handleSignup(
     phoneNumber = ''
   }: SignupAdditionalData = additionalData || {};
 
-  // Map userType string to os_user_type ID for foreign key constraint
-  // os_user_type table: id=1 -> 'host', id=2 -> 'guest', id=3 -> 'split_lease', id=4 -> 'trial_host'
-  const userTypeIdMap: Record<string, number> = {
-    'Host': 1,
-    'host': 1,
-    'Guest': 2,
-    'guest': 2,
-    'Split Lease': 3,
-    'split_lease': 3,
-    'Trial Host': 4,
-    'trial_host': 4
+  // Map userType string to os_user_type.display for foreign key constraint
+  // Foreign key references os_user_type(display) which contains full descriptive strings
+  const userTypeDisplayMap: Record<string, string> = {
+    'Host': 'A Host (I have a space available to rent)',
+    'host': 'A Host (I have a space available to rent)',
+    'Guest': 'A Guest (I would like to rent a space)',
+    'guest': 'A Guest (I would like to rent a space)',
+    'Split Lease': 'Split Lease',
+    'split_lease': 'Split Lease',
+    'Trial Host': 'Trial Host',
+    'trial_host': 'Trial Host'
   };
-  const userTypeId = userTypeIdMap[userType] ?? 2; // Default to Guest (id=2) if unknown
+  const userTypeDisplay = userTypeDisplayMap[userType] ?? 'A Guest (I would like to rent a space)'; // Default to Guest
 
   console.log(`[signup] Registering new user: ${email}`);
-  console.log(`[signup] Additional data: firstName=${firstName}, lastName=${lastName}, userType=${userType} (id=${userTypeId})`);
+  console.log(`[signup] Additional data: firstName=${firstName}, lastName=${lastName}, userType=${userType} -> display="${userTypeDisplay}"`);
 
   // Client-side validation
   if (password.length < 4) {
@@ -259,8 +259,8 @@ export async function handleSignup(
       'Name - Full': fullName,
       'Date of Birth': dateOfBirth,
       'Phone Number (as text)': phoneNumber || null,
-      'Type - User Current': userTypeId, // Foreign key to os_user_type.id
-      'Type - User Signup': userTypeId,  // Foreign key to os_user_type.id
+      'Type - User Current': userTypeDisplay, // Foreign key to os_user_type.display
+      'Type - User Signup': userTypeDisplay,  // Foreign key to os_user_type.display
       'Account - Host / Landlord': generatedHostId,
       'Created Date': now,
       'Modified Date': now,
