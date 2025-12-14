@@ -65,3 +65,17 @@ export function validateAction(action: string, allowedActions: string[]): void {
     throw new ValidationError(`Unknown action: ${action}. Allowed actions: ${allowedActions.join(', ')}`);
   }
 }
+
+/**
+ * Validate E.164 phone number format
+ * E.164: +[country code][number], e.g., +15551234567
+ * NO FALLBACK: Throws if invalid
+ */
+export function validatePhoneE164(phone: string, fieldName: string = 'phone'): void {
+  const e164Regex = /^\+[1-9]\d{1,14}$/;
+  if (!e164Regex.test(phone)) {
+    throw new ValidationError(
+      `${fieldName} must be in E.164 format (e.g., +15551234567). Received: ${phone}`
+    );
+  }
+}
