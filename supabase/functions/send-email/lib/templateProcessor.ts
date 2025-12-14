@@ -3,13 +3,13 @@
  * Split Lease - send-email Edge Function
  *
  * Handles placeholder replacement for multiple syntaxes:
- * - Dollar-sign style: $variable$ (Bubble templates)
+ * - Double dollar-sign style: $$variable$$ (Bubble templates)
  * - Jinja-style: {{ variable }} (legacy support)
  */
 
 /**
  * Replace placeholders in a template string (HTML content)
- * Supports both $variable$ (primary) and {{ variable }} (fallback) syntaxes
+ * Supports both $$variable$$ (primary) and {{ variable }} (fallback) syntaxes
  *
  * @param template - The HTML template with placeholders
  * @param variables - Key-value pairs for replacement
@@ -53,9 +53,9 @@ function processTemplateInternal(
 
   let processedTemplate = template;
 
-  // First pass: Replace $variable$ placeholders (Bubble template style - single dollar signs)
-  // Supports: $var$, $var_name$, $var-name$
-  const dollarRegex = /\$([a-zA-Z0-9_\-]+)\$/g;
+  // First pass: Replace $$variable$$ placeholders (Bubble template style - double dollar signs)
+  // Supports: $$var$$, $$var_name$$, $$var-name$$
+  const dollarRegex = /\$\$([a-zA-Z0-9_\-]+)\$\$/g;
 
   processedTemplate = processedTemplate.replace(dollarRegex, (match, variableName) => {
     const value = variables[variableName];
@@ -114,14 +114,14 @@ function escapeJsonString(text: string): string {
 
 /**
  * Extract all placeholder names from a template
- * Supports both $variable$ and {{ variable }} syntaxes
+ * Supports both $$variable$$ and {{ variable }} syntaxes
  * Useful for validation and debugging
  */
 export function extractPlaceholders(template: string): string[] {
   const placeholders: string[] = [];
 
-  // Extract $variable$ placeholders (Bubble style - single dollar signs)
-  const dollarRegex = /\$([a-zA-Z0-9_\-]+)\$/g;
+  // Extract $$variable$$ placeholders (Bubble style - double dollar signs)
+  const dollarRegex = /\$\$([a-zA-Z0-9_\-]+)\$\$/g;
   let match;
 
   while ((match = dollarRegex.exec(template)) !== null) {
