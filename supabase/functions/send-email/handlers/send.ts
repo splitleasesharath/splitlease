@@ -74,6 +74,8 @@ export async function handleSend(
 
   // Step 1: Fetch template from database
   console.log('[send-email:send] Step 1/3: Fetching template...');
+  console.log('[send-email:send] Looking up template_id:', template_id);
+
   const { data: template, error: templateError } = await supabase
     .schema('reference_table')
     .from('zat_email_html_template_eg_sendbasicemailwf_')
@@ -81,9 +83,13 @@ export async function handleSend(
     .eq('_id', template_id)
     .single();
 
+  console.log('[send-email:send] Query result - data:', template ? 'found' : 'null');
+  console.log('[send-email:send] Query result - error:', templateError ? JSON.stringify(templateError) : 'none');
+
   if (templateError || !template) {
     console.error('[send-email:send] Template fetch error:', templateError);
-    throw new Error(`Template not found: ${template_id}`);
+    console.error('[send-email:send] Template data:', template);
+    throw new Error(`Template not found: ${template_id}. Error: ${templateError?.message || 'No data returned'}`);
   }
 
   const emailTemplate = template as EmailTemplate;
