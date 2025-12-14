@@ -25,12 +25,10 @@ const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/mes
 // ============================================================================
 const USE_MOCK_DATA = true;
 
-// Generate mock timestamps relative to now
-const now = new Date();
-const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 30); // 2:30 PM today
-const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 11, 30); // Yesterday 11:30 AM
-const lastWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3, 15, 0); // 3 days ago
-
+// ============================================================================
+// MOCK DATA - Matches exact Edge Function response format
+// Edge Function returns PRE-FORMATTED time strings, not ISO dates
+// ============================================================================
 const MOCK_THREADS = [
   {
     _id: 'thread_1',
@@ -38,7 +36,7 @@ const MOCK_THREADS = [
     contact_avatar: null,
     property_name: 'Cozy Studio in Williamsburg',
     last_message_preview: 'Looking forward to meeting you!',
-    last_message_time: today.toISOString(),
+    last_message_time: '2:30 PM',  // Pre-formatted (today)
     unread_count: 2,
     is_with_splitbot: false,
   },
@@ -48,7 +46,7 @@ const MOCK_THREADS = [
     contact_avatar: null,
     property_name: 'Spacious 1BR in East Village',
     last_message_preview: 'The dates work perfectly for me.',
-    last_message_time: yesterday.toISOString(),
+    last_message_time: 'Yesterday',  // Pre-formatted
     unread_count: 0,
     is_with_splitbot: false,
   },
@@ -58,19 +56,11 @@ const MOCK_THREADS = [
     contact_avatar: null,
     property_name: null,
     last_message_preview: 'Your proposal has been submitted!',
-    last_message_time: lastWeek.toISOString(),
+    last_message_time: 'Dec 10',  // Pre-formatted (older)
     unread_count: 0,
     is_with_splitbot: true,
   },
 ];
-
-// Message timestamps
-const msgTime1 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 15); // Today 2:15 PM
-const msgTime2 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 25); // Today 2:25 PM
-const msgTime3 = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 30); // Today 2:30 PM
-const msgTime4 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 10, 0); // Yesterday 10:00 AM
-const msgTime5 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 11, 30); // Yesterday 11:30 AM
-const msgTime6 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3, 15, 0); // 3 days ago 3:00 PM
 
 const MOCK_MESSAGES = {
   thread_1: [
@@ -80,7 +70,7 @@ const MOCK_MESSAGES = {
       sender_name: 'You',
       sender_type: 'guest',
       is_outgoing: true,
-      timestamp: msgTime1.toISOString(),
+      timestamp: 'Dec 12, 2:15 PM',  // Pre-formatted (matches Edge Function output)
     },
     {
       _id: 'msg_2',
@@ -88,7 +78,7 @@ const MOCK_MESSAGES = {
       sender_name: 'Sarah Johnson',
       sender_type: 'host',
       is_outgoing: false,
-      timestamp: msgTime2.toISOString(),
+      timestamp: 'Dec 12, 2:25 PM',
     },
     {
       _id: 'msg_3',
@@ -96,7 +86,7 @@ const MOCK_MESSAGES = {
       sender_name: 'Sarah Johnson',
       sender_type: 'host',
       is_outgoing: false,
-      timestamp: msgTime3.toISOString(),
+      timestamp: 'Dec 12, 2:30 PM',
     },
   ],
   thread_2: [
@@ -106,7 +96,7 @@ const MOCK_MESSAGES = {
       sender_name: 'You',
       sender_type: 'guest',
       is_outgoing: true,
-      timestamp: msgTime4.toISOString(),
+      timestamp: 'Dec 11, 10:00 AM',
     },
     {
       _id: 'msg_5',
@@ -114,7 +104,7 @@ const MOCK_MESSAGES = {
       sender_name: 'Michael Chen',
       sender_type: 'host',
       is_outgoing: false,
-      timestamp: msgTime5.toISOString(),
+      timestamp: 'Dec 11, 11:30 AM',
     },
   ],
   thread_3: [
@@ -124,7 +114,7 @@ const MOCK_MESSAGES = {
       sender_name: 'Split Bot',
       sender_type: 'splitbot',
       is_outgoing: false,
-      timestamp: msgTime6.toISOString(),
+      timestamp: 'Dec 10, 3:00 PM',
     },
   ],
 };

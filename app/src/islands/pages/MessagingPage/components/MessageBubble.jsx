@@ -13,17 +13,8 @@ export default function MessageBubble({ message }) {
 
   const isSplitBot = message.sender_type === 'splitbot';
 
-  // Format timestamp for display
-  const formatTimestamp = (timestamp) => {
-    if (!timestamp) return '';
-
-    const date = new Date(timestamp);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
+  // Timestamp is already pre-formatted by the Edge Function
+  // Examples: "Dec 12, 2:15 PM"
 
   return (
     <div className={`message-bubble ${bubbleClass} ${isSplitBot ? 'message-bubble--splitbot' : ''}`}>
@@ -66,7 +57,7 @@ export default function MessageBubble({ message }) {
       {/* Timestamp */}
       <span className="message-bubble__timestamp">
         {message.sender_name && !message.is_outgoing && `${message.sender_name} - `}
-        {formatTimestamp(message.timestamp)}
+        {message.timestamp || ''}
       </span>
     </div>
   );

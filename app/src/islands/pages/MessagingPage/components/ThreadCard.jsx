@@ -6,35 +6,8 @@
  */
 
 export default function ThreadCard({ thread, isSelected, onClick }) {
-  // Format time display (e.g., "2:30 PM" or "Yesterday")
-  const formatTime = (timestamp) => {
-    if (!timestamp) return '';
-
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-      // Today - show time
-      return date.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      // Within a week - show day name
-      return date.toLocaleDateString('en-US', { weekday: 'short' });
-    } else {
-      // Older - show date
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      });
-    }
-  };
+  // Time is already pre-formatted by the Edge Function
+  // Examples: "2:30 PM", "Yesterday", "Wed", "Dec 10"
 
   return (
     <div
@@ -87,7 +60,7 @@ export default function ThreadCard({ thread, isSelected, onClick }) {
       {/* Meta (time and unread count) */}
       <div className="thread-card__meta">
         <span className="thread-card__time">
-          {formatTime(thread.last_message_time)}
+          {thread.last_message_time || ''}
         </span>
         {thread.unread_count > 0 && (
           <span className="thread-card__unread" aria-label={`${thread.unread_count} unread messages`}>
