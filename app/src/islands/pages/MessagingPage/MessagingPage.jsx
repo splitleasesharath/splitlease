@@ -8,7 +8,8 @@
  * Architecture:
  * - Islands Architecture (independent React root)
  * - Uses shared Header/Footer components
- * - Two-column layout (30% sidebar, 70% content)
+ * - Desktop: Two-column layout (30% sidebar, 70% content)
+ * - Mobile: Phone-style navigation (list → full-screen conversation)
  *
  * Authentication:
  * - Page requires authenticated user (Host or Guest)
@@ -16,11 +17,15 @@
  * - Redirects to home if not authenticated
  */
 
+import { useState, useEffect } from 'react';
 import Header from '../../shared/Header.jsx';
 import { useMessagingPageLogic } from './useMessagingPageLogic.js';
 import ThreadSidebar from './components/ThreadSidebar.jsx';
 import MessageThread from './components/MessageThread.jsx';
 import MessageInput from './components/MessageInput.jsx';
+
+// Mobile breakpoint (matches CSS)
+const MOBILE_BREAKPOINT = 900;
 
 // ============================================================================
 // LOADING STATE COMPONENT
@@ -124,6 +129,34 @@ export default function MessagingPage() {
     handleRetry,
   } = useMessagingPageLogic();
 
+  // Mobile view state: 'list' or 'conversation'
+  const [mobileView, setMobileView] = useState('list');
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Track window size for mobile detection
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // When a thread is selected on mobile, switch to conversation view
+  const handleMobileThreadSelect = (thread) => {
+    handleThreadSelect(thread);
+    if (isMobile) {
+      setMobileView('conversation');
+    }
+  };
+
+  // Back button handler for mobile
+  const handleBackToList = () => {
+    setMobileView('list');
+  };
+
   // Don't render content if redirecting (auth failed)
   if (authState.shouldRedirect) {
     return (
@@ -161,24 +194,27 @@ export default function MessagingPage() {
             <EmptyState />
           )}
 
-          {/* Main Content - Two Column Layout */}
+          {/* Main Content - Two Column Layout (Desktop) / Single View (Mobile) */}
           {!isLoading && !error && threads.length > 0 && (
-            <div className="messaging-layout">
-              {/* Left Column - Thread Sidebar (30%) */}
+            <div className={`messaging-layout ${isMobile ? 'messaging-layout--mobile' : ''}`}>
+              {/* Thread Sidebar - Hidden on mobile when viewing conversation */}
               <ThreadSidebar
                 threads={threads}
                 selectedThreadId={selectedThread?._id}
-                onThreadSelect={handleThreadSelect}
+                onThreadSelect={handleMobileThreadSelect}
+                className={isMobile && mobileView === 'conversation' ? 'thread-sidebar--hidden' : ''}
               />
 
-              {/* Right Column - Message Content (70%) */}
-              <div className="message-content">
+              {/* Message Content - Hidden on mobile when viewing list */}
+              <div className={`message-content ${isMobile && mobileView === 'list' ? 'message-content--hidden' : ''}`}>
                 {selectedThread ? (
                   <>
                     <MessageThread
                       messages={messages}
                       threadInfo={threadInfo}
                       isLoading={isLoadingMessages}
+                      onBack={handleBackToList}
+                      isMobile={isMobile}
                     />
                     <MessageInput
                       value={messageInput}

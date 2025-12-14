@@ -2,14 +2,15 @@
  * ThreadSidebar Component
  *
  * Left sidebar containing the list of message threads.
- * Shows 30% width on desktop, full width on mobile.
+ * Desktop: 30% width sidebar
+ * Mobile: Full-screen list view (hidden when conversation is open)
  */
 
 import ThreadCard from './ThreadCard.jsx';
 
-export default function ThreadSidebar({ threads, selectedThreadId, onThreadSelect }) {
+export default function ThreadSidebar({ threads, selectedThreadId, onThreadSelect, className = '' }) {
   return (
-    <aside className="thread-sidebar">
+    <aside className={`thread-sidebar ${className}`.trim()}>
       <h2 className="sidebar-title">Messages</h2>
       <div className="thread-list">
         {threads.map(thread => (

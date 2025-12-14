@@ -3,9 +3,10 @@
  *
  * Header above messages with contact info and status.
  * Shows avatar, name, property name, and optional status badge.
+ * On mobile, shows a back button to return to the thread list.
  */
 
-export default function ThreadHeader({ info }) {
+export default function ThreadHeader({ info, onBack, isMobile }) {
   if (!info) return null;
 
   // Determine status type for styling
@@ -27,6 +28,19 @@ export default function ThreadHeader({ info }) {
 
   return (
     <div className="thread-header">
+      {/* Back Button (Mobile only) */}
+      {isMobile && onBack && (
+        <button
+          className="thread-header__back"
+          onClick={onBack}
+          aria-label="Back to messages"
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
+      )}
+
       {/* Avatar */}
       <img
         src={info.contact_avatar || '/assets/images/default-avatar.svg'}

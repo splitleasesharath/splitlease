@@ -3,13 +3,14 @@
  *
  * Message display area with thread header and messages list.
  * Auto-scrolls to bottom when new messages arrive.
+ * On mobile, shows a back button to return to thread list.
  */
 
 import { useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble.jsx';
 import ThreadHeader from './ThreadHeader.jsx';
 
-export default function MessageThread({ messages, threadInfo, isLoading }) {
+export default function MessageThread({ messages, threadInfo, isLoading, onBack, isMobile }) {
   const messagesEndRef = useRef(null);
 
   // Auto-scroll to bottom when messages change
@@ -22,7 +23,7 @@ export default function MessageThread({ messages, threadInfo, isLoading }) {
   return (
     <div className="message-thread">
       {/* Thread Header */}
-      {threadInfo && <ThreadHeader info={threadInfo} />}
+      {threadInfo && <ThreadHeader info={threadInfo} onBack={onBack} isMobile={isMobile} />}
 
       {/* Messages Container */}
       <div className="message-thread__messages">

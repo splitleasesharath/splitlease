@@ -506,6 +506,16 @@ main.main-content:has(.messaging-page) {
   height: 20px;
 }
 
+/* Sending spinner animation */
+.message-input__sending-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
 /* ==========================================================================
    Loading, Error, Empty States
    ========================================================================== */
@@ -652,28 +662,73 @@ main.main-content:has(.messaging-page) {
 }
 
 /* ==========================================================================
-   Responsive Design
+   Responsive Design - Mobile Phone-Style Navigation
    ========================================================================== */
 
 @media (max-width: 900px) {
-  .messaging-layout {
+  /* Mobile: Full-screen views instead of split */
+  .messaging-layout--mobile {
     flex-direction: column;
-    height: auto;
-    min-height: calc(100vh - 80px);
+    height: calc(100vh - 80px);
   }
 
-  .thread-sidebar {
+  /* Thread Sidebar - Full screen list view */
+  .messaging-layout--mobile .thread-sidebar {
     width: 100%;
     max-width: none;
     min-width: auto;
     border-right: none;
-    border-bottom: 1px solid var(--color-border);
-    max-height: 40vh;
+    border-bottom: none;
+    max-height: none;
+    height: 100%;
+    flex: 1;
   }
 
-  .message-content {
-    flex: 1;
-    min-height: 50vh;
+  /* Hide sidebar when viewing conversation */
+  .thread-sidebar--hidden {
+    display: none !important;
+  }
+
+  /* Message Content - Full screen conversation view */
+  .messaging-layout--mobile .message-content {
+    position: absolute;
+    top: 80px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: calc(100vh - 80px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Hide message content when viewing list */
+  .message-content--hidden {
+    display: none !important;
+  }
+
+  /* Back button in thread header */
+  .thread-header__back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: none;
+    background: transparent;
+    color: var(--color-primary-purple);
+    cursor: pointer;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease;
+  }
+
+  .thread-header__back:hover {
+    background-color: var(--color-hover-bg);
+  }
+
+  .thread-header__back:active {
+    background-color: var(--color-message-incoming-bg);
   }
 
   .message-bubble {
@@ -693,13 +748,10 @@ main.main-content:has(.messaging-page) {
     width: 40px;
     height: 40px;
   }
+
 }
 
 @media (max-width: 480px) {
-  .thread-sidebar {
-    max-height: 35vh;
-  }
-
   .sidebar-title {
     font-size: 1.25rem;
     padding: 1rem;
@@ -735,5 +787,12 @@ main.main-content:has(.messaging-page) {
   .message-input__send {
     width: 40px;
     height: 40px;
+  }
+}
+
+/* Hide back button on desktop */
+@media (min-width: 901px) {
+  .thread-header__back {
+    display: none;
   }
 }
