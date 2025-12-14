@@ -1,104 +1,205 @@
 # Send Email Edge Function
 
 **Endpoint**: `POST /functions/v1/send-email`
-**Purpose**: Send templated emails via SendGrid with dynamic placeholder replacement
-**Version**: 1.0
-**Last Updated**: 2025-12-13
+**Purpose**: Send templated emails via SendGrid using pre-built SendGrid JSON templates
+**Version**: 2.0
+**Last Updated**: 2025-12-14
+
+---
+
+## Quick Start
+
+```javascript
+const response = await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${accessToken}`,
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify({
+    action: 'send',
+    payload: {
+      template_id: '1756320055390x685004717147094100',
+      to_email: 'recipient@example.com',
+      from_email: 'tech@leasesplit.com',
+      from_name: 'Split Lease',
+      subject: 'Your Subject Here',
+      variables: {
+        title: 'Welcome!',
+        bodytext1: 'First paragraph content...',
+        bodytext2: 'Second paragraph content...',
+        button_url: 'https://splitlease.com',
+        button_text: 'Visit Site',
+        logourl: 'https://splitlease.com/logo.png',
+        preheadertext: 'Preview text for email clients',
+      }
+    }
+  })
+});
+```
 
 ---
 
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Actions](#actions)
-3. [Authentication](#authentication)
+2. [Template System](#template-system)
+3. [Placeholder Reference](#placeholder-reference)
 4. [Request Format](#request-format)
 5. [Response Format](#response-format)
-6. [Template System](#template-system)
-7. [Placeholder Replacement](#placeholder-replacement)
-8. [Error Handling](#error-handling)
-9. [Environment Variables](#environment-variables)
-10. [Usage Examples](#usage-examples)
-11. [Integration Guide](#integration-guide)
-12. [Troubleshooting](#troubleshooting)
+6. [Usage Examples](#usage-examples)
+7. [Configuration](#configuration)
+8. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## Overview
 
-The `send-email` edge function provides a centralized service for sending templated emails through SendGrid. It retrieves HTML templates from the database, processes Jinja-style placeholders with provided variables, and delivers emails via the SendGrid API.
+The `send-email` Edge Function sends templated emails through SendGrid. Templates are stored in the database as **complete SendGrid JSON payloads** with `$$placeholder$$` variables that get replaced at send time.
+
+### How It Works
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        SEND EMAIL FLOW                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. RECEIVE REQUEST                                             │
+│     └─ { action: "send", payload: { template_id, variables } }  │
+│                                                                 │
+│  2. FETCH TEMPLATE                                              │
+│     └─ Query reference_table.zat_email_html_template_*          │
+│     └─ Get "Email Template JSON" (complete SendGrid payload)    │
+│                                                                 │
+│  3. REPLACE PLACEHOLDERS                                        │
+│     └─ Find all $$variable$$ patterns                           │
+│     └─ Replace with JSON-escaped values from variables          │
+│                                                                 │
+│  4. SEND TO SENDGRID                                            │
+│     └─ Parse processed JSON                                     │
+│     └─ POST directly to SendGrid API                            │
+│                                                                 │
+│  5. RETURN RESULT                                               │
+│     └─ { message_id, status: "sent", sent_at }                  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ### Key Features
 
 | Feature | Description |
 |---------|-------------|
-| **Template-based** | Templates stored in `zat_email_html_template_eg_sendbasicemailwf_` table |
-| **Dynamic placeholders** | Jinja-style `{{ variable }}` replacement |
-| **XSS protection** | Automatic HTML escaping of variable values |
-| **Configurable sender** | Override from_email/from_name per request |
-| **Subject templating** | Subject line also supports placeholder replacement |
-| **Health monitoring** | Built-in health check endpoint |
-
-### Architecture Flow
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           SEND EMAIL FLOW                                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  1. REQUEST RECEIVED                                                        │
-│     ├─ Validate Bearer token                                                │
-│     └─ Parse { action: "send", payload: {...} }                             │
-│                                                                             │
-│  2. TEMPLATE RETRIEVAL                                                      │
-│     ├─ Query zat_email_html_template_eg_sendbasicemailwf_                   │
-│     └─ Fetch: _id, Name, HTML Content, Subject, From Email, From Name       │
-│                                                                             │
-│  3. PLACEHOLDER PROCESSING                                                  │
-│     ├─ Extract all {{ variable }} patterns                                  │
-│     ├─ Validate provided variables                                          │
-│     ├─ Escape HTML in values (XSS prevention)                               │
-│     └─ Replace placeholders in HTML and subject                             │
-│                                                                             │
-│  4. SENDGRID API CALL                                                       │
-│     ├─ Build SendGrid request body                                          │
-│     ├─ POST to SendGrid endpoint                                            │
-│     └─ Extract message_id from response                                     │
-│                                                                             │
-│  5. RESPONSE                                                                │
-│     └─ Return { message_id, template_id, to_email, status, sent_at }        │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
+| **SendGrid JSON Templates** | Templates contain the full SendGrid API payload structure |
+| **Double Dollar Placeholders** | `$$variable$$` syntax for variable replacement |
+| **JSON-Safe Escaping** | Values are escaped for JSON (handles quotes, newlines, etc.) |
+| **Flexible Variables** | Pass any variables needed by your template |
 
 ---
 
-## Actions
+## Template System
 
-| Action | Description | Auth Required |
-|--------|-------------|---------------|
-| `send` | Send an email using a template | Yes (Bearer token) |
-| `health` | Check function health and secret configuration | No |
+### Template Structure
+
+Templates are stored in `reference_table.zat_email_html_template_eg_sendbasicemailwf_` and contain a **complete SendGrid JSON payload**:
+
+```json
+{
+  "personalizations": [
+    {
+      "to": [{ "email": "$$to_email$$" }]
+    }
+  ],
+  "from": {
+    "email": "$$from_email$$",
+    "name": "$$from_name$$"
+  },
+  "subject": "$$subject$$",
+  "content": [
+    {
+      "type": "text/plain",
+      "value": "$$title$$\n\n$$bodytext1$$..."
+    },
+    {
+      "type": "text/html",
+      "value": "<!DOCTYPE html>...$$title$$...$$bodytext1$$..."
+    }
+  ]
+}
+```
+
+### Database Schema
+
+**Schema**: `reference_table`
+**Table**: `zat_email_html_template_eg_sendbasicemailwf_`
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `_id` | text | Template ID (use this as `template_id`) |
+| `Name` | text | Human-readable template name |
+| `Email Template JSON` | text | Complete SendGrid JSON payload with `$$placeholders$$` |
+| `Description` | text | Template description |
+| `Placeholder` | text[] | Array of placeholder names used in template |
+
+### Available Templates
+
+| Template ID | Name | Description |
+|-------------|------|-------------|
+| `1756320055390x685004717147094100` | General Email Template 4 | Standard email with title, body, button |
 
 ---
 
-## Authentication
+## Placeholder Reference
 
-The `send` action requires a Bearer token in the Authorization header.
+### Syntax
 
-```http
-Authorization: Bearer <token>
+Placeholders use **double dollar signs**:
+
+```
+$$variable_name$$
 ```
 
-**Current Implementation**: Validates that a non-empty Bearer token is present. Future enhancement will validate against Supabase Auth or an API key whitelist.
+### "General Email Template 4" Placeholders
 
-**Health Check**: The `health` action does not require authentication.
+| Placeholder | Required | Description | Example Value |
+|-------------|----------|-------------|---------------|
+| `$$to_email$$` | **Yes** | Recipient email | Provided via `to_email` in payload |
+| `$$from_email$$` | **Yes** | Sender email | Provided via `from_email` in payload |
+| `$$from_name$$` | **Yes** | Sender name | Provided via `from_name` in payload |
+| `$$subject$$` | **Yes** | Email subject | Provided via `subject` in payload |
+| `$$title$$` | **Yes** | Email heading | `"Welcome to Split Lease!"` |
+| `$$bodytext1$$` | **Yes** | First paragraph | `"Your booking has been confirmed..."` |
+| `$$bodytext2$$` | **Yes** | Second paragraph | `"Next steps: ..."` |
+| `$$button_url$$` | **Yes** | CTA button link | `"https://splitlease.com/dashboard"` |
+| `$$button_text$$` | **Yes** | CTA button label | `"View Dashboard"` |
+| `$$logourl$$` | **Yes** | Logo image URL | `"https://splitlease.com/logo.png"` |
+| `$$preheadertext$$` | **Yes** | Email preview text | `"Your booking confirmation"` |
+| `$$warningmessage$$` | No | Warning banner HTML | `""` (empty for no warning) |
+| `$$banner$$` | No | Banner HTML content | `""` (empty for no banner) |
+| `$$cc_email$$` | No | CC recipients JSON | `""` (empty for none) |
+| `$$bcc_email$$` | No | BCC recipients JSON | `""` (empty for none) |
+| `$$message_id$$` | No | Email threading ID | `""` (for new threads) |
+| `$$in_reply_to$$` | No | Reply threading | `""` (for new threads) |
+| `$$references$$` | No | Thread references | `""` (for new threads) |
+
+### JSON Escaping
+
+Variable values are automatically escaped for JSON safety:
+
+| Character | Escaped To |
+|-----------|------------|
+| `"` | `\"` |
+| `\` | `\\` |
+| Newline | `\n` |
+| Tab | `\t` |
+| Other control chars | `\uXXXX` |
+
+This means you can safely include quotes and newlines in your variable values.
 
 ---
 
 ## Request Format
 
-### Send Email Request
+### Send Email
 
 ```http
 POST /functions/v1/send-email
@@ -110,15 +211,27 @@ Content-Type: application/json
 {
   "action": "send",
   "payload": {
-    "template_id": "string",
-    "to_email": "string",
-    "to_name": "string",
-    "from_email": "string",
-    "from_name": "string",
-    "subject": "string",
+    "template_id": "1756320055390x685004717147094100",
+    "to_email": "recipient@example.com",
+    "to_name": "John Doe",
+    "from_email": "tech@leasesplit.com",
+    "from_name": "Split Lease",
+    "subject": "Your Email Subject",
     "variables": {
-      "key1": "value1",
-      "key2": "value2"
+      "title": "Email Title",
+      "bodytext1": "First paragraph...",
+      "bodytext2": "Second paragraph...",
+      "button_url": "https://splitlease.com",
+      "button_text": "Click Here",
+      "logourl": "https://splitlease.com/logo.png",
+      "preheadertext": "Preview text",
+      "warningmessage": "",
+      "banner": "",
+      "cc_email": "",
+      "bcc_email": "",
+      "message_id": "",
+      "in_reply_to": "",
+      "references": ""
     }
   }
 }
@@ -128,34 +241,15 @@ Content-Type: application/json
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `template_id` | string | **Yes** | ID of template in `zat_email_html_template_eg_sendbasicemailwf_` table |
-| `to_email` | string | **Yes** | Recipient email address (validated format) |
+| `template_id` | string | **Yes** | Template ID from database |
+| `to_email` | string | **Yes** | Recipient email address |
 | `to_name` | string | No | Recipient display name |
-| `from_email` | string | No | Sender email (defaults to template value or `noreply@splitlease.com`) |
-| `from_name` | string | No | Sender display name (defaults to template value or `Split Lease`) |
-| `subject` | string | No | Email subject (defaults to template value or `Message from Split Lease`) |
-| `variables` | object | **Yes** | Key-value pairs for placeholder replacement |
+| `from_email` | string | No | Sender email (default: `noreply@splitlease.com`) |
+| `from_name` | string | No | Sender name (default: `Split Lease`) |
+| `subject` | string | No | Email subject (default: `Message from Split Lease`) |
+| `variables` | object | **Yes** | All placeholder values for the template |
 
-### Priority Order for Sender/Subject
-
-The function uses the following priority order for `from_email`, `from_name`, and `subject`:
-
-1. **Payload value** (if provided)
-2. **Template value** (from database)
-3. **Default value** (hardcoded fallback)
-
-| Field | Default Value |
-|-------|---------------|
-| `from_email` | `noreply@splitlease.com` |
-| `from_name` | `Split Lease` |
-| `subject` | `Message from Split Lease` |
-
-### Health Check Request
-
-```http
-POST /functions/v1/send-email
-Content-Type: application/json
-```
+### Health Check
 
 ```json
 {
@@ -163,63 +257,33 @@ Content-Type: application/json
 }
 ```
 
+No authentication required.
+
 ---
 
 ## Response Format
 
-### Successful Send Response
+### Success
 
 ```json
 {
   "success": true,
   "data": {
     "message_id": "abc123xyz",
-    "template_id": "template_abc123",
+    "template_id": "1756320055390x685004717147094100",
     "to_email": "recipient@example.com",
     "status": "sent",
-    "sent_at": "2025-12-13T10:30:00.000Z"
+    "sent_at": "2025-12-14T10:30:00.000Z"
   }
 }
 ```
 
-### Response Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `message_id` | string \| undefined | SendGrid message ID (from `x-message-id` header) |
-| `template_id` | string | Template ID used for this email |
-| `to_email` | string | Recipient email address |
-| `status` | string | Always `"sent"` on success |
-| `sent_at` | string | ISO 8601 timestamp of send time |
-
-### Health Check Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "status": "healthy",
-    "timestamp": "2025-12-13T10:30:00.000Z",
-    "actions": ["send", "health"],
-    "secrets": {
-      "SENDGRID_API_KEY": true,
-      "SENDGRID_EMAIL_ENDPOINT": true
-    }
-  }
-}
-```
-
-| Status Value | Meaning |
-|--------------|---------|
-| `healthy` | All required secrets are configured |
-| `unhealthy (missing secrets)` | One or more required secrets are missing |
-
-### Error Response
+### Error
 
 ```json
 {
   "success": false,
-  "error": "Error message describing what went wrong"
+  "error": "Template not found: invalid_template_id"
 }
 ```
 
@@ -227,383 +291,56 @@ Content-Type: application/json
 
 | Code | Meaning |
 |------|---------|
-| `200` | Success |
-| `400` | Validation error (missing fields, invalid email format) |
-| `401` | Authentication error (missing/invalid Bearer token) |
-| `404` | Template not found |
-| `405` | Method not allowed (only POST accepted) |
-| `500` | Internal server error (SendGrid failure, database error) |
-
----
-
-## Template System
-
-### Database Table
-
-**Table Name**: `zat_email_html_template_eg_sendbasicemailwf_`
-
-### Table Schema
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `_id` | string | Unique template identifier (used as `template_id`) |
-| `Name` | string | Human-readable template name |
-| `HTML Content` | string | HTML template with `{{ placeholder }}` syntax |
-| `Subject` | string | Default email subject line |
-| `From Email` | string | Default sender email |
-| `From Name` | string | Default sender display name |
-
-### Template Example
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>Welcome to Split Lease</title>
-</head>
-<body>
-  <h1>Hello, {{ first_name }}!</h1>
-  <p>Welcome to Split Lease. Your account has been created successfully.</p>
-  <p>Your listing at {{ listing_address }} is now active.</p>
-  <p>Move-in date: {{ move_in_date }}</p>
-  <footer>
-    <p>Best regards,<br>The Split Lease Team</p>
-  </footer>
-</body>
-</html>
-```
-
----
-
-## Placeholder Replacement
-
-### Syntax
-
-Placeholders use Jinja-style double curly braces:
-
-```
-{{ variable_name }}
-```
-
-### Supported Patterns
-
-| Pattern | Valid | Example |
-|---------|-------|---------|
-| `{{ variable }}` | Yes | `{{ first_name }}` |
-| `{{variable}}` | Yes | `{{first_name}}` |
-| `{{ variable_name }}` | Yes | `{{ move_in_date }}` |
-| `{{ variable-name }}` | Yes | `{{ listing-address }}` |
-| `{{ nested.variable }}` | Yes | `{{ user.email }}` |
-| `{{ 123 }}` | No | Numbers only not allowed |
-| `{{ var name }}` | No | Spaces in name not allowed |
-
-### Regex Pattern
-
-```regex
-/\{\{\s*([a-zA-Z0-9_\-.]+)\s*\}\}/g
-```
-
-### Missing Placeholder Behavior
-
-When a placeholder is found in the template but no corresponding value is provided in `variables`:
-
-1. **Warning logged** to console
-2. **Original placeholder preserved** in output (not removed or replaced with empty string)
-3. **Email still sent** - missing placeholders do not cause failure
-
-This allows for optional placeholders in templates.
-
-### XSS Protection
-
-All variable values are HTML-escaped before insertion to prevent XSS attacks:
-
-| Character | Escaped To |
-|-----------|------------|
-| `&` | `&amp;` |
-| `<` | `&lt;` |
-| `>` | `&gt;` |
-| `"` | `&quot;` |
-| `'` | `&#39;` |
-
-**Example**:
-```javascript
-// Input variable
-{ "user_input": "<script>alert('xss')</script>" }
-
-// Output in email
-&lt;script&gt;alert(&#39;xss&#39;)&lt;/script&gt;
-```
-
-### Subject Line Processing
-
-The subject line also supports placeholder replacement using the same syntax:
-
-```json
-{
-  "subject": "Your proposal for {{ listing_address }} has been accepted!"
-}
-```
-
----
-
-## Error Handling
-
-### Error Types
-
-| Error Type | HTTP Code | When Triggered |
-|------------|-----------|----------------|
-| `ValidationError` | 400 | Missing required fields, invalid email format |
-| `AuthenticationError` | 401 | Missing/empty Bearer token |
-| `Template not found` | 500 | Template ID doesn't exist in database |
-| `Template has no HTML content` | 500 | Template exists but `HTML Content` is empty |
-| `SendGrid API error` | 500 | SendGrid rejects the request |
-| `Missing environment variables` | 500 | Required secrets not configured |
-
-### Slack Error Reporting
-
-All errors are reported to Slack via the error collector pattern (ONE RUN = ONE LOG):
-
-```typescript
-collector.add(error, 'context description');
-collector.reportToSlack();
-```
-
-### Common Error Messages
-
-| Message | Cause | Resolution |
-|---------|-------|------------|
-| `Missing or invalid Authorization header. Use Bearer token.` | No Authorization header or wrong format | Add `Authorization: Bearer <token>` header |
-| `Empty Bearer token` | Authorization header present but token is empty | Provide a non-empty token |
-| `Validation error: Missing required field: template_id` | `template_id` not provided | Include `template_id` in payload |
-| `Validation error: Invalid email format: xxx` | `to_email` fails regex validation | Provide valid email address |
-| `Template not found: xxx` | Template ID doesn't exist | Verify template ID exists in database |
-| `SendGrid API error (403): {...}` | SendGrid authentication failed | Verify `SENDGRID_API_KEY` is correct |
-
----
-
-## Environment Variables
-
-### Required Secrets
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `SENDGRID_API_KEY` | SendGrid API authentication key | `SG.xxxxx...` |
-| `SENDGRID_EMAIL_ENDPOINT` | SendGrid mail send endpoint | `https://api.sendgrid.com/v3/mail/send` |
-
-### Auto-Configured (Supabase)
-
-| Variable | Description |
-|----------|-------------|
-| `SUPABASE_URL` | Supabase project URL |
-| `SUPABASE_SERVICE_ROLE_KEY` | Service role key for admin database access |
-
-### Configuration Location
-
-Secrets are configured in: **Supabase Dashboard > Project Settings > Edge Functions > Secrets**
+| 200 | Success |
+| 400 | Validation error (missing fields, invalid email) |
+| 401 | Authentication error (missing Bearer token) |
+| 500 | Server error (template not found, SendGrid error) |
 
 ---
 
 ## Usage Examples
 
-### Basic Email Send
+### Basic Email (Frontend)
 
 ```javascript
-const response = await fetch('https://your-project.supabase.co/functions/v1/send-email', {
-  method: 'POST',
-  headers: {
-    'Authorization': 'Bearer your-auth-token',
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    action: 'send',
-    payload: {
-      template_id: 'welcome_email_template',
-      to_email: 'user@example.com',
-      to_name: 'John Doe',
-      variables: {
-        first_name: 'John',
-        listing_address: '123 Main Street, Apt 4B',
-        move_in_date: 'January 15, 2025'
-      }
-    }
-  })
-});
+import { supabase } from './lib/supabase';
 
-const result = await response.json();
-console.log(result);
-// {
-//   success: true,
-//   data: {
-//     message_id: 'abc123xyz',
-//     template_id: 'welcome_email_template',
-//     to_email: 'user@example.com',
-//     status: 'sent',
-//     sent_at: '2025-12-13T10:30:00.000Z'
-//   }
-// }
-```
-
-### With Custom Sender
-
-```javascript
-const response = await fetch('https://your-project.supabase.co/functions/v1/send-email', {
-  method: 'POST',
-  headers: {
-    'Authorization': 'Bearer your-auth-token',
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    action: 'send',
-    payload: {
-      template_id: 'proposal_accepted',
-      to_email: 'guest@example.com',
-      to_name: 'Jane Smith',
-      from_email: 'notifications@splitlease.com',
-      from_name: 'Split Lease Notifications',
-      subject: 'Great news! Your proposal was accepted',
-      variables: {
-        guest_name: 'Jane',
-        host_name: 'Michael',
-        listing_address: '456 Oak Avenue',
-        monthly_rent: '$2,500',
-        start_date: 'February 1, 2025',
-        end_date: 'July 31, 2025'
-      }
-    }
-  })
-});
-```
-
-### Health Check
-
-```javascript
-const response = await fetch('https://your-project.supabase.co/functions/v1/send-email', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    action: 'health'
-  })
-});
-
-const result = await response.json();
-console.log(result);
-// {
-//   success: true,
-//   data: {
-//     status: 'healthy',
-//     timestamp: '2025-12-13T10:30:00.000Z',
-//     actions: ['send', 'health'],
-//     secrets: {
-//       SENDGRID_API_KEY: true,
-//       SENDGRID_EMAIL_ENDPOINT: true
-//     }
-//   }
-// }
-```
-
-### Using with Supabase Client
-
-```typescript
-import { supabase } from '@/lib/supabase';
-
-async function sendWelcomeEmail(user: { email: string; name: string }) {
-  const { data: session } = await supabase.auth.getSession();
-
-  const response = await supabase.functions.invoke('send-email', {
-    body: {
-      action: 'send',
-      payload: {
-        template_id: 'welcome_email',
-        to_email: user.email,
-        to_name: user.name,
-        variables: {
-          first_name: user.name.split(' ')[0],
-          signup_date: new Date().toLocaleDateString()
-        }
-      }
-    },
-    headers: {
-      Authorization: `Bearer ${session?.session?.access_token}`
-    }
-  });
-
-  if (response.error) {
-    console.error('Failed to send welcome email:', response.error);
-    throw response.error;
-  }
-
-  return response.data;
-}
-```
-
----
-
-## Integration Guide
-
-### Step 1: Verify Function Health
-
-Before integrating, verify the function is deployed and configured:
-
-```bash
-curl -X POST https://your-project.supabase.co/functions/v1/send-email \
-  -H "Content-Type: application/json" \
-  -d '{"action": "health"}'
-```
-
-Expected response: `"status": "healthy"` with all secrets showing `true`.
-
-### Step 2: Identify Template ID
-
-Query the database to find available templates:
-
-```sql
-SELECT _id, "Name", "Subject"
-FROM zat_email_html_template_eg_sendbasicemailwf_;
-```
-
-### Step 3: Extract Required Variables
-
-Each template has specific placeholders. To find them:
-
-1. Read the `HTML Content` column
-2. Look for `{{ variable }}` patterns
-3. Map these to your data model
-
-### Step 4: Implement the Call
-
-```typescript
-// Utility function for sending templated emails
-async function sendTemplatedEmail(params: {
-  templateId: string;
-  toEmail: string;
-  toName?: string;
-  variables: Record<string, string>;
-  subject?: string;
-}): Promise<{ messageId?: string; sentAt: string }> {
-  const { data: session } = await supabase.auth.getSession();
-
-  if (!session?.session?.access_token) {
-    throw new Error('No authenticated session');
-  }
+async function sendWelcomeEmail(userEmail, userName) {
+  const { data: { session } } = await supabase.auth.getSession();
 
   const response = await fetch(
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`,
     {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${session.session.access_token}`,
+        'Authorization': `Bearer ${session?.access_token}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         action: 'send',
         payload: {
-          template_id: params.templateId,
-          to_email: params.toEmail,
-          to_name: params.toName,
-          subject: params.subject,
-          variables: params.variables
+          template_id: '1756320055390x685004717147094100',
+          to_email: userEmail,
+          to_name: userName,
+          from_email: 'welcome@leasesplit.com',
+          from_name: 'Split Lease',
+          subject: 'Welcome to Split Lease!',
+          variables: {
+            title: `Welcome, ${userName}!`,
+            bodytext1: 'Thank you for joining Split Lease. We\'re excited to help you find your perfect shared living space.',
+            bodytext2: 'Get started by browsing available listings or creating your own listing.',
+            button_url: 'https://splitlease.com/search',
+            button_text: 'Browse Listings',
+            logourl: 'https://splitlease.com/assets/images/split-lease-logo.png',
+            preheadertext: 'Welcome to Split Lease - Your journey starts here',
+            warningmessage: '',
+            banner: '',
+            cc_email: '',
+            bcc_email: '',
+            message_id: '',
+            in_reply_to: '',
+            references: '',
+          }
         }
       })
     }
@@ -612,111 +349,160 @@ async function sendTemplatedEmail(params: {
   const result = await response.json();
 
   if (!result.success) {
-    throw new Error(result.error || 'Failed to send email');
+    throw new Error(result.error);
   }
 
-  return {
-    messageId: result.data.message_id,
-    sentAt: result.data.sent_at
-  };
+  return result.data;
 }
 ```
 
-### Step 5: Error Handling
+### Proposal Notification
 
-Always implement proper error handling:
+```javascript
+async function sendProposalNotification(host, guest, listing, proposal) {
+  const { data: { session } } = await supabase.auth.getSession();
 
-```typescript
-try {
-  const result = await sendTemplatedEmail({
-    templateId: 'proposal_notification',
-    toEmail: host.email,
-    toName: host.name,
-    variables: {
-      guest_name: proposal.guestName,
-      listing_title: listing.title,
-      proposed_dates: `${proposal.startDate} - ${proposal.endDate}`
-    }
+  await fetch(`${SUPABASE_URL}/functions/v1/send-email`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session?.access_token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      action: 'send',
+      payload: {
+        template_id: '1756320055390x685004717147094100',
+        to_email: host.email,
+        to_name: host.name,
+        from_email: 'notifications@leasesplit.com',
+        from_name: 'Split Lease',
+        subject: `New proposal for ${listing.address}`,
+        variables: {
+          title: 'You have a new proposal!',
+          bodytext1: `${guest.name} has submitted a proposal for your listing at ${listing.address}.`,
+          bodytext2: `Proposed dates: ${proposal.startDate} - ${proposal.endDate}\nMonthly rent: $${proposal.monthlyRent}`,
+          button_url: `https://splitlease.com/host-proposals/${host.id}`,
+          button_text: 'View Proposal',
+          logourl: 'https://splitlease.com/assets/images/split-lease-logo.png',
+          preheadertext: `New proposal from ${guest.name}`,
+          warningmessage: '',
+          banner: '',
+          cc_email: '',
+          bcc_email: '',
+          message_id: '',
+          in_reply_to: '',
+          references: '',
+        }
+      }
+    })
   });
-
-  console.log(`Email sent successfully: ${result.messageId}`);
-} catch (error) {
-  // Log error but don't block user flow
-  console.error('Failed to send notification email:', error);
-
-  // Optionally: Queue for retry or alert monitoring
 }
+```
+
+### Using Supabase Client
+
+```javascript
+const { data, error } = await supabase.functions.invoke('send-email', {
+  body: {
+    action: 'send',
+    payload: {
+      template_id: '1756320055390x685004717147094100',
+      to_email: 'user@example.com',
+      from_email: 'tech@leasesplit.com',
+      from_name: 'Split Lease',
+      subject: 'Test Email',
+      variables: {
+        title: 'Test Title',
+        bodytext1: 'Test body 1',
+        bodytext2: 'Test body 2',
+        button_url: 'https://splitlease.com',
+        button_text: 'Click Me',
+        logourl: 'https://splitlease.com/logo.png',
+        preheadertext: 'Test preview',
+        warningmessage: '',
+        banner: '',
+        cc_email: '',
+        bcc_email: '',
+        message_id: '',
+        in_reply_to: '',
+        references: '',
+      }
+    }
+  }
+});
+```
+
+---
+
+## Configuration
+
+### Required Environment Variables
+
+Configure these in **Supabase Dashboard > Project Settings > Edge Functions > Secrets**:
+
+| Variable | Description |
+|----------|-------------|
+| `SENDGRID_API_KEY` | Your SendGrid API key |
+| `SENDGRID_EMAIL_ENDPOINT` | `https://api.sendgrid.com/v3/mail/send` |
+
+### Required Database Configuration
+
+The `reference_table` schema must be exposed to the API:
+
+1. **Dashboard**: Go to **Project Settings > API > Exposed schemas** and add `reference_table`
+
+2. **SQL Grants** (run in SQL Editor):
+```sql
+GRANT USAGE ON SCHEMA reference_table TO anon, authenticated, service_role;
+GRANT SELECT ON reference_table.zat_email_html_template_eg_sendbasicemailwf_ TO anon, authenticated, service_role;
 ```
 
 ---
 
 ## Troubleshooting
 
-### Common Issues
+### "Template not found"
 
-#### 1. "unhealthy (missing secrets)" in health check
-
-**Cause**: Required environment variables not configured.
+**Cause**: Template ID doesn't exist or schema not accessible.
 
 **Solution**:
-1. Go to Supabase Dashboard > Project Settings > Edge Functions > Secrets
-2. Add `SENDGRID_API_KEY` with your SendGrid API key
-3. Add `SENDGRID_EMAIL_ENDPOINT` with value `https://api.sendgrid.com/v3/mail/send`
+1. Verify template exists: Query the database for the `_id`
+2. Ensure `reference_table` schema is exposed in API settings
+3. Run the SQL grants above
 
-#### 2. "Template not found" error
+### "permission denied for schema reference_table"
 
-**Cause**: The `template_id` doesn't match any `_id` in the templates table.
-
-**Solution**:
-1. Query the database: `SELECT _id FROM zat_email_html_template_eg_sendbasicemailwf_`
-2. Verify the exact `_id` value (case-sensitive)
-3. Ensure the template record exists
-
-#### 3. SendGrid API error (403)
-
-**Cause**: Invalid SendGrid API key or insufficient permissions.
+**Cause**: Schema not exposed or grants not applied.
 
 **Solution**:
-1. Verify API key in SendGrid dashboard
-2. Ensure API key has "Mail Send" permission
-3. Update `SENDGRID_API_KEY` secret in Supabase
+1. Add `reference_table` to exposed schemas in Dashboard
+2. Run the SQL grants in SQL Editor
 
-#### 4. Placeholders appear in sent email
+### Placeholders not being replaced
 
-**Cause**: Variable names don't match placeholders in template.
-
-**Solution**:
-1. Extract placeholders from template using regex
-2. Ensure all variable keys match exactly (case-sensitive)
-3. Check for typos in variable names
-
-#### 5. "Invalid email format" error
-
-**Cause**: `to_email` doesn't pass email validation.
+**Cause**: Variable names don't match placeholder names.
 
 **Solution**:
-1. Verify email format: `user@domain.com`
-2. Remove leading/trailing whitespace
-3. Check for invisible characters
+1. Check the `Placeholder` column in the template for exact names
+2. Ensure variable keys match exactly (case-sensitive, no `$$` in key names)
+3. Pass variables as: `{ "title": "value" }` not `{ "$$title$$": "value" }`
 
-### Debug Checklist
+### "Invalid JSON after placeholder processing"
 
-- [ ] Health check returns `"status": "healthy"`
-- [ ] All secrets show `true` in health response
-- [ ] Template ID exists in database
-- [ ] Template has non-empty `HTML Content`
-- [ ] All placeholder names match variable keys
-- [ ] `to_email` is valid email format
-- [ ] Bearer token is included in Authorization header
+**Cause**: Malformed template or special characters in values.
 
----
+**Solution**:
+1. Values are auto-escaped for JSON, but check template JSON is valid
+2. Empty string `""` is valid for optional placeholders
 
-## Related Documentation
+### Email appears blank
 
-- [Edge Functions Overview](../README.md)
-- [Shared Utilities](../SHARED_UTILITIES.md)
-- [Quick Reference](../QUICK_REFERENCE.md)
-- [SendGrid API Documentation](https://docs.sendgrid.com/api-reference/mail-send/mail-send)
+**Cause**: Required placeholders have empty values.
+
+**Solution**: Ensure all required placeholders have non-empty values:
+- `title`, `bodytext1`, `bodytext2`
+- `button_url`, `button_text`
+- `logourl`, `preheadertext`
 
 ---
 
@@ -724,15 +510,14 @@ try {
 
 | File | Purpose |
 |------|---------|
-| `supabase/functions/send-email/index.ts` | Main router, action handling |
-| `supabase/functions/send-email/handlers/send.ts` | Send action implementation |
+| `supabase/functions/send-email/index.ts` | Main router |
+| `supabase/functions/send-email/handlers/send.ts` | Send action logic |
 | `supabase/functions/send-email/lib/templateProcessor.ts` | Placeholder replacement |
 | `supabase/functions/send-email/lib/sendgridClient.ts` | SendGrid API client |
-| `supabase/functions/send-email/lib/types.ts` | TypeScript interfaces |
-| `supabase/functions/send-email/deno.json` | Import map configuration |
+| `supabase/functions/send-email/lib/types.ts` | TypeScript types |
 
 ---
 
-**Document Version**: 1.0
-**Created**: 2025-12-13
+**Document Version**: 2.0
+**Last Updated**: 2025-12-14
 **Author**: Claude Code
