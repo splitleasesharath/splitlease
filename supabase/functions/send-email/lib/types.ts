@@ -5,7 +5,7 @@
 
 // Request payload for send action
 export interface SendEmailPayload {
-  template_id: string;           // ID of template in zat_email_html_template_eg_sendbasicemailwf_
+  template_id: string;           // ID of template in emailtemplate_postmark_
   to_email: string;              // Recipient email address
   to_name?: string;              // Recipient name (optional)
   from_email?: string;           // Sender email (optional, uses default)
@@ -14,14 +14,13 @@ export interface SendEmailPayload {
   variables: Record<string, string>;  // Key-value pairs for placeholder replacement
 }
 
-// Email template from database
+// Email template from database (emailtemplate_postmark_ table)
 export interface EmailTemplate {
   _id: string;
   Name?: string;
-  'HTML Content'?: string;       // The HTML template with {{ placeholders }}
+  HTML?: string;                 // The HTML template with {{ placeholders }}
   Subject?: string;              // Default subject line
-  'From Email'?: string;         // Default from email
-  'From Name'?: string;          // Default from name
+  // Note: From Email and From Name are not in this table, use defaults
 }
 
 // SendGrid request body structure
