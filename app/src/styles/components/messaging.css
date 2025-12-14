@@ -729,12 +729,20 @@ main.main-content:has(.messaging-page) {
     height: 40px;
     border: none;
     background: transparent;
-    color: var(--color-primary-purple);
     cursor: pointer;
     border-radius: 50%;
     margin-right: 0.5rem;
     flex-shrink: 0;
     transition: background-color 0.2s ease;
+  }
+
+  .thread-header__back svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .thread-header__back svg path {
+    stroke: #6B4FA1; /* Purple color */
   }
 
   .thread-header__back:hover {
