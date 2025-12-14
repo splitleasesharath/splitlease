@@ -140,6 +140,12 @@ export default function AccountProfilePage() {
                 onEditPhone={logic.handleEditPhone}
                 onOpenNotificationSettings={logic.handleOpenNotificationSettings}
                 onChangePassword={logic.handleChangePassword}
+                // Host-specific props
+                isHostUser={logic.isHostUser}
+                hostListings={logic.hostListings}
+                loadingListings={logic.loadingListings}
+                onListingClick={logic.handleListingClick}
+                onCreateListing={logic.handleCreateListing}
               />
             ) : (
               <PublicView
@@ -147,6 +153,10 @@ export default function AccountProfilePage() {
                 verifications={logic.verifications}
                 goodGuestReasonsList={logic.goodGuestReasonsList}
                 storageItemsList={logic.storageItemsList}
+                // Host-specific props
+                isHostUser={logic.isHostUser}
+                hostListings={logic.hostListings}
+                onListingClick={logic.handleListingClick}
               />
             )}
           </div>

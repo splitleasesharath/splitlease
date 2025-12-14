@@ -14,6 +14,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase.js';
 import { getSessionId, checkAuthStatus } from '../../../lib/auth.js';
+import { isHost } from '../../../logic/rules/users/isHost.js';
 
 // ============================================================================
 // CONSTANTS
@@ -220,6 +221,10 @@ export function useAccountProfilePageLogic() {
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [showPhoneEditModal, setShowPhoneEditModal] = useState(false);
 
+  // Host listings state
+  const [hostListings, setHostListings] = useState([]);
+  const [loadingListings, setLoadingListings] = useState(false);
+
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
@@ -235,6 +240,14 @@ export function useAccountProfilePageLogic() {
   const isPublicView = useMemo(() => {
     return !isEditorView;
   }, [isEditorView]);
+
+  /**
+   * Determine if profile belongs to a host user
+   */
+  const isHostUser = useMemo(() => {
+    const userType = profileData?.['Type - User Signup'];
+    return isHost({ userType });
+  }, [profileData]);
 
   /**
    * Extract verifications from profile data
@@ -368,6 +381,46 @@ export function useAccountProfilePageLogic() {
     }
   }, []);
 
+  /**
+   * Fetch host's listings from the listing table
+   */
+  const fetchHostListings = useCallback(async (userId) => {
+    if (!userId) return;
+    setLoadingListings(true);
+    try {
+      const { data, error } = await supabase
+        .from('listing')
+        .select(`
+          _id,
+          Name,
+          "Borough/Region",
+          hood,
+          "Qty of Bedrooms",
+          "Qty of Bathrooms",
+          "Start Nightly Price",
+          Complete,
+          listing_photo!listing_photo_listing_fkey (
+            _id,
+            url,
+            "Order"
+          )
+        `)
+        .eq('"Host / Landlord"', userId)
+        .eq('Complete', true)
+        .order('_created_date', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+      setHostListings(data || []);
+    } catch (err) {
+      console.error('Error fetching host listings:', err);
+      // Non-blocking - just log and continue with empty listings
+      setHostListings([]);
+    } finally {
+      setLoadingListings(false);
+    }
+  }, []);
+
   // ============================================================================
   // INITIALIZATION
   // ============================================================================
@@ -394,7 +447,15 @@ export function useAccountProfilePageLogic() {
         await fetchReferenceData();
 
         // Fetch profile data
-        await fetchProfileData(urlUserId);
+        const userData = await fetchProfileData(urlUserId);
+
+        // If user is a host, fetch their listings
+        if (userData) {
+          const userType = userData['Type - User Signup'];
+          if (isHost({ userType })) {
+            await fetchHostListings(urlUserId);
+          }
+        }
 
         setLoading(false);
       } catch (err) {
@@ -405,7 +466,7 @@ export function useAccountProfilePageLogic() {
     }
 
     initialize();
-  }, [fetchReferenceData, fetchProfileData]);
+  }, [fetchReferenceData, fetchProfileData, fetchHostListings]);
 
   // ============================================================================
   // FORM HANDLERS
@@ -622,6 +683,26 @@ export function useAccountProfilePageLogic() {
   }, []);
 
   // ============================================================================
+  // HOST LISTING HANDLERS
+  // ============================================================================
+
+  /**
+   * Navigate to listing detail page
+   */
+  const handleListingClick = useCallback((listingId) => {
+    if (listingId) {
+      window.location.href = `/view-split-lease/${listingId}`;
+    }
+  }, []);
+
+  /**
+   * Navigate to create listing page
+   */
+  const handleCreateListing = useCallback(() => {
+    window.location.href = '/self-listing';
+  }, []);
+
+  // ============================================================================
   // RETURN API
   // ============================================================================
 
@@ -687,6 +768,13 @@ export function useAccountProfilePageLogic() {
     showNotificationModal,
     handleCloseNotificationModal,
     showPhoneEditModal,
-    handleClosePhoneEditModal
+    handleClosePhoneEditModal,
+
+    // Host profile
+    isHostUser,
+    hostListings,
+    loadingListings,
+    handleListingClick,
+    handleCreateListing
   };
 }
