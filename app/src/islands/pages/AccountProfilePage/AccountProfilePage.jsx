@@ -92,12 +92,13 @@ export default function AccountProfilePage() {
   }
 
   // Sidebar props based on view mode
+  // Database columns use 'Name - First', 'Name - Last' naming convention
   const sidebarProps = {
     isEditorView: logic.isEditorView,
     coverPhotoUrl: logic.profileData?.['Cover Photo'] || null,
     avatarUrl: logic.profileData?.['Profile Photo'] || null,
-    firstName: logic.formData.firstName || logic.profileData?.['First Name'] || '',
-    lastName: logic.formData.lastName || logic.profileData?.['Last Name'] || '',
+    firstName: logic.formData.firstName || logic.profileData?.['Name - First'] || '',
+    lastName: logic.formData.lastName || logic.profileData?.['Name - Last'] || '',
     jobTitle: logic.displayJobTitle,
     profileStrength: logic.profileStrength,
     verifications: logic.verifications,

@@ -270,8 +270,8 @@ export function useAccountProfilePageLogic() {
     const profileInfo = {
       profilePhoto: profileData?.['Profile Photo'],
       bio: formData.bio || profileData?.['About Me'],
-      firstName: formData.firstName || profileData?.['First Name'],
-      lastName: formData.lastName || profileData?.['Last Name'],
+      firstName: formData.firstName || profileData?.['Name - First'],
+      lastName: formData.lastName || profileData?.['Name - Last'],
       jobTitle: formData.jobTitle || profileData?.['Job Title']
     };
     return calculateProfileStrength(profileInfo, verifications);
@@ -284,8 +284,8 @@ export function useAccountProfilePageLogic() {
     const profileInfo = {
       profilePhoto: profileData?.['Profile Photo'],
       bio: formData.bio || profileData?.['About Me'],
-      firstName: formData.firstName || profileData?.['First Name'],
-      lastName: formData.lastName || profileData?.['Last Name'],
+      firstName: formData.firstName || profileData?.['Name - First'],
+      lastName: formData.lastName || profileData?.['Name - Last'],
       jobTitle: formData.jobTitle || profileData?.['Job Title']
     };
     return generateNextActions(profileInfo, verifications);
@@ -295,8 +295,8 @@ export function useAccountProfilePageLogic() {
    * Display name for sidebar
    */
   const displayName = useMemo(() => {
-    const first = formData.firstName || profileData?.['First Name'] || '';
-    const last = formData.lastName || profileData?.['Last Name'] || '';
+    const first = formData.firstName || profileData?.['Name - First'] || '';
+    const last = formData.lastName || profileData?.['Name - Last'] || '';
     return `${first} ${last}`.trim() || 'Your Name';
   }, [formData.firstName, formData.lastName, profileData]);
 
@@ -362,9 +362,10 @@ export function useAccountProfilePageLogic() {
       setProfileData(userData);
 
       // Initialize form data from profile
+      // Database columns use 'Name - First', 'Name - Last' naming convention
       setFormData({
-        firstName: userData['First Name'] || '',
-        lastName: userData['Last Name'] || '',
+        firstName: userData['Name - First'] || '',
+        lastName: userData['Name - Last'] || '',
         jobTitle: userData['Job Title'] || '',
         bio: userData['About Me'] || '',
         needForSpace: userData['Guest Account (Profile) - Need for Space'] || '',
@@ -554,9 +555,16 @@ export function useAccountProfilePageLogic() {
     setSaving(true);
 
     try {
+      // Build the full name from first and last name
+      const firstName = formData.firstName.trim();
+      const lastName = formData.lastName.trim();
+      const fullName = [firstName, lastName].filter(Boolean).join(' ') || null;
+
+      // Database columns use 'Name - First', 'Name - Last', 'Name - Full' naming convention
       const updateData = {
-        'First Name': formData.firstName.trim(),
-        'Last Name': formData.lastName.trim(),
+        'Name - First': firstName,
+        'Name - Last': lastName,
+        'Name - Full': fullName,
         'Job Title': formData.jobTitle.trim(),
         'About Me': formData.bio.trim(),
         'Guest Account (Profile) - Need for Space': formData.needForSpace.trim(),
@@ -564,7 +572,8 @@ export function useAccountProfilePageLogic() {
         'Recent Days Selected': indicesToDayNames(formData.selectedDays),
         'Transportation': formData.transportationType,
         'Good Guest Reasons': formData.goodGuestReasons,
-        'storage': formData.storageItems
+        'storage': formData.storageItems,
+        'Modified Date': new Date().toISOString()
       };
 
       const { error: updateError } = await supabase
@@ -594,9 +603,10 @@ export function useAccountProfilePageLogic() {
    */
   const handleCancel = useCallback(() => {
     if (profileData) {
+      // Database columns use 'Name - First', 'Name - Last' naming convention
       setFormData({
-        firstName: profileData['First Name'] || '',
-        lastName: profileData['Last Name'] || '',
+        firstName: profileData['Name - First'] || '',
+        lastName: profileData['Name - Last'] || '',
         jobTitle: profileData['Job Title'] || '',
         bio: profileData['About Me'] || '',
         needForSpace: profileData['Guest Account (Profile) - Need for Space'] || '',
