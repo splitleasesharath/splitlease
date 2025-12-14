@@ -827,10 +827,3 @@ main.main-content:has(.messaging-page) {
     height: 40px;
   }
 }
-
-/* Hide back button on desktop */
-@media (min-width: 901px) {
-  .thread-header__back {
-    display: none;
-  }
-}
