@@ -210,11 +210,15 @@ export function useMessagingPageLogic() {
     init();
   }, []);
 
+  // Ref to track if initial thread selection has been done
+  const hasAutoSelectedThread = useRef(false);
+
   // ============================================================================
-  // URL PARAM SYNC FOR THREAD SELECTION
+  // URL PARAM SYNC FOR THREAD SELECTION (runs once when threads load)
   // ============================================================================
   useEffect(() => {
-    if (!initialLoadDone.current || threads.length === 0) return;
+    // Only run once when threads first load
+    if (!initialLoadDone.current || threads.length === 0 || hasAutoSelectedThread.current) return;
 
     const params = new URLSearchParams(window.location.search);
     const threadId = params.get('thread');
@@ -222,16 +226,15 @@ export function useMessagingPageLogic() {
     if (threadId) {
       const thread = threads.find(t => t._id === threadId);
       if (thread) {
-        // Only select if different from current
-        if (!selectedThread || selectedThread._id !== threadId) {
-          handleThreadSelectInternal(thread);
-        }
+        hasAutoSelectedThread.current = true;
+        handleThreadSelectInternal(thread);
       }
-    } else if (threads.length > 0 && !selectedThread) {
-      // Auto-select first thread if none selected and no URL param
+    } else if (threads.length > 0) {
+      // Auto-select first thread if no URL param
+      hasAutoSelectedThread.current = true;
       handleThreadSelectInternal(threads[0]);
     }
-  }, [threads, selectedThread]);
+  }, [threads]);
 
   // ============================================================================
   // API CALLS
