@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
+import EmailPreviewSidebar from '../shared/EmailPreviewSidebar.jsx';
 import { supabase } from '../../lib/supabase.js';
+import { renderGeneralEmailTemplate } from '../../lib/emailTemplateRenderer.js';
 
 /**
  * InternalTestPage - Development/QA testing page
  *
- * Button 1: Send Email - Sends test email via SendGrid
+ * Button 1: Send Email - Opens preview sidebar, then sends via SendGrid
  * Button 2: Send SMS - Sends test SMS via Twilio
  * Buttons 3-25: Placeholder test buttons for future functionality
  */
@@ -14,17 +16,86 @@ export default function InternalTestPage() {
   const [loading, setLoading] = useState({});
   const [results, setResults] = useState({});
 
+  // Email preview sidebar state
+  const [showEmailPreview, setShowEmailPreview] = useState(false);
+  const [emailPreviewData, setEmailPreviewData] = useState(null);
+  const [sendingEmail, setSendingEmail] = useState(false);
+
   /**
-   * Send test email via send-email Edge Function
-   * Uses SendGrid to deliver templated email
+   * Get the email configuration for testing
+   * Centralized so preview and send use identical data
+   */
+  const getTestEmailConfig = () => {
+    const timestamp = new Date().toLocaleString();
+    return {
+      template_id: '1756320055390x685004717147094100', // "General Email Template 4"
+      to_email: 'splitleasesharath@gmail.com',
+      to_name: 'Sharath',
+      from_email: 'tech@leasesplit.com',
+      from_name: 'Split Lease Tech',
+      subject: 'Test Email from Internal Test Page',
+      variables: {
+        // Required template placeholders for "General Email Template 4"
+        title: 'Test Email Title',
+        bodytext1: 'This is the first paragraph of the test email. It demonstrates that the email template system is working correctly.',
+        bodytext2: 'This is the second paragraph with additional information. Sent at: ' + timestamp,
+        button_url: 'https://splitlease.com',
+        button_text: 'Visit Split Lease',
+        logourl: 'https://splitlease.com/assets/images/split-lease-logo.png',
+        preheadertext: 'Test email from Split Lease Internal Test Page',
+        // Optional placeholders (can be empty)
+        warningmessage: '',
+        banner: '',
+        cc_email: '',
+        bcc_email: '',
+        message_id: '',
+        in_reply_to: '',
+        references: '',
+      }
+    };
+  };
+
+  /**
+   * Step 1: Open email preview sidebar
+   * Generates a client-side preview of the email before sending
+   */
+  const handlePreviewEmail = () => {
+    const config = getTestEmailConfig();
+
+    // Generate HTML preview using the same template structure
+    const htmlContent = renderGeneralEmailTemplate({
+      subject: config.subject,
+      title: config.variables.title,
+      bodytext1: config.variables.bodytext1,
+      bodytext2: config.variables.bodytext2,
+      button_url: config.variables.button_url,
+      button_text: config.variables.button_text,
+      logourl: config.variables.logourl,
+      preheadertext: config.variables.preheadertext,
+      warningmessage: config.variables.warningmessage,
+      banner: config.variables.banner,
+    });
+
+    setEmailPreviewData({
+      ...config,
+      htmlContent,
+    });
+    setShowEmailPreview(true);
+  };
+
+  /**
+   * Step 2: Actually send the email after preview confirmation
+   * Called from the sidebar's "Send" button
    */
   const handleSendEmail = async () => {
-    setLoading(prev => ({ ...prev, 1: true }));
+    setSendingEmail(true);
     setResults(prev => ({ ...prev, 1: null }));
 
     try {
       // Get current session for Bearer token
       const { data: { session } } = await supabase.auth.getSession();
+
+      const config = getTestEmailConfig();
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`,
@@ -37,30 +108,13 @@ export default function InternalTestPage() {
           body: JSON.stringify({
             action: 'send',
             payload: {
-              template_id: '1756320055390x685004717147094100', // "General Email Template 4"
-              to_email: 'splitleasesharath@gmail.com',
-              to_name: 'Sharath',
-              from_email: 'tech@leasesplit.com',
-              from_name: 'Split Lease Tech',
-              subject: 'Test Email from Internal Test Page',
-              variables: {
-                // Required template placeholders for "General Email Template 4"
-                title: 'Test Email Title',
-                bodytext1: 'This is the first paragraph of the test email. It demonstrates that the email template system is working correctly.',
-                bodytext2: 'This is the second paragraph with additional information. Sent at: ' + new Date().toLocaleString(),
-                button_url: 'https://splitlease.com',
-                button_text: 'Visit Split Lease',
-                logourl: 'https://splitlease.com/assets/images/split-lease-logo.png',
-                preheadertext: 'Test email from Split Lease Internal Test Page',
-                // Optional placeholders (can be empty)
-                warningmessage: '',
-                banner: '',
-                cc_email: '',
-                bcc_email: '',
-                message_id: '',
-                in_reply_to: '',
-                references: '',
-              }
+              template_id: config.template_id,
+              to_email: config.to_email,
+              to_name: config.to_name,
+              from_email: config.from_email,
+              from_name: config.from_name,
+              subject: config.subject,
+              variables: config.variables,
             }
           })
         }
@@ -74,6 +128,8 @@ export default function InternalTestPage() {
           1: { success: true, message: `Email sent! Message ID: ${result.data?.message_id || 'N/A'}` }
         }));
         console.log('[InternalTestPage] Email sent successfully:', result);
+        // Close sidebar on success
+        setShowEmailPreview(false);
       } else {
         setResults(prev => ({
           ...prev,
@@ -88,7 +144,7 @@ export default function InternalTestPage() {
       }));
       console.error('[InternalTestPage] Email send error:', error);
     } finally {
-      setLoading(prev => ({ ...prev, 1: false }));
+      setSendingEmail(false);
     }
   };
 
@@ -167,7 +223,7 @@ export default function InternalTestPage() {
    * Button configuration - defines label and action for each button
    */
   const buttonConfig = {
-    1: { label: 'Send Email', action: handleSendEmail, color: '#059669' },  // Green for email
+    1: { label: 'Send Email', action: handlePreviewEmail, color: '#059669' },  // Green for email - now opens preview
     2: { label: 'Send SMS', action: handleSendSMS, color: '#2563EB' },      // Blue for SMS
   };
 
@@ -297,7 +353,7 @@ export default function InternalTestPage() {
         }}>
           <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>Test Configuration</h3>
           <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
-            <li><strong>Send Email:</strong> To/From: tech@leasesplit.com</li>
+            <li><strong>Send Email:</strong> Opens preview sidebar → To: splitleasesharath@gmail.com</li>
             <li><strong>Send SMS:</strong> To: +1 (313) 757-5323</li>
             <li><strong>Email Template ID:</strong> 1756320055390x685004717147094100 ("General Email Template 4")</li>
             <li><strong>Email Placeholders:</strong> title, bodytext1, bodytext2, button_url, button_text, logourl, preheadertext</li>
@@ -307,6 +363,15 @@ export default function InternalTestPage() {
       </main>
 
       <Footer />
+
+      {/* Email Preview Sidebar */}
+      <EmailPreviewSidebar
+        isOpen={showEmailPreview}
+        onClose={() => setShowEmailPreview(false)}
+        onSend={handleSendEmail}
+        emailData={emailPreviewData}
+        loading={sendingEmail}
+      />
     </>
   );
 }
