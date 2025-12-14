@@ -131,6 +131,7 @@ export async function handleSend(
   // Process placeholders in the entire JSON string (with JSON-safe escaping)
   const processedJsonString = processTemplateJson(templateJsonString, allVariables);
   console.log('[send-email:send] Template processed successfully');
+  console.log('[send-email:send] Processed JSON payload:', processedJsonString);
 
   // Step 3: Parse and send via SendGrid
   console.log('[send-email:send] Step 3/3: Sending via SendGrid...');
