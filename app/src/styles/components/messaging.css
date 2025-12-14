@@ -40,6 +40,14 @@
    Page Layout
    ========================================================================== */
 
+/* Override main element defaults for messaging page - full width edge to edge */
+main.main-content:has(.messaging-page) {
+  max-width: 100%;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+}
+
 .messaging-page {
   height: calc(100vh - 80px);
   max-height: calc(100vh - 80px);
@@ -48,6 +56,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  width: 100%;
 }
 
 .messaging-layout {
