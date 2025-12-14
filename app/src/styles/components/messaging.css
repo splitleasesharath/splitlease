@@ -432,7 +432,7 @@ main.main-content:has(.messaging-page) {
 
 .message-input__field {
   flex: 1;
-  padding: 0.75rem 1rem;
+  padding: 10px 1rem; /* Centered: (44px - 22.5px line) / 2 ≈ 10px */
   font-size: 0.9375rem;
   font-family: inherit;
   line-height: 1.5;
@@ -441,9 +441,10 @@ main.main-content:has(.messaging-page) {
   outline: none;
   resize: none;
   overflow: hidden; /* Hide scrollbar by default */
-  min-height: 46px;
+  min-height: 44px;
   max-height: 91.5px; /* Approximately 3 lines + padding */
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  box-sizing: border-box;
 }
 
 .message-input__field:focus {

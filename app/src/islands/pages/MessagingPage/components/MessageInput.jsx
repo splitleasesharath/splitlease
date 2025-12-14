@@ -21,7 +21,8 @@ export default function MessageInput({ value, onChange, onSend, disabled, isSend
       // Calculate max height (3 lines + padding)
       const lineHeight = 22.5; // 1.5 * 15px font-size
       const maxLines = 3;
-      const maxHeight = lineHeight * maxLines + 24; // 24px for padding
+      const padding = 20; // 10px top + 10px bottom
+      const maxHeight = lineHeight * maxLines + padding;
 
       const newHeight = Math.min(textarea.scrollHeight, maxHeight);
       textarea.style.height = `${newHeight}px`;
