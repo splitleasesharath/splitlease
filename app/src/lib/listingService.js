@@ -119,6 +119,11 @@ export async function createListing(formData) {
   // NOTE: Bubble sync disabled - see /docs/tech-debt/BUBBLE_SYNC_DISABLED.md
   // The listing is now created directly in Supabase without Bubble synchronization
 
+  // Step 6: Trigger mockup proposal creation for first-time hosts (non-blocking)
+  triggerMockupProposalIfFirstListing(userId, data._id).catch(err => {
+    console.warn('[ListingService] ⚠️ Mockup proposal creation failed (non-blocking):', err.message);
+  });
+
   return data;
 }
 
@@ -168,6 +173,77 @@ async function linkListingToHost(userId, listingId) {
   }
 
   console.log('[ListingService] ✅ user Listings updated:', currentListings);
+}
+
+/**
+ * Trigger mockup proposal creation for first-time hosts
+ *
+ * Non-blocking operation - failures don't affect listing creation.
+ * Only triggers if this is the host's first listing.
+ *
+ * @param {string} userId - The user's Bubble _id
+ * @param {string} listingId - The newly created listing's _id
+ * @returns {Promise<void>}
+ */
+async function triggerMockupProposalIfFirstListing(userId, listingId) {
+  console.log('[ListingService] Step 6: Checking if first listing for mockup proposal...');
+
+  // Fetch user data to check listing count and get required fields
+  const { data: userData, error: fetchError } = await supabase
+    .from('user')
+    .select('_id, email, Listings, "Host Account"')
+    .eq('_id', userId)
+    .maybeSingle();
+
+  if (fetchError || !userData) {
+    console.warn('[ListingService] ⚠️ Could not fetch user for mockup proposal check:', fetchError?.message);
+    return;
+  }
+
+  const listings = userData.Listings || [];
+  const hostAccountId = userData['Host Account'];
+  const userEmail = userData.email;
+
+  // Only create mockup proposal for first listing
+  if (listings.length !== 1) {
+    console.log(`[ListingService] ⏭️ Skipping mockup proposal - not first listing (count: ${listings.length})`);
+    return;
+  }
+
+  if (!hostAccountId || !userEmail) {
+    console.warn('[ListingService] ⚠️ Missing hostAccountId or email for mockup proposal');
+    return;
+  }
+
+  console.log('[ListingService] 🎯 First listing detected, triggering mockup proposal creation...');
+
+  // Get the Supabase URL from environment or config
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+  // Call the listing edge function with createMockupProposal action
+  const response = await fetch(`${supabaseUrl}/functions/v1/listing`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      action: 'createMockupProposal',
+      payload: {
+        listingId: listingId,
+        hostAccountId: hostAccountId,
+        hostUserId: userId,
+        hostEmail: userEmail,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Edge function returned ${response.status}: ${errorText}`);
+  }
+
+  const result = await response.json();
+  console.log('[ListingService] ✅ Mockup proposal creation triggered:', result);
 }
 
 /**
