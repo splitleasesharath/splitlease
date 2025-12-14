@@ -18,12 +18,16 @@ export default function MessageInput({ value, onChange, onSend, disabled, isSend
     if (textarea) {
       // Reset height to auto to get the correct scrollHeight
       textarea.style.height = 'auto';
-      // Calculate line height (approximately 1.5 * font-size of 15px = 22.5px)
-      const lineHeight = 22.5;
+      // Calculate max height (3 lines + padding)
+      const lineHeight = 22.5; // 1.5 * 15px font-size
       const maxLines = 3;
-      const maxHeight = lineHeight * maxLines + 24; // 24px for padding (12px top + 12px bottom)
-      // Set the height to the smaller of scrollHeight or maxHeight
-      textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+      const maxHeight = lineHeight * maxLines + 24; // 24px for padding
+
+      const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+      textarea.style.height = `${newHeight}px`;
+
+      // Only show scrollbar when content exceeds max height
+      textarea.style.overflowY = textarea.scrollHeight > maxHeight ? 'auto' : 'hidden';
     }
   }, [value]);
 
@@ -73,11 +77,8 @@ export default function MessageInput({ value, onChange, onSend, disabled, isSend
         {isSending ? (
           <div className="message-input__sending-spinner"></div>
         ) : (
-          <svg width="20" height="20" viewBox="0 0 24 24">
-            <path
-              d="M2 21l21-9L2 3v7l15 2-15 2v7z"
-              fill={disabled || !value.trim() ? '#888888' : '#FFFFFF'}
-            />
+          <svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M2 21l21-9L2 3v7l15 2-15 2v7z" />
           </svg>
         )}
       </button>

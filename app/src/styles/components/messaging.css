@@ -440,7 +440,7 @@ main.main-content:has(.messaging-page) {
   border-radius: 1.25rem;
   outline: none;
   resize: none;
-  overflow-y: auto;
+  overflow: hidden; /* Hide scrollbar by default */
   min-height: 46px;
   max-height: 91.5px; /* Approximately 3 lines + padding */
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
@@ -486,6 +486,8 @@ main.main-content:has(.messaging-page) {
   justify-content: center;
   transition: background-color 0.2s ease, transform 0.1s ease;
   flex-shrink: 0;
+  overflow: visible;
+  padding: 0;
 }
 
 .message-input__send:hover:not(:disabled) {
@@ -505,6 +507,16 @@ main.main-content:has(.messaging-page) {
 .message-input__send svg {
   width: 20px;
   height: 20px;
+  display: block;
+  pointer-events: none;
+}
+
+.message-input__send svg path {
+  fill: white;
+}
+
+.message-input__send:disabled svg path {
+  fill: #888888;
 }
 
 /* Sending spinner animation */
