@@ -64,21 +64,27 @@ export async function handleSend(
     throw new Error('Missing SENDGRID_EMAIL_ENDPOINT environment variable');
   }
 
-  // Initialize Supabase client
+  // Initialize Supabase client with reference_table schema access
+  // The reference_table schema must be exposed in API settings (Dashboard > API > Exposed schemas)
   const supabase = createClient(supabaseUrl, supabaseServiceKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
     },
+    db: {
+      schema: 'reference_table',
+    },
   });
 
   // Step 1: Fetch template from database
-  // Note: Using raw SQL because reference_table schema is not in the default allowed schemas
   console.log('[send-email:send] Step 1/3: Fetching template...');
   console.log('[send-email:send] Looking up template_id:', template_id);
 
   const { data: template, error: templateError } = await supabase
-    .rpc('get_email_template', { p_template_id: template_id });
+    .from('zat_email_html_template_eg_sendbasicemailwf_')
+    .select('_id, Name, "Email Template JSON", Description, "Email Reference", Logo, Placeholder')
+    .eq('_id', template_id)
+    .single();
 
   console.log('[send-email:send] Query result - data:', template ? 'found' : 'null');
   console.log('[send-email:send] Query result - error:', templateError ? JSON.stringify(templateError) : 'none');
