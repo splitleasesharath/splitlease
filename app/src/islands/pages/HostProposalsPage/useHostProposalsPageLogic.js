@@ -13,6 +13,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
 import { supabase } from '../../../lib/supabase.js';
+import { isHost } from '../../../logic/rules/users/isHost.js';
 
 /**
  * Hook for Host Proposals Page business logic
@@ -80,7 +81,7 @@ export function useHostProposalsPageLogic() {
 
         // Check if user is a host
         const userType = userData['User Type'] || userData.userType;
-        if (userType !== 'Host') {
+        if (!isHost({ userType })) {
           console.warn('User is not a Host, redirecting...');
           setAuthState({
             isChecking: false,

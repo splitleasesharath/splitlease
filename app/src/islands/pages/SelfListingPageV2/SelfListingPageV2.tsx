@@ -21,6 +21,7 @@ import Toast, { useToast } from '../../shared/Toast.jsx';
 import { HostScheduleSelector } from '../../shared/HostScheduleSelector/HostScheduleSelector.jsx';
 import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
 import { createListing, saveDraft } from '../../../lib/listingService.js';
+import { isGuest } from '../../../logic/rules/users/isGuest.js';
 import { supabase } from '../../../lib/supabase.js';
 import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode } from '../../../lib/nycZipCodes';
 import './styles/SelfListingPageV2.css';
@@ -210,7 +211,7 @@ export function SelfListingPageV2() {
 
       console.log('🔐 SelfListingPageV2: User type:', userType);
 
-      if (userType === 'Guest') {
+      if (isGuest({ userType })) {
         // Guest users should not access this page - redirect to index
         console.log('❌ SelfListingPageV2: Guest user detected - redirecting to index');
         window.location.href = '/';
