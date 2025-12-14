@@ -82,6 +82,7 @@ export default function ProfileSidebar({
       <div className="profile-avatar-container">
         <AvatarWithBadge
           imageUrl={avatarUrl}
+          firstName={firstName}
           isEditorView={isEditorView}
           isVerified={verifications.govId}
           onChange={onAvatarChange}

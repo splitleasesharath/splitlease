@@ -196,6 +196,15 @@
   color: var(--sl-primary);
 }
 
+/* Initial letter avatar (matching LoggedInAvatar style) */
+.profile-avatar-initial {
+  background-color: #5B21B6;
+  color: white;
+  font-weight: 600;
+  font-size: 48px;
+  font-family: var(--sl-font-sans);
+}
+
 /* Profile Avatar Edit Badge */
 .profile-avatar-edit-badge {
   position: absolute;
