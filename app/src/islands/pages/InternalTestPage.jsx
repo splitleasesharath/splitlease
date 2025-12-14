@@ -37,7 +37,7 @@ export default function InternalTestPage() {
           body: JSON.stringify({
             action: 'send',
             payload: {
-              template_id: '1622655205490x843984560185147400', // "New Template" from emailtemplate_postmark_
+              template_id: '1756320055390x685004717147094100', // "General Email Template 4"
               to_email: 'splitleasesharath@gmail.com',
               to_name: 'Sharath',
               from_email: 'tech@leasesplit.com',
@@ -285,7 +285,7 @@ export default function InternalTestPage() {
           <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
             <li><strong>Send Email:</strong> To: splitleasesharath@gmail.com | From: tech@leasesplit.com</li>
             <li><strong>Send SMS:</strong> To: +1 (313) 757-5323</li>
-            <li><strong>Email Template ID:</strong> 1622655205490x843984560185147400 ("New Template")</li>
+            <li><strong>Email Template ID:</strong> 1756320055390x685004717147094100 ("General Email Template 4")</li>
             <li><strong>SMS Template ID:</strong> test_sms_template (needs valid ID)</li>
           </ul>
         </div>

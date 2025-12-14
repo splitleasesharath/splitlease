@@ -75,8 +75,9 @@ export async function handleSend(
   // Step 1: Fetch template from database
   console.log('[send-email:send] Step 1/3: Fetching template...');
   const { data: template, error: templateError } = await supabase
-    .from('emailtemplate_postmark_')
-    .select('_id, Name, HTML, Subject')
+    .schema('reference_table')
+    .from('zat_email_html_template_eg_sendbasicemailwf_')
+    .select('_id, Name, "HTML Content", Subject, "From Email", "From Name"')
     .eq('_id', template_id)
     .single();
 
@@ -88,7 +89,7 @@ export async function handleSend(
   const emailTemplate = template as EmailTemplate;
   console.log('[send-email:send] Template found:', emailTemplate.Name || template_id);
 
-  const htmlContent = emailTemplate.HTML;
+  const htmlContent = emailTemplate['HTML Content'];
   if (!htmlContent) {
     throw new Error(`Template ${template_id} has no HTML content`);
   }
@@ -105,10 +106,9 @@ export async function handleSend(
   const processedHtml = processTemplate(htmlContent, variables);
   console.log('[send-email:send] Template processed successfully');
 
-  // Determine email parameters (payload overrides defaults)
-  // Note: emailtemplate_postmark_ table doesn't have From Email/Name columns
-  const finalFromEmail = from_email || DEFAULT_FROM_EMAIL;
-  const finalFromName = from_name || DEFAULT_FROM_NAME;
+  // Determine email parameters (payload overrides template defaults)
+  const finalFromEmail = from_email || emailTemplate['From Email'] || DEFAULT_FROM_EMAIL;
+  const finalFromName = from_name || emailTemplate['From Name'] || DEFAULT_FROM_NAME;
   const finalSubject = providedSubject || emailTemplate.Subject || 'Message from Split Lease';
 
   // Also process subject if it contains placeholders
