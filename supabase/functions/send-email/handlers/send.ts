@@ -77,7 +77,7 @@ export async function handleSend(
   const { data: template, error: templateError } = await supabase
     .schema('reference_table')
     .from('zat_email_html_template_eg_sendbasicemailwf_')
-    .select('_id, Name, "HTML Content", Subject, "From Email", "From Name"')
+    .select('_id, Name, "Email Template JSON", Description, "Email Reference", Logo, Placeholder')
     .eq('_id', template_id)
     .single();
 
@@ -89,9 +89,9 @@ export async function handleSend(
   const emailTemplate = template as EmailTemplate;
   console.log('[send-email:send] Template found:', emailTemplate.Name || template_id);
 
-  const htmlContent = emailTemplate['HTML Content'];
+  const htmlContent = emailTemplate['Email Template JSON'];
   if (!htmlContent) {
-    throw new Error(`Template ${template_id} has no HTML content`);
+    throw new Error(`Template ${template_id} has no HTML content (Email Template JSON is empty)`);
   }
 
   // Step 2: Process template placeholders
@@ -106,10 +106,12 @@ export async function handleSend(
   const processedHtml = processTemplate(htmlContent, variables);
   console.log('[send-email:send] Template processed successfully');
 
-  // Determine email parameters (payload overrides template defaults)
-  const finalFromEmail = from_email || emailTemplate['From Email'] || DEFAULT_FROM_EMAIL;
-  const finalFromName = from_name || emailTemplate['From Name'] || DEFAULT_FROM_NAME;
-  const finalSubject = providedSubject || emailTemplate.Subject || 'Message from Split Lease';
+  // Determine email parameters (payload provides values, fallback to defaults)
+  // Note: The database table doesn't have Subject/From Email/From Name columns,
+  // so these must be provided in the payload or use defaults
+  const finalFromEmail = from_email || DEFAULT_FROM_EMAIL;
+  const finalFromName = from_name || DEFAULT_FROM_NAME;
+  const finalSubject = providedSubject || 'Message from Split Lease';
 
   // Also process subject if it contains placeholders
   const processedSubject = processTemplate(finalSubject, variables);
