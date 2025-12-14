@@ -38,14 +38,28 @@ export default function InternalTestPage() {
             action: 'send',
             payload: {
               template_id: '1756320055390x685004717147094100', // "General Email Template 4"
-              to_email: 'splitleasesharath@gmail.com',
-              to_name: 'Sharath',
+              to_email: 'tech@leasesplit.com',
+              to_name: 'Split Lease Tech',
               from_email: 'tech@leasesplit.com',
               from_name: 'Split Lease Tech',
               subject: 'Test Email from Internal Test Page',
               variables: {
-                test_message: 'This is a test email sent from the Internal Test Page.',
-                timestamp: new Date().toLocaleString(),
+                // Required template placeholders for "General Email Template 4"
+                title: 'Test Email Title',
+                bodytext1: 'This is the first paragraph of the test email. It demonstrates that the email template system is working correctly.',
+                bodytext2: 'This is the second paragraph with additional information. Sent at: ' + new Date().toLocaleString(),
+                button_url: 'https://splitlease.com',
+                button_text: 'Visit Split Lease',
+                logourl: 'https://splitlease.com/assets/images/split-lease-logo.png',
+                preheadertext: 'Test email from Split Lease Internal Test Page',
+                // Optional placeholders (can be empty)
+                warningmessage: '',
+                banner: '',
+                cc_email: '',
+                bcc_email: '',
+                message_id: '',
+                in_reply_to: '',
+                references: '',
               }
             }
           })
@@ -283,9 +297,10 @@ export default function InternalTestPage() {
         }}>
           <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>Test Configuration</h3>
           <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
-            <li><strong>Send Email:</strong> To: splitleasesharath@gmail.com | From: tech@leasesplit.com</li>
+            <li><strong>Send Email:</strong> To/From: tech@leasesplit.com</li>
             <li><strong>Send SMS:</strong> To: +1 (313) 757-5323</li>
             <li><strong>Email Template ID:</strong> 1756320055390x685004717147094100 ("General Email Template 4")</li>
+            <li><strong>Email Placeholders:</strong> title, bodytext1, bodytext2, button_url, button_text, logourl, preheadertext</li>
             <li><strong>SMS Template ID:</strong> test_sms_template (needs valid ID)</li>
           </ul>
         </div>
