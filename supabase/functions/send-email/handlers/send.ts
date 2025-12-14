@@ -11,7 +11,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateRequiredFields, validateEmail } from '../../_shared/validation.ts';
 import type { SendEmailPayload, EmailTemplate, SendEmailResult } from '../lib/types.ts';
-import { processTemplate, validatePlaceholders } from '../lib/templateProcessor.ts';
+import { processTemplateJson, validatePlaceholders } from '../lib/templateProcessor.ts';
 import { sendEmailRaw, isSuccessResponse } from '../lib/sendgridClient.ts';
 
 // Default sender configuration
@@ -128,8 +128,8 @@ export async function handleSend(
     console.warn('[send-email:send] Missing placeholder values:', missingPlaceholders.join(', '));
   }
 
-  // Process placeholders in the entire JSON string
-  const processedJsonString = processTemplate(templateJsonString, allVariables);
+  // Process placeholders in the entire JSON string (with JSON-safe escaping)
+  const processedJsonString = processTemplateJson(templateJsonString, allVariables);
   console.log('[send-email:send] Template processed successfully');
 
   // Step 3: Parse and send via SendGrid

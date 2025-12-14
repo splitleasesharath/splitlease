@@ -8,7 +8,7 @@
  */
 
 /**
- * Replace placeholders in a template string
+ * Replace placeholders in a template string (HTML content)
  * Supports both $$variable$$ (primary) and {{ variable }} (fallback) syntaxes
  *
  * @param template - The HTML template with placeholders
@@ -19,9 +19,37 @@ export function processTemplate(
   template: string,
   variables: Record<string, string>
 ): string {
+  return processTemplateInternal(template, variables, false);
+}
+
+/**
+ * Replace placeholders in a JSON template string
+ * Values are escaped to be JSON-safe (handles quotes, newlines, backslashes)
+ *
+ * @param template - The JSON template string with placeholders
+ * @param variables - Key-value pairs for replacement
+ * @returns Processed JSON string (valid JSON after replacement)
+ */
+export function processTemplateJson(
+  template: string,
+  variables: Record<string, string>
+): string {
+  return processTemplateInternal(template, variables, true);
+}
+
+/**
+ * Internal function to process templates with configurable escaping
+ */
+function processTemplateInternal(
+  template: string,
+  variables: Record<string, string>,
+  jsonSafe: boolean
+): string {
   if (!template) {
     throw new Error('Template content is empty');
   }
+
+  const escapeValue = jsonSafe ? escapeJsonString : escapeHtml;
 
   let processedTemplate = template;
 
@@ -34,11 +62,11 @@ export function processTemplate(
 
     if (value === undefined) {
       console.warn(`[templateProcessor] Dollar placeholder "${variableName}" not found in variables, keeping original`);
-      return match;
+      // For JSON templates, return empty string for missing placeholders to keep JSON valid
+      return jsonSafe ? '' : match;
     }
 
-    // Escape HTML in values to prevent XSS
-    return escapeHtml(String(value));
+    return escapeValue(String(value));
   });
 
   // Second pass: Replace {{ variable }} placeholders (Jinja-style fallback)
@@ -49,10 +77,10 @@ export function processTemplate(
 
     if (value === undefined) {
       console.warn(`[templateProcessor] Jinja placeholder "${variableName}" not found in variables, keeping original`);
-      return match;
+      return jsonSafe ? '' : match;
     }
 
-    return escapeHtml(String(value));
+    return escapeValue(String(value));
   });
 
   return processedTemplate;
@@ -71,6 +99,17 @@ function escapeHtml(text: string): string {
   };
 
   return text.replace(/[&<>"']/g, (char) => escapeMap[char] || char);
+}
+
+/**
+ * Escape a string to be safely embedded in a JSON string value
+ * Handles: quotes, backslashes, newlines, tabs, and other control characters
+ */
+function escapeJsonString(text: string): string {
+  // Use JSON.stringify to properly escape, then strip the surrounding quotes
+  const escaped = JSON.stringify(text);
+  // JSON.stringify adds quotes around the string, remove them
+  return escaped.slice(1, -1);
 }
 
 /**
