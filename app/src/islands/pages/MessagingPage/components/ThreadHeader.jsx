@@ -34,9 +34,22 @@ export default function ThreadHeader({ info, onBack, isMobile }) {
           className="thread-header__back"
           onClick={onBack}
           aria-label="Back to messages"
+          style={{ minWidth: '40px', minHeight: '40px' }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <polyline points="15,18 9,12 15,6" fill="none" stroke="#6B4FA1" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            style={{ display: 'block', width: '24px', height: '24px' }}
+          >
+            <path
+              d="M15 18L9 12L15 6"
+              fill="none"
+              stroke="#6B4FA1"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
       )}
