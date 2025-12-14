@@ -82,7 +82,7 @@ export async function handleSend(
 
   const { data: template, error: templateError } = await supabase
     .from('zat_email_html_template_eg_sendbasicemailwf_')
-    .select('_id, Name, "Email Template JSON", Description, "Email Reference", Logo, Placeholder')
+    .select('_id, "Name", "Email Template JSON", "Description", "Email Reference", "Logo", "Placeholder"')
     .eq('_id', template_id)
     .single();
 
