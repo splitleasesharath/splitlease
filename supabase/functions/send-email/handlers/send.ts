@@ -12,7 +12,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateRequiredFields, validateEmail } from '../../_shared/validation.ts';
 import type { SendEmailPayload, EmailTemplate, SendEmailResult } from '../lib/types.ts';
 import { processTemplate, validatePlaceholders } from '../lib/templateProcessor.ts';
-import { buildSendGridRequestBody, sendEmail, isSuccessResponse } from '../lib/sendgridClient.ts';
+import { sendEmailRaw, isSuccessResponse } from '../lib/sendgridClient.ts';
 
 // Default sender configuration
 const DEFAULT_FROM_EMAIL = 'noreply@splitlease.com';
@@ -98,46 +98,52 @@ export async function handleSend(
   const emailTemplate = template as EmailTemplate;
   console.log('[send-email:send] Template found:', emailTemplate.Name || template_id);
 
-  const htmlContent = emailTemplate['Email Template JSON'];
-  if (!htmlContent) {
-    throw new Error(`Template ${template_id} has no HTML content (Email Template JSON is empty)`);
+  const templateJsonString = emailTemplate['Email Template JSON'];
+  if (!templateJsonString) {
+    throw new Error(`Template ${template_id} has no content (Email Template JSON is empty)`);
   }
 
   // Step 2: Process template placeholders
+  // The template is a SendGrid JSON payload with $$placeholder$$ variables
   console.log('[send-email:send] Step 2/3: Processing template placeholders...');
 
+  // Build the complete variables object, merging payload values with provided overrides
+  const allVariables: Record<string, string> = {
+    ...variables,
+    // Override with explicit payload values if provided
+    to_email: to_email,
+    from_email: from_email || DEFAULT_FROM_EMAIL,
+    from_name: from_name || DEFAULT_FROM_NAME,
+    subject: providedSubject || variables.subject || 'Message from Split Lease',
+  };
+
+  // Add to_name if provided
+  if (to_name) {
+    allVariables.to_name = to_name;
+  }
+
   // Validate all placeholders have values (warning only)
-  const missingPlaceholders = validatePlaceholders(htmlContent, variables);
+  const missingPlaceholders = validatePlaceholders(templateJsonString, allVariables);
   if (missingPlaceholders.length > 0) {
     console.warn('[send-email:send] Missing placeholder values:', missingPlaceholders.join(', '));
   }
 
-  const processedHtml = processTemplate(htmlContent, variables);
+  // Process placeholders in the entire JSON string
+  const processedJsonString = processTemplate(templateJsonString, allVariables);
   console.log('[send-email:send] Template processed successfully');
 
-  // Determine email parameters (payload provides values, fallback to defaults)
-  // Note: The database table doesn't have Subject/From Email/From Name columns,
-  // so these must be provided in the payload or use defaults
-  const finalFromEmail = from_email || DEFAULT_FROM_EMAIL;
-  const finalFromName = from_name || DEFAULT_FROM_NAME;
-  const finalSubject = providedSubject || 'Message from Split Lease';
-
-  // Also process subject if it contains placeholders
-  const processedSubject = processTemplate(finalSubject, variables);
-
-  // Step 3: Send via SendGrid
+  // Step 3: Parse and send via SendGrid
   console.log('[send-email:send] Step 3/3: Sending via SendGrid...');
 
-  const sendGridBody = buildSendGridRequestBody({
-    toEmail: to_email,
-    toName: to_name,
-    fromEmail: finalFromEmail,
-    fromName: finalFromName,
-    subject: processedSubject,
-    htmlContent: processedHtml,
-  });
+  let sendGridBody: Record<string, unknown>;
+  try {
+    sendGridBody = JSON.parse(processedJsonString);
+  } catch (parseError) {
+    console.error('[send-email:send] Failed to parse processed template as JSON:', parseError);
+    throw new Error(`Template ${template_id} produced invalid JSON after placeholder processing`);
+  }
 
-  const sendGridResponse = await sendEmail(sendgridApiKey, sendgridEmailEndpoint, sendGridBody);
+  const sendGridResponse = await sendEmailRaw(sendgridApiKey, sendgridEmailEndpoint, sendGridBody);
 
   if (!isSuccessResponse(sendGridResponse)) {
     const errorMessage = typeof sendGridResponse.body === 'object'
