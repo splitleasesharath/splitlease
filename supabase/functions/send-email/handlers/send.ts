@@ -73,15 +73,12 @@ export async function handleSend(
   });
 
   // Step 1: Fetch template from database
+  // Note: Using raw SQL because reference_table schema is not in the default allowed schemas
   console.log('[send-email:send] Step 1/3: Fetching template...');
   console.log('[send-email:send] Looking up template_id:', template_id);
 
   const { data: template, error: templateError } = await supabase
-    .schema('reference_table')
-    .from('zat_email_html_template_eg_sendbasicemailwf_')
-    .select('_id, Name, "Email Template JSON", Description, "Email Reference", Logo, Placeholder')
-    .eq('_id', template_id)
-    .single();
+    .rpc('get_email_template', { p_template_id: template_id });
 
   console.log('[send-email:send] Query result - data:', template ? 'found' : 'null');
   console.log('[send-email:send] Query result - error:', templateError ? JSON.stringify(templateError) : 'none');
