@@ -69,6 +69,7 @@ This plan implements an event-driven workflow orchestration system using Postgre
 4. **Workflow definitions in database** - Centralized, versionable, no redeploy to change
 5. **Event-driven triggers** - pg_net for immediate execution, pg_cron as backup
 6. **Frontend triggers workflows by name** - Decoupled from implementation details
+7. **Template variable validation at enqueue** - Catch missing placeholders before workflow runs, fail fast
 
 ### Relationship to Existing Infrastructure
 
@@ -450,7 +451,7 @@ GRANT EXECUTE ON FUNCTION move_failed_workflows_to_dlq() TO service_role;
 
 **File**: `supabase/functions/workflow-enqueue/index.ts`
 
-This function receives workflow requests from the frontend, validates them, and enqueues to pgmq.
+This function receives workflow requests from the frontend, validates them against both `required_fields` AND all `{{template_variables}}` found in step definitions, then enqueues to pgmq.
 
 ```typescript
 /**
@@ -458,6 +459,12 @@ This function receives workflow requests from the frontend, validates them, and 
  *
  * Receives workflow requests from frontend, validates payload against
  * workflow definition, and enqueues to pgmq for orchestration.
+ *
+ * VALIDATION:
+ * 1. required_fields - Explicit fields defined in workflow definition
+ * 2. template_variables - ALL {{placeholders}} extracted from step payload_templates
+ *
+ * This dual validation ensures no workflow starts with missing data.
  *
  * Request: { action: "enqueue", payload: { workflow: "name", data: {...} } }
  * Response: { execution_id, workflow_name, status: "queued" }
@@ -470,6 +477,90 @@ import { ValidationError, formatErrorResponse, getStatusCodeFromError } from "..
 import { validateRequired } from "../_shared/validation.ts";
 
 const ALLOWED_ACTIONS = ["enqueue", "health", "status"] as const;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Template Variable Extraction & Validation
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Recursively extract all {{variable}} placeholders from any object/array/string
+ * Supports nested paths like {{step_0_result.message_id}}
+ */
+function extractTemplateVariables(obj: unknown, variables: Set<string> = new Set()): Set<string> {
+    if (typeof obj === "string") {
+        // Match {{variable}} or {{nested.path}}
+        const regex = /\{\{\s*([\w.]+)\s*\}\}/g;
+        let match;
+        while ((match = regex.exec(obj)) !== null) {
+            variables.add(match[1]);
+        }
+    } else if (Array.isArray(obj)) {
+        for (const item of obj) {
+            extractTemplateVariables(item, variables);
+        }
+    } else if (typeof obj === "object" && obj !== null) {
+        for (const value of Object.values(obj)) {
+            extractTemplateVariables(value, variables);
+        }
+    }
+    return variables;
+}
+
+/**
+ * Validate that all template variables are provided in data
+ * Excludes step_N_result variables (populated at runtime by orchestrator)
+ */
+function validateTemplateVariables(
+    steps: unknown[],
+    data: Record<string, unknown>
+): { valid: boolean; missing: string[]; stepResultVars: string[] } {
+    const allVariables = new Set<string>();
+
+    // Extract from all steps
+    for (const step of steps) {
+        extractTemplateVariables(step, allVariables);
+    }
+
+    const missing: string[] = [];
+    const stepResultVars: string[] = [];
+
+    for (const variable of allVariables) {
+        // Variables like step_0_result, step_1_result.message_id are populated at runtime
+        if (variable.startsWith("step_")) {
+            stepResultVars.push(variable);
+            continue;
+        }
+
+        // Check if variable exists in data (handle nested paths)
+        const value = getNestedValue(data, variable);
+        if (value === undefined) {
+            missing.push(variable);
+        }
+    }
+
+    return {
+        valid: missing.length === 0,
+        missing,
+        stepResultVars
+    };
+}
+
+/**
+ * Get nested value from object using dot notation
+ * e.g., getNestedValue({ user: { email: 'x' } }, 'user.email') => 'x'
+ */
+function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
+    return path.split(".").reduce((current: unknown, key: string) => {
+        if (current && typeof current === "object") {
+            return (current as Record<string, unknown>)[key];
+        }
+        return undefined;
+    }, obj);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
     // CORS
@@ -541,18 +632,34 @@ async function handleEnqueue(supabase: any, payload: any) {
         throw new ValidationError(`Workflow not found: ${workflow}`);
     }
 
-    // 2. Validate required fields
-    const missingFields = (definition.required_fields || [])
+    // 2. Validate required_fields (explicit list in definition)
+    const missingRequiredFields = (definition.required_fields || [])
         .filter((field: string) => data[field] === undefined);
 
-    if (missingFields.length > 0) {
-        throw new ValidationError(`Missing required fields: ${missingFields.join(", ")}`);
+    if (missingRequiredFields.length > 0) {
+        throw new ValidationError(
+            `Missing required fields: ${missingRequiredFields.join(", ")}`
+        );
     }
 
-    // 3. Generate correlation ID for idempotency
+    // 3. Validate ALL template variables in steps (comprehensive check)
+    const templateValidation = validateTemplateVariables(definition.steps, data);
+
+    if (!templateValidation.valid) {
+        throw new ValidationError(
+            `Missing template variables: ${templateValidation.missing.join(", ")}. ` +
+            `These placeholders exist in workflow steps but were not provided in data.`
+        );
+    }
+
+    console.log(`[workflow-enqueue] Validation passed for '${workflow}'`);
+    console.log(`[workflow-enqueue] - Required fields: ${definition.required_fields?.length || 0}`);
+    console.log(`[workflow-enqueue] - Template variables validated: ${templateValidation.stepResultVars.length} runtime vars skipped`);
+
+    // 4. Generate correlation ID for idempotency
     const correlationId = correlation_id || `${workflow}:${Date.now()}:${crypto.randomUUID()}`;
 
-    // 4. Check idempotency
+    // 5. Check idempotency
     const { data: existing } = await supabase
         .from("workflow_executions")
         .select("id, status")
@@ -568,7 +675,7 @@ async function handleEnqueue(supabase: any, payload: any) {
         };
     }
 
-    // 5. Create execution record
+    // 6. Create execution record
     const { data: execution, error: execError } = await supabase
         .from("workflow_executions")
         .insert({
@@ -589,7 +696,7 @@ async function handleEnqueue(supabase: any, payload: any) {
         throw new Error(`Failed to create execution: ${execError.message}`);
     }
 
-    // 6. Enqueue to pgmq
+    // 7. Enqueue to pgmq
     const queueMessage = {
         execution_id: execution.id,
         workflow_name: workflow,
@@ -639,6 +746,57 @@ async function handleStatus(supabase: any, payload: any) {
     return execution;
 }
 ```
+
+### 2.1.1 Validation Behavior
+
+The enqueue function now performs **two levels of validation**:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DUAL VALIDATION AT ENQUEUE TIME                           │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  LEVEL 1: required_fields (Explicit)                                        │
+│  ────────────────────────────────────                                       │
+│  Defined in workflow_definitions table:                                     │
+│  required_fields: ['guest_email', 'guest_name', 'email_template_id']        │
+│                                                                             │
+│  ✓ Fast check against explicit list                                         │
+│  ✓ Documents "must have" fields for the workflow                            │
+│  ✗ May not catch all placeholders if definition is incomplete               │
+│                                                                             │
+│  LEVEL 2: template_variables (Comprehensive)                                │
+│  ───────────────────────────────────────────                                │
+│  Scans ALL {{placeholders}} in ALL steps:                                   │
+│                                                                             │
+│  steps: [                                                                   │
+│    { payload_template: { "to_email": "{{guest_email}}" } },                 │
+│    { payload_template: { "address": "{{listing_address}}" } }  ◄── FOUND    │
+│  ]                                                                          │
+│                                                                             │
+│  ✓ Catches ALL placeholders regardless of required_fields                   │
+│  ✓ Prevents silent "" values in emails                                      │
+│  ✓ Skips step_N_result.* variables (populated at runtime)                   │
+│                                                                             │
+│  RESULT: If ANY variable is missing → 400 error with specific message       │
+│                                                                             │
+│  Error: "Missing template variables: listing_address. These placeholders    │
+│          exist in workflow steps but were not provided in data."            │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.1.2 Runtime Variables (Skipped)
+
+Variables that start with `step_` are skipped during validation because they're populated by the orchestrator at runtime:
+
+| Variable Pattern | Populated By | When |
+|------------------|--------------|------|
+| `{{step_0_result}}` | Orchestrator | After Step 0 completes |
+| `{{step_0_result.message_id}}` | Orchestrator | After Step 0 completes |
+| `{{step_1_result.sent_at}}` | Orchestrator | After Step 1 completes |
+
+These are legitimate placeholders that can't be validated at enqueue time.
 
 ### 2.2 Workflow Orchestrator Edge Function
 
@@ -1387,5 +1545,32 @@ This implementation creates a complete event-driven workflow orchestration syste
 5. **pg_net trigger** provides immediate execution
 6. **pg_cron backup** ensures processing even if triggers fail
 7. **workflow_executions** provides audit trail and status tracking
+8. **Dual validation** at enqueue catches missing data before workflow starts (required_fields + template variable scanning)
 
 The architecture mirrors Bubble's Backend Workflows but with full control, PostgreSQL durability, and no vendor lock-in.
+
+---
+
+## Validation Summary
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    FAIL-FAST VALIDATION STRATEGY                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  WITHOUT VALIDATION:                                                        │
+│  ───────────────────                                                        │
+│  Frontend sends data ──► Workflow starts ──► Step 2 fails silently          │
+│                                              (blank email sent)             │
+│                                                                             │
+│  WITH VALIDATION (This Plan):                                               │
+│  ────────────────────────────                                               │
+│  Frontend sends data ──► Enqueue validates ──► 400 Error (immediate)        │
+│                          │                                                  │
+│                          ├─ Check required_fields                           │
+│                          └─ Scan ALL {{placeholders}} in ALL steps          │
+│                                                                             │
+│  Result: Bugs caught at trigger time, not at Step N execution time          │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
