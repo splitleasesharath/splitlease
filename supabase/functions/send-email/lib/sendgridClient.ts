@@ -61,6 +61,32 @@ export async function sendEmail(
   console.log('[sendgridClient] To:', requestBody.personalizations[0].to[0].email);
   console.log('[sendgridClient] Subject:', requestBody.personalizations[0].subject);
 
+  return sendEmailRaw(apiKey, emailEndpoint, requestBody);
+}
+
+/**
+ * Send email via SendGrid API with raw JSON body
+ * Used when the template already contains the full SendGrid payload structure
+ *
+ * @param apiKey - SendGrid API key
+ * @param emailEndpoint - SendGrid API endpoint
+ * @param requestBody - Pre-built SendGrid request body (already processed)
+ * @returns SendGrid response
+ */
+export async function sendEmailRaw(
+  apiKey: string,
+  emailEndpoint: string,
+  requestBody: Record<string, unknown>
+): Promise<SendGridResponse> {
+  console.log('[sendgridClient] Sending email via SendGrid (raw)...');
+
+  // Try to extract to/subject for logging
+  const personalizations = requestBody.personalizations as Array<{ to?: Array<{ email?: string }>; subject?: string }> | undefined;
+  if (personalizations?.[0]) {
+    console.log('[sendgridClient] To:', personalizations[0].to?.[0]?.email || 'unknown');
+    console.log('[sendgridClient] Subject:', personalizations[0].subject || (requestBody.subject as string) || 'unknown');
+  }
+
   const response = await fetch(emailEndpoint, {
     method: 'POST',
     headers: {
