@@ -41,6 +41,20 @@ interface SignupAdditionalData {
   phoneNumber?: string;
 }
 
+/**
+ * Map simple user type values to reference_table.os_user_type.display values
+ * The foreign key constraint fk_user_type_current requires exact match to display column
+ */
+function mapUserTypeToDisplay(userType: string): string {
+  const mapping: Record<string, string> = {
+    'Host': 'A Host (I have a space available to rent)',
+    'Guest': 'A Guest (I would like to rent a space)',
+    'host': 'A Host (I have a space available to rent)',
+    'guest': 'A Guest (I would like to rent a space)',
+  };
+  return mapping[userType] || 'A Guest (I would like to rent a space)';
+}
+
 export async function handleSignup(
   supabaseUrl: string,
   supabaseServiceKey: string,
@@ -245,8 +259,8 @@ export async function handleSignup(
       'Name - Full': fullName,
       'Date of Birth': dateOfBirth,
       'Phone Number (as text)': phoneNumber || null,
-      'Type - User Current': userType || 'Guest',
-      'Type - User Signup': userType || 'Guest',
+      'Type - User Current': mapUserTypeToDisplay(userType || 'Guest'),
+      'Type - User Signup': mapUserTypeToDisplay(userType || 'Guest'),
       'Account - Host / Landlord': generatedHostId,
       'Created Date': now,
       'Modified Date': now,
