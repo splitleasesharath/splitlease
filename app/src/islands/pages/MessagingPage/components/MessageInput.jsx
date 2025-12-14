@@ -1,12 +1,32 @@
 /**
  * MessageInput Component
  *
- * Message input field with send button.
- * Supports Enter key to send (Shift+Enter for new line in future textarea version).
- * Has character limit of 1000 characters.
+ * Auto-growing textarea with send button.
+ * - Grows vertically up to 3 lines, then shows scrollbar
+ * - Enter sends message, Shift+Enter adds new line
+ * - Has character limit of 1000 characters
  */
 
+import { useRef, useEffect } from 'react';
+
 export default function MessageInput({ value, onChange, onSend, disabled, isSending }) {
+  const textareaRef = useRef(null);
+
+  // Auto-resize textarea based on content (up to 3 lines)
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      // Reset height to auto to get the correct scrollHeight
+      textarea.style.height = 'auto';
+      // Calculate line height (approximately 1.5 * font-size of 15px = 22.5px)
+      const lineHeight = 22.5;
+      const maxLines = 3;
+      const maxHeight = lineHeight * maxLines + 24; // 24px for padding (12px top + 12px bottom)
+      // Set the height to the smaller of scrollHeight or maxHeight
+      textarea.style.height = `${Math.min(textarea.scrollHeight, maxHeight)}px`;
+    }
+  }, [value]);
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -23,8 +43,8 @@ export default function MessageInput({ value, onChange, onSend, disabled, isSend
   return (
     <div className="message-input">
       <div className="message-input__container">
-        <input
-          type="text"
+        <textarea
+          ref={textareaRef}
           className="message-input__field"
           placeholder={disabled ? 'Select a conversation to send a message' : 'Type a message...'}
           value={value}
@@ -33,6 +53,7 @@ export default function MessageInput({ value, onChange, onSend, disabled, isSend
           disabled={disabled}
           maxLength={maxCharacters}
           aria-label="Message input"
+          rows={1}
         />
 
         {/* Character count indicator (shows when near limit) */}

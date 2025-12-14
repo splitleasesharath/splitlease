@@ -416,20 +416,33 @@ main.main-content:has(.messaging-page) {
 
 .message-input {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   padding: 1rem 1.5rem;
   border-top: 1px solid var(--color-border);
   background-color: var(--color-background);
   gap: 0.75rem;
 }
 
+.message-input__container {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+}
+
 .message-input__field {
   flex: 1;
   padding: 0.75rem 1rem;
   font-size: 0.9375rem;
+  font-family: inherit;
+  line-height: 1.5;
   border: 1px solid var(--color-border);
-  border-radius: 100px;
+  border-radius: 1.25rem;
   outline: none;
+  resize: none;
+  overflow-y: auto;
+  min-height: 46px;
+  max-height: 91.5px; /* Approximately 3 lines + padding */
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -445,6 +458,19 @@ main.main-content:has(.messaging-page) {
 
 .message-input__field::placeholder {
   color: var(--color-text-secondary);
+}
+
+.message-input__count {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.5rem;
+  font-size: 0.6875rem;
+  color: var(--color-text-secondary);
+}
+
+.message-input__count--limit {
+  color: var(--color-alert);
+  font-weight: 600;
 }
 
 .message-input__send {
@@ -702,6 +728,8 @@ main.main-content:has(.messaging-page) {
   .message-input__field {
     padding: 0.625rem 0.875rem;
     font-size: 0.875rem;
+    min-height: 40px;
+    max-height: 80px; /* Approximately 3 lines on mobile */
   }
 
   .message-input__send {
