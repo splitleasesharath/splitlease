@@ -38,8 +38,8 @@ export default function InternalTestPage() {
             action: 'send',
             payload: {
               template_id: '1756320055390x685004717147094100', // "General Email Template 4"
-              to_email: 'tech@leasesplit.com',
-              to_name: 'Split Lease Tech',
+              to_email: 'splitleasesharath@gmail.com',
+              to_name: 'Sharath',
               from_email: 'tech@leasesplit.com',
               from_name: 'Split Lease Tech',
               subject: 'Test Email from Internal Test Page',
