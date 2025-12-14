@@ -497,7 +497,8 @@ main.main-content:has(.messaging-page) {
 }
 
 .message-input__send:disabled {
-  background-color: var(--color-border);
+  background-color: #E5E5E5;
+  color: #999999;
   cursor: not-allowed;
 }
 
