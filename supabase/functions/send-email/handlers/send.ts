@@ -122,6 +122,9 @@ export async function handleSend(
     allVariables.to_name = to_name;
   }
 
+  // Log placeholder replacements for debugging
+  console.log('[send-email:send] Placeholder replacements:', JSON.stringify(allVariables, null, 2));
+
   // Validate all placeholders have values (warning only)
   const missingPlaceholders = validatePlaceholders(templateJsonString, allVariables);
   if (missingPlaceholders.length > 0) {
