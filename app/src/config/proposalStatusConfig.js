@@ -14,11 +14,15 @@ export const PROPOSAL_STATUS = {
   HOST_COUNTEROFFER: 'Host Counteroffer Submitted / Awaiting Guest Review',
   PROPOSAL_ACCEPTED_DRAFTING: 'Proposal or Counteroffer Accepted / Drafting Lease Documents',
   LEASE_DOCUMENTS_SENT: 'Lease Documents Sent for Review',
-  INITIAL_PAYMENT_LEASE_ACTIVATED: 'Initial Payment Submitted / Lease activated',
+  INITIAL_PAYMENT_LEASE_ACTIVATED: 'Initial Payment Submitted / Lease activated ',
   CANCELLED_BY_GUEST: 'Proposal Cancelled by Guest',
   CANCELLED_BY_SPLITLEASE: 'Proposal Cancelled by Split Lease',
   REJECTED_BY_HOST: 'Proposal Rejected by Host',
 };
+
+function normalizeStatusText(statusText) {
+  return typeof statusText === 'string' ? statusText.trim() : statusText;
+}
 
 export const STATUS_CONFIG = {
   [PROPOSAL_STATUS.PENDING]: {
@@ -83,8 +87,13 @@ export const STATUS_CONFIG = {
   },
 };
 
+const STATUS_CONFIG_BY_NORMALIZED_STATUS = new Map(
+  Object.entries(STATUS_CONFIG).map(([statusText, config]) => [normalizeStatusText(statusText), config])
+);
+
 export function getStatusConfig(statusText) {
-  return STATUS_CONFIG[statusText] || {
+  const normalized = normalizeStatusText(statusText);
+  return STATUS_CONFIG_BY_NORMALIZED_STATUS.get(normalized) || {
     usualOrder: 0,
     guestAction1: 'Invisible',
     guestAction2: 'Invisible',

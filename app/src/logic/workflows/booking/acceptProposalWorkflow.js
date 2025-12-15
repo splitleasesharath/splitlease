@@ -22,6 +22,8 @@
  * })
  * // => { success: true, message: 'Proposal accepted', updated: true }
  */
+import { PROPOSAL_STATUSES } from '../../constants/proposalStatuses.js'
+
 export async function acceptProposalWorkflow({
   supabase,
   proposal,
@@ -59,7 +61,7 @@ export async function acceptProposalWorkflow({
     const { error } = await supabase
       .from('proposal')
       .update({
-        'Proposal Status': 'Accepted',
+        'Status': PROPOSAL_STATUSES.PROPOSAL_OR_COUNTEROFFER_ACCEPTED.key,
         'Modified Date': new Date().toISOString()
       })
       .eq('_id', proposal.id)

@@ -14,6 +14,7 @@
  */
 
 import { supabase } from '../supabase.js';
+import { PROPOSAL_STATUSES } from '../constants/proposalStatuses.js';
 
 // In-memory cache for status configurations
 let statusConfigCache = null;
@@ -41,6 +42,7 @@ export async function fetchStatusConfigurations() {
   fetchPromise = (async () => {
     try {
       const { data, error } = await supabase
+        .schema('reference_table')
         .from('os_proposal_status')
         .select(`
           id,
@@ -65,7 +67,7 @@ export async function fetchStatusConfigurations() {
 
       // Also create a lookup map by display value (matches proposal.Status)
       statusConfigByDisplayCache = new Map(
-        (data || []).map(config => [config.display, config])
+        (data || []).map(config => [typeof config.display === 'string' ? config.display.trim() : config.display, config])
       );
 
       console.log(`fetchStatusConfigurations: Cached ${statusConfigCache.length} status configurations`);
@@ -185,13 +187,17 @@ export function shouldHideVirtualMeetingButton(statusDisplay) {
 
   const normalized = typeof statusDisplay === 'string' ? statusDisplay.trim() : statusDisplay;
 
+  const leaseActivatedStatus = PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key.trim();
+  const suggestedAwaitingRentalAppStatus = PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP.key.trim();
+  const suggestedPendingConfirmationStatus = PROPOSAL_STATUSES.SUGGESTED_PROPOSAL_PENDING_CONFIRMATION.key.trim();
+
   // Hidden for rejected/cancelled/activated statuses
   const hiddenStatuses = [
-    'Proposal Rejected by Host',
-    'Proposal Cancelled by Split Lease',
-    'Initial Payment Submitted / Lease activated',
-    'Proposal Submitted for guest by Split Lease - Awaiting Rental Application',
-    'Proposal Submitted for guest by Split Lease - Pending Confirmation'
+    PROPOSAL_STATUSES.REJECTED_BY_HOST.key,
+    PROPOSAL_STATUSES.CANCELLED_BY_SPLITLEASE.key,
+    leaseActivatedStatus,
+    suggestedAwaitingRentalAppStatus,
+    suggestedPendingConfirmationStatus
   ];
 
   return hiddenStatuses.includes(normalized);
@@ -225,11 +231,11 @@ export function getButtonConfigForProposal(proposal) {
   const guestDocsFinalized = proposal['guest documents review finalized?'] === true;
   const idDocsSubmitted = proposal.guest?.['ID documents submitted?'] === true;
   const hasHouseManual = proposal.listing?.hasHouseManual === true;
-  const isCounteroffer = status === 'Host Counteroffer Submitted / Awaiting Guest Review';
+  const isCounteroffer = status === PROPOSAL_STATUSES.COUNTEROFFER_SUBMITTED_AWAITING_GUEST_REVIEW.key;
   const isTerminal = sortOrder === -1;
-  const isRejectedByHost = status === 'Proposal Rejected by Host';
+  const isRejectedByHost = status === PROPOSAL_STATUSES.REJECTED_BY_HOST.key;
   const isSLSuggested = isSuggestedProposalFromConfig(status);
-  const isLeaseDocsReview = status === 'Lease Documents Sent for Review';
+  const isLeaseDocsReview = status === PROPOSAL_STATUSES.LEASE_DOCUMENTS_SENT_FOR_REVIEW.key;
 
   // === Guest Action 1 Button ===
   let guestAction1 = { visible: false, label: null, action: null, style: null };
@@ -327,7 +333,7 @@ export function getButtonConfigForProposal(proposal) {
   let cancelButton = { visible: false, label: 'Cancel Proposal', action: 'cancel_proposal', style: null, disabled: false };
 
   // Check for lease-activated status (completed flow - no cancel button)
-  const isLeaseActivated = status === 'Initial Payment Submitted / Lease activated';
+  const isLeaseActivated = status === PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key.trim();
 
   // Determine cancel button visibility and label based on Bubble conditionals
   if (isTerminal) {

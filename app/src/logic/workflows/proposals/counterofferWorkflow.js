@@ -17,6 +17,7 @@
 
 import { supabase } from '../../../lib/supabase.js';
 import { hasReviewableCounteroffer } from '../../rules/proposals/proposalRules.js';
+import { PROPOSAL_STATUSES } from '../../constants/proposalStatuses.js';
 
 /**
  * Accept a counteroffer
@@ -50,7 +51,7 @@ export async function acceptCounteroffer(proposalId) {
   // Update proposal status to accepted
   const now = new Date().toISOString();
   const updateData = {
-    'Status': 'Proposal or Counteroffer Accepted / Drafting Lease Documents',
+    'Status': PROPOSAL_STATUSES.PROPOSAL_OR_COUNTEROFFER_ACCEPTED.key,
     'Modified Date': now,
     'Is Finalized': true
   };
@@ -91,7 +92,7 @@ export async function declineCounteroffer(proposalId, reason = 'Counteroffer dec
 
   const now = new Date().toISOString();
   const updateData = {
-    'Status': 'Proposal Cancelled by Guest',
+    'Status': PROPOSAL_STATUSES.CANCELLED_BY_GUEST.key,
     'Deleted': true,
     'Modified Date': now,
     'reason for cancellation': reason

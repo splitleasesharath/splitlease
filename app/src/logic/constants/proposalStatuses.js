@@ -187,7 +187,7 @@ export const PROPOSAL_STATUSES = {
 
   // usualOrder 7: Initial Payment / Lease Activated
   INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED: {
-    key: 'Initial Payment Submitted / Lease activated',
+    key: 'Initial Payment Submitted / Lease activated ',
     color: 'green',
     label: 'Lease Activated',
     stage: 6,
@@ -247,7 +247,7 @@ export function getStatusConfig(statusKey) {
   const normalizedKey = normalizeStatusKey(statusKey);
 
   const config = Object.values(PROPOSAL_STATUSES).find(
-    s => s.key === normalizedKey
+    s => normalizeStatusKey(s.key) === normalizedKey
   );
 
   return config || {
@@ -290,7 +290,8 @@ export function shouldShowStatusBanner(statusKey) {
   if (!statusKey) return false;
 
   const usualOrder = getUsualOrder(statusKey);
-  const isProposalSubmitted = statusKey === PROPOSAL_STATUSES.PROPOSAL_SUBMITTED_AWAITING_RENTAL_APP.key;
+  const normalizedKey = normalizeStatusKey(statusKey);
+  const isProposalSubmitted = normalizedKey === normalizeStatusKey(PROPOSAL_STATUSES.PROPOSAL_SUBMITTED_AWAITING_RENTAL_APP.key);
 
   return usualOrder >= 3 || isProposalSubmitted;
 }
@@ -333,7 +334,7 @@ export function isTerminalStatus(statusKey) {
  */
 export function isCompletedStatus(statusKey) {
   const normalizedKey = normalizeStatusKey(statusKey);
-  return normalizedKey === PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key;
+  return normalizedKey === normalizeStatusKey(PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key);
 }
 
 /**

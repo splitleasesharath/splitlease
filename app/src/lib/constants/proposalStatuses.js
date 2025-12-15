@@ -50,6 +50,22 @@ export const PROPOSAL_STATUSES = {
     actions: ['submit_rental_app', 'cancel_proposal', 'request_vm', 'send_message', 'modify_proposal']
   },
 
+  SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP: {
+    key: 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application',
+    color: 'purple',
+    label: 'Suggested Proposal - Submit Rental App',
+    stage: 1,
+    actions: ['submit_rental_app', 'cancel_proposal', 'request_vm', 'send_message']
+  },
+
+  SUGGESTED_PROPOSAL_PENDING_CONFIRMATION: {
+    key: 'Proposal Submitted for guest by Split Lease - Pending Confirmation',
+    color: 'purple',
+    label: 'Suggested Proposal - Pending Confirmation',
+    stage: 1,
+    actions: ['confirm_proposal', 'cancel_proposal', 'request_vm', 'send_message']
+  },
+
   PENDING_CONFIRMATION: {
     key: 'Pending Confirmation',
     color: 'blue',
@@ -120,7 +136,7 @@ export const PROPOSAL_STATUSES = {
 
   // Stage 6: Initial Payment / Lease Activated
   INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED: {
-    key: 'Initial Payment Submitted / Lease activated',
+    key: 'Initial Payment Submitted / Lease activated ',
     color: 'green',
     label: 'Lease Activated',
     stage: 6,
@@ -146,6 +162,10 @@ export const PROPOSAL_STATUSES = {
   }
 };
 
+function normalizeStatusKey(statusKey) {
+  return typeof statusKey === 'string' ? statusKey.trim() : statusKey;
+}
+
 /**
  * Get status configuration by status key
  * @param {string} statusKey - The status string from the database
@@ -162,16 +182,18 @@ export function getStatusConfig(statusKey) {
     };
   }
 
+  const normalizedKey = normalizeStatusKey(statusKey);
+
   // Find matching status configuration
   const config = Object.values(PROPOSAL_STATUSES).find(
-    s => s.key === statusKey
+    s => normalizeStatusKey(s.key) === normalizedKey
   );
 
   // Return config or default fallback
   return config || {
-    key: statusKey,
+    key: normalizedKey,
     color: 'gray',
-    label: statusKey,
+    label: normalizedKey,
     stage: null,
     actions: []
   };
@@ -213,8 +235,9 @@ export function isActiveStatus(statusKey) {
  * @returns {boolean} True if status is cancelled or rejected
  */
 export function isTerminalStatus(statusKey) {
-  const config = getStatusConfig(statusKey);
-  return config.color === 'red' || statusKey.includes('Cancelled') || statusKey.includes('Rejected');
+  const normalizedKey = normalizeStatusKey(statusKey) || '';
+  const config = getStatusConfig(normalizedKey);
+  return config.color === 'red' || normalizedKey.includes('Cancelled') || normalizedKey.includes('Rejected');
 }
 
 /**
@@ -223,5 +246,5 @@ export function isTerminalStatus(statusKey) {
  * @returns {boolean} True if lease is activated
  */
 export function isCompletedStatus(statusKey) {
-  return statusKey === PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key;
+  return normalizeStatusKey(statusKey) === normalizeStatusKey(PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key);
 }

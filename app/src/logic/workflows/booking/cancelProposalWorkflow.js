@@ -33,6 +33,8 @@
  * })
  * // => { success: true, message: 'Proposal cancelled', updated: true }
  */
+import { PROPOSAL_STATUSES } from '../../constants/proposalStatuses.js'
+
 export async function cancelProposalWorkflow({
   supabase,
   proposal,
@@ -106,8 +108,8 @@ export async function cancelProposalWorkflow({
       const { error } = await supabase
         .from('proposal')
         .update({
-          'Proposal Status': 'Cancelled by Guest',
-          'Cancellation Reason': 'Guest initiated cancellation',
+          'Status': PROPOSAL_STATUSES.CANCELLED_BY_GUEST.key,
+          'reason for cancellation': 'Guest initiated cancellation',
           'Modified Date': new Date().toISOString()
         })
         .eq('_id', proposal.id)

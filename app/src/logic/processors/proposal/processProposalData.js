@@ -31,6 +31,8 @@
  *   }
  * })
  */
+import { PROPOSAL_STATUSES, getUsualOrder } from '../../constants/proposalStatuses.js'
+
 export function processProposalData({ rawProposal, listing = null, guest = null, host = null }) {
   // No Fallback: Proposal data must exist
   if (!rawProposal) {
@@ -56,7 +58,11 @@ export function processProposalData({ rawProposal, listing = null, guest = null,
   }
 
   // Determine which terms are current (original or host-changed)
-  const hasHostCounteroffer = rawProposal['Proposal Status'] === 'Host Countered'
+  const status = typeof rawProposal.Status === 'string'
+    ? rawProposal.Status.trim()
+    : (typeof rawProposal.status === 'string' ? rawProposal.status.trim() : 'Draft')
+
+  const hasHostCounteroffer = status === PROPOSAL_STATUSES.COUNTEROFFER_SUBMITTED_AWAITING_GUEST_REVIEW.key.trim()
 
   // Merge terms: Use host-changed (hc) fields if they exist, otherwise use original
   const currentTerms = {
@@ -112,9 +118,9 @@ export function processProposalData({ rawProposal, listing = null, guest = null,
     guestId: rawProposal.Guest,
 
     // Status and workflow
-    status: rawProposal['Proposal Status'] || 'Draft',
+    status,
     deleted: rawProposal.Deleted === true,
-    usualOrder: rawProposal['Usual Order'] || null,
+    usualOrder: getUsualOrder(status),
 
     // Current terms (merged from original or counteroffer)
     currentTerms,
@@ -128,7 +134,7 @@ export function processProposalData({ rawProposal, listing = null, guest = null,
     houseManualAccessed: rawProposal['Did user access house manual?'] === true,
 
     // Cancellation
-    cancellationReason: rawProposal['Cancellation Reason'] || null,
+    cancellationReason: rawProposal['reason for cancellation'] || null,
 
     // Timestamps
     createdDate: rawProposal['Created Date'],
