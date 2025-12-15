@@ -1256,6 +1256,7 @@ export default function SearchPage() {
       try {
         console.log('[DEBUG] Loading boroughs from zat_geo_borough_toplevel...');
         const { data, error } = await supabase
+          .schema('reference_table')
           .from('zat_geo_borough_toplevel')
           .select('_id, "Display Borough"')
           .order('"Display Borough"', { ascending: true });
@@ -1334,6 +1335,7 @@ export default function SearchPage() {
       try {
         // First, let's see what neighborhoods exist without filtering
         const { data: allNeighborhoods, error: allError } = await supabase
+          .schema('reference_table')
           .from('zat_geo_hood_mediumlevel')
           .select('_id, Display, "Geo-Borough"')
           .limit(5);
@@ -1347,6 +1349,7 @@ export default function SearchPage() {
 
         // Now query with the filter
         const { data, error } = await supabase
+          .schema('reference_table')
           .from('zat_geo_hood_mediumlevel')
           .select('_id, Display, "Geo-Borough"')
           .eq('"Geo-Borough"', borough.id)

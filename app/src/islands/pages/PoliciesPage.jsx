@@ -46,6 +46,7 @@ export default function PoliciesPage() {
         console.log('📡 Fetching policies from Supabase...');
 
         const { data, error } = await supabase
+          .schema('reference_table')
           .from('zat_policiesdocuments')
           .select('*')
           .eq('Active', true)

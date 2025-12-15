@@ -1234,6 +1234,34 @@ export function SelfListingPageV2() {
               maximizing your occupancy and reducing turnover effort.
             </div>
           </details>
+
+          {/* Damage Deposit and Cleaning Fee */}
+          <div className="nightly-fees-row">
+            <div className="fee-input-group">
+              <label className="calc-label">Damage Deposit</label>
+              <div className="input-with-prefix">
+                <span className="prefix">$</span>
+                <input
+                  type="number"
+                  value={formData.securityDeposit || ''}
+                  onChange={e => updateFormData({ securityDeposit: parseInt(e.target.value) || 0 })}
+                  placeholder="500"
+                />
+              </div>
+            </div>
+            <div className="fee-input-group">
+              <label className="calc-label">Cleaning Fee</label>
+              <div className="input-with-prefix">
+                <span className="prefix">$</span>
+                <input
+                  type="number"
+                  value={formData.cleaningFee || ''}
+                  onChange={e => updateFormData({ cleaningFee: parseInt(e.target.value) || 0 })}
+                  placeholder="150"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="btn-group">
@@ -1271,40 +1299,6 @@ export function SelfListingPageV2() {
             className={validationErrors.price ? 'input-error' : ''}
           />
         </div>
-      </div>
-
-      <div className="form-group">
-        <label>Utilities (WiFi, Electric, Gas)</label>
-        <div className="utility-options">
-          <div
-            className={`utility-card ${formData.utilitiesIncluded ? 'selected' : ''}`}
-            onClick={() => updateFormData({ utilitiesIncluded: true })}
-          >
-            <div className="utility-radio"></div>
-            <span>Included in Rent</span>
-          </div>
-          <div
-            className={`utility-card ${!formData.utilitiesIncluded ? 'selected' : ''}`}
-            onClick={() => updateFormData({ utilitiesIncluded: false })}
-          >
-            <div className="utility-radio"></div>
-            <span>Charged Extra</span>
-          </div>
-        </div>
-        {!formData.utilitiesIncluded && (
-          <div className="utility-cost-wrapper">
-            <label>Estimated Monthly Cost</label>
-            <div className="input-with-prefix">
-              <span className="prefix">$</span>
-              <input
-                type="number"
-                value={formData.utilityCost || ''}
-                onChange={e => updateFormData({ utilityCost: parseInt(e.target.value) || 0 })}
-                placeholder="150"
-              />
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="row">
@@ -1585,12 +1579,12 @@ export function SelfListingPageV2() {
       schedule = getScheduleText().text;
     } else if (formData.leaseStyle === 'weekly') {
       priceDisplay = `$${formData.price}`;
-      freq = formData.frequency;
+      freq = 'Week';
       const pattern = WEEKLY_PATTERNS.find(p => p.value === formData.weeklyPattern);
       schedule = `Weekly: ${pattern?.label || formData.weeklyPattern}`;
     } else {
       priceDisplay = `$${formData.price}`;
-      freq = formData.frequency;
+      freq = 'Month';
       schedule = 'Monthly Agreement';
     }
 

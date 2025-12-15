@@ -91,6 +91,7 @@ export async function initializeLookups() {
 async function initializeBoroughLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.BOROUGH)
       .select('_id, "Display Borough"');
 
@@ -115,6 +116,7 @@ async function initializeBoroughLookups() {
 async function initializeNeighborhoodLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.NEIGHBORHOOD)
       .select('_id, Display');
 
@@ -141,6 +143,7 @@ async function initializePropertyTypeLookups() {
   try {
     // IMPORTANT: Column name has trailing space: "Label "
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.LISTING_TYPE)
       .select('_id, "Label "')
       .limit(100);
@@ -229,6 +232,7 @@ async function initializeSafetyLookups() {
 async function initializeHouseRuleLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.HOUSE_RULE)
       .select('_id, Name, Icon');
 
@@ -255,6 +259,7 @@ async function initializeHouseRuleLookups() {
 async function initializeParkingLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.PARKING)
       .select('_id, Label');
 
@@ -280,6 +285,7 @@ async function initializeParkingLookups() {
 async function initializeCancellationPolicyLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.CANCELLATION_POLICY)
       .select('_id, Display, "Best Case Text", "Medium Case Text", "Worst Case Text", "Summary Texts"');
 
@@ -309,6 +315,7 @@ async function initializeCancellationPolicyLookups() {
 async function initializeStorageLookups() {
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.STORAGE)
       .select('_id, Title, "Summary - Guest"');
 
@@ -541,6 +548,7 @@ export async function fetchNeighborhoodName(neighborhoodId) {
 
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.NEIGHBORHOOD)
       .select('Display')
       .eq('_id', neighborhoodId)
@@ -573,6 +581,7 @@ export async function fetchBoroughName(boroughId) {
 
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from(DATABASE.TABLES.BOROUGH)
       .select('"Display Borough"')
       .eq('_id', boroughId)
