@@ -73,6 +73,7 @@ export default function AboutUsPage() {
         console.log('[AboutUsPage] Fetching team members from Supabase...');
 
         const { data, error: fetchError } = await supabase
+          .schema('reference_table')
           .from('zat_splitleaseteam')
           .select('_id, name, title, image, "click through link", "order"')
           .order('order', { ascending: true });

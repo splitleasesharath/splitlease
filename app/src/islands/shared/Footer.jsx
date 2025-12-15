@@ -97,16 +97,10 @@ export default function Footer() {
     }
   };
 
-  // Handle import submission
+  // Handle import submission (footer inline form)
   const handleImportSubmit = async () => {
     if (!importUrl.trim() || !importEmail.trim()) {
       alert('Please fill in both fields');
-      return;
-    }
-
-    // Validate URL
-    if (!importUrl.startsWith('http://') && !importUrl.startsWith('https://')) {
-      alert('Please enter a valid URL');
       return;
     }
 
@@ -119,9 +113,22 @@ export default function Footer() {
     setIsSubmittingImport(true);
 
     try {
-      // Simulate API call for import
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      alert('Listing imported successfully!');
+      const response = await fetch('/api/import-listing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          listingUrl: importUrl.trim(),
+          emailAddress: importEmail.trim()
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit import request');
+      }
+
+      alert('Listing import request submitted! We will email you when it is ready.');
       setImportUrl('');
       setImportEmail('');
     } catch (error) {
@@ -358,9 +365,21 @@ export default function Footer() {
         onSubmit={async (data) => {
           setIsSubmittingImport(true);
           try {
-            // TODO: Implement actual import API call
-            console.log('Importing listing:', data);
-            await new Promise((resolve) => setTimeout(resolve, 2000));
+            const response = await fetch('/api/import-listing', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                listingUrl: data.listingUrl,
+                emailAddress: data.emailAddress
+              })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+              throw new Error(result.error || 'Failed to submit import request');
+            }
+
             alert('Listing import request submitted! We will email you when it is ready.');
             setShowImportListingModal(false);
           } catch (error) {

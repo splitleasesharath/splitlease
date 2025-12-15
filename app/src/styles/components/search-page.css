@@ -725,6 +725,11 @@
   display: none;
 }
 
+/* Mobile Header Actions - Hide on desktop */
+.mobile-header-actions {
+  display: none;
+}
+
 /* Mobile filter close button - Hide on desktop */
 .mobile-filter-close-btn {
   display: none;
@@ -760,6 +765,18 @@
 }
 
 @media (max-width: 768px) {
+  /* Hide map column on mobile - map is accessed via mobile-map-modal */
+  .map-column {
+    display: none;
+  }
+
+  /* Ensure listings column takes full height without map column */
+  .listings-column {
+    flex: 1 1 100%;
+    height: auto;
+    min-height: 100vh;
+  }
+
   /* Show mobile filter bar */
   .mobile-filter-bar {
     display: flex;
@@ -775,6 +792,65 @@
   .mobile-logo-link {
     display: flex;
     margin-right: 0.5rem;
+  }
+
+  /* Mobile Header Actions - Auth-aware elements */
+  .mobile-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-left: auto;
+  }
+
+  /* Mobile Favorites Link */
+  .mobile-favorites-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #f3e8ff;
+    color: #5b21b6;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .mobile-favorites-link:hover {
+    background: #ede9fe;
+    transform: scale(1.05);
+  }
+
+  .mobile-favorites-link svg {
+    fill: #5b21b6;
+    stroke: none;
+    transition: fill 0.2s ease;
+  }
+
+  .mobile-favorites-link:hover svg {
+    fill: #4c1d95;
+  }
+
+  /* Mobile Sign In Button */
+  .mobile-signin-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 0.75rem;
+    background: #5b21b6;
+    color: white;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+  }
+
+  .mobile-signin-btn:hover {
+    background: #4c1d95;
   }
 
   /* Hide hamburger menu on mobile */
@@ -909,9 +985,49 @@
     transform: scale(0.95);
   }
 
-  /* Add padding-top to account for close button */
+  /* Add padding-top to account for close button and padding-bottom for apply button */
   .inline-filters.active {
     padding-top: 4rem;
+    padding-bottom: 6rem; /* Space for fixed apply button */
+  }
+
+  /* Mobile Apply Filters Button Container */
+  .mobile-filter-apply-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    background: white;
+    border-top: 1px solid #e5e7eb;
+    z-index: 2002;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Mobile Apply Filters Button */
+  .mobile-filter-apply-btn {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: #5b21b6;
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mobile-filter-apply-btn:hover {
+    background: #4c1d95;
+  }
+
+  .mobile-filter-apply-btn:active {
+    background: #3b1578;
+    transform: scale(0.98);
   }
 
   /* Improve filter group labels on mobile - maintain floating label design */

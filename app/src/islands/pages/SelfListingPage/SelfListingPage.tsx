@@ -15,6 +15,7 @@ import Toast, { useToast } from '../../shared/Toast';
 import { getListingById } from '../../../lib/bubbleAPI';
 import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth';
 import { createListing } from '../../../lib/listingService';
+import { isGuest } from '../../../logic/rules/users/isGuest.js';
 import './styles/SelfListingPage.css';
 import '../../../styles/components/toast.css';
 
@@ -288,7 +289,7 @@ export const SelfListingPage: React.FC = () => {
 
       console.log('🔐 SelfListingPage: User type:', userType);
 
-      if (userType === 'Guest') {
+      if (isGuest({ userType })) {
         // Guest users should not access this page - redirect to index
         console.log('❌ SelfListingPage: Guest user detected - redirecting to index');
         window.location.href = '/';

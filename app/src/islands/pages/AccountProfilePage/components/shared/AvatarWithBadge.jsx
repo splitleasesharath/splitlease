@@ -7,14 +7,22 @@
  */
 
 import React, { useRef } from 'react';
-import { Camera, Check, User } from 'lucide-react';
+import { Camera, Check } from 'lucide-react';
 
 export default function AvatarWithBadge({
   imageUrl,
+  firstName,
   isEditorView = false,
   isVerified = false,
   onChange
 }) {
+  // Get initial letter for fallback avatar
+  const getInitial = () => {
+    if (firstName && typeof firstName === 'string' && firstName.trim().length > 0) {
+      return firstName.trim().charAt(0).toUpperCase();
+    }
+    return '?';
+  };
   const inputRef = useRef(null);
 
   const handleBadgeClick = (e) => {
@@ -45,8 +53,8 @@ export default function AvatarWithBadge({
           className="profile-avatar-image"
         />
       ) : (
-        <div className="profile-avatar-placeholder">
-          <User size={48} />
+        <div className="profile-avatar-placeholder profile-avatar-initial">
+          {getInitial()}
         </div>
       )}
 
@@ -55,9 +63,11 @@ export default function AvatarWithBadge({
         // Editor View: Camera badge for upload
         <>
           <button
+            type="button"
             className="profile-avatar-edit-badge"
             onClick={handleBadgeClick}
             aria-label="Change profile photo"
+            title="Upload profile photo"
           >
             <Camera size={18} />
           </button>

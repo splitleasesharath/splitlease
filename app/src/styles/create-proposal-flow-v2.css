@@ -650,19 +650,31 @@
     font-size: 15px;
   }
 
+  /* Mobile layout: Label + edit on row 1, value on row 2 */
   .review-field {
-    grid-template-columns: 1fr;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 4px 15px;
     padding: 12px 0;
   }
 
+  .review-label {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
   .review-value {
+    grid-column: 1;
+    grid-row: 2;
     text-align: left;
   }
 
   .edit-link {
-    margin-left: 0;
-    justify-self: start;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: center;
+    justify-self: end;
   }
 
   .day-selector {

@@ -41,6 +41,20 @@ interface SignupAdditionalData {
   phoneNumber?: string;
 }
 
+/**
+ * Map simple user type values to reference_table.os_user_type.display values
+ * The foreign key constraint fk_user_type_current requires exact match to display column
+ */
+function mapUserTypeToDisplay(userType: string): string {
+  const mapping: Record<string, string> = {
+    'Host': 'A Host (I have a space available to rent)',
+    'Guest': 'A Guest (I would like to rent a space)',
+    'host': 'A Host (I have a space available to rent)',
+    'guest': 'A Guest (I would like to rent a space)',
+  };
+  return mapping[userType] || 'A Guest (I would like to rent a space)';
+}
+
 export async function handleSignup(
   supabaseUrl: string,
   supabaseServiceKey: string,
@@ -61,8 +75,22 @@ export async function handleSignup(
     phoneNumber = ''
   }: SignupAdditionalData = additionalData || {};
 
+  // Map userType string to os_user_type.display for foreign key constraint
+  // Foreign key references os_user_type(display) which contains full descriptive strings
+  const userTypeDisplayMap: Record<string, string> = {
+    'Host': 'A Host (I have a space available to rent)',
+    'host': 'A Host (I have a space available to rent)',
+    'Guest': 'A Guest (I would like to rent a space)',
+    'guest': 'A Guest (I would like to rent a space)',
+    'Split Lease': 'Split Lease',
+    'split_lease': 'Split Lease',
+    'Trial Host': 'Trial Host',
+    'trial_host': 'Trial Host'
+  };
+  const userTypeDisplay = userTypeDisplayMap[userType] ?? 'A Guest (I would like to rent a space)'; // Default to Guest
+
   console.log(`[signup] Registering new user: ${email}`);
-  console.log(`[signup] Additional data: firstName=${firstName}, lastName=${lastName}, userType=${userType}`);
+  console.log(`[signup] Additional data: firstName=${firstName}, lastName=${lastName}, userType=${userType} -> display="${userTypeDisplay}"`);
 
   // Client-side validation
   if (password.length < 4) {
@@ -245,8 +273,8 @@ export async function handleSignup(
       'Name - Full': fullName,
       'Date of Birth': dateOfBirth,
       'Phone Number (as text)': phoneNumber || null,
-      'Type - User Current': userType || 'Guest',
-      'Type - User Signup': userType || 'Guest',
+      'Type - User Current': userTypeDisplay, // Foreign key to os_user_type.display
+      'Type - User Signup': userTypeDisplay,  // Foreign key to os_user_type.display
       'Account - Host / Landlord': generatedHostId,
       'Created Date': now,
       'Modified Date': now,

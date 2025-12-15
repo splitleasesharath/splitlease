@@ -328,6 +328,16 @@
 
 /* Show hamburger menu and hide desktop navigation on mobile */
 @media (max-width: 768px) {
+    .main-header {
+        overflow-x: hidden;
+    }
+
+    .nav-container {
+        padding: 1rem 1rem;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+
     .hamburger-menu {
         display: flex;
     }
@@ -379,6 +389,14 @@
     /* Hide user name on mobile, show only avatar */
     .user-name-wrapper {
         display: none;
+    }
+
+    /* Make explore rentals button responsive on mobile */
+    .explore-rentals-btn {
+        min-width: unset;
+        max-width: 100%;
+        width: 100%;
+        margin-right: 0;
     }
 }
 

@@ -15,6 +15,7 @@ import ReasonsCard from './cards/ReasonsCard.jsx';
 import StorageItemsCard from './cards/StorageItemsCard.jsx';
 import VideoIntroCard from './cards/VideoIntroCard.jsx';
 import AccountSettingsCard from './cards/AccountSettingsCard.jsx';
+import ListingsCard from './cards/ListingsCard.jsx';
 
 export default function EditorView({
   formData,
@@ -33,11 +34,17 @@ export default function EditorView({
   onConnectLinkedIn,
   onEditPhone,
   onOpenNotificationSettings,
-  onChangePassword
+  onChangePassword,
+  // Host-specific props
+  isHostUser = false,
+  hostListings = [],
+  loadingListings = false,
+  onListingClick,
+  onCreateListing
 }) {
   return (
     <>
-      {/* Basic Information */}
+      {/* Basic Information - Always shown */}
       <BasicInfoCard
         firstName={formData.firstName}
         lastName={formData.lastName}
@@ -46,29 +53,33 @@ export default function EditorView({
         onFieldChange={onFieldChange}
       />
 
-      {/* About You */}
+      {/* About You - Always shown */}
       <AboutCard
         bio={formData.bio}
         onFieldChange={onFieldChange}
       />
 
-      {/* Why Split Lease? */}
-      <RequirementsCard
-        needForSpace={formData.needForSpace}
-        specialNeeds={formData.specialNeeds}
-        onFieldChange={onFieldChange}
-      />
+      {/* Guest-only: Why Split Lease? */}
+      {!isHostUser && (
+        <RequirementsCard
+          needForSpace={formData.needForSpace}
+          specialNeeds={formData.specialNeeds}
+          onFieldChange={onFieldChange}
+        />
+      )}
 
-      {/* Schedule & Commute */}
-      <ScheduleCommuteCard
-        selectedDays={formData.selectedDays}
-        transportationType={formData.transportationType}
-        transportationOptions={transportationOptions}
-        onDayToggle={onDayToggle}
-        onFieldChange={onFieldChange}
-      />
+      {/* Guest-only: Schedule & Commute */}
+      {!isHostUser && (
+        <ScheduleCommuteCard
+          selectedDays={formData.selectedDays}
+          transportationType={formData.transportationType}
+          transportationOptions={transportationOptions}
+          onDayToggle={onDayToggle}
+          onFieldChange={onFieldChange}
+        />
+      )}
 
-      {/* Trust & Verification */}
+      {/* Trust & Verification - Always shown */}
       <TrustVerificationCard
         verifications={verifications}
         onVerifyEmail={onVerifyEmail}
@@ -78,27 +89,41 @@ export default function EditorView({
         onEditPhone={onEditPhone}
       />
 
-      {/* Reasons to Host Me */}
-      <ReasonsCard
-        selectedReasons={formData.goodGuestReasons}
-        reasonsList={goodGuestReasonsList}
-        onChipToggle={onChipToggle}
-      />
+      {/* Guest-only: Reasons to Host Me */}
+      {!isHostUser && (
+        <ReasonsCard
+          selectedReasons={formData.goodGuestReasons}
+          reasonsList={goodGuestReasonsList}
+          onChipToggle={onChipToggle}
+        />
+      )}
 
-      {/* Storage Items */}
-      <StorageItemsCard
-        selectedItems={formData.storageItems}
-        itemsList={storageItemsList}
-        onChipToggle={onChipToggle}
-      />
+      {/* Guest-only: Storage Items */}
+      {!isHostUser && (
+        <StorageItemsCard
+          selectedItems={formData.storageItems}
+          itemsList={storageItemsList}
+          onChipToggle={onChipToggle}
+        />
+      )}
 
-      {/* Video Introduction */}
+      {/* Host-only: My Listings */}
+      {isHostUser && (
+        <ListingsCard
+          listings={hostListings}
+          loading={loadingListings}
+          onListingClick={onListingClick}
+          onCreateListing={onCreateListing}
+        />
+      )}
+
+      {/* Video Introduction - Always shown */}
       <VideoIntroCard
         videoUrl={profileData?.['Video Intro URL'] || null}
         onUpload={() => console.log('Video upload clicked')}
       />
 
-      {/* Account Settings */}
+      {/* Account Settings - Always shown */}
       <AccountSettingsCard
         onOpenNotificationSettings={onOpenNotificationSettings}
         onChangePassword={onChangePassword}

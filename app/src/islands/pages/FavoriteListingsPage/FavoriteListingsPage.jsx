@@ -1150,8 +1150,77 @@ const FavoriteListingsPage = () => {
       <main className="two-column-layout">
         {/* LEFT COLUMN: Listings */}
         <section className="listings-column">
-          {/* Mobile Filter Bar */}
-          <div className="mobile-filter-bar">
+          {/* ROW 1: Mobile Header - Logo, Explore Rentals, Avatar */}
+          <div className="mobile-filter-bar mobile-header-row">
+            <a href="/" className="mobile-logo-link" aria-label="Go to homepage">
+              <img
+                src="/assets/images/split-lease-purple-circle.png"
+                alt="Split Lease Logo"
+                className="mobile-logo-icon"
+                width="28"
+                height="28"
+              />
+            </a>
+            <a href="/search" className="filter-toggle-btn explore-rentals-btn">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="11" cy="11" r="8" strokeWidth="2" />
+                <path d="M21 21l-4.35-4.35" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              <span>Explore Rentals</span>
+            </a>
+
+            {/* Mobile Header Actions - Auth-aware elements */}
+            <div className="mobile-header-actions">
+              {isLoggedIn && currentUser ? (
+                <>
+                  {/* Favorites Heart - Active state since we're on favorites page */}
+                  <a href="/favorite-listings" className="mobile-favorites-link active" aria-label="My Favorite Listings">
+                    <svg
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="#FF6B35"
+                      stroke="#FF6B35"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                    </svg>
+                    {listings.length > 0 && (
+                      <span className="mobile-favorites-badge">{listings.length}</span>
+                    )}
+                  </a>
+
+                  {/* Logged In Avatar */}
+                  <LoggedInAvatar
+                    user={currentUser}
+                    currentPath="/favorite-listings"
+                    onNavigate={handleNavigate}
+                    onLogout={handleLogout}
+                    size="small"
+                  />
+                </>
+              ) : (
+                /* Hamburger menu for logged out users */
+                <button
+                  className="hamburger-menu"
+                  onClick={() => setMenuOpen(!menuOpen)}
+                  aria-label="Toggle menu"
+                >
+                  <span>Menu</span>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="3" y1="12" x2="21" y2="12" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <line x1="3" y1="18" x2="21" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* ROW 2: Map Button Row */}
+          <div className="mobile-map-row">
             <button className="map-toggle-btn" onClick={() => setMobileMapVisible(true)}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
                 <rect x="3" y="3" width="18" height="18" rx="2" strokeWidth="2" />
@@ -1161,7 +1230,7 @@ const FavoriteListingsPage = () => {
             </button>
           </div>
 
-          {/* Mobile Schedule Selector */}
+          {/* ROW 3: Mobile Schedule Selector with Check-in/Check-out */}
           <div className="mobile-schedule-selector">
             <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
               {/* AuthAwareSearchScheduleSelector will be mounted here on mobile */}

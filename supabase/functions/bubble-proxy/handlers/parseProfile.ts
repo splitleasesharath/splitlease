@@ -127,6 +127,7 @@ async function matchBoroughId(
   const firstBorough = boroughName.split(',')[0].trim();
 
   const { data, error } = await supabase
+    .schema('reference_table')
     .from('zat_geo_borough_toplevel')
     .select('_id')
     .ilike('Display Borough', `%${firstBorough}%`)
@@ -151,6 +152,7 @@ async function matchHoodIds(
 
   for (const hoodName of hoodNames) {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from('zat_geo_hood_mediumlevel')
       .select('_id')
       .ilike('Display', `%${hoodName}%`)
@@ -323,6 +325,7 @@ export async function handleParseProfile(
 
   // Get available boroughs
   const { data: boroughs } = await supabase
+    .schema('reference_table')
     .from('zat_geo_borough_toplevel')
     .select('"Display Borough"');
 

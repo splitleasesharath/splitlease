@@ -61,6 +61,7 @@ async function fetchLookupTables() {
 
     // Fetch house rules
     const { data: rules } = await supabase
+      .schema('reference_table')
       .from('zat_features_houserule')
       .select('_id, "Name", "Icon"');
     if (rules) {
@@ -71,6 +72,7 @@ async function fetchLookupTables() {
 
     // Fetch listing types (Label has trailing space in column name)
     const { data: types } = await supabase
+      .schema('reference_table')
       .from('zat_features_listingtype')
       .select('_id, "Label ", "Icon"');
     if (types) {
@@ -81,6 +83,7 @@ async function fetchLookupTables() {
 
     // Fetch parking options
     const { data: parking } = await supabase
+      .schema('reference_table')
       .from('zat_features_parkingoptions')
       .select('_id, "Label"');
     if (parking) {
@@ -91,6 +94,7 @@ async function fetchLookupTables() {
 
     // Fetch storage options
     const { data: storage } = await supabase
+      .schema('reference_table')
       .from('zat_features_storageoptions')
       .select('_id, "Title"');
     if (storage) {
