@@ -7,7 +7,7 @@
 
 ## QUICK_STATS
 
-[TOTAL_FILES]: 1
+[TOTAL_FILES]: 2
 [FILE_TYPES]: JavaScript
 [RUNTIME]: Cloudflare Workers (V8 isolate)
 [URL_PATH]: `/api/*`
@@ -29,6 +29,12 @@
 [INTENT]: Handle FAQ inquiry form submissions
 [ENDPOINT]: POST /api/faq-inquiry
 [FUNCTION]: Sends user inquiries to Slack channels via webhooks
+[METHODS]: POST
+
+### import-listing.js
+[INTENT]: Handle listing import requests from external platforms
+[ENDPOINT]: POST /api/import-listing
+[FUNCTION]: Sends listing import requests to Slack channels via webhooks
 [METHODS]: POST
 
 ---
@@ -63,6 +69,35 @@
 [CORS]: Cross-origin request support
 [VALIDATION]: Required field checking, email format validation
 [PARALLEL_DELIVERY]: Sends to multiple Slack channels concurrently
+[ERROR_HANDLING]: Graceful error responses with descriptive messages
+
+### import-listing.js
+
+#### Request
+[METHOD]: POST
+[CONTENT_TYPE]: application/json
+[BODY_SCHEMA]:
+```json
+{
+  "listingUrl": "string (required)",
+  "emailAddress": "string (required, valid email)"
+}
+```
+
+#### Environment Variables
+[REQUIRED_SECRETS]:
+- `SLACK_WEBHOOK_ADDINGLISTINGS` - Slack webhook for adding listings channel
+- `SLACK_WEBHOOK_GENERAL` - Slack webhook for general channel
+
+#### Response Codes
+[200]: `{ success: true, message: "Import request submitted successfully" }`
+[400]: Validation errors (missing fields, invalid email format)
+[500]: Server errors or Slack webhook failures
+
+#### Features
+[CORS]: Cross-origin request support
+[VALIDATION]: Required field checking, email format validation
+[PARALLEL_DELIVERY]: Sends to both Slack channels concurrently
 [ERROR_HANDLING]: Graceful error responses with descriptive messages
 
 ---
@@ -109,6 +144,7 @@ export async function onRequestPost(context) {
 [LOCATION]: Cloudflare Pages Dashboard > Settings > Environment Variables
 [SECRETS]:
 - SLACK_WEBHOOK_ACQUISITION
+- SLACK_WEBHOOK_ADDINGLISTINGS
 - SLACK_WEBHOOK_GENERAL
 
 [SCOPE]: Production and Preview environments
