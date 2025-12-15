@@ -123,16 +123,15 @@ const ToastIcon = ({ type }) => {
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([]);
 
-  const showToast = useCallback((options) => {
+  const showToast = useCallback((options, type, duration) => {
     // Support both old API (message, type, duration) and new API (options object)
     let toastConfig;
 
     if (typeof options === 'string') {
       // Legacy API: showToast(message, type, duration)
-      const [message, type, duration] = [options, arguments[1], arguments[2]];
       toastConfig = {
         id: toastId++,
-        title: message,
+        title: options,
         content: null,
         type: type || 'info',
         duration: duration ?? 5000,
@@ -169,7 +168,12 @@ export function ToastProvider({ children }) {
   // Set global function for use outside React components
   useEffect(() => {
     setGlobalToastFunction(showToast);
-    return () => setGlobalToastFunction(null);
+    // Also set window.showToast for hooks that use the global directly
+    window.showToast = showToast;
+    return () => {
+      setGlobalToastFunction(null);
+      delete window.showToast;
+    };
   }, [showToast]);
 
   return (
@@ -193,14 +197,13 @@ export function useToast() {
   // Fallback for components not wrapped in ToastProvider
   const [toasts, setToasts] = useState([]);
 
-  const showToast = useCallback((options) => {
+  const showToast = useCallback((options, type, duration) => {
     let toastConfig;
 
     if (typeof options === 'string') {
-      const [message, type, duration] = [options, arguments[1], arguments[2]];
       toastConfig = {
         id: toastId++,
-        title: message,
+        title: options,
         content: null,
         type: type || 'info',
         duration: duration ?? 5000,
