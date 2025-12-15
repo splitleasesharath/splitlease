@@ -215,13 +215,15 @@ async function queueProfileParsing(data) {
   const edgeFunctionUrl = `${supabaseUrl}/functions/v1/ai-parse-profile`;
 
   try {
+    // Use queue_and_process to both queue AND process in one call
+    // This ensures GPT-4 parsing actually happens (not just queued forever)
     const response = await fetch(edgeFunctionUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        action: 'queue',
+        action: 'queue_and_process',
         payload: {
           user_id: data.user_id,
           email: data.email,
