@@ -1817,6 +1817,49 @@
   margin-top: 2px;
 }
 
+/* Nightly Fees Row (Damage Deposit & Cleaning Fee) */
+.nightly-fees-row {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.nightly-fees-row .fee-input-group {
+  flex: 1;
+}
+
+.nightly-fees-row .calc-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.nightly-fees-row .input-with-prefix {
+  width: 100%;
+}
+
+.nightly-fees-row .input-with-prefix input {
+  width: 100%;
+  padding: 12px 12px 12px 40px;
+  font-size: 1rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  transition: border-color 0.2s;
+}
+
+.nightly-fees-row .input-with-prefix input:focus {
+  outline: none;
+  border-color: var(--v2-primary);
+}
+
+@media (max-width: 500px) {
+  .nightly-fees-row {
+    flex-direction: column;
+    gap: 15px;
+  }
+}
+
 /* Pricing Details Accordion */
 .pricing-details {
   border-top: 1px solid #e5e7eb;
