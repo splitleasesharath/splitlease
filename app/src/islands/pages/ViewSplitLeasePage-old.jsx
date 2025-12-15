@@ -1120,6 +1120,7 @@ export default function ViewSplitLeasePage() {
       let neighborhood = null;
       if (listingData['Location - Hood']) {
         const { data: hoodData } = await supabase
+          .schema('reference_table')
           .from('zat_geo_hood_mediumlevel')
           .select('Display')
           .eq('_id', listingData['Location - Hood'])
@@ -1131,6 +1132,7 @@ export default function ViewSplitLeasePage() {
       let borough = null;
       if (listingData['Location - Borough']) {
         const { data: boroughData } = await supabase
+          .schema('reference_table')
           .from('zat_geo_borough_toplevel')
           .select('"Display Borough"')
           .eq('_id', listingData['Location - Borough'])
@@ -1142,6 +1144,7 @@ export default function ViewSplitLeasePage() {
       let typeOfSpace = null;
       if (listingData['Features - Type of Space']) {
         const { data: typeData } = await supabase
+          .schema('reference_table')
           .from('zat_features_listingtype')
           .select('"Label "')
           .eq('_id', listingData['Features - Type of Space'])

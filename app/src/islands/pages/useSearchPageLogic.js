@@ -506,6 +506,7 @@ export function useSearchPageLogic() {
     const loadBoroughs = async () => {
       try {
         const { data, error } = await supabase
+          .schema('reference_table')
           .from('zat_geo_borough_toplevel')
           .select('_id, "Display Borough"')
           .order('"Display Borough"', { ascending: true })
@@ -570,6 +571,7 @@ export function useSearchPageLogic() {
 
       try {
         const { data, error } = await supabase
+          .schema('reference_table')
           .from('zat_geo_hood_mediumlevel')
           .select('_id, Display, "Geo-Borough"')
           .eq('"Geo-Borough"', borough.id)

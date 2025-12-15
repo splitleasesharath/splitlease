@@ -318,6 +318,7 @@ export function useAccountProfilePageLogic() {
     try {
       // Fetch good guest reasons
       const { data: reasons, error: reasonsError } = await supabase
+        .schema('reference_table')
         .from('zat_goodguestreasons')
         .select('_id, name')
         .order('name');
@@ -330,6 +331,7 @@ export function useAccountProfilePageLogic() {
 
       // Fetch storage items
       const { data: storage, error: storageError } = await supabase
+        .schema('reference_table')
         .from('zat_storage')
         .select('_id, Name')
         .order('Name');
