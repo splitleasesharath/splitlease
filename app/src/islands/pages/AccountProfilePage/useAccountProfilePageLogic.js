@@ -688,9 +688,92 @@ export function useAccountProfilePageLogic() {
   }, []);
 
   const handleAvatarChange = useCallback(async (file) => {
-    // TODO: Implement avatar upload
-    console.log('Avatar change:', file);
-  }, []);
+    if (!file || !profileUserId) {
+      console.error('Cannot upload avatar: no file or user ID');
+      return;
+    }
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      console.error('Invalid file type. Please upload a JPEG, PNG, GIF, or WebP image.');
+      return;
+    }
+
+    // Validate file size (5MB max)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      console.error('File too large. Maximum size is 5MB.');
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      // Get the Supabase Auth session to get the auth user ID for storage path
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      if (sessionError || !session?.user?.id) {
+        throw new Error('Not authenticated. Please log in again.');
+      }
+
+      const authUserId = session.user.id;
+
+      // Generate unique filename with timestamp to avoid cache issues
+      const fileExtension = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+      const fileName = `avatar_${Date.now()}.${fileExtension}`;
+      const filePath = `${authUserId}/${fileName}`;
+
+      // Upload the file to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: file.type
+        });
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get the public URL for the uploaded image
+      const { data: urlData } = supabase.storage
+        .from('profile-photos')
+        .getPublicUrl(filePath);
+
+      if (!urlData?.publicUrl) {
+        throw new Error('Failed to get public URL for uploaded image');
+      }
+
+      const publicUrl = urlData.publicUrl;
+
+      // Update the user's Profile Photo field in the database
+      const { error: updateError } = await supabase
+        .from('user')
+        .update({
+          'Profile Photo': publicUrl,
+          'Modified Date': new Date().toISOString()
+        })
+        .eq('_id', profileUserId);
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // Update local state
+      setProfileData(prev => ({
+        ...prev,
+        'Profile Photo': publicUrl
+      }));
+
+      console.log('✅ Avatar uploaded successfully:', publicUrl);
+    } catch (err) {
+      console.error('❌ Error uploading avatar:', err);
+      setError(err.message || 'Failed to upload profile photo');
+    } finally {
+      setSaving(false);
+    }
+  }, [profileUserId]);
 
   // ============================================================================
   // HOST LISTING HANDLERS

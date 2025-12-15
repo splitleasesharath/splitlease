@@ -63,9 +63,11 @@ export default function AvatarWithBadge({
         // Editor View: Camera badge for upload
         <>
           <button
+            type="button"
             className="profile-avatar-edit-badge"
             onClick={handleBadgeClick}
             aria-label="Change profile photo"
+            title="Upload profile photo"
           >
             <Camera size={18} />
           </button>
