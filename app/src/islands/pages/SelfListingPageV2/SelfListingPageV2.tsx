@@ -129,6 +129,7 @@ const DEFAULT_FORM_DATA: FormData = {
 };
 
 const STORAGE_KEY = 'selfListingV2Draft';
+const LAST_HOST_TYPE_KEY = 'selfListingV2LastHostType';
 
 // Host Type Options
 const HOST_TYPES = [
@@ -321,6 +322,12 @@ export function SelfListingPageV2() {
         }
       } catch (e) {
         console.error('Failed to load draft:', e);
+      }
+    } else {
+      // No draft exists - check if we have a last hostType preference from previous listing
+      const lastHostType = localStorage.getItem(LAST_HOST_TYPE_KEY);
+      if (lastHostType && ['resident', 'liveout', 'coliving', 'agent'].includes(lastHostType)) {
+        setFormData(prev => ({ ...prev, hostType: lastHostType as FormData['hostType'] }));
       }
     }
   }, []);
@@ -920,6 +927,8 @@ export function SelfListingPageV2() {
       console.log('[SelfListingPageV2] Listing created:', result);
       setCreatedListingId(result._id);
       setSubmitSuccess(true);
+      // Save last hostType before clearing draft so it persists for next listing
+      localStorage.setItem(LAST_HOST_TYPE_KEY, formData.hostType);
       localStorage.removeItem(STORAGE_KEY);
     } catch (error) {
       console.error('[SelfListingPageV2] Submit error:', error);
