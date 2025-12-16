@@ -8,7 +8,7 @@
  */
 
 import { supabase } from './supabase.js';
-import { getSessionId } from './secureStorage.js';
+import { getUserId } from './secureStorage.js';
 import { uploadPhotos } from './photoUpload.js';
 
 /**
@@ -28,8 +28,9 @@ import { uploadPhotos } from './photoUpload.js';
 export async function createListing(formData) {
   console.log('[ListingService] Creating listing directly in listing table');
 
-  // Get current user ID
-  const userId = getSessionId();
+  // Get current user ID (Bubble-style _id, not Supabase Auth UUID)
+  // getUserId() returns the public user ID stored as 'sl_user_id'
+  const userId = getUserId();
   console.log('[ListingService] Current user ID:', userId);
 
   // Step 1: Generate Bubble-compatible _id via RPC
