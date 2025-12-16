@@ -88,13 +88,9 @@ function EmptyState() {
 function NoThreadSelectedState() {
   return (
     <div className="no-thread-selected">
-      <div className="no-thread-selected__icon">
-        <svg width="80" height="80" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-        </svg>
-      </div>
-      <h3>Select a Conversation</h3>
-      <p>Send and receive messages.</p>
+      <div className="no-thread-selected__emoji">💬</div>
+      <h3 className="no-thread-selected__title">Select a Conversation</h3>
+      <p className="no-thread-selected__subtitle">Send and receive messages.</p>
     </div>
   );
 }
