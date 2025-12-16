@@ -782,11 +782,11 @@ export function useAccountProfilePageLogic() {
   // ============================================================================
 
   /**
-   * Navigate to listing detail page
+   * Navigate to listing preview page (host context - shows preview without booking widget)
    */
   const handleListingClick = useCallback((listingId) => {
     if (listingId) {
-      window.location.href = `/view-split-lease/${listingId}`;
+      window.location.href = `/preview-split-lease/${listingId}`;
     }
   }, []);
 

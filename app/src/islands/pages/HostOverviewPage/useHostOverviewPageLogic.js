@@ -48,6 +48,10 @@ export function useHostOverviewPageLogic() {
   // Create listing modal state
   const [showCreateListingModal, setShowCreateListingModal] = useState(false);
 
+  // Import listing modal state
+  const [showImportListingModal, setShowImportListingModal] = useState(false);
+  const [importListingLoading, setImportListingLoading] = useState(false);
+
   // ============================================================================
   // TOAST NOTIFICATIONS
   // ============================================================================
@@ -474,9 +478,38 @@ export function useHostOverviewPageLogic() {
   }, []);
 
   const handleImportListing = useCallback(() => {
-    showToast('Import Listing', 'Import listing feature coming soon', 'information');
-    // TODO: Open import listing modal or navigate to import page
-  }, [showToast]);
+    setShowImportListingModal(true);
+  }, []);
+
+  const handleCloseImportListingModal = useCallback(() => {
+    setShowImportListingModal(false);
+  }, []);
+
+  const handleImportListingSubmit = useCallback(async ({ listingUrl, emailAddress }) => {
+    setImportListingLoading(true);
+    try {
+      // Send import request to Slack webhook for processing
+      const { error: importError } = await supabase.functions.invoke('slack-notification', {
+        body: {
+          type: 'import_listing',
+          listingUrl,
+          emailAddress,
+          userId: user?.id,
+          userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
+        }
+      });
+
+      if (importError) throw importError;
+
+      showToast('Success', 'Import request submitted! We\'ll notify you when your listing is ready.', 'success', 5000);
+      setShowImportListingModal(false);
+    } catch (err) {
+      console.error('Error submitting import request:', err);
+      showToast('Error', 'Failed to submit import request. Please try again.', 'error', 5000);
+    } finally {
+      setImportListingLoading(false);
+    }
+  }, [user, showToast]);
 
   const handleCreateNewManual = useCallback(async () => {
     try {
@@ -522,7 +555,7 @@ export function useHostOverviewPageLogic() {
   const handlePreviewListing = useCallback((listing) => {
     showToast('Preview', `Previewing ${listing.name || listing.Name}...`, 'information');
     // Open listing preview in new tab
-    window.open(`/view-split-lease/${listing.id || listing._id}`, '_blank');
+    window.open(`/preview-split-lease/${listing.id || listing._id}`, '_blank');
   }, [showToast]);
 
   const handleSeeDetails = useCallback((listing) => {
@@ -645,11 +678,15 @@ export function useHostOverviewPageLogic() {
     itemToDelete,
     deleteType,
     showCreateListingModal,
+    showImportListingModal,
+    importListingLoading,
 
     // Action handlers
     handleCreateNewListing,
     handleCloseCreateListingModal,
     handleImportListing,
+    handleCloseImportListingModal,
+    handleImportListingSubmit,
     handleCreateNewManual,
     handleEditListing,
     handlePreviewListing,

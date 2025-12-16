@@ -19,6 +19,7 @@ import Footer from '../../shared/Footer.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import Toast, { useToast } from '../../shared/Toast.jsx';
 import { HostScheduleSelector } from '../../shared/HostScheduleSelector/HostScheduleSelector.jsx';
+import InformationalText from '../../shared/InformationalText.jsx';
 import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
 import { createListing, saveDraft } from '../../../lib/listingService.js';
 import { isGuest } from '../../../logic/rules/users/isGuest.js';
@@ -185,6 +186,81 @@ export function SelfListingPageV2() {
 
   // Validation errors for highlighting fields
   const [validationErrors, setValidationErrors] = useState<Record<string, boolean>>({});
+
+  // Informational text tooltip state
+  const [activeInfoTooltip, setActiveInfoTooltip] = useState<string | null>(null);
+
+  // Refs for informational text tooltips
+  const leaseStyleNightlyInfoRef = useRef<HTMLButtonElement>(null);
+  const leaseStyleWeeklyInfoRef = useRef<HTMLButtonElement>(null);
+  const leaseStyleMonthlyInfoRef = useRef<HTMLButtonElement>(null);
+  const baseNightlyRateInfoRef = useRef<HTMLButtonElement>(null);
+  const longStayDiscountInfoRef = useRef<HTMLButtonElement>(null);
+  const damageDepositInfoRef = useRef<HTMLButtonElement>(null);
+  const cleaningFeeInfoRef = useRef<HTMLButtonElement>(null);
+  const desiredRentInfoRef = useRef<HTMLButtonElement>(null);
+  const securityDepositInfoRef = useRef<HTMLButtonElement>(null);
+  const utilitiesInfoRef = useRef<HTMLButtonElement>(null);
+
+  // Informational text content
+  const infoContent = {
+    leaseStyleNightly: {
+      title: 'Nightly Rental',
+      content: 'Rent by the night with flexible availability. Perfect for hosts who want maximum control over their schedule.',
+      expandedContent: 'With nightly rentals, you can select specific nights of the week to make available. Guests book individual nights, and you receive payment for each night booked. This model offers the highest flexibility but requires more active management.',
+    },
+    leaseStyleWeekly: {
+      title: 'Weekly Rental',
+      content: 'Rent in weekly patterns with consistent schedules. Ideal for hosts with predictable routines.',
+      expandedContent: 'Weekly rentals allow you to set patterns like "one week on, one week off." This provides predictable income and less turnover than nightly rentals while maintaining some flexibility.',
+    },
+    leaseStyleMonthly: {
+      title: 'Monthly Rental',
+      content: 'Traditional month-to-month rental with stable, predictable income.',
+      expandedContent: 'With monthly rentals, you receive a fixed monthly rate regardless of how many nights your guest uses. Split Lease may sublease unused nights to maximize occupancy. This model offers the most predictable income with minimal management.',
+    },
+    baseNightlyRate: {
+      title: 'Base Nightly Rate',
+      content: 'This is your starting price per night. Consecutive nights automatically get discounted based on your Long Stay Discount setting.',
+      expandedContent: 'Set this to the rate you want for a single night stay. Multi-night bookings will be cheaper per night, encouraging longer stays and reducing your turnover effort.',
+    },
+    longStayDiscount: {
+      title: 'Long Stay Discount',
+      content: 'The percentage discount applied to consecutive nights. Higher discounts encourage longer bookings.',
+      expandedContent: 'A 20% discount means each consecutive night gets progressively cheaper. For example, if your base rate is $100, night 2 might be $95, night 3 might be $90, and so on. This creates an incentive for guests to book longer stays.',
+    },
+    damageDeposit: {
+      title: 'Damage Deposit',
+      content: 'A refundable security deposit to protect your property against damages during the stay.',
+      expandedContent: 'The damage deposit is held during the guest\'s stay and returned within 7 days after checkout, minus any deductions for damages. We recommend a minimum of $500 for adequate protection.',
+    },
+    cleaningFee: {
+      title: 'Cleaning Fee',
+      content: 'A one-time fee charged to guests to cover cleaning costs between stays.',
+      expandedContent: 'This fee helps ensure your property stays in top condition for each guest. It covers professional cleaning, fresh linens, and general turnover preparation.',
+    },
+    desiredRent: {
+      title: 'Desired Rent',
+      content: 'The total amount you want to receive for each rental period (weekly or monthly).',
+      expandedContent: 'This is your take-home amount before any Split Lease service fees. Set this based on your costs (mortgage, utilities, etc.) plus your desired profit margin.',
+    },
+    securityDeposit: {
+      title: 'Security Deposit',
+      content: 'A refundable deposit held for the duration of the lease to cover potential damages.',
+      expandedContent: 'For weekly and monthly rentals, we recommend at least one week or month\'s rent as a security deposit. This is refunded at the end of the lease if no damages occur.',
+    },
+    utilities: {
+      title: 'Utilities',
+      content: 'Specify whether utilities are included in the rent or charged separately.',
+      expandedContent: 'If utilities are not included, specify the estimated monthly cost so guests know what to expect. Common utilities include electricity, gas, water, internet, and trash removal.',
+    },
+  };
+
+  // Handle info tooltip toggle
+  const handleInfoClick = (tooltipId: string) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setActiveInfoTooltip(activeInfoTooltip === tooltipId ? null : tooltipId);
+  };
 
   // Access control state - guests should not access this page
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
@@ -1018,23 +1094,52 @@ export function SelfListingPageV2() {
         <div className="form-group">
           <label>Lease Style</label>
           <div className="lease-options-columns">
-            {(['nightly', 'weekly', 'monthly'] as const).map(style => (
-              <div
-                key={style}
-                className={`privacy-card ${formData.leaseStyle === style ? 'selected' : ''}`}
-                onClick={() => updateFormData({ leaseStyle: style })}
-              >
-                <div className="privacy-radio"></div>
-                <div className="privacy-content">
-                  <h3>{style.charAt(0).toUpperCase() + style.slice(1)}</h3>
-                  <p>
-                    {style === 'nightly' && 'Rent by the night with flexible availability'}
-                    {style === 'weekly' && 'Rent in weekly patterns'}
-                    {style === 'monthly' && 'Traditional month-to-month rental'}
-                  </p>
+            {(['nightly', 'weekly', 'monthly'] as const).map(style => {
+              const infoRef = style === 'nightly' ? leaseStyleNightlyInfoRef
+                : style === 'weekly' ? leaseStyleWeeklyInfoRef
+                : leaseStyleMonthlyInfoRef;
+              const tooltipId = `leaseStyle${style.charAt(0).toUpperCase() + style.slice(1)}` as keyof typeof infoContent;
+
+              return (
+                <div
+                  key={style}
+                  className={`privacy-card ${formData.leaseStyle === style ? 'selected' : ''}`}
+                  onClick={() => updateFormData({ leaseStyle: style })}
+                >
+                  <div className="privacy-radio"></div>
+                  <div className="privacy-content">
+                    <h3 className="lease-style-header">
+                      {style.charAt(0).toUpperCase() + style.slice(1)}
+                      <button
+                        ref={infoRef}
+                        type="button"
+                        className="info-help-btn"
+                        onClick={handleInfoClick(tooltipId)}
+                        aria-label={`Learn more about ${style} rental`}
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <circle cx="12" cy="12" r="10" />
+                          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                          <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                      </button>
+                    </h3>
+                    <p>
+                      {style === 'nightly' && 'Rent by the night with flexible availability'}
+                      {style === 'weekly' && 'Rent in weekly patterns'}
+                      {style === 'monthly' && 'Traditional month-to-month rental'}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -1142,7 +1247,22 @@ export function SelfListingPageV2() {
         <div className="nightly-calculator-vertical">
           {/* Base Nightly Rate Input */}
           <div className="control-group" style={{ textAlign: 'center' }}>
-            <label className="calc-label">Base Nightly Rate</label>
+            <label className="calc-label label-with-info">
+              Base Nightly Rate
+              <button
+                ref={baseNightlyRateInfoRef}
+                type="button"
+                className="info-help-btn"
+                onClick={handleInfoClick('baseNightlyRate')}
+                aria-label="Learn more about base nightly rate"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </button>
+            </label>
             <div className="base-input-wrapper">
               <span className="currency-symbol">$</span>
               <input
@@ -1158,7 +1278,22 @@ export function SelfListingPageV2() {
           {/* Long Stay Discount Slider */}
           <div className="control-group">
             <div className="label-row">
-              <span className="calc-label">Long Stay Discount</span>
+              <span className="calc-label label-with-info">
+                Long Stay Discount
+                <button
+                  ref={longStayDiscountInfoRef}
+                  type="button"
+                  className="info-help-btn"
+                  onClick={handleInfoClick('longStayDiscount')}
+                  aria-label="Learn more about long stay discount"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </button>
+              </span>
               <span className="value-display">{formData.nightlyDiscount}%</span>
             </div>
             <div className="range-wrapper">
@@ -1238,7 +1373,22 @@ export function SelfListingPageV2() {
           {/* Damage Deposit and Cleaning Fee */}
           <div className="nightly-fees-row">
             <div className="fee-input-group">
-              <label className="calc-label">Damage Deposit</label>
+              <label className="calc-label label-with-info">
+                Damage Deposit
+                <button
+                  ref={damageDepositInfoRef}
+                  type="button"
+                  className="info-help-btn"
+                  onClick={handleInfoClick('damageDeposit')}
+                  aria-label="Learn more about damage deposit"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </button>
+              </label>
               <div className="input-with-prefix">
                 <span className="prefix">$</span>
                 <input
@@ -1250,7 +1400,22 @@ export function SelfListingPageV2() {
               </div>
             </div>
             <div className="fee-input-group">
-              <label className="calc-label">Cleaning Fee</label>
+              <label className="calc-label label-with-info">
+                Cleaning Fee
+                <button
+                  ref={cleaningFeeInfoRef}
+                  type="button"
+                  className="info-help-btn"
+                  onClick={handleInfoClick('cleaningFee')}
+                  aria-label="Learn more about cleaning fee"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </button>
+              </label>
               <div className="input-with-prefix">
                 <span className="prefix">$</span>
                 <input
@@ -1281,7 +1446,22 @@ export function SelfListingPageV2() {
       <h2>Financials</h2>
 
       <div className="form-group">
-        <label>Desired Rent (Per {frequencyLabel})</label>
+        <label className="label-with-info">
+          Desired Rent (Per {frequencyLabel})
+          <button
+            ref={desiredRentInfoRef}
+            type="button"
+            className="info-help-btn"
+            onClick={handleInfoClick('desiredRent')}
+            aria-label="Learn more about desired rent"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+          </button>
+        </label>
         <div className="input-with-prefix">
           <span className="prefix">$</span>
           <input
@@ -1304,7 +1484,22 @@ export function SelfListingPageV2() {
       <div className="row">
         <div className="col">
           <div className="form-group">
-            <label>Security Deposit</label>
+            <label className="label-with-info">
+              Security Deposit
+              <button
+                ref={securityDepositInfoRef}
+                type="button"
+                className="info-help-btn"
+                onClick={handleInfoClick('securityDeposit')}
+                aria-label="Learn more about security deposit"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </button>
+            </label>
             <div className="input-with-prefix">
               <span className="prefix">$</span>
               <input
@@ -1318,7 +1513,22 @@ export function SelfListingPageV2() {
         </div>
         <div className="col">
           <div className="form-group">
-            <label>Cleaning Fee</label>
+            <label className="label-with-info">
+              Cleaning Fee
+              <button
+                ref={cleaningFeeInfoRef}
+                type="button"
+                className="info-help-btn"
+                onClick={handleInfoClick('cleaningFee')}
+                aria-label="Learn more about cleaning fee"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+              </button>
+            </label>
             <div className="input-with-prefix">
               <span className="prefix">$</span>
               <input
@@ -1692,7 +1902,7 @@ export function SelfListingPageV2() {
           <a href={createdListingId ? `/listing-dashboard?id=${createdListingId}` : '/listing-dashboard'} className="btn-next">Go to My Dashboard</a>
           {createdListingId && (
             <a
-              href={`/view-split-lease?id=${createdListingId}`}
+              href={`/preview-split-lease?id=${createdListingId}`}
               className="btn-next btn-secondary"
             >
               Preview Listing
@@ -1929,6 +2139,107 @@ export function SelfListingPageV2() {
 
       {/* Toast Notifications */}
       <Toast toasts={toasts} onRemove={removeToast} />
+
+      {/* Informational Text Tooltips */}
+      <InformationalText
+        isOpen={activeInfoTooltip === 'leaseStyleNightly'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={leaseStyleNightlyInfoRef}
+        title={infoContent.leaseStyleNightly.title}
+        content={infoContent.leaseStyleNightly.content}
+        expandedContent={infoContent.leaseStyleNightly.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'leaseStyleWeekly'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={leaseStyleWeeklyInfoRef}
+        title={infoContent.leaseStyleWeekly.title}
+        content={infoContent.leaseStyleWeekly.content}
+        expandedContent={infoContent.leaseStyleWeekly.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'leaseStyleMonthly'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={leaseStyleMonthlyInfoRef}
+        title={infoContent.leaseStyleMonthly.title}
+        content={infoContent.leaseStyleMonthly.content}
+        expandedContent={infoContent.leaseStyleMonthly.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'baseNightlyRate'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={baseNightlyRateInfoRef}
+        title={infoContent.baseNightlyRate.title}
+        content={infoContent.baseNightlyRate.content}
+        expandedContent={infoContent.baseNightlyRate.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'longStayDiscount'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={longStayDiscountInfoRef}
+        title={infoContent.longStayDiscount.title}
+        content={infoContent.longStayDiscount.content}
+        expandedContent={infoContent.longStayDiscount.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'damageDeposit'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={damageDepositInfoRef}
+        title={infoContent.damageDeposit.title}
+        content={infoContent.damageDeposit.content}
+        expandedContent={infoContent.damageDeposit.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'cleaningFee'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={cleaningFeeInfoRef}
+        title={infoContent.cleaningFee.title}
+        content={infoContent.cleaningFee.content}
+        expandedContent={infoContent.cleaningFee.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'desiredRent'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={desiredRentInfoRef}
+        title={infoContent.desiredRent.title}
+        content={infoContent.desiredRent.content}
+        expandedContent={infoContent.desiredRent.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'securityDeposit'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={securityDepositInfoRef}
+        title={infoContent.securityDeposit.title}
+        content={infoContent.securityDeposit.content}
+        expandedContent={infoContent.securityDeposit.expandedContent}
+        showMoreAvailable={true}
+      />
+
+      <InformationalText
+        isOpen={activeInfoTooltip === 'utilities'}
+        onClose={() => setActiveInfoTooltip(null)}
+        triggerRef={utilitiesInfoRef}
+        title={infoContent.utilities.title}
+        content={infoContent.utilities.content}
+        expandedContent={infoContent.utilities.expandedContent}
+        showMoreAvailable={true}
+      />
     </div>
   );
 }
