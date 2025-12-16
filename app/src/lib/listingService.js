@@ -28,10 +28,37 @@ import { uploadPhotos } from './photoUpload.js';
 export async function createListing(formData) {
   console.log('[ListingService] Creating listing directly in listing table');
 
-  // Get current user ID (Bubble-style _id, not Supabase Auth UUID)
-  // getUserId() returns the public user ID stored as 'sl_user_id'
-  const userId = getUserId();
-  console.log('[ListingService] Current user ID:', userId);
+  // Get current user ID from storage
+  const storedUserId = getUserId();
+  console.log('[ListingService] Stored user ID:', storedUserId);
+
+  // Resolve the Bubble _id if we have a Supabase Auth UUID
+  // Supabase UUIDs contain dashes, Bubble IDs don't
+  let bubbleUserId = storedUserId;
+  const isSupabaseUUID = storedUserId && storedUserId.includes('-');
+
+  if (isSupabaseUUID) {
+    console.log('[ListingService] Detected Supabase Auth UUID, resolving Bubble _id by email...');
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session?.user?.email) {
+      const { data: userData, error: userError } = await supabase
+        .from('user')
+        .select('_id')
+        .eq('email', session.user.email)
+        .maybeSingle();
+
+      if (userData?._id) {
+        bubbleUserId = userData._id;
+        console.log('[ListingService] ✅ Resolved Bubble _id:', bubbleUserId);
+      } else {
+        console.warn('[ListingService] ⚠️ Could not resolve Bubble _id, using stored ID:', storedUserId);
+      }
+    }
+  }
+
+  const userId = bubbleUserId;
+  console.log('[ListingService] Current user ID (for listing):', userId);
 
   // Step 1: Generate Bubble-compatible _id via RPC
   const { data: generatedId, error: rpcError } = await supabase.rpc('generate_bubble_id');
@@ -137,19 +164,57 @@ export async function createListing(formData) {
  * Link a listing to the host's user record
  * Adds the listing _id to the Listings array in the user table
  *
- * @param {string} userId - The user's Bubble _id
+ * Handles both Supabase Auth UUIDs and Bubble IDs:
+ * - Supabase UUID (contains dashes): Look up user by email from auth session
+ * - Bubble ID (timestamp format): Direct lookup by _id
+ *
+ * @param {string} userId - The user's Supabase Auth UUID or Bubble _id
  * @param {string} listingId - The listing's _id (Bubble-compatible ID)
  * @returns {Promise<void>}
  */
 async function linkListingToHost(userId, listingId) {
   console.log('[ListingService] Linking listing _id to host:', userId, listingId);
 
-  // First, get the current Listings array from user table
-  const { data: userData, error: fetchError } = await supabase
-    .from('user')
-    .select('_id, Listings')
-    .eq('_id', userId)
-    .maybeSingle();
+  let userData = null;
+  let fetchError = null;
+
+  // Check if userId is a Supabase Auth UUID (contains dashes) or Bubble ID
+  const isSupabaseUUID = userId && userId.includes('-');
+
+  if (isSupabaseUUID) {
+    // Get user email from Supabase Auth session
+    console.log('[ListingService] Detected Supabase Auth UUID, looking up user by email...');
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user?.email) {
+      console.error('[ListingService] ❌ No email found in auth session');
+      throw new Error('Could not retrieve user email from session');
+    }
+
+    const userEmail = session.user.email;
+    console.log('[ListingService] Looking up user by email:', userEmail);
+
+    // Look up user by email in public.user table
+    const result = await supabase
+      .from('user')
+      .select('_id, Listings')
+      .eq('email', userEmail)
+      .maybeSingle();
+
+    userData = result.data;
+    fetchError = result.error;
+  } else {
+    // Legacy path: Direct lookup by Bubble _id
+    console.log('[ListingService] Using Bubble ID for user lookup');
+    const result = await supabase
+      .from('user')
+      .select('_id, Listings')
+      .eq('_id', userId)
+      .maybeSingle();
+
+    userData = result.data;
+    fetchError = result.error;
+  }
 
   if (fetchError) {
     console.error('[ListingService] ❌ Error fetching user:', fetchError);
@@ -160,6 +225,8 @@ async function linkListingToHost(userId, listingId) {
     console.error('[ListingService] ❌ No user found for userId:', userId);
     throw new Error(`User not found: ${userId}`);
   }
+
+  console.log('[ListingService] ✅ Found user with Bubble _id:', userData._id);
 
   // Add the new listing ID to the array
   const currentListings = userData.Listings || [];
