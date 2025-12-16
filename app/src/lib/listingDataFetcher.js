@@ -286,7 +286,8 @@ export async function fetchListingComplete(listingId) {
         console.error('User fetch error:', userError);
       } else if (userData) {
         hostData = {
-          _id: userData['Account - Host / Landlord'],
+          _id: userData['Account - Host / Landlord'],  // host_account ID (keep for backwards compat)
+          userId: userData._id,  // user's Bubble ID (needed for messaging)
           'Name - First': userData['Name - First'],
           'Name - Last': userData['Name - Last'],
           'Profile Photo': userData['Profile Photo'],
