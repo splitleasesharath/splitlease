@@ -2,9 +2,177 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-# Split Lease - Orchestrator Guide
+# Split Lease
 
 React 18 + Vite Islands Architecture | Supabase Edge Functions | Cloudflare Pages
+
+A flexible rental marketplace for NYC properties enabling split scheduling, repeat stays, and proposal-based booking.
+
+---
+
+## Commands
+
+```bash
+# Development (from project root)
+bun run dev              # Start dev server at http://localhost:8000
+bun run build            # Production build (runs generate-routes first)
+bun run preview          # Preview production build locally
+bun run generate-routes  # Regenerate _redirects and _routes.json
+
+# From app/ directory (alternative)
+cd app && bun run dev    # Same as above
+
+# Supabase Edge Functions
+supabase functions serve           # Serve ALL functions locally (with hot reload)
+supabase functions serve <name>    # Serve single function
+supabase functions deploy          # Deploy all functions (production)
+supabase functions deploy <name>   # Deploy single function
+supabase functions logs <name>     # View function logs
+
+# Supabase Local Development
+supabase start           # Start local Supabase (Postgres, Auth, etc.)
+supabase stop            # Stop local Supabase
+supabase db reset        # Reset local database to migrations
+supabase migration new <name>  # Create new migration
+
+# Cloudflare Deployment
+/deploy                  # Claude slash command for deployment
+npx wrangler pages deploy dist --project-name splitlease  # Manual deploy
+```
+
+---
+
+## Architecture
+
+### Tech Stack Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        FRONTEND (app/)                          │
+│  React 18 + Vite | Islands Architecture | Cloudflare Pages     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  public/*.html    ──→  src/*.jsx (entry)  ──→  islands/pages/  │
+│  (27 HTML files)       (mount React)           (page components)│
+│                                                                 │
+│  src/logic/  ────────────────────────────────────────────────  │
+│  ├── calculators/   (pure math: calculate*, get*)              │
+│  ├── rules/         (boolean predicates: is*, can*, should*)   │
+│  ├── processors/    (data transform: adapt*, format*, process*)│
+│  └── workflows/     (orchestration: *Workflow)                 │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   BACKEND (supabase/functions/)                  │
+│           Supabase Edge Functions (Deno/TypeScript)             │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  auth-user/      Login, signup, password reset (Supabase Auth) │
+│  bubble-proxy/   Proxy to Bubble.io API (legacy backend)       │
+│  proposal/       Proposal CRUD with queue-based Bubble sync    │
+│  listing/        Listing CRUD with atomic Bubble sync          │
+│  ai-gateway/     OpenAI proxy with prompt templating           │
+│  bubble_sync/    Queue processor for Supabase→Bubble sync      │
+│  messages/       Real-time messaging threads                    │
+│                                                                 │
+│  _shared/        CORS, errors, validation, Slack, sync utils   │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                        DATA LAYER                               │
+├─────────────────────────────────────────────────────────────────┤
+│  Supabase PostgreSQL  ←──→  Bubble.io (legacy, source of truth)│
+│  (replica + native)        (migrating away)                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Core Patterns
+
+| Pattern | Description |
+|---------|-------------|
+| **Islands Architecture** | Each page is an independent React root, not a SPA. Full page loads between pages. |
+| **Hollow Components** | Page components contain NO logic, delegate everything to `useXxxPageLogic` hooks |
+| **Four-Layer Logic** | Business logic separated into `calculators` → `rules` → `processors` → `workflows` |
+| **Route Registry** | Single source of truth in `app/src/routes.config.js` - generates Vite inputs, Cloudflare _redirects |
+| **Action-Based Edge Functions** | All Edge Functions use `{ action, payload }` request pattern |
+| **Queue-Based Sync** | Supabase→Bubble sync via `sync_queue` table, processed by cron job |
+
+### Day Indexing (CRITICAL)
+
+| System | Sun | Mon | Tue | Wed | Thu | Fri | Sat |
+|--------|-----|-----|-----|-----|-----|-----|-----|
+| JavaScript (internal) | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+| Bubble API (external) | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+
+**Always convert at API boundaries** using:
+- `adaptDaysFromBubble()` - when receiving data from Bubble
+- `adaptDaysToBubble()` - when sending data to Bubble
+- Location: `app/src/logic/processors/external/adaptDays*.js`
+
+---
+
+## Key Files
+
+| What you need | Where to find it |
+|---------------|------------------|
+| Route Registry | `app/src/routes.config.js` |
+| Vite Config | `app/vite.config.js` |
+| Authentication | `app/src/lib/auth.js` |
+| Supabase client | `app/src/lib/supabase.js` |
+| Day conversion | `app/src/logic/processors/external/adaptDays*.js` |
+| Business rules | `app/src/logic/rules/` |
+| Pricing calculations | `app/src/logic/calculators/pricing/` |
+| Edge Functions | `supabase/functions/` |
+| Shared Edge utilities | `supabase/functions/_shared/` |
+| Page components | `app/src/islands/pages/` |
+| Shared components | `app/src/islands/shared/` |
+
+---
+
+## Documentation Hierarchy
+
+| File | Use For |
+|------|---------|
+| [miniCLAUDE.md](./Documentation/miniCLAUDE.md) | Quick reference, simple tasks |
+| [largeCLAUDE.md](./Documentation/largeCLAUDE.md) | Full context, complex tasks |
+| [app/CLAUDE.md](../app/CLAUDE.md) | Frontend architecture details |
+| [supabase/CLAUDE.md](../supabase/CLAUDE.md) | Edge Functions reference |
+
+---
+
+## Rules
+
+### DO
+- Use Edge Functions for all Bubble API calls (never call Bubble from frontend)
+- Run `bun run generate-routes` after any route changes in `routes.config.js`
+- Commit after each meaningful change (do not push unless asked)
+- Convert day indices at system boundaries
+- Use the four-layer logic architecture for business logic
+- Use `mcp-tool-specialist` subagent for all MCP tool invocations
+
+### DON'T
+- Expose API keys in frontend code
+- Call Bubble API directly from frontend
+- Use `git push --force` or push to main without review
+- Modify database tables without explicit instruction
+- Add fallback mechanisms when things fail - surface the real error
+- Over-engineer for hypothetical future needs
+- Manually edit `_redirects` or `_routes.json` (auto-generated)
+
+---
+
+## Plans Directory
+
+```
+.claude/plans/
+├── New/        # Active plans awaiting execution
+├── Done/       # Completed plans (moved after implementation)
+└── Documents/  # Analysis documents (prefix: YYYYMMDDHHMMSS)
+```
 
 ---
 
@@ -130,126 +298,4 @@ These subagents may ONLY be invoked **before** starting the pipeline or **after*
 
 ---
 
-## Commands
-
-```bash
-# Development
-bun run dev              # Start dev server at http://localhost:8000
-bun run build            # Production build (runs generate-routes first)
-bun run preview          # Preview production build locally
-bun run generate-routes  # Regenerate _redirects and _routes.json
-
-# Supabase Edge Functions
-supabase functions serve           # Serve functions locally
-supabase functions deploy          # Deploy all functions
-supabase functions deploy <name>   # Deploy single function
-
-# Deployment
-/deploy                  # Claude slash command for deployment
-```
-
----
-
-## Architecture Quick Reference
-
-### Core Patterns
-| Pattern | Description |
-|---------|-------------|
-| **Islands Architecture** | Each page is an independent React root, not a SPA |
-| **Hollow Components** | Page components contain NO logic, delegate to `useXxxPageLogic` hooks |
-| **Four-Layer Logic** | `calculators` → `rules` → `processors` → `workflows` |
-| **Edge Function Proxy** | All Bubble API calls go through Edge Functions |
-| **Action-Based Routing** | Edge Functions use `{ action, payload }` pattern |
-
-### Day Indexing (CRITICAL)
-| System | Sun | Mon | Tue | Wed | Thu | Fri | Sat |
-|--------|-----|-----|-----|-----|-----|-----|-----|
-| JavaScript | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
-| Bubble API | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
-
-**Always convert at API boundaries** using `adaptDaysFromBubble` / `adaptDaysToBubble`.
-
----
-
-## Documentation Hierarchy
-
-### Primary Context Files
-| File | Use For |
-|------|---------|
-| [miniCLAUDE.md](./Documentation/miniCLAUDE.md) | Quick reference, simple tasks |
-| [largeCLAUDE.md](./Documentation/largeCLAUDE.md) | Full context, complex tasks |
-
-### Domain-Specific Documentation
-| Domain | Location |
-|--------|----------|
-| Architecture | [Documentation/Architecture/](./Documentation/Architecture/) |
-| Auth Flows | [Documentation/Auth/](./Documentation/Auth/) |
-| Edge Functions | [Documentation/Backend(EDGE - Functions)/](./Documentation/Backend(EDGE%20-%20Functions)/) |
-| Database | [Documentation/Database/](./Documentation/Database/) |
-| External APIs | [Documentation/External/](./Documentation/External/) |
-| Pages | [Documentation/Pages/](./Documentation/Pages/) |
-| Routing | [Documentation/Routing/](./Documentation/Routing/) |
-
-### Code-Level Guides
-| Guide | Location |
-|-------|----------|
-| Frontend | [app/CLAUDE.md](../app/CLAUDE.md) |
-| Backend | [supabase/CLAUDE.md](../supabase/CLAUDE.md) |
-| Database Schema | [DATABASE_SCHEMA_OVERVIEW.md](../DATABASE_SCHEMA_OVERVIEW.md) |
-
----
-
-## Key Files Quick Reference
-
-| What you need | Where to find it |
-|---------------|------------------|
-| Routes | `app/src/routes.config.js` |
-| Authentication | `app/src/lib/auth.js` |
-| Supabase client | `app/src/lib/supabase.js` |
-| Day conversion | `app/src/logic/processors/external/adaptDays*.js` |
-| Business rules | `app/src/logic/rules/` |
-| Pricing calculations | `app/src/logic/calculators/pricing/` |
-| Edge Functions | `supabase/functions/` |
-| Shared Edge utilities | `supabase/functions/_shared/` |
-
----
-
-## Rules
-
-### DO (MANDATORY)
-- **ALWAYS invoke subagents via Task tool for non-trivial tasks** — This is non-negotiable
-- **ALWAYS use `task-classifier` as the first step** for BUILD/DEBUG/CLEANUP/DESIGN tasks
-- **ALWAYS complete ALL 4 phases** once the pipeline starts — no early exit
-- **NEVER inject external subagents mid-pipeline** — the 4-phase sequence is sealed
-- **ALWAYS use `mcp-tool-specialist`** for any MCP tool invocation (only before or after pipeline)
-- Use Edge Functions for all Bubble API calls
-- Run `bun run generate-routes` after route changes
-- Commit after each meaningful change
-- Convert day indices at system boundaries
-- Use the four-layer logic architecture
-
-### DON'T (PROHIBITED)
-- **NEVER implement non-trivial code changes directly** — Use the subagent pipeline
-- **NEVER invoke MCP tools directly** — Route through `mcp-tool-specialist`
-- **NEVER skip the classification step** for tasks that modify code
-- Expose API keys in frontend code
-- Call Bubble API directly from frontend
-- `git push --force` or push to main without review
-- Modify database tables without explicit instruction
-- Add fallback mechanisms when things fail
-- Over-engineer for hypothetical future needs
-
----
-
-## Plans Directory Structure
-
-```
-.claude/plans/
-├── New/        # Active plans awaiting execution
-├── Done/       # Completed plans (moved after execution)
-└── Documents/  # Analysis documents (prefix: YYYYMMDDHHMMSS)
-```
-
----
-
-**VERSION**: 9.5 | **UPDATED**: 2025-12-12
+**VERSION**: 10.0 | **UPDATED**: 2025-12-16
