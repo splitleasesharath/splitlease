@@ -20,6 +20,7 @@
 
 import { supabase } from '../../../lib/supabase.js';
 import { canCancelProposal, requiresSpecialCancellationConfirmation } from '../../rules/proposals/proposalRules.js';
+import { PROPOSAL_STATUSES } from '../../constants/proposalStatuses.js';
 
 /**
  * Evaluate which cancellation workflow condition applies
@@ -41,9 +42,9 @@ export function determineCancellationCondition(proposal) {
 
   // Condition 3 & 6: Already cancelled or rejected - just inform user
   if (
-    status === 'Proposal Cancelled by Guest' ||
-    status === 'Proposal Cancelled by Split Lease' ||
-    status === 'Proposal Rejected by Host'
+    status === PROPOSAL_STATUSES.CANCELLED_BY_GUEST.key ||
+    status === PROPOSAL_STATUSES.CANCELLED_BY_SPLITLEASE.key ||
+    status === PROPOSAL_STATUSES.REJECTED_BY_HOST.key
   ) {
     return {
       condition: 'already_cancelled',
@@ -99,7 +100,7 @@ export async function executeCancelProposal(proposalId, reason = null) {
   const now = new Date().toISOString();
 
   const updateData = {
-    'Status': 'Proposal Cancelled by Guest',
+    'Status': PROPOSAL_STATUSES.CANCELLED_BY_GUEST.key,
     'Modified Date': now
   };
 

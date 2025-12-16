@@ -324,7 +324,7 @@ export function useGuestProposalsPageLogic() {
         id: selectedProposal._id || selectedProposal.id,
         status: getProposalStatus(),
         deleted: getDeletedStatus(),
-        usualOrder: selectedProposal['Status - Usual Order'] || selectedProposal.usualOrder || 0,
+        usualOrder: selectedProposal.usualOrder || 0,
         houseManualAccessed: selectedProposal['Did user access house manual?'] || selectedProposal.houseManualAccessed || false
       }
 
@@ -409,7 +409,7 @@ export function useGuestProposalsPageLogic() {
    */
   function getProposalStatus() {
     if (!selectedProposal) return null
-    return selectedProposal.status || selectedProposal.Status || selectedProposal['Proposal Status']
+    return selectedProposal.status || selectedProposal.Status
   }
 
   /**

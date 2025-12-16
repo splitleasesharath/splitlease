@@ -81,6 +81,12 @@
 /host-success
   Content-Type: text/html; charset=utf-8
 
+# Messages page - serve as HTML (uses _internal pattern)
+/messages
+  Content-Type: text/html; charset=utf-8
+/messages/*
+  Content-Type: text/html; charset=utf-8
+
 # Listing Dashboard page - serve as HTML (uses _internal pattern)
 /listing-dashboard
   Content-Type: text/html; charset=utf-8

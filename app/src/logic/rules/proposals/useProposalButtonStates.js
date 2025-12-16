@@ -33,7 +33,8 @@ export function useProposalButtonStates({ proposal, virtualMeeting, guest, listi
       };
     }
 
-    const status = proposal.Status || proposal.status;
+    const rawStatus = proposal.Status || proposal.status;
+    const status = typeof rawStatus === 'string' ? rawStatus.trim() : rawStatus;
     const config = getStatusConfig(status);
     const vm = virtualMeeting;
 
@@ -44,7 +45,7 @@ export function useProposalButtonStates({ proposal, virtualMeeting, guest, listi
       PROPOSAL_STATUS.INITIAL_PAYMENT_LEASE_ACTIVATED,
       PROPOSAL_STATUS.PROPOSAL_SUBMITTED_BY_SL_AWAITING_APPLICATION,
       PROPOSAL_STATUS.PROPOSAL_SUBMITTED_BY_SL_PENDING_CONFIRMATION,
-    ];
+    ].map(s => (typeof s === 'string' ? s.trim() : s));
 
     let vmButton = { visible: !vmHiddenStatuses.includes(status) };
 
@@ -111,7 +112,7 @@ export function useProposalButtonStates({ proposal, virtualMeeting, guest, listi
     const cancelHiddenStatuses = [
       PROPOSAL_STATUS.PROPOSAL_SUBMITTED_BY_SL_AWAITING_APPLICATION,
       PROPOSAL_STATUS.PROPOSAL_SUBMITTED_BY_SL_PENDING_CONFIRMATION,
-    ];
+    ].map(s => (typeof s === 'string' ? s.trim() : s));
 
     let cancelButton = { visible: !cancelHiddenStatuses.includes(status) };
 
@@ -120,7 +121,7 @@ export function useProposalButtonStates({ proposal, virtualMeeting, guest, listi
         PROPOSAL_STATUS.CANCELLED_BY_GUEST,
         PROPOSAL_STATUS.CANCELLED_BY_SPLITLEASE,
         PROPOSAL_STATUS.REJECTED_BY_HOST,
-      ];
+      ].map(s => (typeof s === 'string' ? s.trim() : s));
 
       if (terminalStatuses.includes(status)) {
         cancelButton = { ...cancelButton, label: 'Delete Proposal' };

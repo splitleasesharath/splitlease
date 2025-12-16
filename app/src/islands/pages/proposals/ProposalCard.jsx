@@ -502,7 +502,7 @@ function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}
       return PROGRESS_COLORS.green;
     }
     // Purple when lease activated
-    if (normalizedStatus === 'Initial Payment Submitted / Lease activated') {
+    if (isCompletedStatus(normalizedStatus)) {
       return PROGRESS_COLORS.purple;
     }
     return PROGRESS_COLORS.gray;

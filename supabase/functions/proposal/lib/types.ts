@@ -276,7 +276,7 @@ export type ProposalStatusName =
   | "Lease Documents Sent for Review"
   | "Lease Documents Sent for Signatures"
   | "Lease Documents Signed / Awaiting Initial payment"
-  | "Initial Payment Submitted / Lease activated"
+  | "Initial Payment Submitted / Lease activated "
   | "Proposal Cancelled by Guest"
   | "Proposal Rejected by Host"
   | "Proposal Cancelled by Split Lease"

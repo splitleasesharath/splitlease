@@ -22,6 +22,8 @@
  * canAcceptProposal({ proposalStatus: 'Accepted' })
  * // => false (already accepted)
  */
+import { PROPOSAL_STATUSES } from '../../constants/proposalStatuses.js'
+
 export function canAcceptProposal({ proposalStatus, deleted = false }) {
   // Deleted proposals cannot be accepted
   if (deleted) {
@@ -37,5 +39,5 @@ export function canAcceptProposal({ proposalStatus, deleted = false }) {
 
   // Can only accept when host has countered
   // This is the only status where guest needs to make an "accept" decision
-  return status === 'Host Countered'
+  return status === PROPOSAL_STATUSES.COUNTEROFFER_SUBMITTED_AWAITING_GUEST_REVIEW.key.trim()
 }

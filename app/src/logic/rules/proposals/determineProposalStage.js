@@ -21,6 +21,8 @@
  * const stage = determineProposalStage({ proposalStatus: 'Host Countered' })
  * // => 2
  */
+import { getStageFromStatus, isTerminalStatus } from '../../constants/proposalStatuses.js'
+
 export function determineProposalStage({ proposalStatus, deleted = false }) {
   // Validation
   if (!proposalStatus || typeof proposalStatus !== 'string') {
@@ -32,40 +34,12 @@ export function determineProposalStage({ proposalStatus, deleted = false }) {
     return 6
   }
 
-  // Map status to stage
   const status = proposalStatus.trim()
 
-  // Stage 6: Cancelled/Rejected/Expired (Terminal negative states)
-  if (
-    status === 'Cancelled by Guest' ||
-    status === 'Cancelled by Host' ||
-    status === 'Rejected' ||
-    status === 'Expired'
-  ) {
+  if (isTerminalStatus(status)) {
     return 6
   }
 
-  // Stage 5: Completed (Terminal positive state)
-  if (status === 'Completed') {
-    return 5
-  }
-
-  // Stage 4: Accepted/Verified (Confirmed booking)
-  if (status === 'Accepted' || status === 'Verified') {
-    return 4
-  }
-
-  // Stage 3: Virtual Meeting (In progress)
-  if (status === 'VM Requested' || status === 'VM Confirmed') {
-    return 3
-  }
-
-  // Stage 2: Host Countered (Waiting for guest response)
-  if (status === 'Host Countered') {
-    return 2
-  }
-
-  // Stage 1: Proposal Sent (Initial state, waiting for host)
-  // Includes: Draft, Pending, or any unrecognized status
-  return 1
+  const stage = getStageFromStatus(status)
+  return stage ?? 1
 }
