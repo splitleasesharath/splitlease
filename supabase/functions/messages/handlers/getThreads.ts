@@ -40,33 +40,41 @@ export async function handleGetThreads(
   console.log('[getThreads] ========== GET THREADS ==========');
   console.log('[getThreads] User:', user.email);
 
-  // Get user's Bubble ID from public.user table by email
-  // Email is the common identifier between auth.users and public.user
-  if (!user.email) {
-    console.error('[getThreads] No email in auth token');
+  // Get user's Bubble ID from JWT metadata (set during login via auth-user Edge Function)
+  // This avoids querying public.user table which may not have the user yet
+  const userBubbleId = user.user_metadata?.user_id;
+
+  if (!userBubbleId) {
+    console.error('[getThreads] No Bubble user_id in JWT metadata');
+    console.error('[getThreads] user_metadata:', JSON.stringify(user.user_metadata));
     throw new ValidationError('Could not find user profile. Please try logging in again.');
   }
 
-  const { data: userData, error: userError } = await supabaseAdmin
-    .from('user')
-    .select('_id, "User Type"')
-    .ilike('email', user.email)
-    .single();
+  console.log('[getThreads] User Bubble ID (from JWT):', userBubbleId);
 
-  if (userError || !userData?._id) {
-    console.error('[getThreads] User lookup failed:', userError?.message);
-    throw new ValidationError('Could not find user profile. Please try logging in again.');
+  // Step 1: Query junction table to get user's thread IDs
+  const { data: userThreadLinks, error: junctionError } = await supabaseAdmin
+    .from('user_thread')
+    .select('thread_id, role')
+    .eq('user_id', userBubbleId);
+
+  if (junctionError) {
+    console.error('[getThreads] Junction query failed:', junctionError);
+    throw new Error(`Failed to fetch user threads: ${junctionError.message}`);
   }
-  console.log('[getThreads] Found user by email');
 
-  const userBubbleId = userData._id;
-  const userType = userData['User Type'] || '';
-  const isHost = userType.includes('Host');
-  console.log('[getThreads] User Bubble ID:', userBubbleId);
-  console.log('[getThreads] User Type:', userType);
+  if (!userThreadLinks || userThreadLinks.length === 0) {
+    console.log('[getThreads] No threads found for user in junction table');
+    return {
+      threads: [],
+      total_count: 0,
+    };
+  }
 
-  // Query thread_conversation table for user's threads
-  // User can be either host or guest in a thread
+  const threadIds = userThreadLinks.map(link => link.thread_id);
+  console.log('[getThreads] Found', threadIds.length, 'thread links in junction table');
+
+  // Step 2: Fetch full thread details using the thread IDs
   const { data: threads, error: threadsError } = await supabaseAdmin
     .from('thread_conversation')
     .select(`
@@ -79,7 +87,7 @@ export async function handleGetThreads(
       "last message",
       "split bot only"
     `)
-    .or(`host.eq.${userBubbleId},guest.eq.${userBubbleId}`)
+    .in('_id', threadIds)
     .order('"Modified Date"', { ascending: false });
 
   if (threadsError) {
@@ -88,14 +96,14 @@ export async function handleGetThreads(
   }
 
   if (!threads || threads.length === 0) {
-    console.log('[getThreads] No threads found for user');
+    console.log('[getThreads] No thread details found (threads may have been deleted)');
     return {
       threads: [],
       total_count: 0,
     };
   }
 
-  console.log('[getThreads] Found', threads.length, 'threads');
+  console.log('[getThreads] Found', threads.length, 'threads with details');
 
   // Collect all unique user IDs and listing IDs for batch lookup
   const contactIds = new Set<string>();
