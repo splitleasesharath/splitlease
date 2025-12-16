@@ -280,7 +280,7 @@ export default function LoggedInAvatar({
         id: 'messages',
         label: 'Messages',
         icon: '/assets/icons/message-circle-purple.svg',
-        path: '/messaging',
+        path: '/messages',
         badgeCount: effectiveUnreadMessagesCount,
         badgeColor: 'red',
       });
