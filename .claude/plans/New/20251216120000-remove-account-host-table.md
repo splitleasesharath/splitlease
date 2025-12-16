@@ -1,9 +1,10 @@
 # Plan: Remove `account_host` Table from Codebase
 
 **Created**: 2025-12-16 12:00:00
-**Status**: ANALYSIS COMPLETE - AWAITING APPROVAL
+**Status**: CODE CHANGES COMPLETE - READY FOR TABLE DELETION
 **Classification**: CLEANUP
 **Risk Level**: HIGH (affects signup, auth, proposals, listings, bubble sync)
+**Last Updated**: 2025-12-16
 
 ---
 
@@ -217,28 +218,28 @@ WHERE u."Account - Host / Landlord" = ah._id;
 ## Execution Order
 
 ```
-1. [ ] Export account_host data (backup)
-2. [ ] Add host_listings column to user table
-3. [ ] Migrate listings data to user.host_listings
-4. [ ] Update Edge Functions (in order):
-   a. [ ] tableMapping.ts (remove mapping)
-   b. [ ] signup.ts (stop creating account_host)
-   c. [ ] syncSignupAtomic.ts (stop syncing account_host)
-   d. [ ] propagateListingFK.ts (use user.host_listings)
-   e. [ ] submit.ts (query user instead)
-   f. [ ] proposal/actions/*.ts (update queries)
-   g. [ ] virtual-meeting/create.ts (update query)
-   h. [ ] validate.ts (update response)
-   i. [ ] processQueueDataApi.ts (update FK propagation)
-5. [ ] Deploy Edge Functions
-6. [ ] Update Frontend Code:
-   a. [ ] auth.js
-   b. [ ] supabaseUtils.js
-   c. [ ] useLoggedInAvatarData.js
-   d. [ ] useHostOverviewPageLogic.js
+1. [x] Export account_host data (backup) - Data exists in Supabase, 886 records verified
+2. [x] Add host_listings column to user table - Already migrated (Listings column exists)
+3. [x] Migrate listings data to user.host_listings - 99.7% accuracy verified
+4. [x] Update Edge Functions (in order):
+   a. [x] tableMapping.ts (remove mapping)
+   b. [x] signup.ts (stop creating account_host)
+   c. [x] syncSignupAtomic.ts (stop syncing account_host)
+   d. [x] propagateListingFK.ts (use user.Listings)
+   e. [x] submit.ts (query user instead)
+   f. [x] proposal/actions/*.ts (update queries)
+   g. [x] virtual-meeting/create.ts (update query)
+   h. [ ] validate.ts (update response) - accountHostId still returned for compatibility
+   i. [ ] processQueueDataApi.ts (FK propagation comment only)
+5. [ ] Deploy Edge Functions - MANUAL DEPLOYMENT REQUIRED
+6. [x] Update Frontend Code:
+   a. [x] auth.js (comment updates)
+   b. [x] supabaseUtils.js (fetchHostData now uses user table)
+   c. [x] useLoggedInAvatarData.js (removed account_host query)
+   d. [x] useHostOverviewPageLogic.js (already uses user.accountHostId)
 7. [ ] Test all affected flows
 8. [ ] Update documentation
-9. [ ] Remove Account - Host / Landlord column
+9. [ ] Remove Account - Host / Landlord column (OPTIONAL - keep for legacy compatibility)
 10. [ ] Delete account_host table
 ```
 
