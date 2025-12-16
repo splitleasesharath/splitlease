@@ -107,46 +107,78 @@ export async function fetchPhotoUrls(photoIds) {
 
 /**
  * Fetch host data in batch from database
- * NOTE: account_host table deprecated - now queries user table directly
- * @param {Array<string>} hostIds - Array of account_host IDs (legacy FK stored in "Account - Host / Landlord")
- * @returns {Promise<Object>} Map of account_host ID to host data {name, image, verified}
+ * PRIMARY PATTERN: hostIds are user._id values (new unified pattern)
+ * FALLBACK: hostIds may be legacy account_host IDs (Account - Host / Landlord values)
+ * @param {Array<string>} hostIds - Array of host IDs (user._id or legacy Account - Host / Landlord)
+ * @returns {Promise<Object>} Map of host ID to host data {name, image, verified}
  */
 export async function fetchHostData(hostIds) {
   if (!hostIds || hostIds.length === 0) {
     return {};
   }
 
+  const hostMap = {};
+
   try {
-    // Fetch user records directly using reverse lookup
-    // Users have "Account - Host / Landlord" field containing the legacy host account ID
+    // First try: NEW PATTERN - hostIds are user._id values
     const { data: userData, error: userError } = await supabase
       .from('user')
-      .select('_id, "Name - Full", "Profile Photo", "Account - Host / Landlord"')
-      .in('"Account - Host / Landlord"', hostIds);
+      .select('_id, "Name - Full", "Profile Photo"')
+      .in('_id', hostIds);
 
     if (userError) {
-      console.error('❌ Error fetching user data:', userError);
-      return {};
+      console.error('❌ Error fetching user data by _id:', userError);
     }
 
-    // Create host map keyed by account_host ID (the "Account - Host / Landlord" value)
-    const hostMap = {};
-    userData.forEach(user => {
-      const hostId = user['Account - Host / Landlord'];
-      if (hostId) {
-        // Add https: protocol if profile photo URL starts with //
+    // Process users found by _id
+    const foundUserIds = new Set();
+    if (userData && userData.length > 0) {
+      userData.forEach(user => {
+        foundUserIds.add(user._id);
         let profilePhoto = user['Profile Photo'];
         if (profilePhoto && profilePhoto.startsWith('//')) {
           profilePhoto = 'https:' + profilePhoto;
         }
-
-        hostMap[hostId] = {
+        hostMap[user._id] = {
           name: user['Name - Full'] || null,
           image: profilePhoto || null,
-          verified: false // TODO: Add verification logic when available
+          verified: false
         };
+      });
+    }
+
+    // Find which hostIds weren't matched by user._id lookup
+    const unmatchedIds = hostIds.filter(id => !foundUserIds.has(id));
+
+    // Fallback: LEGACY PATTERN - remaining hostIds may be Account - Host / Landlord values
+    if (unmatchedIds.length > 0) {
+      console.log(`📍 ${unmatchedIds.length} hosts not found via _id, trying legacy Account - Host / Landlord lookup...`);
+      const { data: legacyData, error: legacyError } = await supabase
+        .from('user')
+        .select('_id, "Name - Full", "Profile Photo", "Account - Host / Landlord"')
+        .in('"Account - Host / Landlord"', unmatchedIds);
+
+      if (legacyError) {
+        console.error('❌ Error fetching user data by Account - Host / Landlord:', legacyError);
       }
-    });
+
+      if (legacyData && legacyData.length > 0) {
+        legacyData.forEach(user => {
+          const legacyHostId = user['Account - Host / Landlord'];
+          if (legacyHostId && !hostMap[legacyHostId]) {
+            let profilePhoto = user['Profile Photo'];
+            if (profilePhoto && profilePhoto.startsWith('//')) {
+              profilePhoto = 'https:' + profilePhoto;
+            }
+            hostMap[legacyHostId] = {
+              name: user['Name - Full'] || null,
+              image: profilePhoto || null,
+              verified: false
+            };
+          }
+        });
+      }
+    }
 
     console.log(`✅ Fetched host data for ${Object.keys(hostMap).length} hosts`);
     return hostMap;

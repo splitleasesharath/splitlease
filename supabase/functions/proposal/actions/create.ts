@@ -127,49 +127,47 @@ export async function handleCreate(
   const guestData = guest as unknown as GuestData;
   console.log(`[proposal:create] Found guest: ${guestData.email}`);
 
-  // Fetch Host User directly via Account - Host / Landlord FK (reverse lookup)
-  // The listing's "Host / Landlord" field contains account_host._id
-  // We find the user whose "Account - Host / Landlord" matches this ID
+  // Fetch Host User - NEW PATTERN: listing["Host / Landlord"] = user._id directly
+  // Legacy pattern (deprecated): listing["Host / Landlord"] = user["Account - Host / Landlord"]
+  // We try user._id first (new), then fall back to Account - Host / Landlord lookup (legacy)
   const hostLandlordValue = listingData["Host / Landlord"];
   console.log(`[proposal:create] Looking up host user for Host / Landlord: ${hostLandlordValue}`);
 
   let hostUserData: HostUserData | null = null;
-  let hostAccountId = hostLandlordValue;
 
-  // First try: Standard lookup via Account - Host / Landlord
+  // First try: NEW PATTERN - Host / Landlord = user._id directly
   const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
     .select(`_id, email, "Proposals List"`)
-    .eq("Account - Host / Landlord", hostLandlordValue)
+    .eq("_id", hostLandlordValue)
     .maybeSingle();
 
   if (hostUser) {
     hostUserData = hostUser as unknown as HostUserData;
-    console.log(`[proposal:create] Found host via Account - Host / Landlord: ${hostUserData.email}`);
+    console.log(`[proposal:create] Found host via user._id (new pattern): ${hostUserData.email}`);
   } else {
-    // Fallback: Legacy listings may have Host / Landlord = user._id directly
-    // This happens with older listings or some self-listing edge cases
-    console.log(`[proposal:create] Standard lookup failed, trying fallback (Host / Landlord as user._id)`);
-    const { data: fallbackUser, error: fallbackError } = await supabase
+    // Fallback: LEGACY PATTERN - Host / Landlord = user["Account - Host / Landlord"]
+    // This handles old listings created before the migration
+    console.log(`[proposal:create] user._id lookup failed, trying legacy Account - Host / Landlord lookup`);
+    const { data: legacyUser, error: legacyError } = await supabase
       .from("user")
-      .select(`_id, email, "Proposals List", "Account - Host / Landlord"`)
-      .eq("_id", hostLandlordValue)
+      .select(`_id, email, "Proposals List"`)
+      .eq("Account - Host / Landlord", hostLandlordValue)
       .maybeSingle();
 
-    if (fallbackUser) {
-      hostUserData = fallbackUser as unknown as HostUserData;
-      // Use the user's actual host account ID if available, otherwise use the user's _id
-      hostAccountId = (fallbackUser as any)["Account - Host / Landlord"] || hostLandlordValue;
-      console.log(`[proposal:create] Found host via fallback (user._id): ${hostUserData.email}`);
+    if (legacyUser) {
+      hostUserData = legacyUser as unknown as HostUserData;
+      console.log(`[proposal:create] Found host via Account - Host / Landlord (legacy): ${hostUserData.email}`);
     } else {
-      console.error(`[proposal:create] Host user fetch failed. Standard error:`, hostUserError, `Fallback error:`, fallbackError);
-      throw new ValidationError(`Host user not found for host account: ${hostLandlordValue}`);
+      console.error(`[proposal:create] Host user fetch failed. Direct error:`, hostUserError, `Legacy error:`, legacyError);
+      throw new ValidationError(`Host user not found: ${hostLandlordValue}`);
     }
   }
 
-  // Create hostAccountData for backwards compatibility with existing code
-  const hostAccountData = { _id: hostAccountId, User: hostUserData._id } as HostAccountData;
-  console.log(`[proposal:create] Host resolved - User: ${hostUserData._id}, Account: ${hostAccountId}`);
+  // hostAccountData kept for backwards compatibility with downstream code
+  // In the new pattern, we use user._id for everything
+  const hostAccountData = { _id: hostUserData._id, User: hostUserData._id } as HostAccountData;
+  console.log(`[proposal:create] Host resolved - User ID: ${hostUserData._id}`);
 
   // Fetch Rental Application (if exists)
   let rentalApp: RentalApplicationData | null = null;
@@ -258,7 +256,8 @@ export async function handleCreate(
     // Core relationships
     Listing: input.listingId,
     Guest: input.guestId,
-    "Host - Account": listingData["Host / Landlord"],
+    // NEW PATTERN: Store host user._id directly (legacy stored account_host._id)
+    "Host - Account": hostUserData._id,
     "Created By": input.guestId,
 
     // Guest info

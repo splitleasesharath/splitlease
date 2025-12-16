@@ -7,18 +7,17 @@
  * 2. Client-side validation (password length, match)
  * 3. Check if email already exists in public.user table
  * 4. Check if email already exists in Supabase Auth
- * 5. Generate Supabase IDs using generate_bubble_id():
- *    - user_id (primary _id for user table)
- *    - host_account_id (for backwards compatibility - stored in user table)
+ * 5. Generate single Supabase ID using generate_bubble_id():
+ *    - user_id (primary _id for user table AND for Account - Host / Landlord)
  * 6. Create Supabase Auth user (auth.users table)
  * 7. Sign in user to get session tokens
  * 8. Insert user profile into public.user table with:
  *    - _id = generated user_id
- *    - Account - Host / Landlord = host_account_id (for legacy FK compatibility)
+ *    - Account - Host / Landlord = SAME user_id (user IS their own host account)
  *    - Receptivity = 0 (migrated from account_host)
  * 9. Return session tokens and user data
  *
- * NOTE: account_host table is DEPRECATED - host data now stored directly in user table
+ * NOTE: account_host table is DEPRECATED - the user IS the host account (no indirection)
  *
  * NO FALLBACK - If any operation fails, entire signup fails
  * Uses Supabase Auth natively - no Bubble dependency
@@ -156,19 +155,23 @@ export async function handleSignup(
 
     console.log('[signup] ✅ Email is available');
 
-    // ========== GENERATE BUBBLE-STYLE IDs ==========
-    console.log('[signup] Generating IDs using generate_bubble_id()...');
+    // ========== GENERATE BUBBLE-STYLE ID ==========
+    console.log('[signup] Generating ID using generate_bubble_id()...');
 
     const { data: generatedUserId, error: userIdError } = await supabaseAdmin.rpc('generate_bubble_id');
-    const { data: generatedHostId, error: hostIdError } = await supabaseAdmin.rpc('generate_bubble_id');
 
-    if (userIdError || hostIdError) {
-      console.error('[signup] Failed to generate IDs:', userIdError || hostIdError);
-      throw new BubbleApiError('Failed to generate unique IDs', 500);
+    if (userIdError) {
+      console.error('[signup] Failed to generate ID:', userIdError);
+      throw new BubbleApiError('Failed to generate unique ID', 500);
     }
 
+    // NOTE: We use the same user._id for "Account - Host / Landlord" field
+    // This eliminates the legacy pattern of having a separate hostAccountId
+    // The user IS their own host account - no indirection needed
+    const generatedHostId = generatedUserId;
+
     console.log(`[signup]    Generated User ID: ${generatedUserId}`);
-    console.log(`[signup]    Generated Host Account ID: ${generatedHostId}`);
+    console.log(`[signup]    Account - Host / Landlord will use same ID: ${generatedHostId}`);
 
     // ========== CREATE SUPABASE AUTH USER ==========
     console.log('[signup] Creating Supabase Auth user...');
@@ -253,7 +256,7 @@ export async function handleSignup(
       'Phone Number (as text)': phoneNumber || null,
       'Type - User Current': userTypeDisplay, // Foreign key to os_user_type.display
       'Type - User Signup': userTypeDisplay,  // Foreign key to os_user_type.display
-      'Account - Host / Landlord': generatedHostId, // Legacy FK ID for backwards compatibility
+      'Account - Host / Landlord': generatedHostId, // Same as user._id - user IS their own host account
       'Created Date': now,
       'Modified Date': now,
       'authentication': {}, // Required jsonb field

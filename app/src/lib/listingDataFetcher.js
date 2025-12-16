@@ -271,55 +271,54 @@ export async function fetchListingComplete(listingId) {
       ? getStorageOption(listingData['Features - Secure Storage Option'])
       : null;
 
-    // 8. Fetch host data - query user table via Account - Host / Landlord FK
-    // NOTE: Listings should have Host / Landlord = user["Account - Host / Landlord"] (the host account ID)
-    // However, some older self-listings may have Host / Landlord = user._id (legacy bug, now fixed)
-    // We try the correct lookup first, then fallback to direct user._id lookup for compatibility
+    // 8. Fetch host data - query user table
+    // PRIMARY PATTERN: Host / Landlord = user._id (new unified pattern)
+    // FALLBACK: Host / Landlord = user["Account - Host / Landlord"] (legacy listings)
     let hostData = null;
     if (listingData['Host / Landlord']) {
       const hostLandlordValue = listingData['Host / Landlord'];
 
-      // First try: Correct lookup - Host / Landlord should equal user["Account - Host / Landlord"]
+      // First try: NEW PATTERN - Host / Landlord = user._id directly
       const { data: userData, error: userError } = await supabase
         .from('user')
-        .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text", "Account - Host / Landlord"')
-        .filter('"Account - Host / Landlord"', 'eq', hostLandlordValue)
+        .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text"')
+        .eq('_id', hostLandlordValue)
         .maybeSingle();
 
       if (userError) {
-        console.error('User fetch error (by host account):', userError);
+        console.error('User fetch error (by _id):', userError);
       }
 
       if (userData) {
         hostData = {
-          _id: userData['Account - Host / Landlord'],
+          _id: userData._id,
           'Name - First': userData['Name - First'],
           'Name - Last': userData['Name - Last'],
           'Profile Photo': userData['Profile Photo'],
           Email: userData['email as text']
         };
-        console.log('📍 Host found via Account - Host / Landlord lookup');
+        console.log('📍 Host found via user._id lookup');
       } else {
-        // Fallback: Legacy listings may have Host / Landlord = user._id (the bug we fixed)
-        // Try looking up user directly by _id
-        console.log('📍 Host not found via Account - Host / Landlord, trying direct _id lookup...');
-        const { data: fallbackUser, error: fallbackError } = await supabase
+        // Fallback: LEGACY PATTERN - Host / Landlord = user["Account - Host / Landlord"]
+        // (for listings created before the pattern was unified)
+        console.log('📍 Host not found via _id, trying legacy Account - Host / Landlord lookup...');
+        const { data: legacyUser, error: legacyError } = await supabase
           .from('user')
-          .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text", "Account - Host / Landlord"')
-          .eq('_id', hostLandlordValue)
+          .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text"')
+          .filter('"Account - Host / Landlord"', 'eq', hostLandlordValue)
           .maybeSingle();
 
-        if (fallbackError) {
-          console.error('User fetch error (by _id fallback):', fallbackError);
-        } else if (fallbackUser) {
+        if (legacyError) {
+          console.error('User fetch error (by Account - Host / Landlord fallback):', legacyError);
+        } else if (legacyUser) {
           hostData = {
-            _id: fallbackUser['Account - Host / Landlord'] || fallbackUser._id,
-            'Name - First': fallbackUser['Name - First'],
-            'Name - Last': fallbackUser['Name - Last'],
-            'Profile Photo': fallbackUser['Profile Photo'],
-            Email: fallbackUser['email as text']
+            _id: legacyUser._id,
+            'Name - First': legacyUser['Name - First'],
+            'Name - Last': legacyUser['Name - Last'],
+            'Profile Photo': legacyUser['Profile Photo'],
+            Email: legacyUser['email as text']
           };
-          console.log('📍 Host found via _id fallback (legacy listing data)');
+          console.log('📍 Host found via legacy Account - Host / Landlord lookup');
         }
       }
     }

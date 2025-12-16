@@ -32,54 +32,35 @@ export async function createListing(formData) {
   const storedUserId = getUserId();
   console.log('[ListingService] Stored user ID:', storedUserId);
 
-  // Resolve user data - we need both _id (for Created By) and Account - Host / Landlord (for host FK)
-  // The listing table's "Host / Landlord" column expects the host account ID, NOT the user ID
-  let bubbleUserId = storedUserId;
-  let hostAccountId = null;
+  // Resolve user._id - this is used for BOTH "Created By" AND "Host / Landlord"
+  // Since we've unified the pattern: user._id = user["Account - Host / Landlord"]
+  // The user IS their own host account (no indirection through account_host table)
+  let userId = storedUserId;
   const isSupabaseUUID = storedUserId && storedUserId.includes('-');
 
   if (isSupabaseUUID) {
-    console.log('[ListingService] Detected Supabase Auth UUID, resolving user data by email...');
+    console.log('[ListingService] Detected Supabase Auth UUID, resolving user._id by email...');
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session?.user?.email) {
-      // Fetch both _id and Account - Host / Landlord for the listing FK
+      // Fetch user._id - this is all we need since user._id = host account ID
       // Note: Some users have email in 'email' column, others in 'email as text' (legacy Bubble column)
       const { data: userData, error: userError } = await supabase
         .from('user')
-        .select('_id, "Account - Host / Landlord"')
+        .select('_id')
         .or(`email.eq.${session.user.email},email as text.eq.${session.user.email}`)
         .maybeSingle();
 
       if (userData?._id) {
-        bubbleUserId = userData._id;
-        hostAccountId = userData['Account - Host / Landlord'];
-        console.log('[ListingService] ✅ Resolved user _id:', bubbleUserId);
-        console.log('[ListingService] ✅ Resolved host account ID:', hostAccountId);
+        userId = userData._id;
+        console.log('[ListingService] ✅ Resolved user._id:', userId);
       } else {
         console.warn('[ListingService] ⚠️ Could not resolve user data, using stored ID:', storedUserId);
       }
     }
-  } else {
-    // For Bubble-style IDs, we need to fetch the host account ID from user table
-    console.log('[ListingService] Bubble-style ID detected, fetching host account ID...');
-    const { data: userData, error: userError } = await supabase
-      .from('user')
-      .select('"Account - Host / Landlord"')
-      .eq('_id', storedUserId)
-      .maybeSingle();
-
-    if (userData?.['Account - Host / Landlord']) {
-      hostAccountId = userData['Account - Host / Landlord'];
-      console.log('[ListingService] ✅ Resolved host account ID:', hostAccountId);
-    } else {
-      console.warn('[ListingService] ⚠️ Could not resolve host account ID for user:', storedUserId);
-    }
   }
 
-  const userId = bubbleUserId;
-  console.log('[ListingService] User ID (for Created By):', userId);
-  console.log('[ListingService] Host Account ID (for Host / Landlord FK):', hostAccountId);
+  console.log('[ListingService] User ID (for Created By and Host / Landlord):', userId);
 
   // Step 1: Generate Bubble-compatible _id via RPC
   const { data: generatedId, error: rpcError } = await supabase.rpc('generate_bubble_id');
@@ -139,8 +120,8 @@ export async function createListing(formData) {
   };
 
   // Step 3: Map form data to listing table columns
-  // Pass hostAccountId for the "Host / Landlord" FK (proposal lookup depends on this)
-  const listingData = mapFormDataToListingTable(formDataWithPhotos, userId, generatedId, hostAccountId);
+  // Pass userId for both "Created By" and "Host / Landlord" (user IS their own host account)
+  const listingData = mapFormDataToListingTable(formDataWithPhotos, userId, generatedId, userId);
 
   // Debug: Log the cancellation policy value being inserted
   console.log('[ListingService] Cancellation Policy value to insert:', listingData['Cancellation Policy']);
@@ -544,12 +525,12 @@ function mapFormDataToListingTable(formData, userId, generatedId, hostAccountId 
     _id: generatedId,
 
     // User/Host reference
-    // CRITICAL: "Host / Landlord" must be the host account ID (user["Account - Host / Landlord"]),
-    // NOT the user._id. The proposal edge function looks up the host user via:
-    //   .eq("Account - Host / Landlord", listing["Host / Landlord"])
-    // If we use userId here, that lookup will fail and proposal creation will break.
+    // The user IS their own host account: user._id = user["Account - Host / Landlord"]
+    // The proposal edge function looks up the host user via:
+    //   .eq("_id", listing["Host / Landlord"]) as primary lookup
+    // This unified pattern eliminates the legacy account_host indirection.
     'Created By': userId || null,
-    'Host / Landlord': hostAccountId || null,
+    'Host / Landlord': hostAccountId || null, // This is now the same as userId
     'Created Date': now,
     'Modified Date': now,
 
