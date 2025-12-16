@@ -191,7 +191,7 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
   // Fetch user data to check listing count and get required fields
   const { data: userData, error: fetchError } = await supabase
     .from('user')
-    .select('_id, email, Listings, "Account - Host / Landlord"')
+    .select('_id, email, Listings')
     .eq('_id', userId)
     .maybeSingle();
 
@@ -201,7 +201,6 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
   }
 
   const listings = userData.Listings || [];
-  const hostAccountId = userData['Account - Host / Landlord'];
   const userEmail = userData.email;
 
   // Only create mockup proposal for first listing
@@ -210,8 +209,8 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
     return;
   }
 
-  if (!hostAccountId || !userEmail) {
-    console.warn('[ListingService] ⚠️ Missing hostAccountId or email for mockup proposal');
+  if (!userEmail) {
+    console.warn('[ListingService] ⚠️ Missing email for mockup proposal');
     return;
   }
 
@@ -230,7 +229,6 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
       action: 'createMockupProposal',
       payload: {
         listingId: listingId,
-        hostAccountId: hostAccountId,
         hostUserId: userId,
         hostEmail: userEmail,
       },

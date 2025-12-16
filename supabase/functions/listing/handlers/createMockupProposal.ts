@@ -26,7 +26,6 @@ import { addUserProposal } from '../../_shared/junctionHelpers.ts';
 
 export interface CreateMockupProposalPayload {
   listingId: string;
-  hostAccountId: string;
   hostUserId: string;
   hostEmail: string;
 }
@@ -45,6 +44,7 @@ interface MockGuestData {
 interface ListingData {
   _id: string;
   'rental type'?: string;
+  'Host / Landlord'?: string;
   'Days Available (List of Days)'?: number[];
   'Nights Available (List of Nights) '?: number[];
   '💰Weekly Host Rate'?: number;
@@ -317,11 +317,10 @@ export async function handleCreateMockupProposal(
   supabase: SupabaseClient,
   payload: CreateMockupProposalPayload
 ): Promise<void> {
-  const { listingId, hostAccountId, hostUserId, hostEmail } = payload;
+  const { listingId, hostUserId, hostEmail } = payload;
 
   console.log('[createMockupProposal] ========== START ==========');
   console.log('[createMockupProposal] Listing:', listingId);
-  console.log('[createMockupProposal] Host Account:', hostAccountId);
   console.log('[createMockupProposal] Host User:', hostUserId);
 
   try {
@@ -364,6 +363,7 @@ export async function handleCreateMockupProposal(
       .select(`
         _id,
         "rental type",
+        "Host / Landlord",
         "Days Available (List of Days)",
         "Nights Available (List of Nights) ",
         "💰Weekly Host Rate",
@@ -391,6 +391,47 @@ export async function handleCreateMockupProposal(
     const listingData = listing as ListingData;
     const rentalType = listingData['rental type'] || 'nightly';
     console.log('[createMockupProposal] Rental type:', rentalType);
+
+    // ─────────────────────────────────────────────────────────
+    // Step 2.5: Resolve host user ID from listing
+    // ─────────────────────────────────────────────────────────
+    console.log('[createMockupProposal] Step 2.5: Resolving host user ID...');
+
+    // For new listings, Host / Landlord is user._id
+    // For legacy listings, Host / Landlord is account_host._id
+    // We need to determine which case we're dealing with
+
+    let resolvedHostUserId = hostUserId; // Default to passed value
+    const hostLandlordId = listingData['Host / Landlord'] as string | undefined;
+
+    if (hostLandlordId) {
+      // Check if this ID exists in user table (new listing pattern)
+      const { data: userCheck } = await supabase
+        .from('user')
+        .select('_id')
+        .eq('_id', hostLandlordId)
+        .maybeSingle();
+
+      if (userCheck) {
+        // Host / Landlord is already a user._id
+        resolvedHostUserId = hostLandlordId;
+        console.log('[createMockupProposal] Host / Landlord is user._id:', resolvedHostUserId);
+      } else {
+        // Host / Landlord might be account_host._id (legacy)
+        const { data: accountHost } = await supabase
+          .from('account_host')
+          .select('User')
+          .eq('_id', hostLandlordId)
+          .maybeSingle();
+
+        if (accountHost?.User) {
+          resolvedHostUserId = accountHost.User;
+          console.log('[createMockupProposal] Resolved from account_host:', resolvedHostUserId);
+        }
+      }
+    }
+
+    console.log('[createMockupProposal] Final resolved host user ID:', resolvedHostUserId);
 
     // ─────────────────────────────────────────────────────────
     // Step 3: Calculate day/night configuration
@@ -486,7 +527,7 @@ export async function handleCreateMockupProposal(
       // Core relationships
       Listing: listingId,
       Guest: guestData._id,
-      'Host - Account': hostAccountId,
+      'Host - Account': resolvedHostUserId,
       'Created By': guestData._id,
 
       // Guest info (from mock guest)
@@ -579,7 +620,7 @@ export async function handleCreateMockupProposal(
     const { data: hostUser, error: hostUserError } = await supabase
       .from('user')
       .select('_id, "Proposals List"')
-      .eq('_id', hostUserId)
+      .eq('_id', resolvedHostUserId)
       .single();
 
     if (hostUserError || !hostUser) {
@@ -594,7 +635,7 @@ export async function handleCreateMockupProposal(
           'Proposals List': updatedProposals,
           'Modified Date': now,
         })
-        .eq('_id', hostUserId);
+        .eq('_id', resolvedHostUserId);
 
       if (updateError) {
         console.warn('[createMockupProposal] Failed to update host Proposals List:', updateError);
@@ -603,7 +644,7 @@ export async function handleCreateMockupProposal(
       }
 
       // Dual-write to junction table
-      await addUserProposal(supabase, hostUserId, proposalId, 'host');
+      await addUserProposal(supabase, resolvedHostUserId, proposalId, 'host');
     }
 
     // ─────────────────────────────────────────────────────────

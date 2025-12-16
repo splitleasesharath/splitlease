@@ -145,7 +145,6 @@ Deno.serve(async (req: Request) => {
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
         await handleCreateMockupProposal(supabase, body.payload as {
           listingId: string;
-          hostAccountId: string;
           hostUserId: string;
           hostEmail: string;
         });
