@@ -403,27 +403,39 @@ export function useAccountProfilePageLogic() {
 
       console.log('[AccountProfile] Listings fetched:', data?.length || 0);
 
-      // Map RPC results to the format expected by the UI
-      // RPC returns: _id, Name, Complete, "Location - Borough", "Location - City",
-      //              "Features - Photos", rental_type, monthly_rate, etc.
+      // Map RPC results to the format expected by ListingsCard component
+      // RPC returns: _id, Name, Complete, "Location - Borough", hood, bedrooms, bathrooms,
+      //              "Features - Photos", min_nightly, rental_type, monthly_rate, etc.
       const mappedListings = (data || [])
         .filter(listing => listing.Complete === true) // Only show complete listings
-        .map(listing => ({
-          _id: listing._id,
-          Name: listing.Name || 'Unnamed Listing',
-          // Map location fields
-          'Borough/Region': listing['Location - Borough'] || '',
-          hood: listing['Location - City'] || '',
-          // Pricing
-          'Start Nightly Price': listing.rate_2_nights || listing.monthly_rate || 0,
-          Complete: listing.Complete,
-          // Photos from RPC (Features - Photos is an array of URLs)
-          photos: listing['Features - Photos'] || [],
-          // Additional fields for display
-          rental_type: listing.rental_type,
-          monthly_rate: listing.monthly_rate,
-          source: listing.source || 'listing_trial'
-        }));
+        .map(listing => {
+          // Convert Features - Photos (array of URLs) to listing_photo format (array of {url, Order})
+          const photosArray = listing['Features - Photos'] || [];
+          const listing_photo = photosArray.map((url, index) => ({
+            url: url,
+            Order: index + 1
+          }));
+
+          return {
+            _id: listing._id,
+            Name: listing.Name || 'Unnamed Listing',
+            // Map location fields to match ListingsCard expectations
+            'Borough/Region': listing['Location - Borough'] || '',
+            hood: listing.hood || '',
+            // Bedroom/bathroom counts (now returned by updated RPC)
+            'Qty of Bedrooms': listing.bedrooms || 0,
+            'Qty of Bathrooms': listing.bathrooms || 0,
+            // Pricing - use min_nightly which is the "Start Nightly Price"
+            'Start Nightly Price': listing.min_nightly || listing.rate_2_nights || listing.monthly_rate || 0,
+            Complete: listing.Complete,
+            // Photos converted to listing_photo format for ListingsCard
+            listing_photo: listing_photo,
+            // Additional fields for display
+            rental_type: listing.rental_type,
+            monthly_rate: listing.monthly_rate,
+            source: listing.source || 'listing_trial'
+          };
+        });
 
       setHostListings(mappedListings);
     } catch (err) {
