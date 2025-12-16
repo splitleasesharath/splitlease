@@ -417,7 +417,11 @@ export function useAccountProfilePageLogic() {
           }));
 
           return {
-            _id: listing._id,
+            // Use 'id' (Bubble-style ID) for routing, not '_id' (internal Supabase ID)
+            // id format: 1764973043780x52847445415716824 (for URLs)
+            // _id format: self_1764973043425_nkzixvohd (internal, don't use for routing)
+            _id: listing.id || listing._id, // Prefer Bubble-style 'id' for routing
+            id: listing.id, // Keep original Bubble ID explicitly
             Name: listing.Name || 'Unnamed Listing',
             // Map location fields to match ListingsCard expectations
             'Borough/Region': listing['Location - Borough'] || '',
@@ -820,13 +824,21 @@ export function useAccountProfilePageLogic() {
   // ============================================================================
 
   /**
-   * Navigate to listing preview page (host context - shows preview without booking widget)
+   * Navigate to listing page based on view context:
+   * - Editor View (own profile): Go to listing-dashboard to manage the listing
+   * - Public View (visitor): Go to view-split-lease to see listing details with booking
    */
   const handleListingClick = useCallback((listingId) => {
     if (listingId) {
-      window.location.href = `/preview-split-lease/${listingId}`;
+      if (isEditorView) {
+        // Owner viewing their own profile - go to listing management
+        window.location.href = `/listing-dashboard/${listingId}`;
+      } else {
+        // Visitor viewing someone else's profile - go to public listing view
+        window.location.href = `/view-split-lease/${listingId}`;
+      }
     }
-  }, []);
+  }, [isEditorView]);
 
   /**
    * Navigate to create listing page
