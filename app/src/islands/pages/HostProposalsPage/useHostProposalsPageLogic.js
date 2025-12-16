@@ -156,9 +156,12 @@ export function useHostProposalsPageLogic() {
   };
 
   /**
-   * Fetch host's listings directly from Supabase
+   * Fetch host's listings using RPC function
    *
-   * Pattern: Find listings where:
+   * Uses get_host_listings RPC to handle column names with special characters
+   * (like "Host / Landlord") that cause issues with PostgREST .or() filters.
+   *
+   * Pattern: RPC handles finding listings where:
    * - "Host / Landlord" = user._id (new pattern), OR
    * - "Host / Landlord" = user."Account - Host / Landlord" (legacy pattern), OR
    * - "Created By" = user._id
@@ -167,45 +170,9 @@ export function useHostProposalsPageLogic() {
     try {
       console.log('[useHostProposalsPageLogic] Fetching listings for user:', userId);
 
-      // First, get the user's "Account - Host / Landlord" for legacy lookup
-      const { data: userData, error: userError } = await supabase
-        .from('user')
-        .select('_id, "Account - Host / Landlord"')
-        .eq('_id', userId)
-        .maybeSingle();
-
-      if (userError) {
-        console.error('[useHostProposalsPageLogic] Error fetching user:', userError);
-      }
-
-      const hostAccountId = userData?.['Account - Host / Landlord'];
-      console.log('[useHostProposalsPageLogic] User host account ID:', hostAccountId);
-
-      // Build OR filter for both new and legacy patterns
-      let orFilter = `"Created By".eq.${userId},"Host / Landlord".eq.${userId}`;
-      if (hostAccountId && hostAccountId !== userId) {
-        orFilter += `,"Host / Landlord".eq.${hostAccountId}`;
-      }
-
+      // Use RPC function to fetch listings (handles special characters in column names)
       const { data: listings, error } = await supabase
-        .from('listing')
-        .select(`
-          _id,
-          "Name",
-          "Address",
-          "City",
-          "State",
-          "Status",
-          "rental type",
-          "Bedrooms",
-          "Bathrooms",
-          "Host / Landlord",
-          "Created By",
-          "Created Date",
-          "Modified Date"
-        `)
-        .or(orFilter)
-        .order('Created Date', { ascending: false });
+        .rpc('get_host_listings', { host_user_id: userId });
 
       if (error) {
         console.error('[useHostProposalsPageLogic] Error fetching listings:', error);
