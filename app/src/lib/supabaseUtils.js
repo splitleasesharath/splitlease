@@ -139,7 +139,8 @@ export async function fetchHostData(hostIds) {
         hostMap[user._id] = {
           name: user['Name - Full'] || null,
           image: profilePhoto || null,
-          verified: false
+          verified: false,
+          userId: user._id
         };
       });
     }
