@@ -85,3 +85,55 @@ export interface DeleteVirtualMeetingResponse {
   proposalId: string;
   deletedAt: string;
 }
+
+// Accept Virtual Meeting
+export interface AcceptVirtualMeetingInput {
+  proposalId: string;           // Required: FK to proposal._id
+  bookedDate: string;           // Required: ISO 8601 datetime (selected time slot)
+  userAcceptingId: string;      // Required: FK to user._id (user accepting)
+}
+
+export interface AcceptVirtualMeetingResponse {
+  success: boolean;
+  virtualMeetingId: string;
+  proposalId: string;
+  bookedDate: string;
+  updatedAt: string;
+}
+
+// Decline Virtual Meeting
+export interface DeclineVirtualMeetingInput {
+  proposalId: string;           // Required: FK to proposal._id
+}
+
+export interface DeclineVirtualMeetingResponse {
+  success: boolean;
+  proposalId: string;
+  declinedAt: string;
+}
+
+// Send Calendar Invite
+export interface SendCalendarInviteInput {
+  proposalId: string;           // Required: FK to proposal._id
+  userId: string;               // Required: FK to user._id (recipient)
+}
+
+export interface SendCalendarInviteResponse {
+  success: boolean;
+  proposalId: string;
+  userId: string;
+  triggeredAt: string;
+}
+
+// Notify Participants
+export interface NotifyParticipantsInput {
+  hostId: string;               // Required: FK to user._id
+  guestId: string;              // Required: FK to user._id
+  virtualMeetingId: string;     // Required: FK to virtualmeetingschedulesandlinks._id
+}
+
+export interface NotifyParticipantsResponse {
+  success: boolean;
+  virtualMeetingId: string;
+  notifiedAt: string;
+}
