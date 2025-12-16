@@ -417,16 +417,17 @@ export async function handleCreateMockupProposal(
         resolvedHostUserId = hostLandlordId;
         console.log('[createMockupProposal] Host / Landlord is user._id:', resolvedHostUserId);
       } else {
-        // Host / Landlord might be account_host._id (legacy)
-        const { data: accountHost } = await supabase
-          .from('account_host')
-          .select('User')
-          .eq('_id', hostLandlordId)
+        // Host / Landlord might be a legacy FK ID stored in "Account - Host / Landlord"
+        // Use reverse lookup pattern: find user WHERE "Account - Host / Landlord" = hostLandlordId
+        const { data: hostUser } = await supabase
+          .from('user')
+          .select('_id')
+          .eq('Account - Host / Landlord', hostLandlordId)
           .maybeSingle();
 
-        if (accountHost?.User) {
-          resolvedHostUserId = accountHost.User;
-          console.log('[createMockupProposal] Resolved from account_host:', resolvedHostUserId);
+        if (hostUser?._id) {
+          resolvedHostUserId = hostUser._id;
+          console.log('[createMockupProposal] Resolved via reverse lookup from user table:', resolvedHostUserId);
         }
       }
     }

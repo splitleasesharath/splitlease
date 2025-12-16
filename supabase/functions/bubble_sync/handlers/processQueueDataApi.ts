@@ -172,7 +172,7 @@ async function processItemDataApi(
                     newBubbleId
                 );
 
-                // FK Propagation: Update account_host.Listings in Bubble for listing table
+                // FK Propagation: Update user.Listings in Bubble for listing table
                 if (item.table_name === 'listing') {
                     // Get the host's user ID from payload
                     // Could be in 'Created By', 'Host / Landlord', or 'User' field
