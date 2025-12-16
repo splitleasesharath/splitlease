@@ -256,24 +256,64 @@ async function linkListingToHost(userId, listingId) {
  * Non-blocking operation - failures don't affect listing creation.
  * Only triggers if this is the host's first listing.
  *
- * @param {string} userId - The user's Bubble _id
+ * Handles both ID formats:
+ * - Supabase Auth UUID (contains dashes): Lookup by email from auth session
+ * - Bubble ID (timestamp format): Direct lookup by _id
+ *
+ * @param {string} userId - The user's Supabase Auth UUID or Bubble _id
  * @param {string} listingId - The newly created listing's _id
  * @returns {Promise<void>}
  */
 async function triggerMockupProposalIfFirstListing(userId, listingId) {
   console.log('[ListingService] Step 6: Checking if first listing for mockup proposal...');
 
-  // Fetch user data to check listing count and get required fields
-  const { data: userData, error: fetchError } = await supabase
-    .from('user')
-    .select('_id, email, Listings')
-    .eq('_id', userId)
-    .maybeSingle();
+  let userData = null;
+  let fetchError = null;
+
+  // Check if userId is a Supabase Auth UUID (contains dashes) or Bubble ID
+  const isSupabaseUUID = userId && userId.includes('-');
+
+  if (isSupabaseUUID) {
+    // Get user email from Supabase Auth session
+    console.log('[ListingService] Detected Supabase Auth UUID, looking up user by email...');
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session?.user?.email) {
+      console.warn('[ListingService] ⚠️ No email found in auth session for mockup proposal check');
+      return;
+    }
+
+    const sessionEmail = session.user.email;
+    console.log('[ListingService] Looking up user by email for mockup check:', sessionEmail);
+
+    // Look up user by email in public.user table
+    const result = await supabase
+      .from('user')
+      .select('_id, email, Listings')
+      .or(`email.eq.${sessionEmail},email as text.eq.${sessionEmail}`)
+      .maybeSingle();
+
+    userData = result.data;
+    fetchError = result.error;
+  } else {
+    // Legacy path: Direct lookup by Bubble _id
+    console.log('[ListingService] Using Bubble ID for mockup proposal user lookup');
+    const result = await supabase
+      .from('user')
+      .select('_id, email, Listings')
+      .eq('_id', userId)
+      .maybeSingle();
+
+    userData = result.data;
+    fetchError = result.error;
+  }
 
   if (fetchError || !userData) {
     console.warn('[ListingService] ⚠️ Could not fetch user for mockup proposal check:', fetchError?.message);
     return;
   }
+
+  console.log('[ListingService] ✅ Found user for mockup check with Bubble _id:', userData._id);
 
   const listings = userData.Listings || [];
   const userEmail = userData.email;
@@ -295,6 +335,7 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
   // Call the listing edge function with createMockupProposal action
+  // IMPORTANT: Use userData._id (Bubble-compatible ID), not userId (may be Supabase UUID)
   const response = await fetch(`${supabaseUrl}/functions/v1/listing`, {
     method: 'POST',
     headers: {
@@ -304,7 +345,7 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
       action: 'createMockupProposal',
       payload: {
         listingId: listingId,
-        hostUserId: userId,
+        hostUserId: userData._id,
         hostEmail: userEmail,
       },
     }),
