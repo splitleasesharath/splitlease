@@ -488,18 +488,22 @@ export function useHostOverviewPageLogic() {
   const handleImportListingSubmit = useCallback(async ({ listingUrl, emailAddress }) => {
     setImportListingLoading(true);
     try {
-      // Send import request to Slack webhook for processing
-      const { error: importError } = await supabase.functions.invoke('slack-notification', {
-        body: {
-          type: 'import_listing',
+      // Send import request to Cloudflare Pages Function (same-origin, no CORS issues)
+      const response = await fetch('/api/import-listing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           listingUrl,
           emailAddress,
           userId: user?.id,
           userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
-        }
+        })
       });
 
-      if (importError) throw importError;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to submit import request');
+      }
 
       showToast('Success', 'Import request submitted! We\'ll notify you when your listing is ready.', 'success', 5000);
       setShowImportListingModal(false);
