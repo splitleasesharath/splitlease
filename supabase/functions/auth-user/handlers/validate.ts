@@ -65,7 +65,8 @@ export async function handleValidate(
     let userData = null;
     let userError = null;
 
-    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "Account - Host / Landlord", "About Me / Bio", "need for Space", "special needs", "Proposals List"';
+    // Note: "Account - Host / Landlord" column was removed - user._id is now used directly as host reference
+    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "About Me / Bio", "need for Space", "special needs", "Proposals List"';
 
     // First attempt: query by _id (Bubble-style ID)
     console.log(`[validate] Attempting to find user by _id: ${user_id}`);
@@ -156,7 +157,8 @@ export async function handleValidate(
       email: userEmail,
       profilePhoto: profilePhoto || null,
       userType: userData['Type - User Current'] || null,
-      accountHostId: userData['Account - Host / Landlord'] || null,
+      // accountHostId is now the same as userId (user IS their own host account)
+      accountHostId: userData._id,
       // User profile fields for proposal prefilling
       aboutMe: userData['About Me / Bio'] || null,
       needForSpace: userData['need for Space'] || null,

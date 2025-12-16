@@ -44,7 +44,7 @@ interface MockGuestData {
 interface ListingData {
   _id: string;
   'rental type'?: string;
-  'Host / Landlord'?: string;
+  'Host User'?: string;
   'Days Available (List of Days)'?: number[];
   'Nights Available (List of Nights) '?: number[];
   '💰Weekly Host Rate'?: number;
@@ -363,7 +363,7 @@ export async function handleCreateMockupProposal(
       .select(`
         _id,
         "rental type",
-        "Host / Landlord",
+        "Host User",
         "Days Available (List of Days)",
         "Nights Available (List of Nights) ",
         "💰Weekly Host Rate",
@@ -393,53 +393,14 @@ export async function handleCreateMockupProposal(
     console.log('[createMockupProposal] Rental type:', rentalType);
 
     // ─────────────────────────────────────────────────────────
-    // Step 2.5: Resolve host references from listing
+    // Step 2.5: Get host user ID from listing
     // ─────────────────────────────────────────────────────────
-    console.log('[createMockupProposal] Step 2.5: Resolving host references...');
+    console.log('[createMockupProposal] Step 2.5: Getting host user ID...');
 
-    // We need TWO values:
-    // 1. hostAccountId: For proposal's "Host - Account" field (matches listing's "Host / Landlord")
-    // 2. resolvedHostUserId: For updating user's Proposals List (always user._id)
-    //
-    // For new listings: Host / Landlord = user._id (both values are the same)
-    // For legacy listings: Host / Landlord = account_host._id (need to resolve user._id separately)
+    // Host User column now always contains user._id directly
+    const resolvedHostUserId = listingData['Host User'] || hostUserId;
 
-    let resolvedHostUserId = hostUserId; // Default to passed value
-    const hostLandlordId = listingData['Host / Landlord'] as string | undefined;
-
-    // hostAccountId for proposal's "Host - Account" field - use listing's value directly
-    const hostAccountId = hostLandlordId || hostUserId;
-
-    if (hostLandlordId) {
-      // Check if this ID exists in user table (new listing pattern)
-      const { data: userCheck } = await supabase
-        .from('user')
-        .select('_id')
-        .eq('_id', hostLandlordId)
-        .maybeSingle();
-
-      if (userCheck) {
-        // Host / Landlord is already a user._id (new listing pattern)
-        resolvedHostUserId = hostLandlordId;
-        console.log('[createMockupProposal] Host / Landlord is user._id:', resolvedHostUserId);
-      } else {
-        // Host / Landlord is account_host._id (legacy pattern)
-        // Resolve user._id via reverse lookup for Proposals List update
-        const { data: hostUser } = await supabase
-          .from('user')
-          .select('_id')
-          .eq('Account - Host / Landlord', hostLandlordId)
-          .maybeSingle();
-
-        if (hostUser?._id) {
-          resolvedHostUserId = hostUser._id;
-          console.log('[createMockupProposal] Resolved user._id via reverse lookup:', resolvedHostUserId);
-        }
-      }
-    }
-
-    console.log('[createMockupProposal] Host Account ID (for proposal):', hostAccountId);
-    console.log('[createMockupProposal] Resolved Host User ID (for Proposals List):', resolvedHostUserId);
+    console.log('[createMockupProposal] Host User ID:', resolvedHostUserId);
 
     // ─────────────────────────────────────────────────────────
     // Step 3: Calculate day/night configuration
@@ -535,7 +496,7 @@ export async function handleCreateMockupProposal(
       // Core relationships
       Listing: listingId,
       Guest: guestData._id,
-      'Host - Account': hostAccountId, // Use listing's Host / Landlord value
+      'Host User': resolvedHostUserId, // user._id directly
       'Created By': guestData._id,
 
       // Guest info (from mock guest)

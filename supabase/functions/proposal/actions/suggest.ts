@@ -161,7 +161,7 @@ export async function handleSuggest(
       .from("listing")
       .select(`
         _id,
-        "Host / Landlord",
+        "Host User",
         "rental type",
         "Days Available (List of Days)",
         "Nights Available (List of Nights) ",
@@ -217,7 +217,7 @@ export async function handleSuggest(
         .from("listing")
         .select(`
           _id,
-          "Host / Landlord",
+          "Host User",
           "rental type",
           "Days Available (List of Days)",
           "Nights Available (List of Nights)",
@@ -273,7 +273,7 @@ export async function handleSuggest(
       const suggestionData = {
         Listing: listing._id,
         Guest: originProposal.Guest,
-        "Host - Account": listing["Host / Landlord"],
+        "Host User": listing["Host User"],
         Status: "sl_submitted_awaiting_rental_app", // Default for suggestions
         "Days Selected": originProposal["Days Selected"],
         "Nights Selected (Nights list)": originProposal["Nights Selected (Nights list)"],

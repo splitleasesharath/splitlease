@@ -7,17 +7,16 @@
  * 2. Client-side validation (password length, match)
  * 3. Check if email already exists in public.user table
  * 4. Check if email already exists in Supabase Auth
- * 5. Generate single Supabase ID using generate_bubble_id():
- *    - user_id (primary _id for user table AND for Account - Host / Landlord)
+ * 5. Generate user_id using generate_bubble_id()
  * 6. Create Supabase Auth user (auth.users table)
  * 7. Sign in user to get session tokens
  * 8. Insert user profile into public.user table with:
- *    - _id = generated user_id
- *    - Account - Host / Landlord = SAME user_id (user IS their own host account)
- *    - Receptivity = 0 (migrated from account_host)
+ *    - _id = generated user_id (also used as host reference in listings/proposals)
+ *    - Receptivity = 0 (host field migrated from account_host)
  * 9. Return session tokens and user data
  *
- * NOTE: account_host table is DEPRECATED - the user IS the host account (no indirection)
+ * NOTE: account_host table and "Account - Host / Landlord" column have been removed
+ * User._id is now used directly as the host reference in listings and proposals
  *
  * NO FALLBACK - If any operation fails, entire signup fails
  * Uses Supabase Auth natively - no Bubble dependency
@@ -165,13 +164,11 @@ export async function handleSignup(
       throw new BubbleApiError('Failed to generate unique ID', 500);
     }
 
-    // NOTE: We use the same user._id for "Account - Host / Landlord" field
-    // This eliminates the legacy pattern of having a separate hostAccountId
-    // The user IS their own host account - no indirection needed
+    // User._id is now used directly as host reference - no separate host account ID needed
+    // Keep generatedHostId for backwards compatibility with user_metadata
     const generatedHostId = generatedUserId;
 
     console.log(`[signup]    Generated User ID: ${generatedUserId}`);
-    console.log(`[signup]    Account - Host / Landlord will use same ID: ${generatedHostId}`);
 
     // ========== CREATE SUPABASE AUTH USER ==========
     console.log('[signup] Creating Supabase Auth user...');
@@ -236,10 +233,9 @@ export async function handleSignup(
       }
     }
 
-    // NOTE: account_host table creation REMOVED - host data now stored directly in user table
-    // The generatedHostId is still used for the "Account - Host / Landlord" FK field
-    // to maintain backwards compatibility with existing listings and proposals
-    console.log('[signup] Skipping account_host creation (DEPRECATED) - using user table directly');
+    // NOTE: account_host table and "Account - Host / Landlord" column have been removed
+    // User._id is now used directly as the host reference in listings and proposals
+    console.log('[signup] Creating user record (user._id serves as host reference)');
 
     // Insert into public.user table (includes host fields that were previously in account_host)
     console.log('[signup] Inserting into public.user table...');
@@ -256,7 +252,7 @@ export async function handleSignup(
       'Phone Number (as text)': phoneNumber || null,
       'Type - User Current': userTypeDisplay, // Foreign key to os_user_type.display
       'Type - User Signup': userTypeDisplay,  // Foreign key to os_user_type.display
-      'Account - Host / Landlord': generatedHostId, // Same as user._id - user IS their own host account
+      // Note: "Account - Host / Landlord" column removed - user._id is used directly as host reference
       'Created Date': now,
       'Modified Date': now,
       'authentication': {}, // Required jsonb field

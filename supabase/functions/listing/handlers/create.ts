@@ -89,7 +89,7 @@ export async function handleCreate(
       'Modified Date': now,
     };
 
-    // If user_email provided, look up user and attach (new pattern: Host / Landlord = user._id)
+    // If user_email provided, look up user and attach (Host User = user._id)
     if (user_email) {
       const { data: userData } = await supabase
         .from('user')
@@ -98,7 +98,7 @@ export async function handleCreate(
         .single();
 
       if (userData) {
-        listingData['Host / Landlord'] = userData._id;
+        listingData['Host User'] = userData._id;
         listingData['Created By'] = userData._id;
         console.log('[listing:create] User found:', userData._id);
       }

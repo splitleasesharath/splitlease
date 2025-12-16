@@ -104,12 +104,12 @@ export async function handleGet(
     guestData = guest;
   }
 
-  // Fetch host (via user table - reverse lookup by Account - Host / Landlord FK)
-  if (proposalData["Host - Account"]) {
+  // Fetch host (Host User column now contains user._id directly)
+  if (proposalData["Host User"]) {
     const { data: host } = await supabase
       .from("user")
       .select(`_id, "Name - Full", email`)
-      .eq("Account - Host / Landlord", proposalData["Host - Account"])
+      .eq("_id", proposalData["Host User"])
       .single();
     hostData = host;
   }

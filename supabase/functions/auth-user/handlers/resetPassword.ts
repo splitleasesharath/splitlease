@@ -97,7 +97,7 @@ export async function handleRequestPasswordReset(
 
       const { data: legacyUser, error: legacyError } = await supabaseAdmin
         .from('user')
-        .select('_id, email, "Name - First", "Name - Last", "Type - User Current", "Account - Host / Landlord"')
+        .select('_id, email, "Name - First", "Name - Last", "Type - User Current"')
         .eq('email', emailLower)
         .maybeSingle();
 
@@ -134,7 +134,8 @@ export async function handleRequestPasswordReset(
           user_metadata: {
             // Link to existing records - DO NOT create new ones
             user_id: legacyUser._id,
-            host_account_id: legacyUser['Account - Host / Landlord'],
+            // host_account_id is now same as user_id (user._id used directly as host reference)
+            host_account_id: legacyUser._id,
             user_type: legacyUser['Type - User Current'] || 'Guest',
             first_name: legacyUser['Name - First'] || '',
             last_name: legacyUser['Name - Last'] || '',

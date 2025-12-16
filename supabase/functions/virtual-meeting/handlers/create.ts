@@ -62,7 +62,7 @@ export async function handleCreate(
       _id,
       Guest,
       Listing,
-      "Host - Account"
+      "Host User"
     `)
     .eq("_id", input.proposalId)
     .single();
@@ -75,43 +75,25 @@ export async function handleCreate(
   const proposalData = proposal as unknown as ProposalData;
   console.log(`[virtual-meeting:create] Found proposal, guest: ${proposalData.Guest}, listing: ${proposalData.Listing}`);
 
-  // Fetch Host User - PRIMARY: user._id lookup (new pattern)
-  // FALLBACK: Account - Host / Landlord lookup (legacy pattern)
-  const hostAccountValue = proposalData["Host - Account"];
-  let hostUserData: UserData | null = null;
+  // Fetch Host User directly (Host User column now contains user._id)
+  const hostUserId = proposalData["Host User"];
 
-  // First try: NEW PATTERN - Host - Account = user._id directly
-  const { data: hostUserDirect, error: hostUserDirectError } = await supabase
+  const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
     .select(`_id, email, "Name - First", "Name - Full"`)
-    .eq("_id", hostAccountValue)
-    .maybeSingle();
+    .eq("_id", hostUserId)
+    .single();
 
-  if (hostUserDirect) {
-    hostUserData = hostUserDirect as unknown as UserData;
-    console.log(`[virtual-meeting:create] Found host user via _id lookup: ${hostUserData.email}`);
-  } else {
-    // Fallback: LEGACY PATTERN - Host - Account = account_host._id, lookup via user["Account - Host / Landlord"]
-    console.log(`[virtual-meeting:create] _id lookup failed, trying legacy Account - Host / Landlord lookup`);
-    const { data: hostUserLegacy, error: hostUserLegacyError } = await supabase
-      .from("user")
-      .select(`_id, email, "Name - First", "Name - Full"`)
-      .eq("Account - Host / Landlord", hostAccountValue)
-      .maybeSingle();
-
-    if (hostUserLegacy) {
-      hostUserData = hostUserLegacy as unknown as UserData;
-      console.log(`[virtual-meeting:create] Found host user via legacy lookup: ${hostUserData.email}`);
-    }
+  if (hostUserError || !hostUser) {
+    console.error(`[virtual-meeting:create] Host user fetch failed:`, hostUserError);
+    throw new ValidationError(`Host user not found: ${hostUserId}`);
   }
 
-  if (!hostUserData) {
-    console.error(`[virtual-meeting:create] Host user fetch failed for value: ${hostAccountValue}`);
-    throw new ValidationError(`Host user not found for host account: ${hostAccountValue}`);
-  }
+  const hostUserData = hostUser as unknown as UserData;
+  console.log(`[virtual-meeting:create] Found host user: ${hostUserData.email}`);
 
-  // Create hostAccountData for backwards compatibility with existing code
-  const hostAccountData = { _id: hostAccountValue, User: hostUserData._id } as HostAccountData;
+  // hostAccountData maintained for backwards compatibility with downstream code
+  const hostAccountData = { _id: hostUserData._id, User: hostUserData._id } as HostAccountData;
 
   // Fetch Guest User
   const { data: guestUser, error: guestUserError } = await supabase

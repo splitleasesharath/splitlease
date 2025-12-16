@@ -311,9 +311,9 @@ export async function handleSubmit(
       Status: listing_data['Status'] || 'Pending Review',
     };
 
-    // Attach user if found (new pattern: Host / Landlord = user._id, not account_host._id)
+    // Attach user if found (Host User = user._id)
     if (userId) {
-      updateData['Host / Landlord'] = userId;
+      updateData['Host User'] = userId;
       updateData['Created By'] = userId;
     }
 

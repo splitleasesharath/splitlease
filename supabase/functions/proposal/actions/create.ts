@@ -70,7 +70,7 @@ export async function handleCreate(
     .select(
       `
       _id,
-      "Host / Landlord",
+      "Host User",
       "rental type",
       "Features - House Rules",
       "💰Cleaning Cost / Maintenance Fee",
@@ -98,7 +98,7 @@ export async function handleCreate(
   }
 
   const listingData = listing as unknown as ListingData;
-  console.log(`[proposal:create] Found listing, host account: ${listingData["Host / Landlord"]}`);
+  console.log(`[proposal:create] Found listing, host user: ${listingData["Host User"]}`);
 
   // Fetch Guest User
   const { data: guest, error: guestError } = await supabase
@@ -127,24 +127,21 @@ export async function handleCreate(
   const guestData = guest as unknown as GuestData;
   console.log(`[proposal:create] Found guest: ${guestData.email}`);
 
-  // Fetch Host User via Account - Host / Landlord FK (reverse lookup)
-  // The listing's "Host / Landlord" field contains account_host._id
-  // We find the user whose "Account - Host / Landlord" matches this ID
-  // NOTE: Column name contains "/" which breaks .eq() - use .filter() with quoted column name
+  // Fetch Host User directly (Host User column now contains user._id)
   const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
     .select(`_id, email, "Proposals List"`)
-    .filter('"Account - Host / Landlord"', 'eq', listingData["Host / Landlord"])
+    .eq("_id", listingData["Host User"])
     .single();
 
   if (hostUserError || !hostUser) {
     console.error(`[proposal:create] Host user fetch failed:`, hostUserError);
-    throw new ValidationError(`Host user not found for host account: ${listingData["Host / Landlord"]}`);
+    throw new ValidationError(`Host user not found: ${listingData["Host User"]}`);
   }
 
   const hostUserData = hostUser as unknown as HostUserData;
-  // Create hostAccountData for backwards compatibility with existing code
-  const hostAccountData = { _id: listingData["Host / Landlord"], User: hostUserData._id } as HostAccountData;
+  // hostAccountData maintained for backwards compatibility with downstream code
+  const hostAccountData = { _id: hostUserData._id, User: hostUserData._id } as HostAccountData;
   console.log(`[proposal:create] Found host: ${hostUserData.email}`);
 
   // Fetch Rental Application (if exists)
@@ -234,8 +231,8 @@ export async function handleCreate(
     // Core relationships
     Listing: input.listingId,
     Guest: input.guestId,
-    // NEW PATTERN: Store host user._id directly (legacy stored account_host._id)
-    "Host - Account": hostUserData._id,
+    // Host User contains user._id directly
+    "Host User": hostUserData._id,
     "Created By": input.guestId,
 
     // Guest info
@@ -435,7 +432,7 @@ export async function handleCreate(
   // ================================================
 
   // Enqueue sync item for the proposal creation only.
-  // The proposal record contains FK relationships (Guest, Host - Account, Listing)
+  // The proposal record contains FK relationships (Guest, Host User, Listing)
   // that establish the connections. We do NOT update user records' Proposals List
   // via Data API - Bubble's Data API handles ONE record per call, and list fields
   // like Proposals List are managed by Bubble's internal relationship system.

@@ -81,7 +81,7 @@ export async function handleLogin(
     // First try to find user by email
     const { data: userProfile, error: profileError } = await supabaseAdmin
       .from('user')
-      .select('_id, email, "Name - First", "Name - Last", "Profile Photo", "Account - Host / Landlord"')
+      .select('_id, email, "Name - First", "Name - Last", "Profile Photo"')
       .eq('email', email.toLowerCase())
       .maybeSingle();
 
@@ -93,12 +93,12 @@ export async function handleLogin(
     // Get user_id from profile or user_metadata
     let userId = userProfile?._id || authUser.user_metadata?.user_id || authUser.id;
     let userType = authUser.user_metadata?.user_type || 'Guest';
-    let hostAccountId = userProfile?.['Account - Host / Landlord'] || authUser.user_metadata?.host_account_id;
+    // hostAccountId is now the same as userId (user._id is used directly as host reference)
+    let hostAccountId = userId;
 
     console.log(`[login] ✅ User profile loaded`);
     console.log(`[login]    User ID (_id): ${userId}`);
     console.log(`[login]    User Type: ${userType}`);
-    console.log(`[login]    Host Account ID: ${hostAccountId}`);
 
     // ========== RETURN SESSION DATA ==========
     const { access_token, refresh_token, expires_in } = session;
