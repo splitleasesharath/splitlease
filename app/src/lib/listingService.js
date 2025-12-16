@@ -245,6 +245,25 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
 }
 
 /**
+ * Map cancellation policy display name to its database FK ID
+ * The 'Cancellation Policy' column has a foreign key constraint to reference_table.zat_features_cancellationpolicy
+ *
+ * @param {string|null} policyName - Human-readable policy name (e.g., 'Standard')
+ * @returns {string|null} - The FK ID for the policy, or null if not found
+ */
+function mapCancellationPolicyToId(policyName) {
+  const policyMap = {
+    'Standard': '1665431440883x653177548350901500',
+    'Additional Host Restrictions': '1665431684611x656977293321267800',
+    'Prior to First-Time Arrival': '1599791792265x281203802121463780',
+    'After First-Time Arrival': '1599791785559x603327510287017500',
+  };
+
+  if (!policyName) return policyMap['Standard']; // Default to Standard if not provided
+  return policyMap[policyName] || policyMap['Standard']; // Fallback to Standard if unknown
+}
+
+/**
  * Map SelfListingPage form data to listing table columns
  * Creates a record ready for direct insertion into the listing table
  *
@@ -343,7 +362,8 @@ function mapFormDataToListingTable(formData, userId, generatedId) {
     ...mapNightlyRatesToColumns(formData.pricing?.nightlyPricing),
 
     // Section 5: Rules
-    'Cancellation Policy': formData.rules?.cancellationPolicy || null,
+    // Note: Cancellation Policy is a FK reference to reference_table.zat_features_cancellationpolicy
+    'Cancellation Policy': mapCancellationPolicyToId(formData.rules?.cancellationPolicy),
     'Preferred Gender': formData.rules?.preferredGender || 'No Preference',
     'Features - Qty Guests': formData.rules?.numberOfGuests || 2,
     'NEW Date Check-in Time': formData.rules?.checkInTime || '2:00 PM',
@@ -570,7 +590,7 @@ function mapFormDataToListingTableForUpdate(formData) {
 
   // Section 5: Rules
   if (formData.rules) {
-    if (formData.rules.cancellationPolicy !== undefined) updateData['Cancellation Policy'] = formData.rules.cancellationPolicy;
+    if (formData.rules.cancellationPolicy !== undefined) updateData['Cancellation Policy'] = mapCancellationPolicyToId(formData.rules.cancellationPolicy);
     if (formData.rules.preferredGender !== undefined) updateData['Preferred Gender'] = formData.rules.preferredGender;
     if (formData.rules.numberOfGuests !== undefined) updateData['Features - Qty Guests'] = formData.rules.numberOfGuests;
     if (formData.rules.checkInTime !== undefined) updateData['NEW Date Check-in Time'] = formData.rules.checkInTime;
@@ -837,7 +857,7 @@ function mapFormDataToDatabase(formData, userId = null) {
     ...mapNightlyRatesToColumns(formData.pricing?.nightlyPricing),
 
     // Section 5: Rules
-    'Cancellation Policy': formData.rules?.cancellationPolicy || null,
+    'Cancellation Policy': mapCancellationPolicyToId(formData.rules?.cancellationPolicy),
     'Preferred Gender': formData.rules?.preferredGender || 'No Preference',
     'Features - Qty Guests': formData.rules?.numberOfGuests || 2,
     'NEW Date Check-in Time': formData.rules?.checkInTime || '2:00 PM',
