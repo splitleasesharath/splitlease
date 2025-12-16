@@ -1692,7 +1692,7 @@ export function SelfListingPageV2() {
           <a href={createdListingId ? `/listing-dashboard?id=${createdListingId}` : '/listing-dashboard'} className="btn-next">Go to My Dashboard</a>
           {createdListingId && (
             <a
-              href={`/view-split-lease?id=${createdListingId}`}
+              href={`/preview-split-lease?id=${createdListingId}`}
               className="btn-next btn-secondary"
             >
               Preview Listing

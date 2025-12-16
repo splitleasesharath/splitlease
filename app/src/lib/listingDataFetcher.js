@@ -399,6 +399,8 @@ export async function fetchListingComplete(listingId) {
  * - ?id=listingId
  * - /view-split-lease/listingId
  * - /view-split-lease.html/listingId
+ * - /preview-split-lease/listingId
+ * - /preview-split-lease.html/listingId
  * @returns {string|null} Listing ID or null
  */
 export function getListingIdFromUrl() {
@@ -415,14 +417,16 @@ export function getListingIdFromUrl() {
     return idFromQuery;
   }
 
-  // 2. Parse pathname for segment after 'view-split-lease'
+  // 2. Parse pathname for segment after 'view-split-lease' or 'preview-split-lease'
   const pathSegments = window.location.pathname.split('/').filter(segment => segment);
   console.log('🔍 [getListingIdFromUrl] Path segments:', pathSegments);
 
   const viewSegmentIndex = pathSegments.findIndex(segment =>
     segment === 'view-split-lease' ||
     segment === 'view-split-lease.html' ||
-    segment === 'view-split-lease-1'
+    segment === 'view-split-lease-1' ||
+    segment === 'preview-split-lease' ||
+    segment === 'preview-split-lease.html'
   );
   console.log('🔍 [getListingIdFromUrl] View segment index:', viewSegmentIndex);
 

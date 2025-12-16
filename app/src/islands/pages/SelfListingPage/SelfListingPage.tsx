@@ -140,7 +140,7 @@ const SuccessModal: React.FC<SuccessModalProps> = ({ isOpen, listingId, listingN
   };
 
   const handleViewListing = () => {
-    window.location.href = `/view-split-lease.html?listing_id=${listingId}`;
+    window.location.href = `/preview-split-lease?listing_id=${listingId}`;
   };
 
   // Loading state UI

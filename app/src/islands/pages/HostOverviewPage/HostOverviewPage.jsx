@@ -16,6 +16,7 @@
 import Header from '../../shared/Header.jsx';
 import Footer from '../../shared/Footer.jsx';
 import CreateDuplicateListingModal from '../../shared/CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
+import ImportListingModal from '../../shared/ImportListingModal/ImportListingModal.jsx';
 
 // Local components
 import { ListingCard, ClaimListingCard, HouseManualCard, VirtualMeetingCard } from './components/HostOverviewCards.jsx';
@@ -55,11 +56,15 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
     itemToDelete,
     deleteType,
     showCreateListingModal,
+    showImportListingModal,
+    importListingLoading,
 
     // Action handlers
     handleCreateNewListing,
     handleCloseCreateListingModal,
     handleImportListing,
+    handleCloseImportListingModal,
+    handleImportListingSubmit,
     handleCreateNewManual,
     handleEditListing,
     handlePreviewListing,
@@ -268,6 +273,15 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
         onClose={handleCloseCreateListingModal}
         currentUser={user}
         existingListings={myListings}
+      />
+
+      {/* Import Listing Modal */}
+      <ImportListingModal
+        isOpen={showImportListingModal}
+        onClose={handleCloseImportListingModal}
+        onSubmit={handleImportListingSubmit}
+        currentUserEmail={user?.email || ''}
+        isLoading={importListingLoading}
       />
     </div>
   );

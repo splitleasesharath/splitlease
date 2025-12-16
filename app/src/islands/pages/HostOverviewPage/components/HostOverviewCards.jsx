@@ -8,7 +8,8 @@
  * - VirtualMeetingCard: Scheduled virtual meetings
  */
 
-import React from 'react';
+import React, { useState } from 'react';
+import { extractPhotos } from '../../../../lib/supabaseUtils.js';
 
 // Base Card Component
 export function Card({ children, className = '', onClick, hover = false }) {
@@ -36,11 +37,38 @@ function formatCurrency(amount) {
 
 // Listing Card - For host's managed listings
 export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = false }) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
   const listingName = listing.name || listing.Name || 'Unnamed Listing';
   const borough = listing.location?.borough || listing['Location - Borough']?.Display || 'Location not specified';
   const isComplete = listing.complete || listing.Complete;
   const leasesCount = listing.leasesCount || listing['Leases Count'] || 0;
   const proposalsCount = listing.proposalsCount || listing['Proposals Count'] || 0;
+
+  // Extract photo URLs from the photos field
+  const photosField = listing.photos || listing['Features - Photos'] || [];
+  const photoUrls = extractPhotos(photosField, {}, listing.id || listing._id);
+  const hasImages = photoUrls.length > 0;
+  const hasMultipleImages = photoUrls.length > 1;
+
+  // Image navigation handlers
+  const handlePrevImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!hasMultipleImages) return;
+    setCurrentImageIndex((prev) =>
+      prev === 0 ? photoUrls.length - 1 : prev - 1
+    );
+  };
+
+  const handleNextImage = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!hasMultipleImages) return;
+    setCurrentImageIndex((prev) =>
+      prev === photoUrls.length - 1 ? 0 : prev + 1
+    );
+  };
 
   // Pricing data
   const rentalType = listing.rental_type || listing['rental type'] || 'Nightly';
@@ -101,8 +129,44 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
 
   return (
     <Card className="listing-card" hover>
+      {/* Photo Section - Left side on desktop */}
+      <div className="listing-card__image-section">
+        {hasImages ? (
+          <div className="listing-card__images">
+            <img
+              src={photoUrls[currentImageIndex]}
+              alt={listingName}
+              className="listing-card__image"
+            />
+            {hasMultipleImages && (
+              <>
+                <button className="listing-card__image-nav listing-card__image-nav--prev" onClick={handlePrevImage}>
+                  ‹
+                </button>
+                <button className="listing-card__image-nav listing-card__image-nav--next" onClick={handleNextImage}>
+                  ›
+                </button>
+                <div className="listing-card__image-counter">
+                  {currentImageIndex + 1}/{photoUrls.length}
+                </div>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="listing-card__image-placeholder">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <circle cx="8.5" cy="8.5" r="1.5" />
+              <polyline points="21 15 16 10 5 21" />
+            </svg>
+            <span>No photos</span>
+          </div>
+        )}
+      </div>
+
+      {/* Content Section */}
       <div className="listing-card__content">
-        {/* Left side - Info and actions */}
+        {/* Middle - Info and actions */}
         <div className="listing-card__left">
           <div className="listing-card__header">
             <div className="listing-card__info">
@@ -124,18 +188,20 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
             </button>
           </div>
 
-          <div className="listing-card__badges">
-            {leasesCount > 0 && (
-              <div className="badge badge--leases">
-                Leases: {leasesCount}
-              </div>
-            )}
-            {proposalsCount > 0 && (
-              <div className="badge badge--proposals">
-                Proposals: {proposalsCount}
-              </div>
-            )}
-          </div>
+          {(leasesCount > 0 || proposalsCount > 0) && (
+            <div className="listing-card__badges">
+              {leasesCount > 0 && (
+                <div className="badge badge--leases">
+                  Leases: {leasesCount}
+                </div>
+              )}
+              {proposalsCount > 0 && (
+                <div className="badge badge--proposals">
+                  Proposals: {proposalsCount}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="listing-card__actions">
             <button
@@ -145,7 +211,7 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
                 onEdit(listing);
               }}
             >
-              Manage Listing
+              Manage
             </button>
             <button
               className="btn btn--secondary"
@@ -185,7 +251,7 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
             </div>
           ) : (
             <div className="listing-card__pricing listing-card__pricing--empty">
-              <span className="listing-card__pricing-empty">No pricing set</span>
+              <span className="listing-card__pricing-empty">No pricing</span>
             </div>
           )}
         </div>
