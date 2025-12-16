@@ -99,12 +99,14 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
   }, [calculatePrices]);
 
   // Calculate derived values
+  // prices[N-1] = price per night for an N-night stay
+  // Total for N nights = N * prices[N-1]
   const prices = nightlyPricesRef.current;
-  const sum5 = prices.slice(0, 5).reduce((a, b) => a + b, 0);
-  const avgPrice = Math.round(sum5 / 5);
-  const fiveNightTotal = sum5;
+  const fiveNightPricePerNight = prices[4]; // Price per night for 5-night stay
+  const fiveNightTotal = 5 * fiveNightPricePerNight;
+  const avgPrice = fiveNightPricePerNight; // For 5-night stay, avg = per night price
   const monthlyEstimate = fiveNightTotal * 4;
-  const sevenNightTotal = prices.reduce((a, b) => a + b, 0);
+  const sevenNightTotal = 7 * prices[6]; // 7 nights × price per night for 7-night stay
 
   // Handle base rate input change
   const handleBaseRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,9 +180,11 @@ export const NightlyPriceSlider: React.FC<NightlyPriceSliderProps> = ({
           </div>
         </div>
         <div className="formula-row">
-          {prices.map((_, idx) => {
-            const cumulativeTotal = prices.slice(0, idx + 1).reduce((a, b) => a + b, 0);
-            return <div key={idx} className="formula-item">{fmtShort(cumulativeTotal)}</div>;
+          {prices.map((pricePerNight, idx) => {
+            // Total for N nights = N * (price per night for that stay length)
+            const nightCount = idx + 1;
+            const total = nightCount * pricePerNight;
+            return <div key={idx} className="formula-item">{fmtShort(total)}</div>;
           })}
         </div>
         <div className="formula-total-row">
