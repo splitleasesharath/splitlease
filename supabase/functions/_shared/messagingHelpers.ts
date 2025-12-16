@@ -122,7 +122,7 @@ export async function createThread(
       "Created By": params.createdBy,
       "Created Date": now,
       "Modified Date": now,
-      "Participants": JSON.stringify([params.hostUserId, params.guestUserId]),
+      "Participants": [params.hostUserId, params.guestUserId],
       "from logged out user?": false,
       created_at: now,
       updated_at: now,
