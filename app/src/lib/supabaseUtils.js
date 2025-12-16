@@ -160,6 +160,7 @@ export async function fetchHostData(hostIds) {
       }
 
       userMap[user._id] = {
+        userId: user._id,  // User's Bubble ID (needed for messaging)
         name: user['Name - Full'] || null,
         image: profilePhoto || null,
         verified: false // TODO: Add verification logic when available
