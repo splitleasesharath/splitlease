@@ -130,21 +130,46 @@ export async function handleCreate(
   // Fetch Host User directly via Account - Host / Landlord FK (reverse lookup)
   // The listing's "Host / Landlord" field contains account_host._id
   // We find the user whose "Account - Host / Landlord" matches this ID
+  const hostLandlordValue = listingData["Host / Landlord"];
+  console.log(`[proposal:create] Looking up host user for Host / Landlord: ${hostLandlordValue}`);
+
+  let hostUserData: HostUserData | null = null;
+  let hostAccountId = hostLandlordValue;
+
+  // First try: Standard lookup via Account - Host / Landlord
   const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
     .select(`_id, email, "Proposals List"`)
-    .eq("Account - Host / Landlord", listingData["Host / Landlord"])
-    .single();
+    .eq("Account - Host / Landlord", hostLandlordValue)
+    .maybeSingle();
 
-  if (hostUserError || !hostUser) {
-    console.error(`[proposal:create] Host user fetch failed:`, hostUserError);
-    throw new ValidationError(`Host user not found for host account: ${listingData["Host / Landlord"]}`);
+  if (hostUser) {
+    hostUserData = hostUser as unknown as HostUserData;
+    console.log(`[proposal:create] Found host via Account - Host / Landlord: ${hostUserData.email}`);
+  } else {
+    // Fallback: Legacy listings may have Host / Landlord = user._id directly
+    // This happens with older listings or some self-listing edge cases
+    console.log(`[proposal:create] Standard lookup failed, trying fallback (Host / Landlord as user._id)`);
+    const { data: fallbackUser, error: fallbackError } = await supabase
+      .from("user")
+      .select(`_id, email, "Proposals List", "Account - Host / Landlord"`)
+      .eq("_id", hostLandlordValue)
+      .maybeSingle();
+
+    if (fallbackUser) {
+      hostUserData = fallbackUser as unknown as HostUserData;
+      // Use the user's actual host account ID if available, otherwise use the user's _id
+      hostAccountId = (fallbackUser as any)["Account - Host / Landlord"] || hostLandlordValue;
+      console.log(`[proposal:create] Found host via fallback (user._id): ${hostUserData.email}`);
+    } else {
+      console.error(`[proposal:create] Host user fetch failed. Standard error:`, hostUserError, `Fallback error:`, fallbackError);
+      throw new ValidationError(`Host user not found for host account: ${hostLandlordValue}`);
+    }
   }
 
-  const hostUserData = hostUser as unknown as HostUserData;
   // Create hostAccountData for backwards compatibility with existing code
-  const hostAccountData = { _id: listingData["Host / Landlord"], User: hostUserData._id } as HostAccountData;
-  console.log(`[proposal:create] Found host: ${hostUserData.email}`);
+  const hostAccountData = { _id: hostAccountId, User: hostUserData._id } as HostAccountData;
+  console.log(`[proposal:create] Host resolved - User: ${hostUserData._id}, Account: ${hostAccountId}`);
 
   // Fetch Rental Application (if exists)
   let rentalApp: RentalApplicationData | null = null;
