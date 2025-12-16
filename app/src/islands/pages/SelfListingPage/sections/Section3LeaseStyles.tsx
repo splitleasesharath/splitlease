@@ -71,25 +71,31 @@ export const Section3LeaseStyles: React.FC<Section3Props> = ({
       rentalType: type
     };
 
+    // All days/nights available object - used for all rental types
+    const allDaysAvailable = {
+      sunday: true,
+      monday: true,
+      tuesday: true,
+      wednesday: true,
+      thursday: true,
+      friday: true,
+      saturday: true
+    };
+
     // Reset type-specific fields when switching
     if (type === 'Nightly') {
-      newData.availableNights = {
-        sunday: true,
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: true,
-        friday: true,
-        saturday: true
-      };
+      // Nightly: User can customize which nights are available (default all)
+      newData.availableNights = allDaysAvailable;
       delete newData.weeklyPattern;
       delete newData.subsidyAgreement;
     } else if (type === 'Weekly') {
-      delete newData.availableNights;
+      // Weekly: All days/nights should be available (full week rental)
+      newData.availableNights = allDaysAvailable;
       newData.weeklyPattern = '';
       delete newData.subsidyAgreement;
     } else if (type === 'Monthly') {
-      delete newData.availableNights;
+      // Monthly: All days/nights should be available (full month rental)
+      newData.availableNights = allDaysAvailable;
       delete newData.weeklyPattern;
       // Don't set subsidyAgreement automatically, let user select
     }

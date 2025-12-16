@@ -931,16 +931,30 @@ export function SelfListingPageV2() {
 
   // Map form data to listingService format
   const mapFormDataToListingService = (data: FormData) => {
-    // Convert selectedNights array to availableNights object
-    const availableNights = {
-      sunday: data.selectedNights.includes('sunday'),
-      monday: data.selectedNights.includes('monday'),
-      tuesday: data.selectedNights.includes('tuesday'),
-      wednesday: data.selectedNights.includes('wednesday'),
-      thursday: data.selectedNights.includes('thursday'),
-      friday: data.selectedNights.includes('friday'),
-      saturday: data.selectedNights.includes('saturday'),
+    // All days/nights available - used for weekly/monthly rentals
+    const allDaysAvailable = {
+      sunday: true,
+      monday: true,
+      tuesday: true,
+      wednesday: true,
+      thursday: true,
+      friday: true,
+      saturday: true,
     };
+
+    // For nightly: use user's selected nights
+    // For weekly/monthly: all days should be available (full week/month rental)
+    const availableNights = data.leaseStyle === 'nightly'
+      ? {
+          sunday: data.selectedNights.includes('sunday'),
+          monday: data.selectedNights.includes('monday'),
+          tuesday: data.selectedNights.includes('tuesday'),
+          wednesday: data.selectedNights.includes('wednesday'),
+          thursday: data.selectedNights.includes('thursday'),
+          friday: data.selectedNights.includes('friday'),
+          saturday: data.selectedNights.includes('saturday'),
+        }
+      : allDaysAvailable;
 
     // Build nightly pricing object if applicable
     const nightlyPricing = data.leaseStyle === 'nightly' ? {
@@ -996,9 +1010,10 @@ export function SelfListingPageV2() {
       },
 
       // Lease styles
+      // For weekly/monthly rentals, all days/nights should be available
       leaseStyles: {
         rentalType: data.leaseStyle.charAt(0).toUpperCase() + data.leaseStyle.slice(1),
-        availableNights: data.leaseStyle === 'nightly' ? availableNights : {},
+        availableNights: availableNights, // Always pass availableNights (all days for weekly/monthly)
         weeklyPattern: data.leaseStyle === 'weekly' ? data.weeklyPattern : '',
         subsidyAgreement: data.leaseStyle === 'monthly' ? data.monthlyAgreement : false,
       },
