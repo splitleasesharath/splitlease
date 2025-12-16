@@ -706,12 +706,14 @@ export default function useListingDashboardPageLogic() {
     console.log(`📋 Updating listing table with _id=${listingId}`);
     console.log('📋 DB updates:', dbUpdates);
 
+    // Note: Using .maybeSingle() instead of .single() to avoid 409 Conflict errors
+    // when multiple concurrent updates occur (e.g., from React StrictMode double-mounting)
     const { data, error: updateError } = await supabase
       .from('listing')
       .update(dbUpdates)
       .eq('_id', listingId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (updateError) {
       console.error('❌ Error updating listing:', updateError);
