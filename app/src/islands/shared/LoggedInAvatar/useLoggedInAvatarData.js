@@ -159,8 +159,7 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .single(),
 
         // 2. Fetch listings for this user using the same RPC as HostOverview
-        //    This queries both listing_trial and listing tables,
-        //    checking both "Host User" and "Created By" fields
+        //    This queries the listing table by "Host User" and "Created By" fields
         supabase
           .rpc('get_host_listings', { host_user_id: userId }),
 
@@ -264,8 +263,7 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
       }
 
       // Process listings - get count and first listing ID
-      // The RPC returns results from both listing_trial and listing tables
-      // Deduplicate by _id in case the same listing exists in both tables
+      // The RPC returns results from the listing table
       const rawListings = listingsResult.data || [];
       if (listingsResult.error) {
         console.warn('[useLoggedInAvatarData] Listings query error:', listingsResult.error);

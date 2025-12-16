@@ -532,7 +532,7 @@ export const SelfListingPage: React.FC = () => {
       console.log('[SelfListingPage] Submitting listing after auth...');
       console.log('[SelfListingPage] Form data:', formData);
 
-      // Submit to listing_trial table via listingService
+      // Submit to listing table via listingService
       const newListing = await createListing(formData);
 
       console.log('[SelfListingPage] ✅ Listing created:', newListing);
@@ -576,7 +576,7 @@ export const SelfListingPage: React.FC = () => {
       console.log('[SelfListingPage] Submitting listing...');
       console.log('[SelfListingPage] Form data:', formData);
 
-      // Submit to listing_trial table via listingService
+      // Submit to listing table via listingService
       const newListing = await createListing(formData);
 
       console.log('[SelfListingPage] ✅ Listing created:', newListing);

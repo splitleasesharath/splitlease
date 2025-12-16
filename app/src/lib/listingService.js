@@ -487,7 +487,7 @@ function mapStateToDisplayName(stateInput) {
  * Map SelfListingPage form data to listing table columns
  * Creates a record ready for direct insertion into the listing table
  *
- * Column Mapping from listing_trial:
+ * Column Mapping Notes:
  * - form_metadata → Handled by localStorage (not stored in DB)
  * - address_validated → Stored in 'Location - Address' JSONB
  * - weekly_pattern → Mapped to 'Weeks offered'
@@ -674,26 +674,6 @@ function mapAvailableNightsToNames(availableNights) {
 // DISABLED FUNCTIONS - Moved to tech-debt
 // See /docs/tech-debt/BUBBLE_SYNC_DISABLED.md for details
 // ============================================================================
-
-/*
- * [DISABLED] Sync a listing to the main Supabase `listing` table
- * This was used when listing_trial was the primary table
- * Now we insert directly into listing table, so this is no longer needed
- *
-async function syncToListingTable(listingTrialData, bubbleId) {
-  // ... see /docs/tech-debt/BUBBLE_SYNC_DISABLED.md
-}
-*/
-
-/*
- * [DISABLED] Sync a listing from listing_trial to Bubble
- * Bubble sync is disabled - listings are now created directly in Supabase
- * See /docs/tech-debt/BUBBLE_SYNC_DISABLED.md for the original implementation
- *
-async function syncListingToBubble(supabaseData, formData) {
-  // ... see /docs/tech-debt/BUBBLE_SYNC_DISABLED.md
-}
-*/
 
 /**
  * Update an existing listing in listing table
@@ -942,39 +922,6 @@ export async function getListingById(listingId) {
 }
 
 /**
- * @deprecated Use getListingById instead - listing_trial table is no longer used
- * Get a listing by UUID from listing_trial
- * @param {string} id - UUID of the listing
- * @returns {Promise<object|null>} - Listing data or null if not found
- */
-export async function getListingTrialById(id) {
-  console.warn('[ListingService] ⚠️ getListingTrialById is deprecated. Use getListingById instead.');
-  console.log('[ListingService] Fetching from listing_trial:', id);
-
-  if (!id) {
-    throw new Error('Listing ID is required');
-  }
-
-  const { data, error } = await supabase
-    .from('listing_trial')
-    .select('*')
-    .eq('id', id)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') {
-      console.log('[ListingService] Listing not found:', id);
-      return null;
-    }
-    console.error('[ListingService] ❌ Error fetching listing:', error);
-    throw new Error(error.message || 'Failed to fetch listing');
-  }
-
-  console.log('[ListingService] ✅ Listing fetched:', data.id);
-  return data;
-}
-
-/**
  * Save a draft listing
  * Note: Drafts are now primarily saved to localStorage via the store.
  * This function creates/updates a listing in the database if needed.
@@ -994,156 +941,8 @@ export async function saveDraft(formData, existingId = null) {
 }
 
 // ============================================================================
-// DEPRECATED FUNCTIONS - For backwards compatibility with listing_trial
-// These will be removed in a future version
+// HELPER FUNCTIONS
 // ============================================================================
-
-/**
- * @deprecated Use mapFormDataToListingTable instead - listing_trial table is no longer used
- * Map SelfListingPage form data to database columns (for listing_trial table)
- *
- * @param {object} formData - Form data from SelfListingPage
- * @param {string|null} userId - The current user's ID (for host linking)
- * @returns {object} - Database-ready object
- */
-function mapFormDataToDatabase(formData, userId = null) {
-  console.warn('[ListingService] ⚠️ mapFormDataToDatabase is deprecated. Use mapFormDataToListingTable instead.');
-  const now = new Date().toISOString();
-
-  // Generate a unique _id for Bubble compatibility (even though not syncing)
-  const uniqueId = `self_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-  // Map available nights from object to array of day numbers (1-based for Bubble compatibility)
-  const daysAvailable = formData.leaseStyles?.availableNights
-    ? mapAvailableNightsToArray(formData.leaseStyles.availableNights)
-    : [];
-
-  // Build the database record
-  return {
-    // Required fields
-    _id: uniqueId,
-    'Created By': userId || 'self-listing-form',
-    'Host User': userId || null,
-    'Created Date': now,
-    'Modified Date': now,
-
-    // Section 1: Space Snapshot
-    Name: formData.spaceSnapshot?.listingName || null,
-    'Features - Type of Space': mapSpaceTypeToId(formData.spaceSnapshot?.typeOfSpace),
-    'Features - Qty Bedrooms': formData.spaceSnapshot?.bedrooms || null,
-    'Features - Qty Beds': formData.spaceSnapshot?.beds || null,
-    'Features - Qty Bathrooms': formData.spaceSnapshot?.bathrooms
-      ? Number(formData.spaceSnapshot.bathrooms)
-      : null,
-    'Kitchen Type': formData.spaceSnapshot?.typeOfKitchen || null,
-    'Features - Parking type': mapParkingTypeToId(formData.spaceSnapshot?.typeOfParking),
-
-    // Address (stored as JSONB)
-    'Location - Address': formData.spaceSnapshot?.address
-      ? {
-          address: formData.spaceSnapshot.address.fullAddress,
-          number: formData.spaceSnapshot.address.number,
-          street: formData.spaceSnapshot.address.street,
-          lat: formData.spaceSnapshot.address.latitude,
-          lng: formData.spaceSnapshot.address.longitude,
-        }
-      : null,
-    // Note: Location - City is a FK to reference_table.zat_location._id - set to null
-    'Location - City': null,
-    'Location - State': mapStateToDisplayName(formData.spaceSnapshot?.address?.state),
-    'Location - Zip Code': formData.spaceSnapshot?.address?.zip || null,
-    'Location - Coordinates': formData.spaceSnapshot?.address?.latitude
-      ? {
-          lat: formData.spaceSnapshot.address.latitude,
-          lng: formData.spaceSnapshot.address.longitude,
-        }
-      : null,
-    'neighborhood (manual input by user)':
-      formData.spaceSnapshot?.address?.neighborhood || null,
-    address_validated: formData.spaceSnapshot?.address?.validated || false,
-
-    // Section 2: Features
-    'Features - Amenities In-Unit': formData.features?.amenitiesInsideUnit || [],
-    'Features - Amenities In-Building':
-      formData.features?.amenitiesOutsideUnit || [],
-    Description: formData.features?.descriptionOfLodging || null,
-    'Description - Neighborhood':
-      formData.features?.neighborhoodDescription || null,
-
-    // Section 3: Lease Styles
-    'rental type': formData.leaseStyles?.rentalType || 'Monthly',
-    'Days Available (List of Days)': daysAvailable,
-    weekly_pattern: formData.leaseStyles?.weeklyPattern || null,
-    subsidy_agreement: formData.leaseStyles?.subsidyAgreement || false,
-
-    // Section 4: Pricing
-    '💰Damage Deposit': formData.pricing?.damageDeposit || 0,
-    '💰Cleaning Cost / Maintenance Fee': formData.pricing?.maintenanceFee || 0,
-    '💰Weekly Host Rate': formData.pricing?.weeklyCompensation || null,
-    '💰Monthly Host Rate': formData.pricing?.monthlyCompensation || null,
-    nightly_pricing: formData.pricing?.nightlyPricing || null,
-
-    // Calculate nightly rates if nightlyPricing exists
-    ...mapNightlyRatesToColumns(formData.pricing?.nightlyPricing),
-
-    // Section 5: Rules
-    'Cancellation Policy': mapCancellationPolicyToId(formData.rules?.cancellationPolicy),
-    'Preferred Gender': formData.rules?.preferredGender || 'No Preference',
-    'Features - Qty Guests': formData.rules?.numberOfGuests || 2,
-    'NEW Date Check-in Time': formData.rules?.checkInTime || '2:00 PM',
-    'NEW Date Check-out Time': formData.rules?.checkOutTime || '11:00 AM',
-    ideal_min_duration: formData.rules?.idealMinDuration || null,
-    ideal_max_duration: formData.rules?.idealMaxDuration || null,
-    'Features - House Rules': formData.rules?.houseRules || [],
-    'Dates - Blocked': formData.rules?.blockedDates || [],
-
-    // Section 6: Photos - Store with format compatible with listing display
-    'Features - Photos': formData.photos?.photos?.map((p, index) => ({
-      id: p.id,
-      url: p.url || p.Photo,
-      Photo: p.url || p.Photo,
-      'Photo (thumbnail)': p['Photo (thumbnail)'] || p.url || p.Photo,
-      caption: p.caption || '',
-      displayOrder: p.displayOrder ?? index,
-      SortOrder: p.SortOrder ?? p.displayOrder ?? index,
-      toggleMainPhoto: p.toggleMainPhoto ?? (index === 0),
-      storagePath: p.storagePath || null
-    })) || [],
-
-    // Section 7: Review
-    'Features - Safety': formData.review?.safetyFeatures || [],
-    'Features - SQFT Area': formData.review?.squareFootage || null,
-    ' First Available': formData.review?.firstDayAvailable || null,
-    agreed_to_terms: formData.review?.agreedToTerms || false,
-    optional_notes: formData.review?.optionalNotes || null,
-    previous_reviews_link: formData.review?.previousReviewsLink || null,
-
-    // Form metadata
-    form_metadata: {
-      currentSection: formData.currentSection || 1,
-      completedSections: formData.completedSections || [],
-      isDraft: formData.isDraft !== false,
-      isSubmitted: formData.isSubmitted || false,
-    },
-
-    // Source identification
-    source_type: formData.source_type || 'self-listing-form',
-
-    // V2 fields (simplified flow)
-    host_type: formData.hostType || null,
-    market_strategy: formData.marketStrategy || 'private',
-
-    // Status defaults for new self-listings
-    Active: false,
-    Approved: false,
-    Complete: formData.isSubmitted || false,
-    'Features - Trial Periods Allowed': false,
-    'Maximum Weeks': 52,
-    'Minimum Nights': 1,
-    'Weeks offered': 'All',
-    'Nights Available (List of Nights) ': [],
-  };
-}
 
 /**
  * Map available nights object to array of 1-based day numbers
@@ -1201,7 +1000,7 @@ function mapNightlyRatesToColumns(nightlyPricing) {
  * Map database record back to form data structure
  * Used when loading an existing listing for editing
  *
- * @param {object} dbRecord - Database record from listing_trial
+ * @param {object} dbRecord - Database record from listing table
  * @returns {object} - Form data structure for SelfListingPage
  */
 export function mapDatabaseToFormData(dbRecord) {

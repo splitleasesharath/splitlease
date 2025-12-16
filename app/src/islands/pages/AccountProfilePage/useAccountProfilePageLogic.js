@@ -437,7 +437,7 @@ export function useAccountProfilePageLogic() {
             // Additional fields for display
             rental_type: listing.rental_type,
             monthly_rate: listing.monthly_rate,
-            source: listing.source || 'listing_trial'
+            source: listing.source || 'listing'
           };
         });
 
