@@ -15,7 +15,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import Header from '../../shared/Header.jsx';
-import Footer from '../../shared/Footer.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import Toast, { useToast } from '../../shared/Toast.jsx';
 import { HostScheduleSelector } from '../../shared/HostScheduleSelector/HostScheduleSelector.jsx';
@@ -2088,7 +2087,6 @@ export function SelfListingPageV2() {
             <p>Loading...</p>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -2116,8 +2114,6 @@ export function SelfListingPageV2() {
           {renderCurrentStep()}
         </div>
       </main>
-
-      <Footer />
 
       {showAuthModal && (
         <SignUpLoginModal
