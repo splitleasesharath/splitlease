@@ -77,17 +77,18 @@ export async function handleGetThreads(
   console.log('[getThreads] Found', threadIds.length, 'thread links in junction table');
 
   // Step 2: Fetch full thread details using the thread IDs
+  // Note: Table is 'thread' and columns have specific naming conventions
   const { data: threads, error: threadsError } = await supabaseAdmin
-    .from('thread_conversation')
+    .from('thread')
     .select(`
       _id,
       "Modified Date",
-      host,
-      guest,
-      proposal,
-      listing,
-      "last message",
-      "split bot only"
+      "-Host User",
+      "-Guest User",
+      "Proposal",
+      "Listing",
+      "~Last Message",
+      "Thread Subject"
     `)
     .in('_id', threadIds)
     .order('"Modified Date"', { ascending: false });
@@ -113,23 +114,26 @@ export async function handleGetThreads(
 
   threads.forEach(thread => {
     // Contact is the other person in the thread
-    const contactId = thread.host === userBubbleId ? thread.guest : thread.host;
+    const hostId = thread['-Host User'];
+    const guestId = thread['-Guest User'];
+    const contactId = hostId === userBubbleId ? guestId : hostId;
     if (contactId) contactIds.add(contactId);
-    if (thread.listing) listingIds.add(thread.listing);
+    if (thread['Listing']) listingIds.add(thread['Listing']);
   });
 
   // Batch fetch contact user data
+  // Note: User table uses "Name - First" and "Name - Last" column names
   let contactMap: Record<string, { name: string; avatar?: string }> = {};
   if (contactIds.size > 0) {
     const { data: contacts, error: contactsError } = await supabaseAdmin
       .from('user')
-      .select('_id, "First Name", "Last Name", "Profile Photo"')
+      .select('_id, "Name - First", "Name - Last", "Profile Photo"')
       .in('_id', Array.from(contactIds));
 
     if (!contactsError && contacts) {
       contactMap = contacts.reduce((acc, contact) => {
         acc[contact._id] = {
-          name: `${contact['First Name'] || ''} ${contact['Last Name'] || ''}`.trim() || 'Unknown User',
+          name: `${contact['Name - First'] || ''} ${contact['Name - Last'] || ''}`.trim() || 'Unknown User',
           avatar: contact['Profile Photo'],
         };
         return acc;
@@ -154,14 +158,14 @@ export async function handleGetThreads(
   }
 
   // Fetch unread message counts per thread
-  const threadIds = threads.map(t => t._id);
+  const threadIdsForUnread = threads.map(t => t._id);
   let unreadMap: Record<string, number> = {};
 
   // Query messages where user is in unread_users list
   const { data: unreadMessages, error: unreadError } = await supabaseAdmin
     .from('message')
     .select('thread_conversation, unread_users')
-    .in('thread_conversation', threadIds);
+    .in('thread_conversation', threadIdsForUnread);
 
   if (!unreadError && unreadMessages) {
     unreadMessages.forEach(msg => {
@@ -176,7 +180,9 @@ export async function handleGetThreads(
 
   // Transform threads to response format
   const transformedThreads: Thread[] = threads.map(thread => {
-    const contactId = thread.host === userBubbleId ? thread.guest : thread.host;
+    const hostId = thread['-Host User'];
+    const guestId = thread['-Guest User'];
+    const contactId = hostId === userBubbleId ? guestId : hostId;
     const contact = contactId ? contactMap[contactId] : null;
 
     // Format the last modified time
@@ -200,11 +206,11 @@ export async function handleGetThreads(
       _id: thread._id,
       contact_name: contact?.name || 'Split Lease',
       contact_avatar: contact?.avatar,
-      property_name: thread.listing ? listingMap[thread.listing] : undefined,
-      last_message_preview: thread['last message'] || 'No messages yet',
+      property_name: thread['Listing'] ? listingMap[thread['Listing']] : undefined,
+      last_message_preview: thread['~Last Message'] || 'No messages yet',
       last_message_time: lastMessageTime,
       unread_count: unreadMap[thread._id] || 0,
-      is_with_splitbot: thread['split bot only'] === true,
+      is_with_splitbot: false, // No longer tracking split bot only
     };
   });
 
