@@ -3,7 +3,7 @@
  * Fetches user's favorited listings from Supabase
  *
  * Uses Supabase service role to:
- * 1. Get user's "Favorited Listings" array from user table
+ * 1. Get user's favorited listing IDs from junction table (Phase 5b migration)
  * 2. Fetch those listings from the listing table
  */
 
@@ -94,42 +94,23 @@ export async function handleGetFavorites(
   });
 
   try {
-    // Step 1: Fetch user's favorited listing IDs
-    console.log('[GetFavorites Handler] Step 1: Fetching user favorites...');
-    const { data: userData, error: userError } = await supabase
-      .from('user')
-      .select('"Favorited Listings"')
-      .eq('_id', userId)
-      .single();
+    // Step 1: Fetch user's favorited listing IDs from junction table
+    console.log('[GetFavorites Handler] Step 1: Fetching user favorites from junction table...');
+    const { data: favoritesData, error: favoritesError } = await supabase
+      .schema('junctions')
+      .from('user_listing_favorite')
+      .select('listing_id')
+      .eq('user_id', userId)
+      .order('favorited_at', { ascending: false });
 
-    if (userError) {
-      console.error('[GetFavorites Handler] User fetch error:', userError);
-      throw new Error(`Failed to fetch user data: ${userError.message}`);
+    if (favoritesError) {
+      console.error('[GetFavorites Handler] Junction table fetch error:', favoritesError);
+      throw new Error(`Failed to fetch favorites: ${favoritesError.message}`);
     }
 
-    // Parse Favorited Listings - it's stored as a stringified JSON array in the database
-    let favoritedIds: string[] = [];
-    const rawFavorites = userData?.['Favorited Listings'];
-    console.log('[GetFavorites Handler] Raw favorites value:', rawFavorites, 'Type:', typeof rawFavorites);
-
-    if (rawFavorites) {
-      if (typeof rawFavorites === 'string') {
-        // Parse the stringified JSON array
-        try {
-          favoritedIds = JSON.parse(rawFavorites);
-          console.log('[GetFavorites Handler] Parsed favorites from string:', favoritedIds);
-        } catch (parseError) {
-          console.error('[GetFavorites Handler] Failed to parse favorites string:', parseError);
-          favoritedIds = [];
-        }
-      } else if (Array.isArray(rawFavorites)) {
-        // Already an array
-        favoritedIds = rawFavorites;
-        console.log('[GetFavorites Handler] Favorites already an array:', favoritedIds);
-      }
-    }
-
-    console.log('[GetFavorites Handler] Favorited IDs:', favoritedIds);
+    // Extract listing IDs from junction table results
+    const favoritedIds: string[] = (favoritesData || []).map(f => f.listing_id);
+    console.log('[GetFavorites Handler] Favorited IDs from junction:', favoritedIds);
 
     // If no favorites, return empty response
     if (favoritedIds.length === 0) {

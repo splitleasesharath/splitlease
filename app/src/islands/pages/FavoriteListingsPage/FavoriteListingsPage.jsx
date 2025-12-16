@@ -633,21 +633,24 @@ const FavoriteListingsPage = () => {
             avatarUrl: userData.profilePhoto || null
           });
 
-          // Also fetch user's proposal count and profile info for prefilling
+          // Fetch user profile + counts from junction tables (Phase 5b migration)
           try {
-            const { data: userProposalData, error: propError } = await supabase
-              .from('user')
-              .select('"About Me / Bio", "need for Space", "special needs", "Proposals List"')
-              .eq('_id', sessionId)
-              .single();
+            const [profileResult, countsResult] = await Promise.all([
+              supabase
+                .from('user')
+                .select('"About Me / Bio", "need for Space", "special needs"')
+                .eq('_id', sessionId)
+                .single(),
+              supabase.rpc('get_user_junction_counts', { p_user_id: sessionId })
+            ]);
 
-            if (!propError && userProposalData) {
-              const proposalsList = userProposalData['Proposals List'];
-              const proposalCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
+            if (!profileResult.error && profileResult.data) {
+              const junctionCounts = countsResult.data?.[0] || {};
+              const proposalCount = Number(junctionCounts.proposals_count) || 0;
               setLoggedInUserData({
-                aboutMe: userProposalData['About Me / Bio'] || '',
-                needForSpace: userProposalData['need for Space'] || '',
-                specialNeeds: userProposalData['special needs'] || '',
+                aboutMe: profileResult.data['About Me / Bio'] || '',
+                needForSpace: profileResult.data['need for Space'] || '',
+                specialNeeds: profileResult.data['special needs'] || '',
                 proposalCount: proposalCount
               });
             }
@@ -662,12 +665,11 @@ const FavoriteListingsPage = () => {
           return;
         }
 
-        // Fetch user's favorited listing IDs
-        const { data: userFavorites, error: favError } = await supabase
-          .from('user')
-          .select('"Favorited Listings"')
-          .eq('_id', sessionId)
-          .single();
+        // Fetch user's favorited listing IDs from junction table (Phase 5b migration)
+        const { data: favorites, error: favError } = await supabase.rpc(
+          'get_user_favorites',
+          { p_user_id: sessionId }
+        );
 
         if (favError) {
           console.error('Error fetching favorites:', favError);
@@ -676,18 +678,8 @@ const FavoriteListingsPage = () => {
           return;
         }
 
-        const favorites = userFavorites?.['Favorited Listings'];
-        let favoritedIds = [];
-
-        if (favorites) {
-          if (typeof favorites === 'string') {
-            try {
-              favoritedIds = JSON.parse(favorites);
-            } catch { favoritedIds = []; }
-          } else if (Array.isArray(favorites)) {
-            favoritedIds = favorites;
-          }
-        }
+        // RPC returns text[] directly
+        let favoritedIds = Array.isArray(favorites) ? favorites : [];
 
         // Filter to valid Bubble listing IDs
         favoritedIds = favoritedIds.filter(id => typeof id === 'string' && /^\d+x\d+$/.test(id));
@@ -1060,20 +1052,23 @@ const FavoriteListingsPage = () => {
           avatarUrl: userData.profilePhoto || null
         });
 
-        // Also fetch user's proposal data for future proposals
-        const { data: userProposalData } = await supabase
-          .from('user')
-          .select('"About Me / Bio", "need for Space", "special needs", "Proposals List"')
-          .eq('_id', sessionId)
-          .single();
+        // Fetch user profile + proposal count from junction tables (Phase 5b migration)
+        const [profileResult, countsResult] = await Promise.all([
+          supabase
+            .from('user')
+            .select('"About Me / Bio", "need for Space", "special needs"')
+            .eq('_id', sessionId)
+            .single(),
+          supabase.rpc('get_user_junction_counts', { p_user_id: sessionId })
+        ]);
 
-        if (userProposalData) {
-          const proposalsList = userProposalData['Proposals List'];
-          const proposalCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
+        if (profileResult.data) {
+          const junctionCounts = countsResult.data?.[0] || {};
+          const proposalCount = Number(junctionCounts.proposals_count) || 0;
           setLoggedInUserData({
-            aboutMe: userProposalData['About Me / Bio'] || '',
-            needForSpace: userProposalData['need for Space'] || '',
-            specialNeeds: userProposalData['special needs'] || '',
+            aboutMe: profileResult.data['About Me / Bio'] || '',
+            needForSpace: profileResult.data['need for Space'] || '',
+            specialNeeds: profileResult.data['special needs'] || '',
             proposalCount: proposalCount
           });
         }

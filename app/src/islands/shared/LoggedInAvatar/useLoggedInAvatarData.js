@@ -144,17 +144,16 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         virtualMeetingsResult,
         leasesResult,
         messagesResult,
-        suggestedProposalsResult
+        suggestedProposalsResult,
+        junctionCountsResult
       ] = await Promise.all([
-        // 1. Fetch user data (type, proposals list, account host reference)
+        // 1. Fetch user data (type, account host reference)
         supabase
           .from('user')
           .select(`
             _id,
             "Type - User Current",
-            "Proposals List",
-            "Account - Host / Landlord",
-            "Favorited Listings"
+            "Account - Host / Landlord"
           `)
           .eq('_id', userId)
           .single(),
@@ -197,7 +196,10 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .select('_id', { count: 'exact', head: true })
           .eq('Guest', userId)
           .in('Status', SUGGESTED_PROPOSAL_STATUSES)
-          .or('"Deleted".is.null,"Deleted".eq.false')
+          .or('"Deleted".is.null,"Deleted".eq.false'),
+
+        // 8. Get favorites and proposals counts from junction tables (Phase 5b migration)
+        supabase.rpc('get_user_junction_counts', { p_user_id: userId })
       ]);
 
       // Process user data
@@ -239,13 +241,15 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         console.warn('[useLoggedInAvatarData] No user type found, defaulting to GUEST');
       }
 
-      // Get proposals count from Proposals List array
-      const proposalsList = userData?.['Proposals List'];
-      const proposalsCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
+      // Get proposals and favorites counts from junction tables RPC
+      // Falls back to 0 if RPC fails (backward compatible)
+      const junctionCounts = junctionCountsResult.data?.[0] || {};
+      const proposalsCount = Number(junctionCounts.proposals_count) || 0;
+      const favoritesCount = Number(junctionCounts.favorites_count) || 0;
 
-      // Get favorites count from user's favorites list
-      const favoritesList = userData?.['Favorited Listings'];
-      const favoritesCount = Array.isArray(favoritesList) ? favoritesList.length : 0;
+      if (junctionCountsResult.error) {
+        console.warn('[useLoggedInAvatarData] Junction counts RPC failed, using 0:', junctionCountsResult.error);
+      }
 
       // Get house manuals count if user is a host
       let houseManualsCount = 0;

@@ -1023,37 +1023,50 @@ export default function SearchPage() {
               proposalCount: userData.proposalCount ?? 0
             });
 
-            // Fetch favorites, proposals list, and profile data from Supabase
+            // Fetch favorites, proposals count, and profile data from Supabase
+            // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
             if (userId) {
-              const { data: userRecord, error } = await supabase
-                .from('user')
-                .select('"Favorited Listings", "Proposals List", "About Me / Bio", "need for Space", "special needs"')
-                .eq('_id', userId)
-                .single();
+              // Parallel fetch: profile data + junction counts + favorites list
+              const [userResult, countsResult, favoritesResult] = await Promise.all([
+                // Profile data for proposal form prefilling
+                supabase
+                  .from('user')
+                  .select('"About Me / Bio", "need for Space", "special needs"')
+                  .eq('_id', userId)
+                  .single(),
+                // Junction counts for proposals
+                supabase.rpc('get_user_junction_counts', { p_user_id: userId }),
+                // Favorites array for heart icons
+                supabase.rpc('get_user_favorites', { p_user_id: userId })
+              ]);
+
+              const userRecord = userResult.data;
+              const error = userResult.error;
+
+              // Handle favorites from junction RPC
+              const favorites = favoritesResult.data || [];
+              if (Array.isArray(favorites) && favorites.length > 0) {
+                // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
+                const validFavorites = favorites.filter(id =>
+                  typeof id === 'string' && /^\d+x\d+$/.test(id)
+                );
+
+                // Store all favorited IDs for heart icon state
+                setFavoritedListingIds(new Set(validFavorites));
+                // Set count to match - all favorites count regardless of Active status
+                setFavoritesCount(validFavorites.length);
+                console.log('[SearchPage] Favorites count from junction:', validFavorites.length);
+              } else {
+                setFavoritesCount(0);
+                setFavoritedListingIds(new Set());
+              }
+
+              // Handle proposals count from junction RPC
+              const junctionCounts = countsResult.data?.[0] || {};
+              const proposalCount = Number(junctionCounts.proposals_count) || 0;
+              console.log('[SearchPage] Proposals count from junction:', proposalCount);
 
               if (!error && userRecord) {
-                // Handle favorites
-                const favorites = userRecord['Favorited Listings'];
-                if (Array.isArray(favorites)) {
-                  // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
-                  const validFavorites = favorites.filter(id =>
-                    typeof id === 'string' && /^\d+x\d+$/.test(id)
-                  );
-
-                  // Store all favorited IDs for heart icon state
-                  setFavoritedListingIds(new Set(validFavorites));
-                  // Set count to match - all favorites count regardless of Active status
-                  setFavoritesCount(validFavorites.length);
-                  console.log('[SearchPage] Favorites count:', validFavorites.length);
-                } else {
-                  setFavoritesCount(0);
-                  setFavoritedListingIds(new Set());
-                }
-
-                // Handle proposals count for Create Proposal CTA
-                const proposalsList = userRecord['Proposals List'];
-                const proposalCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
-                console.log('[SearchPage] Proposals count from user table:', proposalCount);
 
                 // Update currentUser with actual proposal count
                 setCurrentUser(prev => ({
