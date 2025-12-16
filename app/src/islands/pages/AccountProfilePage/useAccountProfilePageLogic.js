@@ -827,14 +827,18 @@ export function useAccountProfilePageLogic() {
    * Navigate to listing page based on view context:
    * - Editor View (own profile): Go to listing-dashboard to manage the listing
    * - Public View (visitor): Go to view-split-lease to see listing details with booking
+   *
+   * Note: listing-dashboard uses query params (?id=), view-split-lease uses path segments (/:id)
    */
   const handleListingClick = useCallback((listingId) => {
     if (listingId) {
       if (isEditorView) {
         // Owner viewing their own profile - go to listing management
-        window.location.href = `/listing-dashboard/${listingId}`;
+        // listing-dashboard uses query params, NOT path segments
+        window.location.href = `/listing-dashboard?id=${listingId}`;
       } else {
         // Visitor viewing someone else's profile - go to public listing view
+        // view-split-lease uses path segments
         window.location.href = `/view-split-lease/${listingId}`;
       }
     }
