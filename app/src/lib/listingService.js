@@ -334,6 +334,44 @@ function mapStorageOptionToId(storageOption) {
 }
 
 /**
+ * Map state abbreviation to full state name for FK constraint
+ * The 'Location - State' column has a FK to reference_table.os_us_states.display
+ * which expects full state names like "New York", not abbreviations like "NY"
+ *
+ * @param {string|null} stateInput - State abbreviation (e.g., 'NY') or full name
+ * @returns {string|null} - Full state name for FK, or null if not provided
+ */
+function mapStateToDisplayName(stateInput) {
+  if (!stateInput) return null;
+
+  // If it's already a full state name (more than 2 chars), return as-is
+  if (stateInput.length > 2) {
+    return stateInput;
+  }
+
+  // Map of state abbreviations to full display names
+  const stateAbbreviationMap = {
+    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+    'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+    'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+    'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+    'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+    'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+    'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+    'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+    'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+    'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+    'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+    'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia',
+  };
+
+  const result = stateAbbreviationMap[stateInput.toUpperCase()] || stateInput;
+  console.log('[ListingService] State mapping:', { input: stateInput, output: result });
+  return result;
+}
+
+/**
  * Map SelfListingPage form data to listing table columns
  * Creates a record ready for direct insertion into the listing table
  *
@@ -406,8 +444,9 @@ function mapFormDataToListingTable(formData, userId, generatedId) {
     // Note: Location - City is a FK to reference_table.zat_location._id - set to null for now
     // The city string is stored in 'Location - Address' JSONB field above
     'Location - City': null,
-    // Note: Location - State is a string FK to reference_table.os_us_states.display (no mapping needed)
-    'Location - State': formData.spaceSnapshot?.address?.state || null,
+    // Note: Location - State is a string FK to reference_table.os_us_states.display
+    // Google Maps returns abbreviation (e.g., 'NY'), but FK expects full name (e.g., 'New York')
+    'Location - State': mapStateToDisplayName(formData.spaceSnapshot?.address?.state),
     'Location - Zip Code': formData.spaceSnapshot?.address?.zip || null,
     'neighborhood (manual input by user)':
       formData.spaceSnapshot?.address?.neighborhood || null,
@@ -631,7 +670,7 @@ function mapFormDataToListingTableForUpdate(formData) {
         validated: formData.spaceSnapshot.address.validated || false,
       };
       // Note: Location - City is a FK - don't update from string value
-      updateData['Location - State'] = formData.spaceSnapshot.address.state;
+      updateData['Location - State'] = mapStateToDisplayName(formData.spaceSnapshot.address.state);
       updateData['Location - Zip Code'] = formData.spaceSnapshot.address.zip;
       updateData['neighborhood (manual input by user)'] = formData.spaceSnapshot.address.neighborhood;
     }
@@ -898,7 +937,7 @@ function mapFormDataToDatabase(formData, userId = null) {
       : null,
     // Note: Location - City is a FK to reference_table.zat_location._id - set to null
     'Location - City': null,
-    'Location - State': formData.spaceSnapshot?.address?.state || null,
+    'Location - State': mapStateToDisplayName(formData.spaceSnapshot?.address?.state),
     'Location - Zip Code': formData.spaceSnapshot?.address?.zip || null,
     'Location - Coordinates': formData.spaceSnapshot?.address?.latitude
       ? {
