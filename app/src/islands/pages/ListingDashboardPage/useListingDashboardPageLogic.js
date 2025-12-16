@@ -715,18 +715,31 @@ export default function useListingDashboardPageLogic() {
     console.log(`📋 Updating listing table with _id=${listingId}`);
     console.log('📋 DB updates:', dbUpdates);
 
-    // Note: Using .maybeSingle() instead of .single() to avoid 409 Conflict errors
-    // when multiple concurrent updates occur (e.g., from React StrictMode double-mounting)
-    const { data, error: updateError } = await supabase
+    // Perform the update without .select() to avoid 409 conflicts from PostgREST
+    // The .select().maybeSingle() pattern can fail when:
+    // 1. Multiple concurrent updates occur (React StrictMode double-mounting)
+    // 2. PostgREST has timing issues between UPDATE and SELECT
+    const { error: updateError } = await supabase
       .from('listing')
       .update(dbUpdates)
-      .eq('_id', listingId)
-      .select()
-      .maybeSingle();
+      .eq('_id', listingId);
 
     if (updateError) {
       console.error('❌ Error updating listing:', updateError);
       throw updateError;
+    }
+
+    // Fetch the updated row separately for reliable data retrieval
+    const { data, error: fetchError } = await supabase
+      .from('listing')
+      .select('*')
+      .eq('_id', listingId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.warn('⚠️ Update succeeded but failed to fetch updated data:', fetchError);
+      // Return partial data - the update still succeeded
+      return { _id: listingId, ...dbUpdates };
     }
 
     console.log('✅ Listing updated:', data);
