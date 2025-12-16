@@ -541,7 +541,7 @@ export const SelfListingPage: React.FC = () => {
       markSubmitted();
 
       // Update modal with the listing ID (transitions from loading to success)
-      setCreatedListingId(newListing.id);
+      setCreatedListingId(newListing._id);
     } catch (error) {
       console.error('[SelfListingPage] ❌ Error submitting listing:', error);
       markSubmissionFailed(error instanceof Error ? error.message : 'Unknown error');
@@ -585,7 +585,7 @@ export const SelfListingPage: React.FC = () => {
       markSubmitted();
 
       // Update modal with the listing ID (transitions from loading to success)
-      setCreatedListingId(newListing.id);
+      setCreatedListingId(newListing._id);
     } catch (error) {
       console.error('[SelfListingPage] ❌ Error submitting listing:', error);
       markSubmissionFailed(error instanceof Error ? error.message : 'Unknown error');
