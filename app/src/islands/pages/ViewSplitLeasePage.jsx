@@ -2415,7 +2415,7 @@ export default function ViewSplitLeasePage() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '0',
+              marginBottom: formattedTerminationDate ? '8px' : '0',
               fontSize: '15px'
             }}>
               <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Rent</span>
@@ -2425,6 +2425,22 @@ export default function ViewSplitLeasePage() {
                   : priceMessage || 'Please Add More Days'}
               </span>
             </div>
+            {/* Ideal Termination Date */}
+            {formattedTerminationDate && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '14px',
+                paddingTop: '8px',
+                borderTop: '1px solid #E5E7EB'
+              }}>
+                <span style={{ color: '#6B7280', fontWeight: '500' }}>Ideal Termination Date</span>
+                <span style={{ color: '#31135d', fontWeight: '600' }}>
+                  {formattedTerminationDate}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Total Row */}
@@ -3204,6 +3220,23 @@ export default function ViewSplitLeasePage() {
                         : '—'}
                     </span>
                   </div>
+                  {/* Ideal Termination Date */}
+                  {formattedTerminationDate && (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '13px',
+                      marginBottom: '8px',
+                      paddingTop: '8px',
+                      borderTop: '1px solid #E5E7EB'
+                    }}>
+                      <span style={{ color: '#6B7280', fontWeight: '500' }}>Ideal Termination Date</span>
+                      <span style={{ color: '#31135d', fontWeight: '600' }}>
+                        {formattedTerminationDate}
+                      </span>
+                    </div>
+                  )}
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
