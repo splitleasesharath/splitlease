@@ -53,7 +53,9 @@ export async function handleGetThreads(
   console.log('[getThreads] User Bubble ID (from JWT):', userBubbleId);
 
   // Step 1: Query junction table to get user's thread IDs
+  // Note: user_thread is in 'junctions' schema, not 'public'
   const { data: userThreadLinks, error: junctionError } = await supabaseAdmin
+    .schema('junctions')
     .from('user_thread')
     .select('thread_id, role')
     .eq('user_id', userBubbleId);
