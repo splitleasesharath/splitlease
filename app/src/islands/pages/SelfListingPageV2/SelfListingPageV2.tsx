@@ -1907,6 +1907,12 @@ export function SelfListingPageV2() {
               Preview Listing
             </a>
           )}
+          <a
+            href="/host-proposals"
+            className="btn-next btn-secondary"
+          >
+            View Your Proposals
+          </a>
         </div>
       </div>
     </div>

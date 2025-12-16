@@ -191,7 +191,7 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
   // Fetch user data to check listing count and get required fields
   const { data: userData, error: fetchError } = await supabase
     .from('user')
-    .select('_id, email, Listings, "Host Account"')
+    .select('_id, email, Listings, "Account - Host / Landlord"')
     .eq('_id', userId)
     .maybeSingle();
 
@@ -201,7 +201,7 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
   }
 
   const listings = userData.Listings || [];
-  const hostAccountId = userData['Host Account'];
+  const hostAccountId = userData['Account - Host / Landlord'];
   const userEmail = userData.email;
 
   // Only create mockup proposal for first listing
