@@ -53,7 +53,7 @@ export async function handleGetThreads(
   console.log('[getThreads] User Bubble ID (from JWT):', userBubbleId);
 
   // Query thread table directly - user can be either host or guest
-  // Note: junctions schema is not exposed via REST API, so we use OR filter
+  // Note: Column names with special chars need quoting in .or() filter
   const { data: threads, error: threadsError } = await supabaseAdmin
     .from('thread')
     .select(`
@@ -66,7 +66,7 @@ export async function handleGetThreads(
       "~Last Message",
       "Thread Subject"
     `)
-    .or(`-Host User.eq.${userBubbleId},-Guest User.eq.${userBubbleId}`)
+    .or(`"-Host User".eq.${userBubbleId},"-Guest User".eq.${userBubbleId}`)
     .order('"Modified Date"', { ascending: false });
 
   if (threadsError) {
