@@ -226,7 +226,7 @@ export function useHostOverviewPageLogic() {
           rate_5_nights: listing.rate_5_nights,
           cleaning_fee: listing.cleaning_fee,
           damage_deposit: listing.damage_deposit,
-          nightly_pricing: listing.nightly_pricing
+          pricing_list: listing.pricing_list
         }));
       }
 
@@ -278,7 +278,7 @@ export function useHostOverviewPageLogic() {
             rate_5_nights: listing['💰Nightly Host Rate for 5 nights'],
             cleaning_fee: listing['💰Cleaning Cost / Maintenance Fee'],
             damage_deposit: listing['💰Damage Deposit'],
-            nightly_pricing: listing.nightly_pricing
+            pricing_list: listing.pricing_list
           }));
           rpcListings = [...rpcListings, ...mappedMissing];
         }
