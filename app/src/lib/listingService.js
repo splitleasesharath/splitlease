@@ -42,10 +42,11 @@ export async function createListing(formData) {
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session?.user?.email) {
+      // Note: Some users have email in 'email' column, others in 'email as text' (legacy Bubble column)
       const { data: userData, error: userError } = await supabase
         .from('user')
         .select('_id')
-        .eq('email', session.user.email)
+        .or(`email.eq.${session.user.email},email as text.eq.${session.user.email}`)
         .maybeSingle();
 
       if (userData?._id) {
@@ -195,10 +196,11 @@ async function linkListingToHost(userId, listingId) {
     console.log('[ListingService] Looking up user by email:', userEmail);
 
     // Look up user by email in public.user table
+    // Note: Some users have email in 'email' column, others in 'email as text' (legacy Bubble column)
     const result = await supabase
       .from('user')
       .select('_id, Listings')
-      .eq('email', userEmail)
+      .or(`email.eq.${userEmail},email as text.eq.${userEmail}`)
       .maybeSingle();
 
     userData = result.data;
