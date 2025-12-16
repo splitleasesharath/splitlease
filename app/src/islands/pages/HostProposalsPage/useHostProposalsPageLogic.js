@@ -102,7 +102,8 @@ export function useHostProposalsPageLogic() {
         });
 
         // Load host data
-        await loadHostData(userData._id || userData.id);
+        // validateTokenAndFetchUser returns { userId, accountHostId, ... }
+        await loadHostData(userData.userId);
 
       } catch (err) {
         console.error('Auth check failed:', err);
@@ -491,7 +492,7 @@ export function useHostProposalsPageLogic() {
    */
   const handleRetry = useCallback(() => {
     if (user) {
-      loadHostData(user._id || user.id);
+      loadHostData(user.userId);
     }
   }, [user]);
 
