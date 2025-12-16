@@ -137,14 +137,15 @@
 }
 
 /* Date currently being viewed (time picker shown) */
-.vm-date-button-active {
+.vm-date-button.vm-date-button-active {
   background: rgb(92, 32, 182);
   color: white;
   font-weight: 600;
 }
 
-.vm-date-button-active:hover:not(:disabled) {
+.vm-date-button.vm-date-button-active:hover:not(:disabled) {
   background: rgb(82, 28, 162);
+  color: white;
 }
 
 /* Date has selected time slots */

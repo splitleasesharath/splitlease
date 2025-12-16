@@ -51,6 +51,7 @@ export default function FAQPage() {
       setError(null);
 
       const { data, error: fetchError } = await supabase
+        .schema('reference_table')
         .from('zat_faq')
         .select('_id, Question, Answer, Category, sub-category')
         .order('Category', { ascending: true })

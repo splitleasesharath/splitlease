@@ -13,6 +13,7 @@ import TrustVerificationCard from './cards/TrustVerificationCard.jsx';
 import ReasonsCard from './cards/ReasonsCard.jsx';
 import StorageItemsCard from './cards/StorageItemsCard.jsx';
 import VideoIntroCard from './cards/VideoIntroCard.jsx';
+import ListingsCard from './cards/ListingsCard.jsx';
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
@@ -30,7 +31,11 @@ export default function PublicView({
   profileData,
   verifications,
   goodGuestReasonsList,
-  storageItemsList
+  storageItemsList,
+  // Host-specific props
+  isHostUser = false,
+  hostListings = [],
+  onListingClick
 }) {
   // Extract data from profile
   const bio = profileData?.['About Me'] || '';
@@ -55,14 +60,14 @@ export default function PublicView({
 
   return (
     <>
-      {/* About */}
+      {/* About - Always shown */}
       <AboutCard
         bio={bio}
         readOnly={true}
       />
 
-      {/* Requirements */}
-      {(needForSpace || specialNeeds) && (
+      {/* Guest-only: Requirements */}
+      {!isHostUser && (needForSpace || specialNeeds) && (
         <RequirementsCard
           needForSpace={needForSpace}
           specialNeeds={specialNeeds}
@@ -70,8 +75,8 @@ export default function PublicView({
         />
       )}
 
-      {/* Schedule & Commute */}
-      {(selectedDays.length > 0 || transportationType) && (
+      {/* Guest-only: Schedule & Commute */}
+      {!isHostUser && (selectedDays.length > 0 || transportationType) && (
         <ScheduleCommuteCard
           selectedDays={selectedDays}
           transportationType={transportationType}
@@ -80,14 +85,14 @@ export default function PublicView({
         />
       )}
 
-      {/* Trust & Verification */}
+      {/* Trust & Verification - Always shown */}
       <TrustVerificationCard
         verifications={verifications}
         readOnly={true}
       />
 
-      {/* Reasons to Host */}
-      {goodGuestReasons.length > 0 && (
+      {/* Guest-only: Reasons to Host */}
+      {!isHostUser && goodGuestReasons.length > 0 && (
         <ReasonsCard
           selectedReasons={goodGuestReasons}
           reasonsList={goodGuestReasonsList}
@@ -95,8 +100,8 @@ export default function PublicView({
         />
       )}
 
-      {/* Storage Items */}
-      {storageItems.length > 0 && (
+      {/* Guest-only: Storage Items */}
+      {!isHostUser && storageItems.length > 0 && (
         <StorageItemsCard
           selectedItems={storageItems}
           itemsList={storageItemsList}
@@ -104,7 +109,17 @@ export default function PublicView({
         />
       )}
 
-      {/* Video Introduction */}
+      {/* Host-only: Listings */}
+      {isHostUser && hostListings.length > 0 && (
+        <ListingsCard
+          listings={hostListings}
+          loading={false}
+          onListingClick={onListingClick}
+          readOnly={true}
+        />
+      )}
+
+      {/* Video Introduction - Always shown */}
       {videoUrl && (
         <VideoIntroCard
           videoUrl={videoUrl}

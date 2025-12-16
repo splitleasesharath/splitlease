@@ -63,13 +63,13 @@ export const STATUS_TRANSITIONS: Record<
     "Proposal Cancelled by Split Lease",
   ],
   "Lease Documents Signed / Awaiting Initial payment": [
-    "Initial Payment Submitted / Lease activated",
+    "Initial Payment Submitted / Lease activated ",
     "Proposal Cancelled by Guest",
     "Proposal Cancelled by Split Lease",
   ],
 
   // Terminal states (no transitions out)
-  "Initial Payment Submitted / Lease activated": [],
+  "Initial Payment Submitted / Lease activated ": [],
   "Proposal Cancelled by Guest": [],
   "Proposal Rejected by Host": [],
   "Proposal Cancelled by Split Lease": [],
@@ -90,7 +90,7 @@ export const STATUS_STAGES: Record<ProposalStatusName, number> = {
   "Lease Documents Sent for Review": 4,
   "Lease Documents Sent for Signatures": 5,
   "Lease Documents Signed / Awaiting Initial payment": 6,
-  "Initial Payment Submitted / Lease activated": 7,
+  "Initial Payment Submitted / Lease activated ": 7,
   "Proposal Cancelled by Guest": -1,
   "Proposal Rejected by Host": -1,
   "Proposal Cancelled by Split Lease": -1,

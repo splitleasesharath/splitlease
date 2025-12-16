@@ -275,11 +275,12 @@ export async function fetchListingComplete(listingId) {
     let hostData = null;
     if (listingData['Host / Landlord']) {
       // Query user table directly where Account - Host / Landlord matches the host account ID
+      // Note: Column name has special characters, so we use filter() with quoted column name
       const { data: userData, error: userError } = await supabase
         .from('user')
         .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text", "Account - Host / Landlord"')
-        .eq('Account - Host / Landlord', listingData['Host / Landlord'])
-        .single();
+        .filter('"Account - Host / Landlord"', 'eq', listingData['Host / Landlord'])
+        .maybeSingle();
 
       if (userError) {
         console.error('User fetch error:', userError);
@@ -531,6 +532,7 @@ export async function fetchZatPriceConfiguration() {
 
   try {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from('zat_priceconfiguration')
       .select(`
         "Overall Site Markup",

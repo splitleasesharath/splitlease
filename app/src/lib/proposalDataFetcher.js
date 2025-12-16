@@ -212,6 +212,7 @@ export async function loadProposalDetails(proposal) {
     // Load house rules
     if (proposal['House Rules'] && Array.isArray(proposal['House Rules']) && proposal['House Rules'].length > 0) {
       const { data: rulesData, error: rulesError } = await supabase
+        .schema('reference_table')
         .from('zat_features_houserule')
         .select('_id, Name, Icon')
         .in('_id', proposal['House Rules']);

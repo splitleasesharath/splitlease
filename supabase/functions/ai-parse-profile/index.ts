@@ -52,6 +52,10 @@ interface ExtractedData {
   preferredWeeklySchedule: string | null;
   email: string | null;
   preferredHoods: string[] | null;
+  // New fields for better extraction
+  reservationSpan: string | null;  // Duration like "17 weeks", "3 months"
+  moveInRange: string | null;      // When they want to move in
+  commutingInfo: string | null;    // Commuting details
 }
 
 interface MatchedIds {
@@ -69,7 +73,7 @@ function buildParsingPrompt(
   availableBoroughs: string[],
   availableSchedules: string[]
 ): string {
-  return `A guest user signed up on our site using the freeform text —-${textInputted}---- please create a text that answers to the following sections: Biography, Special Needs, Need for Space, Reasons to Host me, Credit Score, Last Name, Full Name, Ideal Days Schedule (just separate the days with commas, for example: Monday,Tuesday,Wednesday,Thursday, don't put space between commas separation, just the day and a comma), Preferred Borough (for this category just focus on listing separated by commas the boroughs or locations desired, nothing else, don't include space between the borough and comma, for example: Manhattan,Brooklyn,Queens. The list of boroughs we have on our system is ${availableBoroughs.join(',')} create on your answer the list of boroughs inputted that also matches with the ones on our system), Transportation Medium, Stored Items (for these stored items follow the same structure as above, separate each item by commas and no space between them), Preferred Weekly Schedule (for this one just answer one of the following weekly schedules: ${availableSchedules.join(',')}), email (for this section i want you to print what you found on the text as a valid email, if by any chance you fixed a typo error like guest@mail and the user didn't input the .com, just add your reasoning to why and how you fixed the email, if the email is valid since the beginning, no explanation needed), Preferred Hoods (on this case, if there's any specific indication of what hood inside of the borough or what address the user inputted just print a list of hoods as you did for boroughs, for example if the user mentioned that is looking something near the empire states, then your list of preferred hoods should be something like: Midtown,Midtown South,FiDi,Hell's Kitchen - the idea is you include every neighborhood/hood that is near any location mentioned by the user) — The idea is that you generate a text following the next format with each of the labels listed above.
+  return `A guest user signed up on our site using the freeform text —-${textInputted}---- please create a text that answers to the following sections: Biography, Special Needs, Need for Space, Reasons to Host me, Credit Score, Last Name, Full Name, Ideal Days Schedule (just separate the days with commas, for example: Monday,Tuesday,Wednesday,Thursday, don't put space between commas separation, just the day and a comma), Preferred Borough (for this category just focus on listing separated by commas the boroughs or locations desired, nothing else, don't include space between the borough and comma, for example: Manhattan,Brooklyn,Queens. The list of boroughs we have on our system is ${availableBoroughs.join(',')} create on your answer the list of boroughs inputted that also matches with the ones on our system), Transportation Medium, Stored Items (for these stored items follow the same structure as above, separate each item by commas and no space between them), Preferred Weekly Schedule (for this one just answer one of the following weekly schedules: ${availableSchedules.join(',')}), email (for this section i want you to print what you found on the text as a valid email, if by any chance you fixed a typo error like guest@mail and the user didn't input the .com, just add your reasoning to why and how you fixed the email, if the email is valid since the beginning, no explanation needed), Preferred Hoods (on this case, if there's any specific indication of what hood inside of the borough or what address the user inputted just print a list of hoods as you did for boroughs, for example if the user mentioned that is looking something near the empire states, then your list of preferred hoods should be something like: Midtown,Midtown South,FiDi,Hell's Kitchen - the idea is you include every neighborhood/hood that is near any location mentioned by the user), Reservation Span (extract the duration/length of stay mentioned, for example: 17 weeks, 3 months, 6 months, 1 year - include the number and unit like weeks or months), Move In Range (when does the user want to move in or start, for example: immediately, next month, January 2024, ASAP), Commuting Info (any commuting or travel patterns mentioned, like commuting to a specific city weekly, traveling for work, etc) — The idea is that you generate a text following the next format with each of the labels listed above.
 
 Please start each paragraph with the labels I gave above but without heading formats like ### or **, for example 'Special Needs.' It is very important, a matter of life or death, that you respect the labels format I gave above and after each label you add a dot '.' also, END each section with a dot '.' for example 'Special Needs. I travel with my cat, he is very calm and independent, he does not cause issues but i definitely need one part of the apartment dedicated to his toys and spaces.', and DON'T include dots inside the content of each section, just use commas or something different since dots are the ones I'm using for my data manipulation later. If there's nothing in the text related to that label, just avoid entirely to include that section. It is a matter of LIFE or DEATH that you respect the formats provided above, including that the content of each section starts with a capital letter.
 
@@ -130,6 +134,10 @@ function extractAllData(gptResponse: string): ExtractedData {
     preferredWeeklySchedule: extractSection(gptResponse, 'Preferred Weekly Schedule'),
     email: extractSection(gptResponse, 'email'),
     preferredHoods: extractCommaSeparatedList(gptResponse, 'Preferred Hoods'),
+    // New fields
+    reservationSpan: extractSection(gptResponse, 'Reservation Span'),
+    moveInRange: extractSection(gptResponse, 'Move In Range'),
+    commutingInfo: extractSection(gptResponse, 'Commuting Info'),
   };
 }
 
@@ -147,6 +155,7 @@ async function matchBoroughId(
   const firstBorough = boroughName.split(',')[0].trim();
 
   const { data, error } = await supabase
+    .schema('reference_table')
     .from('zat_geo_borough_toplevel')
     .select('_id')
     .ilike('"Display Borough"', `%${firstBorough}%`)
@@ -171,6 +180,7 @@ async function matchHoodIds(
 
   for (const hoodName of hoodNames) {
     const { data, error } = await supabase
+      .schema('reference_table')
       .from('zat_geo_hood_mediumlevel')
       .select('_id')
       .ilike('"Display"', `%${hoodName}%`)
@@ -367,6 +377,7 @@ async function processJob(
     console.log('[ai-parse-profile] Fetching reference data...');
 
     const { data: boroughs } = await supabase
+      .schema('reference_table')
       .from('zat_geo_borough_toplevel')
       .select('"Display Borough"');
 
@@ -469,6 +480,22 @@ async function processJob(
     }
     if (extractedData.storedItems && extractedData.storedItems.length > 0) {
       userUpdate['About - Commonly Stored Items'] = extractedData.storedItems;
+    }
+    // New fields for reservation span, move-in range, and commuting
+    if (extractedData.reservationSpan) {
+      userUpdate['reservation span'] = extractedData.reservationSpan;
+    }
+    if (extractedData.moveInRange) {
+      userUpdate['Move-in range'] = extractedData.moveInRange;
+    }
+    if (extractedData.commutingInfo) {
+      // Store commuting info in special needs or a dedicated field
+      // Append to special needs if it exists, otherwise set it
+      if (extractedData.specialNeeds) {
+        userUpdate['special needs'] = `${extractedData.specialNeeds}. Commuting: ${extractedData.commutingInfo}`;
+      } else {
+        userUpdate['special needs'] = `Commuting: ${extractedData.commutingInfo}`;
+      }
     }
 
     const { error: updateError } = await supabase

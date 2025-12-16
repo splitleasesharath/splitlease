@@ -92,12 +92,13 @@ export default function AccountProfilePage() {
   }
 
   // Sidebar props based on view mode
+  // Database columns use 'Name - First', 'Name - Last' naming convention
   const sidebarProps = {
     isEditorView: logic.isEditorView,
     coverPhotoUrl: logic.profileData?.['Cover Photo'] || null,
     avatarUrl: logic.profileData?.['Profile Photo'] || null,
-    firstName: logic.displayName.split(' ')[0] || '',
-    lastName: logic.displayName.split(' ').slice(1).join(' ') || '',
+    firstName: logic.formData.firstName || logic.profileData?.['Name - First'] || '',
+    lastName: logic.formData.lastName || logic.profileData?.['Name - Last'] || '',
     jobTitle: logic.displayJobTitle,
     profileStrength: logic.profileStrength,
     verifications: logic.verifications,
@@ -140,6 +141,12 @@ export default function AccountProfilePage() {
                 onEditPhone={logic.handleEditPhone}
                 onOpenNotificationSettings={logic.handleOpenNotificationSettings}
                 onChangePassword={logic.handleChangePassword}
+                // Host-specific props
+                isHostUser={logic.isHostUser}
+                hostListings={logic.hostListings}
+                loadingListings={logic.loadingListings}
+                onListingClick={logic.handleListingClick}
+                onCreateListing={logic.handleCreateListing}
               />
             ) : (
               <PublicView
@@ -147,6 +154,10 @@ export default function AccountProfilePage() {
                 verifications={logic.verifications}
                 goodGuestReasonsList={logic.goodGuestReasonsList}
                 storageItemsList={logic.storageItemsList}
+                // Host-specific props
+                isHostUser={logic.isHostUser}
+                hostListings={logic.hostListings}
+                onListingClick={logic.handleListingClick}
               />
             )}
           </div>

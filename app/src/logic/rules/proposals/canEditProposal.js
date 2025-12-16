@@ -18,6 +18,8 @@
  * canEditProposal({ proposalStatus: 'Accepted' })
  * // => false
  */
+import { getActionsForStatus } from '../../constants/proposalStatuses.js'
+
 export function canEditProposal({ proposalStatus, deleted = false }) {
   // Deleted proposals cannot be edited
   if (deleted) {
@@ -30,12 +32,7 @@ export function canEditProposal({ proposalStatus, deleted = false }) {
   }
 
   const status = proposalStatus.trim()
+  const actions = getActionsForStatus(status)
 
-  // Editable statuses: Draft, Pending, Host Countered
-  // Guest can edit when:
-  // - Initial proposal not yet reviewed (Draft, Pending)
-  // - Host has countered and guest needs to respond (Host Countered)
-  const editableStatuses = ['Draft', 'Pending', 'Host Countered']
-
-  return editableStatuses.includes(status)
+  return actions.includes('modify_proposal') || actions.includes('edit_proposal')
 }

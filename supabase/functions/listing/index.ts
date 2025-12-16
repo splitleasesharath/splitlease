@@ -24,14 +24,16 @@ import { createErrorCollector, ErrorCollector } from "../_shared/slack.ts";
 import { handleCreate } from "./handlers/create.ts";
 import { handleGet } from "./handlers/get.ts";
 import { handleSubmit } from "./handlers/submit.ts";
+import { handleCreateMockupProposal } from "./handlers/createMockupProposal.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ["create", "get", "submit"] as const;
+const ALLOWED_ACTIONS = ["create", "get", "submit", "createMockupProposal"] as const;
 // All listing actions are public (auth handled by Bubble workflow)
-const PUBLIC_ACTIONS = ["create", "get"] as const;
+const PUBLIC_ACTIONS = ["create", "get", "createMockupProposal"] as const;
 
 type Action = (typeof ALLOWED_ACTIONS)[number];
 
@@ -137,6 +139,19 @@ Deno.serve(async (req: Request) => {
       case "submit":
         result = await handleSubmit(body.payload);
         break;
+
+      case "createMockupProposal": {
+        // Create Supabase client for mockup proposal handler
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
+        await handleCreateMockupProposal(supabase, body.payload as {
+          listingId: string;
+          hostAccountId: string;
+          hostUserId: string;
+          hostEmail: string;
+        });
+        result = { success: true, message: "Mockup proposal creation initiated" };
+        break;
+      }
 
       default:
         throw new ValidationError(`Unhandled action: ${body.action}`);

@@ -1,0 +1,92 @@
+/**
+ * NotificationCategoryRow - Single category row with SMS/Email toggles
+ */
+
+import React from 'react';
+import NotificationToggle from './NotificationToggle.jsx';
+
+const styles = {
+  row: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '16px 0',
+    borderBottom: '1px solid #F0F0F0',
+  },
+  rowLast: {
+    borderBottom: 'none',
+  },
+  labelSection: {
+    flex: 1,
+    marginRight: '16px',
+  },
+  label: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#000000',
+    marginBottom: '4px',
+  },
+  description: {
+    fontSize: '12px',
+    color: '#666666',
+    lineHeight: '1.4',
+  },
+  toggleSection: {
+    display: 'flex',
+    gap: '24px',
+    alignItems: 'center',
+  },
+  toggleWrapper: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '4px',
+  },
+  toggleLabel: {
+    fontSize: '10px',
+    fontWeight: '500',
+    color: '#666666',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+  },
+};
+
+export default function NotificationCategoryRow({
+  category,
+  smsEnabled,
+  emailEnabled,
+  onToggleSms,
+  onToggleEmail,
+  smsPending = false,
+  emailPending = false,
+  isLast = false,
+}) {
+  return (
+    <div style={{ ...styles.row, ...(isLast ? styles.rowLast : {}) }}>
+      <div style={styles.labelSection}>
+        <div style={styles.label}>{category.label}</div>
+        <div style={styles.description}>{category.description}</div>
+      </div>
+      <div style={styles.toggleSection}>
+        <div style={styles.toggleWrapper}>
+          <span style={styles.toggleLabel}>SMS</span>
+          <NotificationToggle
+            checked={smsEnabled}
+            onChange={() => onToggleSms(category.smsColumn)}
+            disabled={smsPending}
+            ariaLabel={`${category.label} SMS notifications`}
+          />
+        </div>
+        <div style={styles.toggleWrapper}>
+          <span style={styles.toggleLabel}>Email</span>
+          <NotificationToggle
+            checked={emailEnabled}
+            onChange={() => onToggleEmail(category.emailColumn)}
+            disabled={emailPending}
+            ariaLabel={`${category.label} Email notifications`}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}

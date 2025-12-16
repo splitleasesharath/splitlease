@@ -13,7 +13,7 @@
  * - Rules never perform actions - they only provide verdicts
  */
 
-import { PROPOSAL_STATUSES, isTerminalStatus, getActionsForStatus } from '../../../lib/constants/proposalStatuses.js';
+import { PROPOSAL_STATUSES, isTerminalStatus, isCompletedStatus, getActionsForStatus } from '../../../lib/constants/proposalStatuses.js';
 
 /**
  * Check if a proposal can be cancelled by the guest
@@ -39,7 +39,7 @@ export function canCancelProposal(proposal) {
   }
 
   // Can't cancel if lease is already activated
-  if (status === PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key) {
+  if (isCompletedStatus(status)) {
     return false;
   }
 
@@ -245,7 +245,7 @@ export function isLeaseActivated(proposal) {
 
   const status = proposal.status || proposal.Status;
 
-  return status === PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key;
+  return isCompletedStatus(status);
 }
 
 /**
