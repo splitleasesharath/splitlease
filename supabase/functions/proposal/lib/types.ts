@@ -207,12 +207,12 @@ export interface GuestData {
   _id: string;
   email: string;
   "Rental Application": string | null;
-  "Proposals List": string[];
-  "Favorited Listings": string[];
+  "Proposals List": string[];  // Native text[] array from PostgreSQL (migrated from JSONB)
+  "Favorited Listings": string[];  // Still JSONB - requires parseJsonArray
   "About Me / Bio"?: string;
   "need for Space"?: string;
   "special needs"?: string;
-  "Tasks Completed"?: string[];
+  "Tasks Completed"?: string[];  // Still JSONB - requires parseJsonArray
 }
 
 /**
@@ -229,7 +229,7 @@ export interface HostAccountData {
 export interface HostUserData {
   _id: string;
   email: string;
-  "Proposals List": string[];
+  "Proposals List": string[];  // Native text[] array from PostgreSQL (migrated from JSONB)
 }
 
 /**
