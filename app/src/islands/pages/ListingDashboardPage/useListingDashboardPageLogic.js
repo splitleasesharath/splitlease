@@ -390,22 +390,31 @@ export default function useListingDashboardPageLogic() {
       // Extract photos - check if embedded in Features - Photos or in listing_photo table
       let photos = [];
       const inlinePhotos = safeParseJsonArray(listingData['Features - Photos']);
-      const hasEmbeddedObjects = inlinePhotos.length > 0 &&
-        typeof inlinePhotos[0] === 'object' &&
-        inlinePhotos[0] !== null;
 
-      if (hasEmbeddedObjects) {
-        // Transform embedded photos to match expected format
-        photos = inlinePhotos.map((photo, index) => ({
-          _id: photo.id || `inline_${index}`,
-          Photo: photo.url || photo.Photo || photo,
-          URL: photo.url || photo.Photo || photo,
-          toggleMainPhoto: photo.toggleMainPhoto ?? photo.isCover ?? (index === 0),
-          Type: photo.type || photo.Type || 'Other',
-          SortOrder: photo.SortOrder ?? photo.sortOrder ?? index,
-          Active: true,
-        }));
-        console.log('📷 Embedded photos from Features - Photos:', photos.length);
+      if (inlinePhotos.length > 0) {
+        // Features - Photos can contain either:
+        // 1. Array of objects: [{url: "...", isCover: true}, ...]
+        // 2. Array of URL strings: ["https://...", "https://..."]
+        const firstItem = inlinePhotos[0];
+        const isObjectArray = typeof firstItem === 'object' && firstItem !== null;
+
+        photos = inlinePhotos.map((photo, index) => {
+          // Handle both string URLs and object formats
+          const photoUrl = isObjectArray
+            ? (photo.url || photo.Photo || photo.URL || String(photo))
+            : String(photo);
+
+          return {
+            _id: isObjectArray ? (photo.id || `inline_${index}`) : `inline_${index}`,
+            Photo: photoUrl,
+            URL: photoUrl,
+            toggleMainPhoto: isObjectArray ? (photo.toggleMainPhoto ?? photo.isCover ?? (index === 0)) : (index === 0),
+            Type: isObjectArray ? (photo.type || photo.Type || 'Other') : 'Other',
+            SortOrder: isObjectArray ? (photo.SortOrder ?? photo.sortOrder ?? index) : index,
+            Active: true,
+          };
+        });
+        console.log('📷 Embedded photos from Features - Photos:', photos.length, isObjectArray ? '(objects)' : '(URLs)');
       } else {
         // Legacy: fetch from listing_photo table
         const { data: photosData, error: photosError } = photosResult;
