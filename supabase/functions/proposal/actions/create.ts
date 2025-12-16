@@ -127,47 +127,24 @@ export async function handleCreate(
   const guestData = guest as unknown as GuestData;
   console.log(`[proposal:create] Found guest: ${guestData.email}`);
 
-  // Fetch Host User - NEW PATTERN: listing["Host / Landlord"] = user._id directly
-  // Legacy pattern (deprecated): listing["Host / Landlord"] = user["Account - Host / Landlord"]
-  // We try user._id first (new), then fall back to Account - Host / Landlord lookup (legacy)
-  const hostLandlordValue = listingData["Host / Landlord"];
-  console.log(`[proposal:create] Looking up host user for Host / Landlord: ${hostLandlordValue}`);
-
-  let hostUserData: HostUserData | null = null;
-
-  // First try: NEW PATTERN - Host / Landlord = user._id directly
+  // Fetch Host User via Account - Host / Landlord FK (reverse lookup)
+  // The listing's "Host / Landlord" field contains account_host._id
+  // We find the user whose "Account - Host / Landlord" matches this ID
   const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
     .select(`_id, email, "Proposals List"`)
-    .eq("_id", hostLandlordValue)
-    .maybeSingle();
+    .eq("Account - Host / Landlord", listingData["Host / Landlord"])
+    .single();
 
-  if (hostUser) {
-    hostUserData = hostUser as unknown as HostUserData;
-    console.log(`[proposal:create] Found host via user._id (new pattern): ${hostUserData.email}`);
-  } else {
-    // Fallback: LEGACY PATTERN - Host / Landlord = user["Account - Host / Landlord"]
-    // This handles old listings created before the migration
-    console.log(`[proposal:create] user._id lookup failed, trying legacy Account - Host / Landlord lookup`);
-    const { data: legacyUser, error: legacyError } = await supabase
-      .from("user")
-      .select(`_id, email, "Proposals List"`)
-      .eq("Account - Host / Landlord", hostLandlordValue)
-      .maybeSingle();
-
-    if (legacyUser) {
-      hostUserData = legacyUser as unknown as HostUserData;
-      console.log(`[proposal:create] Found host via Account - Host / Landlord (legacy): ${hostUserData.email}`);
-    } else {
-      console.error(`[proposal:create] Host user fetch failed. Direct error:`, hostUserError, `Legacy error:`, legacyError);
-      throw new ValidationError(`Host user not found: ${hostLandlordValue}`);
-    }
+  if (hostUserError || !hostUser) {
+    console.error(`[proposal:create] Host user fetch failed:`, hostUserError);
+    throw new ValidationError(`Host user not found for host account: ${listingData["Host / Landlord"]}`);
   }
 
-  // hostAccountData kept for backwards compatibility with downstream code
-  // In the new pattern, we use user._id for everything
-  const hostAccountData = { _id: hostUserData._id, User: hostUserData._id } as HostAccountData;
-  console.log(`[proposal:create] Host resolved - User ID: ${hostUserData._id}`);
+  const hostUserData = hostUser as unknown as HostUserData;
+  // Create hostAccountData for backwards compatibility with existing code
+  const hostAccountData = { _id: listingData["Host / Landlord"], User: hostUserData._id } as HostAccountData;
+  console.log(`[proposal:create] Found host: ${hostUserData.email}`);
 
   // Fetch Rental Application (if exists)
   let rentalApp: RentalApplicationData | null = null;

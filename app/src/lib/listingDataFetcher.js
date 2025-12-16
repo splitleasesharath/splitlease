@@ -272,21 +272,18 @@ export async function fetchListingComplete(listingId) {
       : null;
 
     // 8. Fetch host data - query user table
-    // PRIMARY PATTERN: Host / Landlord = user._id (new unified pattern)
-    // FALLBACK: Host / Landlord = user["Account - Host / Landlord"] (legacy listings)
+    // listing["Host / Landlord"] contains account_host._id
+    // We find the user whose "Account - Host / Landlord" matches this ID
     let hostData = null;
     if (listingData['Host / Landlord']) {
-      const hostLandlordValue = listingData['Host / Landlord'];
-
-      // First try: NEW PATTERN - Host / Landlord = user._id directly
       const { data: userData, error: userError } = await supabase
         .from('user')
         .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text"')
-        .eq('_id', hostLandlordValue)
+        .eq('Account - Host / Landlord', listingData['Host / Landlord'])
         .maybeSingle();
 
       if (userError) {
-        console.error('User fetch error (by _id):', userError);
+        console.error('User fetch error (by Account - Host / Landlord):', userError);
       }
 
       if (userData) {
@@ -297,29 +294,7 @@ export async function fetchListingComplete(listingId) {
           'Profile Photo': userData['Profile Photo'],
           Email: userData['email as text']
         };
-        console.log('📍 Host found via user._id lookup');
-      } else {
-        // Fallback: LEGACY PATTERN - Host / Landlord = user["Account - Host / Landlord"]
-        // (for listings created before the pattern was unified)
-        console.log('📍 Host not found via _id, trying legacy Account - Host / Landlord lookup...');
-        const { data: legacyUser, error: legacyError } = await supabase
-          .from('user')
-          .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text"')
-          .filter('"Account - Host / Landlord"', 'eq', hostLandlordValue)
-          .maybeSingle();
-
-        if (legacyError) {
-          console.error('User fetch error (by Account - Host / Landlord fallback):', legacyError);
-        } else if (legacyUser) {
-          hostData = {
-            _id: legacyUser._id,
-            'Name - First': legacyUser['Name - First'],
-            'Name - Last': legacyUser['Name - Last'],
-            'Profile Photo': legacyUser['Profile Photo'],
-            Email: legacyUser['email as text']
-          };
-          console.log('📍 Host found via legacy Account - Host / Landlord lookup');
-        }
+        console.log('📍 Host found via Account - Host / Landlord lookup');
       }
     }
 
