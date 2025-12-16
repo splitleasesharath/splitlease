@@ -31,8 +31,8 @@
 [EXPORTS]: default useListingDashboardPageLogic
 [DEPENDS_ON]: supabase, auth, aiService, amenitiesService, safetyFeaturesService, houseRulesService, neighborhoodService
 [USED_BY]: ListingDashboardPage.jsx
-[KEY_FEATURES]: Dual-table support (listing_trial and listing), lookup table resolution, day conversion (Bubble 1-7 to JS 0-6), AI content generation, photo reordering, blocked dates management
-[DATA_FLOW]: Fetches listing from listing_trial (by id) or listing (by _id), transforms to component format, resolves IDs to names via lookup tables
+[KEY_FEATURES]: Listing table support, lookup table resolution, day conversion (Bubble 1-7 to JS 0-6), AI content generation, photo reordering, blocked dates management
+[DATA_FLOW]: Fetches listing from listing table (by _id), transforms to component format, resolves IDs to names via lookup tables
 [AI_WORKFLOW]: Load amenities/neighborhood/rules/safety first, then generate AI title/description with enriched context
 [PHOTO_OPS]: Set cover, delete, reorder with DB persistence
 
@@ -175,10 +175,10 @@
 
 ### transformListingData()
 [INTENT]: Convert Supabase listing to component-friendly format
-[INPUT]: dbListing (raw from listing_trial or listing), photos array, lookups object, isListingTrial flag
+[INPUT]: dbListing (raw from listing table), photos array, lookups object
 [OUTPUT]: Transformed listing object with resolved IDs and computed fields
 [KEY_TRANSFORMS]: JSON array parsing (amenities, rules, safety, days), day conversion (Bubble 1-7 to JS 0-6), photo object mapping, location address parsing, pricing object construction
-[ID_HANDLING]: listing_trial uses 'id' (UUID), listing uses '_id' (Bubble ID)
+[ID_HANDLING]: listing table uses '_id' (Bubble ID)
 [COMPATIBILITY]: Returns both transformed properties and raw DB fields for EditListingDetails modal
 
 ### fetchLookupTables()
@@ -197,10 +197,10 @@
 
 ## KEY_FEATURES
 
-### Dual Table Support
-[DESCRIPTION]: Supports both listing_trial (new submissions, uses 'id') and listing (Bubble-synced, uses '_id')
-[FLOW]: Try listing_trial first by 'id', fallback to listing by '_id'
-[PHOTOS]: listing_trial stores inline in 'Features - Photos' JSON column, listing uses listing_photo table
+### Listing Table Support
+[DESCRIPTION]: Uses listing table with '_id' (Bubble ID) as primary key
+[FLOW]: Query listing table directly by '_id'
+[PHOTOS]: Listings use listing_photo table for photo storage
 
 ### Day Indexing Conversion
 [CRITICAL]: JS uses 0-6 (Sun-Sat), Bubble uses 1-7 (Sun-Sat)
@@ -216,9 +216,9 @@
 
 ### Photo Management
 [SET_COVER]: Moves selected photo to index 0, updates isCover flag, persists to DB
-[DELETE]: Soft-delete (Active=false) in listing_photo table or remove from JSON in listing_trial
-[REORDER]: Updates SortOrder in listing_photo or reorders JSON array in listing_trial
-[PERSISTENCE]: Separate logic for listing_trial (inline JSON) vs listing (table)
+[DELETE]: Soft-delete (Active=false) in listing_photo table
+[REORDER]: Updates SortOrder in listing_photo table
+[PERSISTENCE]: Uses listing_photo table for all photo operations
 
 ### Edit Modal System
 [EDIT_SECTION]: State tracks which section is being edited (null = closed)
@@ -287,15 +287,10 @@
 
 ## DATABASE_TABLES
 
-### listing_trial
-[PRIMARY_KEY]: id (UUID)
-[PHOTOS]: Inline in 'Features - Photos' JSON column
-[USE_CASE]: New self-listing submissions
-
 ### listing
 [PRIMARY_KEY]: _id (Bubble ID string)
 [PHOTOS]: Separate listing_photo table
-[USE_CASE]: Bubble-synced listings
+[USE_CASE]: All listings (self-listing submissions and Bubble-synced)
 
 ### listing_photo
 [FOREIGN_KEY]: Listing (_id)
@@ -316,5 +311,5 @@
 
 ---
 
-**DOCUMENT_VERSION**: 2.0
-**STATUS**: Production (fully functional with dual-table support and AI import)
+**DOCUMENT_VERSION**: 2.1
+**STATUS**: Production (fully functional with listing table support and AI import)

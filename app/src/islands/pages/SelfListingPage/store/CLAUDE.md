@@ -475,7 +475,7 @@ export const SelfListingPage = () => {
 ### listingService
 [FUNCTION]: createListing(formData)
 [TRANSFORM]: Uses prepareListingSubmission() to convert to Bubble payload
-[DESTINATION]: Supabase listing_trial table
+[DESTINATION]: Supabase listing table
 
 ### Section Components
 [CONSUMERS]: Section1SpaceSnapshot through Section7Review
