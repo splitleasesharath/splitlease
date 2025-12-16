@@ -147,13 +147,14 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         suggestedProposalsResult,
         junctionCountsResult
       ] = await Promise.all([
-        // 1. Fetch user data (type, account host reference)
+        // 1. Fetch user data (type, account host reference, favorites)
         supabase
           .from('user')
           .select(`
             _id,
             "Type - User Current",
-            "Account - Host / Landlord"
+            "Account - Host / Landlord",
+            "Favorited Listings"
           `)
           .eq('_id', userId)
           .single(),
@@ -241,15 +242,18 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         console.warn('[useLoggedInAvatarData] No user type found, defaulting to GUEST');
       }
 
-      // Get proposals and favorites counts from junction tables RPC
+      // Get proposals count from junction tables RPC
       // Falls back to 0 if RPC fails (backward compatible)
       const junctionCounts = junctionCountsResult.data?.[0] || {};
       const proposalsCount = Number(junctionCounts.proposals_count) || 0;
-      const favoritesCount = Number(junctionCounts.favorites_count) || 0;
 
       if (junctionCountsResult.error) {
         console.warn('[useLoggedInAvatarData] Junction counts RPC failed, using 0:', junctionCountsResult.error);
       }
+
+      // Get favorites count from user table JSONB field (not junction table)
+      const favoritedListings = userData?.['Favorited Listings'] || [];
+      const favoritesCount = Array.isArray(favoritedListings) ? favoritedListings.length : 0;
 
       // Get house manuals count if user is a host
       // NOTE: House manuals now queried directly from user table (account_host deprecated)

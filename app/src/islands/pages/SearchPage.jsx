@@ -1027,24 +1027,22 @@ export default function SearchPage() {
             // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
             if (userId) {
               // Parallel fetch: profile data + junction counts + favorites list
-              const [userResult, countsResult, favoritesResult] = await Promise.all([
-                // Profile data for proposal form prefilling
+              const [userResult, countsResult] = await Promise.all([
+                // Profile data + favorites for proposal form prefilling and heart icons
                 supabase
                   .from('user')
-                  .select('"About Me / Bio", "need for Space", "special needs"')
+                  .select('"About Me / Bio", "need for Space", "special needs", "Favorited Listings"')
                   .eq('_id', userId)
                   .single(),
                 // Junction counts for proposals
-                supabase.rpc('get_user_junction_counts', { p_user_id: userId }),
-                // Favorites array for heart icons
-                supabase.rpc('get_user_favorites', { p_user_id: userId })
+                supabase.rpc('get_user_junction_counts', { p_user_id: userId })
               ]);
 
               const userRecord = userResult.data;
               const error = userResult.error;
 
-              // Handle favorites from junction RPC
-              const favorites = favoritesResult.data || [];
+              // Handle favorites from user table JSONB field
+              const favorites = userRecord?.['Favorited Listings'] || [];
               if (Array.isArray(favorites) && favorites.length > 0) {
                 // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
                 const validFavorites = favorites.filter(id =>
@@ -1055,7 +1053,7 @@ export default function SearchPage() {
                 setFavoritedListingIds(new Set(validFavorites));
                 // Set count to match - all favorites count regardless of Active status
                 setFavoritesCount(validFavorites.length);
-                console.log('[SearchPage] Favorites count from junction:', validFavorites.length);
+                console.log('[SearchPage] Favorites count from user table:', validFavorites.length);
               } else {
                 setFavoritesCount(0);
                 setFavoritedListingIds(new Set());
