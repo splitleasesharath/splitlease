@@ -1706,7 +1706,10 @@ export default function SearchPage() {
         isOpen={isContactModalOpen}
         onClose={handleCloseContactModal}
         listing={selectedListing}
-        userEmail={null}
+        onLoginRequired={() => {
+          // SearchPageTest has no auth modal - just close
+          handleCloseContactModal();
+        }}
       />
       <InformationalText
         isOpen={isInfoModalOpen}
