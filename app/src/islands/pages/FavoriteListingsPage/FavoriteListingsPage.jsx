@@ -16,7 +16,7 @@ import CreateProposalFlowV2 from '../../shared/CreateProposalFlowV2.jsx';
 import ProposalSuccessModal from '../../modals/ProposalSuccessModal.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import EmptyState from './components/EmptyState';
-import { getFavoritedListings, removeFromFavorites } from './favoritesApi';
+import { getFavoritedListingIds, removeFromFavorites } from './favoritesApi';
 import { checkAuthStatus, getSessionId, validateTokenAndFetchUser, getUserId, logoutUser } from '../../../lib/auth';
 import { fetchProposalsByGuest } from '../../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../../lib/listingDataFetcher.js';
@@ -665,21 +665,19 @@ const FavoriteListingsPage = () => {
           return;
         }
 
-        // Fetch user's favorited listing IDs from junction table (Phase 5b migration)
-        const { data: favorites, error: favError } = await supabase.rpc(
-          'get_user_favorites',
-          { p_user_id: sessionId }
-        );
-
-        if (favError) {
+        // Fetch user's favorited listing IDs from user table
+        let favoritedIds = [];
+        try {
+          favoritedIds = await getFavoritedListingIds(sessionId);
+        } catch (favError) {
           console.error('Error fetching favorites:', favError);
           setError('Failed to load your favorites. Please try again.');
           setIsLoading(false);
           return;
         }
 
-        // RPC returns text[] directly
-        let favoritedIds = Array.isArray(favorites) ? favorites : [];
+        // Ensure we have an array
+        favoritedIds = Array.isArray(favoritedIds) ? favoritedIds : [];
 
         // Filter to valid Bubble listing IDs
         favoritedIds = favoritedIds.filter(id => typeof id === 'string' && /^\d+x\d+$/.test(id));
