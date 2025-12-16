@@ -385,38 +385,49 @@ export function useAccountProfilePageLogic() {
   }, []);
 
   /**
-   * Fetch host's listings from the listing table
+   * Fetch host's listings using RPC function
+   * Uses get_host_listings RPC to handle column names with special characters
+   * (same approach as HostOverviewPage)
    */
   const fetchHostListings = useCallback(async (userId) => {
     if (!userId) return;
     setLoadingListings(true);
     try {
+      console.log('[AccountProfile] Fetching listings for host:', userId);
+
+      // Use RPC function to fetch listings (handles "Host / Landlord" column name)
       const { data, error } = await supabase
-        .from('listing')
-        .select(`
-          _id,
-          Name,
-          "Borough/Region",
-          hood,
-          "Qty of Bedrooms",
-          "Qty of Bathrooms",
-          "Start Nightly Price",
-          Complete,
-          listing_photo!listing_photo_listing_fkey (
-            _id,
-            url,
-            "Order"
-          )
-        `)
-        .eq('"Host / Landlord"', userId)
-        .eq('Complete', true)
-        .order('_created_date', { ascending: false })
-        .limit(10);
+        .rpc('get_host_listings', { host_user_id: userId });
 
       if (error) throw error;
-      setHostListings(data || []);
+
+      console.log('[AccountProfile] Listings fetched:', data?.length || 0);
+
+      // Map RPC results to the format expected by the UI
+      // RPC returns: _id, Name, Complete, "Location - Borough", "Location - City",
+      //              "Features - Photos", rental_type, monthly_rate, etc.
+      const mappedListings = (data || [])
+        .filter(listing => listing.Complete === true) // Only show complete listings
+        .map(listing => ({
+          _id: listing._id,
+          Name: listing.Name || 'Unnamed Listing',
+          // Map location fields
+          'Borough/Region': listing['Location - Borough'] || '',
+          hood: listing['Location - City'] || '',
+          // Pricing
+          'Start Nightly Price': listing.rate_2_nights || listing.monthly_rate || 0,
+          Complete: listing.Complete,
+          // Photos from RPC (Features - Photos is an array of URLs)
+          photos: listing['Features - Photos'] || [],
+          // Additional fields for display
+          rental_type: listing.rental_type,
+          monthly_rate: listing.monthly_rate,
+          source: listing.source || 'listing_trial'
+        }));
+
+      setHostListings(mappedListings);
     } catch (err) {
-      console.error('Error fetching host listings:', err);
+      console.error('[AccountProfile] Error fetching host listings:', err);
       // Non-blocking - just log and continue with empty listings
       setHostListings([]);
     } finally {
