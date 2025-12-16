@@ -1,5 +1,5 @@
 /**
- * useMessagingPageLogic
+ * useMessagingPageLogic - WITH SUPABASE REALTIME
  *
  * All business logic for the Messaging Page following Hollow Component Pattern.
  *
@@ -9,9 +9,10 @@
  * - URL parameter sync (?thread=THREAD_ID)
  * - Fetch messages when thread selected
  * - Message sending handler
- * - Real-time state management
+ * - REAL-TIME: Subscribe to thread channel for instant message delivery
+ * - REAL-TIME: Typing indicators via Presence
  *
- * DEV MODE: Set USE_MOCK_DATA to true to bypass auth and use mock data
+ * NO FALLBACK: Real data only, no mock data in production
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -19,105 +20,6 @@ import { checkAuthStatus } from '../../../lib/auth.js';
 import { supabase } from '../../../lib/supabase.js';
 
 const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/messages`;
-
-// ============================================================================
-// DEV MODE: Toggle this to bypass auth and use mock data
-// ============================================================================
-const USE_MOCK_DATA = true;
-
-// ============================================================================
-// MOCK DATA - Matches exact Edge Function response format
-// Edge Function returns PRE-FORMATTED time strings, not ISO dates
-// ============================================================================
-const MOCK_THREADS = [
-  {
-    _id: 'thread_1',
-    contact_name: 'Sarah Johnson',
-    contact_avatar: null,
-    property_name: 'Cozy Studio in Williamsburg',
-    last_message_preview: 'Looking forward to meeting you!',
-    last_message_time: '2:30 PM',  // Pre-formatted (today)
-    unread_count: 2,
-    is_with_splitbot: false,
-  },
-  {
-    _id: 'thread_2',
-    contact_name: 'Michael Chen',
-    contact_avatar: null,
-    property_name: 'Spacious 1BR in East Village',
-    last_message_preview: 'The dates work perfectly for me.',
-    last_message_time: 'Yesterday',  // Pre-formatted
-    unread_count: 0,
-    is_with_splitbot: false,
-  },
-  {
-    _id: 'thread_3',
-    contact_name: 'Split Bot',
-    contact_avatar: null,
-    property_name: null,
-    last_message_preview: 'Your proposal has been submitted!',
-    last_message_time: 'Dec 10',  // Pre-formatted (older)
-    unread_count: 0,
-    is_with_splitbot: true,
-  },
-];
-
-const MOCK_MESSAGES = {
-  thread_1: [
-    {
-      _id: 'msg_1',
-      message_body: 'Hi! I saw your listing and I\'m very interested in the space.',
-      sender_name: 'You',
-      sender_type: 'guest',
-      is_outgoing: true,
-      timestamp: 'Dec 12, 2:15 PM',  // Pre-formatted (matches Edge Function output)
-    },
-    {
-      _id: 'msg_2',
-      message_body: 'Thanks for reaching out! The space is available for your dates. Would you like to schedule a viewing?',
-      sender_name: 'Sarah Johnson',
-      sender_type: 'host',
-      is_outgoing: false,
-      timestamp: 'Dec 12, 2:25 PM',
-    },
-    {
-      _id: 'msg_3',
-      message_body: 'Looking forward to meeting you!',
-      sender_name: 'Sarah Johnson',
-      sender_type: 'host',
-      is_outgoing: false,
-      timestamp: 'Dec 12, 2:30 PM',
-    },
-  ],
-  thread_2: [
-    {
-      _id: 'msg_4',
-      message_body: 'Hi Michael, are you available for a split lease starting January?',
-      sender_name: 'You',
-      sender_type: 'guest',
-      is_outgoing: true,
-      timestamp: 'Dec 11, 10:00 AM',
-    },
-    {
-      _id: 'msg_5',
-      message_body: 'The dates work perfectly for me.',
-      sender_name: 'Michael Chen',
-      sender_type: 'host',
-      is_outgoing: false,
-      timestamp: 'Dec 11, 11:30 AM',
-    },
-  ],
-  thread_3: [
-    {
-      _id: 'msg_6',
-      message_body: 'Your proposal has been submitted! The host has 48 hours to respond.',
-      sender_name: 'Split Bot',
-      sender_type: 'splitbot',
-      is_outgoing: false,
-      timestamp: 'Dec 10, 3:00 PM',
-    },
-  ],
-};
 
 export function useMessagingPageLogic() {
   // ============================================================================
@@ -146,6 +48,14 @@ export function useMessagingPageLogic() {
   const [messageInput, setMessageInput] = useState('');
   const [isSending, setIsSending] = useState(false);
 
+  // ============================================================================
+  // REALTIME STATE
+  // ============================================================================
+  const [isOtherUserTyping, setIsOtherUserTyping] = useState(false);
+  const [typingUserName, setTypingUserName] = useState(null);
+  const channelRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+
   // Ref to track if initial load is complete
   const initialLoadDone = useRef(false);
 
@@ -154,25 +64,13 @@ export function useMessagingPageLogic() {
   // ============================================================================
   useEffect(() => {
     async function init() {
-      // DEV MODE: Skip auth and use mock data
-      if (USE_MOCK_DATA) {
-        console.log('🔧 DEV MODE: Using mock data, skipping auth');
-        setAuthState({ isChecking: false, shouldRedirect: false });
-        setUser({ email: 'demo@splitlease.com', id: 'demo_user' });
-        setThreads(MOCK_THREADS);
-        setIsLoading(false);
-        initialLoadDone.current = true;
-        return;
-      }
-
       try {
-        // checkAuthStatus() returns a boolean, not an object
+        // checkAuthStatus() returns a boolean
         const isAuthenticated = await checkAuthStatus();
 
         if (!isAuthenticated) {
           console.log('❌ Messaging: User not authenticated, redirecting to home');
           setAuthState({ isChecking: false, shouldRedirect: true });
-          // Redirect after short delay to show loading state
           setTimeout(() => {
             window.location.href = '/?login=true';
           }, 100);
@@ -182,7 +80,19 @@ export function useMessagingPageLogic() {
         // Get user data from Supabase session
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
-          setUser(session.user);
+          // Also fetch user's Bubble ID for Realtime identification
+          const { data: userData } = await supabase
+            .from('user')
+            .select('_id, "First Name", "Last Name"')
+            .ilike('email', session.user.email)
+            .single();
+
+          setUser({
+            ...session.user,
+            bubbleId: userData?._id,
+            firstName: userData?.['First Name'],
+            lastName: userData?.['Last Name'],
+          });
         }
 
         setAuthState({ isChecking: false, shouldRedirect: false });
@@ -207,7 +117,6 @@ export function useMessagingPageLogic() {
   // URL PARAM SYNC FOR THREAD SELECTION (runs once when threads load)
   // ============================================================================
   useEffect(() => {
-    // Only run once when threads first load
     if (!initialLoadDone.current || threads.length === 0 || hasAutoSelectedThread.current) return;
 
     const params = new URLSearchParams(window.location.search);
@@ -220,11 +129,121 @@ export function useMessagingPageLogic() {
         handleThreadSelectInternal(thread);
       }
     } else if (threads.length > 0) {
-      // Auto-select first thread if no URL param
       hasAutoSelectedThread.current = true;
       handleThreadSelectInternal(threads[0]);
     }
   }, [threads]);
+
+  // ============================================================================
+  // REALTIME SUBSCRIPTION
+  // ============================================================================
+  useEffect(() => {
+    if (!selectedThread || authState.isChecking || !user?.bubbleId) return;
+
+    const channelName = `thread-${selectedThread._id}`;
+    console.log('[Realtime] Subscribing to channel:', channelName);
+
+    const channel = supabase.channel(channelName);
+
+    // Listen for new messages via broadcast
+    channel.on('broadcast', { event: 'new_message' }, (payload) => {
+      console.log('[Realtime] New message received:', payload);
+
+      const messageData = payload.payload?.message;
+      if (messageData && messageData.thread_id === selectedThread._id) {
+        // Add message to state (avoid duplicates)
+        setMessages(prev => {
+          if (prev.some(m => m._id === messageData._id)) return prev;
+
+          // Transform to UI format
+          const transformedMessage = {
+            _id: messageData._id,
+            message_body: messageData.message_body,
+            sender_name: messageData.is_split_bot ? 'Split Bot' : messageData.sender_name,
+            sender_avatar: messageData.sender_avatar,
+            sender_type: messageData.is_split_bot ? 'splitbot' :
+              (messageData.sender_id === payload.payload?.host_user ? 'host' : 'guest'),
+            is_outgoing: messageData.sender_id === user?.bubbleId,
+            timestamp: new Date(messageData.created_at).toLocaleString('en-US', {
+              month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+            }),
+            call_to_action: messageData.call_to_action ? {
+              type: messageData.call_to_action,
+              message: 'View Details'
+            } : undefined,
+            split_bot_warning: messageData.split_bot_warning,
+          };
+
+          return [...prev, transformedMessage];
+        });
+
+        // Clear typing indicator when message received
+        setIsOtherUserTyping(false);
+        setTypingUserName(null);
+      }
+    });
+
+    // Listen for typing indicators via presence
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      const typingUsers = Object.values(state)
+        .flat()
+        .filter(u => u.typing && u.user_id !== user?.bubbleId);
+
+      if (typingUsers.length > 0) {
+        setIsOtherUserTyping(true);
+        setTypingUserName(typingUsers[0].user_name);
+      } else {
+        setIsOtherUserTyping(false);
+        setTypingUserName(null);
+      }
+    });
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        console.log('[Realtime] Subscribed to channel:', channelName);
+        // Track presence for typing indicators
+        await channel.track({
+          user_id: user?.bubbleId,
+          user_name: user?.firstName || 'User',
+          typing: false,
+          online_at: new Date().toISOString(),
+        });
+      }
+    });
+
+    channelRef.current = channel;
+
+    // Cleanup
+    return () => {
+      console.log('[Realtime] Unsubscribing from channel:', channelName);
+      channel.unsubscribe();
+      channelRef.current = null;
+    };
+  }, [selectedThread?._id, authState.isChecking, user?.bubbleId]);
+
+  // ============================================================================
+  // TYPING INDICATOR
+  // ============================================================================
+
+  /**
+   * Track typing state via Presence
+   */
+  const trackTyping = useCallback(async (isTyping) => {
+    if (!channelRef.current || !user) return;
+
+    try {
+      await channelRef.current.track({
+        user_id: user.bubbleId,
+        user_name: user.firstName || 'User',
+        typing: isTyping,
+        typing_at: isTyping ? new Date().toISOString() : null,
+        online_at: new Date().toISOString(),
+      });
+    } catch (err) {
+      console.error('[Realtime] Failed to track typing:', err);
+    }
+  }, [user]);
 
   // ============================================================================
   // API CALLS
@@ -279,23 +298,6 @@ export function useMessagingPageLogic() {
    * Fetch messages for a specific thread
    */
   async function fetchMessages(threadId) {
-    // DEV MODE: Use mock messages
-    if (USE_MOCK_DATA) {
-      setIsLoadingMessages(true);
-      // Simulate network delay
-      await new Promise(resolve => setTimeout(resolve, 300));
-      const mockMsgs = MOCK_MESSAGES[threadId] || [];
-      const thread = MOCK_THREADS.find(t => t._id === threadId);
-      setMessages(mockMsgs);
-      setThreadInfo({
-        contact_name: thread?.contact_name || 'Unknown',
-        contact_avatar: thread?.contact_avatar,
-        property_name: thread?.property_name,
-      });
-      setIsLoadingMessages(false);
-      return;
-    }
-
     try {
       setIsLoadingMessages(true);
 
@@ -339,32 +341,19 @@ export function useMessagingPageLogic() {
 
   /**
    * Send a new message
+   * After sending, Realtime will deliver the message to all subscribers
    */
   async function sendMessage() {
     if (!messageInput.trim() || !selectedThread || isSending) return;
 
-    // DEV MODE: Simulate sending
-    if (USE_MOCK_DATA) {
-      setIsSending(true);
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Add the new message to messages
-      const newMsg = {
-        _id: `msg_${Date.now()}`,
-        message_body: messageInput.trim(),
-        sender_name: 'You',
-        sender_type: 'guest',
-        is_outgoing: true,
-        timestamp: new Date().toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
-      };
-      setMessages(prev => [...prev, newMsg]);
-      setMessageInput('');
-      setIsSending(false);
-      return;
-    }
-
     try {
       setIsSending(true);
+
+      // Clear typing indicator immediately
+      trackTyping(false);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
 
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -394,20 +383,37 @@ export function useMessagingPageLogic() {
       }
 
       if (result.success) {
-        // Clear input
+        // Clear input immediately
         setMessageInput('');
 
-        // Refresh messages to show the new one
-        await fetchMessages(selectedThread._id);
+        // Note: We no longer need to fetch messages or threads here!
+        // The Realtime subscription will automatically add the new message
+        // when the database trigger broadcasts it.
 
-        // Update thread list to show updated last message
-        await fetchThreads();
+        // However, for the sender's immediate feedback, add optimistically
+        // (the Realtime broadcast might also arrive, but we'll dedupe)
+        const optimisticMessage = {
+          _id: result.data.message_id,
+          message_body: messageInput.trim(),
+          sender_name: 'You',
+          sender_type: 'guest', // Will be corrected by Realtime if wrong
+          is_outgoing: true,
+          timestamp: new Date().toLocaleString('en-US', {
+            month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
+          }),
+        };
+
+        setMessages(prev => {
+          // Avoid duplicates
+          if (prev.some(m => m._id === optimisticMessage._id)) return prev;
+          return [...prev, optimisticMessage];
+        });
+
       } else {
         throw new Error(result.error || 'Failed to send message');
       }
     } catch (err) {
       console.error('Error sending message:', err);
-      // Don't clear input on error so user can retry
       setError(err.message || 'Failed to send message');
     } finally {
       setIsSending(false);
@@ -425,6 +431,8 @@ export function useMessagingPageLogic() {
     setSelectedThread(thread);
     setMessages([]);
     setThreadInfo(null);
+    setIsOtherUserTyping(false);
+    setTypingUserName(null);
     fetchMessages(thread._id);
   }
 
@@ -435,6 +443,8 @@ export function useMessagingPageLogic() {
     setSelectedThread(thread);
     setMessages([]);
     setThreadInfo(null);
+    setIsOtherUserTyping(false);
+    setTypingUserName(null);
 
     // Update URL
     const params = new URLSearchParams(window.location.search);
@@ -446,14 +456,24 @@ export function useMessagingPageLogic() {
   }, []);
 
   /**
-   * Handle message input change
+   * Handle message input change with typing indicator
    */
   const handleMessageInputChange = useCallback((value) => {
-    // Limit to 1000 characters as per plan
     if (value.length <= 1000) {
       setMessageInput(value);
+
+      // Track typing
+      trackTyping(true);
+
+      // Clear typing after 2 seconds of no input
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      typingTimeoutRef.current = setTimeout(() => {
+        trackTyping(false);
+      }, 2000);
     }
-  }, []);
+  }, [trackTyping]);
 
   /**
    * Handle send message
@@ -491,6 +511,10 @@ export function useMessagingPageLogic() {
     error,
     messageInput,
     isSending,
+
+    // Realtime state
+    isOtherUserTyping,
+    typingUserName,
 
     // Handlers
     handleThreadSelect,

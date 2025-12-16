@@ -4,21 +4,31 @@
  * Message display area with thread header and messages list.
  * Auto-scrolls to bottom when new messages arrive.
  * On mobile, shows a back button to return to thread list.
+ * Shows typing indicator when another user is composing.
  */
 
 import { useEffect, useRef } from 'react';
 import MessageBubble from './MessageBubble.jsx';
 import ThreadHeader from './ThreadHeader.jsx';
+import TypingIndicator from './TypingIndicator.jsx';
 
-export default function MessageThread({ messages, threadInfo, isLoading, onBack, isMobile }) {
+export default function MessageThread({
+  messages,
+  threadInfo,
+  isLoading,
+  onBack,
+  isMobile,
+  isOtherUserTyping,
+  typingUserName
+}) {
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll to bottom when messages change
+  // Auto-scroll to bottom when messages change or typing indicator appears
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, isOtherUserTyping]);
 
   return (
     <div className="message-thread">
@@ -48,6 +58,8 @@ export default function MessageThread({ messages, threadInfo, isLoading, onBack,
                 message={message}
               />
             ))}
+            {/* Typing Indicator */}
+            {isOtherUserTyping && <TypingIndicator userName={typingUserName} />}
             {/* Scroll anchor */}
             <div ref={messagesEndRef} />
           </>

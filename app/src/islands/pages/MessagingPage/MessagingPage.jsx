@@ -122,6 +122,10 @@ export default function MessagingPage() {
     messageInput,
     isSending,
 
+    // Realtime state
+    isOtherUserTyping,
+    typingUserName,
+
     // Handlers
     handleThreadSelect,
     handleMessageInputChange,
@@ -215,6 +219,8 @@ export default function MessagingPage() {
                       isLoading={isLoadingMessages}
                       onBack={handleBackToList}
                       isMobile={isMobile}
+                      isOtherUserTyping={isOtherUserTyping}
+                      typingUserName={typingUserName}
                     />
                     <MessageInput
                       value={messageInput}
