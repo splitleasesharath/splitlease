@@ -13,7 +13,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase.js';
-import { getSessionId, checkAuthStatus } from '../../../lib/auth.js';
+import { getSessionId, checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
 import { isHost } from '../../../logic/rules/users/isHost.js';
 
 // ============================================================================
@@ -438,13 +438,28 @@ export function useAccountProfilePageLogic() {
         }
         setProfileUserId(urlUserId);
 
-        // Check authentication status
+        // Check authentication status and get validated user data
+        // We need the validated user ID (Bubble _id) for accurate comparison
+        // getSessionId() may return Supabase UUID instead of Bubble _id due to
+        // timing issues with Supabase Auth session sync
         const isAuth = await checkAuthStatus();
         setIsAuthenticated(isAuth);
 
-        // Get logged-in user ID
-        const sessionId = getSessionId();
-        setLoggedInUserId(sessionId);
+        // Get logged-in user ID from validated user data (Bubble _id)
+        // This ensures we compare the correct ID format with the URL ID
+        let validatedUserId = null;
+        if (isAuth) {
+          const validatedUser = await validateTokenAndFetchUser({ clearOnFailure: false });
+          if (validatedUser?.userId) {
+            validatedUserId = validatedUser.userId;
+            console.log('[AccountProfile] Using validated userId (Bubble _id):', validatedUserId);
+          } else {
+            // Fallback to session ID if validation fails (shouldn't happen if isAuth is true)
+            validatedUserId = getSessionId();
+            console.log('[AccountProfile] Falling back to session ID:', validatedUserId);
+          }
+        }
+        setLoggedInUserId(validatedUserId);
 
         // Fetch reference data
         await fetchReferenceData();
