@@ -1363,8 +1363,10 @@ const FavoriteListingsPage = () => {
         isOpen={isContactModalOpen}
         onClose={handleCloseContactModal}
         listing={selectedListing}
-        userEmail={currentUser?.email || ''}
-        userName={currentUser?.name || ''}
+        onLoginRequired={() => {
+          handleCloseContactModal();
+          setShowAuthModal(true);
+        }}
       />
       <InformationalText
         isOpen={isInfoModalOpen}
