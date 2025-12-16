@@ -81,7 +81,7 @@ export async function handleUpdate(
   // ================================================
 
   const isGuest = proposalData.Guest === user.id;
-  const isHost = await checkIsHost(supabase, proposalData["Host - Account"], user.id);
+  const isHost = await checkIsHost(supabase, proposalData["Host User"], user.id);
   const isAdmin = await checkIsAdmin(supabase, user.id);
 
   if (!isGuest && !isHost && !isAdmin) {
@@ -329,21 +329,17 @@ export async function handleUpdate(
 
 /**
  * Check if user is the host of the proposal's listing
+ * Host User now directly contains user._id - simple equality check
  */
 async function checkIsHost(
   supabase: SupabaseClient,
-  hostAccountId: string,
+  hostUserId: string,
   userId: string
 ): Promise<boolean> {
-  if (!hostAccountId) return false;
+  if (!hostUserId) return false;
 
-  const { data } = await supabase
-    .from("account_host")
-    .select("User")
-    .eq("_id", hostAccountId)
-    .single();
-
-  return data?.User === userId;
+  // Host User column now contains user._id directly - just compare
+  return hostUserId === userId;
 }
 
 /**

@@ -9,7 +9,6 @@ import { Section7Review } from './sections/Section7Review';
 import type { ListingFormData } from './types/listing.types';
 import { useListingStore, listingLocalStore } from './store';
 import Header from '../../shared/Header';
-import Footer from '../../shared/Footer';
 import SignUpLoginModal from '../../shared/SignUpLoginModal';
 import Toast, { useToast } from '../../shared/Toast';
 import { getListingById } from '../../../lib/bubbleAPI';
@@ -542,7 +541,7 @@ export const SelfListingPage: React.FC = () => {
       markSubmitted();
 
       // Update modal with the listing ID (transitions from loading to success)
-      setCreatedListingId(newListing.id);
+      setCreatedListingId(newListing._id);
     } catch (error) {
       console.error('[SelfListingPage] ❌ Error submitting listing:', error);
       markSubmissionFailed(error instanceof Error ? error.message : 'Unknown error');
@@ -586,7 +585,7 @@ export const SelfListingPage: React.FC = () => {
       markSubmitted();
 
       // Update modal with the listing ID (transitions from loading to success)
-      setCreatedListingId(newListing.id);
+      setCreatedListingId(newListing._id);
     } catch (error) {
       console.error('[SelfListingPage] ❌ Error submitting listing:', error);
       markSubmissionFailed(error instanceof Error ? error.message : 'Unknown error');
@@ -654,7 +653,6 @@ export const SelfListingPage: React.FC = () => {
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
           <p>Loading...</p>
         </div>
-        <Footer />
       </>
     );
   }
@@ -819,10 +817,6 @@ export const SelfListingPage: React.FC = () => {
         </main>
       </div>
       </div>
-
-      {/* Shared Footer Island */}
-      {console.log('🎨 Rendering Footer component')}
-      <Footer />
 
       {/* Auth Modal for logged-out users */}
       <SignUpLoginModal

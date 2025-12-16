@@ -23,7 +23,7 @@ export async function onRequestPost(context) {
 
   try {
     // Parse the request body
-    const { listingUrl, emailAddress } = await request.json();
+    const { listingUrl, emailAddress, userId, userName } = await request.json();
 
     // Validate inputs
     if (!listingUrl || !emailAddress) {
@@ -48,9 +48,12 @@ export async function onRequestPost(context) {
       );
     }
 
+    // Build user info line if available
+    const userInfo = userName ? `*Host:* ${userName}${userId ? ` (${userId})` : ''}\n` : '';
+
     // Create Slack message with rich formatting
     const slackMessage = {
-      text: `*📥 New Listing Import Request*\n\n*Listing URL:* ${listingUrl}\n*Email:* ${emailAddress}\n*Submitted:* ${new Date().toISOString()}`
+      text: `*📥 New Listing Import Request*\n\n${userInfo}*Listing URL:* ${listingUrl}\n*Email:* ${emailAddress}\n*Submitted:* ${new Date().toISOString()}`
     };
 
     // Get Slack webhook URLs from environment variables

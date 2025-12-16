@@ -185,7 +185,9 @@ export default function LoggedInAvatar({
         id: 'proposals',
         label: 'My Proposals',
         icon: '/assets/icons/file-text-purple.svg',
-        path: '/guest-proposals',
+        path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
+          ? '/guest-proposals'
+          : '/host-proposals',
         badgeCount: effectiveProposalsCount,
         badgeColor: 'purple',
       });

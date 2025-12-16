@@ -280,21 +280,19 @@ export async function handleSubmit(
 
     console.log('[listing:submit] ✅ Step 1 complete - Listing exists:', existingListing.Name);
 
-    // Step 2: Look up user and get host account
+    // Step 2: Look up user
     console.log('[listing:submit] Step 2/5: Looking up user...');
     const { data: userData } = await supabase
       .from('user')
-      .select('_id, "Account - Host / Landlord"')
+      .select('_id')
       .eq('email', user_email.toLowerCase())
       .single();
 
-    let hostAccountId: string | null = null;
-    let createdById: string | null = null;
+    let userId: string | null = null;
 
     if (userData) {
-      hostAccountId = userData['Account - Host / Landlord'] as string;
-      createdById = userData._id;
-      console.log('[listing:submit] ✅ Step 2 complete - User found, host account:', hostAccountId);
+      userId = userData._id;
+      console.log('[listing:submit] ✅ Step 2 complete - User found:', userId);
     } else {
       console.log('[listing:submit] ⚠️ Step 2 warning - User not found for email:', user_email);
     }
@@ -313,12 +311,10 @@ export async function handleSubmit(
       Status: listing_data['Status'] || 'Pending Review',
     };
 
-    // Attach user if found
-    if (hostAccountId) {
-      updateData['Host / Landlord'] = hostAccountId;
-    }
-    if (createdById) {
-      updateData['Created By'] = createdById;
+    // Attach user if found (Host User = user._id)
+    if (userId) {
+      updateData['Host User'] = userId;
+      updateData['Created By'] = userId;
     }
 
     const { error: updateError } = await supabase
@@ -362,38 +358,26 @@ export async function handleSubmit(
     }
 
     // Step 5: Check if first listing and create mockup proposal
-    if (hostAccountId && createdById) {
+    if (userId) {
       try {
         console.log('[listing:submit] Step 5/5: Checking for first listing...');
 
-        // Get host account to check listings count
-        const { data: hostAccountData } = await supabase
-          .from('account_host')
-          .select('Listings')
-          .eq('_id', hostAccountId)
+        // Get user's listings count directly from user table
+        const { data: hostUserData } = await supabase
+          .from('user')
+          .select('"Listings"')
+          .eq('_id', userId)
           .single();
 
-        const listings = parseJsonArray<string>(hostAccountData?.Listings, 'account_host.Listings');
+        const listings = parseJsonArray<string>(hostUserData?.Listings, 'user.Listings');
 
         if (listings.length === 1) {
           console.log('[listing:submit] First listing detected, creating mockup proposal');
 
-          // Get host user email if not available
-          let hostEmailToUse = user_email;
-          if (!hostEmailToUse) {
-            const { data: hostUserData } = await supabase
-              .from('user')
-              .select('email')
-              .eq('_id', createdById)
-              .single();
-            hostEmailToUse = hostUserData?.email || '';
-          }
-
           await handleCreateMockupProposal(supabase, {
             listingId: listing_id,
-            hostAccountId: hostAccountId,
-            hostUserId: createdById,
-            hostEmail: hostEmailToUse,
+            hostUserId: userId,
+            hostEmail: user_email,
           });
 
           console.log('[listing:submit] ✅ Step 5 complete - Mockup proposal created');
@@ -405,7 +389,7 @@ export async function handleSubmit(
         console.warn('[listing:submit] ⚠️ Mockup proposal creation failed (non-blocking):', mockupError);
       }
     } else {
-      console.log('[listing:submit] ⏭️ Step 5 skipped - Missing host account or user ID');
+      console.log('[listing:submit] ⏭️ Step 5 skipped - User not found');
     }
 
     console.log('[listing:submit] ========== SUCCESS ==========');

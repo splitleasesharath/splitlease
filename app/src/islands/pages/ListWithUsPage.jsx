@@ -3,12 +3,15 @@ import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import CreateDuplicateListingModal from '../shared/CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import ImportListingModal from '../shared/ImportListingModal/ImportListingModal.jsx';
+import { useToast } from '../shared/Toast.jsx';
+import Toast from '../shared/Toast.jsx';
 import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 
 export default function ListWithUsPage() {
   const [showCreateListingModal, setShowCreateListingModal] = useState(false);
   const [showImportListingModal, setShowImportListingModal] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const { toasts, showToast, removeToast } = useToast();
 
   return (
     <>
@@ -255,11 +258,19 @@ export default function ListWithUsPage() {
               throw new Error(result.error || 'Failed to submit import request');
             }
 
-            alert('Listing import request submitted! We will email you when it is ready.');
+            showToast({
+              title: 'Request Submitted!',
+              content: 'We will email you when your listing is ready.',
+              type: 'success'
+            });
             setShowImportListingModal(false);
           } catch (error) {
             console.error('Import error:', error);
-            alert('Failed to import listing. Please try again later.');
+            showToast({
+              title: 'Import Failed',
+              content: 'Please try again later.',
+              type: 'error'
+            });
           } finally {
             setIsImporting(false);
           }
@@ -267,6 +278,9 @@ export default function ListWithUsPage() {
         currentUserEmail=""
         isLoading={isImporting}
       />
+
+      {/* Toast Notifications */}
+      {toasts && toasts.length > 0 && <Toast toasts={toasts} onRemove={removeToast} />}
     </>
   );
 }

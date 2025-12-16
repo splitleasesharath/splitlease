@@ -13,7 +13,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase.js';
-import { getSessionId, checkAuthStatus } from '../../../lib/auth.js';
+import { getSessionId, checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
 import { isHost } from '../../../logic/rules/users/isHost.js';
 
 // ============================================================================
@@ -385,38 +385,65 @@ export function useAccountProfilePageLogic() {
   }, []);
 
   /**
-   * Fetch host's listings from the listing table
+   * Fetch host's listings using RPC function
+   * Uses get_host_listings RPC to handle column names with special characters
+   * (same approach as HostOverviewPage)
    */
   const fetchHostListings = useCallback(async (userId) => {
     if (!userId) return;
     setLoadingListings(true);
     try {
+      console.log('[AccountProfile] Fetching listings for host:', userId);
+
+      // Use RPC function to fetch listings (handles "Host User" column name)
       const { data, error } = await supabase
-        .from('listing')
-        .select(`
-          _id,
-          Name,
-          "Borough/Region",
-          hood,
-          "Qty of Bedrooms",
-          "Qty of Bathrooms",
-          "Start Nightly Price",
-          Complete,
-          listing_photo!listing_photo_listing_fkey (
-            _id,
-            url,
-            "Order"
-          )
-        `)
-        .eq('"Host / Landlord"', userId)
-        .eq('Complete', true)
-        .order('_created_date', { ascending: false })
-        .limit(10);
+        .rpc('get_host_listings', { host_user_id: userId });
 
       if (error) throw error;
-      setHostListings(data || []);
+
+      console.log('[AccountProfile] Listings fetched:', data?.length || 0);
+
+      // Map RPC results to the format expected by ListingsCard component
+      // RPC returns: _id, Name, Complete, "Location - Borough", hood, bedrooms, bathrooms,
+      //              "Features - Photos", min_nightly, rental_type, monthly_rate, etc.
+      const mappedListings = (data || [])
+        .filter(listing => listing.Complete === true) // Only show complete listings
+        .map(listing => {
+          // Convert Features - Photos (array of URLs) to listing_photo format (array of {url, Order})
+          const photosArray = listing['Features - Photos'] || [];
+          const listing_photo = photosArray.map((url, index) => ({
+            url: url,
+            Order: index + 1
+          }));
+
+          return {
+            // Use 'id' (Bubble-style ID) for routing, not '_id' (internal Supabase ID)
+            // id format: 1764973043780x52847445415716824 (for URLs)
+            // _id format: self_1764973043425_nkzixvohd (internal, don't use for routing)
+            _id: listing.id || listing._id, // Prefer Bubble-style 'id' for routing
+            id: listing.id, // Keep original Bubble ID explicitly
+            Name: listing.Name || 'Unnamed Listing',
+            // Map location fields to match ListingsCard expectations
+            'Borough/Region': listing['Location - Borough'] || '',
+            hood: listing.hood || '',
+            // Bedroom/bathroom counts (now returned by updated RPC)
+            'Qty of Bedrooms': listing.bedrooms || 0,
+            'Qty of Bathrooms': listing.bathrooms || 0,
+            // Pricing - use min_nightly which is the "Start Nightly Price"
+            'Start Nightly Price': listing.min_nightly || listing.rate_2_nights || listing.monthly_rate || 0,
+            Complete: listing.Complete,
+            // Photos converted to listing_photo format for ListingsCard
+            listing_photo: listing_photo,
+            // Additional fields for display
+            rental_type: listing.rental_type,
+            monthly_rate: listing.monthly_rate,
+            source: listing.source || 'listing_trial'
+          };
+        });
+
+      setHostListings(mappedListings);
     } catch (err) {
-      console.error('Error fetching host listings:', err);
+      console.error('[AccountProfile] Error fetching host listings:', err);
       // Non-blocking - just log and continue with empty listings
       setHostListings([]);
     } finally {
@@ -438,13 +465,28 @@ export function useAccountProfilePageLogic() {
         }
         setProfileUserId(urlUserId);
 
-        // Check authentication status
+        // Check authentication status and get validated user data
+        // We need the validated user ID (Bubble _id) for accurate comparison
+        // getSessionId() may return Supabase UUID instead of Bubble _id due to
+        // timing issues with Supabase Auth session sync
         const isAuth = await checkAuthStatus();
         setIsAuthenticated(isAuth);
 
-        // Get logged-in user ID
-        const sessionId = getSessionId();
-        setLoggedInUserId(sessionId);
+        // Get logged-in user ID from validated user data (Bubble _id)
+        // This ensures we compare the correct ID format with the URL ID
+        let validatedUserId = null;
+        if (isAuth) {
+          const validatedUser = await validateTokenAndFetchUser({ clearOnFailure: false });
+          if (validatedUser?.userId) {
+            validatedUserId = validatedUser.userId;
+            console.log('[AccountProfile] Using validated userId (Bubble _id):', validatedUserId);
+          } else {
+            // Fallback to session ID if validation fails (shouldn't happen if isAuth is true)
+            validatedUserId = getSessionId();
+            console.log('[AccountProfile] Falling back to session ID:', validatedUserId);
+          }
+        }
+        setLoggedInUserId(validatedUserId);
 
         // Fetch reference data
         await fetchReferenceData();
@@ -782,13 +824,25 @@ export function useAccountProfilePageLogic() {
   // ============================================================================
 
   /**
-   * Navigate to listing preview page (host context - shows preview without booking widget)
+   * Navigate to listing page based on view context:
+   * - Editor View (own profile): Go to listing-dashboard to manage the listing
+   * - Public View (visitor): Go to view-split-lease to see listing details with booking
+   *
+   * Note: listing-dashboard uses query params (?id=), view-split-lease uses path segments (/:id)
    */
   const handleListingClick = useCallback((listingId) => {
     if (listingId) {
-      window.location.href = `/preview-split-lease/${listingId}`;
+      if (isEditorView) {
+        // Owner viewing their own profile - go to listing management
+        // listing-dashboard uses query params, NOT path segments
+        window.location.href = `/listing-dashboard?id=${listingId}`;
+      } else {
+        // Visitor viewing someone else's profile - go to public listing view
+        // view-split-lease uses path segments
+        window.location.href = `/view-split-lease/${listingId}`;
+      }
     }
-  }, []);
+  }, [isEditorView]);
 
   /**
    * Navigate to create listing page

@@ -104,22 +104,14 @@ export async function handleGet(
     guestData = guest;
   }
 
-  // Fetch host (via account_host)
-  if (proposalData["Host - Account"]) {
-    const { data: hostAccount } = await supabase
-      .from("account_host")
-      .select("User")
-      .eq("_id", proposalData["Host - Account"])
+  // Fetch host (Host User column now contains user._id directly)
+  if (proposalData["Host User"]) {
+    const { data: host } = await supabase
+      .from("user")
+      .select(`_id, "Name - Full", email`)
+      .eq("_id", proposalData["Host User"])
       .single();
-
-    if (hostAccount?.User) {
-      const { data: host } = await supabase
-        .from("user")
-        .select(`_id, "Name - Full", email`)
-        .eq("_id", hostAccount.User)
-        .single();
-      hostData = host;
-    }
+    hostData = host;
   }
 
   // ================================================

@@ -621,7 +621,7 @@ export async function loginUser(email, password) {
  * Automatically logs in the user after successful signup
  *
  * ✅ MIGRATED TO SUPABASE AUTH: No longer uses Bubble for signup
- * Creates user in Supabase Auth + public.user + account_host
+ * Creates user in Supabase Auth + public.user (account_host deprecated)
  *
  * @param {string} email - User email
  * @param {string} password - User password
@@ -993,9 +993,8 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
       profilePhoto: userData.profilePhoto || null,
       userType: userType,
       // Host account ID for fetching host-specific data (listings, etc.)
-      accountHostId: userData.accountHostId || null,
-      // Also include with Bubble field naming for backwards compatibility
-      'Account - Host / Landlord': userData.accountHostId || null,
+      // Note: After migration, user._id is used directly as host reference
+      accountHostId: userData.accountHostId || userData._id || null,
       // User profile fields for proposal prefilling
       aboutMe: userData.aboutMe || null,
       needForSpace: userData.needForSpace || null,

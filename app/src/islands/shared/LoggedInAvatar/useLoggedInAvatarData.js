@@ -147,20 +147,20 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         suggestedProposalsResult,
         junctionCountsResult
       ] = await Promise.all([
-        // 1. Fetch user data (type, account host reference)
+        // 1. Fetch user data (type, favorites)
         supabase
           .from('user')
           .select(`
             _id,
             "Type - User Current",
-            "Account - Host / Landlord"
+            "Favorited Listings"
           `)
           .eq('_id', userId)
           .single(),
 
         // 2. Fetch listings for this user using the same RPC as HostOverview
         //    This queries both listing_trial and listing tables,
-        //    checking both "Host / Landlord" and "Created By" fields
+        //    checking both "Host User" and "Created By" fields
         supabase
           .rpc('get_host_listings', { host_user_id: userId }),
 
@@ -241,32 +241,26 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         console.warn('[useLoggedInAvatarData] No user type found, defaulting to GUEST');
       }
 
-      // Get proposals and favorites counts from junction tables RPC
+      // Get proposals count from junction tables RPC
       // Falls back to 0 if RPC fails (backward compatible)
       const junctionCounts = junctionCountsResult.data?.[0] || {};
       const proposalsCount = Number(junctionCounts.proposals_count) || 0;
-      const favoritesCount = Number(junctionCounts.favorites_count) || 0;
 
       if (junctionCountsResult.error) {
         console.warn('[useLoggedInAvatarData] Junction counts RPC failed, using 0:', junctionCountsResult.error);
       }
 
+      // Get favorites count from user table JSONB field (not junction table)
+      const favoritedListings = userData?.['Favorited Listings'] || [];
+      const favoritesCount = Array.isArray(favoritedListings) ? favoritedListings.length : 0;
+
       // Get house manuals count if user is a host
+      // NOTE: House manuals now queried directly from user table (account_host deprecated)
       let houseManualsCount = 0;
       if (normalizedType === NORMALIZED_USER_TYPES.HOST || normalizedType === NORMALIZED_USER_TYPES.TRIAL_HOST) {
-        const accountHostId = userData?.['Account - Host / Landlord'];
-        if (accountHostId) {
-          const { data: hostData, error: hostError } = await supabase
-            .from('account_host')
-            .select('"House manuals"')
-            .eq('_id', accountHostId)
-            .single();
-
-          if (!hostError && hostData) {
-            const houseManuals = hostData['House manuals'];
-            houseManualsCount = Array.isArray(houseManuals) ? houseManuals.length : 0;
-          }
-        }
+        // Check if userData has House manuals directly (migrated from account_host)
+        const houseManuals = userData?.['House manuals'];
+        houseManualsCount = Array.isArray(houseManuals) ? houseManuals.length : 0;
       }
 
       // Process listings - get count and first listing ID

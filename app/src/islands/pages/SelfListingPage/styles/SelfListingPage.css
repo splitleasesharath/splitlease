@@ -658,6 +658,376 @@ textarea {
   margin-top: 0.5rem;
 }
 
+/* ============================================
+   Nightly Price Slider Component Styles
+   ============================================ */
+.nightly-price-slider {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+}
+
+.nightly-price-slider .control-group {
+  margin-bottom: 24px;
+}
+
+.nightly-price-slider .label-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  align-items: baseline;
+}
+
+.nightly-price-slider .calc-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.nightly-price-slider .value-display {
+  font-size: 14px;
+  font-weight: 700;
+  color: #5b3bb3;
+}
+
+/* Base Rate Input */
+.nightly-price-slider .base-input-wrapper {
+  position: relative;
+  max-width: 200px;
+  margin: 0 auto 24px;
+}
+
+.nightly-price-slider .base-input-wrapper .currency-symbol {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.nightly-price-slider .base-input {
+  width: 100%;
+  padding: 12px 12px 12px 32px;
+  font-size: 24px;
+  font-weight: 700;
+  text-align: center;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.nightly-price-slider .base-input:focus {
+  border-color: #5b3bb3;
+}
+
+/* Hide number input spinners */
+.nightly-price-slider .base-input::-webkit-outer-spin-button,
+.nightly-price-slider .base-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.nightly-price-slider .base-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Range Slider */
+.nightly-price-slider .range-wrapper {
+  position: relative;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.nightly-price-slider .range-wrapper input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.nightly-price-slider .range-wrapper input[type="range"]:focus {
+  outline: none;
+}
+
+.nightly-price-slider .range-wrapper input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  cursor: pointer;
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+.nightly-price-slider .range-wrapper input[type="range"]::-webkit-slider-thumb {
+  height: 24px;
+  width: 24px;
+  border-radius: 50%;
+  background: #5b3bb3;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -8px;
+  box-shadow: 0 2px 6px rgba(91, 59, 179, 0.3);
+  border: 2px solid #fff;
+}
+
+.nightly-price-slider .range-wrapper input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 8px;
+  cursor: pointer;
+  background: #e5e7eb;
+  border-radius: 4px;
+}
+
+.nightly-price-slider .range-wrapper input[type="range"]::-moz-range-thumb {
+  height: 24px;
+  width: 24px;
+  border-radius: 50%;
+  background: #5b3bb3;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(91, 59, 179, 0.3);
+  border: 2px solid #fff;
+}
+
+/* Marks */
+.nightly-price-slider .marks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -5px;
+  padding: 0 2px;
+}
+
+.nightly-price-slider .marks span {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* Hint Text */
+.nightly-price-slider .calc-hint {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.nightly-price-slider .calc-hint strong {
+  color: #5b3bb3;
+}
+
+/* Color Palette Display */
+.nightly-price-slider .nights-display-wrapper {
+  margin-top: 24px;
+}
+
+.nightly-price-slider .nights-display-header {
+  text-align: center;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.nightly-price-slider .palette-container {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.nightly-price-slider .palette-row {
+  display: flex;
+}
+
+.nightly-price-slider .palette-swatch {
+  flex: 1;
+  min-height: 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+}
+
+/* Gradient colors - dark grey to white */
+.nightly-price-slider .palette-swatch.n1 { background: #374151; color: white; }
+.nightly-price-slider .palette-swatch.n2 { background: #4b5563; color: white; }
+.nightly-price-slider .palette-swatch.n3 { background: #6b7280; color: white; }
+.nightly-price-slider .palette-swatch.n4 { background: #9ca3af; color: white; }
+.nightly-price-slider .palette-swatch.n5 { background: #d1d5db; color: #374151; }
+.nightly-price-slider .palette-swatch.n6 { background: #e5e7eb; color: #374151; }
+.nightly-price-slider .palette-swatch.n7 { background: #f3f4f6; color: #374151; }
+
+.nightly-price-slider .swatch-number {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.75;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.nightly-price-slider .swatch-price {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.nightly-price-slider .swatch-label {
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.65;
+  margin-top: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Cumulative totals row */
+.nightly-price-slider .formula-row {
+  display: flex;
+  margin-top: 8px;
+}
+
+.nightly-price-slider .formula-item {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.nightly-price-slider .formula-total-row {
+  margin-top: 12px;
+  padding: 12px 16px;
+  background: #f9fafb;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nightly-price-slider .formula-total-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.nightly-price-slider .formula-total {
+  font-size: 18px;
+  font-weight: 800;
+  color: #374151;
+}
+
+/* Summary totals */
+.nightly-price-slider .summary-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding: 16px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.nightly-price-slider .summary-item {
+  text-align: center;
+}
+
+.nightly-price-slider .summary-label {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.nightly-price-slider .summary-value {
+  font-size: 20px;
+  color: #374151;
+  font-weight: 800;
+}
+
+/* Details/accordion */
+.nightly-price-slider .pricing-details {
+  margin-top: 24px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 15px;
+}
+
+.nightly-price-slider .pricing-details summary {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nightly-price-slider .pricing-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.nightly-price-slider .pricing-details summary:hover {
+  color: #374151;
+}
+
+.nightly-price-slider .pricing-details summary::before {
+  content: '▸';
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+.nightly-price-slider .pricing-details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.nightly-price-slider .details-content {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #6b7280;
+  background: #f9fafb;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .nightly-price-slider .palette-swatch {
+    min-height: 60px;
+    padding: 6px 2px;
+  }
+
+  .nightly-price-slider .swatch-number {
+    font-size: 8px;
+  }
+
+  .nightly-price-slider .swatch-price {
+    font-size: 12px;
+  }
+
+  .nightly-price-slider .swatch-label {
+    font-size: 7px;
+  }
+
+  .nightly-price-slider .summary-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .nightly-price-slider .summary-item {
+    text-align: center;
+  }
+}
+
 .pricing-table {
   margin: 2rem 0;
   overflow-x: auto;

@@ -62,7 +62,7 @@ export async function handleCreate(
       _id,
       Guest,
       Listing,
-      "Host - Account"
+      "Host User"
     `)
     .eq("_id", input.proposalId)
     .single();
@@ -75,35 +75,25 @@ export async function handleCreate(
   const proposalData = proposal as unknown as ProposalData;
   console.log(`[virtual-meeting:create] Found proposal, guest: ${proposalData.Guest}, listing: ${proposalData.Listing}`);
 
-  // Fetch Host Account
-  const { data: hostAccount, error: hostAccountError } = await supabase
-    .from("account_host")
-    .select("_id, User")
-    .eq("_id", proposalData["Host - Account"])
-    .single();
+  // Fetch Host User directly (Host User column now contains user._id)
+  const hostUserId = proposalData["Host User"];
 
-  if (hostAccountError || !hostAccount) {
-    console.error(`[virtual-meeting:create] Host account fetch failed:`, hostAccountError);
-    throw new ValidationError(`Host account not found: ${proposalData["Host - Account"]}`);
-  }
-
-  const hostAccountData = hostAccount as unknown as HostAccountData;
-  console.log(`[virtual-meeting:create] Found host account, user: ${hostAccountData.User}`);
-
-  // Fetch Host User
   const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
     .select(`_id, email, "Name - First", "Name - Full"`)
-    .eq("_id", hostAccountData.User)
+    .eq("_id", hostUserId)
     .single();
 
   if (hostUserError || !hostUser) {
     console.error(`[virtual-meeting:create] Host user fetch failed:`, hostUserError);
-    throw new ValidationError(`Host user not found`);
+    throw new ValidationError(`Host user not found: ${hostUserId}`);
   }
 
   const hostUserData = hostUser as unknown as UserData;
   console.log(`[virtual-meeting:create] Found host user: ${hostUserData.email}`);
+
+  // hostAccountData maintained for backwards compatibility with downstream code
+  const hostAccountData = { _id: hostUserData._id, User: hostUserData._id } as HostAccountData;
 
   // Fetch Guest User
   const { data: guestUser, error: guestUserError } = await supabase

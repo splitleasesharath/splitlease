@@ -4,12 +4,11 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { NEIGHBORHOOD_TEMPLATE } from './constants';
 import { generateListingDescription, generateListingTitle } from '../../../lib/aiService';
 import { getCommonHouseRules } from './services/houseRulesService';
 import { getCommonSafetyFeatures } from './services/safetyFeaturesService';
 import { getCommonInUnitAmenities, getCommonBuildingAmenities } from './services/amenitiesService';
-import { getNeighborhoodByZipCode } from './services/neighborhoodService';
+import { getNeighborhoodByZipCode, getNeighborhoodDescriptionWithFallback } from './services/neighborhoodService';
 import { uploadPhoto } from '../../../lib/photoUpload';
 
 /**
@@ -307,15 +306,26 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
 
     setIsLoadingNeighborhood(true);
     try {
-      const neighborhood = await getNeighborhoodByZipCode(zipCode);
+      // Build address data for AI fallback
+      const addressData = {
+        fullAddress: `${formData['Location - City'] || listing?.['Location - City'] || ''}, ${formData['Location - State'] || listing?.['Location - State'] || ''}`,
+        city: formData['Location - City'] || listing?.['Location - City'] || '',
+        state: formData['Location - State'] || listing?.['Location - State'] || '',
+        zip: zipCode,
+      };
 
-      if (neighborhood && neighborhood.description) {
-        handleInputChange('Description - Neighborhood', neighborhood.description);
-        showToast('Template loaded!', `Loaded description for ${neighborhood.neighborhoodName || 'neighborhood'}`);
+      const result = await getNeighborhoodDescriptionWithFallback(zipCode, addressData);
+
+      if (result && result.description) {
+        handleInputChange('Description - Neighborhood', result.description);
+
+        if (result.source === 'ai') {
+          showToast('Description generated!', 'AI-generated neighborhood description based on address');
+        } else {
+          showToast('Template loaded!', `Loaded description for ${result.neighborhoodName || 'neighborhood'}`);
+        }
       } else {
-        // Fall back to static template if no neighborhood found
-        handleInputChange('Description - Neighborhood', NEIGHBORHOOD_TEMPLATE);
-        showToast('Default template loaded', `No specific neighborhood found for ZIP: ${zipCode}`);
+        showToast('Could not load template', `No description available for ZIP: ${zipCode}`, 'error');
       }
     } catch (error) {
       console.error('[loadNeighborhoodTemplate] Error:', error);

@@ -856,8 +856,8 @@ export default function SearchPage() {
         // Batch fetch host data
         const hostIds = new Set();
         data.forEach(listing => {
-          if (listing['Host / Landlord']) {
-            hostIds.add(listing['Host / Landlord']);
+          if (listing['Host User']) {
+            hostIds.add(listing['Host User']);
           }
         });
 
@@ -866,7 +866,7 @@ export default function SearchPage() {
         // Map host data to listings
         const resolvedHosts = {};
         data.forEach(listing => {
-          const hostId = listing['Host / Landlord'];
+          const hostId = listing['Host User'];
           resolvedHosts[listing._id] = hostMap[hostId] || null;
         });
 
@@ -1089,13 +1089,13 @@ export default function SearchPage() {
       // Batch fetch host data
       const hostIds = new Set();
       data.forEach(listing => {
-        if (listing['Host / Landlord']) hostIds.add(listing['Host / Landlord']);
+        if (listing['Host User']) hostIds.add(listing['Host User']);
       });
       const hostMap = await fetchHostData(Array.from(hostIds));
 
       const resolvedHosts = {};
       data.forEach(listing => {
-        const hostId = listing['Host / Landlord'];
+        const hostId = listing['Host User'];
         resolvedHosts[listing._id] = hostMap[hostId] || null;
       });
 

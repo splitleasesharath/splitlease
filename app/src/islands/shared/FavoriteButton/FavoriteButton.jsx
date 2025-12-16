@@ -5,6 +5,8 @@
  * Manages its own state for immediate visual feedback while staying
  * in sync with the parent's state via the initialFavorited prop.
  *
+ * Uses direct Supabase updates to the user table's "Favorited Listings" JSONB field.
+ *
  * Usage:
  *   <FavoriteButton
  *     listingId="123x456"
@@ -68,26 +70,45 @@ const FavoriteButton = ({
     // Reset animation
     setTimeout(() => setIsAnimating(false), 300);
 
-    // Sync with server in background
+    // Sync with Supabase user table directly
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          action: 'toggle_favorite',
-          payload: {
-            userId,
-            listingId,
-            action: newFavoritedState ? 'add' : 'remove',
-          },
-        },
-      });
+      // Fetch current favorites from user table
+      const { data: userData, error: fetchError } = await supabase
+        .from('user')
+        .select('"Favorited Listings"')
+        .eq('_id', userId)
+        .single();
 
-      if (error) {
-        throw error;
+      if (fetchError) {
+        throw fetchError;
       }
 
-      if (!data?.success) {
-        throw new Error(data?.error?.message || 'Failed to update favorites');
+      // Get current favorites array (or empty array if null)
+      const currentFavorites = userData?.['Favorited Listings'] || [];
+
+      // Add or remove the listing ID
+      let newFavorites;
+      if (newFavoritedState) {
+        // Add to favorites (avoid duplicates)
+        if (!currentFavorites.includes(listingId)) {
+          newFavorites = [...currentFavorites, listingId];
+        } else {
+          newFavorites = currentFavorites;
+        }
+      } else {
+        // Remove from favorites
+        newFavorites = currentFavorites.filter(id => id !== listingId);
+      }
+
+      // Update user table with new favorites array
+      const { error: updateError } = await supabase
+        .from('user')
+        .update({ 'Favorited Listings': newFavorites })
+        .eq('_id', userId);
+
+      if (updateError) {
+        throw updateError;
       }
 
       // Notify parent if callback provided

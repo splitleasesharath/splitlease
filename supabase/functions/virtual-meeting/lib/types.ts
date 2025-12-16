@@ -22,12 +22,12 @@ export interface ProposalData {
   _id: string;
   Guest: string;
   Listing: string;
-  'Host - Account': string;
+  'Host User': string;
 }
 
 export interface ListingData {
   _id: string;
-  'Host / Landlord': string;
+  'Host User': string;
   'Created By': string;
 }
 

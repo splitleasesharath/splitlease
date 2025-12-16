@@ -16,6 +16,22 @@ import { validateDayIndices, validateNightIndices } from "./dayConversion.ts";
  * NOTE: Uses camelCase to match frontend payload format
  */
 export function validateCreateProposalInput(input: CreateProposalInput): void {
+  // Debug logging for validation troubleshooting
+  console.log('[validators] Validating input:', JSON.stringify({
+    listingId: { value: input.listingId, type: typeof input.listingId },
+    guestId: { value: input.guestId, type: typeof input.guestId },
+    estimatedBookingTotal: { value: input.estimatedBookingTotal, type: typeof input.estimatedBookingTotal },
+    moveInStartRange: { value: input.moveInStartRange, type: typeof input.moveInStartRange },
+    moveInEndRange: { value: input.moveInEndRange, type: typeof input.moveInEndRange },
+    reservationSpanWeeks: { value: input.reservationSpanWeeks, type: typeof input.reservationSpanWeeks },
+    reservationSpan: { value: input.reservationSpan, type: typeof input.reservationSpan },
+    daysSelected: { value: input.daysSelected, type: typeof input.daysSelected, isArray: Array.isArray(input.daysSelected) },
+    nightsSelected: { value: input.nightsSelected, type: typeof input.nightsSelected, isArray: Array.isArray(input.nightsSelected) },
+    checkIn: { value: input.checkIn, type: typeof input.checkIn },
+    checkOut: { value: input.checkOut, type: typeof input.checkOut },
+    proposalPrice: { value: input.proposalPrice, type: typeof input.proposalPrice },
+  }, null, 2));
+
   // ─────────────────────────────────────────────────────────
   // Required Identifiers
   // ─────────────────────────────────────────────────────────

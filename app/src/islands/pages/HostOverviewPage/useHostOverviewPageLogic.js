@@ -79,7 +79,8 @@ export function useHostOverviewPageLogic() {
           firstName: userData['Name - First'] || userData.firstName || 'Host',
           lastName: userData['Name - Last'] || userData.lastName || '',
           email: userData.email || '',
-          accountHostId: userData['Account - Host / Landlord'] || userData.accountHostId
+          // After migration, user._id serves as host reference directly
+          accountHostId: userData.accountHostId || userData._id
         });
         return userData;
       }
@@ -128,7 +129,7 @@ export function useHostOverviewPageLogic() {
         );
       }
 
-      // 2. Fetch from listing_trial where Host / Landlord = userId or Created By = userId
+      // 2. Fetch from listing_trial where Host User = userId or Created By = userId
       // Using RPC function to handle column names with special characters
       if (userId) {
         fetchPromises.push(
@@ -429,7 +430,8 @@ export function useHostOverviewPageLogic() {
         return;
       }
 
-      const hostAccountId = userData['Account - Host / Landlord'] || userData.accountHostId;
+      // After migration, user._id serves as host reference directly
+      const hostAccountId = userData.accountHostId || userData._id;
       const userId = userData.userId || userData._id || userData.id;
 
       console.log('[HostOverview] loadData - hostAccountId:', hostAccountId, 'userId:', userId);
@@ -488,18 +490,22 @@ export function useHostOverviewPageLogic() {
   const handleImportListingSubmit = useCallback(async ({ listingUrl, emailAddress }) => {
     setImportListingLoading(true);
     try {
-      // Send import request to Slack webhook for processing
-      const { error: importError } = await supabase.functions.invoke('slack-notification', {
-        body: {
-          type: 'import_listing',
+      // Send import request to Cloudflare Pages Function (same-origin, no CORS issues)
+      const response = await fetch('/api/import-listing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           listingUrl,
           emailAddress,
           userId: user?.id,
           userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
-        }
+        })
       });
 
-      if (importError) throw importError;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to submit import request');
+      }
 
       showToast('Success', 'Import request submitted! We\'ll notify you when your listing is ready.', 'success', 5000);
       setShowImportListingModal(false);

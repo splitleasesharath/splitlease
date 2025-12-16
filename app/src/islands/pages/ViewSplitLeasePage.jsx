@@ -693,6 +693,32 @@ export default function ViewSplitLeasePage() {
   // Convert Day objects to array of numbers for compatibility with existing code
   const selectedDays = selectedDayObjects.map(day => day.dayOfWeek);
 
+  // Calculate ideal termination date based on move-in date and reservation span
+  const idealTerminationDate = useMemo(() => {
+    if (!moveInDate || !reservationSpan || selectedDays.length === 0) {
+      return null;
+    }
+
+    // Calculate termination date: moveInDate + (reservationSpan weeks * 7 days)
+    const moveIn = new Date(moveInDate);
+    const terminationDate = new Date(moveIn);
+    terminationDate.setDate(moveIn.getDate() + (reservationSpan * 7));
+
+    return terminationDate;
+  }, [moveInDate, reservationSpan, selectedDays.length]);
+
+  // Format the termination date for display
+  const formattedTerminationDate = useMemo(() => {
+    if (!idealTerminationDate) return null;
+
+    return idealTerminationDate.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  }, [idealTerminationDate]);
+
   // Calculate smart default move-in date based on selected days
   // If user selects Wed-Sat, default to next Wednesday after 2 weeks
   const calculateSmartMoveInDate = useCallback((selectedDayNumbers) => {
@@ -1186,6 +1212,20 @@ export default function ViewSplitLeasePage() {
       };
 
       console.log('📋 Edge Function payload:', edgeFunctionPayload);
+      console.log('📋 Payload field types:', {
+        guestId: typeof edgeFunctionPayload.guestId,
+        listingId: typeof edgeFunctionPayload.listingId,
+        moveInStartRange: typeof edgeFunctionPayload.moveInStartRange,
+        moveInEndRange: typeof edgeFunctionPayload.moveInEndRange,
+        daysSelected: { type: typeof edgeFunctionPayload.daysSelected, isArray: Array.isArray(edgeFunctionPayload.daysSelected), value: edgeFunctionPayload.daysSelected },
+        nightsSelected: { type: typeof edgeFunctionPayload.nightsSelected, isArray: Array.isArray(edgeFunctionPayload.nightsSelected), value: edgeFunctionPayload.nightsSelected },
+        reservationSpan: typeof edgeFunctionPayload.reservationSpan,
+        reservationSpanWeeks: typeof edgeFunctionPayload.reservationSpanWeeks,
+        checkIn: typeof edgeFunctionPayload.checkIn,
+        checkOut: typeof edgeFunctionPayload.checkOut,
+        proposalPrice: typeof edgeFunctionPayload.proposalPrice,
+        estimatedBookingTotal: typeof edgeFunctionPayload.estimatedBookingTotal,
+      });
 
       // Call the proposal Edge Function (Supabase-native)
       const { data, error } = await supabase.functions.invoke('proposal', {
@@ -1197,7 +1237,36 @@ export default function ViewSplitLeasePage() {
 
       if (error) {
         console.error('❌ Edge Function error:', error);
-        throw new Error(error.message || 'Failed to submit proposal');
+        console.error('❌ Error properties:', Object.keys(error));
+        console.error('❌ Error context:', error.context);
+
+        // Extract actual error message from response context if available
+        let errorMessage = error.message || 'Failed to submit proposal';
+
+        // FunctionsHttpError has context.json() method or context as Response
+        try {
+          if (error.context && typeof error.context.json === 'function') {
+            // context is a Response object
+            const errorBody = await error.context.json();
+            console.error('❌ Edge Function error body (from json()):', errorBody);
+            if (errorBody?.error) {
+              errorMessage = errorBody.error;
+            }
+          } else if (error.context?.body) {
+            // context.body might be a ReadableStream or string
+            const errorBody = typeof error.context.body === 'string'
+              ? JSON.parse(error.context.body)
+              : error.context.body;
+            console.error('❌ Edge Function error body (from body):', errorBody);
+            if (errorBody?.error) {
+              errorMessage = errorBody.error;
+            }
+          }
+        } catch (e) {
+          console.error('❌ Could not parse error body:', e);
+        }
+
+        throw new Error(errorMessage);
       }
 
       if (!data?.success) {
@@ -2374,7 +2443,7 @@ export default function ViewSplitLeasePage() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: '0',
+              marginBottom: formattedTerminationDate ? '8px' : '0',
               fontSize: '15px'
             }}>
               <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Rent</span>
@@ -2384,6 +2453,22 @@ export default function ViewSplitLeasePage() {
                   : priceMessage || 'Please Add More Days'}
               </span>
             </div>
+            {/* Ideal Termination Date */}
+            {formattedTerminationDate && (
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '14px',
+                paddingTop: '8px',
+                borderTop: '1px solid #E5E7EB'
+              }}>
+                <span style={{ color: '#6B7280', fontWeight: '500' }}>Ideal Termination Date</span>
+                <span style={{ color: '#31135d', fontWeight: '600' }}>
+                  {formattedTerminationDate}
+                </span>
+              </div>
+            )}
           </div>
 
           {/* Total Row */}
@@ -3166,6 +3251,23 @@ export default function ViewSplitLeasePage() {
                         : '—'}
                     </span>
                   </div>
+                  {/* Ideal Termination Date */}
+                  {formattedTerminationDate && (
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      fontSize: '13px',
+                      marginBottom: '8px',
+                      paddingTop: '8px',
+                      borderTop: '1px solid #E5E7EB'
+                    }}>
+                      <span style={{ color: '#6B7280', fontWeight: '500' }}>Ideal Termination Date</span>
+                      <span style={{ color: '#31135d', fontWeight: '600' }}>
+                        {formattedTerminationDate}
+                      </span>
+                    </div>
+                  )}
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',

@@ -138,7 +138,7 @@ export async function fetchListingComplete(listingId) {
           "💰Unit Markup",
           "NEW Date Check-in Time",
           "NEW Date Check-out Time",
-          "Host / Landlord",
+          "Host User",
           "host name",
           "host restrictions",
           "Cancellation Policy",
@@ -271,28 +271,29 @@ export async function fetchListingComplete(listingId) {
       ? getStorageOption(listingData['Features - Secure Storage Option'])
       : null;
 
-    // 8. Fetch host data - query user table directly via Account - Host / Landlord FK
+    // 8. Fetch host data - query user table
+    // listing["Host User"] now contains user._id directly (after migration)
     let hostData = null;
-    if (listingData['Host / Landlord']) {
-      // Query user table directly where Account - Host / Landlord matches the host account ID
-      // Note: Column name has special characters, so we use filter() with quoted column name
+    if (listingData['Host User']) {
       const { data: userData, error: userError } = await supabase
         .from('user')
-        .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text", "Account - Host / Landlord"')
-        .filter('"Account - Host / Landlord"', 'eq', listingData['Host / Landlord'])
+        .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text"')
+        .eq('_id', listingData['Host User'])
         .maybeSingle();
 
       if (userError) {
-        console.error('User fetch error:', userError);
-      } else if (userData) {
+        console.error('User fetch error (by _id):', userError);
+      }
+
+      if (userData) {
         hostData = {
-          _id: userData['Account - Host / Landlord'],  // host_account ID (keep for backwards compat)
-          userId: userData._id,  // user's Bubble ID (needed for messaging)
+          _id: userData._id,
           'Name - First': userData['Name - First'],
           'Name - Last': userData['Name - Last'],
           'Profile Photo': userData['Profile Photo'],
           Email: userData['email as text']
         };
+        console.log('📍 Host found via user._id lookup');
       }
     }
 

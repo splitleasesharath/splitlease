@@ -1,9 +1,16 @@
 import { supabase } from '../../../../lib/supabase.js';
+import { generateNeighborhoodDescription } from '../../../../lib/aiService';
 
 export interface Neighborhood {
   neighborhood_name: string;
   description: string;
   zips: string[];
+}
+
+export interface NeighborhoodResult {
+  description: string;
+  neighborhood_name?: string;
+  source: 'database' | 'ai';
 }
 
 /**
@@ -58,4 +65,57 @@ export function extractZipCode(address: string): string {
   // Match 5-digit ZIP code (with optional +4 extension)
   const zipMatch = address.match(/\b(\d{5})(-\d{4})?\b/);
   return zipMatch ? zipMatch[1] : '';
+}
+
+/**
+ * Get neighborhood description with AI fallback
+ * First attempts database lookup, falls back to AI generation if not found
+ * @param zipCode - ZIP code to lookup
+ * @param addressData - Address data for AI fallback
+ * @returns Promise with neighborhood result or null
+ */
+export async function getNeighborhoodDescriptionWithFallback(
+  zipCode: string,
+  addressData: {
+    fullAddress: string;
+    city: string;
+    state: string;
+    zip: string;
+  }
+): Promise<NeighborhoodResult | null> {
+  // First, try database lookup
+  const dbResult = await getNeighborhoodByZipCode(zipCode);
+
+  if (dbResult && dbResult.description) {
+    console.log('[neighborhoodService] Found description in database');
+    return {
+      description: dbResult.description,
+      neighborhood_name: dbResult.neighborhood_name,
+      source: 'database',
+    };
+  }
+
+  // Fallback to AI generation
+  console.log('[neighborhoodService] No database match, generating via AI');
+
+  if (!addressData.fullAddress && !addressData.city) {
+    console.warn('[neighborhoodService] Insufficient address data for AI generation');
+    return null;
+  }
+
+  try {
+    const aiDescription = await generateNeighborhoodDescription(addressData);
+
+    if (aiDescription) {
+      return {
+        description: aiDescription,
+        source: 'ai',
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[neighborhoodService] AI generation failed:', error);
+    return null;
+  }
 }

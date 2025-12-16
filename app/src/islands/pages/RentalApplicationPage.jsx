@@ -14,7 +14,6 @@
  */
 
 import Header from '../shared/Header.jsx';
-import Footer from '../shared/Footer.jsx';
 import { useRentalApplicationPageLogic } from './useRentalApplicationPageLogic.js';
 
 export default function RentalApplicationPage({ requireAuth = false, isAuthenticated = true }) {
@@ -1131,8 +1130,6 @@ export default function RentalApplicationPage({ requireAuth = false, isAuthentic
           </div>
         </div>
       )}
-
-      <Footer />
     </>
   );
 }

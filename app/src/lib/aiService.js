@@ -134,6 +134,54 @@ export async function generateListingTitle(listingData) {
 }
 
 /**
+ * Generate a neighborhood description using AI based on address
+ * Used as fallback when ZIP code lookup fails
+ *
+ * @param {Object} addressData - The address data to generate description from
+ * @param {string} addressData.fullAddress - Full street address
+ * @param {string} addressData.city - City name
+ * @param {string} addressData.state - State abbreviation
+ * @param {string} addressData.zip - ZIP code
+ * @returns {Promise<string>} Generated neighborhood description
+ * @throws {Error} If generation fails
+ */
+export async function generateNeighborhoodDescription(addressData) {
+  console.log('[aiService] Generating neighborhood description for address:', addressData);
+
+  const variables = {
+    address: addressData.fullAddress || '',
+    city: addressData.city || '',
+    state: addressData.state || '',
+    zipCode: addressData.zip || '',
+  };
+
+  console.log('[aiService] Calling ai-gateway for neighborhood with variables:', variables);
+
+  const { data, error } = await supabase.functions.invoke('ai-gateway', {
+    body: {
+      action: 'complete',
+      payload: {
+        prompt_key: 'neighborhood-description',
+        variables,
+      },
+    },
+  });
+
+  if (error) {
+    console.error('[aiService] Edge Function error:', error);
+    throw new Error(`Failed to generate neighborhood description: ${error.message}`);
+  }
+
+  if (!data?.success) {
+    console.error('[aiService] AI Gateway error:', data?.error);
+    throw new Error(data?.error || 'Failed to generate neighborhood description');
+  }
+
+  console.log('[aiService] Generated neighborhood description:', data.data?.content);
+  return data.data?.content || '';
+}
+
+/**
  * Extract listing data from localStorage draft for AI generation
  * Reads the selfListingDraft from localStorage and extracts relevant fields
  *

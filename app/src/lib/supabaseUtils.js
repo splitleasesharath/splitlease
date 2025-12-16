@@ -107,74 +107,42 @@ export async function fetchPhotoUrls(photoIds) {
 
 /**
  * Fetch host data in batch from database
- * @param {Array<string>} hostIds - Array of account_host IDs
- * @returns {Promise<Object>} Map of account_host ID to host data {name, image, verified}
+ * After migration, hostIds are always user._id values (Host User column)
+ * @param {Array<string>} hostIds - Array of host IDs (user._id)
+ * @returns {Promise<Object>} Map of host ID to host data {name, image, verified}
  */
 export async function fetchHostData(hostIds) {
   if (!hostIds || hostIds.length === 0) {
     return {};
   }
 
+  const hostMap = {};
+
   try {
-    // Fetch account_host records
-    const { data: accountHostData, error: accountError } = await supabase
-      .from('account_host')
-      .select('_id, User')
-      .in('_id', hostIds);
-
-    if (accountError) {
-      console.error('❌ Error fetching account_host data:', accountError);
-      return {};
-    }
-
-    // Collect user IDs
-    const userIds = new Set();
-    accountHostData.forEach(account => {
-      if (account.User) {
-        userIds.add(account.User);
-      }
-    });
-
-    if (userIds.size === 0) {
-      return {};
-    }
-
-    // Fetch user records
+    // hostIds are user._id values (Host User column contains user._id directly)
     const { data: userData, error: userError } = await supabase
       .from('user')
       .select('_id, "Name - Full", "Profile Photo"')
-      .in('_id', Array.from(userIds));
+      .in('_id', hostIds);
 
     if (userError) {
-      console.error('❌ Error fetching user data:', userError);
-      return {};
+      console.error('❌ Error fetching user data by _id:', userError);
     }
 
-    // Create user map
-    const userMap = {};
-    userData.forEach(user => {
-      // Add https: protocol if profile photo URL starts with //
-      let profilePhoto = user['Profile Photo'];
-      if (profilePhoto && profilePhoto.startsWith('//')) {
-        profilePhoto = 'https:' + profilePhoto;
-      }
-
-      userMap[user._id] = {
-        userId: user._id,  // User's Bubble ID (needed for messaging)
-        name: user['Name - Full'] || null,
-        image: profilePhoto || null,
-        verified: false // TODO: Add verification logic when available
-      };
-    });
-
-    // Create host map keyed by account_host ID
-    const hostMap = {};
-    accountHostData.forEach(account => {
-      const userId = account.User;
-      if (userId && userMap[userId]) {
-        hostMap[account._id] = userMap[userId];
-      }
-    });
+    // Process users found by _id
+    if (userData && userData.length > 0) {
+      userData.forEach(user => {
+        let profilePhoto = user['Profile Photo'];
+        if (profilePhoto && profilePhoto.startsWith('//')) {
+          profilePhoto = 'https:' + profilePhoto;
+        }
+        hostMap[user._id] = {
+          name: user['Name - Full'] || null,
+          image: profilePhoto || null,
+          verified: false
+        };
+      });
+    }
 
     console.log(`✅ Fetched host data for ${Object.keys(hostMap).length} hosts`);
     return hostMap;
@@ -186,12 +154,13 @@ export async function fetchHostData(hostIds) {
 
 /**
  * Extract photos from Supabase photos field.
- * Handles two formats:
- * 1. Embedded objects (new): [{id, url, Photo, ...}, ...]
- * 2. Legacy IDs (deprecated): ["photoId1", "photoId2"]
+ * Handles three formats:
+ * 1. Embedded objects: [{id, url, Photo, ...}, ...]
+ * 2. Direct URL strings: ["https://...", "https://...", ...]
+ * 3. Legacy IDs (deprecated): ["photoId1", "photoId2"] - requires photoMap
  *
- * @param {Array|string} photosField - Array of photo objects/IDs or JSON string
- * @param {Object} photoMap - Map of photo IDs to URLs (only needed for legacy format)
+ * @param {Array|string} photosField - Array of photo objects/URLs/IDs or JSON string
+ * @param {Object} photoMap - Map of photo IDs to URLs (only needed for legacy ID format)
  * @param {string} listingId - Listing ID for debugging purposes
  * @returns {Array<string>} Array of photo URLs (empty array if none found)
  */
@@ -221,8 +190,20 @@ export function extractPhotos(photosField, photoMap = {}, listingId = null) {
       continue;
     }
 
-    // Legacy format: photo is an ID string - look up in photoMap
+    // String format: could be a direct URL or a legacy ID
     if (typeof photo === 'string') {
+      // Check if it's already a valid URL (starts with http://, https://, or //)
+      if (photo.startsWith('http://') || photo.startsWith('https://') || photo.startsWith('//')) {
+        let photoUrl = photo;
+        // Add https: protocol if URL starts with //
+        if (photoUrl.startsWith('//')) {
+          photoUrl = 'https:' + photoUrl;
+        }
+        photoUrls.push(photoUrl);
+        continue;
+      }
+
+      // Legacy format: photo is an ID string - look up in photoMap
       const url = photoMap[photo];
       if (url) {
         photoUrls.push(url);
