@@ -52,32 +52,8 @@ export async function handleGetThreads(
 
   console.log('[getThreads] User Bubble ID (from JWT):', userBubbleId);
 
-  // Step 1: Query junction table to get user's thread IDs
-  // Note: user_thread is in 'junctions' schema, not 'public'
-  const { data: userThreadLinks, error: junctionError } = await supabaseAdmin
-    .schema('junctions')
-    .from('user_thread')
-    .select('thread_id, role')
-    .eq('user_id', userBubbleId);
-
-  if (junctionError) {
-    console.error('[getThreads] Junction query failed:', junctionError);
-    throw new Error(`Failed to fetch user threads: ${junctionError.message}`);
-  }
-
-  if (!userThreadLinks || userThreadLinks.length === 0) {
-    console.log('[getThreads] No threads found for user in junction table');
-    return {
-      threads: [],
-      total_count: 0,
-    };
-  }
-
-  const threadIds = userThreadLinks.map(link => link.thread_id);
-  console.log('[getThreads] Found', threadIds.length, 'thread links in junction table');
-
-  // Step 2: Fetch full thread details using the thread IDs
-  // Note: Table is 'thread' and columns have specific naming conventions
+  // Query thread table directly - user can be either host or guest
+  // Note: junctions schema is not exposed via REST API, so we use OR filter
   const { data: threads, error: threadsError } = await supabaseAdmin
     .from('thread')
     .select(`
@@ -90,7 +66,7 @@ export async function handleGetThreads(
       "~Last Message",
       "Thread Subject"
     `)
-    .in('_id', threadIds)
+    .or(`-Host User.eq.${userBubbleId},-Guest User.eq.${userBubbleId}`)
     .order('"Modified Date"', { ascending: false });
 
   if (threadsError) {
