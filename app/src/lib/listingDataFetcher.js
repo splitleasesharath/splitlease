@@ -274,12 +274,13 @@ export async function fetchListingComplete(listingId) {
     // 8. Fetch host data - query user table
     // listing["Host / Landlord"] contains account_host._id
     // We find the user whose "Account - Host / Landlord" matches this ID
+    // Note: Column name contains "/" which requires proper quoting in filter()
     let hostData = null;
     if (listingData['Host / Landlord']) {
       const { data: userData, error: userError } = await supabase
         .from('user')
         .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text"')
-        .eq('Account - Host / Landlord', listingData['Host / Landlord'])
+        .filter('"Account - Host / Landlord"', 'eq', listingData['Host / Landlord'])
         .maybeSingle();
 
       if (userError) {

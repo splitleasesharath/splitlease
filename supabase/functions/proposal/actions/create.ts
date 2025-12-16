@@ -130,10 +130,11 @@ export async function handleCreate(
   // Fetch Host User via Account - Host / Landlord FK (reverse lookup)
   // The listing's "Host / Landlord" field contains account_host._id
   // We find the user whose "Account - Host / Landlord" matches this ID
+  // NOTE: Column name contains "/" which breaks .eq() - use .filter() with quoted column name
   const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
     .select(`_id, email, "Proposals List"`)
-    .eq("Account - Host / Landlord", listingData["Host / Landlord"])
+    .filter('"Account - Host / Landlord"', 'eq', listingData["Host / Landlord"])
     .single();
 
   if (hostUserError || !hostUser) {
