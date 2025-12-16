@@ -693,6 +693,32 @@ export default function ViewSplitLeasePage() {
   // Convert Day objects to array of numbers for compatibility with existing code
   const selectedDays = selectedDayObjects.map(day => day.dayOfWeek);
 
+  // Calculate ideal termination date based on move-in date and reservation span
+  const idealTerminationDate = useMemo(() => {
+    if (!moveInDate || !reservationSpan || selectedDays.length === 0) {
+      return null;
+    }
+
+    // Calculate termination date: moveInDate + (reservationSpan weeks * 7 days)
+    const moveIn = new Date(moveInDate);
+    const terminationDate = new Date(moveIn);
+    terminationDate.setDate(moveIn.getDate() + (reservationSpan * 7));
+
+    return terminationDate;
+  }, [moveInDate, reservationSpan, selectedDays.length]);
+
+  // Format the termination date for display
+  const formattedTerminationDate = useMemo(() => {
+    if (!idealTerminationDate) return null;
+
+    return idealTerminationDate.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  }, [idealTerminationDate]);
+
   // Calculate smart default move-in date based on selected days
   // If user selects Wed-Sat, default to next Wednesday after 2 weeks
   const calculateSmartMoveInDate = useCallback((selectedDayNumbers) => {
@@ -1197,7 +1223,22 @@ export default function ViewSplitLeasePage() {
 
       if (error) {
         console.error('❌ Edge Function error:', error);
-        throw new Error(error.message || 'Failed to submit proposal');
+        // Extract actual error message from response context if available
+        let errorMessage = error.message || 'Failed to submit proposal';
+        if (error.context?.body) {
+          try {
+            const errorBody = typeof error.context.body === 'string'
+              ? JSON.parse(error.context.body)
+              : error.context.body;
+            if (errorBody?.error) {
+              errorMessage = errorBody.error;
+              console.error('❌ Edge Function error details:', errorBody.error);
+            }
+          } catch (e) {
+            console.error('❌ Could not parse error body:', e);
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       if (!data?.success) {
