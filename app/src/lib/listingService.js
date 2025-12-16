@@ -32,34 +32,54 @@ export async function createListing(formData) {
   const storedUserId = getUserId();
   console.log('[ListingService] Stored user ID:', storedUserId);
 
-  // Resolve the Bubble _id if we have a Supabase Auth UUID
-  // Supabase UUIDs contain dashes, Bubble IDs don't
+  // Resolve user data - we need both _id (for Created By) and Account - Host / Landlord (for host FK)
+  // The listing table's "Host / Landlord" column expects the host account ID, NOT the user ID
   let bubbleUserId = storedUserId;
+  let hostAccountId = null;
   const isSupabaseUUID = storedUserId && storedUserId.includes('-');
 
   if (isSupabaseUUID) {
-    console.log('[ListingService] Detected Supabase Auth UUID, resolving Bubble _id by email...');
+    console.log('[ListingService] Detected Supabase Auth UUID, resolving user data by email...');
     const { data: { session } } = await supabase.auth.getSession();
 
     if (session?.user?.email) {
+      // Fetch both _id and Account - Host / Landlord for the listing FK
       // Note: Some users have email in 'email' column, others in 'email as text' (legacy Bubble column)
       const { data: userData, error: userError } = await supabase
         .from('user')
-        .select('_id')
+        .select('_id, "Account - Host / Landlord"')
         .or(`email.eq.${session.user.email},email as text.eq.${session.user.email}`)
         .maybeSingle();
 
       if (userData?._id) {
         bubbleUserId = userData._id;
-        console.log('[ListingService] ✅ Resolved Bubble _id:', bubbleUserId);
+        hostAccountId = userData['Account - Host / Landlord'];
+        console.log('[ListingService] ✅ Resolved user _id:', bubbleUserId);
+        console.log('[ListingService] ✅ Resolved host account ID:', hostAccountId);
       } else {
-        console.warn('[ListingService] ⚠️ Could not resolve Bubble _id, using stored ID:', storedUserId);
+        console.warn('[ListingService] ⚠️ Could not resolve user data, using stored ID:', storedUserId);
       }
+    }
+  } else {
+    // For Bubble-style IDs, we need to fetch the host account ID from user table
+    console.log('[ListingService] Bubble-style ID detected, fetching host account ID...');
+    const { data: userData, error: userError } = await supabase
+      .from('user')
+      .select('"Account - Host / Landlord"')
+      .eq('_id', storedUserId)
+      .maybeSingle();
+
+    if (userData?.['Account - Host / Landlord']) {
+      hostAccountId = userData['Account - Host / Landlord'];
+      console.log('[ListingService] ✅ Resolved host account ID:', hostAccountId);
+    } else {
+      console.warn('[ListingService] ⚠️ Could not resolve host account ID for user:', storedUserId);
     }
   }
 
   const userId = bubbleUserId;
-  console.log('[ListingService] Current user ID (for listing):', userId);
+  console.log('[ListingService] User ID (for Created By):', userId);
+  console.log('[ListingService] Host Account ID (for Host / Landlord FK):', hostAccountId);
 
   // Step 1: Generate Bubble-compatible _id via RPC
   const { data: generatedId, error: rpcError } = await supabase.rpc('generate_bubble_id');
@@ -119,7 +139,8 @@ export async function createListing(formData) {
   };
 
   // Step 3: Map form data to listing table columns
-  const listingData = mapFormDataToListingTable(formDataWithPhotos, userId, generatedId);
+  // Pass hostAccountId for the "Host / Landlord" FK (proposal lookup depends on this)
+  const listingData = mapFormDataToListingTable(formDataWithPhotos, userId, generatedId, hostAccountId);
 
   // Debug: Log the cancellation policy value being inserted
   console.log('[ListingService] Cancellation Policy value to insert:', listingData['Cancellation Policy']);
@@ -499,11 +520,12 @@ function mapStateToDisplayName(stateInput) {
  * - source_type → Omitted (Created By is for user ID)
  *
  * @param {object} formData - Form data from SelfListingPage
- * @param {string|null} userId - The current user's ID (for host linking)
+ * @param {string|null} userId - The current user's _id (for Created By)
  * @param {string} generatedId - The Bubble-compatible _id from generate_bubble_id()
+ * @param {string|null} hostAccountId - The user's "Account - Host / Landlord" ID (for Host FK)
  * @returns {object} - Database-ready object for listing table
  */
-function mapFormDataToListingTable(formData, userId, generatedId) {
+function mapFormDataToListingTable(formData, userId, generatedId, hostAccountId = null) {
   const now = new Date().toISOString();
 
   // Map available nights from object to array of day numbers (1-based for Bubble compatibility)
@@ -522,8 +544,12 @@ function mapFormDataToListingTable(formData, userId, generatedId) {
     _id: generatedId,
 
     // User/Host reference
+    // CRITICAL: "Host / Landlord" must be the host account ID (user["Account - Host / Landlord"]),
+    // NOT the user._id. The proposal edge function looks up the host user via:
+    //   .eq("Account - Host / Landlord", listing["Host / Landlord"])
+    // If we use userId here, that lookup will fail and proposal creation will break.
     'Created By': userId || null,
-    'Host / Landlord': userId || null,
+    'Host / Landlord': hostAccountId || null,
     'Created Date': now,
     'Modified Date': now,
 

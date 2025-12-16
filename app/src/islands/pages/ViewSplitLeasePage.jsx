@@ -1212,6 +1212,20 @@ export default function ViewSplitLeasePage() {
       };
 
       console.log('📋 Edge Function payload:', edgeFunctionPayload);
+      console.log('📋 Payload field types:', {
+        guestId: typeof edgeFunctionPayload.guestId,
+        listingId: typeof edgeFunctionPayload.listingId,
+        moveInStartRange: typeof edgeFunctionPayload.moveInStartRange,
+        moveInEndRange: typeof edgeFunctionPayload.moveInEndRange,
+        daysSelected: { type: typeof edgeFunctionPayload.daysSelected, isArray: Array.isArray(edgeFunctionPayload.daysSelected), value: edgeFunctionPayload.daysSelected },
+        nightsSelected: { type: typeof edgeFunctionPayload.nightsSelected, isArray: Array.isArray(edgeFunctionPayload.nightsSelected), value: edgeFunctionPayload.nightsSelected },
+        reservationSpan: typeof edgeFunctionPayload.reservationSpan,
+        reservationSpanWeeks: typeof edgeFunctionPayload.reservationSpanWeeks,
+        checkIn: typeof edgeFunctionPayload.checkIn,
+        checkOut: typeof edgeFunctionPayload.checkOut,
+        proposalPrice: typeof edgeFunctionPayload.proposalPrice,
+        estimatedBookingTotal: typeof edgeFunctionPayload.estimatedBookingTotal,
+      });
 
       // Call the proposal Edge Function (Supabase-native)
       const { data, error } = await supabase.functions.invoke('proposal', {
@@ -1223,21 +1237,35 @@ export default function ViewSplitLeasePage() {
 
       if (error) {
         console.error('❌ Edge Function error:', error);
+        console.error('❌ Error properties:', Object.keys(error));
+        console.error('❌ Error context:', error.context);
+
         // Extract actual error message from response context if available
         let errorMessage = error.message || 'Failed to submit proposal';
-        if (error.context?.body) {
-          try {
+
+        // FunctionsHttpError has context.json() method or context as Response
+        try {
+          if (error.context && typeof error.context.json === 'function') {
+            // context is a Response object
+            const errorBody = await error.context.json();
+            console.error('❌ Edge Function error body (from json()):', errorBody);
+            if (errorBody?.error) {
+              errorMessage = errorBody.error;
+            }
+          } else if (error.context?.body) {
+            // context.body might be a ReadableStream or string
             const errorBody = typeof error.context.body === 'string'
               ? JSON.parse(error.context.body)
               : error.context.body;
+            console.error('❌ Edge Function error body (from body):', errorBody);
             if (errorBody?.error) {
               errorMessage = errorBody.error;
-              console.error('❌ Edge Function error details:', errorBody.error);
             }
-          } catch (e) {
-            console.error('❌ Could not parse error body:', e);
           }
+        } catch (e) {
+          console.error('❌ Could not parse error body:', e);
         }
+
         throw new Error(errorMessage);
       }
 
