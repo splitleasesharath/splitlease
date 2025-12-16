@@ -376,13 +376,13 @@ export function SelfListingPageV2() {
             // Clear localStorage draft to prevent conflicts
             localStorage.removeItem(STORAGE_KEY);
 
-            // Pre-select the last host type option ("agent") for editing
+            // Pre-select the saved host type from the existing listing
             setFormData(prev => ({
               ...prev,
-              hostType: 'agent', // Last option in HOST_TYPES - pre-select for edit mode
+              hostType: existingListing.host_type || prev.hostType,
             }));
 
-            console.log('[SelfListingPageV2] Listing loaded, hostType pre-set to "agent"');
+            console.log('[SelfListingPageV2] Listing loaded, hostType pre-set to:', existingListing.host_type);
           } else {
             console.warn('[SelfListingPageV2] Listing not found:', listingId);
           }
