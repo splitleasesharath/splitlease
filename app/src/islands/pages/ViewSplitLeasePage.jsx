@@ -2885,11 +2885,14 @@ export default function ViewSplitLeasePage() {
             id: listing._id,
             title: listing.Name,
             host: {
+              userId: listing.host?.userId,  // User's Bubble ID for messaging
               name: listing.host ? `${listing.host['Name - First']} ${listing.host['Name - Last']?.charAt(0)}.` : 'Host'
             }
           }}
-          userEmail={loggedInUserData?.email || ''}
-          userName={loggedInUserData?.fullName || loggedInUserData?.firstName || ''}
+          onLoginRequired={() => {
+            setShowContactHostModal(false);
+            setShowAuthModal(true);
+          }}
         />
       )}
 

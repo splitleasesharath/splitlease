@@ -2728,8 +2728,11 @@ export default function SearchPage() {
         isOpen={isContactModalOpen}
         onClose={handleCloseContactModal}
         listing={selectedListing}
-        userEmail={currentUser?.email || ''}
-        userName={currentUser?.name || ''}
+        onLoginRequired={() => {
+          handleCloseContactModal();
+          setAuthModalView('signup');
+          setIsAuthModalOpen(true);
+        }}
       />
       <InformationalText
         isOpen={isInfoModalOpen}
