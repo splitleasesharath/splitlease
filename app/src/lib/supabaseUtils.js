@@ -122,7 +122,7 @@ export async function fetchHostData(hostIds) {
     const { data: userData, error: userError } = await supabase
       .from('user')
       .select('_id, "Name - Full", "Profile Photo", "Account - Host / Landlord"')
-      .in('Account - Host / Landlord', hostIds);
+      .in('"Account - Host / Landlord"', hostIds);
 
     if (userError) {
       console.error('❌ Error fetching user data:', userError);
