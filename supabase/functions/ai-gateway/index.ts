@@ -32,9 +32,10 @@ import "./prompts/_registry.ts";
 // (ES Module import hoisting would cause TDZ error if imported from _registry.ts)
 import "./prompts/listing-description.ts";
 import "./prompts/listing-title.ts";
+import "./prompts/neighborhood-description.ts";
 
 const ALLOWED_ACTIONS = ["complete", "stream"];
-const PUBLIC_PROMPTS = ["listing-description", "listing-title", "echo-test"];
+const PUBLIC_PROMPTS = ["listing-description", "listing-title", "neighborhood-description", "echo-test"];
 
 console.log("[ai-gateway] Edge Function started");
 

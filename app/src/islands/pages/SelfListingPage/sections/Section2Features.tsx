@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import type { Features } from '../types/listing.types';
-import { getNeighborhoodByZipCode } from '../utils/neighborhoodService';
+import { getNeighborhoodDescriptionWithFallback } from '../utils/neighborhoodService';
 import { getCommonInUnitAmenities, getCommonBuildingAmenities, getAllInUnitAmenities, getAllBuildingAmenities } from '../utils/amenitiesService';
 import { generateListingDescription, extractListingDataFromDraft } from '../../../../lib/aiService';
 
@@ -163,12 +163,29 @@ export const Section2Features: React.FC<Section2Props> = ({
 
     setIsLoadingNeighborhood(true);
     try {
-      const neighborhood = await getNeighborhoodByZipCode(zipCode);
+      // Get address data from localStorage draft
+      const draftJson = localStorage.getItem('selfListingDraft');
+      const draft = draftJson ? JSON.parse(draftJson) : null;
+      const addressData = {
+        fullAddress: draft?.spaceSnapshot?.address?.fullAddress || '',
+        city: draft?.spaceSnapshot?.address?.city || '',
+        state: draft?.spaceSnapshot?.address?.state || '',
+        zip: zipCode,
+      };
 
-      if (neighborhood && neighborhood.description) {
-        handleChange('neighborhoodDescription', neighborhood.description);
+      const result = await getNeighborhoodDescriptionWithFallback(zipCode, addressData);
+
+      if (result && result.description) {
+        handleChange('neighborhoodDescription', result.description);
+
+        // Show different message based on source
+        if (result.source === 'ai') {
+          console.log('[Section2Features] AI-generated neighborhood description loaded');
+        } else {
+          console.log(`[Section2Features] Database template loaded for ${result.neighborhood_name || 'neighborhood'}`);
+        }
       } else {
-        alert(`No neighborhood information found for ZIP code: ${zipCode}`);
+        alert(`Could not find or generate neighborhood information for ZIP code: ${zipCode}`);
       }
     } catch (error) {
       console.error('Error loading neighborhood template:', error);
@@ -316,7 +333,7 @@ export const Section2Features: React.FC<Section2Props> = ({
               onClick={loadNeighborhoodTemplate}
               disabled={isLoadingNeighborhood}
             >
-              {isLoadingNeighborhood ? 'loading...' : 'load template'}
+              {isLoadingNeighborhood ? 'loading/generating...' : 'load template'}
             </button>
           </div>
           <textarea

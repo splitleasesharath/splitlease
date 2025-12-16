@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../../../../lib/supabase.js';
+import { generateNeighborhoodDescription } from '../../../../lib/aiService';
 
 /**
  * Fetches neighborhood description from Supabase based on ZIP code
@@ -46,6 +47,55 @@ export async function getNeighborhoodByZipCode(zipCode) {
     return result;
   } catch (err) {
     console.error('[neighborhoodService] Unexpected error:', err);
+    return null;
+  }
+}
+
+/**
+ * Get neighborhood description with AI fallback
+ * First attempts database lookup, falls back to AI generation if not found
+ * @param {string} zipCode - ZIP code to lookup
+ * @param {Object} addressData - Address data for AI fallback
+ * @param {string} addressData.fullAddress - Full street address
+ * @param {string} addressData.city - City name
+ * @param {string} addressData.state - State abbreviation
+ * @param {string} addressData.zip - ZIP code
+ * @returns {Promise<{description: string, neighborhoodName?: string, source: 'database' | 'ai'} | null>}
+ */
+export async function getNeighborhoodDescriptionWithFallback(zipCode, addressData) {
+  // First, try database lookup
+  const dbResult = await getNeighborhoodByZipCode(zipCode);
+
+  if (dbResult && dbResult.description) {
+    console.log('[neighborhoodService] Found description in database');
+    return {
+      description: dbResult.description,
+      neighborhoodName: dbResult.neighborhoodName,
+      source: 'database',
+    };
+  }
+
+  // Fallback to AI generation
+  console.log('[neighborhoodService] No database match, generating via AI');
+
+  if (!addressData?.fullAddress && !addressData?.city) {
+    console.warn('[neighborhoodService] Insufficient address data for AI generation');
+    return null;
+  }
+
+  try {
+    const aiDescription = await generateNeighborhoodDescription(addressData);
+
+    if (aiDescription) {
+      return {
+        description: aiDescription,
+        source: 'ai',
+      };
+    }
+
+    return null;
+  } catch (error) {
+    console.error('[neighborhoodService] AI generation failed:', error);
     return null;
   }
 }
