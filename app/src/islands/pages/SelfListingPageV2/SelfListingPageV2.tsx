@@ -20,7 +20,7 @@ import Toast, { useToast } from '../../shared/Toast.jsx';
 import { HostScheduleSelector } from '../../shared/HostScheduleSelector/HostScheduleSelector.jsx';
 import InformationalText from '../../shared/InformationalText.jsx';
 import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
-import { createListing, saveDraft } from '../../../lib/listingService.js';
+import { createListing, saveDraft, getListingById } from '../../../lib/listingService.js';
 import { isGuest } from '../../../logic/rules/users/isGuest.js';
 import { supabase } from '../../../lib/supabase.js';
 import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode } from '../../../lib/nycZipCodes';
@@ -179,6 +179,10 @@ export function SelfListingPageV2() {
   const [userPhoneNumber, setUserPhoneNumber] = useState<string | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [draftListingId, setDraftListingId] = useState<string | null>(null);
+
+  // Edit mode state - for editing existing listings via ?id= parameter
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingListingId, setEditingListingId] = useState<string | null>(null);
 
   // Toast notifications
   const { toasts, showToast, removeToast } = useToast();
@@ -350,13 +354,46 @@ export function SelfListingPageV2() {
     initAuth();
   }, []);
 
-  // Handle URL parameters for continuing from another device
+  // Handle URL parameters for continuing from another device or editing existing listing
   useEffect(() => {
     const loadDraftFromUrl = async () => {
       const urlParams = new URLSearchParams(window.location.search);
+      const listingId = urlParams.get('id');
       const draftId = urlParams.get('draft');
       const sessionId = urlParams.get('session');
       const step = urlParams.get('step');
+
+      // Check for edit mode first (existing listing ID)
+      if (listingId) {
+        console.log('[SelfListingPageV2] Edit mode detected, loading listing:', listingId);
+        setIsEditMode(true);
+        setEditingListingId(listingId);
+
+        try {
+          const existingListing = await getListingById(listingId);
+
+          if (existingListing) {
+            // Clear localStorage draft to prevent conflicts
+            localStorage.removeItem(STORAGE_KEY);
+
+            // Pre-select the last host type option ("agent") for editing
+            setFormData(prev => ({
+              ...prev,
+              hostType: 'agent', // Last option in HOST_TYPES - pre-select for edit mode
+            }));
+
+            console.log('[SelfListingPageV2] Listing loaded, hostType pre-set to "agent"');
+          } else {
+            console.warn('[SelfListingPageV2] Listing not found:', listingId);
+          }
+        } catch (error) {
+          console.error('[SelfListingPageV2] Failed to load listing for editing:', error);
+        }
+
+        // Clear the URL parameters to avoid confusion on refresh
+        window.history.replaceState({}, '', window.location.pathname);
+        return; // Exit early, don't process draft/session params
+      }
 
       if (draftId) {
         // Try to load from Supabase listing_drafts table
