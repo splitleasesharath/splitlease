@@ -79,7 +79,8 @@ export function useHostOverviewPageLogic() {
           firstName: userData['Name - First'] || userData.firstName || 'Host',
           lastName: userData['Name - Last'] || userData.lastName || '',
           email: userData.email || '',
-          accountHostId: userData['Account - Host / Landlord'] || userData.accountHostId
+          // After migration, user._id serves as host reference directly
+          accountHostId: userData.accountHostId || userData._id
         });
         return userData;
       }
@@ -128,7 +129,7 @@ export function useHostOverviewPageLogic() {
         );
       }
 
-      // 2. Fetch from listing_trial where Host / Landlord = userId or Created By = userId
+      // 2. Fetch from listing_trial where Host User = userId or Created By = userId
       // Using RPC function to handle column names with special characters
       if (userId) {
         fetchPromises.push(
@@ -429,7 +430,8 @@ export function useHostOverviewPageLogic() {
         return;
       }
 
-      const hostAccountId = userData['Account - Host / Landlord'] || userData.accountHostId;
+      // After migration, user._id serves as host reference directly
+      const hostAccountId = userData.accountHostId || userData._id;
       const userId = userData.userId || userData._id || userData.id;
 
       console.log('[HostOverview] loadData - hostAccountId:', hostAccountId, 'userId:', userId);

@@ -107,9 +107,8 @@ export async function fetchPhotoUrls(photoIds) {
 
 /**
  * Fetch host data in batch from database
- * PRIMARY PATTERN: hostIds are user._id values (new unified pattern)
- * FALLBACK: hostIds may be legacy account_host IDs (Account - Host / Landlord values)
- * @param {Array<string>} hostIds - Array of host IDs (user._id or legacy Account - Host / Landlord)
+ * After migration, hostIds are always user._id values (Host User column)
+ * @param {Array<string>} hostIds - Array of host IDs (user._id)
  * @returns {Promise<Object>} Map of host ID to host data {name, image, verified}
  */
 export async function fetchHostData(hostIds) {
@@ -120,7 +119,7 @@ export async function fetchHostData(hostIds) {
   const hostMap = {};
 
   try {
-    // First try: NEW PATTERN - hostIds are user._id values
+    // hostIds are user._id values (Host User column contains user._id directly)
     const { data: userData, error: userError } = await supabase
       .from('user')
       .select('_id, "Name - Full", "Profile Photo"')
@@ -131,10 +130,8 @@ export async function fetchHostData(hostIds) {
     }
 
     // Process users found by _id
-    const foundUserIds = new Set();
     if (userData && userData.length > 0) {
       userData.forEach(user => {
-        foundUserIds.add(user._id);
         let profilePhoto = user['Profile Photo'];
         if (profilePhoto && profilePhoto.startsWith('//')) {
           profilePhoto = 'https:' + profilePhoto;
@@ -145,39 +142,6 @@ export async function fetchHostData(hostIds) {
           verified: false
         };
       });
-    }
-
-    // Find which hostIds weren't matched by user._id lookup
-    const unmatchedIds = hostIds.filter(id => !foundUserIds.has(id));
-
-    // Fallback: LEGACY PATTERN - remaining hostIds may be Account - Host / Landlord values
-    if (unmatchedIds.length > 0) {
-      console.log(`📍 ${unmatchedIds.length} hosts not found via _id, trying legacy Account - Host / Landlord lookup...`);
-      const { data: legacyData, error: legacyError } = await supabase
-        .from('user')
-        .select('_id, "Name - Full", "Profile Photo", "Account - Host / Landlord"')
-        .in('"Account - Host / Landlord"', unmatchedIds);
-
-      if (legacyError) {
-        console.error('❌ Error fetching user data by Account - Host / Landlord:', legacyError);
-      }
-
-      if (legacyData && legacyData.length > 0) {
-        legacyData.forEach(user => {
-          const legacyHostId = user['Account - Host / Landlord'];
-          if (legacyHostId && !hostMap[legacyHostId]) {
-            let profilePhoto = user['Profile Photo'];
-            if (profilePhoto && profilePhoto.startsWith('//')) {
-              profilePhoto = 'https:' + profilePhoto;
-            }
-            hostMap[legacyHostId] = {
-              name: user['Name - Full'] || null,
-              image: profilePhoto || null,
-              verified: false
-            };
-          }
-        });
-      }
     }
 
     console.log(`✅ Fetched host data for ${Object.keys(hostMap).length} hosts`);

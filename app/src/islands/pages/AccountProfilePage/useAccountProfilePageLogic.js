@@ -395,7 +395,7 @@ export function useAccountProfilePageLogic() {
     try {
       console.log('[AccountProfile] Fetching listings for host:', userId);
 
-      // Use RPC function to fetch listings (handles "Host / Landlord" column name)
+      // Use RPC function to fetch listings (handles "Host User" column name)
       const { data, error } = await supabase
         .rpc('get_host_listings', { host_user_id: userId });
 

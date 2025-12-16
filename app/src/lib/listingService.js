@@ -32,9 +32,8 @@ export async function createListing(formData) {
   const storedUserId = getUserId();
   console.log('[ListingService] Stored user ID:', storedUserId);
 
-  // Resolve user._id - this is used for BOTH "Created By" AND "Host / Landlord"
-  // Since we've unified the pattern: user._id = user["Account - Host / Landlord"]
-  // The user IS their own host account (no indirection through account_host table)
+  // Resolve user._id - this is used for BOTH "Created By" AND "Host User"
+  // user._id is used directly as the host reference
   let userId = storedUserId;
   const isSupabaseUUID = storedUserId && storedUserId.includes('-');
 
@@ -60,7 +59,7 @@ export async function createListing(formData) {
     }
   }
 
-  console.log('[ListingService] User ID (for Created By and Host / Landlord):', userId);
+  console.log('[ListingService] User ID (for Created By and Host User):', userId);
 
   // Step 1: Generate Bubble-compatible _id via RPC
   const { data: generatedId, error: rpcError } = await supabase.rpc('generate_bubble_id');
@@ -120,7 +119,7 @@ export async function createListing(formData) {
   };
 
   // Step 3: Map form data to listing table columns
-  // Pass userId for both "Created By" and "Host / Landlord" (user IS their own host account)
+  // Pass userId for both "Created By" and "Host User"
   const listingData = mapFormDataToListingTable(formDataWithPhotos, userId, generatedId, userId);
 
   // Debug: Log the cancellation policy value being inserted
@@ -503,7 +502,7 @@ function mapStateToDisplayName(stateInput) {
  * @param {object} formData - Form data from SelfListingPage
  * @param {string|null} userId - The current user's _id (for Created By)
  * @param {string} generatedId - The Bubble-compatible _id from generate_bubble_id()
- * @param {string|null} hostAccountId - The user's "Account - Host / Landlord" ID (for Host FK)
+ * @param {string|null} hostAccountId - The user._id (for Host User FK)
  * @returns {object} - Database-ready object for listing table
  */
 function mapFormDataToListingTable(formData, userId, generatedId, hostAccountId = null) {
@@ -524,13 +523,9 @@ function mapFormDataToListingTable(formData, userId, generatedId, hostAccountId 
     // Primary key - generated Bubble-compatible ID
     _id: generatedId,
 
-    // User/Host reference
-    // The user IS their own host account: user._id = user["Account - Host / Landlord"]
-    // The proposal edge function looks up the host user via:
-    //   .eq("_id", listing["Host / Landlord"]) as primary lookup
-    // This unified pattern eliminates the legacy account_host indirection.
+    // User/Host reference - Host User contains user._id directly
     'Created By': userId || null,
-    'Host / Landlord': hostAccountId || null, // This is now the same as userId
+    'Host User': hostAccountId || null, // user._id
     'Created Date': now,
     'Modified Date': now,
 
@@ -1028,7 +1023,7 @@ function mapFormDataToDatabase(formData, userId = null) {
     // Required fields
     _id: uniqueId,
     'Created By': userId || 'self-listing-form',
-    'Host / Landlord': userId || null,
+    'Host User': userId || null,
     'Created Date': now,
     'Modified Date': now,
 

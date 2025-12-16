@@ -147,13 +147,12 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         suggestedProposalsResult,
         junctionCountsResult
       ] = await Promise.all([
-        // 1. Fetch user data (type, account host reference, favorites)
+        // 1. Fetch user data (type, favorites)
         supabase
           .from('user')
           .select(`
             _id,
             "Type - User Current",
-            "Account - Host / Landlord",
             "Favorited Listings"
           `)
           .eq('_id', userId)
@@ -161,7 +160,7 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
 
         // 2. Fetch listings for this user using the same RPC as HostOverview
         //    This queries both listing_trial and listing tables,
-        //    checking both "Host / Landlord" and "Created By" fields
+        //    checking both "Host User" and "Created By" fields
         supabase
           .rpc('get_host_listings', { host_user_id: userId }),
 

@@ -159,11 +159,10 @@ export function useHostProposalsPageLogic() {
    * Fetch host's listings using RPC function
    *
    * Uses get_host_listings RPC to handle column names with special characters
-   * (like "Host / Landlord") that cause issues with PostgREST .or() filters.
+   * (like "Host User") that cause issues with PostgREST .or() filters.
    *
    * Pattern: RPC handles finding listings where:
-   * - "Host / Landlord" = user._id (new pattern), OR
-   * - "Host / Landlord" = user."Account - Host / Landlord" (legacy pattern), OR
+   * - "Host User" = user._id, OR
    * - "Created By" = user._id
    */
   const fetchHostListings = async (userId) => {
@@ -201,7 +200,7 @@ export function useHostProposalsPageLogic() {
           _id,
           "Status",
           "Guest",
-          "Host - Account",
+          "Host User",
           "Listing",
           "Move in range start",
           "Move in range end",

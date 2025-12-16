@@ -180,7 +180,7 @@ export async function fetchProposalsByIds(proposalIds) {
       "Features - House Rules",
       "NEW Date Check-in Time",
       "NEW Date Check-out Time",
-      "Host / Landlord",
+      "Host User",
       "House manual"
     `)
     .in('_id', listingIds);
@@ -322,13 +322,14 @@ export async function fetchProposalsByIds(proposalIds) {
     }
   }
 
-  // Step 4: Extract unique host account IDs from listings
-  const hostAccountIds = [...new Set((listings || []).map(l => l['Host / Landlord']).filter(Boolean))];
+  // Step 4: Extract unique host user IDs from listings
+  // After migration, "Host User" contains user._id directly
+  const hostUserIds = [...new Set((listings || []).map(l => l['Host User']).filter(Boolean))];
 
-  console.log(`fetchProposalsByIds: Fetching ${hostAccountIds.length} unique hosts`);
+  console.log(`fetchProposalsByIds: Fetching ${hostUserIds.length} unique hosts`);
 
   let hosts = [];
-  if (hostAccountIds.length > 0) {
+  if (hostUserIds.length > 0) {
     const { data: hostsData, error: hostError } = await supabase
       .from('user')
       .select(`
@@ -340,10 +341,9 @@ export async function fetchProposalsByIds(proposalIds) {
         "About Me / Bio",
         "Verify - Linked In ID",
         "Verify - Phone",
-        "user verified?",
-        "Account - Host / Landlord"
+        "user verified?"
       `)
-      .in('"Account - Host / Landlord"', hostAccountIds);
+      .in('_id', hostUserIds);
 
     if (hostError) {
       console.error('fetchProposalsByIds: Error fetching hosts:', hostError);
@@ -420,8 +420,8 @@ export async function fetchProposalsByIds(proposalIds) {
 
   // Step 7: Create lookup maps for efficient joining
   const listingMap = new Map((listings || []).map(l => [l._id, l]));
-  // Key hosts by their Account - Host / Landlord field (not _id) for proper joining
-  const hostMap = new Map(hosts.map(h => [h['Account - Host / Landlord'], h]));
+  // Key hosts by their _id (Host User column now contains user._id directly)
+  const hostMap = new Map(hosts.map(h => [h._id, h]));
   // Key guests by their _id field
   const guestMap = new Map(guests.map(g => [g._id, g]));
   // Key boroughs and hoods by their _id
@@ -438,8 +438,8 @@ export async function fetchProposalsByIds(proposalIds) {
   // Step 8: Manually join the data
   const enrichedProposals = validProposals.map((proposal) => {
     const listing = listingMap.get(proposal.Listing);
-    // Lookup host by Host Account ID from listing
-    const host = listing ? hostMap.get(listing['Host / Landlord']) : null;
+    // Lookup host by Host User ID from listing (contains user._id directly)
+    const host = listing ? hostMap.get(listing['Host User']) : null;
     // Lookup guest by proposal's Guest field
     const guest = guestMap.get(proposal.Guest);
     // Lookup borough and hood names

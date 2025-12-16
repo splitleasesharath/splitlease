@@ -993,9 +993,8 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
       profilePhoto: userData.profilePhoto || null,
       userType: userType,
       // Host account ID for fetching host-specific data (listings, etc.)
-      accountHostId: userData.accountHostId || null,
-      // Also include with Bubble field naming for backwards compatibility
-      'Account - Host / Landlord': userData.accountHostId || null,
+      // Note: After migration, user._id is used directly as host reference
+      accountHostId: userData.accountHostId || userData._id || null,
       // User profile fields for proposal prefilling
       aboutMe: userData.aboutMe || null,
       needForSpace: userData.needForSpace || null,

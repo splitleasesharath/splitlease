@@ -745,8 +745,8 @@ const FavoriteListingsPage = () => {
         // Batch fetch host data
         const hostIds = new Set();
         listingsData.forEach(listing => {
-          if (listing['Host / Landlord']) {
-            hostIds.add(listing['Host / Landlord']);
+          if (listing['Host User']) {
+            hostIds.add(listing['Host User']);
           }
         });
 
@@ -755,7 +755,7 @@ const FavoriteListingsPage = () => {
         // Transform listings
         const transformedListings = listingsData
           .map(listing => {
-            const hostId = listing['Host / Landlord'];
+            const hostId = listing['Host User'];
             return transformListing(listing, resolvedPhotos[listing._id], hostMap[hostId] || null);
           })
           .filter(listing => listing.coordinates && listing.coordinates.lat && listing.coordinates.lng)

@@ -138,7 +138,7 @@ export async function fetchListingComplete(listingId) {
           "💰Unit Markup",
           "NEW Date Check-in Time",
           "NEW Date Check-out Time",
-          "Host / Landlord",
+          "Host User",
           "host name",
           "host restrictions",
           "Cancellation Policy",
@@ -272,19 +272,17 @@ export async function fetchListingComplete(listingId) {
       : null;
 
     // 8. Fetch host data - query user table
-    // listing["Host / Landlord"] contains account_host._id
-    // We find the user whose "Account - Host / Landlord" matches this ID
-    // Note: Column name contains "/" which requires proper quoting in filter()
+    // listing["Host User"] now contains user._id directly (after migration)
     let hostData = null;
-    if (listingData['Host / Landlord']) {
+    if (listingData['Host User']) {
       const { data: userData, error: userError } = await supabase
         .from('user')
         .select('_id, "Name - First", "Name - Last", "Profile Photo", "email as text"')
-        .filter('"Account - Host / Landlord"', 'eq', listingData['Host / Landlord'])
+        .eq('_id', listingData['Host User'])
         .maybeSingle();
 
       if (userError) {
-        console.error('User fetch error (by Account - Host / Landlord):', userError);
+        console.error('User fetch error (by _id):', userError);
       }
 
       if (userData) {
@@ -295,7 +293,7 @@ export async function fetchListingComplete(listingId) {
           'Profile Photo': userData['Profile Photo'],
           Email: userData['email as text']
         };
-        console.log('📍 Host found via Account - Host / Landlord lookup');
+        console.log('📍 Host found via user._id lookup');
       }
     }
 
