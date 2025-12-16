@@ -7,8 +7,9 @@
  *
  * Supported Actions:
  * - send_message: Send a message in a thread
- * - get_threads: Get user's conversation threads
  * - get_messages: Get messages for a specific thread
+ *
+ * NOTE: get_threads was removed - frontend now queries Supabase directly
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -20,13 +21,12 @@ import { createErrorCollector, ErrorCollector } from '../_shared/slack.ts';
 
 // Import handlers
 import { handleSendMessage } from './handlers/sendMessage.ts';
-import { handleGetThreads } from './handlers/getThreads.ts';
 import { handleGetMessages } from './handlers/getMessages.ts';
 
 console.log('[messages] Edge Function started');
 
 // All actions require authentication
-const allowedActions = ['send_message', 'get_threads', 'get_messages'];
+const allowedActions = ['send_message', 'get_messages'];
 
 interface MessagesRequest {
   action: string;
@@ -118,10 +118,6 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'send_message':
         result = await handleSendMessage(supabaseAdmin, payload, user);
-        break;
-
-      case 'get_threads':
-        result = await handleGetThreads(supabaseAdmin, payload, user);
         break;
 
       case 'get_messages':
