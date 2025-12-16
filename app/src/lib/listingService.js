@@ -92,6 +92,10 @@ export async function createListing(formData) {
   // Step 3: Map form data to listing table columns
   const listingData = mapFormDataToListingTable(formDataWithPhotos, userId, generatedId);
 
+  // Debug: Log the cancellation policy value being inserted
+  console.log('[ListingService] Cancellation Policy value to insert:', listingData['Cancellation Policy']);
+  console.log('[ListingService] Rules from form:', formDataWithPhotos.rules);
+
   // Step 4: Insert directly into listing table
   const { data, error } = await supabase
     .from('listing')
@@ -101,6 +105,7 @@ export async function createListing(formData) {
 
   if (error) {
     console.error('[ListingService] ❌ Error creating listing in Supabase:', error);
+    console.error('[ListingService] ❌ Full listing data that failed:', JSON.stringify(listingData, null, 2));
     throw new Error(error.message || 'Failed to create listing');
   }
 
@@ -259,8 +264,73 @@ function mapCancellationPolicyToId(policyName) {
     'After First-Time Arrival': '1599791785559x603327510287017500',
   };
 
-  if (!policyName) return policyMap['Standard']; // Default to Standard if not provided
-  return policyMap[policyName] || policyMap['Standard']; // Fallback to Standard if unknown
+  const result = !policyName ? policyMap['Standard'] : (policyMap[policyName] || policyMap['Standard']);
+  console.log('[ListingService] Cancellation policy mapping:', { input: policyName, output: result });
+  return result;
+}
+
+/**
+ * Map parking type display name to its database FK ID
+ * The 'Features - Parking type' column has a foreign key constraint to reference_table.zat_features_parkingoptions
+ *
+ * @param {string|null} parkingType - Human-readable parking type (e.g., 'Street Parking')
+ * @returns {string|null} - The FK ID for the parking type, or null if not provided
+ */
+function mapParkingTypeToId(parkingType) {
+  const parkingMap = {
+    'Street Parking': '1642428637379x970678957586007000',
+    'No Parking': '1642428658755x946399373738815900',
+    'Off-Street Parking': '1642428710705x523449235750343100',
+    'Attached Garage': '1642428740411x489476808574605760',
+    'Detached Garage': '1642428749714x405527148800546750',
+    'Nearby Parking Structure': '1642428759346x972313924643388700',
+  };
+
+  if (!parkingType) return null; // Parking type is optional
+  const result = parkingMap[parkingType] || null;
+  console.log('[ListingService] Parking type mapping:', { input: parkingType, output: result });
+  return result;
+}
+
+/**
+ * Map listing type (Type of Space) display name to its database FK ID
+ * The 'Features - Type of Space' column has a foreign key constraint to reference_table.zat_features_listingtype
+ *
+ * @param {string|null} spaceType - Human-readable space type (e.g., 'Private Room')
+ * @returns {string|null} - The FK ID for the space type, or null if not provided
+ */
+function mapSpaceTypeToId(spaceType) {
+  const spaceTypeMap = {
+    'Private Room': '1569530159044x216130979074711000',
+    'Entire Place': '1569530331984x152755544104023800',
+    'Shared Room': '1585742011301x719941865479153400',
+    'All Spaces': '1588063597111x228486447854442800',
+  };
+
+  if (!spaceType) return null; // Space type is optional
+  const result = spaceTypeMap[spaceType] || null;
+  console.log('[ListingService] Space type mapping:', { input: spaceType, output: result });
+  return result;
+}
+
+/**
+ * Map storage option display name to its database FK ID
+ * The 'Features - Secure Storage Option' column has a foreign key constraint to reference_table.zat_features_storageoptions
+ *
+ * @param {string|null} storageOption - Human-readable storage option (e.g., 'In the room')
+ * @returns {string|null} - The FK ID for the storage option, or null if not provided
+ */
+function mapStorageOptionToId(storageOption) {
+  const storageMap = {
+    'In the room': '1606866759190x694414586166435100',
+    'In a locked closet': '1606866790336x155474305631091200',
+    'In a suitcase': '1606866843299x274753427318384030',
+  };
+
+  if (!storageOption) return null; // Storage option is optional
+  const result = storageMap[storageOption] || null;
+  console.log('[ListingService] Storage option mapping:', { input: storageOption, output: result });
+  return result;
 }
 
 /**
@@ -310,14 +380,17 @@ function mapFormDataToListingTable(formData, userId, generatedId) {
 
     // Section 1: Space Snapshot
     Name: formData.spaceSnapshot?.listingName || null,
-    'Features - Type of Space': formData.spaceSnapshot?.typeOfSpace || null,
+    // Note: Type of Space is a FK reference to reference_table.zat_features_listingtype
+    'Features - Type of Space': mapSpaceTypeToId(formData.spaceSnapshot?.typeOfSpace),
     'Features - Qty Bedrooms': formData.spaceSnapshot?.bedrooms || null,
     'Features - Qty Beds': formData.spaceSnapshot?.beds || null,
     'Features - Qty Bathrooms': formData.spaceSnapshot?.bathrooms
       ? Number(formData.spaceSnapshot.bathrooms)
       : null,
+    // Note: Kitchen Type is a string FK to reference_table.os_kitchen_type.display (no mapping needed)
     'Kitchen Type': formData.spaceSnapshot?.typeOfKitchen || null,
-    'Features - Parking type': formData.spaceSnapshot?.typeOfParking || null,
+    // Note: Parking type is a FK reference to reference_table.zat_features_parkingoptions
+    'Features - Parking type': mapParkingTypeToId(formData.spaceSnapshot?.typeOfParking),
 
     // Address (stored as JSONB with validated flag inside)
     'Location - Address': formData.spaceSnapshot?.address
@@ -330,11 +403,15 @@ function mapFormDataToListingTable(formData, userId, generatedId) {
           validated: formData.spaceSnapshot.address.validated || false,
         }
       : null,
-    'Location - City': formData.spaceSnapshot?.address?.city || null,
+    // Note: Location - City is a FK to reference_table.zat_location._id - set to null for now
+    // The city string is stored in 'Location - Address' JSONB field above
+    'Location - City': null,
+    // Note: Location - State is a string FK to reference_table.os_us_states.display (no mapping needed)
     'Location - State': formData.spaceSnapshot?.address?.state || null,
     'Location - Zip Code': formData.spaceSnapshot?.address?.zip || null,
     'neighborhood (manual input by user)':
       formData.spaceSnapshot?.address?.neighborhood || null,
+    // Note: Location - Borough and Location - Hood are FK columns but we don't populate them in self-listing
 
     // Section 2: Features
     'Features - Amenities In-Unit': formData.features?.amenitiesInsideUnit || [],
@@ -537,12 +614,12 @@ function mapFormDataToListingTableForUpdate(formData) {
   // Section 1: Space Snapshot
   if (formData.spaceSnapshot) {
     if (formData.spaceSnapshot.listingName !== undefined) updateData['Name'] = formData.spaceSnapshot.listingName;
-    if (formData.spaceSnapshot.typeOfSpace !== undefined) updateData['Features - Type of Space'] = formData.spaceSnapshot.typeOfSpace;
+    if (formData.spaceSnapshot.typeOfSpace !== undefined) updateData['Features - Type of Space'] = mapSpaceTypeToId(formData.spaceSnapshot.typeOfSpace);
     if (formData.spaceSnapshot.bedrooms !== undefined) updateData['Features - Qty Bedrooms'] = formData.spaceSnapshot.bedrooms;
     if (formData.spaceSnapshot.beds !== undefined) updateData['Features - Qty Beds'] = formData.spaceSnapshot.beds;
     if (formData.spaceSnapshot.bathrooms !== undefined) updateData['Features - Qty Bathrooms'] = Number(formData.spaceSnapshot.bathrooms);
     if (formData.spaceSnapshot.typeOfKitchen !== undefined) updateData['Kitchen Type'] = formData.spaceSnapshot.typeOfKitchen;
-    if (formData.spaceSnapshot.typeOfParking !== undefined) updateData['Features - Parking type'] = formData.spaceSnapshot.typeOfParking;
+    if (formData.spaceSnapshot.typeOfParking !== undefined) updateData['Features - Parking type'] = mapParkingTypeToId(formData.spaceSnapshot.typeOfParking);
 
     if (formData.spaceSnapshot.address) {
       updateData['Location - Address'] = {
@@ -553,7 +630,7 @@ function mapFormDataToListingTableForUpdate(formData) {
         lng: formData.spaceSnapshot.address.longitude,
         validated: formData.spaceSnapshot.address.validated || false,
       };
-      updateData['Location - City'] = formData.spaceSnapshot.address.city;
+      // Note: Location - City is a FK - don't update from string value
       updateData['Location - State'] = formData.spaceSnapshot.address.state;
       updateData['Location - Zip Code'] = formData.spaceSnapshot.address.zip;
       updateData['neighborhood (manual input by user)'] = formData.spaceSnapshot.address.neighborhood;
@@ -800,14 +877,14 @@ function mapFormDataToDatabase(formData, userId = null) {
 
     // Section 1: Space Snapshot
     Name: formData.spaceSnapshot?.listingName || null,
-    'Features - Type of Space': formData.spaceSnapshot?.typeOfSpace || null,
+    'Features - Type of Space': mapSpaceTypeToId(formData.spaceSnapshot?.typeOfSpace),
     'Features - Qty Bedrooms': formData.spaceSnapshot?.bedrooms || null,
     'Features - Qty Beds': formData.spaceSnapshot?.beds || null,
     'Features - Qty Bathrooms': formData.spaceSnapshot?.bathrooms
       ? Number(formData.spaceSnapshot.bathrooms)
       : null,
     'Kitchen Type': formData.spaceSnapshot?.typeOfKitchen || null,
-    'Features - Parking type': formData.spaceSnapshot?.typeOfParking || null,
+    'Features - Parking type': mapParkingTypeToId(formData.spaceSnapshot?.typeOfParking),
 
     // Address (stored as JSONB)
     'Location - Address': formData.spaceSnapshot?.address
@@ -819,7 +896,8 @@ function mapFormDataToDatabase(formData, userId = null) {
           lng: formData.spaceSnapshot.address.longitude,
         }
       : null,
-    'Location - City': formData.spaceSnapshot?.address?.city || null,
+    // Note: Location - City is a FK to reference_table.zat_location._id - set to null
+    'Location - City': null,
     'Location - State': formData.spaceSnapshot?.address?.state || null,
     'Location - Zip Code': formData.spaceSnapshot?.address?.zip || null,
     'Location - Coordinates': formData.spaceSnapshot?.address?.latitude
