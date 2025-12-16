@@ -32,6 +32,10 @@ import {
 } from "../lib/calculations.ts";
 import { determineInitialStatus, ProposalStatusName } from "../lib/status.ts";
 import { enqueueBubbleSync, triggerQueueProcessing } from "../lib/bubbleSyncQueue.ts";
+import {
+  addUserProposal,
+  addUserListingFavorite,
+} from "../../_shared/junctionHelpers.ts";
 
 // ID generation is now done via RPC: generate_bubble_id()
 
@@ -375,6 +379,18 @@ export async function handleCreate(
   }
 
   // ================================================
+  // STEP 2b: DUAL-WRITE TO JUNCTION TABLES (Guest)
+  // ================================================
+
+  // Add proposal to guest's junction table
+  await addUserProposal(supabase, input.guestId, proposalId, 'guest');
+
+  // Add listing to favorites junction table (if newly added)
+  if (!currentFavorites.includes(input.listingId)) {
+    await addUserListingFavorite(supabase, input.guestId, input.listingId);
+  }
+
+  // ================================================
   // STEP 3: UPDATE HOST USER
   // ================================================
 
@@ -395,6 +411,13 @@ export async function handleCreate(
   } else {
     console.log(`[proposal:create] Host user updated`);
   }
+
+  // ================================================
+  // STEP 3b: DUAL-WRITE TO JUNCTION TABLES (Host)
+  // ================================================
+
+  // Add proposal to host's junction table
+  await addUserProposal(supabase, hostAccountData.User, proposalId, 'host');
 
   // ================================================
   // TRIGGER ASYNC WORKFLOWS (Non-blocking)

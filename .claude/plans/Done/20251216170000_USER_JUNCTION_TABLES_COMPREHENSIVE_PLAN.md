@@ -802,5 +802,100 @@ CREATE POLICY "Users see own storage items" ON junctions.user_storage_item
 
 ---
 
-**Plan Status**: READY FOR IMPLEMENTATION
-**Next Action**: Execute Phase 1 (Schema & Table Creation)
+**Plan Status**: ~~READY FOR IMPLEMENTATION~~ **IMPLEMENTED**
+**Next Action**: ~~Execute Phase 1 (Schema & Table Creation)~~ Frontend read migration (Phase 5b)
+
+---
+
+## Implementation Changelog
+
+### 2025-12-16 - Phase 1-4 Complete: Junction Tables & Dual-Write Implementation
+
+#### Database Changes (via Supabase Migrations)
+
+**Migrations Applied:**
+1. `create_junctions_schema` - Created `junctions` schema with permissions
+2. `create_user_storage_item_junction` - User commonly stored items
+3. `create_user_preferred_hood_junction` - User preferred neighborhoods
+4. `create_user_guest_reason_junction` - User good guest reasons
+5. `create_user_rental_type_search_junction` - User rental type searches
+6. `create_user_thread_junction` - User chat threads
+7. `create_user_listing_favorite_junction` - User favorited listings
+8. `create_user_proposal_junction` - User proposals (guest/host roles)
+9. `create_user_lease_junction` - User leases (guest/host/participant roles)
+10. `create_user_permission_junction` - User sensitive info permissions
+11. `create_thread_participant_junction` - Thread participants
+12. `enable_rls_junction_tables` - RLS policies for all junction tables
+
+**Data Migrated:**
+| Junction Table | Rows |
+|----------------|------|
+| thread_participant | 1,570 |
+| user_thread | 1,518 |
+| user_proposal | 1,262 |
+| user_guest_reason | 204 |
+| user_storage_item | 191 |
+| user_lease | 162 |
+| user_permission | 140 |
+| user_listing_favorite | 46 |
+| user_preferred_hood | 13 |
+| user_rental_type_search | 6 |
+| **TOTAL** | **5,112** |
+
+#### Edge Function Changes (Dual-Write Pattern)
+
+**New Shared Module:**
+- `supabase/functions/_shared/junctionHelpers.ts` - Helper functions for junction table operations
+
+**Updated Edge Functions:**
+
+| File | Changes |
+|------|---------|
+| `supabase/functions/proposal/actions/create.ts` | Added dual-write to `user_proposal` (guest + host) and `user_listing_favorite` |
+| `supabase/functions/listing/handlers/createMockupProposal.ts` | Added dual-write to `user_proposal` (host) |
+| `supabase/functions/bubble-proxy/handlers/favorites.ts` | Added dual-write to `user_listing_favorite` (add/remove) |
+| `supabase/functions/ai-parse-profile/index.ts` | Added dual-write to `user_listing_favorite`, `user_preferred_hood`, `user_storage_item` |
+| `supabase/functions/bubble-proxy/handlers/parseProfile.ts` | Added dual-write to `user_listing_favorite`, `user_preferred_hood`, `user_storage_item` |
+
+#### Files Modified
+
+```
+supabase/functions/_shared/junctionHelpers.ts (NEW)
+supabase/functions/proposal/actions/create.ts
+supabase/functions/listing/handlers/createMockupProposal.ts
+supabase/functions/bubble-proxy/handlers/favorites.ts
+supabase/functions/ai-parse-profile/index.ts
+supabase/functions/bubble-proxy/handlers/parseProfile.ts
+```
+
+#### Verification Results
+
+- **FK Integrity**: All 5,112 junction records have valid foreign key references
+- **Orphan Count**: 0 (stale JSONB references were filtered during migration)
+- **RLS Status**: All 10 junction tables have RLS enabled with service_role and authenticated policies
+
+#### Pending Work (Phase 5b)
+
+**Frontend READ Migration** - Update frontend queries to read from junction tables:
+
+| File | Fields to Migrate |
+|------|-------------------|
+| `app/src/lib/proposals/userProposalQueries.js` | `Proposals List` |
+| `app/src/lib/proposalDataFetcher.js` | `Proposals List` |
+| `app/src/islands/pages/FavoriteListingsPage/FavoriteListingsPage.jsx` | `Favorited Listings`, `Proposals List` |
+| `app/src/islands/pages/SearchPage.jsx` | `Favorited Listings`, `Proposals List` |
+| `app/src/islands/shared/LoggedInAvatar/useLoggedInAvatarData.js` | `Favorited Listings`, `Proposals List` |
+| `supabase/functions/bubble-proxy/handlers/getFavorites.ts` | `Favorited Listings` |
+| `supabase/functions/auth-user/handlers/validate.ts` | `Proposals List` |
+
+**Recommended Approach for Frontend Migration:**
+1. Create SQL views or RPC functions that query junction tables
+2. Update frontend queries to use new views/RPCs
+3. Test thoroughly before removing JSONB reads
+4. Eventually deprecate JSONB columns (Phase 6)
+
+---
+
+**Implementation Completed By**: Claude Code
+**Date**: 2025-12-16
+**Commit**: See git history for junction table implementation commits

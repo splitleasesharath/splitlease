@@ -8,6 +8,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 import { parseJsonArray } from '../../_shared/jsonUtils.ts';
+import {
+  addUserListingFavorite,
+  removeUserListingFavorite,
+} from '../../_shared/junctionHelpers.ts';
 
 interface FavoritesPayload {
   userId: string;
@@ -109,6 +113,13 @@ export async function handleFavorites(
     if (updateError) {
       console.error('[Favorites Handler] Update error:', updateError);
       throw new Error(`Failed to update favorites: ${updateError.message}`);
+    }
+
+    // Dual-write to junction table
+    if (action === 'add') {
+      await addUserListingFavorite(supabase, userId, listingId);
+    } else {
+      await removeUserListingFavorite(supabase, userId, listingId);
     }
 
     // Verify the update by fetching again

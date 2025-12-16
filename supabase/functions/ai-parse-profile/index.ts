@@ -24,6 +24,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { complete } from '../_shared/openai.ts';
 import { ValidationError } from '../_shared/errors.ts';
+import {
+  addUserListingFavoritesBatch,
+  setUserPreferredHoods,
+  setUserStorageItems,
+} from '../_shared/junctionHelpers.ts';
 
 console.log('[ai-parse-profile] Edge Function started');
 
@@ -302,6 +307,9 @@ async function findAndFavoriteMatchingListings(
     console.log('[ai-parse-profile] Updated user favorites with', listingIds.length, 'new listings');
   }
 
+  // Dual-write to junction table
+  await addUserListingFavoritesBatch(supabase, userId, listingIds);
+
   return listingIds;
 }
 
@@ -505,6 +513,14 @@ async function processJob(
 
     if (updateError) {
       throw new Error(`Failed to update user: ${updateError.message}`);
+    }
+
+    // 7b. Dual-write to junction tables
+    if (hoodIds.length > 0) {
+      await setUserPreferredHoods(supabase, job.user_id, hoodIds);
+    }
+    if (extractedData.storedItems && extractedData.storedItems.length > 0) {
+      await setUserStorageItems(supabase, job.user_id, extractedData.storedItems);
     }
 
     // 8. Favorite matching listings

@@ -18,6 +18,7 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { enqueueBubbleSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
 import { parseJsonArray } from '../../_shared/jsonUtils.ts';
+import { addUserProposal } from '../../_shared/junctionHelpers.ts';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -600,6 +601,9 @@ export async function handleCreateMockupProposal(
       } else {
         console.log('[createMockupProposal] Host Proposals List updated');
       }
+
+      // Dual-write to junction table
+      await addUserProposal(supabase, hostUserId, proposalId, 'host');
     }
 
     // ─────────────────────────────────────────────────────────

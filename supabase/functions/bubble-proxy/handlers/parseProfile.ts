@@ -19,6 +19,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { complete } from '../../_shared/openai.ts';
 import { ValidationError } from '../../_shared/errors.ts';
 import { parseJsonArray } from '../../_shared/jsonUtils.ts';
+import {
+  addUserListingFavoritesBatch,
+  setUserPreferredHoods,
+  setUserStorageItems,
+} from '../../_shared/junctionHelpers.ts';
 
 // ============================================================================
 // Types
@@ -270,6 +275,9 @@ async function findAndFavoriteMatchingListings(
     console.log('[parseProfile] Updated user favorites with', listingIds.length, 'new listings');
   }
 
+  // Dual-write to junction table
+  await addUserListingFavoritesBatch(supabase, userId, listingIds);
+
   // Also update each listing's "Users that favorite" field
   for (const listingId of listingIds) {
     const { data: listingData } = await supabase
@@ -448,6 +456,14 @@ export async function handleParseProfile(
   }
 
   console.log('[parseProfile] User profile updated successfully');
+
+  // Dual-write to junction tables
+  if (hoodIds.length > 0) {
+    await setUserPreferredHoods(supabase, payload.user_id, hoodIds);
+  }
+  if (extractedData.storedItems && extractedData.storedItems.length > 0) {
+    await setUserStorageItems(supabase, payload.user_id, extractedData.storedItems);
+  }
 
   // ========== STEP 6: Find and favorite matching listings ==========
   console.log('[parseProfile] Step 6: Finding and favoriting listings...');
