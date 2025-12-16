@@ -329,6 +329,7 @@ export async function handleUpdate(
 
 /**
  * Check if user is the host of the proposal's listing
+ * Uses reverse lookup: find user with matching "Account - Host / Landlord" FK
  */
 async function checkIsHost(
   supabase: SupabaseClient,
@@ -337,13 +338,15 @@ async function checkIsHost(
 ): Promise<boolean> {
   if (!hostAccountId) return false;
 
+  // Check if this user's "Account - Host / Landlord" matches the host account ID
   const { data } = await supabase
-    .from("account_host")
-    .select("User")
-    .eq("_id", hostAccountId)
+    .from("user")
+    .select("_id")
+    .eq("_id", userId)
+    .eq("Account - Host / Landlord", hostAccountId)
     .single();
 
-  return data?.User === userId;
+  return !!data;
 }
 
 /**

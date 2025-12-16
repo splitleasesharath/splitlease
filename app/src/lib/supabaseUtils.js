@@ -107,7 +107,8 @@ export async function fetchPhotoUrls(photoIds) {
 
 /**
  * Fetch host data in batch from database
- * @param {Array<string>} hostIds - Array of account_host IDs
+ * NOTE: account_host table deprecated - now queries user table directly
+ * @param {Array<string>} hostIds - Array of account_host IDs (legacy FK stored in "Account - Host / Landlord")
  * @returns {Promise<Object>} Map of account_host ID to host data {name, image, verified}
  */
 export async function fetchHostData(hostIds) {
@@ -116,62 +117,34 @@ export async function fetchHostData(hostIds) {
   }
 
   try {
-    // Fetch account_host records
-    const { data: accountHostData, error: accountError } = await supabase
-      .from('account_host')
-      .select('_id, User')
-      .in('_id', hostIds);
-
-    if (accountError) {
-      console.error('❌ Error fetching account_host data:', accountError);
-      return {};
-    }
-
-    // Collect user IDs
-    const userIds = new Set();
-    accountHostData.forEach(account => {
-      if (account.User) {
-        userIds.add(account.User);
-      }
-    });
-
-    if (userIds.size === 0) {
-      return {};
-    }
-
-    // Fetch user records
+    // Fetch user records directly using reverse lookup
+    // Users have "Account - Host / Landlord" field containing the legacy host account ID
     const { data: userData, error: userError } = await supabase
       .from('user')
-      .select('_id, "Name - Full", "Profile Photo"')
-      .in('_id', Array.from(userIds));
+      .select('_id, "Name - Full", "Profile Photo", "Account - Host / Landlord"')
+      .in('Account - Host / Landlord', hostIds);
 
     if (userError) {
       console.error('❌ Error fetching user data:', userError);
       return {};
     }
 
-    // Create user map
-    const userMap = {};
-    userData.forEach(user => {
-      // Add https: protocol if profile photo URL starts with //
-      let profilePhoto = user['Profile Photo'];
-      if (profilePhoto && profilePhoto.startsWith('//')) {
-        profilePhoto = 'https:' + profilePhoto;
-      }
-
-      userMap[user._id] = {
-        name: user['Name - Full'] || null,
-        image: profilePhoto || null,
-        verified: false // TODO: Add verification logic when available
-      };
-    });
-
-    // Create host map keyed by account_host ID
+    // Create host map keyed by account_host ID (the "Account - Host / Landlord" value)
     const hostMap = {};
-    accountHostData.forEach(account => {
-      const userId = account.User;
-      if (userId && userMap[userId]) {
-        hostMap[account._id] = userMap[userId];
+    userData.forEach(user => {
+      const hostId = user['Account - Host / Landlord'];
+      if (hostId) {
+        // Add https: protocol if profile photo URL starts with //
+        let profilePhoto = user['Profile Photo'];
+        if (profilePhoto && profilePhoto.startsWith('//')) {
+          profilePhoto = 'https:' + profilePhoto;
+        }
+
+        hostMap[hostId] = {
+          name: user['Name - Full'] || null,
+          image: profilePhoto || null,
+          verified: false // TODO: Add verification logic when available
+        };
       }
     });
 

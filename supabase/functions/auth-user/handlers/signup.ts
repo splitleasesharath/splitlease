@@ -9,14 +9,16 @@
  * 4. Check if email already exists in Supabase Auth
  * 5. Generate Supabase IDs using generate_bubble_id():
  *    - user_id (primary _id for user table)
- *    - host_account_id (primary _id for account_host table)
+ *    - host_account_id (for backwards compatibility - stored in user table)
  * 6. Create Supabase Auth user (auth.users table)
  * 7. Sign in user to get session tokens
- * 8. Insert account_host row with generated ID
- * 9. Insert user profile into public.user table with:
+ * 8. Insert user profile into public.user table with:
  *    - _id = generated user_id
- *    - Account - Host / Landlord = host_account_id
- * 10. Return session tokens and user data
+ *    - Account - Host / Landlord = host_account_id (for legacy FK compatibility)
+ *    - Receptivity = 0 (migrated from account_host)
+ * 9. Return session tokens and user data
+ *
+ * NOTE: account_host table is DEPRECATED - host data now stored directly in user table
  *
  * NO FALLBACK - If any operation fails, entire signup fails
  * Uses Supabase Auth natively - no Bubble dependency
@@ -231,36 +233,12 @@ export async function handleSignup(
       }
     }
 
-    // Step 1: Insert into account_host table
-    console.log('[signup] Creating account_host record...');
+    // NOTE: account_host table creation REMOVED - host data now stored directly in user table
+    // The generatedHostId is still used for the "Account - Host / Landlord" FK field
+    // to maintain backwards compatibility with existing listings and proposals
+    console.log('[signup] Skipping account_host creation (DEPRECATED) - using user table directly');
 
-    const hostAccountRecord = {
-      '_id': generatedHostId,
-      'User': generatedUserId,
-      'HasClaimedListing': false,
-      'Receptivity': 0,
-      'Created Date': now,
-      'Modified Date': now,
-      'bubble_id': null
-    };
-
-    const { error: hostInsertError } = await supabaseAdmin
-      .from('account_host')
-      .insert(hostAccountRecord);
-
-    if (hostInsertError) {
-      console.error('[signup] Failed to insert into account_host:', hostInsertError.message);
-      // Clean up auth user
-      await supabaseAdmin.auth.admin.deleteUser(supabaseUserId!);
-      throw new BubbleApiError(
-        `Failed to create host account: ${hostInsertError.message}`,
-        500
-      );
-    }
-
-    console.log('[signup] ✅ account_host record created:', generatedHostId);
-
-    // Step 2: Insert into public.user table
+    // Insert into public.user table (includes host fields that were previously in account_host)
     console.log('[signup] Inserting into public.user table...');
 
     const userRecord = {
@@ -275,11 +253,15 @@ export async function handleSignup(
       'Phone Number (as text)': phoneNumber || null,
       'Type - User Current': userTypeDisplay, // Foreign key to os_user_type.display
       'Type - User Signup': userTypeDisplay,  // Foreign key to os_user_type.display
-      'Account - Host / Landlord': generatedHostId,
+      'Account - Host / Landlord': generatedHostId, // Legacy FK ID for backwards compatibility
       'Created Date': now,
       'Modified Date': now,
       'authentication': {}, // Required jsonb field
-      'user_signed_up': true // Required boolean field
+      'user_signed_up': true, // Required boolean field
+      // Host fields (migrated from account_host table)
+      'Receptivity': 0,
+      'MedianHoursToReply': null,
+      'Listings': null  // Will be populated when user creates listings
     };
 
     console.log('[signup] User record to insert:', JSON.stringify(userRecord, null, 2));
@@ -290,8 +272,7 @@ export async function handleSignup(
 
     if (userInsertError) {
       console.error('[signup] Failed to insert into public.user:', userInsertError.message);
-      // Clean up: delete host account and auth user
-      await supabaseAdmin.from('account_host').delete().eq('_id', generatedHostId);
+      // Clean up: delete auth user (no account_host to clean up anymore)
       await supabaseAdmin.auth.admin.deleteUser(supabaseUserId!);
       throw new BubbleApiError(
         `Failed to create user profile: ${userInsertError.message}`,
@@ -302,10 +283,10 @@ export async function handleSignup(
     console.log('[signup] ✅ User inserted into public.user table');
     console.log(`[signup] ========== SIGNUP COMPLETE ==========`);
     console.log(`[signup]    User ID (_id): ${generatedUserId}`);
-    console.log(`[signup]    Host Account ID: ${generatedHostId}`);
+    console.log(`[signup]    Host Account ID (legacy FK): ${generatedHostId}`);
     console.log(`[signup]    Supabase Auth ID: ${supabaseUserId}`);
     console.log(`[signup]    public.user created: yes`);
-    console.log(`[signup]    account_host created: yes`);
+    console.log(`[signup]    account_host created: SKIPPED (deprecated)`);
 
     // ========== QUEUE BUBBLE SYNC ==========
     // Queue the atomic signup operation for Bubble sync

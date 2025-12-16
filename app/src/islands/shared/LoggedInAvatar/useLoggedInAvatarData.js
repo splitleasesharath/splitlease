@@ -252,21 +252,12 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
       }
 
       // Get house manuals count if user is a host
+      // NOTE: House manuals now queried directly from user table (account_host deprecated)
       let houseManualsCount = 0;
       if (normalizedType === NORMALIZED_USER_TYPES.HOST || normalizedType === NORMALIZED_USER_TYPES.TRIAL_HOST) {
-        const accountHostId = userData?.['Account - Host / Landlord'];
-        if (accountHostId) {
-          const { data: hostData, error: hostError } = await supabase
-            .from('account_host')
-            .select('"House manuals"')
-            .eq('_id', accountHostId)
-            .single();
-
-          if (!hostError && hostData) {
-            const houseManuals = hostData['House manuals'];
-            houseManualsCount = Array.isArray(houseManuals) ? houseManuals.length : 0;
-          }
-        }
+        // Check if userData has House manuals directly (migrated from account_host)
+        const houseManuals = userData?.['House manuals'];
+        houseManualsCount = Array.isArray(houseManuals) ? houseManuals.length : 0;
       }
 
       // Process listings - get count and first listing ID

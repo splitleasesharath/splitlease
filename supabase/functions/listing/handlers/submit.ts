@@ -366,14 +366,14 @@ export async function handleSubmit(
       try {
         console.log('[listing:submit] Step 5/5: Checking for first listing...');
 
-        // Get host account to check listings count
-        const { data: hostAccountData } = await supabase
-          .from('account_host')
-          .select('Listings')
-          .eq('_id', hostAccountId)
+        // Get user's listings count directly from user table (migrated from account_host)
+        const { data: hostUserData } = await supabase
+          .from('user')
+          .select('"Listings"')
+          .eq('_id', createdById)
           .single();
 
-        const listings = parseJsonArray<string>(hostAccountData?.Listings, 'account_host.Listings');
+        const listings = parseJsonArray<string>(hostUserData?.Listings, 'user.Listings');
 
         if (listings.length === 1) {
           console.log('[listing:submit] First listing detected, creating mockup proposal');

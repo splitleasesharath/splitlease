@@ -621,7 +621,7 @@ export async function loginUser(email, password) {
  * Automatically logs in the user after successful signup
  *
  * ✅ MIGRATED TO SUPABASE AUTH: No longer uses Bubble for signup
- * Creates user in Supabase Auth + public.user + account_host
+ * Creates user in Supabase Auth + public.user (account_host deprecated)
  *
  * @param {string} email - User email
  * @param {string} password - User password

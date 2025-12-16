@@ -127,33 +127,23 @@ export async function handleCreate(
   const guestData = guest as unknown as GuestData;
   console.log(`[proposal:create] Found guest: ${guestData.email}`);
 
-  // Fetch Host Account
-  const { data: hostAccount, error: hostAccountError } = await supabase
-    .from("account_host")
-    .select("_id, User")
-    .eq("_id", listingData["Host / Landlord"])
-    .single();
-
-  if (hostAccountError || !hostAccount) {
-    console.error(`[proposal:create] Host account fetch failed:`, hostAccountError);
-    throw new ValidationError(`Host account not found: ${listingData["Host / Landlord"]}`);
-  }
-
-  const hostAccountData = hostAccount as unknown as HostAccountData;
-
-  // Fetch Host User
+  // Fetch Host User directly via Account - Host / Landlord FK (reverse lookup)
+  // The listing's "Host / Landlord" field contains account_host._id
+  // We find the user whose "Account - Host / Landlord" matches this ID
   const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
     .select(`_id, email, "Proposals List"`)
-    .eq("_id", hostAccountData.User)
+    .eq("Account - Host / Landlord", listingData["Host / Landlord"])
     .single();
 
   if (hostUserError || !hostUser) {
     console.error(`[proposal:create] Host user fetch failed:`, hostUserError);
-    throw new ValidationError(`Host user not found`);
+    throw new ValidationError(`Host user not found for host account: ${listingData["Host / Landlord"]}`);
   }
 
   const hostUserData = hostUser as unknown as HostUserData;
+  // Create hostAccountData for backwards compatibility with existing code
+  const hostAccountData = { _id: listingData["Host / Landlord"], User: hostUserData._id } as HostAccountData;
   console.log(`[proposal:create] Found host: ${hostUserData.email}`);
 
   // Fetch Rental Application (if exists)
