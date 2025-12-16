@@ -535,6 +535,64 @@
   color: #374151;
 }
 
+/* Info Help Button - Question Mark Icon */
+.info-help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  margin-left: 6px;
+  background: transparent;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: all 0.2s ease;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.info-help-btn:hover {
+  color: var(--v2-primary);
+  background: rgba(91, 33, 182, 0.1);
+}
+
+.info-help-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Label with info button layout */
+.label-with-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Lease style header with info button */
+.lease-style-header {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--v2-text-main);
+  margin-bottom: 4px;
+}
+
+.lease-style-header .info-help-btn {
+  margin-left: 4px;
+}
+
+/* Form group label with info */
+.form-group .label-with-info {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
 .value-display {
   font-size: 14px;
   font-weight: 700;
