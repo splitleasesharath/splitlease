@@ -16,7 +16,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { checkAuthStatus } from '../../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getAvatarUrl } from '../../../lib/auth.js';
+import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
 
 const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/messages`;
@@ -65,11 +66,11 @@ export function useMessagingPageLogic() {
   useEffect(() => {
     async function init() {
       try {
-        // checkAuthStatus() returns a boolean
+        // Step 1: Check basic auth status
         const isAuthenticated = await checkAuthStatus();
 
         if (!isAuthenticated) {
-          console.log('❌ Messaging: User not authenticated, redirecting to home');
+          console.log('[Messaging] User not authenticated, redirecting to home');
           setAuthState({ isChecking: false, shouldRedirect: true });
           setTimeout(() => {
             window.location.href = '/?login=true';
@@ -77,22 +78,45 @@ export function useMessagingPageLogic() {
           return;
         }
 
-        // Get user data from Supabase session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          // Also fetch user's Bubble ID for Realtime identification
-          const { data: userData } = await supabase
-            .from('user')
-            .select('_id, "First Name", "Last Name"')
-            .ilike('email', session.user.email)
-            .single();
+        // Step 2: Get user data using the gold standard pattern
+        // Use clearOnFailure: false to preserve session even if profile fetch fails
+        const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
 
+        if (userData) {
+          // User profile fetched successfully
           setUser({
-            ...session.user,
-            bubbleId: userData?._id,
-            firstName: userData?.['First Name'],
-            lastName: userData?.['Last Name'],
+            id: userData.userId,
+            email: userData.email,
+            bubbleId: userData.userId,  // userId from validateTokenAndFetchUser is the Bubble _id
+            firstName: userData.firstName,
+            lastName: userData.fullName?.split(' ').slice(1).join(' ') || '',
+            profilePhoto: userData.profilePhoto
           });
+          console.log('[Messaging] User data loaded:', userData.firstName);
+        } else {
+          // Fallback: Use session metadata if profile fetch failed but session is valid
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session?.user) {
+            const fallbackUser = {
+              id: session.user.id,
+              email: session.user.email,
+              bubbleId: session.user.user_metadata?.user_id || getUserId() || session.user.id,
+              firstName: session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'User',
+              lastName: session.user.user_metadata?.last_name || '',
+              profilePhoto: getAvatarUrl() || null
+            };
+            setUser(fallbackUser);
+            console.log('[Messaging] Using fallback user data from session:', fallbackUser.firstName);
+          } else {
+            // No session at all - redirect
+            console.log('[Messaging] No valid session, redirecting');
+            setAuthState({ isChecking: false, shouldRedirect: true });
+            setTimeout(() => {
+              window.location.href = '/?login=true';
+            }, 100);
+            return;
+          }
         }
 
         setAuthState({ isChecking: false, shouldRedirect: false });
@@ -101,7 +125,7 @@ export function useMessagingPageLogic() {
         await fetchThreads();
         initialLoadDone.current = true;
       } catch (err) {
-        console.error('Auth check failed:', err);
+        console.error('[Messaging] Auth check failed:', err);
         setError('Failed to check authentication. Please refresh the page.');
         setIsLoading(false);
       }
