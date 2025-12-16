@@ -16,7 +16,8 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { checkAuthStatus } from '../../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getAvatarUrl } from '../../../lib/auth.js';
+import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
 
 const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/messages`;
@@ -65,11 +66,11 @@ export function useMessagingPageLogic() {
   useEffect(() => {
     async function init() {
       try {
-        // checkAuthStatus() returns a boolean
+        // Step 1: Check basic auth status
         const isAuthenticated = await checkAuthStatus();
 
         if (!isAuthenticated) {
-          console.log('❌ Messaging: User not authenticated, redirecting to home');
+          console.log('[Messaging] User not authenticated, redirecting to home');
           setAuthState({ isChecking: false, shouldRedirect: true });
           setTimeout(() => {
             window.location.href = '/?login=true';
@@ -77,22 +78,45 @@ export function useMessagingPageLogic() {
           return;
         }
 
-        // Get user data from Supabase session
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          // Also fetch user's Bubble ID for Realtime identification
-          const { data: userData } = await supabase
-            .from('user')
-            .select('_id, "First Name", "Last Name"')
-            .ilike('email', session.user.email)
-            .single();
+        // Step 2: Get user data using the gold standard pattern
+        // Use clearOnFailure: false to preserve session even if profile fetch fails
+        const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
 
+        if (userData) {
+          // User profile fetched successfully
           setUser({
-            ...session.user,
-            bubbleId: userData?._id,
-            firstName: userData?.['First Name'],
-            lastName: userData?.['Last Name'],
+            id: userData.userId,
+            email: userData.email,
+            bubbleId: userData.userId,  // userId from validateTokenAndFetchUser is the Bubble _id
+            firstName: userData.firstName,
+            lastName: userData.fullName?.split(' ').slice(1).join(' ') || '',
+            profilePhoto: userData.profilePhoto
           });
+          console.log('[Messaging] User data loaded:', userData.firstName);
+        } else {
+          // Fallback: Use session metadata if profile fetch failed but session is valid
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session?.user) {
+            const fallbackUser = {
+              id: session.user.id,
+              email: session.user.email,
+              bubbleId: session.user.user_metadata?.user_id || getUserId() || session.user.id,
+              firstName: session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'User',
+              lastName: session.user.user_metadata?.last_name || '',
+              profilePhoto: getAvatarUrl() || null
+            };
+            setUser(fallbackUser);
+            console.log('[Messaging] Using fallback user data from session:', fallbackUser.firstName);
+          } else {
+            // No session at all - redirect
+            console.log('[Messaging] No valid session, redirecting');
+            setAuthState({ isChecking: false, shouldRedirect: true });
+            setTimeout(() => {
+              window.location.href = '/?login=true';
+            }, 100);
+            return;
+          }
         }
 
         setAuthState({ isChecking: false, shouldRedirect: false });
@@ -101,7 +125,7 @@ export function useMessagingPageLogic() {
         await fetchThreads();
         initialLoadDone.current = true;
       } catch (err) {
-        console.error('Auth check failed:', err);
+        console.error('[Messaging] Auth check failed:', err);
         setError('Failed to check authentication. Please refresh the page.');
         setIsLoading(false);
       }
@@ -251,47 +275,148 @@ export function useMessagingPageLogic() {
 
   /**
    * Fetch all threads for the authenticated user
+   * Direct Supabase query - no Edge Function needed for reads
    */
   async function fetchThreads() {
     try {
       setIsLoading(true);
       setError(null);
 
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        throw new Error('No active session');
+      // Get user's Bubble ID from user state or session metadata
+      const bubbleId = user?.bubbleId;
+      if (!bubbleId) {
+        // User state might not be set yet, try session metadata
+        const { data: { session } } = await supabase.auth.getSession();
+        const fallbackBubbleId = session?.user?.user_metadata?.user_id;
+        if (!fallbackBubbleId) {
+          throw new Error('User ID not available');
+        }
+        // Query with fallback ID
+        await fetchThreadsWithBubbleId(fallbackBubbleId);
+        return;
       }
 
-      const response = await fetch(EDGE_FUNCTION_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          action: 'get_threads',
-          payload: {}
-        }),
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch threads');
-      }
-
-      if (result.success) {
-        setThreads(result.data.threads || []);
-      } else {
-        throw new Error(result.error || 'Failed to fetch threads');
-      }
+      await fetchThreadsWithBubbleId(bubbleId);
     } catch (err) {
       console.error('Error fetching threads:', err);
       setError(err.message || 'Failed to load conversations');
     } finally {
       setIsLoading(false);
     }
+  }
+
+  /**
+   * Fetch threads with a known Bubble ID
+   */
+  async function fetchThreadsWithBubbleId(bubbleId) {
+    // Step 1: Query threads where user is host or guest
+    const { data: threads, error: threadsError } = await supabase
+      .from('thread')
+      .select(`
+        _id,
+        "Modified Date",
+        "-Host User",
+        "-Guest User",
+        "Listing",
+        "~Last Message",
+        "Thread Subject"
+      `)
+      .or(`"-Host User".eq.${bubbleId},"-Guest User".eq.${bubbleId}`)
+      .order('"Modified Date"', { ascending: false });
+
+    if (threadsError) {
+      throw new Error(`Failed to fetch threads: ${threadsError.message}`);
+    }
+
+    if (!threads || threads.length === 0) {
+      setThreads([]);
+      return;
+    }
+
+    // Step 2: Collect contact IDs and listing IDs for batch lookup
+    const contactIds = new Set();
+    const listingIds = new Set();
+
+    threads.forEach(thread => {
+      const hostId = thread['-Host User'];
+      const guestId = thread['-Guest User'];
+      const contactId = hostId === bubbleId ? guestId : hostId;
+      if (contactId) contactIds.add(contactId);
+      if (thread['Listing']) listingIds.add(thread['Listing']);
+    });
+
+    // Step 3: Batch fetch contact user data
+    let contactMap = {};
+    if (contactIds.size > 0) {
+      const { data: contacts } = await supabase
+        .from('user')
+        .select('_id, "Name - First", "Name - Last", "Profile Photo"')
+        .in('_id', Array.from(contactIds));
+
+      if (contacts) {
+        contactMap = contacts.reduce((acc, contact) => {
+          acc[contact._id] = {
+            name: `${contact['Name - First'] || ''} ${contact['Name - Last'] || ''}`.trim() || 'Unknown User',
+            avatar: contact['Profile Photo'],
+          };
+          return acc;
+        }, {});
+      }
+    }
+
+    // Step 4: Batch fetch listing data
+    let listingMap = {};
+    if (listingIds.size > 0) {
+      const { data: listings } = await supabase
+        .from('listing')
+        .select('_id, Name')
+        .in('_id', Array.from(listingIds));
+
+      if (listings) {
+        listingMap = listings.reduce((acc, listing) => {
+          acc[listing._id] = listing.Name || 'Unnamed Property';
+          return acc;
+        }, {});
+      }
+    }
+
+    // Step 5: Transform threads to UI format
+    const transformedThreads = threads.map(thread => {
+      const hostId = thread['-Host User'];
+      const guestId = thread['-Guest User'];
+      const contactId = hostId === bubbleId ? guestId : hostId;
+      const contact = contactId ? contactMap[contactId] : null;
+
+      // Format the last modified time
+      const modifiedDate = thread['Modified Date'] ? new Date(thread['Modified Date']) : new Date();
+      const now = new Date();
+      const diffMs = now.getTime() - modifiedDate.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      let lastMessageTime;
+      if (diffDays === 0) {
+        lastMessageTime = modifiedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      } else if (diffDays === 1) {
+        lastMessageTime = 'Yesterday';
+      } else if (diffDays < 7) {
+        lastMessageTime = modifiedDate.toLocaleDateString('en-US', { weekday: 'short' });
+      } else {
+        lastMessageTime = modifiedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+
+      return {
+        _id: thread._id,
+        contact_name: contact?.name || 'Split Lease',
+        contact_avatar: contact?.avatar,
+        property_name: thread['Listing'] ? listingMap[thread['Listing']] : undefined,
+        last_message_preview: thread['~Last Message'] || 'No messages yet',
+        last_message_time: lastMessageTime,
+        unread_count: 0, // TODO: Implement unread count if needed
+        is_with_splitbot: false,
+      };
+    });
+
+    setThreads(transformedThreads);
   }
 
   /**
