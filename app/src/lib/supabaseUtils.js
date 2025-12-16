@@ -158,12 +158,13 @@ export async function fetchHostData(hostIds) {
 
 /**
  * Extract photos from Supabase photos field.
- * Handles two formats:
- * 1. Embedded objects (new): [{id, url, Photo, ...}, ...]
- * 2. Legacy IDs (deprecated): ["photoId1", "photoId2"]
+ * Handles three formats:
+ * 1. Embedded objects: [{id, url, Photo, ...}, ...]
+ * 2. Direct URL strings: ["https://...", "https://...", ...]
+ * 3. Legacy IDs (deprecated): ["photoId1", "photoId2"] - requires photoMap
  *
- * @param {Array|string} photosField - Array of photo objects/IDs or JSON string
- * @param {Object} photoMap - Map of photo IDs to URLs (only needed for legacy format)
+ * @param {Array|string} photosField - Array of photo objects/URLs/IDs or JSON string
+ * @param {Object} photoMap - Map of photo IDs to URLs (only needed for legacy ID format)
  * @param {string} listingId - Listing ID for debugging purposes
  * @returns {Array<string>} Array of photo URLs (empty array if none found)
  */
@@ -193,8 +194,20 @@ export function extractPhotos(photosField, photoMap = {}, listingId = null) {
       continue;
     }
 
-    // Legacy format: photo is an ID string - look up in photoMap
+    // String format: could be a direct URL or a legacy ID
     if (typeof photo === 'string') {
+      // Check if it's already a valid URL (starts with http://, https://, or //)
+      if (photo.startsWith('http://') || photo.startsWith('https://') || photo.startsWith('//')) {
+        let photoUrl = photo;
+        // Add https: protocol if URL starts with //
+        if (photoUrl.startsWith('//')) {
+          photoUrl = 'https:' + photoUrl;
+        }
+        photoUrls.push(photoUrl);
+        continue;
+      }
+
+      // Legacy format: photo is an ID string - look up in photoMap
       const url = photoMap[photo];
       if (url) {
         photoUrls.push(url);
