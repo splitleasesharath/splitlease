@@ -153,6 +153,9 @@ npx wrangler pages deploy dist --project-name splitlease  # Manual deploy
 - Convert day indices at system boundaries
 - Use the four-layer logic architecture for business logic
 - Use `mcp-tool-specialist` subagent for all MCP tool invocations
+- **Send only changed fields when updating database records** (prevents FK constraint violations)
+- **Log full error details** on database errors: `code`, `message`, `details`, `hint`
+- Test edit flows with listings that have null FK values (legacy data)
 
 ### DON'T
 - Expose API keys in frontend code
@@ -162,6 +165,29 @@ npx wrangler pages deploy dist --project-name splitlease  # Manual deploy
 - Add fallback mechanisms when things fail - surface the real error
 - Over-engineer for hypothetical future needs
 - Manually edit `_redirects` or `_routes.json` (auto-generated)
+- **Send entire formData to updateListing** - always filter to changed fields only
+
+### Database Update Pattern (CRITICAL)
+
+The `listing` table has 12 FK constraints. Sending unchanged FK fields (even null) triggers validation:
+
+```javascript
+// ❌ BAD - Causes 409 errors when FK fields have null/invalid values
+await updateListing(id, formData);
+
+// ✅ GOOD - Only sends fields that changed
+const changedFields = {};
+for (const [key, value] of Object.entries(formData)) {
+  if (value !== originalData[key]) {
+    changedFields[key] = value;
+  }
+}
+await updateListing(id, changedFields);
+```
+
+**PostgREST Error Codes**: 409 + code `23503` = FK violation, `23505` = unique violation
+
+See: `.claude/plans/Documents/20251217091827-edit-listing-409-regression-report.md`
 
 ---
 
