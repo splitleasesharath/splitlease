@@ -89,7 +89,9 @@ export default function ProposalDetailsModal({
   // "Total Compensation (proposal - host)" is the total = per-night rate * nights * weeks
   const hostCompensation = proposal.hostCompensation || proposal['host compensation'] || proposal['Host Compensation'] || 0;
   const totalCompensation = proposal.totalCompensation || proposal['Total Compensation (proposal - host)'] || proposal['Total Compensation'] || 0;
-  const compensationPerNight = proposal.compensationPerNight || proposal['proposal nightly price'] || proposal['Compensation Per Night'] || 0;
+  // Use hostCompensation for per-night display - this is the HOST's rate
+  // NOTE: "proposal nightly price" is the GUEST-facing rate, not host compensation
+  const compensationPerNight = hostCompensation;
   const maintenanceFee = proposal.maintenanceFee || proposal['cleaning fee'] || proposal['Maintenance Fee'] || 0;
   const damageDeposit = proposal.damageDeposit || proposal['damage deposit'] || proposal['Damage Deposit'] || 0;
   const counterOfferHappened = proposal.counterOfferHappened || proposal['Counter Offer Happened'] || false;
