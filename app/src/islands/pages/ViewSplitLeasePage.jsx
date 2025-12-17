@@ -693,32 +693,6 @@ export default function ViewSplitLeasePage() {
   // Convert Day objects to array of numbers for compatibility with existing code
   const selectedDays = selectedDayObjects.map(day => day.dayOfWeek);
 
-  // Calculate ideal termination date based on move-in date and reservation span
-  const idealTerminationDate = useMemo(() => {
-    if (!moveInDate || !reservationSpan || selectedDays.length === 0) {
-      return null;
-    }
-
-    // Calculate termination date: moveInDate + (reservationSpan weeks * 7 days)
-    const moveIn = new Date(moveInDate);
-    const terminationDate = new Date(moveIn);
-    terminationDate.setDate(moveIn.getDate() + (reservationSpan * 7));
-
-    return terminationDate;
-  }, [moveInDate, reservationSpan, selectedDays.length]);
-
-  // Format the termination date for display
-  const formattedTerminationDate = useMemo(() => {
-    if (!idealTerminationDate) return null;
-
-    return idealTerminationDate.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  }, [idealTerminationDate]);
-
   // Calculate smart default move-in date based on selected days
   // If user selects Wed-Sat, default to next Wednesday after 2 weeks
   const calculateSmartMoveInDate = useCallback((selectedDayNumbers) => {
@@ -2486,7 +2460,6 @@ export default function ViewSplitLeasePage() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: formattedTerminationDate ? '8px' : '0',
               fontSize: '15px'
             }}>
               <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Rent</span>
@@ -2496,22 +2469,6 @@ export default function ViewSplitLeasePage() {
                   : priceMessage || 'Please Add More Days'}
               </span>
             </div>
-            {/* Ideal Termination Date */}
-            {formattedTerminationDate && (
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: '14px',
-                paddingTop: '8px',
-                borderTop: '1px solid #E5E7EB'
-              }}>
-                <span style={{ color: '#6B7280', fontWeight: '500' }}>Ideal Termination Date</span>
-                <span style={{ color: '#31135d', fontWeight: '600' }}>
-                  {formattedTerminationDate}
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Total Row */}
@@ -3295,23 +3252,6 @@ export default function ViewSplitLeasePage() {
                         : '—'}
                     </span>
                   </div>
-                  {/* Ideal Termination Date */}
-                  {formattedTerminationDate && (
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      fontSize: '13px',
-                      marginBottom: '8px',
-                      paddingTop: '8px',
-                      borderTop: '1px solid #E5E7EB'
-                    }}>
-                      <span style={{ color: '#6B7280', fontWeight: '500' }}>Ideal Termination Date</span>
-                      <span style={{ color: '#31135d', fontWeight: '600' }}>
-                        {formattedTerminationDate}
-                      </span>
-                    </div>
-                  )}
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
