@@ -148,12 +148,15 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
         <div className="detail-row">
           <span>Duration <strong>{reservationSpanWeeks} weeks</strong></span>
         </div>
-        {counterOfferHappened && (
-          <div className="detail-row pricing">
-            <span className="original-price">${hostCompensation * reservationSpanWeeks * 7}</span>
-            <span className="current-price">${formatCurrency(totalCompensation)}</span>
-          </div>
-        )}
+        <div className="detail-row compensation">
+          <span className="compensation-label">Your Compensation</span>
+          <span className="compensation-value">
+            {counterOfferHappened && (
+              <span className="original-price">${formatCurrency(hostCompensation * reservationSpanWeeks * 7)}</span>
+            )}
+            <strong>${formatCurrency(totalCompensation)}</strong>
+          </span>
+        </div>
       </div>
     </div>
   );

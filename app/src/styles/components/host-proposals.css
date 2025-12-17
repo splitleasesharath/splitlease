@@ -346,6 +346,40 @@
   color: var(--text-dark);
 }
 
+/* Compensation row in proposal card */
+.proposal-card-details .detail-row.compensation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  border-top: 1px solid var(--border-color);
+}
+
+.compensation-label {
+  font-size: var(--text-sm);
+  color: var(--text-gray);
+}
+
+.compensation-value {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--text-base);
+}
+
+.compensation-value strong {
+  font-weight: 700;
+  color: var(--primary-purple);
+}
+
+.compensation-value .original-price {
+  text-decoration: line-through;
+  color: var(--text-light-gray);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
 /* ========================================
    DAY INDICATOR
    ======================================== */
