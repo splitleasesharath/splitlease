@@ -145,7 +145,9 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         leasesResult,
         messagesResult,
         suggestedProposalsResult,
-        junctionCountsResult
+        junctionCountsResult,
+        guestProposalsResult,
+        hostProposalsResult
       ] = await Promise.all([
         // 1. Fetch user data (type, favorites)
         supabase
@@ -198,7 +200,21 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .or('"Deleted".is.null,"Deleted".eq.false'),
 
         // 8. Get favorites and proposals counts from junction tables (Phase 5b migration)
-        supabase.rpc('get_user_junction_counts', { p_user_id: userId })
+        supabase.rpc('get_user_junction_counts', { p_user_id: userId }),
+
+        // 9. Count proposals where user is the GUEST (proposals they submitted)
+        supabase
+          .from('proposal')
+          .select('_id', { count: 'exact', head: true })
+          .eq('Guest', userId)
+          .or('"Deleted".is.null,"Deleted".eq.false'),
+
+        // 10. Count proposals where user is the HOST (proposals received on their listings)
+        supabase
+          .from('proposal')
+          .select('_id', { count: 'exact', head: true })
+          .eq('Host User', userId)
+          .or('"Deleted".is.null,"Deleted".eq.false')
       ]);
 
       // Process user data
@@ -240,13 +256,29 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         console.warn('[useLoggedInAvatarData] No user type found, defaulting to GUEST');
       }
 
-      // Get proposals count from junction tables RPC
-      // Falls back to 0 if RPC fails (backward compatible)
-      const junctionCounts = junctionCountsResult.data?.[0] || {};
-      const proposalsCount = Number(junctionCounts.proposals_count) || 0;
+      // Get proposals count based on user type
+      // Guests: proposals they submitted (Guest = userId)
+      // Hosts: proposals received on their listings (Host User = userId)
+      const guestProposalsCount = guestProposalsResult.count || 0;
+      const hostProposalsCount = hostProposalsResult.count || 0;
 
+      // Select the appropriate count based on user type
+      // Note: We determine this AFTER normalizing user type above
+      const proposalsCount = normalizedType === NORMALIZED_USER_TYPES.GUEST
+        ? guestProposalsCount
+        : hostProposalsCount;
+
+      if (guestProposalsResult.error) {
+        console.warn('[useLoggedInAvatarData] Guest proposals count failed:', guestProposalsResult.error);
+      }
+      if (hostProposalsResult.error) {
+        console.warn('[useLoggedInAvatarData] Host proposals count failed:', hostProposalsResult.error);
+      }
+
+      // Get favorites count from junction tables RPC (still used for favorites)
+      const junctionCounts = junctionCountsResult.data?.[0] || {};
       if (junctionCountsResult.error) {
-        console.warn('[useLoggedInAvatarData] Junction counts RPC failed, using 0:', junctionCountsResult.error);
+        console.warn('[useLoggedInAvatarData] Junction counts RPC failed:', junctionCountsResult.error);
       }
 
       // Get favorites count from user table JSONB field (not junction table)
@@ -272,6 +304,12 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
       const listingsCount = uniqueListingIds.length;
       const firstListingId = listingsCount === 1 ? (rawListings[0]?._id || rawListings[0]?.id) : null;
       console.log('[useLoggedInAvatarData] Listings count:', listingsCount, 'raw:', rawListings.length);
+      console.log('[useLoggedInAvatarData] Proposals counts:', {
+        userType: normalizedType,
+        guestProposals: guestProposalsCount,
+        hostProposals: hostProposalsCount,
+        effectiveCount: proposalsCount
+      });
 
       const newData = {
         userType: normalizedType,
