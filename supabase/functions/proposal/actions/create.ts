@@ -29,6 +29,7 @@ import {
   calculateComplementaryNights,
   calculateOrderRanking,
   formatPriceForDisplay,
+  getNightlyRateForNights,
 } from "../lib/calculations.ts";
 import { determineInitialStatus, ProposalStatusName } from "../lib/status.ts";
 import { enqueueBubbleSync, triggerQueueProcessing } from "../lib/bubbleSyncQueue.ts";
@@ -172,14 +173,31 @@ export async function handleCreate(
   );
 
   // Calculate compensation (Steps 13-18)
+  // IMPORTANT: Use the HOST's nightly rate from listing pricing tiers, NOT the guest-facing price
   const rentalType = ((listingData["rental type"] || "nightly").toLowerCase()) as RentalType;
+  const nightsPerWeek = input.nightsSelected.length;
+
+  // Get the host's nightly rate based on the number of nights selected
+  // This matches Bubble's "host compensation" parameter which comes from listing pricing
+  const hostNightlyRate = getNightlyRateForNights(listingData, nightsPerWeek);
+
+  console.log(`[proposal:create] Host pricing calculation:`, {
+    rentalType,
+    nightsPerWeek,
+    hostNightlyRate,
+    weeklyRate: listingData["💰Weekly Host Rate"],
+    monthlyRate: listingData["💰Monthly Host Rate"],
+    guestProposalPrice: input.proposalPrice
+  });
+
   const compensation = calculateCompensation(
     rentalType,
     (input.reservationSpan || "other") as ReservationSpan,
-    input.nightsSelected.length,
+    nightsPerWeek,
     listingData["💰Weekly Host Rate"] || 0,
-    input.proposalPrice,
-    input.reservationSpanWeeks
+    hostNightlyRate,
+    input.reservationSpanWeeks,
+    listingData["💰Monthly Host Rate"] || 0
   );
 
   // Calculate move-out date
@@ -196,7 +214,13 @@ export async function handleCreate(
     input.status as ProposalStatusName | undefined
   );
 
-  console.log(`[proposal:create] Calculated status: ${status}, compensation: ${compensation.total_compensation}`);
+  console.log(`[proposal:create] Calculated status: ${status}, compensation:`, {
+    hostCompensationPerNight: compensation.host_compensation_per_night,
+    totalCompensation: compensation.total_compensation,
+    fourWeekRent: compensation.four_week_rent,
+    fourWeekCompensation: compensation.four_week_compensation,
+    durationMonths: compensation.duration_months
+  });
 
   // ================================================
   // STEP 1: CREATE PROPOSAL RECORD
@@ -266,11 +290,13 @@ export async function handleCreate(
     "Complementary Nights": complementaryNights,
 
     // Pricing
+    // CRITICAL: "host compensation" is the per-night HOST rate, not guest-facing price
+    // "Total Compensation" = host compensation per night * nights per week * weeks
     "proposal nightly price": input.proposalPrice,
     "4 week rent": input.fourWeekRent || compensation.four_week_rent,
     "Total Price for Reservation (guest)": input.estimatedBookingTotal,
     "Total Compensation (proposal - host)": compensation.total_compensation,
-    "host compensation": input.hostCompensation || compensation.total_compensation,
+    "host compensation": compensation.host_compensation_per_night,
     "4 week compensation": input.fourWeekCompensation || compensation.four_week_compensation,
     "cleaning fee": listingData["💰Cleaning Cost / Maintenance Fee"] || 0,
     "damage deposit": listingData["💰Damage Deposit"] || 0,
