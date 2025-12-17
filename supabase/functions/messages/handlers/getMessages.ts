@@ -78,7 +78,7 @@ export async function handleGetMessages(
 
   const { data: userData, error: userError } = await supabaseAdmin
     .from('user')
-    .select('_id, "User Type"')
+    .select('_id, "Type - User Current"')
     .ilike('email', user.email)
     .single();
 
@@ -89,20 +89,20 @@ export async function handleGetMessages(
   console.log('[getMessages] Found user by email');
 
   const userBubbleId = userData._id;
-  const userType = userData['User Type'] || '';
+  const userType = userData['Type - User Current'] || '';
   const isHost = userType.includes('Host');
   console.log('[getMessages] User Bubble ID:', userBubbleId);
   console.log('[getMessages] Is Host:', isHost);
 
   // Verify user has access to this thread
   const { data: thread, error: threadError } = await supabaseAdmin
-    .from('thread_conversation')
+    .from('thread')
     .select(`
       _id,
-      host,
-      guest,
-      listing,
-      proposal
+      "-Host User",
+      "-Guest User",
+      "Listing",
+      "Proposal"
     `)
     .eq('_id', thread_id)
     .single();
@@ -112,41 +112,42 @@ export async function handleGetMessages(
     throw new ValidationError('Thread not found');
   }
 
+  const threadHost = thread['-Host User'];
+  const threadGuest = thread['-Guest User'];
+
   // Check user is participant in thread
-  if (thread.host !== userBubbleId && thread.guest !== userBubbleId) {
+  if (threadHost !== userBubbleId && threadGuest !== userBubbleId) {
     console.error('[getMessages] User not participant in thread');
     throw new ValidationError('You do not have access to this conversation');
   }
 
   // Determine if user is host or guest in this thread
-  const isHostInThread = thread.host === userBubbleId;
-  const contactId = isHostInThread ? thread.guest : thread.host;
+  const isHostInThread = threadHost === userBubbleId;
+  const contactId = isHostInThread ? threadGuest : threadHost;
 
   // Fetch messages for this thread
   // Filter by visibility based on user role in thread
   let query = supabaseAdmin
-    .from('message')
+    .from('_message')
     .select(`
       _id,
-      "Message body",
+      "Message Body",
       "Created Date",
-      sender,
-      "is visible to guest",
-      "is visible to host",
-      "Sender type",
-      "Split bot warning",
-      "call to action",
-      "call to action message",
-      "call to action link"
+      "-Originator User",
+      "is Visible to Guest",
+      "is Visible to Host",
+      "is Split Bot",
+      "Split Bot Warning",
+      "Call to Action"
     `)
-    .eq('thread_conversation', thread_id)
+    .eq('"Associated Thread/Conversation"', thread_id)
     .order('"Created Date"', { ascending: true });
 
   // Apply visibility filter
   if (isHostInThread) {
-    query = query.eq('"is visible to host"', true);
+    query = query.eq('"is Visible to Host"', true);
   } else {
-    query = query.eq('"is visible to guest"', true);
+    query = query.eq('"is Visible to Guest"', true);
   }
 
   // Apply pagination
@@ -164,7 +165,7 @@ export async function handleGetMessages(
   // Collect all sender IDs for batch lookup
   const senderIds = new Set<string>();
   messages?.forEach(msg => {
-    if (msg.sender) senderIds.add(msg.sender);
+    if (msg['-Originator User']) senderIds.add(msg['-Originator User']);
   });
 
   // Batch fetch sender user data
@@ -172,13 +173,13 @@ export async function handleGetMessages(
   if (senderIds.size > 0) {
     const { data: senders, error: sendersError } = await supabaseAdmin
       .from('user')
-      .select('_id, "First Name", "Last Name", "Profile Photo"')
+      .select('_id, "Name - First", "Name - Last", "Profile Photo"')
       .in('_id', Array.from(senderIds));
 
     if (!sendersError && senders) {
       senderMap = senders.reduce((acc, sender) => {
         acc[sender._id] = {
-          name: `${sender['First Name'] || ''} ${sender['Last Name'] || ''}`.trim() || 'Unknown',
+          name: `${sender['Name - First'] || ''} ${sender['Name - Last'] || ''}`.trim() || 'Unknown',
           avatar: sender['Profile Photo'],
         };
         return acc;
@@ -191,13 +192,13 @@ export async function handleGetMessages(
   if (contactId) {
     const { data: contact, error: contactError } = await supabaseAdmin
       .from('user')
-      .select('"First Name", "Last Name", "Profile Photo"')
+      .select('"Name - First", "Name - Last", "Profile Photo"')
       .eq('_id', contactId)
       .single();
 
     if (!contactError && contact) {
       contactInfo = {
-        name: `${contact['First Name'] || ''} ${contact['Last Name'] || ''}`.trim() || 'Unknown User',
+        name: `${contact['Name - First'] || ''} ${contact['Name - Last'] || ''}`.trim() || 'Unknown User',
         avatar: contact['Profile Photo'],
       };
     }
@@ -205,11 +206,11 @@ export async function handleGetMessages(
 
   // Fetch listing name if present
   let propertyName: string | undefined;
-  if (thread.listing) {
+  if (thread['Listing']) {
     const { data: listing, error: listingError } = await supabaseAdmin
       .from('listing')
       .select('Name')
-      .eq('_id', thread.listing)
+      .eq('_id', thread['Listing'])
       .single();
 
     if (!listingError && listing) {
@@ -220,11 +221,11 @@ export async function handleGetMessages(
   // Fetch proposal status if present
   let proposalStatus: string | undefined;
   let statusType: string | undefined;
-  if (thread.proposal) {
+  if (thread['Proposal']) {
     const { data: proposal, error: proposalError } = await supabaseAdmin
       .from('proposal')
       .select('"Proposal Status"')
-      .eq('_id', thread.proposal)
+      .eq('_id', thread['Proposal'])
       .single();
 
     if (!proposalError && proposal) {
@@ -242,15 +243,16 @@ export async function handleGetMessages(
 
   // Transform messages to response format
   const transformedMessages: Message[] = (messages || []).map(msg => {
-    const sender = msg.sender ? senderMap[msg.sender] : null;
-    const isOutgoing = msg.sender === userBubbleId;
-    const isSplitBot = msg['Sender type'] === 'splitbot' || msg['Sender type'] === 'Split Bot';
+    const senderId = msg['-Originator User'];
+    const sender = senderId ? senderMap[senderId] : null;
+    const isOutgoing = senderId === userBubbleId;
+    const isSplitBot = msg['is Split Bot'] === true;
 
     // Determine sender type
     let senderType: 'guest' | 'host' | 'splitbot';
     if (isSplitBot) {
       senderType = 'splitbot';
-    } else if (msg.sender === thread.host) {
+    } else if (senderId === threadHost) {
       senderType = 'host';
     } else {
       senderType = 'guest';
@@ -267,47 +269,46 @@ export async function handleGetMessages(
 
     // Build call to action if present
     let callToAction: Message['call_to_action'];
-    if (msg['call to action'] || msg['call to action message']) {
+    if (msg['Call to Action']) {
       callToAction = {
-        type: msg['call to action'] || 'action',
-        message: msg['call to action message'] || 'View Details',
-        link: msg['call to action link'],
+        type: msg['Call to Action'],
+        message: 'View Details',
       };
     }
 
     return {
       _id: msg._id,
-      message_body: msg['Message body'] || '',
+      message_body: msg['Message Body'] || '',
       sender_name: isSplitBot ? 'Split Bot' : (sender?.name || 'Unknown'),
       sender_avatar: isSplitBot ? undefined : sender?.avatar,
       sender_type: senderType,
       is_outgoing: isOutgoing,
       timestamp,
       call_to_action: callToAction,
-      split_bot_warning: msg['Split bot warning'],
+      split_bot_warning: msg['Split Bot Warning'],
     };
   });
 
-  // Mark messages as read by removing user from unread_users
+  // Mark messages as read by removing user from Unread Users
   // This is a fire-and-forget operation
   if (messages && messages.length > 0) {
     const messageIds = messages.map(m => m._id);
 
-    // Get messages with unread_users containing this user
+    // Get messages with Unread Users containing this user
     const { data: unreadMessages, error: unreadError } = await supabaseAdmin
-      .from('message')
-      .select('_id, unread_users')
+      .from('_message')
+      .select('_id, "Unread Users"')
       .in('_id', messageIds);
 
     if (!unreadError && unreadMessages) {
       for (const msg of unreadMessages) {
-        const unreadUsers = msg.unread_users || [];
+        const unreadUsers = msg['Unread Users'] || [];
         if (Array.isArray(unreadUsers) && unreadUsers.includes(userBubbleId)) {
           // Remove user from unread list
           const updatedUnread = unreadUsers.filter((id: string) => id !== userBubbleId);
           await supabaseAdmin
-            .from('message')
-            .update({ unread_users: updatedUnread })
+            .from('_message')
+            .update({ "Unread Users": updatedUnread })
             .eq('_id', msg._id);
         }
       }
@@ -316,9 +317,9 @@ export async function handleGetMessages(
 
   // Check if there are more messages
   const { count: totalCount } = await supabaseAdmin
-    .from('message')
+    .from('_message')
     .select('*', { count: 'exact', head: true })
-    .eq('thread_conversation', thread_id);
+    .eq('"Associated Thread/Conversation"', thread_id);
 
   const hasMore = totalCount ? (offset + limit) < totalCount : false;
 
