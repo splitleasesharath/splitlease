@@ -97,15 +97,14 @@ export default function ProposalDetailsModal({
   // Get active days
   const activeDays = getActiveDays(checkInDay, checkOutDay);
 
-  // Get progress steps
+  // Get progress steps - ordered as: Proposal Submitted → Rental App → Host Review → Drafting Lease Docs → Initial Payment
   const getProgressSteps = () => {
     return {
-      rentalApp: visualOrder >= 1,
-      reviewDocs: visualOrder >= 6,
-      initialPayment: visualOrder >= 8,
-      proposalSubmitted: true,
-      hostReview: visualOrder >= 2,
-      leaseDocs: visualOrder >= 6
+      proposalSubmitted: true, // Step 1: Always completed (visualOrder >= 0)
+      rentalApp: visualOrder >= 1, // Step 2: Rental application submitted
+      hostReview: visualOrder >= 2, // Step 3: Host is reviewing
+      leaseDocs: visualOrder >= 6, // Step 4: Drafting lease documents
+      initialPayment: visualOrder >= 8 // Step 5: Initial payment
     };
   };
 
@@ -268,39 +267,40 @@ export default function ProposalDetailsModal({
             </button>
             {statusExpanded && (
               <div className="section-content status-content">
-                {/* Progress Tracker */}
+                {/* Progress Tracker - Order: Proposal Submitted → Rental App → Host Review → Drafting Lease Docs → Initial Payment */}
                 <div className="progress-tracker">
-                  <div className="progress-row top-row">
-                    <div className={`progress-step ${progress.rentalApp ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
-                      <div className="step-circle"></div>
-                      <span className="step-label">{progress.rentalApp ? 'Rental App Submitted' : 'Submit Rental App'}</span>
-                    </div>
-                    <div className="progress-line"></div>
-                    <div className={`progress-step ${progress.reviewDocs ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
-                      <div className="step-circle"></div>
-                      <span className="step-label">{progress.reviewDocs ? 'Review Documents' : 'Drafting Lease Docs'}</span>
-                    </div>
-                    <div className="progress-line"></div>
-                    <div className={`progress-step ${progress.initialPayment ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
-                      <div className="step-circle"></div>
-                      <span className="step-label">Initial Payment</span>
-                    </div>
+                  {/* Step 1: Proposal Submitted */}
+                  <div className={`progress-step ${progress.proposalSubmitted ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                    <div className="step-circle"></div>
+                    <span className="step-label">Proposal Submitted</span>
                   </div>
-                  <div className="progress-row bottom-row">
-                    <div className={`progress-step ${progress.proposalSubmitted ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
-                      <div className="step-circle"></div>
-                      <span className="step-label">Proposal submitted</span>
-                    </div>
-                    <div className="progress-line"></div>
-                    <div className={`progress-step ${progress.hostReview ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
-                      <div className="step-circle"></div>
-                      <span className="step-label">{progress.hostReview ? 'Edit/Review Proposal' : 'Host Review'}</span>
-                    </div>
-                    <div className="progress-line"></div>
-                    <div className={`progress-step ${progress.leaseDocs ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
-                      <div className="step-circle"></div>
-                      <span className="step-label">Lease Documents</span>
-                    </div>
+                  <div className={`progress-line ${progress.proposalSubmitted && progress.rentalApp ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}></div>
+
+                  {/* Step 2: Rental Application Submitted */}
+                  <div className={`progress-step ${progress.rentalApp ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                    <div className="step-circle"></div>
+                    <span className="step-label">{progress.rentalApp ? 'Rental App Submitted' : 'Rental Application'}</span>
+                  </div>
+                  <div className={`progress-line ${progress.rentalApp && progress.hostReview ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}></div>
+
+                  {/* Step 3: Host Review */}
+                  <div className={`progress-step ${progress.hostReview ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                    <div className="step-circle"></div>
+                    <span className="step-label">Host Review</span>
+                  </div>
+                  <div className={`progress-line ${progress.hostReview && progress.leaseDocs ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}></div>
+
+                  {/* Step 4: Drafting Lease Documents */}
+                  <div className={`progress-step ${progress.leaseDocs ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                    <div className="step-circle"></div>
+                    <span className="step-label">{progress.leaseDocs ? 'Lease Documents' : 'Drafting Lease Docs'}</span>
+                  </div>
+                  <div className={`progress-line ${progress.leaseDocs && progress.initialPayment ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}></div>
+
+                  {/* Step 5: Initial Payment */}
+                  <div className={`progress-step ${progress.initialPayment ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                    <div className="step-circle"></div>
+                    <span className="step-label">Initial Payment</span>
                   </div>
                 </div>
 

@@ -784,12 +784,8 @@
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  justify-content: space-between;
+  justify-content: center;
   gap: 0;
-}
-
-.progress-row {
-  display: contents;
 }
 
 .progress-step {
@@ -797,17 +793,18 @@
   flex-direction: column;
   align-items: center;
   gap: var(--spacing-xs);
-  flex: 1;
   min-width: 0;
+  z-index: 1;
 }
 
 .step-circle {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   background-color: var(--border-color);
   transition: background-color var(--transition-base);
   flex-shrink: 0;
+  border: 2px solid var(--bg-white);
 }
 
 .progress-step.completed .step-circle {
@@ -822,16 +819,26 @@
   font-size: 9px;
   color: var(--text-gray);
   text-align: center;
-  max-width: 70px;
+  max-width: 60px;
   line-height: 1.2;
+  word-wrap: break-word;
 }
 
 .progress-line {
-  width: 20px;
-  height: 2px;
+  flex: 1;
+  height: 3px;
   background-color: var(--border-color);
-  margin-top: 11px;
-  flex-shrink: 0;
+  margin-top: 8px;
+  min-width: 20px;
+  max-width: 60px;
+}
+
+.progress-line.completed {
+  background-color: var(--primary-purple);
+}
+
+.progress-line.cancelled {
+  background-color: #991B1B;
 }
 
 /* Status Box */
@@ -1018,11 +1025,22 @@
 
   .step-label {
     font-size: 8px;
-    max-width: 50px;
+    max-width: 45px;
   }
 
   .progress-line {
-    width: 10px;
+    min-width: 10px;
+    max-width: 30px;
+  }
+
+  .step-circle {
+    width: 16px;
+    height: 16px;
+  }
+
+  .progress-line {
+    margin-top: 6px;
+    height: 2px;
   }
 }
 
