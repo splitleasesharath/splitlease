@@ -70,17 +70,30 @@ function convertDayValueToName(dayValue) {
 }
 
 /**
- * Get check-in and check-out range from Days Selected
- * Days Selected contains all days the guest is present (check-in through check-out)
- * First day = check-in day, Last day = check-out day
+ * Get check-in and check-out range from proposal
+ * Uses the stored check-in/check-out day fields directly (handles wrap-around weeks correctly)
  *
  * Note: Database now stores 0-indexed days natively (0=Sunday through 6=Saturday)
  *
  * @param {Object} proposal - Proposal object
- * @returns {string|null} "Friday to Sunday" format or null if unavailable
+ * @returns {string|null} "Wednesday to Sunday" format or null if unavailable
  */
 function getCheckInOutRange(proposal) {
-  // Try to use Days Selected first (more reliable than check-in/out day fields)
+  // Use the stored check-in/out day fields directly - they handle wrap-around correctly
+  const checkInDay = proposal['check in day'];
+  const checkOutDay = proposal['check out day'];
+
+  if (checkInDay !== null && checkInDay !== undefined &&
+      checkOutDay !== null && checkOutDay !== undefined) {
+    const checkInName = convertDayValueToName(checkInDay);
+    const checkOutName = convertDayValueToName(checkOutDay);
+
+    if (checkInName && checkOutName) {
+      return `${checkInName} to ${checkOutName}`;
+    }
+  }
+
+  // Fallback: derive from Days Selected (for legacy data without check-in/out fields)
   let daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
 
   // Parse if it's a JSON string
@@ -93,7 +106,7 @@ function getCheckInOutRange(proposal) {
   }
 
   if (Array.isArray(daysSelected) && daysSelected.length > 0) {
-    // Convert to day indices for sorting (0-indexed: 0=Sunday through 6=Saturday)
+    // Convert to day indices (0-indexed: 0=Sunday through 6=Saturday)
     const dayIndices = daysSelected.map(day => {
       if (typeof day === 'number') return day;
       if (typeof day === 'string') {
@@ -110,12 +123,12 @@ function getCheckInOutRange(proposal) {
     }).filter(idx => idx >= 0 && idx <= 6);
 
     if (dayIndices.length > 0) {
-      // Sort to find first and last day
+      // Sort to find first and last day (note: doesn't handle wrap-around, but this is fallback only)
       dayIndices.sort((a, b) => a - b);
       const firstDayIndex = dayIndices[0];
       const lastDayIndex = dayIndices[dayIndices.length - 1];
 
-      const checkInName = DAY_NAMES[firstDayIndex]; // 0-indexed direct lookup
+      const checkInName = DAY_NAMES[firstDayIndex];
       const checkOutName = DAY_NAMES[lastDayIndex];
 
       if (checkInName && checkOutName) {
@@ -124,18 +137,7 @@ function getCheckInOutRange(proposal) {
     }
   }
 
-  // Fallback to check-in/out day fields
-  const checkInDay = proposal['check in day'];
-  const checkOutDay = proposal['check out day'];
-
-  if (!checkInDay || !checkOutDay) return null;
-
-  const checkInName = convertDayValueToName(checkInDay);
-  const checkOutName = convertDayValueToName(checkOutDay);
-
-  if (!checkInName || !checkOutName) return null;
-
-  return `${checkInName} to ${checkOutName}`;
+  return null;
 }
 
 /**
