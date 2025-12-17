@@ -14,6 +14,7 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { ValidationError } from '../../_shared/errors.ts';
 import { validateRequiredFields, validateEmail } from '../../_shared/validation.ts';
+import { sendToSlack } from '../../_shared/slack.ts';
 
 interface SendGuestInquiryPayload {
   sender_name: string;           // Required: Guest's name
@@ -80,6 +81,17 @@ export async function handleSendGuestInquiry(
   }
 
   console.log('[sendGuestInquiry] Inquiry created:', inquiry.id);
+
+  // Send Slack notification (fire-and-forget, doesn't block response)
+  const listingInfo = typedPayload.listing_id
+    ? `\n*Listing:* ${typedPayload.listing_id}`
+    : '';
+
+  sendToSlack('acquisition', {
+    text: `🏠 *New Guest Inquiry*\n\n*From:* ${typedPayload.sender_name.trim()}\n*Email:* ${typedPayload.sender_email.trim().toLowerCase()}${listingInfo}\n\n*Message:*\n>${typedPayload.message_body.trim().replace(/\n/g, '\n>')}`
+  });
+
+  console.log('[sendGuestInquiry] Slack notification queued');
   console.log('[sendGuestInquiry] ========== GUEST INQUIRY COMPLETE ==========');
 
   return {
