@@ -549,62 +549,6 @@ export default function useListingDashboardPageLogic() {
     // TODO: Debounce and save to backend
   }, []);
 
-  // Cancellation policy change handler - saves policy ID to database
-  const handleCancellationPolicyChange = useCallback(async (policyId) => {
-    const listingId = getListingIdFromUrl();
-    if (!listingId) {
-      console.error('❌ No listing ID found for cancellation policy update');
-      return;
-    }
-
-    console.log('📋 Updating cancellation policy to:', policyId);
-
-    try {
-      await updateListing(listingId, {
-        'Cancellation Policy': policyId,
-      });
-
-      // Update local state
-      setListing((prev) => ({
-        ...prev,
-        cancellationPolicy: policyId,
-        'Cancellation Policy': policyId,
-      }));
-
-      console.log('✅ Cancellation policy saved successfully');
-    } catch (error) {
-      console.error('❌ Failed to save cancellation policy:', error);
-    }
-  }, [getListingIdFromUrl, updateListing]);
-
-  // Cancellation policy additional restrictions change handler
-  const handleCancellationRestrictionsChange = useCallback(async (restrictionsText) => {
-    const listingId = getListingIdFromUrl();
-    if (!listingId) {
-      console.error('❌ No listing ID found for cancellation restrictions update');
-      return;
-    }
-
-    console.log('📋 Updating cancellation restrictions:', restrictionsText);
-
-    try {
-      await updateListing(listingId, {
-        'Cancellation Policy - Additional Restrictions': restrictionsText,
-      });
-
-      // Update local state
-      setListing((prev) => ({
-        ...prev,
-        cancellationPolicyAdditionalRestrictions: restrictionsText,
-        'Cancellation Policy - Additional Restrictions': restrictionsText,
-      }));
-
-      console.log('✅ Cancellation restrictions saved successfully');
-    } catch (error) {
-      console.error('❌ Failed to save cancellation restrictions:', error);
-    }
-  }, [getListingIdFromUrl, updateListing]);
-
   // Copy link handler
   const handleCopyLink = useCallback(() => {
     console.log('Link copied');
@@ -801,6 +745,62 @@ export default function useListingDashboardPageLogic() {
     console.log('✅ Listing updated:', data);
     return data;
   }, []);
+
+  // Cancellation policy change handler - saves policy ID to database
+  const handleCancellationPolicyChange = useCallback(async (policyId) => {
+    const listingId = getListingIdFromUrl();
+    if (!listingId) {
+      console.error('❌ No listing ID found for cancellation policy update');
+      return;
+    }
+
+    console.log('📋 Updating cancellation policy to:', policyId);
+
+    try {
+      await updateListing(listingId, {
+        'Cancellation Policy': policyId,
+      });
+
+      // Update local state
+      setListing((prev) => ({
+        ...prev,
+        cancellationPolicy: policyId,
+        'Cancellation Policy': policyId,
+      }));
+
+      console.log('✅ Cancellation policy saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save cancellation policy:', error);
+    }
+  }, [getListingIdFromUrl, updateListing]);
+
+  // Cancellation policy additional restrictions change handler
+  const handleCancellationRestrictionsChange = useCallback(async (restrictionsText) => {
+    const listingId = getListingIdFromUrl();
+    if (!listingId) {
+      console.error('❌ No listing ID found for cancellation restrictions update');
+      return;
+    }
+
+    console.log('📋 Updating cancellation restrictions:', restrictionsText);
+
+    try {
+      await updateListing(listingId, {
+        'Cancellation Policy - Additional Restrictions': restrictionsText,
+      });
+
+      // Update local state
+      setListing((prev) => ({
+        ...prev,
+        cancellationPolicyAdditionalRestrictions: restrictionsText,
+        'Cancellation Policy - Additional Restrictions': restrictionsText,
+      }));
+
+      console.log('✅ Cancellation restrictions saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save cancellation restrictions:', error);
+    }
+  }, [getListingIdFromUrl, updateListing]);
 
   /**
    * Start the AI generation process for all fields
