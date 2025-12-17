@@ -421,7 +421,7 @@
 }
 
 .list-lease-feature:before {
-  content: "•";
+  content: "\2022";
   position: absolute;
   left: 8px;
   color: #31135D;
