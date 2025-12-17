@@ -315,40 +315,58 @@ export default function ProposalDetailsModal({
             </button>
             {statusExpanded && (
               <div className="section-content status-content">
-                {/* Progress Tracker - Order: Proposal Submitted → Rental App → Host Review → Drafting Lease Docs → Initial Payment */}
+                {/* Progress Tracker - Order: Proposal Submitted → Rental App → Host Review → Lease Docs → Initial Payment */}
+                {/* Matches guest proposals page design: fully connected dots and lines */}
                 <div className="progress-tracker">
-                  {/* Step 1: Proposal Submitted */}
-                  <div className={`progress-step ${getStepClass(progress.proposalSubmitted)}`}>
-                    <div className="step-circle"></div>
-                    <span className="step-label">Proposal Submitted</span>
-                  </div>
-                  <div className={`progress-line ${getLineClass(progress.proposalSubmitted, progress.rentalApp)}`}></div>
+                  {/* Row 1: Circles and connecting lines (no gaps) */}
+                  <div className="progress-tracker-line">
+                    {/* Step 1: Proposal Submitted */}
+                    <div className={`progress-step ${getStepClass(progress.proposalSubmitted)}`}>
+                      <div className="step-circle"></div>
+                    </div>
+                    <div className={`progress-line ${getLineClass(progress.proposalSubmitted, progress.rentalApp)}`}></div>
 
-                  {/* Step 2: Rental Application Submitted */}
-                  <div className={`progress-step ${getStepClass(progress.rentalApp)}`}>
-                    <div className="step-circle"></div>
-                    <span className="step-label">{progress.rentalApp.completed ? 'Rental App Submitted' : 'Rental Application'}</span>
-                  </div>
-                  <div className={`progress-line ${getLineClass(progress.rentalApp, progress.hostReview)}`}></div>
+                    {/* Step 2: Rental Application */}
+                    <div className={`progress-step ${getStepClass(progress.rentalApp)}`}>
+                      <div className="step-circle"></div>
+                    </div>
+                    <div className={`progress-line ${getLineClass(progress.rentalApp, progress.hostReview)}`}></div>
 
-                  {/* Step 3: Host Review */}
-                  <div className={`progress-step ${getStepClass(progress.hostReview)}`}>
-                    <div className="step-circle"></div>
-                    <span className="step-label">Host Review</span>
-                  </div>
-                  <div className={`progress-line ${getLineClass(progress.hostReview, progress.leaseDocs)}`}></div>
+                    {/* Step 3: Host Review */}
+                    <div className={`progress-step ${getStepClass(progress.hostReview)}`}>
+                      <div className="step-circle"></div>
+                    </div>
+                    <div className={`progress-line ${getLineClass(progress.hostReview, progress.leaseDocs)}`}></div>
 
-                  {/* Step 4: Drafting Lease Documents */}
-                  <div className={`progress-step ${getStepClass(progress.leaseDocs)}`}>
-                    <div className="step-circle"></div>
-                    <span className="step-label">{progress.leaseDocs.completed ? 'Lease Documents' : 'Drafting Lease Docs'}</span>
-                  </div>
-                  <div className={`progress-line ${getLineClass(progress.leaseDocs, progress.initialPayment)}`}></div>
+                    {/* Step 4: Lease Documents */}
+                    <div className={`progress-step ${getStepClass(progress.leaseDocs)}`}>
+                      <div className="step-circle"></div>
+                    </div>
+                    <div className={`progress-line ${getLineClass(progress.leaseDocs, progress.initialPayment)}`}></div>
 
-                  {/* Step 5: Initial Payment */}
-                  <div className={`progress-step ${getStepClass(progress.initialPayment)}`}>
-                    <div className="step-circle"></div>
-                    <span className="step-label">Initial Payment</span>
+                    {/* Step 5: Initial Payment */}
+                    <div className={`progress-step ${getStepClass(progress.initialPayment)}`}>
+                      <div className="step-circle"></div>
+                    </div>
+                  </div>
+
+                  {/* Row 2: Labels below the line */}
+                  <div className="progress-tracker-labels">
+                    <div className="progress-label-wrapper">
+                      <span className="step-label">Proposal Submitted</span>
+                    </div>
+                    <div className="progress-label-wrapper">
+                      <span className="step-label">{progress.rentalApp.completed ? 'Rental App Submitted' : 'Rental Application'}</span>
+                    </div>
+                    <div className="progress-label-wrapper">
+                      <span className="step-label">Host Review</span>
+                    </div>
+                    <div className="progress-label-wrapper">
+                      <span className="step-label">{progress.leaseDocs.completed ? 'Lease Documents' : 'Lease Docs'}</span>
+                    </div>
+                    <div className="progress-label-wrapper">
+                      <span className="step-label">Initial Payment</span>
+                    </div>
                   </div>
                 </div>
 

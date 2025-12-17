@@ -779,37 +779,41 @@
 }
 
 /* Progress Tracker
+ * Matches guest proposals page design (fully connected dots and lines)
  * Colors from Bubble "Status - Proposal" option set:
- * - Default/Unfilled: #EDEAF6 (light purple/gray)
+ * - Default/Unfilled: #D4D4D4 (gray)
  * - Completed/Active: #31135D (Success purple - dark purple)
  * - Current Step: #BFBFBF (medium gray)
  * - Cancelled/Rejected: #DB2E2E (red)
  */
 .progress-tracker {
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 0;
-}
-
-.progress-step {
-  display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xs);
-  min-width: 0;
-  z-index: 1;
+  gap: 8px;
+}
+
+/* Container for the dots and lines (horizontal) */
+.progress-tracker-line {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Wrapper for each step node (circle only, no label here) */
+.progress-step {
+  display: flex;
+  align-items: center;
 }
 
 .step-circle {
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background-color: #EDEAF6; /* Default: light purple/gray (incomplete) */
+  background-color: #D4D4D4; /* Default: gray (incomplete) */
   transition: background-color var(--transition-base);
   flex-shrink: 0;
-  border: 2px solid var(--bg-white);
 }
 
 /* Completed state - dark purple */
@@ -827,22 +831,13 @@
   background-color: #DB2E2E;
 }
 
-.step-label {
-  font-size: 9px;
-  color: var(--text-gray);
-  text-align: center;
-  max-width: 60px;
-  line-height: 1.2;
-  word-wrap: break-word;
-}
-
+/* Connector line between steps - NO GAPS */
 .progress-line {
-  flex: 1;
-  height: 3px;
-  background-color: #EDEAF6; /* Default: light purple/gray (incomplete) */
-  margin-top: 8px;
-  min-width: 20px;
-  max-width: 60px;
+  width: 60px;
+  height: 6px;
+  background-color: #D4D4D4; /* Default: gray (incomplete) */
+  flex-shrink: 0;
+  /* No margin - connects directly to circles */
 }
 
 /* Completed line - dark purple */
@@ -853,6 +848,40 @@
 /* Cancelled/Rejected line - red */
 .progress-line.cancelled {
   background-color: #DB2E2E;
+}
+
+/* Container for labels (below the line) */
+.progress-tracker-labels {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 0;
+}
+
+/* Individual label wrapper - matches step width */
+.progress-label-wrapper {
+  display: flex;
+  justify-content: center;
+  /* Width = circle (24px) + connector (60px) = 84px, except last one */
+}
+
+.progress-label-wrapper:not(:last-child) {
+  width: 84px;
+}
+
+.progress-label-wrapper:last-child {
+  width: 24px; /* Just the circle width for last label */
+}
+
+.step-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: #6B7280;
+  text-align: center;
+  line-height: 1.3;
+  max-width: 70px;
+  word-wrap: break-word;
 }
 
 /* Status Box */
@@ -1037,24 +1066,28 @@
     width: 100%;
   }
 
+  /* Progress tracker responsive */
   .step-label {
     font-size: 8px;
-    max-width: 45px;
+    max-width: 50px;
   }
 
   .progress-line {
-    min-width: 10px;
-    max-width: 30px;
+    width: 35px;
+    height: 5px;
   }
 
   .step-circle {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
   }
 
-  .progress-line {
-    margin-top: 6px;
-    height: 2px;
+  .progress-label-wrapper:not(:last-child) {
+    width: 53px; /* 18px circle + 35px connector */
+  }
+
+  .progress-label-wrapper:last-child {
+    width: 18px;
   }
 }
 
