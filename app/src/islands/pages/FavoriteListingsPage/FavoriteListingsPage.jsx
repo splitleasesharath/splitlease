@@ -12,7 +12,7 @@ import ContactHostMessaging from '../../shared/ContactHostMessaging.jsx';
 import InformationalText from '../../shared/InformationalText.jsx';
 import LoggedInAvatar from '../../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import FavoriteButton from '../../shared/FavoriteButton/FavoriteButton.jsx';
-import CreateProposalFlowV2 from '../../shared/CreateProposalFlowV2.jsx';
+import CreateProposalFlowV2, { clearProposalDraft } from '../../shared/CreateProposalFlowV2.jsx';
 import ProposalSuccessModal from '../../modals/ProposalSuccessModal.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import EmptyState from './components/EmptyState';
@@ -1013,6 +1013,9 @@ const FavoriteListingsPage = () => {
 
       console.log('✅ Proposal submitted successfully:', data);
       console.log('   Proposal ID:', data.data?.proposalId);
+
+      // Clear the localStorage draft on successful submission
+      clearProposalDraft(proposalData.listingId);
 
       setIsProposalModalOpen(false);
       setPendingProposalData(null);
