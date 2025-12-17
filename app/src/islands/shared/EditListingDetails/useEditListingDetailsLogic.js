@@ -167,7 +167,32 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
   const handleSave = useCallback(async () => {
     setIsLoading(true);
     try {
-      const updatedListing = await updateListing(listing._id, formData);
+      // Only send fields that have actually changed to avoid FK constraint issues
+      // when unchanged FK fields contain null or invalid values
+      const changedFields = {};
+      for (const [key, value] of Object.entries(formData)) {
+        // Compare with original listing value - only include if different
+        const originalValue = listing[key];
+
+        // Handle array comparison (for amenities, rules, photos, etc.)
+        if (Array.isArray(value) && Array.isArray(originalValue)) {
+          if (JSON.stringify(value) !== JSON.stringify(originalValue)) {
+            changedFields[key] = value;
+          }
+        } else if (value !== originalValue) {
+          changedFields[key] = value;
+        }
+      }
+
+      // If no changes, just close
+      if (Object.keys(changedFields).length === 0) {
+        showToast('No changes to save');
+        setTimeout(onClose, 500);
+        return;
+      }
+
+      console.log('📝 Saving only changed fields:', Object.keys(changedFields));
+      const updatedListing = await updateListing(listing._id, changedFields);
       showToast('Your changes have been saved');
       onSave(updatedListing);
       setTimeout(onClose, 1000);

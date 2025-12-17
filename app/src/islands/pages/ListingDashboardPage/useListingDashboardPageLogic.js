@@ -726,6 +726,11 @@ export default function useListingDashboardPageLogic() {
 
     if (updateError) {
       console.error('❌ Error updating listing:', updateError);
+      console.error('❌ Error code:', updateError.code);
+      console.error('❌ Error message:', updateError.message);
+      console.error('❌ Error details:', updateError.details);
+      console.error('❌ Error hint:', updateError.hint);
+      console.error('❌ Full error object:', JSON.stringify(updateError, null, 2));
       throw updateError;
     }
 
