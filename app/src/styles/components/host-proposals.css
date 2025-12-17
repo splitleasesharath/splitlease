@@ -792,7 +792,8 @@
   align-items: stretch; /* Full width */
   gap: 12px;
   width: 100%;
-  padding: 0 var(--spacing-sm);
+  /* Add horizontal padding to prevent label overflow on edges */
+  padding: 0 50px;
 }
 
 /* Container for the dots and lines (horizontal) - fills available width */
@@ -1080,6 +1081,10 @@
   }
 
   /* Progress tracker responsive */
+  .progress-tracker {
+    padding: 0 40px;
+  }
+
   .step-label {
     font-size: 9px;
   }
