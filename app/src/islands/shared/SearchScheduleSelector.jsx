@@ -157,15 +157,16 @@ const InfoText = styled.p`
 
 /**
  * Days of the week constant - Starting with Sunday (S, M, T, W, T, F, S)
+ * Uses 0-based indexing matching JavaScript Date.getDay()
  */
 const DAYS_OF_WEEK = [
-  { id: '1', singleLetter: 'S', fullName: 'Sunday', index: 0 },
-  { id: '2', singleLetter: 'M', fullName: 'Monday', index: 1 },
-  { id: '3', singleLetter: 'T', fullName: 'Tuesday', index: 2 },
-  { id: '4', singleLetter: 'W', fullName: 'Wednesday', index: 3 },
-  { id: '5', singleLetter: 'T', fullName: 'Thursday', index: 4 },
-  { id: '6', singleLetter: 'F', fullName: 'Friday', index: 5 },
-  { id: '7', singleLetter: 'S', fullName: 'Saturday', index: 6 },
+  { id: '0', singleLetter: 'S', fullName: 'Sunday', index: 0 },
+  { id: '1', singleLetter: 'M', fullName: 'Monday', index: 1 },
+  { id: '2', singleLetter: 'T', fullName: 'Tuesday', index: 2 },
+  { id: '3', singleLetter: 'W', fullName: 'Wednesday', index: 3 },
+  { id: '4', singleLetter: 'T', fullName: 'Thursday', index: 4 },
+  { id: '5', singleLetter: 'F', fullName: 'Friday', index: 5 },
+  { id: '6', singleLetter: 'S', fullName: 'Saturday', index: 6 },
 ];
 
 // ============================================================================
@@ -174,7 +175,7 @@ const DAYS_OF_WEEK = [
 
 /**
  * Get initial selection from URL parameter or default to Monday-Friday
- * URL parameter format: ?days-selected=2,3,4,5,6 (1-based, where 1=Sunday)
+ * URL parameter format: ?days-selected=1,2,3,4,5 (0-based, where 0=Sunday)
  * Internal format: [1,2,3,4,5] (0-based, where 0=Sunday)
  */
 const getInitialSelectionFromUrl = () => {
@@ -184,19 +185,16 @@ const getInitialSelectionFromUrl = () => {
 
   if (daysParam) {
     try {
-      // Parse 1-based indices from URL and convert to 0-based
-      const oneBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
-      const zeroBased = oneBased
-        .filter(d => d >= 1 && d <= 7) // Validate 1-based range
-        .map(d => d - 1); // Convert to 0-based (1→0, 2→1, etc.)
+      // Parse 0-based indices from URL directly
+      const dayIndices = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+      const validDays = dayIndices.filter(d => d >= 0 && d <= 6); // Validate 0-based range
 
-      if (zeroBased.length > 0) {
+      if (validDays.length > 0) {
         console.log('📅 SearchScheduleSelector: Loaded selection from URL:', {
           urlParam: daysParam,
-          oneBased,
-          zeroBased
+          dayIndices: validDays
         });
-        return zeroBased;
+        return validDays;
       }
     } catch (e) {
       console.warn('⚠️ Failed to parse days-selected URL parameter:', e);
@@ -564,7 +562,7 @@ export default function SearchScheduleSelector({
 
   /**
    * Update URL parameter when selection changes
-   * Format: ?days-selected=2,3,4,5,6 (1-based, where 1=Sunday)
+   * Format: ?days-selected=1,2,3,4,5 (0-based, where 0=Sunday)
    * Only updates URL if updateUrl prop is true
    */
   useEffect(() => {
@@ -576,9 +574,8 @@ export default function SearchScheduleSelector({
     const selectedDaysArray = Array.from(selectedDays).sort((a, b) => a - b);
 
     if (selectedDaysArray.length > 0) {
-      // Convert 0-based indices to 1-based for URL (0→1, 1→2, etc.)
-      const oneBased = selectedDaysArray.map(idx => idx + 1);
-      const daysParam = oneBased.join(',');
+      // Use 0-based indices directly in URL
+      const daysParam = selectedDaysArray.join(',');
 
       // Update URL without reloading the page
       const url = new URL(window.location);
@@ -586,8 +583,7 @@ export default function SearchScheduleSelector({
       window.history.replaceState({}, '', url);
 
       console.log('📅 SearchScheduleSelector: Updated URL parameter:', {
-        zeroBased: selectedDaysArray,
-        oneBased,
+        dayIndices: selectedDaysArray,
         urlParam: daysParam
       });
     } else {

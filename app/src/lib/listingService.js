@@ -945,26 +945,28 @@ export async function saveDraft(formData, existingId = null) {
 // ============================================================================
 
 /**
- * Map available nights object to array of 1-based day numbers
- * Internal (JS) uses 0-based, Bubble uses 1-based
+ * Map available nights object to array of day numbers for database
+ *
+ * Day indices use JavaScript's 0-based standard (matching Date.getDay()):
+ * 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
  *
  * @param {object} availableNights - {sunday: bool, monday: bool, ...}
- * @returns {number[]} - Array of 1-based day numbers
+ * @returns {number[]} - Array of 0-based day numbers (0-6)
  */
 function mapAvailableNightsToArray(availableNights) {
   const dayMapping = {
-    sunday: 1,
-    monday: 2,
-    tuesday: 3,
-    wednesday: 4,
-    thursday: 5,
-    friday: 6,
-    saturday: 7,
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6,
   };
 
   const result = [];
   for (const [day, isSelected] of Object.entries(availableNights)) {
-    if (isSelected && dayMapping[day]) {
+    if (isSelected && dayMapping[day] !== undefined) {
       result.push(dayMapping[day]);
     }
   }

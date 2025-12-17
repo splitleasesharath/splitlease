@@ -167,20 +167,20 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
     photoType: photo.Type || 'Other',
   }));
 
-  // Parse available days (1-7 Bubble format to 0-6 JS format)
+  // Parse available days (database now stores 0-6 JS format natively)
   const availableDays = safeParseJsonArray(dbListing['Days Available (List of Days)']).map(day => {
-    // Bubble uses 1-7, JS uses 0-6
+    // Database uses 0-6 (JS standard: 0=Sunday through 6=Saturday)
     const numDay = typeof day === 'number' ? day : parseInt(day, 10);
-    return numDay - 1; // Convert to 0-indexed
+    return numDay; // Already 0-indexed
   });
 
-  // Convert Bubble day numbers to night IDs for HostScheduleSelector
-  // Bubble uses 1=Sunday, 2=Monday... 7=Saturday
+  // Convert day indices to night IDs for HostScheduleSelector
+  // Database now uses 0=Sunday, 1=Monday... 6=Saturday (JS standard)
   const NIGHT_IDS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const nightsAvailable = safeParseJsonArray(dbListing['Days Available (List of Days)']).map(day => {
     const numDay = typeof day === 'number' ? day : parseInt(day, 10);
-    // Bubble uses 1-7, night IDs use 0-indexed array
-    return NIGHT_IDS[numDay - 1];
+    // Day indices use 0-indexed array directly
+    return NIGHT_IDS[numDay];
   }).filter(Boolean);
 
   return {
