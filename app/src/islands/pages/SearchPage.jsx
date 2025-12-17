@@ -664,7 +664,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
           <div className="listing-meta">
             <span className="meta-item"><strong>{listing.type || 'Entire Place'}</strong></span>
             <span className="meta-item"><strong>{listing.maxGuests}</strong> guests</span>
-            <span className="meta-item"><strong>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`}</strong></span>
+            <span className="meta-item"><strong>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bedroom${listing.bedrooms > 1 ? 's' : ''}`}</strong></span>
             <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
           </div>
 
