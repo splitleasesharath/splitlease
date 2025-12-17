@@ -151,10 +151,11 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
         <div className="detail-row compensation">
           <span className="compensation-label">Your Compensation</span>
           <span className="compensation-value">
-            {counterOfferHappened && (
-              <span className="original-price">${formatCurrency(hostCompensation * reservationSpanWeeks * 7)}</span>
+            {totalCompensation > 0 ? (
+              <strong>${formatCurrency(totalCompensation)}</strong>
+            ) : (
+              <span className="compensation-error">Contact Split Lease</span>
             )}
-            <strong>${formatCurrency(totalCompensation)}</strong>
           </span>
         </div>
       </div>

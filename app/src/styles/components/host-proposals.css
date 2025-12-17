@@ -373,11 +373,10 @@
   color: var(--primary-purple);
 }
 
-.compensation-value .original-price {
-  text-decoration: line-through;
-  color: var(--text-light-gray);
+.compensation-value .compensation-error {
   font-size: var(--text-sm);
-  font-weight: 400;
+  color: var(--error-red, #dc2626);
+  font-style: italic;
 }
 
 /* ========================================
