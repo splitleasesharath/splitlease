@@ -303,7 +303,7 @@ export const Section2Features: React.FC<Section2Props> = ({
               type="button"
               className="btn-link"
               onClick={loadTemplate}
-              disabled={isLoadingDescription}
+              disabled={isLoadingDescription || isLoadingNeighborhood}
             >
               {isLoadingDescription ? 'generating...' : 'load template'}
             </button>
@@ -331,7 +331,7 @@ export const Section2Features: React.FC<Section2Props> = ({
               type="button"
               className="btn-link"
               onClick={loadNeighborhoodTemplate}
-              disabled={isLoadingNeighborhood}
+              disabled={isLoadingNeighborhood || isLoadingDescription}
             >
               {isLoadingNeighborhood ? 'loading/generating...' : 'load template'}
             </button>
