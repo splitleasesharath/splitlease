@@ -11,7 +11,7 @@ import FavoriteButton from '../shared/FavoriteButton';
 import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import { isGuest } from '../../logic/rules/users/isGuest.js';
 import { supabase } from '../../lib/supabase.js';
-import { fetchProposalsByGuest } from '../../lib/proposalDataFetcher.js';
+import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
@@ -21,6 +21,7 @@ import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJson
 import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
+import { shiftMoveInDateIfPast } from '../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 
@@ -947,6 +948,8 @@ export default function SearchPage() {
   // Proposal flow state
   const [zatConfig, setZatConfig] = useState(null);
   const [loggedInUserData, setLoggedInUserData] = useState(null);
+  const [lastProposalDefaults, setLastProposalDefaults] = useState(null);
+  const [reservationSpanForProposal, setReservationSpanForProposal] = useState(13);
   const [pendingProposalData, setPendingProposalData] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successProposalId, setSuccessProposalId] = useState(null);
@@ -1079,6 +1082,13 @@ export default function SearchPage() {
                   specialNeeds: userRecord['special needs'] || '',
                   proposalCount: proposalCount
                 });
+
+                // Fetch last proposal defaults for pre-population
+                const proposalDefaults = await fetchLastProposalDefaults(userId);
+                if (proposalDefaults) {
+                  setLastProposalDefaults(proposalDefaults);
+                  console.log('[SearchPage] Loaded last proposal defaults:', proposalDefaults);
+                }
 
                 // Fetch user's proposals to check if any exist for specific listings
                 const userIsGuest = isGuest({ userType: userData.userType });
@@ -2042,9 +2052,18 @@ export default function SearchPage() {
     twoWeeksFromNow.setDate(today.getDate() + 14);
     const minMoveInDate = twoWeeksFromNow.toISOString().split('T')[0];
 
-    // Calculate smart default move-in date using shared calculator
+    // Determine move-in date: prefer last proposal's date (shifted if needed), fallback to smart calculation
     let smartMoveInDate = minMoveInDate;
-    if (initialDays.length > 0) {
+
+    if (lastProposalDefaults?.moveInDate) {
+      // Use previous proposal's move-in date, shifted forward if necessary
+      smartMoveInDate = shiftMoveInDateIfPast({
+        previousMoveInDate: lastProposalDefaults.moveInDate,
+        minDate: minMoveInDate
+      }) || minMoveInDate;
+      console.log('[SearchPage] Pre-filling move-in from last proposal:', lastProposalDefaults.moveInDate, '->', smartMoveInDate);
+    } else if (initialDays.length > 0) {
+      // Fallback: calculate based on selected days
       try {
         const selectedDayIndices = initialDays.map(d => d.dayOfWeek);
         smartMoveInDate = calculateNextAvailableCheckIn({
@@ -2057,9 +2076,13 @@ export default function SearchPage() {
       }
     }
 
+    // Determine reservation span: prefer last proposal's span, fallback to default
+    const prefillReservationSpan = lastProposalDefaults?.reservationSpanWeeks || 13;
+
     setSelectedListingForProposal(listing);
     setSelectedDayObjectsForProposal(initialDays);
     setMoveInDateForProposal(smartMoveInDate);
+    setReservationSpanForProposal(prefillReservationSpan);
     setIsCreateProposalModalOpen(true);
   };
 
@@ -2764,7 +2787,7 @@ export default function SearchPage() {
           moveInDate={moveInDateForProposal}
           daysSelected={selectedDayObjectsForProposal}
           nightsSelected={selectedDayObjectsForProposal.length > 0 ? selectedDayObjectsForProposal.length - 1 : 0}
-          reservationSpan={13}
+          reservationSpan={reservationSpanForProposal}
           pricingBreakdown={null}
           zatConfig={zatConfig}
           isFirstProposal={!loggedInUserData || loggedInUserData.proposalCount === 0}

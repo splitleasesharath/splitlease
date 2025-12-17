@@ -18,7 +18,7 @@ import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import EmptyState from './components/EmptyState';
 import { getFavoritedListingIds, removeFromFavorites } from './favoritesApi';
 import { checkAuthStatus, getSessionId, validateTokenAndFetchUser, getUserId, logoutUser } from '../../../lib/auth';
-import { fetchProposalsByGuest } from '../../../lib/proposalDataFetcher.js';
+import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../../lib/listingDataFetcher.js';
 import { supabase } from '../../../lib/supabase.js';
 import { getNeighborhoodName, getBoroughName, getPropertyTypeLabel, initializeLookups, isInitialized } from '../../../lib/dataLookups.js';
@@ -26,6 +26,7 @@ import { fetchPhotoUrls, extractPhotos, fetchHostData, parseAmenities } from '..
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import { createDay } from '../../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
+import { shiftMoveInDateIfPast } from '../../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
 import './FavoriteListingsPage.css';
 import '../../../styles/create-proposal-flow-v2.css';
 
@@ -465,6 +466,7 @@ const FavoriteListingsPage = () => {
   const [priceBreakdown, setPriceBreakdown] = useState(null);
   const [pendingProposalData, setPendingProposalData] = useState(null);
   const [loggedInUserData, setLoggedInUserData] = useState(null);
+  const [lastProposalDefaults, setLastProposalDefaults] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successProposalId, setSuccessProposalId] = useState(null);
   const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
@@ -686,6 +688,13 @@ const FavoriteListingsPage = () => {
                 specialNeeds: profileResult.data['special needs'] || '',
                 proposalCount: proposalCount
               });
+
+              // Fetch last proposal defaults for pre-population
+              const proposalDefaults = await fetchLastProposalDefaults(sessionId);
+              if (proposalDefaults) {
+                setLastProposalDefaults(proposalDefaults);
+                console.log('[FavoriteListingsPage] Loaded last proposal defaults:', proposalDefaults);
+              }
             }
           } catch (e) {
             console.warn('Failed to fetch user proposal data:', e);
@@ -906,9 +915,18 @@ const FavoriteListingsPage = () => {
     twoWeeksFromNow.setDate(today.getDate() + 14);
     const minMoveInDate = twoWeeksFromNow.toISOString().split('T')[0];
 
-    // Calculate smart default move-in date using shared calculator
+    // Determine move-in date: prefer last proposal's date (shifted if needed), fallback to smart calculation
     let smartMoveInDate = minMoveInDate;
-    if (initialDays.length > 0) {
+
+    if (lastProposalDefaults?.moveInDate) {
+      // Use previous proposal's move-in date, shifted forward if necessary
+      smartMoveInDate = shiftMoveInDateIfPast({
+        previousMoveInDate: lastProposalDefaults.moveInDate,
+        minDate: minMoveInDate
+      }) || minMoveInDate;
+      console.log('[FavoriteListingsPage] Pre-filling move-in from last proposal:', lastProposalDefaults.moveInDate, '->', smartMoveInDate);
+    } else if (initialDays.length > 0) {
+      // Fallback: calculate based on selected days
       try {
         const selectedDayIndices = initialDays.map(d => d.dayOfWeek);
         smartMoveInDate = calculateNextAvailableCheckIn({
@@ -921,10 +939,13 @@ const FavoriteListingsPage = () => {
       }
     }
 
+    // Determine reservation span: prefer last proposal's span, fallback to default
+    const prefillReservationSpan = lastProposalDefaults?.reservationSpanWeeks || 13;
+
     setSelectedListingForProposal(listing);
     setSelectedDayObjects(initialDays);
     setMoveInDate(smartMoveInDate);
-    setReservationSpan(13);
+    setReservationSpan(prefillReservationSpan);
     setPriceBreakdown(null); // Will be calculated by ListingScheduleSelector
     setIsProposalModalOpen(true);
   };
