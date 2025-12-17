@@ -2397,7 +2397,8 @@ export default function SearchPage() {
         console.log('Schedule selector changed (display only, not used for filtering):', days);
         // No state update - schedule selection is for display purposes only
       },
-      onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error)
+      onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error),
+      weekPattern: weekPattern
     };
 
     if (mountPointDesktop) {
@@ -2415,7 +2416,7 @@ export default function SearchPage() {
     return () => {
       roots.forEach(root => root.unmount());
     };
-  }, []);
+  }, [weekPattern]);
 
   // Determine if "Create Proposal" button should be visible
   // Conditions: logged in AND is a guest AND has 1+ existing proposals

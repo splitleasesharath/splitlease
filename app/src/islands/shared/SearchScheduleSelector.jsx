@@ -151,6 +151,32 @@ const InfoText = styled.p`
   }
 `;
 
+const CheckInOutRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+`;
+
+const RepeatIcon = styled.svg`
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  color: #4B47CE;
+`;
+
+const RepeatPatternText = styled.p`
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666666;
+  text-align: center;
+
+  @media (max-width: 768px) {
+    font-size: 12px;
+  }
+`;
+
 // ============================================================================
 // CONSTANTS
 // ============================================================================
@@ -168,6 +194,21 @@ const DAYS_OF_WEEK = [
   { id: '5', singleLetter: 'F', fullName: 'Friday', index: 5 },
   { id: '6', singleLetter: 'S', fullName: 'Saturday', index: 6 },
 ];
+
+/**
+ * Get human-readable repeat pattern description
+ * @param {string} weekPattern - The week pattern key (e.g., 'every-week', 'one-on-off')
+ * @returns {string|null} The repeat description or null if every week
+ */
+const getRepeatPatternText = (weekPattern) => {
+  const patterns = {
+    'every-week': null, // No repeat text for every week
+    'one-on-off': 'Repeats 1 week on, 1 week off',
+    'two-on-off': 'Repeats 2 weeks on, 2 weeks off',
+    'one-three-off': 'Repeats 1 week on, 3 weeks off',
+  };
+  return patterns[weekPattern] || null;
+};
 
 // ============================================================================
 // COMPONENT
@@ -219,6 +260,7 @@ const getInitialSelectionFromUrl = () => {
  * @param {number} [props.minDays=2] - Minimum number of days that can be selected
  * @param {boolean} [props.requireContiguous=true] - Whether to require contiguous day selection
  * @param {number[]} [props.initialSelection] - Initial selected days (array of day indices 0-6). If not provided, reads from URL or defaults to Monday-Friday
+ * @param {string} [props.weekPattern='every-week'] - The weekly pattern (e.g., 'every-week', 'one-on-off', 'two-on-off', 'one-three-off')
  *
  * @example
  * ```jsx
@@ -236,6 +278,7 @@ export default function SearchScheduleSelector({
   requireContiguous = true,
   initialSelection,
   updateUrl = true,
+  weekPattern = 'every-week',
 }) {
   // Use initialSelection if provided, otherwise get from URL or use default
   const getInitialState = () => {
@@ -689,21 +732,39 @@ export default function SearchScheduleSelector({
 
       <InfoContainer>
         {selectedDays.size > 0 && (
-          <InfoText>
-            {showError ? (
-              <span style={{ color: '#d32f2f' }}>
-                {errorMessage}
-              </span>
-            ) : selectedDays.size === 7 ? (
-              <span className="day-name">Full Time</span>
-            ) : (
-              checkinDay && checkoutDay && (
-                <>
-                  <strong>Check-in:</strong> <span className="day-name">{checkinDay}</span> • <strong>Check-out:</strong> <span className="day-name">{checkoutDay}</span>
-                </>
-              )
+          <>
+            <InfoText>
+              {showError ? (
+                <span style={{ color: '#d32f2f' }}>
+                  {errorMessage}
+                </span>
+              ) : selectedDays.size === 7 ? (
+                <span className="day-name">Full Time</span>
+              ) : (
+                checkinDay && checkoutDay && (
+                  <CheckInOutRow>
+                    <RepeatIcon viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path
+                        d="M17 2L21 6M21 6L17 10M21 6H8C5.23858 6 3 8.23858 3 11M7 22L3 18M3 18L7 14M3 18H16C18.7614 18 21 15.7614 21 13"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </RepeatIcon>
+                    <span>
+                      <strong>Check-in:</strong> <span className="day-name">{checkinDay}</span> • <strong>Check-out:</strong> <span className="day-name">{checkoutDay}</span>
+                    </span>
+                  </CheckInOutRow>
+                )
+              )}
+            </InfoText>
+            {!showError && selectedDays.size < 7 && getRepeatPatternText(weekPattern) && (
+              <RepeatPatternText>
+                {getRepeatPatternText(weekPattern)}
+              </RepeatPatternText>
             )}
-          </InfoText>
+          </>
         )}
       </InfoContainer>
     </Container>
