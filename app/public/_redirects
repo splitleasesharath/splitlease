@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2025-12-17T12:12:46.731Z
+# Generated: 2025-12-17T12:16:07.723Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -84,10 +84,9 @@
 /host-success  /_internal/host-success-view.html  200
 /host-success/  /_internal/host-success-view.html  200
 
-# /self-listing
-/self-listing  /self-listing.html  200
-/self-listing/  /self-listing.html  200
-/self-listing.html  /self-listing.html  200
+# /self-listing → self-listing.html
+/self-listing  /_internal/self-listing.html  200
+/self-listing/  /_internal/self-listing.html  200
 
 # /self-listing-v2 → self-listing-v2.html
 /self-listing-v2  /_internal/self-listing-v2-view.html  200
@@ -105,10 +104,9 @@
 /favorite-listings  /_internal/favorite-listings-view.html  200
 /favorite-listings/  /_internal/favorite-listings-view.html  200
 
-# /rental-application
-/rental-application  /rental-application.html  200
-/rental-application/  /rental-application.html  200
-/rental-application.html  /rental-application.html  200
+# /rental-application → rental-application.html
+/rental-application  /_internal/rental-application.html  200
+/rental-application/  /_internal/rental-application.html  200
 
 # /reset-password → reset-password.html
 /reset-password  /_internal/reset-password-view.html  200
