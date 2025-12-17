@@ -35,8 +35,10 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
  * Convert a day value to a day name
  * Handles multiple formats:
  * - String day names: "Monday", "Friday", etc. (returned as-is)
- * - Numeric strings from Supabase: "2", "6" (Bubble 1-indexed, where 1=Sunday, 2=Monday, etc.)
- * - Numeric values: 2, 6 (Bubble 1-indexed)
+ * - Numeric strings from Supabase: "0", "3" (0-indexed, where 0=Sunday, 1=Monday, etc.)
+ * - Numeric values: 0, 3 (0-indexed)
+ *
+ * Note: Database now stores 0-indexed days natively (0=Sunday through 6=Saturday)
  *
  * @param {string|number} dayValue - The day value to convert
  * @returns {string} The day name or empty string if invalid
@@ -44,20 +46,20 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 function convertDayValueToName(dayValue) {
   if (dayValue === null || dayValue === undefined) return '';
 
-  // If it's a number, convert from Bubble 1-indexed to day name
+  // If it's a number, convert from 0-indexed to day name
   if (typeof dayValue === 'number') {
-    return DAY_NAMES[dayValue - 1] || '';
+    return DAY_NAMES[dayValue] || '';
   }
 
   // If it's a string, check if it's a numeric string or a day name
   if (typeof dayValue === 'string') {
     const trimmed = dayValue.trim();
 
-    // Check if it's a numeric string (e.g., "2", "6")
+    // Check if it's a numeric string (e.g., "0", "3")
     const numericValue = parseInt(trimmed, 10);
     if (!isNaN(numericValue) && String(numericValue) === trimmed) {
-      // It's a numeric string, convert from Bubble 1-indexed to day name
-      return DAY_NAMES[numericValue - 1] || '';
+      // It's a numeric string, convert from 0-indexed to day name
+      return DAY_NAMES[numericValue] || '';
     }
 
     // It's already a day name string (e.g., "Monday")
@@ -71,6 +73,8 @@ function convertDayValueToName(dayValue) {
  * Get check-in and check-out range from Days Selected
  * Days Selected contains all days the guest is present (check-in through check-out)
  * First day = check-in day, Last day = check-out day
+ *
+ * Note: Database now stores 0-indexed days natively (0=Sunday through 6=Saturday)
  *
  * @param {Object} proposal - Proposal object
  * @returns {string|null} "Friday to Sunday" format or null if unavailable
@@ -89,21 +93,21 @@ function getCheckInOutRange(proposal) {
   }
 
   if (Array.isArray(daysSelected) && daysSelected.length > 0) {
-    // Convert to day indices for sorting
+    // Convert to day indices for sorting (0-indexed: 0=Sunday through 6=Saturday)
     const dayIndices = daysSelected.map(day => {
       if (typeof day === 'number') return day;
       if (typeof day === 'string') {
         const trimmed = day.trim();
         const numericValue = parseInt(trimmed, 10);
         if (!isNaN(numericValue) && String(numericValue) === trimmed) {
-          return numericValue; // Bubble 1-indexed
+          return numericValue; // 0-indexed
         }
-        // It's a day name - find its Bubble index
+        // It's a day name - find its 0-indexed position
         const jsIndex = DAY_NAMES.indexOf(trimmed);
-        return jsIndex >= 0 ? jsIndex + 1 : -1; // Convert to Bubble 1-indexed
+        return jsIndex >= 0 ? jsIndex : -1;
       }
       return -1;
-    }).filter(idx => idx >= 1 && idx <= 7);
+    }).filter(idx => idx >= 0 && idx <= 6);
 
     if (dayIndices.length > 0) {
       // Sort to find first and last day
@@ -111,8 +115,8 @@ function getCheckInOutRange(proposal) {
       const firstDayIndex = dayIndices[0];
       const lastDayIndex = dayIndices[dayIndices.length - 1];
 
-      const checkInName = DAY_NAMES[firstDayIndex - 1]; // Convert from Bubble to JS index
-      const checkOutName = DAY_NAMES[lastDayIndex - 1];
+      const checkInName = DAY_NAMES[firstDayIndex]; // 0-indexed direct lookup
+      const checkOutName = DAY_NAMES[lastDayIndex];
 
       if (checkInName && checkOutName) {
         return `${checkInName} to ${checkOutName}`;
@@ -136,7 +140,8 @@ function getCheckInOutRange(proposal) {
 
 /**
  * Get all days with selection status
- * Handles both text day names (from Supabase) and numeric indices (legacy Bubble format)
+ * Handles both text day names (from Supabase) and numeric indices (0-indexed format)
+ * Note: Database now stores 0-indexed days natively (0=Sunday through 6=Saturday)
  */
 function getAllDaysWithSelection(daysSelected) {
   const days = daysSelected || [];
@@ -153,12 +158,12 @@ function getAllDaysWithSelection(daysSelected) {
       selected: selectedSet.has(DAY_NAMES[index])
     }));
   } else {
-    // Numeric format: Bubble 1-indexed [2, 3, 4, 5, 6] for Mon-Fri
+    // Numeric format: 0-indexed [0, 3, 4, 5, 6] for Sun, Wed-Sat
     const selectedSet = new Set(days);
     return DAY_LETTERS.map((letter, index) => ({
       index,
       letter,
-      selected: selectedSet.has(index + 1) // Convert to Bubble 1-indexed
+      selected: selectedSet.has(index) // 0-indexed (0=Sunday, 6=Saturday)
     }));
   }
 }
