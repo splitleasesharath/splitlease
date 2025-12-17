@@ -82,6 +82,46 @@ function getInitialScheduleFromUrl() {
 }
 
 /**
+ * Get initial reservation span from URL parameter
+ * URL format: ?reservation-span=13 (weeks)
+ * Returns: Number or null if not provided/invalid
+ */
+function getInitialReservationSpanFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const spanParam = urlParams.get('reservation-span');
+
+  if (!spanParam) return null;
+
+  const parsed = parseInt(spanParam, 10);
+  if (!isNaN(parsed) && parsed > 0) {
+    console.log('📅 ViewSplitLeasePage: Loaded reservation span from URL:', parsed);
+    return parsed;
+  }
+
+  return null;
+}
+
+/**
+ * Get initial move-in date from URL parameter
+ * URL format: ?move-in=2025-02-15 (YYYY-MM-DD)
+ * Returns: String (YYYY-MM-DD) or null if not provided/invalid
+ */
+function getInitialMoveInFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const moveInParam = urlParams.get('move-in');
+
+  if (!moveInParam) return null;
+
+  // Basic validation: YYYY-MM-DD format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(moveInParam)) {
+    console.log('📅 ViewSplitLeasePage: Loaded move-in date from URL:', moveInParam);
+    return moveInParam;
+  }
+
+  return null;
+}
+
+/**
  * Fetch informational texts from Supabase
  */
 async function fetchInformationalTexts() {
@@ -656,11 +696,11 @@ export default function ViewSplitLeasePage() {
   const [zatConfig, setZatConfig] = useState(null);
   const [informationalTexts, setInformationalTexts] = useState({});
 
-  // Booking widget state
-  const [moveInDate, setMoveInDate] = useState(null);
+  // Booking widget state - initialize from URL parameters if available
+  const [moveInDate, setMoveInDate] = useState(() => getInitialMoveInFromUrl());
   const [strictMode, setStrictMode] = useState(false);
   const [selectedDayObjects, setSelectedDayObjects] = useState(() => getInitialScheduleFromUrl()); // Day objects from URL param or empty
-  const [reservationSpan, setReservationSpan] = useState(13); // 13 weeks default
+  const [reservationSpan, setReservationSpan] = useState(() => getInitialReservationSpanFromUrl() || 13); // URL value or 13 weeks default
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [priceBreakdown, setPriceBreakdown] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -724,14 +764,30 @@ export default function ViewSplitLeasePage() {
   }, [minMoveInDate]);
 
   // Set initial move-in date if days were loaded from URL
+  // Also validate URL-provided move-in date is not before minimum (2 weeks from today)
   useEffect(() => {
-    if (selectedDayObjects.length > 0 && !moveInDate) {
-      const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
-      const smartDate = calculateSmartMoveInDate(dayNumbers);
-      setMoveInDate(smartDate);
-      console.log('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
+    if (selectedDayObjects.length > 0) {
+      // If move-in date was provided via URL, validate it's not before minimum
+      if (moveInDate) {
+        const providedDate = new Date(moveInDate);
+        const minDate = new Date(minMoveInDate);
+
+        if (providedDate < minDate) {
+          // URL date is in the past, use smart calculation instead
+          const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
+          const smartDate = calculateSmartMoveInDate(dayNumbers);
+          setMoveInDate(smartDate);
+          console.log('📅 ViewSplitLeasePage: URL move-in date was before minimum, using smart date:', smartDate);
+        }
+      } else {
+        // No URL date provided, calculate smart default
+        const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
+        const smartDate = calculateSmartMoveInDate(dayNumbers);
+        setMoveInDate(smartDate);
+        console.log('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
+      }
     }
-  }, [selectedDayObjects, moveInDate, calculateSmartMoveInDate]);
+  }, []); // Run only once on mount - empty deps to prevent recalculation on state changes
 
   // UI state
   const [showTutorialModal, setShowTutorialModal] = useState(false);

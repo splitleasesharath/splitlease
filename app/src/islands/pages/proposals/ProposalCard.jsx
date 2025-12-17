@@ -20,7 +20,7 @@ import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers
 import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
 import { shouldHideVirtualMeetingButton } from '../../../lib/proposals/statusButtonConfig.js';
 import { navigateToMessaging } from '../../../logic/workflows/proposals/navigationWorkflow.js';
-import { goToRentalApplication } from '../../../lib/navigation.js';
+import { goToRentalApplication, getListingUrlWithProposalContext } from '../../../lib/navigation.js';
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
@@ -168,6 +168,59 @@ function getAllDaysWithSelection(daysSelected) {
       selected: selectedSet.has(index) // 0-indexed (0=Sunday, 6=Saturday)
     }));
   }
+}
+
+/**
+ * Parse days selected from proposal for URL context
+ * Handles both array and JSON string formats
+ * Returns 0-indexed day numbers (0=Sunday through 6=Saturday)
+ *
+ * @param {Object} proposal - Proposal object
+ * @returns {number[]} Array of 0-indexed day numbers
+ */
+function parseDaysSelectedForContext(proposal) {
+  let days = proposal['Days Selected'] || proposal.hcDaysSelected || [];
+
+  // Parse if JSON string
+  if (typeof days === 'string') {
+    try {
+      days = JSON.parse(days);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  if (!Array.isArray(days) || days.length === 0) return [];
+
+  // Convert to numbers if needed (days stored as 0-indexed)
+  return days.map(d => {
+    if (typeof d === 'number') return d;
+    if (typeof d === 'string') {
+      const trimmed = d.trim();
+      const numericValue = parseInt(trimmed, 10);
+      // Check if it's a numeric string
+      if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+        return numericValue;
+      }
+      // It's a day name - find its 0-indexed position
+      const dayIndex = DAY_NAMES.indexOf(trimmed);
+      return dayIndex >= 0 ? dayIndex : -1;
+    }
+    return -1;
+  }).filter(d => d >= 0 && d <= 6);
+}
+
+/**
+ * Get effective reservation span, accounting for counteroffers
+ *
+ * @param {Object} proposal - Proposal object
+ * @returns {number|null} Reservation span in weeks or null if not available
+ */
+function getEffectiveReservationSpan(proposal) {
+  const isCounteroffer = proposal['counter offer happened'];
+  return isCounteroffer
+    ? proposal['hc reservation span (weeks)']
+    : proposal['Reservation Span (Weeks)'];
 }
 
 // ============================================================================
@@ -942,7 +995,11 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
             {/* Action buttons row */}
             <div className="listing-actions-row">
               <a
-                href={`/view-split-lease/${listing?._id}`}
+                href={getListingUrlWithProposalContext(listing?._id, {
+                  daysSelected: parseDaysSelectedForContext(proposal),
+                  reservationSpan: getEffectiveReservationSpan(proposal),
+                  moveInDate: proposal['Move in range start']
+                })}
                 className="btn-action btn-primary-v2"
                 target="_blank"
                 rel="noopener noreferrer"
