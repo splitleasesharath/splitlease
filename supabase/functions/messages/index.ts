@@ -3,11 +3,11 @@
  * Split Lease - Edge Function
  *
  * Routes client requests to appropriate messaging handlers
- * All actions require authentication via Supabase Auth
  *
  * Supported Actions:
- * - send_message: Send a message in a thread
- * - get_messages: Get messages for a specific thread
+ * - send_message: Send a message in a thread (requires auth)
+ * - get_messages: Get messages for a specific thread (requires auth)
+ * - send_guest_inquiry: Contact host without auth (name/email required)
  *
  * NOTE: get_threads was removed - frontend now queries Supabase directly
  */
@@ -22,11 +22,16 @@ import { createErrorCollector, ErrorCollector } from '../_shared/slack.ts';
 // Import handlers
 import { handleSendMessage } from './handlers/sendMessage.ts';
 import { handleGetMessages } from './handlers/getMessages.ts';
+import { handleSendGuestInquiry } from './handlers/sendGuestInquiry.ts';
 
 console.log('[messages] Edge Function started');
 
-// All actions require authentication
-const allowedActions = ['send_message', 'get_messages'];
+// Actions that require authentication
+const authRequiredActions = ['send_message', 'get_messages'];
+// Actions that don't require authentication
+const noAuthActions = ['send_guest_inquiry'];
+// All allowed actions
+const allowedActions = [...authRequiredActions, ...noAuthActions];
 
 interface MessagesRequest {
   action: string;
@@ -80,48 +85,58 @@ Deno.serve(async (req) => {
       throw new Error('Supabase configuration missing');
     }
 
-    // All actions require authentication
-    const authHeader = req.headers.get('Authorization');
-    let user = null;
-
-    if (!authHeader) {
-      throw new AuthenticationError('Authorization header required');
-    }
-
-    // Validate user authentication
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader } },
-      auth: { persistSession: false },
-    });
-
-    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !authUser) {
-      console.error('[messages] Auth error:', authError?.message);
-      throw new AuthenticationError('Invalid or expired authentication token');
-    }
-
-    user = authUser;
-    console.log(`[messages] Authenticated user: ${user.email} (${user.id})`);
-
-    // Set user context for error reporting
-    collector.setContext({ userId: user.id });
-
     // Create admin client for database operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false },
     });
+
+    // Check if this action requires authentication
+    const requiresAuth = authRequiredActions.includes(action);
+    let user = null;
+
+    if (requiresAuth) {
+      const authHeader = req.headers.get('Authorization');
+
+      if (!authHeader) {
+        throw new AuthenticationError('Authorization header required');
+      }
+
+      // Validate user authentication
+      const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: authHeader } },
+        auth: { persistSession: false },
+      });
+
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+
+      if (authError || !authUser) {
+        console.error('[messages] Auth error:', authError?.message);
+        throw new AuthenticationError('Invalid or expired authentication token');
+      }
+
+      user = authUser;
+      console.log(`[messages] Authenticated user: ${user.email} (${user.id})`);
+
+      // Set user context for error reporting
+      collector.setContext({ userId: user.id });
+    } else {
+      console.log(`[messages] No-auth action: ${action}`);
+    }
 
     // Route to appropriate handler
     let result;
 
     switch (action) {
       case 'send_message':
-        result = await handleSendMessage(supabaseAdmin, payload, user);
+        result = await handleSendMessage(supabaseAdmin, payload, user!);
         break;
 
       case 'get_messages':
-        result = await handleGetMessages(supabaseAdmin, payload, user);
+        result = await handleGetMessages(supabaseAdmin, payload, user!);
+        break;
+
+      case 'send_guest_inquiry':
+        result = await handleSendGuestInquiry(supabaseAdmin, payload);
         break;
 
       default:
