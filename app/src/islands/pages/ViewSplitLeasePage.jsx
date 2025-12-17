@@ -3204,6 +3204,37 @@ export default function ViewSplitLeasePage() {
                   />
                 </div>
 
+                {/* Strict Mode - placed directly after Move-in Date for visual grouping */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  marginBottom: '16px',
+                  padding: '12px',
+                  background: '#f8f9ff',
+                  borderRadius: '10px',
+                  border: '1px solid #e9d5ff'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={strictMode}
+                    onChange={() => setStrictMode(!strictMode)}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      cursor: 'pointer',
+                      accentColor: '#31135d'
+                    }}
+                  />
+                  <label style={{
+                    fontSize: '14px',
+                    color: '#111827',
+                    fontWeight: '500'
+                  }}>
+                    Strict (no negotiation on exact move in)
+                  </label>
+                </div>
+
                 {/* Weekly Schedule Selector */}
                 {scheduleSelectorListing && (
                   <div style={{
@@ -3260,37 +3291,6 @@ export default function ViewSplitLeasePage() {
                       </option>
                     ))}
                   </select>
-                </div>
-
-                {/* Strict Mode */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  marginBottom: '16px',
-                  padding: '12px',
-                  background: '#f8f9ff',
-                  borderRadius: '10px',
-                  border: '1px solid #e9d5ff'
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={strictMode}
-                    onChange={() => setStrictMode(!strictMode)}
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      cursor: 'pointer',
-                      accentColor: '#31135d'
-                    }}
-                  />
-                  <label style={{
-                    fontSize: '14px',
-                    color: '#111827',
-                    fontWeight: '500'
-                  }}>
-                    Strict (no negotiation on exact move in)
-                  </label>
                 </div>
 
                 {/* Price Breakdown */}

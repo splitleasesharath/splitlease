@@ -19,6 +19,39 @@ import { validateTokenAndFetchUser } from '../../../lib/auth.js';
 import { supabase } from '../../../lib/supabase.js';
 import { initializeLookups, getBoroughName } from '../../../lib/dataLookups.js';
 
+/**
+ * Extract borough name from address string
+ * Handles formats like "276 Belmont Ave, Brooklyn, NY 11207, USA"
+ * @param {string|object} addressField - The Location - Address field (JSONB or string)
+ * @returns {string} The borough name or empty string
+ */
+function extractBoroughFromAddress(addressField) {
+  if (!addressField) return '';
+
+  // If it's a JSONB object, get the address string
+  const addressStr = typeof addressField === 'object' ? addressField.address : addressField;
+  if (!addressStr || typeof addressStr !== 'string') return '';
+
+  // NYC boroughs to look for in the address
+  const boroughPatterns = [
+    { pattern: /,\s*Brooklyn\s*,/i, name: 'Brooklyn' },
+    { pattern: /,\s*Manhattan\s*,/i, name: 'Manhattan' },
+    { pattern: /,\s*Queens\s*,/i, name: 'Queens' },
+    { pattern: /,\s*Bronx\s*,/i, name: 'Bronx' },
+    { pattern: /,\s*Staten Island\s*,/i, name: 'Staten Island' },
+    // "New York, NY" typically means Manhattan
+    { pattern: /,\s*New York\s*,\s*NY/i, name: 'Manhattan' },
+  ];
+
+  for (const { pattern, name } of boroughPatterns) {
+    if (pattern.test(addressStr)) {
+      return name;
+    }
+  }
+
+  return '';
+}
+
 export function useHostOverviewPageLogic() {
   // ============================================================================
   // STATE
@@ -202,36 +235,43 @@ export function useHostOverviewPageLogic() {
       let rpcListings = [];
       const rpcResult = results.find(r => r?.type === 'listing_rpc');
       if (rpcResult?.data && !rpcResult.error) {
-        rpcListings = rpcResult.data.map(listing => ({
-          id: listing.id,
-          _id: listing._id,
-          name: listing.Name || 'Unnamed Listing',
-          Name: listing.Name,
-          complete: listing.Complete || false,
-          source: listing.source || 'listing',
-          location: {
-            borough: getBoroughName(listing['Location - Borough']) || '',
-            city: listing['Location - City'] || '',
-            state: listing['Location - State'] || ''
-          },
-          leasesCount: 0,
-          proposalsCount: 0,
-          photos: listing['Features - Photos'] || [],
-          // Pricing fields from RPC
-          rental_type: listing.rental_type,
-          monthly_rate: listing.monthly_rate,
-          weekly_rate: listing.weekly_rate,
-          // Individual nightly rates from RPC
-          nightly_rate_2: listing.rate_2_nights,
-          nightly_rate_3: listing.rate_3_nights,
-          nightly_rate_4: listing.rate_4_nights,
-          nightly_rate_5: listing.rate_5_nights,
-          nightly_rate_7: listing.rate_7_nights,
-          rate_5_nights: listing.rate_5_nights,
-          cleaning_fee: listing.cleaning_fee,
-          damage_deposit: listing.damage_deposit,
-          pricing_list: listing.pricing_list
-        }));
+        rpcListings = rpcResult.data.map(listing => {
+          // Try FK lookup first, fall back to extracting from address string
+          const boroughFromFK = getBoroughName(listing['Location - Borough']);
+          const boroughFromAddress = extractBoroughFromAddress(listing['Location - Address']);
+          const borough = boroughFromFK || boroughFromAddress || '';
+
+          return {
+            id: listing.id,
+            _id: listing._id,
+            name: listing.Name || 'Unnamed Listing',
+            Name: listing.Name,
+            complete: listing.Complete || false,
+            source: listing.source || 'listing',
+              location: {
+              borough,
+              city: listing['Location - City'] || '',
+              state: listing['Location - State'] || ''
+            },
+            leasesCount: 0,
+            proposalsCount: 0,
+            photos: listing['Features - Photos'] || [],
+            // Pricing fields from RPC
+            rental_type: listing.rental_type,
+            monthly_rate: listing.monthly_rate,
+            weekly_rate: listing.weekly_rate,
+            // Individual nightly rates from RPC
+            nightly_rate_2: listing.rate_2_nights,
+            nightly_rate_3: listing.rate_3_nights,
+            nightly_rate_4: listing.rate_4_nights,
+            nightly_rate_5: listing.rate_5_nights,
+            nightly_rate_7: listing.rate_7_nights,
+            rate_5_nights: listing.rate_5_nights,
+            cleaning_fee: listing.cleaning_fee,
+            damage_deposit: listing.damage_deposit,
+            pricing_list: listing.pricing_list
+          };
+        });
       }
 
       // Check if we need to fetch additional listings from user.Listings
