@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
-import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
+import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
@@ -1316,6 +1316,9 @@ export default function ViewSplitLeasePage() {
 
       console.log('✅ Proposal submitted successfully:', data);
       console.log('   Proposal ID:', data.data?.proposalId);
+
+      // Clear the localStorage draft on successful submission
+      clearProposalDraft(proposalData.listingId);
 
       // Close the create proposal modal
       setIsProposalModalOpen(false);

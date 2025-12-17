@@ -38,9 +38,9 @@ export default function PublicView({
   onListingClick
 }) {
   // Extract data from profile
-  const bio = profileData?.['About Me'] || '';
-  const needForSpace = profileData?.['Guest Account (Profile) - Need for Space'] || '';
-  const specialNeeds = profileData?.['Guest Account (Profile) - Special Needs?'] || '';
+  const bio = profileData?.['About Me / Bio'] || '';
+  const needForSpace = profileData?.['need for Space'] || '';
+  const specialNeeds = profileData?.['special needs'] || '';
   const selectedDays = dayNamesToIndices(profileData?.['Recent Days Selected'] || []);
   const transportationType = profileData?.['Transportation'] || '';
   const goodGuestReasons = profileData?.['Good Guest Reasons'] || [];

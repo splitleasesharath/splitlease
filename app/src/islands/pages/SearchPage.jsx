@@ -8,7 +8,7 @@ import AuthAwareSearchScheduleSelector from '../shared/AuthAwareSearchScheduleSe
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import FavoriteButton from '../shared/FavoriteButton';
-import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
+import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import { isGuest } from '../../logic/rules/users/isGuest.js';
 import { supabase } from '../../lib/supabase.js';
 import { fetchProposalsByGuest } from '../../lib/proposalDataFetcher.js';
@@ -2152,6 +2152,9 @@ export default function SearchPage() {
 
       console.log('[SearchPage] Proposal submitted successfully:', data);
       console.log('   Proposal ID:', data.data?.proposalId);
+
+      // Clear the localStorage draft on successful submission
+      clearProposalDraft(proposalData.listingId);
 
       // Close the create proposal modal
       setIsCreateProposalModalOpen(false);

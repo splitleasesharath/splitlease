@@ -96,12 +96,14 @@ const saveProposalDraft = (listingId, data) => {
 
 /**
  * Clear proposal draft from localStorage
+ * Exported so parent components can call this on successful submission
  * @param {string} listingId - The listing ID
  */
-const clearProposalDraft = (listingId) => {
+export const clearProposalDraft = (listingId) => {
   if (!listingId) return;
   try {
     localStorage.removeItem(`${PROPOSAL_DRAFT_KEY_PREFIX}${listingId}`);
+    console.log('🗑️ Cleared proposal draft from localStorage for listing:', listingId);
   } catch (e) {
     console.warn('Failed to clear proposal draft:', e);
   }
@@ -595,13 +597,13 @@ export default function CreateProposalFlowV2({
     // Convert day names back to day objects for submission
     const submissionData = {
       ...proposalData,
-      daysSelectedObjects: dayNamesToObjects(proposalData.daysSelected)
+      daysSelectedObjects: dayNamesToObjects(proposalData.daysSelected),
+      // Include listingId so parent can clear draft on success
+      listingId: listingId
     };
 
-    // Clear draft from localStorage on successful submission
-    clearProposalDraft(listingId);
-    console.log('🗑️ Cleared proposal draft from localStorage');
-
+    // NOTE: localStorage draft is NOT cleared here - parent must call clearProposalDraft(listingId)
+    // on successful submission. This ensures data is preserved if submission fails.
     onSubmit(submissionData);
   };
 
