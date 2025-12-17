@@ -38,12 +38,23 @@
 
 /**
  * Proposal status definitions with visual order and actions
+ *
+ * usualOrder values (from Bubble "Status - Proposal" option set):
+ *   0 = Proposal Submitted (awaiting rental app)
+ *   1 = Host Review
+ *   2 = Host Counteroffer Submitted / Awaiting Guest Review
+ *   3 = Proposal or Counteroffer Accepted / Drafting Docs
+ *   4 = Lease Documents Sent for Review
+ *   5 = Lease Documents Sent for Signatures
+ *   6 = Lease Documents Signed
+ *   7 = Initial Payment Submitted / Lease activated
+ *   -1 = Cancelled/Rejected (special states)
  */
 export const PROPOSAL_STATUSES = {
   proposal_submitted: {
     id: 'proposal_submitted',
     displayText: 'Proposal Submitted',
-    visualOrder: 1,
+    usualOrder: 0, // Awaiting rental application
     hostAction1: 'See Details',
     hostAction2: 'Request Rental App',
     guestAction1: 'View Status',
@@ -52,7 +63,7 @@ export const PROPOSAL_STATUSES = {
   host_review: {
     id: 'host_review',
     displayText: 'Host Review',
-    visualOrder: 2,
+    usualOrder: 1,
     hostAction1: 'Review / Modify',
     hostAction2: 'Accept Proposal',
     guestAction1: 'View Status',
@@ -61,7 +72,7 @@ export const PROPOSAL_STATUSES = {
   host_counteroffer: {
     id: 'host_counteroffer',
     displayText: 'Host Counteroffer Submitted',
-    visualOrder: 4,
+    usualOrder: 2,
     hostAction1: 'Remind Guest',
     hostAction2: 'See Details',
     guestAction1: 'Review Counteroffer',
@@ -69,8 +80,8 @@ export const PROPOSAL_STATUSES = {
   },
   accepted: {
     id: 'accepted',
-    displayText: 'Accepted',
-    visualOrder: 5,
+    displayText: 'Accepted / Drafting Docs',
+    usualOrder: 3,
     hostAction1: 'Remind Split Lease',
     hostAction2: 'See Details',
     guestAction1: 'View Status',
@@ -78,17 +89,26 @@ export const PROPOSAL_STATUSES = {
   },
   lease_documents_sent: {
     id: 'lease_documents_sent',
-    displayText: 'Lease Documents Sent',
-    visualOrder: 6,
+    displayText: 'Lease Documents Sent for Review',
+    usualOrder: 4,
     hostAction1: 'Review Documents',
     hostAction2: 'Verify Identity',
     guestAction1: 'Sign Documents',
     guestAction2: ''
   },
+  lease_documents_signatures: {
+    id: 'lease_documents_signatures',
+    displayText: 'Lease Documents Sent for Signatures',
+    usualOrder: 5,
+    hostAction1: 'Resend Documents',
+    hostAction2: '',
+    guestAction1: 'Sign Documents',
+    guestAction2: ''
+  },
   lease_signed: {
     id: 'lease_signed',
-    displayText: 'Lease Signed',
-    visualOrder: 7,
+    displayText: 'Lease Documents Signed',
+    usualOrder: 6,
     hostAction1: 'Resend Documents',
     hostAction2: '',
     guestAction1: 'View Documents',
@@ -96,8 +116,8 @@ export const PROPOSAL_STATUSES = {
   },
   payment_submitted: {
     id: 'payment_submitted',
-    displayText: 'Payment Submitted',
-    visualOrder: 8,
+    displayText: 'Initial Payment Submitted',
+    usualOrder: 7,
     hostAction1: 'Go to Leases',
     hostAction2: '',
     guestAction1: 'View Lease',
@@ -106,7 +126,7 @@ export const PROPOSAL_STATUSES = {
   cancelled_by_guest: {
     id: 'cancelled_by_guest',
     displayText: 'Cancelled by Guest',
-    visualOrder: 9,
+    usualOrder: -1, // Special cancelled state
     hostAction1: 'Delete Proposal',
     hostAction2: '',
     guestAction1: '',
@@ -115,7 +135,7 @@ export const PROPOSAL_STATUSES = {
   rejected_by_host: {
     id: 'rejected_by_host',
     displayText: 'Rejected by Host',
-    visualOrder: 10,
+    usualOrder: -1, // Special cancelled state
     hostAction1: 'Delete Proposal',
     hostAction2: '',
     guestAction1: '',
@@ -124,12 +144,24 @@ export const PROPOSAL_STATUSES = {
   cancelled_by_splitlease: {
     id: 'cancelled_by_splitlease',
     displayText: 'Cancelled by Split Lease',
-    visualOrder: 11,
+    usualOrder: -1, // Special cancelled state
     hostAction1: 'Delete Proposal',
     hostAction2: '',
     guestAction1: '',
     guestAction2: ''
   }
+};
+
+/**
+ * Progress bar step thresholds (usualOrder values required to complete each step)
+ * Based on Bubble "Status - Proposal" option set Usual Order values
+ */
+export const PROGRESS_THRESHOLDS = {
+  proposalSubmitted: 0,  // Always completed once proposal exists
+  rentalApp: 1,          // Completed when usualOrder >= 1 (Host Review)
+  hostReview: 3,         // Completed when usualOrder >= 3 (Accepted)
+  leaseDocs: 4,          // Completed when usualOrder >= 4 (Lease docs sent)
+  initialPayment: 7      // Completed when usualOrder >= 7 (Payment submitted)
 };
 
 /**
@@ -139,9 +171,9 @@ export const PROPOSAL_STATUSES = {
  */
 export function getStatusTagInfo(status) {
   const statusId = status?.id || status;
-  const visualOrder = status?.visualOrder || PROPOSAL_STATUSES[statusId]?.visualOrder || 0;
+  const usualOrder = status?.usualOrder ?? PROPOSAL_STATUSES[statusId]?.usualOrder ?? 0;
 
-  // Cancelled statuses
+  // Cancelled statuses (usualOrder === -1)
   if (statusId === 'cancelled_by_guest' || statusId === 'cancelled_by_splitlease' || statusId === 'rejected_by_host') {
     return {
       text: 'Cancelled!',
@@ -161,8 +193,8 @@ export function getStatusTagInfo(status) {
     };
   }
 
-  // Pending review (visual order < 3)
-  if (visualOrder < 3) {
+  // Pending review (usualOrder < 3 means not yet accepted)
+  if (usualOrder < 3) {
     return {
       text: 'Pending Review',
       backgroundColor: '#FEF3C7',
@@ -171,7 +203,7 @@ export function getStatusTagInfo(status) {
     };
   }
 
-  // Default - Accepted
+  // Default - Accepted (usualOrder >= 3)
   return {
     text: 'Accepted!',
     backgroundColor: '#D1FAE5',

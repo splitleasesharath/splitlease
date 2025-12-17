@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import DayIndicator from './DayIndicator.jsx';
-import { getStatusTagInfo, getActiveDays, PROPOSAL_STATUSES } from './types.js';
+import { getStatusTagInfo, getActiveDays, PROPOSAL_STATUSES, PROGRESS_THRESHOLDS } from './types.js';
 import { formatCurrency, formatDate, formatDateTime } from './formatters.js';
 
 /**
@@ -43,11 +43,15 @@ export default function ProposalDetailsModal({
   const statusId = status.id || status._id || status;
   const statusConfig = PROPOSAL_STATUSES[statusId] || {};
   const statusInfo = getStatusTagInfo(status);
-  const visualOrder = statusConfig.visualOrder || 0;
+  const usualOrder = statusConfig.usualOrder ?? 0;
 
   const isCancelled = ['cancelled_by_guest', 'cancelled_by_splitlease', 'rejected_by_host'].includes(statusId);
-  const isPending = visualOrder < 3;
-  const isAccepted = statusId === 'accepted';
+  const isPending = usualOrder < 3; // Not yet accepted
+  const isAccepted = usualOrder >= 3 && !isCancelled; // Accepted or beyond
+
+  // Check if rental application has been submitted (for "current" state on Host Review)
+  const rentalApplication = proposal.rentalApplication || proposal['rental application'] || proposal['Rental Application'];
+  const rentalAppSubmitted = rentalApplication?.submitted === 'yes' || rentalApplication?.submitted === true;
 
   // Get guest info
   const guest = proposal.guest || proposal.Guest || proposal['Created By'] || {};
@@ -97,18 +101,65 @@ export default function ProposalDetailsModal({
   // Get active days
   const activeDays = getActiveDays(checkInDay, checkOutDay);
 
-  // Get progress steps - ordered as: Proposal Submitted → Rental App → Host Review → Drafting Lease Docs → Initial Payment
+  /**
+   * Get progress steps based on usualOrder thresholds from Bubble's "Status - Proposal" option set
+   *
+   * Step states:
+   * - 'completed': usualOrder >= threshold (purple #31135D)
+   * - 'current': actively in progress (gray #BFBFBF) - only for Host Review when rental app submitted
+   * - 'incomplete': not yet reached (light gray #EDEAF6)
+   * - 'cancelled'/'rejected': proposal was cancelled/rejected (red #DB2E2E)
+   */
   const getProgressSteps = () => {
+    // Special case: Host Review is "current" (gray) when status is host_review AND rental app is submitted
+    const isHostReviewCurrent = statusId === 'host_review' && rentalAppSubmitted;
+
     return {
-      proposalSubmitted: true, // Step 1: Always completed (visualOrder >= 0)
-      rentalApp: visualOrder >= 1, // Step 2: Rental application submitted
-      hostReview: visualOrder >= 2, // Step 3: Host is reviewing
-      leaseDocs: visualOrder >= 6, // Step 4: Drafting lease documents
-      initialPayment: visualOrder >= 8 // Step 5: Initial payment
+      proposalSubmitted: {
+        completed: true, // Always completed once proposal exists
+        current: false
+      },
+      rentalApp: {
+        completed: usualOrder >= PROGRESS_THRESHOLDS.rentalApp, // usualOrder >= 1
+        current: false
+      },
+      hostReview: {
+        completed: usualOrder >= PROGRESS_THRESHOLDS.hostReview, // usualOrder >= 3 (Accepted)
+        current: isHostReviewCurrent // Gray when in host_review status with rental app submitted
+      },
+      leaseDocs: {
+        completed: usualOrder >= PROGRESS_THRESHOLDS.leaseDocs, // usualOrder >= 4
+        current: false
+      },
+      initialPayment: {
+        completed: usualOrder >= PROGRESS_THRESHOLDS.initialPayment, // usualOrder >= 7
+        current: false
+      }
     };
   };
 
   const progress = getProgressSteps();
+
+  /**
+   * Get CSS class for a progress step
+   * Priority: cancelled > completed > current > (default incomplete)
+   */
+  const getStepClass = (step) => {
+    if (isCancelled) return 'cancelled';
+    if (step.completed) return 'completed';
+    if (step.current) return 'current';
+    return '';
+  };
+
+  /**
+   * Get CSS class for a progress line (between two steps)
+   * Line is completed if BOTH adjacent steps are completed
+   */
+  const getLineClass = (prevStep, nextStep) => {
+    if (isCancelled) return 'cancelled';
+    if (prevStep.completed && nextStep.completed) return 'completed';
+    return '';
+  };
 
   return (
     <>
@@ -270,35 +321,35 @@ export default function ProposalDetailsModal({
                 {/* Progress Tracker - Order: Proposal Submitted → Rental App → Host Review → Drafting Lease Docs → Initial Payment */}
                 <div className="progress-tracker">
                   {/* Step 1: Proposal Submitted */}
-                  <div className={`progress-step ${progress.proposalSubmitted ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                  <div className={`progress-step ${getStepClass(progress.proposalSubmitted)}`}>
                     <div className="step-circle"></div>
                     <span className="step-label">Proposal Submitted</span>
                   </div>
-                  <div className={`progress-line ${progress.proposalSubmitted && progress.rentalApp ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}></div>
+                  <div className={`progress-line ${getLineClass(progress.proposalSubmitted, progress.rentalApp)}`}></div>
 
                   {/* Step 2: Rental Application Submitted */}
-                  <div className={`progress-step ${progress.rentalApp ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                  <div className={`progress-step ${getStepClass(progress.rentalApp)}`}>
                     <div className="step-circle"></div>
-                    <span className="step-label">{progress.rentalApp ? 'Rental App Submitted' : 'Rental Application'}</span>
+                    <span className="step-label">{progress.rentalApp.completed ? 'Rental App Submitted' : 'Rental Application'}</span>
                   </div>
-                  <div className={`progress-line ${progress.rentalApp && progress.hostReview ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}></div>
+                  <div className={`progress-line ${getLineClass(progress.rentalApp, progress.hostReview)}`}></div>
 
                   {/* Step 3: Host Review */}
-                  <div className={`progress-step ${progress.hostReview ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                  <div className={`progress-step ${getStepClass(progress.hostReview)}`}>
                     <div className="step-circle"></div>
                     <span className="step-label">Host Review</span>
                   </div>
-                  <div className={`progress-line ${progress.hostReview && progress.leaseDocs ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}></div>
+                  <div className={`progress-line ${getLineClass(progress.hostReview, progress.leaseDocs)}`}></div>
 
                   {/* Step 4: Drafting Lease Documents */}
-                  <div className={`progress-step ${progress.leaseDocs ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                  <div className={`progress-step ${getStepClass(progress.leaseDocs)}`}>
                     <div className="step-circle"></div>
-                    <span className="step-label">{progress.leaseDocs ? 'Lease Documents' : 'Drafting Lease Docs'}</span>
+                    <span className="step-label">{progress.leaseDocs.completed ? 'Lease Documents' : 'Drafting Lease Docs'}</span>
                   </div>
-                  <div className={`progress-line ${progress.leaseDocs && progress.initialPayment ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}></div>
+                  <div className={`progress-line ${getLineClass(progress.leaseDocs, progress.initialPayment)}`}></div>
 
                   {/* Step 5: Initial Payment */}
-                  <div className={`progress-step ${progress.initialPayment ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                  <div className={`progress-step ${getStepClass(progress.initialPayment)}`}>
                     <div className="step-circle"></div>
                     <span className="step-label">Initial Payment</span>
                   </div>

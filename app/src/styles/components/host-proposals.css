@@ -778,7 +778,13 @@
   gap: var(--spacing-2xl);
 }
 
-/* Progress Tracker */
+/* Progress Tracker
+ * Colors from Bubble "Status - Proposal" option set:
+ * - Default/Unfilled: #EDEAF6 (light purple/gray)
+ * - Completed/Active: #31135D (Success purple - dark purple)
+ * - Current Step: #BFBFBF (medium gray)
+ * - Cancelled/Rejected: #DB2E2E (red)
+ */
 .progress-tracker {
   display: flex;
   flex-direction: row;
@@ -800,18 +806,25 @@
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background-color: var(--border-color);
+  background-color: #EDEAF6; /* Default: light purple/gray (incomplete) */
   transition: background-color var(--transition-base);
   flex-shrink: 0;
   border: 2px solid var(--bg-white);
 }
 
+/* Completed state - dark purple */
 .progress-step.completed .step-circle {
-  background-color: var(--primary-purple);
+  background-color: #31135D;
 }
 
+/* Current state - medium gray (actively in progress) */
+.progress-step.current .step-circle {
+  background-color: #BFBFBF;
+}
+
+/* Cancelled/Rejected state - red */
 .progress-step.cancelled .step-circle {
-  background-color: #991B1B;
+  background-color: #DB2E2E;
 }
 
 .step-label {
@@ -826,18 +839,20 @@
 .progress-line {
   flex: 1;
   height: 3px;
-  background-color: var(--border-color);
+  background-color: #EDEAF6; /* Default: light purple/gray (incomplete) */
   margin-top: 8px;
   min-width: 20px;
   max-width: 60px;
 }
 
+/* Completed line - dark purple */
 .progress-line.completed {
-  background-color: var(--primary-purple);
+  background-color: #31135D;
 }
 
+/* Cancelled/Rejected line - red */
 .progress-line.cancelled {
-  background-color: #991B1B;
+  background-color: #DB2E2E;
 }
 
 /* Status Box */
