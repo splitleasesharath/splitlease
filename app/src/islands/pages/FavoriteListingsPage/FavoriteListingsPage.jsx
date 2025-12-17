@@ -62,7 +62,7 @@ async function fetchInformationalTexts() {
  * PropertyCard - Individual listing card (matches SearchPage PropertyCard exactly)
  * @param {Object} proposalForListing - The user's existing proposal for this listing (if any)
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, onToggleFavorite, userId, proposalForListing, onCreateProposal }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, onToggleFavorite, userId, proposalForListing, onCreateProposal, onPhotoClick }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
 
@@ -195,6 +195,14 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
           <img
             src={listing.images[currentImageIndex]}
             alt={listing.title}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onPhotoClick) {
+                onPhotoClick(listing, currentImageIndex);
+              }
+            }}
+            style={{ cursor: 'pointer' }}
           />
           {hasMultipleImages && (
             <>
@@ -353,8 +361,9 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
  * Note: On favorites page, all listings are favorited by definition
  * @param {Map} proposalsByListingId - Map of listing ID to proposal object
  * @param {Function} onCreateProposal - Handler to open inline proposal creation modal
+ * @param {Function} onPhotoClick - Handler to open fullscreen photo gallery
  */
-function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal }) {
+function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal, onPhotoClick }) {
   return (
     <div className="listings-container">
       {listings.map((listing) => {
@@ -376,6 +385,7 @@ function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, i
             userId={userId}
             proposalForListing={proposalForListing}
             onCreateProposal={onCreateProposal}
+            onPhotoClick={onPhotoClick}
           />
         );
       })}
@@ -459,6 +469,29 @@ const FavoriteListingsPage = () => {
   const [successProposalId, setSuccessProposalId] = useState(null);
   const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Photo gallery modal state
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [selectedListingPhotos, setSelectedListingPhotos] = useState([]);
+  const [selectedListingName, setSelectedListingName] = useState('');
+
+  // Close photo modal on ESC key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && showPhotoModal) {
+        setShowPhotoModal(false);
+      }
+    };
+
+    if (showPhotoModal) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showPhotoModal]);
 
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -896,6 +929,15 @@ const FavoriteListingsPage = () => {
     setIsProposalModalOpen(true);
   };
 
+  // Handler to open fullscreen photo gallery
+  const handlePhotoGalleryOpen = (listing, photoIndex = 0) => {
+    if (!listing.images || listing.images.length === 0) return;
+    setSelectedListingPhotos(listing.images);
+    setSelectedListingName(listing.title || 'Listing');
+    setCurrentPhotoIndex(photoIndex);
+    setShowPhotoModal(true);
+  };
+
   // Submit proposal to backend
   const submitProposal = async (proposalData) => {
     setIsSubmittingProposal(true);
@@ -1268,6 +1310,7 @@ const FavoriteListingsPage = () => {
                 userId={userId}
                 proposalsByListingId={proposalsByListingId}
                 onCreateProposal={handleOpenProposalModal}
+                onPhotoClick={handlePhotoGalleryOpen}
               />
             )}
           </div>
@@ -1468,6 +1511,142 @@ const FavoriteListingsPage = () => {
             setSelectedListingForProposal(null);
           }}
         />
+      )}
+
+      {/* Fullscreen Photo Gallery Modal */}
+      {showPhotoModal && selectedListingPhotos.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.9)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+          }}
+          onClick={() => setShowPhotoModal(false)}
+        >
+          {/* Close X Button - Top Right */}
+          <button
+            onClick={() => setShowPhotoModal(false)}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              color: 'white',
+              fontSize: '2rem',
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1002
+            }}
+          >
+            ×
+          </button>
+
+          {/* Main Image */}
+          <img
+            src={selectedListingPhotos[currentPhotoIndex]}
+            alt={`${selectedListingName} - photo ${currentPhotoIndex + 1}`}
+            style={{
+              maxWidth: '95vw',
+              maxHeight: '75vh',
+              objectFit: 'contain',
+              marginBottom: '5rem'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {/* Navigation Controls */}
+          <div style={{
+            position: 'absolute',
+            bottom: '4rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            gap: '0.5rem',
+            alignItems: 'center',
+            zIndex: 1001
+          }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentPhotoIndex(prev => (prev > 0 ? prev - 1 : selectedListingPhotos.length - 1));
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                border: 'none',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.875rem'
+              }}
+            >
+              ← Previous
+            </button>
+
+            <span style={{
+              color: 'white',
+              fontSize: '0.75rem',
+              minWidth: '60px',
+              textAlign: 'center'
+            }}>
+              {currentPhotoIndex + 1} / {selectedListingPhotos.length}
+            </span>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentPhotoIndex(prev => (prev < selectedListingPhotos.length - 1 ? prev + 1 : 0));
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                border: 'none',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.875rem'
+              }}
+            >
+              Next →
+            </button>
+          </div>
+
+          {/* Close Button - Bottom Center */}
+          <button
+            onClick={() => setShowPhotoModal(false)}
+            style={{
+              position: 'absolute',
+              bottom: '1rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'white',
+              border: 'none',
+              color: '#1f2937',
+              padding: '0.5rem 2rem',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '0.875rem',
+              zIndex: 1001
+            }}
+          >
+            Close
+          </button>
+        </div>
       )}
     </div>
   );
