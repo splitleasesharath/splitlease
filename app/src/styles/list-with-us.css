@@ -430,6 +430,430 @@
 }
 
 /* ========================================
+   Nightly Pricing Calculator Section
+   ======================================== */
+.list-pricing-calculator-section {
+  background: #f7f8f9;
+  padding: 100px 32px;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+}
+
+.list-pricing-calculator-section .gradient-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+}
+
+.list-pricing-calculator-section .gradient-blob-1 {
+  width: 400px;
+  height: 400px;
+  background: linear-gradient(135deg, rgba(49, 19, 93, 0.1) 0%, rgba(74, 29, 133, 0.05) 100%);
+  top: -100px;
+  left: 10%;
+}
+
+.list-pricing-calculator-section .gradient-blob-2 {
+  width: 300px;
+  height: 300px;
+  background: linear-gradient(135deg, rgba(138, 92, 246, 0.08) 0%, rgba(49, 19, 93, 0.04) 100%);
+  bottom: -80px;
+  right: 15%;
+}
+
+.list-pricing-calculator-container {
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.list-pricing-calculator-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.list-pricing-calculator-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  color: #31135D;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+}
+
+.list-pricing-calculator-title {
+  font-size: 42px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 16px;
+  letter-spacing: -0.5px;
+}
+
+.list-pricing-calculator-description {
+  font-size: 18px;
+  color: #6B7280;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.7;
+}
+
+/* Calculator Card */
+.pricing-calculator-card {
+  background: white;
+  border: 2px solid #E5E7EB;
+  border-radius: 20px;
+  padding: 40px 36px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+}
+
+.calc-control-group {
+  margin-bottom: 28px;
+}
+
+.calc-control-centered {
+  text-align: center;
+}
+
+.calc-label {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 12px;
+}
+
+.calc-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.calc-value-display {
+  font-size: 15px;
+  font-weight: 700;
+  color: #31135D;
+}
+
+/* Base Input */
+.pricing-calculator-card .base-input-wrapper {
+  position: relative;
+  max-width: 180px;
+  margin: 0 auto;
+}
+
+.pricing-calculator-card .currency-symbol {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 22px;
+  font-weight: 600;
+  color: #9CA3AF;
+}
+
+.pricing-calculator-card .base-input {
+  width: 100%;
+  padding: 14px 14px 14px 44px;
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+  border: 2px solid #E5E7EB;
+  border-radius: 14px;
+  color: #111827;
+  outline: none;
+  transition: border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.pricing-calculator-card .base-input:focus {
+  border-color: #31135D;
+}
+
+/* Range Slider */
+.calc-range-wrapper {
+  position: relative;
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+.calc-range-wrapper input[type="range"] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.calc-range-wrapper input[type="range"]:focus {
+  outline: none;
+}
+
+.calc-range-wrapper input[type="range"]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 8px;
+  cursor: pointer;
+  background: #E5E7EB;
+  border-radius: 4px;
+}
+
+.calc-range-wrapper input[type="range"]::-webkit-slider-thumb {
+  height: 26px;
+  width: 26px;
+  border-radius: 50%;
+  background: var(--gradient-purple-blue);
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -9px;
+  box-shadow: 0 2px 8px rgba(49, 19, 93, 0.3);
+  border: 3px solid white;
+}
+
+.calc-range-wrapper input[type="range"]::-moz-range-track {
+  width: 100%;
+  height: 8px;
+  cursor: pointer;
+  background: #E5E7EB;
+  border-radius: 4px;
+}
+
+.calc-range-wrapper input[type="range"]::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #31135D;
+  cursor: pointer;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(49, 19, 93, 0.3);
+}
+
+.calc-marks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -4px;
+  padding: 0 4px;
+}
+
+.calc-marks span {
+  font-size: 12px;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+
+.calc-hint {
+  font-size: 13px;
+  color: #6B7280;
+  margin-top: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.calc-hint strong {
+  color: #31135D;
+  font-weight: 700;
+}
+
+/* Nights Display / Palette */
+.pricing-calculator-card .nights-display-wrapper {
+  margin-top: 32px;
+}
+
+.pricing-calculator-card .nights-display-header {
+  text-align: center;
+  margin-bottom: 14px;
+  font-size: 14px;
+  color: #6B7280;
+  font-weight: 500;
+}
+
+.pricing-calculator-card .palette-container {
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #E5E7EB;
+}
+
+.pricing-calculator-card .palette-row {
+  display: flex;
+}
+
+.pricing-calculator-card .palette-swatch {
+  flex: 1;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 4px;
+}
+
+/* Gradient colors - dark grey to white */
+.pricing-calculator-card .palette-swatch.n1 { background: #374151; color: white; }
+.pricing-calculator-card .palette-swatch.n2 { background: #4B5563; color: white; }
+.pricing-calculator-card .palette-swatch.n3 { background: #6B7280; color: white; }
+.pricing-calculator-card .palette-swatch.n4 { background: #9CA3AF; color: white; }
+.pricing-calculator-card .palette-swatch.n5 { background: #D1D5DB; color: #374151; }
+.pricing-calculator-card .palette-swatch.n6 { background: #E5E7EB; color: #374151; }
+.pricing-calculator-card .palette-swatch.n7 { background: #F3F4F6; color: #374151; }
+
+.pricing-calculator-card .swatch-number {
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.75;
+  margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.pricing-calculator-card .swatch-price {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.pricing-calculator-card .swatch-label {
+  font-size: 8px;
+  font-weight: 600;
+  line-height: 1;
+  opacity: 0.65;
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Formula Row */
+.pricing-calculator-card .formula-row {
+  display: flex;
+  margin-top: 10px;
+}
+
+.pricing-calculator-card .formula-item {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  color: #6B7280;
+  font-weight: 600;
+}
+
+.pricing-calculator-card .formula-total-row {
+  margin-top: 14px;
+  padding: 14px 18px;
+  background: #F9FAFB;
+  border-radius: 12px;
+  border: 1px solid #E5E7EB;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pricing-calculator-card .formula-total-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B7280;
+}
+
+.pricing-calculator-card .formula-total {
+  font-size: 20px;
+  font-weight: 800;
+  color: #374151;
+}
+
+/* Summary Row */
+.pricing-calculator-card .summary-row {
+  display: flex;
+  justify-content: space-between;
+  background: linear-gradient(135deg, rgba(49, 19, 93, 0.08) 0%, rgba(91, 33, 182, 0.12) 100%);
+  border: 1px solid rgba(49, 19, 93, 0.2);
+  border-radius: 14px;
+  padding: 20px 24px;
+  margin-top: 24px;
+}
+
+.pricing-calculator-card .summary-item {
+  text-align: center;
+  flex: 1;
+}
+
+.pricing-calculator-card .summary-item:first-child {
+  text-align: left;
+}
+
+.pricing-calculator-card .summary-item:last-child {
+  text-align: right;
+}
+
+.pricing-calculator-card .summary-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.pricing-calculator-card .summary-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #31135D;
+}
+
+.pricing-calculator-card .summary-sub {
+  font-size: 12px;
+  color: #9CA3AF;
+  margin-top: 4px;
+}
+
+/* Details/Accordion */
+.pricing-calculator-card .pricing-details {
+  margin-top: 28px;
+  border-top: 1px solid #E5E7EB;
+  padding-top: 18px;
+}
+
+.pricing-calculator-card .pricing-details summary {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6B7280;
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s;
+}
+
+.pricing-calculator-card .pricing-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.pricing-calculator-card .pricing-details summary:hover {
+  color: #31135D;
+}
+
+.pricing-calculator-card .pricing-details summary::before {
+  content: "▸";
+  display: inline-block;
+  transition: transform 0.2s;
+}
+
+.pricing-calculator-card .pricing-details[open] summary::before {
+  transform: rotate(90deg);
+}
+
+.pricing-calculator-card .details-content {
+  margin-top: 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #6B7280;
+  background: #F9FAFB;
+  padding: 16px;
+  border-radius: 10px;
+}
+
+/* ========================================
    Pricing Policy Section
    ======================================== */
 .list-pricing-policy-section {
@@ -656,5 +1080,59 @@
 
   .list-hero-section .floating-person {
     display: none;
+  }
+
+  /* Pricing Calculator Responsive */
+  .list-pricing-calculator-section {
+    padding: 60px 20px;
+  }
+
+  .list-pricing-calculator-title {
+    font-size: 32px;
+  }
+
+  .list-pricing-calculator-description {
+    font-size: 16px;
+  }
+
+  .pricing-calculator-card {
+    padding: 28px 20px;
+  }
+
+  .pricing-calculator-card .palette-swatch {
+    min-height: 65px;
+    padding: 8px 2px;
+  }
+
+  .pricing-calculator-card .swatch-number {
+    font-size: 8px;
+  }
+
+  .pricing-calculator-card .swatch-price {
+    font-size: 12px;
+  }
+
+  .pricing-calculator-card .swatch-label {
+    font-size: 6px;
+  }
+
+  .pricing-calculator-card .formula-item {
+    font-size: 10px;
+  }
+
+  .pricing-calculator-card .summary-row {
+    flex-direction: column;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .pricing-calculator-card .summary-item,
+  .pricing-calculator-card .summary-item:first-child,
+  .pricing-calculator-card .summary-item:last-child {
+    text-align: center;
+  }
+
+  .pricing-calculator-card .summary-value {
+    font-size: 22px;
   }
 }
