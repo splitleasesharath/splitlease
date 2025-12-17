@@ -14,7 +14,7 @@ export default function ProposalSuccessModal({
 }) {
   // Handle navigation to rental application
   const handleGoToRentalApp = () => {
-    window.location.href = `/rental-app-new-design?proposal=${proposalId}`;
+    window.location.href = `/rental-application?proposal=${proposalId}`;
   };
 
   // Handle navigation to guest dashboard
