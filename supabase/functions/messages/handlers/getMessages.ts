@@ -78,7 +78,7 @@ export async function handleGetMessages(
 
   const { data: userData, error: userError } = await supabaseAdmin
     .from('user')
-    .select('_id, "User Type"')
+    .select('_id, "Type - User Current"')
     .ilike('email', user.email)
     .single();
 
@@ -89,7 +89,7 @@ export async function handleGetMessages(
   console.log('[getMessages] Found user by email');
 
   const userBubbleId = userData._id;
-  const userType = userData['User Type'] || '';
+  const userType = userData['Type - User Current'] || '';
   const isHost = userType.includes('Host');
   console.log('[getMessages] User Bubble ID:', userBubbleId);
   console.log('[getMessages] Is Host:', isHost);
