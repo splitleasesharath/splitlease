@@ -56,10 +56,33 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
   const listing = proposal.listing || proposal.Listing || {};
   const listingDescription = listing.description || listing.Description || listing['Listing Name'] || 'Restored apartment with amenities';
 
-  // Helper to convert Bubble day indices (1-7) to day names
+  // Helper to convert Bubble day indices (1-7) or numeric strings to day names
+  // Handles: numbers (1-7), numeric strings ("1"-"7"), or day name strings ("Monday")
   const bubbleDayToName = (bubbleDay) => {
     const dayNames = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return typeof bubbleDay === 'number' ? dayNames[bubbleDay] || 'Monday' : bubbleDay;
+
+    if (bubbleDay === null || bubbleDay === undefined) return '';
+
+    // If it's already a number, use it directly
+    if (typeof bubbleDay === 'number') {
+      return dayNames[bubbleDay] || '';
+    }
+
+    // If it's a string, check if it's a numeric string
+    if (typeof bubbleDay === 'string') {
+      const trimmed = bubbleDay.trim();
+      const numericValue = parseInt(trimmed, 10);
+
+      // If it parses to a valid number and matches the original string, it's a numeric string
+      if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+        return dayNames[numericValue] || '';
+      }
+
+      // Otherwise it's already a day name string
+      return trimmed;
+    }
+
+    return '';
   };
 
   // Get schedule info
@@ -131,9 +154,9 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
         <h3 className="proposal-title">{guestName ? `${guestName}'s Proposal` : "'s Proposal"}</h3>
         <p className="listing-description">{listingDescription}</p>
 
-        {/* Schedule Info */}
+        {/* Schedule Info - shows check-in to check-out range */}
         <p className="schedule-text">
-          {checkInDay} thru {checkOutDay} (check{checkOutDay === checkInDay ? '-out' : ' out'} day)
+          {checkInDay} to {checkOutDay}
         </p>
 
         {/* Day Indicator */}

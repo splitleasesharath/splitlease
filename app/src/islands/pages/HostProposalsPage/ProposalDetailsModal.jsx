@@ -67,10 +67,33 @@ export default function ProposalDetailsModal({
   const emailVerified = guest.emailVerified || guest['Email Verified'] || false;
   const identityVerified = guest.identityVerified || guest['Identity Verified'] || false;
 
-  // Helper to convert Bubble day indices (1-7) to day names
+  // Helper to convert Bubble day indices (1-7) or numeric strings to day names
+  // Handles: numbers (1-7), numeric strings ("1"-"7"), or day name strings ("Monday")
   const bubbleDayToName = (bubbleDay) => {
     const dayNames = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return typeof bubbleDay === 'number' ? dayNames[bubbleDay] || 'Monday' : bubbleDay;
+
+    if (bubbleDay === null || bubbleDay === undefined) return '';
+
+    // If it's already a number, use it directly
+    if (typeof bubbleDay === 'number') {
+      return dayNames[bubbleDay] || '';
+    }
+
+    // If it's a string, check if it's a numeric string
+    if (typeof bubbleDay === 'string') {
+      const trimmed = bubbleDay.trim();
+      const numericValue = parseInt(trimmed, 10);
+
+      // If it parses to a valid number and matches the original string, it's a numeric string
+      if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+        return dayNames[numericValue] || '';
+      }
+
+      // Otherwise it's already a day name string
+      return trimmed;
+    }
+
+    return '';
   };
 
   // Get schedule info
@@ -181,7 +204,7 @@ export default function ProposalDetailsModal({
             <h2 className="modal-title">{guestName}'s Proposal</h2>
             <div className="modal-schedule">
               <span className="schedule-text">
-                {checkInDay} thru {checkOutDay} (last night)
+                {checkInDay} to {checkOutDay}
                 {counterOfferHappened && ' (Proposed by You)'}
               </span>
               <DayIndicator activeDays={activeDays} size="medium" />
