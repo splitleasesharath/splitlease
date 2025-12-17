@@ -297,6 +297,39 @@
   background: #4a2359;
 }
 
+/* Submit button loading state */
+.nav-button.next.submitting {
+  opacity: 0.7;
+  cursor: not-allowed;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.nav-button.next.submitting:hover {
+  background: #5B2C6F;
+}
+
+.nav-button.next:disabled {
+  cursor: not-allowed;
+}
+
+/* Spinner for submit button */
+.button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: button-spin 0.8s linear infinite;
+}
+
+@keyframes button-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 .nav-button:active {
   transform: scale(0.98);
 }
