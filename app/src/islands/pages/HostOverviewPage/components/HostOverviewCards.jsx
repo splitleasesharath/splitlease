@@ -38,7 +38,7 @@ function formatCurrency(amount) {
 // Listing Card - For host's managed listings
 export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = false }) {
   const listingName = listing.name || listing.Name || 'Unnamed Listing';
-  const borough = listing.location?.borough || listing['Location - Borough']?.Display || 'Location not specified';
+  const borough = listing.location?.borough || listing['Location - Borough'] || 'Location not specified';
   const isComplete = listing.complete || listing.Complete;
   const leasesCount = listing.leasesCount || listing['Leases Count'] || 0;
   const proposalsCount = listing.proposalsCount || listing['Proposals Count'] || 0;
@@ -228,7 +228,7 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
 // Claim Listing Card - For unclaimed listings
 export function ClaimListingCard({ listing, onSeeDetails, onDelete }) {
   const listingName = listing.name || listing.Name || 'Unnamed Listing';
-  const borough = listing.location?.borough || listing['Location - Borough']?.Display || 'Location not specified';
+  const borough = listing.location?.borough || listing['Location - Borough'] || 'Location not specified';
   const isComplete = listing.complete || listing.Complete;
 
   return (
