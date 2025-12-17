@@ -101,17 +101,15 @@ npx wrangler pages deploy dist --project-name splitlease  # Manual deploy
 | **Action-Based Edge Functions** | All Edge Functions use `{ action, payload }` request pattern |
 | **Queue-Based Sync** | Supabase→Bubble sync via `sync_queue` table, processed by cron job |
 
-### Day Indexing (CRITICAL)
+### Day Indexing
 
-| System | Sun | Mon | Tue | Wed | Thu | Fri | Sat |
-|--------|-----|-----|-----|-----|-----|-----|-----|
-| JavaScript (internal) | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
-| Bubble API (external) | 1 | 2 | 3 | 4 | 5 | 6 | 7 |
+All day indices use JavaScript's 0-based standard (matching `Date.getDay()`):
 
-**Always convert at API boundaries** using:
-- `adaptDaysFromBubble()` - when receiving data from Bubble
-- `adaptDaysToBubble()` - when sending data to Bubble
-- Location: `app/src/logic/processors/external/adaptDays*.js`
+| Day | Sun | Mon | Tue | Wed | Thu | Fri | Sat |
+|-----|-----|-----|-----|-----|-----|-----|-----|
+| Index | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+
+The database stores days natively in this format. No conversion needed.
 
 ---
 
@@ -123,7 +121,7 @@ npx wrangler pages deploy dist --project-name splitlease  # Manual deploy
 | Vite Config | `app/vite.config.js` |
 | Authentication | `app/src/lib/auth.js` |
 | Supabase client | `app/src/lib/supabase.js` |
-| Day conversion | `app/src/logic/processors/external/adaptDays*.js` |
+| Day utilities | `app/src/lib/dayUtils.js` |
 | Business rules | `app/src/logic/rules/` |
 | Pricing calculations | `app/src/logic/calculators/pricing/` |
 | Edge Functions | `supabase/functions/` |
@@ -147,10 +145,10 @@ npx wrangler pages deploy dist --project-name splitlease  # Manual deploy
 ## Rules
 
 ### DO
-- Use Edge Functions for all Bubble API calls (never call Bubble from frontend)
+- Use Edge Functions for all API calls (never call external APIs from frontend)
 - Run `bun run generate-routes` after any route changes in `routes.config.js`
 - Commit after each meaningful change (do not push unless asked)
-- Convert day indices at system boundaries
+- Use 0-indexed days (0=Sunday through 6=Saturday) everywhere
 - Use the four-layer logic architecture for business logic
 - Use `mcp-tool-specialist` subagent for all MCP tool invocations
 - **Send only changed fields when updating database records** (prevents FK constraint violations)
@@ -159,7 +157,6 @@ npx wrangler pages deploy dist --project-name splitlease  # Manual deploy
 
 ### DON'T
 - Expose API keys in frontend code
-- Call Bubble API directly from frontend
 - Use `git push --force` or push to main without review
 - Modify database tables without explicit instruction
 - Add fallback mechanisms when things fail - surface the real error
@@ -324,4 +321,4 @@ These subagents may ONLY be invoked **before** starting the pipeline or **after*
 
 ---
 
-**VERSION**: 10.0 | **UPDATED**: 2025-12-16
+**VERSION**: 11.0 | **UPDATED**: 2025-12-17
