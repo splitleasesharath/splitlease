@@ -1338,7 +1338,11 @@ export function SelfListingPageV2() {
           {/* Long Stay Discount Slider */}
           <div className="control-group">
             <div className="label-row">
-              <span className="calc-label label-with-info">
+              <span
+                className="calc-label label-with-info clickable-label"
+                onClick={handleInfoClick('longStayDiscount')}
+                style={{ cursor: 'pointer' }}
+              >
                 Long Stay Discount
                 <button
                   ref={longStayDiscountInfoRef}
