@@ -95,6 +95,18 @@ export function useHostOverviewPageLogic() {
     if (!hostAccountId && !userId) return [];
 
     try {
+      // First, fetch borough reference table to map IDs to display names
+      const { data: boroughs } = await supabase
+        .from('zat_geo_borough_toplevel')
+        .select('_id, "Display Borough"');
+
+      const boroughMap = {};
+      if (boroughs) {
+        boroughs.forEach(b => {
+          boroughMap[b._id] = b['Display Borough'];
+        });
+      }
+
       // Fetch listings from multiple sources in parallel:
       // 1. Bubble API (existing synced listings)
       // 2. listing table via RPC (self-listing submissions)
@@ -206,7 +218,7 @@ export function useHostOverviewPageLogic() {
           complete: listing.Complete || false,
           source: listing.source || 'listing',
           location: {
-            borough: listing['Location - Borough'] || '',
+            borough: boroughMap[listing['Location - Borough']] || listing['Location - Borough'] || '',
             city: listing['Location - City'] || '',
             state: listing['Location - State'] || ''
           },
@@ -258,7 +270,7 @@ export function useHostOverviewPageLogic() {
             complete: listing.Complete || false,
             source: 'listing',
             location: {
-              borough: listing['Location - Borough'] || '',
+              borough: boroughMap[listing['Location - Borough']] || listing['Location - Borough'] || '',
               city: listing['Location - City'] || '',
               state: listing['Location - State'] || ''
             },
