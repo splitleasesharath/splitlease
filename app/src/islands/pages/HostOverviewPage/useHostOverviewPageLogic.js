@@ -294,36 +294,43 @@ export function useHostOverviewPageLogic() {
           .in('_id', missingIds);
 
         if (missingListings) {
-          const mappedMissing = missingListings.map(listing => ({
-            id: listing._id,
-            _id: listing._id,
-            name: listing.Name || 'Unnamed Listing',
-            Name: listing.Name,
-            complete: listing.Complete || false,
-            source: 'listing',
-            location: {
-              borough: getBoroughName(listing['Location - Borough']) || '',
-              city: listing['Location - City'] || '',
-              state: listing['Location - State'] || ''
-            },
-            leasesCount: 0,
-            proposalsCount: 0,
-            photos: listing['Features - Photos'] || [],
-            // Pricing fields (using original column names from direct query)
-            rental_type: listing['rental type'],
-            monthly_rate: listing['💰Monthly Host Rate'],
-            weekly_rate: listing['💰Weekly Host Rate'],
-            // Individual nightly rates
-            nightly_rate_2: listing['💰Nightly Host Rate for 2 nights'],
-            nightly_rate_3: listing['💰Nightly Host Rate for 3 nights'],
-            nightly_rate_4: listing['💰Nightly Host Rate for 4 nights'],
-            nightly_rate_5: listing['💰Nightly Host Rate for 5 nights'],
-            nightly_rate_7: listing['💰Nightly Host Rate for 7 nights'],
-            rate_5_nights: listing['💰Nightly Host Rate for 5 nights'],
-            cleaning_fee: listing['💰Cleaning Cost / Maintenance Fee'],
-            damage_deposit: listing['💰Damage Deposit'],
-            pricing_list: listing.pricing_list
-          }));
+          const mappedMissing = missingListings.map(listing => {
+            // Try FK lookup first, fall back to extracting from address string
+            const boroughFromFK = getBoroughName(listing['Location - Borough']);
+            const boroughFromAddress = extractBoroughFromAddress(listing['Location - Address']);
+            const borough = boroughFromFK || boroughFromAddress || '';
+
+            return {
+              id: listing._id,
+              _id: listing._id,
+              name: listing.Name || 'Unnamed Listing',
+              Name: listing.Name,
+              complete: listing.Complete || false,
+              source: 'listing',
+              location: {
+                borough,
+                city: listing['Location - City'] || '',
+                state: listing['Location - State'] || ''
+              },
+              leasesCount: 0,
+              proposalsCount: 0,
+              photos: listing['Features - Photos'] || [],
+              // Pricing fields (using original column names from direct query)
+              rental_type: listing['rental type'],
+              monthly_rate: listing['💰Monthly Host Rate'],
+              weekly_rate: listing['💰Weekly Host Rate'],
+              // Individual nightly rates
+              nightly_rate_2: listing['💰Nightly Host Rate for 2 nights'],
+              nightly_rate_3: listing['💰Nightly Host Rate for 3 nights'],
+              nightly_rate_4: listing['💰Nightly Host Rate for 4 nights'],
+              nightly_rate_5: listing['💰Nightly Host Rate for 5 nights'],
+              nightly_rate_7: listing['💰Nightly Host Rate for 7 nights'],
+              rate_5_nights: listing['💰Nightly Host Rate for 5 nights'],
+              cleaning_fee: listing['💰Cleaning Cost / Maintenance Fee'],
+              damage_deposit: listing['💰Damage Deposit'],
+              pricing_list: listing.pricing_list
+            };
+          });
           rpcListings = [...rpcListings, ...mappedMissing];
         }
       }
