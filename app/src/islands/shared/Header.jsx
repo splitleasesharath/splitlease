@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl } from '../../lib/auth.js';
-import { SIGNUP_LOGIN_URL, SEARCH_URL } from '../../lib/constants.js';
+import { SIGNUP_LOGIN_URL, SEARCH_URL, HOST_OVERVIEW_URL } from '../../lib/constants.js';
 import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
@@ -586,9 +586,15 @@ export default function Header({ autoShowLogin = false }) {
 
         {/* Right Navigation - Auth Buttons */}
         <div className={`nav-right ${mobileMenuActive ? 'mobile-active' : ''}`}>
-          <a href={SEARCH_URL} className="explore-rentals-btn">
-            Explore Rentals
-          </a>
+          {currentUser && isHost() ? (
+            <a href={HOST_OVERVIEW_URL} className="explore-rentals-btn">
+              Host Overview
+            </a>
+          ) : (
+            <a href={SEARCH_URL} className="explore-rentals-btn">
+              Explore Rentals
+            </a>
+          )}
 
           {currentUser && currentUser.firstName ? (
             /* User is logged in - show LoggedInAvatar component with full menu */
