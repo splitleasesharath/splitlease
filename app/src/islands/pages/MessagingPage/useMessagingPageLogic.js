@@ -280,18 +280,22 @@ export function useMessagingPageLogic() {
       setIsLoading(true);
       setError(null);
 
-      // Get user's Bubble ID from user state or session metadata
-      const bubbleId = user?.bubbleId;
+      // Get user's Bubble ID from multiple sources (state may not be set yet due to async setState)
+      let bubbleId = user?.bubbleId;
+
       if (!bubbleId) {
-        // User state might not be set yet, try session metadata
+        // Try secure storage first (works for legacy auth users)
+        bubbleId = getUserId();
+      }
+
+      if (!bubbleId) {
+        // Fallback to Supabase session metadata
         const { data: { session } } = await supabase.auth.getSession();
-        const fallbackBubbleId = session?.user?.user_metadata?.user_id;
-        if (!fallbackBubbleId) {
-          throw new Error('User ID not available');
-        }
-        // Query with fallback ID
-        await fetchThreadsWithBubbleId(fallbackBubbleId);
-        return;
+        bubbleId = session?.user?.user_metadata?.user_id;
+      }
+
+      if (!bubbleId) {
+        throw new Error('User ID not available');
       }
 
       await fetchThreadsWithBubbleId(bubbleId);
