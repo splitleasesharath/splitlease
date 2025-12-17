@@ -12,6 +12,7 @@
   flex-direction: column;
   background-color: var(--bg-light);
   padding: var(--spacing-2xl) 0;
+  padding-top: 100px; /* Account for fixed header height */
 }
 
 .host-proposals-page .container {
@@ -943,6 +944,7 @@
 @media (max-width: 768px) {
   .host-proposals-page {
     padding: var(--spacing-lg) 0;
+    padding-top: 80px; /* Slightly smaller on mobile */
   }
 
   .host-proposals-page .container {

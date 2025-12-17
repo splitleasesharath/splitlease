@@ -437,7 +437,7 @@ export function useAccountProfilePageLogic() {
             // Additional fields for display
             rental_type: listing.rental_type,
             monthly_rate: listing.monthly_rate,
-            source: listing.source || 'listing_trial'
+            source: listing.source || 'listing'
           };
         });
 
@@ -458,14 +458,7 @@ export function useAccountProfilePageLogic() {
   useEffect(() => {
     async function initialize() {
       try {
-        // Extract profile user ID from URL
-        const urlUserId = getUserIdFromUrl();
-        if (!urlUserId) {
-          throw new Error('No user ID provided in URL');
-        }
-        setProfileUserId(urlUserId);
-
-        // Check authentication status and get validated user data
+        // Check authentication status FIRST to potentially use as fallback
         // We need the validated user ID (Bubble _id) for accurate comparison
         // getSessionId() may return Supabase UUID instead of Bubble _id due to
         // timing issues with Supabase Auth session sync
@@ -488,17 +481,30 @@ export function useAccountProfilePageLogic() {
         }
         setLoggedInUserId(validatedUserId);
 
+        // Extract profile user ID from URL, or fall back to logged-in user's ID
+        // This allows users to view their own profile at /account-profile without a userId param
+        const urlUserId = getUserIdFromUrl();
+        const targetUserId = urlUserId || validatedUserId;
+
+        if (!targetUserId) {
+          // No URL param AND not logged in - redirect to login or show error
+          throw new Error('Please log in to view your profile, or provide a user ID in the URL');
+        }
+
+        console.log('[AccountProfile] Target user ID:', targetUserId, urlUserId ? '(from URL)' : '(from session - viewing own profile)');
+        setProfileUserId(targetUserId);
+
         // Fetch reference data
         await fetchReferenceData();
 
         // Fetch profile data
-        const userData = await fetchProfileData(urlUserId);
+        const userData = await fetchProfileData(targetUserId);
 
         // If user is a host, fetch their listings
         if (userData) {
           const userType = userData['Type - User Signup'];
           if (isHost({ userType })) {
-            await fetchHostListings(urlUserId);
+            await fetchHostListings(targetUserId);
           }
         }
 

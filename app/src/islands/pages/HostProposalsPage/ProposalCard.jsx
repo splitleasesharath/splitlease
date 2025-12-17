@@ -50,28 +50,38 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
 
   // Get guest info - handle both Bubble and local formats
   const guest = proposal.guest || proposal.Guest || proposal['Created By'] || {};
-  const guestName = guest.firstName || guest['First Name'] || guest.first_name || '';
+  const guestName = guest.firstName || guest['Name - First'] || guest['First Name'] || guest.first_name || '';
 
   // Get listing info
   const listing = proposal.listing || proposal.Listing || {};
   const listingDescription = listing.description || listing.Description || listing['Listing Name'] || 'Restored apartment with amenities';
 
+  // Helper to convert Bubble day indices (1-7) to day names
+  const bubbleDayToName = (bubbleDay) => {
+    const dayNames = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return typeof bubbleDay === 'number' ? dayNames[bubbleDay] || 'Monday' : bubbleDay;
+  };
+
   // Get schedule info
-  const checkInDay = proposal.checkInDay || proposal['Check In Day'] || proposal.check_in_day || 'Monday';
-  const checkOutDay = proposal.checkOutDay || proposal['Check Out Day'] || proposal.check_out_day || 'Friday';
-  const moveInRangeStart = proposal.moveInRangeStart || proposal['Move In Range Start'] || proposal.move_in_range_start;
-  const reservationSpanWeeks = proposal.reservationSpanWeeks || proposal['Reservation Span (weeks)'] || proposal.reservation_span_weeks || 0;
+  const checkInDayRaw = proposal.checkInDay || proposal['check in day'] || proposal['Check In Day'] || proposal.check_in_day || 'Monday';
+  const checkOutDayRaw = proposal.checkOutDay || proposal['check out day'] || proposal['Check Out Day'] || proposal.check_out_day || 'Friday';
+  const checkInDay = bubbleDayToName(checkInDayRaw);
+  const checkOutDay = bubbleDayToName(checkOutDayRaw);
+  const moveInRangeStart = proposal.moveInRangeStart || proposal['Move in range start'] || proposal['Move In Range Start'] || proposal.move_in_range_start;
+  const reservationSpanWeeks = proposal.reservationSpanWeeks || proposal['Reservation Span (Weeks)'] || proposal['Reservation Span (weeks)'] || proposal.reservation_span_weeks || 0;
 
   // Get pricing info
-  const hostCompensation = proposal.hostCompensation || proposal['Host Compensation'] || proposal.host_compensation || 0;
-  const totalCompensation = proposal.totalCompensation || proposal['Total Compensation'] || proposal.total_compensation || 0;
+  // "host compensation" is the per-night HOST rate (from listing pricing tiers)
+  // "Total Compensation (proposal - host)" is the total = per-night rate * nights * weeks
+  const hostCompensation = proposal.hostCompensation || proposal['host compensation'] || proposal['Host Compensation'] || proposal.host_compensation || 0;
+  const totalCompensation = proposal.totalCompensation || proposal['Total Compensation (proposal - host)'] || proposal['Total Compensation'] || proposal.total_compensation || 0;
   const counterOfferHappened = proposal.counterOfferHappened || proposal['Counter Offer Happened'] || proposal.counter_offer_happened || false;
 
   // Get active days for the schedule
   const activeDays = getActiveDays(checkInDay, checkOutDay);
 
   // Guest avatar
-  const guestAvatar = guest.avatar || guest.Avatar || guest['Profile Picture'];
+  const guestAvatar = guest.avatar || guest.Avatar || guest['Profile Photo'] || guest['Profile Picture'];
   const avatarUrl = guestAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(guestName)}&background=random&size=40`;
 
   const handleDelete = (e) => {

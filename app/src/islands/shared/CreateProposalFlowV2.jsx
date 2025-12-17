@@ -121,6 +121,7 @@ const clearProposalDraft = (listingId) => {
  * @param {Object} existingUserData - User's saved profile data for prefilling (aboutMe, needForSpace, specialNeeds)
  * @param {Function} onClose - Callback when modal closes
  * @param {Function} onSubmit - Callback when proposal is submitted
+ * @param {boolean} isSubmitting - Whether the proposal is currently being submitted (disables button)
  */
 export default function CreateProposalFlowV2({
   listing,
@@ -134,7 +135,8 @@ export default function CreateProposalFlowV2({
   useFullFlow = false,
   existingUserData = null,
   onClose,
-  onSubmit
+  onSubmit,
+  isSubmitting = false
 }) {
   // Lock body scroll when popup is open
   useBodyScrollLock();
@@ -717,8 +719,19 @@ export default function CreateProposalFlowV2({
             </button>
           )}
           {currentSection === 1 ? (
-            <button className="nav-button next" onClick={handleSubmit}>
-              Submit Proposal
+            <button
+              className={`nav-button next ${isSubmitting ? 'submitting' : ''}`}
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <span className="button-spinner"></span>
+                  Submitting...
+                </>
+              ) : (
+                'Submit Proposal'
+              )}
             </button>
           ) : (
             <button className="nav-button next" onClick={handleNext}>

@@ -126,6 +126,7 @@ export function useHostProposalsPageLogic() {
 
   /**
    * Load host listings and proposals
+   * Sorts listings by proposal count (most proposals first) and selects the one with most recent proposals
    */
   const loadHostData = async (userId) => {
     setIsLoading(true);
@@ -136,11 +137,65 @@ export function useHostProposalsPageLogic() {
       const listingsResult = await fetchHostListings(userId);
 
       if (listingsResult.length > 0) {
-        setListings(listingsResult);
-        setSelectedListing(listingsResult[0]);
+        // Fetch proposal counts for all listings to determine sort order
+        const listingIds = listingsResult.map(l => l._id || l.id);
 
-        // Fetch proposals for the first listing
-        const proposalsResult = await fetchProposalsForListing(listingsResult[0]._id || listingsResult[0].id);
+        // Get proposal counts and most recent proposal date for each listing
+        const { data: proposalStats, error: statsError } = await supabase
+          .from('proposal')
+          .select('Listing, "Created Date"')
+          .in('Listing', listingIds)
+          .or('"Deleted".is.null,"Deleted".eq.false');
+
+        if (statsError) {
+          console.warn('[useHostProposalsPageLogic] Could not fetch proposal stats:', statsError);
+        }
+
+        // Calculate stats per listing
+        const statsMap = {};
+        (proposalStats || []).forEach(p => {
+          const listingId = p.Listing;
+          if (!statsMap[listingId]) {
+            statsMap[listingId] = { count: 0, mostRecent: null };
+          }
+          statsMap[listingId].count++;
+          const createdDate = new Date(p['Created Date']);
+          if (!statsMap[listingId].mostRecent || createdDate > statsMap[listingId].mostRecent) {
+            statsMap[listingId].mostRecent = createdDate;
+          }
+        });
+
+        // Sort listings: most recent proposal first, then by proposal count
+        const sortedListings = [...listingsResult].sort((a, b) => {
+          const aId = a._id || a.id;
+          const bId = b._id || b.id;
+          const aStats = statsMap[aId] || { count: 0, mostRecent: null };
+          const bStats = statsMap[bId] || { count: 0, mostRecent: null };
+
+          // First, prioritize listings with proposals
+          if (aStats.count > 0 && bStats.count === 0) return -1;
+          if (bStats.count > 0 && aStats.count === 0) return 1;
+
+          // Then sort by most recent proposal date
+          if (aStats.mostRecent && bStats.mostRecent) {
+            return bStats.mostRecent - aStats.mostRecent;
+          }
+          if (aStats.mostRecent) return -1;
+          if (bStats.mostRecent) return 1;
+
+          // Finally, sort by proposal count
+          return bStats.count - aStats.count;
+        });
+
+        console.log('[useHostProposalsPageLogic] Sorted listings by proposals:',
+          sortedListings.map(l => ({ id: l._id || l.id, name: l.Name, proposals: statsMap[l._id || l.id]?.count || 0 }))
+        );
+
+        setListings(sortedListings);
+        setSelectedListing(sortedListings[0]);
+
+        // Fetch proposals for the first (most relevant) listing
+        const proposalsResult = await fetchProposalsForListing(sortedListings[0]._id || sortedListings[0].id);
         setProposals(proposalsResult);
       } else {
         setListings([]);
@@ -212,6 +267,10 @@ export function useHostProposalsPageLogic() {
           "4 week rent",
           "Total Price for Reservation (guest)",
           "Total Compensation (proposal - host)",
+          "host compensation",
+          "4 week compensation",
+          "cleaning fee",
+          "damage deposit",
           "Guest email",
           "need for space",
           "about_yourself",

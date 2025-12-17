@@ -2846,6 +2846,7 @@ export default function ViewSplitLeasePage() {
           } : null}
           onClose={() => setIsProposalModalOpen(false)}
           onSubmit={handleProposalSubmit}
+          isSubmitting={isSubmittingProposal}
         />
       )}
 

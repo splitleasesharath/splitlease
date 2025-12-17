@@ -2775,6 +2775,7 @@ export default function SearchPage() {
           } : null}
           onClose={handleCloseCreateProposalModal}
           onSubmit={handleCreateProposalSubmit}
+          isSubmitting={isSubmittingProposal}
         />
       )}
 

@@ -56,7 +56,7 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
   const damageDeposit = listing.damage_deposit || listing['💰Damage Deposit'];
   const nightlyPricing = listing.nightly_pricing;
 
-  // Collect all nightly rates (from both Bubble and listing_trial sources)
+  // Collect all nightly rates
   const nightlyRates = [
     listing.nightly_rate_2 || listing['💰Nightly Host Rate for 2 nights'],
     listing.nightly_rate_3 || listing['💰Nightly Host Rate for 3 nights'],

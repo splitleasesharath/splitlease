@@ -97,7 +97,7 @@ export function useHostOverviewPageLogic() {
     try {
       // Fetch listings from multiple sources in parallel:
       // 1. Bubble API (existing synced listings)
-      // 2. listing_trial table (new self-listing submissions)
+      // 2. listing table via RPC (self-listing submissions)
       // 3. user.Listings array (linked listings)
 
       const fetchPromises = [];
@@ -129,19 +129,19 @@ export function useHostOverviewPageLogic() {
         );
       }
 
-      // 2. Fetch from listing_trial where Host User = userId or Created By = userId
+      // 2. Fetch from listing table where Host User = userId or Created By = userId
       // Using RPC function to handle column names with special characters
       if (userId) {
         fetchPromises.push(
           supabase
             .rpc('get_host_listings', { host_user_id: userId })
             .then(result => {
-              console.log('[HostOverview] listing_trial query result:', result);
-              return { type: 'listing_trial', ...result };
+              console.log('[HostOverview] listing query result:', result);
+              return { type: 'listing_rpc', ...result };
             })
             .catch(err => {
-              console.warn('listing_trial fetch failed:', err);
-              return { type: 'listing_trial', data: [], error: err };
+              console.warn('listing fetch failed:', err);
+              return { type: 'listing_rpc', data: [], error: err };
             })
         );
       }
@@ -194,17 +194,17 @@ export function useHostOverviewPageLogic() {
         damage_deposit: listing['💰Damage Deposit']
       }));
 
-      // Process listing_trial listings
-      let trialListings = [];
-      const trialResult = results.find(r => r?.type === 'listing_trial');
-      if (trialResult?.data && !trialResult.error) {
-        trialListings = trialResult.data.map(listing => ({
+      // Process listings from RPC
+      let rpcListings = [];
+      const rpcResult = results.find(r => r?.type === 'listing_rpc');
+      if (rpcResult?.data && !rpcResult.error) {
+        rpcListings = rpcResult.data.map(listing => ({
           id: listing.id,
           _id: listing._id,
           name: listing.Name || 'Unnamed Listing',
           Name: listing.Name,
           complete: listing.Complete || false,
-          source: listing.source || 'listing_trial',
+          source: listing.source || 'listing',
           location: {
             borough: listing['Location - Borough'] || '',
             city: listing['Location - City'] || '',
@@ -226,7 +226,7 @@ export function useHostOverviewPageLogic() {
           rate_5_nights: listing.rate_5_nights,
           cleaning_fee: listing.cleaning_fee,
           damage_deposit: listing.damage_deposit,
-          nightly_pricing: listing.nightly_pricing
+          pricing_list: listing.pricing_list
         }));
       }
 
@@ -237,26 +237,26 @@ export function useHostOverviewPageLogic() {
       // Fetch any linked listings that aren't already in our results
       const existingIds = new Set([
         ...mappedBubbleListings.map(l => l.id),
-        ...trialListings.map(l => l.id)
+        ...rpcListings.map(l => l.id)
       ]);
 
       const missingIds = linkedListingIds.filter(id => !existingIds.has(id));
 
       if (missingIds.length > 0) {
-        // Fetch missing listings from listing_trial
+        // Fetch missing listings from listing table
         const { data: missingListings } = await supabase
-          .from('listing_trial')
+          .from('listing')
           .select('*')
-          .in('id', missingIds);
+          .in('_id', missingIds);
 
         if (missingListings) {
           const mappedMissing = missingListings.map(listing => ({
-            id: listing.id,
+            id: listing._id,
             _id: listing._id,
             name: listing.Name || 'Unnamed Listing',
             Name: listing.Name,
             complete: listing.Complete || false,
-            source: 'listing_trial',
+            source: 'listing',
             location: {
               borough: listing['Location - Borough'] || '',
               city: listing['Location - City'] || '',
@@ -278,21 +278,21 @@ export function useHostOverviewPageLogic() {
             rate_5_nights: listing['💰Nightly Host Rate for 5 nights'],
             cleaning_fee: listing['💰Cleaning Cost / Maintenance Fee'],
             damage_deposit: listing['💰Damage Deposit'],
-            nightly_pricing: listing.nightly_pricing
+            pricing_list: listing.pricing_list
           }));
-          trialListings = [...trialListings, ...mappedMissing];
+          rpcListings = [...rpcListings, ...mappedMissing];
         }
       }
 
       // Combine all listings, deduplicated by id
-      const allListings = [...mappedBubbleListings, ...trialListings];
+      const allListings = [...mappedBubbleListings, ...rpcListings];
       const uniqueListings = allListings.filter((listing, index, self) =>
         index === self.findIndex(l => l.id === listing.id)
       );
 
       console.log('[HostOverview] Fetched listings:', {
         bubble: mappedBubbleListings.length,
-        trial: trialListings.length,
+        rpc: rpcListings.length,
         total: uniqueListings.length
       });
 

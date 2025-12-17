@@ -1439,6 +1439,7 @@ const FavoriteListingsPage = () => {
             setSelectedListingForProposal(null);
           }}
           onSubmit={handleProposalSubmit}
+          isSubmitting={isSubmittingProposal}
         />
       )}
 

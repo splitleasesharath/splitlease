@@ -53,177 +53,132 @@ function parseJsonField(field) {
 
 /**
  * Fetch complete listing data with all enrichments
- * Supports both listing table (Bubble) and listing_trial table (self-listing)
- * @param {string} listingId - The listing _id or id (for listing_trial)
+ * @param {string} listingId - The listing _id
  * @returns {Promise<object>} Enriched listing object
  */
 export async function fetchListingComplete(listingId) {
   try {
-    // 1. Try listing_trial first (for self-listing submissions), then fall back to listing table
-    console.log('🔍 fetchListingComplete: Trying listing_trial table first with id=' + listingId);
+    // Fetch from listing table
+    console.log('🔍 fetchListingComplete: Fetching listing with _id=' + listingId);
 
-    const { data: trialData, error: trialError } = await supabase
-      .from('listing_trial')
-      .select('*')
-      .eq('id', listingId)
-      .maybeSingle();
+    const { data: listingData, error: listingError } = await supabase
+      .from('listing')
+      .select(`
+        _id,
+        Name,
+        Description,
+        "Description - Neighborhood",
+        "Features - Qty Bedrooms",
+        "Features - Qty Bathrooms",
+        "Features - Qty Beds",
+        "Features - Qty Guests",
+        "Features - SQFT Area",
+        "Kitchen Type",
+        "Features - Type of Space",
+        "Features - Amenities In-Unit",
+        "Features - Amenities In-Building",
+        "Features - Safety",
+        "Features - House Rules",
+        "Features - Parking type",
+        "Features - Secure Storage Option",
+        "Features - Trial Periods Allowed",
+        "Features - Photos",
+        "Location - Address",
+        "Location - slightly different address",
+        "Location - Hood",
+        "Location - Borough",
+        "neighborhood (manual input by user)",
+        "Time to Station (commute)",
+        "Map HTML Web",
+        "💰Nightly Host Rate for 2 nights",
+        "💰Nightly Host Rate for 3 nights",
+        "💰Nightly Host Rate for 4 nights",
+        "💰Nightly Host Rate for 5 nights",
+        "💰Nightly Host Rate for 7 nights",
+        "💰Weekly Host Rate",
+        "💰Monthly Host Rate",
+        "💰Damage Deposit",
+        "💰Cleaning Cost / Maintenance Fee",
+        "💰Price Override",
+        "Days Available (List of Days)",
+        "Nights Available (List of Nights) ",
+        "Days Not Available",
+        "Nights Not Available",
+        "Dates - Blocked",
+        " First Available",
+        "Last Available",
+        "Minimum Nights",
+        "Maximum Nights",
+        "Minimum Weeks",
+        "Maximum Weeks",
+        "Minimum Months",
+        "Maximum Months",
+        "Weeks offered",
+        "rental type",
+        "💰Unit Markup",
+        "NEW Date Check-in Time",
+        "NEW Date Check-out Time",
+        "Host User",
+        "host name",
+        "host restrictions",
+        "Cancellation Policy",
+        "video tour",
+        "Reviews",
+        Active,
+        Complete,
+        "Preferred Gender",
+        "allow alternating roommates?"
+      `)
+      .eq('_id', listingId)
+      .single();
 
-    let listingData = null;
-    let isListingTrial = false;
-
-    if (trialData) {
-      console.log('✅ Found listing in listing_trial table');
-      listingData = trialData;
-      isListingTrial = true;
-      // Map listing_trial fields to standard listing format for compatibility
-      // listing_trial uses 'id' as UUID, listing uses '_id' as Bubble ID
-      listingData._id = listingData.id;
-    } else {
-      // Fall back to listing table
-      console.log('📋 Not found in listing_trial, trying listing table with _id=' + listingId);
-      const { data: mainListingData, error: listingError } = await supabase
-        .from('listing')
-        .select(`
-          _id,
-          Name,
-          Description,
-          "Description - Neighborhood",
-          "Features - Qty Bedrooms",
-          "Features - Qty Bathrooms",
-          "Features - Qty Beds",
-          "Features - Qty Guests",
-          "Features - SQFT Area",
-          "Kitchen Type",
-          "Features - Type of Space",
-          "Features - Amenities In-Unit",
-          "Features - Amenities In-Building",
-          "Features - Safety",
-          "Features - House Rules",
-          "Features - Parking type",
-          "Features - Secure Storage Option",
-          "Features - Trial Periods Allowed",
-          "Features - Photos",
-          "Location - Address",
-          "Location - slightly different address",
-          "Location - Hood",
-          "Location - Borough",
-          "neighborhood (manual input by user)",
-          "Time to Station (commute)",
-          "Map HTML Web",
-          "💰Nightly Host Rate for 2 nights",
-          "💰Nightly Host Rate for 3 nights",
-          "💰Nightly Host Rate for 4 nights",
-          "💰Nightly Host Rate for 5 nights",
-          "💰Nightly Host Rate for 7 nights",
-          "💰Weekly Host Rate",
-          "💰Monthly Host Rate",
-          "💰Damage Deposit",
-          "💰Cleaning Cost / Maintenance Fee",
-          "💰Price Override",
-          "Days Available (List of Days)",
-          "Nights Available (List of Nights) ",
-          "Days Not Available",
-          "Nights Not Available",
-          "Dates - Blocked",
-          " First Available",
-          "Last Available",
-          "Minimum Nights",
-          "Maximum Nights",
-          "Minimum Weeks",
-          "Maximum Weeks",
-          "Minimum Months",
-          "Maximum Months",
-          "Weeks offered",
-          "rental type",
-          "💰Unit Markup",
-          "NEW Date Check-in Time",
-          "NEW Date Check-out Time",
-          "Host User",
-          "host name",
-          "host restrictions",
-          "Cancellation Policy",
-          "video tour",
-          "Reviews",
-          Active,
-          Complete,
-          "Preferred Gender",
-          "allow alternating roommates?"
-        `)
-        .eq('_id', listingId)
-        .single();
-
-      if (listingError) throw listingError;
-      if (!mainListingData) throw new Error('Listing not found in either listing_trial or listing table');
-
-      listingData = mainListingData;
-    }
-
+    if (listingError) throw listingError;
     if (!listingData) throw new Error('Listing not found');
 
-    // 2. Fetch photos - handle differently for listing_trial vs listing
-    let sortedPhotos = [];
+    console.log('✅ Found listing:', listingData._id);
 
-    if (isListingTrial) {
-      // For listing_trial, photos are stored inline in 'Features - Photos' JSON column
-      const inlinePhotos = parseJsonField(listingData['Features - Photos']);
-      sortedPhotos = inlinePhotos.map((photo, index) => ({
-        _id: photo.id || `inline_${index}`,
-        Photo: photo.Photo || photo.url || photo,
-        'Photo (thumbnail)': photo['Photo (thumbnail)'] || photo.Photo || photo.url || photo,
+    // 2. Fetch photos - check if embedded in Features - Photos or in listing_photo table
+    let sortedPhotos = [];
+    const embeddedPhotos = parseJsonField(listingData['Features - Photos']);
+    const hasEmbeddedObjects = embeddedPhotos.length > 0 &&
+      typeof embeddedPhotos[0] === 'object' &&
+      embeddedPhotos[0] !== null;
+
+    if (hasEmbeddedObjects) {
+      // Photos are embedded objects with URLs
+      sortedPhotos = embeddedPhotos.map((photo, index) => ({
+        _id: photo.id || `embedded_${index}`,
+        Photo: photo.Photo || photo.url || '',
+        'Photo (thumbnail)': photo['Photo (thumbnail)'] || photo.Photo || photo.url || '',
         toggleMainPhoto: photo.toggleMainPhoto ?? photo.isCover ?? (index === 0),
         SortOrder: photo.SortOrder ?? photo.sortOrder ?? photo.displayOrder ?? index,
         Caption: photo.caption || photo.Caption || ''
       }));
-      // Sort by SortOrder
-      sortedPhotos.sort((a, b) => {
-        if (a.toggleMainPhoto) return -1;
-        if (b.toggleMainPhoto) return 1;
-        return (a.SortOrder ?? 0) - (b.SortOrder ?? 0);
-      });
-      console.log('📷 Inline photos from listing_trial:', sortedPhotos.length);
+      console.log('📷 Embedded photos from Features - Photos:', sortedPhotos.length);
     } else {
-      // For listing, first check if photos are embedded in Features - Photos (new format)
-      const embeddedPhotos = parseJsonField(listingData['Features - Photos']);
-      const hasEmbeddedObjects = embeddedPhotos.length > 0 &&
-        typeof embeddedPhotos[0] === 'object' &&
-        embeddedPhotos[0] !== null;
+      // Legacy: fetch from listing_photo table
+      const { data: photosData, error: photosError } = await supabase
+        .from('listing_photo')
+        .select('_id, Photo, "Photo (thumbnail)", SortOrder, toggleMainPhoto, Caption')
+        .eq('Listing', listingId)
+        .order('SortOrder', { ascending: true, nullsLast: true });
 
-      if (hasEmbeddedObjects) {
-        // New format: photos are embedded objects with URLs
-        sortedPhotos = embeddedPhotos.map((photo, index) => ({
-          _id: photo.id || `embedded_${index}`,
-          Photo: photo.Photo || photo.url || '',
-          'Photo (thumbnail)': photo['Photo (thumbnail)'] || photo.Photo || photo.url || '',
-          toggleMainPhoto: photo.toggleMainPhoto ?? (index === 0),
-          SortOrder: photo.SortOrder ?? photo.displayOrder ?? index,
-          Caption: photo.caption || photo.Caption || ''
-        }));
-        console.log('📷 Embedded photos from Features - Photos:', sortedPhotos.length);
-      } else {
-        // Legacy: fetch from listing_photo table
-        const { data: photosData, error: photosError } = await supabase
-          .from('listing_photo')
-          .select('_id, Photo, "Photo (thumbnail)", SortOrder, toggleMainPhoto, Caption')
-          .eq('Listing', listingId)
-          .order('SortOrder', { ascending: true, nullsLast: true });
-
-        if (photosError) console.error('Photos fetch error:', photosError);
-        sortedPhotos = photosData || [];
-        console.log('📷 Photos from listing_photo table:', sortedPhotos.length);
-      }
-
-      // Sort photos (main photo first, then by SortOrder, then by _id)
-      sortedPhotos = sortedPhotos.sort((a, b) => {
-        if (a.toggleMainPhoto) return -1;
-        if (b.toggleMainPhoto) return 1;
-        if (a.SortOrder !== null && b.SortOrder === null) return -1;
-        if (a.SortOrder === null && b.SortOrder !== null) return 1;
-        if (a.SortOrder !== null && b.SortOrder !== null) {
-          return a.SortOrder - b.SortOrder;
-        }
-        return (a._id || '').localeCompare(b._id || '');
-      });
+      if (photosError) console.error('Photos fetch error:', photosError);
+      sortedPhotos = photosData || [];
+      console.log('📷 Photos from listing_photo table:', sortedPhotos.length);
     }
+
+    // Sort photos (main photo first, then by SortOrder, then by _id)
+    sortedPhotos = sortedPhotos.sort((a, b) => {
+      if (a.toggleMainPhoto) return -1;
+      if (b.toggleMainPhoto) return 1;
+      if (a.SortOrder !== null && b.SortOrder === null) return -1;
+      if (a.SortOrder === null && b.SortOrder !== null) return 1;
+      if (a.SortOrder !== null && b.SortOrder !== null) {
+        return a.SortOrder - b.SortOrder;
+      }
+      return (a._id || '').localeCompare(b._id || '');
+    });
 
     // 4. Resolve geographic data
     const resolvedNeighborhood = listingData['Location - Hood']

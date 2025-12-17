@@ -248,6 +248,8 @@ export interface CompensationResult {
   duration_months: number;
   four_week_rent: number;
   four_week_compensation: number;
+  /** Host's per-night rate (used for "host compensation" field in proposal) */
+  host_compensation_per_night: number;
 }
 
 /**

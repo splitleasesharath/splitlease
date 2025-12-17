@@ -51,10 +51,10 @@ export default function ProposalDetailsModal({
 
   // Get guest info
   const guest = proposal.guest || proposal.Guest || proposal['Created By'] || {};
-  const guestName = guest.firstName || guest['First Name'] || guest.first_name || 'Guest';
-  const guestLastName = guest.lastName || guest['Last Name'] || guest.last_name || '';
+  const guestName = guest.firstName || guest['Name - First'] || guest['First Name'] || guest.first_name || 'Guest';
+  const guestLastName = guest.lastName || guest['Name - Last'] || guest['Last Name'] || guest.last_name || '';
   const guestBio = guest.bio || guest.Bio || '';
-  const guestAvatar = guest.avatar || guest.Avatar || guest['Profile Picture'];
+  const guestAvatar = guest.avatar || guest.Avatar || guest['Profile Photo'] || guest['Profile Picture'];
   const avatarUrl = guestAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(guestName)}&background=random&size=60`;
 
   // Verification statuses
@@ -63,21 +63,31 @@ export default function ProposalDetailsModal({
   const emailVerified = guest.emailVerified || guest['Email Verified'] || false;
   const identityVerified = guest.identityVerified || guest['Identity Verified'] || false;
 
+  // Helper to convert Bubble day indices (1-7) to day names
+  const bubbleDayToName = (bubbleDay) => {
+    const dayNames = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return typeof bubbleDay === 'number' ? dayNames[bubbleDay] || 'Monday' : bubbleDay;
+  };
+
   // Get schedule info
-  const checkInDay = proposal.checkInDay || proposal['Check In Day'] || 'Monday';
-  const checkOutDay = proposal.checkOutDay || proposal['Check Out Day'] || 'Friday';
+  const checkInDayRaw = proposal.checkInDay || proposal['check in day'] || proposal['Check In Day'] || 'Monday';
+  const checkOutDayRaw = proposal.checkOutDay || proposal['check out day'] || proposal['Check Out Day'] || 'Friday';
+  const checkInDay = bubbleDayToName(checkInDayRaw);
+  const checkOutDay = bubbleDayToName(checkOutDayRaw);
   const checkInTime = proposal.checkInTime || proposal['Check In Time'] || '2:00 pm';
   const checkOutTime = proposal.checkOutTime || proposal['Check Out Time'] || '11:00 am';
-  const moveInRangeStart = proposal.moveInRangeStart || proposal['Move In Range Start'];
-  const moveInRangeEnd = proposal.moveInRangeEnd || proposal['Move In Range End'];
-  const reservationSpanWeeks = proposal.reservationSpanWeeks || proposal['Reservation Span (weeks)'] || 0;
+  const moveInRangeStart = proposal.moveInRangeStart || proposal['Move in range start'] || proposal['Move In Range Start'];
+  const moveInRangeEnd = proposal.moveInRangeEnd || proposal['Move in range end'] || proposal['Move In Range End'];
+  const reservationSpanWeeks = proposal.reservationSpanWeeks || proposal['Reservation Span (Weeks)'] || proposal['Reservation Span (weeks)'] || 0;
 
   // Get pricing info
-  const hostCompensation = proposal.hostCompensation || proposal['Host Compensation'] || 0;
-  const totalCompensation = proposal.totalCompensation || proposal['Total Compensation'] || 0;
-  const compensationPerNight = proposal.compensationPerNight || proposal['Compensation Per Night'] || 0;
-  const maintenanceFee = proposal.maintenanceFee || proposal['Maintenance Fee'] || 0;
-  const damageDeposit = proposal.damageDeposit || proposal['Damage Deposit'] || 0;
+  // "host compensation" is the per-night HOST rate (from listing pricing tiers)
+  // "Total Compensation (proposal - host)" is the total = per-night rate * nights * weeks
+  const hostCompensation = proposal.hostCompensation || proposal['host compensation'] || proposal['Host Compensation'] || 0;
+  const totalCompensation = proposal.totalCompensation || proposal['Total Compensation (proposal - host)'] || proposal['Total Compensation'] || 0;
+  const compensationPerNight = proposal.compensationPerNight || proposal['proposal nightly price'] || proposal['Compensation Per Night'] || 0;
+  const maintenanceFee = proposal.maintenanceFee || proposal['cleaning fee'] || proposal['Maintenance Fee'] || 0;
+  const damageDeposit = proposal.damageDeposit || proposal['damage deposit'] || proposal['Damage Deposit'] || 0;
   const counterOfferHappened = proposal.counterOfferHappened || proposal['Counter Offer Happened'] || false;
   const reasonForCancellation = proposal.reasonForCancellation || proposal['Reason For Cancellation'] || '';
 
