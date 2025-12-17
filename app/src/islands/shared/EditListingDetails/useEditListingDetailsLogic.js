@@ -368,6 +368,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
       listingName: formData.Name || listing?.Name || '',
       address: `${formData['Location - City'] || listing?.['Location - City'] || ''}, ${formData['Location - State'] || listing?.['Location - State'] || ''}`,
       neighborhood: formData['Location - Hood'] || listing?.['Location - Hood'] || formData['Location - Borough'] || listing?.['Location - Borough'] || '',
+      borough: formData['Location - Borough'] || listing?.['Location - Borough'] || '',
       typeOfSpace: formData['Features - Type of Space'] || listing?.['Features - Type of Space'] || '',
       bedrooms: formData['Features - Qty Bedrooms'] ?? listing?.['Features - Qty Bedrooms'] ?? 0,
       beds: formData['Features - Qty Beds'] ?? listing?.['Features - Qty Beds'] ?? 0,
