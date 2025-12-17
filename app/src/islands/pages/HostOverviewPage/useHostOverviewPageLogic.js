@@ -607,13 +607,20 @@ export function useHostOverviewPageLogic() {
       const itemName = itemToDelete.name || itemToDelete.Name || itemToDelete.display || itemToDelete.Display || 'item';
 
       if (deleteType === 'listing') {
-        // Delete listing via Bubble API
-        await supabase.functions.invoke('bubble-proxy', {
+        // Delete listing via listing edge function
+        const { data, error } = await supabase.functions.invoke('listing', {
           body: {
-            endpoint: `listing/${itemId}`,
-            method: 'DELETE'
+            action: 'delete',
+            payload: {
+              listing_id: itemId,
+              user_email: user?.email,
+            }
           }
         });
+
+        if (error) {
+          throw new Error(error.message || 'Failed to delete listing');
+        }
 
         setMyListings(prev => prev.filter(l => (l.id || l._id) !== itemId));
         showToast('Success', `${itemName} deleted successfully`, 'success');

@@ -25,15 +25,16 @@ import { handleCreate } from "./handlers/create.ts";
 import { handleGet } from "./handlers/get.ts";
 import { handleSubmit } from "./handlers/submit.ts";
 import { handleCreateMockupProposal } from "./handlers/createMockupProposal.ts";
+import { handleDelete } from "./handlers/delete.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ["create", "get", "submit", "createMockupProposal"] as const;
+const ALLOWED_ACTIONS = ["create", "get", "submit", "createMockupProposal", "delete"] as const;
 // All listing actions are public (auth handled by Bubble workflow)
-const PUBLIC_ACTIONS = ["create", "get", "createMockupProposal"] as const;
+const PUBLIC_ACTIONS = ["create", "get", "createMockupProposal", "delete"] as const;
 
 type Action = (typeof ALLOWED_ACTIONS)[number];
 
@@ -151,6 +152,10 @@ Deno.serve(async (req: Request) => {
         result = { success: true, message: "Mockup proposal creation initiated" };
         break;
       }
+
+      case "delete":
+        result = await handleDelete(body.payload);
+        break;
 
       default:
         throw new ValidationError(`Unhandled action: ${body.action}`);
