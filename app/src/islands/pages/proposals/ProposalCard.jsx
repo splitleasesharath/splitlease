@@ -25,7 +25,7 @@ import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
-import MapModal from '../../modals/MapModal.jsx';
+import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.jsx';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -684,7 +684,7 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
 // MAIN COMPONENT
 // ============================================================================
 
-export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig }) {
+export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect }) {
   if (!proposal) {
     return null;
   }
@@ -1348,14 +1348,14 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
         />
       )}
 
-      {/* Map Modal */}
-      {showMapModal && (
-        <MapModal
-          listing={listing}
-          address={mapAddress}
-          onClose={() => setShowMapModal(false)}
-        />
-      )}
+      {/* Fullscreen Proposal Map Modal */}
+      <FullscreenProposalMapModal
+        isOpen={showMapModal}
+        onClose={() => setShowMapModal(false)}
+        proposals={allProposals}
+        currentProposalId={proposal._id}
+        onProposalSelect={onProposalSelect}
+      />
     </div>
   );
 }
