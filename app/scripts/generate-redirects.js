@@ -44,17 +44,18 @@ function generateRedirects() {
     // The base /help-center is handled separately as a static route
     if (route.path === '/help-center/:category') {
       lines.push(`# ${route.path} → ${route.file} (wildcard only, base handled separately)`);
-      lines.push(`${basePath}/*  /_internal/${route.internalName}  200`);
+      lines.push(`${basePath}/*  /_internal/${route.internalName}.html  200`);
       lines.push('');
       continue;
     }
 
     if (route.cloudflareInternal && route.internalName) {
       // Use _internal/ directory to avoid Cloudflare's "pretty URL" normalization
+      // .html extension required for Cloudflare to serve correct Content-Type
       lines.push(`# ${route.path} → ${route.file}`);
-      lines.push(`${basePath}  /_internal/${route.internalName}  200`);
-      lines.push(`${basePath}/  /_internal/${route.internalName}  200`);
-      lines.push(`${basePath}/*  /_internal/${route.internalName}  200`);
+      lines.push(`${basePath}  /_internal/${route.internalName}.html  200`);
+      lines.push(`${basePath}/  /_internal/${route.internalName}.html  200`);
+      lines.push(`${basePath}/*  /_internal/${route.internalName}.html  200`);
     } else {
       // Direct rewrite to HTML file
       lines.push(`# ${route.path} → ${route.file}`);
@@ -78,9 +79,10 @@ function generateRedirects() {
       lines.push('/index.html  /index.html  200');
       lines.push('');
     } else if (route.cloudflareInternal && route.internalName) {
+      // .html extension required for Cloudflare to serve correct Content-Type
       lines.push(`# ${basePath} → ${route.file}`);
-      lines.push(`${basePath}  /_internal/${route.internalName}  200`);
-      lines.push(`${basePath}/  /_internal/${route.internalName}  200`);
+      lines.push(`${basePath}  /_internal/${route.internalName}.html  200`);
+      lines.push(`${basePath}/  /_internal/${route.internalName}.html  200`);
       lines.push('');
     } else {
       // Add rewrites for both clean URL and .html extension
