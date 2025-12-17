@@ -214,7 +214,7 @@ export const routes = [
     aliases: ['/self-listing.html'],
     protected: true,
     cloudflareInternal: true,
-    internalName: 'self-listing',
+    internalName: 'self-listing-view',
     hasDynamicSegment: false
   },
   {
@@ -261,7 +261,7 @@ export const routes = [
     aliases: ['/rental-application.html'],
     protected: true,
     cloudflareInternal: true,
-    internalName: 'rental-application',
+    internalName: 'rental-application-view',
     hasDynamicSegment: false
   },
 

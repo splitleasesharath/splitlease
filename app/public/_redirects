@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2025-12-17T12:16:07.723Z
+# Generated: 2025-12-17T12:29:06.072Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -8,30 +8,30 @@
 # These routes use _internal/ files to avoid Cloudflare's 308 redirects
 
 # /view-split-lease → view-split-lease.html
-/view-split-lease  /_internal/listing-view.html  200
-/view-split-lease/  /_internal/listing-view.html  200
-/view-split-lease/*  /_internal/listing-view.html  200
+/view-split-lease  /_internal/listing-view  200
+/view-split-lease/  /_internal/listing-view  200
+/view-split-lease/*  /_internal/listing-view  200
 
 # /preview-split-lease → preview-split-lease.html
-/preview-split-lease  /_internal/preview-listing-view.html  200
-/preview-split-lease/  /_internal/preview-listing-view.html  200
-/preview-split-lease/*  /_internal/preview-listing-view.html  200
+/preview-split-lease  /_internal/preview-listing-view  200
+/preview-split-lease/  /_internal/preview-listing-view  200
+/preview-split-lease/*  /_internal/preview-listing-view  200
 
 # /guest-proposals → guest-proposals.html
-/guest-proposals  /_internal/guest-proposals-view.html  200
-/guest-proposals/  /_internal/guest-proposals-view.html  200
-/guest-proposals/*  /_internal/guest-proposals-view.html  200
+/guest-proposals  /_internal/guest-proposals-view  200
+/guest-proposals/  /_internal/guest-proposals-view  200
+/guest-proposals/*  /_internal/guest-proposals-view  200
 
 # /account-profile → account-profile.html
 /account-profile/*  /account-profile.html  200
 
 # /help-center/:category → help-center-category.html (wildcard only, base handled separately)
-/help-center/*  /_internal/help-center-category-view.html  200
+/help-center/*  /_internal/help-center-category-view  200
 
 # /host-proposals → host-proposals.html
-/host-proposals  /_internal/host-proposals-view.html  200
-/host-proposals/  /_internal/host-proposals-view.html  200
-/host-proposals/*  /_internal/host-proposals-view.html  200
+/host-proposals  /_internal/host-proposals-view  200
+/host-proposals/  /_internal/host-proposals-view  200
+/host-proposals/*  /_internal/host-proposals-view  200
 
 # ===== STATIC PAGES =====
 
@@ -40,8 +40,8 @@
 /index.html  /index.html  200
 
 # /search → search.html
-/search  /_internal/search-view.html  200
-/search/  /_internal/search-view.html  200
+/search  /_internal/search-view  200
+/search/  /_internal/search-view  200
 
 # /search-test
 /search-test  /search-test.html  200
@@ -49,68 +49,68 @@
 /search-test.html  /search-test.html  200
 
 # /help-center → help-center.html
-/help-center  /_internal/help-center-view.html  200
-/help-center/  /_internal/help-center-view.html  200
+/help-center  /_internal/help-center-view  200
+/help-center/  /_internal/help-center-view  200
 
 # /faq → faq.html
-/faq  /_internal/faq-view.html  200
-/faq/  /_internal/faq-view.html  200
+/faq  /_internal/faq-view  200
+/faq/  /_internal/faq-view  200
 
 # /policies → policies.html
-/policies  /_internal/policies-view.html  200
-/policies/  /_internal/policies-view.html  200
+/policies  /_internal/policies-view  200
+/policies/  /_internal/policies-view  200
 
 # /list-with-us → list-with-us.html
-/list-with-us  /_internal/list-with-us-view.html  200
-/list-with-us/  /_internal/list-with-us-view.html  200
+/list-with-us  /_internal/list-with-us-view  200
+/list-with-us/  /_internal/list-with-us-view  200
 
 # /why-split-lease → why-split-lease.html
-/why-split-lease  /_internal/why-split-lease-view.html  200
-/why-split-lease/  /_internal/why-split-lease-view.html  200
+/why-split-lease  /_internal/why-split-lease-view  200
+/why-split-lease/  /_internal/why-split-lease-view  200
 
 # /careers → careers.html
-/careers  /_internal/careers-view.html  200
-/careers/  /_internal/careers-view.html  200
+/careers  /_internal/careers-view  200
+/careers/  /_internal/careers-view  200
 
 # /about-us → about-us.html
-/about-us  /_internal/about-us-view.html  200
-/about-us/  /_internal/about-us-view.html  200
+/about-us  /_internal/about-us-view  200
+/about-us/  /_internal/about-us-view  200
 
 # /guest-success → guest-success.html
-/guest-success  /_internal/guest-success-view.html  200
-/guest-success/  /_internal/guest-success-view.html  200
+/guest-success  /_internal/guest-success-view  200
+/guest-success/  /_internal/guest-success-view  200
 
 # /host-success → host-success.html
-/host-success  /_internal/host-success-view.html  200
-/host-success/  /_internal/host-success-view.html  200
+/host-success  /_internal/host-success-view  200
+/host-success/  /_internal/host-success-view  200
 
 # /self-listing → self-listing.html
-/self-listing  /_internal/self-listing.html  200
-/self-listing/  /_internal/self-listing.html  200
+/self-listing  /_internal/self-listing-view  200
+/self-listing/  /_internal/self-listing-view  200
 
 # /self-listing-v2 → self-listing-v2.html
-/self-listing-v2  /_internal/self-listing-v2-view.html  200
-/self-listing-v2/  /_internal/self-listing-v2-view.html  200
+/self-listing-v2  /_internal/self-listing-v2-view  200
+/self-listing-v2/  /_internal/self-listing-v2-view  200
 
 # /listing-dashboard → listing-dashboard.html
-/listing-dashboard  /_internal/listing-dashboard-view.html  200
-/listing-dashboard/  /_internal/listing-dashboard-view.html  200
+/listing-dashboard  /_internal/listing-dashboard-view  200
+/listing-dashboard/  /_internal/listing-dashboard-view  200
 
 # /host-overview → host-overview.html
-/host-overview  /_internal/host-overview-view.html  200
-/host-overview/  /_internal/host-overview-view.html  200
+/host-overview  /_internal/host-overview-view  200
+/host-overview/  /_internal/host-overview-view  200
 
 # /favorite-listings → favorite-listings.html
-/favorite-listings  /_internal/favorite-listings-view.html  200
-/favorite-listings/  /_internal/favorite-listings-view.html  200
+/favorite-listings  /_internal/favorite-listings-view  200
+/favorite-listings/  /_internal/favorite-listings-view  200
 
 # /rental-application → rental-application.html
-/rental-application  /_internal/rental-application.html  200
-/rental-application/  /_internal/rental-application.html  200
+/rental-application  /_internal/rental-application-view  200
+/rental-application/  /_internal/rental-application-view  200
 
 # /reset-password → reset-password.html
-/reset-password  /_internal/reset-password-view.html  200
-/reset-password/  /_internal/reset-password-view.html  200
+/reset-password  /_internal/reset-password-view  200
+/reset-password/  /_internal/reset-password-view  200
 
 # /404
 /404  /404.html  200
@@ -118,8 +118,8 @@
 /404.html  /404.html  200
 
 # /messages → messages.html
-/messages  /_internal/messages-view.html  200
-/messages/  /_internal/messages-view.html  200
+/messages  /_internal/messages-view  200
+/messages/  /_internal/messages-view  200
 
 # /_internal-test
 /_internal-test  /_internal-test.html  200

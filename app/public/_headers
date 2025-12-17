@@ -99,6 +99,14 @@
 /favorite-listings
   Content-Type: text/html; charset=utf-8
 
+# Self Listing page - serve as HTML (uses _internal pattern)
+/self-listing
+  Content-Type: text/html; charset=utf-8
+
+# Rental Application page - serve as HTML (uses _internal pattern)
+/rental-application
+  Content-Type: text/html; charset=utf-8
+
 # Internal files (no extension) - serve as HTML
 /_internal/*
   Content-Type: text/html; charset=utf-8

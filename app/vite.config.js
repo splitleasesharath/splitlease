@@ -176,15 +176,15 @@ export default defineConfig({
         }
 
         // Generate _internal files from Route Registry
-        // Files MUST have .html extension for Cloudflare to serve correct Content-Type
+        // Files should NOT have .html extension - Content-Type is set via _headers file
         const internalRoutes = getInternalRoutes();
         for (const route of internalRoutes) {
           const source = path.join(distDir, route.file);
-          const dest = path.join(internalDir, `${route.internalName}.html`);
+          const dest = path.join(internalDir, route.internalName);
 
           if (fs.existsSync(source)) {
             fs.copyFileSync(source, dest);
-            console.log(`Created _internal/${route.internalName}.html for Cloudflare routing`);
+            console.log(`Created _internal/${route.internalName} for Cloudflare routing`);
           }
         }
 
