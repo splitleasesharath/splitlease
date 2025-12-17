@@ -270,3 +270,129 @@ export async function addUserListingFavoritesBatch(
     console.log(`[junctionHelpers] user_listing_favorite batch added successfully`);
   }
 }
+
+// ============================================
+// THREAD MESSAGE JUNCTION
+// ============================================
+
+export type MessageType = 'all' | 'slbot_to_host' | 'slbot_to_guest' | 'host_sent' | 'guest_sent';
+
+/**
+ * Add a message to thread junction
+ * Usually auto-populated by trigger, but available for manual use
+ */
+export async function addThreadMessage(
+  supabase: SupabaseClient,
+  threadId: string,
+  messageId: string,
+  messageType: MessageType = 'all'
+): Promise<void> {
+  console.log(`[junctionHelpers] Adding thread_message: thread=${threadId}, message=${messageId}, type=${messageType}`);
+
+  const { error } = await supabase
+    .schema('junctions')
+    .from('thread_message')
+    .insert({
+      thread_id: threadId,
+      message_id: messageId,
+      message_type: messageType,
+    });
+
+  if (error) {
+    // Ignore duplicate key errors (junction already exists via trigger)
+    if (error.code === '23505') {
+      console.log(`[junctionHelpers] thread_message already exists (idempotent)`);
+      return;
+    }
+    console.error(`[junctionHelpers] Failed to add thread_message:`, error);
+  } else {
+    console.log(`[junctionHelpers] thread_message added successfully`);
+  }
+}
+
+/**
+ * Get messages for a thread filtered by type
+ * Useful for visibility-filtered queries
+ */
+export async function getThreadMessagesByType(
+  supabase: SupabaseClient,
+  threadId: string,
+  messageTypes: MessageType[]
+): Promise<string[]> {
+  console.log(`[junctionHelpers] Getting thread_messages: thread=${threadId}, types=${messageTypes.join(',')}`);
+
+  const { data, error } = await supabase
+    .schema('junctions')
+    .from('thread_message')
+    .select('message_id')
+    .eq('thread_id', threadId)
+    .in('message_type', messageTypes);
+
+  if (error) {
+    console.error(`[junctionHelpers] Failed to get thread_messages:`, error);
+    return [];
+  }
+
+  return data?.map(row => row.message_id) || [];
+}
+
+// ============================================
+// THREAD PARTICIPANT JUNCTION
+// ============================================
+
+/**
+ * Add a participant to thread junction
+ * Usually auto-populated by trigger, but available for manual use
+ */
+export async function addThreadParticipant(
+  supabase: SupabaseClient,
+  threadId: string,
+  userId: string,
+  role: 'host' | 'guest'
+): Promise<void> {
+  console.log(`[junctionHelpers] Adding thread_participant: thread=${threadId}, user=${userId}, role=${role}`);
+
+  const { error } = await supabase
+    .schema('junctions')
+    .from('thread_participant')
+    .insert({
+      thread_id: threadId,
+      user_id: userId,
+      role: role,
+    });
+
+  if (error) {
+    // Ignore duplicate key errors (junction already exists via trigger)
+    if (error.code === '23505') {
+      console.log(`[junctionHelpers] thread_participant already exists (idempotent)`);
+      return;
+    }
+    console.error(`[junctionHelpers] Failed to add thread_participant:`, error);
+  } else {
+    console.log(`[junctionHelpers] thread_participant added successfully`);
+  }
+}
+
+/**
+ * Get all threads for a user via junction table
+ * More efficient than OR queries on thread table
+ */
+export async function getUserThreadIds(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<string[]> {
+  console.log(`[junctionHelpers] Getting user threads: user=${userId}`);
+
+  const { data, error } = await supabase
+    .schema('junctions')
+    .from('thread_participant')
+    .select('thread_id')
+    .eq('user_id', userId);
+
+  if (error) {
+    console.error(`[junctionHelpers] Failed to get user threads:`, error);
+    return [];
+  }
+
+  return data?.map(row => row.thread_id) || [];
+}

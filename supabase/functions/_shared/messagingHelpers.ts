@@ -133,22 +133,8 @@ export async function createThread(
     throw new Error(`Failed to create thread: ${error.message}`);
   }
 
-  // Add to junction tables
-  try {
-    await supabase.rpc('add_user_to_thread', {
-      p_user_id: params.hostUserId,
-      p_thread_id: threadId,
-      p_role: 'host'
-    });
-    await supabase.rpc('add_user_to_thread', {
-      p_user_id: params.guestUserId,
-      p_thread_id: threadId,
-      p_role: 'guest'
-    });
-  } catch (junctionError) {
-    // Log but don't fail - junction tables are secondary
-    console.warn('[messagingHelpers] Junction table update failed:', junctionError);
-  }
+  // Junction tables (thread_participant) are now auto-populated by database trigger
+  // trigger_populate_thread_participant_junction handles this automatically on thread INSERT
 
   console.log('[messagingHelpers] Created thread:', threadId);
   return threadId;
