@@ -1169,14 +1169,55 @@ export default function ViewSplitLeasePage() {
       const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || selectedDays;
       const daysInBubbleFormat = adaptDaysToBubble({ zeroBasedDays: daysInJsFormat });
 
-      // Calculate nights from days (nights = days without the last checkout day)
-      // For consecutive days [1,2,3,4,5] (Mon-Fri), nights are [1,2,3,4] (Mon-Thu)
-      const sortedDays = [...daysInBubbleFormat].sort((a, b) => a - b);
-      const nightsInBubbleFormat = sortedDays.slice(0, -1); // Remove last day (checkout day)
+      // Sort days in JS format first to detect wrap-around (Saturday/Sunday spanning)
+      const sortedJsDays = [...daysInJsFormat].sort((a, b) => a - b);
 
-      // Get check-in and check-out days in Bubble format
-      const checkInDayBubble = sortedDays[0];
-      const checkOutDayBubble = sortedDays[sortedDays.length - 1];
+      // Check for wrap-around case (both Saturday=6 and Sunday=0 present, but not all 7 days)
+      const hasSaturday = sortedJsDays.includes(6);
+      const hasSunday = sortedJsDays.includes(0);
+      const isWrapAround = hasSaturday && hasSunday && daysInJsFormat.length < 7;
+
+      let checkInDayJs, checkOutDayJs, nightsInJsFormat;
+
+      if (isWrapAround) {
+        // Find the gap in the sorted selection to determine wrap-around point
+        let gapIndex = -1;
+        for (let i = 0; i < sortedJsDays.length - 1; i++) {
+          if (sortedJsDays[i + 1] - sortedJsDays[i] > 1) {
+            gapIndex = i + 1;
+            break;
+          }
+        }
+
+        if (gapIndex !== -1) {
+          // Wrap-around: check-in is the first day after the gap, check-out is the last day before gap
+          checkInDayJs = sortedJsDays[gapIndex];
+          checkOutDayJs = sortedJsDays[gapIndex - 1];
+
+          // Reorder days to be in actual sequence (check-in to check-out)
+          // e.g., [0, 6] with gap at index 1 → reorder to [6, 0] (Fri, Sat, Sun)
+          const reorderedDays = [...sortedJsDays.slice(gapIndex), ...sortedJsDays.slice(0, gapIndex)];
+
+          // Nights = all days except the last one (checkout day)
+          nightsInJsFormat = reorderedDays.slice(0, -1);
+        } else {
+          // No gap found, use standard logic
+          checkInDayJs = sortedJsDays[0];
+          checkOutDayJs = sortedJsDays[sortedJsDays.length - 1];
+          nightsInJsFormat = sortedJsDays.slice(0, -1);
+        }
+      } else {
+        // Standard case: check-in = first day, check-out = last day
+        checkInDayJs = sortedJsDays[0];
+        checkOutDayJs = sortedJsDays[sortedJsDays.length - 1];
+        // Nights = all days except the last one (checkout day)
+        nightsInJsFormat = sortedJsDays.slice(0, -1);
+      }
+
+      // Convert to Bubble format (1-7)
+      const checkInDayBubble = checkInDayJs + 1;
+      const checkOutDayBubble = checkOutDayJs + 1;
+      const nightsInBubbleFormat = nightsInJsFormat.map(d => d + 1);
 
       // Format reservation span text
       const reservationSpanWeeks = proposalData.reservationSpan || reservationSpan;
