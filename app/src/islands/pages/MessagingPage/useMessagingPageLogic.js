@@ -20,8 +20,6 @@ import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getAvatarUrl 
 import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
 
-const EDGE_FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/messages`;
-
 export function useMessagingPageLogic() {
   // ============================================================================
   // AUTH STATE
@@ -282,18 +280,22 @@ export function useMessagingPageLogic() {
       setIsLoading(true);
       setError(null);
 
-      // Get user's Bubble ID from user state or session metadata
-      const bubbleId = user?.bubbleId;
+      // Get user's Bubble ID from multiple sources (state may not be set yet due to async setState)
+      let bubbleId = user?.bubbleId;
+
       if (!bubbleId) {
-        // User state might not be set yet, try session metadata
+        // Try secure storage first (works for legacy auth users)
+        bubbleId = getUserId();
+      }
+
+      if (!bubbleId) {
+        // Fallback to Supabase session metadata
         const { data: { session } } = await supabase.auth.getSession();
-        const fallbackBubbleId = session?.user?.user_metadata?.user_id;
-        if (!fallbackBubbleId) {
-          throw new Error('User ID not available');
-        }
-        // Query with fallback ID
-        await fetchThreadsWithBubbleId(fallbackBubbleId);
-        return;
+        bubbleId = session?.user?.user_metadata?.user_id;
+      }
+
+      if (!bubbleId) {
+        throw new Error('User ID not available');
       }
 
       await fetchThreadsWithBubbleId(bubbleId);
@@ -421,40 +423,30 @@ export function useMessagingPageLogic() {
 
   /**
    * Fetch messages for a specific thread
+   * Uses supabase.functions.invoke() for automatic token refresh
    */
   async function fetchMessages(threadId) {
     try {
       setIsLoadingMessages(true);
 
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        throw new Error('No active session');
-      }
-
-      const response = await fetch(EDGE_FUNCTION_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
+      // Use supabase.functions.invoke() instead of raw fetch()
+      // This ensures automatic token refresh for stale sessions
+      const { data, error } = await supabase.functions.invoke('messages', {
+        body: {
           action: 'get_messages',
           payload: { thread_id: threadId }
-        }),
+        }
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to fetch messages');
+      if (error) {
+        throw new Error(error.message || 'Failed to fetch messages');
       }
 
-      if (result.success) {
-        setMessages(result.data.messages || []);
-        setThreadInfo(result.data.thread_info || null);
+      if (data?.success) {
+        setMessages(data.data.messages || []);
+        setThreadInfo(data.data.thread_info || null);
       } else {
-        throw new Error(result.error || 'Failed to fetch messages');
+        throw new Error(data?.error || 'Failed to fetch messages');
       }
     } catch (err) {
       console.error('Error fetching messages:', err);
@@ -467,6 +459,7 @@ export function useMessagingPageLogic() {
   /**
    * Send a new message
    * After sending, Realtime will deliver the message to all subscribers
+   * Uses supabase.functions.invoke() for automatic token refresh
    */
   async function sendMessage() {
     if (!messageInput.trim() || !selectedThread || isSending) return;
@@ -480,34 +473,23 @@ export function useMessagingPageLogic() {
         clearTimeout(typingTimeoutRef.current);
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (!session?.access_token) {
-        throw new Error('No active session');
-      }
-
-      const response = await fetch(EDGE_FUNCTION_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
+      // Use supabase.functions.invoke() instead of raw fetch()
+      // This ensures automatic token refresh for stale sessions
+      const { data, error } = await supabase.functions.invoke('messages', {
+        body: {
           action: 'send_message',
           payload: {
             thread_id: selectedThread._id,
             message_body: messageInput.trim(),
           },
-        }),
+        }
       });
 
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to send message');
+      if (error) {
+        throw new Error(error.message || 'Failed to send message');
       }
 
-      if (result.success) {
+      if (data?.success) {
         // Clear input immediately
         setMessageInput('');
 
@@ -518,7 +500,7 @@ export function useMessagingPageLogic() {
         // However, for the sender's immediate feedback, add optimistically
         // (the Realtime broadcast might also arrive, but we'll dedupe)
         const optimisticMessage = {
-          _id: result.data.message_id,
+          _id: data.data.message_id,
           message_body: messageInput.trim(),
           sender_name: 'You',
           sender_type: 'guest', // Will be corrected by Realtime if wrong
@@ -535,7 +517,7 @@ export function useMessagingPageLogic() {
         });
 
       } else {
-        throw new Error(result.error || 'Failed to send message');
+        throw new Error(data?.error || 'Failed to send message');
       }
     } catch (err) {
       console.error('Error sending message:', err);
