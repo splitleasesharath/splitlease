@@ -460,9 +460,13 @@ export async function handleCreateMockupProposal(
       reservationSpanWeeks
     );
 
-    console.log('[createMockupProposal] Nightly price:', pricing.nightlyPrice);
-    console.log('[createMockupProposal] Four week rent:', pricing.fourWeekRent);
-    console.log('[createMockupProposal] Total:', pricing.estimatedBookingTotal);
+    console.log('[createMockupProposal] Pricing calculated:', {
+      nightlyPrice: pricing.nightlyPrice,
+      fourWeekRent: pricing.fourWeekRent,
+      hostCompensationPerNight: pricing.hostCompensationPerNight,
+      totalHostCompensation: pricing.totalHostCompensation,
+      estimatedBookingTotal: pricing.estimatedBookingTotal
+    });
 
     // ─────────────────────────────────────────────────────────
     // Step 6: Generate proposal ID

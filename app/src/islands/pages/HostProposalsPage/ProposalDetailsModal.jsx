@@ -81,11 +81,13 @@ export default function ProposalDetailsModal({
   const reservationSpanWeeks = proposal.reservationSpanWeeks || proposal['Reservation Span (Weeks)'] || proposal['Reservation Span (weeks)'] || 0;
 
   // Get pricing info
-  const hostCompensation = proposal.hostCompensation || proposal['Host Compensation'] || 0;
-  const totalCompensation = proposal.totalCompensation || proposal['Total Compensation'] || 0;
-  const compensationPerNight = proposal.compensationPerNight || proposal['Compensation Per Night'] || 0;
-  const maintenanceFee = proposal.maintenanceFee || proposal['Maintenance Fee'] || 0;
-  const damageDeposit = proposal.damageDeposit || proposal['Damage Deposit'] || 0;
+  // "host compensation" is the per-night HOST rate (from listing pricing tiers)
+  // "Total Compensation (proposal - host)" is the total = per-night rate * nights * weeks
+  const hostCompensation = proposal.hostCompensation || proposal['host compensation'] || proposal['Host Compensation'] || 0;
+  const totalCompensation = proposal.totalCompensation || proposal['Total Compensation (proposal - host)'] || proposal['Total Compensation'] || 0;
+  const compensationPerNight = proposal.compensationPerNight || proposal['proposal nightly price'] || proposal['Compensation Per Night'] || 0;
+  const maintenanceFee = proposal.maintenanceFee || proposal['cleaning fee'] || proposal['Maintenance Fee'] || 0;
+  const damageDeposit = proposal.damageDeposit || proposal['damage deposit'] || proposal['Damage Deposit'] || 0;
   const counterOfferHappened = proposal.counterOfferHappened || proposal['Counter Offer Happened'] || false;
   const reasonForCancellation = proposal.reasonForCancellation || proposal['Reason For Cancellation'] || '';
 

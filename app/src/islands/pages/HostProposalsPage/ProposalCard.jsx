@@ -71,8 +71,10 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
   const reservationSpanWeeks = proposal.reservationSpanWeeks || proposal['Reservation Span (Weeks)'] || proposal['Reservation Span (weeks)'] || proposal.reservation_span_weeks || 0;
 
   // Get pricing info
-  const hostCompensation = proposal.hostCompensation || proposal['Host Compensation'] || proposal.host_compensation || 0;
-  const totalCompensation = proposal.totalCompensation || proposal['Total Compensation'] || proposal.total_compensation || 0;
+  // "host compensation" is the per-night HOST rate (from listing pricing tiers)
+  // "Total Compensation (proposal - host)" is the total = per-night rate * nights * weeks
+  const hostCompensation = proposal.hostCompensation || proposal['host compensation'] || proposal['Host Compensation'] || proposal.host_compensation || 0;
+  const totalCompensation = proposal.totalCompensation || proposal['Total Compensation (proposal - host)'] || proposal['Total Compensation'] || proposal.total_compensation || 0;
   const counterOfferHappened = proposal.counterOfferHappened || proposal['Counter Offer Happened'] || proposal.counter_offer_happened || false;
 
   // Get active days for the schedule
