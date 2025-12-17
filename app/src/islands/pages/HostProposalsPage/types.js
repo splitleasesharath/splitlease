@@ -249,3 +249,80 @@ export function getActiveDays(checkInDay, checkOutDay) {
 
   return activeDays;
 }
+
+/**
+ * Convert Bubble night indices to day names for highlighting
+ * Bubble uses 1-7 (Sunday=1, Saturday=7), JavaScript uses 0-6 (Sunday=0, Saturday=6)
+ *
+ * @param {number[]|string} nightsSelected - Array of Bubble day indices [1,6] or JSON string
+ * @returns {DayOfWeek[]} Array of day names ['Sunday', 'Friday']
+ */
+export function getNightsAsDayNames(nightsSelected) {
+  const dayNames = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  if (!nightsSelected) return [];
+
+  // Parse if it's a JSON string
+  let nights = nightsSelected;
+  if (typeof nightsSelected === 'string') {
+    try {
+      nights = JSON.parse(nightsSelected);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  if (!Array.isArray(nights)) return [];
+
+  // Convert Bubble indices (1-7) to day names
+  return nights
+    .map(bubbleIndex => {
+      const index = typeof bubbleIndex === 'string' ? parseInt(bubbleIndex, 10) : bubbleIndex;
+      return dayNames[index] || '';
+    })
+    .filter(Boolean);
+}
+
+/**
+ * Get check-in and check-out days from nights selected
+ * Check-in is the first night, check-out is the day after the last night
+ *
+ * @param {number[]|string} nightsSelected - Array of Bubble day indices or JSON string
+ * @returns {{ checkInDay: string, checkOutDay: string }} Check-in and check-out day names
+ */
+export function getCheckInOutFromNights(nightsSelected) {
+  const dayNames = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  if (!nightsSelected) return { checkInDay: '', checkOutDay: '' };
+
+  // Parse if it's a JSON string
+  let nights = nightsSelected;
+  if (typeof nightsSelected === 'string') {
+    try {
+      nights = JSON.parse(nightsSelected);
+    } catch (e) {
+      return { checkInDay: '', checkOutDay: '' };
+    }
+  }
+
+  if (!Array.isArray(nights) || nights.length === 0) return { checkInDay: '', checkOutDay: '' };
+
+  // Convert to numbers and sort to find first and last night
+  const sortedNights = nights
+    .map(n => typeof n === 'string' ? parseInt(n, 10) : n)
+    .filter(n => !isNaN(n) && n >= 1 && n <= 7)
+    .sort((a, b) => a - b);
+
+  if (sortedNights.length === 0) return { checkInDay: '', checkOutDay: '' };
+
+  const firstNight = sortedNights[0]; // Check-in day (Bubble format)
+  const lastNight = sortedNights[sortedNights.length - 1]; // Last night stayed
+
+  // Check-out is the day AFTER the last night (with wrap-around)
+  const checkOutIndex = lastNight === 7 ? 1 : lastNight + 1;
+
+  return {
+    checkInDay: dayNames[firstNight] || '',
+    checkOutDay: dayNames[checkOutIndex] || ''
+  };
+}

@@ -67,13 +67,65 @@ function convertDayValueToName(dayValue) {
   return '';
 }
 
+/**
+ * Get check-in and check-out range from Days Selected
+ * Days Selected contains all days the guest is present (check-in through check-out)
+ * First day = check-in day, Last day = check-out day
+ *
+ * @param {Object} proposal - Proposal object
+ * @returns {string|null} "Friday to Sunday" format or null if unavailable
+ */
 function getCheckInOutRange(proposal) {
+  // Try to use Days Selected first (more reliable than check-in/out day fields)
+  let daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
+
+  // Parse if it's a JSON string
+  if (typeof daysSelected === 'string') {
+    try {
+      daysSelected = JSON.parse(daysSelected);
+    } catch (e) {
+      daysSelected = [];
+    }
+  }
+
+  if (Array.isArray(daysSelected) && daysSelected.length > 0) {
+    // Convert to day indices for sorting
+    const dayIndices = daysSelected.map(day => {
+      if (typeof day === 'number') return day;
+      if (typeof day === 'string') {
+        const trimmed = day.trim();
+        const numericValue = parseInt(trimmed, 10);
+        if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+          return numericValue; // Bubble 1-indexed
+        }
+        // It's a day name - find its Bubble index
+        const jsIndex = DAY_NAMES.indexOf(trimmed);
+        return jsIndex >= 0 ? jsIndex + 1 : -1; // Convert to Bubble 1-indexed
+      }
+      return -1;
+    }).filter(idx => idx >= 1 && idx <= 7);
+
+    if (dayIndices.length > 0) {
+      // Sort to find first and last day
+      dayIndices.sort((a, b) => a - b);
+      const firstDayIndex = dayIndices[0];
+      const lastDayIndex = dayIndices[dayIndices.length - 1];
+
+      const checkInName = DAY_NAMES[firstDayIndex - 1]; // Convert from Bubble to JS index
+      const checkOutName = DAY_NAMES[lastDayIndex - 1];
+
+      if (checkInName && checkOutName) {
+        return `${checkInName} to ${checkOutName}`;
+      }
+    }
+  }
+
+  // Fallback to check-in/out day fields
   const checkInDay = proposal['check in day'];
   const checkOutDay = proposal['check out day'];
 
   if (!checkInDay || !checkOutDay) return null;
 
-  // Convert both values to day names using unified conversion function
   const checkInName = convertDayValueToName(checkInDay);
   const checkOutName = convertDayValueToName(checkOutDay);
 

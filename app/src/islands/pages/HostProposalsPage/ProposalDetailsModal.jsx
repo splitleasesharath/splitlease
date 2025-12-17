@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import DayIndicator from './DayIndicator.jsx';
-import { getStatusTagInfo, getActiveDays, PROPOSAL_STATUSES, PROGRESS_THRESHOLDS } from './types.js';
+import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromNights, PROPOSAL_STATUSES, PROGRESS_THRESHOLDS } from './types.js';
 import { formatCurrency, formatDate, formatDateTime } from './formatters.js';
 
 /**
@@ -67,40 +67,12 @@ export default function ProposalDetailsModal({
   const emailVerified = guest.emailVerified || guest['Email Verified'] || false;
   const identityVerified = guest.identityVerified || guest['Identity Verified'] || false;
 
-  // Helper to convert Bubble day indices (1-7) or numeric strings to day names
-  // Handles: numbers (1-7), numeric strings ("1"-"7"), or day name strings ("Monday")
-  const bubbleDayToName = (bubbleDay) => {
-    const dayNames = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  // Get schedule info - use Nights Selected for hosts (they care about nights, not days)
+  // Check for host counteroffer nights first, fall back to original proposal nights
+  const nightsSelectedRaw = proposal['hc nights selected'] || proposal['Nights Selected (Nights list)'] || proposal.nightsSelected || proposal['Nights Selected'];
 
-    if (bubbleDay === null || bubbleDay === undefined) return '';
-
-    // If it's already a number, use it directly
-    if (typeof bubbleDay === 'number') {
-      return dayNames[bubbleDay] || '';
-    }
-
-    // If it's a string, check if it's a numeric string
-    if (typeof bubbleDay === 'string') {
-      const trimmed = bubbleDay.trim();
-      const numericValue = parseInt(trimmed, 10);
-
-      // If it parses to a valid number and matches the original string, it's a numeric string
-      if (!isNaN(numericValue) && String(numericValue) === trimmed) {
-        return dayNames[numericValue] || '';
-      }
-
-      // Otherwise it's already a day name string
-      return trimmed;
-    }
-
-    return '';
-  };
-
-  // Get schedule info
-  const checkInDayRaw = proposal.checkInDay || proposal['check in day'] || proposal['Check In Day'] || 'Monday';
-  const checkOutDayRaw = proposal.checkOutDay || proposal['check out day'] || proposal['Check Out Day'] || 'Friday';
-  const checkInDay = bubbleDayToName(checkInDayRaw);
-  const checkOutDay = bubbleDayToName(checkOutDayRaw);
+  // Get check-in/check-out from nights selected (more accurate than stored check-in/out days)
+  const { checkInDay, checkOutDay } = getCheckInOutFromNights(nightsSelectedRaw);
   const checkInTime = proposal.checkInTime || proposal['Check In Time'] || '2:00 pm';
   const checkOutTime = proposal.checkOutTime || proposal['Check Out Time'] || '11:00 am';
   const moveInRangeStart = proposal.moveInRangeStart || proposal['Move in range start'] || proposal['Move In Range Start'];
@@ -123,8 +95,8 @@ export default function ProposalDetailsModal({
   // Virtual meeting
   const virtualMeeting = proposal.virtualMeeting || proposal['Virtual Meeting'];
 
-  // Get active days
-  const activeDays = getActiveDays(checkInDay, checkOutDay);
+  // Get active nights for the day indicator (hosts see nights, not days)
+  const activeDays = getNightsAsDayNames(nightsSelectedRaw);
 
   /**
    * Get progress steps based on usualOrder thresholds from Bubble's "Status - Proposal" option set
