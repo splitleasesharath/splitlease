@@ -1303,6 +1303,13 @@ export default function ViewSplitLeasePage() {
       setSuccessProposalId(newProposalId);
       setShowSuccessModal(true);
 
+      // Update existingProposalForListing so the button disables after modal closes
+      setExistingProposalForListing({
+        _id: newProposalId,
+        Status: 'Pending Host Review',
+        'Created Date': new Date().toISOString()
+      });
+
     } catch (error) {
       console.error('❌ Error submitting proposal:', error);
       showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
