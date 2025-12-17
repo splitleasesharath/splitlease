@@ -23,8 +23,10 @@
 
 .fullscreen-proposal-map-modal {
   position: relative;
-  width: calc(100vw - 40px);
-  height: calc(100vh - 40px);
+  width: calc(80vw);
+  height: calc(80vh);
+  max-width: 1200px;
+  max-height: 800px;
   background-color: #ffffff;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -307,8 +309,8 @@
 
 /* Hover States */
 .proposal-price-marker:hover {
-  transform: translate3d(var(--x, 0), var(--y, 0), 0) translate(-50%, -50%) scale(1.05);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  z-index: 1003 !important;
 }
 
 .proposal-price-marker.normal:hover {
@@ -332,24 +334,28 @@
 /* Tablet */
 @media (max-width: 1024px) {
   .fullscreen-proposal-map-modal-backdrop {
-    padding: 24px;
+    padding: 16px;
   }
 
   .fullscreen-proposal-map-modal {
-    width: calc(100vw - 48px);
-    height: calc(100vh - 48px);
+    width: calc(85vw);
+    height: calc(85vh);
+    max-width: none;
+    max-height: none;
   }
 }
 
 /* Mobile */
 @media (max-width: 768px) {
   .fullscreen-proposal-map-modal-backdrop {
-    padding: 16px;
+    padding: 12px;
   }
 
   .fullscreen-proposal-map-modal {
-    width: calc(100vw - 32px);
-    height: calc(100vh - 32px);
+    width: calc(100vw - 24px);
+    height: calc(90vh);
+    max-width: none;
+    max-height: none;
   }
 
   .fullscreen-proposal-map-header {

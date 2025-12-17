@@ -26,7 +26,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { COLORS, getBoroughMapConfig } from '../../lib/constants.js';
 import { formatPrice } from '../../lib/proposals/dataTransformers.js';
 import { isTerminalStatus } from '../../logic/constants/proposalStatuses.js';
-import { waitForGoogleMaps, isValidCoordinates } from '../../lib/mapUtils.js';
+import { isValidCoordinates } from '../../lib/mapUtils.js';
 import './FullscreenProposalMapModal.css';
 
 /**
@@ -224,28 +224,23 @@ export default function FullscreenProposalMapModal({
 
   /**
    * Initialize Google Map
+   * Uses the same loading pattern as GoogleMap.jsx for consistency
    */
   useEffect(() => {
     if (!isOpen) return;
 
-    const initMap = async () => {
-      setIsLoading(true);
-
-      // Wait for Google Maps API to load
-      const loaded = await waitForGoogleMaps(10000);
-      if (!loaded) {
-        console.error('FullscreenProposalMapModal: Google Maps API failed to load');
-        setIsLoading(false);
-        return;
-      }
+    const initMap = () => {
+      console.log('🗺️ FullscreenProposalMapModal: Initializing map...');
 
       if (!mapRef.current) {
+        console.warn('⚠️ FullscreenProposalMapModal: mapRef not available');
         setIsLoading(false);
         return;
       }
 
       // Don't recreate map if it already exists
       if (googleMapRef.current) {
+        console.log('✅ FullscreenProposalMapModal: Map already exists, skipping init');
         setIsLoading(false);
         return;
       }
@@ -276,9 +271,20 @@ export default function FullscreenProposalMapModal({
       googleMapRef.current = map;
       setMapLoaded(true);
       setIsLoading(false);
+      console.log('✅ FullscreenProposalMapModal: Map initialized successfully');
     };
 
-    initMap();
+    // Check that both google.maps exists AND ControlPosition is available (indicates full load)
+    // This is the same pattern used in GoogleMap.jsx
+    if (window.google && window.google.maps && window.google.maps.ControlPosition) {
+      console.log('✅ FullscreenProposalMapModal: Google Maps API already loaded');
+      initMap();
+    } else {
+      console.log('⏳ FullscreenProposalMapModal: Waiting for Google Maps API to load...');
+      setIsLoading(true);
+      window.addEventListener('google-maps-loaded', initMap);
+      return () => window.removeEventListener('google-maps-loaded', initMap);
+    }
 
     // Cleanup on unmount or close
     return () => {
