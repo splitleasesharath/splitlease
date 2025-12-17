@@ -232,7 +232,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
               type="button"
               className="eld-btn-link"
               onClick={generateAIDescription}
-              disabled={isGeneratingDescription}
+              disabled={isGeneratingDescription || isLoadingNeighborhood}
             >
               {isGeneratingDescription ? 'generating...' : 'generate with AI'}
             </button>
@@ -280,7 +280,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
             type="button"
             className="eld-btn-link"
             onClick={loadNeighborhoodTemplate}
-            disabled={isLoadingNeighborhood}
+            disabled={isLoadingNeighborhood || isGeneratingDescription}
           >
             {isLoadingNeighborhood ? 'loading...' : 'load template'}
           </button>
