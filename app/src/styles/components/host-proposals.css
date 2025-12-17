@@ -851,31 +851,37 @@
   background-color: #DB2E2E;
 }
 
-/* Container for labels (below the line) - matches dots/lines row proportions */
+/* Container for labels (below the line) - matches dots/lines row proportions exactly */
 .progress-tracker-labels {
   display: flex;
   flex-direction: row;
   width: 100%;
-}
-
-/* Individual label wrapper - uses same flex proportions as the line row */
-.progress-label-wrapper {
-  display: flex;
-  justify-content: center;
   align-items: flex-start;
 }
 
-/* First and last labels: width = half circle */
-.progress-label-wrapper:first-child,
-.progress-label-wrapper:last-child {
+/*
+ * Label alignment strategy:
+ * The dots row is: [circle 28px][flex line][circle 28px][flex line]...[circle 28px]
+ *
+ * To center labels under circles, we mirror this exact structure:
+ * [label-wrapper 28px][spacer flex][label-wrapper 28px][spacer flex]...[label-wrapper 28px]
+ *
+ * Each label wrapper is exactly the circle width (28px), and the spacers
+ * between them flex to match the connector lines.
+ */
+.progress-label-wrapper {
   width: 28px; /* Same as circle width */
   flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;
 }
 
-/* Middle labels: grow to fill space (same as progress-line) */
-.progress-label-wrapper:not(:first-child):not(:last-child) {
+/* Spacer between labels - mirrors the flex lines in the dots row */
+.progress-label-spacer {
   flex: 1;
-  min-width: 40px;
+  min-width: 40px; /* Same as progress-line min-width */
 }
 
 .step-label {
@@ -885,8 +891,10 @@
   color: #6B7280;
   text-align: center;
   line-height: 1.3;
-  max-width: 90px;
-  word-wrap: break-word;
+  white-space: nowrap;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* Status Box */
@@ -1074,7 +1082,6 @@
   /* Progress tracker responsive */
   .step-label {
     font-size: 9px;
-    max-width: 70px;
   }
 
   .progress-line {
@@ -1087,9 +1094,12 @@
     height: 22px;
   }
 
-  .progress-label-wrapper:first-child,
-  .progress-label-wrapper:last-child {
+  .progress-label-wrapper {
     width: 22px;
+  }
+
+  .progress-label-spacer {
+    min-width: 30px;
   }
 }
 

@@ -350,20 +350,24 @@ export default function ProposalDetailsModal({
                     </div>
                   </div>
 
-                  {/* Row 2: Labels below the line */}
+                  {/* Row 2: Labels below the line - mirrors dots/lines structure exactly */}
                   <div className="progress-tracker-labels">
                     <div className="progress-label-wrapper">
                       <span className="step-label">Proposal Submitted</span>
                     </div>
+                    <div className="progress-label-spacer"></div>
                     <div className="progress-label-wrapper">
                       <span className="step-label">{progress.rentalApp.completed ? 'Rental App Submitted' : 'Rental Application'}</span>
                     </div>
+                    <div className="progress-label-spacer"></div>
                     <div className="progress-label-wrapper">
                       <span className="step-label">Host Review</span>
                     </div>
+                    <div className="progress-label-spacer"></div>
                     <div className="progress-label-wrapper">
                       <span className="step-label">{progress.leaseDocs.completed ? 'Lease Documents' : 'Lease Docs'}</span>
                     </div>
+                    <div className="progress-label-spacer"></div>
                     <div className="progress-label-wrapper">
                       <span className="step-label">Initial Payment</span>
                     </div>
