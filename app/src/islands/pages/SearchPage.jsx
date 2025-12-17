@@ -21,7 +21,7 @@ import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJson
 import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
-import { adaptDaysToBubble } from '../../logic/processors/external/adaptDaysToBubble.js';
+// NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 
 // ============================================================================
@@ -2084,19 +2084,18 @@ export default function SearchPage() {
       console.log('   Guest ID:', guestId);
       console.log('   Listing ID:', selectedListingForProposal?.id || selectedListingForProposal?._id);
 
-      // Convert days from JS format (0-6) to Bubble format (1-7)
+      // Days are already in JS format (0-6) - database now uses 0-indexed natively
       // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
       const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || [];
-      const daysInBubbleFormat = adaptDaysToBubble({ zeroBasedDays: daysInJsFormat });
 
       // Calculate nights from days (nights = days without the last checkout day)
       // For consecutive days [1,2,3,4,5] (Mon-Fri), nights are [1,2,3,4] (Mon-Thu)
-      const sortedDays = [...daysInBubbleFormat].sort((a, b) => a - b);
-      const nightsInBubbleFormat = sortedDays.slice(0, -1); // Remove last day (checkout day)
+      const sortedDays = [...daysInJsFormat].sort((a, b) => a - b);
+      const nightsSelected = sortedDays.slice(0, -1); // Remove last day (checkout day)
 
-      // Get check-in and check-out days in Bubble format
-      const checkInDayBubble = sortedDays[0];
-      const checkOutDayBubble = sortedDays[sortedDays.length - 1];
+      // Get check-in and check-out days (0-indexed)
+      const checkInDay = sortedDays[0];
+      const checkOutDay = sortedDays[sortedDays.length - 1];
 
       // Format reservation span text
       const reservationSpanWeeks = proposalData.reservationSpan || 13;
@@ -2106,18 +2105,18 @@ export default function SearchPage() {
           ? '20 weeks (approx. 5 months)'
           : `${reservationSpanWeeks} weeks`;
 
-      // Build the Edge Function payload
+      // Build the Edge Function payload (using 0-indexed days)
       const edgeFunctionPayload = {
         guestId: guestId,
         listingId: selectedListingForProposal?.id || selectedListingForProposal?._id,
         moveInStartRange: proposalData.moveInDate,
         moveInEndRange: proposalData.moveInDate, // Same as start if no flexibility
-        daysSelected: daysInBubbleFormat,
-        nightsSelected: nightsInBubbleFormat,
+        daysSelected: daysInJsFormat,
+        nightsSelected: nightsSelected,
         reservationSpan: reservationSpanText,
         reservationSpanWeeks: reservationSpanWeeks,
-        checkIn: checkInDayBubble,
-        checkOut: checkOutDayBubble,
+        checkIn: checkInDay,
+        checkOut: checkOutDay,
         proposalPrice: proposalData.pricePerNight,
         fourWeekRent: proposalData.pricePerFourWeeks,
         hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now

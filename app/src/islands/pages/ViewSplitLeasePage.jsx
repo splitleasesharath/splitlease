@@ -34,7 +34,7 @@ import {
 import { DAY_ABBREVIATIONS, DEFAULTS, COLORS, SCHEDULE_PATTERNS } from '../../lib/constants.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { supabase } from '../../lib/supabase.js';
-import { adaptDaysToBubble } from '../../logic/processors/external/adaptDaysToBubble.js';
+// NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import '../../styles/listing-schedule-selector.css';
 import '../../styles/components/toast.css';
 
@@ -1164,10 +1164,9 @@ export default function ViewSplitLeasePage() {
       console.log('   Guest ID:', guestId);
       console.log('   Listing ID:', proposalData.listingId);
 
-      // Convert days from JS format (0-6) to Bubble format (1-7)
+      // Days are already in JS format (0-6) - database now uses 0-indexed natively
       // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
       const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || selectedDays;
-      const daysInBubbleFormat = adaptDaysToBubble({ zeroBasedDays: daysInJsFormat });
 
       // Sort days in JS format first to detect wrap-around (Saturday/Sunday spanning)
       const sortedJsDays = [...daysInJsFormat].sort((a, b) => a - b);
@@ -1214,10 +1213,10 @@ export default function ViewSplitLeasePage() {
         nightsInJsFormat = sortedJsDays.slice(0, -1);
       }
 
-      // Convert to Bubble format (1-7)
-      const checkInDayBubble = checkInDayJs + 1;
-      const checkOutDayBubble = checkOutDayJs + 1;
-      const nightsInBubbleFormat = nightsInJsFormat.map(d => d + 1);
+      // Use JS format directly (0-6) - database now uses 0-indexed natively
+      const checkInDay = checkInDayJs;
+      const checkOutDay = checkOutDayJs;
+      const nightsSelected = nightsInJsFormat;
 
       // Format reservation span text
       const reservationSpanWeeks = proposalData.reservationSpan || reservationSpan;
@@ -1227,18 +1226,18 @@ export default function ViewSplitLeasePage() {
           ? '20 weeks (approx. 5 months)'
           : `${reservationSpanWeeks} weeks`;
 
-      // Build the Edge Function payload
+      // Build the Edge Function payload (using 0-indexed days)
       const edgeFunctionPayload = {
         guestId: guestId,
         listingId: proposalData.listingId,
         moveInStartRange: proposalData.moveInDate,
         moveInEndRange: proposalData.moveInDate, // Same as start if no flexibility
-        daysSelected: daysInBubbleFormat,
-        nightsSelected: nightsInBubbleFormat,
+        daysSelected: daysInJsFormat,
+        nightsSelected: nightsSelected,
         reservationSpan: reservationSpanText,
         reservationSpanWeeks: reservationSpanWeeks,
-        checkIn: checkInDayBubble,
-        checkOut: checkOutDayBubble,
+        checkIn: checkInDay,
+        checkOut: checkOutDay,
         proposalPrice: proposalData.pricePerNight,
         fourWeekRent: proposalData.pricePerFourWeeks,
         hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now

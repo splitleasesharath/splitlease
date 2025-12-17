@@ -23,7 +23,7 @@ import { fetchZatPriceConfiguration } from '../../../lib/listingDataFetcher.js';
 import { supabase } from '../../../lib/supabase.js';
 import { getNeighborhoodName, getBoroughName, getPropertyTypeLabel, initializeLookups, isInitialized } from '../../../lib/dataLookups.js';
 import { fetchPhotoUrls, extractPhotos, fetchHostData, parseAmenities } from '../../../lib/supabaseUtils.js';
-import { adaptDaysToBubble } from '../../../logic/processors/external/adaptDaysToBubble.js';
+// NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import { createDay } from '../../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import './FavoriteListingsPage.css';
@@ -906,17 +906,16 @@ const FavoriteListingsPage = () => {
         throw new Error('User session not found');
       }
 
-      // Convert days from JS format (0-6) to Bubble format (1-7)
+      // Days are already in JS format (0-6) - database now uses 0-indexed natively
       const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || [];
-      const daysInBubbleFormat = adaptDaysToBubble({ zeroBasedDays: daysInJsFormat });
 
       // Calculate nights from days (nights = days without the last checkout day)
-      const sortedDays = [...daysInBubbleFormat].sort((a, b) => a - b);
-      const nightsInBubbleFormat = sortedDays.slice(0, -1); // Remove last day (checkout day)
+      const sortedDays = [...daysInJsFormat].sort((a, b) => a - b);
+      const nightsSelected = sortedDays.slice(0, -1); // Remove last day (checkout day)
 
-      // Get check-in and check-out days in Bubble format (numbers 1-7)
-      const checkInDayBubble = sortedDays[0];
-      const checkOutDayBubble = sortedDays[sortedDays.length - 1];
+      // Get check-in and check-out days (0-indexed)
+      const checkInDay = sortedDays[0];
+      const checkOutDay = sortedDays[sortedDays.length - 1];
 
       // Format reservation span text
       const reservationSpanWeeks = proposalData.reservationSpan || 13;
@@ -926,18 +925,18 @@ const FavoriteListingsPage = () => {
           ? '20 weeks (approx. 5 months)'
           : `${reservationSpanWeeks} weeks`;
 
-      // Build payload matching ViewSplitLeasePage format
+      // Build payload (using 0-indexed days)
       const payload = {
         guestId: guestId,
         listingId: selectedListingForProposal._id || selectedListingForProposal.id,
         moveInStartRange: proposalData.moveInDate,
         moveInEndRange: proposalData.moveInDate, // Same as start if no flexibility
-        daysSelected: daysInBubbleFormat,
-        nightsSelected: nightsInBubbleFormat,
+        daysSelected: daysInJsFormat,
+        nightsSelected: nightsSelected,
         reservationSpan: reservationSpanText,
         reservationSpanWeeks: reservationSpanWeeks,
-        checkIn: checkInDayBubble,
-        checkOut: checkOutDayBubble,
+        checkIn: checkInDay,
+        checkOut: checkOutDay,
         proposalPrice: proposalData.pricePerNight,
         fourWeekRent: proposalData.pricePerFourWeeks,
         hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now
