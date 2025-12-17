@@ -17,6 +17,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { validateTokenAndFetchUser } from '../../../lib/auth.js';
 import { supabase } from '../../../lib/supabase.js';
+import { initializeLookups, getBoroughName } from '../../../lib/dataLookups.js';
 
 export function useHostOverviewPageLogic() {
   // ============================================================================
@@ -95,17 +96,8 @@ export function useHostOverviewPageLogic() {
     if (!hostAccountId && !userId) return [];
 
     try {
-      // First, fetch borough reference table to map IDs to display names
-      const { data: boroughs } = await supabase
-        .from('zat_geo_borough_toplevel')
-        .select('_id, "Display Borough"');
-
-      const boroughMap = {};
-      if (boroughs) {
-        boroughs.forEach(b => {
-          boroughMap[b._id] = b['Display Borough'];
-        });
-      }
+      // Initialize lookups cache (boroughs, neighborhoods, etc.)
+      await initializeLookups();
 
       // Fetch listings from multiple sources in parallel:
       // 1. Bubble API (existing synced listings)
@@ -218,7 +210,7 @@ export function useHostOverviewPageLogic() {
           complete: listing.Complete || false,
           source: listing.source || 'listing',
           location: {
-            borough: boroughMap[listing['Location - Borough']] || listing['Location - Borough'] || '',
+            borough: getBoroughName(listing['Location - Borough']) || '',
             city: listing['Location - City'] || '',
             state: listing['Location - State'] || ''
           },
@@ -270,7 +262,7 @@ export function useHostOverviewPageLogic() {
             complete: listing.Complete || false,
             source: 'listing',
             location: {
-              borough: boroughMap[listing['Location - Borough']] || listing['Location - Borough'] || '',
+              borough: getBoroughName(listing['Location - Borough']) || '',
               city: listing['Location - City'] || '',
               state: listing['Location - State'] || ''
             },
