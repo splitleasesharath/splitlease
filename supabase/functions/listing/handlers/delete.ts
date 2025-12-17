@@ -2,7 +2,7 @@
  * Delete Listing Handler
  * Split Lease - Supabase Edge Functions
  *
- * PATTERN: Soft delete (set Active=false) with queue-based Bubble sync
+ * PATTERN: Soft delete (set Deleted=true) with queue-based Bubble sync
  * Following virtual-meeting/handlers/delete.ts pattern
  *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
@@ -26,7 +26,7 @@ interface DeleteListingResult {
 
 /**
  * Handle listing deletion with Supabase-first pattern
- * Soft deletes (Active=false) and queues Bubble sync
+ * Soft deletes (Deleted=true) and queues Bubble sync
  */
 export async function handleDelete(
   payload: Record<string, unknown>
@@ -70,12 +70,12 @@ export async function handleDelete(
 
   console.log('[listing:delete] Found listing:', existingListing.Name);
 
-  // Step 2: Soft delete (set Active=false)
+  // Step 2: Soft delete (set Deleted=true)
   const now = new Date().toISOString();
   const { error: updateError } = await supabase
     .from('listing')
     .update({
-      Active: false,
+      Deleted: true,
       'Modified Date': now,
     })
     .eq('_id', listing_id);
@@ -87,7 +87,7 @@ export async function handleDelete(
 
   console.log('[listing:delete] Listing soft-deleted successfully');
 
-  // Step 3: Queue Bubble sync (UPDATE operation to set Active=false)
+  // Step 3: Queue Bubble sync (UPDATE operation to set Deleted=true)
   try {
     await enqueueBubbleSync(supabase, {
       correlationId: `listing_delete:${listing_id}`,
@@ -97,7 +97,7 @@ export async function handleDelete(
         recordId: listing_id,
         operation: 'UPDATE',
         bubbleId: listing_id,
-        payload: { Active: false, 'Modified Date': now },
+        payload: { Deleted: true, 'Modified Date': now },
       }]
     });
 

@@ -291,7 +291,8 @@ export function useHostOverviewPageLogic() {
         const { data: missingListings } = await supabase
           .from('listing')
           .select('*')
-          .in('_id', missingIds);
+          .in('_id', missingIds)
+          .eq('Deleted', false);
 
         if (missingListings) {
           const mappedMissing = missingListings.map(listing => {
