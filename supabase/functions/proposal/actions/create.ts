@@ -87,7 +87,8 @@ export async function handleCreate(
       "💰Nightly Host Rate for 4 nights",
       "💰Nightly Host Rate for 5 nights",
       "💰Nightly Host Rate for 7 nights",
-      "💰Monthly Host Rate"
+      "💰Monthly Host Rate",
+      "Deleted"
     `
     )
     .eq("_id", input.listingId)
@@ -96,6 +97,12 @@ export async function handleCreate(
   if (listingError || !listing) {
     console.error(`[proposal:create] Listing fetch failed:`, listingError);
     throw new ValidationError(`Listing not found: ${input.listingId}`);
+  }
+
+  // Check if listing is soft-deleted
+  if ((listing as Record<string, unknown>).Deleted === true) {
+    console.error(`[proposal:create] Listing is soft-deleted: ${input.listingId}`);
+    throw new ValidationError(`Cannot create proposal for deleted listing: ${input.listingId}`);
   }
 
   const listingData = listing as unknown as ListingData;
@@ -127,6 +134,52 @@ export async function handleCreate(
 
   const guestData = guest as unknown as GuestData;
   console.log(`[proposal:create] Found guest: ${guestData.email}`);
+
+  // ================================================
+  // EARLY PROFILE SAVE: Save bio/need_for_space BEFORE proposal creation
+  // This ensures user-entered data persists even if proposal creation fails
+  // ================================================
+  const tasksCompletedEarly = parseJsonArray<string>(guestData["Tasks Completed"], "Tasks Completed");
+  const earlyProfileUpdates: Record<string, unknown> = {};
+
+  if (!guestData["About Me / Bio"] && !tasksCompletedEarly.includes("bio") && input.aboutMe) {
+    earlyProfileUpdates["About Me / Bio"] = input.aboutMe;
+    console.log(`[proposal:create] Will save bio early (before proposal creation)`);
+  }
+  if (!guestData["need for Space"] && !tasksCompletedEarly.includes("need_for_space") && input.needForSpace) {
+    earlyProfileUpdates["need for Space"] = input.needForSpace;
+    console.log(`[proposal:create] Will save need_for_space early (before proposal creation)`);
+  }
+  if (!guestData["special needs"] && !tasksCompletedEarly.includes("special_needs") && input.specialNeeds) {
+    earlyProfileUpdates["special needs"] = input.specialNeeds;
+    console.log(`[proposal:create] Will save special_needs early (before proposal creation)`);
+  }
+
+  // Save profile data immediately if there's anything to save
+  if (Object.keys(earlyProfileUpdates).length > 0) {
+    earlyProfileUpdates["Modified Date"] = new Date().toISOString();
+    const { error: earlyUpdateError } = await supabase
+      .from("user")
+      .update(earlyProfileUpdates)
+      .eq("_id", input.guestId);
+
+    if (earlyUpdateError) {
+      console.error(`[proposal:create] Early profile save failed:`, earlyUpdateError);
+      // Non-blocking - continue with proposal creation
+    } else {
+      console.log(`[proposal:create] Early profile save succeeded - data will persist even if proposal fails`);
+      // Update local guestData to reflect the save (so we don't try to save again later)
+      if (earlyProfileUpdates["About Me / Bio"]) {
+        (guestData as Record<string, unknown>)["About Me / Bio"] = earlyProfileUpdates["About Me / Bio"];
+      }
+      if (earlyProfileUpdates["need for Space"]) {
+        (guestData as Record<string, unknown>)["need for Space"] = earlyProfileUpdates["need for Space"];
+      }
+      if (earlyProfileUpdates["special needs"]) {
+        (guestData as Record<string, unknown>)["special needs"] = earlyProfileUpdates["special needs"];
+      }
+    }
+  }
 
   // Fetch Host User directly (Host User column now contains user._id)
   const { data: hostUser, error: hostUserError } = await supabase

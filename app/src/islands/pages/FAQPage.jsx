@@ -123,12 +123,7 @@ export default function FAQPage() {
 
       setSubmitSuccess(true);
       setInquiryForm({ name: '', email: '', inquiry: '' });
-
-      // Close modal after 2 seconds
-      setTimeout(() => {
-        setShowInquiryModal(false);
-        setSubmitSuccess(false);
-      }, 2000);
+      // User closes modal manually after reading success message
     } catch (err) {
       console.error('Error sending inquiry:', err);
       setSubmitError(err.message || 'Failed to send inquiry. Please try again.');

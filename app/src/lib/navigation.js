@@ -41,6 +41,42 @@ export function getListingUrl(listingId) {
 }
 
 /**
+ * Get the URL for a listing with proposal context preserved
+ * Used when navigating from proposals page to view the listing with the same scheduling context.
+ *
+ * @param {string} listingId - The listing ID
+ * @param {Object} proposalContext - Proposal scheduling context
+ * @param {number[]} proposalContext.daysSelected - Selected days (0-indexed, 0=Sunday through 6=Saturday)
+ * @param {number} proposalContext.reservationSpan - Reservation span in weeks
+ * @param {string} [proposalContext.moveInDate] - Move-in date (YYYY-MM-DD format)
+ * @returns {string} The listing URL with context parameters
+ */
+export function getListingUrlWithProposalContext(listingId, proposalContext = {}) {
+  if (!listingId) return '/view-split-lease';
+
+  const params = new URLSearchParams();
+
+  // Days selected: convert from 0-indexed to 1-indexed for URL (matching existing pattern)
+  if (proposalContext.daysSelected && proposalContext.daysSelected.length > 0) {
+    const oneBasedDays = proposalContext.daysSelected.map(d => d + 1);
+    params.set('days-selected', oneBasedDays.join(','));
+  }
+
+  // Reservation span (weeks)
+  if (proposalContext.reservationSpan) {
+    params.set('reservation-span', proposalContext.reservationSpan.toString());
+  }
+
+  // Move-in date (YYYY-MM-DD format)
+  if (proposalContext.moveInDate) {
+    params.set('move-in', proposalContext.moveInDate);
+  }
+
+  const queryString = params.toString();
+  return `/view-split-lease/${listingId}${queryString ? '?' + queryString : ''}`;
+}
+
+/**
  * Navigate to guest proposals page
  * @param {string} userId - Optional user ID
  * @param {string} proposalId - Optional proposal ID to highlight

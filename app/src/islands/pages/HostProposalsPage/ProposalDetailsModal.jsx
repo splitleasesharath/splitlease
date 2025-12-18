@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import DayIndicator from './DayIndicator.jsx';
-import { getStatusTagInfo, getActiveDays, PROPOSAL_STATUSES } from './types.js';
+import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromNights, PROPOSAL_STATUSES, PROGRESS_THRESHOLDS } from './types.js';
 import { formatCurrency, formatDate, formatDateTime } from './formatters.js';
 
 /**
@@ -43,11 +43,15 @@ export default function ProposalDetailsModal({
   const statusId = status.id || status._id || status;
   const statusConfig = PROPOSAL_STATUSES[statusId] || {};
   const statusInfo = getStatusTagInfo(status);
-  const visualOrder = statusConfig.visualOrder || 0;
+  const usualOrder = statusConfig.usualOrder ?? 0;
 
   const isCancelled = ['cancelled_by_guest', 'cancelled_by_splitlease', 'rejected_by_host'].includes(statusId);
-  const isPending = visualOrder < 3;
-  const isAccepted = statusId === 'accepted';
+  const isPending = usualOrder < 3; // Not yet accepted
+  const isAccepted = usualOrder >= 3 && !isCancelled; // Accepted or beyond
+
+  // Check if rental application has been submitted (for "current" state on Host Review)
+  const rentalApplication = proposal.rentalApplication || proposal['rental application'] || proposal['Rental Application'];
+  const rentalAppSubmitted = rentalApplication?.submitted === 'yes' || rentalApplication?.submitted === true;
 
   // Get guest info
   const guest = proposal.guest || proposal.Guest || proposal['Created By'] || {};
@@ -63,17 +67,12 @@ export default function ProposalDetailsModal({
   const emailVerified = guest.emailVerified || guest['Email Verified'] || false;
   const identityVerified = guest.identityVerified || guest['Identity Verified'] || false;
 
-  // Helper to convert Bubble day indices (1-7) to day names
-  const bubbleDayToName = (bubbleDay) => {
-    const dayNames = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return typeof bubbleDay === 'number' ? dayNames[bubbleDay] || 'Monday' : bubbleDay;
-  };
+  // Get schedule info - use Nights Selected for hosts (they care about nights, not days)
+  // Check for host counteroffer nights first, fall back to original proposal nights
+  const nightsSelectedRaw = proposal['hc nights selected'] || proposal['Nights Selected (Nights list)'] || proposal.nightsSelected || proposal['Nights Selected'];
 
-  // Get schedule info
-  const checkInDayRaw = proposal.checkInDay || proposal['check in day'] || proposal['Check In Day'] || 'Monday';
-  const checkOutDayRaw = proposal.checkOutDay || proposal['check out day'] || proposal['Check Out Day'] || 'Friday';
-  const checkInDay = bubbleDayToName(checkInDayRaw);
-  const checkOutDay = bubbleDayToName(checkOutDayRaw);
+  // Get check-in/check-out from nights selected (more accurate than stored check-in/out days)
+  const { checkInDay, checkOutDay } = getCheckInOutFromNights(nightsSelectedRaw);
   const checkInTime = proposal.checkInTime || proposal['Check In Time'] || '2:00 pm';
   const checkOutTime = proposal.checkOutTime || proposal['Check Out Time'] || '11:00 am';
   const moveInRangeStart = proposal.moveInRangeStart || proposal['Move in range start'] || proposal['Move In Range Start'];
@@ -85,7 +84,9 @@ export default function ProposalDetailsModal({
   // "Total Compensation (proposal - host)" is the total = per-night rate * nights * weeks
   const hostCompensation = proposal.hostCompensation || proposal['host compensation'] || proposal['Host Compensation'] || 0;
   const totalCompensation = proposal.totalCompensation || proposal['Total Compensation (proposal - host)'] || proposal['Total Compensation'] || 0;
-  const compensationPerNight = proposal.compensationPerNight || proposal['proposal nightly price'] || proposal['Compensation Per Night'] || 0;
+  // Use hostCompensation for per-night display - this is the HOST's rate
+  // NOTE: "proposal nightly price" is the GUEST-facing rate, not host compensation
+  const compensationPerNight = hostCompensation;
   const maintenanceFee = proposal.maintenanceFee || proposal['cleaning fee'] || proposal['Maintenance Fee'] || 0;
   const damageDeposit = proposal.damageDeposit || proposal['damage deposit'] || proposal['Damage Deposit'] || 0;
   const counterOfferHappened = proposal.counterOfferHappened || proposal['Counter Offer Happened'] || false;
@@ -94,22 +95,68 @@ export default function ProposalDetailsModal({
   // Virtual meeting
   const virtualMeeting = proposal.virtualMeeting || proposal['Virtual Meeting'];
 
-  // Get active days
-  const activeDays = getActiveDays(checkInDay, checkOutDay);
+  // Get active nights for the day indicator (hosts see nights, not days)
+  const activeDays = getNightsAsDayNames(nightsSelectedRaw);
 
-  // Get progress steps
+  /**
+   * Get progress steps based on usualOrder thresholds from Bubble's "Status - Proposal" option set
+   *
+   * Step states:
+   * - 'completed': usualOrder >= threshold (purple #31135D)
+   * - 'current': actively in progress (gray #BFBFBF) - only for Host Review when rental app submitted
+   * - 'incomplete': not yet reached (light gray #EDEAF6)
+   * - 'cancelled'/'rejected': proposal was cancelled/rejected (red #DB2E2E)
+   */
   const getProgressSteps = () => {
+    // Special case: Host Review is "current" (gray) when status is host_review AND rental app is submitted
+    const isHostReviewCurrent = statusId === 'host_review' && rentalAppSubmitted;
+
     return {
-      rentalApp: visualOrder >= 1,
-      reviewDocs: visualOrder >= 6,
-      initialPayment: visualOrder >= 8,
-      proposalSubmitted: true,
-      hostReview: visualOrder >= 2,
-      leaseDocs: visualOrder >= 6
+      proposalSubmitted: {
+        completed: true, // Always completed once proposal exists
+        current: false
+      },
+      rentalApp: {
+        completed: usualOrder >= PROGRESS_THRESHOLDS.rentalApp, // usualOrder >= 1
+        current: false
+      },
+      hostReview: {
+        completed: usualOrder >= PROGRESS_THRESHOLDS.hostReview, // usualOrder >= 3 (Accepted)
+        current: isHostReviewCurrent // Gray when in host_review status with rental app submitted
+      },
+      leaseDocs: {
+        completed: usualOrder >= PROGRESS_THRESHOLDS.leaseDocs, // usualOrder >= 4
+        current: false
+      },
+      initialPayment: {
+        completed: usualOrder >= PROGRESS_THRESHOLDS.initialPayment, // usualOrder >= 7
+        current: false
+      }
     };
   };
 
   const progress = getProgressSteps();
+
+  /**
+   * Get CSS class for a progress step
+   * Priority: cancelled > completed > current > (default incomplete)
+   */
+  const getStepClass = (step) => {
+    if (isCancelled) return 'cancelled';
+    if (step.completed) return 'completed';
+    if (step.current) return 'current';
+    return '';
+  };
+
+  /**
+   * Get CSS class for a progress line (between two steps)
+   * Line is completed if BOTH adjacent steps are completed
+   */
+  const getLineClass = (prevStep, nextStep) => {
+    if (isCancelled) return 'cancelled';
+    if (prevStep.completed && nextStep.completed) return 'completed';
+    return '';
+  };
 
   return (
     <>
@@ -129,7 +176,7 @@ export default function ProposalDetailsModal({
             <h2 className="modal-title">{guestName}'s Proposal</h2>
             <div className="modal-schedule">
               <span className="schedule-text">
-                {checkInDay} thru {checkOutDay} (last night)
+                {checkInDay} to {checkOutDay}
                 {counterOfferHappened && ' (Proposed by You)'}
               </span>
               <DayIndicator activeDays={activeDays} size="medium" />
@@ -268,38 +315,61 @@ export default function ProposalDetailsModal({
             </button>
             {statusExpanded && (
               <div className="section-content status-content">
-                {/* Progress Tracker */}
+                {/* Progress Tracker - Order: Proposal Submitted → Rental App → Host Review → Lease Docs → Initial Payment */}
+                {/* Matches guest proposals page design: fully connected dots and lines */}
                 <div className="progress-tracker">
-                  <div className="progress-row top-row">
-                    <div className={`progress-step ${progress.rentalApp ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                  {/* Row 1: Circles and connecting lines (no gaps) */}
+                  <div className="progress-tracker-line">
+                    {/* Step 1: Proposal Submitted */}
+                    <div className={`progress-step ${getStepClass(progress.proposalSubmitted)}`}>
                       <div className="step-circle"></div>
-                      <span className="step-label">{progress.rentalApp ? 'Rental App Submitted' : 'Submit Rental App'}</span>
                     </div>
-                    <div className="progress-line"></div>
-                    <div className={`progress-step ${progress.reviewDocs ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                    <div className={`progress-line ${getLineClass(progress.proposalSubmitted, progress.rentalApp)}`}></div>
+
+                    {/* Step 2: Rental Application */}
+                    <div className={`progress-step ${getStepClass(progress.rentalApp)}`}>
                       <div className="step-circle"></div>
-                      <span className="step-label">{progress.reviewDocs ? 'Review Documents' : 'Drafting Lease Docs'}</span>
                     </div>
-                    <div className="progress-line"></div>
-                    <div className={`progress-step ${progress.initialPayment ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
+                    <div className={`progress-line ${getLineClass(progress.rentalApp, progress.hostReview)}`}></div>
+
+                    {/* Step 3: Host Review */}
+                    <div className={`progress-step ${getStepClass(progress.hostReview)}`}>
                       <div className="step-circle"></div>
-                      <span className="step-label">Initial Payment</span>
+                    </div>
+                    <div className={`progress-line ${getLineClass(progress.hostReview, progress.leaseDocs)}`}></div>
+
+                    {/* Step 4: Lease Documents */}
+                    <div className={`progress-step ${getStepClass(progress.leaseDocs)}`}>
+                      <div className="step-circle"></div>
+                    </div>
+                    <div className={`progress-line ${getLineClass(progress.leaseDocs, progress.initialPayment)}`}></div>
+
+                    {/* Step 5: Initial Payment */}
+                    <div className={`progress-step ${getStepClass(progress.initialPayment)}`}>
+                      <div className="step-circle"></div>
                     </div>
                   </div>
-                  <div className="progress-row bottom-row">
-                    <div className={`progress-step ${progress.proposalSubmitted ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
-                      <div className="step-circle"></div>
-                      <span className="step-label">Proposal submitted</span>
+
+                  {/* Row 2: Labels below the line - mirrors dots/lines structure exactly */}
+                  <div className="progress-tracker-labels">
+                    <div className="progress-label-wrapper">
+                      <span className="step-label">Proposal Submitted</span>
                     </div>
-                    <div className="progress-line"></div>
-                    <div className={`progress-step ${progress.hostReview ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
-                      <div className="step-circle"></div>
-                      <span className="step-label">{progress.hostReview ? 'Edit/Review Proposal' : 'Host Review'}</span>
+                    <div className="progress-label-spacer"></div>
+                    <div className="progress-label-wrapper">
+                      <span className="step-label">{progress.rentalApp.completed ? 'Rental App Submitted' : 'Rental Application'}</span>
                     </div>
-                    <div className="progress-line"></div>
-                    <div className={`progress-step ${progress.leaseDocs ? 'completed' : ''} ${isCancelled ? 'cancelled' : ''}`}>
-                      <div className="step-circle"></div>
-                      <span className="step-label">Lease Documents</span>
+                    <div className="progress-label-spacer"></div>
+                    <div className="progress-label-wrapper">
+                      <span className="step-label">Host Review</span>
+                    </div>
+                    <div className="progress-label-spacer"></div>
+                    <div className="progress-label-wrapper">
+                      <span className="step-label">{progress.leaseDocs.completed ? 'Lease Documents' : 'Lease Docs'}</span>
+                    </div>
+                    <div className="progress-label-spacer"></div>
+                    <div className="progress-label-wrapper">
+                      <span className="step-label">Initial Payment</span>
                     </div>
                   </div>
                 </div>

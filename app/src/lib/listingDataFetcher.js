@@ -126,6 +126,7 @@ export async function fetchListingComplete(listingId) {
         "Reviews",
         Active,
         Complete,
+        Deleted,
         "Preferred Gender",
         "allow alternating roommates?"
       `)
@@ -134,6 +135,11 @@ export async function fetchListingComplete(listingId) {
 
     if (listingError) throw listingError;
     if (!listingData) throw new Error('Listing not found');
+
+    // Check if listing is soft-deleted
+    if (listingData.Deleted === true) {
+      throw new Error('Listing has been deleted');
+    }
 
     console.log('✅ Found listing:', listingData._id);
 
@@ -451,7 +457,7 @@ export async function fetchListingBasic(listingId) {
     console.log('📊 Calling Supabase...');
     const { data: listingData, error: listingError } = await supabase
       .from('listing')
-      .select('_id, Name, Description, Active')
+      .select('_id, Name, Description, Active, Deleted')
       .eq('_id', listingId)
       .single();
 
@@ -465,6 +471,11 @@ export async function fetchListingBasic(listingId) {
     if (!listingData) {
       console.error('❌ No listing data returned');
       throw new Error('Listing not found');
+    }
+
+    // Check if listing is soft-deleted
+    if (listingData.Deleted === true) {
+      throw new Error('Listing has been deleted');
     }
 
     console.log('✅ fetchListingBasic: Successfully fetched listing');

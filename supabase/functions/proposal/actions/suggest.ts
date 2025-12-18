@@ -12,7 +12,6 @@
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ValidationError } from "../../_shared/errors.ts";
 import { UserContext, CreateProposalInput, ListingData } from "../lib/types.ts";
-import { adaptDaysFromBubble } from "../lib/dayConversion.ts";
 
 // ─────────────────────────────────────────────────────────────
 // INPUT TYPE
@@ -148,8 +147,8 @@ export async function handleSuggest(
   // Exclude origin listing and any specified exclusions
   const excludeIds = [originProposal.Listing, ...excludeListingIds];
 
-  // Get guest's selected days (convert from Bubble format)
-  const guestDaysJS = adaptDaysFromBubble(originProposal["Days Selected"] || []);
+  // Get guest's selected days (already 0-indexed after migration)
+  const guestDaysJS = originProposal["Days Selected"] || [];
   const guestNightsPerWeek = originProposal["nights per week (num)"] || guestDaysJS.length;
 
   // Weekly Match: Find listings with overlapping available days
@@ -188,9 +187,9 @@ export async function handleSuggest(
       skippedReasons.push(`Weekly match query error: ${weeklyError.message}`);
     } else if (weeklyMatches) {
       for (const listing of weeklyMatches) {
-        // Check if listing has overlapping available days
-        const listingDaysJS = adaptDaysFromBubble(listing["Days Available (List of Days)"] || []);
-        const overlappingDays = guestDaysJS.filter((d) => listingDaysJS.includes(d));
+        // Check if listing has overlapping available days (already 0-indexed)
+        const listingDaysJS = listing["Days Available (List of Days)"] || [];
+        const overlappingDays = guestDaysJS.filter((d: number) => listingDaysJS.includes(d));
 
         if (overlappingDays.length >= guestNightsPerWeek) {
           matchingListings.push(listing as unknown as ListingData);

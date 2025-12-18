@@ -123,7 +123,7 @@ export async function fetchProposalsByIds(proposalIds) {
       "guest documents review finalized?"
     `)
     .in('_id', proposalIds)
-    .order('"Created Date"', { ascending: false });
+    .order('Created Date', { ascending: false });
 
   if (proposalError) {
     console.error('fetchProposalsByIds: Error fetching proposals:', proposalError);

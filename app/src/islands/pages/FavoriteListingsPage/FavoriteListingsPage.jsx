@@ -12,20 +12,21 @@ import ContactHostMessaging from '../../shared/ContactHostMessaging.jsx';
 import InformationalText from '../../shared/InformationalText.jsx';
 import LoggedInAvatar from '../../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import FavoriteButton from '../../shared/FavoriteButton/FavoriteButton.jsx';
-import CreateProposalFlowV2 from '../../shared/CreateProposalFlowV2.jsx';
+import CreateProposalFlowV2, { clearProposalDraft } from '../../shared/CreateProposalFlowV2.jsx';
 import ProposalSuccessModal from '../../modals/ProposalSuccessModal.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import EmptyState from './components/EmptyState';
 import { getFavoritedListingIds, removeFromFavorites } from './favoritesApi';
 import { checkAuthStatus, getSessionId, validateTokenAndFetchUser, getUserId, logoutUser } from '../../../lib/auth';
-import { fetchProposalsByGuest } from '../../../lib/proposalDataFetcher.js';
+import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../../lib/listingDataFetcher.js';
 import { supabase } from '../../../lib/supabase.js';
 import { getNeighborhoodName, getBoroughName, getPropertyTypeLabel, initializeLookups, isInitialized } from '../../../lib/dataLookups.js';
 import { fetchPhotoUrls, extractPhotos, fetchHostData, parseAmenities } from '../../../lib/supabaseUtils.js';
-import { adaptDaysToBubble } from '../../../logic/processors/external/adaptDaysToBubble.js';
+// NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import { createDay } from '../../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
+import { shiftMoveInDateIfPast } from '../../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
 import './FavoriteListingsPage.css';
 import '../../../styles/create-proposal-flow-v2.css';
 
@@ -62,7 +63,7 @@ async function fetchInformationalTexts() {
  * PropertyCard - Individual listing card (matches SearchPage PropertyCard exactly)
  * @param {Object} proposalForListing - The user's existing proposal for this listing (if any)
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, onToggleFavorite, userId, proposalForListing, onCreateProposal }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, onToggleFavorite, userId, proposalForListing, onCreateProposal, onPhotoClick }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
 
@@ -195,6 +196,14 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
           <img
             src={listing.images[currentImageIndex]}
             alt={listing.title}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (onPhotoClick) {
+                onPhotoClick(listing, currentImageIndex);
+              }
+            }}
+            style={{ cursor: 'pointer' }}
           />
           {hasMultipleImages && (
             <>
@@ -222,6 +231,17 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
             size="medium"
           />
           {listing.isNew && <span className="new-badge">New Listing</span>}
+          {listing.type === 'Entire Place' && (
+            <span className="family-friendly-tag" aria-label="Family Friendly - Entire place listing suitable for families">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              Family Friendly
+            </span>
+          )}
         </div>
       )}
 
@@ -353,8 +373,9 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
  * Note: On favorites page, all listings are favorited by definition
  * @param {Map} proposalsByListingId - Map of listing ID to proposal object
  * @param {Function} onCreateProposal - Handler to open inline proposal creation modal
+ * @param {Function} onPhotoClick - Handler to open fullscreen photo gallery
  */
-function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal }) {
+function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, onToggleFavorite, userId, proposalsByListingId, onCreateProposal, onPhotoClick }) {
   return (
     <div className="listings-container">
       {listings.map((listing) => {
@@ -376,6 +397,7 @@ function ListingsGrid({ listings, onOpenContactModal, onOpenInfoModal, mapRef, i
             userId={userId}
             proposalForListing={proposalForListing}
             onCreateProposal={onCreateProposal}
+            onPhotoClick={onPhotoClick}
           />
         );
       })}
@@ -455,10 +477,34 @@ const FavoriteListingsPage = () => {
   const [priceBreakdown, setPriceBreakdown] = useState(null);
   const [pendingProposalData, setPendingProposalData] = useState(null);
   const [loggedInUserData, setLoggedInUserData] = useState(null);
+  const [lastProposalDefaults, setLastProposalDefaults] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successProposalId, setSuccessProposalId] = useState(null);
   const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Photo gallery modal state
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [selectedListingPhotos, setSelectedListingPhotos] = useState([]);
+  const [selectedListingName, setSelectedListingName] = useState('');
+
+  // Close photo modal on ESC key press
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && showPhotoModal) {
+        setShowPhotoModal(false);
+      }
+    };
+
+    if (showPhotoModal) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showPhotoModal]);
 
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
@@ -653,6 +699,13 @@ const FavoriteListingsPage = () => {
                 specialNeeds: profileResult.data['special needs'] || '',
                 proposalCount: proposalCount
               });
+
+              // Fetch last proposal defaults for pre-population
+              const proposalDefaults = await fetchLastProposalDefaults(sessionId);
+              if (proposalDefaults) {
+                setLastProposalDefaults(proposalDefaults);
+                console.log('[FavoriteListingsPage] Loaded last proposal defaults:', proposalDefaults);
+              }
             }
           } catch (e) {
             console.warn('Failed to fetch user proposal data:', e);
@@ -689,11 +742,12 @@ const FavoriteListingsPage = () => {
           return;
         }
 
-        // Fetch listings data from Supabase (all favorited listings, regardless of Active status)
+        // Fetch listings data from Supabase (all favorited listings, regardless of Active status, but exclude soft-deleted)
         const { data: listingsData, error: listingsError } = await supabase
           .from('listing')
           .select('*')
-          .in('_id', favoritedIds);
+          .in('_id', favoritedIds)
+          .eq('Deleted', false);
 
         if (listingsError) {
           console.error('Error fetching listings:', listingsError);
@@ -873,9 +927,18 @@ const FavoriteListingsPage = () => {
     twoWeeksFromNow.setDate(today.getDate() + 14);
     const minMoveInDate = twoWeeksFromNow.toISOString().split('T')[0];
 
-    // Calculate smart default move-in date using shared calculator
+    // Determine move-in date: prefer last proposal's date (shifted if needed), fallback to smart calculation
     let smartMoveInDate = minMoveInDate;
-    if (initialDays.length > 0) {
+
+    if (lastProposalDefaults?.moveInDate) {
+      // Use previous proposal's move-in date, shifted forward if necessary
+      smartMoveInDate = shiftMoveInDateIfPast({
+        previousMoveInDate: lastProposalDefaults.moveInDate,
+        minDate: minMoveInDate
+      }) || minMoveInDate;
+      console.log('[FavoriteListingsPage] Pre-filling move-in from last proposal:', lastProposalDefaults.moveInDate, '->', smartMoveInDate);
+    } else if (initialDays.length > 0) {
+      // Fallback: calculate based on selected days
       try {
         const selectedDayIndices = initialDays.map(d => d.dayOfWeek);
         smartMoveInDate = calculateNextAvailableCheckIn({
@@ -888,12 +951,24 @@ const FavoriteListingsPage = () => {
       }
     }
 
+    // Determine reservation span: prefer last proposal's span, fallback to default
+    const prefillReservationSpan = lastProposalDefaults?.reservationSpanWeeks || 13;
+
     setSelectedListingForProposal(listing);
     setSelectedDayObjects(initialDays);
     setMoveInDate(smartMoveInDate);
-    setReservationSpan(13);
+    setReservationSpan(prefillReservationSpan);
     setPriceBreakdown(null); // Will be calculated by ListingScheduleSelector
     setIsProposalModalOpen(true);
+  };
+
+  // Handler to open fullscreen photo gallery
+  const handlePhotoGalleryOpen = (listing, photoIndex = 0) => {
+    if (!listing.images || listing.images.length === 0) return;
+    setSelectedListingPhotos(listing.images);
+    setSelectedListingName(listing.title || 'Listing');
+    setCurrentPhotoIndex(photoIndex);
+    setShowPhotoModal(true);
   };
 
   // Submit proposal to backend
@@ -906,17 +981,52 @@ const FavoriteListingsPage = () => {
         throw new Error('User session not found');
       }
 
-      // Convert days from JS format (0-6) to Bubble format (1-7)
+      // Days are already in JS format (0-6) - database now uses 0-indexed natively
       const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || [];
-      const daysInBubbleFormat = adaptDaysToBubble({ zeroBasedDays: daysInJsFormat });
 
-      // Calculate nights from days (nights = days without the last checkout day)
-      const sortedDays = [...daysInBubbleFormat].sort((a, b) => a - b);
-      const nightsInBubbleFormat = sortedDays.slice(0, -1); // Remove last day (checkout day)
+      // Sort days in JS format first to detect wrap-around (Saturday/Sunday spanning)
+      const sortedJsDays = [...daysInJsFormat].sort((a, b) => a - b);
 
-      // Get check-in and check-out days in Bubble format (numbers 1-7)
-      const checkInDayBubble = sortedDays[0];
-      const checkOutDayBubble = sortedDays[sortedDays.length - 1];
+      // Check for wrap-around case (both Saturday=6 and Sunday=0 present, but not all 7 days)
+      const hasSaturday = sortedJsDays.includes(6);
+      const hasSunday = sortedJsDays.includes(0);
+      const isWrapAround = hasSaturday && hasSunday && daysInJsFormat.length < 7;
+
+      let checkInDay, checkOutDay, nightsSelected;
+
+      if (isWrapAround) {
+        // Find the gap in the sorted selection to determine wrap-around point
+        let gapIndex = -1;
+        for (let i = 0; i < sortedJsDays.length - 1; i++) {
+          if (sortedJsDays[i + 1] - sortedJsDays[i] > 1) {
+            gapIndex = i + 1;
+            break;
+          }
+        }
+
+        if (gapIndex !== -1) {
+          // Wrap-around: check-in is the first day after the gap, check-out is the last day before gap
+          checkInDay = sortedJsDays[gapIndex];
+          checkOutDay = sortedJsDays[gapIndex - 1];
+
+          // Reorder days to be in actual sequence (check-in to check-out)
+          const reorderedDays = [...sortedJsDays.slice(gapIndex), ...sortedJsDays.slice(0, gapIndex)];
+
+          // Nights = all days except the last one (checkout day)
+          nightsSelected = reorderedDays.slice(0, -1);
+        } else {
+          // No gap found, use standard logic
+          checkInDay = sortedJsDays[0];
+          checkOutDay = sortedJsDays[sortedJsDays.length - 1];
+          nightsSelected = sortedJsDays.slice(0, -1);
+        }
+      } else {
+        // Standard case: check-in = first day, check-out = last day
+        checkInDay = sortedJsDays[0];
+        checkOutDay = sortedJsDays[sortedJsDays.length - 1];
+        // Nights = all days except the last one (checkout day)
+        nightsSelected = sortedJsDays.slice(0, -1);
+      }
 
       // Format reservation span text
       const reservationSpanWeeks = proposalData.reservationSpan || 13;
@@ -926,18 +1036,18 @@ const FavoriteListingsPage = () => {
           ? '20 weeks (approx. 5 months)'
           : `${reservationSpanWeeks} weeks`;
 
-      // Build payload matching ViewSplitLeasePage format
+      // Build payload (using 0-indexed days)
       const payload = {
         guestId: guestId,
         listingId: selectedListingForProposal._id || selectedListingForProposal.id,
         moveInStartRange: proposalData.moveInDate,
         moveInEndRange: proposalData.moveInDate, // Same as start if no flexibility
-        daysSelected: daysInBubbleFormat,
-        nightsSelected: nightsInBubbleFormat,
+        daysSelected: daysInJsFormat,
+        nightsSelected: nightsSelected,
         reservationSpan: reservationSpanText,
         reservationSpanWeeks: reservationSpanWeeks,
-        checkIn: checkInDayBubble,
-        checkOut: checkOutDayBubble,
+        checkIn: checkInDay,
+        checkOut: checkOutDay,
         proposalPrice: proposalData.pricePerNight,
         fourWeekRent: proposalData.pricePerFourWeeks,
         hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now
@@ -972,6 +1082,9 @@ const FavoriteListingsPage = () => {
 
       console.log('✅ Proposal submitted successfully:', data);
       console.log('   Proposal ID:', data.data?.proposalId);
+
+      // Clear the localStorage draft on successful submission
+      clearProposalDraft(proposalData.listingId);
 
       setIsProposalModalOpen(false);
       setPendingProposalData(null);
@@ -1269,6 +1382,7 @@ const FavoriteListingsPage = () => {
                 userId={userId}
                 proposalsByListingId={proposalsByListingId}
                 onCreateProposal={handleOpenProposalModal}
+                onPhotoClick={handlePhotoGalleryOpen}
               />
             )}
           </div>
@@ -1469,6 +1583,142 @@ const FavoriteListingsPage = () => {
             setSelectedListingForProposal(null);
           }}
         />
+      )}
+
+      {/* Fullscreen Photo Gallery Modal */}
+      {showPhotoModal && selectedListingPhotos.length > 0 && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.9)',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '1rem'
+          }}
+          onClick={() => setShowPhotoModal(false)}
+        >
+          {/* Close X Button - Top Right */}
+          <button
+            onClick={() => setShowPhotoModal(false)}
+            style={{
+              position: 'absolute',
+              top: '1rem',
+              right: '1rem',
+              background: 'rgba(255,255,255,0.2)',
+              border: 'none',
+              color: 'white',
+              fontSize: '2rem',
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1002
+            }}
+          >
+            ×
+          </button>
+
+          {/* Main Image */}
+          <img
+            src={selectedListingPhotos[currentPhotoIndex]}
+            alt={`${selectedListingName} - photo ${currentPhotoIndex + 1}`}
+            style={{
+              maxWidth: '95vw',
+              maxHeight: '75vh',
+              objectFit: 'contain',
+              marginBottom: '5rem'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+
+          {/* Navigation Controls */}
+          <div style={{
+            position: 'absolute',
+            bottom: '4rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            display: 'flex',
+            gap: '0.5rem',
+            alignItems: 'center',
+            zIndex: 1001
+          }}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentPhotoIndex(prev => (prev > 0 ? prev - 1 : selectedListingPhotos.length - 1));
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                border: 'none',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.875rem'
+              }}
+            >
+              ← Previous
+            </button>
+
+            <span style={{
+              color: 'white',
+              fontSize: '0.75rem',
+              minWidth: '60px',
+              textAlign: 'center'
+            }}>
+              {currentPhotoIndex + 1} / {selectedListingPhotos.length}
+            </span>
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentPhotoIndex(prev => (prev < selectedListingPhotos.length - 1 ? prev + 1 : 0));
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.2)',
+                border: 'none',
+                color: 'white',
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontWeight: '600',
+                fontSize: '0.875rem'
+              }}
+            >
+              Next →
+            </button>
+          </div>
+
+          {/* Close Button - Bottom Center */}
+          <button
+            onClick={() => setShowPhotoModal(false)}
+            style={{
+              position: 'absolute',
+              bottom: '1rem',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              background: 'white',
+              border: 'none',
+              color: '#1f2937',
+              padding: '0.5rem 2rem',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontWeight: '600',
+              fontSize: '0.875rem',
+              zIndex: 1001
+            }}
+          >
+            Close
+          </button>
+        </div>
       )}
     </div>
   );

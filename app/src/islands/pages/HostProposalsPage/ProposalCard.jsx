@@ -5,7 +5,7 @@
  */
 
 import DayIndicator from './DayIndicator.jsx';
-import { getStatusTagInfo, getActiveDays } from './types.js';
+import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromNights } from './types.js';
 import { formatCurrency, formatDate } from './formatters.js';
 
 /**
@@ -56,19 +56,14 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
   const listing = proposal.listing || proposal.Listing || {};
   const listingDescription = listing.description || listing.Description || listing['Listing Name'] || 'Restored apartment with amenities';
 
-  // Helper to convert Bubble day indices (1-7) to day names
-  const bubbleDayToName = (bubbleDay) => {
-    const dayNames = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    return typeof bubbleDay === 'number' ? dayNames[bubbleDay] || 'Monday' : bubbleDay;
-  };
-
-  // Get schedule info
-  const checkInDayRaw = proposal.checkInDay || proposal['check in day'] || proposal['Check In Day'] || proposal.check_in_day || 'Monday';
-  const checkOutDayRaw = proposal.checkOutDay || proposal['check out day'] || proposal['Check Out Day'] || proposal.check_out_day || 'Friday';
-  const checkInDay = bubbleDayToName(checkInDayRaw);
-  const checkOutDay = bubbleDayToName(checkOutDayRaw);
+  // Get schedule info - use Nights Selected for hosts (they care about nights, not days)
+  // Check for host counteroffer nights first, fall back to original proposal nights
+  const nightsSelectedRaw = proposal['hc nights selected'] || proposal['Nights Selected (Nights list)'] || proposal.nightsSelected || proposal['Nights Selected'];
   const moveInRangeStart = proposal.moveInRangeStart || proposal['Move in range start'] || proposal['Move In Range Start'] || proposal.move_in_range_start;
   const reservationSpanWeeks = proposal.reservationSpanWeeks || proposal['Reservation Span (Weeks)'] || proposal['Reservation Span (weeks)'] || proposal.reservation_span_weeks || 0;
+
+  // Get check-in/check-out from nights selected (more accurate than stored check-in/out days)
+  const { checkInDay, checkOutDay } = getCheckInOutFromNights(nightsSelectedRaw);
 
   // Get pricing info
   // "host compensation" is the per-night HOST rate (from listing pricing tiers)
@@ -77,8 +72,8 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
   const totalCompensation = proposal.totalCompensation || proposal['Total Compensation (proposal - host)'] || proposal['Total Compensation'] || proposal.total_compensation || 0;
   const counterOfferHappened = proposal.counterOfferHappened || proposal['Counter Offer Happened'] || proposal.counter_offer_happened || false;
 
-  // Get active days for the schedule
-  const activeDays = getActiveDays(checkInDay, checkOutDay);
+  // Get active nights for the day indicator (hosts see nights, not days)
+  const activeDays = getNightsAsDayNames(nightsSelectedRaw);
 
   // Guest avatar
   const guestAvatar = guest.avatar || guest.Avatar || guest['Profile Photo'] || guest['Profile Picture'];
@@ -131,9 +126,9 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
         <h3 className="proposal-title">{guestName ? `${guestName}'s Proposal` : "'s Proposal"}</h3>
         <p className="listing-description">{listingDescription}</p>
 
-        {/* Schedule Info */}
+        {/* Schedule Info - shows check-in to check-out range */}
         <p className="schedule-text">
-          {checkInDay} thru {checkOutDay} (check{checkOutDay === checkInDay ? '-out' : ' out'} day)
+          {checkInDay} to {checkOutDay}
         </p>
 
         {/* Day Indicator */}
@@ -148,12 +143,16 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
         <div className="detail-row">
           <span>Duration <strong>{reservationSpanWeeks} weeks</strong></span>
         </div>
-        {counterOfferHappened && (
-          <div className="detail-row pricing">
-            <span className="original-price">${hostCompensation * reservationSpanWeeks * 7}</span>
-            <span className="current-price">${formatCurrency(totalCompensation)}</span>
-          </div>
-        )}
+        <div className="detail-row compensation">
+          <span className="compensation-label">Your Compensation</span>
+          <span className="compensation-value">
+            {totalCompensation > 0 ? (
+              <strong>${formatCurrency(totalCompensation)}</strong>
+            ) : (
+              <span className="compensation-error">Contact Split Lease</span>
+            )}
+          </span>
+        </div>
       </div>
     </div>
   );

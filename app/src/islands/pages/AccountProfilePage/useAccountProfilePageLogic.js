@@ -269,7 +269,7 @@ export function useAccountProfilePageLogic() {
   const profileStrength = useMemo(() => {
     const profileInfo = {
       profilePhoto: profileData?.['Profile Photo'],
-      bio: formData.bio || profileData?.['About Me'],
+      bio: formData.bio || profileData?.['About Me / Bio'],
       firstName: formData.firstName || profileData?.['Name - First'],
       lastName: formData.lastName || profileData?.['Name - Last'],
       jobTitle: formData.jobTitle || profileData?.['Job Title']
@@ -283,7 +283,7 @@ export function useAccountProfilePageLogic() {
   const nextActions = useMemo(() => {
     const profileInfo = {
       profilePhoto: profileData?.['Profile Photo'],
-      bio: formData.bio || profileData?.['About Me'],
+      bio: formData.bio || profileData?.['About Me / Bio'],
       firstName: formData.firstName || profileData?.['Name - First'],
       lastName: formData.lastName || profileData?.['Name - Last'],
       jobTitle: formData.jobTitle || profileData?.['Job Title']
@@ -369,9 +369,9 @@ export function useAccountProfilePageLogic() {
         firstName: userData['Name - First'] || '',
         lastName: userData['Name - Last'] || '',
         jobTitle: userData['Job Title'] || '',
-        bio: userData['About Me'] || '',
-        needForSpace: userData['Guest Account (Profile) - Need for Space'] || '',
-        specialNeeds: userData['Guest Account (Profile) - Special Needs?'] || '',
+        bio: userData['About Me / Bio'] || '',
+        needForSpace: userData['need for Space'] || '',
+        specialNeeds: userData['special needs'] || '',
         selectedDays: dayNamesToIndices(userData['Recent Days Selected'] || []),
         transportationType: userData['Transportation'] || '',
         goodGuestReasons: userData['Good Guest Reasons'] || [],
@@ -616,9 +616,9 @@ export function useAccountProfilePageLogic() {
         'Name - Last': lastName,
         'Name - Full': fullName,
         'Job Title': formData.jobTitle.trim(),
-        'About Me': formData.bio.trim(),
-        'Guest Account (Profile) - Need for Space': formData.needForSpace.trim(),
-        'Guest Account (Profile) - Special Needs?': formData.specialNeeds.trim(),
+        'About Me / Bio': formData.bio.trim(),
+        'need for Space': formData.needForSpace.trim(),
+        'special needs': formData.specialNeeds.trim(),
         'Recent Days Selected': indicesToDayNames(formData.selectedDays),
         'Transportation': formData.transportationType,
         'Good Guest Reasons': formData.goodGuestReasons,
@@ -658,9 +658,9 @@ export function useAccountProfilePageLogic() {
         firstName: profileData['Name - First'] || '',
         lastName: profileData['Name - Last'] || '',
         jobTitle: profileData['Job Title'] || '',
-        bio: profileData['About Me'] || '',
-        needForSpace: profileData['Guest Account (Profile) - Need for Space'] || '',
-        specialNeeds: profileData['Guest Account (Profile) - Special Needs?'] || '',
+        bio: profileData['About Me / Bio'] || '',
+        needForSpace: profileData['need for Space'] || '',
+        specialNeeds: profileData['special needs'] || '',
         selectedDays: dayNamesToIndices(profileData['Recent Days Selected'] || []),
         transportationType: profileData['Transportation'] || '',
         goodGuestReasons: profileData['Good Guest Reasons'] || [],

@@ -39,6 +39,7 @@ export default function ListingDashboardPage() {
     handleBackClick,
     handleDescriptionChange,
     handleCancellationPolicyChange,
+    handleCancellationRestrictionsChange,
     handleCopyLink,
     handleAIAssistant,
     handleScheduleCohost,
@@ -208,6 +209,7 @@ export default function ListingDashboardPage() {
             <CancellationPolicySection
               listing={listing}
               onPolicyChange={handleCancellationPolicyChange}
+              onRestrictionsChange={handleCancellationRestrictionsChange}
             />
           </div>
         </div>

@@ -9,7 +9,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
-import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
+import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import ListingScheduleSelector from '../shared/ListingScheduleSelector.jsx';
 import GoogleMap from '../shared/GoogleMap.jsx';
 import ContactHostMessaging from '../shared/ContactHostMessaging.jsx';
@@ -34,7 +34,7 @@ import {
 import { DAY_ABBREVIATIONS, DEFAULTS, COLORS, SCHEDULE_PATTERNS } from '../../lib/constants.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { supabase } from '../../lib/supabase.js';
-import { adaptDaysToBubble } from '../../logic/processors/external/adaptDaysToBubble.js';
+// NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import '../../styles/listing-schedule-selector.css';
 import '../../styles/components/toast.css';
 
@@ -79,6 +79,46 @@ function getInitialScheduleFromUrl() {
   }
 
   return [];
+}
+
+/**
+ * Get initial reservation span from URL parameter
+ * URL format: ?reservation-span=13 (weeks)
+ * Returns: Number or null if not provided/invalid
+ */
+function getInitialReservationSpanFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const spanParam = urlParams.get('reservation-span');
+
+  if (!spanParam) return null;
+
+  const parsed = parseInt(spanParam, 10);
+  if (!isNaN(parsed) && parsed > 0) {
+    console.log('📅 ViewSplitLeasePage: Loaded reservation span from URL:', parsed);
+    return parsed;
+  }
+
+  return null;
+}
+
+/**
+ * Get initial move-in date from URL parameter
+ * URL format: ?move-in=2025-02-15 (YYYY-MM-DD)
+ * Returns: String (YYYY-MM-DD) or null if not provided/invalid
+ */
+function getInitialMoveInFromUrl() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const moveInParam = urlParams.get('move-in');
+
+  if (!moveInParam) return null;
+
+  // Basic validation: YYYY-MM-DD format
+  if (/^\d{4}-\d{2}-\d{2}$/.test(moveInParam)) {
+    console.log('📅 ViewSplitLeasePage: Loaded move-in date from URL:', moveInParam);
+    return moveInParam;
+  }
+
+  return null;
 }
 
 /**
@@ -656,11 +696,11 @@ export default function ViewSplitLeasePage() {
   const [zatConfig, setZatConfig] = useState(null);
   const [informationalTexts, setInformationalTexts] = useState({});
 
-  // Booking widget state
-  const [moveInDate, setMoveInDate] = useState(null);
+  // Booking widget state - initialize from URL parameters if available
+  const [moveInDate, setMoveInDate] = useState(() => getInitialMoveInFromUrl());
   const [strictMode, setStrictMode] = useState(false);
   const [selectedDayObjects, setSelectedDayObjects] = useState(() => getInitialScheduleFromUrl()); // Day objects from URL param or empty
-  const [reservationSpan, setReservationSpan] = useState(13); // 13 weeks default
+  const [reservationSpan, setReservationSpan] = useState(() => getInitialReservationSpanFromUrl() || 13); // URL value or 13 weeks default
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [priceBreakdown, setPriceBreakdown] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -693,32 +733,6 @@ export default function ViewSplitLeasePage() {
   // Convert Day objects to array of numbers for compatibility with existing code
   const selectedDays = selectedDayObjects.map(day => day.dayOfWeek);
 
-  // Calculate ideal termination date based on move-in date and reservation span
-  const idealTerminationDate = useMemo(() => {
-    if (!moveInDate || !reservationSpan || selectedDays.length === 0) {
-      return null;
-    }
-
-    // Calculate termination date: moveInDate + (reservationSpan weeks * 7 days)
-    const moveIn = new Date(moveInDate);
-    const terminationDate = new Date(moveIn);
-    terminationDate.setDate(moveIn.getDate() + (reservationSpan * 7));
-
-    return terminationDate;
-  }, [moveInDate, reservationSpan, selectedDays.length]);
-
-  // Format the termination date for display
-  const formattedTerminationDate = useMemo(() => {
-    if (!idealTerminationDate) return null;
-
-    return idealTerminationDate.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  }, [idealTerminationDate]);
-
   // Calculate smart default move-in date based on selected days
   // If user selects Wed-Sat, default to next Wednesday after 2 weeks
   const calculateSmartMoveInDate = useCallback((selectedDayNumbers) => {
@@ -750,14 +764,30 @@ export default function ViewSplitLeasePage() {
   }, [minMoveInDate]);
 
   // Set initial move-in date if days were loaded from URL
+  // Also validate URL-provided move-in date is not before minimum (2 weeks from today)
   useEffect(() => {
-    if (selectedDayObjects.length > 0 && !moveInDate) {
-      const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
-      const smartDate = calculateSmartMoveInDate(dayNumbers);
-      setMoveInDate(smartDate);
-      console.log('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
+    if (selectedDayObjects.length > 0) {
+      // If move-in date was provided via URL, validate it's not before minimum
+      if (moveInDate) {
+        const providedDate = new Date(moveInDate);
+        const minDate = new Date(minMoveInDate);
+
+        if (providedDate < minDate) {
+          // URL date is in the past, use smart calculation instead
+          const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
+          const smartDate = calculateSmartMoveInDate(dayNumbers);
+          setMoveInDate(smartDate);
+          console.log('📅 ViewSplitLeasePage: URL move-in date was before minimum, using smart date:', smartDate);
+        }
+      } else {
+        // No URL date provided, calculate smart default
+        const dayNumbers = selectedDayObjects.map(day => day.dayOfWeek);
+        const smartDate = calculateSmartMoveInDate(dayNumbers);
+        setMoveInDate(smartDate);
+        console.log('📅 ViewSplitLeasePage: Set initial move-in date from URL selection:', smartDate);
+      }
     }
-  }, [selectedDayObjects, moveInDate, calculateSmartMoveInDate]);
+  }, []); // Run only once on mount - empty deps to prevent recalculation on state changes
 
   // UI state
   const [showTutorialModal, setShowTutorialModal] = useState(false);
@@ -1164,19 +1194,59 @@ export default function ViewSplitLeasePage() {
       console.log('   Guest ID:', guestId);
       console.log('   Listing ID:', proposalData.listingId);
 
-      // Convert days from JS format (0-6) to Bubble format (1-7)
+      // Days are already in JS format (0-6) - database now uses 0-indexed natively
       // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
       const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || selectedDays;
-      const daysInBubbleFormat = adaptDaysToBubble({ zeroBasedDays: daysInJsFormat });
 
-      // Calculate nights from days (nights = days without the last checkout day)
-      // For consecutive days [1,2,3,4,5] (Mon-Fri), nights are [1,2,3,4] (Mon-Thu)
-      const sortedDays = [...daysInBubbleFormat].sort((a, b) => a - b);
-      const nightsInBubbleFormat = sortedDays.slice(0, -1); // Remove last day (checkout day)
+      // Sort days in JS format first to detect wrap-around (Saturday/Sunday spanning)
+      const sortedJsDays = [...daysInJsFormat].sort((a, b) => a - b);
 
-      // Get check-in and check-out days in Bubble format
-      const checkInDayBubble = sortedDays[0];
-      const checkOutDayBubble = sortedDays[sortedDays.length - 1];
+      // Check for wrap-around case (both Saturday=6 and Sunday=0 present, but not all 7 days)
+      const hasSaturday = sortedJsDays.includes(6);
+      const hasSunday = sortedJsDays.includes(0);
+      const isWrapAround = hasSaturday && hasSunday && daysInJsFormat.length < 7;
+
+      let checkInDayJs, checkOutDayJs, nightsInJsFormat;
+
+      if (isWrapAround) {
+        // Find the gap in the sorted selection to determine wrap-around point
+        let gapIndex = -1;
+        for (let i = 0; i < sortedJsDays.length - 1; i++) {
+          if (sortedJsDays[i + 1] - sortedJsDays[i] > 1) {
+            gapIndex = i + 1;
+            break;
+          }
+        }
+
+        if (gapIndex !== -1) {
+          // Wrap-around: check-in is the first day after the gap, check-out is the last day before gap
+          checkInDayJs = sortedJsDays[gapIndex];
+          checkOutDayJs = sortedJsDays[gapIndex - 1];
+
+          // Reorder days to be in actual sequence (check-in to check-out)
+          // e.g., [0, 6] with gap at index 1 → reorder to [6, 0] (Fri, Sat, Sun)
+          const reorderedDays = [...sortedJsDays.slice(gapIndex), ...sortedJsDays.slice(0, gapIndex)];
+
+          // Nights = all days except the last one (checkout day)
+          nightsInJsFormat = reorderedDays.slice(0, -1);
+        } else {
+          // No gap found, use standard logic
+          checkInDayJs = sortedJsDays[0];
+          checkOutDayJs = sortedJsDays[sortedJsDays.length - 1];
+          nightsInJsFormat = sortedJsDays.slice(0, -1);
+        }
+      } else {
+        // Standard case: check-in = first day, check-out = last day
+        checkInDayJs = sortedJsDays[0];
+        checkOutDayJs = sortedJsDays[sortedJsDays.length - 1];
+        // Nights = all days except the last one (checkout day)
+        nightsInJsFormat = sortedJsDays.slice(0, -1);
+      }
+
+      // Use JS format directly (0-6) - database now uses 0-indexed natively
+      const checkInDay = checkInDayJs;
+      const checkOutDay = checkOutDayJs;
+      const nightsSelected = nightsInJsFormat;
 
       // Format reservation span text
       const reservationSpanWeeks = proposalData.reservationSpan || reservationSpan;
@@ -1186,18 +1256,18 @@ export default function ViewSplitLeasePage() {
           ? '20 weeks (approx. 5 months)'
           : `${reservationSpanWeeks} weeks`;
 
-      // Build the Edge Function payload
+      // Build the Edge Function payload (using 0-indexed days)
       const edgeFunctionPayload = {
         guestId: guestId,
         listingId: proposalData.listingId,
         moveInStartRange: proposalData.moveInDate,
         moveInEndRange: proposalData.moveInDate, // Same as start if no flexibility
-        daysSelected: daysInBubbleFormat,
-        nightsSelected: nightsInBubbleFormat,
+        daysSelected: daysInJsFormat,
+        nightsSelected: nightsSelected,
         reservationSpan: reservationSpanText,
         reservationSpanWeeks: reservationSpanWeeks,
-        checkIn: checkInDayBubble,
-        checkOut: checkOutDayBubble,
+        checkIn: checkInDay,
+        checkOut: checkOutDay,
         proposalPrice: proposalData.pricePerNight,
         fourWeekRent: proposalData.pricePerFourWeeks,
         hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now
@@ -1277,6 +1347,9 @@ export default function ViewSplitLeasePage() {
       console.log('✅ Proposal submitted successfully:', data);
       console.log('   Proposal ID:', data.data?.proposalId);
 
+      // Clear the localStorage draft on successful submission
+      clearProposalDraft(proposalData.listingId);
+
       // Close the create proposal modal
       setIsProposalModalOpen(false);
       setPendingProposalData(null);
@@ -1285,6 +1358,13 @@ export default function ViewSplitLeasePage() {
       const newProposalId = data.data?.proposalId;
       setSuccessProposalId(newProposalId);
       setShowSuccessModal(true);
+
+      // Update existingProposalForListing so the button disables after modal closes
+      setExistingProposalForListing({
+        _id: newProposalId,
+        Status: 'Pending Host Review',
+        'Created Date': new Date().toISOString()
+      });
 
     } catch (error) {
       console.error('❌ Error submitting proposal:', error);
@@ -2443,7 +2523,6 @@ export default function ViewSplitLeasePage() {
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
-              marginBottom: formattedTerminationDate ? '8px' : '0',
               fontSize: '15px'
             }}>
               <span style={{ color: '#111827', fontWeight: '500' }}>4-Week Rent</span>
@@ -2453,22 +2532,6 @@ export default function ViewSplitLeasePage() {
                   : priceMessage || 'Please Add More Days'}
               </span>
             </div>
-            {/* Ideal Termination Date */}
-            {formattedTerminationDate && (
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                fontSize: '14px',
-                paddingTop: '8px',
-                borderTop: '1px solid #E5E7EB'
-              }}>
-                <span style={{ color: '#6B7280', fontWeight: '500' }}>Ideal Termination Date</span>
-                <span style={{ color: '#31135d', fontWeight: '600' }}>
-                  {formattedTerminationDate}
-                </span>
-              </div>
-            )}
           </div>
 
           {/* Total Row */}
@@ -3141,6 +3204,37 @@ export default function ViewSplitLeasePage() {
                   />
                 </div>
 
+                {/* Strict Mode - placed directly after Move-in Date for visual grouping */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  marginBottom: '16px',
+                  padding: '12px',
+                  background: '#f8f9ff',
+                  borderRadius: '10px',
+                  border: '1px solid #e9d5ff'
+                }}>
+                  <input
+                    type="checkbox"
+                    checked={strictMode}
+                    onChange={() => setStrictMode(!strictMode)}
+                    style={{
+                      width: '20px',
+                      height: '20px',
+                      cursor: 'pointer',
+                      accentColor: '#31135d'
+                    }}
+                  />
+                  <label style={{
+                    fontSize: '14px',
+                    color: '#111827',
+                    fontWeight: '500'
+                  }}>
+                    Strict (no negotiation on exact move in)
+                  </label>
+                </div>
+
                 {/* Weekly Schedule Selector */}
                 {scheduleSelectorListing && (
                   <div style={{
@@ -3199,37 +3293,6 @@ export default function ViewSplitLeasePage() {
                   </select>
                 </div>
 
-                {/* Strict Mode */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  marginBottom: '16px',
-                  padding: '12px',
-                  background: '#f8f9ff',
-                  borderRadius: '10px',
-                  border: '1px solid #e9d5ff'
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={strictMode}
-                    onChange={() => setStrictMode(!strictMode)}
-                    style={{
-                      width: '20px',
-                      height: '20px',
-                      cursor: 'pointer',
-                      accentColor: '#31135d'
-                    }}
-                  />
-                  <label style={{
-                    fontSize: '14px',
-                    color: '#111827',
-                    fontWeight: '500'
-                  }}>
-                    Strict (no negotiation on exact move in)
-                  </label>
-                </div>
-
                 {/* Price Breakdown */}
                 <div style={{
                   marginBottom: '16px',
@@ -3252,23 +3315,6 @@ export default function ViewSplitLeasePage() {
                         : '—'}
                     </span>
                   </div>
-                  {/* Ideal Termination Date */}
-                  {formattedTerminationDate && (
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      fontSize: '13px',
-                      marginBottom: '8px',
-                      paddingTop: '8px',
-                      borderTop: '1px solid #E5E7EB'
-                    }}>
-                      <span style={{ color: '#6B7280', fontWeight: '500' }}>Ideal Termination Date</span>
-                      <span style={{ color: '#31135d', fontWeight: '600' }}>
-                        {formattedTerminationDate}
-                      </span>
-                    </div>
-                  )}
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',

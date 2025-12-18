@@ -1,9 +1,12 @@
 /**
  * Utility functions for the Host Schedule Selector component
  * Includes contiguity checking, sequencing, and calculations
+ *
+ * Day indices use JavaScript's 0-based standard (matching Date.getDay()):
+ * 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
  */
 
-import { getNightById, getNightByNumber, ALL_NIGHTS } from './constants.js'
+import { getNightById, getNightByDayIndex, ALL_NIGHTS } from './constants.js'
 
 /**
  * Check if selected nights form a contiguous block
@@ -16,9 +19,9 @@ export function checkContiguity(selectedNights) {
     return { isContiguous: true }
   }
 
-  // Convert to bubble numbers and sort
+  // Convert to day indices (0-6) and sort
   const numbers = selectedNights
-    .map((id) => getNightById(id).bubbleNumber)
+    .map((id) => getNightById(id).dayIndex)
     .sort((a, b) => a - b)
 
   // Check for gaps
@@ -46,20 +49,20 @@ export function getNightSequence(startNightId, endNightId) {
   const startNight = getNightById(startNightId)
   const endNight = getNightById(endNightId)
 
-  const startNum = startNight.bubbleNumber
-  const endNum = endNight.bubbleNumber
+  const startIdx = startNight.dayIndex
+  const endIdx = endNight.dayIndex
 
   const sequence = []
 
-  if (startNum <= endNum) {
+  if (startIdx <= endIdx) {
     // Ascending order
-    for (let i = startNum; i <= endNum; i++) {
-      sequence.push(getNightByNumber(i).id)
+    for (let i = startIdx; i <= endIdx; i++) {
+      sequence.push(getNightByDayIndex(i).id)
     }
   } else {
     // Descending order
-    for (let i = startNum; i >= endNum; i--) {
-      sequence.push(getNightByNumber(i).id)
+    for (let i = startIdx; i >= endIdx; i--) {
+      sequence.push(getNightByDayIndex(i).id)
     }
   }
 
@@ -122,7 +125,7 @@ export function getNotSelectedNights(selectedNights) {
 }
 
 /**
- * Sort nights by their bubble number
+ * Sort nights by their day index (0-6)
  * @param {import('./types.js').NightId[]} nights
  * @returns {import('./types.js').NightId[]}
  */
@@ -130,7 +133,7 @@ export function sortNights(nights) {
   return [...nights].sort((a, b) => {
     const nightA = getNightById(a)
     const nightB = getNightById(b)
-    return nightA.bubbleNumber - nightB.bubbleNumber
+    return nightA.dayIndex - nightB.dayIndex
   })
 }
 
@@ -185,7 +188,7 @@ export function getCheckOutDay(selectedNights, notSelectedNights) {
 }
 
 /**
- * Get start night number (bubble number of first selected night)
+ * Get start night day index (0-6 index of first selected night)
  * @param {import('./types.js').NightId[]} selectedNights
  * @param {import('./types.js').NightId[]} notSelectedNights
  * @returns {number | null}
@@ -200,21 +203,22 @@ export function getStartNightNumber(selectedNights, notSelectedNights) {
   // Handle corner case when Sunday is NOT in not-selected nights
   if (!notSelectedNights.includes('sunday')) {
     // If Sunday is selected, it might wrap around
-    const hasLowNumbers = sorted.some((id) => getNightById(id).bubbleNumber <= 3)
-    const hasHighNumbers = sorted.some((id) => getNightById(id).bubbleNumber >= 5)
+    // 0-6 indexing: low = 0-2 (Sun-Tue), high = 4-6 (Thu-Sat)
+    const hasLowNumbers = sorted.some((id) => getNightById(id).dayIndex <= 2)
+    const hasHighNumbers = sorted.some((id) => getNightById(id).dayIndex >= 4)
 
     if (hasLowNumbers && hasHighNumbers) {
       // Wraps around Sunday, start is the first low number
-      const lowNumbers = sorted.filter((id) => getNightById(id).bubbleNumber <= 3)
-      return getNightById(lowNumbers[0]).bubbleNumber
+      const lowNumbers = sorted.filter((id) => getNightById(id).dayIndex <= 2)
+      return getNightById(lowNumbers[0]).dayIndex
     }
   }
 
-  return getNightById(sorted[0]).bubbleNumber
+  return getNightById(sorted[0]).dayIndex
 }
 
 /**
- * Get end night number (bubble number of last selected night)
+ * Get end night day index (0-6 index of last selected night)
  * @param {import('./types.js').NightId[]} selectedNights
  * @param {import('./types.js').NightId[]} notSelectedNights
  * @returns {number | null}
@@ -229,17 +233,18 @@ export function getEndNightNumber(selectedNights, notSelectedNights) {
   // Handle corner case when Sunday is NOT in not-selected nights
   if (!notSelectedNights.includes('sunday')) {
     // If Sunday is selected, it might wrap around
-    const hasLowNumbers = sorted.some((id) => getNightById(id).bubbleNumber <= 3)
-    const hasHighNumbers = sorted.some((id) => getNightById(id).bubbleNumber >= 5)
+    // 0-6 indexing: low = 0-2 (Sun-Tue), high = 4-6 (Thu-Sat)
+    const hasLowNumbers = sorted.some((id) => getNightById(id).dayIndex <= 2)
+    const hasHighNumbers = sorted.some((id) => getNightById(id).dayIndex >= 4)
 
     if (hasLowNumbers && hasHighNumbers) {
       // Wraps around Sunday, end is the last high number
-      const highNumbers = sorted.filter((id) => getNightById(id).bubbleNumber >= 5)
-      return getNightById(highNumbers[highNumbers.length - 1]).bubbleNumber
+      const highNumbers = sorted.filter((id) => getNightById(id).dayIndex >= 4)
+      return getNightById(highNumbers[highNumbers.length - 1]).dayIndex
     }
   }
 
-  return getNightById(sorted[sorted.length - 1]).bubbleNumber
+  return getNightById(sorted[sorted.length - 1]).dayIndex
 }
 
 /**

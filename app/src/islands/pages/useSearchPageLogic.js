@@ -207,6 +207,7 @@ export function useSearchPageLogic() {
         .from('listing')
         .select('*')
         .eq('Active', true)
+        .eq('Deleted', false)
         .eq('isForUsability', false)
         .or(
           '"Location - Address".not.is.null,"Location - slightly different address".not.is.null'
@@ -332,6 +333,7 @@ export function useSearchPageLogic() {
         .select('*')
         .eq('"Complete"', true)
         .or('"Active".eq.true,"Active".is.null')
+        .eq('Deleted', false)
         .eq('"Location - Borough"', borough.id)
         .or(
           '"Location - Address".not.is.null,"Location - slightly different address".not.is.null'

@@ -60,7 +60,9 @@ export const FIELD_TYPES = {
         'Created Date', 'Modified Date', 'Operator Last Updated AUT'
     ]),
 
-    // Fields containing day indices that need conversion
+    // Fields containing day indices - NO LONGER NEED CONVERSION
+    // After migration to 0-indexed, database stores JS format (0-6)
+    // Bubble sync is being deprecated, so this is kept for reference only
     DAY_INDEX_FIELDS: new Set([
         'Days Available (List of Days)', 'Days Not Available',
         'Nights Available (List of Nights) ', 'Nights Not Available',
@@ -85,56 +87,56 @@ export const FIELD_TYPES = {
 };
 
 /**
- * Bubble day display names indexed by Bubble day number (1-7)
- * Used for converting Option Set "Days" fields to their display values
+ * Day display names indexed by JavaScript day number (0-6)
+ * After migration, database stores 0-indexed days
  */
-const BUBBLE_DAY_DISPLAY_NAMES: Record<number, string> = {
-    1: 'Sunday',
-    2: 'Monday',
-    3: 'Tuesday',
-    4: 'Wednesday',
-    5: 'Thursday',
-    6: 'Friday',
-    7: 'Saturday',
+const JS_DAY_DISPLAY_NAMES: Record<number, string> = {
+    0: 'Sunday',
+    1: 'Monday',
+    2: 'Tuesday',
+    3: 'Wednesday',
+    4: 'Thursday',
+    5: 'Friday',
+    6: 'Saturday',
 };
 
 /**
- * Convert a Bubble day number (1-7) to its display name for Option Set fields
- * Bubble's Data API expects Option Set values as display strings, not numbers
+ * Convert a JS day number (0-6) to its display name
+ * After migration, database stores 0-indexed days
  *
- * @param dayNumber - Bubble day index (1=Sunday, 2=Monday, ..., 7=Saturday)
+ * @param dayNumber - JS day index (0=Sunday, 1=Monday, ..., 6=Saturday)
  * @returns Display name string (e.g., "Monday") or null if invalid
  */
 export function convertDayNumberToDisplayName(dayNumber: number): string | null {
-    if (typeof dayNumber !== 'number' || dayNumber < 1 || dayNumber > 7) {
-        console.warn(`[Transformer] Invalid day number for Option Set conversion: ${dayNumber}`);
+    if (typeof dayNumber !== 'number' || dayNumber < 0 || dayNumber > 6) {
+        console.warn(`[Transformer] Invalid day number for display conversion: ${dayNumber}`);
         return null;
     }
-    return BUBBLE_DAY_DISPLAY_NAMES[dayNumber];
+    return JS_DAY_DISPLAY_NAMES[dayNumber];
 }
 
 /**
- * Convert JavaScript day index (0=Sunday) to Bubble day index (1=Sunday)
- * CRITICAL: This is the reverse of adaptDaysFromBubble()
+ * @deprecated Bubble sync is being phased out. Database now uses 0-indexed days natively.
+ * Kept for backwards compatibility during transition period.
  */
 export function adaptDaysToBubble(days: number[]): number[] {
+    console.warn('[Transformer] adaptDaysToBubble is deprecated - Bubble sync being phased out');
     if (!Array.isArray(days)) return days;
     return days.map(day => {
         const bubbleDay = day + 1;
-        // Ensure valid range 1-7
         return Math.max(1, Math.min(7, bubbleDay));
     });
 }
 
 /**
- * Convert Bubble day index (1=Sunday) to JavaScript day index (0=Sunday)
- * For reference - this is what the pull script uses
+ * @deprecated Bubble sync is being phased out. Database now uses 0-indexed days natively.
+ * Kept for backwards compatibility during transition period.
  */
 export function adaptDaysFromBubble(days: number[]): number[] {
+    console.warn('[Transformer] adaptDaysFromBubble is deprecated - Bubble sync being phased out');
     if (!Array.isArray(days)) return days;
     return days.map(day => {
         const jsDay = day - 1;
-        // Ensure valid range 0-6
         return Math.max(0, Math.min(6, jsDay));
     });
 }
@@ -194,12 +196,10 @@ export function transformFieldForBubble(
 
     // Handle JSONB fields
     if (FIELD_TYPES.JSONB_FIELDS.has(key)) {
-        let parsedValue = parseJsonbField(value);
+        const parsedValue = parseJsonbField(value);
 
-        // If this is a day index field, convert the values
-        if (FIELD_TYPES.DAY_INDEX_FIELDS.has(key) && Array.isArray(parsedValue)) {
-            parsedValue = adaptDaysToBubble(parsedValue as number[]);
-        }
+        // Day index fields are now stored as 0-indexed (JS format) natively
+        // No conversion needed - Bubble sync is being deprecated
 
         return { key: bubbleKey, value: parsedValue };
     }

@@ -14,6 +14,7 @@ export const AUTHORIZED_DOMAIN = 'app.split.lease';
 export const BUBBLE_API_URL = 'https://app.split.lease';
 export const SIGNUP_LOGIN_URL = 'https://app.split.lease/signup-login';
 export const SEARCH_URL = '/search';
+export const HOST_OVERVIEW_URL = '/host-overview';
 export const VIEW_LISTING_URL = '/view-split-lease';
 export const ACCOUNT_PROFILE_URL = 'https://app.split.lease/account-profile';
 export const FAQ_URL = '/faq';
@@ -71,21 +72,22 @@ export const DAY_NAMES = [
 
 export const DAY_ABBREVIATIONS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-// Bubble API day numbering (1-based, Sunday=1)
-export const BUBBLE_DAY_NUMBERS = {
-  SUNDAY: 1,
-  MONDAY: 2,
-  TUESDAY: 3,
-  WEDNESDAY: 4,
-  THURSDAY: 5,
-  FRIDAY: 6,
-  SATURDAY: 7
+// JavaScript day numbering (0-based, matching Date.getDay())
+// NOTE: BUBBLE_DAY_NUMBERS removed - database now uses 0-indexed days natively
+export const DAY_NUMBERS = {
+  SUNDAY: 0,
+  MONDAY: 1,
+  TUESDAY: 2,
+  WEDNESDAY: 3,
+  THURSDAY: 4,
+  FRIDAY: 5,
+  SATURDAY: 6
 };
 
 // ============================================================================
 // Schedule Patterns and Presets
-// IMPORTANT: All day arrays use 0-based indexing (0=Sunday, 1=Monday, ... 6=Saturday)
-// Convert to 1-based when sending to Bubble API using toBubbleDays() from dayUtils.js
+// All day arrays use 0-based indexing (0=Sunday, 1=Monday, ... 6=Saturday)
+// Database now stores days in this format natively
 // ============================================================================
 
 export const SCHEDULE_PATTERNS = {

@@ -1,9 +1,8 @@
 /**
  * HostEditingProposal Types and Constants
  *
- * Aligned with existing codebase patterns:
- * - 0-based day indexing (0=Sunday, 6=Saturday) internally
- * - 1-based (1=Sunday, 7=Saturday) for Bubble API
+ * Day indices use JavaScript's 0-based standard (matching Date.getDay()):
+ * 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
  */
 
 // ============================================================================
@@ -11,13 +10,13 @@
 // ============================================================================
 
 export const DAYS_OF_WEEK = [
-  { id: 0, name: 'Sunday', shortName: 'Sun', singleLetter: 'S', bubbleNumber: 1 },
-  { id: 1, name: 'Monday', shortName: 'Mon', singleLetter: 'M', bubbleNumber: 2 },
-  { id: 2, name: 'Tuesday', shortName: 'Tue', singleLetter: 'T', bubbleNumber: 3 },
-  { id: 3, name: 'Wednesday', shortName: 'Wed', singleLetter: 'W', bubbleNumber: 4 },
-  { id: 4, name: 'Thursday', shortName: 'Thu', singleLetter: 'T', bubbleNumber: 5 },
-  { id: 5, name: 'Friday', shortName: 'Fri', singleLetter: 'F', bubbleNumber: 6 },
-  { id: 6, name: 'Saturday', shortName: 'Sat', singleLetter: 'S', bubbleNumber: 7 }
+  { id: 0, name: 'Sunday', shortName: 'Sun', singleLetter: 'S', dayIndex: 0 },
+  { id: 1, name: 'Monday', shortName: 'Mon', singleLetter: 'M', dayIndex: 1 },
+  { id: 2, name: 'Tuesday', shortName: 'Tue', singleLetter: 'T', dayIndex: 2 },
+  { id: 3, name: 'Wednesday', shortName: 'Wed', singleLetter: 'W', dayIndex: 3 },
+  { id: 4, name: 'Thursday', shortName: 'Thu', singleLetter: 'T', dayIndex: 4 },
+  { id: 5, name: 'Friday', shortName: 'Fri', singleLetter: 'F', dayIndex: 5 },
+  { id: 6, name: 'Saturday', shortName: 'Sat', singleLetter: 'S', dayIndex: 6 }
 ]
 
 // Map night names to their corresponding check-in/check-out days (0-based)

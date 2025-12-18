@@ -20,12 +20,12 @@ import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers
 import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
 import { shouldHideVirtualMeetingButton } from '../../../lib/proposals/statusButtonConfig.js';
 import { navigateToMessaging } from '../../../logic/workflows/proposals/navigationWorkflow.js';
-import { goToRentalApplication } from '../../../lib/navigation.js';
+import { goToRentalApplication, getListingUrlWithProposalContext } from '../../../lib/navigation.js';
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
-import MapModal from '../../modals/MapModal.jsx';
+import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.jsx';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -35,8 +35,10 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
  * Convert a day value to a day name
  * Handles multiple formats:
  * - String day names: "Monday", "Friday", etc. (returned as-is)
- * - Numeric strings from Supabase: "2", "6" (Bubble 1-indexed, where 1=Sunday, 2=Monday, etc.)
- * - Numeric values: 2, 6 (Bubble 1-indexed)
+ * - Numeric strings from Supabase: "0", "3" (0-indexed, where 0=Sunday, 1=Monday, etc.)
+ * - Numeric values: 0, 3 (0-indexed)
+ *
+ * Note: Database now stores 0-indexed days natively (0=Sunday through 6=Saturday)
  *
  * @param {string|number} dayValue - The day value to convert
  * @returns {string} The day name or empty string if invalid
@@ -44,20 +46,20 @@ const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Frid
 function convertDayValueToName(dayValue) {
   if (dayValue === null || dayValue === undefined) return '';
 
-  // If it's a number, convert from Bubble 1-indexed to day name
+  // If it's a number, convert from 0-indexed to day name
   if (typeof dayValue === 'number') {
-    return DAY_NAMES[dayValue - 1] || '';
+    return DAY_NAMES[dayValue] || '';
   }
 
   // If it's a string, check if it's a numeric string or a day name
   if (typeof dayValue === 'string') {
     const trimmed = dayValue.trim();
 
-    // Check if it's a numeric string (e.g., "2", "6")
+    // Check if it's a numeric string (e.g., "0", "3")
     const numericValue = parseInt(trimmed, 10);
     if (!isNaN(numericValue) && String(numericValue) === trimmed) {
-      // It's a numeric string, convert from Bubble 1-indexed to day name
-      return DAY_NAMES[numericValue - 1] || '';
+      // It's a numeric string, convert from 0-indexed to day name
+      return DAY_NAMES[numericValue] || '';
     }
 
     // It's already a day name string (e.g., "Monday")
@@ -67,24 +69,81 @@ function convertDayValueToName(dayValue) {
   return '';
 }
 
+/**
+ * Get check-in and check-out range from proposal
+ * Uses the stored check-in/check-out day fields directly (handles wrap-around weeks correctly)
+ *
+ * Note: Database now stores 0-indexed days natively (0=Sunday through 6=Saturday)
+ *
+ * @param {Object} proposal - Proposal object
+ * @returns {string|null} "Wednesday to Sunday" format or null if unavailable
+ */
 function getCheckInOutRange(proposal) {
+  // Use the stored check-in/out day fields directly - they handle wrap-around correctly
   const checkInDay = proposal['check in day'];
   const checkOutDay = proposal['check out day'];
 
-  if (!checkInDay || !checkOutDay) return null;
+  if (checkInDay !== null && checkInDay !== undefined &&
+      checkOutDay !== null && checkOutDay !== undefined) {
+    const checkInName = convertDayValueToName(checkInDay);
+    const checkOutName = convertDayValueToName(checkOutDay);
 
-  // Convert both values to day names using unified conversion function
-  const checkInName = convertDayValueToName(checkInDay);
-  const checkOutName = convertDayValueToName(checkOutDay);
+    if (checkInName && checkOutName) {
+      return `${checkInName} to ${checkOutName}`;
+    }
+  }
 
-  if (!checkInName || !checkOutName) return null;
+  // Fallback: derive from Days Selected (for legacy data without check-in/out fields)
+  let daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
 
-  return `${checkInName} to ${checkOutName}`;
+  // Parse if it's a JSON string
+  if (typeof daysSelected === 'string') {
+    try {
+      daysSelected = JSON.parse(daysSelected);
+    } catch (e) {
+      daysSelected = [];
+    }
+  }
+
+  if (Array.isArray(daysSelected) && daysSelected.length > 0) {
+    // Convert to day indices (0-indexed: 0=Sunday through 6=Saturday)
+    const dayIndices = daysSelected.map(day => {
+      if (typeof day === 'number') return day;
+      if (typeof day === 'string') {
+        const trimmed = day.trim();
+        const numericValue = parseInt(trimmed, 10);
+        if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+          return numericValue; // 0-indexed
+        }
+        // It's a day name - find its 0-indexed position
+        const jsIndex = DAY_NAMES.indexOf(trimmed);
+        return jsIndex >= 0 ? jsIndex : -1;
+      }
+      return -1;
+    }).filter(idx => idx >= 0 && idx <= 6);
+
+    if (dayIndices.length > 0) {
+      // Sort to find first and last day (note: doesn't handle wrap-around, but this is fallback only)
+      dayIndices.sort((a, b) => a - b);
+      const firstDayIndex = dayIndices[0];
+      const lastDayIndex = dayIndices[dayIndices.length - 1];
+
+      const checkInName = DAY_NAMES[firstDayIndex];
+      const checkOutName = DAY_NAMES[lastDayIndex];
+
+      if (checkInName && checkOutName) {
+        return `${checkInName} to ${checkOutName}`;
+      }
+    }
+  }
+
+  return null;
 }
 
 /**
  * Get all days with selection status
- * Handles both text day names (from Supabase) and numeric indices (legacy Bubble format)
+ * Handles both text day names (from Supabase) and numeric indices (0-indexed format)
+ * Note: Database now stores 0-indexed days natively (0=Sunday through 6=Saturday)
  */
 function getAllDaysWithSelection(daysSelected) {
   const days = daysSelected || [];
@@ -101,14 +160,67 @@ function getAllDaysWithSelection(daysSelected) {
       selected: selectedSet.has(DAY_NAMES[index])
     }));
   } else {
-    // Numeric format: Bubble 1-indexed [2, 3, 4, 5, 6] for Mon-Fri
+    // Numeric format: 0-indexed [0, 3, 4, 5, 6] for Sun, Wed-Sat
     const selectedSet = new Set(days);
     return DAY_LETTERS.map((letter, index) => ({
       index,
       letter,
-      selected: selectedSet.has(index + 1) // Convert to Bubble 1-indexed
+      selected: selectedSet.has(index) // 0-indexed (0=Sunday, 6=Saturday)
     }));
   }
+}
+
+/**
+ * Parse days selected from proposal for URL context
+ * Handles both array and JSON string formats
+ * Returns 0-indexed day numbers (0=Sunday through 6=Saturday)
+ *
+ * @param {Object} proposal - Proposal object
+ * @returns {number[]} Array of 0-indexed day numbers
+ */
+function parseDaysSelectedForContext(proposal) {
+  let days = proposal['Days Selected'] || proposal.hcDaysSelected || [];
+
+  // Parse if JSON string
+  if (typeof days === 'string') {
+    try {
+      days = JSON.parse(days);
+    } catch (e) {
+      return [];
+    }
+  }
+
+  if (!Array.isArray(days) || days.length === 0) return [];
+
+  // Convert to numbers if needed (days stored as 0-indexed)
+  return days.map(d => {
+    if (typeof d === 'number') return d;
+    if (typeof d === 'string') {
+      const trimmed = d.trim();
+      const numericValue = parseInt(trimmed, 10);
+      // Check if it's a numeric string
+      if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+        return numericValue;
+      }
+      // It's a day name - find its 0-indexed position
+      const dayIndex = DAY_NAMES.indexOf(trimmed);
+      return dayIndex >= 0 ? dayIndex : -1;
+    }
+    return -1;
+  }).filter(d => d >= 0 && d <= 6);
+}
+
+/**
+ * Get effective reservation span, accounting for counteroffers
+ *
+ * @param {Object} proposal - Proposal object
+ * @returns {number|null} Reservation span in weeks or null if not available
+ */
+function getEffectiveReservationSpan(proposal) {
+  const isCounteroffer = proposal['counter offer happened'];
+  return isCounteroffer
+    ? proposal['hc reservation span (weeks)']
+    : proposal['Reservation Span (Weeks)'];
 }
 
 // ============================================================================
@@ -572,7 +684,7 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
 // MAIN COMPONENT
 // ============================================================================
 
-export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig }) {
+export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect }) {
   if (!proposal) {
     return null;
   }
@@ -883,7 +995,11 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
             {/* Action buttons row */}
             <div className="listing-actions-row">
               <a
-                href={`/view-split-lease/${listing?._id}`}
+                href={getListingUrlWithProposalContext(listing?._id, {
+                  daysSelected: parseDaysSelectedForContext(proposal),
+                  reservationSpan: getEffectiveReservationSpan(proposal),
+                  moveInDate: proposal['Move in range start']
+                })}
                 className="btn-action btn-primary-v2"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -1232,14 +1348,14 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
         />
       )}
 
-      {/* Map Modal */}
-      {showMapModal && (
-        <MapModal
-          listing={listing}
-          address={mapAddress}
-          onClose={() => setShowMapModal(false)}
-        />
-      )}
+      {/* Fullscreen Proposal Map Modal */}
+      <FullscreenProposalMapModal
+        isOpen={showMapModal}
+        onClose={() => setShowMapModal(false)}
+        proposals={allProposals}
+        currentProposalId={proposal._id}
+        onProposalSelect={onProposalSelect}
+      />
     </div>
   );
 }

@@ -1,9 +1,9 @@
 /**
  * ContactHostMessaging Component - Modal for contacting listing hosts
  *
- * MIGRATED: Now uses native Supabase messages Edge Function instead of bubble-proxy
- * Requires authentication - user must be logged in to contact host
- * Messages are stored directly in Supabase (thread + _message tables)
+ * Supports both authenticated and guest users:
+ * - Authenticated users: Uses native messaging (thread + _message tables)
+ * - Guest users: Uses guest_inquiry table (collects name/email)
  *
  * NO FALLBACK PRINCIPLE: Real data or nothing.
  *
@@ -25,6 +25,8 @@ function formatHostName(fullName) {
 
 export default function ContactHostMessaging({ isOpen, onClose, listing, onLoginRequired }) {
   const [formData, setFormData] = useState({
+    userName: '',
+    email: '',
     message: ''
   });
   const [errors, setErrors] = useState({});
@@ -37,7 +39,7 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
   useEffect(() => {
     if (isOpen) {
       checkAuthentication();
-      setFormData({ message: '' });
+      setFormData({ userName: '', email: '', message: '' });
       setErrors({});
       setMessageSent(false);
     }
@@ -70,10 +72,24 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen]);
 
-  // Validation - only message field needed (user is authenticated)
+  // Validation - guest users need name/email, all users need message
   const validate = () => {
     const newErrors = {};
 
+    // Guest users need name and email
+    if (!isAuthenticated) {
+      if (!formData.userName.trim()) {
+        newErrors.userName = 'Name is required';
+      }
+
+      if (!formData.email.trim()) {
+        newErrors.email = 'Email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email';
+      }
+    }
+
+    // All users need a message
     if (!formData.message.trim()) {
       newErrors.message = 'Message is required';
     } else if (formData.message.trim().length < 10) {
@@ -84,67 +100,110 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
     return Object.keys(newErrors).length === 0;
   };
 
-  // Submit message via native messages Edge Function
+  // Submit message via messages Edge Function (authenticated or guest)
   const handleSubmit = async () => {
     if (!validate()) return;
-
-    // Check authentication before submitting
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      setErrors({
-        submit: 'Please log in to contact the host.'
-      });
-      return;
-    }
 
     setIsSubmitting(true);
     setErrors({});
 
-    console.log('[ContactHostMessaging] Sending message via messages Edge Function', {
-      recipient_user_id: listing.host?.userId,
-      listing_id: listing.id,
-      message_body_length: formData.message.length
-    });
+    // Validate we have the host user ID
+    if (!listing.host?.userId) {
+      setErrors({
+        submit: 'Host information unavailable. Please try again later.'
+      });
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
-      // Validate we have the host user ID
-      if (!listing.host?.userId) {
-        throw new Error('Host information unavailable. Please try again later.');
-      }
+      // Check current auth state
+      const { data: { session } } = await supabase.auth.getSession();
 
-      // Send message via native messages Edge Function
-      const { data, error } = await supabase.functions.invoke('messages', {
-        body: {
-          action: 'send_message',
-          payload: {
-            recipient_user_id: listing.host.userId,  // Host's user._id
-            listing_id: listing.id,                   // Listing association
-            message_body: formData.message.trim()
+      if (session) {
+        // Authenticated user: send via native messaging
+        console.log('[ContactHostMessaging] Sending authenticated message', {
+          recipient_user_id: listing.host?.userId,
+          listing_id: listing.id,
+          message_body_length: formData.message.length
+        });
+
+        const { data, error } = await supabase.functions.invoke('messages', {
+          body: {
+            action: 'send_message',
+            payload: {
+              recipient_user_id: listing.host.userId,
+              listing_id: listing.id,
+              message_body: formData.message.trim()
+            }
           }
+        });
+
+        if (error) {
+          console.error('[ContactHostMessaging] Edge Function error:', error);
+          setErrors({
+            submit: error.message || 'Failed to send message. Please try again.'
+          });
+          return;
         }
-      });
 
-      if (error) {
-        console.error('[ContactHostMessaging] Edge Function error:', error);
-        setErrors({
-          submit: error.message || 'Failed to send message. Please try again.'
+        if (!data.success) {
+          console.error('[ContactHostMessaging] Message send failed:', data.error);
+          setErrors({
+            submit: data.error || 'Failed to send message. Please try again.'
+          });
+          return;
+        }
+
+        console.log('[ContactHostMessaging] Message sent successfully', {
+          thread_id: data.data?.thread_id,
+          message_id: data.data?.message_id,
+          is_new_thread: data.data?.is_new_thread
         });
-        return;
+      } else {
+        // Guest user: send via guest inquiry
+        console.log('[ContactHostMessaging] Sending guest inquiry', {
+          sender_name: formData.userName,
+          sender_email: formData.email,
+          recipient_user_id: listing.host?.userId,
+          listing_id: listing.id,
+          message_body_length: formData.message.length
+        });
+
+        const { data, error } = await supabase.functions.invoke('messages', {
+          body: {
+            action: 'send_guest_inquiry',
+            payload: {
+              sender_name: formData.userName.trim(),
+              sender_email: formData.email.trim(),
+              recipient_user_id: listing.host.userId,
+              listing_id: listing.id,
+              message_body: formData.message.trim()
+            }
+          }
+        });
+
+        if (error) {
+          console.error('[ContactHostMessaging] Edge Function error:', error);
+          setErrors({
+            submit: error.message || 'Failed to send message. Please try again.'
+          });
+          return;
+        }
+
+        if (!data.success) {
+          console.error('[ContactHostMessaging] Guest inquiry failed:', data.error);
+          setErrors({
+            submit: data.error || 'Failed to send message. Please try again.'
+          });
+          return;
+        }
+
+        console.log('[ContactHostMessaging] Guest inquiry sent successfully', {
+          inquiry_id: data.data?.inquiry_id
+        });
       }
 
-      if (!data.success) {
-        console.error('[ContactHostMessaging] Message send failed:', data.error);
-        setErrors({
-          submit: data.error || 'Failed to send message. Please try again.'
-        });
-        return;
-      }
-
-      console.log('[ContactHostMessaging] Message sent successfully', {
-        thread_id: data.data?.thread_id,
-        message_id: data.data?.message_id,
-        is_new_thread: data.data?.is_new_thread
-      });
       setMessageSent(true);
       setTimeout(() => {
         handleClose();
@@ -160,7 +219,7 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
   };
 
   const handleClose = () => {
-    setFormData({ message: '' });
+    setFormData({ userName: '', email: '', message: '' });
     setErrors({});
     setMessageSent(false);
     onClose();
@@ -262,72 +321,12 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
               animation: 'spin 1s linear infinite',
               margin: '0 auto 1rem'
             }} />
-            <p style={{ color: '#6b7280', margin: 0 }}>Checking authentication...</p>
+            <p style={{ color: '#6b7280', margin: 0 }}>Loading...</p>
             <style>{`
               @keyframes spin {
                 to { transform: rotate(360deg); }
               }
             `}</style>
-          </div>
-        ) : !isAuthenticated ? (
-          /* Login Required View */
-          <div style={{
-            padding: '2rem',
-            textAlign: 'center'
-          }}>
-            <div style={{
-              width: '64px',
-              height: '64px',
-              borderRadius: '50%',
-              background: '#f3f4f6',
-              color: '#6b7280',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '2rem',
-              margin: '0 auto 1rem'
-            }}>
-              🔒
-            </div>
-            <h3 style={{
-              fontSize: '1.25rem',
-              fontWeight: '600',
-              color: '#1a202c',
-              marginBottom: '0.5rem'
-            }}>
-              Login Required
-            </h3>
-            <p style={{
-              color: '#6b7280',
-              fontSize: '0.95rem',
-              marginBottom: '1.5rem',
-              lineHeight: 1.5
-            }}>
-              Please log in to send a message to {formatHostName(listing.host?.name)}.
-              Your message will appear in your inbox once sent.
-            </p>
-            <button
-              onClick={handleLoginClick}
-              style={{
-                padding: '0.75rem 2rem',
-                background: '#5B21B6',
-                color: 'white',
-                border: 'none',
-                borderRadius: '6px',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'background 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.background = '#4c1d95';
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.background = '#5B21B6';
-              }}
-            >
-              Log In to Continue
-            </button>
           </div>
         ) : messageSent ? (
           /* Success View */
@@ -361,11 +360,13 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
               color: '#6b7280',
               fontSize: '1rem'
             }}>
-              Your message has been sent to the host. You can view the conversation in your inbox.
+              {isAuthenticated
+                ? 'Your message has been sent to the host. You can view the conversation in your inbox.'
+                : 'Your message has been sent to the host. They will respond to your email.'}
             </p>
           </div>
         ) : (
-          /* Contact Form - Simplified (only message field needed) */
+          /* Contact Form - Shows name/email for guests, just message for authenticated */
           <div style={{ padding: '1.5rem' }}>
             <p style={{
               fontSize: '0.875rem',
@@ -375,6 +376,109 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
             }}>
               Regarding: <strong>{listing.title}</strong>
             </p>
+
+            {/* Guest user fields - Name and Email */}
+            {!isAuthenticated && (
+              <>
+                {/* Name Field */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    color: '#374151',
+                    marginBottom: '0.5rem'
+                  }}>
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.userName}
+                    onChange={(e) => handleInputChange('userName', e.target.value)}
+                    placeholder="John Smith"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: `1px solid ${errors.userName ? '#ef4444' : '#d1d5db'}`,
+                      borderRadius: '6px',
+                      fontSize: '1rem',
+                      outline: 'none',
+                      transition: 'border-color 0.2s',
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={(e) => {
+                      if (!errors.userName) {
+                        e.target.style.borderColor = '#5B21B6';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.userName) {
+                        e.target.style.borderColor = '#d1d5db';
+                      }
+                    }}
+                  />
+                  {errors.userName && (
+                    <span style={{
+                      display: 'block',
+                      marginTop: '0.25rem',
+                      fontSize: '0.813rem',
+                      color: '#ef4444'
+                    }}>
+                      {errors.userName}
+                    </span>
+                  )}
+                </div>
+
+                {/* Email Field */}
+                <div style={{ marginBottom: '1rem' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    color: '#374151',
+                    marginBottom: '0.5rem'
+                  }}>
+                    Your Email
+                  </label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    placeholder="john@example.com"
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: `1px solid ${errors.email ? '#ef4444' : '#d1d5db'}`,
+                      borderRadius: '6px',
+                      fontSize: '1rem',
+                      outline: 'none',
+                      transition: 'border-color 0.2s',
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={(e) => {
+                      if (!errors.email) {
+                        e.target.style.borderColor = '#5B21B6';
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.email) {
+                        e.target.style.borderColor = '#d1d5db';
+                      }
+                    }}
+                  />
+                  {errors.email && (
+                    <span style={{
+                      display: 'block',
+                      marginTop: '0.25rem',
+                      fontSize: '0.813rem',
+                      color: '#ef4444'
+                    }}>
+                      {errors.email}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Message Field */}
             <div style={{ marginBottom: '1.5rem' }}>
@@ -479,6 +583,33 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
             >
               {isSubmitting ? 'Sending...' : 'Send Message'}
             </button>
+
+            {/* Login prompt for guests */}
+            {!isAuthenticated && (
+              <p style={{
+                marginTop: '1rem',
+                fontSize: '0.813rem',
+                color: '#6b7280',
+                textAlign: 'center'
+              }}>
+                Have an account?{' '}
+                <button
+                  onClick={handleLoginClick}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#5B21B6',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    fontSize: 'inherit',
+                    padding: 0
+                  }}
+                >
+                  Log in
+                </button>
+                {' '}to track your messages.
+              </p>
+            )}
           </div>
         )}
       </div>

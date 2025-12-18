@@ -17,6 +17,40 @@
 import { useState, useEffect, useCallback } from 'react';
 import { validateTokenAndFetchUser } from '../../../lib/auth.js';
 import { supabase } from '../../../lib/supabase.js';
+import { initializeLookups, getBoroughName } from '../../../lib/dataLookups.js';
+
+/**
+ * Extract borough name from address string
+ * Handles formats like "276 Belmont Ave, Brooklyn, NY 11207, USA"
+ * @param {string|object} addressField - The Location - Address field (JSONB or string)
+ * @returns {string} The borough name or empty string
+ */
+function extractBoroughFromAddress(addressField) {
+  if (!addressField) return '';
+
+  // If it's a JSONB object, get the address string
+  const addressStr = typeof addressField === 'object' ? addressField.address : addressField;
+  if (!addressStr || typeof addressStr !== 'string') return '';
+
+  // NYC boroughs to look for in the address
+  const boroughPatterns = [
+    { pattern: /,\s*Brooklyn\s*,/i, name: 'Brooklyn' },
+    { pattern: /,\s*Manhattan\s*,/i, name: 'Manhattan' },
+    { pattern: /,\s*Queens\s*,/i, name: 'Queens' },
+    { pattern: /,\s*Bronx\s*,/i, name: 'Bronx' },
+    { pattern: /,\s*Staten Island\s*,/i, name: 'Staten Island' },
+    // "New York, NY" typically means Manhattan
+    { pattern: /,\s*New York\s*,\s*NY/i, name: 'Manhattan' },
+  ];
+
+  for (const { pattern, name } of boroughPatterns) {
+    if (pattern.test(addressStr)) {
+      return name;
+    }
+  }
+
+  return '';
+}
 
 export function useHostOverviewPageLogic() {
   // ============================================================================
@@ -95,6 +129,9 @@ export function useHostOverviewPageLogic() {
     if (!hostAccountId && !userId) return [];
 
     try {
+      // Initialize lookups cache (boroughs, neighborhoods, etc.)
+      await initializeLookups();
+
       // Fetch listings from multiple sources in parallel:
       // 1. Bubble API (existing synced listings)
       // 2. listing table via RPC (self-listing submissions)
@@ -198,36 +235,43 @@ export function useHostOverviewPageLogic() {
       let rpcListings = [];
       const rpcResult = results.find(r => r?.type === 'listing_rpc');
       if (rpcResult?.data && !rpcResult.error) {
-        rpcListings = rpcResult.data.map(listing => ({
-          id: listing.id,
-          _id: listing._id,
-          name: listing.Name || 'Unnamed Listing',
-          Name: listing.Name,
-          complete: listing.Complete || false,
-          source: listing.source || 'listing',
-          location: {
-            borough: listing['Location - Borough'] || '',
-            city: listing['Location - City'] || '',
-            state: listing['Location - State'] || ''
-          },
-          leasesCount: 0,
-          proposalsCount: 0,
-          photos: listing['Features - Photos'] || [],
-          // Pricing fields from RPC
-          rental_type: listing.rental_type,
-          monthly_rate: listing.monthly_rate,
-          weekly_rate: listing.weekly_rate,
-          // Individual nightly rates from RPC
-          nightly_rate_2: listing.rate_2_nights,
-          nightly_rate_3: listing.rate_3_nights,
-          nightly_rate_4: listing.rate_4_nights,
-          nightly_rate_5: listing.rate_5_nights,
-          nightly_rate_7: listing.rate_7_nights,
-          rate_5_nights: listing.rate_5_nights,
-          cleaning_fee: listing.cleaning_fee,
-          damage_deposit: listing.damage_deposit,
-          pricing_list: listing.pricing_list
-        }));
+        rpcListings = rpcResult.data.map(listing => {
+          // Try FK lookup first, fall back to extracting from address string
+          const boroughFromFK = getBoroughName(listing['Location - Borough']);
+          const boroughFromAddress = extractBoroughFromAddress(listing['Location - Address']);
+          const borough = boroughFromFK || boroughFromAddress || '';
+
+          return {
+            id: listing.id,
+            _id: listing._id,
+            name: listing.Name || 'Unnamed Listing',
+            Name: listing.Name,
+            complete: listing.Complete || false,
+            source: listing.source || 'listing',
+              location: {
+              borough,
+              city: listing['Location - City'] || '',
+              state: listing['Location - State'] || ''
+            },
+            leasesCount: 0,
+            proposalsCount: 0,
+            photos: listing['Features - Photos'] || [],
+            // Pricing fields from RPC
+            rental_type: listing.rental_type,
+            monthly_rate: listing.monthly_rate,
+            weekly_rate: listing.weekly_rate,
+            // Individual nightly rates from RPC
+            nightly_rate_2: listing.rate_2_nights,
+            nightly_rate_3: listing.rate_3_nights,
+            nightly_rate_4: listing.rate_4_nights,
+            nightly_rate_5: listing.rate_5_nights,
+            nightly_rate_7: listing.rate_7_nights,
+            rate_5_nights: listing.rate_5_nights,
+            cleaning_fee: listing.cleaning_fee,
+            damage_deposit: listing.damage_deposit,
+            pricing_list: listing.pricing_list
+          };
+        });
       }
 
       // Check if we need to fetch additional listings from user.Listings
@@ -247,39 +291,47 @@ export function useHostOverviewPageLogic() {
         const { data: missingListings } = await supabase
           .from('listing')
           .select('*')
-          .in('_id', missingIds);
+          .in('_id', missingIds)
+          .eq('Deleted', false);
 
         if (missingListings) {
-          const mappedMissing = missingListings.map(listing => ({
-            id: listing._id,
-            _id: listing._id,
-            name: listing.Name || 'Unnamed Listing',
-            Name: listing.Name,
-            complete: listing.Complete || false,
-            source: 'listing',
-            location: {
-              borough: listing['Location - Borough'] || '',
-              city: listing['Location - City'] || '',
-              state: listing['Location - State'] || ''
-            },
-            leasesCount: 0,
-            proposalsCount: 0,
-            photos: listing['Features - Photos'] || [],
-            // Pricing fields (using original column names from direct query)
-            rental_type: listing['rental type'],
-            monthly_rate: listing['💰Monthly Host Rate'],
-            weekly_rate: listing['💰Weekly Host Rate'],
-            // Individual nightly rates
-            nightly_rate_2: listing['💰Nightly Host Rate for 2 nights'],
-            nightly_rate_3: listing['💰Nightly Host Rate for 3 nights'],
-            nightly_rate_4: listing['💰Nightly Host Rate for 4 nights'],
-            nightly_rate_5: listing['💰Nightly Host Rate for 5 nights'],
-            nightly_rate_7: listing['💰Nightly Host Rate for 7 nights'],
-            rate_5_nights: listing['💰Nightly Host Rate for 5 nights'],
-            cleaning_fee: listing['💰Cleaning Cost / Maintenance Fee'],
-            damage_deposit: listing['💰Damage Deposit'],
-            pricing_list: listing.pricing_list
-          }));
+          const mappedMissing = missingListings.map(listing => {
+            // Try FK lookup first, fall back to extracting from address string
+            const boroughFromFK = getBoroughName(listing['Location - Borough']);
+            const boroughFromAddress = extractBoroughFromAddress(listing['Location - Address']);
+            const borough = boroughFromFK || boroughFromAddress || '';
+
+            return {
+              id: listing._id,
+              _id: listing._id,
+              name: listing.Name || 'Unnamed Listing',
+              Name: listing.Name,
+              complete: listing.Complete || false,
+              source: 'listing',
+              location: {
+                borough,
+                city: listing['Location - City'] || '',
+                state: listing['Location - State'] || ''
+              },
+              leasesCount: 0,
+              proposalsCount: 0,
+              photos: listing['Features - Photos'] || [],
+              // Pricing fields (using original column names from direct query)
+              rental_type: listing['rental type'],
+              monthly_rate: listing['💰Monthly Host Rate'],
+              weekly_rate: listing['💰Weekly Host Rate'],
+              // Individual nightly rates
+              nightly_rate_2: listing['💰Nightly Host Rate for 2 nights'],
+              nightly_rate_3: listing['💰Nightly Host Rate for 3 nights'],
+              nightly_rate_4: listing['💰Nightly Host Rate for 4 nights'],
+              nightly_rate_5: listing['💰Nightly Host Rate for 5 nights'],
+              nightly_rate_7: listing['💰Nightly Host Rate for 7 nights'],
+              rate_5_nights: listing['💰Nightly Host Rate for 5 nights'],
+              cleaning_fee: listing['💰Cleaning Cost / Maintenance Fee'],
+              damage_deposit: listing['💰Damage Deposit'],
+              pricing_list: listing.pricing_list
+            };
+          });
           rpcListings = [...rpcListings, ...mappedMissing];
         }
       }
@@ -607,13 +659,20 @@ export function useHostOverviewPageLogic() {
       const itemName = itemToDelete.name || itemToDelete.Name || itemToDelete.display || itemToDelete.Display || 'item';
 
       if (deleteType === 'listing') {
-        // Delete listing via Bubble API
-        await supabase.functions.invoke('bubble-proxy', {
+        // Delete listing via listing edge function
+        const { data, error } = await supabase.functions.invoke('listing', {
           body: {
-            endpoint: `listing/${itemId}`,
-            method: 'DELETE'
+            action: 'delete',
+            payload: {
+              listing_id: itemId,
+              user_email: user?.email,
+            }
           }
         });
+
+        if (error) {
+          throw new Error(error.message || 'Failed to delete listing');
+        }
 
         setMyListings(prev => prev.filter(l => (l.id || l._id) !== itemId));
         showToast('Success', `${itemName} deleted successfully`, 'success');

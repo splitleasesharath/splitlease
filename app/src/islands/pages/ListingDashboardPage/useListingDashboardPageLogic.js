@@ -167,20 +167,20 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
     photoType: photo.Type || 'Other',
   }));
 
-  // Parse available days (1-7 Bubble format to 0-6 JS format)
+  // Parse available days (database now stores 0-6 JS format natively)
   const availableDays = safeParseJsonArray(dbListing['Days Available (List of Days)']).map(day => {
-    // Bubble uses 1-7, JS uses 0-6
+    // Database uses 0-6 (JS standard: 0=Sunday through 6=Saturday)
     const numDay = typeof day === 'number' ? day : parseInt(day, 10);
-    return numDay - 1; // Convert to 0-indexed
+    return numDay; // Already 0-indexed
   });
 
-  // Convert Bubble day numbers to night IDs for HostScheduleSelector
-  // Bubble uses 1=Sunday, 2=Monday... 7=Saturday
+  // Convert day indices to night IDs for HostScheduleSelector
+  // Database now uses 0=Sunday, 1=Monday... 6=Saturday (JS standard)
   const NIGHT_IDS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const nightsAvailable = safeParseJsonArray(dbListing['Days Available (List of Days)']).map(day => {
     const numDay = typeof day === 'number' ? day : parseInt(day, 10);
-    // Bubble uses 1-7, night IDs use 0-indexed array
-    return NIGHT_IDS[numDay - 1];
+    // Day indices use 0-indexed array directly
+    return NIGHT_IDS[numDay];
   }).filter(Boolean);
 
   return {
@@ -318,6 +318,7 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
 
     // Cancellation Policy
     cancellationPolicy: dbListing['Cancellation Policy'] || 'Standard',
+    cancellationPolicyAdditionalRestrictions: dbListing['Cancellation Policy - Additional Restrictions'] || '',
 
     // Photos
     photos: transformedPhotos,
@@ -548,12 +549,6 @@ export default function useListingDashboardPageLogic() {
     // TODO: Debounce and save to backend
   }, []);
 
-  // Cancellation policy change handler
-  const handleCancellationPolicyChange = useCallback((policy) => {
-    // TODO: Save to backend
-    console.log('Cancellation policy changed to:', policy);
-  }, []);
-
   // Copy link handler
   const handleCopyLink = useCallback(() => {
     console.log('Link copied');
@@ -726,6 +721,11 @@ export default function useListingDashboardPageLogic() {
 
     if (updateError) {
       console.error('❌ Error updating listing:', updateError);
+      console.error('❌ Error code:', updateError.code);
+      console.error('❌ Error message:', updateError.message);
+      console.error('❌ Error details:', updateError.details);
+      console.error('❌ Error hint:', updateError.hint);
+      console.error('❌ Full error object:', JSON.stringify(updateError, null, 2));
       throw updateError;
     }
 
@@ -745,6 +745,62 @@ export default function useListingDashboardPageLogic() {
     console.log('✅ Listing updated:', data);
     return data;
   }, []);
+
+  // Cancellation policy change handler - saves policy ID to database
+  const handleCancellationPolicyChange = useCallback(async (policyId) => {
+    const listingId = getListingIdFromUrl();
+    if (!listingId) {
+      console.error('❌ No listing ID found for cancellation policy update');
+      return;
+    }
+
+    console.log('📋 Updating cancellation policy to:', policyId);
+
+    try {
+      await updateListing(listingId, {
+        'Cancellation Policy': policyId,
+      });
+
+      // Update local state
+      setListing((prev) => ({
+        ...prev,
+        cancellationPolicy: policyId,
+        'Cancellation Policy': policyId,
+      }));
+
+      console.log('✅ Cancellation policy saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save cancellation policy:', error);
+    }
+  }, [getListingIdFromUrl, updateListing]);
+
+  // Cancellation policy additional restrictions change handler
+  const handleCancellationRestrictionsChange = useCallback(async (restrictionsText) => {
+    const listingId = getListingIdFromUrl();
+    if (!listingId) {
+      console.error('❌ No listing ID found for cancellation restrictions update');
+      return;
+    }
+
+    console.log('📋 Updating cancellation restrictions:', restrictionsText);
+
+    try {
+      await updateListing(listingId, {
+        'Cancellation Policy - Additional Restrictions': restrictionsText,
+      });
+
+      // Update local state
+      setListing((prev) => ({
+        ...prev,
+        cancellationPolicyAdditionalRestrictions: restrictionsText,
+        'Cancellation Policy - Additional Restrictions': restrictionsText,
+      }));
+
+      console.log('✅ Cancellation restrictions saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save cancellation restrictions:', error);
+    }
+  }, [getListingIdFromUrl, updateListing]);
 
   /**
    * Start the AI generation process for all fields
@@ -1182,6 +1238,7 @@ export default function useListingDashboardPageLogic() {
     handleBackClick,
     handleDescriptionChange,
     handleCancellationPolicyChange,
+    handleCancellationRestrictionsChange,
     handleCopyLink,
     handleAIAssistant,
 
