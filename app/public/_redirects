@@ -1,10 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-<<<<<<< HEAD
-# Generated: 2025-12-18T08:48:41.998Z
-=======
-# Generated: 2025-12-18T14:10:47.376Z
->>>>>>> 89bb1da7b42a0210bf684b16809ac78725e9a7b9
+# Generated: 2025-12-18T14:17:38.416Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
