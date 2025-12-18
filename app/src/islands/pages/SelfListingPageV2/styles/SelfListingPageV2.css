@@ -2016,6 +2016,30 @@
   .pricing-details-inline {
     margin-top: 20px;
   }
+
+  /* Day selector - fit within container on mobile */
+  .day-selector-wrapper {
+    padding: 12px;
+    margin-top: 20px;
+  }
+
+  .day-selector {
+    gap: 4px;
+  }
+
+  .day-btn {
+    max-width: 38px;
+    border-radius: 8px;
+  }
+
+  .day-col .day-label {
+    font-size: 10px;
+    margin-bottom: 4px;
+  }
+
+  .btn-icon {
+    font-size: 11px;
+  }
 }
 
 @media (max-width: 550px) {
