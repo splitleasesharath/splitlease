@@ -1,6 +1,160 @@
-# Core Business Tables - Bubble ID Foreign Key Fields
+# Database Foreign Key Reference Index
 
-This document lists all fields in core business tables that contain Bubble-format IDs (single or arrays), with **verified** target table mappings.
+This document provides a complete index of all foreign key relationships in the Split Lease database, covering both:
+1. **PostgreSQL FK Constraints** - Actual database-enforced foreign keys
+2. **Bubble ID Field Mappings** - Logical relationships using Bubble.io ID format
+
+**Last Updated**: 2025-12-18
+
+---
+
+# Part 1: PostgreSQL Foreign Key Constraints
+
+These are actual database-enforced FK constraints. **Total: 53 foreign keys** across 2 schemas.
+
+## Schema: `junctions` (10 tables, 20 FKs)
+
+Junction tables implement many-to-many relationships with proper FK constraints.
+
+| Table | Column | References |
+|-------|--------|------------|
+| `thread_message` | `message_id` | `public._message._id` |
+| `thread_message` | `thread_id` | `public.thread._id` |
+| `thread_participant` | `thread_id` | `public.thread._id` |
+| `thread_participant` | `user_id` | `public.user._id` |
+| `user_guest_reason` | `reason_id` | `reference_table.zat_goodguestreasons._id` |
+| `user_guest_reason` | `user_id` | `public.user._id` |
+| `user_lease` | `lease_id` | `public.bookings_leases._id` |
+| `user_lease` | `user_id` | `public.user._id` |
+| `user_listing_favorite` | `listing_id` | `public.listing._id` |
+| `user_listing_favorite` | `user_id` | `public.user._id` |
+| `user_permission` | `grantee_user_id` | `public.user._id` |
+| `user_permission` | `grantor_user_id` | `public.user._id` |
+| `user_preferred_hood` | `hood_id` | `reference_table.zat_geo_hood_mediumlevel._id` |
+| `user_preferred_hood` | `user_id` | `public.user._id` |
+| `user_proposal` | `proposal_id` | `public.proposal._id` |
+| `user_proposal` | `user_id` | `public.user._id` |
+| `user_rental_type_search` | `rental_type_id` | `reference_table.os_rental_type.id` |
+| `user_rental_type_search` | `user_id` | `public.user._id` |
+| `user_storage_item` | `storage_id` | `reference_table.zat_storage._id` |
+| `user_storage_item` | `user_id` | `public.user._id` |
+
+## Schema: `public` (Core tables, 33 FKs)
+
+### `_message` (6 FKs)
+| Column | References |
+|--------|------------|
+| `Call to Action` | `reference_table.os_messaging_cta.display` |
+| `Created By` | `public.user._id` |
+| `-Guest User` | `public.user._id` |
+| `-Host User` | `public.user._id` |
+| `-Originator User` | `public.user._id` |
+| `Associated Thread/Conversation` | `public.thread._id` |
+
+### `ai_parsing_queue` (1 FK)
+| Column | References |
+|--------|------------|
+| `user_id` | `public.user._id` |
+
+### `bookings_leases` (4 FKs)
+| Column | References |
+|--------|------------|
+| `Cancellation Policy` | `reference_table.zat_features_cancellationpolicy._id` |
+| `Created By` | `public.user._id` |
+| `Listing` | `public.listing._id` |
+| `Proposal` | `public.proposal._id` |
+
+### `external_reviews` (1 FK)
+| Column | References |
+|--------|------------|
+| `listing_id` | `public.listing._id` |
+
+### `listing` (12 FKs) ⚠️ **CRITICAL - See Update Pattern**
+| Column | References |
+|--------|------------|
+| `Location - Borough` | `reference_table.zat_geo_borough_toplevel._id` |
+| `Location - Hood` | `reference_table.zat_geo_hood_mediumlevel._id` |
+| `Cancellation Policy` | `reference_table.zat_features_cancellationpolicy._id` |
+| `Features - Parking type` | `reference_table.zat_features_parkingoptions._id` |
+| `Features - Secure Storage Option` | `reference_table.zat_features_storageoptions._id` |
+| `Features - Type of Space` | `reference_table.zat_features_listingtype._id` |
+| `Kitchen Type` | `reference_table.os_kitchen_type.display` |
+| `Location - City` | `reference_table.zat_location._id` |
+| `Location - State` | `reference_table.os_us_states.display` |
+| `rental type` | `reference_table.os_rental_type.display` |
+| `Created By` | `public.user._id` |
+| `Host / Landlord` | `public.user._id` |
+
+> ⚠️ **Update Pattern**: Due to 12 FK constraints, always send only changed fields when updating listings. See `.claude/plans/Documents/20251217091827-edit-listing-409-regression-report.md`
+
+### `notification_preferences` (1 FK)
+| Column | References |
+|--------|------------|
+| `user_id` | `public.user._id` |
+
+### `proposal` (1 FK)
+| Column | References |
+|--------|------------|
+| `Status` | `reference_table.os_proposal_status.display` |
+
+### `sync_queue` (1 FK)
+| Column | References |
+|--------|------------|
+| `table_name` | `public.sync_config.supabase_table` |
+
+### `thread` (3 FKs)
+| Column | References |
+|--------|------------|
+| `Created By` | `public.user._id` |
+| `Listing` | `public.listing._id` |
+| `Proposal` | `public.proposal._id` |
+
+### `user` (5 FKs)
+| Column | References |
+|--------|------------|
+| `Type - User Current` | `reference_table.os_user_type.display` |
+| `Type - User Signup` | `reference_table.os_user_type.display` |
+| `Preferred Borough` | `reference_table.zat_geo_borough_toplevel._id` |
+| `Preferred weekly schedule` | `reference_table.os_weekly_selection_options.display` |
+| `Price Tier` | `reference_table.os_price_filter.display` |
+
+## Reference Tables Index (`reference_table` schema)
+
+| Reference Table | Referenced By |
+|-----------------|---------------|
+| `os_kitchen_type` | listing |
+| `os_messaging_cta` | _message |
+| `os_price_filter` | user |
+| `os_proposal_status` | proposal |
+| `os_rental_type` | listing, user_rental_type_search |
+| `os_us_states` | listing |
+| `os_user_type` | user (2 columns) |
+| `os_weekly_selection_options` | user |
+| `zat_features_cancellationpolicy` | listing, bookings_leases |
+| `zat_features_listingtype` | listing |
+| `zat_features_parkingoptions` | listing |
+| `zat_features_storageoptions` | listing |
+| `zat_geo_borough_toplevel` | listing, user |
+| `zat_geo_hood_mediumlevel` | listing, user_preferred_hood |
+| `zat_goodguestreasons` | user_guest_reason |
+| `zat_location` | listing |
+| `zat_storage` | user_storage_item |
+
+## FK Statistics Summary
+
+| Metric | Count |
+|--------|-------|
+| **Total Foreign Keys** | 53 |
+| **Schemas with FKs** | 2 (`junctions`, `public`) |
+| **Reference Tables** | 17 (all in `reference_table` schema) |
+| **Most FK-heavy table** | `listing` (12 FKs) |
+| **Junction Tables** | 10 |
+
+---
+
+# Part 2: Bubble ID Field Mappings
+
+This section documents fields containing Bubble-format IDs (logical relationships not yet converted to PostgreSQL FKs).
 
 **Bubble ID Format**: `{timestamp}x{random_number}` (e.g., `1734021909988x471937219829047940`)
 
@@ -529,8 +683,16 @@ These fields contain Bubble IDs but the target table could not be determined:
 
 ---
 
-**Generated**: 2025-12-06
-**Verification Method**: 2-phase (semantic + brute force)
+# Document Summary
+
+| Section | Content |
+|---------|---------|
+| **Part 1: PostgreSQL FKs** | 53 database-enforced foreign keys |
+| **Part 2: Bubble ID Mappings** | Logical relationships via Bubble IDs |
+
+**Generated**: 2025-12-18
+**PostgreSQL FK Query**: `information_schema.table_constraints` JOIN query
+**Bubble ID Verification**: 2-phase (semantic + brute force)
 **Tables Analyzed**: 35 core business tables
 **Tables with Bubble ID Fields**: 31
 **Verified FK Mappings**: 95%+ coverage
