@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2025-12-18T16:22:28.357Z
+# Generated: 2025-12-18T16:34:46.462Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -75,6 +75,10 @@
 # /about-us → about-us.html
 /about-us  /_internal/about-us-view  200
 /about-us/  /_internal/about-us-view  200
+
+# /host-guarantee → host-guarantee.html
+/host-guarantee  /_internal/host-guarantee-view  200
+/host-guarantee/  /_internal/host-guarantee-view  200
 
 # /guest-success → guest-success.html
 /guest-success  /_internal/guest-success-view  200

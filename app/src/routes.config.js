@@ -175,6 +175,15 @@ export const routes = [
     internalName: 'about-us-view',
     hasDynamicSegment: false
   },
+  {
+    path: '/host-guarantee',
+    file: 'host-guarantee.html',
+    aliases: ['/host-guarantee.html'],
+    protected: false,
+    cloudflareInternal: true,
+    internalName: 'host-guarantee-view',
+    hasDynamicSegment: false
+  },
 
   // ===== SUCCESS PAGES =====
   {
