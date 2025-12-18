@@ -755,3 +755,37 @@
     font-size: 28px;
   }
 }
+
+/* Clickable FAQ Item Links */
+.faq-item-link {
+  display: block;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.faq-item-link:hover {
+  transform: translateY(-2px);
+}
+
+.faq-item-link .faq-question {
+  transition: color 0.2s ease;
+}
+
+.faq-item-link:hover .faq-question {
+  color: #31135D;
+}
+
+.faq-link-indicator {
+  display: inline-block;
+  margin-top: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #31135D;
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.faq-item-link:hover .faq-link-indicator {
+  opacity: 1;
+  transform: translateX(4px);
+}

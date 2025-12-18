@@ -205,33 +205,37 @@ export default function HostGuaranteePage() {
           </div>
 
           <div className="guarantee-faq-grid">
-            <div className="faq-item">
-              <h3 className="faq-question">How do I file a claim?</h3>
+            <a href="/faq?section=hosts&question=1598576324794x693327507784140000" className="faq-item faq-item-link">
+              <h3 className="faq-question">I am worried about my guest gaining tenant's rights. What are my protections?</h3>
               <p className="faq-answer">
-                If a guest causes damage to your property, document the damage with photos and contact our support team within 14 days of the guest's checkout. We'll guide you through the claims process.
+                Learn about Split Lease's periodic tenancy structure and how it protects hosts from long-term tenant claims.
               </p>
-            </div>
+              <span className="faq-link-indicator">View answer →</span>
+            </a>
 
-            <div className="faq-item">
-              <h3 className="faq-question">What documentation do I need?</h3>
+            <a href="/faq?section=hosts&question=1585485787198x865624488127564500" className="faq-item faq-item-link">
+              <h3 className="faq-question">What does the cancellation policy look like?</h3>
               <p className="faq-answer">
-                You'll need photos of the damage, receipts or estimates for repairs, and any communication with the guest about the incident. The more documentation, the smoother the process.
+                Understand how cancellations are handled and what protections are in place for hosts.
               </p>
-            </div>
+              <span className="faq-link-indicator">View answer →</span>
+            </a>
 
-            <div className="faq-item">
-              <h3 className="faq-question">How long does the claims process take?</h3>
+            <a href="/faq?section=hosts&question=1621605643737x217621659116098430" className="faq-item faq-item-link">
+              <h3 className="faq-question">How will I receive payment after booking?</h3>
               <p className="faq-answer">
-                Most claims are resolved within 7-14 business days after all required documentation is submitted. Complex cases may take longer.
+                Learn about Split Lease's secure payment process and when you'll receive your earnings.
               </p>
-            </div>
+              <span className="faq-link-indicator">View answer →</span>
+            </a>
 
-            <div className="faq-item">
-              <h3 className="faq-question">Is there a deductible?</h3>
+            <a href="/faq?section=hosts&question=1585860980462x241805081013604540" className="faq-item faq-item-link">
+              <h3 className="faq-question">How can I make sure the traveler is who they say they are?</h3>
               <p className="faq-answer">
-                The Host Guarantee has no deductible for covered damages. However, claims must meet our minimum threshold to be processed.
+                Discover how Split Lease verifies guests to help protect you and your property.
               </p>
-            </div>
+              <span className="faq-link-indicator">View answer →</span>
+            </a>
           </div>
 
           <div className="guarantee-faq-cta">
