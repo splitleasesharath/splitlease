@@ -140,13 +140,6 @@ export default function ActionCardGrid({ counts, onCardClick }) {
       visible: counts.virtualMeetings > 0, // Only show if there are virtual meetings
     },
     {
-      id: 'manage',
-      icon: <SettingsIcon />,
-      label: 'Manage Listing',
-      badge: true,
-      visible: true, // Always visible
-    },
-    {
       id: 'leases',
       icon: <FileCheckIcon />,
       label: 'Leases',
