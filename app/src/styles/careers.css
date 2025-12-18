@@ -798,6 +798,19 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  /* Ensure correct hero content order - override mobile.css global styles */
+  .hero-section .hero-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Reset order properties that mobile.css sets globally */
+  .hero-section .hero-badge { order: 0 !important; }
+  .hero-section .hero-title { order: 1 !important; }
+  .hero-section .hero-subtitle { order: 2 !important; }
+  .hero-section .hero-cta { order: 3 !important; }
+
   .hero-title {
     font-size: 32px;
     line-height: 1.3;
