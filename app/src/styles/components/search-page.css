@@ -764,6 +764,11 @@
   background: #f3f4f6;
 }
 
+/* Compact Schedule Indicator - Hidden by default on desktop */
+.compact-schedule-indicator {
+  display: none !important;
+}
+
 @media (max-width: 768px) {
   /* Hide map column on mobile - map is accessed via mobile-map-modal */
   .map-column {
@@ -919,9 +924,9 @@
     transition: transform 0.3s ease, opacity 0.3s ease;
   }
 
-  /* Visible state - slides in from top */
+  /* Visible state - slides in from top (mobile only) */
   .compact-schedule-indicator--visible {
-    display: flex;
+    display: flex !important;
     transform: translateY(0);
     opacity: 1;
   }
