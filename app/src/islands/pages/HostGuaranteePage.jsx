@@ -8,17 +8,6 @@ export default function HostGuaranteePage() {
 
       {/* Hero Section */}
       <section className="guarantee-hero-section">
-        {/* Floating people */}
-        <div className="floating-person hero-person-1">
-          <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=192,h=,f=auto,dpr=1,fit=contain/f1628195334709x669100317545697300/brad%20circle.png" alt="Host" />
-        </div>
-        <div className="floating-person hero-person-2">
-          <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=192,h=,f=auto,dpr=1,fit=contain/f1606752112120x678210779169741800/arvind-image-success-story.jpg" alt="Host" />
-        </div>
-        <div className="floating-person hero-person-3">
-          <img src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=192,h=,f=auto,dpr=1,fit=contain/f1756215264078x737048307341117100/Emily%20Johnson%20-%20Fake%20Profile%20Photo.jfif" alt="Host" />
-        </div>
-
         <div className="guarantee-hero-container">
           <div className="guarantee-hero-badge">
             Property Protection
