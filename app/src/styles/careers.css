@@ -895,9 +895,95 @@ body {
     gap: 16px;
   }
 
+  /* Mobile card redesign: horizontal layout with always-visible avatar */
   .example-card {
-    padding: 20px;
-    height: 170px;
+    padding: 16px;
+    height: auto;
+    min-height: 140px;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  /* Avatar stays visible on the left side */
+  .example-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+    width: 64px;
+  }
+
+  .example-avatar {
+    width: 56px;
+    height: 56px;
+    font-size: 18px;
+  }
+
+  .example-name {
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+
+  /* Content wrapper takes remaining space on the right */
+  .example-content-wrapper {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .example-pattern {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+  }
+
+  /* Show review text below pattern on mobile (no hover needed) */
+  .example-review {
+    position: static;
+    opacity: 1;
+    font-size: 13px;
+    line-height: 1.4;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid #E5E7EB;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    pointer-events: auto;
+  }
+
+  .example-timeline {
+    margin-top: 8px;
+  }
+
+  .day-block {
+    height: 6px;
+  }
+
+  .timeline-labels {
+    margin-top: 4px;
+  }
+
+  .timeline-label {
+    font-size: 9px;
+  }
+
+  /* Disable hover effects on mobile - keep everything visible */
+  .example-card:hover .example-header,
+  .example-card:hover .example-pattern,
+  .example-card:hover .example-timeline,
+  .example-card:hover .timeline-labels {
+    opacity: 1;
+    max-height: none;
+    margin-bottom: initial;
+  }
+
+  .example-card:hover .example-review {
+    opacity: 1;
   }
 
   .role-card {
