@@ -2524,7 +2524,7 @@ export default function SearchPage() {
       {/* Two-column layout: Listings (left) + Map (right) */}
       <main className="two-column-layout">
         {/* LEFT COLUMN: Listings with filters */}
-        <section className="listings-column">
+        <section className={`listings-column ${mobileHeaderHidden ? 'listings-column--header-hidden' : ''}`}>
           {/* Mobile Filter Bar - Sticky at top on mobile */}
           <MobileFilterBar
             onFilterClick={() => setFilterPanelActive(!filterPanelActive)}
@@ -2543,7 +2543,7 @@ export default function SearchPage() {
           />
 
           {/* Mobile Schedule Selector - Always visible on mobile */}
-          <div className="mobile-schedule-selector">
+          <div className={`mobile-schedule-selector ${mobileHeaderHidden ? 'mobile-schedule-selector--hidden' : ''}`}>
             <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
               {/* AuthAwareSearchScheduleSelector will be mounted here on mobile */}
             </div>
