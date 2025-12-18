@@ -1449,17 +1449,7 @@
     }
 
     .listing-price-sidebar .price-starting {
-        margin-left: 8px;
-        font-size: 14px;
-        color: #999;
-    }
-
-    .listing-price-sidebar .price-starting span {
-        display: inline;
-        font-size: 14px;
-        margin-left: 0;
-        color: #999;
-        text-decoration: line-through;
+        display: none;
     }
 
     .listing-price-sidebar .availability-note {
