@@ -320,10 +320,10 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: rgba(255,255,255,0.95);
-    border: none;
-    width: 36px;
-    height: 36px;
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(0,0,0,0.1);
+    width: 32px;
+    height: 32px;
     padding: 0;
     box-sizing: border-box;
     border-radius: 50%;
@@ -332,14 +332,24 @@
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    opacity: 1;
-    font-size: 16px;
-    font-weight: 600;
-    color: #1a1a1a;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    opacity: 0.8;
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
     z-index: 2;
 }
 
+.listing-card:hover .image-nav {
+    opacity: 1;
+    background: white;
+}
+
+.image-nav:hover {
+    background: white;
+    transform: translateY(-50%) scale(1.15);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.25);
+}
 
 .prev-btn {
     left: 8px;
@@ -1242,28 +1252,17 @@
         border-radius: 12px 12px 0 0;
     }
 
-    /* Image nav buttons - larger touch targets on mobile */
+    /* Image nav buttons - contained within image area */
     .listing-images .image-nav {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
-        background: rgba(255,255,255,0.95);
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         z-index: 5;
-        opacity: 1;
-    }
-
-    .listing-images .image-nav:active {
-        transform: translateY(-50%) scale(0.95);
-        background: white;
     }
 
     .listing-images .prev-btn {
-        left: 10px;
+        left: 8px;
     }
 
     .listing-images .next-btn {
-        right: 10px;
+        right: 8px;
     }
 
     /* Content section - Vertical column layout on mobile */
