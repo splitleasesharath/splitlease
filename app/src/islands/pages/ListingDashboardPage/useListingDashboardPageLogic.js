@@ -507,10 +507,7 @@ export default function useListingDashboardPageLogic() {
 
   // Copy link handler - defined before handleCardClick so it can be used in the switch
   const handleCopyLink = useCallback(async () => {
-    console.log('🔗 handleCopyLink called, listing:', listing?.id);
-
     if (!listing?.id) {
-      console.log('🔗 No listing ID available');
       window.showToast?.({
         title: 'Error',
         content: 'No listing ID available',
@@ -520,7 +517,6 @@ export default function useListingDashboardPageLogic() {
     }
 
     const listingUrl = `${window.location.origin}/view-split-lease/${listing.id}`;
-    console.log('🔗 Copying URL:', listingUrl);
 
     try {
       // Modern Clipboard API (preferred)
@@ -555,7 +551,6 @@ export default function useListingDashboardPageLogic() {
 
   // Action card click handler
   const handleCardClick = useCallback((cardId) => {
-    console.log('🎯 handleCardClick called with cardId:', cardId);
     switch (cardId) {
       case 'preview':
         if (listing) {
@@ -563,7 +558,6 @@ export default function useListingDashboardPageLogic() {
         }
         break;
       case 'copy-link':
-        console.log('🎯 copy-link case reached');
         handleCopyLink();
         break;
       case 'proposals':
