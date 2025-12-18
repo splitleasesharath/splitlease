@@ -238,6 +238,8 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
     // Status
     status: dbListing.Active ? 'Online' : 'Offline',
     isOnline: dbListing.Active || false,
+    isApproved: dbListing.Approved || false,
+    isComplete: dbListing.Complete || false,
     createdAt: dbListing['Created Date'] ? new Date(dbListing['Created Date']) : null,
     activeSince: dbListing['Created Date'] ? new Date(dbListing['Created Date']) : null,
     updatedAt: dbListing['Modified Date'] ? new Date(dbListing['Modified Date']) : null,
