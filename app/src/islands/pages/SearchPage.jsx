@@ -65,6 +65,85 @@ async function fetchInformationalTexts() {
 // ============================================================================
 
 /**
+ * CompactScheduleIndicator - Minimal dot-based schedule display
+ * Shows when mobile header is hidden during scroll
+ */
+function CompactScheduleIndicator({ isVisible }) {
+  // Get selected days from URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const daysSelected = urlParams.get('days-selected') || '';
+
+  // Parse days-selected (format: "1,2,3,4,5" where 0=Sun, 1=Mon, etc.)
+  const selectedDaysArray = daysSelected
+    ? daysSelected.split(',').map(d => parseInt(d, 10)).filter(d => !isNaN(d))
+    : [];
+
+  // Day names for display
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  // Calculate check-in and check-out days
+  let checkInText = '';
+  let checkOutText = '';
+
+  if (selectedDaysArray.length >= 2) {
+    const sortedDays = [...selectedDaysArray].sort((a, b) => a - b);
+    const hasSaturday = sortedDays.includes(6);
+    const hasSunday = sortedDays.includes(0);
+    const isWrapAround = hasSaturday && hasSunday && sortedDays.length < 7;
+
+    let checkInDay, checkOutDay;
+
+    if (isWrapAround) {
+      // Find the gap in the sequence to determine actual check-in/check-out
+      let gapIndex = -1;
+      for (let i = 1; i < sortedDays.length; i++) {
+        if (sortedDays[i] - sortedDays[i - 1] > 1) {
+          gapIndex = i;
+          break;
+        }
+      }
+
+      if (gapIndex !== -1) {
+        checkInDay = sortedDays[gapIndex];
+        checkOutDay = sortedDays[gapIndex - 1];
+      } else {
+        checkInDay = sortedDays[0];
+        checkOutDay = sortedDays[sortedDays.length - 1];
+      }
+    } else {
+      checkInDay = sortedDays[0];
+      checkOutDay = sortedDays[sortedDays.length - 1];
+    }
+
+    checkInText = dayNames[checkInDay];
+    checkOutText = dayNames[checkOutDay];
+  }
+
+  return (
+    <div className={`compact-schedule-indicator ${isVisible ? 'compact-schedule-indicator--visible' : ''}`}>
+      <span className="compact-schedule-text">
+        {selectedDaysArray.length >= 2 ? (
+          <>
+            <span className="compact-label">Check-in:</span> {checkInText} • <span className="compact-label">Check-out:</span> {checkOutText}
+          </>
+        ) : (
+          'Select days'
+        )}
+      </span>
+      <div className="compact-schedule-dots">
+        {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => (
+          <div
+            key={dayIndex}
+            className={`compact-day-dot ${selectedDaysArray.includes(dayIndex) ? 'selected' : ''}`}
+            title={dayNames[dayIndex]}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
  * MobileFilterBar - Sticky filter button for mobile
  * Includes auth-aware elements: favorites link and LoggedInAvatar for logged-in users
  */
@@ -77,10 +156,11 @@ function MobileFilterBar({
   favoritesCount,
   onNavigate,
   onLogout,
-  onOpenAuthModal
+  onOpenAuthModal,
+  isHidden
 }) {
   return (
-    <div className="mobile-filter-bar">
+    <div className={`mobile-filter-bar ${isHidden ? 'mobile-filter-bar--hidden' : ''}`}>
       <a href="/" className="mobile-logo-link" aria-label="Go to homepage">
         <img
           src="/assets/images/split-lease-purple-circle.png"
@@ -657,9 +737,17 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
             <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
           </div>
 
-          {/* Host Row - Two-line layout: avatar+name on line 1, buttons on line 2 */}
+          {/* Host Section - Price, CTA, Hosted by */}
           <div className="listing-host-section">
-            {/* Line 1: Host Profile (avatar + name) */}
+            {/* Inline Price Display */}
+            <div className="inline-price">
+              <span className="price-current">${dynamicPrice.toFixed(2)}</span>
+              <span className="price-period">/ night</span>
+              {startingPrice > 0 && startingPrice !== dynamicPrice && (
+                <span className="price-original">${parseFloat(startingPrice).toFixed(2)}</span>
+              )}
+            </div>
+            {/* Host Profile - Simple text */}
             <div className="host-profile">
               {listing.host?.image ? (
                 <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
@@ -671,7 +759,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
                 {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
               </span>
             </div>
-            {/* Line 2: Action Buttons */}
+            {/* Action Buttons */}
             <div className="action-buttons">
               <button
                 className="action-button secondary"
@@ -944,6 +1032,7 @@ export default function SearchPage() {
   const [mapSectionActive, setMapSectionActive] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMapVisible, setMobileMapVisible] = useState(false);
+  const [mobileHeaderHidden, setMobileHeaderHidden] = useState(false);
 
   // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -990,6 +1079,52 @@ export default function SearchPage() {
       }
     };
     init();
+  }, []);
+
+  // Mobile header scroll hide/show effect
+  // Note: On mobile, the scrolling element is .listings-content, not window
+  useEffect(() => {
+    let lastScrollY = 0;
+    let ticking = false;
+
+    const handleScroll = (e) => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // Get scroll position from the actual scrolling element
+          const scrollElement = e.target;
+          const currentScrollY = scrollElement.scrollTop || 0;
+          const isMobile = window.innerWidth <= 768;
+
+          if (isMobile) {
+            // Hide header when scrolling down past first card (~250px)
+            // Show header when scrolling up
+            if (currentScrollY > 250 && currentScrollY > lastScrollY) {
+              setMobileHeaderHidden(true);
+            } else if (currentScrollY < lastScrollY) {
+              setMobileHeaderHidden(false);
+            }
+          } else {
+            setMobileHeaderHidden(false);
+          }
+
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    // Find the actual scrolling container (.listings-content)
+    const listingsContent = document.querySelector('.listings-content');
+
+    if (listingsContent) {
+      listingsContent.addEventListener('scroll', handleScroll, { passive: true });
+      return () => listingsContent.removeEventListener('scroll', handleScroll);
+    }
+
+    // Fallback to window scroll for safety
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Fetch informational texts on mount
@@ -2483,7 +2618,7 @@ export default function SearchPage() {
       {/* Two-column layout: Listings (left) + Map (right) */}
       <main className="two-column-layout">
         {/* LEFT COLUMN: Listings with filters */}
-        <section className="listings-column">
+        <section className={`listings-column ${mobileHeaderHidden ? 'listings-column--header-hidden' : ''}`}>
           {/* Mobile Filter Bar - Sticky at top on mobile */}
           <MobileFilterBar
             onFilterClick={() => setFilterPanelActive(!filterPanelActive)}
@@ -2498,14 +2633,18 @@ export default function SearchPage() {
               setAuthModalView('login');
               setIsAuthModalOpen(true);
             }}
+            isHidden={mobileHeaderHidden}
           />
 
           {/* Mobile Schedule Selector - Always visible on mobile */}
-          <div className="mobile-schedule-selector">
+          <div className={`mobile-schedule-selector ${mobileHeaderHidden ? 'mobile-schedule-selector--hidden' : ''}`}>
             <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point-mobile">
               {/* AuthAwareSearchScheduleSelector will be mounted here on mobile */}
             </div>
           </div>
+
+          {/* Compact Schedule Indicator - Shows when header is hidden */}
+          <CompactScheduleIndicator isVisible={mobileHeaderHidden} />
 
           {/* All filters in single horizontal flexbox container */}
           <div className={`inline-filters ${filterPanelActive ? 'active' : ''}`}>
@@ -2617,8 +2756,8 @@ export default function SearchPage() {
             )}
           </div>
 
-          {/* Listings count */}
-          <div className="listings-count">
+          {/* Listings count - hidden when mobile header is collapsed */}
+          <div className={`listings-count ${mobileHeaderHidden ? 'listings-count--hidden' : ''}`}>
             <strong>{allListings.length} listings found</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
           </div>
 

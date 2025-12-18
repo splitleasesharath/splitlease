@@ -1,7 +1,59 @@
+import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
+import { supabase } from '../../lib/supabase.js';
+
+// FAQ IDs to display on this page
+const FAQ_IDS = [
+  '1598576324794x693327507784140000', // Tenant's rights protection
+  '1585485787198x865624488127564500', // Cancellation policy
+  '1621605643737x217621659116098430', // Payment after booking
+  '1585860980462x241805081013604540', // Traveler verification
+];
 
 export default function HostGuaranteePage() {
+  const [faqs, setFaqs] = useState([]);
+  const [activeAccordion, setActiveAccordion] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadFaqs() {
+      try {
+        const { data, error } = await supabase
+          .schema('reference_table')
+          .from('zat_faq')
+          .select('_id, Question, Answer')
+          .in('_id', FAQ_IDS);
+
+        if (error) throw error;
+
+        // Sort FAQs to match the order of FAQ_IDS
+        const sortedFaqs = FAQ_IDS.map(id =>
+          data.find(faq => faq._id === id)
+        ).filter(Boolean);
+
+        setFaqs(sortedFaqs);
+      } catch (err) {
+        console.error('Error loading FAQs:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadFaqs();
+  }, []);
+
+  const toggleAccordion = (index) => {
+    setActiveAccordion(activeAccordion === index ? null : index);
+  };
+
+  const handleKeyPress = (e, index) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleAccordion(index);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -156,6 +208,7 @@ export default function HostGuaranteePage() {
             {/* Split Lease TOS */}
             <div className="guarantee-info-card">
               <div className="guarantee-info-card-header">
+                <span className="split-lease-badge">Our Policy</span>
                 <h3 className="guarantee-info-card-title">Split Lease Host Guarantee Full TOS</h3>
               </div>
               <p className="guarantee-info-card-description">
@@ -204,34 +257,39 @@ export default function HostGuaranteePage() {
             <h2 className="guarantee-faq-title">Frequently Asked Questions</h2>
           </div>
 
-          <div className="guarantee-faq-grid">
-            <div className="faq-item">
-              <h3 className="faq-question">How do I file a claim?</h3>
-              <p className="faq-answer">
-                If a guest causes damage to your property, document the damage with photos and contact our support team within 14 days of the guest's checkout. We'll guide you through the claims process.
-              </p>
-            </div>
-
-            <div className="faq-item">
-              <h3 className="faq-question">What documentation do I need?</h3>
-              <p className="faq-answer">
-                You'll need photos of the damage, receipts or estimates for repairs, and any communication with the guest about the incident. The more documentation, the smoother the process.
-              </p>
-            </div>
-
-            <div className="faq-item">
-              <h3 className="faq-question">How long does the claims process take?</h3>
-              <p className="faq-answer">
-                Most claims are resolved within 7-14 business days after all required documentation is submitted. Complex cases may take longer.
-              </p>
-            </div>
-
-            <div className="faq-item">
-              <h3 className="faq-question">Is there a deductible?</h3>
-              <p className="faq-answer">
-                The Host Guarantee has no deductible for covered damages. However, claims must meet our minimum threshold to be processed.
-              </p>
-            </div>
+          <div className="guarantee-faq-accordion">
+            {isLoading ? (
+              <div className="faq-loading">Loading questions...</div>
+            ) : faqs.length === 0 ? (
+              <div className="faq-empty">No FAQs available.</div>
+            ) : (
+              faqs.map((faq, index) => {
+                const isActive = activeAccordion === index;
+                return (
+                  <div
+                    key={faq._id}
+                    className={`guarantee-accordion-item ${isActive ? 'active' : ''}`}
+                  >
+                    <div
+                      className="guarantee-accordion-header"
+                      tabIndex="0"
+                      role="button"
+                      aria-expanded={isActive}
+                      onClick={() => toggleAccordion(index)}
+                      onKeyPress={(e) => handleKeyPress(e, index)}
+                    >
+                      <span className="guarantee-accordion-icon"></span>
+                      <h3>{faq.Question}</h3>
+                    </div>
+                    <div className="guarantee-accordion-content">
+                      <div className="guarantee-accordion-content-inner">
+                        <p>{faq.Answer}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
 
           <div className="guarantee-faq-cta">
