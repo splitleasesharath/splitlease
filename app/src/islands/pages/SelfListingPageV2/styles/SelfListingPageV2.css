@@ -1967,6 +1967,10 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+  .self-listing-v2-main {
+    padding-top: 80px; /* Reduced padding for mobile header */
+  }
+
   .pricing-table-side {
     flex: none;
     width: 100%;
