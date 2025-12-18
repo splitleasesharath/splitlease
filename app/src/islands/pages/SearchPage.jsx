@@ -23,6 +23,8 @@ import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import { shiftMoveInDateIfPast } from '../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
+import { getNightlyRateByFrequency } from '../../logic/calculators/pricing/getNightlyRateByFrequency.js';
+import { calculateGuestFacingPrice } from '../../logic/calculators/pricing/calculateGuestFacingPrice.js';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 
 // ============================================================================
@@ -426,7 +428,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
 
@@ -467,52 +469,36 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
   // Get listing ID for FavoriteButton
   const favoriteListingId = listing.id || listing._id;
 
-  // Calculate dynamic price using default 5 nights (Monday-Friday pattern)
-  // Uses the same formula as priceCalculations.js for Nightly rental type
+  // Calculate dynamic price based on selected nights from day selector
   const calculateDynamicPrice = () => {
-    const nightsCount = 5; // Default to 5 nights (Mon-Fri)
+    const nightsCount = selectedNightsCount || 5; // Default to 5 if not provided
 
-    const priceFieldMap = {
-      2: 'Price 2 nights selected',
-      3: 'Price 3 nights selected',
-      4: 'Price 4 nights selected',
-      5: 'Price 5 nights selected',
-      6: 'Price 6 nights selected',
-      7: 'Price 7 nights selected'
-    };
-
-    // Get the host compensation rate for the selected nights
-    let nightlyHostRate = 0;
-    if (nightsCount >= 2 && nightsCount <= 7) {
-      const fieldName = priceFieldMap[nightsCount];
-      nightlyHostRate = listing[fieldName] || 0;
+    // Handle edge cases: night counts outside supported range
+    // Supported: 2, 3, 4, 5, 7 (note: 6 is NOT supported by the pricing system)
+    if (nightsCount < 2 || nightsCount > 7 || nightsCount === 6) {
+      // Return starting price for unsupported night counts
+      return listing['Starting nightly price'] || listing.price?.starting || 0;
     }
 
-    // Fallback to starting price if no specific rate found
-    if (!nightlyHostRate || nightlyHostRate === 0) {
-      nightlyHostRate = listing['Starting nightly price'] || listing.price?.starting || 0;
+    try {
+      // Step 1: Get the host nightly rate for the selected frequency
+      const hostNightlyRate = getNightlyRateByFrequency({
+        listing: listing,
+        nightsSelected: nightsCount
+      });
+
+      // Step 2: Calculate guest-facing price (applies markup and discounts)
+      const guestPrice = calculateGuestFacingPrice({
+        hostNightlyRate: hostNightlyRate,
+        nightsCount: nightsCount
+      });
+
+      return guestPrice;
+    } catch (error) {
+      // If calculators throw (e.g., missing price data), fall back to starting price
+      console.warn(`[PropertyCard] Price calculation failed for listing ${listing.id}:`, error.message);
+      return listing['Starting nightly price'] || listing.price?.starting || 0;
     }
-
-    // Apply the same markup calculation as priceCalculations.js
-    // Step 1: Calculate base price (host rate × nights)
-    const basePrice = nightlyHostRate * nightsCount;
-
-    // Step 2: Apply full-time discount (only for 7 nights, 13% discount)
-    const fullTimeDiscount = nightsCount === 7 ? basePrice * 0.13 : 0;
-
-    // Step 3: Price after discounts
-    const priceAfterDiscounts = basePrice - fullTimeDiscount;
-
-    // Step 4: Apply site markup (17%)
-    const siteMarkup = priceAfterDiscounts * 0.17;
-
-    // Step 5: Calculate total price
-    const totalPrice = basePrice - fullTimeDiscount + siteMarkup;
-
-    // Step 6: Calculate price per night (guest-facing price)
-    const pricePerNight = totalPrice / nightsCount;
-
-    return pricePerNight;
   };
 
   const dynamicPrice = calculateDynamicPrice();
@@ -751,7 +737,11 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
           <div className="price-main">${dynamicPrice.toFixed(2)}</div>
           <div className="price-period">/night</div>
           <div className="price-divider"></div>
-          <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
+          {selectedNightsCount >= 2 && selectedNightsCount <= 7 && selectedNightsCount !== 6 ? (
+            <div className="price-context">for {selectedNightsCount} nights/week</div>
+          ) : (
+            <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
+          )}
           <div className="availability-note">Message Split Lease<br/>for Availability</div>
         </div>
       </div>
@@ -762,7 +752,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
 
   const sentinelRef = useRef(null);
 
@@ -816,6 +806,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             showCreateProposalButton={showCreateProposalButton}
             onOpenCreateProposalModal={onOpenCreateProposalModal}
             proposalForListing={proposalForListing}
+            selectedNightsCount={selectedNightsCount}
           />
         );
       })}
@@ -940,6 +931,9 @@ export default function SearchPage() {
   const [priceTier, setPriceTier] = useState(urlFilters.priceTier);
   const [sortBy, setSortBy] = useState(urlFilters.sortBy);
   const [neighborhoodSearch, setNeighborhoodSearch] = useState('');
+
+  // Dynamic pricing state - tracks selected nights from day selector
+  const [selectedNightsCount, setSelectedNightsCount] = useState(5);
 
   // UI state
   const [filterPanelActive, setFilterPanelActive] = useState(false);
@@ -2405,8 +2399,13 @@ export default function SearchPage() {
 
     const selectorProps = {
       onSelectionChange: (days) => {
-        console.log('Schedule selector changed (display only, not used for filtering):', days);
-        // No state update - schedule selection is for display purposes only
+        console.log('Schedule selector changed:', days);
+        // Extract nights count from selected days for dynamic pricing
+        const nightsCount = days.length;
+        // Only update if valid night count (2-7, excluding 6 which is unsupported by pricing system)
+        if (nightsCount >= 2 && nightsCount <= 7 && nightsCount !== 6) {
+          setSelectedNightsCount(nightsCount);
+        }
       },
       onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error),
       weekPattern: weekPattern
@@ -2651,6 +2650,7 @@ export default function SearchPage() {
                       showCreateProposalButton={showCreateProposalButton}
                       onOpenCreateProposalModal={handleOpenCreateProposalModal}
                       proposalsByListingId={proposalsByListingId}
+                      selectedNightsCount={selectedNightsCount}
                     />
                   </div>
                 )}
@@ -2677,6 +2677,7 @@ export default function SearchPage() {
                 showCreateProposalButton={showCreateProposalButton}
                 onOpenCreateProposalModal={handleOpenCreateProposalModal}
                 proposalsByListingId={proposalsByListingId}
+                selectedNightsCount={selectedNightsCount}
               />
             )}
           </div>
