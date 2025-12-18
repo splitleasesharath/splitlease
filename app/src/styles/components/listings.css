@@ -281,6 +281,7 @@
     flex-direction: row;
     align-items: stretch;
     min-height: 200px;
+    max-height: 280px;
     height: auto;
     position: relative;
 }
