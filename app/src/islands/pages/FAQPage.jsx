@@ -169,7 +169,8 @@ export default function FAQPage() {
             role="tab"
             aria-selected={activeTab === 'general'}
           >
-            General Questions
+            <span className="tab-text-full">General Questions</span>
+            <span className="tab-text-short">General</span>
           </button>
           <button
             className={`tab ${activeTab === 'travelers' ? 'active' : ''}`}
@@ -177,7 +178,8 @@ export default function FAQPage() {
             role="tab"
             aria-selected={activeTab === 'travelers'}
           >
-            For Guests
+            <span className="tab-text-full">For Guests</span>
+            <span className="tab-text-short">Guest</span>
           </button>
           <button
             className={`tab ${activeTab === 'hosts' ? 'active' : ''}`}
@@ -185,7 +187,8 @@ export default function FAQPage() {
             role="tab"
             aria-selected={activeTab === 'hosts'}
           >
-            For Hosts
+            <span className="tab-text-full">For Hosts</span>
+            <span className="tab-text-short">Host</span>
           </button>
         </div>
       </div>
