@@ -1146,12 +1146,17 @@ body {
   }
 
   .modal {
-    padding-top: 80px;
+    padding-top: 0;
+    align-items: center;
+    padding: 16px;
   }
 
   .modal-content {
-    width: 95%;
-    max-height: calc(100vh - 100px);
+    width: 100%;
+    max-width: 100%;
+    max-height: calc(100vh - 32px);
+    border-radius: 12px;
+    margin: 0 auto;
   }
 
   .modal-content > div {
