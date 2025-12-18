@@ -84,20 +84,26 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
 
     const days = [];
 
+    // Today reference for past-date comparison (moved before previous month loop)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     // Previous month padding
     const prevMonth = new Date(year, month, 0);
+    const prevMonthYear = prevMonth.getFullYear();
+    const prevMonthMonth = prevMonth.getMonth();
     for (let i = startPadding - 1; i >= 0; i--) {
+      const dayNum = prevMonth.getDate() - i;
+      const date = new Date(prevMonthYear, prevMonthMonth, dayNum);
       days.push({
-        day: prevMonth.getDate() - i,
+        day: dayNum,
         isCurrentMonth: false,
-        isPast: true,
+        isPast: date < today,
+        date: date,
       });
     }
 
     // Current month days
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     for (let i = 1; i <= daysInMonth; i++) {
       const date = new Date(year, month, i);
       days.push({
@@ -110,11 +116,15 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
 
     // Next month padding
     const remaining = 42 - days.length; // 6 rows * 7 days
+    const nextMonthYear = month === 11 ? year + 1 : year;
+    const nextMonthMonth = month === 11 ? 0 : month + 1;
     for (let i = 1; i <= remaining; i++) {
+      const date = new Date(nextMonthYear, nextMonthMonth, i);
       days.push({
         day: i,
         isCurrentMonth: false,
         isPast: false,
+        date: date,
       });
     }
 
@@ -170,11 +180,11 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
 
   // Handle date click
   const handleDateClick = useCallback((dayInfo) => {
-    console.log('📅 Date clicked:', dayInfo);
+    console.log('📅 Date clicked:', dayInfo, 'isOverflow:', !dayInfo.isCurrentMonth);
 
-    // Don't allow clicking on past dates or dates from other months
-    if (dayInfo.isPast || !dayInfo.isCurrentMonth || !dayInfo.date) {
-      console.log('📅 Click ignored: past date or not current month');
+    // Don't allow clicking on past dates or dates without valid Date objects
+    if (dayInfo.isPast || !dayInfo.date) {
+      console.log('📅 Click ignored: past date or missing date object');
       return;
     }
 
