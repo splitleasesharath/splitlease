@@ -411,6 +411,17 @@
   margin-bottom: 16px;
 }
 
+.split-lease-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: rgba(49, 19, 93, 0.08);
+  color: #31135D;
+  border-radius: 500px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
 .compare-badge {
   display: inline-block;
   padding: 4px 12px;

@@ -208,6 +208,7 @@ export default function HostGuaranteePage() {
             {/* Split Lease TOS */}
             <div className="guarantee-info-card">
               <div className="guarantee-info-card-header">
+                <span className="split-lease-badge">Our Policy</span>
                 <h3 className="guarantee-info-card-title">Split Lease Host Guarantee Full TOS</h3>
               </div>
               <p className="guarantee-info-card-description">
