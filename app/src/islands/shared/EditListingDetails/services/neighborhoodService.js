@@ -52,6 +52,52 @@ export async function getNeighborhoodByZipCode(zipCode) {
 }
 
 /**
+ * Fetches neighborhood description from Supabase based on neighborhood name
+ * Uses case-insensitive matching against the Display column
+ * @param {string} neighborhoodName - The neighborhood name (e.g., "Astoria", "Williamsburg")
+ * @returns {Promise<{neighborhoodName: string, description: string} | null>} Neighborhood data or null if not found
+ */
+export async function getNeighborhoodByName(neighborhoodName) {
+  if (!neighborhoodName || neighborhoodName.trim().length === 0) {
+    console.warn('[neighborhoodService] No neighborhood name provided for lookup');
+    return null;
+  }
+
+  try {
+    console.log('[neighborhoodService] Fetching neighborhood by name:', neighborhoodName);
+
+    // Use ilike for case-insensitive matching
+    const { data, error } = await supabase
+      .from('zat_geo_hood_mediumlevel')
+      .select('Display, "Neighborhood Description"')
+      .ilike('Display', neighborhoodName.trim())
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[neighborhoodService] Error fetching by name:', error);
+      return null;
+    }
+
+    if (!data) {
+      console.warn(`[neighborhoodService] No match for neighborhood name: ${neighborhoodName}`);
+      return null;
+    }
+
+    const result = {
+      neighborhoodName: data.Display || '',
+      description: data['Neighborhood Description'] || ''
+    };
+
+    console.log('[neighborhoodService] Found neighborhood by name:', result.neighborhoodName);
+    return result;
+  } catch (err) {
+    console.error('[neighborhoodService] Unexpected error in getNeighborhoodByName:', err);
+    return null;
+  }
+}
+
+/**
  * Get neighborhood description with AI fallback
  * First attempts database lookup, falls back to AI generation if not found
  * @param {string} zipCode - ZIP code to lookup

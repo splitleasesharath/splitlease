@@ -57,6 +57,46 @@ const SuccessIcon = () => (
   </svg>
 );
 
+// Confetti colors - brand purple, green success, gold, pink, blue
+const CONFETTI_COLORS = ['#6b4fbb', '#22c55e', '#fbbf24', '#f472b6', '#60a5fa', '#31135d', '#10b981'];
+const CONFETTI_SHAPES = ['circle', 'square', 'ribbon'];
+
+/**
+ * Generates confetti pieces with randomized properties
+ */
+const generateConfettiPieces = (count = 50) => {
+  return Array.from({ length: count }, (_, i) => ({
+    id: i,
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    shape: CONFETTI_SHAPES[i % CONFETTI_SHAPES.length],
+    left: Math.random() * 100,
+    delay: Math.random() * 0.8,
+  }));
+};
+
+/**
+ * Confetti celebration component
+ */
+const ConfettiCelebration = () => {
+  const pieces = generateConfettiPieces(50);
+
+  return (
+    <div className="ai-import-confetti-container">
+      {pieces.map((piece) => (
+        <div
+          key={piece.id}
+          className={`ai-import-confetti ai-import-confetti--${piece.shape}`}
+          style={{
+            left: `${piece.left}%`,
+            backgroundColor: piece.color,
+            animationDelay: `${piece.delay}s`,
+          }}
+        />
+      ))}
+    </div>
+  );
+};
+
 // Generation task labels - ordered to show data loading first, then AI generation
 // This matches the actual execution order in useListingDashboardPageLogic.js
 const GENERATION_TASKS = [
@@ -198,6 +238,9 @@ const AIImportAssistantModal = ({
             </button>
           )}
         </div>
+
+        {/* Confetti celebration on completion */}
+        {isComplete && <ConfettiCelebration />}
 
         {/* Content */}
         <div className="ai-import-content">

@@ -6,7 +6,8 @@ import { generateListingDescription, generateListingTitle } from '../../../lib/a
 import { getCommonHouseRules } from '../../shared/EditListingDetails/services/houseRulesService';
 import { getCommonSafetyFeatures } from '../../shared/EditListingDetails/services/safetyFeaturesService';
 import { getCommonInUnitAmenities, getCommonBuildingAmenities } from '../../shared/EditListingDetails/services/amenitiesService';
-import { getNeighborhoodByZipCode } from '../../shared/EditListingDetails/services/neighborhoodService';
+import { getNeighborhoodByZipCode, getNeighborhoodByName } from '../../shared/EditListingDetails/services/neighborhoodService';
+import { generateNeighborhoodDescription } from '../../../lib/aiService';
 
 /**
  * Safely parse a JSON string or return the value if already an array
@@ -603,6 +604,9 @@ export default function useListingDashboardPageLogic() {
   const [isAIComplete, setIsAIComplete] = useState(false);
   const [aiGeneratedData, setAiGeneratedData] = useState({});
 
+  // Track which fields were modified by AI for highlighting
+  const [highlightedFields, setHighlightedFields] = useState(new Set());
+
   // ============================================================================
   // GOLD STANDARD AUTH PATTERN - Fetch current user data with fallback
   // ============================================================================
@@ -735,11 +739,69 @@ export default function useListingDashboardPageLogic() {
   }, []);
 
   const handleAIImportComplete = useCallback((generatedData) => {
-    console.log('✅ AI Import complete, refreshing listing data...');
-    // Refresh listing data to show updated values
+    console.log('✅ AI Import complete, updating local state instantly...');
+    console.log('📋 Generated data:', generatedData);
+
+    // Build set of changed fields for highlighting
+    const changedFields = new Set();
+
+    // Update listing state instantly with generated data
+    setListing(prev => {
+      if (!prev) return prev;
+
+      const updates = { ...prev };
+
+      // Update title if generated
+      if (generatedData.name && generatedData.name !== prev.title) {
+        updates.title = generatedData.name;
+        updates.Name = generatedData.name;
+        changedFields.add('name');
+      }
+
+      // Update description if generated
+      if (generatedData.description && generatedData.description !== prev.description) {
+        updates.description = generatedData.description;
+        updates.Description = generatedData.description;
+        changedFields.add('description');
+      }
+
+      // Update neighborhood description if generated
+      if (generatedData.neighborhood && generatedData.neighborhood !== prev.descriptionNeighborhood) {
+        updates.descriptionNeighborhood = generatedData.neighborhood;
+        updates['Description - Neighborhood'] = generatedData.neighborhood;
+        changedFields.add('neighborhood');
+      }
+
+      // Mark amenities/rules/safety as changed if counts > 0
+      if (generatedData.inUnitAmenitiesCount > 0 || generatedData.buildingAmenitiesCount > 0) {
+        changedFields.add('amenities');
+      }
+      if (generatedData.houseRulesCount > 0) {
+        changedFields.add('rules');
+      }
+      if (generatedData.safetyFeaturesCount > 0) {
+        changedFields.add('safety');
+      }
+
+      return updates;
+    });
+
+    // Set highlighted fields for visual feedback
+    setHighlightedFields(changedFields);
+    console.log('✨ Highlighting changed fields:', [...changedFields]);
+
+    // Auto-clear highlights after 8 seconds
+    setTimeout(() => {
+      setHighlightedFields(new Set());
+    }, 8000);
+
+    // Silent background refresh to sync any related data (like resolved amenity names)
     const listingId = getListingIdFromUrl();
     if (listingId) {
-      fetchListing(listingId);
+      // Small delay to let state update complete first
+      setTimeout(() => {
+        fetchListing(listingId);
+      }, 500);
     }
   }, [fetchListing, getListingIdFromUrl]);
 
@@ -923,19 +985,65 @@ export default function useListingDashboardPageLogic() {
         setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'complete' }));
       }
 
-      // 3. Load Neighborhood Description
+      // 3. Load Neighborhood Description (cascade: Name → ZIP → AI)
       setAiGenerationStatus(prev => ({ ...prev, neighborhood: 'loading' }));
       try {
-        const zipCode = listing.location?.zipCode;
-        if (zipCode) {
-          const neighborhood = await getNeighborhoodByZipCode(zipCode);
-          if (neighborhood && neighborhood.description) {
-            generatedResults.neighborhood = neighborhood.description;
-            generatedResults.neighborhoodName = neighborhood.neighborhoodName;
-            enrichedNeighborhood = neighborhood.neighborhoodName || enrichedNeighborhood;
-            await updateListing(listingId, { 'Description - Neighborhood': neighborhood.description });
+        let neighborhoodResult = null;
+
+        // First, try by neighborhood name (Location - Hood)
+        const hoodName = listing.location?.hoodsDisplay;
+        if (hoodName) {
+          console.log('🏘️ Trying neighborhood lookup by name:', hoodName);
+          neighborhoodResult = await getNeighborhoodByName(hoodName);
+          if (neighborhoodResult?.description) {
+            console.log('✅ Found neighborhood by name:', hoodName);
           }
         }
+
+        // Second, fallback to ZIP code lookup
+        if (!neighborhoodResult?.description) {
+          const zipCode = listing.location?.zipCode;
+          if (zipCode) {
+            console.log('🏘️ Trying neighborhood lookup by ZIP:', zipCode);
+            neighborhoodResult = await getNeighborhoodByZipCode(zipCode);
+            if (neighborhoodResult?.description) {
+              console.log('✅ Found neighborhood by ZIP:', zipCode);
+            }
+          }
+        }
+
+        // Third, fallback to AI generation
+        if (!neighborhoodResult?.description) {
+          console.log('🏘️ No database match, trying AI generation...');
+          const addressData = {
+            fullAddress: listing.location?.address || '',
+            city: listing.location?.city || '',
+            state: listing.location?.state || '',
+            zip: listing.location?.zipCode || '',
+          };
+
+          if (addressData.city || addressData.fullAddress) {
+            const aiDescription = await generateNeighborhoodDescription(addressData);
+            if (aiDescription) {
+              neighborhoodResult = {
+                description: aiDescription,
+                neighborhoodName: hoodName || '',
+              };
+              console.log('✅ Generated neighborhood via AI');
+            }
+          }
+        }
+
+        // Save result if we have one
+        if (neighborhoodResult?.description) {
+          generatedResults.neighborhood = neighborhoodResult.description;
+          generatedResults.neighborhoodName = neighborhoodResult.neighborhoodName;
+          enrichedNeighborhood = neighborhoodResult.neighborhoodName || enrichedNeighborhood;
+          await updateListing(listingId, { 'Description - Neighborhood': neighborhoodResult.description });
+        } else {
+          console.warn('⚠️ No neighborhood description found via any method');
+        }
+
         setAiGenerationStatus(prev => ({ ...prev, neighborhood: 'complete' }));
       } catch (err) {
         console.error('❌ Error loading neighborhood:', err);
@@ -1318,6 +1426,7 @@ export default function useListingDashboardPageLogic() {
     isAIGenerating,
     isAIComplete,
     aiGeneratedData,
+    highlightedFields,
 
     // Photo management handlers
     handleSetCoverPhoto,

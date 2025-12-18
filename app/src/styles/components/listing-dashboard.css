@@ -2676,3 +2676,81 @@
     flex-wrap: wrap;
   }
 }
+
+/* =====================================================
+   AI-GENERATED CONTENT HIGHLIGHT ANIMATION
+   ===================================================== */
+
+/**
+ * Applied to sections modified by AI Import Assistant
+ * Creates a pulsing purple glow effect that fades after 8 seconds
+ */
+.listing-dashboard-section--ai-highlighted {
+  position: relative;
+  animation: aiHighlightPulse 2s ease-in-out 3, aiHighlightFadeOut 2s ease-out 6s forwards;
+  border-radius: 12px;
+  margin: -12px;
+  padding: 12px;
+}
+
+@keyframes aiHighlightPulse {
+  0% {
+    box-shadow: 0 0 0 3px rgba(107, 79, 187, 0.4), 0 0 20px rgba(107, 79, 187, 0.2);
+    background-color: rgba(107, 79, 187, 0.06);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(107, 79, 187, 0.6), 0 0 30px rgba(107, 79, 187, 0.3);
+    background-color: rgba(107, 79, 187, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(107, 79, 187, 0.4), 0 0 20px rgba(107, 79, 187, 0.2);
+    background-color: rgba(107, 79, 187, 0.06);
+  }
+}
+
+@keyframes aiHighlightFadeOut {
+  from {
+    box-shadow: 0 0 0 3px rgba(107, 79, 187, 0.4), 0 0 20px rgba(107, 79, 187, 0.2);
+    background-color: rgba(107, 79, 187, 0.06);
+  }
+  to {
+    box-shadow: 0 0 0 0 transparent;
+    background-color: transparent;
+  }
+}
+
+/* AI highlight badge - "AI Updated" label */
+.listing-dashboard-section--ai-highlighted::before {
+  content: '✨ AI Updated';
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  background: linear-gradient(135deg, #6b4fbb 0%, #31135d 100%);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  z-index: 1;
+  animation: aiBadgeFadeIn 0.3s ease-out, aiBadgeFadeOut 0.5s ease-out 7.5s forwards;
+}
+
+@keyframes aiBadgeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aiBadgeFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
