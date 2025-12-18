@@ -277,17 +277,6 @@ export default function WhySplitLeasePage() {
                 <div className="stat-label">NYC Listings</div>
               </div>
             </div>
-
-            {/* Mobile-only avatar row - shown between stats and CTA on small screens */}
-            <div className="hero-avatars-row">
-              <div className="avatar-stack">
-                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" alt="" />
-                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop" alt="" />
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop" alt="" />
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" alt="" />
-              </div>
-            </div>
-
             <div className="hero-cta">
               <a href={SEARCH_URL} className="cta-button cta-primary">
                 <span>Find Your NYC Space</span>

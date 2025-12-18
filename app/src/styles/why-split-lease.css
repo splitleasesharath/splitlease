@@ -253,32 +253,6 @@ body {
     flex-wrap: wrap;
 }
 
-/* Mobile avatar row - hidden on desktop, shown on mobile */
-.hero-avatars-row {
-    display: none; /* Hidden by default (desktop) */
-    justify-content: center;
-    margin-bottom: 32px;
-}
-
-.hero-avatars-row .avatar-stack {
-    display: flex;
-    align-items: center;
-}
-
-.hero-avatars-row .avatar-stack img {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: 3px solid white;
-    object-fit: cover;
-    margin-left: -12px; /* Overlap effect */
-    box-shadow: 0 2px 8px rgba(49, 19, 93, 0.15);
-}
-
-.hero-avatars-row .avatar-stack img:first-child {
-    margin-left: 0; /* No negative margin on first */
-}
-
 .cta-button {
     padding: 16px 40px;
     border-radius: 500px;
@@ -1647,22 +1621,67 @@ body {
 
 @media (max-width: 968px) {
     .hero-identity {
-        padding: 60px 32px;
-        padding-top: 140px; /* 80px for fixed header + 60px spacing */
+        padding: 60px 20px;
+        padding-top: 120px;
+        min-height: auto;
     }
 
-    /* Hide floating people on tablet/mobile - replaced by avatar row */
+    /* Hide persons 5 and 6 on tablet/mobile - keep 4 around the edges */
     .hero-identity .floating-person {
+        display: block;
+    }
+
+    .hero-identity .hero-person-5,
+    .hero-identity .hero-person-6 {
         display: none;
     }
 
-    /* Show the mobile avatar row */
-    .hero-avatars-row {
-        display: flex;
+    /* Reposition 4 avatars around the content edges - like reference design */
+    .hero-identity .hero-person-1 {
+        width: 52px;
+        height: 52px;
+        top: auto;
+        bottom: 32%;
+        right: 4%;
+        left: auto;
+    }
+
+    .hero-identity .hero-person-2 {
+        width: 48px;
+        height: 48px;
+        top: 28%;
+        left: 3%;
+        right: auto;
+        bottom: auto;
+    }
+
+    .hero-identity .hero-person-3 {
+        width: 52px;
+        height: 52px;
+        top: auto;
+        bottom: 15%;
+        right: auto;
+        left: 5%;
+    }
+
+    .hero-identity .hero-person-4 {
+        width: 48px;
+        height: 48px;
+        top: 22%;
+        right: 3%;
+        left: auto;
+        bottom: auto;
+    }
+
+    /* Smaller border for mobile avatars */
+    .hero-identity .floating-person {
+        border-width: 3px;
+        box-shadow: 0 4px 12px rgba(49, 19, 93, 0.12);
     }
 
     .hero-identity .hero-title {
-        font-size: 36px;
+        font-size: 28px;
+        padding: 0 8px;
     }
 
     .schedule-section,
