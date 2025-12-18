@@ -94,14 +94,21 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
   useEffect(() => {
     if (!listing || formDataInitializedRef.current) return;
 
+    // Auto-populate borough from zip code if missing
+    const zipCode = listing['Location - Zip Code'];
+    let borough = listing['Location - Borough'];
+    if (!borough && zipCode) {
+      borough = getBoroughForZipCode(zipCode);
+    }
+
     setFormData({
       Name: listing.Name,
       Description: listing.Description,
       'Description - Neighborhood': listing['Description - Neighborhood'],
       'Location - City': listing['Location - City'],
       'Location - State': listing['Location - State'],
-      'Location - Zip Code': listing['Location - Zip Code'],
-      'Location - Borough': listing['Location - Borough'],
+      'Location - Zip Code': zipCode,
+      'Location - Borough': borough,
       'Location - Hood': listing['Location - Hood'],
       'Features - Type of Space': listing['Features - Type of Space'],
       'Features - Qty Bedrooms': listing['Features - Qty Bedrooms'],

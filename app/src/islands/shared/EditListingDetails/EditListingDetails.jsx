@@ -25,7 +25,8 @@ import {
   BEDROOM_OPTIONS,
   BED_OPTIONS,
   BATHROOM_OPTIONS,
-  GUEST_OPTIONS
+  GUEST_OPTIONS,
+  BOROUGH_OPTIONS
 } from './constants';
 import '../../../styles/components/edit-listing-details.css';
 
@@ -216,14 +217,19 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
                 />
               </div>
               <div className="eld-form-field">
-                <label className="eld-form-label">Borough/Neighborhood</label>
-                <input
-                  type="text"
-                  className="eld-form-input"
-                  placeholder="Borough or Neighborhood"
+                <label className="eld-form-label">Borough/Area</label>
+                <select
+                  className="eld-form-input eld-form-select"
                   value={formData['Location - Borough'] || ''}
                   onChange={(e) => handleInputChange('Location - Borough', e.target.value)}
-                />
+                >
+                  <option value="">Select Borough/Area</option>
+                  {BOROUGH_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
