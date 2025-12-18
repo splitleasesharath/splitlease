@@ -538,110 +538,36 @@
   color: #dc2626;
 }
 
-/* Status Info Tooltip */
-.listing-dashboard-property__status-info {
-  position: relative;
+/* Status Trigger Button - clickable offline status */
+.listing-dashboard-property__status-trigger {
   display: inline-flex;
-  align-items: center;
-  margin-left: 6px;
-}
-
-.listing-dashboard-property__status-info-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  background-color: transparent;
-  border: none;
-  border-radius: 50%;
-  color: #6b7280;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.listing-dashboard-property__status-info-btn:hover {
-  color: var(--ld-accent-purple);
-  background-color: rgba(107, 79, 187, 0.1);
-}
-
-.listing-dashboard-property__status-info-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-.listing-dashboard-property__status-tooltip {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: 280px;
-  background-color: white;
-  border: 1px solid var(--ld-border-color);
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  z-index: 100;
-  padding: 16px;
-  animation: tooltipFadeIn 0.2s ease-out;
-}
-
-@keyframes tooltipFadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-/* Tooltip arrow */
-.listing-dashboard-property__status-tooltip::before {
-  content: '';
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  transform: translateX(-50%) rotate(45deg);
-  width: 12px;
-  height: 12px;
-  background-color: white;
-  border-left: 1px solid var(--ld-border-color);
-  border-top: 1px solid var(--ld-border-color);
-}
-
-.listing-dashboard-property__status-tooltip-header {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ld-text-primary);
-  margin-bottom: 8px;
-  display: flex;
   align-items: center;
   gap: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  transition: opacity 0.2s ease;
 }
 
-.listing-dashboard-property__status-tooltip-message {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--ld-text-secondary);
-  margin: 0;
+.listing-dashboard-property__status-trigger:hover {
+  opacity: 0.8;
 }
 
-/* Mobile responsive adjustments */
-@media (max-width: 640px) {
-  .listing-dashboard-property__status-tooltip {
-    width: 260px;
-    left: auto;
-    right: -20px;
-    transform: none;
-  }
+.listing-dashboard-property__status-trigger:hover .listing-dashboard-property__status-value--offline {
+  text-decoration: underline;
+}
 
-  .listing-dashboard-property__status-tooltip::before {
-    left: auto;
-    right: 28px;
-    transform: rotate(45deg);
-  }
+.listing-dashboard-property__status-trigger svg {
+  color: #6b7280;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.listing-dashboard-property__status-trigger:hover svg {
+  color: var(--ld-accent-purple);
 }
 
 .listing-dashboard-property__active-since {
