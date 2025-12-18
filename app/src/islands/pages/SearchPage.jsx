@@ -23,8 +23,8 @@ import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import { shiftMoveInDateIfPast } from '../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
-import { getNightlyRateByFrequency } from '../../logic/calculators/pricing/getNightlyRateByFrequency.js';
-import { calculateGuestFacingPrice } from '../../logic/calculators/pricing/calculateGuestFacingPrice.js';
+import { countSelectedNights } from '../../lib/scheduleSelector/nightCalculations.js';
+import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 
 // ============================================================================
@@ -470,32 +470,27 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
   const favoriteListingId = listing.id || listing._id;
 
   // Calculate dynamic price based on selected nights from day selector
+  // Uses the same calculatePrice function as View Split Lease page
   const calculateDynamicPrice = () => {
-    const nightsCount = selectedNightsCount || 5; // Default to 5 if not provided
+    const nightsCount = selectedNightsCount;
 
-    // Handle edge cases: night counts outside supported range
-    // Supported: 2, 3, 4, 5, 7 (note: 6 is NOT supported by the pricing system)
-    if (nightsCount < 2 || nightsCount > 7 || nightsCount === 6) {
-      // Return starting price for unsupported night counts
+    // If 0 or 1 nights, show starting price (need at least 2 days = 1 night for a valid stay)
+    if (nightsCount < 1) {
       return listing['Starting nightly price'] || listing.price?.starting || 0;
     }
 
     try {
-      // Step 1: Get the host nightly rate for the selected frequency
-      const hostNightlyRate = getNightlyRateByFrequency({
-        listing: listing,
-        nightsSelected: nightsCount
-      });
+      // Create a mock nights array with the correct length
+      // calculatePrice only uses .length to get nightsCount
+      const mockNightsArray = Array(nightsCount).fill({ nightNumber: 0 });
 
-      // Step 2: Calculate guest-facing price (applies markup and discounts)
-      const guestPrice = calculateGuestFacingPrice({
-        hostNightlyRate: hostNightlyRate,
-        nightsCount: nightsCount
-      });
+      // Use the same pricing calculation as View Split Lease page
+      // Default reservationSpan of 13 weeks (standard booking period)
+      const priceBreakdown = calculatePrice(mockNightsArray, listing, 13, null);
 
-      return guestPrice;
+      // Return the guest-facing price per night
+      return priceBreakdown.pricePerNight || listing['Starting nightly price'] || listing.price?.starting || 0;
     } catch (error) {
-      // If calculators throw (e.g., missing price data), fall back to starting price
       console.warn(`[PropertyCard] Price calculation failed for listing ${listing.id}:`, error.message);
       return listing['Starting nightly price'] || listing.price?.starting || 0;
     }
@@ -737,8 +732,8 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
           <div className="price-main">${dynamicPrice.toFixed(2)}</div>
           <div className="price-period">/night</div>
           <div className="price-divider"></div>
-          {selectedNightsCount >= 2 && selectedNightsCount <= 7 && selectedNightsCount !== 6 ? (
-            <div className="price-context">for {selectedNightsCount} nights/week</div>
+          {selectedNightsCount >= 1 ? (
+            <div className="price-context">for {selectedNightsCount} night{selectedNightsCount !== 1 ? 's' : ''}/week</div>
           ) : (
             <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
           )}
@@ -933,7 +928,8 @@ export default function SearchPage() {
   const [neighborhoodSearch, setNeighborhoodSearch] = useState('');
 
   // Dynamic pricing state - tracks selected nights from day selector
-  const [selectedNightsCount, setSelectedNightsCount] = useState(5);
+  // Default: Mon-Fri = 5 days = 4 nights (nights = days - 1)
+  const [selectedNightsCount, setSelectedNightsCount] = useState(4);
 
   // UI state
   const [filterPanelActive, setFilterPanelActive] = useState(false);
@@ -2400,12 +2396,11 @@ export default function SearchPage() {
     const selectorProps = {
       onSelectionChange: (days) => {
         console.log('Schedule selector changed:', days);
-        // Extract nights count from selected days for dynamic pricing
-        const nightsCount = days.length;
-        // Only update if valid night count (2-7, excluding 6 which is unsupported by pricing system)
-        if (nightsCount >= 2 && nightsCount <= 7 && nightsCount !== 6) {
-          setSelectedNightsCount(nightsCount);
-        }
+        // Calculate nights from days (nights = days - 1)
+        const nightsCount = countSelectedNights(days);
+        console.log(`[SearchPage] Days selected: ${days.length}, Nights: ${nightsCount}`);
+        // Update nights count for dynamic pricing (0 nights is valid - shows starting price)
+        setSelectedNightsCount(nightsCount);
       },
       onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error),
       weekPattern: weekPattern
