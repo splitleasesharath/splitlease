@@ -580,7 +580,6 @@ export default function PricingEditSection({
                   </button>
                 </div>
                 <HostScheduleSelector
-                  listing={{ nightsAvailable: selectedNights }}
                   selectedNights={selectedNights}
                   onSelectionChange={handleNightSelectionChange}
                   isClickable={isOwner}
