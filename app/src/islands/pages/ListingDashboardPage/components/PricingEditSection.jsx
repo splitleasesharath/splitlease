@@ -206,9 +206,12 @@ export default function PricingEditSection({
 
   // Handle back button click - show confirmation if changes exist
   const handleBackClick = useCallback(() => {
+    console.log('🔙 Back button clicked, hasChanges:', hasChanges);
     if (hasChanges) {
+      console.log('📋 Showing confirmation modal');
       setShowConfirmModal(true);
     } else {
+      console.log('✅ No changes, closing directly');
       onClose();
     }
   }, [hasChanges, onClose]);
