@@ -370,6 +370,22 @@ body {
   text-transform: uppercase;
 }
 
+/* Desktop: Show desktop structure, hide mobile structure */
+.desktop-card-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.mobile-card-inner {
+  display: none; /* Hide mobile flip card on desktop */
+}
+
+/* Hide legacy mobile-only elements on desktop */
+.swipe-hint {
+  display: none;
+}
+
 .mission-content {
   display: flex;
   flex-direction: column;
@@ -798,6 +814,19 @@ body {
 
 /* Responsive Design */
 @media (max-width: 768px) {
+  /* Ensure correct hero content order - override mobile.css global styles */
+  .hero-section .hero-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* Reset order properties that mobile.css sets globally */
+  .hero-section .hero-badge { order: 0 !important; }
+  .hero-section .hero-title { order: 1 !important; }
+  .hero-section .hero-subtitle { order: 2 !important; }
+  .hero-section .hero-cta { order: 3 !important; }
+
   .hero-title {
     font-size: 32px;
     line-height: 1.3;
@@ -882,9 +911,174 @@ body {
     gap: 16px;
   }
 
+  /* Mobile: Hide desktop, show mobile flip structure */
+  .desktop-card-content {
+    display: none !important;
+  }
+
+  .mobile-card-inner {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+
+  /* Mobile card redesign: horizontal flip/slide transition */
   .example-card {
-    padding: 20px;
-    height: 170px;
+    padding: 0;
+    height: 180px;
+    perspective: 1000px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .example-card:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: transparent;
+  }
+
+  .example-card.flipped .mobile-card-inner {
+    transform: rotateY(180deg);
+  }
+
+  /* Front and back faces */
+  .mobile-card-front,
+  .mobile-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    background: white;
+    border-radius: 16px;
+    border: 2px solid #E5E7EB;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+  }
+
+  .mobile-card-back {
+    transform: rotateY(180deg);
+    border-color: #31135D;
+  }
+
+  /* Avatar and header */
+  .mobile-card-front .example-header,
+  .mobile-card-back .example-header {
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+    max-height: none;
+    opacity: 1;
+  }
+
+  .mobile-card-front .example-avatar,
+  .mobile-card-back .example-avatar {
+    width: 44px;
+    height: 44px;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .mobile-card-front .example-name,
+  .mobile-card-back .example-name {
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  /* Content wrapper */
+  .mobile-card-front .example-content-wrapper {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .mobile-card-front .example-pattern {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 0;
+  }
+
+  /* Review content on back of card */
+  .review-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+
+  .example-review-text {
+    font-size: 15px;
+    color: #374151;
+    line-height: 1.6;
+    font-style: italic;
+    margin: 0;
+  }
+
+  .example-review-text::before {
+    content: '"';
+    font-size: 24px;
+    color: #31135D;
+    margin-right: 4px;
+  }
+
+  .example-review-text::after {
+    content: '"';
+    font-size: 24px;
+    color: #31135D;
+    margin-left: 4px;
+  }
+
+  /* Timeline */
+  .mobile-card-front .example-timeline {
+    margin-top: auto;
+    padding-top: 8px;
+  }
+
+  .mobile-card-front .day-block {
+    height: 6px;
+  }
+
+  .mobile-card-front .timeline-labels {
+    margin-top: 4px;
+  }
+
+  .mobile-card-front .timeline-label {
+    font-size: 9px;
+  }
+
+  /* Swipe hint */
+  .swipe-hint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #9CA3AF;
+  }
+
+  .swipe-hint.back {
+    color: #31135D;
+  }
+
+  .swipe-hint svg {
+    opacity: 0.7;
+  }
+
+  /* Disable hover effects on mobile */
+  .example-card:hover .example-header,
+  .example-card:hover .example-pattern,
+  .example-card:hover .example-timeline,
+  .example-card:hover .timeline-labels {
+    opacity: 1;
+    max-height: none;
+    margin-bottom: initial;
   }
 
   .role-card {
