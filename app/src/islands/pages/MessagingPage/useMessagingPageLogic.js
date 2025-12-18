@@ -157,53 +157,67 @@ export function useMessagingPageLogic() {
   }, [threads]);
 
   // ============================================================================
-  // REALTIME SUBSCRIPTION
+  // REALTIME SUBSCRIPTION - Using Postgres Changes (more reliable than broadcast)
   // ============================================================================
   useEffect(() => {
     if (!selectedThread || authState.isChecking || !user?.bubbleId) return;
 
-    const channelName = `thread-${selectedThread._id}`;
-    console.log('[Realtime] Subscribing to channel:', channelName);
+    const channelName = `messages-${selectedThread._id}`;
+    console.log('[Realtime] Subscribing to postgres_changes for thread:', selectedThread._id);
 
     const channel = supabase.channel(channelName);
 
-    // Listen for new messages via broadcast
-    channel.on('broadcast', { event: 'new_message' }, (payload) => {
-      console.log('[Realtime] New message received:', payload);
+    // Listen for new messages via Postgres Changes (INSERT events on _message table)
+    channel.on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: '_message',
+        filter: `"Associated Thread/Conversation"=eq.${selectedThread._id}`
+      },
+      (payload) => {
+        console.log('[Realtime] New message received via postgres_changes:', payload);
 
-      const messageData = payload.payload?.message;
-      if (messageData && messageData.thread_id === selectedThread._id) {
+        const newRow = payload.new;
+        if (!newRow) return;
+
+        // Skip if this is our own message (already added optimistically)
+        const isOwnMessage = newRow['-Originator User'] === user?.bubbleId;
+
         // Add message to state (avoid duplicates)
         setMessages(prev => {
-          if (prev.some(m => m._id === messageData._id)) return prev;
+          if (prev.some(m => m._id === newRow._id)) return prev;
 
-          // Transform to UI format
+          // Transform database row to UI format
           const transformedMessage = {
-            _id: messageData._id,
-            message_body: messageData.message_body,
-            sender_name: messageData.is_split_bot ? 'Split Bot' : messageData.sender_name,
-            sender_avatar: messageData.sender_avatar,
-            sender_type: messageData.is_split_bot ? 'splitbot' :
-              (messageData.sender_id === payload.payload?.host_user ? 'host' : 'guest'),
-            is_outgoing: messageData.sender_id === user?.bubbleId,
-            timestamp: new Date(messageData.created_at).toLocaleString('en-US', {
+            _id: newRow._id,
+            message_body: newRow['Message Body'],
+            sender_name: newRow['is Split Bot'] ? 'Split Bot' : (isOwnMessage ? 'You' : selectedThread.contact_name || 'User'),
+            sender_avatar: isOwnMessage ? user?.profilePhoto : undefined,
+            sender_type: newRow['is Split Bot'] ? 'splitbot' :
+              (newRow['-Originator User'] === newRow['-Host User'] ? 'host' : 'guest'),
+            is_outgoing: isOwnMessage,
+            timestamp: new Date(newRow['Created Date']).toLocaleString('en-US', {
               month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'
             }),
-            call_to_action: messageData.call_to_action ? {
-              type: messageData.call_to_action,
+            call_to_action: newRow['Call to Action'] ? {
+              type: newRow['Call to Action'],
               message: 'View Details'
             } : undefined,
-            split_bot_warning: messageData.split_bot_warning,
+            split_bot_warning: newRow['Split Bot Warning'],
           };
 
           return [...prev, transformedMessage];
         });
 
         // Clear typing indicator when message received
-        setIsOtherUserTyping(false);
-        setTypingUserName(null);
+        if (!isOwnMessage) {
+          setIsOtherUserTyping(false);
+          setTypingUserName(null);
+        }
       }
-    });
+    );
 
     // Listen for typing indicators via presence
     channel.on('presence', { event: 'sync' }, () => {
@@ -222,8 +236,9 @@ export function useMessagingPageLogic() {
     });
 
     channel.subscribe(async (status) => {
+      console.log('[Realtime] Subscription status:', status);
       if (status === 'SUBSCRIBED') {
-        console.log('[Realtime] Subscribed to channel:', channelName);
+        console.log('[Realtime] Successfully subscribed to channel:', channelName);
         // Track presence for typing indicators
         await channel.track({
           user_id: user?.bubbleId,
@@ -231,6 +246,10 @@ export function useMessagingPageLogic() {
           typing: false,
           online_at: new Date().toISOString(),
         });
+      } else if (status === 'CHANNEL_ERROR') {
+        console.error('[Realtime] Channel error - check RLS policies on _message table');
+      } else if (status === 'TIMED_OUT') {
+        console.error('[Realtime] Subscription timed out');
       }
     });
 
