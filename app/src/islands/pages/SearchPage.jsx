@@ -75,10 +75,11 @@ function MobileFilterBar({
   favoritesCount,
   onNavigate,
   onLogout,
-  onOpenAuthModal
+  onOpenAuthModal,
+  isHidden
 }) {
   return (
-    <div className="mobile-filter-bar">
+    <div className={`mobile-filter-bar ${isHidden ? 'mobile-filter-bar--hidden' : ''}`}>
       <a href="/" className="mobile-logo-link" aria-label="Go to homepage">
         <img
           src="/assets/images/split-lease-purple-circle.png"
@@ -954,6 +955,7 @@ export default function SearchPage() {
   const [mapSectionActive, setMapSectionActive] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMapVisible, setMobileMapVisible] = useState(false);
+  const [mobileHeaderHidden, setMobileHeaderHidden] = useState(false);
 
   // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -1000,6 +1002,52 @@ export default function SearchPage() {
       }
     };
     init();
+  }, []);
+
+  // Mobile header scroll hide/show effect
+  // Note: On mobile, the scrolling element is .listings-content, not window
+  useEffect(() => {
+    let lastScrollY = 0;
+    let ticking = false;
+
+    const handleScroll = (e) => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // Get scroll position from the actual scrolling element
+          const scrollElement = e.target;
+          const currentScrollY = scrollElement.scrollTop || 0;
+          const isMobile = window.innerWidth <= 768;
+
+          if (isMobile) {
+            // Hide header when scrolling down past first card (~250px)
+            // Show header when scrolling up
+            if (currentScrollY > 250 && currentScrollY > lastScrollY) {
+              setMobileHeaderHidden(true);
+            } else if (currentScrollY < lastScrollY) {
+              setMobileHeaderHidden(false);
+            }
+          } else {
+            setMobileHeaderHidden(false);
+          }
+
+          lastScrollY = currentScrollY;
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    // Find the actual scrolling container (.listings-content)
+    const listingsContent = document.querySelector('.listings-content');
+
+    if (listingsContent) {
+      listingsContent.addEventListener('scroll', handleScroll, { passive: true });
+      return () => listingsContent.removeEventListener('scroll', handleScroll);
+    }
+
+    // Fallback to window scroll for safety
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Fetch informational texts on mount
@@ -2491,6 +2539,7 @@ export default function SearchPage() {
               setAuthModalView('login');
               setIsAuthModalOpen(true);
             }}
+            isHidden={mobileHeaderHidden}
           />
 
           {/* Mobile Schedule Selector - Always visible on mobile */}

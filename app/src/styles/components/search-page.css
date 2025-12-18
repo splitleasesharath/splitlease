@@ -786,6 +786,12 @@
     right: 0;
     z-index: 100;
     align-items: center;
+    transition: transform 0.3s ease;
+  }
+
+  /* Hidden state - slides up out of view */
+  .mobile-filter-bar--hidden {
+    transform: translateY(-100%);
   }
 
   /* Show mobile logo on mobile */
