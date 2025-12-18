@@ -14,6 +14,7 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { Smartphone } from 'lucide-react';
 import Header from '../../shared/Header.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import Toast, { useToast } from '../../shared/Toast.jsx';
@@ -1831,7 +1832,7 @@ export function SelfListingPageV2() {
         <div className="btn-row-secondary">
           <button className="btn-back" onClick={prevStep}>Back</button>
           <button className="btn-continue-phone" onClick={handleContinueOnPhone}>
-            <span className="btn-icon-phone">📱</span> Continue on Phone
+            <Smartphone size={18} color="#5b21b6" /> Continue on Phone
           </button>
         </div>
       </div>
@@ -2034,7 +2035,9 @@ export function SelfListingPageV2() {
           >
             ×
           </button>
-          <div className="continue-phone-icon">📱</div>
+          <div className="continue-phone-icon">
+            <Smartphone size={48} color="#5b21b6" />
+          </div>
           <h2>Continue on Your Phone</h2>
           <p>
             {isSavingDraft
