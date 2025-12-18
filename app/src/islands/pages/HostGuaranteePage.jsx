@@ -1,7 +1,59 @@
+import { useState, useEffect } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
+import { supabase } from '../../lib/supabase.js';
+
+// FAQ IDs to display on this page
+const FAQ_IDS = [
+  '1598576324794x693327507784140000', // Tenant's rights protection
+  '1585485787198x865624488127564500', // Cancellation policy
+  '1621605643737x217621659116098430', // Payment after booking
+  '1585860980462x241805081013604540', // Traveler verification
+];
 
 export default function HostGuaranteePage() {
+  const [faqs, setFaqs] = useState([]);
+  const [activeAccordion, setActiveAccordion] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadFaqs() {
+      try {
+        const { data, error } = await supabase
+          .schema('reference_table')
+          .from('zat_faq')
+          .select('_id, Question, Answer')
+          .in('_id', FAQ_IDS);
+
+        if (error) throw error;
+
+        // Sort FAQs to match the order of FAQ_IDS
+        const sortedFaqs = FAQ_IDS.map(id =>
+          data.find(faq => faq._id === id)
+        ).filter(Boolean);
+
+        setFaqs(sortedFaqs);
+      } catch (err) {
+        console.error('Error loading FAQs:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadFaqs();
+  }, []);
+
+  const toggleAccordion = (index) => {
+    setActiveAccordion(activeAccordion === index ? null : index);
+  };
+
+  const handleKeyPress = (e, index) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleAccordion(index);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -204,38 +256,39 @@ export default function HostGuaranteePage() {
             <h2 className="guarantee-faq-title">Frequently Asked Questions</h2>
           </div>
 
-          <div className="guarantee-faq-grid">
-            <a href="/faq?section=hosts&question=1598576324794x693327507784140000" className="faq-item faq-item-link">
-              <h3 className="faq-question">I am worried about my guest gaining tenant's rights. What are my protections?</h3>
-              <p className="faq-answer">
-                Learn about Split Lease's periodic tenancy structure and how it protects hosts from long-term tenant claims.
-              </p>
-              <span className="faq-link-indicator">View answer →</span>
-            </a>
-
-            <a href="/faq?section=hosts&question=1585485787198x865624488127564500" className="faq-item faq-item-link">
-              <h3 className="faq-question">What does the cancellation policy look like?</h3>
-              <p className="faq-answer">
-                Understand how cancellations are handled and what protections are in place for hosts.
-              </p>
-              <span className="faq-link-indicator">View answer →</span>
-            </a>
-
-            <a href="/faq?section=hosts&question=1621605643737x217621659116098430" className="faq-item faq-item-link">
-              <h3 className="faq-question">How will I receive payment after booking?</h3>
-              <p className="faq-answer">
-                Learn about Split Lease's secure payment process and when you'll receive your earnings.
-              </p>
-              <span className="faq-link-indicator">View answer →</span>
-            </a>
-
-            <a href="/faq?section=hosts&question=1585860980462x241805081013604540" className="faq-item faq-item-link">
-              <h3 className="faq-question">How can I make sure the traveler is who they say they are?</h3>
-              <p className="faq-answer">
-                Discover how Split Lease verifies guests to help protect you and your property.
-              </p>
-              <span className="faq-link-indicator">View answer →</span>
-            </a>
+          <div className="guarantee-faq-accordion">
+            {isLoading ? (
+              <div className="faq-loading">Loading questions...</div>
+            ) : faqs.length === 0 ? (
+              <div className="faq-empty">No FAQs available.</div>
+            ) : (
+              faqs.map((faq, index) => {
+                const isActive = activeAccordion === index;
+                return (
+                  <div
+                    key={faq._id}
+                    className={`guarantee-accordion-item ${isActive ? 'active' : ''}`}
+                  >
+                    <div
+                      className="guarantee-accordion-header"
+                      tabIndex="0"
+                      role="button"
+                      aria-expanded={isActive}
+                      onClick={() => toggleAccordion(index)}
+                      onKeyPress={(e) => handleKeyPress(e, index)}
+                    >
+                      <span className="guarantee-accordion-icon"></span>
+                      <h3>{faq.Question}</h3>
+                    </div>
+                    <div className="guarantee-accordion-content">
+                      <div className="guarantee-accordion-content-inner">
+                        <p>{faq.Answer}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
 
           <div className="guarantee-faq-cta">
