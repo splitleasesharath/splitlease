@@ -928,7 +928,7 @@ body {
   /* Mobile card redesign: horizontal flip/slide transition */
   .example-card {
     padding: 0;
-    height: 207px; /* 180px + 15% */
+    height: 230px;
     perspective: 1000px;
     background: transparent;
     border: none;
@@ -1003,6 +1003,10 @@ body {
     font-size: 14px;
     line-height: 1.5;
     margin-bottom: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   /* Review content on back of card */
@@ -1148,7 +1152,7 @@ body {
   }
 
   .example-card {
-    height: 184px; /* 160px + 15% */
+    height: 210px;
   }
 
   .timeline-label {
