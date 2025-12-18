@@ -806,25 +806,25 @@
 }
 
 .listing-host-section .action-button.primary {
-    background: #1a1a1a;
+    background: #6C5CE7;
     color: white;
     border: none;
 }
 
 .listing-host-section .action-button.primary:hover {
-    background: #333;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background: #5B4BD6;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
 }
 
 .listing-host-section .action-button.secondary {
-    background: #1a1a1a;
+    background: #6C5CE7;
     color: white;
     border: none;
 }
 
 .listing-host-section .action-button.secondary:hover {
-    background: #333;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background: #5B4BD6;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
 }
 
 .listing-host-section .action-button svg {
@@ -841,7 +841,7 @@
     justify-content: center;
     gap: 6px;
     padding: 10px 20px;
-    background: #1a1a1a;
+    background: #6C5CE7;
     color: white;
     border: none;
     border-radius: 8px;
@@ -853,8 +853,8 @@
 }
 
 .listing-host-section .create-proposal-btn:hover {
-    background: #333;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background: #5B4BD6;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
 }
 
 .listing-host-section .create-proposal-btn svg {
@@ -869,7 +869,7 @@
     justify-content: center;
     gap: 6px;
     padding: 10px 20px;
-    background: #1a1a1a;
+    background: #6C5CE7;
     color: white;
     border: none;
     border-radius: 8px;
@@ -881,8 +881,8 @@
 }
 
 .listing-host-section .view-proposal-btn:hover {
-    background: #333;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    background: #5B4BD6;
+    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
 }
 
 .listing-host-section .view-proposal-btn svg {
@@ -1229,20 +1229,40 @@
     .listing-card {
         flex-direction: column;
         height: auto;
+        max-height: none;
+        min-height: auto;
         border-radius: 12px;
     }
 
-    /* Image section - Full width on top with better height */
+    /* Image section - Full width on top with fixed height */
     .listing-images {
+        position: relative;
         width: 100%;
         min-width: 100%;
         height: 200px;
+        min-height: 200px;
+        max-height: 200px;
         flex-shrink: 0;
+        align-self: auto;
         border-radius: 12px 12px 0 0;
+        overflow: hidden;
     }
 
     .listing-images img {
         border-radius: 12px 12px 0 0;
+    }
+
+    /* Image nav buttons - contained within image area */
+    .listing-images .image-nav {
+        z-index: 5;
+    }
+
+    .listing-images .prev-btn {
+        left: 8px;
+    }
+
+    .listing-images .next-btn {
+        right: 8px;
     }
 
     /* Content section - Vertical column layout on mobile */
