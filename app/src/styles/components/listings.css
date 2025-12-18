@@ -279,7 +279,8 @@
     border: 1px solid #f3f4f6;
     display: flex;
     flex-direction: row;
-    min-height: 220px;
+    align-items: stretch;
+    min-height: 200px;
     height: auto;
     position: relative;
 }
@@ -293,16 +294,16 @@
    All cards now have images (real or placeholder), so horizontal
    layout should always apply. */
 
-/* Image Section - Left 40% */
+/* Image Section - Left 40%, dynamic height to match card */
 .listing-images {
     position: relative;
     width: 40%;
     min-width: 280px;
-    height: 220px;
-    max-height: 220px;
+    min-height: 200px;
     overflow: hidden;
     background: linear-gradient(to bottom, #f9fafb, #f3f4f6);
     flex-shrink: 0;
+    align-self: stretch;
 }
 
 .listing-images img {
