@@ -896,7 +896,60 @@
 
   /* When header is hidden, collapse the padding */
   .listings-column--header-hidden {
-    padding-top: 0;
+    padding-top: 50px; /* Space for compact schedule indicator */
+  }
+
+  /* Compact Schedule Indicator - Shows when header is hidden */
+  .compact-schedule-indicator {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 99;
+    background: white;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+
+  /* Visible state - slides in from top */
+  .compact-schedule-indicator--visible {
+    display: flex;
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .compact-schedule-nights {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #31135D;
+    white-space: nowrap;
+  }
+
+  .compact-schedule-dots {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .compact-day-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #E5E7EB;
+    transition: background 0.2s ease, transform 0.2s ease;
+  }
+
+  .compact-day-dot.selected {
+    background: #31135D;
+    transform: scale(1.1);
   }
 
   /* Listings count - directly below schedule selector, not sticky */

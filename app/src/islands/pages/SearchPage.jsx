@@ -63,6 +63,43 @@ async function fetchInformationalTexts() {
 // ============================================================================
 
 /**
+ * CompactScheduleIndicator - Minimal dot-based schedule display
+ * Shows when mobile header is hidden during scroll
+ */
+function CompactScheduleIndicator({ isVisible }) {
+  // Get selected days from URL params
+  const urlParams = new URLSearchParams(window.location.search);
+  const daysSelected = urlParams.get('days-selected') || '';
+
+  // Parse days-selected (format: "1,2,3,4,5" where 0=Sun, 1=Mon, etc.)
+  const selectedDaysArray = daysSelected
+    ? daysSelected.split(',').map(d => parseInt(d, 10)).filter(d => !isNaN(d))
+    : [];
+
+  const nightsCount = selectedDaysArray.length;
+
+  // Days of week: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+  return (
+    <div className={`compact-schedule-indicator ${isVisible ? 'compact-schedule-indicator--visible' : ''}`}>
+      <span className="compact-schedule-nights">
+        {nightsCount > 0 ? `${nightsCount} night${nightsCount !== 1 ? 's' : ''}` : 'Select days'}
+      </span>
+      <div className="compact-schedule-dots">
+        {dayLabels.map((label, index) => (
+          <div
+            key={index}
+            className={`compact-day-dot ${selectedDaysArray.includes(index) ? 'selected' : ''}`}
+            title={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index]}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
  * MobileFilterBar - Sticky filter button for mobile
  * Includes auth-aware elements: favorites link and LoggedInAvatar for logged-in users
  */
@@ -2548,6 +2585,9 @@ export default function SearchPage() {
               {/* AuthAwareSearchScheduleSelector will be mounted here on mobile */}
             </div>
           </div>
+
+          {/* Compact Schedule Indicator - Shows when header is hidden */}
+          <CompactScheduleIndicator isVisible={mobileHeaderHidden} />
 
           {/* All filters in single horizontal flexbox container */}
           <div className={`inline-filters ${filterPanelActive ? 'active' : ''}`}>
