@@ -370,30 +370,20 @@ body {
   text-transform: uppercase;
 }
 
-/* Desktop: Hide mobile-only elements */
-.card-inner {
-  display: contents; /* Makes it transparent in desktop layout */
+/* Desktop: Show desktop structure, hide mobile structure */
+.desktop-card-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
-.card-front,
-.card-back {
-  display: contents; /* Makes them transparent in desktop layout */
+.mobile-card-inner {
+  display: none; /* Hide mobile flip card on desktop */
 }
 
-.card-back {
-  display: none; /* Completely hide on desktop */
-}
-
+/* Hide legacy mobile-only elements on desktop */
 .swipe-hint {
-  display: none; /* Hide on desktop */
-}
-
-.review-content {
-  display: none; /* Hide on desktop */
-}
-
-.example-review-text {
-  display: none; /* Hide on desktop */
+  display: none;
 }
 
 .mission-content {
@@ -921,6 +911,20 @@ body {
     gap: 16px;
   }
 
+  /* Mobile: Hide desktop, show mobile flip structure */
+  .desktop-card-content {
+    display: none !important;
+  }
+
+  .mobile-card-inner {
+    display: block;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+  }
+
   /* Mobile card redesign: horizontal flip/slide transition */
   .example-card {
     padding: 0;
@@ -937,23 +941,13 @@ body {
     border-color: transparent;
   }
 
-  /* Card inner container for flip animation */
-  .card-inner {
-    display: block;
-    position: relative;
-    width: 100%;
-    height: 100%;
-    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-style: preserve-3d;
-  }
-
-  .example-card.flipped .card-inner {
+  .example-card.flipped .mobile-card-inner {
     transform: rotateY(180deg);
   }
 
   /* Front and back faces */
-  .card-front,
-  .card-back {
+  .mobile-card-front,
+  .mobile-card-back {
     position: absolute;
     width: 100%;
     height: 100%;
@@ -963,28 +957,19 @@ body {
     border-radius: 16px;
     border: 2px solid #E5E7EB;
     padding: 16px;
-    display: flex !important;
+    display: flex;
     flex-direction: column;
     box-sizing: border-box;
   }
 
-  .card-back {
-    display: flex !important;
+  .mobile-card-back {
     transform: rotateY(180deg);
     border-color: #31135D;
   }
 
-  /* Show review content on mobile */
-  .review-content {
-    display: flex;
-  }
-
-  .example-review-text {
-    display: block;
-  }
-
   /* Avatar and header */
-  .example-header {
+  .mobile-card-front .example-header,
+  .mobile-card-back .example-header {
     flex-direction: row;
     align-items: center;
     gap: 12px;
@@ -993,34 +978,31 @@ body {
     opacity: 1;
   }
 
-  .example-avatar {
+  .mobile-card-front .example-avatar,
+  .mobile-card-back .example-avatar {
     width: 44px;
     height: 44px;
     font-size: 16px;
     flex-shrink: 0;
   }
 
-  .example-name {
+  .mobile-card-front .example-name,
+  .mobile-card-back .example-name {
     font-size: 16px;
     font-weight: 600;
   }
 
   /* Content wrapper */
-  .example-content-wrapper {
+  .mobile-card-front .example-content-wrapper {
     flex: 1;
     min-width: 0;
     overflow: hidden;
   }
 
-  .example-pattern {
+  .mobile-card-front .example-pattern {
     font-size: 14px;
     line-height: 1.5;
     margin-bottom: 0;
-  }
-
-  /* Hide the absolute positioned review (used on desktop) */
-  .example-review {
-    display: none;
   }
 
   /* Review content on back of card */
@@ -1053,20 +1035,20 @@ body {
   }
 
   /* Timeline */
-  .example-timeline {
+  .mobile-card-front .example-timeline {
     margin-top: auto;
     padding-top: 8px;
   }
 
-  .day-block {
+  .mobile-card-front .day-block {
     height: 6px;
   }
 
-  .timeline-labels {
+  .mobile-card-front .timeline-labels {
     margin-top: 4px;
   }
 
-  .timeline-label {
+  .mobile-card-front .timeline-label {
     font-size: 9px;
   }
 

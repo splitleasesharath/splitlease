@@ -3,7 +3,7 @@ import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 
-// Swipeable Example Card component for mobile
+// Example Card component with mobile flip support
 function SwipeableExampleCard({ name, avatarUrl, pattern, review, activeDays }) {
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -16,9 +16,33 @@ function SwipeableExampleCard({ name, avatarUrl, pattern, review, activeDays }) 
       className={`example-card ${isFlipped ? 'flipped' : ''}`}
       onClick={handleToggle}
     >
-      <div className="card-inner">
-        {/* Front side - Pattern view */}
-        <div className="card-front">
+      {/* Desktop structure - uses original hover behavior */}
+      <div className="desktop-card-content">
+        <div className="example-header">
+          <div className="example-avatar">
+            <img src={avatarUrl} alt={name} />
+          </div>
+          <div className="example-name">{name}</div>
+        </div>
+        <div className="example-content-wrapper">
+          <p className="example-pattern">{pattern}</p>
+          <p className="example-review">"{review}"</p>
+        </div>
+        <div className="example-timeline">
+          {[0, 1, 2, 3, 4, 5, 6].map(day => (
+            <div key={day} className={`day-block ${activeDays.includes(day) ? 'active' : ''}`}></div>
+          ))}
+        </div>
+        <div className="timeline-labels">
+          <span className="timeline-label">Mon</span>
+          <span className="timeline-label">Sun</span>
+        </div>
+      </div>
+
+      {/* Mobile structure - flip card */}
+      <div className="mobile-card-inner">
+        {/* Front side */}
+        <div className="mobile-card-front">
           <div className="example-header">
             <div className="example-avatar">
               <img src={avatarUrl} alt={name} />
@@ -45,8 +69,8 @@ function SwipeableExampleCard({ name, avatarUrl, pattern, review, activeDays }) 
           </div>
         </div>
 
-        {/* Back side - Review view */}
-        <div className="card-back">
+        {/* Back side */}
+        <div className="mobile-card-back">
           <div className="example-header">
             <div className="example-avatar">
               <img src={avatarUrl} alt={name} />
@@ -54,7 +78,7 @@ function SwipeableExampleCard({ name, avatarUrl, pattern, review, activeDays }) 
             <div className="example-name">{name}</div>
           </div>
           <div className="review-content">
-            <p className="example-review-text">{review}</p>
+            <p className="example-review-text">"{review}"</p>
           </div>
           <div className="swipe-hint back">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
