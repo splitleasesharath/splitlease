@@ -2042,10 +2042,10 @@ export default function SearchPage() {
     let initialDays = [];
     if (daysParam) {
       try {
-        const oneBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
-        initialDays = oneBased
-          .filter(d => d >= 1 && d <= 7)
-          .map(d => d - 1)  // Convert to 0-based
+        // URL stores 0-based day indices (0=Sun, 6=Sat) matching JS Date.getDay()
+        const zeroBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+        initialDays = zeroBased
+          .filter(d => d >= 0 && d <= 6)  // Valid 0-based day range
           .map(dayIndex => createDay(dayIndex, true));
       } catch (e) {
         console.warn('Failed to parse days from URL:', e);
