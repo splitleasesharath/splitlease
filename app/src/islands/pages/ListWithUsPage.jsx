@@ -65,12 +65,12 @@ export default function ListWithUsPage() {
             Join Split Lease and transform your unused property into a reliable income stream. Flexible lease terms, transparent pricing, and comprehensive support.
           </p>
           <div className="list-hero-cta">
-            <button
-              onClick={() => setShowCreateListingModal(true)}
+            <a
+              href="/self-listing-v2.html"
               className="cta-button cta-primary"
             >
               Start New Listing
-            </button>
+            </a>
             <button
               onClick={() => setShowImportListingModal(true)}
               className="cta-button cta-secondary"
