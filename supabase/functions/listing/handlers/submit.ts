@@ -19,6 +19,7 @@ import { validateRequiredFields } from '../../_shared/validation.ts';
 import { enqueueBubbleSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
 import { parseJsonArray } from '../../_shared/jsonUtils.ts';
 import { handleCreateMockupProposal } from './createMockupProposal.ts';
+import { getGeoByZipCode } from '../../_shared/geoLookup.ts';
 
 /**
  * Listing submission data structure from frontend
@@ -297,6 +298,26 @@ export async function handleSubmit(
       console.log('[listing:submit] ⚠️ Step 2 warning - User not found for email:', user_email);
     }
 
+    // Step 2b: Look up borough and hood from zip code
+    console.log('[listing:submit] Step 2b/5: Looking up borough/hood from zip code...');
+    let boroughId: string | null = null;
+    let hoodId: string | null = null;
+
+    const zipCode = listing_data['Zip'];
+    if (zipCode) {
+      const geoResult = await getGeoByZipCode(supabase, zipCode as string);
+      if (geoResult.borough) {
+        boroughId = geoResult.borough._id;
+        console.log('[listing:submit] ✅ Borough found:', geoResult.borough.displayName);
+      }
+      if (geoResult.hood) {
+        hoodId = geoResult.hood._id;
+        console.log('[listing:submit] ✅ Hood found:', geoResult.hood.displayName);
+      }
+    } else {
+      console.log('[listing:submit] ⚠️ No zip code provided, skipping geo lookup');
+    }
+
     // Step 3: Update listing in Supabase
     console.log('[listing:submit] Step 3/5: Updating listing in Supabase...');
     const now = new Date().toISOString();
@@ -310,6 +331,16 @@ export async function handleSubmit(
       'Modified Date': now,
       Status: listing_data['Status'] || 'Pending Review',
     };
+
+    // Add borough and hood FK references if found
+    if (boroughId) {
+      updateData['Location - Borough'] = boroughId;
+      console.log('[listing:submit] Setting Location - Borough:', boroughId);
+    }
+    if (hoodId) {
+      updateData['Location - Hood'] = hoodId;
+      console.log('[listing:submit] Setting Location - Hood:', hoodId);
+    }
 
     // Attach user if found (Host User = user._id)
     if (userId) {

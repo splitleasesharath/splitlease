@@ -917,6 +917,12 @@ export async function getListingById(listingId) {
     throw new Error(error.message || 'Failed to fetch listing');
   }
 
+  // Check if listing is soft-deleted
+  if (data && data.Deleted === true) {
+    console.log('[ListingService] Listing is soft-deleted:', listingId);
+    return null;
+  }
+
   console.log('[ListingService] ✅ Listing fetched:', data._id);
   return data;
 }

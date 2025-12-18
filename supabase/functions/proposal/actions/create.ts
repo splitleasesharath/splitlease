@@ -87,7 +87,8 @@ export async function handleCreate(
       "💰Nightly Host Rate for 4 nights",
       "💰Nightly Host Rate for 5 nights",
       "💰Nightly Host Rate for 7 nights",
-      "💰Monthly Host Rate"
+      "💰Monthly Host Rate",
+      "Deleted"
     `
     )
     .eq("_id", input.listingId)
@@ -96,6 +97,12 @@ export async function handleCreate(
   if (listingError || !listing) {
     console.error(`[proposal:create] Listing fetch failed:`, listingError);
     throw new ValidationError(`Listing not found: ${input.listingId}`);
+  }
+
+  // Check if listing is soft-deleted
+  if ((listing as Record<string, unknown>).Deleted === true) {
+    console.error(`[proposal:create] Listing is soft-deleted: ${input.listingId}`);
+    throw new ValidationError(`Cannot create proposal for deleted listing: ${input.listingId}`);
   }
 
   const listingData = listing as unknown as ListingData;

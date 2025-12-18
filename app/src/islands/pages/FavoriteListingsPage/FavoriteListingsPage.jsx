@@ -742,11 +742,12 @@ const FavoriteListingsPage = () => {
           return;
         }
 
-        // Fetch listings data from Supabase (all favorited listings, regardless of Active status)
+        // Fetch listings data from Supabase (all favorited listings, regardless of Active status, but exclude soft-deleted)
         const { data: listingsData, error: listingsError } = await supabase
           .from('listing')
           .select('*')
-          .in('_id', favoritedIds);
+          .in('_id', favoritedIds)
+          .eq('Deleted', false);
 
         if (listingsError) {
           console.error('Error fetching listings:', listingsError);
