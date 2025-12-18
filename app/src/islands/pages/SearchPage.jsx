@@ -76,22 +76,64 @@ function CompactScheduleIndicator({ isVisible }) {
     ? daysSelected.split(',').map(d => parseInt(d, 10)).filter(d => !isNaN(d))
     : [];
 
-  const nightsCount = selectedDaysArray.length;
+  // Day names for display
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-  // Days of week: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
-  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  // Calculate check-in and check-out days
+  let checkInText = '';
+  let checkOutText = '';
+
+  if (selectedDaysArray.length >= 2) {
+    const sortedDays = [...selectedDaysArray].sort((a, b) => a - b);
+    const hasSaturday = sortedDays.includes(6);
+    const hasSunday = sortedDays.includes(0);
+    const isWrapAround = hasSaturday && hasSunday && sortedDays.length < 7;
+
+    let checkInDay, checkOutDay;
+
+    if (isWrapAround) {
+      // Find the gap in the sequence to determine actual check-in/check-out
+      let gapIndex = -1;
+      for (let i = 1; i < sortedDays.length; i++) {
+        if (sortedDays[i] - sortedDays[i - 1] > 1) {
+          gapIndex = i;
+          break;
+        }
+      }
+
+      if (gapIndex !== -1) {
+        checkInDay = sortedDays[gapIndex];
+        checkOutDay = sortedDays[gapIndex - 1];
+      } else {
+        checkInDay = sortedDays[0];
+        checkOutDay = sortedDays[sortedDays.length - 1];
+      }
+    } else {
+      checkInDay = sortedDays[0];
+      checkOutDay = sortedDays[sortedDays.length - 1];
+    }
+
+    checkInText = dayNames[checkInDay];
+    checkOutText = dayNames[checkOutDay];
+  }
 
   return (
     <div className={`compact-schedule-indicator ${isVisible ? 'compact-schedule-indicator--visible' : ''}`}>
-      <span className="compact-schedule-nights">
-        {nightsCount > 0 ? `${nightsCount} night${nightsCount !== 1 ? 's' : ''}` : 'Select days'}
+      <span className="compact-schedule-text">
+        {selectedDaysArray.length >= 2 ? (
+          <>
+            <span className="compact-label">Check-in:</span> {checkInText} • <span className="compact-label">Check-out:</span> {checkOutText}
+          </>
+        ) : (
+          'Select days'
+        )}
       </span>
       <div className="compact-schedule-dots">
-        {dayLabels.map((label, index) => (
+        {[0, 1, 2, 3, 4, 5, 6].map((dayIndex) => (
           <div
-            key={index}
-            className={`compact-day-dot ${selectedDaysArray.includes(index) ? 'selected' : ''}`}
-            title={['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index]}
+            key={dayIndex}
+            className={`compact-day-dot ${selectedDaysArray.includes(dayIndex) ? 'selected' : ''}`}
+            title={dayNames[dayIndex]}
           />
         ))}
       </div>

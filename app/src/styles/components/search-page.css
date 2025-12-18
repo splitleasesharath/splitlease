@@ -926,11 +926,18 @@
     opacity: 1;
   }
 
-  .compact-schedule-nights {
-    font-size: 0.875rem;
-    font-weight: 600;
-    color: #31135D;
+  .compact-schedule-text {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #1f2937;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .compact-schedule-text .compact-label {
+    color: #6b7280;
+    font-weight: 400;
   }
 
   .compact-schedule-dots {
