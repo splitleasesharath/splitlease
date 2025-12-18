@@ -144,24 +144,24 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         virtualMeetingsResult,
         leasesResult,
         messagesResult,
-        suggestedProposalsResult
+        suggestedProposalsResult,
+        junctionCountsResult,
+        guestProposalsResult,
+        hostProposalsResult
       ] = await Promise.all([
-        // 1. Fetch user data (type, proposals list, account host reference)
+        // 1. Fetch user data (type, favorites)
         supabase
           .from('user')
           .select(`
             _id,
             "Type - User Current",
-            "Proposals List",
-            "Account - Host / Landlord",
             "Favorited Listings"
           `)
           .eq('_id', userId)
           .single(),
 
         // 2. Fetch listings for this user using the same RPC as HostOverview
-        //    This queries both listing_trial and listing tables,
-        //    checking both "Host / Landlord" and "Created By" fields
+        //    This queries the listing table by "Host User" and "Created By" fields
         supabase
           .rpc('get_host_listings', { host_user_id: userId }),
 
@@ -197,6 +197,23 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .select('_id', { count: 'exact', head: true })
           .eq('Guest', userId)
           .in('Status', SUGGESTED_PROPOSAL_STATUSES)
+          .or('"Deleted".is.null,"Deleted".eq.false'),
+
+        // 8. Get favorites and proposals counts from junction tables (Phase 5b migration)
+        supabase.rpc('get_user_junction_counts', { p_user_id: userId }),
+
+        // 9. Count proposals where user is the GUEST (proposals they submitted)
+        supabase
+          .from('proposal')
+          .select('_id', { count: 'exact', head: true })
+          .eq('Guest', userId)
+          .or('"Deleted".is.null,"Deleted".eq.false'),
+
+        // 10. Count proposals where user is the HOST (proposals received on their listings)
+        supabase
+          .from('proposal')
+          .select('_id', { count: 'exact', head: true })
+          .eq('Host User', userId)
           .or('"Deleted".is.null,"Deleted".eq.false')
       ]);
 
@@ -239,35 +256,46 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         console.warn('[useLoggedInAvatarData] No user type found, defaulting to GUEST');
       }
 
-      // Get proposals count from Proposals List array
-      const proposalsList = userData?.['Proposals List'];
-      const proposalsCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
+      // Get proposals count based on user type
+      // Guests: proposals they submitted (Guest = userId)
+      // Hosts: proposals received on their listings (Host User = userId)
+      const guestProposalsCount = guestProposalsResult.count || 0;
+      const hostProposalsCount = hostProposalsResult.count || 0;
 
-      // Get favorites count from user's favorites list
-      const favoritesList = userData?.['Favorited Listings'];
-      const favoritesCount = Array.isArray(favoritesList) ? favoritesList.length : 0;
+      // Select the appropriate count based on user type
+      // Note: We determine this AFTER normalizing user type above
+      const proposalsCount = normalizedType === NORMALIZED_USER_TYPES.GUEST
+        ? guestProposalsCount
+        : hostProposalsCount;
+
+      if (guestProposalsResult.error) {
+        console.warn('[useLoggedInAvatarData] Guest proposals count failed:', guestProposalsResult.error);
+      }
+      if (hostProposalsResult.error) {
+        console.warn('[useLoggedInAvatarData] Host proposals count failed:', hostProposalsResult.error);
+      }
+
+      // Get favorites count from junction tables RPC (still used for favorites)
+      const junctionCounts = junctionCountsResult.data?.[0] || {};
+      if (junctionCountsResult.error) {
+        console.warn('[useLoggedInAvatarData] Junction counts RPC failed:', junctionCountsResult.error);
+      }
+
+      // Get favorites count from user table JSONB field (not junction table)
+      const favoritedListings = userData?.['Favorited Listings'] || [];
+      const favoritesCount = Array.isArray(favoritedListings) ? favoritedListings.length : 0;
 
       // Get house manuals count if user is a host
+      // NOTE: House manuals now queried directly from user table (account_host deprecated)
       let houseManualsCount = 0;
       if (normalizedType === NORMALIZED_USER_TYPES.HOST || normalizedType === NORMALIZED_USER_TYPES.TRIAL_HOST) {
-        const accountHostId = userData?.['Account - Host / Landlord'];
-        if (accountHostId) {
-          const { data: hostData, error: hostError } = await supabase
-            .from('account_host')
-            .select('"House manuals"')
-            .eq('_id', accountHostId)
-            .single();
-
-          if (!hostError && hostData) {
-            const houseManuals = hostData['House manuals'];
-            houseManualsCount = Array.isArray(houseManuals) ? houseManuals.length : 0;
-          }
-        }
+        // Check if userData has House manuals directly (migrated from account_host)
+        const houseManuals = userData?.['House manuals'];
+        houseManualsCount = Array.isArray(houseManuals) ? houseManuals.length : 0;
       }
 
       // Process listings - get count and first listing ID
-      // The RPC returns results from both listing_trial and listing tables
-      // Deduplicate by _id in case the same listing exists in both tables
+      // The RPC returns results from the listing table
       const rawListings = listingsResult.data || [];
       if (listingsResult.error) {
         console.warn('[useLoggedInAvatarData] Listings query error:', listingsResult.error);
@@ -276,6 +304,12 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
       const listingsCount = uniqueListingIds.length;
       const firstListingId = listingsCount === 1 ? (rawListings[0]?._id || rawListings[0]?.id) : null;
       console.log('[useLoggedInAvatarData] Listings count:', listingsCount, 'raw:', rawListings.length);
+      console.log('[useLoggedInAvatarData] Proposals counts:', {
+        userType: normalizedType,
+        guestProposals: guestProposalsCount,
+        hostProposals: hostProposalsCount,
+        effectiveCount: proposalsCount
+      });
 
       const newData = {
         userType: normalizedType,

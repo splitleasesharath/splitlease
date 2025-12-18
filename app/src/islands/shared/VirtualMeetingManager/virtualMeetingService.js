@@ -6,42 +6,6 @@
 import { supabase } from '../../../lib/supabase.js';
 import { toISOString } from './dateUtils.js';
 
-// Edge function endpoint for Bubble workflow calls
-const BUBBLE_PROXY_FUNCTION = 'bubble-proxy';
-
-/**
- * Generic API request handler via Edge Function proxy
- * @param {string} workflow - Bubble workflow name
- * @param {Object} data - Request data
- * @returns {Promise<{status: string, data?: any, message?: string}>}
- */
-async function proxyRequest(workflow, data) {
-  try {
-    const { data: responseData, error } = await supabase.functions.invoke(BUBBLE_PROXY_FUNCTION, {
-      body: {
-        endpoint: `/wf/${workflow}`,
-        method: 'POST',
-        data: data,
-      },
-    });
-
-    if (error) {
-      throw new Error(error.message || 'API request failed');
-    }
-
-    return {
-      status: 'success',
-      data: responseData,
-    };
-  } catch (error) {
-    console.error(`API Error (${workflow}):`, error);
-    return {
-      status: 'error',
-      message: error instanceof Error ? error.message : 'Unknown error occurred',
-    };
-  }
-}
-
 /**
  * Accept a virtual meeting request
  * @param {string} proposalId - Proposal ID
@@ -50,13 +14,33 @@ async function proxyRequest(workflow, data) {
  * @returns {Promise<{status: string, data?: any, message?: string}>}
  */
 export async function acceptVirtualMeeting(proposalId, bookedDate, userAcceptingId) {
-  const data = {
-    proposal: proposalId,
-    booked_date_sel: toISOString(bookedDate),
-    user_accepting: userAcceptingId,
-  };
+  try {
+    const { data: responseData, error } = await supabase.functions.invoke('virtual-meeting', {
+      body: {
+        action: 'accept',
+        payload: {
+          proposalId,
+          bookedDate: toISOString(bookedDate),
+          userAcceptingId,
+        },
+      },
+    });
 
-  return proxyRequest('accept-virtual-meeting', data);
+    if (error) {
+      throw new Error(error.message || 'Failed to accept virtual meeting');
+    }
+
+    return {
+      status: 'success',
+      data: responseData?.data,
+    };
+  } catch (error) {
+    console.error('API Error (accept-virtual-meeting):', error);
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
 }
 
 /**
@@ -112,7 +96,31 @@ export async function createVirtualMeetingRequest(
  * @returns {Promise<{status: string, data?: any, message?: string}>}
  */
 export async function declineVirtualMeeting(proposalId) {
-  return proxyRequest('decline-virtual-meeting', { proposal: proposalId });
+  try {
+    const { data: responseData, error } = await supabase.functions.invoke('virtual-meeting', {
+      body: {
+        action: 'decline',
+        payload: {
+          proposalId,
+        },
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to decline virtual meeting');
+    }
+
+    return {
+      status: 'success',
+      data: responseData?.data,
+    };
+  } catch (error) {
+    console.error('API Error (decline-virtual-meeting):', error);
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
 }
 
 /**
@@ -157,12 +165,32 @@ export async function cancelVirtualMeeting(meetingId, proposalId) {
  * @returns {Promise<{status: string, data?: any, message?: string}>}
  */
 export async function sendGoogleCalendarInvite(proposalId, userId) {
-  const data = {
-    proposal: proposalId,
-    user: userId,
-  };
+  try {
+    const { data: responseData, error } = await supabase.functions.invoke('virtual-meeting', {
+      body: {
+        action: 'send_calendar_invite',
+        payload: {
+          proposalId,
+          userId,
+        },
+      },
+    });
 
-  return proxyRequest('l3-trigger-send-google-calend', data);
+    if (error) {
+      throw new Error(error.message || 'Failed to send calendar invite');
+    }
+
+    return {
+      status: 'success',
+      data: responseData?.data,
+    };
+  } catch (error) {
+    console.error('API Error (send-calendar-invite):', error);
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
 }
 
 /**
@@ -173,13 +201,33 @@ export async function sendGoogleCalendarInvite(proposalId, userId) {
  * @returns {Promise<{status: string, data?: any, message?: string}>}
  */
 export async function notifyVirtualMeetingParticipants(hostId, guestId, virtualMeetingId) {
-  const data = {
-    host: hostId,
-    guest: guestId,
-    virtual_meeting: virtualMeetingId,
-  };
+  try {
+    const { data: responseData, error } = await supabase.functions.invoke('virtual-meeting', {
+      body: {
+        action: 'notify_participants',
+        payload: {
+          hostId,
+          guestId,
+          virtualMeetingId,
+        },
+      },
+    });
 
-  return proxyRequest('notify-virtual-meeting-partici', data);
+    if (error) {
+      throw new Error(error.message || 'Failed to notify participants');
+    }
+
+    return {
+      status: 'success',
+      data: responseData?.data,
+    };
+  } catch (error) {
+    console.error('API Error (notify-participants):', error);
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
 }
 
 /**

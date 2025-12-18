@@ -207,6 +207,7 @@ export function useSearchPageLogic() {
         .from('listing')
         .select('*')
         .eq('Active', true)
+        .eq('Deleted', false)
         .eq('isForUsability', false)
         .or(
           '"Location - Address".not.is.null,"Location - slightly different address".not.is.null'
@@ -254,8 +255,8 @@ export function useSearchPageLogic() {
       // Batch fetch host data
       const hostIds = new Set()
       data.forEach((listing) => {
-        if (listing['Host / Landlord']) {
-          hostIds.add(listing['Host / Landlord'])
+        if (listing['Host User']) {
+          hostIds.add(listing['Host User'])
         }
       })
 
@@ -264,7 +265,7 @@ export function useSearchPageLogic() {
       // Map host data to listings
       const resolvedHosts = {}
       data.forEach((listing) => {
-        const hostId = listing['Host / Landlord']
+        const hostId = listing['Host User']
         resolvedHosts[listing._id] = hostMap[hostId] || null
       })
 
@@ -332,6 +333,7 @@ export function useSearchPageLogic() {
         .select('*')
         .eq('"Complete"', true)
         .or('"Active".eq.true,"Active".is.null')
+        .eq('Deleted', false)
         .eq('"Location - Borough"', borough.id)
         .or(
           '"Location - Address".not.is.null,"Location - slightly different address".not.is.null'
@@ -408,8 +410,8 @@ export function useSearchPageLogic() {
       // Batch fetch host data
       const hostIds = new Set()
       data.forEach((listing) => {
-        if (listing['Host / Landlord']) {
-          hostIds.add(listing['Host / Landlord'])
+        if (listing['Host User']) {
+          hostIds.add(listing['Host User'])
         }
       })
 
@@ -418,7 +420,7 @@ export function useSearchPageLogic() {
       // Map host data to listings
       const resolvedHosts = {}
       data.forEach((listing) => {
-        const hostId = listing['Host / Landlord']
+        const hostId = listing['Host User']
         resolvedHosts[listing._id] = hostMap[hostId] || null
       })
 

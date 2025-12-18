@@ -15,13 +15,54 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { validateTokenAndFetchUser } from '../../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getAvatarUrl } from '../../../lib/auth.js';
+import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
+import { initializeLookups, getBoroughName } from '../../../lib/dataLookups.js';
+
+/**
+ * Extract borough name from address string
+ * Handles formats like "276 Belmont Ave, Brooklyn, NY 11207, USA"
+ * @param {string|object} addressField - The Location - Address field (JSONB or string)
+ * @returns {string} The borough name or empty string
+ */
+function extractBoroughFromAddress(addressField) {
+  if (!addressField) return '';
+
+  // If it's a JSONB object, get the address string
+  const addressStr = typeof addressField === 'object' ? addressField.address : addressField;
+  if (!addressStr || typeof addressStr !== 'string') return '';
+
+  // NYC boroughs to look for in the address
+  const boroughPatterns = [
+    { pattern: /,\s*Brooklyn\s*,/i, name: 'Brooklyn' },
+    { pattern: /,\s*Manhattan\s*,/i, name: 'Manhattan' },
+    { pattern: /,\s*Queens\s*,/i, name: 'Queens' },
+    { pattern: /,\s*Bronx\s*,/i, name: 'Bronx' },
+    { pattern: /,\s*Staten Island\s*,/i, name: 'Staten Island' },
+    // "New York, NY" typically means Manhattan
+    { pattern: /,\s*New York\s*,\s*NY/i, name: 'Manhattan' },
+  ];
+
+  for (const { pattern, name } of boroughPatterns) {
+    if (pattern.test(addressStr)) {
+      return name;
+    }
+  }
+
+  return '';
+}
 
 export function useHostOverviewPageLogic() {
   // ============================================================================
   // STATE
   // ============================================================================
+
+  // Auth state
+  const [authState, setAuthState] = useState({
+    isChecking: true,
+    shouldRedirect: false
+  });
 
   // User data
   const [user, setUser] = useState(null);
@@ -79,7 +120,8 @@ export function useHostOverviewPageLogic() {
           firstName: userData['Name - First'] || userData.firstName || 'Host',
           lastName: userData['Name - Last'] || userData.lastName || '',
           email: userData.email || '',
-          accountHostId: userData['Account - Host / Landlord'] || userData.accountHostId
+          // After migration, user._id serves as host reference directly
+          accountHostId: userData.accountHostId || userData._id
         });
         return userData;
       }
@@ -94,9 +136,12 @@ export function useHostOverviewPageLogic() {
     if (!hostAccountId && !userId) return [];
 
     try {
+      // Initialize lookups cache (boroughs, neighborhoods, etc.)
+      await initializeLookups();
+
       // Fetch listings from multiple sources in parallel:
       // 1. Bubble API (existing synced listings)
-      // 2. listing_trial table (new self-listing submissions)
+      // 2. listing table via RPC (self-listing submissions)
       // 3. user.Listings array (linked listings)
 
       const fetchPromises = [];
@@ -128,19 +173,19 @@ export function useHostOverviewPageLogic() {
         );
       }
 
-      // 2. Fetch from listing_trial where Host / Landlord = userId or Created By = userId
+      // 2. Fetch from listing table where Host User = userId or Created By = userId
       // Using RPC function to handle column names with special characters
       if (userId) {
         fetchPromises.push(
           supabase
             .rpc('get_host_listings', { host_user_id: userId })
             .then(result => {
-              console.log('[HostOverview] listing_trial query result:', result);
-              return { type: 'listing_trial', ...result };
+              console.log('[HostOverview] listing query result:', result);
+              return { type: 'listing_rpc', ...result };
             })
             .catch(err => {
-              console.warn('listing_trial fetch failed:', err);
-              return { type: 'listing_trial', data: [], error: err };
+              console.warn('listing fetch failed:', err);
+              return { type: 'listing_rpc', data: [], error: err };
             })
         );
       }
@@ -193,40 +238,47 @@ export function useHostOverviewPageLogic() {
         damage_deposit: listing['💰Damage Deposit']
       }));
 
-      // Process listing_trial listings
-      let trialListings = [];
-      const trialResult = results.find(r => r?.type === 'listing_trial');
-      if (trialResult?.data && !trialResult.error) {
-        trialListings = trialResult.data.map(listing => ({
-          id: listing.id,
-          _id: listing._id,
-          name: listing.Name || 'Unnamed Listing',
-          Name: listing.Name,
-          complete: listing.Complete || false,
-          source: listing.source || 'listing_trial',
-          location: {
-            borough: listing['Location - Borough'] || '',
-            city: listing['Location - City'] || '',
-            state: listing['Location - State'] || ''
-          },
-          leasesCount: 0,
-          proposalsCount: 0,
-          photos: listing['Features - Photos'] || [],
-          // Pricing fields from RPC
-          rental_type: listing.rental_type,
-          monthly_rate: listing.monthly_rate,
-          weekly_rate: listing.weekly_rate,
-          // Individual nightly rates from RPC
-          nightly_rate_2: listing.rate_2_nights,
-          nightly_rate_3: listing.rate_3_nights,
-          nightly_rate_4: listing.rate_4_nights,
-          nightly_rate_5: listing.rate_5_nights,
-          nightly_rate_7: listing.rate_7_nights,
-          rate_5_nights: listing.rate_5_nights,
-          cleaning_fee: listing.cleaning_fee,
-          damage_deposit: listing.damage_deposit,
-          nightly_pricing: listing.nightly_pricing
-        }));
+      // Process listings from RPC
+      let rpcListings = [];
+      const rpcResult = results.find(r => r?.type === 'listing_rpc');
+      if (rpcResult?.data && !rpcResult.error) {
+        rpcListings = rpcResult.data.map(listing => {
+          // Try FK lookup first, fall back to extracting from address string
+          const boroughFromFK = getBoroughName(listing['Location - Borough']);
+          const boroughFromAddress = extractBoroughFromAddress(listing['Location - Address']);
+          const borough = boroughFromFK || boroughFromAddress || '';
+
+          return {
+            id: listing.id,
+            _id: listing._id,
+            name: listing.Name || 'Unnamed Listing',
+            Name: listing.Name,
+            complete: listing.Complete || false,
+            source: listing.source || 'listing',
+              location: {
+              borough,
+              city: listing['Location - City'] || '',
+              state: listing['Location - State'] || ''
+            },
+            leasesCount: 0,
+            proposalsCount: 0,
+            photos: listing['Features - Photos'] || [],
+            // Pricing fields from RPC
+            rental_type: listing.rental_type,
+            monthly_rate: listing.monthly_rate,
+            weekly_rate: listing.weekly_rate,
+            // Individual nightly rates from RPC
+            nightly_rate_2: listing.rate_2_nights,
+            nightly_rate_3: listing.rate_3_nights,
+            nightly_rate_4: listing.rate_4_nights,
+            nightly_rate_5: listing.rate_5_nights,
+            nightly_rate_7: listing.rate_7_nights,
+            rate_5_nights: listing.rate_5_nights,
+            cleaning_fee: listing.cleaning_fee,
+            damage_deposit: listing.damage_deposit,
+            pricing_list: listing.pricing_list
+          };
+        });
       }
 
       // Check if we need to fetch additional listings from user.Listings
@@ -236,62 +288,70 @@ export function useHostOverviewPageLogic() {
       // Fetch any linked listings that aren't already in our results
       const existingIds = new Set([
         ...mappedBubbleListings.map(l => l.id),
-        ...trialListings.map(l => l.id)
+        ...rpcListings.map(l => l.id)
       ]);
 
       const missingIds = linkedListingIds.filter(id => !existingIds.has(id));
 
       if (missingIds.length > 0) {
-        // Fetch missing listings from listing_trial
+        // Fetch missing listings from listing table
         const { data: missingListings } = await supabase
-          .from('listing_trial')
+          .from('listing')
           .select('*')
-          .in('id', missingIds);
+          .in('_id', missingIds)
+          .eq('Deleted', false);
 
         if (missingListings) {
-          const mappedMissing = missingListings.map(listing => ({
-            id: listing.id,
-            _id: listing._id,
-            name: listing.Name || 'Unnamed Listing',
-            Name: listing.Name,
-            complete: listing.Complete || false,
-            source: 'listing_trial',
-            location: {
-              borough: listing['Location - Borough'] || '',
-              city: listing['Location - City'] || '',
-              state: listing['Location - State'] || ''
-            },
-            leasesCount: 0,
-            proposalsCount: 0,
-            photos: listing['Features - Photos'] || [],
-            // Pricing fields (using original column names from direct query)
-            rental_type: listing['rental type'],
-            monthly_rate: listing['💰Monthly Host Rate'],
-            weekly_rate: listing['💰Weekly Host Rate'],
-            // Individual nightly rates
-            nightly_rate_2: listing['💰Nightly Host Rate for 2 nights'],
-            nightly_rate_3: listing['💰Nightly Host Rate for 3 nights'],
-            nightly_rate_4: listing['💰Nightly Host Rate for 4 nights'],
-            nightly_rate_5: listing['💰Nightly Host Rate for 5 nights'],
-            nightly_rate_7: listing['💰Nightly Host Rate for 7 nights'],
-            rate_5_nights: listing['💰Nightly Host Rate for 5 nights'],
-            cleaning_fee: listing['💰Cleaning Cost / Maintenance Fee'],
-            damage_deposit: listing['💰Damage Deposit'],
-            nightly_pricing: listing.nightly_pricing
-          }));
-          trialListings = [...trialListings, ...mappedMissing];
+          const mappedMissing = missingListings.map(listing => {
+            // Try FK lookup first, fall back to extracting from address string
+            const boroughFromFK = getBoroughName(listing['Location - Borough']);
+            const boroughFromAddress = extractBoroughFromAddress(listing['Location - Address']);
+            const borough = boroughFromFK || boroughFromAddress || '';
+
+            return {
+              id: listing._id,
+              _id: listing._id,
+              name: listing.Name || 'Unnamed Listing',
+              Name: listing.Name,
+              complete: listing.Complete || false,
+              source: 'listing',
+              location: {
+                borough,
+                city: listing['Location - City'] || '',
+                state: listing['Location - State'] || ''
+              },
+              leasesCount: 0,
+              proposalsCount: 0,
+              photos: listing['Features - Photos'] || [],
+              // Pricing fields (using original column names from direct query)
+              rental_type: listing['rental type'],
+              monthly_rate: listing['💰Monthly Host Rate'],
+              weekly_rate: listing['💰Weekly Host Rate'],
+              // Individual nightly rates
+              nightly_rate_2: listing['💰Nightly Host Rate for 2 nights'],
+              nightly_rate_3: listing['💰Nightly Host Rate for 3 nights'],
+              nightly_rate_4: listing['💰Nightly Host Rate for 4 nights'],
+              nightly_rate_5: listing['💰Nightly Host Rate for 5 nights'],
+              nightly_rate_7: listing['💰Nightly Host Rate for 7 nights'],
+              rate_5_nights: listing['💰Nightly Host Rate for 5 nights'],
+              cleaning_fee: listing['💰Cleaning Cost / Maintenance Fee'],
+              damage_deposit: listing['💰Damage Deposit'],
+              pricing_list: listing.pricing_list
+            };
+          });
+          rpcListings = [...rpcListings, ...mappedMissing];
         }
       }
 
       // Combine all listings, deduplicated by id
-      const allListings = [...mappedBubbleListings, ...trialListings];
+      const allListings = [...mappedBubbleListings, ...rpcListings];
       const uniqueListings = allListings.filter((listing, index, self) =>
         index === self.findIndex(l => l.id === listing.id)
       );
 
       console.log('[HostOverview] Fetched listings:', {
         bubble: mappedBubbleListings.length,
-        trial: trialListings.length,
+        rpc: rpcListings.length,
         total: uniqueListings.length
       });
 
@@ -408,29 +468,72 @@ export function useHostOverviewPageLogic() {
     setError(null);
 
     try {
-      // Fetch user first
-      const userData = await fetchUserData();
+      // ========================================================================
+      // GOLD STANDARD AUTH PATTERN - Step 1: Quick auth check
+      // ========================================================================
+      const isAuthenticated = await checkAuthStatus();
 
-      if (!userData) {
-        // For demo/development, use mock data if no user
-        setUser({
-          id: 'demo',
-          firstName: 'Demo',
-          lastName: 'Host',
-          email: 'demo@example.com'
-        });
-
-        // Set empty arrays - user will see empty states
-        setListingsToClaim([]);
-        setMyListings([]);
-        setHouseManuals([]);
-        setVirtualMeetings([]);
-        setLoading(false);
+      if (!isAuthenticated) {
+        console.log('[HostOverview] User not authenticated, redirecting to home');
+        setAuthState({ isChecking: false, shouldRedirect: true });
+        setTimeout(() => {
+          window.location.href = '/?login=true';
+        }, 100);
         return;
       }
 
-      const hostAccountId = userData['Account - Host / Landlord'] || userData.accountHostId;
-      const userId = userData.userId || userData._id || userData.id;
+      // ========================================================================
+      // GOLD STANDARD AUTH PATTERN - Step 2: Deep validation with clearOnFailure: false
+      // ========================================================================
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+
+      let finalUser = null;
+
+      if (userData) {
+        // Success path: Use validated user data
+        finalUser = {
+          id: userData._id || userData.id,
+          firstName: userData['Name - First'] || userData.firstName || 'Host',
+          lastName: userData['Name - Last'] || userData.lastName || '',
+          email: userData.email || '',
+          accountHostId: userData.accountHostId || userData._id
+        };
+        setUser(finalUser);
+        console.log('[HostOverview] User data loaded:', finalUser.firstName);
+      } else {
+        // ========================================================================
+        // GOLD STANDARD AUTH PATTERN - Step 3: Fallback to Supabase session metadata
+        // ========================================================================
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          // Session valid but profile fetch failed - use session metadata
+          const fallbackUser = {
+            id: session.user.id,
+            firstName: session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'Host',
+            lastName: session.user.user_metadata?.last_name || '',
+            email: session.user.email,
+            accountHostId: session.user.user_metadata?.user_id || getUserId() || session.user.id
+          };
+          setUser(fallbackUser);
+          finalUser = fallbackUser;
+          console.log('[HostOverview] Using fallback user data from session:', fallbackUser.firstName);
+        } else {
+          // No valid session - redirect
+          console.log('[HostOverview] No valid session, redirecting');
+          setAuthState({ isChecking: false, shouldRedirect: true });
+          setTimeout(() => {
+            window.location.href = '/?login=true';
+          }, 100);
+          return;
+        }
+      }
+
+      setAuthState({ isChecking: false, shouldRedirect: false });
+
+      // After migration, user._id serves as host reference directly
+      const hostAccountId = finalUser.accountHostId || finalUser.id;
+      const userId = finalUser.id;
 
       console.log('[HostOverview] loadData - hostAccountId:', hostAccountId, 'userId:', userId);
 
@@ -447,13 +550,13 @@ export function useHostOverviewPageLogic() {
       setHouseManuals(manuals);
       setVirtualMeetings(meetings);
     } catch (err) {
-      console.error('Error loading data:', err);
+      console.error('[HostOverview] Error loading data:', err);
       setError('Failed to load your dashboard. Please try again.');
       showToast('Error', 'Failed to load dashboard data', 'error', 5000);
     } finally {
       setLoading(false);
     }
-  }, [fetchUserData, fetchHostListings, fetchListingsToClaim, fetchHouseManuals, fetchVirtualMeetings, showToast]);
+  }, [fetchHostListings, fetchListingsToClaim, fetchHouseManuals, fetchVirtualMeetings, showToast]);
 
   // ============================================================================
   // EFFECTS
@@ -488,18 +591,22 @@ export function useHostOverviewPageLogic() {
   const handleImportListingSubmit = useCallback(async ({ listingUrl, emailAddress }) => {
     setImportListingLoading(true);
     try {
-      // Send import request to Slack webhook for processing
-      const { error: importError } = await supabase.functions.invoke('slack-notification', {
-        body: {
-          type: 'import_listing',
+      // Send import request to Cloudflare Pages Function (same-origin, no CORS issues)
+      const response = await fetch('/api/import-listing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
           listingUrl,
           emailAddress,
           userId: user?.id,
           userName: `${user?.firstName || ''} ${user?.lastName || ''}`.trim()
-        }
+        })
       });
 
-      if (importError) throw importError;
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to submit import request');
+      }
 
       showToast('Success', 'Import request submitted! We\'ll notify you when your listing is ready.', 'success', 5000);
       setShowImportListingModal(false);
@@ -601,13 +708,20 @@ export function useHostOverviewPageLogic() {
       const itemName = itemToDelete.name || itemToDelete.Name || itemToDelete.display || itemToDelete.Display || 'item';
 
       if (deleteType === 'listing') {
-        // Delete listing via Bubble API
-        await supabase.functions.invoke('bubble-proxy', {
+        // Delete listing via listing edge function
+        const { data, error } = await supabase.functions.invoke('listing', {
           body: {
-            endpoint: `listing/${itemId}`,
-            method: 'DELETE'
+            action: 'delete',
+            payload: {
+              listing_id: itemId,
+              user_email: user?.email,
+            }
           }
         });
+
+        if (error) {
+          throw new Error(error.message || 'Failed to delete listing');
+        }
 
         setMyListings(prev => prev.filter(l => (l.id || l._id) !== itemId));
         showToast('Success', `${itemName} deleted successfully`, 'success');
@@ -658,6 +772,9 @@ export function useHostOverviewPageLogic() {
   // ============================================================================
 
   return {
+    // Auth state
+    authState,
+
     // Core data
     user,
     listingsToClaim,

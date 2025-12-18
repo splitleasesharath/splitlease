@@ -19,6 +19,7 @@ import { validateRequiredFields } from '../../_shared/validation.ts';
 import { enqueueBubbleSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
 import { parseJsonArray } from '../../_shared/jsonUtils.ts';
 import { handleCreateMockupProposal } from './createMockupProposal.ts';
+import { getGeoByZipCode } from '../../_shared/geoLookup.ts';
 
 /**
  * Listing submission data structure from frontend
@@ -280,23 +281,41 @@ export async function handleSubmit(
 
     console.log('[listing:submit] ✅ Step 1 complete - Listing exists:', existingListing.Name);
 
-    // Step 2: Look up user and get host account
+    // Step 2: Look up user
     console.log('[listing:submit] Step 2/5: Looking up user...');
     const { data: userData } = await supabase
       .from('user')
-      .select('_id, "Account - Host / Landlord"')
+      .select('_id')
       .eq('email', user_email.toLowerCase())
       .single();
 
-    let hostAccountId: string | null = null;
-    let createdById: string | null = null;
+    let userId: string | null = null;
 
     if (userData) {
-      hostAccountId = userData['Account - Host / Landlord'] as string;
-      createdById = userData._id;
-      console.log('[listing:submit] ✅ Step 2 complete - User found, host account:', hostAccountId);
+      userId = userData._id;
+      console.log('[listing:submit] ✅ Step 2 complete - User found:', userId);
     } else {
       console.log('[listing:submit] ⚠️ Step 2 warning - User not found for email:', user_email);
+    }
+
+    // Step 2b: Look up borough and hood from zip code
+    console.log('[listing:submit] Step 2b/5: Looking up borough/hood from zip code...');
+    let boroughId: string | null = null;
+    let hoodId: string | null = null;
+
+    const zipCode = listing_data['Zip'];
+    if (zipCode) {
+      const geoResult = await getGeoByZipCode(supabase, zipCode as string);
+      if (geoResult.borough) {
+        boroughId = geoResult.borough._id;
+        console.log('[listing:submit] ✅ Borough found:', geoResult.borough.displayName);
+      }
+      if (geoResult.hood) {
+        hoodId = geoResult.hood._id;
+        console.log('[listing:submit] ✅ Hood found:', geoResult.hood.displayName);
+      }
+    } else {
+      console.log('[listing:submit] ⚠️ No zip code provided, skipping geo lookup');
     }
 
     // Step 3: Update listing in Supabase
@@ -313,12 +332,20 @@ export async function handleSubmit(
       Status: listing_data['Status'] || 'Pending Review',
     };
 
-    // Attach user if found
-    if (hostAccountId) {
-      updateData['Host / Landlord'] = hostAccountId;
+    // Add borough and hood FK references if found
+    if (boroughId) {
+      updateData['Location - Borough'] = boroughId;
+      console.log('[listing:submit] Setting Location - Borough:', boroughId);
     }
-    if (createdById) {
-      updateData['Created By'] = createdById;
+    if (hoodId) {
+      updateData['Location - Hood'] = hoodId;
+      console.log('[listing:submit] Setting Location - Hood:', hoodId);
+    }
+
+    // Attach user if found (Host User = user._id)
+    if (userId) {
+      updateData['Host User'] = userId;
+      updateData['Created By'] = userId;
     }
 
     const { error: updateError } = await supabase
@@ -362,38 +389,26 @@ export async function handleSubmit(
     }
 
     // Step 5: Check if first listing and create mockup proposal
-    if (hostAccountId && createdById) {
+    if (userId) {
       try {
         console.log('[listing:submit] Step 5/5: Checking for first listing...');
 
-        // Get host account to check listings count
-        const { data: hostAccountData } = await supabase
-          .from('account_host')
-          .select('Listings')
-          .eq('_id', hostAccountId)
+        // Get user's listings count directly from user table
+        const { data: hostUserData } = await supabase
+          .from('user')
+          .select('"Listings"')
+          .eq('_id', userId)
           .single();
 
-        const listings = parseJsonArray<string>(hostAccountData?.Listings, 'account_host.Listings');
+        const listings = parseJsonArray<string>(hostUserData?.Listings, 'user.Listings');
 
         if (listings.length === 1) {
           console.log('[listing:submit] First listing detected, creating mockup proposal');
 
-          // Get host user email if not available
-          let hostEmailToUse = user_email;
-          if (!hostEmailToUse) {
-            const { data: hostUserData } = await supabase
-              .from('user')
-              .select('email')
-              .eq('_id', createdById)
-              .single();
-            hostEmailToUse = hostUserData?.email || '';
-          }
-
           await handleCreateMockupProposal(supabase, {
             listingId: listing_id,
-            hostAccountId: hostAccountId,
-            hostUserId: createdById,
-            hostEmail: hostEmailToUse,
+            hostUserId: userId,
+            hostEmail: user_email,
           });
 
           console.log('[listing:submit] ✅ Step 5 complete - Mockup proposal created');
@@ -405,7 +420,7 @@ export async function handleSubmit(
         console.warn('[listing:submit] ⚠️ Mockup proposal creation failed (non-blocking):', mockupError);
       }
     } else {
-      console.log('[listing:submit] ⏭️ Step 5 skipped - Missing host account or user ID');
+      console.log('[listing:submit] ⏭️ Step 5 skipped - User not found');
     }
 
     console.log('[listing:submit] ========== SUCCESS ==========');

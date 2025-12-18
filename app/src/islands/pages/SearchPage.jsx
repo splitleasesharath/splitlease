@@ -8,10 +8,10 @@ import AuthAwareSearchScheduleSelector from '../shared/AuthAwareSearchScheduleSe
 import SignUpLoginModal from '../shared/SignUpLoginModal.jsx';
 import LoggedInAvatar from '../shared/LoggedInAvatar/LoggedInAvatar.jsx';
 import FavoriteButton from '../shared/FavoriteButton';
-import CreateProposalFlowV2 from '../shared/CreateProposalFlowV2.jsx';
+import CreateProposalFlowV2, { clearProposalDraft } from '../shared/CreateProposalFlowV2.jsx';
 import { isGuest } from '../../logic/rules/users/isGuest.js';
 import { supabase } from '../../lib/supabase.js';
-import { fetchProposalsByGuest } from '../../lib/proposalDataFetcher.js';
+import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../lib/listingDataFetcher.js';
 import { checkAuthStatus, validateTokenAndFetchUser, getUserId, getSessionId, logoutUser } from '../../lib/auth.js';
 import { PRICE_TIERS, SORT_OPTIONS, WEEK_PATTERNS, LISTING_CONFIG, VIEW_LISTING_URL, SEARCH_URL } from '../../lib/constants.js';
@@ -21,7 +21,8 @@ import { fetchPhotoUrls, fetchHostData, extractPhotos, parseAmenities, parseJson
 import { sanitizeNeighborhoodSearch, sanitizeSearchQuery } from '../../lib/sanitize.js';
 import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
-import { adaptDaysToBubble } from '../../logic/processors/external/adaptDaysToBubble.js';
+import { shiftMoveInDateIfPast } from '../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
+// NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 
 // ============================================================================
@@ -620,6 +621,17 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
             size="medium"
           />
           {listing.isNew && <span className="new-badge">New Listing</span>}
+          {listing.type === 'Entire Place' && (
+            <span className="family-friendly-tag" aria-label="Family Friendly - Entire place listing suitable for families">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              Family Friendly
+            </span>
+          )}
         </div>
       )}
 
@@ -652,7 +664,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
           <div className="listing-meta">
             <span className="meta-item"><strong>{listing.type || 'Entire Place'}</strong></span>
             <span className="meta-item"><strong>{listing.maxGuests}</strong> guests</span>
-            <span className="meta-item"><strong>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed`}</strong></span>
+            <span className="meta-item"><strong>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bedroom${listing.bedrooms > 1 ? 's' : ''}`}</strong></span>
             <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
           </div>
 
@@ -947,6 +959,8 @@ export default function SearchPage() {
   // Proposal flow state
   const [zatConfig, setZatConfig] = useState(null);
   const [loggedInUserData, setLoggedInUserData] = useState(null);
+  const [lastProposalDefaults, setLastProposalDefaults] = useState(null);
+  const [reservationSpanForProposal, setReservationSpanForProposal] = useState(13);
   const [pendingProposalData, setPendingProposalData] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successProposalId, setSuccessProposalId] = useState(null);
@@ -1023,37 +1037,48 @@ export default function SearchPage() {
               proposalCount: userData.proposalCount ?? 0
             });
 
-            // Fetch favorites, proposals list, and profile data from Supabase
+            // Fetch favorites, proposals count, and profile data from Supabase
+            // Uses junction table RPCs for favorites/proposals (Phase 5b migration)
             if (userId) {
-              const { data: userRecord, error } = await supabase
-                .from('user')
-                .select('"Favorited Listings", "Proposals List", "About Me / Bio", "need for Space", "special needs"')
-                .eq('_id', userId)
-                .single();
+              // Parallel fetch: profile data + junction counts + favorites list
+              const [userResult, countsResult] = await Promise.all([
+                // Profile data + favorites for proposal form prefilling and heart icons
+                supabase
+                  .from('user')
+                  .select('"About Me / Bio", "need for Space", "special needs", "Favorited Listings"')
+                  .eq('_id', userId)
+                  .single(),
+                // Junction counts for proposals
+                supabase.rpc('get_user_junction_counts', { p_user_id: userId })
+              ]);
+
+              const userRecord = userResult.data;
+              const error = userResult.error;
+
+              // Handle favorites from user table JSONB field
+              const favorites = userRecord?.['Favorited Listings'] || [];
+              if (Array.isArray(favorites) && favorites.length > 0) {
+                // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
+                const validFavorites = favorites.filter(id =>
+                  typeof id === 'string' && /^\d+x\d+$/.test(id)
+                );
+
+                // Store all favorited IDs for heart icon state
+                setFavoritedListingIds(new Set(validFavorites));
+                // Set count to match - all favorites count regardless of Active status
+                setFavoritesCount(validFavorites.length);
+                console.log('[SearchPage] Favorites count from user table:', validFavorites.length);
+              } else {
+                setFavoritesCount(0);
+                setFavoritedListingIds(new Set());
+              }
+
+              // Handle proposals count from junction RPC
+              const junctionCounts = countsResult.data?.[0] || {};
+              const proposalCount = Number(junctionCounts.proposals_count) || 0;
+              console.log('[SearchPage] Proposals count from junction:', proposalCount);
 
               if (!error && userRecord) {
-                // Handle favorites
-                const favorites = userRecord['Favorited Listings'];
-                if (Array.isArray(favorites)) {
-                  // Filter to only valid Bubble listing IDs (pattern: digits + 'x' + digits)
-                  const validFavorites = favorites.filter(id =>
-                    typeof id === 'string' && /^\d+x\d+$/.test(id)
-                  );
-
-                  // Store all favorited IDs for heart icon state
-                  setFavoritedListingIds(new Set(validFavorites));
-                  // Set count to match - all favorites count regardless of Active status
-                  setFavoritesCount(validFavorites.length);
-                  console.log('[SearchPage] Favorites count:', validFavorites.length);
-                } else {
-                  setFavoritesCount(0);
-                  setFavoritedListingIds(new Set());
-                }
-
-                // Handle proposals count for Create Proposal CTA
-                const proposalsList = userRecord['Proposals List'];
-                const proposalCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
-                console.log('[SearchPage] Proposals count from user table:', proposalCount);
 
                 // Update currentUser with actual proposal count
                 setCurrentUser(prev => ({
@@ -1068,6 +1093,13 @@ export default function SearchPage() {
                   specialNeeds: userRecord['special needs'] || '',
                   proposalCount: proposalCount
                 });
+
+                // Fetch last proposal defaults for pre-population
+                const proposalDefaults = await fetchLastProposalDefaults(userId);
+                if (proposalDefaults) {
+                  setLastProposalDefaults(proposalDefaults);
+                  console.log('[SearchPage] Loaded last proposal defaults:', proposalDefaults);
+                }
 
                 // Fetch user's proposals to check if any exist for specific listings
                 const userIsGuest = isGuest({ userType: userData.userType });
@@ -1172,8 +1204,8 @@ export default function SearchPage() {
         // Batch fetch host data
         const hostIds = new Set();
         data.forEach(listing => {
-          if (listing['Host / Landlord']) {
-            hostIds.add(listing['Host / Landlord']);
+          if (listing['Host User']) {
+            hostIds.add(listing['Host User']);
           }
         });
 
@@ -1182,7 +1214,7 @@ export default function SearchPage() {
         // Map host data to listings
         const resolvedHosts = {};
         data.forEach(listing => {
-          const hostId = listing['Host / Landlord'];
+          const hostId = listing['Host User'];
           resolvedHosts[listing._id] = hostMap[hostId] || null;
         });
 
@@ -1544,8 +1576,8 @@ export default function SearchPage() {
       // Batch fetch host data for all listings
       const hostIds = new Set();
       data.forEach(listing => {
-        if (listing['Host / Landlord']) {
-          hostIds.add(listing['Host / Landlord']);
+        if (listing['Host User']) {
+          hostIds.add(listing['Host User']);
         }
       });
 
@@ -1554,7 +1586,7 @@ export default function SearchPage() {
       // Map host data to listings
       const resolvedHosts = {};
       data.forEach(listing => {
-        const hostId = listing['Host / Landlord'];
+        const hostId = listing['Host User'];
         resolvedHosts[listing._id] = hostMap[hostId] || null;
       });
 
@@ -1714,8 +1746,8 @@ export default function SearchPage() {
       // Batch fetch host data for all listings
       const hostIds = new Set();
       data.forEach(listing => {
-        if (listing['Host / Landlord']) {
-          hostIds.add(listing['Host / Landlord']);
+        if (listing['Host User']) {
+          hostIds.add(listing['Host User']);
         }
       });
 
@@ -1724,7 +1756,7 @@ export default function SearchPage() {
       // Map host data to listings
       const resolvedHosts = {};
       data.forEach(listing => {
-        const hostId = listing['Host / Landlord'];
+        const hostId = listing['Host User'];
         resolvedHosts[listing._id] = hostMap[hostId] || null;
       });
 
@@ -2031,9 +2063,18 @@ export default function SearchPage() {
     twoWeeksFromNow.setDate(today.getDate() + 14);
     const minMoveInDate = twoWeeksFromNow.toISOString().split('T')[0];
 
-    // Calculate smart default move-in date using shared calculator
+    // Determine move-in date: prefer last proposal's date (shifted if needed), fallback to smart calculation
     let smartMoveInDate = minMoveInDate;
-    if (initialDays.length > 0) {
+
+    if (lastProposalDefaults?.moveInDate) {
+      // Use previous proposal's move-in date, shifted forward if necessary
+      smartMoveInDate = shiftMoveInDateIfPast({
+        previousMoveInDate: lastProposalDefaults.moveInDate,
+        minDate: minMoveInDate
+      }) || minMoveInDate;
+      console.log('[SearchPage] Pre-filling move-in from last proposal:', lastProposalDefaults.moveInDate, '->', smartMoveInDate);
+    } else if (initialDays.length > 0) {
+      // Fallback: calculate based on selected days
       try {
         const selectedDayIndices = initialDays.map(d => d.dayOfWeek);
         smartMoveInDate = calculateNextAvailableCheckIn({
@@ -2046,9 +2087,13 @@ export default function SearchPage() {
       }
     }
 
+    // Determine reservation span: prefer last proposal's span, fallback to default
+    const prefillReservationSpan = lastProposalDefaults?.reservationSpanWeeks || 13;
+
     setSelectedListingForProposal(listing);
     setSelectedDayObjectsForProposal(initialDays);
     setMoveInDateForProposal(smartMoveInDate);
+    setReservationSpanForProposal(prefillReservationSpan);
     setIsCreateProposalModalOpen(true);
   };
 
@@ -2073,19 +2118,53 @@ export default function SearchPage() {
       console.log('   Guest ID:', guestId);
       console.log('   Listing ID:', selectedListingForProposal?.id || selectedListingForProposal?._id);
 
-      // Convert days from JS format (0-6) to Bubble format (1-7)
+      // Days are already in JS format (0-6) - database now uses 0-indexed natively
       // proposalData.daysSelectedObjects contains Day objects with dayOfWeek property
       const daysInJsFormat = proposalData.daysSelectedObjects?.map(d => d.dayOfWeek) || [];
-      const daysInBubbleFormat = adaptDaysToBubble({ zeroBasedDays: daysInJsFormat });
 
-      // Calculate nights from days (nights = days without the last checkout day)
-      // For consecutive days [1,2,3,4,5] (Mon-Fri), nights are [1,2,3,4] (Mon-Thu)
-      const sortedDays = [...daysInBubbleFormat].sort((a, b) => a - b);
-      const nightsInBubbleFormat = sortedDays.slice(0, -1); // Remove last day (checkout day)
+      // Sort days in JS format first to detect wrap-around (Saturday/Sunday spanning)
+      const sortedJsDays = [...daysInJsFormat].sort((a, b) => a - b);
 
-      // Get check-in and check-out days in Bubble format
-      const checkInDayBubble = sortedDays[0];
-      const checkOutDayBubble = sortedDays[sortedDays.length - 1];
+      // Check for wrap-around case (both Saturday=6 and Sunday=0 present, but not all 7 days)
+      const hasSaturday = sortedJsDays.includes(6);
+      const hasSunday = sortedJsDays.includes(0);
+      const isWrapAround = hasSaturday && hasSunday && daysInJsFormat.length < 7;
+
+      let checkInDay, checkOutDay, nightsSelected;
+
+      if (isWrapAround) {
+        // Find the gap in the sorted selection to determine wrap-around point
+        let gapIndex = -1;
+        for (let i = 0; i < sortedJsDays.length - 1; i++) {
+          if (sortedJsDays[i + 1] - sortedJsDays[i] > 1) {
+            gapIndex = i + 1;
+            break;
+          }
+        }
+
+        if (gapIndex !== -1) {
+          // Wrap-around: check-in is the first day after the gap, check-out is the last day before gap
+          checkInDay = sortedJsDays[gapIndex];
+          checkOutDay = sortedJsDays[gapIndex - 1];
+
+          // Reorder days to be in actual sequence (check-in to check-out)
+          const reorderedDays = [...sortedJsDays.slice(gapIndex), ...sortedJsDays.slice(0, gapIndex)];
+
+          // Nights = all days except the last one (checkout day)
+          nightsSelected = reorderedDays.slice(0, -1);
+        } else {
+          // No gap found, use standard logic
+          checkInDay = sortedJsDays[0];
+          checkOutDay = sortedJsDays[sortedJsDays.length - 1];
+          nightsSelected = sortedJsDays.slice(0, -1);
+        }
+      } else {
+        // Standard case: check-in = first day, check-out = last day
+        checkInDay = sortedJsDays[0];
+        checkOutDay = sortedJsDays[sortedJsDays.length - 1];
+        // Nights = all days except the last one (checkout day)
+        nightsSelected = sortedJsDays.slice(0, -1);
+      }
 
       // Format reservation span text
       const reservationSpanWeeks = proposalData.reservationSpan || 13;
@@ -2095,18 +2174,18 @@ export default function SearchPage() {
           ? '20 weeks (approx. 5 months)'
           : `${reservationSpanWeeks} weeks`;
 
-      // Build the Edge Function payload
+      // Build the Edge Function payload (using 0-indexed days)
       const edgeFunctionPayload = {
         guestId: guestId,
         listingId: selectedListingForProposal?.id || selectedListingForProposal?._id,
         moveInStartRange: proposalData.moveInDate,
         moveInEndRange: proposalData.moveInDate, // Same as start if no flexibility
-        daysSelected: daysInBubbleFormat,
-        nightsSelected: nightsInBubbleFormat,
+        daysSelected: daysInJsFormat,
+        nightsSelected: nightsSelected,
         reservationSpan: reservationSpanText,
         reservationSpanWeeks: reservationSpanWeeks,
-        checkIn: checkInDayBubble,
-        checkOut: checkOutDayBubble,
+        checkIn: checkInDay,
+        checkOut: checkOutDay,
         proposalPrice: proposalData.pricePerNight,
         fourWeekRent: proposalData.pricePerFourWeeks,
         hostCompensation: proposalData.pricePerFourWeeks, // Same as 4-week rent for now
@@ -2142,6 +2221,9 @@ export default function SearchPage() {
 
       console.log('[SearchPage] Proposal submitted successfully:', data);
       console.log('   Proposal ID:', data.data?.proposalId);
+
+      // Clear the localStorage draft on successful submission
+      clearProposalDraft(proposalData.listingId);
 
       // Close the create proposal modal
       setIsCreateProposalModalOpen(false);
@@ -2326,7 +2408,8 @@ export default function SearchPage() {
         console.log('Schedule selector changed (display only, not used for filtering):', days);
         // No state update - schedule selection is for display purposes only
       },
-      onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error)
+      onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error),
+      weekPattern: weekPattern
     };
 
     if (mountPointDesktop) {
@@ -2344,7 +2427,7 @@ export default function SearchPage() {
     return () => {
       roots.forEach(root => root.unmount());
     };
-  }, []);
+  }, [weekPattern]);
 
   // Determine if "Create Proposal" button should be visible
   // Conditions: logged in AND is a guest AND has 1+ existing proposals
@@ -2717,8 +2800,11 @@ export default function SearchPage() {
         isOpen={isContactModalOpen}
         onClose={handleCloseContactModal}
         listing={selectedListing}
-        userEmail={currentUser?.email || ''}
-        userName={currentUser?.name || ''}
+        onLoginRequired={() => {
+          handleCloseContactModal();
+          setAuthModalView('signup');
+          setIsAuthModalOpen(true);
+        }}
       />
       <InformationalText
         isOpen={isInfoModalOpen}
@@ -2748,7 +2834,7 @@ export default function SearchPage() {
           moveInDate={moveInDateForProposal}
           daysSelected={selectedDayObjectsForProposal}
           nightsSelected={selectedDayObjectsForProposal.length > 0 ? selectedDayObjectsForProposal.length - 1 : 0}
-          reservationSpan={13}
+          reservationSpan={reservationSpanForProposal}
           pricingBreakdown={null}
           zatConfig={zatConfig}
           isFirstProposal={!loggedInUserData || loggedInUserData.proposalCount === 0}
@@ -2761,6 +2847,7 @@ export default function SearchPage() {
           } : null}
           onClose={handleCloseCreateProposalModal}
           onSubmit={handleCreateProposalSubmit}
+          isSubmitting={isSubmittingProposal}
         />
       )}
 

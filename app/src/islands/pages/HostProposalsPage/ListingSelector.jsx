@@ -39,7 +39,7 @@ export default function ListingSelector({
       >
         {listings.map((listing) => (
           <option key={listing._id || listing.id} value={listing._id || listing.id}>
-            {listing.name || listing['Listing Name'] || 'Unnamed Listing'}
+            {listing.Name || listing.name || listing['Listing Name'] || 'Unnamed Listing'}
           </option>
         ))}
       </select>

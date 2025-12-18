@@ -80,10 +80,10 @@
 [INTENT]: API service layer proxying Bubble workflows via Supabase Edge Functions
 [EXPORTS]: default virtualMeetingService (object), named functions
 [DEPENDS_ON]: lib/supabase, dateUtils (toISOString)
-[EDGE_FUNCTION]: bubble-proxy
+[EDGE_FUNCTION]: virtual-meeting
 [API_FUNCTIONS]: acceptVirtualMeeting, createVirtualMeetingRequest, declineVirtualMeeting, cancelVirtualMeeting, sendGoogleCalendarInvite, notifyVirtualMeetingParticipants, updateVirtualMeetingDirect, retryApiCall
 [RESPONSE_FORMAT]: {status: 'success'|'error', data?: any, message?: string}
-[PROXY_PATTERN]: All Bubble workflow calls go through proxyRequest() helper
+[CALL_PATTERN]: All operations call virtual-meeting edge function with action-based routing
 [ERROR_HANDLING]: Try-catch with console.error logging, returns standardized error response
 [RETRY_LOGIC]: retryApiCall() wrapper with exponential backoff
 [DIRECT_UPDATE]: updateVirtualMeetingDirect() bypasses Bubble for simple Supabase updates
@@ -308,7 +308,7 @@ const resultWithRetry = await virtualMeetingService.retry(
 
 [LOCAL_IMPORTS]: ../../../lib/supabase.js
 [EXTERNAL_PACKAGES]: date-fns, date-fns-tz, react
-[EDGE_FUNCTIONS]: bubble-proxy (all Bubble workflow calls)
+[EDGE_FUNCTIONS]: virtual-meeting (all VM operations)
 [SUPABASE_TABLE]: virtualmeetingschedulesandlinks (for direct updates)
 [CSS_FILES]: ./VirtualMeetingManager.css, ./BookTimeSlot.css
 

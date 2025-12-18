@@ -454,10 +454,8 @@ class ListingLocalStore {
       errors.push(`At least ${data.photos.minRequired} photos are required`);
     }
 
-    // Section 7: Review
-    if (!data.review.agreedToTerms) {
-      errors.push('You must agree to the terms and conditions');
-    }
+    // Note: agreedToTerms validation removed - terms acceptance is handled
+    // during signup/login flow in the SignUpLoginSharedIsland component
 
     return errors;
   }

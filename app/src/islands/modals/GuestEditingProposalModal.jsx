@@ -21,14 +21,18 @@ import './GuestEditingProposalModal.css'
 // CONSTANTS
 // ============================================================================
 
+/**
+ * Days of the week with 0-based indexing (matching JavaScript Date.getDay())
+ * 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
+ */
 const DAYS_OF_WEEK = [
-  { id: 0, name: 'Sunday', shortName: 'Sun', singleLetter: 'S', bubbleNumber: 1 },
-  { id: 1, name: 'Monday', shortName: 'Mon', singleLetter: 'M', bubbleNumber: 2 },
-  { id: 2, name: 'Tuesday', shortName: 'Tue', singleLetter: 'T', bubbleNumber: 3 },
-  { id: 3, name: 'Wednesday', shortName: 'Wed', singleLetter: 'W', bubbleNumber: 4 },
-  { id: 4, name: 'Thursday', shortName: 'Thu', singleLetter: 'T', bubbleNumber: 5 },
-  { id: 5, name: 'Friday', shortName: 'Fri', singleLetter: 'F', bubbleNumber: 6 },
-  { id: 6, name: 'Saturday', shortName: 'Sat', singleLetter: 'S', bubbleNumber: 7 }
+  { id: 0, name: 'Sunday', shortName: 'Sun', singleLetter: 'S', dayIndex: 0 },
+  { id: 1, name: 'Monday', shortName: 'Mon', singleLetter: 'M', dayIndex: 1 },
+  { id: 2, name: 'Tuesday', shortName: 'Tue', singleLetter: 'T', dayIndex: 2 },
+  { id: 3, name: 'Wednesday', shortName: 'Wed', singleLetter: 'W', dayIndex: 3 },
+  { id: 4, name: 'Thursday', shortName: 'Thu', singleLetter: 'T', dayIndex: 4 },
+  { id: 5, name: 'Friday', shortName: 'Fri', singleLetter: 'F', dayIndex: 5 },
+  { id: 6, name: 'Saturday', shortName: 'Sat', singleLetter: 'S', dayIndex: 6 }
 ]
 
 const RESERVATION_SPAN_OPTIONS = [
@@ -161,7 +165,7 @@ function DayNightSelector({
 
   const dayToDayOption = useCallback((day) => ({
     display: day.name,
-    bubbleNumber: day.bubbleNumber,
+    dayIndex: day.dayIndex,
     first3Letters: day.shortName
   }), [])
 
@@ -170,11 +174,11 @@ function DayNightSelector({
   }, [selectedDays])
 
   const isCheckInDay = useCallback((day) => {
-    return checkInDay?.bubbleNumber === day.bubbleNumber
+    return checkInDay?.dayIndex === day.dayIndex
   }, [checkInDay])
 
   const isCheckOutDay = useCallback((day) => {
-    return checkOutDay?.bubbleNumber === day.bubbleNumber
+    return checkOutDay?.dayIndex === day.dayIndex
   }, [checkOutDay])
 
   const selectedDaysCount = selectedDays.length
@@ -702,8 +706,8 @@ export default function GuestEditingProposalModal({
     numberOfWeeks: proposal?.reservationSpanWeeks || proposal?.['Reservation Span (Weeks)'] || 4,
     selectedDays: [1, 2, 3, 4, 5], // Default Monday-Friday
     selectedNights: [1, 2, 3, 4], // Default 4 nights
-    checkInDay: { display: 'Monday', bubbleNumber: 2, first3Letters: 'Mon' },
-    checkOutDay: { display: 'Friday', bubbleNumber: 6, first3Letters: 'Fri' }
+    checkInDay: { display: 'Monday', dayIndex: 1, first3Letters: 'Mon' },
+    checkOutDay: { display: 'Friday', dayIndex: 5, first3Letters: 'Fri' }
   }))
 
   // Price breakdown visibility state

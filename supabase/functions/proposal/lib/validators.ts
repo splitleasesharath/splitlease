@@ -3,11 +3,27 @@
  * Split Lease - Supabase Edge Functions
  *
  * NO FALLBACK PRINCIPLE: Validation failures throw errors immediately
+ *
+ * Day indices use JavaScript 0-based format (0=Sunday through 6=Saturday)
  */
 
 import { ValidationError } from "../../_shared/errors.ts";
 import { CreateProposalInput, UpdateProposalInput } from "./types.ts";
-import { validateDayIndices, validateNightIndices } from "./dayConversion.ts";
+
+/**
+ * Validate that day indices are in correct 0-6 range (JavaScript format)
+ */
+function validateDayIndices(days: number[]): boolean {
+  if (!Array.isArray(days)) return false;
+  return days.every((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+}
+
+/**
+ * Validate that night indices are in correct 0-6 range (JavaScript format)
+ */
+function validateNightIndices(nights: number[]): boolean {
+  return validateDayIndices(nights); // Same validation logic
+}
 
 /**
  * Validate input for creating a new proposal
@@ -16,6 +32,22 @@ import { validateDayIndices, validateNightIndices } from "./dayConversion.ts";
  * NOTE: Uses camelCase to match frontend payload format
  */
 export function validateCreateProposalInput(input: CreateProposalInput): void {
+  // Debug logging for validation troubleshooting
+  console.log('[validators] Validating input:', JSON.stringify({
+    listingId: { value: input.listingId, type: typeof input.listingId },
+    guestId: { value: input.guestId, type: typeof input.guestId },
+    estimatedBookingTotal: { value: input.estimatedBookingTotal, type: typeof input.estimatedBookingTotal },
+    moveInStartRange: { value: input.moveInStartRange, type: typeof input.moveInStartRange },
+    moveInEndRange: { value: input.moveInEndRange, type: typeof input.moveInEndRange },
+    reservationSpanWeeks: { value: input.reservationSpanWeeks, type: typeof input.reservationSpanWeeks },
+    reservationSpan: { value: input.reservationSpan, type: typeof input.reservationSpan },
+    daysSelected: { value: input.daysSelected, type: typeof input.daysSelected, isArray: Array.isArray(input.daysSelected) },
+    nightsSelected: { value: input.nightsSelected, type: typeof input.nightsSelected, isArray: Array.isArray(input.nightsSelected) },
+    checkIn: { value: input.checkIn, type: typeof input.checkIn },
+    checkOut: { value: input.checkOut, type: typeof input.checkOut },
+    proposalPrice: { value: input.proposalPrice, type: typeof input.proposalPrice },
+  }, null, 2));
+
   // ─────────────────────────────────────────────────────────
   // Required Identifiers
   // ─────────────────────────────────────────────────────────
@@ -109,16 +141,16 @@ export function validateCreateProposalInput(input: CreateProposalInput): void {
   }
 
   // ─────────────────────────────────────────────────────────
-  // Day/Night Selection Validation (Bubble format: 1-7)
+  // Day/Night Selection Validation (JavaScript format: 0-6)
   // ─────────────────────────────────────────────────────────
 
   if (!Array.isArray(input.daysSelected) || input.daysSelected.length === 0) {
     throw new ValidationError("daysSelected must be a non-empty array");
   }
 
-  if (!validateDayIndices(input.daysSelected, "bubble")) {
+  if (!validateDayIndices(input.daysSelected)) {
     throw new ValidationError(
-      "daysSelected must contain integer values 1-7 (Bubble format: Sun=1, Sat=7)"
+      "daysSelected must contain integer values 0-6 (Sun=0, Sat=6)"
     );
   }
 
@@ -129,25 +161,25 @@ export function validateCreateProposalInput(input: CreateProposalInput): void {
     throw new ValidationError("nightsSelected must be a non-empty array");
   }
 
-  if (!validateNightIndices(input.nightsSelected, "bubble")) {
+  if (!validateNightIndices(input.nightsSelected)) {
     throw new ValidationError(
-      "nightsSelected must contain integer values 1-7 (Bubble format)"
+      "nightsSelected must contain integer values 0-6"
     );
   }
 
   // Check-in/out validation
   if (
     typeof input.checkIn !== "number" ||
-    !validateDayIndices([input.checkIn], "bubble")
+    !validateDayIndices([input.checkIn])
   ) {
-    throw new ValidationError("checkIn must be an integer value 1-7");
+    throw new ValidationError("checkIn must be an integer value 0-6");
   }
 
   if (
     typeof input.checkOut !== "number" ||
-    !validateDayIndices([input.checkOut], "bubble")
+    !validateDayIndices([input.checkOut])
   ) {
-    throw new ValidationError("checkOut must be an integer value 1-7");
+    throw new ValidationError("checkOut must be an integer value 0-6");
   }
 
   // ─────────────────────────────────────────────────────────
@@ -233,10 +265,10 @@ export function validateUpdateProposalInput(input: UpdateProposalInput): void {
     }
     if (
       input.days_selected.length > 0 &&
-      !validateDayIndices(input.days_selected, "bubble")
+      !validateDayIndices(input.days_selected)
     ) {
       throw new ValidationError(
-        "days_selected must contain integer values 1-7"
+        "days_selected must contain integer values 0-6"
       );
     }
   }
@@ -247,10 +279,10 @@ export function validateUpdateProposalInput(input: UpdateProposalInput): void {
     }
     if (
       input.nights_selected.length > 0 &&
-      !validateNightIndices(input.nights_selected, "bubble")
+      !validateNightIndices(input.nights_selected)
     ) {
       throw new ValidationError(
-        "nights_selected must contain integer values 1-7"
+        "nights_selected must contain integer values 0-6"
       );
     }
   }
@@ -285,10 +317,10 @@ export function validateUpdateProposalInput(input: UpdateProposalInput): void {
     }
     if (
       input.hc_days_selected.length > 0 &&
-      !validateDayIndices(input.hc_days_selected, "bubble")
+      !validateDayIndices(input.hc_days_selected)
     ) {
       throw new ValidationError(
-        "hc_days_selected must contain integer values 1-7"
+        "hc_days_selected must contain integer values 0-6"
       );
     }
   }
@@ -301,10 +333,10 @@ export function validateUpdateProposalInput(input: UpdateProposalInput): void {
     }
     if (
       input.hc_nights_selected.length > 0 &&
-      !validateNightIndices(input.hc_nights_selected, "bubble")
+      !validateNightIndices(input.hc_nights_selected)
     ) {
       throw new ValidationError(
-        "hc_nights_selected must contain integer values 1-7"
+        "hc_nights_selected must contain integer values 0-6"
       );
     }
   }

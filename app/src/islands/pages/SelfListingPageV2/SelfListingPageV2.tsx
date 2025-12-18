@@ -15,13 +15,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import Header from '../../shared/Header.jsx';
-import Footer from '../../shared/Footer.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import Toast, { useToast } from '../../shared/Toast.jsx';
 import { HostScheduleSelector } from '../../shared/HostScheduleSelector/HostScheduleSelector.jsx';
 import InformationalText from '../../shared/InformationalText.jsx';
 import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
-import { createListing, saveDraft } from '../../../lib/listingService.js';
+import { createListing, saveDraft, getListingById } from '../../../lib/listingService.js';
 import { isGuest } from '../../../logic/rules/users/isGuest.js';
 import { supabase } from '../../../lib/supabase.js';
 import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode } from '../../../lib/nycZipCodes';
@@ -130,6 +129,7 @@ const DEFAULT_FORM_DATA: FormData = {
 };
 
 const STORAGE_KEY = 'selfListingV2Draft';
+const LAST_HOST_TYPE_KEY = 'selfListingV2LastHostType';
 
 // Host Type Options
 const HOST_TYPES = [
@@ -180,6 +180,10 @@ export function SelfListingPageV2() {
   const [userPhoneNumber, setUserPhoneNumber] = useState<string | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [draftListingId, setDraftListingId] = useState<string | null>(null);
+
+  // Edit mode state - for editing existing listings via ?id= parameter
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingListingId, setEditingListingId] = useState<string | null>(null);
 
   // Toast notifications
   const { toasts, showToast, removeToast } = useToast();
@@ -319,6 +323,12 @@ export function SelfListingPageV2() {
       } catch (e) {
         console.error('Failed to load draft:', e);
       }
+    } else {
+      // No draft exists - check if we have a last hostType preference from previous listing
+      const lastHostType = localStorage.getItem(LAST_HOST_TYPE_KEY);
+      if (lastHostType && ['resident', 'liveout', 'coliving', 'agent'].includes(lastHostType)) {
+        setFormData(prev => ({ ...prev, hostType: lastHostType as FormData['hostType'] }));
+      }
     }
   }, []);
 
@@ -351,13 +361,46 @@ export function SelfListingPageV2() {
     initAuth();
   }, []);
 
-  // Handle URL parameters for continuing from another device
+  // Handle URL parameters for continuing from another device or editing existing listing
   useEffect(() => {
     const loadDraftFromUrl = async () => {
       const urlParams = new URLSearchParams(window.location.search);
+      const listingId = urlParams.get('id');
       const draftId = urlParams.get('draft');
       const sessionId = urlParams.get('session');
       const step = urlParams.get('step');
+
+      // Check for edit mode first (existing listing ID)
+      if (listingId) {
+        console.log('[SelfListingPageV2] Edit mode detected, loading listing:', listingId);
+        setIsEditMode(true);
+        setEditingListingId(listingId);
+
+        try {
+          const existingListing = await getListingById(listingId);
+
+          if (existingListing) {
+            // Clear localStorage draft to prevent conflicts
+            localStorage.removeItem(STORAGE_KEY);
+
+            // Pre-select the saved host type from the existing listing
+            setFormData(prev => ({
+              ...prev,
+              hostType: existingListing.host_type || prev.hostType,
+            }));
+
+            console.log('[SelfListingPageV2] Listing loaded, hostType pre-set to:', existingListing.host_type);
+          } else {
+            console.warn('[SelfListingPageV2] Listing not found:', listingId);
+          }
+        } catch (error) {
+          console.error('[SelfListingPageV2] Failed to load listing for editing:', error);
+        }
+
+        // Clear the URL parameters to avoid confusion on refresh
+        window.history.replaceState({}, '', window.location.pathname);
+        return; // Exit early, don't process draft/session params
+      }
 
       if (draftId) {
         // Try to load from Supabase listing_drafts table
@@ -884,6 +927,8 @@ export function SelfListingPageV2() {
       console.log('[SelfListingPageV2] Listing created:', result);
       setCreatedListingId(result._id);
       setSubmitSuccess(true);
+      // Save last hostType before clearing draft so it persists for next listing
+      localStorage.setItem(LAST_HOST_TYPE_KEY, formData.hostType);
       localStorage.removeItem(STORAGE_KEY);
     } catch (error) {
       console.error('[SelfListingPageV2] Submit error:', error);
@@ -895,16 +940,30 @@ export function SelfListingPageV2() {
 
   // Map form data to listingService format
   const mapFormDataToListingService = (data: FormData) => {
-    // Convert selectedNights array to availableNights object
-    const availableNights = {
-      sunday: data.selectedNights.includes('sunday'),
-      monday: data.selectedNights.includes('monday'),
-      tuesday: data.selectedNights.includes('tuesday'),
-      wednesday: data.selectedNights.includes('wednesday'),
-      thursday: data.selectedNights.includes('thursday'),
-      friday: data.selectedNights.includes('friday'),
-      saturday: data.selectedNights.includes('saturday'),
+    // All days/nights available - used for weekly/monthly rentals
+    const allDaysAvailable = {
+      sunday: true,
+      monday: true,
+      tuesday: true,
+      wednesday: true,
+      thursday: true,
+      friday: true,
+      saturday: true,
     };
+
+    // For nightly: use user's selected nights
+    // For weekly/monthly: all days should be available (full week/month rental)
+    const availableNights = data.leaseStyle === 'nightly'
+      ? {
+          sunday: data.selectedNights.includes('sunday'),
+          monday: data.selectedNights.includes('monday'),
+          tuesday: data.selectedNights.includes('tuesday'),
+          wednesday: data.selectedNights.includes('wednesday'),
+          thursday: data.selectedNights.includes('thursday'),
+          friday: data.selectedNights.includes('friday'),
+          saturday: data.selectedNights.includes('saturday'),
+        }
+      : allDaysAvailable;
 
     // Build nightly pricing object if applicable
     const nightlyPricing = data.leaseStyle === 'nightly' ? {
@@ -960,9 +1019,10 @@ export function SelfListingPageV2() {
       },
 
       // Lease styles
+      // For weekly/monthly rentals, all days/nights should be available
       leaseStyles: {
         rentalType: data.leaseStyle.charAt(0).toUpperCase() + data.leaseStyle.slice(1),
-        availableNights: data.leaseStyle === 'nightly' ? availableNights : {},
+        availableNights: availableNights, // Always pass availableNights (all days for weekly/monthly)
         weeklyPattern: data.leaseStyle === 'weekly' ? data.weeklyPattern : '',
         subsidyAgreement: data.leaseStyle === 'monthly' ? data.monthlyAgreement : false,
       },
@@ -1278,7 +1338,11 @@ export function SelfListingPageV2() {
           {/* Long Stay Discount Slider */}
           <div className="control-group">
             <div className="label-row">
-              <span className="calc-label label-with-info">
+              <span
+                className="calc-label label-with-info clickable-label"
+                onClick={handleInfoClick('longStayDiscount')}
+                style={{ cursor: 'pointer' }}
+              >
                 Long Stay Discount
                 <button
                   ref={longStayDiscountInfoRef}
@@ -1908,6 +1972,12 @@ export function SelfListingPageV2() {
               Preview Listing
             </a>
           )}
+          <a
+            href="/host-proposals"
+            className="btn-next btn-secondary"
+          >
+            View Your Proposals
+          </a>
         </div>
       </div>
     </div>
@@ -2088,7 +2158,6 @@ export function SelfListingPageV2() {
             <p>Loading...</p>
           </div>
         </main>
-        <Footer />
       </div>
     );
   }
@@ -2116,8 +2185,6 @@ export function SelfListingPageV2() {
           {renderCurrentStep()}
         </div>
       </main>
-
-      <Footer />
 
       {showAuthModal && (
         <SignUpLoginModal

@@ -161,6 +161,8 @@ export default function GuestProposalsPage() {
                   transformedProposal={transformedProposal}
                   statusConfig={statusConfig}
                   buttonConfig={buttonConfig}
+                  allProposals={proposals}
+                  onProposalSelect={handleProposalSelect}
                 />
               )}
 

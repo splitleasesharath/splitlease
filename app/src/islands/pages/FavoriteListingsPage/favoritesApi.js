@@ -1,108 +1,85 @@
 /**
  * API service for favorite listings
- * Uses Supabase Edge Functions (bubble-proxy) to interact with Bubble.io
+ * Uses direct Supabase queries to the user table's "Favorited Listings" JSONB field
  */
 
 import { supabase } from '../../../lib/supabase.js';
 
 /**
- * Fetch favorited listings for a user
+ * Fetch favorited listing IDs for a user from the user table
  * @param {string} userId - The user's ID
- * @param {Object} [options] - Fetch options
- * @param {number} [options.page=1] - Page number
- * @param {number} [options.perPage=20] - Items per page
- * @param {string} [options.sortBy='price_asc'] - Sort order
- * @returns {Promise<{listings: Array, pagination: Object}>}
+ * @returns {Promise<string[]>} Array of favorited listing IDs
  */
-export async function getFavoritedListings(userId, options = {}) {
-  const { page = 1, perPage = 20, sortBy = 'price_asc' } = options;
-
-  console.log('📡 [favoritesApi] getFavoritedListings called with:', { userId, options });
+export async function getFavoritedListingIds(userId) {
+  console.log('📡 [favoritesApi] getFavoritedListingIds called with:', { userId });
 
   try {
-    const requestBody = {
-      action: 'get_favorites',
-      payload: {
-        userId,
-        page,
-        perPage,
-        sortBy,
-      },
-    };
-    console.log('📡 [favoritesApi] Request body:', JSON.stringify(requestBody, null, 2));
-
-    const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-      body: requestBody,
-    });
-
-    console.log('📡 [favoritesApi] Response data:', data);
-    console.log('📡 [favoritesApi] Response error:', error);
+    const { data: userData, error } = await supabase
+      .from('user')
+      .select('"Favorited Listings"')
+      .eq('_id', userId)
+      .single();
 
     if (error) {
-      console.error('❌ Error fetching favorited listings:', error);
+      console.error('❌ Error fetching favorited listing IDs:', error);
       throw error;
     }
 
-    // Check for success response from Edge Function
-    if (!data?.success) {
-      const errorMsg = data?.error?.message || 'Failed to fetch favorites';
-      console.error('❌ Edge Function error:', errorMsg);
-      throw new Error(errorMsg);
-    }
-
-    // If no data returned, return empty response
-    if (!data.data || !data.data.listings) {
-      return {
-        listings: [],
-        pagination: {
-          total: 0,
-          page: 1,
-          perPage: 20,
-          totalPages: 0,
-        },
-      };
-    }
-
-    return data.data;
+    const favorites = userData?.['Favorited Listings'] || [];
+    console.log('📡 [favoritesApi] Found', favorites.length, 'favorited listings');
+    return favorites;
   } catch (err) {
-    console.error('❌ Failed to fetch favorited listings:', err);
+    console.error('❌ Failed to fetch favorited listing IDs:', err);
     throw err;
   }
 }
 
 /**
+ * Check if a specific listing is favorited by the user
+ * @param {string} userId - The user's ID
+ * @param {string} listingId - The listing ID to check
+ * @returns {Promise<boolean>} True if favorited, false otherwise
+ */
+export async function isListingFavorited(userId, listingId) {
+  try {
+    const favorites = await getFavoritedListingIds(userId);
+    return favorites.includes(listingId);
+  } catch (err) {
+    console.error('❌ Failed to check if listing is favorited:', err);
+    return false;
+  }
+}
+
+/**
  * Remove a listing from user's favorites
+ * Updates the user table's "Favorited Listings" JSONB field directly
  * @param {string} userId - The user's ID
  * @param {string} listingId - The listing ID to remove
  * @returns {Promise<{success: boolean, favorites: string[]}>}
  */
 export async function removeFromFavorites(userId, listingId) {
   try {
-    // Use Edge Function to remove from favorites (bypasses RLS with service role key)
-    console.log('🔄 Calling Edge Function to remove from favorites:', { userId, listingId });
+    console.log('🔄 Removing from favorites:', { userId, listingId });
 
-    const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-      body: {
-        action: 'toggle_favorite',
-        payload: {
-          userId,
-          listingId,
-          action: 'remove',
-        },
-      },
-    });
+    // Fetch current favorites
+    const currentFavorites = await getFavoritedListingIds(userId);
 
-    if (error) {
-      console.error('❌ Edge Function error:', error);
-      throw error;
-    }
+    // Remove the listing ID
+    const newFavorites = currentFavorites.filter(id => id !== listingId);
 
-    if (!data?.success) {
-      throw new Error(data?.error?.message || 'Failed to remove from favorites');
+    // Update user table
+    const { error: updateError } = await supabase
+      .from('user')
+      .update({ 'Favorited Listings': newFavorites })
+      .eq('_id', userId);
+
+    if (updateError) {
+      console.error('❌ Error updating favorites:', updateError);
+      throw updateError;
     }
 
     console.log('✅ Removed from favorites successfully');
-    return { success: true, favorites: data.data?.favorites || [] };
+    return { success: true, favorites: newFavorites };
   } catch (err) {
     console.error('❌ Failed to remove from favorites:', err);
     throw err;
@@ -111,37 +88,39 @@ export async function removeFromFavorites(userId, listingId) {
 
 /**
  * Add a listing to user's favorites
+ * Updates the user table's "Favorited Listings" JSONB field directly
  * @param {string} userId - The user's ID
  * @param {string} listingId - The listing ID to add
  * @returns {Promise<{success: boolean, favorites: string[]}>}
  */
 export async function addToFavorites(userId, listingId) {
   try {
-    // Use Edge Function to add to favorites (bypasses RLS with service role key)
-    console.log('🔄 Calling Edge Function to add to favorites:', { userId, listingId });
+    console.log('🔄 Adding to favorites:', { userId, listingId });
 
-    const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-      body: {
-        action: 'toggle_favorite',
-        payload: {
-          userId,
-          listingId,
-          action: 'add',
-        },
-      },
-    });
+    // Fetch current favorites
+    const currentFavorites = await getFavoritedListingIds(userId);
 
-    if (error) {
-      console.error('❌ Edge Function error:', error);
-      throw error;
+    // Add the listing ID (avoid duplicates)
+    let newFavorites;
+    if (!currentFavorites.includes(listingId)) {
+      newFavorites = [...currentFavorites, listingId];
+    } else {
+      newFavorites = currentFavorites;
     }
 
-    if (!data?.success) {
-      throw new Error(data?.error?.message || 'Failed to add to favorites');
+    // Update user table
+    const { error: updateError } = await supabase
+      .from('user')
+      .update({ 'Favorited Listings': newFavorites })
+      .eq('_id', userId);
+
+    if (updateError) {
+      console.error('❌ Error updating favorites:', updateError);
+      throw updateError;
     }
 
     console.log('✅ Added to favorites successfully');
-    return { success: true, favorites: data.data?.favorites || [] };
+    return { success: true, favorites: newFavorites };
   } catch (err) {
     console.error('❌ Failed to add to favorites:', err);
     throw err;

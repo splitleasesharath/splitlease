@@ -70,3 +70,81 @@ export function validateDeleteVirtualMeetingInput(input: unknown): void {
     throw new ValidationError('proposalId is required and must be a string');
   }
 }
+
+/**
+ * Validate the accept virtual meeting input payload
+ * @param input - The raw input to validate
+ * @throws ValidationError if input is invalid
+ */
+export function validateAcceptVirtualMeetingInput(input: unknown): void {
+  const data = input as Record<string, unknown>;
+
+  if (!data.proposalId || typeof data.proposalId !== 'string') {
+    throw new ValidationError('proposalId is required and must be a string');
+  }
+
+  if (!data.bookedDate || typeof data.bookedDate !== 'string') {
+    throw new ValidationError('bookedDate is required and must be a string');
+  }
+
+  // Validate bookedDate is valid ISO 8601
+  const date = new Date(data.bookedDate);
+  if (isNaN(date.getTime())) {
+    throw new ValidationError(`Invalid datetime format for bookedDate: ${data.bookedDate}`);
+  }
+
+  if (!data.userAcceptingId || typeof data.userAcceptingId !== 'string') {
+    throw new ValidationError('userAcceptingId is required and must be a string');
+  }
+}
+
+/**
+ * Validate the decline virtual meeting input payload
+ * @param input - The raw input to validate
+ * @throws ValidationError if input is invalid
+ */
+export function validateDeclineVirtualMeetingInput(input: unknown): void {
+  const data = input as Record<string, unknown>;
+
+  if (!data.proposalId || typeof data.proposalId !== 'string') {
+    throw new ValidationError('proposalId is required and must be a string');
+  }
+}
+
+/**
+ * Validate the send calendar invite input payload
+ * @param input - The raw input to validate
+ * @throws ValidationError if input is invalid
+ */
+export function validateSendCalendarInviteInput(input: unknown): void {
+  const data = input as Record<string, unknown>;
+
+  if (!data.proposalId || typeof data.proposalId !== 'string') {
+    throw new ValidationError('proposalId is required and must be a string');
+  }
+
+  if (!data.userId || typeof data.userId !== 'string') {
+    throw new ValidationError('userId is required and must be a string');
+  }
+}
+
+/**
+ * Validate the notify participants input payload
+ * @param input - The raw input to validate
+ * @throws ValidationError if input is invalid
+ */
+export function validateNotifyParticipantsInput(input: unknown): void {
+  const data = input as Record<string, unknown>;
+
+  if (!data.hostId || typeof data.hostId !== 'string') {
+    throw new ValidationError('hostId is required and must be a string');
+  }
+
+  if (!data.guestId || typeof data.guestId !== 'string') {
+    throw new ValidationError('guestId is required and must be a string');
+  }
+
+  if (!data.virtualMeetingId || typeof data.virtualMeetingId !== 'string') {
+    throw new ValidationError('virtualMeetingId is required and must be a string');
+  }
+}

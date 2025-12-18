@@ -77,30 +77,92 @@ export async function generateListingDescription(listingData) {
 }
 
 /**
+ * Rare amenities that should be prioritized in title generation
+ * These are differentiators that make a listing stand out
+ */
+const RARE_AMENITIES = [
+  'washer', 'dryer', 'w/d', 'laundry',
+  'dishwasher',
+  'terrace', 'balcony', 'patio', 'outdoor', 'backyard', 'garden', 'deck',
+  'rooftop', 'roof deck',
+  'doorman', 'concierge',
+  'gym', 'fitness',
+  'parking', 'garage',
+  'pool', 'swimming',
+  'elevator',
+  'exposed brick', 'high ceiling', 'skylight',
+  'fireplace',
+  'view', 'views',
+];
+
+/**
+ * Sort amenities by rarity - rare ones first
+ * @param {string[]} amenities - Array of amenity strings
+ * @returns {string[]} Sorted array with rare amenities first
+ */
+function sortAmenitiesByRarity(amenities) {
+  if (!Array.isArray(amenities)) return [];
+
+  return [...amenities].sort((a, b) => {
+    const aLower = a.toLowerCase();
+    const bLower = b.toLowerCase();
+    const aIsRare = RARE_AMENITIES.some(rare => aLower.includes(rare));
+    const bIsRare = RARE_AMENITIES.some(rare => bLower.includes(rare));
+
+    if (aIsRare && !bIsRare) return -1;
+    if (!aIsRare && bIsRare) return 1;
+    return 0;
+  });
+}
+
+/**
+ * Variation hints to force different title approaches
+ */
+const VARIATION_HINTS = [
+  'Focus on the LOCATION - mention the neighborhood name prominently',
+  'Focus on the BEST AMENITY - lead with the most unique feature',
+  'Focus on the SPACE TYPE - emphasize what kind of space it is',
+  'Focus on the VIBE - capture the neighborhood character',
+  'Focus on LIFESTYLE - who would love living here',
+];
+
+/**
  * Generate a listing title using AI based on property details
  *
  * @param {Object} listingData - The listing data to generate title from
  * @param {string} listingData.neighborhood - Neighborhood name
+ * @param {string} listingData.borough - Borough name (Manhattan, Brooklyn, etc.)
  * @param {string} listingData.typeOfSpace - Type of space (e.g., "Private Room", "Entire Place")
  * @param {number} listingData.bedrooms - Number of bedrooms (0 = Studio)
+ * @param {number} listingData.bathrooms - Number of bathrooms
  * @param {string[]} listingData.amenitiesInsideUnit - Array of in-unit amenities
+ * @param {string[]} listingData.amenitiesOutsideUnit - Array of building amenities
  * @returns {Promise<string>} Generated title
  * @throws {Error} If generation fails
  */
 export async function generateListingTitle(listingData) {
   console.log('[aiService] Generating listing title with data:', listingData);
 
-  // Format amenities array as comma-separated string (top 3 for brevity)
-  const amenitiesInUnit = Array.isArray(listingData.amenitiesInsideUnit)
-    ? listingData.amenitiesInsideUnit.slice(0, 3).join(', ')
-    : listingData.amenitiesInsideUnit || '';
+  // Sort amenities by rarity (rare ones first) and take top 5
+  const inUnitSorted = sortAmenitiesByRarity(listingData.amenitiesInsideUnit || []);
+  const buildingSorted = sortAmenitiesByRarity(listingData.amenitiesOutsideUnit || []);
+
+  const amenitiesInUnit = inUnitSorted.slice(0, 5).join(', ');
+  const amenitiesInBuilding = buildingSorted.slice(0, 5).join(', ');
+
+  // Pick a random variation hint to force different approaches
+  const variationHint = VARIATION_HINTS[Math.floor(Math.random() * VARIATION_HINTS.length)];
 
   // Prepare variables for the prompt
   const variables = {
     neighborhood: listingData.neighborhood || '',
+    borough: listingData.borough || '',
     typeOfSpace: listingData.typeOfSpace || '',
     bedrooms: listingData.bedrooms ?? '',
+    bathrooms: listingData.bathrooms ?? '',
     amenitiesInsideUnit: amenitiesInUnit || 'None specified',
+    amenitiesInBuilding: amenitiesInBuilding || 'None specified',
+    variationHint,
   };
 
   console.log('[aiService] Calling ai-gateway for title with variables:', variables);
@@ -131,6 +193,54 @@ export async function generateListingTitle(listingData) {
 
   console.log('[aiService] Generated title:', title);
   return title;
+}
+
+/**
+ * Generate a neighborhood description using AI based on address
+ * Used as fallback when ZIP code lookup fails
+ *
+ * @param {Object} addressData - The address data to generate description from
+ * @param {string} addressData.fullAddress - Full street address
+ * @param {string} addressData.city - City name
+ * @param {string} addressData.state - State abbreviation
+ * @param {string} addressData.zip - ZIP code
+ * @returns {Promise<string>} Generated neighborhood description
+ * @throws {Error} If generation fails
+ */
+export async function generateNeighborhoodDescription(addressData) {
+  console.log('[aiService] Generating neighborhood description for address:', addressData);
+
+  const variables = {
+    address: addressData.fullAddress || '',
+    city: addressData.city || '',
+    state: addressData.state || '',
+    zipCode: addressData.zip || '',
+  };
+
+  console.log('[aiService] Calling ai-gateway for neighborhood with variables:', variables);
+
+  const { data, error } = await supabase.functions.invoke('ai-gateway', {
+    body: {
+      action: 'complete',
+      payload: {
+        prompt_key: 'neighborhood-description',
+        variables,
+      },
+    },
+  });
+
+  if (error) {
+    console.error('[aiService] Edge Function error:', error);
+    throw new Error(`Failed to generate neighborhood description: ${error.message}`);
+  }
+
+  if (!data?.success) {
+    console.error('[aiService] AI Gateway error:', data?.error);
+    throw new Error(data?.error || 'Failed to generate neighborhood description');
+  }
+
+  console.log('[aiService] Generated neighborhood description:', data.data?.content);
+  return data.data?.content || '';
 }
 
 /**

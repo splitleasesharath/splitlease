@@ -29,9 +29,14 @@ import {
   calculateComplementaryNights,
   calculateOrderRanking,
   formatPriceForDisplay,
+  getNightlyRateForNights,
 } from "../lib/calculations.ts";
 import { determineInitialStatus, ProposalStatusName } from "../lib/status.ts";
 import { enqueueBubbleSync, triggerQueueProcessing } from "../lib/bubbleSyncQueue.ts";
+import {
+  addUserProposal,
+  addUserListingFavorite,
+} from "../../_shared/junctionHelpers.ts";
 
 // ID generation is now done via RPC: generate_bubble_id()
 
@@ -66,7 +71,7 @@ export async function handleCreate(
     .select(
       `
       _id,
-      "Host / Landlord",
+      "Host User",
       "rental type",
       "Features - House Rules",
       "💰Cleaning Cost / Maintenance Fee",
@@ -82,7 +87,8 @@ export async function handleCreate(
       "💰Nightly Host Rate for 4 nights",
       "💰Nightly Host Rate for 5 nights",
       "💰Nightly Host Rate for 7 nights",
-      "💰Monthly Host Rate"
+      "💰Monthly Host Rate",
+      "Deleted"
     `
     )
     .eq("_id", input.listingId)
@@ -93,8 +99,14 @@ export async function handleCreate(
     throw new ValidationError(`Listing not found: ${input.listingId}`);
   }
 
+  // Check if listing is soft-deleted
+  if ((listing as Record<string, unknown>).Deleted === true) {
+    console.error(`[proposal:create] Listing is soft-deleted: ${input.listingId}`);
+    throw new ValidationError(`Cannot create proposal for deleted listing: ${input.listingId}`);
+  }
+
   const listingData = listing as unknown as ListingData;
-  console.log(`[proposal:create] Found listing, host account: ${listingData["Host / Landlord"]}`);
+  console.log(`[proposal:create] Found listing, host user: ${listingData["Host User"]}`);
 
   // Fetch Guest User
   const { data: guest, error: guestError } = await supabase
@@ -123,33 +135,67 @@ export async function handleCreate(
   const guestData = guest as unknown as GuestData;
   console.log(`[proposal:create] Found guest: ${guestData.email}`);
 
-  // Fetch Host Account
-  const { data: hostAccount, error: hostAccountError } = await supabase
-    .from("account_host")
-    .select("_id, User")
-    .eq("_id", listingData["Host / Landlord"])
-    .single();
+  // ================================================
+  // EARLY PROFILE SAVE: Save bio/need_for_space BEFORE proposal creation
+  // This ensures user-entered data persists even if proposal creation fails
+  // ================================================
+  const tasksCompletedEarly = parseJsonArray<string>(guestData["Tasks Completed"], "Tasks Completed");
+  const earlyProfileUpdates: Record<string, unknown> = {};
 
-  if (hostAccountError || !hostAccount) {
-    console.error(`[proposal:create] Host account fetch failed:`, hostAccountError);
-    throw new ValidationError(`Host account not found: ${listingData["Host / Landlord"]}`);
+  if (!guestData["About Me / Bio"] && !tasksCompletedEarly.includes("bio") && input.aboutMe) {
+    earlyProfileUpdates["About Me / Bio"] = input.aboutMe;
+    console.log(`[proposal:create] Will save bio early (before proposal creation)`);
+  }
+  if (!guestData["need for Space"] && !tasksCompletedEarly.includes("need_for_space") && input.needForSpace) {
+    earlyProfileUpdates["need for Space"] = input.needForSpace;
+    console.log(`[proposal:create] Will save need_for_space early (before proposal creation)`);
+  }
+  if (!guestData["special needs"] && !tasksCompletedEarly.includes("special_needs") && input.specialNeeds) {
+    earlyProfileUpdates["special needs"] = input.specialNeeds;
+    console.log(`[proposal:create] Will save special_needs early (before proposal creation)`);
   }
 
-  const hostAccountData = hostAccount as unknown as HostAccountData;
+  // Save profile data immediately if there's anything to save
+  if (Object.keys(earlyProfileUpdates).length > 0) {
+    earlyProfileUpdates["Modified Date"] = new Date().toISOString();
+    const { error: earlyUpdateError } = await supabase
+      .from("user")
+      .update(earlyProfileUpdates)
+      .eq("_id", input.guestId);
 
-  // Fetch Host User
+    if (earlyUpdateError) {
+      console.error(`[proposal:create] Early profile save failed:`, earlyUpdateError);
+      // Non-blocking - continue with proposal creation
+    } else {
+      console.log(`[proposal:create] Early profile save succeeded - data will persist even if proposal fails`);
+      // Update local guestData to reflect the save (so we don't try to save again later)
+      if (earlyProfileUpdates["About Me / Bio"]) {
+        (guestData as Record<string, unknown>)["About Me / Bio"] = earlyProfileUpdates["About Me / Bio"];
+      }
+      if (earlyProfileUpdates["need for Space"]) {
+        (guestData as Record<string, unknown>)["need for Space"] = earlyProfileUpdates["need for Space"];
+      }
+      if (earlyProfileUpdates["special needs"]) {
+        (guestData as Record<string, unknown>)["special needs"] = earlyProfileUpdates["special needs"];
+      }
+    }
+  }
+
+  // Fetch Host User directly (Host User column now contains user._id)
   const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
     .select(`_id, email, "Proposals List"`)
-    .eq("_id", hostAccountData.User)
+    .eq("_id", listingData["Host User"])
     .single();
 
   if (hostUserError || !hostUser) {
     console.error(`[proposal:create] Host user fetch failed:`, hostUserError);
-    throw new ValidationError(`Host user not found`);
+    throw new ValidationError(`Host user not found: ${listingData["Host User"]}`);
   }
 
   const hostUserData = hostUser as unknown as HostUserData;
+  // hostAccountData maintained for backwards compatibility with downstream code
+  const hostAccountData = { _id: hostUserData._id, User: hostUserData._id } as HostAccountData;
   console.log(`[proposal:create] Found host: ${hostUserData.email}`);
 
   // Fetch Rental Application (if exists)
@@ -180,14 +226,31 @@ export async function handleCreate(
   );
 
   // Calculate compensation (Steps 13-18)
+  // IMPORTANT: Use the HOST's nightly rate from listing pricing tiers, NOT the guest-facing price
   const rentalType = ((listingData["rental type"] || "nightly").toLowerCase()) as RentalType;
+  const nightsPerWeek = input.nightsSelected.length;
+
+  // Get the host's nightly rate based on the number of nights selected
+  // This matches Bubble's "host compensation" parameter which comes from listing pricing
+  const hostNightlyRate = getNightlyRateForNights(listingData, nightsPerWeek);
+
+  console.log(`[proposal:create] Host pricing calculation:`, {
+    rentalType,
+    nightsPerWeek,
+    hostNightlyRate,
+    weeklyRate: listingData["💰Weekly Host Rate"],
+    monthlyRate: listingData["💰Monthly Host Rate"],
+    guestProposalPrice: input.proposalPrice
+  });
+
   const compensation = calculateCompensation(
     rentalType,
     (input.reservationSpan || "other") as ReservationSpan,
-    input.nightsSelected.length,
+    nightsPerWeek,
     listingData["💰Weekly Host Rate"] || 0,
-    input.proposalPrice,
-    input.reservationSpanWeeks
+    hostNightlyRate,
+    input.reservationSpanWeeks,
+    listingData["💰Monthly Host Rate"] || 0
   );
 
   // Calculate move-out date
@@ -204,7 +267,13 @@ export async function handleCreate(
     input.status as ProposalStatusName | undefined
   );
 
-  console.log(`[proposal:create] Calculated status: ${status}, compensation: ${compensation.total_compensation}`);
+  console.log(`[proposal:create] Calculated status: ${status}, compensation:`, {
+    hostCompensationPerNight: compensation.host_compensation_per_night,
+    totalCompensation: compensation.total_compensation,
+    fourWeekRent: compensation.four_week_rent,
+    fourWeekCompensation: compensation.four_week_compensation,
+    durationMonths: compensation.duration_months
+  });
 
   // ================================================
   // STEP 1: CREATE PROPOSAL RECORD
@@ -239,7 +308,8 @@ export async function handleCreate(
     // Core relationships
     Listing: input.listingId,
     Guest: input.guestId,
-    "Host - Account": listingData["Host / Landlord"],
+    // Host User contains user._id directly
+    "Host User": hostUserData._id,
     "Created By": input.guestId,
 
     // Guest info
@@ -273,11 +343,13 @@ export async function handleCreate(
     "Complementary Nights": complementaryNights,
 
     // Pricing
+    // CRITICAL: "host compensation" is the per-night HOST rate, not guest-facing price
+    // "Total Compensation" = host compensation per night * nights per week * weeks
     "proposal nightly price": input.proposalPrice,
     "4 week rent": input.fourWeekRent || compensation.four_week_rent,
     "Total Price for Reservation (guest)": input.estimatedBookingTotal,
     "Total Compensation (proposal - host)": compensation.total_compensation,
-    "host compensation": input.hostCompensation || compensation.total_compensation,
+    "host compensation": compensation.host_compensation_per_night,
     "4 week compensation": input.fourWeekCompensation || compensation.four_week_compensation,
     "cleaning fee": listingData["💰Cleaning Cost / Maintenance Fee"] || 0,
     "damage deposit": listingData["💰Damage Deposit"] || 0,
@@ -375,6 +447,18 @@ export async function handleCreate(
   }
 
   // ================================================
+  // STEP 2b: DUAL-WRITE TO JUNCTION TABLES (Guest)
+  // ================================================
+
+  // Add proposal to guest's junction table
+  await addUserProposal(supabase, input.guestId, proposalId, 'guest');
+
+  // Add listing to favorites junction table (if newly added)
+  if (!currentFavorites.includes(input.listingId)) {
+    await addUserListingFavorite(supabase, input.guestId, input.listingId);
+  }
+
+  // ================================================
   // STEP 3: UPDATE HOST USER
   // ================================================
 
@@ -395,6 +479,13 @@ export async function handleCreate(
   } else {
     console.log(`[proposal:create] Host user updated`);
   }
+
+  // ================================================
+  // STEP 3b: DUAL-WRITE TO JUNCTION TABLES (Host)
+  // ================================================
+
+  // Add proposal to host's junction table
+  await addUserProposal(supabase, hostAccountData.User, proposalId, 'host');
 
   // ================================================
   // TRIGGER ASYNC WORKFLOWS (Non-blocking)
@@ -420,7 +511,7 @@ export async function handleCreate(
   // ================================================
 
   // Enqueue sync item for the proposal creation only.
-  // The proposal record contains FK relationships (Guest, Host - Account, Listing)
+  // The proposal record contains FK relationships (Guest, Host User, Listing)
   // that establish the connections. We do NOT update user records' Proposals List
   // via Data API - Bubble's Data API handles ONE record per call, and list fields
   // like Proposals List are managed by Bubble's internal relationship system.

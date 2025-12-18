@@ -20,8 +20,8 @@ export const TABLE_MAPPING = {
         'bookings_stays': 'bookings-stays',
         'bookings_leases': 'bookings-leases',
 
-        // Account tables
-        'account_host': 'account_host',
+        // Account tables - DEPRECATED: account_host migrated to user table
+        // 'account_host': 'account_host',  // REMOVED - data now in user table
 
         // Related tables
         'listing_photo': 'listing-photo',
@@ -64,8 +64,8 @@ export const TABLE_MAPPING = {
         'bookings-stays': 'bookings_stays',
         'bookings-leases': 'bookings_leases',
 
-        // Account tables
-        'account_host': 'account_host',
+        // Account tables - DEPRECATED: account_host migrated to user table
+        // 'account_host': 'account_host',  // REMOVED - data now in user table
 
         // Related tables
         'listing-photo': 'listing_photo',

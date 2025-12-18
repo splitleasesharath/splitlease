@@ -38,16 +38,9 @@ const styles = {
   },
   toggleWrapper: {
     display: 'flex',
-    flexDirection: 'column',
     alignItems: 'center',
-    gap: '4px',
-  },
-  toggleLabel: {
-    fontSize: '10px',
-    fontWeight: '500',
-    color: '#666666',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px',
+    justifyContent: 'center',
+    width: '51px', // Match header label width for alignment
   },
 };
 
@@ -69,7 +62,6 @@ export default function NotificationCategoryRow({
       </div>
       <div style={styles.toggleSection}>
         <div style={styles.toggleWrapper}>
-          <span style={styles.toggleLabel}>SMS</span>
           <NotificationToggle
             checked={smsEnabled}
             onChange={() => onToggleSms(category.smsColumn)}
@@ -78,7 +70,6 @@ export default function NotificationCategoryRow({
           />
         </div>
         <div style={styles.toggleWrapper}>
-          <span style={styles.toggleLabel}>Email</span>
           <NotificationToggle
             checked={emailEnabled}
             onChange={() => onToggleEmail(category.emailColumn)}

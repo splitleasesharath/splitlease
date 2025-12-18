@@ -94,7 +94,7 @@ listingLocalStore (singleton)
     ↓
 localStorage (auto-save with 1s debounce)
     ↓
-Submit → prepareListingSubmission → listingService → Supabase listing_trial
+Submit → prepareListingSubmission → listingService → Supabase listing table
 ```
 
 [AUTO_SAVE]: 1 second debounce after field changes
@@ -219,7 +219,7 @@ Submit → prepareListingSubmission → listingService → Supabase listing_tria
 ### listingService
 [FUNCTION]: createListing(formData)
 [RETURNS]: { id, ...listing data }
-[DESTINATION]: Supabase listing_trial table
+[DESTINATION]: Supabase listing table
 
 ### bubbleAPI
 [FUNCTION]: getListingById(listingId)

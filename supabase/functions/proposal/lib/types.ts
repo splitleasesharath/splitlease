@@ -137,7 +137,7 @@ export interface ProposalData {
   _id: string;
   Listing: string;
   Guest: string;
-  "Host - Account": string;
+  "Host User": string;
   Status: string;
   "proposal nightly price": number;
   "Move in range start": string;
@@ -181,7 +181,7 @@ export interface ProposalData {
  */
 export interface ListingData {
   _id: string;
-  "Host / Landlord": string;
+  "Host User": string;
   "rental type": string;
   "Features - House Rules": string[];
   "💰Cleaning Cost / Maintenance Fee": number;
@@ -248,6 +248,8 @@ export interface CompensationResult {
   duration_months: number;
   four_week_rent: number;
   four_week_compensation: number;
+  /** Host's per-night rate (used for "host compensation" field in proposal) */
+  host_compensation_per_night: number;
 }
 
 /**

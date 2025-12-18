@@ -89,20 +89,18 @@ export async function handleCreate(
       'Modified Date': now,
     };
 
-    // If user_email provided, look up user and attach
-    let hostAccountId: string | null = null;
+    // If user_email provided, look up user and attach (Host User = user._id)
     if (user_email) {
       const { data: userData } = await supabase
         .from('user')
-        .select('_id, "Account - Host / Landlord"')
+        .select('_id')
         .eq('email', user_email.toLowerCase())
         .single();
 
       if (userData) {
-        hostAccountId = userData['Account - Host / Landlord'] as string;
-        listingData['Host / Landlord'] = hostAccountId;
+        listingData['Host User'] = userData._id;
         listingData['Created By'] = userData._id;
-        console.log('[listing:create] User found, host account:', hostAccountId);
+        console.log('[listing:create] User found:', userData._id);
       }
     }
 

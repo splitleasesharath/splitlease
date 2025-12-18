@@ -1416,6 +1416,21 @@
   color: #d1d5db;
 }
 
+/* Selectable overflow days (future dates from adjacent months) */
+.listing-dashboard-availability__calendar-day--other-month.listing-dashboard-availability__calendar-day--selectable {
+  cursor: pointer;
+}
+
+.listing-dashboard-availability__calendar-day--other-month.listing-dashboard-availability__calendar-day--selectable:hover {
+  background-color: #f3f4f6;
+}
+
+/* Blocked overflow days should still show blocked styling */
+.listing-dashboard-availability__calendar-day--other-month.listing-dashboard-availability__calendar-day--blocked {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
 .listing-dashboard-availability__calendar-day--past {
   color: #9ca3af;
   background-color: #f9fafb;
@@ -1784,6 +1799,54 @@
 
 .listing-dashboard-cancellation__link:hover {
   color: var(--ld-accent-purple);
+}
+
+.listing-dashboard-cancellation__restrictions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ld-border-color);
+}
+
+.listing-dashboard-cancellation__restrictions-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ld-text-secondary);
+}
+
+.listing-dashboard-cancellation__restrictions-input {
+  width: 100%;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border: 1px solid var(--ld-border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 100px;
+}
+
+.listing-dashboard-cancellation__restrictions-input:focus {
+  outline: none;
+  border-color: var(--ld-accent-purple);
+  box-shadow: 0 0 0 3px rgba(107, 79, 187, 0.1);
+}
+
+.listing-dashboard-cancellation__restrictions-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.listing-dashboard-cancellation__restrictions-input::placeholder {
+  color: #9ca3af;
+}
+
+.listing-dashboard-cancellation__saving {
+  font-size: 12px;
+  color: var(--ld-accent-purple);
+  font-style: italic;
 }
 
 /* Responsive adjustments */

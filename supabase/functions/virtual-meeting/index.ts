@@ -4,6 +4,11 @@
  *
  * Main router for virtual meeting operations:
  * - create: Create a new virtual meeting request
+ * - delete: Delete/cancel a virtual meeting
+ * - accept: Accept a virtual meeting with booked date
+ * - decline: Decline a virtual meeting request
+ * - send_calendar_invite: Trigger Google Calendar invite via Zapier
+ * - notify_participants: Send SMS/Email notifications to participants
  *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
  */
@@ -22,14 +27,18 @@ import { createErrorCollector, ErrorCollector } from "../_shared/slack.ts";
 
 import { handleCreate } from "./handlers/create.ts";
 import { handleDelete } from "./handlers/delete.ts";
+import { handleAccept } from "./handlers/accept.ts";
+import { handleDecline } from "./handlers/decline.ts";
+import { handleSendCalendarInvite } from "./handlers/sendCalendarInvite.ts";
+import { handleNotifyParticipants } from "./handlers/notifyParticipants.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ["create", "delete"] as const;
-// NOTE: 'create' and 'delete' are public until Supabase auth migration is complete
-const PUBLIC_ACTIONS = ["create", "delete"] as const;
+const ALLOWED_ACTIONS = ["create", "delete", "accept", "decline", "send_calendar_invite", "notify_participants"] as const;
+// NOTE: All actions are public until Supabase auth migration is complete
+const PUBLIC_ACTIONS = ["create", "delete", "accept", "decline", "send_calendar_invite", "notify_participants"] as const;
 
 type Action = (typeof ALLOWED_ACTIONS)[number];
 
@@ -154,6 +163,22 @@ Deno.serve(async (req: Request) => {
 
       case "delete":
         result = await handleDelete(body.payload, user, serviceClient);
+        break;
+
+      case "accept":
+        result = await handleAccept(body.payload, user, serviceClient);
+        break;
+
+      case "decline":
+        result = await handleDecline(body.payload, user, serviceClient);
+        break;
+
+      case "send_calendar_invite":
+        result = await handleSendCalendarInvite(body.payload, user, serviceClient);
+        break;
+
+      case "notify_participants":
+        result = await handleNotifyParticipants(body.payload, user, serviceClient);
         break;
 
       default:

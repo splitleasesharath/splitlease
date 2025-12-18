@@ -11,7 +11,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getUserType } from '../../../lib/auth.js';
+import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
 import { isHost } from '../../../logic/rules/users/isHost.js';
 
@@ -65,24 +66,70 @@ export function useHostProposalsPageLogic() {
           return;
         }
 
-        // Validate token and get user data
-        const userData = await validateTokenAndFetchUser();
+        // ========================================================================
+        // GOLD STANDARD AUTH PATTERN - Step 2: Deep validation with clearOnFailure: false
+        // ========================================================================
+        const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
 
-        if (!userData) {
-          setAuthState({
-            isChecking: false,
-            isAuthenticated: false,
-            shouldRedirect: true,
-            userType: null
-          });
-          window.location.href = '/';
-          return;
+        let userType = null;
+        let finalUserData = null;
+
+        if (userData) {
+          // Success path: Use validated user data
+          userType = userData['User Type'] || userData.userType;
+          finalUserData = userData;
+          console.log('[HostProposals] User data loaded, userType:', userType);
+        } else {
+          // ========================================================================
+          // GOLD STANDARD AUTH PATTERN - Step 3: Fallback to Supabase session metadata
+          // ========================================================================
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session?.user) {
+            // Session valid but profile fetch failed - use session metadata
+            userType = session.user.user_metadata?.user_type || getUserType() || null;
+            console.log('[HostProposals] Using fallback session data, userType:', userType);
+
+            // Create minimal user data from session for loadHostData
+            if (userType && isHost({ userType })) {
+              finalUserData = {
+                userId: session.user.user_metadata?.user_id || getUserId() || session.user.id,
+                _id: session.user.user_metadata?.user_id || getUserId() || session.user.id,
+                firstName: session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'Host',
+                email: session.user.email,
+                userType: userType
+              };
+            }
+
+            // If we can't determine userType from session, redirect
+            if (!userType) {
+              console.log('[HostProposals] Cannot determine user type from session, redirecting');
+              setAuthState({
+                isChecking: false,
+                isAuthenticated: true,
+                shouldRedirect: true,
+                userType: null
+              });
+              window.location.href = '/';
+              return;
+            }
+          } else {
+            // No valid session - redirect
+            console.log('[HostProposals] No valid session, redirecting');
+            setAuthState({
+              isChecking: false,
+              isAuthenticated: false,
+              shouldRedirect: true,
+              userType: null
+            });
+            window.location.href = '/';
+            return;
+          }
         }
 
         // Check if user is a host
-        const userType = userData['User Type'] || userData.userType;
         if (!isHost({ userType })) {
-          console.warn('User is not a Host, redirecting...');
+          console.warn('[HostProposals] User is not a Host, redirecting...');
           setAuthState({
             isChecking: false,
             isAuthenticated: false,
@@ -93,7 +140,7 @@ export function useHostProposalsPageLogic() {
           return;
         }
 
-        setUser(userData);
+        setUser(finalUserData);
         setAuthState({
           isChecking: false,
           isAuthenticated: true,
@@ -102,7 +149,7 @@ export function useHostProposalsPageLogic() {
         });
 
         // Load host data
-        await loadHostData(userData._id || userData.id);
+        await loadHostData(finalUserData.userId || finalUserData._id);
 
       } catch (err) {
         console.error('Auth check failed:', err);
@@ -125,6 +172,7 @@ export function useHostProposalsPageLogic() {
 
   /**
    * Load host listings and proposals
+   * Sorts listings by proposal count (most proposals first) and selects the one with most recent proposals
    */
   const loadHostData = async (userId) => {
     setIsLoading(true);
@@ -135,11 +183,65 @@ export function useHostProposalsPageLogic() {
       const listingsResult = await fetchHostListings(userId);
 
       if (listingsResult.length > 0) {
-        setListings(listingsResult);
-        setSelectedListing(listingsResult[0]);
+        // Fetch proposal counts for all listings to determine sort order
+        const listingIds = listingsResult.map(l => l._id || l.id);
 
-        // Fetch proposals for the first listing
-        const proposalsResult = await fetchProposalsForListing(listingsResult[0]._id || listingsResult[0].id);
+        // Get proposal counts and most recent proposal date for each listing
+        const { data: proposalStats, error: statsError } = await supabase
+          .from('proposal')
+          .select('Listing, "Created Date"')
+          .in('Listing', listingIds)
+          .or('"Deleted".is.null,"Deleted".eq.false');
+
+        if (statsError) {
+          console.warn('[useHostProposalsPageLogic] Could not fetch proposal stats:', statsError);
+        }
+
+        // Calculate stats per listing
+        const statsMap = {};
+        (proposalStats || []).forEach(p => {
+          const listingId = p.Listing;
+          if (!statsMap[listingId]) {
+            statsMap[listingId] = { count: 0, mostRecent: null };
+          }
+          statsMap[listingId].count++;
+          const createdDate = new Date(p['Created Date']);
+          if (!statsMap[listingId].mostRecent || createdDate > statsMap[listingId].mostRecent) {
+            statsMap[listingId].mostRecent = createdDate;
+          }
+        });
+
+        // Sort listings: most recent proposal first, then by proposal count
+        const sortedListings = [...listingsResult].sort((a, b) => {
+          const aId = a._id || a.id;
+          const bId = b._id || b.id;
+          const aStats = statsMap[aId] || { count: 0, mostRecent: null };
+          const bStats = statsMap[bId] || { count: 0, mostRecent: null };
+
+          // First, prioritize listings with proposals
+          if (aStats.count > 0 && bStats.count === 0) return -1;
+          if (bStats.count > 0 && aStats.count === 0) return 1;
+
+          // Then sort by most recent proposal date
+          if (aStats.mostRecent && bStats.mostRecent) {
+            return bStats.mostRecent - aStats.mostRecent;
+          }
+          if (aStats.mostRecent) return -1;
+          if (bStats.mostRecent) return 1;
+
+          // Finally, sort by proposal count
+          return bStats.count - aStats.count;
+        });
+
+        console.log('[useHostProposalsPageLogic] Sorted listings by proposals:',
+          sortedListings.map(l => ({ id: l._id || l.id, name: l.Name, proposals: statsMap[l._id || l.id]?.count || 0 }))
+        );
+
+        setListings(sortedListings);
+        setSelectedListing(sortedListings[0]);
+
+        // Fetch proposals for the first (most relevant) listing
+        const proposalsResult = await fetchProposalsForListing(sortedListings[0]._id || sortedListings[0].id);
         setProposals(proposalsResult);
       } else {
         setListings([]);
@@ -155,20 +257,30 @@ export function useHostProposalsPageLogic() {
   };
 
   /**
-   * Fetch host's listings from API
+   * Fetch host's listings using RPC function
+   *
+   * Uses get_host_listings RPC to handle column names with special characters
+   * (like "Host User") that cause issues with PostgREST .or() filters.
+   *
+   * Pattern: RPC handles finding listings where:
+   * - "Host User" = user._id, OR
+   * - "Created By" = user._id
    */
   const fetchHostListings = async (userId) => {
     try {
-      const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          action: 'getHostListings',
-          hostId: userId
-        }
-      });
+      console.log('[useHostProposalsPageLogic] Fetching listings for user:', userId);
 
-      if (error) throw error;
+      // Use RPC function to fetch listings (handles special characters in column names)
+      const { data: listings, error } = await supabase
+        .rpc('get_host_listings', { host_user_id: userId });
 
-      return data?.listings || data?.response?.results || [];
+      if (error) {
+        console.error('[useHostProposalsPageLogic] Error fetching listings:', error);
+        throw error;
+      }
+
+      console.log('[useHostProposalsPageLogic] Found listings:', listings?.length || 0);
+      return listings || [];
     } catch (err) {
       console.error('Failed to fetch listings:', err);
       return [];
@@ -176,20 +288,82 @@ export function useHostProposalsPageLogic() {
   };
 
   /**
-   * Fetch proposals for a specific listing
+   * Fetch proposals for a specific listing directly from Supabase
+   * Includes guest information for display
    */
   const fetchProposalsForListing = async (listingId) => {
     try {
-      const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          action: 'getProposalsForListing',
-          listingId: listingId
+      console.log('[useHostProposalsPageLogic] Fetching proposals for listing:', listingId);
+
+      const { data: proposals, error } = await supabase
+        .from('proposal')
+        .select(`
+          _id,
+          "Status",
+          "Guest",
+          "Host User",
+          "Listing",
+          "Move in range start",
+          "Move in range end",
+          "Move-out",
+          "Reservation Span",
+          "Reservation Span (Weeks)",
+          "nights per week (num)",
+          "Nights Selected (Nights list)",
+          "Days Selected",
+          "check in day",
+          "check out day",
+          "hc nights selected",
+          "hc days selected",
+          "proposal nightly price",
+          "4 week rent",
+          "Total Price for Reservation (guest)",
+          "Total Compensation (proposal - host)",
+          "host compensation",
+          "4 week compensation",
+          "cleaning fee",
+          "damage deposit",
+          "Guest email",
+          "need for space",
+          "about_yourself",
+          "Comment",
+          "Created Date",
+          "Modified Date"
+        `)
+        .eq('Listing', listingId)
+        .neq('Deleted', true)
+        .order('Created Date', { ascending: false });
+
+      if (error) {
+        console.error('[useHostProposalsPageLogic] Error fetching proposals:', error);
+        throw error;
+      }
+
+      console.log('[useHostProposalsPageLogic] Found proposals:', proposals?.length || 0);
+
+      // Enrich proposals with guest data
+      if (proposals && proposals.length > 0) {
+        const guestIds = [...new Set(proposals.map(p => p.Guest).filter(Boolean))];
+
+        if (guestIds.length > 0) {
+          const { data: guests } = await supabase
+            .from('user')
+            .select('_id, "Name - Full", "Name - First", "Name - Last", email, "Profile Photo"')
+            .in('_id', guestIds);
+
+          const guestMap = {};
+          guests?.forEach(g => { guestMap[g._id] = g; });
+
+          // Attach guest data to each proposal
+          proposals.forEach(p => {
+            if (p.Guest && guestMap[p.Guest]) {
+              p.guest = guestMap[p.Guest];
+            }
+          });
         }
-      });
+      }
 
-      if (error) throw error;
-
-      return data?.proposals || data?.response?.results || [];
+      return proposals || [];
     } catch (err) {
       console.error('Failed to fetch proposals:', err);
       return [];
@@ -235,7 +409,7 @@ export function useHostProposalsPageLogic() {
   }, []);
 
   /**
-   * Handle proposal deletion
+   * Handle proposal deletion (soft delete via status update)
    */
   const handleDeleteProposal = useCallback(async (proposal) => {
     if (!confirm('Are you sure you want to delete this proposal?')) {
@@ -243,10 +417,14 @@ export function useHostProposalsPageLogic() {
     }
 
     try {
-      const { error } = await supabase.functions.invoke('bubble-proxy', {
+      // Use proposal Edge Function to update status
+      const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
-          action: 'deleteProposal',
-          proposalId: proposal._id || proposal.id
+          action: 'update',
+          payload: {
+            proposalId: proposal._id || proposal.id,
+            status: 'Deleted'
+          }
         }
       });
 
@@ -254,6 +432,7 @@ export function useHostProposalsPageLogic() {
 
       // Remove from local state
       setProposals(prev => prev.filter(p => (p._id || p.id) !== (proposal._id || proposal.id)));
+      console.log('[useHostProposalsPageLogic] Proposal deleted:', proposal._id);
 
     } catch (err) {
       console.error('Failed to delete proposal:', err);
@@ -266,10 +445,14 @@ export function useHostProposalsPageLogic() {
    */
   const handleAcceptProposal = useCallback(async (proposal) => {
     try {
-      const { error } = await supabase.functions.invoke('bubble-proxy', {
+      // Use proposal Edge Function to update status
+      const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
-          action: 'acceptProposal',
-          proposalId: proposal._id || proposal.id
+          action: 'update',
+          payload: {
+            proposalId: proposal._id || proposal.id,
+            status: 'Accepted'
+          }
         }
       });
 
@@ -283,6 +466,7 @@ export function useHostProposalsPageLogic() {
 
       handleCloseModal();
       alert('Proposal accepted successfully!');
+      console.log('[useHostProposalsPageLogic] Proposal accepted:', proposal._id);
 
     } catch (err) {
       console.error('Failed to accept proposal:', err);
@@ -299,10 +483,14 @@ export function useHostProposalsPageLogic() {
     }
 
     try {
-      const { error } = await supabase.functions.invoke('bubble-proxy', {
+      // Use proposal Edge Function to update status
+      const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
-          action: 'rejectProposal',
-          proposalId: proposal._id || proposal.id
+          action: 'update',
+          payload: {
+            proposalId: proposal._id || proposal.id,
+            status: 'Declined'
+          }
         }
       });
 
@@ -316,6 +504,7 @@ export function useHostProposalsPageLogic() {
 
       handleCloseModal();
       alert('Proposal rejected.');
+      console.log('[useHostProposalsPageLogic] Proposal rejected:', proposal._id);
 
     } catch (err) {
       console.error('Failed to reject proposal:', err);
@@ -345,18 +534,13 @@ export function useHostProposalsPageLogic() {
 
   /**
    * Handle remind Split Lease
+   * TODO: Implement proper reminder system (email/notification)
    */
   const handleRemindSplitLease = useCallback(async (proposal) => {
     try {
-      await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          action: 'remindSplitLease',
-          proposalId: proposal._id || proposal.id
-        }
-      });
-
-      alert('Reminder sent to Split Lease team');
-
+      // For now, just show a confirmation - can be connected to a notification system later
+      console.log('[useHostProposalsPageLogic] Reminder requested for proposal:', proposal._id);
+      alert('Reminder feature coming soon! For urgent matters, please contact support@splitlease.com');
     } catch (err) {
       console.error('Failed to send reminder:', err);
       alert('Failed to send reminder. Please try again.');
@@ -385,7 +569,7 @@ export function useHostProposalsPageLogic() {
    */
   const handleRetry = useCallback(() => {
     if (user) {
-      loadHostData(user._id || user.id);
+      loadHostData(user.userId);
     }
   }, [user]);
 

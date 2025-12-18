@@ -213,7 +213,8 @@ export const routes = [
     file: 'self-listing.html',
     aliases: ['/self-listing.html'],
     protected: true,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'self-listing-view',
     hasDynamicSegment: false
   },
   {
@@ -259,7 +260,8 @@ export const routes = [
     file: 'rental-application.html',
     aliases: ['/rental-application.html'],
     protected: true,
-    cloudflareInternal: false,
+    cloudflareInternal: true,
+    internalName: 'rental-application-view',
     hasDynamicSegment: false
   },
 

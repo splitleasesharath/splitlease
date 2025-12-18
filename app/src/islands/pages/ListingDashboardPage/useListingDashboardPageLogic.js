@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { validateTokenAndFetchUser } from '../../../lib/auth';
+import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getAvatarUrl } from '../../../lib/auth';
+import { getUserId } from '../../../lib/secureStorage';
 import { generateListingDescription, generateListingTitle } from '../../../lib/aiService';
 import { getCommonHouseRules } from '../../shared/EditListingDetails/services/houseRulesService';
 import { getCommonSafetyFeatures } from '../../shared/EditListingDetails/services/safetyFeaturesService';
@@ -116,13 +117,11 @@ async function fetchLookupTables() {
  * @param {Object} dbListing - Raw listing data from Supabase
  * @param {Array} photos - Array of photo objects
  * @param {Object} lookups - Lookup tables for resolving IDs to names
- * @param {boolean} isListingTrial - Whether this is from listing_trial table (uses 'id' instead of '_id')
  */
-function transformListingData(dbListing, photos = [], lookups = {}, isListingTrial = false) {
+function transformListingData(dbListing, photos = [], lookups = {}) {
   if (!dbListing) return null;
 
-  // listing_trial uses 'id' (UUID), listing uses '_id' (Bubble ID)
-  const listingId = isListingTrial ? dbListing.id : dbListing._id;
+  const listingId = dbListing._id;
 
   // Parse location address if it's a JSON string
   let locationAddress = {};
@@ -169,20 +168,20 @@ function transformListingData(dbListing, photos = [], lookups = {}, isListingTri
     photoType: photo.Type || 'Other',
   }));
 
-  // Parse available days (1-7 Bubble format to 0-6 JS format)
+  // Parse available days (database now stores 0-6 JS format natively)
   const availableDays = safeParseJsonArray(dbListing['Days Available (List of Days)']).map(day => {
-    // Bubble uses 1-7, JS uses 0-6
+    // Database uses 0-6 (JS standard: 0=Sunday through 6=Saturday)
     const numDay = typeof day === 'number' ? day : parseInt(day, 10);
-    return numDay - 1; // Convert to 0-indexed
+    return numDay; // Already 0-indexed
   });
 
-  // Convert Bubble day numbers to night IDs for HostScheduleSelector
-  // Bubble uses 1=Sunday, 2=Monday... 7=Saturday
+  // Convert day indices to night IDs for HostScheduleSelector
+  // Database now uses 0=Sunday, 1=Monday... 6=Saturday (JS standard)
   const NIGHT_IDS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
   const nightsAvailable = safeParseJsonArray(dbListing['Days Available (List of Days)']).map(day => {
     const numDay = typeof day === 'number' ? day : parseInt(day, 10);
-    // Bubble uses 1-7, night IDs use 0-indexed array
-    return NIGHT_IDS[numDay - 1];
+    // Day indices use 0-indexed array directly
+    return NIGHT_IDS[numDay];
   }).filter(Boolean);
 
   return {
@@ -320,6 +319,7 @@ function transformListingData(dbListing, photos = [], lookups = {}, isListingTri
 
     // Cancellation Policy
     cancellationPolicy: dbListing['Cancellation Policy'] || 'Standard',
+    cancellationPolicyAdditionalRestrictions: dbListing['Cancellation Policy - Additional Restrictions'] || '',
 
     // Photos
     photos: transformedPhotos,
@@ -361,83 +361,62 @@ export default function useListingDashboardPageLogic() {
     try {
       console.log('🔍 Fetching listing:', listingId);
 
-      // Try listing_trial first (by id column), then fall back to listing table (by _id column)
-      // This handles both new self-listing submissions (stored in listing_trial) and
-      // existing Bubble listings (stored in listing table)
-
-      // First, try listing_trial table by 'id' column
-      console.log('📋 Trying listing_trial table with id=' + listingId);
-      const trialResult = await supabase
-        .from('listing_trial')
+      // Fetch from listing table
+      const listingResult = await supabase
+        .from('listing')
         .select('*')
-        .eq('id', listingId)
+        .eq('_id', listingId)
         .maybeSingle();
 
-      let listingData = trialResult.data;
-      let isListingTrial = true;
-
-      // If not found in listing_trial, try the listing table by '_id' column
-      if (!listingData) {
-        console.log('📋 Not found in listing_trial, trying listing table with _id=' + listingId);
-        const listingResult = await supabase
-          .from('listing')
-          .select('*')
-          .eq('_id', listingId)
-          .maybeSingle();
-
-        if (listingResult.error) {
-          throw new Error(`Failed to fetch listing: ${listingResult.error.message}`);
-        }
-
-        listingData = listingResult.data;
-        isListingTrial = false;
+      if (listingResult.error) {
+        throw new Error(`Failed to fetch listing: ${listingResult.error.message}`);
       }
 
+      const listingData = listingResult.data;
+
       if (!listingData) {
-        throw new Error('Listing not found in either listing_trial or listing table');
+        throw new Error('Listing not found');
       }
 
-      console.log(`✅ Found listing in ${isListingTrial ? 'listing_trial' : 'listing'} table:`, listingData);
+      console.log('✅ Found listing:', listingData._id);
 
       // Fetch lookup tables and related data in parallel
       const [lookups, photosResult, proposalsResult, leasesResult, meetingsResult] = await Promise.all([
         fetchLookupTables(),
-        // For listing_trial, photos are stored inline in 'Features - Photos' column, not a separate table
-        isListingTrial
-          ? Promise.resolve({ data: [], error: null })
-          : supabase.from('listing_photo').select('*').eq('Listing', listingId).eq('Active', true).order('SortOrder', { ascending: true }),
-        // For listing_trial, proposals/leases/meetings may not exist yet
-        isListingTrial
-          ? Promise.resolve({ count: 0, error: null })
-          : supabase.from('proposal').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
-        isListingTrial
-          ? Promise.resolve({ count: 0, error: null })
-          : supabase.from('bookings_leases').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
-        isListingTrial
-          ? Promise.resolve({ count: 0, error: null })
-          : supabase.from('virtualmeetingschedulesandlinks').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
+        supabase.from('listing_photo').select('*').eq('Listing', listingId).eq('Active', true).order('SortOrder', { ascending: true }),
+        supabase.from('proposal').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
+        supabase.from('bookings_leases').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
+        supabase.from('virtualmeetingschedulesandlinks').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
       ]);
 
-      // Extract photos from inline 'Features - Photos' JSON column
-      // Works for both listing_trial and regular listing (after migration)
+      // Extract photos - check if embedded in Features - Photos or in listing_photo table
       let photos = [];
       const inlinePhotos = safeParseJsonArray(listingData['Features - Photos']);
-      const hasEmbeddedObjects = inlinePhotos.length > 0 &&
-        typeof inlinePhotos[0] === 'object' &&
-        inlinePhotos[0] !== null;
 
-      if (isListingTrial || hasEmbeddedObjects) {
-        // Transform inline/embedded photos to match expected format
-        photos = inlinePhotos.map((photo, index) => ({
-          _id: photo.id || `inline_${index}`,
-          Photo: photo.url || photo.Photo || photo,
-          URL: photo.url || photo.Photo || photo,
-          toggleMainPhoto: photo.toggleMainPhoto ?? photo.isCover ?? (index === 0),
-          Type: photo.type || photo.Type || 'Other',
-          SortOrder: photo.SortOrder ?? photo.sortOrder ?? index,
-          Active: true,
-        }));
-        console.log('📷 Embedded photos from Features - Photos:', photos.length);
+      if (inlinePhotos.length > 0) {
+        // Features - Photos can contain either:
+        // 1. Array of objects: [{url: "...", isCover: true}, ...]
+        // 2. Array of URL strings: ["https://...", "https://..."]
+        const firstItem = inlinePhotos[0];
+        const isObjectArray = typeof firstItem === 'object' && firstItem !== null;
+
+        photos = inlinePhotos.map((photo, index) => {
+          // Handle both string URLs and object formats
+          const photoUrl = isObjectArray
+            ? (photo.url || photo.Photo || photo.URL || String(photo))
+            : String(photo);
+
+          return {
+            _id: isObjectArray ? (photo.id || `inline_${index}`) : `inline_${index}`,
+            Photo: photoUrl,
+            URL: photoUrl,
+            toggleMainPhoto: isObjectArray ? (photo.toggleMainPhoto ?? photo.isCover ?? (index === 0)) : (index === 0),
+            Type: isObjectArray ? (photo.type || photo.Type || 'Other') : 'Other',
+            SortOrder: isObjectArray ? (photo.SortOrder ?? photo.sortOrder ?? index) : index,
+            Active: true,
+          };
+        });
+        console.log('📷 Embedded photos from Features - Photos:', photos.length, isObjectArray ? '(objects)' : '(URLs)');
       } else {
         // Legacy: fetch from listing_photo table
         const { data: photosData, error: photosError } = photosResult;
@@ -463,8 +442,7 @@ export default function useListingDashboardPageLogic() {
         console.warn('⚠️ Failed to fetch meetings count:', meetingsError);
       }
 
-      // Pass isListingTrial to handle listing_trial (uses 'id') vs listing (uses '_id')
-      const transformedListing = transformListingData(listingData, photos || [], lookups, isListingTrial);
+      const transformedListing = transformListingData(listingData, photos || [], lookups);
 
       setListing(transformedListing);
       setCounts({
@@ -572,12 +550,6 @@ export default function useListingDashboardPageLogic() {
     // TODO: Debounce and save to backend
   }, []);
 
-  // Cancellation policy change handler
-  const handleCancellationPolicyChange = useCallback((policy) => {
-    // TODO: Save to backend
-    console.log('Cancellation policy changed to:', policy);
-  }, []);
-
   // Copy link handler
   const handleCopyLink = useCallback(() => {
     console.log('Link copied');
@@ -606,6 +578,12 @@ export default function useListingDashboardPageLogic() {
   const [showScheduleCohost, setShowScheduleCohost] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
+  // Auth state (Gold Standard pattern)
+  const [authState, setAuthState] = useState({
+    isChecking: true,
+    shouldRedirect: false
+  });
+
   // Import Reviews modal state
   const [showImportReviews, setShowImportReviews] = useState(false);
   const [isImportingReviews, setIsImportingReviews] = useState(false);
@@ -625,16 +603,62 @@ export default function useListingDashboardPageLogic() {
   const [isAIComplete, setIsAIComplete] = useState(false);
   const [aiGeneratedData, setAiGeneratedData] = useState({});
 
-  // Fetch current user data
+  // ============================================================================
+  // GOLD STANDARD AUTH PATTERN - Fetch current user data with fallback
+  // ============================================================================
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const userData = await validateTokenAndFetchUser();
+        // Step 1: Quick auth check
+        const isAuthenticated = await checkAuthStatus();
+
+        if (!isAuthenticated) {
+          console.log('[ListingDashboard] User not authenticated, redirecting to home');
+          setAuthState({ isChecking: false, shouldRedirect: true });
+          setTimeout(() => {
+            window.location.href = '/?login=true';
+          }, 100);
+          return;
+        }
+
+        // Step 2: Deep validation with clearOnFailure: false
+        const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+
         if (userData) {
+          // Success path: Use validated user data
           setCurrentUser(userData);
+          setAuthState({ isChecking: false, shouldRedirect: false });
+          console.log('[ListingDashboard] User data loaded:', userData['Name - First'] || userData.firstName);
+        } else {
+          // Step 3: Fallback to Supabase session metadata
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session?.user) {
+            // Session valid but profile fetch failed - use session metadata
+            const fallbackUser = {
+              _id: session.user.user_metadata?.user_id || getUserId() || session.user.id,
+              id: session.user.id,
+              'Name - First': session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'Host',
+              'Name - Last': session.user.user_metadata?.last_name || '',
+              email: session.user.email,
+              firstName: session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'Host',
+              lastName: session.user.user_metadata?.last_name || ''
+            };
+            setCurrentUser(fallbackUser);
+            setAuthState({ isChecking: false, shouldRedirect: false });
+            console.log('[ListingDashboard] Using fallback user data from session:', fallbackUser.firstName);
+          } else {
+            // No valid session - redirect
+            console.log('[ListingDashboard] No valid session, redirecting');
+            setAuthState({ isChecking: false, shouldRedirect: true });
+            setTimeout(() => {
+              window.location.href = '/?login=true';
+            }, 100);
+          }
         }
       } catch (err) {
-        console.warn('⚠️ Could not fetch user data:', err);
+        console.warn('[ListingDashboard] Could not fetch user data:', err);
+        setAuthState({ isChecking: false, shouldRedirect: false });
       }
     };
     fetchUser();
@@ -724,17 +748,6 @@ export default function useListingDashboardPageLogic() {
   const updateListing = useCallback(async (listingId, updates) => {
     console.log('📝 Updating listing:', listingId, updates);
 
-    // Try listing_trial first (by id column), then fall back to listing table (by _id column)
-    // First check if the listing exists in listing_trial
-    const { data: trialCheck } = await supabase
-      .from('listing_trial')
-      .select('id')
-      .eq('id', listingId)
-      .maybeSingle();
-
-    const tableName = trialCheck ? 'listing_trial' : 'listing';
-    const idColumn = trialCheck ? 'id' : '_id';
-
     // Map UI field names to database column names (handles quirky column names with leading spaces)
     const fieldMapping = {
       'First Available': ' First Available', // DB column has leading space
@@ -747,24 +760,100 @@ export default function useListingDashboardPageLogic() {
       dbUpdates[dbColumnName] = value;
     }
 
-    console.log(`📋 Updating ${tableName} table with ${idColumn}=${listingId}`);
+    console.log(`📋 Updating listing table with _id=${listingId}`);
     console.log('📋 DB updates:', dbUpdates);
 
-    const { data, error: updateError } = await supabase
-      .from(tableName)
+    // Perform the update without .select() to avoid 409 conflicts from PostgREST
+    // The .select().maybeSingle() pattern can fail when:
+    // 1. Multiple concurrent updates occur (React StrictMode double-mounting)
+    // 2. PostgREST has timing issues between UPDATE and SELECT
+    const { error: updateError } = await supabase
+      .from('listing')
       .update(dbUpdates)
-      .eq(idColumn, listingId)
-      .select()
-      .single();
+      .eq('_id', listingId);
 
     if (updateError) {
       console.error('❌ Error updating listing:', updateError);
+      console.error('❌ Error code:', updateError.code);
+      console.error('❌ Error message:', updateError.message);
+      console.error('❌ Error details:', updateError.details);
+      console.error('❌ Error hint:', updateError.hint);
+      console.error('❌ Full error object:', JSON.stringify(updateError, null, 2));
       throw updateError;
+    }
+
+    // Fetch the updated row separately for reliable data retrieval
+    const { data, error: fetchError } = await supabase
+      .from('listing')
+      .select('*')
+      .eq('_id', listingId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.warn('⚠️ Update succeeded but failed to fetch updated data:', fetchError);
+      // Return partial data - the update still succeeded
+      return { _id: listingId, ...dbUpdates };
     }
 
     console.log('✅ Listing updated:', data);
     return data;
   }, []);
+
+  // Cancellation policy change handler - saves policy ID to database
+  const handleCancellationPolicyChange = useCallback(async (policyId) => {
+    const listingId = getListingIdFromUrl();
+    if (!listingId) {
+      console.error('❌ No listing ID found for cancellation policy update');
+      return;
+    }
+
+    console.log('📋 Updating cancellation policy to:', policyId);
+
+    try {
+      await updateListing(listingId, {
+        'Cancellation Policy': policyId,
+      });
+
+      // Update local state
+      setListing((prev) => ({
+        ...prev,
+        cancellationPolicy: policyId,
+        'Cancellation Policy': policyId,
+      }));
+
+      console.log('✅ Cancellation policy saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save cancellation policy:', error);
+    }
+  }, [getListingIdFromUrl, updateListing]);
+
+  // Cancellation policy additional restrictions change handler
+  const handleCancellationRestrictionsChange = useCallback(async (restrictionsText) => {
+    const listingId = getListingIdFromUrl();
+    if (!listingId) {
+      console.error('❌ No listing ID found for cancellation restrictions update');
+      return;
+    }
+
+    console.log('📋 Updating cancellation restrictions:', restrictionsText);
+
+    try {
+      await updateListing(listingId, {
+        'Cancellation Policy - Additional Restrictions': restrictionsText,
+      });
+
+      // Update local state
+      setListing((prev) => ({
+        ...prev,
+        cancellationPolicyAdditionalRestrictions: restrictionsText,
+        'Cancellation Policy - Additional Restrictions': restrictionsText,
+      }));
+
+      console.log('✅ Cancellation restrictions saved successfully');
+    } catch (error) {
+      console.error('❌ Failed to save cancellation restrictions:', error);
+    }
+  }, [getListingIdFromUrl, updateListing]);
 
   /**
    * Start the AI generation process for all fields
@@ -981,54 +1070,30 @@ export default function useListingDashboardPageLogic() {
     try {
       const listingId = getListingIdFromUrl();
 
-      // Check if this is a listing_trial
-      const { data: trialCheck } = await supabase
-        .from('listing_trial')
-        .select('id')
-        .eq('id', listingId)
-        .maybeSingle();
+      // Update the listing_photo table
+      // First, reset all photos' toggleMainPhoto to false
+      await supabase
+        .from('listing_photo')
+        .update({ toggleMainPhoto: false })
+        .eq('Listing', listingId);
 
-      if (trialCheck) {
-        // For listing_trial, update the inline 'Features - Photos' JSON
-        const photosJson = newPhotos.map((p, idx) => ({
-          url: p.url,
-          isCover: idx === 0,
-          type: p.photoType || 'Other',
-          sortOrder: idx,
-        }));
+      // Set the selected photo as cover
+      await supabase
+        .from('listing_photo')
+        .update({ toggleMainPhoto: true, SortOrder: 0 })
+        .eq('_id', photoId);
 
-        await supabase
-          .from('listing_trial')
-          .update({ 'Features - Photos': JSON.stringify(photosJson) })
-          .eq('id', listingId);
-
-        console.log('✅ Cover photo updated in listing_trial');
-      } else {
-        // For regular listing, update the listing_photo table
-        // First, reset all photos' toggleMainPhoto to false
-        await supabase
-          .from('listing_photo')
-          .update({ toggleMainPhoto: false })
-          .eq('Listing', listingId);
-
-        // Set the selected photo as cover
-        await supabase
-          .from('listing_photo')
-          .update({ toggleMainPhoto: true, SortOrder: 0 })
-          .eq('_id', photoId);
-
-        // Update sort order for other photos
-        for (let i = 0; i < newPhotos.length; i++) {
-          if (newPhotos[i].id !== photoId) {
-            await supabase
-              .from('listing_photo')
-              .update({ SortOrder: i })
-              .eq('_id', newPhotos[i].id);
-          }
+      // Update sort order for other photos
+      for (let i = 0; i < newPhotos.length; i++) {
+        if (newPhotos[i].id !== photoId) {
+          await supabase
+            .from('listing_photo')
+            .update({ SortOrder: i })
+            .eq('_id', newPhotos[i].id);
         }
-
-        console.log('✅ Cover photo updated in listing_photo table');
       }
+
+      console.log('✅ Cover photo updated in listing_photo table');
     } catch (err) {
       console.error('❌ Error updating cover photo:', err);
       // Revert local state on error
@@ -1061,42 +1126,18 @@ export default function useListingDashboardPageLogic() {
     try {
       const listingId = getListingIdFromUrl();
 
-      // Check if this is a listing_trial
-      const { data: trialCheck } = await supabase
-        .from('listing_trial')
-        .select('id')
-        .eq('id', listingId)
-        .maybeSingle();
-
-      if (trialCheck) {
-        // For listing_trial, update the inline 'Features - Photos' JSON
-        const photosJson = newPhotos.map((p, idx) => ({
-          url: p.url,
-          isCover: idx === 0,
-          type: p.photoType || 'Other',
-          sortOrder: idx,
-        }));
-
+      // Update the listing_photo table sort orders
+      for (let i = 0; i < newPhotos.length; i++) {
         await supabase
-          .from('listing_trial')
-          .update({ 'Features - Photos': JSON.stringify(photosJson) })
-          .eq('id', listingId);
-
-        console.log('✅ Photos reordered in listing_trial');
-      } else {
-        // For regular listing, update the listing_photo table sort orders
-        for (let i = 0; i < newPhotos.length; i++) {
-          await supabase
-            .from('listing_photo')
-            .update({
-              SortOrder: i,
-              toggleMainPhoto: i === 0,
-            })
-            .eq('_id', newPhotos[i].id);
-        }
-
-        console.log('✅ Photos reordered in listing_photo table');
+          .from('listing_photo')
+          .update({
+            SortOrder: i,
+            toggleMainPhoto: i === 0,
+          })
+          .eq('_id', newPhotos[i].id);
       }
+
+      console.log('✅ Photos reordered in listing_photo table');
     } catch (err) {
       console.error('❌ Error reordering photos:', err);
       // Revert local state on error
@@ -1134,45 +1175,21 @@ export default function useListingDashboardPageLogic() {
     try {
       const listingId = getListingIdFromUrl();
 
-      // Check if this is a listing_trial
-      const { data: trialCheck } = await supabase
-        .from('listing_trial')
-        .select('id')
-        .eq('id', listingId)
-        .maybeSingle();
+      // Soft-delete by setting Active to false
+      await supabase
+        .from('listing_photo')
+        .update({ Active: false })
+        .eq('_id', photoId);
 
-      if (trialCheck) {
-        // For listing_trial, update the inline 'Features - Photos' JSON
-        const photosJson = newPhotos.map((p, idx) => ({
-          url: p.url,
-          isCover: idx === 0,
-          type: p.photoType || 'Other',
-          sortOrder: idx,
-        }));
-
-        await supabase
-          .from('listing_trial')
-          .update({ 'Features - Photos': JSON.stringify(photosJson) })
-          .eq('id', listingId);
-
-        console.log('✅ Photo deleted from listing_trial');
-      } else {
-        // For regular listing, soft-delete by setting Active to false
+      // If this was the cover photo, set the first remaining photo as cover
+      if (newPhotos.length > 0 && listing.photos[photoIndex].isCover) {
         await supabase
           .from('listing_photo')
-          .update({ Active: false })
-          .eq('_id', photoId);
-
-        // If this was the cover photo, set the first remaining photo as cover
-        if (newPhotos.length > 0 && listing.photos[photoIndex].isCover) {
-          await supabase
-            .from('listing_photo')
-            .update({ toggleMainPhoto: true })
-            .eq('_id', newPhotos[0].id);
-        }
-
-        console.log('✅ Photo deleted from listing_photo table');
+          .update({ toggleMainPhoto: true })
+          .eq('_id', newPhotos[0].id);
       }
+
+      console.log('✅ Photo deleted from listing_photo table');
     } catch (err) {
       console.error('❌ Error deleting photo:', err);
       // Revert local state on error
@@ -1257,6 +1274,9 @@ export default function useListingDashboardPageLogic() {
   }, [getListingIdFromUrl, updateListing]);
 
   return {
+    // Auth state
+    authState,
+
     // State
     activeTab,
     listing,
@@ -1274,6 +1294,7 @@ export default function useListingDashboardPageLogic() {
     handleBackClick,
     handleDescriptionChange,
     handleCancellationPolicyChange,
+    handleCancellationRestrictionsChange,
     handleCopyLink,
     handleAIAssistant,
 

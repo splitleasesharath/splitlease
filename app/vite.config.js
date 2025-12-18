@@ -176,6 +176,7 @@ export default defineConfig({
         }
 
         // Generate _internal files from Route Registry
+        // Files should NOT have .html extension - Content-Type is set via _headers file
         const internalRoutes = getInternalRoutes();
         for (const route of internalRoutes) {
           const source = path.join(distDir, route.file);

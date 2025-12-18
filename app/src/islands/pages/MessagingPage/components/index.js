@@ -10,3 +10,4 @@ export { default as ThreadHeader } from './ThreadHeader.jsx';
 export { default as MessageThread } from './MessageThread.jsx';
 export { default as MessageBubble } from './MessageBubble.jsx';
 export { default as MessageInput } from './MessageInput.jsx';
+export { default as TypingIndicator } from './TypingIndicator.jsx';

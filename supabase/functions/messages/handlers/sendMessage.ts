@@ -1,156 +1,144 @@
 /**
- * Send Message Handler
+ * Send Message Handler - NATIVE SUPABASE
  * Split Lease - Messages Edge Function
  *
- * Replicates Bubble's CORE-send-new-message workflow
- * Triggers the Bubble workflow to create a new message in a thread
+ * Creates messages directly in Supabase (NO BUBBLE).
+ * The database trigger handles:
+ * - Broadcasting to Realtime channel
+ * - Updating thread's last message
  *
  * NO FALLBACK PRINCIPLE: Throws if message creation fails
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { User } from 'https://esm.sh/@supabase/supabase-js@2';
-import { ValidationError, BubbleApiError } from '../../_shared/errors.ts';
+import { ValidationError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
-import { BubbleSyncService } from '../../_shared/bubbleSync.ts';
+import {
+  getUserBubbleId,
+  createMessage,
+  createThread,
+  findExistingThread
+} from '../../_shared/messagingHelpers.ts';
 
 interface SendMessagePayload {
-  thread_id: string;           // Required: Thread/Conversation ID
+  thread_id?: string;          // Optional if creating new thread
   message_body: string;        // Required: Message content
-  sender_id?: string;          // Optional: Sender user ID (defaults to authenticated user)
-  to_guest?: boolean;          // Optional: Is message to guest (default: false)
-  splitbot?: boolean;          // Optional: Is Split Bot message (default: false)
-  call_to_action?: string;     // Optional: CTA type for system messages
-  proposal_id?: string;        // Optional: Associated proposal
-  date_change_req_id?: string; // Optional: Associated date change request
-  review_id?: string;          // Optional: Associated review
+  // For new thread creation:
+  recipient_user_id?: string;  // Required if no thread_id
+  listing_id?: string;         // Optional: Associated listing
+  // Message options:
+  splitbot?: boolean;          // Optional: Is Split Bot message
+  call_to_action?: string;     // Optional: CTA type
+  split_bot_warning?: string;  // Optional: Warning text
 }
 
 interface SendMessageResult {
   success: boolean;
-  message_id?: string;
+  message_id: string;
   thread_id: string;
+  is_new_thread: boolean;
   timestamp: string;
 }
 
 /**
- * Handle send_message action
- * Triggers Bubble workflow to create message
+ * Handle send_message action - NATIVE SUPABASE
+ * No longer calls Bubble workflows - all operations are Supabase-native
  */
 export async function handleSendMessage(
   supabaseAdmin: SupabaseClient,
   payload: Record<string, unknown>,
   user: User
 ): Promise<SendMessageResult> {
-  console.log('[sendMessage] ========== SEND MESSAGE ==========');
+  console.log('[sendMessage] ========== SEND MESSAGE (NATIVE) ==========');
   console.log('[sendMessage] User:', user.email);
-  console.log('[sendMessage] Payload:', JSON.stringify(payload, null, 2));
 
   // Validate required fields
   const typedPayload = payload as unknown as SendMessagePayload;
-  validateRequiredFields(typedPayload, ['thread_id', 'message_body']);
+  validateRequiredFields(typedPayload, ['message_body']);
 
   // Validate message body is not empty
   if (!typedPayload.message_body.trim()) {
     throw new ValidationError('Message body cannot be empty');
   }
 
-  // Get user's Bubble ID from public.user table by email
-  // Email is the common identifier between auth.users and public.user
+  // Get sender's Bubble ID
   if (!user.email) {
-    console.error('[sendMessage] No email in auth token');
     throw new ValidationError('Could not find user profile. Please try logging in again.');
   }
 
-  const { data: userData, error: userError } = await supabaseAdmin
-    .from('user')
-    .select('_id')
-    .ilike('email', user.email)
-    .single();
-
-  if (userError || !userData?._id) {
-    console.error('[sendMessage] User lookup failed:', userError?.message);
+  const senderBubbleId = await getUserBubbleId(supabaseAdmin, user.email);
+  if (!senderBubbleId) {
     throw new ValidationError('Could not find user profile. Please try logging in again.');
   }
-  console.log('[sendMessage] Found user by email');
 
-  const senderBubbleId = typedPayload.sender_id || userData._id;
   console.log('[sendMessage] Sender Bubble ID:', senderBubbleId);
 
-  // Initialize Bubble sync service
-  const bubbleBaseUrl = Deno.env.get('BUBBLE_API_BASE_URL');
-  const bubbleApiKey = Deno.env.get('BUBBLE_API_KEY');
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  let threadId = typedPayload.thread_id;
+  let isNewThread = false;
 
-  if (!bubbleBaseUrl || !bubbleApiKey || !supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Bubble or Supabase configuration missing');
-  }
-
-  const syncService = new BubbleSyncService(
-    bubbleBaseUrl,
-    bubbleApiKey,
-    supabaseUrl,
-    supabaseServiceKey
-  );
-
-  // Build workflow parameters based on Bubble's CORE-send-new-message workflow
-  const workflowParams: Record<string, unknown> = {
-    thread_conversation: typedPayload.thread_id,
-    message_body: typedPayload.message_body,
-    sender: senderBubbleId,
-    to_guest: typedPayload.to_guest ?? false,
-    splitbot: typedPayload.splitbot ?? false,
-  };
-
-  // Add optional parameters if provided
-  if (typedPayload.call_to_action) {
-    workflowParams.call_to_action = typedPayload.call_to_action;
-  }
-  if (typedPayload.proposal_id) {
-    workflowParams.proposal = typedPayload.proposal_id;
-  }
-  if (typedPayload.date_change_req_id) {
-    workflowParams.date_change_req = typedPayload.date_change_req_id;
-  }
-  if (typedPayload.review_id) {
-    workflowParams.review = typedPayload.review_id;
-  }
-
-  console.log('[sendMessage] Triggering Bubble workflow: send-new-message');
-  console.log('[sendMessage] Workflow params:', JSON.stringify(workflowParams, null, 2));
-
-  try {
-    // Trigger the Bubble workflow to create the message
-    // This workflow handles all the business logic in Bubble
-    const result = await syncService.triggerWorkflowOnly('send-new-message', workflowParams);
-
-    console.log('[sendMessage] Workflow result:', JSON.stringify(result, null, 2));
-
-    // Extract message ID if returned
-    const messageId = result?.response?.message || result?.message || result?.id;
-
-    console.log('[sendMessage] Message sent successfully');
-    console.log('[sendMessage] ========== SEND COMPLETE ==========');
-
-    return {
-      success: true,
-      message_id: messageId,
-      thread_id: typedPayload.thread_id,
-      timestamp: new Date().toISOString(),
-    };
-
-  } catch (error) {
-    console.error('[sendMessage] Failed to send message:', error);
-
-    if (error instanceof BubbleApiError) {
-      throw error;
+  // If no thread_id, we need to create or find a thread
+  if (!threadId) {
+    if (!typedPayload.recipient_user_id) {
+      throw new ValidationError('Either thread_id or recipient_user_id is required');
     }
 
-    throw new BubbleApiError(
-      `Failed to send message: ${(error as Error).message}`,
-      500,
-      error
+    const recipientId = typedPayload.recipient_user_id;
+    console.log('[sendMessage] Looking for existing thread with recipient:', recipientId);
+
+    // Check for existing thread (sender as guest, recipient as host)
+    threadId = await findExistingThread(
+      supabaseAdmin,
+      recipientId,  // host
+      senderBubbleId,  // guest
+      typedPayload.listing_id
     );
+
+    if (!threadId) {
+      // Also check reverse (sender as host, recipient as guest)
+      threadId = await findExistingThread(
+        supabaseAdmin,
+        senderBubbleId,  // host
+        recipientId,  // guest
+        typedPayload.listing_id
+      );
+    }
+
+    if (!threadId) {
+      // Create new thread (assume recipient is host, sender is guest)
+      console.log('[sendMessage] Creating new thread...');
+      threadId = await createThread(supabaseAdmin, {
+        hostUserId: recipientId,
+        guestUserId: senderBubbleId,
+        listingId: typedPayload.listing_id,
+        createdBy: senderBubbleId,
+      });
+      isNewThread = true;
+      console.log('[sendMessage] Created new thread:', threadId);
+    } else {
+      console.log('[sendMessage] Found existing thread:', threadId);
+    }
   }
+
+  // Create the message (triggers broadcast automatically via database trigger)
+  console.log('[sendMessage] Creating message in thread:', threadId);
+  const messageId = await createMessage(supabaseAdmin, {
+    threadId,
+    messageBody: typedPayload.message_body.trim(),
+    senderUserId: senderBubbleId,
+    isSplitBot: typedPayload.splitbot || false,
+    callToAction: typedPayload.call_to_action,
+    splitBotWarning: typedPayload.split_bot_warning,
+  });
+
+  console.log('[sendMessage] Message created:', messageId);
+  console.log('[sendMessage] ========== SEND COMPLETE (NATIVE) ==========');
+
+  return {
+    success: true,
+    message_id: messageId,
+    thread_id: threadId,
+    is_new_thread: isNewThread,
+    timestamp: new Date().toISOString(),
+  };
 }

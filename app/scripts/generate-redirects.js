@@ -51,6 +51,7 @@ function generateRedirects() {
 
     if (route.cloudflareInternal && route.internalName) {
       // Use _internal/ directory to avoid Cloudflare's "pretty URL" normalization
+      // Content-Type is set via _headers file, not file extension
       lines.push(`# ${route.path} → ${route.file}`);
       lines.push(`${basePath}  /_internal/${route.internalName}  200`);
       lines.push(`${basePath}/  /_internal/${route.internalName}  200`);
@@ -78,6 +79,7 @@ function generateRedirects() {
       lines.push('/index.html  /index.html  200');
       lines.push('');
     } else if (route.cloudflareInternal && route.internalName) {
+      // Content-Type is set via _headers file, not file extension
       lines.push(`# ${basePath} → ${route.file}`);
       lines.push(`${basePath}  /_internal/${route.internalName}  200`);
       lines.push(`${basePath}/  /_internal/${route.internalName}  200`);

@@ -8,7 +8,7 @@
  * - VirtualMeetingCard: Scheduled virtual meetings
  */
 
-import React, { useState } from 'react';
+import React from 'react';
 import { extractPhotos } from '../../../../lib/supabaseUtils.js';
 
 // Base Card Component
@@ -37,38 +37,16 @@ function formatCurrency(amount) {
 
 // Listing Card - For host's managed listings
 export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = false }) {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
   const listingName = listing.name || listing.Name || 'Unnamed Listing';
-  const borough = listing.location?.borough || listing['Location - Borough']?.Display || 'Location not specified';
+  const borough = listing.location?.borough || listing['Location - Borough'] || 'Location not specified';
   const isComplete = listing.complete || listing.Complete;
   const leasesCount = listing.leasesCount || listing['Leases Count'] || 0;
   const proposalsCount = listing.proposalsCount || listing['Proposals Count'] || 0;
 
-  // Extract photo URLs from the photos field
+  // Extract photo URLs from the photos field - only need the cover photo (first image)
   const photosField = listing.photos || listing['Features - Photos'] || [];
   const photoUrls = extractPhotos(photosField, {}, listing.id || listing._id);
-  const hasImages = photoUrls.length > 0;
-  const hasMultipleImages = photoUrls.length > 1;
-
-  // Image navigation handlers
-  const handlePrevImage = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMultipleImages) return;
-    setCurrentImageIndex((prev) =>
-      prev === 0 ? photoUrls.length - 1 : prev - 1
-    );
-  };
-
-  const handleNextImage = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!hasMultipleImages) return;
-    setCurrentImageIndex((prev) =>
-      prev === photoUrls.length - 1 ? 0 : prev + 1
-    );
-  };
+  const coverPhoto = photoUrls.length > 0 ? photoUrls[0] : null;
 
   // Pricing data
   const rentalType = listing.rental_type || listing['rental type'] || 'Nightly';
@@ -78,7 +56,7 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
   const damageDeposit = listing.damage_deposit || listing['💰Damage Deposit'];
   const nightlyPricing = listing.nightly_pricing;
 
-  // Collect all nightly rates (from both Bubble and listing_trial sources)
+  // Collect all nightly rates
   const nightlyRates = [
     listing.nightly_rate_2 || listing['💰Nightly Host Rate for 2 nights'],
     listing.nightly_rate_3 || listing['💰Nightly Host Rate for 3 nights'],
@@ -131,26 +109,13 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
     <Card className="listing-card" hover>
       {/* Photo Section - Left side on desktop */}
       <div className="listing-card__image-section">
-        {hasImages ? (
+        {coverPhoto ? (
           <div className="listing-card__images">
             <img
-              src={photoUrls[currentImageIndex]}
+              src={coverPhoto}
               alt={listingName}
               className="listing-card__image"
             />
-            {hasMultipleImages && (
-              <>
-                <button className="listing-card__image-nav listing-card__image-nav--prev" onClick={handlePrevImage}>
-                  ‹
-                </button>
-                <button className="listing-card__image-nav listing-card__image-nav--next" onClick={handleNextImage}>
-                  ›
-                </button>
-                <div className="listing-card__image-counter">
-                  {currentImageIndex + 1}/{photoUrls.length}
-                </div>
-              </>
-            )}
           </div>
         ) : (
           <div className="listing-card__image-placeholder">
@@ -263,7 +228,7 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
 // Claim Listing Card - For unclaimed listings
 export function ClaimListingCard({ listing, onSeeDetails, onDelete }) {
   const listingName = listing.name || listing.Name || 'Unnamed Listing';
-  const borough = listing.location?.borough || listing['Location - Borough']?.Display || 'Location not specified';
+  const borough = listing.location?.borough || listing['Location - Borough'] || 'Location not specified';
   const isComplete = listing.complete || listing.Complete;
 
   return (

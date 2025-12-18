@@ -5,6 +5,8 @@ import { checkAuthStatus, getUserType } from '../../lib/auth.js';
 import { normalizeUserType, NORMALIZED_USER_TYPES } from './LoggedInAvatar/useLoggedInAvatarData.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import ImportListingModal from './ImportListingModal/ImportListingModal.jsx';
+import { useToast } from './Toast.jsx';
+import Toast from './Toast.jsx';
 
 export default function Footer() {
   const [referralMethod, setReferralMethod] = useState('text');
@@ -17,6 +19,7 @@ export default function Footer() {
   const [showImportListingModal, setShowImportListingModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userType, setUserType] = useState(null); // 'Host' or 'Guest'
+  const { toasts, showToast, removeToast } = useToast();
 
   // Check auth status and user type on mount
   useEffect(() => {
@@ -48,13 +51,21 @@ export default function Footer() {
   // ✅ MIGRATED: Now uses Supabase Edge Functions
   const handleReferralSubmit = async () => {
     if (!referralContact.trim()) {
-      alert('Please enter contact information');
+      showToast({
+        title: 'Missing Information',
+        content: 'Please enter contact information.',
+        type: 'error'
+      });
       return;
     }
 
     // Basic validation
     if (referralMethod === 'email' && !referralContact.includes('@')) {
-      alert('Please enter a valid email address');
+      showToast({
+        title: 'Invalid Email',
+        content: 'Please enter a valid email address.',
+        type: 'error'
+      });
       return;
     }
 
@@ -87,11 +98,19 @@ export default function Footer() {
       }
 
       console.log('[Footer] ✅ Referral submitted successfully');
-      alert(`Referral sent successfully via ${referralMethod}!`);
+      showToast({
+        title: 'Referral Sent!',
+        content: `Your friend will receive your referral via ${referralMethod}.`,
+        type: 'success'
+      });
       setReferralContact('');
     } catch (error) {
       console.error('[Footer] Referral error:', error);
-      alert('Failed to send referral. Please try again later.');
+      showToast({
+        title: 'Referral Failed',
+        content: 'Please try again later.',
+        type: 'error'
+      });
     } finally {
       setIsSubmittingReferral(false);
     }
@@ -100,13 +119,21 @@ export default function Footer() {
   // Handle import submission (footer inline form)
   const handleImportSubmit = async () => {
     if (!importUrl.trim() || !importEmail.trim()) {
-      alert('Please fill in both fields');
+      showToast({
+        title: 'Missing Information',
+        content: 'Please fill in both fields.',
+        type: 'error'
+      });
       return;
     }
 
     // Validate email
     if (!importEmail.includes('@') || !importEmail.includes('.')) {
-      alert('Please enter a valid email');
+      showToast({
+        title: 'Invalid Email',
+        content: 'Please enter a valid email address.',
+        type: 'error'
+      });
       return;
     }
 
@@ -128,12 +155,20 @@ export default function Footer() {
         throw new Error(data.error || 'Failed to submit import request');
       }
 
-      alert('Listing import request submitted! We will email you when it is ready.');
+      showToast({
+        title: 'Request Submitted!',
+        content: 'We will email you when your listing is ready.',
+        type: 'success'
+      });
       setImportUrl('');
       setImportEmail('');
     } catch (error) {
       console.error('Import error:', error);
-      alert('Failed to import listing. Please try again later.');
+      showToast({
+        title: 'Import Failed',
+        content: 'Please try again later.',
+        type: 'error'
+      });
     } finally {
       setIsSubmittingImport(false);
     }
@@ -196,7 +231,7 @@ export default function Footer() {
             <a href="/faq?section=travelers&question=1692211080963x751695924087252700">About Periodic Tenancy</a>
             <a href="/about-us">About the Team</a>
             <a href="/careers">Careers at Split Lease</a>
-            <a href="https://app.split.lease/knowledge-base/1676496004548x830972865850585500">Blog</a>
+            <a href="/help-center">Blog</a>
           </div>
 
           {/* Referral Column */}
@@ -380,11 +415,19 @@ export default function Footer() {
               throw new Error(result.error || 'Failed to submit import request');
             }
 
-            alert('Listing import request submitted! We will email you when it is ready.');
+            showToast({
+              title: 'Request Submitted!',
+              content: 'We will email you when your listing is ready.',
+              type: 'success'
+            });
             setShowImportListingModal(false);
           } catch (error) {
             console.error('Import error:', error);
-            alert('Failed to import listing. Please try again later.');
+            showToast({
+              title: 'Import Failed',
+              content: 'Please try again later.',
+              type: 'error'
+            });
           } finally {
             setIsSubmittingImport(false);
           }
@@ -392,6 +435,9 @@ export default function Footer() {
         currentUserEmail=""
         isLoading={isSubmittingImport}
       />
+
+      {/* Toast Notifications */}
+      {toasts && toasts.length > 0 && <Toast toasts={toasts} onRemove={removeToast} />}
     </>
   );
 }

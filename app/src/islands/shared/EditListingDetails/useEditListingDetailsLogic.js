@@ -4,12 +4,11 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { NEIGHBORHOOD_TEMPLATE } from './constants';
 import { generateListingDescription, generateListingTitle } from '../../../lib/aiService';
 import { getCommonHouseRules } from './services/houseRulesService';
 import { getCommonSafetyFeatures } from './services/safetyFeaturesService';
 import { getCommonInUnitAmenities, getCommonBuildingAmenities } from './services/amenitiesService';
-import { getNeighborhoodByZipCode } from './services/neighborhoodService';
+import { getNeighborhoodByZipCode, getNeighborhoodDescriptionWithFallback } from './services/neighborhoodService';
 import { uploadPhoto } from '../../../lib/photoUpload';
 
 /**
@@ -168,7 +167,32 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
   const handleSave = useCallback(async () => {
     setIsLoading(true);
     try {
-      const updatedListing = await updateListing(listing._id, formData);
+      // Only send fields that have actually changed to avoid FK constraint issues
+      // when unchanged FK fields contain null or invalid values
+      const changedFields = {};
+      for (const [key, value] of Object.entries(formData)) {
+        // Compare with original listing value - only include if different
+        const originalValue = listing[key];
+
+        // Handle array comparison (for amenities, rules, photos, etc.)
+        if (Array.isArray(value) && Array.isArray(originalValue)) {
+          if (JSON.stringify(value) !== JSON.stringify(originalValue)) {
+            changedFields[key] = value;
+          }
+        } else if (value !== originalValue) {
+          changedFields[key] = value;
+        }
+      }
+
+      // If no changes, just close
+      if (Object.keys(changedFields).length === 0) {
+        showToast('No changes to save');
+        setTimeout(onClose, 500);
+        return;
+      }
+
+      console.log('📝 Saving only changed fields:', Object.keys(changedFields));
+      const updatedListing = await updateListing(listing._id, changedFields);
       showToast('Your changes have been saved');
       onSave(updatedListing);
       setTimeout(onClose, 1000);
@@ -307,15 +331,26 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
 
     setIsLoadingNeighborhood(true);
     try {
-      const neighborhood = await getNeighborhoodByZipCode(zipCode);
+      // Build address data for AI fallback
+      const addressData = {
+        fullAddress: `${formData['Location - City'] || listing?.['Location - City'] || ''}, ${formData['Location - State'] || listing?.['Location - State'] || ''}`,
+        city: formData['Location - City'] || listing?.['Location - City'] || '',
+        state: formData['Location - State'] || listing?.['Location - State'] || '',
+        zip: zipCode,
+      };
 
-      if (neighborhood && neighborhood.description) {
-        handleInputChange('Description - Neighborhood', neighborhood.description);
-        showToast('Template loaded!', `Loaded description for ${neighborhood.neighborhoodName || 'neighborhood'}`);
+      const result = await getNeighborhoodDescriptionWithFallback(zipCode, addressData);
+
+      if (result && result.description) {
+        handleInputChange('Description - Neighborhood', result.description);
+
+        if (result.source === 'ai') {
+          showToast('Description generated!', 'AI-generated neighborhood description based on address');
+        } else {
+          showToast('Template loaded!', `Loaded description for ${result.neighborhoodName || 'neighborhood'}`);
+        }
       } else {
-        // Fall back to static template if no neighborhood found
-        handleInputChange('Description - Neighborhood', NEIGHBORHOOD_TEMPLATE);
-        showToast('Default template loaded', `No specific neighborhood found for ZIP: ${zipCode}`);
+        showToast('Could not load template', `No description available for ZIP: ${zipCode}`, 'error');
       }
     } catch (error) {
       console.error('[loadNeighborhoodTemplate] Error:', error);
@@ -333,6 +368,7 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
       listingName: formData.Name || listing?.Name || '',
       address: `${formData['Location - City'] || listing?.['Location - City'] || ''}, ${formData['Location - State'] || listing?.['Location - State'] || ''}`,
       neighborhood: formData['Location - Hood'] || listing?.['Location - Hood'] || formData['Location - Borough'] || listing?.['Location - Borough'] || '',
+      borough: formData['Location - Borough'] || listing?.['Location - Borough'] || '',
       typeOfSpace: formData['Features - Type of Space'] || listing?.['Features - Type of Space'] || '',
       bedrooms: formData['Features - Qty Bedrooms'] ?? listing?.['Features - Qty Bedrooms'] ?? 0,
       beds: formData['Features - Qty Beds'] ?? listing?.['Features - Qty Beds'] ?? 0,

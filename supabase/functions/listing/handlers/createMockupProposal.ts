@@ -18,6 +18,7 @@
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { enqueueBubbleSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
 import { parseJsonArray } from '../../_shared/jsonUtils.ts';
+import { addUserProposal } from '../../_shared/junctionHelpers.ts';
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -25,7 +26,6 @@ import { parseJsonArray } from '../../_shared/jsonUtils.ts';
 
 export interface CreateMockupProposalPayload {
   listingId: string;
-  hostAccountId: string;
   hostUserId: string;
   hostEmail: string;
 }
@@ -44,6 +44,7 @@ interface MockGuestData {
 interface ListingData {
   _id: string;
   'rental type'?: string;
+  'Host User'?: string;
   'Days Available (List of Days)'?: number[];
   'Nights Available (List of Nights) '?: number[];
   '💰Weekly Host Rate'?: number;
@@ -248,6 +249,12 @@ function getDayNightConfig(rentalType: string, listing: ListingData): {
 
 /**
  * Calculate pricing based on rental type and listing configuration
+ *
+ * IMPORTANT: In Bubble workflow, "host compensation" is the PER-NIGHT host rate,
+ * NOT the total. The total compensation is calculated as:
+ *   - Nightly: host_compensation (per night) * nights_per_week * weeks
+ *   - Weekly: weekly_rate * weeks
+ *   - Monthly: monthly_rate * months
  */
 function calculatePricing(
   rentalType: string,
@@ -258,39 +265,46 @@ function calculatePricing(
   nightlyPrice: number;
   fourWeekRent: number;
   estimatedBookingTotal: number;
-  hostCompensation: number;
+  hostCompensationPerNight: number;
+  totalHostCompensation: number;
 } {
   const rentalTypeLower = (rentalType || 'nightly').toLowerCase();
 
   let nightlyPrice = 0;
   let fourWeekRent = 0;
   let estimatedBookingTotal = 0;
-  let hostCompensation = 0;
+  let hostCompensationPerNight = 0;
+  let totalHostCompensation = 0;
 
   switch (rentalTypeLower) {
     case 'monthly':
-      // Monthly uses 4-nights rate (weekday nights)
+      // Monthly uses 4-nights rate (weekday nights) as the per-night host rate
       nightlyPrice = listing['💰Nightly Host Rate for 4 nights'] || 0;
+      hostCompensationPerNight = nightlyPrice; // Per-night host rate
       fourWeekRent = nightlyPrice * nightsPerWeek * 4;
-      estimatedBookingTotal = nightlyPrice * nightsPerWeek * reservationSpanWeeks;
-      hostCompensation = listing['💰Monthly Host Rate'] || estimatedBookingTotal;
+      // Total compensation: monthly rate * months, or calculate from nightly
+      const monthlyRate = listing['💰Monthly Host Rate'] || fourWeekRent;
+      totalHostCompensation = monthlyRate * (reservationSpanWeeks / 4); // months = weeks/4
+      estimatedBookingTotal = totalHostCompensation;
       break;
 
     case 'weekly':
-      // Weekly uses 5-nights rate
+      // Weekly uses 5-nights rate as per-night host rate
       nightlyPrice = listing['💰Nightly Host Rate for 5 nights'] || 0;
-      fourWeekRent = nightlyPrice * nightsPerWeek * 4;
-      estimatedBookingTotal = nightlyPrice * nightsPerWeek * reservationSpanWeeks;
-      hostCompensation = (listing['💰Weekly Host Rate'] || 0) * reservationSpanWeeks;
+      hostCompensationPerNight = nightlyPrice; // Per-night host rate
+      fourWeekRent = (listing['💰Weekly Host Rate'] || 0) * 4;
+      totalHostCompensation = (listing['💰Weekly Host Rate'] || 0) * reservationSpanWeeks;
+      estimatedBookingTotal = totalHostCompensation;
       break;
 
     case 'nightly':
     default:
       // Nightly uses rate based on actual nights per week
       nightlyPrice = getNightlyRateForNights(listing, nightsPerWeek);
+      hostCompensationPerNight = nightlyPrice; // Per-night host rate
       fourWeekRent = nightlyPrice * nightsPerWeek * 4;
-      estimatedBookingTotal = fourWeekRent;
-      hostCompensation = estimatedBookingTotal;
+      totalHostCompensation = nightlyPrice * nightsPerWeek * reservationSpanWeeks;
+      estimatedBookingTotal = totalHostCompensation;
       break;
   }
 
@@ -298,7 +312,8 @@ function calculatePricing(
     nightlyPrice: Math.round(nightlyPrice * 100) / 100,
     fourWeekRent: Math.round(fourWeekRent * 100) / 100,
     estimatedBookingTotal: Math.round(estimatedBookingTotal * 100) / 100,
-    hostCompensation: Math.round(hostCompensation * 100) / 100,
+    hostCompensationPerNight: Math.round(hostCompensationPerNight * 100) / 100,
+    totalHostCompensation: Math.round(totalHostCompensation * 100) / 100,
   };
 }
 
@@ -316,11 +331,10 @@ export async function handleCreateMockupProposal(
   supabase: SupabaseClient,
   payload: CreateMockupProposalPayload
 ): Promise<void> {
-  const { listingId, hostAccountId, hostUserId, hostEmail } = payload;
+  const { listingId, hostUserId, hostEmail } = payload;
 
   console.log('[createMockupProposal] ========== START ==========');
   console.log('[createMockupProposal] Listing:', listingId);
-  console.log('[createMockupProposal] Host Account:', hostAccountId);
   console.log('[createMockupProposal] Host User:', hostUserId);
 
   try {
@@ -363,6 +377,7 @@ export async function handleCreateMockupProposal(
       .select(`
         _id,
         "rental type",
+        "Host User",
         "Days Available (List of Days)",
         "Nights Available (List of Nights) ",
         "💰Weekly Host Rate",
@@ -390,6 +405,16 @@ export async function handleCreateMockupProposal(
     const listingData = listing as ListingData;
     const rentalType = listingData['rental type'] || 'nightly';
     console.log('[createMockupProposal] Rental type:', rentalType);
+
+    // ─────────────────────────────────────────────────────────
+    // Step 2.5: Get host user ID from listing
+    // ─────────────────────────────────────────────────────────
+    console.log('[createMockupProposal] Step 2.5: Getting host user ID...');
+
+    // Host User column now always contains user._id directly
+    const resolvedHostUserId = listingData['Host User'] || hostUserId;
+
+    console.log('[createMockupProposal] Host User ID:', resolvedHostUserId);
 
     // ─────────────────────────────────────────────────────────
     // Step 3: Calculate day/night configuration
@@ -435,9 +460,13 @@ export async function handleCreateMockupProposal(
       reservationSpanWeeks
     );
 
-    console.log('[createMockupProposal] Nightly price:', pricing.nightlyPrice);
-    console.log('[createMockupProposal] Four week rent:', pricing.fourWeekRent);
-    console.log('[createMockupProposal] Total:', pricing.estimatedBookingTotal);
+    console.log('[createMockupProposal] Pricing calculated:', {
+      nightlyPrice: pricing.nightlyPrice,
+      fourWeekRent: pricing.fourWeekRent,
+      hostCompensationPerNight: pricing.hostCompensationPerNight,
+      totalHostCompensation: pricing.totalHostCompensation,
+      estimatedBookingTotal: pricing.estimatedBookingTotal
+    });
 
     // ─────────────────────────────────────────────────────────
     // Step 6: Generate proposal ID
@@ -485,7 +514,7 @@ export async function handleCreateMockupProposal(
       // Core relationships
       Listing: listingId,
       Guest: guestData._id,
-      'Host - Account': hostAccountId,
+      'Host User': resolvedHostUserId, // user._id directly
       'Created By': guestData._id,
 
       // Guest info (from mock guest)
@@ -522,11 +551,13 @@ export async function handleCreateMockupProposal(
       'Complementary Nights': complementaryNights,
 
       // Pricing
+      // CRITICAL: "host compensation" is the per-night HOST rate, not the total
+      // "Total Compensation" = host compensation per night * nights per week * weeks
       'proposal nightly price': pricing.nightlyPrice,
       '4 week rent': pricing.fourWeekRent,
       'Total Price for Reservation (guest)': pricing.estimatedBookingTotal,
-      'Total Compensation (proposal - host)': pricing.hostCompensation,
-      'host compensation': pricing.hostCompensation,
+      'Total Compensation (proposal - host)': pricing.totalHostCompensation,
+      'host compensation': pricing.hostCompensationPerNight,
       '4 week compensation': pricing.fourWeekRent,
       'cleaning fee': listingData['💰Cleaning Cost / Maintenance Fee'] || 0,
       'damage deposit': listingData['💰Damage Deposit'] || 0,
@@ -578,7 +609,7 @@ export async function handleCreateMockupProposal(
     const { data: hostUser, error: hostUserError } = await supabase
       .from('user')
       .select('_id, "Proposals List"')
-      .eq('_id', hostUserId)
+      .eq('_id', resolvedHostUserId)
       .single();
 
     if (hostUserError || !hostUser) {
@@ -593,13 +624,16 @@ export async function handleCreateMockupProposal(
           'Proposals List': updatedProposals,
           'Modified Date': now,
         })
-        .eq('_id', hostUserId);
+        .eq('_id', resolvedHostUserId);
 
       if (updateError) {
         console.warn('[createMockupProposal] Failed to update host Proposals List:', updateError);
       } else {
         console.log('[createMockupProposal] Host Proposals List updated');
       }
+
+      // Dual-write to junction table
+      await addUserProposal(supabase, resolvedHostUserId, proposalId, 'host');
     }
 
     // ─────────────────────────────────────────────────────────

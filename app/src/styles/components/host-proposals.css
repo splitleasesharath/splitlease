@@ -12,6 +12,7 @@
   flex-direction: column;
   background-color: var(--bg-light);
   padding: var(--spacing-2xl) 0;
+  padding-top: 100px; /* Account for fixed header height */
 }
 
 .host-proposals-page .container {
@@ -343,6 +344,39 @@
 .current-price {
   font-weight: 600;
   color: var(--text-dark);
+}
+
+/* Compensation row in proposal card */
+.proposal-card-details .detail-row.compensation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: var(--spacing-xs);
+  margin-top: var(--spacing-xs);
+  border-top: 1px solid var(--border-color);
+}
+
+.compensation-label {
+  font-size: var(--text-sm);
+  color: var(--text-gray);
+}
+
+.compensation-value {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  font-size: var(--text-base);
+}
+
+.compensation-value strong {
+  font-weight: 700;
+  color: var(--primary-purple);
+}
+
+.compensation-value .compensation-error {
+  font-size: var(--text-sm);
+  color: var(--error-red, #dc2626);
+  font-style: italic;
 }
 
 /* ========================================
@@ -744,59 +778,124 @@
   gap: var(--spacing-2xl);
 }
 
-/* Progress Tracker */
+/* Progress Tracker
+ * Matches guest proposals page design (fully connected dots and lines)
+ * Colors from Bubble "Status - Proposal" option set:
+ * - Default/Unfilled: #D4D4D4 (gray)
+ * - Completed/Active: #31135D (Success purple - dark purple)
+ * - Current Step: #BFBFBF (medium gray)
+ * - Cancelled/Rejected: #DB2E2E (red)
+ */
 .progress-tracker {
   display: flex;
+  flex-direction: column;
+  align-items: stretch; /* Full width */
+  gap: 12px;
+  width: 100%;
+  /* Add horizontal padding to prevent label overflow on edges */
+  padding: 0 50px;
+}
+
+/* Container for the dots and lines (horizontal) - fills available width */
+.progress-tracker-line {
+  display: flex;
   flex-direction: row;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0;
+  align-items: center;
+  width: 100%;
 }
 
-.progress-row {
-  display: contents;
-}
-
+/* Wrapper for each step node (circle only, no label here) */
 .progress-step {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xs);
-  flex: 1;
-  min-width: 0;
+  flex-shrink: 0;
 }
 
 .step-circle {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background-color: var(--border-color);
+  background-color: #D4D4D4; /* Default: gray (incomplete) */
   transition: background-color var(--transition-base);
-  flex-shrink: 0;
 }
 
+/* Completed state - dark purple */
 .progress-step.completed .step-circle {
-  background-color: var(--primary-purple);
+  background-color: #31135D;
 }
 
+/* Current state - medium gray (actively in progress) */
+.progress-step.current .step-circle {
+  background-color: #BFBFBF;
+}
+
+/* Cancelled/Rejected state - red */
 .progress-step.cancelled .step-circle {
-  background-color: #991B1B;
+  background-color: #DB2E2E;
+}
+
+/* Connector line between steps - flexible width to fill space */
+.progress-line {
+  flex: 1; /* Grow to fill available space */
+  height: 6px;
+  min-width: 40px;
+  background-color: #D4D4D4; /* Default: gray (incomplete) */
+}
+
+/* Completed line - dark purple */
+.progress-line.completed {
+  background-color: #31135D;
+}
+
+/* Cancelled/Rejected line - red */
+.progress-line.cancelled {
+  background-color: #DB2E2E;
+}
+
+/* Container for labels (below the line) - matches dots/lines row proportions exactly */
+.progress-tracker-labels {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  align-items: flex-start;
+}
+
+/*
+ * Label alignment strategy:
+ * The dots row is: [circle 28px][flex line][circle 28px][flex line]...[circle 28px]
+ *
+ * To center labels under circles, we mirror this exact structure:
+ * [label-wrapper 28px][spacer flex][label-wrapper 28px][spacer flex]...[label-wrapper 28px]
+ *
+ * Each label wrapper is exactly the circle width (28px), and the spacers
+ * between them flex to match the connector lines.
+ */
+.progress-label-wrapper {
+  width: 28px; /* Same as circle width */
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  position: relative;
+}
+
+/* Spacer between labels - mirrors the flex lines in the dots row */
+.progress-label-spacer {
+  flex: 1;
+  min-width: 40px; /* Same as progress-line min-width */
 }
 
 .step-label {
-  font-size: 9px;
-  color: var(--text-gray);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: #6B7280;
   text-align: center;
-  max-width: 70px;
-  line-height: 1.2;
-}
-
-.progress-line {
-  width: 20px;
-  height: 2px;
-  background-color: var(--border-color);
-  margin-top: 11px;
-  flex-shrink: 0;
+  line-height: 1.3;
+  white-space: nowrap;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 /* Status Box */
@@ -943,6 +1042,7 @@
 @media (max-width: 768px) {
   .host-proposals-page {
     padding: var(--spacing-lg) 0;
+    padding-top: 80px; /* Slightly smaller on mobile */
   }
 
   .host-proposals-page .container {
@@ -980,13 +1080,31 @@
     width: 100%;
   }
 
+  /* Progress tracker responsive */
+  .progress-tracker {
+    padding: 0 40px;
+  }
+
   .step-label {
-    font-size: 8px;
-    max-width: 50px;
+    font-size: 9px;
   }
 
   .progress-line {
-    width: 10px;
+    min-width: 30px;
+    height: 5px;
+  }
+
+  .step-circle {
+    width: 22px;
+    height: 22px;
+  }
+
+  .progress-label-wrapper {
+    width: 22px;
+  }
+
+  .progress-label-spacer {
+    min-width: 30px;
   }
 }
 

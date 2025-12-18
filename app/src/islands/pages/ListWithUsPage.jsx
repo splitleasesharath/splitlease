@@ -1,14 +1,40 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import CreateDuplicateListingModal from '../shared/CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import ImportListingModal from '../shared/ImportListingModal/ImportListingModal.jsx';
+import { useToast } from '../shared/Toast.jsx';
+import Toast from '../shared/Toast.jsx';
 import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 
 export default function ListWithUsPage() {
   const [showCreateListingModal, setShowCreateListingModal] = useState(false);
   const [showImportListingModal, setShowImportListingModal] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const { toasts, showToast, removeToast } = useToast();
+
+  // Nightly pricing calculator state
+  const [nightlyBaseRate, setNightlyBaseRate] = useState(150);
+  const [nightlyDiscount, setNightlyDiscount] = useState(20);
+
+  // Calculate nightly prices using decay curve algorithm
+  const nightlyPrices = useMemo(() => {
+    const p5Target = nightlyBaseRate * (1 - nightlyDiscount / 100);
+    const decay = nightlyBaseRate > 0 ? Math.pow(p5Target / nightlyBaseRate, 0.25) : 1;
+    const clampedDecay = Math.max(0.7, Math.min(1, decay));
+
+    const prices = [Math.ceil(nightlyBaseRate)];
+    for (let i = 1; i < 7; i++) {
+      prices.push(Math.ceil(prices[i - 1] * clampedDecay));
+    }
+    return prices;
+  }, [nightlyBaseRate, nightlyDiscount]);
+
+  // Calculate average price for 5-night stay
+  const avgPrice = useMemo(() => {
+    const sum5 = nightlyPrices.slice(0, 5).reduce((a, b) => a + b, 0);
+    return Math.round(sum5 / 5);
+  }, [nightlyPrices]);
 
   return (
     <>
@@ -146,6 +172,118 @@ export default function ListWithUsPage() {
         </div>
       </section>
 
+      {/* Nightly Pricing Calculator Section */}
+      <section className="list-pricing-calculator-section">
+        <div className="gradient-blob gradient-blob-1"></div>
+        <div className="gradient-blob gradient-blob-2"></div>
+
+        <div className="list-pricing-calculator-container">
+          <div className="list-pricing-calculator-header">
+            <div className="list-pricing-calculator-eyebrow">Try It Out</div>
+            <h2 className="list-pricing-calculator-title">Nightly Pricing Calculator</h2>
+            <p className="list-pricing-calculator-description">
+              See how our Smart Pricing works. Set your base rate and discount to see how consecutive night prices adjust automatically to encourage longer bookings.
+            </p>
+          </div>
+
+          <div className="pricing-calculator-card">
+            {/* Base Nightly Rate Input */}
+            <div className="calc-control-group calc-control-centered">
+              <label className="calc-label">Base Nightly Rate</label>
+              <div className="base-input-wrapper">
+                <span className="currency-symbol">$</span>
+                <input
+                  type="number"
+                  className="base-input"
+                  value={nightlyBaseRate}
+                  onChange={e => setNightlyBaseRate(Math.max(0, parseInt(e.target.value) || 0))}
+                  min="0"
+                />
+              </div>
+            </div>
+
+            {/* Long Stay Discount Slider */}
+            <div className="calc-control-group">
+              <div className="calc-label-row">
+                <span className="calc-label">Long Stay Discount</span>
+                <span className="calc-value-display">{nightlyDiscount}%</span>
+              </div>
+              <div className="calc-range-wrapper">
+                <input
+                  type="range"
+                  min="0"
+                  max="50"
+                  value={nightlyDiscount}
+                  onChange={e => setNightlyDiscount(parseInt(e.target.value))}
+                />
+              </div>
+              <div className="calc-marks">
+                <span>0%</span>
+                <span>25%</span>
+                <span>50%</span>
+              </div>
+              <p className="calc-hint">
+                Consecutive nights get progressively cheaper. A 5-night stay averages <strong>${avgPrice}</strong>/night.
+              </p>
+            </div>
+
+            {/* Color Palette Display */}
+            <div className="nights-display-wrapper">
+              <div className="nights-display-header">Price per consecutive night</div>
+              <div className="palette-container">
+                <div className="palette-row">
+                  {[1, 2, 3, 4, 5, 6, 7].map(night => (
+                    <div key={night} className={`palette-swatch n${night}`}>
+                      <span className="swatch-number">Night {night}</span>
+                      <span className="swatch-price">${nightlyPrices[night - 1] || 0}</span>
+                      <span className="swatch-label">per night</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="formula-row">
+                {[1, 2, 3, 4, 5, 6, 7].map(night => {
+                  const pricePerNight = nightlyPrices[night - 1] || 0;
+                  const total = night * pricePerNight;
+                  return <div key={night} className="formula-item">${total}</div>;
+                })}
+              </div>
+              <div className="formula-total-row">
+                <div className="formula-total-label">7-Night Total</div>
+                <div className="formula-total">
+                  ${7 * (nightlyPrices[6] || 0)}
+                </div>
+              </div>
+            </div>
+
+            {/* Summary Row */}
+            <div className="summary-row">
+              <div className="summary-item">
+                <div className="summary-label">Your Weekly Total</div>
+                <div className="summary-value">${nightlyPrices.reduce((a, b) => a + b, 0)}</div>
+                <div className="summary-sub">7 nights</div>
+              </div>
+              <div className="summary-item">
+                <div className="summary-label">Est. Monthly</div>
+                <div className="summary-value">${Math.round(nightlyPrices.reduce((a, b) => a + b, 0) * 4.33)}</div>
+                <div className="summary-sub">x 4.33 weeks</div>
+              </div>
+            </div>
+
+            {/* Smart Pricing explanation */}
+            <details className="pricing-details">
+              <summary>How does Smart Pricing work?</summary>
+              <div className="details-content">
+                We calculate a "decay curve" for your pricing. The first night is your full Base Rate.
+                Each consecutive night gets slightly cheaper based on your Discount setting.
+                This encourages guests to book longer blocks (like Mon-Fri) instead of just two nights,
+                maximizing your occupancy and reducing turnover effort.
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing Policy Section */}
       <section className="list-pricing-policy-section">
         <div className="circle-accent circle-accent-1"></div>
@@ -255,11 +393,19 @@ export default function ListWithUsPage() {
               throw new Error(result.error || 'Failed to submit import request');
             }
 
-            alert('Listing import request submitted! We will email you when it is ready.');
+            showToast({
+              title: 'Request Submitted!',
+              content: 'We will email you when your listing is ready.',
+              type: 'success'
+            });
             setShowImportListingModal(false);
           } catch (error) {
             console.error('Import error:', error);
-            alert('Failed to import listing. Please try again later.');
+            showToast({
+              title: 'Import Failed',
+              content: 'Please try again later.',
+              type: 'error'
+            });
           } finally {
             setIsImporting(false);
           }
@@ -267,6 +413,9 @@ export default function ListWithUsPage() {
         currentUserEmail=""
         isLoading={isImporting}
       />
+
+      {/* Toast Notifications */}
+      {toasts && toasts.length > 0 && <Toast toasts={toasts} onRemove={removeToast} />}
     </>
   );
 }

@@ -3,13 +3,11 @@
  *
  * Synchronizes native Supabase signup data to Bubble using Data API.
  *
- * PHASE 1: Create account_host, user (2 POSTs)
- * PHASE 2: Update foreign keys (1 PATCH)
+ * NOTE: account_host table is DEPRECATED - host data now stored directly in user table
  *
- * Handles circular foreign key dependency by:
- * 1. Creating host WITHOUT User field
- * 2. Creating user WITH Bubble host ID
- * 3. Updating host WITH Bubble user ID
+ * SIMPLIFIED FLOW (after account_host deprecation):
+ * 1. Create user in Bubble (with host fields included)
+ * 2. Update user.bubble_id in Supabase
  *
  * NO FALLBACK PRINCIPLE:
  * - Real data or nothing
@@ -26,20 +24,23 @@ import {
 
 export interface SyncSignupAtomicPayload {
     user_id: string;                // Supabase user._id
-    host_account_id: string;        // Supabase account_host._id
+    host_account_id: string;        // Legacy FK ID (now stored in user table, not a separate table)
 }
 
 export interface SyncSignupAtomicResult {
     success: boolean;
+    user_bubble_id: string;
+    supabase_user_updated: boolean;
+    // Legacy fields kept for backwards compatibility with callers
     phase1: {
-        host_bubble_id: string;
+        host_bubble_id: string;  // Empty - account_host sync removed
         user_bubble_id: string;
     };
     phase2: {
-        host_updated: boolean;
+        host_updated: boolean;   // Always false - account_host sync removed
     };
     supabase_updates: {
-        host_updated: boolean;
+        host_updated: boolean;   // Always false - account_host sync removed
         user_updated: boolean;
     };
 }
@@ -49,38 +50,32 @@ export async function handleSyncSignupAtomic(
     bubbleConfig: BubbleDataApiConfig,
     payload: SyncSignupAtomicPayload
 ): Promise<SyncSignupAtomicResult> {
-    console.log('[syncSignupAtomic] ========== ATOMIC SIGNUP SYNC START ==========');
+    console.log('[syncSignupAtomic] ========== SIGNUP SYNC START (SIMPLIFIED) ==========');
     console.log('[syncSignupAtomic] User ID:', payload.user_id);
-    console.log('[syncSignupAtomic] Host Account ID:', payload.host_account_id);
+    console.log('[syncSignupAtomic] Host Account ID (legacy FK):', payload.host_account_id);
+    console.log('[syncSignupAtomic] NOTE: account_host table sync SKIPPED (deprecated)');
 
     const result: SyncSignupAtomicResult = {
         success: false,
+        user_bubble_id: '',
+        supabase_user_updated: false,
+        // Legacy fields for backwards compatibility
         phase1: {
-            host_bubble_id: '',
+            host_bubble_id: '',  // Empty - account_host sync removed
             user_bubble_id: ''
         },
         phase2: {
-            host_updated: false
+            host_updated: false  // Always false - account_host sync removed
         },
         supabase_updates: {
-            host_updated: false,
+            host_updated: false, // Always false - account_host sync removed
             user_updated: false
         }
     };
 
     try {
-        // ========== FETCH RECORDS FROM SUPABASE ==========
-        console.log('[syncSignupAtomic] Fetching records from Supabase...');
-
-        const { data: hostRecord, error: hostFetchError } = await supabase
-            .from('account_host')
-            .select('*')
-            .eq('_id', payload.host_account_id)
-            .single();
-
-        if (hostFetchError || !hostRecord) {
-            throw new Error(`Failed to fetch account_host: ${hostFetchError?.message}`);
-        }
+        // ========== FETCH USER RECORD FROM SUPABASE ==========
+        console.log('[syncSignupAtomic] Fetching user record from Supabase...');
 
         const { data: userRecord, error: userFetchError } = await supabase
             .from('user')
@@ -92,48 +87,12 @@ export async function handleSyncSignupAtomic(
             throw new Error(`Failed to fetch user: ${userFetchError?.message}`);
         }
 
-        console.log('[syncSignupAtomic] ✅ All records fetched from Supabase');
+        console.log('[syncSignupAtomic] ✅ User record fetched from Supabase');
 
-        // ========== PHASE 1: CREATE RECORDS IN BUBBLE ==========
-        console.log('[syncSignupAtomic] ========== PHASE 1: CREATE RECORDS ==========');
+        // ========== CREATE USER IN BUBBLE ==========
+        console.log('[syncSignupAtomic] Creating user in Bubble...');
 
-        // Step 1.1: Create account_host (WITHOUT User field)
-        console.log('[syncSignupAtomic] Step 1.1: Creating account_host in Bubble...');
-
-        const hostData = {
-            'HasClaimedListing': hostRecord['HasClaimedListing'] || false,
-            'Receptivity': hostRecord['Receptivity'] || 0,
-            'Created Date': hostRecord['Created Date'],
-            'Modified Date': hostRecord['Modified Date']
-            // ⚠️ OMIT 'User' field - will be set in Phase 2
-        };
-
-        const hostBubbleId = await createRecord(
-            bubbleConfig,
-            'account_host',
-            hostData
-        );
-
-        result.phase1.host_bubble_id = hostBubbleId;
-        console.log('[syncSignupAtomic] ✅ account_host created in Bubble:', hostBubbleId);
-
-        // Update Supabase with Bubble ID
-        const { error: hostUpdateError } = await supabase
-            .from('account_host')
-            .update({ bubble_id: hostBubbleId })
-            .eq('_id', payload.host_account_id);
-
-        if (hostUpdateError) {
-            console.error('[syncSignupAtomic] Failed to update account_host.bubble_id:', hostUpdateError);
-            throw new Error(`Supabase update failed: ${hostUpdateError.message}`);
-        }
-
-        result.supabase_updates.host_updated = true;
-        console.log('[syncSignupAtomic] ✅ Supabase account_host.bubble_id updated');
-
-        // Step 1.2: Create user (WITH Bubble host ID)
-        console.log('[syncSignupAtomic] Step 1.2: Creating user in Bubble...');
-
+        // User data includes host fields (migrated from account_host)
         const userData = {
             'email as text': userRecord['email as text'],
             'Name - First': userRecord['Name - First'],
@@ -143,11 +102,16 @@ export async function handleSyncSignupAtomic(
             'Phone Number (as text)': userRecord['Phone Number (as text)'],
             'Type - User Current': userRecord['Type - User Current'],
             'Type - User Signup': userRecord['Type - User Signup'],
-            'Account - Host / Landlord': hostBubbleId,     // ✅ Use Bubble ID
+            // NOTE: Account - Host / Landlord is now just an ID string, not a FK to account_host in Bubble
+            // Bubble may need to be updated to handle this or we skip this field
             'Created Date': userRecord['Created Date'],
             'Modified Date': userRecord['Modified Date'],
             'authentication': userRecord['authentication'] || {},
-            'user_signed_up': userRecord['user_signed_up'] || true
+            'user_signed_up': userRecord['user_signed_up'] || true,
+            // Host fields (migrated from account_host)
+            'Receptivity': userRecord['Receptivity'] || 0,
+            'MedianHoursToReply': userRecord['MedianHoursToReply'] || null,
+            'Listings': userRecord['Listings'] || null
         };
 
         const userBubbleId = await createRecord(
@@ -156,6 +120,7 @@ export async function handleSyncSignupAtomic(
             userData
         );
 
+        result.user_bubble_id = userBubbleId;
         result.phase1.user_bubble_id = userBubbleId;
         console.log('[syncSignupAtomic] ✅ user created in Bubble:', userBubbleId);
 
@@ -170,33 +135,15 @@ export async function handleSyncSignupAtomic(
             throw new Error(`Supabase update failed: ${userUpdateError.message}`);
         }
 
+        result.supabase_user_updated = true;
         result.supabase_updates.user_updated = true;
         console.log('[syncSignupAtomic] ✅ Supabase user.bubble_id updated');
-        console.log('[syncSignupAtomic] ========== PHASE 1 COMPLETE ==========');
-
-        // ========== PHASE 2: UPDATE FOREIGN KEYS ==========
-        console.log('[syncSignupAtomic] ========== PHASE 2: UPDATE FOREIGN KEYS ==========');
-
-        // Step 2.1: Update account_host.User → Bubble user ID
-        console.log('[syncSignupAtomic] Step 2.1: Updating account_host.User in Bubble...');
-
-        await updateRecord(
-            bubbleConfig,
-            'account_host',
-            hostBubbleId,
-            { 'User': userBubbleId }  // ✅ Set foreign key to Bubble user ID
-        );
-
-        result.phase2.host_updated = true;
-        console.log('[syncSignupAtomic] ✅ account_host.User updated in Bubble');
-        console.log('[syncSignupAtomic] ========== PHASE 2 COMPLETE ==========');
 
         result.success = true;
-        console.log('[syncSignupAtomic] ========== ATOMIC SIGNUP SYNC COMPLETE ==========');
+        console.log('[syncSignupAtomic] ========== SIGNUP SYNC COMPLETE ==========');
         console.log('[syncSignupAtomic] Summary:');
-        console.log('[syncSignupAtomic]   Host Bubble ID:', hostBubbleId);
         console.log('[syncSignupAtomic]   User Bubble ID:', userBubbleId);
-        console.log('[syncSignupAtomic]   All foreign keys updated: ✅');
+        console.log('[syncSignupAtomic]   account_host sync: SKIPPED (deprecated)');
 
         return result;
 
