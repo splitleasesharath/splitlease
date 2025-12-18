@@ -2225,8 +2225,10 @@
 }
 
 .continue-phone-icon {
-  font-size: 48px;
   margin-bottom: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .continue-phone-modal h2 {
