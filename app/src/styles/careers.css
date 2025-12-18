@@ -904,6 +904,11 @@ body {
 
   .video-player-container {
     border-radius: 0;
+    overflow: visible;
+  }
+
+  .video-player {
+    transform: scale(1); /* Remove zoom on mobile so controls are visible */
   }
 
   .mission-grid {
