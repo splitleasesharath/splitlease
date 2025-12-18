@@ -14,7 +14,7 @@ import MoveInSection from './CreateProposalFlowV2Components/MoveInSection.jsx';
 import DaysSelectionSection from './CreateProposalFlowV2Components/DaysSelectionSection.jsx';
 import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
 import { calculateNightsFromDays } from '../../lib/scheduleSelector/nightCalculations.js';
-import { useToast } from './Toast.jsx';
+import Toast, { useToast } from './Toast.jsx';
 import '../../styles/create-proposal-flow-v2.css';
 
 // Day name constants for check-in/check-out calculation
@@ -144,8 +144,8 @@ export default function CreateProposalFlowV2({
   // Lock body scroll when popup is open
   useBodyScrollLock();
 
-  // Toast notifications for validation feedback
-  const { showToast } = useToast();
+  // Toast notifications (with fallback rendering when no ToastProvider)
+  const { toasts, showToast, removeToast } = useToast();
 
   // Get listing ID for localStorage key
   const listingId = listing?._id;
@@ -691,6 +691,7 @@ export default function CreateProposalFlowV2({
   };
 
   return (
+    <>
     <div className="create-proposal-popup">
       <div className="proposal-container">
         <div className="proposal-header">
@@ -771,5 +772,9 @@ export default function CreateProposalFlowV2({
         </div>
       </div>
     </div>
+
+    {/* Toast notifications (rendered here as fallback when no ToastProvider) */}
+    {toasts && toasts.length > 0 && <Toast toasts={toasts} onRemove={removeToast} />}
+    </>
   );
 }
