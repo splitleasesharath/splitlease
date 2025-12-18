@@ -253,6 +253,32 @@ body {
     flex-wrap: wrap;
 }
 
+/* Mobile avatar row - hidden on desktop, shown on mobile */
+.hero-avatars-row {
+    display: none; /* Hidden by default (desktop) */
+    justify-content: center;
+    margin-bottom: 32px;
+}
+
+.hero-avatars-row .avatar-stack {
+    display: flex;
+    align-items: center;
+}
+
+.hero-avatars-row .avatar-stack img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 3px solid white;
+    object-fit: cover;
+    margin-left: -12px; /* Overlap effect */
+    box-shadow: 0 2px 8px rgba(49, 19, 93, 0.15);
+}
+
+.hero-avatars-row .avatar-stack img:first-child {
+    margin-left: 0; /* No negative margin on first */
+}
+
 .cta-button {
     padding: 16px 40px;
     border-radius: 500px;
@@ -1625,9 +1651,14 @@ body {
         padding-top: 140px; /* 80px for fixed header + 60px spacing */
     }
 
-    /* Hide ALL floating people on tablet/mobile - cleaner UX like Payoneer */
+    /* Hide floating people on tablet/mobile - replaced by avatar row */
     .hero-identity .floating-person {
         display: none;
+    }
+
+    /* Show the mobile avatar row */
+    .hero-avatars-row {
+        display: flex;
     }
 
     .hero-identity .hero-title {
