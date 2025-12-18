@@ -24,6 +24,7 @@
   flex: 1;
   background-color: var(--v2-bg);
   padding: 40px 20px;
+  padding-top: 120px; /* Account for fixed header (80px) + spacing (40px) */
 }
 
 .self-listing-v2-main .container {
