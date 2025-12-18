@@ -552,9 +552,34 @@ export default function useListingDashboardPageLogic() {
   }, []);
 
   // Copy link handler
-  const handleCopyLink = useCallback(() => {
-    console.log('Link copied');
-  }, []);
+  const handleCopyLink = useCallback(async () => {
+    if (!listing?.id) {
+      window.showToast?.({
+        title: 'Error',
+        content: 'No listing ID available',
+        type: 'error'
+      });
+      return;
+    }
+
+    const listingUrl = `${window.location.origin}/view-split-lease/${listing.id}`;
+
+    try {
+      await navigator.clipboard.writeText(listingUrl);
+      window.showToast?.({
+        title: 'Link Copied!',
+        content: 'Listing link has been copied to your clipboard',
+        type: 'success'
+      });
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+      window.showToast?.({
+        title: 'Copy Failed',
+        content: 'Unable to copy link to clipboard',
+        type: 'error'
+      });
+    }
+  }, [listing?.id]);
 
   // AI Assistant handler - opens the AI Import Assistant modal
   const handleAIAssistant = useCallback(() => {
