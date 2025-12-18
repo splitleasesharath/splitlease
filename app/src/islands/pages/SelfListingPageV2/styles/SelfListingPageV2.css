@@ -1561,16 +1561,17 @@
   gap: 10px;
 }
 
-/* Night Selector Section - minimal padding on mobile */
+/* Night Selector Section - minimal padding to maximize space for buttons */
 #nightSelector.conditional-section {
-  padding: 16px 8px;
+  padding: 12px 0;
+  background: transparent;
+  border: none;
 }
 
 /* Host Schedule Selector Integration - MOBILE FIRST */
-/* Use negative margins to break out of parent padding and maximize button space */
 .host-schedule-selector-wrapper {
-  margin: 12px -8px; /* Negative margin to extend into parent padding */
-  width: calc(100% + 16px); /* Account for negative margin */
+  margin: 12px 0;
+  width: 100%;
   display: block;
   box-sizing: border-box;
 }
@@ -2070,12 +2071,14 @@
 
   /* Host Schedule Selector - mobile optimizations - MAXIMIZE TAP TARGET */
   #nightSelector.conditional-section {
-    padding: 12px 4px !important; /* Minimal padding on mobile */
+    padding: 8px 0 !important; /* No horizontal padding - let purple container fill width */
+    background: transparent !important;
+    border: none !important;
   }
 
   .host-schedule-selector-wrapper {
-    margin: 8px -12px !important; /* Extend further into parent padding */
-    width: calc(100% + 24px) !important;
+    margin: 8px 0 !important; /* No negative margins needed now */
+    width: 100% !important;
   }
 
   .host-schedule-selector-wrapper .hss-host-schedule-selector {
