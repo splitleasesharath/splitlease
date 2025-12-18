@@ -31,7 +31,7 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 1.5rem;
     margin-bottom: 1rem;
-    justify-content: center;
+    justify-content: space-between;
     max-width: 1200px;
     margin-left: auto;
     margin-right: auto;
@@ -175,7 +175,7 @@
 /* Scroll indicators - hidden on desktop, shown on mobile */
 .home-page .scroll-indicators {
     display: none;
-    justify-content: center;
+    justify-content: space-between;
     gap: 0.5rem;
     margin-top: 1rem;
 }
@@ -327,7 +327,7 @@
     border-radius: 50%;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     cursor: pointer;
     transition: all 0.2s ease;
     opacity: 0.8;
@@ -393,7 +393,7 @@
     border-radius: 50%;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     cursor: pointer;
     transition: all 0.2s ease;
     box-shadow: 0 2px 12px rgba(0,0,0,0.25);
@@ -543,7 +543,7 @@
     background: #e5e7eb;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     font-size: 14px;
     color: #9ca3af;
     flex-shrink: 0;
@@ -561,7 +561,7 @@
 .listing-host-row .message-btn {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 6px;
     background: white;
     color: #6C5CE7;
@@ -593,7 +593,7 @@
 .listing-host-row .create-proposal-btn {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 6px;
     background: #6C5CE7;
     color: white;
@@ -624,7 +624,7 @@
 .listing-host-row .view-proposal-btn {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 6px;
     background: #6C5CE7;
     color: white;
@@ -721,7 +721,7 @@
     color: white;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     font-weight: 700;
     font-size: 14px;
     flex-shrink: 0;
@@ -739,7 +739,7 @@
 .listing-host-section .verified-badge {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     width: 14px;
     height: 14px;
     background: #4A90E2;
@@ -763,7 +763,7 @@
     transition: all 0.2s ease;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     gap: 6px;
     white-space: nowrap;
 }
@@ -856,7 +856,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     text-align: center;
     border-left: 1px solid #f0e6ff;
     flex-shrink: 0;
@@ -1071,7 +1071,7 @@
     background: #e5e7eb;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     font-size: 18px;
     color: #9ca3af;
     font-weight: 600;
@@ -1301,10 +1301,11 @@
         flex-direction: row;
         flex-wrap: wrap;
         align-items: center;
-        justify-content: center;
+        justify-content: space-between;
         padding: 12px 16px;
         border-left: none;
-        border-top: 1px solid #f0e6ff;
+        border-top: none;
+        background: transparent;
         gap: 4px 12px;
     }
 
@@ -1317,8 +1318,7 @@
     }
 
     .listing-price-sidebar .price-starting {
-        width: 100%;
-        text-align: center;
+        text-align: right;
     }
 
     .listing-price-sidebar .price-starting span {
@@ -1423,7 +1423,7 @@
 
 .lazy-load-sentinel {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     padding: 2rem 1rem;
     margin: 1rem 0;
     opacity: 0.8;
