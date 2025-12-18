@@ -928,7 +928,7 @@ body {
   /* Mobile card redesign: horizontal flip/slide transition */
   .example-card {
     padding: 0;
-    height: 230px;
+    height: 270px;
     perspective: 1000px;
     background: transparent;
     border: none;
@@ -1172,7 +1172,7 @@ body {
   }
 
   .example-card {
-    height: 210px;
+    height: 250px;
   }
 
   .timeline-label {
