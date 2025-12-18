@@ -1071,14 +1071,26 @@ body {
     opacity: 0.7;
   }
 
-  /* Disable hover effects on mobile */
-  .example-card:hover .example-header,
-  .example-card:hover .example-pattern,
+  /* Disable ALL hover effects on mobile - we use tap instead */
+  .example-card:hover .example-header {
+    opacity: 1;
+    max-height: none;
+    margin-bottom: 12px;
+    overflow: visible;
+  }
+
+  .example-card:hover .example-pattern {
+    opacity: 1;
+  }
+
+  .example-card:hover .example-review {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .example-card:hover .example-timeline,
   .example-card:hover .timeline-labels {
     opacity: 1;
-    max-height: none;
-    margin-bottom: initial;
   }
 
   .role-card {
