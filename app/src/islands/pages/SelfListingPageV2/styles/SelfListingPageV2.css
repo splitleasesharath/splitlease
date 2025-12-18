@@ -1586,7 +1586,8 @@
 .host-schedule-selector-wrapper .hss-night-cell {
   flex: 1 1 0;
   min-width: 0;
-  max-width: 48px;
+  width: auto;
+  max-width: none;
   aspect-ratio: 1 / 1;
   height: auto;
   border-radius: 50%;
@@ -2047,6 +2048,25 @@
   .btn-icon {
     font-size: 11px;
   }
+
+  /* Host Schedule Selector - mobile optimizations */
+  .host-schedule-selector-wrapper .hss-host-schedule-selector {
+    padding: 12px;
+  }
+
+  .host-schedule-selector-wrapper .hss-nights-grid {
+    gap: 6px;
+  }
+
+  .host-schedule-selector-wrapper .hss-night-cell {
+    min-width: 0;
+    /* Allow buttons to shrink and grow equally */
+    flex: 1 1 0;
+  }
+
+  .host-schedule-selector-wrapper .hss-night-letter {
+    font-size: 14px;
+  }
 }
 
 @media (max-width: 550px) {
@@ -2431,5 +2451,20 @@
   .btn-copy,
   .btn-send-link {
     width: 100%;
+  }
+}
+
+/* Extra small phones - tighter spacing for day selector */
+@media (max-width: 380px) {
+  .host-schedule-selector-wrapper .hss-host-schedule-selector {
+    padding: 10px;
+  }
+
+  .host-schedule-selector-wrapper .hss-nights-grid {
+    gap: 4px;
+  }
+
+  .host-schedule-selector-wrapper .hss-night-letter {
+    font-size: 12px;
   }
 }
