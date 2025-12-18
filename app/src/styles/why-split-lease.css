@@ -1635,6 +1635,28 @@ body {
         display: block;
     }
 
+    /* Scale down floating people for tablets */
+    .hero-identity .hero-person-1 {
+        width: 80px;
+        height: 80px;
+        top: 8%;
+        right: 5%;
+    }
+
+    .hero-identity .hero-person-2 {
+        width: 60px;
+        height: 60px;
+        top: 55%;
+        left: 5%;
+    }
+
+    .hero-identity .hero-person-3 {
+        width: 70px;
+        height: 70px;
+        bottom: 12%;
+        right: 8%;
+    }
+
     .hero-identity .hero-title {
         font-size: 36px;
     }
@@ -1742,6 +1764,35 @@ body {
         gap: 32px;
     }
 
+    /* Further scale down floating people for mobile */
+    .hero-identity .hero-person-1 {
+        width: 56px;
+        height: 56px;
+        top: 5%;
+        right: 3%;
+    }
+
+    .hero-identity .hero-person-2 {
+        width: 44px;
+        height: 44px;
+        top: auto;
+        bottom: 8%;
+        left: 3%;
+    }
+
+    .hero-identity .hero-person-3 {
+        width: 50px;
+        height: 50px;
+        bottom: 18%;
+        right: 3%;
+    }
+
+    /* Reduce border and shadow for smaller images */
+    .hero-identity .floating-person {
+        border-width: 2px;
+        box-shadow: 0 4px 12px rgba(49, 19, 93, 0.12);
+    }
+
     .cta-title-final,
     .different-title,
     .pricing-title {
@@ -1755,5 +1806,12 @@ body {
     .schedule-day {
         padding: 8px 4px;
         font-size: 11px;
+    }
+}
+
+/* Extra small screens - hide all floating people to maximize content space */
+@media (max-width: 400px) {
+    .hero-identity .floating-person {
+        display: none;
     }
 }
