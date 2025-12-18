@@ -2741,8 +2741,8 @@ export default function SearchPage() {
             )}
           </div>
 
-          {/* Listings count */}
-          <div className="listings-count">
+          {/* Listings count - hidden when mobile header is collapsed */}
+          <div className={`listings-count ${mobileHeaderHidden ? 'listings-count--hidden' : ''}`}>
             <strong>{allListings.length} listings found</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
           </div>
 

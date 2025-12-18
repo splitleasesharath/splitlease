@@ -966,6 +966,17 @@
     z-index: 10;
     background: #f9fafb;
     margin-top: 0;
+    transition: opacity 0.3s ease, max-height 0.3s ease;
+    max-height: 50px;
+    overflow: hidden;
+  }
+
+  /* Hide listings count when header is collapsed */
+  .listings-count--hidden {
+    opacity: 0;
+    max-height: 0;
+    padding: 0;
+    border: none;
   }
 
   /* Listings content takes remaining space */
