@@ -474,7 +474,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
   const calculateDynamicPrice = () => {
     const nightsCount = selectedNightsCount;
 
-    // If 0 or 1 nights, show starting price (need at least 2 days = 1 night for a valid stay)
+    // If 0 nights, show starting price (need at least 2 days = 1 night for a valid stay)
     if (nightsCount < 1) {
       return listing['Starting nightly price'] || listing.price?.starting || 0;
     }
@@ -487,6 +487,14 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
       // Use the same pricing calculation as View Split Lease page
       // Default reservationSpan of 13 weeks (standard booking period)
       const priceBreakdown = calculatePrice(mockNightsArray, listing, 13, null);
+
+      console.log(`[PropertyCard] Dynamic price for ${listing.title}:`, {
+        nightsCount,
+        rentalType: listing.rentalType,
+        hostRate: listing[`💰Nightly Host Rate for ${nightsCount} nights`],
+        pricePerNight: priceBreakdown.pricePerNight,
+        valid: priceBreakdown.valid
+      });
 
       // Return the guest-facing price per night
       return priceBreakdown.pricePerNight || listing['Starting nightly price'] || listing.price?.starting || 0;
@@ -1889,12 +1897,26 @@ export default function SearchPage() {
         full: dbListing['💰Nightly Host Rate for 7 nights'] || 0
       },
       'Starting nightly price': dbListing['Standarized Minimum Nightly Price (Filter)'] || 0,
-      'Price 2 nights selected': dbListing['💰Nightly Host Rate for 2 nights'] || null,
-      'Price 3 nights selected': dbListing['💰Nightly Host Rate for 3 nights'] || null,
-      'Price 4 nights selected': dbListing['💰Nightly Host Rate for 4 nights'] || null,
-      'Price 5 nights selected': dbListing['💰Nightly Host Rate for 5 nights'] || null,
-      'Price 6 nights selected': null,
-      'Price 7 nights selected': dbListing['💰Nightly Host Rate for 7 nights'] || null,
+      // Host rate fields needed by calculatePrice from priceCalculations.js
+      '💰Nightly Host Rate for 2 nights': dbListing['💰Nightly Host Rate for 2 nights'] || null,
+      '💰Nightly Host Rate for 3 nights': dbListing['💰Nightly Host Rate for 3 nights'] || null,
+      '💰Nightly Host Rate for 4 nights': dbListing['💰Nightly Host Rate for 4 nights'] || null,
+      '💰Nightly Host Rate for 5 nights': dbListing['💰Nightly Host Rate for 5 nights'] || null,
+      '💰Nightly Host Rate for 7 nights': dbListing['💰Nightly Host Rate for 7 nights'] || null,
+      // Rental type for calculatePrice dispatch (Monthly/Weekly/Nightly)
+      'rental type': dbListing['rental type'] || 'Nightly',
+      rentalType: dbListing['rental type'] || 'Nightly',
+      // Monthly rate if needed
+      '💰Monthly Host Rate': dbListing['💰Monthly Host Rate'] || null,
+      // Weekly rate if needed
+      '💰Weekly Host Rate': dbListing['💰Weekly Host Rate'] || null,
+      // Fees
+      '💰Cleaning Cost / Maintenance Fee': dbListing['💰Cleaning Cost / Maintenance Fee'] || 0,
+      '💰Damage Deposit': dbListing['💰Damage Deposit'] || 0,
+      '💰Unit Markup': dbListing['💰Unit Markup'] || 0,
+      // Weeks offered pattern
+      'Weeks offered': dbListing['Weeks offered'] || 'Every week',
+      weeksOffered: dbListing['Weeks offered'] || 'Every week',
       type: propertyType,
       squareFeet: dbListing['Features - SQFT Area'] || null,
       maxGuests: dbListing['Features - Qty Guests'] || 1,
@@ -1909,7 +1931,6 @@ export default function SearchPage() {
       // Photos loaded via batch fetch BEFORE transformation
       images: images || [],
       description: `${(dbListing['Features - Qty Bedrooms'] || 0) === 0 ? 'Studio' : `${dbListing['Features - Qty Bedrooms']} bedroom`} • ${dbListing['Features - Qty Bathrooms'] || 0} bathroom`,
-      weeks_offered: dbListing['Weeks offered'] || 'Every week',
       // Parse JSONB field that may be stringified JSON or native array
       days_available: parseJsonArray(dbListing['Days Available (List of Days)']),
       isNew: false
