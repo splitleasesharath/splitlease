@@ -430,7 +430,7 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
               {calendarDays.map((dayInfo, index) => {
                 const isBlocked = dayInfo.date && isDateBlocked(dayInfo.date);
                 const isRangeStartDate = isInPendingRange(dayInfo.date);
-                const isSelectable = dayInfo.isCurrentMonth && !dayInfo.isPast;
+                const isSelectable = !dayInfo.isPast && dayInfo.date;
 
                 return (
                   <div

@@ -1416,6 +1416,21 @@
   color: #d1d5db;
 }
 
+/* Selectable overflow days (future dates from adjacent months) */
+.listing-dashboard-availability__calendar-day--other-month.listing-dashboard-availability__calendar-day--selectable {
+  cursor: pointer;
+}
+
+.listing-dashboard-availability__calendar-day--other-month.listing-dashboard-availability__calendar-day--selectable:hover {
+  background-color: #f3f4f6;
+}
+
+/* Blocked overflow days should still show blocked styling */
+.listing-dashboard-availability__calendar-day--other-month.listing-dashboard-availability__calendar-day--blocked {
+  background-color: #fee2e2;
+  color: #dc2626;
+}
+
 .listing-dashboard-availability__calendar-day--past {
   color: #9ca3af;
   background-color: #f9fafb;
