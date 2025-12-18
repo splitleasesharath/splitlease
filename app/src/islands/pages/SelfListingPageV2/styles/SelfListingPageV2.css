@@ -1561,32 +1561,36 @@
   gap: 10px;
 }
 
-/* Host Schedule Selector Integration */
+/* Night Selector Section - minimal padding on mobile */
+#nightSelector.conditional-section {
+  padding: 16px 8px;
+}
+
+/* Host Schedule Selector Integration - MOBILE FIRST */
+/* Use negative margins to break out of parent padding and maximize button space */
 .host-schedule-selector-wrapper {
-  margin: 15px 0;
-  width: 100%;
-  max-width: 100%;
+  margin: 12px -8px; /* Negative margin to extend into parent padding */
+  width: calc(100% + 16px); /* Account for negative margin */
   display: block;
   box-sizing: border-box;
-  overflow: hidden;
 }
 
 .host-schedule-selector-wrapper .hss-host-schedule-selector {
   background: #e0e7ff;
   border: 2px solid #c7d2fe;
   border-radius: 12px;
-  padding: 20px 14px;
+  padding: 16px 10px; /* Reduced horizontal padding */
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
   display: block;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .host-schedule-selector-wrapper .hss-nights-grid {
   display: flex !important;
   justify-content: space-between !important;
-  gap: 6px !important;
+  gap: 6px !important; /* Reduced gap for more button space */
   width: 100% !important;
   max-width: 100% !important;
   box-sizing: border-box !important;
@@ -1612,7 +1616,7 @@
 }
 
 .host-schedule-selector-wrapper .hss-night-letter {
-  font-size: 17px !important;
+  font-size: 16px !important;
   font-weight: 700 !important;
 }
 
@@ -2064,33 +2068,39 @@
     font-size: 11px;
   }
 
-  /* Host Schedule Selector - mobile optimizations */
+  /* Host Schedule Selector - mobile optimizations - MAXIMIZE TAP TARGET */
+  #nightSelector.conditional-section {
+    padding: 12px 4px !important; /* Minimal padding on mobile */
+  }
+
   .host-schedule-selector-wrapper {
-    width: 100%;
+    margin: 8px -12px !important; /* Extend further into parent padding */
+    width: calc(100% + 24px) !important;
   }
 
   .host-schedule-selector-wrapper .hss-host-schedule-selector {
-    padding: 16px;
-    width: 100%;
-    box-sizing: border-box;
+    padding: 12px 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    border-radius: 10px;
   }
 
   .host-schedule-selector-wrapper .hss-nights-grid {
-    gap: 8px;
-    width: 100%;
-    justify-content: space-between;
+    gap: 5px !important; /* Minimal gap for maximum button size */
+    width: 100% !important;
+    justify-content: space-between !important;
   }
 
   .host-schedule-selector-wrapper .hss-night-cell {
-    min-width: 36px;
-    max-width: 44px;
-    /* Allow buttons to grow equally to fill available space */
-    flex: 1 1 auto;
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    /* Buttons will be as large as possible while fitting 7 in a row */
   }
 
   .host-schedule-selector-wrapper .hss-night-letter {
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 14px !important;
+    font-weight: 700 !important;
   }
 }
 
