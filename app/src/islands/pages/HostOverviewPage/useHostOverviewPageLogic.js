@@ -491,12 +491,13 @@ export function useHostOverviewPageLogic() {
 
       if (userData) {
         // Success path: Use validated user data
+        // Note: validateTokenAndFetchUser returns { userId, accountHostId, ... }
         finalUser = {
-          id: userData._id || userData.id,
+          id: userData.userId || userData.accountHostId || userData._id || userData.id,
           firstName: userData['Name - First'] || userData.firstName || 'Host',
           lastName: userData['Name - Last'] || userData.lastName || '',
           email: userData.email || '',
-          accountHostId: userData.accountHostId || userData._id
+          accountHostId: userData.accountHostId || userData.userId || userData._id
         };
         setUser(finalUser);
         console.log('[HostOverview] User data loaded:', finalUser.firstName);
