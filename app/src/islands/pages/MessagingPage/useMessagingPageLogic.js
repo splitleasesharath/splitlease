@@ -168,19 +168,28 @@ export function useMessagingPageLogic() {
     const channel = supabase.channel(channelName);
 
     // Listen for new messages via Postgres Changes (INSERT events on _message table)
+    // NOTE: Filter removed due to column name with special characters not working with Realtime
+    // Client-side filtering is done instead
     channel.on(
       'postgres_changes',
       {
         event: 'INSERT',
         schema: 'public',
-        table: '_message',
-        filter: `"Associated Thread/Conversation"=eq.${selectedThread._id}`
+        table: '_message'
       },
       (payload) => {
-        console.log('[Realtime] New message received via postgres_changes:', payload);
+        console.log('[Realtime] postgres_changes event received:', payload);
 
         const newRow = payload.new;
         if (!newRow) return;
+
+        // Client-side filter: only process messages for this thread
+        if (newRow['Associated Thread/Conversation'] !== selectedThread._id) {
+          console.log('[Realtime] Message is for different thread, ignoring');
+          return;
+        }
+
+        console.log('[Realtime] Message is for this thread, processing...');
 
         // Skip if this is our own message (already added optimistically)
         const isOwnMessage = newRow['-Originator User'] === user?.bubbleId;
