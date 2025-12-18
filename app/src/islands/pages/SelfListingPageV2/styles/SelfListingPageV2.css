@@ -1564,6 +1564,7 @@
 /* Host Schedule Selector Integration */
 .host-schedule-selector-wrapper {
   margin: 15px 0;
+  width: 100%;
 }
 
 .host-schedule-selector-wrapper .hss-host-schedule-selector {
@@ -1571,17 +1572,23 @@
   border: 2px solid #c7d2fe;
   border-radius: 12px;
   padding: 15px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .host-schedule-selector-wrapper .hss-nights-grid {
   display: flex;
   justify-content: space-between;
   gap: 8px;
+  width: 100%;
 }
 
 .host-schedule-selector-wrapper .hss-night-cell {
-  width: 42px;
-  height: 42px;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 48px;
+  aspect-ratio: 1 / 1;
+  height: auto;
   border-radius: 50%;
   border: 2px solid #e5e7eb;
   background: #f3f4f6;
