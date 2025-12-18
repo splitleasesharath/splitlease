@@ -294,17 +294,17 @@
   animation: pulse 2s ease-in-out infinite;
 }
 
-/* Normal Pin (Other Proposals) - White background, purple text, smaller, faded */
+/* Normal Pin (Other Proposals) - Light purple background, white text, smaller */
 .proposal-price-marker.normal {
-  background-color: #ffffff;
-  color: #31135d;
+  background-color: #7c5cad;
+  color: #ffffff;
   font-size: 12px;
   font-weight: 600;
   padding: 6px 10px;
   border-radius: 16px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  border: 2px solid #e5e7eb;
-  opacity: 0.85;
+  box-shadow: 0 2px 6px rgba(124, 92, 173, 0.3);
+  border: 2px solid #ffffff;
+  opacity: 0.9;
   z-index: 1001;
 }
 
