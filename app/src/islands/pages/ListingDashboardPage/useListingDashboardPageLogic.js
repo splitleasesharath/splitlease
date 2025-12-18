@@ -578,6 +578,12 @@ export default function useListingDashboardPageLogic() {
   const [showScheduleCohost, setShowScheduleCohost] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
+  // Auth state (Gold Standard pattern)
+  const [authState, setAuthState] = useState({
+    isChecking: true,
+    shouldRedirect: false
+  });
+
   // Import Reviews modal state
   const [showImportReviews, setShowImportReviews] = useState(false);
   const [isImportingReviews, setIsImportingReviews] = useState(false);
@@ -597,16 +603,62 @@ export default function useListingDashboardPageLogic() {
   const [isAIComplete, setIsAIComplete] = useState(false);
   const [aiGeneratedData, setAiGeneratedData] = useState({});
 
-  // Fetch current user data
+  // ============================================================================
+  // GOLD STANDARD AUTH PATTERN - Fetch current user data with fallback
+  // ============================================================================
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const userData = await validateTokenAndFetchUser();
+        // Step 1: Quick auth check
+        const isAuthenticated = await checkAuthStatus();
+
+        if (!isAuthenticated) {
+          console.log('[ListingDashboard] User not authenticated, redirecting to home');
+          setAuthState({ isChecking: false, shouldRedirect: true });
+          setTimeout(() => {
+            window.location.href = '/?login=true';
+          }, 100);
+          return;
+        }
+
+        // Step 2: Deep validation with clearOnFailure: false
+        const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+
         if (userData) {
+          // Success path: Use validated user data
           setCurrentUser(userData);
+          setAuthState({ isChecking: false, shouldRedirect: false });
+          console.log('[ListingDashboard] User data loaded:', userData['Name - First'] || userData.firstName);
+        } else {
+          // Step 3: Fallback to Supabase session metadata
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session?.user) {
+            // Session valid but profile fetch failed - use session metadata
+            const fallbackUser = {
+              _id: session.user.user_metadata?.user_id || getUserId() || session.user.id,
+              id: session.user.id,
+              'Name - First': session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'Host',
+              'Name - Last': session.user.user_metadata?.last_name || '',
+              email: session.user.email,
+              firstName: session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'Host',
+              lastName: session.user.user_metadata?.last_name || ''
+            };
+            setCurrentUser(fallbackUser);
+            setAuthState({ isChecking: false, shouldRedirect: false });
+            console.log('[ListingDashboard] Using fallback user data from session:', fallbackUser.firstName);
+          } else {
+            // No valid session - redirect
+            console.log('[ListingDashboard] No valid session, redirecting');
+            setAuthState({ isChecking: false, shouldRedirect: true });
+            setTimeout(() => {
+              window.location.href = '/?login=true';
+            }, 100);
+          }
         }
       } catch (err) {
-        console.warn('⚠️ Could not fetch user data:', err);
+        console.warn('[ListingDashboard] Could not fetch user data:', err);
+        setAuthState({ isChecking: false, shouldRedirect: false });
       }
     };
     fetchUser();
@@ -1222,6 +1274,9 @@ export default function useListingDashboardPageLogic() {
   }, [getListingIdFromUrl, updateListing]);
 
   return {
+    // Auth state
+    authState,
+
     // State
     activeTab,
     listing,

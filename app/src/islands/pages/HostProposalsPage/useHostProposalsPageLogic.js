@@ -11,7 +11,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getUserType } from '../../../lib/auth.js';
+import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
 import { isHost } from '../../../logic/rules/users/isHost.js';
 
@@ -65,24 +66,70 @@ export function useHostProposalsPageLogic() {
           return;
         }
 
-        // Validate token and get user data
-        const userData = await validateTokenAndFetchUser();
+        // ========================================================================
+        // GOLD STANDARD AUTH PATTERN - Step 2: Deep validation with clearOnFailure: false
+        // ========================================================================
+        const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
 
-        if (!userData) {
-          setAuthState({
-            isChecking: false,
-            isAuthenticated: false,
-            shouldRedirect: true,
-            userType: null
-          });
-          window.location.href = '/';
-          return;
+        let userType = null;
+        let finalUserData = null;
+
+        if (userData) {
+          // Success path: Use validated user data
+          userType = userData['User Type'] || userData.userType;
+          finalUserData = userData;
+          console.log('[HostProposals] User data loaded, userType:', userType);
+        } else {
+          // ========================================================================
+          // GOLD STANDARD AUTH PATTERN - Step 3: Fallback to Supabase session metadata
+          // ========================================================================
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session?.user) {
+            // Session valid but profile fetch failed - use session metadata
+            userType = session.user.user_metadata?.user_type || getUserType() || null;
+            console.log('[HostProposals] Using fallback session data, userType:', userType);
+
+            // Create minimal user data from session for loadHostData
+            if (userType && isHost({ userType })) {
+              finalUserData = {
+                userId: session.user.user_metadata?.user_id || getUserId() || session.user.id,
+                _id: session.user.user_metadata?.user_id || getUserId() || session.user.id,
+                firstName: session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'Host',
+                email: session.user.email,
+                userType: userType
+              };
+            }
+
+            // If we can't determine userType from session, redirect
+            if (!userType) {
+              console.log('[HostProposals] Cannot determine user type from session, redirecting');
+              setAuthState({
+                isChecking: false,
+                isAuthenticated: true,
+                shouldRedirect: true,
+                userType: null
+              });
+              window.location.href = '/';
+              return;
+            }
+          } else {
+            // No valid session - redirect
+            console.log('[HostProposals] No valid session, redirecting');
+            setAuthState({
+              isChecking: false,
+              isAuthenticated: false,
+              shouldRedirect: true,
+              userType: null
+            });
+            window.location.href = '/';
+            return;
+          }
         }
 
         // Check if user is a host
-        const userType = userData['User Type'] || userData.userType;
         if (!isHost({ userType })) {
-          console.warn('User is not a Host, redirecting...');
+          console.warn('[HostProposals] User is not a Host, redirecting...');
           setAuthState({
             isChecking: false,
             isAuthenticated: false,
@@ -93,7 +140,7 @@ export function useHostProposalsPageLogic() {
           return;
         }
 
-        setUser(userData);
+        setUser(finalUserData);
         setAuthState({
           isChecking: false,
           isAuthenticated: true,
@@ -102,8 +149,7 @@ export function useHostProposalsPageLogic() {
         });
 
         // Load host data
-        // validateTokenAndFetchUser returns { userId, accountHostId, ... }
-        await loadHostData(userData.userId);
+        await loadHostData(finalUserData.userId || finalUserData._id);
 
       } catch (err) {
         console.error('Auth check failed:', err);

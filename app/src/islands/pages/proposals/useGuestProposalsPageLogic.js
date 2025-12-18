@@ -23,7 +23,9 @@ import { transformProposalData, getProposalDisplayText } from '../../../lib/prop
 import { getStatusConfig, getStageFromStatus } from '../../../logic/constants/proposalStatuses.js';
 import { getAllStagesFormatted } from '../../../logic/constants/proposalStages.js';
 import { fetchStatusConfigurations, getButtonConfigForProposal, isStatusConfigCacheReady } from '../../../lib/proposals/statusButtonConfig.js';
-import { checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getUserType } from '../../../lib/auth.js';
+import { getUserId } from '../../../lib/secureStorage.js';
+import { supabase } from '../../../lib/supabase.js';
 
 /**
  * Main logic hook for Guest Proposals Page
@@ -89,29 +91,61 @@ export function useGuestProposalsPageLogic() {
         return;
       }
 
-      // Step 2: Validate token AND fetch user data (including userType)
-      // This ensures userType is fetched from server and cached before we check it
-      const userData = await validateTokenAndFetchUser();
+      // ========================================================================
+      // GOLD STANDARD AUTH PATTERN - Step 2: Deep validation with clearOnFailure: false
+      // ========================================================================
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
 
-      if (!userData) {
-        console.log('❌ Guest Proposals: Token validation failed, redirecting to home');
-        setAuthState({
-          isChecking: false,
-          isAuthenticated: false,
-          isGuest: false,
-          shouldRedirect: true,
-          redirectReason: 'TOKEN_INVALID'
-        });
-        // Redirect to home page
-        window.location.href = '/';
-        return;
+      let userType = null;
+      let isGuest = false;
+
+      if (userData) {
+        // Success path: Use validated user data
+        userType = userData.userType;
+        isGuest = userType === 'Guest' || userType?.includes('Guest');
+        console.log('✅ Guest Proposals: User data loaded, userType:', userType);
+      } else {
+        // ========================================================================
+        // GOLD STANDARD AUTH PATTERN - Step 3: Fallback to Supabase session metadata
+        // ========================================================================
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          // Session valid but profile fetch failed - use session metadata
+          userType = session.user.user_metadata?.user_type || getUserType() || null;
+          isGuest = userType === 'Guest' || userType?.includes?.('Guest');
+          console.log('⚠️ Guest Proposals: Using fallback session data, userType:', userType);
+
+          // If we can't determine userType from session, redirect
+          if (!userType) {
+            console.log('❌ Guest Proposals: Cannot determine user type from session, redirecting');
+            setAuthState({
+              isChecking: false,
+              isAuthenticated: true,
+              isGuest: false,
+              shouldRedirect: true,
+              redirectReason: 'USER_TYPE_UNKNOWN'
+            });
+            window.location.href = '/';
+            return;
+          }
+        } else {
+          // No valid session - redirect
+          console.log('❌ Guest Proposals: No valid session, redirecting to home');
+          setAuthState({
+            isChecking: false,
+            isAuthenticated: false,
+            isGuest: false,
+            shouldRedirect: true,
+            redirectReason: 'TOKEN_INVALID'
+          });
+          window.location.href = '/';
+          return;
+        }
       }
 
       // Check if user is a Guest (not a Host)
-      // userType comes from the validated userData object, NOT from sync storage
       // Database has inconsistent values: 'Guest' OR 'A Guest (I would like to rent a space)'
-      const userType = userData.userType;
-      const isGuest = userType === 'Guest' || userType?.includes('Guest');
 
       if (!isGuest) {
         console.log('❌ Guest Proposals: User is not a Guest (type:', userType, '), redirecting to home');

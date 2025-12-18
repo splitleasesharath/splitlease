@@ -17,7 +17,7 @@ import ProposalSuccessModal from '../../modals/ProposalSuccessModal.jsx';
 import SignUpLoginModal from '../../shared/SignUpLoginModal.jsx';
 import EmptyState from './components/EmptyState';
 import { getFavoritedListingIds, removeFromFavorites } from './favoritesApi';
-import { checkAuthStatus, getSessionId, validateTokenAndFetchUser, getUserId, logoutUser } from '../../../lib/auth';
+import { checkAuthStatus, getSessionId, validateTokenAndFetchUser, getUserId, logoutUser, getFirstName } from '../../../lib/auth';
 import { fetchProposalsByGuest, fetchLastProposalDefaults } from '../../../lib/proposalDataFetcher.js';
 import { fetchZatPriceConfiguration } from '../../../lib/listingDataFetcher.js';
 import { supabase } from '../../../lib/supabase.js';
@@ -665,19 +665,25 @@ const FavoriteListingsPage = () => {
           return;
         }
 
-        // Get user data
-        const userData = await validateTokenAndFetchUser();
-        const sessionId = getSessionId();
-        setUserId(sessionId);
+        // ========================================================================
+        // GOLD STANDARD AUTH PATTERN - Step 2: Deep validation with clearOnFailure: false
+        // ========================================================================
+        const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+        let sessionId = getSessionId();
+        let finalUserId = sessionId;
 
         if (userData) {
+          // Success path: Use validated user data
+          finalUserId = sessionId || userData.userId || userData._id;
+          setUserId(finalUserId);
           setCurrentUser({
-            id: sessionId,
+            id: finalUserId,
             name: userData.fullName || userData.firstName || '',
             email: userData.email || '',
             userType: userData.userType || 'GUEST',
             avatarUrl: userData.profilePhoto || null
           });
+          console.log('[FavoriteListingsPage] User data loaded:', userData.firstName);
 
           // Fetch user profile + counts from junction tables (Phase 5b migration)
           try {
@@ -685,9 +691,9 @@ const FavoriteListingsPage = () => {
               supabase
                 .from('user')
                 .select('"About Me / Bio", "need for Space", "special needs"')
-                .eq('_id', sessionId)
+                .eq('_id', finalUserId)
                 .single(),
-              supabase.rpc('get_user_junction_counts', { p_user_id: sessionId })
+              supabase.rpc('get_user_junction_counts', { p_user_id: finalUserId })
             ]);
 
             if (!profileResult.error && profileResult.data) {
@@ -701,7 +707,7 @@ const FavoriteListingsPage = () => {
               });
 
               // Fetch last proposal defaults for pre-population
-              const proposalDefaults = await fetchLastProposalDefaults(sessionId);
+              const proposalDefaults = await fetchLastProposalDefaults(finalUserId);
               if (proposalDefaults) {
                 setLastProposalDefaults(proposalDefaults);
                 console.log('[FavoriteListingsPage] Loaded last proposal defaults:', proposalDefaults);
@@ -710,13 +716,41 @@ const FavoriteListingsPage = () => {
           } catch (e) {
             console.warn('Failed to fetch user proposal data:', e);
           }
+        } else {
+          // ========================================================================
+          // GOLD STANDARD AUTH PATTERN - Step 3: Fallback to Supabase session metadata
+          // ========================================================================
+          const { data: { session } } = await supabase.auth.getSession();
+
+          if (session?.user) {
+            // Session valid but profile fetch failed - use session metadata
+            finalUserId = session.user.user_metadata?.user_id || getUserId() || session.user.id;
+            setUserId(finalUserId);
+            setCurrentUser({
+              id: finalUserId,
+              name: session.user.user_metadata?.full_name || session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'User',
+              email: session.user.email || '',
+              userType: session.user.user_metadata?.user_type || 'GUEST',
+              avatarUrl: session.user.user_metadata?.avatar_url || null
+            });
+            console.log('[FavoriteListingsPage] Using fallback session data, userId:', finalUserId);
+          } else {
+            // No valid session - show error
+            console.log('[FavoriteListingsPage] No valid session');
+            setError('Please log in to view your favorites.');
+            setIsLoading(false);
+            return;
+          }
         }
 
-        if (!sessionId) {
+        if (!finalUserId) {
           setError('Please log in to view your favorites.');
           setIsLoading(false);
           return;
         }
+
+        // Use finalUserId for remaining operations
+        sessionId = finalUserId;
 
         // Fetch user's favorited listing IDs from user table
         let favoritedIds = [];
