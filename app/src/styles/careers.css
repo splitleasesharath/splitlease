@@ -928,7 +928,7 @@ body {
   /* Mobile card redesign: horizontal flip/slide transition */
   .example-card {
     padding: 0;
-    height: 230px;
+    height: 270px;
     perspective: 1000px;
     background: transparent;
     border: none;
@@ -965,6 +965,7 @@ body {
   .mobile-card-back {
     transform: rotateY(180deg);
     border-color: #31135D;
+    background: linear-gradient(180deg, #ffffff 0%, #faf9fc 100%);
   }
 
   /* Avatar and header */
@@ -1014,28 +1015,47 @@ body {
     flex: 1;
     display: flex;
     align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(49, 19, 93, 0.03) 0%, rgba(107, 33, 168, 0.06) 100%);
+    border-radius: 12px;
+    padding: 16px;
+    margin: 4px 0;
+    position: relative;
   }
 
   .example-review-text {
-    font-size: 15px;
-    color: #374151;
-    line-height: 1.6;
+    font-size: 14px;
+    color: #1f2937;
+    line-height: 1.7;
     font-style: italic;
     margin: 0;
+    text-align: center;
+    font-weight: 450;
+    letter-spacing: -0.01em;
   }
 
   .example-review-text::before {
     content: '"';
-    font-size: 24px;
+    font-size: 32px;
     color: #31135D;
-    margin-right: 4px;
+    opacity: 0.6;
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    font-family: Georgia, serif;
+    line-height: 1;
   }
 
   .example-review-text::after {
     content: '"';
-    font-size: 24px;
+    font-size: 32px;
     color: #31135D;
-    margin-left: 4px;
+    opacity: 0.6;
+    position: absolute;
+    bottom: 0;
+    right: 12px;
+    font-family: Georgia, serif;
+    line-height: 1;
   }
 
   /* Timeline */
@@ -1152,7 +1172,7 @@ body {
   }
 
   .example-card {
-    height: 210px;
+    height: 250px;
   }
 
   .timeline-label {
