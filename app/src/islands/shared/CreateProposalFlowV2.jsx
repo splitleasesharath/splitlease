@@ -14,6 +14,7 @@ import MoveInSection from './CreateProposalFlowV2Components/MoveInSection.jsx';
 import DaysSelectionSection from './CreateProposalFlowV2Components/DaysSelectionSection.jsx';
 import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
 import { calculateNightsFromDays } from '../../lib/scheduleSelector/nightCalculations.js';
+import { useToast } from './Toast.jsx';
 import '../../styles/create-proposal-flow-v2.css';
 
 // Day name constants for check-in/check-out calculation
@@ -142,6 +143,9 @@ export default function CreateProposalFlowV2({
 }) {
   // Lock body scroll when popup is open
   useBodyScrollLock();
+
+  // Toast notifications for validation feedback
+  const { showToast } = useToast();
 
   // Get listing ID for localStorage key
   const listingId = listing?._id;
@@ -568,23 +572,39 @@ export default function CreateProposalFlowV2({
     switch (currentSection) {
       case 2: // User Details
         if (!proposalData.needForSpace || !proposalData.aboutYourself) {
-          alert('Please fill in all required fields (minimum 10 words each)');
+          showToast({
+            title: 'Required Fields Missing',
+            content: 'Please fill in all required fields (minimum 10 words each)',
+            type: 'warning'
+          });
           return false;
         }
         if (proposalData.hasUniqueRequirements && !proposalData.uniqueRequirements) {
-          alert('Please describe your unique requirements');
+          showToast({
+            title: 'Required Field Missing',
+            content: 'Please describe your unique requirements',
+            type: 'warning'
+          });
           return false;
         }
         return true;
       case 3: // Move-in
         if (!proposalData.moveInDate) {
-          alert('Please select a move-in date');
+          showToast({
+            title: 'Move-in Date Required',
+            content: 'Please select a move-in date',
+            type: 'warning'
+          });
           return false;
         }
         return true;
       case 4: // Days Selection
         if (!proposalData.daysSelected || proposalData.daysSelected.length === 0) {
-          alert('Please select at least one day');
+          showToast({
+            title: 'Days Selection Required',
+            content: 'Please select at least one day',
+            type: 'warning'
+          });
           return false;
         }
         return true;
