@@ -905,6 +905,249 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+
+            .hud {
+                padding: 12px 16px;
+            }
+
+            .timer-num {
+                font-size: 1.8rem;
+            }
+
+            .score-display {
+                gap: 16px;
+            }
+
+            .score-num {
+                font-size: 1.25rem;
+            }
+
+            .game {
+                padding-top: 70px;
+                gap: 16px;
+            }
+
+            .listing-card {
+                padding: 16px;
+            }
+
+            .listing-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+
+            .listing-photo {
+                width: 48px;
+                height: 48px;
+            }
+
+            .listing-name {
+                font-size: 1rem;
+            }
+
+            .day-header {
+                font-size: 0.55rem;
+            }
+
+            .day-slot {
+                font-size: 0.6rem;
+            }
+
+            .day-slot .guest-initial {
+                width: 20px;
+                height: 20px;
+                font-size: 0.55rem;
+            }
+
+            /* Single column guest grid on mobile */
+            .guest-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+
+            .guest-card {
+                padding: 14px;
+            }
+
+            .guest-avatar {
+                width: 40px;
+                height: 40px;
+            }
+
+            .guest-name {
+                font-size: 0.9rem;
+            }
+
+            .guest-job {
+                font-size: 0.7rem;
+            }
+
+            .guest-nights {
+                font-size: 0.65rem;
+                padding: 3px 8px;
+            }
+
+            .sched-dot {
+                height: 24px;
+                font-size: 0.6rem;
+            }
+
+            .hint-bar {
+                display: none; /* Hide keyboard hints on mobile */
+            }
+
+            .modal {
+                padding: 32px 24px;
+                margin: 16px;
+                max-width: calc(100% - 32px);
+            }
+
+            .modal h1 {
+                font-size: 1.5rem;
+            }
+
+            .rule {
+                font-size: 0.8rem;
+            }
+
+            .btn {
+                padding: 14px 32px;
+                font-size: 0.85rem;
+            }
+
+            .end-stats {
+                gap: 24px;
+            }
+
+            .end-stat-val {
+                font-size: 2.25rem;
+            }
+
+            .match-modal {
+                padding: 28px 24px;
+                margin: 16px;
+            }
+
+            .match-title {
+                font-size: 1.2rem;
+                margin-bottom: 20px;
+            }
+
+            .match-avatar {
+                width: 56px;
+                height: 56px;
+            }
+
+            .match-guests {
+                gap: 16px;
+            }
+
+            .match-symbol {
+                font-size: 1.8rem;
+            }
+
+            .match-name {
+                font-size: 0.85rem;
+            }
+
+            .chain-indicator {
+                top: 65px;
+                font-size: 0.65rem;
+                padding: 4px 14px;
+            }
+
+            .overlap-toast,
+            .inefficient-toast {
+                top: 85px;
+                font-size: 0.75rem;
+                padding: 10px 18px;
+            }
+        }
+
+        /* Extra small devices */
+        @media (max-width: 400px) {
+            .hud {
+                padding: 10px 12px;
+            }
+
+            .timer-num {
+                font-size: 1.5rem;
+            }
+
+            .score-num {
+                font-size: 1rem;
+            }
+
+            .score-lbl {
+                font-size: 0.5rem;
+            }
+
+            .listing-card {
+                padding: 12px;
+            }
+
+            .listing-photo {
+                width: 40px;
+                height: 40px;
+            }
+
+            .listing-name {
+                font-size: 0.9rem;
+            }
+
+            .week-grid {
+                gap: 4px;
+            }
+
+            .day-slot {
+                font-size: 0.5rem;
+            }
+
+            .guest-card {
+                padding: 12px;
+            }
+
+            .guest-info {
+                gap: 10px;
+            }
+
+            .guest-avatar {
+                width: 36px;
+                height: 36px;
+            }
+
+            .sched-dot {
+                height: 22px;
+                font-size: 0.55rem;
+                border-radius: 4px;
+            }
+
+            .modal h1 {
+                font-size: 1.3rem;
+            }
+
+            .rules {
+                margin-bottom: 24px;
+            }
+
+            .rule {
+                font-size: 0.75rem;
+                padding: 8px 0;
+            }
+
+            .rule-icon {
+                width: 20px;
+                height: 20px;
+                font-size: 0.6rem;
+            }
+        }
     </style>
 </head>
 <body>
