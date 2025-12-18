@@ -505,53 +505,7 @@ export default function useListingDashboardPageLogic() {
     }
   }, [listing]);
 
-  // Action card click handler
-  const handleCardClick = useCallback((cardId) => {
-    switch (cardId) {
-      case 'preview':
-        if (listing) {
-          window.open(`/preview-split-lease.html?id=${listing.id}`, '_blank');
-        }
-        break;
-      case 'copy-link':
-        // Handled by SecondaryActions component
-        break;
-      case 'proposals':
-        setActiveTab('proposals');
-        // TODO: Navigate to proposals or scroll to section
-        break;
-      case 'meetings':
-        setActiveTab('virtual-meetings');
-        // TODO: Navigate to meetings or scroll to section
-        break;
-      case 'manage':
-        setActiveTab('manage');
-        break;
-      case 'leases':
-        setActiveTab('leases');
-        // TODO: Navigate to leases or scroll to section
-        break;
-      default:
-        console.log('Unknown card clicked:', cardId);
-    }
-  }, [listing]);
-
-  // Back to all listings handler
-  const handleBackClick = useCallback(() => {
-    // Navigate to host dashboard or listings page
-    window.location.href = '/host-dashboard';
-  }, []);
-
-  // Description change handler
-  const handleDescriptionChange = useCallback((newDescription) => {
-    setListing((prev) => ({
-      ...prev,
-      description: newDescription,
-    }));
-    // TODO: Debounce and save to backend
-  }, []);
-
-  // Copy link handler
+  // Copy link handler - defined before handleCardClick so it can be used in the switch
   const handleCopyLink = useCallback(async () => {
     if (!listing?.id) {
       window.showToast?.({
@@ -580,6 +534,52 @@ export default function useListingDashboardPageLogic() {
       });
     }
   }, [listing?.id]);
+
+  // Action card click handler
+  const handleCardClick = useCallback((cardId) => {
+    switch (cardId) {
+      case 'preview':
+        if (listing) {
+          window.open(`/preview-split-lease.html?id=${listing.id}`, '_blank');
+        }
+        break;
+      case 'copy-link':
+        handleCopyLink();
+        break;
+      case 'proposals':
+        setActiveTab('proposals');
+        // TODO: Navigate to proposals or scroll to section
+        break;
+      case 'meetings':
+        setActiveTab('virtual-meetings');
+        // TODO: Navigate to meetings or scroll to section
+        break;
+      case 'manage':
+        setActiveTab('manage');
+        break;
+      case 'leases':
+        setActiveTab('leases');
+        // TODO: Navigate to leases or scroll to section
+        break;
+      default:
+        console.log('Unknown card clicked:', cardId);
+    }
+  }, [listing, handleCopyLink]);
+
+  // Back to all listings handler
+  const handleBackClick = useCallback(() => {
+    // Navigate to host dashboard or listings page
+    window.location.href = '/host-dashboard';
+  }, []);
+
+  // Description change handler
+  const handleDescriptionChange = useCallback((newDescription) => {
+    setListing((prev) => ({
+      ...prev,
+      description: newDescription,
+    }));
+    // TODO: Debounce and save to backend
+  }, []);
 
   // AI Assistant handler - opens the AI Import Assistant modal
   const handleAIAssistant = useCallback(() => {
