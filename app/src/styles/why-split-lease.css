@@ -1627,12 +1627,22 @@ body {
         overflow: visible;
     }
 
-    /* Ensure correct content order with flexbox */
+    /* Ensure correct content order - override mobile.css global styles */
     .hero-identity .hero-content {
         display: flex;
         flex-direction: column;
         align-items: center;
+        background: transparent !important;
+        margin-top: 0 !important;
+        padding: 0 !important;
     }
+
+    /* Reset order properties that mobile.css sets globally */
+    .hero-identity .hero-badge { order: 0 !important; }
+    .hero-identity .hero-title { order: 1 !important; }
+    .hero-identity .hero-subtitle { order: 2 !important; }
+    .hero-identity .hero-stats { order: 3 !important; }
+    .hero-identity .hero-cta { order: 4 !important; }
 
     /* Hide persons 5 and 6 on tablet/mobile - keep 4 around the edges */
     .hero-identity .floating-person {
