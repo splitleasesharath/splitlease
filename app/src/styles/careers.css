@@ -902,6 +902,10 @@ body {
     padding: 50px 20px;
   }
 
+  .video-player-container {
+    border-radius: 0;
+  }
+
   .mission-grid {
     grid-template-columns: 1fr;
     gap: 32px;
