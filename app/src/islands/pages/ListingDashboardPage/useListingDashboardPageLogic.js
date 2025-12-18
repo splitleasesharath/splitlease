@@ -519,7 +519,21 @@ export default function useListingDashboardPageLogic() {
     const listingUrl = `${window.location.origin}/view-split-lease/${listing.id}`;
 
     try {
-      await navigator.clipboard.writeText(listingUrl);
+      // Modern Clipboard API (preferred)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(listingUrl);
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = listingUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+
       window.showToast?.({
         title: 'Link Copied!',
         content: 'Listing link has been copied to your clipboard',
