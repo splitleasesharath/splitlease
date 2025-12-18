@@ -848,63 +848,49 @@
     flex-shrink: 0;
 }
 
-/* Price Sidebar - Right Side (F7b Layout) */
+/* Price Sidebar - Right Side (Clean Layout) */
 .listing-price-sidebar {
-    width: 150px;
-    background: #f9f7fc;
+    width: 140px;
+    background: transparent;
     padding: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     text-align: center;
-    border-left: 1px solid #f0e6ff;
+    border-left: none;
     flex-shrink: 0;
     cursor: pointer;
     transition: background 0.2s;
 }
 
 .listing-price-sidebar:hover {
-    background: #f3eef8;
+    background: rgba(49, 19, 93, 0.03);
 }
 
 .listing-price-sidebar .price-main {
-    font-size: 26px;
+    font-size: 22px;
     font-weight: 700;
-    color: #31135D;
+    color: #1a1a1a;
     line-height: 1;
 }
 
 .listing-price-sidebar .price-period {
-    font-size: 11px;
+    font-size: 13px;
     color: #666;
-}
-
-.listing-price-sidebar .price-divider {
-    width: 40px;
-    height: 1px;
-    background: #e0d4f0;
-    margin: 10px 0;
-}
-
-.listing-price-sidebar .price-starting {
-    font-size: 11px;
-    color: #888;
-}
-
-.listing-price-sidebar .price-starting span {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #31135D;
     margin-top: 2px;
 }
 
+.listing-price-sidebar .price-divider {
+    display: none;
+}
+
+.listing-price-sidebar .price-starting {
+    display: none;
+}
+
 .listing-price-sidebar .availability-note {
-    font-size: 9px;
-    color: #31135D;
-    margin-top: 10px;
-    line-height: 1.3;
+    display: none;
 }
 
 /* Legacy listing-info (for compatibility) */
