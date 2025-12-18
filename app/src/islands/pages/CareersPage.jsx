@@ -3,6 +3,71 @@ import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { SIGNUP_LOGIN_URL } from '../../lib/constants.js';
 
+// Swipeable Example Card component for mobile
+function SwipeableExampleCard({ name, avatarUrl, pattern, review, activeDays }) {
+  const [isFlipped, setIsFlipped] = useState(false);
+
+  const handleToggle = () => {
+    setIsFlipped(!isFlipped);
+  };
+
+  return (
+    <div
+      className={`example-card ${isFlipped ? 'flipped' : ''}`}
+      onClick={handleToggle}
+    >
+      <div className="card-inner">
+        {/* Front side - Pattern view */}
+        <div className="card-front">
+          <div className="example-header">
+            <div className="example-avatar">
+              <img src={avatarUrl} alt={name} />
+            </div>
+            <div className="example-name">{name}</div>
+          </div>
+          <div className="example-content-wrapper">
+            <p className="example-pattern">{pattern}</p>
+          </div>
+          <div className="example-timeline">
+            {[0, 1, 2, 3, 4, 5, 6].map(day => (
+              <div key={day} className={`day-block ${activeDays.includes(day) ? 'active' : ''}`}></div>
+            ))}
+          </div>
+          <div className="timeline-labels">
+            <span className="timeline-label">Mon</span>
+            <span className="timeline-label">Sun</span>
+          </div>
+          <div className="swipe-hint">
+            <span>Tap to see review</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </div>
+        </div>
+
+        {/* Back side - Review view */}
+        <div className="card-back">
+          <div className="example-header">
+            <div className="example-avatar">
+              <img src={avatarUrl} alt={name} />
+            </div>
+            <div className="example-name">{name}</div>
+          </div>
+          <div className="review-content">
+            <p className="example-review-text">{review}</p>
+          </div>
+          <div className="swipe-hint back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            <span>Tap to go back</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CareersPage() {
   const [typeformModalActive, setTypeformModalActive] = useState(false);
   const [gameModalActive, setGameModalActive] = useState(false);
@@ -120,97 +185,31 @@ export default function CareersPage() {
           <div className="mission-grid">
             <div className="mission-examples">
               {/* Sarah Example */}
-              <div className="example-card">
-                <div className="example-header">
-                  <div className="example-avatar">
-                    <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces" alt="Sarah" />
-                  </div>
-                  <div className="example-name">Sarah</div>
-                </div>
-                <div className="example-content-wrapper">
-                  <p className="example-pattern">
-                    Lives in Philly, uses Split Lease in NYC Monday-Wednesday
-                  </p>
-                  <p className="example-review">
-                    "Before Split Lease, my life was a nightmare. I was either drowning in NYC rent or spending 4 hours a day commuting."
-                  </p>
-                </div>
-                <div className="example-timeline">
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                </div>
-                <div className="timeline-labels">
-                  <span className="timeline-label">Mon</span>
-                  <span className="timeline-label">Sun</span>
-                </div>
-              </div>
+              <SwipeableExampleCard
+                name="Sarah"
+                avatarUrl="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=faces"
+                pattern="Lives in Philly, uses Split Lease in NYC Monday-Wednesday"
+                review="Before Split Lease, my life was a nightmare. I was either drowning in NYC rent or spending 4 hours a day commuting."
+                activeDays={[0, 1, 2]}
+              />
 
               {/* Marcus Example */}
-              <div className="example-card">
-                <div className="example-header">
-                  <div className="example-avatar">
-                    <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces" alt="Marcus" />
-                  </div>
-                  <div className="example-name">Marcus</div>
-                </div>
-                <div className="example-content-wrapper">
-                  <p className="example-pattern">
-                    Lives in Boston, uses Split Lease in NYC Thursday-Sunday
-                  </p>
-                  <p className="example-review">
-                    "I was burning out from the weekly grind. Split Lease gave me back my time and sanity. I'm saving $2,000/month."
-                  </p>
-                </div>
-                <div className="example-timeline">
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                </div>
-                <div className="timeline-labels">
-                  <span className="timeline-label">Mon</span>
-                  <span className="timeline-label">Sun</span>
-                </div>
-              </div>
+              <SwipeableExampleCard
+                name="Marcus"
+                avatarUrl="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=faces"
+                pattern="Lives in Boston, uses Split Lease in NYC Thursday-Sunday"
+                review="I was burning out from the weekly grind. Split Lease gave me back my time and sanity. I'm saving $2,000/month."
+                activeDays={[3, 4, 5, 6]}
+              />
 
               {/* Jenna Example */}
-              <div className="example-card">
-                <div className="example-header">
-                  <div className="example-avatar">
-                    <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces" alt="Jenna" />
-                  </div>
-                  <div className="example-name">Jenna</div>
-                </div>
-                <div className="example-content-wrapper">
-                  <p className="example-pattern">
-                    Lives in DC, uses Split Lease in NYC Monday-Thursday
-                  </p>
-                  <p className="example-review">
-                    "I thought I had to choose between my career and quality of life. Split Lease gave me flexibility on my terms."
-                  </p>
-                </div>
-                <div className="example-timeline">
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block active"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                  <div className="day-block"></div>
-                </div>
-                <div className="timeline-labels">
-                  <span className="timeline-label">Mon</span>
-                  <span className="timeline-label">Sun</span>
-                </div>
-              </div>
+              <SwipeableExampleCard
+                name="Jenna"
+                avatarUrl="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=faces"
+                pattern="Lives in DC, uses Split Lease in NYC Monday-Thursday"
+                review="I thought I had to choose between my career and quality of life. Split Lease gave me flexibility on my terms."
+                activeDays={[0, 1, 2, 3]}
+              />
             </div>
 
             <div className="mission-content">
