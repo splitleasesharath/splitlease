@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
-import { validateTokenAndFetchUser } from '../../../lib/auth';
+import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getAvatarUrl } from '../../../lib/auth';
+import { getUserId } from '../../../lib/secureStorage';
 import { generateListingDescription, generateListingTitle } from '../../../lib/aiService';
 import { getCommonHouseRules } from '../../shared/EditListingDetails/services/houseRulesService';
 import { getCommonSafetyFeatures } from '../../shared/EditListingDetails/services/safetyFeaturesService';

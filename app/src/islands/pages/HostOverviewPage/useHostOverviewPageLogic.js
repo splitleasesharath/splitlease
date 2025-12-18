@@ -15,7 +15,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { validateTokenAndFetchUser } from '../../../lib/auth.js';
+import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getAvatarUrl } from '../../../lib/auth.js';
+import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
 import { initializeLookups, getBoroughName } from '../../../lib/dataLookups.js';
 
@@ -56,6 +57,12 @@ export function useHostOverviewPageLogic() {
   // ============================================================================
   // STATE
   // ============================================================================
+
+  // Auth state
+  const [authState, setAuthState] = useState({
+    isChecking: true,
+    shouldRedirect: false
+  });
 
   // User data
   const [user, setUser] = useState(null);
@@ -461,30 +468,72 @@ export function useHostOverviewPageLogic() {
     setError(null);
 
     try {
-      // Fetch user first
-      const userData = await fetchUserData();
+      // ========================================================================
+      // GOLD STANDARD AUTH PATTERN - Step 1: Quick auth check
+      // ========================================================================
+      const isAuthenticated = await checkAuthStatus();
 
-      if (!userData) {
-        // For demo/development, use mock data if no user
-        setUser({
-          id: 'demo',
-          firstName: 'Demo',
-          lastName: 'Host',
-          email: 'demo@example.com'
-        });
-
-        // Set empty arrays - user will see empty states
-        setListingsToClaim([]);
-        setMyListings([]);
-        setHouseManuals([]);
-        setVirtualMeetings([]);
-        setLoading(false);
+      if (!isAuthenticated) {
+        console.log('[HostOverview] User not authenticated, redirecting to home');
+        setAuthState({ isChecking: false, shouldRedirect: true });
+        setTimeout(() => {
+          window.location.href = '/?login=true';
+        }, 100);
         return;
       }
 
+      // ========================================================================
+      // GOLD STANDARD AUTH PATTERN - Step 2: Deep validation with clearOnFailure: false
+      // ========================================================================
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
+
+      let finalUser = null;
+
+      if (userData) {
+        // Success path: Use validated user data
+        finalUser = {
+          id: userData._id || userData.id,
+          firstName: userData['Name - First'] || userData.firstName || 'Host',
+          lastName: userData['Name - Last'] || userData.lastName || '',
+          email: userData.email || '',
+          accountHostId: userData.accountHostId || userData._id
+        };
+        setUser(finalUser);
+        console.log('[HostOverview] User data loaded:', finalUser.firstName);
+      } else {
+        // ========================================================================
+        // GOLD STANDARD AUTH PATTERN - Step 3: Fallback to Supabase session metadata
+        // ========================================================================
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (session?.user) {
+          // Session valid but profile fetch failed - use session metadata
+          const fallbackUser = {
+            id: session.user.id,
+            firstName: session.user.user_metadata?.first_name || getFirstName() || session.user.email?.split('@')[0] || 'Host',
+            lastName: session.user.user_metadata?.last_name || '',
+            email: session.user.email,
+            accountHostId: session.user.user_metadata?.user_id || getUserId() || session.user.id
+          };
+          setUser(fallbackUser);
+          finalUser = fallbackUser;
+          console.log('[HostOverview] Using fallback user data from session:', fallbackUser.firstName);
+        } else {
+          // No valid session - redirect
+          console.log('[HostOverview] No valid session, redirecting');
+          setAuthState({ isChecking: false, shouldRedirect: true });
+          setTimeout(() => {
+            window.location.href = '/?login=true';
+          }, 100);
+          return;
+        }
+      }
+
+      setAuthState({ isChecking: false, shouldRedirect: false });
+
       // After migration, user._id serves as host reference directly
-      const hostAccountId = userData.accountHostId || userData._id;
-      const userId = userData.userId || userData._id || userData.id;
+      const hostAccountId = finalUser.accountHostId || finalUser.id;
+      const userId = finalUser.id;
 
       console.log('[HostOverview] loadData - hostAccountId:', hostAccountId, 'userId:', userId);
 
@@ -501,13 +550,13 @@ export function useHostOverviewPageLogic() {
       setHouseManuals(manuals);
       setVirtualMeetings(meetings);
     } catch (err) {
-      console.error('Error loading data:', err);
+      console.error('[HostOverview] Error loading data:', err);
       setError('Failed to load your dashboard. Please try again.');
       showToast('Error', 'Failed to load dashboard data', 'error', 5000);
     } finally {
       setLoading(false);
     }
-  }, [fetchUserData, fetchHostListings, fetchListingsToClaim, fetchHouseManuals, fetchVirtualMeetings, showToast]);
+  }, [fetchHostListings, fetchListingsToClaim, fetchHouseManuals, fetchVirtualMeetings, showToast]);
 
   // ============================================================================
   // EFFECTS
@@ -723,6 +772,9 @@ export function useHostOverviewPageLogic() {
   // ============================================================================
 
   return {
+    // Auth state
+    authState,
+
     // Core data
     user,
     listingsToClaim,
