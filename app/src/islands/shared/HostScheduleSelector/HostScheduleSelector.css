@@ -32,10 +32,11 @@
 
 /* Individual night cell - Default state */
 .hss-night-cell {
-  width: 48px;
+  width: auto;
   height: auto;
   min-width: 32px;
-  flex: 0 1 48px;
+  max-width: 48px;
+  flex: 1 1 0;
   aspect-ratio: 1 / 1;
   background-color: #b2b2b2;
   border: none;

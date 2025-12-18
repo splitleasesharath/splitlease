@@ -1565,31 +1565,42 @@
 .host-schedule-selector-wrapper {
   margin: 15px 0;
   width: 100%;
+  max-width: 100%;
+  display: block;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .host-schedule-selector-wrapper .hss-host-schedule-selector {
   background: #e0e7ff;
   border: 2px solid #c7d2fe;
   border-radius: 12px;
-  padding: 15px;
-  width: 100%;
-  box-sizing: border-box;
+  padding: 20px 14px;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  display: block;
+  overflow: hidden;
 }
 
 .host-schedule-selector-wrapper .hss-nights-grid {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  width: 100%;
+  display: flex !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  flex-wrap: nowrap !important;
 }
 
 .host-schedule-selector-wrapper .hss-night-cell {
-  flex: 1 1 0;
-  min-width: 0;
-  max-width: 48px;
-  aspect-ratio: 1 / 1;
-  height: auto;
-  border-radius: 50%;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  aspect-ratio: 1 / 1 !important;
+  height: auto !important;
+  border-radius: 50% !important;
   border: 2px solid #e5e7eb;
   background: #f3f4f6;
   cursor: pointer;
@@ -1598,6 +1609,11 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.host-schedule-selector-wrapper .hss-night-letter {
+  font-size: 17px !important;
+  font-weight: 700 !important;
 }
 
 /* Unselected state - ensure letter is readable */
@@ -2047,6 +2063,35 @@
   .btn-icon {
     font-size: 11px;
   }
+
+  /* Host Schedule Selector - mobile optimizations */
+  .host-schedule-selector-wrapper {
+    width: 100%;
+  }
+
+  .host-schedule-selector-wrapper .hss-host-schedule-selector {
+    padding: 16px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .host-schedule-selector-wrapper .hss-nights-grid {
+    gap: 8px;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .host-schedule-selector-wrapper .hss-night-cell {
+    min-width: 36px;
+    max-width: 44px;
+    /* Allow buttons to grow equally to fill available space */
+    flex: 1 1 auto;
+  }
+
+  .host-schedule-selector-wrapper .hss-night-letter {
+    font-size: 15px;
+    font-weight: 600;
+  }
 }
 
 @media (max-width: 550px) {
@@ -2431,5 +2476,24 @@
   .btn-copy,
   .btn-send-link {
     width: 100%;
+  }
+}
+
+/* Extra small phones - slightly tighter but still finger-friendly */
+@media (max-width: 380px) {
+  .host-schedule-selector-wrapper .hss-host-schedule-selector {
+    padding: 14px 10px;
+  }
+
+  .host-schedule-selector-wrapper .hss-nights-grid {
+    gap: 6px;
+  }
+
+  .host-schedule-selector-wrapper .hss-night-cell {
+    min-width: 32px;
+  }
+
+  .host-schedule-selector-wrapper .hss-night-letter {
+    font-size: 13px;
   }
 }
