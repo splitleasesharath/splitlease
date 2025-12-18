@@ -137,20 +137,48 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
   // Initialize address input value from existing listing data
   useEffect(() => {
     if (listing && formDataInitializedRef.current) {
-      const city = listing['Location - City'] || '';
-      const state = listing['Location - State'] || '';
-      const zip = listing['Location - Zip Code'] || '';
+      // Try to get full address from Location - Address JSONB field first
+      let fullAddress = '';
+      const locationAddress = listing['Location - Address'];
 
-      // Build display string from available fields
-      const parts = [];
-      if (city) parts.push(city);
-      if (state) parts.push(state);
-      if (zip) parts.push(zip);
+      if (locationAddress) {
+        // Parse if it's a JSON string
+        let addressObj = locationAddress;
+        if (typeof locationAddress === 'string') {
+          try {
+            addressObj = JSON.parse(locationAddress);
+          } catch (e) {
+            // If parsing fails, use as-is if it looks like an address string
+            if (locationAddress.includes(',')) {
+              fullAddress = locationAddress;
+            }
+          }
+        }
+        // Extract address from parsed object
+        if (addressObj && typeof addressObj === 'object' && addressObj.address) {
+          fullAddress = addressObj.address;
+        }
+      }
 
-      const displayValue = parts.join(', ');
-      setAddressInputValue(displayValue);
+      // Fallback: build display string from individual fields if no full address
+      if (!fullAddress) {
+        const city = listing['Location - City'] || '';
+        const state = listing['Location - State'] || '';
+        const zip = listing['Location - Zip Code'] || '';
+
+        const parts = [];
+        if (city) parts.push(city);
+        if (state) parts.push(state);
+        if (zip) parts.push(zip);
+
+        fullAddress = parts.join(', ');
+      }
+
+      setAddressInputValue(fullAddress);
 
       // If we have a valid zip code in service area, mark as valid
+      const zip = listing['Location - Zip Code'] || '';
+      const state = listing['Location - State'] || '';
       if (zip && isValidServiceArea(zip, state, '')) {
         setIsAddressValid(true);
       }

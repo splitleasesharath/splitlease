@@ -254,6 +254,7 @@ export default function ListingDashboardPage() {
             Name: listing.title,
             Description: listing.description,
             'Description - Neighborhood': listing.descriptionNeighborhood,
+            'Location - Address': { address: listing.location?.address },
             'Location - City': listing.location?.city,
             'Location - State': listing.location?.state,
             'Location - Zip Code': listing.location?.zipCode,
