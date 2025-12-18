@@ -1968,7 +1968,40 @@
 /* Responsive */
 @media (max-width: 768px) {
   .self-listing-v2-main {
-    padding-top: 80px; /* Reduced padding for mobile header */
+    padding-top: 70px; /* Reduced padding for mobile header */
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  /* Subtle header on mobile */
+  .self-listing-v2-main .header-section {
+    margin-bottom: 12px;
+  }
+
+  .self-listing-v2-main .header-section h1 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .self-listing-v2-main .header-section p {
+    font-size: 0.8rem;
+    color: var(--v2-text-sub);
+  }
+
+  /* Compact progress bar on mobile */
+  .progress-container {
+    margin-bottom: 16px;
+    padding: 0;
+  }
+
+  .progress-bar-bg {
+    height: 4px;
+  }
+
+  .step-indicator {
+    font-size: 0.75rem;
+    margin-top: 6px;
   }
 
   .pricing-table-side {
