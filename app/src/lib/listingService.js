@@ -11,6 +11,92 @@ import { supabase } from './supabase.js';
 import { getUserId } from './secureStorage.js';
 import { uploadPhotos } from './photoUpload.js';
 
+// ============================================================================
+// GEO LOOKUP UTILITIES
+// ============================================================================
+
+/**
+ * Look up borough ID by zip code from reference table
+ * @param {string} zipCode - The zip code to look up
+ * @returns {Promise<string|null>} Borough _id or null if not found
+ */
+async function getBoroughIdByZipCode(zipCode) {
+  if (!zipCode) return null;
+
+  const cleanZip = String(zipCode).trim().substring(0, 5);
+  if (!/^\d{5}$/.test(cleanZip)) return null;
+
+  try {
+    const { data, error } = await supabase
+      .schema('reference_table')
+      .from('zat_geo_borough_toplevel')
+      .select('_id, "Display Borough"')
+      .contains('Zip Codes', [cleanZip])
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      console.log('[ListingService] No borough found for zip:', cleanZip);
+      return null;
+    }
+
+    console.log('[ListingService] ✅ Found borough:', data['Display Borough'], 'for zip:', cleanZip);
+    return data._id;
+  } catch (err) {
+    console.error('[ListingService] Error looking up borough:', err);
+    return null;
+  }
+}
+
+/**
+ * Look up hood (neighborhood) ID by zip code from reference table
+ * @param {string} zipCode - The zip code to look up
+ * @returns {Promise<string|null>} Hood _id or null if not found
+ */
+async function getHoodIdByZipCode(zipCode) {
+  if (!zipCode) return null;
+
+  const cleanZip = String(zipCode).trim().substring(0, 5);
+  if (!/^\d{5}$/.test(cleanZip)) return null;
+
+  try {
+    const { data, error } = await supabase
+      .schema('reference_table')
+      .from('zat_geo_hood_mediumlevel')
+      .select('_id, "Display"')
+      .contains('Zips', [cleanZip])
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) {
+      console.log('[ListingService] No hood found for zip:', cleanZip);
+      return null;
+    }
+
+    console.log('[ListingService] ✅ Found hood:', data['Display'], 'for zip:', cleanZip);
+    return data._id;
+  } catch (err) {
+    console.error('[ListingService] Error looking up hood:', err);
+    return null;
+  }
+}
+
+/**
+ * Look up both borough and hood IDs by zip code
+ * @param {string} zipCode - The zip code to look up
+ * @returns {Promise<{boroughId: string|null, hoodId: string|null}>}
+ */
+async function getGeoIdsByZipCode(zipCode) {
+  console.log('[ListingService] Looking up geo IDs for zip:', zipCode);
+
+  const [boroughId, hoodId] = await Promise.all([
+    getBoroughIdByZipCode(zipCode),
+    getHoodIdByZipCode(zipCode)
+  ]);
+
+  return { boroughId, hoodId };
+}
+
 /**
  * Create a new listing directly in the listing table
  *
@@ -118,9 +204,21 @@ export async function createListing(formData) {
     }
   };
 
+  // Step 2b: Look up borough and hood IDs from zip code
+  const zipCode = formData.spaceSnapshot?.address?.zip;
+  let boroughId = null;
+  let hoodId = null;
+
+  if (zipCode) {
+    console.log('[ListingService] Looking up borough/hood for zip:', zipCode);
+    const geoIds = await getGeoIdsByZipCode(zipCode);
+    boroughId = geoIds.boroughId;
+    hoodId = geoIds.hoodId;
+  }
+
   // Step 3: Map form data to listing table columns
-  // Pass userId for both "Created By" and "Host User"
-  const listingData = mapFormDataToListingTable(formDataWithPhotos, userId, generatedId, userId);
+  // Pass userId for both "Created By" and "Host User", plus geo IDs
+  const listingData = mapFormDataToListingTable(formDataWithPhotos, userId, generatedId, userId, boroughId, hoodId);
 
   // Debug: Log the cancellation policy value being inserted
   console.log('[ListingService] Cancellation Policy value to insert:', listingData['Cancellation Policy']);
@@ -503,9 +601,11 @@ function mapStateToDisplayName(stateInput) {
  * @param {string|null} userId - The current user's _id (for Created By)
  * @param {string} generatedId - The Bubble-compatible _id from generate_bubble_id()
  * @param {string|null} hostAccountId - The user._id (for Host User FK)
+ * @param {string|null} boroughId - The borough FK ID (from geo lookup)
+ * @param {string|null} hoodId - The hood/neighborhood FK ID (from geo lookup)
  * @returns {object} - Database-ready object for listing table
  */
-function mapFormDataToListingTable(formData, userId, generatedId, hostAccountId = null) {
+function mapFormDataToListingTable(formData, userId, generatedId, hostAccountId = null, boroughId = null, hoodId = null) {
   const now = new Date().toISOString();
 
   // Map available nights from object to array of day numbers (1-based for Bubble compatibility)
@@ -563,7 +663,9 @@ function mapFormDataToListingTable(formData, userId, generatedId, hostAccountId 
     'Location - Zip Code': formData.spaceSnapshot?.address?.zip || null,
     'neighborhood (manual input by user)':
       formData.spaceSnapshot?.address?.neighborhood || null,
-    // Note: Location - Borough and Location - Hood are FK columns but we don't populate them in self-listing
+    // Location - Borough and Location - Hood are FK columns populated from zip code lookup
+    'Location - Borough': boroughId || null,
+    'Location - Hood': hoodId || null,
 
     // Section 2: Features
     'Features - Amenities In-Unit': formData.features?.amenitiesInsideUnit || [],
