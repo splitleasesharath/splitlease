@@ -10,6 +10,7 @@ import { getCommonSafetyFeatures } from './services/safetyFeaturesService';
 import { getCommonInUnitAmenities, getCommonBuildingAmenities } from './services/amenitiesService';
 import { getNeighborhoodByZipCode, getNeighborhoodDescriptionWithFallback } from './services/neighborhoodService';
 import { uploadPhoto } from '../../../lib/photoUpload';
+import { isValidServiceArea, getBoroughForZipCode, NYC_BOUNDS, isHudsonCountyNJ } from '../../../lib/nycZipCodes';
 
 /**
  * Custom hook containing all business logic for EditListingDetails component
@@ -33,6 +34,14 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
   const [isLoadingNeighborhood, setIsLoadingNeighborhood] = useState(false);
   const [isUploadingPhotos, setIsUploadingPhotos] = useState(false);
   const [toast, setToast] = useState(null);
+
+  // Address autocomplete state
+  const addressInputRef = useRef(null);
+  const autocompleteRef = useRef(null);
+  const [isAddressValid, setIsAddressValid] = useState(false);
+  const [addressError, setAddressError] = useState('');
+  const [showManualAddress, setShowManualAddress] = useState(false);
+  const [addressInputValue, setAddressInputValue] = useState('');
 
   // Photo drag and drop state
   const [draggedPhotoIndex, setDraggedPhotoIndex] = useState(null);
@@ -124,6 +133,210 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
       return () => clearTimeout(timer);
     }
   }, [toast]);
+
+  // Initialize address input value from existing listing data
+  useEffect(() => {
+    if (listing && formDataInitializedRef.current) {
+      const city = listing['Location - City'] || '';
+      const state = listing['Location - State'] || '';
+      const zip = listing['Location - Zip Code'] || '';
+
+      // Build display string from available fields
+      const parts = [];
+      if (city) parts.push(city);
+      if (state) parts.push(state);
+      if (zip) parts.push(zip);
+
+      const displayValue = parts.join(', ');
+      setAddressInputValue(displayValue);
+
+      // If we have a valid zip code in service area, mark as valid
+      if (zip && isValidServiceArea(zip, state, '')) {
+        setIsAddressValid(true);
+      }
+    }
+  }, [listing]);
+
+  // Initialize Google Maps Autocomplete when Property Info section is active
+  useEffect(() => {
+    // Only initialize for name or location sections
+    if (editSection !== 'name' && editSection !== 'location') {
+      return;
+    }
+
+    let retryCount = 0;
+    const maxRetries = 50; // Try for 5 seconds
+
+    const initAutocomplete = () => {
+      // Check for Google Maps AND the Places library
+      if (!window.google || !window.google.maps || !window.google.maps.places) {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          setTimeout(initAutocomplete, 100);
+        } else {
+          console.error('Google Maps API failed to load for EditListingDetails');
+          setAddressError('Address autocomplete is unavailable. Please use manual entry.');
+          setShowManualAddress(true);
+        }
+        return;
+      }
+
+      if (!addressInputRef.current) {
+        setTimeout(initAutocomplete, 100);
+        return;
+      }
+
+      try {
+        console.log('Initializing Google Maps Autocomplete for EditListingDetails...');
+
+        // Create bounding box that encompasses NYC + Hudson County NJ
+        const nycBounds = new window.google.maps.LatLngBounds(
+          new window.google.maps.LatLng(NYC_BOUNDS.south, NYC_BOUNDS.west),
+          new window.google.maps.LatLng(NYC_BOUNDS.north, NYC_BOUNDS.east)
+        );
+
+        // Create autocomplete with bounds restriction
+        const autocomplete = new window.google.maps.places.Autocomplete(
+          addressInputRef.current,
+          {
+            types: ['address'],
+            componentRestrictions: { country: 'us' },
+            bounds: nycBounds,
+            strictBounds: true,
+            fields: ['address_components', 'formatted_address', 'geometry', 'name', 'place_id']
+          }
+        );
+
+        console.log('Google Maps Autocomplete initialized successfully for EditListingDetails');
+
+        // Prevent Enter key from triggering autocomplete selection prematurely
+        window.google.maps.event.addDomListener(addressInputRef.current, 'keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+          }
+        });
+
+        autocompleteRef.current = autocomplete;
+
+        // Listen for place selection
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          console.log('Place selected in EditListingDetails:', place);
+
+          // If user just pressed Enter without selecting, don't do anything
+          if (!place.place_id) {
+            console.log('No place_id - user did not select from dropdown');
+            return;
+          }
+
+          if (!place.geometry || !place.address_components) {
+            console.error('Invalid place selected - missing geometry or address components');
+            setAddressError('Please select a valid address from the dropdown');
+            setIsAddressValid(false);
+            return;
+          }
+
+          // Extract address components
+          let city = '';
+          let state = '';
+          let zip = '';
+          let neighborhood = '';
+          let county = '';
+
+          place.address_components.forEach((component) => {
+            const types = component.types;
+
+            if (types.includes('locality')) {
+              city = component.long_name;
+            }
+            if (types.includes('administrative_area_level_1')) {
+              state = component.short_name;
+            }
+            if (types.includes('administrative_area_level_2')) {
+              county = component.long_name;
+            }
+            if (types.includes('postal_code')) {
+              zip = component.long_name;
+            }
+            if (types.includes('neighborhood') || types.includes('sublocality') || types.includes('sublocality_level_1')) {
+              neighborhood = component.long_name;
+            }
+          });
+
+          console.log('Extracted address components:', { city, state, county, zip, neighborhood });
+
+          // Validate that the address is within our service area
+          if (!isValidServiceArea(zip, state, county)) {
+            let errorMsg;
+            if (zip) {
+              const borough = getBoroughForZipCode(zip);
+              errorMsg = borough
+                ? `This address appears to be outside our service area. Zip code ${zip} is in ${borough}.`
+                : `This address is outside our service area (zip: ${zip}). We only accept listings in NYC and Hudson County, NJ.`;
+            } else if (state === 'NJ') {
+              errorMsg = `This address is outside our service area. We only accept listings in Hudson County, NJ, not ${county || 'other NJ counties'}.`;
+            } else {
+              errorMsg = 'This address is outside our service area. We only accept listings in NYC and Hudson County, NJ.';
+            }
+
+            console.warn('Invalid address selected:', { zip, state, county });
+            setAddressError(errorMsg);
+            setIsAddressValid(false);
+            return;
+          }
+
+          // Determine borough from zip code
+          const borough = getBoroughForZipCode(zip) || (isHudsonCountyNJ(state, county) ? 'Hudson County, NJ' : neighborhood);
+
+          console.log('Valid address - Borough/Area:', borough);
+
+          // Update form data with parsed values
+          setFormData(prev => ({
+            ...prev,
+            'Location - City': city,
+            'Location - State': state,
+            'Location - Zip Code': zip,
+            'Location - Borough': borough,
+            'Location - Hood': neighborhood
+          }));
+
+          // Update address input value to show formatted address
+          setAddressInputValue(place.formatted_address || '');
+
+          setIsAddressValid(true);
+          setShowManualAddress(false);
+          setAddressError('');
+          console.log('Address validated and populated successfully!');
+        });
+      } catch (error) {
+        console.error('Error initializing Google Maps Autocomplete:', error);
+        setAddressError('Address autocomplete is unavailable. Please use manual entry.');
+        setShowManualAddress(true);
+      }
+    };
+
+    initAutocomplete();
+
+    return () => {
+      // Cleanup autocomplete listeners
+      if (autocompleteRef.current && window.google) {
+        window.google.maps.event.clearInstanceListeners(autocompleteRef.current);
+      }
+    };
+  }, [editSection]);
+
+  // Handle address input change (clears validation when user types)
+  const handleAddressInputChange = useCallback((e) => {
+    const value = e.target.value;
+    setAddressInputValue(value);
+    setIsAddressValid(false);
+    setAddressError('');
+  }, []);
+
+  // Toggle manual address entry
+  const handleManualAddressToggle = useCallback(() => {
+    setShowManualAddress(prev => !prev);
+  }, []);
 
   const showToast = useCallback((message, subMessage, type = 'success') => {
     setToast({ type, message, subMessage });
@@ -627,6 +840,13 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     draggedPhotoIndex,
     dragOverPhotoIndex,
 
+    // Address autocomplete state
+    addressInputRef,
+    isAddressValid,
+    addressError,
+    showManualAddress,
+    addressInputValue,
+
     // Derived state
     inUnitAmenities,
     buildingAmenities,
@@ -659,6 +879,10 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     handlePhotoDrop,
     handlePhotoDragEnd,
     dismissToast,
-    onClose
+    onClose,
+
+    // Address autocomplete actions
+    handleAddressInputChange,
+    handleManualAddressToggle
   };
 }

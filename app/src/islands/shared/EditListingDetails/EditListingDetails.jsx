@@ -45,6 +45,12 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
     expandedSections,
     draggedPhotoIndex,
     dragOverPhotoIndex,
+    // Address autocomplete state
+    addressInputRef,
+    isAddressValid,
+    addressError,
+    showManualAddress,
+    addressInputValue,
     inUnitAmenities,
     buildingAmenities,
     selectedRules,
@@ -71,7 +77,10 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
     handlePhotoDragLeave,
     handlePhotoDrop,
     handlePhotoDragEnd,
-    dismissToast
+    dismissToast,
+    // Address autocomplete actions
+    handleAddressInputChange,
+    handleManualAddressToggle
   } = useEditListingDetailsLogic({
     listing,
     editSection,
@@ -110,50 +119,115 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
             onChange={(e) => handleInputChange('Name', e.target.value)}
           />
         </div>
-        <div className="eld-form-grid">
+
+        {/* Address Autocomplete Section */}
+        <div className="eld-address-section">
           <div className="eld-form-field">
-            <label className="eld-form-label">City</label>
-            <input
-              type="text"
-              className="eld-form-input"
-              placeholder="City"
-              value={formData['Location - City'] || ''}
-              onChange={(e) => handleInputChange('Location - City', e.target.value)}
-            />
-          </div>
-          <div className="eld-form-field">
-            <label className="eld-form-label">State</label>
-            <input
-              type="text"
-              className="eld-form-input"
-              placeholder="State"
-              value={formData['Location - State'] || ''}
-              onChange={(e) => handleInputChange('Location - State', e.target.value)}
-            />
+            <label className="eld-form-label">
+              Listing Address
+              <span className="eld-address-note"> (private - will not be shared publicly)</span>
+            </label>
+            <div className="eld-address-input-wrapper">
+              <input
+                ref={addressInputRef}
+                type="text"
+                className={`eld-form-input eld-address-input ${isAddressValid ? 'eld-address-valid' : ''} ${addressError ? 'eld-address-error' : ''}`}
+                placeholder="Start typing your address..."
+                value={addressInputValue}
+                onChange={handleAddressInputChange}
+              />
+              {isAddressValid && (
+                <span className="eld-address-checkmark">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20,6 9,17 4,12"/>
+                  </svg>
+                </span>
+              )}
+            </div>
+            {isAddressValid && (
+              <p className="eld-address-success">Address verified</p>
+            )}
+            {addressError && (
+              <div className="eld-address-error-message">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="8" x2="12" y2="12"/>
+                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                <span>{addressError}</span>
+              </div>
+            )}
+            {!isAddressValid && addressInputValue && (
+              <button
+                type="button"
+                className="eld-btn-link eld-manual-toggle"
+                onClick={handleManualAddressToggle}
+              >
+                {showManualAddress ? 'Hide manual entry' : "Can't find your address? Enter manually"}
+              </button>
+            )}
           </div>
         </div>
-        <div className="eld-form-grid">
-          <div className="eld-form-field">
-            <label className="eld-form-label">Zip Code</label>
-            <input
-              type="text"
-              className="eld-form-input"
-              placeholder="Zip Code"
-              value={formData['Location - Zip Code'] || ''}
-              onChange={(e) => handleInputChange('Location - Zip Code', e.target.value)}
-            />
+
+        {/* Manual Address Fields - Show when toggled or always show if address is valid */}
+        {(showManualAddress || isAddressValid) && (
+          <div className={`eld-manual-fields ${showManualAddress && !isAddressValid ? 'eld-manual-fields-expanded' : ''}`}>
+            {showManualAddress && !isAddressValid && (
+              <p className="eld-manual-hint">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12.01" y2="8"/>
+                </svg>
+                Please fill in the address details below
+              </p>
+            )}
+            <div className="eld-form-grid">
+              <div className="eld-form-field">
+                <label className="eld-form-label">City</label>
+                <input
+                  type="text"
+                  className="eld-form-input"
+                  placeholder="City"
+                  value={formData['Location - City'] || ''}
+                  onChange={(e) => handleInputChange('Location - City', e.target.value)}
+                />
+              </div>
+              <div className="eld-form-field">
+                <label className="eld-form-label">State</label>
+                <input
+                  type="text"
+                  className="eld-form-input"
+                  placeholder="State (e.g., NY, NJ)"
+                  value={formData['Location - State'] || ''}
+                  onChange={(e) => handleInputChange('Location - State', e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="eld-form-grid">
+              <div className="eld-form-field">
+                <label className="eld-form-label">Zip Code</label>
+                <input
+                  type="text"
+                  className="eld-form-input"
+                  placeholder="Zip Code"
+                  value={formData['Location - Zip Code'] || ''}
+                  onChange={(e) => handleInputChange('Location - Zip Code', e.target.value)}
+                />
+              </div>
+              <div className="eld-form-field">
+                <label className="eld-form-label">Borough/Neighborhood</label>
+                <input
+                  type="text"
+                  className="eld-form-input"
+                  placeholder="Borough or Neighborhood"
+                  value={formData['Location - Borough'] || ''}
+                  onChange={(e) => handleInputChange('Location - Borough', e.target.value)}
+                />
+              </div>
+            </div>
           </div>
-          <div className="eld-form-field">
-            <label className="eld-form-label">Borough/Neighborhood</label>
-            <input
-              type="text"
-              className="eld-form-input"
-              placeholder="Borough"
-              value={formData['Location - Borough'] || ''}
-              onChange={(e) => handleInputChange('Location - Borough', e.target.value)}
-            />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
