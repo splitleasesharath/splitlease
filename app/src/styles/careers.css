@@ -25,6 +25,7 @@ body {
 .hero-section {
   background: white;
   padding: 100px 48px 80px;
+  padding-top: 180px; /* 80px for fixed header + 100px spacing - matches list-with-us */
   margin: 0;
   position: relative;
   overflow: hidden;
@@ -885,7 +886,8 @@ body {
   }
 
   .hero-section {
-    padding: 80px 20px 50px;
+    padding: 60px 20px 50px;
+    padding-top: 120px; /* Matches list-with-us mobile */
     min-height: 400px;
   }
 
