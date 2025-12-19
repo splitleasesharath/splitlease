@@ -43,8 +43,6 @@
   min-height: 40px;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  overflow-y: auto;
   font-family: var(--hep-font-sans);
   box-sizing: border-box;
   padding: 16px;
@@ -399,19 +397,12 @@
    ======================================== */
 
 .hep-editing-terms {
-  border: 1px dotted var(--hep-gray-border);
-  border-radius: 0;
   width: 100%;
-  max-height: 920px;
   padding: 16px;
-  overflow-x: hidden;
-  overflow-y: auto;
   margin-top: 16px;
 }
 
 .hep-proposal-row {
-  border: 1px dotted var(--hep-gray-border);
-  border-radius: 0;
   width: 100%;
   min-height: 27px;
   display: flex;
@@ -503,9 +494,6 @@
 
 .hep-breakdown-container {
   width: 100%;
-  max-height: 815px;
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
 .hep-breakdown-title {
@@ -602,7 +590,8 @@
    ======================================== */
 
 .hep-reject-section {
-  border: 1px dotted var(--hep-gray-border);
+  background-color: rgba(200, 35, 51, 0.05);
+  border-radius: 8px;
   padding: 16px;
   margin-top: 16px;
 }
@@ -749,9 +738,8 @@
 
 .hss-host-schedule-selector {
   padding: 16px;
-  border: 1px dotted var(--hep-gray-border);
-  border-radius: 4px;
-  overflow: hidden;
+  background-color: rgba(49, 19, 93, 0.03);
+  border-radius: 8px;
 }
 
 .hss-nights-grid {

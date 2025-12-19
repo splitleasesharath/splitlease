@@ -1139,7 +1139,7 @@
 .editing-proposal-container {
   background-color: var(--bg-white);
   border-radius: var(--rounded-2xl);
-  max-width: 900px;
+  max-width: 520px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;

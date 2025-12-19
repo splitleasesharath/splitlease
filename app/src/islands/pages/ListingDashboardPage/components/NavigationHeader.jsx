@@ -96,7 +96,27 @@ const FileCheckIcon = () => (
   </svg>
 );
 
-export default function NavigationHeader({ activeTab, onTabChange, counts, onBackClick }) {
+const GiftIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <polyline points="20 12 20 22 4 22 4 12"></polyline>
+    <rect x="2" y="7" width="20" height="5"></rect>
+    <line x1="12" y1="22" x2="12" y2="7"></line>
+    <path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"></path>
+    <path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"></path>
+  </svg>
+);
+
+export default function NavigationHeader({ activeTab, onTabChange, counts, onBackClick, onInviteClick }) {
   // Handle tab click - special case for all-listings which navigates away
   const handleTabClick = (tabId) => {
     if (tabId === 'all-listings') {
@@ -143,36 +163,39 @@ export default function NavigationHeader({ activeTab, onTabChange, counts, onBac
 
   return (
     <div className="listing-dashboard-nav">
-      {/* Back Button */}
-      <div className="listing-dashboard-nav__back">
-        <button
-          className="listing-dashboard-nav__back-btn"
-          onClick={onBackClick}
-        >
-          <ArrowLeftIcon />
-          <span>All Listings</span>
-        </button>
-      </div>
+      {/* Tabs Row - Tabs on left, Invite on right */}
+      <div className="listing-dashboard-nav__tabs-row">
+        {/* Tab Navigation */}
+        <div className="listing-dashboard-nav__tabs">
+          {visibleTabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => handleTabClick(tab.id)}
+              className={`listing-dashboard-nav__tab ${
+                activeTab === tab.id ? 'listing-dashboard-nav__tab--active' : ''
+              }`}
+            >
+              {tab.icon}
+              <span>{tab.label}</span>
 
-      {/* Tab Navigation */}
-      <div className="listing-dashboard-nav__tabs">
-        {visibleTabs.map((tab) => (
+              {/* Notification Badge */}
+              {tab.badge !== undefined && tab.badge > 0 && (
+                <span className="listing-dashboard-nav__badge">{tab.badge}</span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Invite Friends Button */}
+        {onInviteClick && (
           <button
-            key={tab.id}
-            onClick={() => handleTabClick(tab.id)}
-            className={`listing-dashboard-nav__tab ${
-              activeTab === tab.id ? 'listing-dashboard-nav__tab--active' : ''
-            }`}
+            className="listing-dashboard-nav__invite-btn"
+            onClick={onInviteClick}
           >
-            {tab.icon}
-            <span>{tab.label}</span>
-
-            {/* Notification Badge */}
-            {tab.badge !== undefined && tab.badge > 0 && (
-              <span className="listing-dashboard-nav__badge">{tab.badge}</span>
-            )}
+            <GiftIcon />
+            <span>Give $50, Get $50</span>
           </button>
-        ))}
+        )}
       </div>
     </div>
   );

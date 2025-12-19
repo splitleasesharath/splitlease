@@ -13,7 +13,9 @@ import RespondToVMRequest from './RespondToVMRequest.jsx';
 import BookVirtualMeeting from './BookVirtualMeeting.jsx';
 import CancelVirtualMeetings from './CancelVirtualMeetings.jsx';
 import DetailsOfProposalAndVM from './DetailsOfProposalAndVM.jsx';
+import VMRequestSuccessModal from './VMRequestSuccessModal.jsx';
 import './VirtualMeetingManager.css';
+import '../../pages/AccountProfilePage/AccountProfilePage.css'; // For ReferralModal card styles
 
 /**
  * ViewState type: 'respond' | 'request' | 'cancel' | 'details' | ''
@@ -37,6 +39,7 @@ export default function VirtualMeetingManager({
   const [isSuggesting, setIsSuggesting] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   // Clear messages after 5 seconds
   useEffect(() => {
@@ -123,15 +126,17 @@ export default function VirtualMeetingManager({
       );
 
       if (result.status === 'success') {
-        setSuccess(
-          isSuggestingAlt
-            ? 'Alternative times submitted successfully!'
-            : 'Meeting request sent successfully!'
-        );
-        setTimeout(() => {
-          onClose();
-          if (onSuccess) onSuccess();
-        }, 1500);
+        // Show success modal for new requests (not alternatives)
+        if (!isSuggestingAlt) {
+          setView(''); // Hide the booking view
+          setShowSuccessModal(true);
+        } else {
+          setSuccess('Alternative times submitted successfully!');
+          setTimeout(() => {
+            onClose();
+            if (onSuccess) onSuccess();
+          }, 1500);
+        }
       } else {
         throw new Error(result.message || 'Failed to submit request');
       }
@@ -139,6 +144,15 @@ export default function VirtualMeetingManager({
       setError(err instanceof Error ? err.message : 'Failed to submit request');
       throw err;
     }
+  };
+
+  /**
+   * Handle closing the success modal
+   */
+  const handleSuccessModalClose = () => {
+    setShowSuccessModal(false);
+    onClose();
+    if (onSuccess) onSuccess();
   };
 
   /**
@@ -204,7 +218,44 @@ export default function VirtualMeetingManager({
     return proposal.listing?.name || proposal._listing?.name || 'Property';
   };
 
+  /**
+   * Get host name for success modal
+   */
+  const getHostName = () => {
+    return proposal.host?.name || proposal.host?.firstName || 'the host';
+  };
+
+  /**
+   * Get current user's first name for referral modal
+   */
+  const getCurrentUserName = () => {
+    return currentUser?.['Name - First'] || currentUser?.firstName || currentUser?.name || '';
+  };
+
+  /**
+   * Get user type (host or guest)
+   */
+  const getUserType = () => {
+    const isHost = currentUser?.typeUserSignup === 'host' ||
+                   currentUser?.type_user_signup === 'host';
+    return isHost ? 'host' : 'guest';
+  };
+
   const virtualMeeting = getVirtualMeeting();
+
+  // Show success modal if active
+  if (showSuccessModal) {
+    return (
+      <VMRequestSuccessModal
+        isOpen={true}
+        onClose={handleSuccessModalClose}
+        hostName={getHostName()}
+        referralCode={currentUser?._id || currentUser?.id || 'user'}
+        referrerName={getCurrentUserName()}
+        userType={getUserType()}
+      />
+    );
+  }
 
   // Don't render if no view is set
   if (!view) {

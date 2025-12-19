@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import { EditListingDetails } from '../../shared/EditListingDetails/EditListingDetails';
 import ScheduleCohost from '../../shared/ScheduleCohost';
 import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal';
 import AIImportAssistantModal from '../../shared/AIImportAssistantModal';
+import ReferralModal from '../AccountProfilePage/components/ReferralModal';
 import useListingDashboardPageLogic from './useListingDashboardPageLogic';
 import {
   NavigationHeader,
@@ -22,8 +24,11 @@ import {
   CancellationPolicySection,
 } from './components';
 import '../../../styles/components/listing-dashboard.css';
+import '../AccountProfilePage/AccountProfilePage.css'; // For ReferralModal styles
 
 export default function ListingDashboardPage() {
+  const [showReferralModal, setShowReferralModal] = useState(false);
+
   const {
     activeTab,
     listing,
@@ -139,6 +144,7 @@ export default function ListingDashboardPage() {
               onTabChange={handleTabChange}
               counts={counts}
               onBackClick={handleBackClick}
+              onInviteClick={() => setShowReferralModal(true)}
             />
 
             {/* Alert Banner - Schedule Cohost CTA */}
@@ -319,6 +325,15 @@ export default function ListingDashboardPage() {
         isComplete={isAIComplete}
         generatedData={aiGeneratedData}
         onStartGeneration={handleStartAIGeneration}
+      />
+
+      {/* Referral Modal */}
+      <ReferralModal
+        isOpen={showReferralModal}
+        onClose={() => setShowReferralModal(false)}
+        referralCode={currentUser?._id || currentUser?.id || 'user'}
+        userType="host"
+        referrerName={currentUser?.['Name - First'] || currentUser?.firstName || currentUser?.name || ''}
       />
     </>
   );
