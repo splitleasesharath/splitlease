@@ -127,7 +127,10 @@ export default function AccountProfilePage() {
           <div className="account-profile-feed">
             {/* Referral Banner - shown only in Editor View (user viewing own profile) */}
             {logic.isEditorView && (
-              <ReferralBanner onInviteClick={() => setShowReferralModal(true)} />
+              <ReferralBanner
+                onInviteClick={() => setShowReferralModal(true)}
+                userType={logic.isHostUser ? 'host' : 'guest'}
+              />
             )}
 
             {logic.isEditorView ? (
@@ -207,6 +210,7 @@ export default function AccountProfilePage() {
             rewardsClaimed: logic.profileData?.['Rewards Claimed'] || 0,
             totalRewards: logic.profileData?.['Total Rewards'] || 0
           }}
+          userType={logic.isHostUser ? 'host' : 'guest'}
         />
 
         <Footer />
