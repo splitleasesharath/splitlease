@@ -1242,3 +1242,89 @@
   0%, 100% { opacity: 0.6; }
   50% { opacity: 0.3; }
 }
+
+/* ============================================================================
+   REFERRAL BANNER
+   ============================================================================ */
+
+.referral-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--sl-bg-card);
+  border-radius: var(--sl-radius-lg);
+  padding: 18px 22px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  animation: fadeIn 0.3s ease;
+}
+
+.referral-banner-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.referral-banner-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2f6fed, #4aa8ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.referral-banner-icon svg {
+  color: #ffffff;
+  width: 22px;
+  height: 22px;
+}
+
+.referral-banner-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.referral-banner-text strong {
+  font-size: 16px;
+  color: var(--sl-text-main);
+  line-height: 1.2;
+}
+
+.referral-banner-text span {
+  font-size: 14px;
+  color: var(--sl-text-secondary);
+  margin-top: 4px;
+}
+
+.referral-banner-btn {
+  background: #2f6fed;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.referral-banner-btn:hover {
+  background: #255cd4;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 600px) {
+  .referral-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .referral-banner-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

@@ -20,6 +20,7 @@ import ProfileSidebar from './components/ProfileSidebar.jsx';
 import EditorView from './components/EditorView.jsx';
 import PublicView from './components/PublicView.jsx';
 import FixedSaveBar from './components/shared/FixedSaveBar.jsx';
+import ReferralBanner from './components/ReferralBanner.jsx';
 import './AccountProfilePage.css';
 
 // ============================================================================
@@ -122,6 +123,9 @@ export default function AccountProfilePage() {
 
           {/* Main Feed */}
           <div className="account-profile-feed">
+            {/* Referral Banner - shown only in Editor View (user viewing own profile) */}
+            {logic.isEditorView && <ReferralBanner />}
+
             {logic.isEditorView ? (
               <EditorView
                 formData={logic.formData}
