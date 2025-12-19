@@ -593,3 +593,192 @@
     margin-bottom: 12px;
   }
 }
+
+/* ============================================
+   VM REQUEST SUCCESS MODAL
+   ============================================ */
+
+.vm-success-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 16px;
+}
+
+.vm-success-modal {
+  background: white;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  animation: vmSuccessModalIn 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes vmSuccessModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.vm-success-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #9CA3AF;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.vm-success-modal-close:hover {
+  color: #374151;
+}
+
+.vm-success-modal-content {
+  padding: 32px 24px 24px;
+  text-align: center;
+}
+
+.vm-success-modal-icon {
+  color: #059669;
+  margin-bottom: 16px;
+}
+
+.vm-success-modal-icon svg {
+  width: 56px;
+  height: 56px;
+}
+
+.vm-success-modal-title {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px 0;
+}
+
+.vm-success-modal-message {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6B7280;
+  margin: 0 0 20px 0;
+}
+
+.vm-success-modal-btn {
+  background: var(--vm-purple-accent, #5C20B6);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.vm-success-modal-btn:hover {
+  background: #4a1a94;
+  transform: translateY(-1px);
+}
+
+/* Referral section */
+.vm-success-modal-referral {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #F9FAFB;
+  border-top: 1px solid #E5E7EB;
+}
+
+.vm-success-modal-referral-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--vm-purple-accent, #5C20B6), #8B5CF6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.vm-success-modal-referral-icon svg {
+  color: white;
+  width: 20px;
+  height: 20px;
+}
+
+.vm-success-modal-referral-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.vm-success-modal-referral-content strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  line-height: 1.3;
+}
+
+.vm-success-modal-referral-content span {
+  display: block;
+  font-size: 12px;
+  color: #6B7280;
+  margin-top: 2px;
+}
+
+.vm-success-modal-referral-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--vm-purple-accent, #5C20B6);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.vm-success-modal-referral-btn:hover {
+  background: #4a1a94;
+}
+
+.vm-success-modal-referral-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 480px) {
+  .vm-success-modal-referral {
+    flex-wrap: wrap;
+  }
+
+  .vm-success-modal-referral-btn {
+    width: 100%;
+    justify-content: center;
+    margin-top: 8px;
+  }
+}
