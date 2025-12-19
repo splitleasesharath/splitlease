@@ -184,6 +184,15 @@ export const routes = [
     internalName: 'host-guarantee-view',
     hasDynamicSegment: false
   },
+  {
+    path: '/referral',
+    file: 'referral.html',
+    aliases: ['/referral.html', '/ref'],
+    protected: false,
+    cloudflareInternal: true,
+    internalName: 'referral-view',
+    hasDynamicSegment: false
+  },
 
   // ===== SUCCESS PAGES =====
   {

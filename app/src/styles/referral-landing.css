@@ -1,0 +1,580 @@
+/* Referral Landing Page Styles */
+
+/* Premium Gradient Variables */
+:root {
+  --gradient-purple-blue: linear-gradient(135deg, #31135D 0%, #4A2F7C 50%, #5B21B6 100%);
+  --gradient-purple-pink: linear-gradient(135deg, #31135D 0%, #6B21A8 50%, #A855F7 100%);
+  --brand-purple: #31135D;
+}
+
+/* ============================================
+   HERO SECTION
+   ============================================ */
+.referral-landing-hero {
+  background: linear-gradient(135deg, #f8f7fc 0%, #f3f0fa 100%);
+  padding: 160px 24px 80px;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+.referral-landing-hero__bg-accent {
+  position: absolute;
+  top: -200px;
+  right: -200px;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.referral-landing-hero__container {
+  max-width: 800px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 2;
+}
+
+.referral-landing-hero__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(124, 58, 237, 0.1);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  border-radius: 500px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #7C3AED;
+  margin-bottom: 24px;
+}
+
+.referral-landing-hero__badge svg {
+  width: 18px;
+  height: 18px;
+}
+
+.referral-landing-hero__title {
+  font-size: 48px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1.15;
+  margin-bottom: 20px;
+  letter-spacing: -1px;
+}
+
+.referral-landing-hero__subtitle {
+  font-size: 18px;
+  color: #6b7280;
+  line-height: 1.6;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+/* ============================================
+   MAIN CONTENT SECTION
+   ============================================ */
+.referral-landing-main {
+  padding: 60px 24px 80px;
+  background: white;
+}
+
+.referral-landing-main__container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: start;
+}
+
+/* Left Column */
+.referral-landing-main__left {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+/* Right Column */
+.referral-landing-main__right {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ============================================
+   REFERRAL GIFT CARD (Large Version)
+   ============================================ */
+.referral-landing-card {
+  width: 100%;
+  max-width: 450px;
+  aspect-ratio: 1.75 / 1;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 32px 36px;
+  position: relative;
+  overflow: hidden;
+  border: 3px solid #7C3AED;
+  box-shadow: 0 12px 48px -12px rgba(124, 58, 237, 0.2), 0 6px 24px rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+}
+
+.referral-landing-card__corner-accent {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.15) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+.referral-landing-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  position: relative;
+  z-index: 1;
+}
+
+.referral-landing-card__brand {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #9ca3af;
+  text-transform: uppercase;
+}
+
+.referral-landing-card__amount {
+  font-size: 36px;
+  font-weight: 800;
+  color: #7C3AED;
+  line-height: 1;
+}
+
+.referral-landing-card__content {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.referral-landing-card__sent-by {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.referral-landing-card__name {
+  font-size: 26px;
+  font-weight: 700;
+  color: #7C3AED;
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.referral-landing-card__message {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.5;
+  max-width: 90%;
+}
+
+.referral-landing-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.referral-landing-card__valid {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #9ca3af;
+}
+
+.referral-landing-card__badge {
+  background: linear-gradient(135deg, #7C3AED 0%, #A855F7 100%);
+  padding: 6px 14px;
+  border-radius: 500px;
+}
+
+.referral-landing-card__badge-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================
+   BENEFITS LIST
+   ============================================ */
+.referral-landing-benefits {
+  padding: 32px;
+  background: #f9fafb;
+  border-radius: 16px;
+}
+
+.referral-landing-benefits__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 20px;
+}
+
+.referral-landing-benefits__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.referral-landing-benefits__item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.5;
+}
+
+.referral-landing-benefits__icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background: linear-gradient(135deg, #7C3AED 0%, #A855F7 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.referral-landing-benefits__icon svg {
+  width: 14px;
+  height: 14px;
+  color: white;
+}
+
+/* ============================================
+   FORM CARD
+   ============================================ */
+.referral-landing-form-card {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+}
+
+.referral-landing-form-card__title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.referral-landing-form-card__subtitle {
+  font-size: 15px;
+  color: #6b7280;
+  margin-bottom: 32px;
+  line-height: 1.5;
+}
+
+/* Form Styles */
+.referral-landing-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.referral-landing-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.referral-landing-form__field label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.referral-landing-form__field input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f9fafb;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+.referral-landing-form__field input:focus {
+  border-color: #7C3AED;
+  background: white;
+  box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.1);
+}
+
+.referral-landing-form__field input.error {
+  border-color: #ef4444;
+  background: #fef2f2;
+}
+
+.referral-landing-form__field input::placeholder {
+  color: #9ca3af;
+}
+
+.referral-landing-form__error {
+  font-size: 13px;
+  color: #ef4444;
+  margin-top: 2px;
+}
+
+.referral-landing-form__submit-error {
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 14px;
+  text-align: center;
+}
+
+.referral-landing-form__submit {
+  width: 100%;
+  padding: 16px 24px;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+.referral-landing-form__submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(124, 58, 237, 0.35);
+}
+
+.referral-landing-form__submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.referral-landing-form__terms {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+  line-height: 1.5;
+}
+
+.referral-landing-form__terms a {
+  color: #7C3AED;
+  text-decoration: none;
+}
+
+.referral-landing-form__terms a:hover {
+  text-decoration: underline;
+}
+
+/* Success State */
+.referral-landing-success {
+  text-align: center;
+  padding: 40px 20px;
+}
+
+.referral-landing-success__icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+}
+
+.referral-landing-success__icon svg {
+  width: 32px;
+  height: 32px;
+  color: white;
+}
+
+.referral-landing-success h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 8px;
+}
+
+.referral-landing-success p {
+  font-size: 15px;
+  color: #6b7280;
+}
+
+/* Referral Code Display */
+.referral-landing-code {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #f3f4f6;
+  border-radius: 8px;
+}
+
+.referral-landing-code__label {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.referral-landing-code__value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #7C3AED;
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* ============================================
+   TRUST SECTION
+   ============================================ */
+.referral-landing-trust {
+  padding: 60px 24px;
+  background: linear-gradient(135deg, #31135D 0%, #4A2F7C 100%);
+}
+
+.referral-landing-trust__container {
+  max-width: 900px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 32px;
+  text-align: center;
+}
+
+.referral-landing-trust__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.referral-landing-trust__number {
+  font-size: 36px;
+  font-weight: 700;
+  color: white;
+}
+
+.referral-landing-trust__label {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+/* ============================================
+   RESPONSIVE STYLES
+   ============================================ */
+@media (max-width: 900px) {
+  .referral-landing-main__container {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+
+  .referral-landing-main__left {
+    order: 2;
+  }
+
+  .referral-landing-main__right {
+    order: 1;
+  }
+
+  .referral-landing-card {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .referral-landing-hero {
+    padding: 140px 20px 60px;
+  }
+
+  .referral-landing-hero__title {
+    font-size: 32px;
+  }
+
+  .referral-landing-hero__subtitle {
+    font-size: 16px;
+  }
+
+  .referral-landing-main {
+    padding: 40px 20px 60px;
+  }
+
+  .referral-landing-form-card {
+    padding: 28px;
+  }
+
+  .referral-landing-form-card__title {
+    font-size: 24px;
+  }
+
+  .referral-landing-trust__container {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+  }
+
+  .referral-landing-trust__number {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 480px) {
+  .referral-landing-hero {
+    padding: 120px 16px 48px;
+  }
+
+  .referral-landing-hero__title {
+    font-size: 28px;
+  }
+
+  .referral-landing-main {
+    padding: 32px 16px 48px;
+  }
+
+  .referral-landing-card {
+    padding: 24px 28px;
+  }
+
+  .referral-landing-card__name {
+    font-size: 22px;
+  }
+
+  .referral-landing-card__amount {
+    font-size: 28px;
+  }
+
+  .referral-landing-benefits {
+    padding: 24px;
+  }
+
+  .referral-landing-form-card {
+    padding: 24px 20px;
+  }
+
+  .referral-landing-trust {
+    padding: 48px 16px;
+  }
+}
