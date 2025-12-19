@@ -3090,13 +3090,6 @@ export default function ViewSplitLeasePage() {
                         : 'Select Days'}
                       <span style={{ fontSize: '14px', color: '#6B7280', fontWeight: '500' }}>/night</span>
                     </div>
-                    <div style={{
-                      fontSize: '14px',
-                      color: '#374151',
-                      fontWeight: '600'
-                    }}>
-                      {selectedDays.length} {selectedDays.length === 1 ? 'day' : 'days'}, {Math.max(0, selectedDays.length - 1)} {selectedDays.length - 1 === 1 ? 'night' : 'nights'} Selected
-                    </div>
                   </div>
 
                   {/* Continue Button */}
