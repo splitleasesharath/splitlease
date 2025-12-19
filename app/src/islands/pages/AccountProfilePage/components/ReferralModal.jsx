@@ -146,7 +146,7 @@ function HostReferralCard({ hostName }) {
         <div className="host-referral-card__sent-by">Referred by</div>
         <div className="host-referral-card__name">{hostName}</div>
         <div className="host-referral-card__message">
-          Welcome to hosting. This bonus is yours when you close your first lease. List your space and start earning.
+          This bonus is yours when you close your first lease. List your space and start earning.
         </div>
       </div>
 
