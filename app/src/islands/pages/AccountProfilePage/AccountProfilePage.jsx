@@ -9,7 +9,7 @@
  * - Public View: User viewing someone else's profile (read-only)
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '../../shared/Header.jsx';
 import Footer from '../../shared/Footer.jsx';
 import { ToastProvider } from '../../shared/Toast.jsx';
@@ -21,6 +21,7 @@ import EditorView from './components/EditorView.jsx';
 import PublicView from './components/PublicView.jsx';
 import FixedSaveBar from './components/shared/FixedSaveBar.jsx';
 import ReferralBanner from './components/ReferralBanner.jsx';
+import ReferralModal from './components/ReferralModal.jsx';
 import './AccountProfilePage.css';
 
 // ============================================================================
@@ -65,6 +66,7 @@ function ErrorState({ error }) {
 
 export default function AccountProfilePage() {
   const logic = useAccountProfilePageLogic();
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   // Show loading state
   if (logic.loading) {
@@ -124,7 +126,9 @@ export default function AccountProfilePage() {
           {/* Main Feed */}
           <div className="account-profile-feed">
             {/* Referral Banner - shown only in Editor View (user viewing own profile) */}
-            {logic.isEditorView && <ReferralBanner />}
+            {logic.isEditorView && (
+              <ReferralBanner onInviteClick={() => setShowReferralModal(true)} />
+            )}
 
             {logic.isEditorView ? (
               <EditorView
@@ -192,6 +196,17 @@ export default function AccountProfilePage() {
             logic.handleClosePhoneEditModal();
           }}
           onClose={logic.handleClosePhoneEditModal}
+        />
+
+        <ReferralModal
+          isOpen={showReferralModal}
+          onClose={() => setShowReferralModal(false)}
+          referralCode={logic.profileData?.['Referral Code'] || logic.profileUserId || 'user'}
+          stats={{
+            friendsReferred: logic.profileData?.['Friends Referred'] || 0,
+            rewardsClaimed: logic.profileData?.['Rewards Claimed'] || 0,
+            totalRewards: logic.profileData?.['Total Rewards'] || 0
+          }}
         />
 
         <Footer />
