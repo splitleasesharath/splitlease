@@ -834,6 +834,43 @@
   color: var(--ld-accent-purple);
 }
 
+/* Section Footer with bottom edit button */
+.listing-dashboard-section__footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;
+  margin-top: 16px;
+  border-top: 1px solid var(--ld-border);
+}
+
+.listing-dashboard-section__edit-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: var(--ld-accent-purple);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.listing-dashboard-section__edit-bottom:hover {
+  background-color: #7c3aed;
+  transform: translateY(-1px);
+}
+
+.listing-dashboard-section__edit-bottom:active {
+  transform: translateY(0);
+}
+
+.listing-dashboard-section__edit-bottom svg {
+  flex-shrink: 0;
+}
+
 .listing-dashboard-section__add-btn {
   display: flex;
   align-items: center;

@@ -529,33 +529,6 @@ export default function WhySplitLeasePage() {
         </div>
       </section>
 
-      {/* Trust Stats Section - PATTERN 5: Light Gray with Gradient Purple Blobs */}
-      <section className="trust-section">
-        <div className="gradient-blob gradient-blob-1"></div>
-        <div className="gradient-blob gradient-blob-2"></div>
-
-        <div className="trust-container">
-          <div className="trust-grid">
-            <div className="trust-stat">
-              <div className="trust-number">200+</div>
-              <div className="trust-label">NYC Spaces</div>
-            </div>
-            <div className="trust-stat">
-              <div className="trust-number">2,400+</div>
-              <div className="trust-label">Multi-Locals</div>
-            </div>
-            <div className="trust-stat">
-              <div className="trust-number">$18K</div>
-              <div className="trust-label">Avg. Yearly Savings</div>
-            </div>
-            <div className="trust-stat">
-              <div className="trust-number">4.8★</div>
-              <div className="trust-label">Average Rating</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* What Makes Us Different Section - PATTERN 5: Light Gray with Gradient Blobs */}
       <section className="different-section">
         <div className="gradient-blob gradient-blob-1"></div>

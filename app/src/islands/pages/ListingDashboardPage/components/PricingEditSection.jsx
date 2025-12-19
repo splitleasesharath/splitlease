@@ -367,7 +367,7 @@ export default function PricingEditSection({
           7
         ); // Use 5-night rate for 7
       } else if (selectedRentalType === 'Weekly') {
-        updates['Weeks Offered'] = weeksOffered;
+        updates['Weeks offered'] = weeksOffered;
         updates['💰Weekly Host Rate'] = weeklyRate;
       } else if (selectedRentalType === 'Monthly') {
         updates['💰Monthly Host Rate'] = monthlyRate;
