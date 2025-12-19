@@ -435,8 +435,8 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
 
       // If no changes, just close
       if (Object.keys(changedFields).length === 0) {
-        showToast('No changes to save');
-        setTimeout(onClose, 500);
+        showToast('No changes detected', 'Closing without saving');
+        setTimeout(onClose, 1500);
         return;
       }
 
@@ -457,9 +457,9 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
 
       console.log('📝 Saving only changed fields:', Object.keys(changedFields));
       const updatedListing = await updateListing(listing._id, changedFields);
-      showToast('Your changes have been saved');
+      showToast('Changes saved!', 'Your listing has been updated');
       onSave(updatedListing);
-      setTimeout(onClose, 1000);
+      setTimeout(onClose, 2000);
     } catch (error) {
       console.error('Error saving:', error);
       showToast('Failed to save changes', 'Please try again', 'error');
