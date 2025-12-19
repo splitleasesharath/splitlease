@@ -5,7 +5,6 @@ import { EditListingDetails } from '../../shared/EditListingDetails/EditListingD
 import ScheduleCohost from '../../shared/ScheduleCohost';
 import ImportListingReviewsModal from '../../shared/ImportListingReviewsModal';
 import AIImportAssistantModal from '../../shared/AIImportAssistantModal';
-import ReferralBanner from '../AccountProfilePage/components/ReferralBanner';
 import ReferralModal from '../AccountProfilePage/components/ReferralModal';
 import useListingDashboardPageLogic from './useListingDashboardPageLogic';
 import {
@@ -25,7 +24,6 @@ import {
   CancellationPolicySection,
 } from './components';
 import '../../../styles/components/listing-dashboard.css';
-import '../AccountProfilePage/AccountProfilePage.css';
 
 export default function ListingDashboardPage() {
   const [showReferralModal, setShowReferralModal] = useState(false);
@@ -145,6 +143,7 @@ export default function ListingDashboardPage() {
               onTabChange={handleTabChange}
               counts={counts}
               onBackClick={handleBackClick}
+              onInviteClick={() => setShowReferralModal(true)}
             />
 
             {/* Alert Banner - Schedule Cohost CTA */}
@@ -233,12 +232,6 @@ export default function ListingDashboardPage() {
               listing={listing}
               onPolicyChange={handleCancellationPolicyChange}
               onRestrictionsChange={handleCancellationRestrictionsChange}
-            />
-
-            {/* Referral Banner */}
-            <ReferralBanner
-              onInviteClick={() => setShowReferralModal(true)}
-              userType="host"
             />
           </div>
         </div>
