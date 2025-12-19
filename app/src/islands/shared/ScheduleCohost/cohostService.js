@@ -148,25 +148,22 @@ export function formatDateForBubble(date) {
  */
 export async function createCoHostRequest(data) {
   try {
-    // Format times for Bubble API
+    // Format times for storage
     const formattedTimes = data.selectedTimes.map((slot) => {
       return formatDateForBubble(slot.dateTime);
     });
 
-    const { data: response, error } = await supabase.functions.invoke('bubble-proxy', {
+    const { data: response, error } = await supabase.functions.invoke('cohost-request', {
       body: {
-        action: 'cohost-request',
-        method: 'create',
+        action: 'create',
         payload: {
-          'Subject': data.subject || '',
-          'details submitted (optional)': data.details || '',
-          'Co-Host User': data.userId,
-          'Listing': data.listingId,
-          'selected_times': formattedTimes,
-          'suggested dates and times': formattedTimes,
+          userId: data.userId,
           userEmail: data.userEmail,
           userName: data.userName,
-          'Status - Co-Host Request': 'Co-Host Requested',
+          listingId: data.listingId || null,
+          selectedTimes: formattedTimes,
+          subject: data.subject || '',
+          details: data.details || '',
         },
       },
     });
@@ -176,6 +173,16 @@ export async function createCoHostRequest(data) {
       return { success: false, error: error.message || 'Failed to create request' };
     }
 
+    // Handle Edge Function response format { success: true, data: { ... } }
+    if (response?.success && response?.data) {
+      return {
+        success: true,
+        requestId: response.data.requestId,
+        virtualMeetingId: response.data.virtualMeetingId,
+      };
+    }
+
+    // Handle direct response format (backwards compatibility)
     return {
       success: true,
       requestId: response?.requestId || response?._id,
@@ -196,13 +203,12 @@ export async function createCoHostRequest(data) {
  */
 export async function submitRating(requestId, rating, message) {
   try {
-    const { error } = await supabase.functions.invoke('bubble-proxy', {
+    const { data: response, error } = await supabase.functions.invoke('cohost-request', {
       body: {
-        action: 'cohost-request',
-        method: 'rate',
+        action: 'rate',
         payload: {
           requestId,
-          'Rating': rating,
+          Rating: rating,
           'Rating message (optional)': message || '',
         },
       },
@@ -211,6 +217,11 @@ export async function submitRating(requestId, rating, message) {
     if (error) {
       console.error('[cohostService] Error submitting rating:', error);
       return { success: false, error: error.message || 'Failed to submit rating' };
+    }
+
+    // Check for Edge Function error response
+    if (response && !response.success) {
+      return { success: false, error: response.error || 'Failed to submit rating' };
     }
 
     return { success: true };

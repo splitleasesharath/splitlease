@@ -356,16 +356,7 @@ s3_access_key = "env(S3_ACCESS_KEY)"
 # Configures AWS_SECRET_ACCESS_KEY for S3 bucket
 s3_secret_key = "env(S3_SECRET_KEY)"
 
-[functions.bubble-proxy]
-enabled = true
-verify_jwt = false
-import_map = "./functions/bubble-proxy/deno.json"
-# Uncomment to specify a custom file path to the entrypoint.
-# Supported file extensions are: .ts, .js, .mjs, .jsx, .tsx
-entrypoint = "./functions/bubble-proxy/index.ts"
-# Specifies static files to be bundled with the function. Supports glob patterns.
-# For example, if you want to serve static HTML pages in your function:
-# static_files = [ "./functions/bubble-proxy/*.html" ]
+# bubble-proxy removed - migrated to dedicated Edge Functions (cohost-request, virtual-meeting, etc.)
 
 [functions.auth-user]
 enabled = true
@@ -423,6 +414,11 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/virtual-meeting/deno.json"
 entrypoint = "./functions/virtual-meeting/index.ts"
+
+[functions.cohost-request]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/cohost-request/index.ts"
 
 [functions.send-email]
 enabled = true
