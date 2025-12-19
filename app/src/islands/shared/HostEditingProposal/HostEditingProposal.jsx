@@ -118,9 +118,15 @@ export function HostEditingProposal({
   const [editedMoveInDate, setEditedMoveInDate] = useState(() =>
     getProposalDate('moveInRangeStart', proposal?.['Move in range start'])
   )
-  const [editedReservationSpan, setEditedReservationSpan] = useState(() =>
-    findReservationSpanByWeeks(extractReservationSpanWeeks()) || RESERVATION_SPANS[2]
-  )
+  const [editedReservationSpan, setEditedReservationSpan] = useState(() => {
+    const weeks = extractReservationSpanWeeks()
+    const span = findReservationSpanByWeeks(weeks)
+    // If weeks doesn't match any standard span, use 'other'
+    if (!span) {
+      return RESERVATION_SPANS.find(s => s.value === 'other')
+    }
+    return span
+  })
   const [editedWeeks, setEditedWeeks] = useState(() =>
     extractReservationSpanWeeks()
   )
@@ -349,12 +355,14 @@ export function HostEditingProposal({
   const listingTitle = listing?.title || listing?.Name || 'Listing'
 
   // Get original values for comparison (using the same extraction functions as form initialization)
+  const originalWeeks = extractReservationSpanWeeks()
+  const originalSpanMatch = findReservationSpanByWeeks(originalWeeks)
   const originalValues = {
     moveInDate: getProposalDate('moveInRangeStart', proposal?.['Move in range start']),
     checkInDay: extractCheckInDay(),
     checkOutDay: extractCheckOutDay(),
-    reservationSpan: findReservationSpanByWeeks(extractReservationSpanWeeks()),
-    weeksReservationSpan: extractReservationSpanWeeks(),
+    reservationSpan: originalSpanMatch || RESERVATION_SPANS.find(s => s.value === 'other'),
+    weeksReservationSpan: originalWeeks,
     houseRules: getProposalValue('houseRules', []),
     nightsSelected: extractNightsSelected()
   }

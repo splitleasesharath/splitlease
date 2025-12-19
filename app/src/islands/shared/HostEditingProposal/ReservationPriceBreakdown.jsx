@@ -155,13 +155,11 @@ export function ReservationPriceBreakdown({
       <div className={getRowClass(hasChanged.reservationSpan || hasChanged.weeksReservationSpan)}>
         <span className="hep-breakdown-row-label">Reservation Length</span>
         <span className="hep-breakdown-row-value">
-          {reservationSpan?.value === 'other' ? `${weeksReservationSpan} weeks` : reservationSpan?.label}
+          {weeksReservationSpan} weeks
           {(hasChanged.reservationSpan || hasChanged.weeksReservationSpan) &&
-            originalValues?.reservationSpan && (
+            originalValues?.weeksReservationSpan && (
               <span className="hep-original-value">
-                was: {originalValues.reservationSpan?.value === 'other'
-                  ? `${originalValues.weeksReservationSpan} weeks`
-                  : originalValues.reservationSpan?.label}
+                was: {originalValues.weeksReservationSpan} weeks
               </span>
             )}
         </span>
@@ -190,18 +188,6 @@ export function ReservationPriceBreakdown({
           {hasChanged.nightsSelected && originalValues?.nightsSelected && (
             <span className="hep-original-value">
               was: {originalValues.nightsSelected.length} nights/week
-            </span>
-          )}
-        </span>
-      </div>
-
-      <div className={getRowClass(hasChanged.weeksReservationSpan)}>
-        <span className="hep-breakdown-row-label">Actual Weeks Used</span>
-        <span className="hep-breakdown-row-value">
-          {weeksReservationSpan}
-          {hasChanged.weeksReservationSpan && originalValues?.weeksReservationSpan && (
-            <span className="hep-original-value">
-              was: {originalValues.weeksReservationSpan}
             </span>
           )}
         </span>
