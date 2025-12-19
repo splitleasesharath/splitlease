@@ -251,14 +251,14 @@ export function getActiveDays(checkInDay, checkOutDay) {
 }
 
 /**
- * Convert Bubble night indices to day names for highlighting
- * Bubble uses 1-7 (Sunday=1, Saturday=7), JavaScript uses 0-6 (Sunday=0, Saturday=6)
+ * Convert night indices to day names for highlighting
+ * Database uses 0-based indexing: 0=Sunday, 1=Monday, ..., 6=Saturday
  *
- * @param {number[]|string} nightsSelected - Array of Bubble day indices [1,6] or JSON string
- * @returns {DayOfWeek[]} Array of day names ['Sunday', 'Friday']
+ * @param {number[]|string} nightsSelected - Array of 0-based day indices [4,5,6] or JSON string
+ * @returns {DayOfWeek[]} Array of day names ['Thursday', 'Friday', 'Saturday']
  */
 export function getNightsAsDayNames(nightsSelected) {
-  const dayNames = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   if (!nightsSelected) return [];
 
@@ -274,24 +274,25 @@ export function getNightsAsDayNames(nightsSelected) {
 
   if (!Array.isArray(nights)) return [];
 
-  // Convert Bubble indices (1-7) to day names
+  // Convert 0-based indices to day names
   return nights
-    .map(bubbleIndex => {
-      const index = typeof bubbleIndex === 'string' ? parseInt(bubbleIndex, 10) : bubbleIndex;
-      return dayNames[index] || '';
+    .map(index => {
+      const idx = typeof index === 'string' ? parseInt(index, 10) : index;
+      return dayNames[idx] || '';
     })
     .filter(Boolean);
 }
 
 /**
  * Get check-in and check-out days from nights selected
- * Check-in is the first night, check-out is the day after the last night
+ * Check-in is the first night's day, check-out is the day after the last night
+ * Database uses 0-based indexing: 0=Sunday, 1=Monday, ..., 6=Saturday
  *
- * @param {number[]|string} nightsSelected - Array of Bubble day indices or JSON string
+ * @param {number[]|string} nightsSelected - Array of 0-based day indices or JSON string
  * @returns {{ checkInDay: string, checkOutDay: string }} Check-in and check-out day names
  */
 export function getCheckInOutFromNights(nightsSelected) {
-  const dayNames = ['', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
   if (!nightsSelected) return { checkInDay: '', checkOutDay: '' };
 
@@ -310,16 +311,16 @@ export function getCheckInOutFromNights(nightsSelected) {
   // Convert to numbers and sort to find first and last night
   const sortedNights = nights
     .map(n => typeof n === 'string' ? parseInt(n, 10) : n)
-    .filter(n => !isNaN(n) && n >= 1 && n <= 7)
+    .filter(n => !isNaN(n) && n >= 0 && n <= 6)
     .sort((a, b) => a - b);
 
   if (sortedNights.length === 0) return { checkInDay: '', checkOutDay: '' };
 
-  const firstNight = sortedNights[0]; // Check-in day (Bubble format)
+  const firstNight = sortedNights[0]; // Check-in day (0-based)
   const lastNight = sortedNights[sortedNights.length - 1]; // Last night stayed
 
-  // Check-out is the day AFTER the last night (with wrap-around)
-  const checkOutIndex = lastNight === 7 ? 1 : lastNight + 1;
+  // Check-out is the day AFTER the last night (with wrap-around: Saturday night -> Sunday checkout)
+  const checkOutIndex = (lastNight + 1) % 7;
 
   return {
     checkInDay: dayNames[firstNight] || '',
