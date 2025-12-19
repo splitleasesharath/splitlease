@@ -14,15 +14,37 @@ import { uploadPhoto } from '../../../lib/photoUpload';
 import { isValidServiceArea, getBoroughForZipCode, NYC_BOUNDS, isHudsonCountyNJ } from '../../../lib/nycZipCodes';
 
 /**
+ * Field focus configuration - maps focusField identifiers to their parent sections
+ * This ensures the correct collapsible section is expanded before focusing
+ */
+const FOCUS_FIELD_SECTIONS = {
+  parking: 'storage',
+  storage: 'storage',
+  sqftRoom: 'storage',
+  sqftHome: 'storage',
+  spaceType: 'space',
+  bedrooms: 'space',
+  beds: 'space',
+  bathrooms: 'space',
+  kitchen: 'space',
+  maxGuests: 'rules',
+  minNights: 'availability',
+  maxNights: 'availability',
+  cancellation: 'availability',
+  firstAvailable: 'availability'
+};
+
+/**
  * Custom hook containing all business logic for EditListingDetails component
  * @param {Object} params
  * @param {Object} params.listing - The listing data to edit
  * @param {string} params.editSection - The section being edited
+ * @param {string} params.focusField - Optional field to focus when modal opens
  * @param {Function} params.onClose - Close handler
  * @param {Function} params.onSave - Save handler (receives updated listing)
  * @param {Function} params.updateListing - Function to persist changes to database
  */
-export function useEditListingDetailsLogic({ listing, editSection, onClose, onSave, updateListing }) {
+export function useEditListingDetailsLogic({ listing, editSection, focusField, onClose, onSave, updateListing }) {
   const [formData, setFormData] = useState({});
   const formDataInitializedRef = useRef(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -43,6 +65,24 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
   const [addressError, setAddressError] = useState('');
   const [showManualAddress, setShowManualAddress] = useState(false);
   const [addressInputValue, setAddressInputValue] = useState('');
+
+  // Field refs for focus management
+  const fieldRefs = {
+    parking: useRef(null),
+    storage: useRef(null),
+    sqftRoom: useRef(null),
+    sqftHome: useRef(null),
+    spaceType: useRef(null),
+    bedrooms: useRef(null),
+    beds: useRef(null),
+    bathrooms: useRef(null),
+    kitchen: useRef(null),
+    maxGuests: useRef(null),
+    minNights: useRef(null),
+    maxNights: useRef(null),
+    cancellation: useRef(null),
+    firstAvailable: useRef(null)
+  };
 
   // Photo drag and drop state
   const [draggedPhotoIndex, setDraggedPhotoIndex] = useState(null);
@@ -89,6 +129,29 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
       window.scrollTo(0, scrollY);
     };
   }, []);
+
+  // Focus specific field when modal opens (if focusField is provided)
+  useEffect(() => {
+    if (!focusField) return;
+
+    // Expand the parent section if needed
+    const parentSection = FOCUS_FIELD_SECTIONS[focusField];
+    if (parentSection) {
+      setExpandedSections(prev => ({ ...prev, [parentSection]: true }));
+    }
+
+    // Delay focus to allow section expansion animation and DOM update
+    const focusTimer = setTimeout(() => {
+      const ref = fieldRefs[focusField];
+      if (ref?.current) {
+        ref.current.focus();
+        // Scroll the field into view within the modal
+        ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 150);
+
+    return () => clearTimeout(focusTimer);
+  }, [focusField]);
 
   // Initialize form data from listing (only once on initial mount)
   // This prevents formData from being reset when listing is refreshed after autosave
@@ -907,6 +970,9 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
     addressError,
     showManualAddress,
     addressInputValue,
+
+    // Field refs for focus management
+    fieldRefs,
 
     // Derived state
     inUnitAmenities,

@@ -30,7 +30,16 @@ import {
 } from './constants';
 import '../../../styles/components/edit-listing-details.css';
 
-export function EditListingDetails({ listing, editSection, onClose, onSave, updateListing }) {
+/**
+ * @param {Object} props
+ * @param {Object} props.listing - The listing data to edit
+ * @param {string} props.editSection - The section to edit
+ * @param {string} [props.focusField] - Optional field to focus when modal opens (e.g., 'parking', 'bedrooms')
+ * @param {Function} props.onClose - Close handler
+ * @param {Function} props.onSave - Save handler
+ * @param {Function} props.updateListing - Database update function
+ */
+export function EditListingDetails({ listing, editSection, focusField, onClose, onSave, updateListing }) {
   const {
     formData,
     isLoading,
@@ -52,6 +61,8 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
     addressError,
     showManualAddress,
     addressInputValue,
+    // Field refs for focus management
+    fieldRefs,
     inUnitAmenities,
     buildingAmenities,
     selectedRules,
@@ -85,6 +96,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
   } = useEditListingDetailsLogic({
     listing,
     editSection,
+    focusField,
     onClose,
     onSave,
     updateListing
@@ -539,6 +551,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           <div className="eld-form-field">
             <label className="eld-form-label">Max Guests Allowed</label>
             <select
+              ref={fieldRefs.maxGuests}
               className="eld-form-select"
               value={formData['Features - Qty Guests'] ?? ''}
               onChange={(e) => handleInputChange('Features - Qty Guests', e.target.value ? parseInt(e.target.value) : null)}
@@ -580,6 +593,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
             <div className="eld-form-field">
               <label className="eld-form-label">Est. square footage of room</label>
               <input
+                ref={fieldRefs.sqftRoom}
                 type="number"
                 className="eld-form-input"
                 placeholder="SQFT"
@@ -590,6 +604,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
             <div className="eld-form-field">
               <label className="eld-form-label">Est. square footage of home</label>
               <input
+                ref={fieldRefs.sqftHome}
                 type="number"
                 className="eld-form-input"
                 placeholder="SQFT"
@@ -601,6 +616,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           <div className="eld-form-field">
             <label className="eld-form-label">What type of storage do you offer?</label>
             <select
+              ref={fieldRefs.storage}
               className="eld-form-select"
               value={formData['Features - Secure Storage Option'] || ''}
               onChange={(e) => handleInputChange('Features - Secure Storage Option', e.target.value)}
@@ -614,6 +630,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           <div className="eld-form-field">
             <label className="eld-form-label">What parking options are available?</label>
             <select
+              ref={fieldRefs.parking}
               className="eld-form-select"
               value={formData['Features - Parking type'] || ''}
               onChange={(e) => handleInputChange('Features - Parking type', e.target.value)}
@@ -704,6 +721,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           <div className="eld-form-field">
             <label className="eld-form-label">Type of Space</label>
             <select
+              ref={fieldRefs.spaceType}
               className="eld-form-select"
               value={formData['Features - Type of Space'] || ''}
               onChange={(e) => handleInputChange('Features - Type of Space', e.target.value)}
@@ -718,6 +736,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
             <div className="eld-form-field">
               <label className="eld-form-label">Bedrooms*</label>
               <select
+                ref={fieldRefs.bedrooms}
                 className="eld-form-select"
                 value={formData['Features - Qty Bedrooms'] ?? ''}
                 onChange={(e) => handleInputChange('Features - Qty Bedrooms', e.target.value !== '' ? parseInt(e.target.value) : null)}
@@ -731,6 +750,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
             <div className="eld-form-field">
               <label className="eld-form-label">Beds</label>
               <select
+                ref={fieldRefs.beds}
                 className="eld-form-select"
                 value={formData['Features - Qty Beds'] ?? ''}
                 onChange={(e) => handleInputChange('Features - Qty Beds', e.target.value ? parseInt(e.target.value) : null)}
@@ -744,6 +764,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
             <div className="eld-form-field">
               <label className="eld-form-label">Bathrooms*</label>
               <select
+                ref={fieldRefs.bathrooms}
                 className="eld-form-select"
                 value={formData['Features - Qty Bathrooms'] ?? ''}
                 onChange={(e) => handleInputChange('Features - Qty Bathrooms', e.target.value ? parseFloat(e.target.value) : null)}
@@ -758,6 +779,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           <div className="eld-form-field">
             <label className="eld-form-label">Kitchen Style</label>
             <select
+              ref={fieldRefs.kitchen}
               className="eld-form-select"
               value={formData['Kitchen Type'] || ''}
               onChange={(e) => handleInputChange('Kitchen Type', e.target.value)}
@@ -798,6 +820,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
         <div className="eld-form-field">
           <label className="eld-form-label">Earliest Rent Date</label>
           <input
+            ref={fieldRefs.firstAvailable}
             type="date"
             className="eld-form-input"
             value={formData['First Available'] || ''}
@@ -808,6 +831,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           <div className="eld-form-field">
             <label className="eld-form-label">Minimum Nights</label>
             <input
+              ref={fieldRefs.minNights}
               type="number"
               className="eld-form-input"
               placeholder="Min"
@@ -818,6 +842,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
           <div className="eld-form-field">
             <label className="eld-form-label">Maximum Nights</label>
             <input
+              ref={fieldRefs.maxNights}
               type="number"
               className="eld-form-input"
               placeholder="Max"
@@ -829,6 +854,7 @@ export function EditListingDetails({ listing, editSection, onClose, onSave, upda
         <div className="eld-form-field">
           <label className="eld-form-label">Cancellation Policy</label>
           <select
+            ref={fieldRefs.cancellation}
             className="eld-form-select"
             value={formData['Cancellation Policy'] || ''}
             onChange={(e) => handleInputChange('Cancellation Policy', e.target.value)}

@@ -90,7 +90,7 @@ function EditSectionButton({ onClick, label = 'Edit' }) {
 // SECTION HEADER WITH EDIT BUTTON
 // ============================================================================
 
-function SectionHeader({ title, onEdit, editSection }) {
+function SectionHeader({ title, onEdit, editSection, focusField }) {
   return (
     <div style={{
       display: 'flex',
@@ -106,7 +106,7 @@ function SectionHeader({ title, onEdit, editSection }) {
         {title}
       </h2>
       {onEdit && (
-        <EditSectionButton onClick={() => onEdit(editSection)} />
+        <EditSectionButton onClick={() => onEdit(editSection, focusField)} />
       )}
     </div>
   );
@@ -546,6 +546,7 @@ export default function PreviewSplitLeasePage() {
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editSection, setEditSection] = useState(null);
+  const [editFocusField, setEditFocusField] = useState(null);
 
   // Booking widget state (display only - no proposal creation)
   const [moveInDate, setMoveInDate] = useState(null);
@@ -808,14 +809,16 @@ export default function PreviewSplitLeasePage() {
     }));
   };
 
-  const handleOpenEditModal = (section) => {
+  const handleOpenEditModal = (section, focusField = null) => {
     setEditSection(section);
+    setEditFocusField(focusField);
     setEditModalOpen(true);
   };
 
   const handleCloseEditModal = () => {
     setEditModalOpen(false);
     setEditSection(null);
+    setEditFocusField(null);
   };
 
   const handleSaveEdit = async (updatedListing) => {
@@ -1190,6 +1193,7 @@ export default function PreviewSplitLeasePage() {
                 title="Commute"
                 onEdit={handleOpenEditModal}
                 editSection="details"
+                focusField="parking"
               />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {listing.parkingOption && (
@@ -1911,6 +1915,7 @@ export default function PreviewSplitLeasePage() {
         <EditListingDetails
           listing={listing}
           editSection={editSection}
+          focusField={editFocusField}
           onClose={handleCloseEditModal}
           onSave={handleSaveEdit}
           updateListing={handleUpdateListing}
