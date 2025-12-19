@@ -236,7 +236,10 @@ export default function ListingDashboardPage() {
             />
 
             {/* Referral Banner */}
-            <ReferralBanner onInviteClick={() => setShowReferralModal(true)} />
+            <ReferralBanner
+              onInviteClick={() => setShowReferralModal(true)}
+              userType="host"
+            />
           </div>
         </div>
       </div>

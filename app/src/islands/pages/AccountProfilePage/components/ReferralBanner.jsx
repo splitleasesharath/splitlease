@@ -30,7 +30,7 @@ function GiftIcon() {
   );
 }
 
-export default function ReferralBanner({ onInviteClick }) {
+export default function ReferralBanner({ onInviteClick, userType = 'guest' }) {
   const handleClick = () => {
     if (onInviteClick) {
       onInviteClick();
@@ -41,6 +41,11 @@ export default function ReferralBanner({ onInviteClick }) {
     }
   };
 
+  const isHost = userType === 'host';
+  const subtext = isHost
+    ? 'When the referred host closes their first lease, the reward is unlocked'
+    : 'When they complete their first booking, the reward is unlocked';
+
   return (
     <div className="referral-banner">
       <div className="referral-banner-left">
@@ -49,7 +54,7 @@ export default function ReferralBanner({ onInviteClick }) {
         </div>
         <div className="referral-banner-text">
           <strong>Give $50, Get $50</strong>
-          <span>When they complete their first booking, the reward is unlocked</span>
+          <span>{subtext}</span>
         </div>
       </div>
       <button className="referral-banner-btn" onClick={handleClick}>
