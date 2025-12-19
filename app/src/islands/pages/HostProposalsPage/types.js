@@ -5,6 +5,8 @@
  * Based on the Bubble.io proposal schema with adaptations for the frontend.
  */
 
+import { getStatusConfig, isTerminalStatus } from '../../../logic/constants/proposalStatuses.js';
+
 /**
  * Proposal status types
  * @typedef {'proposal_submitted' | 'host_review' | 'host_counteroffer' | 'accepted' | 'lease_documents_sent' | 'lease_signed' | 'payment_submitted' | 'cancelled_by_guest' | 'rejected_by_host' | 'cancelled_by_splitlease'} ProposalStatusType
@@ -166,15 +168,21 @@ export const PROGRESS_THRESHOLDS = {
 
 /**
  * Get status tag info for display
- * @param {ProposalStatus} status - The proposal status
+ * Uses the unified status system from proposalStatuses.js for proper matching
+ *
+ * @param {string|Object} status - The proposal status (string or object with id)
  * @returns {StatusTagInfo} Status tag display information
  */
 export function getStatusTagInfo(status) {
-  const statusId = status?.id || status;
-  const usualOrder = status?.usualOrder ?? PROPOSAL_STATUSES[statusId]?.usualOrder ?? 0;
+  // Extract status key - handles both string and object formats
+  const statusKey = typeof status === 'string' ? status : (status?.id || status?._id || '');
 
-  // Cancelled statuses (usualOrder === -1)
-  if (statusId === 'cancelled_by_guest' || statusId === 'cancelled_by_splitlease' || statusId === 'rejected_by_host') {
+  // Use unified status system for proper matching
+  const statusConfig = getStatusConfig(statusKey);
+  const usualOrder = statusConfig.usualOrder ?? 0;
+
+  // Check for terminal (cancelled/rejected) states
+  if (isTerminalStatus(statusKey)) {
     return {
       text: 'Cancelled!',
       backgroundColor: '#FEE2E2',
@@ -184,7 +192,7 @@ export function getStatusTagInfo(status) {
   }
 
   // Host counteroffer - awaiting guest review
-  if (statusId === 'host_counteroffer') {
+  if (statusConfig.key === 'Host Counteroffer Submitted / Awaiting Guest Review') {
     return {
       text: 'Guest Reviewing Counteroffer',
       backgroundColor: '#FEF3C7',
@@ -193,22 +201,22 @@ export function getStatusTagInfo(status) {
     };
   }
 
-  // Pending review (usualOrder < 3 means not yet accepted)
-  if (usualOrder < 3) {
+  // Accepted states (usualOrder >= 5 in unified system)
+  if (usualOrder >= 5) {
     return {
-      text: 'Pending Review',
-      backgroundColor: '#FEF3C7',
-      textColor: '#924026',
-      icon: 'clock'
+      text: 'Accepted!',
+      backgroundColor: '#D1FAE5',
+      textColor: '#065F46',
+      icon: 'check'
     };
   }
 
-  // Default - Accepted (usualOrder >= 3)
+  // Pending review (usualOrder < 5 means not yet accepted)
   return {
-    text: 'Accepted!',
-    backgroundColor: '#D1FAE5',
-    textColor: '#065F46',
-    icon: 'check'
+    text: 'Pending Review',
+    backgroundColor: '#FEF3C7',
+    textColor: '#924026',
+    icon: 'clock'
   };
 }
 

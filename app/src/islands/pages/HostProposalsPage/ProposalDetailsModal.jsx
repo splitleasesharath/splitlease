@@ -6,8 +6,48 @@
 
 import { useState } from 'react';
 import DayIndicator from './DayIndicator.jsx';
-import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromNights, PROPOSAL_STATUSES, PROGRESS_THRESHOLDS } from './types.js';
+import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromNights, PROGRESS_THRESHOLDS } from './types.js';
 import { formatCurrency, formatDate, formatDateTime } from './formatters.js';
+import { getStatusConfig, getUsualOrder, isTerminalStatus } from '../../../logic/constants/proposalStatuses.js';
+
+/**
+ * Get host-appropriate status message based on proposal status
+ * Maps guest-facing labels to host-appropriate action messages
+ *
+ * @param {Object} statusConfig - Status configuration from getStatusConfig()
+ * @param {boolean} rentalAppSubmitted - Whether rental application has been submitted
+ * @returns {string} Host-facing status message
+ */
+function getHostStatusMessage(statusConfig, rentalAppSubmitted) {
+  const { key, usualOrder } = statusConfig;
+
+  // Map status keys to host-appropriate messages
+  const hostMessages = {
+    // Pre-acceptance states
+    'Proposal Submitted by guest - Awaiting Rental Application': 'Awaiting Guest Rental Application',
+    'Proposal Submitted for guest by Split Lease - Awaiting Rental Application': 'Awaiting Guest Rental Application',
+    'Proposal Submitted for guest by Split Lease - Pending Confirmation': 'Awaiting Guest Confirmation',
+    'Pending': 'Proposal Pending',
+    'Pending Confirmation': 'Awaiting Guest Confirmation',
+    'Host Review': rentalAppSubmitted ? 'Rental App Received - Review & Decide' : 'Under Your Review',
+    'Rental Application Submitted': 'Rental App Received - Review & Decide',
+
+    // Counteroffer states
+    'Host Counteroffer Submitted / Awaiting Guest Review': 'Counteroffer Sent - Awaiting Guest Response',
+
+    // Post-acceptance states
+    'Proposal or Counteroffer Accepted / Drafting Lease Documents': 'Accepted - Drafting Lease Documents',
+    'Reviewing Documents': 'Documents Under Review',
+    'Lease Documents Sent for Review': 'Lease Documents Sent to Guest',
+    'Lease Documents Sent for Signatures': 'Awaiting Signatures',
+    'Lease Documents Signed / Awaiting Initial payment': 'Awaiting Initial Payment',
+    'Lease Signed / Awaiting Initial Payment': 'Awaiting Initial Payment',
+    'Initial Payment Submitted / Lease activated ': 'Lease Activated!',
+  };
+
+  // Return mapped message or fallback to status label
+  return hostMessages[key] || statusConfig.label || 'Review Proposal';
+}
 
 /**
  * @param {Object} props
@@ -38,16 +78,18 @@ export default function ProposalDetailsModal({
 
   if (!proposal || !isOpen) return null;
 
-  // Get status info
-  const status = proposal.status || proposal.Status || {};
-  const statusId = status.id || status._id || status;
-  const statusConfig = PROPOSAL_STATUSES[statusId] || {};
-  const statusInfo = getStatusTagInfo(status);
+  // Get status info - use unified status system for proper matching
+  // Database stores full Bubble status strings like "Proposal Submitted by guest - Awaiting Rental Application"
+  const statusRaw = proposal.Status || proposal.status || '';
+  const statusKey = typeof statusRaw === 'string' ? statusRaw : (statusRaw?.id || statusRaw?._id || '');
+  const statusConfig = getStatusConfig(statusKey);
+  const statusInfo = getStatusTagInfo(statusRaw);
   const usualOrder = statusConfig.usualOrder ?? 0;
 
-  const isCancelled = ['cancelled_by_guest', 'cancelled_by_splitlease', 'rejected_by_host'].includes(statusId);
-  const isPending = usualOrder < 3; // Not yet accepted
-  const isAccepted = usualOrder >= 3 && !isCancelled; // Accepted or beyond
+  // Terminal states detection using the unified system
+  const isCancelled = isTerminalStatus(statusKey);
+  const isPending = usualOrder < 5 && !isCancelled; // usualOrder < 5 means not yet accepted (unified system uses 5 for accepted)
+  const isAccepted = usualOrder >= 5 && !isCancelled; // Accepted or beyond (usualOrder 5+ in unified system)
 
   // Check if rental application has been submitted (for "current" state on Host Review)
   const rentalApplication = proposal.rentalApplication || proposal['rental application'] || proposal['Rental Application'];
@@ -106,30 +148,42 @@ export default function ProposalDetailsModal({
    * - 'current': actively in progress (gray #BFBFBF) - only for Host Review when rental app submitted
    * - 'incomplete': not yet reached (light gray #EDEAF6)
    * - 'cancelled'/'rejected': proposal was cancelled/rejected (red #DB2E2E)
+   *
+   * Unified system usualOrder values:
+   * - 1-3: Pre-acceptance (Pending, Host Review, Proposal Submitted Awaiting Rental App)
+   * - 4: Host Counteroffer
+   * - 5: Accepted / Drafting Docs
+   * - 6: Lease Documents
+   * - 7: Payment Submitted / Lease Activated
    */
   const getProgressSteps = () => {
-    // Special case: Host Review is "current" (gray) when status is host_review AND rental app is submitted
-    const isHostReviewCurrent = statusId === 'host_review' && rentalAppSubmitted;
+    // Special case: Host Review is "current" (gray) when status is Host Review AND rental app is submitted
+    const isHostReviewCurrent = statusConfig.key === 'Host Review' && rentalAppSubmitted;
 
+    // Unified system thresholds (different from legacy types.js):
+    // - Rental App completed: usualOrder >= 3 (proposal submitted, awaiting or submitted rental app)
+    // - Host Review completed: usualOrder >= 5 (Accepted)
+    // - Lease Docs completed: usualOrder >= 6
+    // - Initial Payment completed: usualOrder >= 7
     return {
       proposalSubmitted: {
         completed: true, // Always completed once proposal exists
         current: false
       },
       rentalApp: {
-        completed: usualOrder >= PROGRESS_THRESHOLDS.rentalApp, // usualOrder >= 1
+        completed: usualOrder >= 3, // Rental app step is done once past "Proposal Submitted Awaiting Rental App" (usualOrder 3)
         current: false
       },
       hostReview: {
-        completed: usualOrder >= PROGRESS_THRESHOLDS.hostReview, // usualOrder >= 3 (Accepted)
-        current: isHostReviewCurrent // Gray when in host_review status with rental app submitted
+        completed: usualOrder >= 5, // Host Review completed when Accepted (usualOrder 5)
+        current: isHostReviewCurrent // Gray when in Host Review status with rental app submitted
       },
       leaseDocs: {
-        completed: usualOrder >= PROGRESS_THRESHOLDS.leaseDocs, // usualOrder >= 4
+        completed: usualOrder >= 6, // Lease docs sent
         current: false
       },
       initialPayment: {
-        completed: usualOrder >= PROGRESS_THRESHOLDS.initialPayment, // usualOrder >= 7
+        completed: usualOrder >= 7, // Payment submitted / Lease activated
         current: false
       }
     };
@@ -156,6 +210,94 @@ export default function ProposalDetailsModal({
     if (isCancelled) return 'cancelled';
     if (prevStep.completed && nextStep.completed) return 'completed';
     return '';
+  };
+
+  /**
+   * Render action buttons based on current proposal status
+   * Different statuses require different host actions
+   */
+  const renderActionButtons = () => {
+    const { key } = statusConfig;
+
+    // Awaiting rental application - host can request VM or remind guest
+    if (key === 'Proposal Submitted by guest - Awaiting Rental Application' ||
+        key === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application') {
+      return (
+        <>
+          <button
+            className="action-btn secondary"
+            onClick={() => onChooseVirtualMeeting?.(proposal, null)}
+          >
+            Request Virtual Meeting
+          </button>
+          <button
+            className="action-btn modify"
+            onClick={() => onModify?.(proposal)}
+          >
+            Review / Modify
+          </button>
+        </>
+      );
+    }
+
+    // Host counteroffer sent - waiting for guest
+    if (key === 'Host Counteroffer Submitted / Awaiting Guest Review') {
+      return (
+        <>
+          <button
+            className="action-btn secondary"
+            onClick={() => onSendMessage?.(proposal)}
+          >
+            Send Message
+          </button>
+          <button
+            className="action-btn modify"
+            onClick={() => onModify?.(proposal)}
+          >
+            See Details
+          </button>
+        </>
+      );
+    }
+
+    // Post-acceptance states
+    if (isAccepted) {
+      return (
+        <>
+          <button
+            className="action-btn secondary"
+            onClick={() => onModify?.(proposal)}
+          >
+            See Details
+          </button>
+          <button
+            className="action-btn primary"
+            onClick={() => onRemindSplitLease?.(proposal)}
+          >
+            Remind Split Lease
+          </button>
+        </>
+      );
+    }
+
+    // Default pending state (Host Review, Rental App Submitted, etc.)
+    // Host can accept, reject, or modify
+    return (
+      <>
+        <button
+          className="action-btn accept"
+          onClick={() => onAccept?.(proposal)}
+        >
+          Accept Proposal
+        </button>
+        <button
+          className="action-btn modify"
+          onClick={() => onModify?.(proposal)}
+        >
+          Review / Modify
+        </button>
+      </>
+    );
   };
 
   return (
@@ -374,7 +516,7 @@ export default function ProposalDetailsModal({
                   </div>
                 </div>
 
-                {/* Status Box */}
+                {/* Status Box - Shows host-appropriate status message */}
                 <div
                   className="status-box"
                   style={{
@@ -394,14 +536,14 @@ export default function ProposalDetailsModal({
                       <svg width="20" height="20" viewBox="0 0 20 20" fill="#065F46">
                         <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM8 15L3 10L4.41 8.59L8 12.17L15.59 4.58L17 6L8 15Z"/>
                       </svg>
-                      <span>Status: Alternative terms Accepted! Lease Documents will be sent to you via HelloSign</span>
+                      <span>Status: {statusConfig.label || 'Accepted'} - Lease Documents will be sent via HelloSign</span>
                     </>
                   ) : (
                     <>
                       <svg width="20" height="20" viewBox="0 0 20 20" fill="#924026">
                         <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z"/>
                       </svg>
-                      <span>Status: Review the Proposal</span>
+                      <span>Status: {getHostStatusMessage(statusConfig, rentalAppSubmitted)}</span>
                     </>
                   )}
                 </div>
@@ -458,7 +600,7 @@ export default function ProposalDetailsModal({
           )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons - Dynamic based on status */}
         {!isCancelled && (
           <div className="modal-actions">
             <button
@@ -467,37 +609,7 @@ export default function ProposalDetailsModal({
             >
               Reject Proposal
             </button>
-            {isPending ? (
-              <>
-                <button
-                  className="action-btn accept"
-                  onClick={() => onAccept?.(proposal)}
-                >
-                  Accept Proposal
-                </button>
-                <button
-                  className="action-btn modify"
-                  onClick={() => onModify?.(proposal)}
-                >
-                  Review / Modify
-                </button>
-              </>
-            ) : isAccepted ? (
-              <>
-                <button
-                  className="action-btn secondary"
-                  onClick={() => onModify?.(proposal)}
-                >
-                  See Details
-                </button>
-                <button
-                  className="action-btn primary"
-                  onClick={() => onRemindSplitLease?.(proposal)}
-                >
-                  Remind Split Lease
-                </button>
-              </>
-            ) : null}
+            {renderActionButtons()}
           </div>
         )}
       </div>
