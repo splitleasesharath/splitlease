@@ -1,21 +1,41 @@
 /**
  * Safety Features Service
- * Returns common safety features from predefined constants
- *
- * Note: Unlike amenities and house rules which have database reference tables,
- * safety features do not have a dedicated table in Supabase. The original code
- * queried a non-existent 'zfut_safetyfeatures' table. This service now uses
- * the predefined COMMON_SAFETY_FEATURES constant for consistency.
+ * Fetches common safety features from Supabase where pre-set is true
  */
 
-import { COMMON_SAFETY_FEATURES } from '../constants.js';
+import { supabase } from '../../../../lib/supabase.js';
 
 /**
- * Returns common safety features from predefined constants
+ * Fetches common safety features from Supabase where pre-set is true
  * @returns {Promise<string[]>} Array of safety feature names
  */
 export async function getCommonSafetyFeatures() {
-  console.log('[safetyFeaturesService] Returning common safety features from constants');
-  console.log('[safetyFeaturesService] Common safety features:', COMMON_SAFETY_FEATURES);
-  return COMMON_SAFETY_FEATURES;
+  try {
+    console.log('[safetyFeaturesService] Fetching common safety features...');
+
+    const { data, error } = await supabase
+      .schema('reference_table')
+      .from('zat_features_safetyfeature')
+      .select('Name, "pre-set?"')
+      .eq('"pre-set?"', true)
+      .order('Name', { ascending: true });
+
+    if (error) {
+      console.error('[safetyFeaturesService] Error fetching common safety features:', error);
+      return [];
+    }
+
+    if (!data || data.length === 0) {
+      console.warn('[safetyFeaturesService] No common safety features found');
+      return [];
+    }
+
+    // Extract just the names
+    const names = data.map((feature) => feature.Name);
+    console.log('[safetyFeaturesService] Fetched common safety features:', names);
+    return names;
+  } catch (err) {
+    console.error('[safetyFeaturesService] Unexpected error:', err);
+    return [];
+  }
 }

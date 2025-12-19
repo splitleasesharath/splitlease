@@ -1,14 +1,9 @@
 /**
  * Safety Features Service
- * Returns common safety features from predefined constants
- *
- * Note: Unlike amenities and house rules which have database reference tables,
- * safety features do not have a dedicated table in Supabase. The original code
- * queried a non-existent 'zfut_safetyfeatures' table. This service now uses
- * the predefined SAFETY_FEATURES constant for consistency.
+ * Fetches common safety features from Supabase where pre-set is true
  */
 
-import { SAFETY_FEATURES } from '../types/listing.types';
+import { supabase } from '../../../../lib/supabase.js';
 
 export interface SafetyFeature {
   _id: string;
@@ -17,15 +12,37 @@ export interface SafetyFeature {
   'pre-set?'?: boolean;
 }
 
-// Common safety features (subset of all safety features that are preset)
-const COMMON_SAFETY_FEATURES = ['Smoke Detector', 'Carbon Monoxide Detector', 'Fire Extinguisher'];
-
 /**
- * Returns common safety features from predefined constants
+ * Fetches common safety features from Supabase where pre-set is true
  * @returns Promise with array of safety feature names
  */
 export async function getCommonSafetyFeatures(): Promise<string[]> {
-  console.log('[safetyService] Returning common safety features from constants');
-  console.log('[safetyService] Common safety features:', COMMON_SAFETY_FEATURES);
-  return COMMON_SAFETY_FEATURES;
+  try {
+    console.log('[safetyService] Fetching common safety features...');
+
+    const { data, error } = await supabase
+      .schema('reference_table')
+      .from('zat_features_safetyfeature')
+      .select('Name, "pre-set?"')
+      .eq('"pre-set?"', true)
+      .order('Name', { ascending: true });
+
+    if (error) {
+      console.error('[safetyService] Error fetching common safety features:', error);
+      return [];
+    }
+
+    if (!data || data.length === 0) {
+      console.warn('[safetyService] No common safety features found');
+      return [];
+    }
+
+    // Extract just the names
+    const names = data.map((feature: SafetyFeature) => feature.Name);
+    console.log('[safetyService] Fetched common safety features:', names);
+    return names;
+  } catch (err) {
+    console.error('[safetyService] Unexpected error:', err);
+    return [];
+  }
 }
