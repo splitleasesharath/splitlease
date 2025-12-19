@@ -131,10 +131,16 @@ function SmsIcon() {
   );
 }
 
-export default function ReferralModal({ isOpen, onClose, referralCode = 'yourname', stats = {} }) {
+export default function ReferralModal({ isOpen, onClose, referralCode = 'yourname', stats = {}, userType = 'guest' }) {
   const [copied, setCopied] = useState(false);
 
   const referralLink = `https://splitlease.com/ref/${referralCode}`;
+  const isHost = userType === 'host';
+
+  // Different subtitle text for hosts vs guests
+  const subtitleText = isHost
+    ? "Give a friend $50 toward their first Split Lease listing. When they close their first lease, you'll get $50 too."
+    : "Give a friend $50 toward their first Split Lease booking. When they complete their first booking, you'll get $50 too.";
 
   const {
     friendsReferred = 0,
@@ -202,7 +208,7 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'yournam
         </div>
 
         <p className="referral-modal-subtitle">
-          Give a friend $50 toward their first Split Lease booking. When they complete their first booking, you'll get $50 too.
+          {subtitleText}
         </p>
 
         <div className="referral-share-section">

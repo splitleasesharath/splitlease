@@ -331,6 +331,7 @@ export default function ListingDashboardPage() {
         isOpen={showReferralModal}
         onClose={() => setShowReferralModal(false)}
         referralCode={currentUser?._id || currentUser?.id || 'user'}
+        userType="host"
       />
     </>
   );
