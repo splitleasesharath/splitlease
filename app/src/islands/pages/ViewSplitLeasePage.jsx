@@ -711,6 +711,10 @@ export default function ViewSplitLeasePage() {
   const [isSubmittingProposal, setIsSubmittingProposal] = useState(false);
   const [existingProposalForListing, setExistingProposalForListing] = useState(null);
 
+  // Custom schedule state - for users who want to specify a different recurrent pattern
+  const [customScheduleDescription, setCustomScheduleDescription] = useState('');
+  const [showCustomScheduleInput, setShowCustomScheduleInput] = useState(false);
+
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
@@ -1278,7 +1282,9 @@ export default function ViewSplitLeasePage() {
         specialNeeds: proposalData.hasUniqueRequirements ? proposalData.uniqueRequirements : '',
         moveInRangeText: proposalData.moveInRange || '',
         flexibleMoveIn: !!proposalData.moveInRange,
-        fourWeekCompensation: proposalData.pricePerFourWeeks
+        fourWeekCompensation: proposalData.pricePerFourWeeks,
+        // Custom schedule description (user's freeform schedule request)
+        customScheduleDescription: customScheduleDescription || ''
       };
 
       console.log('📋 Edge Function payload:', edgeFunctionPayload);
@@ -2405,6 +2411,70 @@ export default function ViewSplitLeasePage() {
                 onPriceChange={handlePriceChange}
                 showPricing={false}
               />
+
+              {/* Listing's weekly pattern info + custom schedule option */}
+              <div style={{
+                marginTop: '12px',
+                fontSize: '13px',
+                color: '#4B5563'
+              }}>
+                <span>This listing is </span>
+                <strong style={{ color: '#31135d' }}>
+                  {listing?.['Weeks offered'] || 'Every week'}
+                </strong>
+                <span>. </span>
+                <button
+                  onClick={() => setShowCustomScheduleInput(!showCustomScheduleInput)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#7C3AED',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    padding: 0,
+                    fontSize: '13px',
+                    fontWeight: '500'
+                  }}
+                >
+                  {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
+                </button>
+              </div>
+
+              {/* Custom schedule freeform input */}
+              {showCustomScheduleInput && (
+                <div style={{ marginTop: '10px' }}>
+                  <textarea
+                    value={customScheduleDescription}
+                    onChange={(e) => setCustomScheduleDescription(e.target.value)}
+                    placeholder="Describe your preferred schedule pattern in detail (e.g., 'I need the space every other week starting January 15th' or 'Weekdays only for the first month, then full weeks')"
+                    style={{
+                      width: '100%',
+                      minHeight: '80px',
+                      padding: '10px 12px',
+                      border: '2px solid #E5E7EB',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontFamily: 'inherit',
+                      resize: 'vertical',
+                      boxSizing: 'border-box'
+                    }}
+                    onFocus={(e) => {
+                      e.target.style.borderColor = '#7C3AED';
+                      e.target.style.outline = 'none';
+                    }}
+                    onBlur={(e) => {
+                      e.target.style.borderColor = '#E5E7EB';
+                    }}
+                  />
+                  <p style={{
+                    marginTop: '6px',
+                    fontSize: '11px',
+                    color: '#6B7280'
+                  }}>
+                    The host will review your custom schedule request and may adjust the proposal accordingly.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -3245,6 +3315,70 @@ export default function ViewSplitLeasePage() {
                       onPriceChange={handlePriceChange}
                       showPricing={false}
                     />
+
+                    {/* Listing's weekly pattern info + custom schedule option (Mobile) */}
+                    <div style={{
+                      marginTop: '12px',
+                      fontSize: '13px',
+                      color: '#4B5563'
+                    }}>
+                      <span>This listing is </span>
+                      <strong style={{ color: '#31135d' }}>
+                        {listing?.['Weeks offered'] || 'Every week'}
+                      </strong>
+                      <span>. </span>
+                      <button
+                        onClick={() => setShowCustomScheduleInput(!showCustomScheduleInput)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#7C3AED',
+                          textDecoration: 'underline',
+                          cursor: 'pointer',
+                          padding: 0,
+                          fontSize: '13px',
+                          fontWeight: '500'
+                        }}
+                      >
+                        {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
+                      </button>
+                    </div>
+
+                    {/* Custom schedule freeform input (Mobile) */}
+                    {showCustomScheduleInput && (
+                      <div style={{ marginTop: '10px' }}>
+                        <textarea
+                          value={customScheduleDescription}
+                          onChange={(e) => setCustomScheduleDescription(e.target.value)}
+                          placeholder="Describe your preferred schedule pattern in detail..."
+                          style={{
+                            width: '100%',
+                            minHeight: '80px',
+                            padding: '10px 12px',
+                            border: '2px solid #E5E7EB',
+                            borderRadius: '8px',
+                            fontSize: '14px',
+                            fontFamily: 'inherit',
+                            resize: 'vertical',
+                            boxSizing: 'border-box'
+                          }}
+                          onFocus={(e) => {
+                            e.target.style.borderColor = '#7C3AED';
+                            e.target.style.outline = 'none';
+                          }}
+                          onBlur={(e) => {
+                            e.target.style.borderColor = '#E5E7EB';
+                          }}
+                        />
+                        <p style={{
+                          marginTop: '6px',
+                          fontSize: '11px',
+                          color: '#6B7280'
+                        }}>
+                          The host will review your custom schedule request.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 

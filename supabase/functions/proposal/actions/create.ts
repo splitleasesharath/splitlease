@@ -381,6 +381,9 @@ export async function handleCreate(
     // "origin proposal of this suggestion": input.originProposalId || null,
     // "number of matches": input.numberOfMatches || null,
 
+    // Custom schedule description (user's freeform schedule request)
+    custom_schedule_description: input.customScheduleDescription || null,
+
     // Timestamps
     "Created Date": now,
     "Modified Date": now,

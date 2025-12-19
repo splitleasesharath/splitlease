@@ -60,6 +60,9 @@ export interface CreateProposalInput {
   moveInRangeText?: string;
   flexibleMoveIn?: boolean;
   numberOfMatches?: number;
+
+  // Custom schedule (user's freeform description of their preferred recurrent pattern)
+  customScheduleDescription?: string;
 }
 
 /**
