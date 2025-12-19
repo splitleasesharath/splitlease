@@ -1549,10 +1549,10 @@
 .host-referral-card {
   width: 100%;
   max-width: 460px;
-  height: 280px;
+  min-height: 280px;
   background: #ffffff;
   border-radius: 20px;
-  padding: 32px 40px;
+  padding: 32px 40px 80px 40px; /* Extra bottom padding for footer */
   position: relative;
   overflow: hidden;
   border: 3px solid #7C3AED;
