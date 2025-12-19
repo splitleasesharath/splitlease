@@ -330,28 +330,6 @@ export default function ReferralLandingPage() {
         </div>
       </section>
 
-      {/* Trust Section */}
-      <section className="referral-landing-trust">
-        <div className="referral-landing-trust__container">
-          <div className="referral-landing-trust__stat">
-            <div className="referral-landing-trust__number">200+</div>
-            <div className="referral-landing-trust__label">NYC Spaces</div>
-          </div>
-          <div className="referral-landing-trust__stat">
-            <div className="referral-landing-trust__number">2,400+</div>
-            <div className="referral-landing-trust__label">Happy Users</div>
-          </div>
-          <div className="referral-landing-trust__stat">
-            <div className="referral-landing-trust__number">$18K</div>
-            <div className="referral-landing-trust__label">Avg. Yearly Savings</div>
-          </div>
-          <div className="referral-landing-trust__stat">
-            <div className="referral-landing-trust__number">4.8</div>
-            <div className="referral-landing-trust__label">Average Rating</div>
-          </div>
-        </div>
-      </section>
-
       <Footer />
     </>
   );
