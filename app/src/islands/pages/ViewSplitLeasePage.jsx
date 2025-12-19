@@ -3095,9 +3095,7 @@ export default function ViewSplitLeasePage() {
                       color: '#374151',
                       fontWeight: '600'
                     }}>
-                      Total: {pricingBreakdown?.valid && pricingBreakdown?.reservationTotal
-                        ? formatPrice(pricingBreakdown.reservationTotal)
-                        : '—'}
+                      {selectedDays.length} {selectedDays.length === 1 ? 'day' : 'days'}, {Math.max(0, selectedDays.length - 1)} {selectedDays.length - 1 === 1 ? 'night' : 'nights'} Selected
                     </div>
                   </div>
 
