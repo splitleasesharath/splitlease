@@ -1548,14 +1548,14 @@
 
 .host-referral-card {
   width: 100%;
-  max-width: 400px;
+  max-width: 460px;
   aspect-ratio: 1.586 / 1; /* Credit card ratio */
   background: #ffffff;
-  border-radius: 16px;
-  padding: 24px 28px;
+  border-radius: 20px;
+  padding: 32px 36px;
   position: relative;
   overflow: hidden;
-  border: 2px solid #7C3AED;
+  border: 3px solid #7C3AED;
   box-shadow:
     0 10px 40px -10px rgba(124, 58, 237, 0.15),
     0 4px 20px rgba(0, 0, 0, 0.05);
@@ -1566,10 +1566,10 @@
 
 .host-referral-card__corner-accent {
   position: absolute;
-  top: -50px;
-  right: -50px;
-  width: 130px;
-  height: 130px;
+  top: -60px;
+  right: -60px;
+  width: 160px;
+  height: 160px;
   border: 2px solid rgba(124, 58, 237, 0.1);
   border-radius: 50%;
 }
@@ -1577,10 +1577,10 @@
 .host-referral-card__corner-accent::before {
   content: '';
   position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
-  bottom: 12px;
+  top: 14px;
+  left: 14px;
+  right: 14px;
+  bottom: 14px;
   border: 2px solid rgba(124, 58, 237, 0.05);
   border-radius: 50%;
 }
@@ -1589,19 +1589,19 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
 .host-referral-card__brand {
   color: #1a1a1a;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.5px;
 }
 
 .host-referral-card__amount {
   color: #7C3AED;
-  font-size: 24px;
+  font-size: 32px;
   font-weight: 700;
   letter-spacing: -0.5px;
 }
@@ -1610,28 +1610,27 @@
   flex: 1;
   display: flex;
   flex-direction: column;
-  justify-content: center;
 }
 
 .host-referral-card__sent-by {
   color: #888888;
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  margin-bottom: 4px;
+  letter-spacing: 1.5px;
+  margin-bottom: 6px;
 }
 
 .host-referral-card__name {
   color: #1a1a1a;
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 500;
   font-family: 'Playfair Display', 'Georgia', serif;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .host-referral-card__message {
   color: #666666;
-  font-size: 12px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -1640,51 +1639,51 @@
   justify-content: space-between;
   align-items: center;
   margin-top: auto;
-  padding-top: 12px;
+  padding-top: 16px;
 }
 
 .host-referral-card__valid {
   color: #999999;
-  font-size: 9px;
+  font-size: 11px;
   letter-spacing: 0.5px;
 }
 
 .host-referral-card__badge {
   background: #7C3AED;
-  padding: 6px 10px;
-  border-radius: 4px;
+  padding: 8px 14px;
+  border-radius: 6px;
 }
 
 .host-referral-card__badge-text {
   color: #ffffff;
-  font-size: 8px;
+  font-size: 10px;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.5px;
   font-weight: 500;
 }
 
 /* Host Referral Card - Mobile */
 @media (max-width: 480px) {
   .host-referral-card {
-    max-width: 320px;
-    padding: 20px;
+    max-width: 360px;
+    padding: 24px 28px;
   }
 
   .host-referral-card__amount {
-    font-size: 22px;
+    font-size: 28px;
   }
 
   .host-referral-card__name {
-    font-size: 18px;
+    font-size: 22px;
   }
 
   .host-referral-card__message {
-    font-size: 11px;
+    font-size: 13px;
   }
 
   .host-referral-card__corner-accent {
-    top: -60px;
-    right: -60px;
+    top: -50px;
+    right: -50px;
     width: 120px;
     height: 120px;
   }
