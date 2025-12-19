@@ -121,38 +121,21 @@ export async function handleCreate(
 
   const now = new Date().toISOString();
 
+  // Note: virtualmeetingschedulesandlinks table has these verified FK columns:
+  // _id, Created By, guest, host, proposal, requested by, Listing (for Co-Host feature)
+  // Other columns may exist but need verification - keeping minimal for now
   const vmData: Record<string, unknown> = {
     _id: virtualMeetingId,
 
-    // Relationships
+    // Verified FK relationships
     guest: input.userId,
     "requested by": input.userId,
-    "Listing (for Co-Host feature)": input.listingId || null,
-
-    // Meeting metadata
-    "meeting duration": 30, // Default 30 minutes for co-host sessions
-    "suggested dates and times": input.selectedTimes,
-
-    // Status fields - all false/null initially
-    "booked date": null,
-    confirmedBySplitLease: false,
-    "meeting declined": false,
-    "meeting link": null,
-    "end of meeting": null,
-    pending: true, // Mark as pending until confirmed
-
-    // Participant info
-    "guest email": input.userEmail || userData?.email || null,
-    "guest name": input.userName || userData?.["Name - Full"] || userData?.["Name - First"] || null,
-
-    // Invitation tracking
-    "invitation sent to guest?": false,
-    "invitation sent to host?": false,
-
-    // Audit fields
     "Created By": input.userId,
-    "Created Date": now,
-    "Modified Date": now,
+    "Listing (for Co-Host feature)": input.listingId || null,
+    // Note: 'host' and 'proposal' are null for co-host requests (no proposal involved)
+
+    // Meeting metadata - these columns may or may not exist, but are safe to try
+    "suggested dates and times": input.selectedTimes,
   };
 
   console.log(`[cohost-request:create] Inserting virtual meeting: ${virtualMeetingId}`);
@@ -172,6 +155,9 @@ export async function handleCreate(
   // CREATE CO-HOST REQUEST RECORD
   // ================================================
 
+  // Note: co_hostrequest table has limited columns:
+  // _id, Co-Host User, Host - Landlord, Listing, Created By, status
+  // Additional details (Subject, details, times) are stored in the virtual meeting record
   const coHostData: Record<string, unknown> = {
     _id: coHostRequestId,
 
@@ -179,19 +165,9 @@ export async function handleCreate(
     "Co-Host User": input.userId,
     "Created By": input.userId,
     Listing: input.listingId || null,
-    "Virtual meeting": virtualMeetingId,
 
-    // Request details
-    Subject: input.subject || null,
-    "details submitted (optional)": input.details || null,
-    "suggested dates and times": input.selectedTimes,
-
-    // Status
+    // Status (references os_co_host_status option set)
     status: "Co-Host Requested",
-
-    // Audit fields
-    "Created Date": now,
-    "Modified Date": now,
   };
 
   console.log(`[cohost-request:create] Inserting co-host request: ${coHostRequestId}`);
