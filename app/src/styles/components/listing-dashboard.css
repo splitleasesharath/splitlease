@@ -17,6 +17,7 @@
   min-height: 100vh;
   background-color: var(--ld-background);
   padding: 24px 16px;
+  padding-top: 100px; /* Account for fixed header */
 }
 
 .listing-dashboard__container {
