@@ -535,72 +535,68 @@ export function HostEditingProposal({
             originalValues={originalValues}
           />
 
-          {/* Confirm button after preview */}
-          <div className="hep-actions-row">
-            <button
-              type="button"
-              className="hep-btn hep-btn-primary"
-              onClick={handleConfirmFromPreview}
-              disabled={proceedButtonLocked}
-            >
-              {hasChanges() ? 'Submit Counteroffer' : 'Accept As-Is'}
-            </button>
-          </div>
+          {/* Reject Proposal Section (expanded) */}
+          {showRejectSection && (
+            <div className="hep-reject-section">
+              <div className="hep-reject-header">
+                <svg className="hep-icon-reject" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M19 7L5 7M14 11V17M10 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 7V4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span className="hep-reject-title">Reject Proposal</span>
+              </div>
+              <p className="hep-reject-warning">This action cannot be undone</p>
+              <p className="hep-reject-confirmation">
+                Are you sure you want to reject this proposal from <strong>{guestName}</strong>?
+              </p>
+              <div className="hep-form-group">
+                <textarea
+                  className="hep-input-base"
+                  placeholder="Reason for rejection (optional)"
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="hep-reject-actions">
+                <button
+                  type="button"
+                  className="hep-btn hep-btn-cancel"
+                  onClick={() => setShowRejectSection(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="hep-btn hep-btn-destructive"
+                  onClick={handleReject}
+                >
+                  Yes, Reject
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Primary Actions Row - Submit/Accept and Reject side by side */}
+          {!showRejectSection && (
+            <div className="hep-primary-actions">
+              <button
+                type="button"
+                className="hep-btn hep-btn-reject-outline"
+                onClick={() => setShowRejectSection(true)}
+              >
+                Reject Proposal
+              </button>
+              <button
+                type="button"
+                className="hep-btn hep-btn-primary hep-btn-primary-large"
+                onClick={handleConfirmFromPreview}
+                disabled={proceedButtonLocked}
+              >
+                {hasChanges() ? 'Submit Edits' : 'Accept As-Is'}
+              </button>
+            </div>
+          )}
         </>
-      )}
-
-      {/* Reject Proposal Section */}
-      {showRejectSection && (
-        <div className="hep-reject-section">
-          <div className="hep-reject-header">
-            <svg className="hep-icon-reject" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 7L5 7M14 11V17M10 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 7V4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span className="hep-reject-title">Reject Proposal</span>
-          </div>
-          <p className="hep-reject-warning">This action cannot be undone</p>
-          <p className="hep-reject-confirmation">
-            Are you sure you want to reject this proposal from <strong>{guestName}</strong>?
-          </p>
-          <div className="hep-form-group">
-            <textarea
-              className="hep-input-base"
-              placeholder="Reason for rejection (optional)"
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-              rows={3}
-            />
-          </div>
-          <div className="hep-reject-actions">
-            <button
-              type="button"
-              className="hep-btn hep-btn-cancel"
-              onClick={() => setShowRejectSection(false)}
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              className="hep-btn hep-btn-destructive"
-              onClick={handleReject}
-            >
-              Yes, Reject
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Reject Button (outside of reject section) */}
-      {!showRejectSection && (
-        <div className="hep-actions-row">
-          <button
-            type="button"
-            className="hep-btn hep-btn-cancel hep-btn-reject"
-            onClick={() => setShowRejectSection(true)}
-          >
-            Reject Proposal
-          </button>
-        </div>
       )}
 
       {/* Confirmation Popup */}
