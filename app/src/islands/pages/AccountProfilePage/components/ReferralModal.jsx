@@ -195,7 +195,7 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'yournam
             <WhatsAppIcon /> WhatsApp
           </button>
           <button className="referral-secondary-btn" onClick={handleTwitter}>
-            <TwitterIcon /> X
+            <TwitterIcon /> Twitter
           </button>
           <button className="referral-secondary-btn" onClick={handleFacebook}>
             <FacebookIcon /> Facebook
