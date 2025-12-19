@@ -1548,8 +1548,8 @@
 
 .host-referral-card {
   width: 100%;
-  max-width: 414px; /* 460px - 10% */
-  aspect-ratio: 1.586 / 1; /* Credit card ratio */
+  max-width: 414px;
+  aspect-ratio: 1.75 / 1; /* Wider ratio - 10% shorter */
   background: #ffffff;
   border-radius: 18px;
   padding: 28px 32px;
