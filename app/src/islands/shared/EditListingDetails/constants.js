@@ -43,10 +43,12 @@ export const COMMON_RULES = ['Quiet Hours', 'No Smoking Inside', 'No Pets', 'Loc
 
 export const COMMON_SAFETY_FEATURES = ['Smoke Detector', 'Carbon Monoxide Detector', 'Fire Extinguisher'];
 
+// Space type options with FK IDs matching reference_table.zat_features_listingtype
+// These IDs are stored in listing."Features - Type of Space" column
 export const SPACE_TYPES = [
-  { value: 'Private Room', label: 'Private Room' },
-  { value: 'Entire place', label: 'Entire place' },
-  { value: 'Shared room', label: 'Shared room' }
+  { value: '1569530159044x216130979074711000', label: 'Private Room' },
+  { value: '1569530331984x152755544104023800', label: 'Entire Place' },
+  { value: '1585742011301x719941865479153400', label: 'Shared Room' }
 ];
 
 export const KITCHEN_TYPES = [
