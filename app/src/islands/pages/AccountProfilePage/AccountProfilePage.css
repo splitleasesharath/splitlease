@@ -1449,7 +1449,11 @@
 .referral-share-actions {
   display: flex;
   gap: 10px;
-  margin: 16px 0;
+  margin: 8px 0;
+}
+
+.referral-share-actions:first-of-type {
+  margin-top: 16px;
 }
 
 .referral-secondary-btn {
