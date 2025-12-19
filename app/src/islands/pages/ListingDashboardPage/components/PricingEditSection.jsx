@@ -407,6 +407,12 @@ export default function PricingEditSection({
         const bubbleDays = selectedNights.map((n) => nightMap[n]).sort();
         updates['Days Available (List of Days)'] = JSON.stringify(bubbleDays);
 
+        // Preserve 1-night rate if available (primarily set during listing creation)
+        // Note: Dashboard currently doesn't have UI to edit 1-night rate directly
+        if (listing?.pricing?.[1]) {
+          updates['💰Nightly Host Rate for 1 night'] = listing.pricing[1];
+        }
+
         // Calculate nightly rates from weekly compensation
         updates['💰Nightly Host Rate for 2 nights'] = calculateNightlyRate(
           nightlyPricing[2],

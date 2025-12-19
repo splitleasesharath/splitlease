@@ -338,6 +338,7 @@ function getActualWeeksDuring4Week(weeksOffered) {
 function getNightlyRateForNights(nightsCount, listing) {
   // Map nights to price fields
   const priceFieldMap = {
+    1: listing.nightlyHostRateFor1Night || listing['💰Nightly Host Rate for 1 night'],
     2: listing.nightlyHostRateFor2Nights || listing['💰Nightly Host Rate for 2 nights'],
     3: listing.nightlyHostRateFor3Nights || listing['💰Nightly Host Rate for 3 nights'],
     4: listing.nightlyHostRateFor4Nights || listing['💰Nightly Host Rate for 4 nights'],

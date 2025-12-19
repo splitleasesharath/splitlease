@@ -294,6 +294,7 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
     nightsAvailable, // Night IDs for HostScheduleSelector
 
     pricing: {
+      1: dbListing['💰Nightly Host Rate for 1 night'] || 0,
       2: dbListing['💰Nightly Host Rate for 2 nights'] || 0,
       3: dbListing['💰Nightly Host Rate for 3 nights'] || 0,
       4: dbListing['💰Nightly Host Rate for 4 nights'] || 0,
@@ -303,6 +304,7 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
     },
 
     weeklyCompensation: {
+      1: (dbListing['💰Nightly Host Rate for 1 night'] || 0) * 1,
       2: (dbListing['💰Nightly Host Rate for 2 nights'] || 0) * 2,
       3: (dbListing['💰Nightly Host Rate for 3 nights'] || 0) * 3,
       4: (dbListing['💰Nightly Host Rate for 4 nights'] || 0) * 4,

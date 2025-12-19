@@ -214,6 +214,9 @@ function mapFieldsToSupabase(data: ListingSubmissionData): Record<string, unknow
   }
 
   // Map nightly prices
+  if (data['Price 1 night selected'] !== undefined) {
+    mapped['💰Nightly Host Rate for 1 night'] = data['Price 1 night selected'];
+  }
   if (data['Price 2 nights selected'] !== undefined) {
     mapped['💰Nightly Host Rate for 2 nights'] = data['Price 2 nights selected'];
   }
