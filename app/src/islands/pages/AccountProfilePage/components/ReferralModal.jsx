@@ -131,7 +131,36 @@ function SmsIcon() {
   );
 }
 
-export default function ReferralModal({ isOpen, onClose, referralCode = 'yourname', stats = {}, userType = 'guest' }) {
+// Host Referral Gift Card Component
+function HostReferralCard({ hostName }) {
+  return (
+    <div className="host-referral-card">
+      <div className="host-referral-card__corner-accent"></div>
+
+      <div className="host-referral-card__header">
+        <div className="host-referral-card__brand">SPLIT LEASE</div>
+        <div className="host-referral-card__amount">$50</div>
+      </div>
+
+      <div className="host-referral-card__content">
+        <div className="host-referral-card__sent-by">Referred by</div>
+        <div className="host-referral-card__name">{hostName}</div>
+        <div className="host-referral-card__message">
+          Welcome to hosting. This bonus is yours when you close your first lease. List your space and start earning.
+        </div>
+      </div>
+
+      <div className="host-referral-card__footer">
+        <div className="host-referral-card__valid">Unlocked after first closed lease</div>
+        <div className="host-referral-card__badge">
+          <span className="host-referral-card__badge-text">Host Bonus</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function ReferralModal({ isOpen, onClose, referralCode = 'yourname', stats = {}, userType = 'guest', hostName = '' }) {
   const [copied, setCopied] = useState(false);
 
   const referralLink = `https://splitlease.com/ref/${referralCode}`;
@@ -210,6 +239,11 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'yournam
         <p className="referral-modal-subtitle">
           {subtitleText}
         </p>
+
+        {/* Host Referral Card - only shown for hosts with a name */}
+        {isHost && hostName && (
+          <HostReferralCard hostName={hostName} />
+        )}
 
         <div className="referral-share-section">
           <label>Your referral link</label>
