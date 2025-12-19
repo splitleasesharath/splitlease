@@ -9,6 +9,7 @@ import { getCommonHouseRules } from './services/houseRulesService';
 import { getCommonSafetyFeatures } from './services/safetyFeaturesService';
 import { getCommonInUnitAmenities, getCommonBuildingAmenities } from './services/amenitiesService';
 import { getNeighborhoodByZipCode, getNeighborhoodDescriptionWithFallback } from './services/neighborhoodService';
+import { getBoroughIdByName } from './services/boroughService';
 import { uploadPhoto } from '../../../lib/photoUpload';
 import { isValidServiceArea, getBoroughForZipCode, NYC_BOUNDS, isHudsonCountyNJ } from '../../../lib/nycZipCodes';
 
@@ -437,6 +438,21 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
         showToast('No changes to save');
         setTimeout(onClose, 500);
         return;
+      }
+
+      // Convert borough display name to FK ID if borough was changed
+      // The database expects a foreign key ID, not the display name
+      if (changedFields['Location - Borough']) {
+        const boroughName = changedFields['Location - Borough'];
+        const boroughId = await getBoroughIdByName(boroughName);
+        if (boroughId) {
+          changedFields['Location - Borough'] = boroughId;
+          console.log('📍 Converted borough name to ID:', boroughName, '->', boroughId);
+        } else {
+          // If we can't find the borough ID, don't save this field to avoid FK errors
+          console.warn('⚠️ Could not find borough ID for:', boroughName, '- skipping borough update');
+          delete changedFields['Location - Borough'];
+        }
       }
 
       console.log('📝 Saving only changed fields:', Object.keys(changedFields));

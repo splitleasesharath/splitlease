@@ -258,7 +258,7 @@ export default function ListingDashboardPage() {
             'Location - City': listing.location?.city,
             'Location - State': listing.location?.state,
             'Location - Zip Code': listing.location?.zipCode,
-            'Location - Borough': listing.location?.hoodsDisplay,
+            'Location - Borough': listing.location?.boroughDisplay,
             'Location - Hood': listing.location?.hoodsDisplay,
             'Features - Type of Space': listing.features?.typeOfSpace?.id,
             'Features - Qty Bedrooms': listing.features?.bedrooms,

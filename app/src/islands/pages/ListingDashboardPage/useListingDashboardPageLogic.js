@@ -8,6 +8,7 @@ import { getCommonSafetyFeatures } from '../../shared/EditListingDetails/service
 import { getCommonInUnitAmenities, getCommonBuildingAmenities } from '../../shared/EditListingDetails/services/amenitiesService';
 import { getNeighborhoodByZipCode, getNeighborhoodByName } from '../../shared/EditListingDetails/services/neighborhoodService';
 import { generateNeighborhoodDescription } from '../../../lib/aiService';
+import { getBoroughForZipCode } from '../../../lib/nycZipCodes';
 
 /**
  * Safely parse a JSON string or return the value if already an array
@@ -228,6 +229,8 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
       id: listingId,
       address: locationAddress.address || dbListing['Not Found - Location - Address '] || '',
       hoodsDisplay: dbListing['Location - Hood'] || '',
+      // Resolve borough display name from zip code (since DB stores FK ID)
+      boroughDisplay: getBoroughForZipCode(dbListing['Location - Zip Code']) || '',
       city: dbListing['Location - City'] || '',
       state: dbListing['Location - State'] || '',
       zipCode: dbListing['Location - Zip Code'] || '',
