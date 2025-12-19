@@ -108,8 +108,11 @@
   display: flex;
   gap: 16px;
   overflow-x: auto;
+  overflow-y: visible;
   -webkit-overflow-scrolling: touch;
   flex: 1;
+  padding-top: 8px; /* Space for badge overflow */
+  margin-top: -8px; /* Compensate for padding */
 }
 
 .listing-dashboard-nav__tab {

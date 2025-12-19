@@ -163,17 +163,6 @@ export default function NavigationHeader({ activeTab, onTabChange, counts, onBac
 
   return (
     <div className="listing-dashboard-nav">
-      {/* Back Button */}
-      <div className="listing-dashboard-nav__back">
-        <button
-          className="listing-dashboard-nav__back-btn"
-          onClick={onBackClick}
-        >
-          <ArrowLeftIcon />
-          <span>All Listings</span>
-        </button>
-      </div>
-
       {/* Tabs Row - Tabs on left, Invite on right */}
       <div className="listing-dashboard-nav__tabs-row">
         {/* Tab Navigation */}
