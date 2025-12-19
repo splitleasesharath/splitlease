@@ -874,24 +874,24 @@
     flex-shrink: 0;
 }
 
-/* Price Sidebar - Right Side (Clean Layout) */
+/* Price Sidebar - Right Side (F7b Layout with subtle background) */
 .listing-price-sidebar {
-    width: 140px;
-    background: transparent;
+    width: 150px;
+    background: #f9f7fc;
     padding: 16px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     text-align: center;
-    border-left: none;
+    border-left: 1px solid #f0e6ff;
     flex-shrink: 0;
     cursor: pointer;
     transition: background 0.2s;
 }
 
 .listing-price-sidebar:hover {
-    background: rgba(49, 19, 93, 0.03);
+    background: #f3eef8;
 }
 
 .listing-price-sidebar .price-main {
