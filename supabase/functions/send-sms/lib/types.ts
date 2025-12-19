@@ -1,33 +1,18 @@
 /**
  * Type definitions for send-sms Edge Function
  * Split Lease
+ *
+ * Direct Twilio proxy - no templates, just forward to/from/body
  */
 
 // Request payload for send action
 export interface SendSmsPayload {
-  template_id: string;           // ID of SMS template in database
-  to_phone: string;              // Recipient phone in E.164 format (+15551234567)
-  from_phone?: string;           // Sender phone (optional, uses default Twilio number)
-  variables: Record<string, string>;  // Key-value pairs for placeholder replacement
+  to: string;     // Recipient phone in E.164 format (+15551234567)
+  from: string;   // Sender phone in E.164 format
+  body: string;   // SMS message content
 }
 
-// SMS template from database (table: zat_sms_template)
-export interface SmsTemplate {
-  _id: string;
-  Name?: string;
-  'Message Content'?: string;    // The SMS template with {{ placeholders }}
-  'From Phone'?: string;         // Default from phone number
-}
-
-// Twilio API request body (form-urlencoded, not JSON)
-export interface TwilioSmsRequest {
-  To: string;
-  From: string;
-  Body: string;
-  StatusCallback?: string;
-}
-
-// Twilio API response
+// Twilio API response wrapper
 export interface TwilioResponse {
   statusCode: number;
   body?: TwilioMessageResponse | TwilioErrorResponse | string;
@@ -76,8 +61,8 @@ export type TwilioMessageStatus =
 // Result from send action
 export interface SendSmsResult {
   message_sid?: string;
-  template_id: string;
-  to_phone: string;
+  to: string;
+  from: string;
   status: 'queued' | 'failed';
   sent_at: string;
 }
