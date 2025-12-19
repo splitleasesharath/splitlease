@@ -1566,3 +1566,259 @@
     }
 }
 
+/* ========================================
+   Desktop Layout - Restore Original Card Style
+   The new card design is for mobile only.
+   On desktop, restore the classic horizontal layout with:
+   - Location above title
+   - Meta items as bordered pills
+   - Host avatar with name and styled buttons
+   - Price sidebar on the right
+   ======================================== */
+@media (min-width: 769px) {
+    /* Restore original content layout order: location → title → meta */
+    .listing-info-top {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .listing-location {
+        order: 1;
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .listing-location svg {
+        color: #31135D;
+    }
+
+    .location-text {
+        font-size: 12px;
+    }
+
+    .listing-title {
+        order: 2;
+        font-size: 17px;
+        margin-bottom: 6px;
+    }
+
+    /* Restore meta section as bordered pill badges */
+    .listing-meta {
+        display: flex;
+        gap: 16px;
+        padding: 12px 0;
+        border-top: 1px solid #f0f0f0;
+        border-bottom: 1px solid #f0f0f0;
+        margin: 12px 0;
+        order: 3;
+    }
+
+    .listing-meta .meta-item {
+        display: inline;
+        font-size: 13px;
+        color: #555;
+        background: none;
+        border: none;
+        padding: 0;
+    }
+
+    .listing-meta .meta-item::after {
+        display: none;
+    }
+
+    .listing-meta .meta-item strong {
+        color: #111;
+        font-weight: 600;
+    }
+
+    /* Hide inline-price on desktop (shown in sidebar instead) */
+    .listing-host-section .inline-price {
+        display: none;
+    }
+
+    /* Restore host section with avatar visible */
+    .listing-host-section {
+        gap: 10px;
+        margin-top: 8px;
+        padding-top: 0;
+    }
+
+    .listing-host-section .host-profile {
+        order: 1;
+        gap: 10px;
+    }
+
+    .listing-host-section .host-avatar {
+        display: block;
+        width: 36px;
+        height: 36px;
+    }
+
+    .listing-host-section .host-avatar-placeholder {
+        display: flex;
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #6C5CE7 0%, #8A7FF9 100%);
+        color: white;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+    }
+
+    .listing-host-section .host-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: #424242;
+    }
+
+    .listing-host-section .host-name::before {
+        display: none;
+    }
+
+    .listing-host-section .verified-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 14px;
+        height: 14px;
+        background: #4A90E2;
+        border-radius: 50%;
+        color: white;
+        font-size: 10px;
+    }
+
+    /* Restore action buttons as side-by-side styled buttons */
+    .listing-host-section .action-buttons {
+        order: 2;
+    }
+
+    .listing-host-section .action-button {
+        flex: 1;
+        padding: 10px 16px;
+        justify-content: center;
+    }
+
+    .listing-host-section .action-button svg {
+        display: inline;
+    }
+
+    .listing-host-section .action-button.primary {
+        background: #6C5CE7;
+    }
+
+    .listing-host-section .action-button.primary:hover {
+        background: #7C6CF7;
+        box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+    }
+
+    .listing-host-section .action-button.secondary {
+        background: white;
+        color: #6C5CE7;
+        border: 2px solid #6C5CE7;
+    }
+
+    .listing-host-section .action-button.secondary:hover {
+        background: #F0F4FF;
+        box-shadow: 0 2px 4px rgba(108, 92, 231, 0.15);
+    }
+
+    /* Restore proposal buttons styles */
+    .listing-host-section .create-proposal-btn {
+        gap: 0.375rem;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .listing-host-section .create-proposal-btn:hover {
+        background: #4c1d95;
+        transform: translateY(-1px);
+        box-shadow: none;
+    }
+
+    .listing-host-section .create-proposal-btn svg {
+        display: inline;
+    }
+
+    .listing-host-section .view-proposal-btn {
+        background: #10b981;
+        gap: 0.375rem;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .listing-host-section .view-proposal-btn:hover {
+        background: #047857;
+        transform: translateY(-1px);
+        box-shadow: none;
+    }
+
+    .listing-host-section .view-proposal-btn svg {
+        display: inline;
+    }
+
+    /* SHOW Price Sidebar on Desktop */
+    .listing-price-sidebar {
+        display: flex;
+        width: 140px;
+        background: transparent;
+        padding: 16px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        border-left: none;
+        flex-shrink: 0;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .listing-price-sidebar:hover {
+        background: rgba(49, 19, 93, 0.03);
+    }
+
+    .listing-price-sidebar .price-main {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1a1a1a;
+        line-height: 1;
+    }
+
+    .listing-price-sidebar .price-period {
+        font-size: 13px;
+        color: #666;
+        margin-top: 2px;
+    }
+
+    .listing-price-sidebar .price-divider {
+        display: none;
+    }
+
+    .listing-price-sidebar .price-starting {
+        font-size: 12px;
+        color: #888;
+        margin-top: 8px;
+        line-height: 1.3;
+    }
+
+    .listing-price-sidebar .price-starting span {
+        display: block;
+        font-weight: 500;
+    }
+
+    .listing-price-sidebar .price-context {
+        font-size: 12px;
+        color: #888;
+        margin-top: 8px;
+    }
+
+    .listing-price-sidebar .availability-note {
+        font-size: 11px;
+        color: #999;
+        margin-top: 12px;
+        line-height: 1.4;
+    }
+}
+
