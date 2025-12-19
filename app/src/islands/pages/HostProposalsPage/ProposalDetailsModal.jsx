@@ -24,8 +24,8 @@ function getHostStatusMessage(statusConfig, rentalAppSubmitted) {
   // Map status keys to host-appropriate messages
   const hostMessages = {
     // Pre-acceptance states
-    'Proposal Submitted by guest - Awaiting Rental Application': 'Awaiting Guest Rental Application',
-    'Proposal Submitted for guest by Split Lease - Awaiting Rental Application': 'Awaiting Guest Rental Application',
+    'Proposal Submitted by guest - Awaiting Rental Application': 'Request Rental App Submission',
+    'Proposal Submitted for guest by Split Lease - Awaiting Rental Application': 'Request Rental App Submission',
     'Proposal Submitted for guest by Split Lease - Pending Confirmation': 'Awaiting Guest Confirmation',
     'Pending': 'Proposal Pending',
     'Pending Confirmation': 'Awaiting Guest Confirmation',
@@ -90,6 +90,10 @@ export default function ProposalDetailsModal({
   const isCancelled = isTerminalStatus(statusKey);
   const isPending = usualOrder < 5 && !isCancelled; // usualOrder < 5 means not yet accepted (unified system uses 5 for accepted)
   const isAccepted = usualOrder >= 5 && !isCancelled; // Accepted or beyond (usualOrder 5+ in unified system)
+
+  // Special state: Awaiting rental app submission - show in green as positive action
+  const isAwaitingRentalApp = statusConfig.key === 'Proposal Submitted by guest - Awaiting Rental Application' ||
+                              statusConfig.key === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application';
 
   // Check if rental application has been submitted (for "current" state on Host Review)
   const rentalApplication = proposal.rentalApplication || proposal['rental application'] || proposal['Rental Application'];
@@ -462,9 +466,12 @@ export default function ProposalDetailsModal({
                 <div className="progress-tracker">
                   {/* Row 1: Circles and connecting lines (no gaps) */}
                   <div className="progress-tracker-line">
-                    {/* Step 1: Proposal Submitted */}
+                    {/* Step 1: Proposal Submitted - Green when awaiting rental app */}
                     <div className={`progress-step ${getStepClass(progress.proposalSubmitted)}`}>
-                      <div className="step-circle"></div>
+                      <div
+                        className="step-circle"
+                        style={isAwaitingRentalApp ? { backgroundColor: '#065F46' } : undefined}
+                      ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.proposalSubmitted, progress.rentalApp)}`}></div>
 
@@ -517,11 +524,14 @@ export default function ProposalDetailsModal({
                 </div>
 
                 {/* Status Box - Shows host-appropriate status message */}
+                {/* Green for: accepted OR awaiting rental app (positive action state) */}
+                {/* Yellow for: other pending states */}
+                {/* Red for: cancelled/rejected */}
                 <div
                   className="status-box"
                   style={{
-                    backgroundColor: isCancelled ? '#FEE2E2' : (isAccepted ? '#D1FAE5' : '#FEF3C7'),
-                    borderColor: isCancelled ? '#991B1B' : (isAccepted ? '#065F46' : '#924026')
+                    backgroundColor: isCancelled ? '#FEE2E2' : ((isAccepted || isAwaitingRentalApp) ? '#D1FAE5' : '#FEF3C7'),
+                    borderColor: isCancelled ? '#991B1B' : ((isAccepted || isAwaitingRentalApp) ? '#065F46' : '#924026')
                   }}
                 >
                   {isCancelled ? (
@@ -537,6 +547,13 @@ export default function ProposalDetailsModal({
                         <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM8 15L3 10L4.41 8.59L8 12.17L15.59 4.58L17 6L8 15Z"/>
                       </svg>
                       <span>Status: {statusConfig.label || 'Accepted'} - Lease Documents will be sent via HelloSign</span>
+                    </>
+                  ) : isAwaitingRentalApp ? (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="#065F46">
+                        <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM8 15L3 10L4.41 8.59L8 12.17L15.59 4.58L17 6L8 15Z"/>
+                      </svg>
+                      <span>Status: {getHostStatusMessage(statusConfig, rentalAppSubmitted)}</span>
                     </>
                   ) : (
                     <>
