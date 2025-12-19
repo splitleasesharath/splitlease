@@ -826,10 +826,48 @@ export default function PreviewSplitLeasePage() {
   };
 
   const handleUpdateListing = async (id, updates) => {
-    // TODO: Implement API call to update listing
-    console.log('Updating listing:', id, updates);
-    // For now, just return the updates
-    return { ...listing, ...updates };
+    console.log('📝 Updating listing:', id, updates);
+
+    // Map UI field names to database column names (handles quirky column names with leading spaces)
+    const fieldMapping = {
+      'First Available': ' First Available', // DB column has leading space
+    };
+
+    // Transform updates to use correct database column names
+    const dbUpdates = {};
+    for (const [key, value] of Object.entries(updates)) {
+      const dbColumnName = fieldMapping[key] || key;
+      dbUpdates[dbColumnName] = value;
+    }
+
+    console.log('📋 DB updates:', dbUpdates);
+
+    // Perform the update
+    const { error: updateError } = await supabase
+      .from('listing')
+      .update(dbUpdates)
+      .eq('_id', id);
+
+    if (updateError) {
+      console.error('❌ Error updating listing:', updateError);
+      console.error('❌ Error details:', updateError.code, updateError.message, updateError.details, updateError.hint);
+      throw updateError;
+    }
+
+    // Fetch the updated row separately for reliable data retrieval
+    const { data, error: fetchError } = await supabase
+      .from('listing')
+      .select('*')
+      .eq('_id', id)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.warn('⚠️ Update succeeded but failed to fetch updated data:', fetchError);
+      return { _id: id, ...dbUpdates };
+    }
+
+    console.log('✅ Listing updated:', data);
+    return data;
   };
 
   const scrollToSection = (sectionRef, shouldZoomMap = false) => {
