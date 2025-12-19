@@ -153,24 +153,42 @@ export async function createCoHostRequest(data) {
       return formatDateForBubble(slot.dateTime);
     });
 
+    // Log the payload for debugging
+    const payload = {
+      userId: data.userId,
+      userEmail: data.userEmail,
+      userName: data.userName,
+      listingId: data.listingId || null,
+      selectedTimes: formattedTimes,
+      subject: data.subject || '',
+      details: data.details || '',
+    };
+    console.log('[cohostService] Sending payload:', payload);
+
     const { data: response, error } = await supabase.functions.invoke('cohost-request', {
       body: {
         action: 'create',
-        payload: {
-          userId: data.userId,
-          userEmail: data.userEmail,
-          userName: data.userName,
-          listingId: data.listingId || null,
-          selectedTimes: formattedTimes,
-          subject: data.subject || '',
-          details: data.details || '',
-        },
+        payload,
       },
     });
 
+    // Log full response for debugging
+    console.log('[cohostService] Response:', response);
+    console.log('[cohostService] Error:', error);
+
     if (error) {
       console.error('[cohostService] Error creating request:', error);
+      // Try to get more details from the response
+      if (response) {
+        console.error('[cohostService] Response with error:', response);
+      }
       return { success: false, error: error.message || 'Failed to create request' };
+    }
+
+    // Check if the response indicates failure
+    if (response && response.success === false) {
+      console.error('[cohostService] Edge Function returned error:', response.error);
+      return { success: false, error: response.error || 'Failed to create request' };
     }
 
     // Handle Edge Function response format { success: true, data: { ... } }

@@ -39,6 +39,7 @@ export function useHostProposalsPageLogic() {
   const [proposals, setProposals] = useState([]);
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditingProposal, setIsEditingProposal] = useState(false);
 
   // ============================================================================
   // UI STATE
@@ -513,13 +514,106 @@ export function useHostProposalsPageLogic() {
   }, [selectedListing, handleCloseModal]);
 
   /**
-   * Handle modify proposal - open edit flow
+   * Handle modify proposal - open HostEditingProposal component
    */
   const handleModifyProposal = useCallback((proposal) => {
-    const guest = proposal.guest || proposal.Guest || proposal['Created By'] || {};
-    const guestName = guest.firstName || guest['First Name'] || 'Guest';
-    alert(`Opening review/modify for proposal from ${guestName}`);
-    // TODO: Navigate to edit proposal page or open edit modal
+    setSelectedProposal(proposal);
+    setIsModalOpen(false); // Close the details modal
+    setIsEditingProposal(true); // Open the editing view
+  }, []);
+
+  /**
+   * Handle closing the editing view
+   */
+  const handleCloseEditing = useCallback(() => {
+    setIsEditingProposal(false);
+    setSelectedProposal(null);
+  }, []);
+
+  /**
+   * Handle accept proposal as-is from editing view
+   */
+  const handleAcceptAsIs = useCallback(async (proposal) => {
+    await handleAcceptProposal(proposal);
+    setIsEditingProposal(false);
+  }, [handleAcceptProposal]);
+
+  /**
+   * Handle counteroffer submission from editing view
+   */
+  const handleCounteroffer = useCallback(async (counterofferData) => {
+    try {
+      // Use proposal Edge Function to create counteroffer
+      const { data, error } = await supabase.functions.invoke('proposal', {
+        body: {
+          action: 'counteroffer',
+          payload: {
+            proposalId: selectedProposal._id || selectedProposal.id,
+            ...counterofferData
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Refresh proposals
+      if (selectedListing) {
+        const proposalsResult = await fetchProposalsForListing(selectedListing._id || selectedListing.id);
+        setProposals(proposalsResult);
+      }
+
+      setIsEditingProposal(false);
+      setSelectedProposal(null);
+      alert('Counteroffer sent successfully!');
+      console.log('[useHostProposalsPageLogic] Counteroffer sent:', selectedProposal._id);
+
+    } catch (err) {
+      console.error('Failed to send counteroffer:', err);
+      alert('Failed to send counteroffer. Please try again.');
+    }
+  }, [selectedProposal, selectedListing]);
+
+  /**
+   * Handle reject from editing view
+   */
+  const handleRejectFromEditing = useCallback(async (proposal, reason) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('proposal', {
+        body: {
+          action: 'update',
+          payload: {
+            proposalId: proposal._id || proposal.id,
+            status: 'Declined',
+            rejectionReason: reason
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Refresh proposals
+      if (selectedListing) {
+        const proposalsResult = await fetchProposalsForListing(selectedListing._id || selectedListing.id);
+        setProposals(proposalsResult);
+      }
+
+      setIsEditingProposal(false);
+      setSelectedProposal(null);
+      alert('Proposal rejected.');
+      console.log('[useHostProposalsPageLogic] Proposal rejected from editing:', proposal._id);
+
+    } catch (err) {
+      console.error('Failed to reject proposal:', err);
+      alert('Failed to reject proposal. Please try again.');
+    }
+  }, [selectedListing]);
+
+  /**
+   * Handle alert notifications from editing component
+   */
+  const handleEditingAlert = useCallback((message, type = 'info') => {
+    // For now, use simple alert. Can be replaced with toast system later.
+    alert(message);
   }, []);
 
   /**
@@ -587,6 +681,7 @@ export function useHostProposalsPageLogic() {
     proposals,
     selectedProposal,
     isModalOpen,
+    isEditingProposal,
 
     // UI state
     isLoading,
@@ -604,6 +699,13 @@ export function useHostProposalsPageLogic() {
     handleRemindSplitLease,
     handleChooseVirtualMeeting,
     handleEditListing,
-    handleRetry
+    handleRetry,
+
+    // Editing handlers
+    handleCloseEditing,
+    handleAcceptAsIs,
+    handleCounteroffer,
+    handleRejectFromEditing,
+    handleEditingAlert
   };
 }

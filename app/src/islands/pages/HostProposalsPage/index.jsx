@@ -22,6 +22,7 @@ import { useHostProposalsPageLogic } from './useHostProposalsPageLogic.js';
 import ListingSelector from './ListingSelector.jsx';
 import ProposalGrid from './ProposalGrid.jsx';
 import ProposalDetailsModal from './ProposalDetailsModal.jsx';
+import { HostEditingProposal } from '../../shared/HostEditingProposal/index.js';
 
 // ============================================================================
 // LOADING STATE COMPONENT
@@ -69,6 +70,7 @@ export default function HostProposalsPage() {
     proposals,
     selectedProposal,
     isModalOpen,
+    isEditingProposal,
 
     // UI state
     isLoading,
@@ -86,7 +88,14 @@ export default function HostProposalsPage() {
     handleRemindSplitLease,
     handleChooseVirtualMeeting,
     handleEditListing,
-    handleRetry
+    handleRetry,
+
+    // Editing handlers
+    handleCloseEditing,
+    handleAcceptAsIs,
+    handleCounteroffer,
+    handleRejectFromEditing,
+    handleEditingAlert
   } = useHostProposalsPageLogic();
 
   // Don't render content if redirecting (auth failed)
@@ -161,6 +170,23 @@ export default function HostProposalsPage() {
         onRemindSplitLease={handleRemindSplitLease}
         onChooseVirtualMeeting={handleChooseVirtualMeeting}
       />
+
+      {/* Host Editing Proposal Modal */}
+      {isEditingProposal && selectedProposal && (
+        <div className="editing-proposal-overlay">
+          <div className="editing-proposal-container">
+            <HostEditingProposal
+              proposal={selectedProposal}
+              availableHouseRules={selectedListing?.houseRules || []}
+              onAcceptAsIs={() => handleAcceptAsIs(selectedProposal)}
+              onCounteroffer={handleCounteroffer}
+              onReject={(reason) => handleRejectFromEditing(selectedProposal, reason)}
+              onCancel={handleCloseEditing}
+              onAlert={handleEditingAlert}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }
