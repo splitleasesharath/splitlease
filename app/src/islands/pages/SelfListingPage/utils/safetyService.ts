@@ -1,4 +1,14 @@
-import { supabase } from '../../../../lib/supabase.js';
+/**
+ * Safety Features Service
+ * Returns common safety features from predefined constants
+ *
+ * Note: Unlike amenities and house rules which have database reference tables,
+ * safety features do not have a dedicated table in Supabase. The original code
+ * queried a non-existent 'zfut_safetyfeatures' table. This service now uses
+ * the predefined SAFETY_FEATURES constant for consistency.
+ */
+
+import { SAFETY_FEATURES } from '../types/listing.types';
 
 export interface SafetyFeature {
   _id: string;
@@ -7,38 +17,15 @@ export interface SafetyFeature {
   'pre-set?'?: boolean;
 }
 
+// Common safety features (subset of all safety features that are preset)
+const COMMON_SAFETY_FEATURES = ['Smoke Detector', 'Carbon Monoxide Detector', 'Fire Extinguisher'];
+
 /**
- * Fetches common safety features from Supabase where pre-set is true
+ * Returns common safety features from predefined constants
  * @returns Promise with array of safety feature names
  */
 export async function getCommonSafetyFeatures(): Promise<string[]> {
-  try {
-    console.log('Fetching common safety features...');
-
-    const { data, error } = await supabase
-      .from('zfut_safetyfeatures')
-      .select('Name, "pre-set?"')
-      .eq('"pre-set?"', true)
-      .order('Name', { ascending: true });
-
-    console.log('Supabase safety features response:', { data, error });
-
-    if (error) {
-      console.error('Error fetching common safety features:', error);
-      return [];
-    }
-
-    if (!data || data.length === 0) {
-      console.warn('No common safety features found');
-      return [];
-    }
-
-    // Extract just the names
-    const names = data.map((feature) => feature.Name);
-    console.log('Fetched common safety features:', names);
-    return names;
-  } catch (err) {
-    console.error('Unexpected error in getCommonSafetyFeatures:', err);
-    return [];
-  }
+  console.log('[safetyService] Returning common safety features from constants');
+  console.log('[safetyService] Common safety features:', COMMON_SAFETY_FEATURES);
+  return COMMON_SAFETY_FEATURES;
 }
