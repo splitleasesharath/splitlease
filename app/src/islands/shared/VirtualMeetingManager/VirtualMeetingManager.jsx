@@ -15,6 +15,7 @@ import CancelVirtualMeetings from './CancelVirtualMeetings.jsx';
 import DetailsOfProposalAndVM from './DetailsOfProposalAndVM.jsx';
 import VMRequestSuccessModal from './VMRequestSuccessModal.jsx';
 import './VirtualMeetingManager.css';
+import '../../pages/AccountProfilePage/AccountProfilePage.css'; // For ReferralModal card styles
 
 /**
  * ViewState type: 'respond' | 'request' | 'cancel' | 'details' | ''
@@ -224,6 +225,22 @@ export default function VirtualMeetingManager({
     return proposal.host?.name || proposal.host?.firstName || 'the host';
   };
 
+  /**
+   * Get current user's first name for referral modal
+   */
+  const getCurrentUserName = () => {
+    return currentUser?.['Name - First'] || currentUser?.firstName || currentUser?.name || '';
+  };
+
+  /**
+   * Get user type (host or guest)
+   */
+  const getUserType = () => {
+    const isHost = currentUser?.typeUserSignup === 'host' ||
+                   currentUser?.type_user_signup === 'host';
+    return isHost ? 'host' : 'guest';
+  };
+
   const virtualMeeting = getVirtualMeeting();
 
   // Show success modal if active
@@ -234,6 +251,8 @@ export default function VirtualMeetingManager({
         onClose={handleSuccessModalClose}
         hostName={getHostName()}
         referralCode={currentUser?._id || currentUser?.id || 'user'}
+        referrerName={getCurrentUserName()}
+        userType={getUserType()}
       />
     );
   }

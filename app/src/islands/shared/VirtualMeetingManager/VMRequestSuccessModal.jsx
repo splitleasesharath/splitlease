@@ -75,7 +75,9 @@ export default function VMRequestSuccessModal({
   isOpen,
   onClose,
   hostName = 'the host',
-  referralCode = 'user'
+  referralCode = 'user',
+  referrerName = '',
+  userType = 'guest'
 }) {
   const [showReferralModal, setShowReferralModal] = useState(false);
 
@@ -102,6 +104,8 @@ export default function VMRequestSuccessModal({
         isOpen={true}
         onClose={handleReferralClose}
         referralCode={referralCode}
+        userType={userType}
+        referrerName={referrerName}
       />
     );
   }

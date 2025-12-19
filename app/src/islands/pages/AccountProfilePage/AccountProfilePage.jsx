@@ -211,6 +211,7 @@ export default function AccountProfilePage() {
             totalRewards: logic.profileData?.['Total Rewards'] || 0
           }}
           userType={logic.isHostUser ? 'host' : 'guest'}
+          referrerName={logic.profileData?.['Name - First'] || logic.profileData?.firstName || ''}
         />
 
         <Footer />

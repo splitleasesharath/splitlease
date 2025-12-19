@@ -131,8 +131,19 @@ function SmsIcon() {
   );
 }
 
-// Host Referral Gift Card Component
-function HostReferralCard({ hostName }) {
+// Referral Gift Card Component - works for both host and guest
+function ReferralCard({ referrerName, isHost }) {
+  // Dynamic text based on user type
+  const cardMessage = isHost
+    ? "This bonus is yours when you close your first lease. List your space and start earning."
+    : "This bonus is yours when you complete your first booking. Find your perfect space today.";
+
+  const footerText = isHost
+    ? "Unlocked after first closed lease"
+    : "Unlocked after first booking";
+
+  const badgeText = isHost ? "Host Bonus" : "Guest Bonus";
+
   return (
     <div className="host-referral-card">
       <div className="host-referral-card__corner-accent"></div>
@@ -144,23 +155,23 @@ function HostReferralCard({ hostName }) {
 
       <div className="host-referral-card__content">
         <div className="host-referral-card__sent-by">Referred by</div>
-        <div className="host-referral-card__name">{hostName}</div>
+        <div className="host-referral-card__name">{referrerName}</div>
         <div className="host-referral-card__message">
-          This bonus is yours when you close your first lease. List your space and start earning.
+          {cardMessage}
         </div>
       </div>
 
       <div className="host-referral-card__footer">
-        <div className="host-referral-card__valid">Unlocked after first closed lease</div>
+        <div className="host-referral-card__valid">{footerText}</div>
         <div className="host-referral-card__badge">
-          <span className="host-referral-card__badge-text">Host Bonus</span>
+          <span className="host-referral-card__badge-text">{badgeText}</span>
         </div>
       </div>
     </div>
   );
 }
 
-export default function ReferralModal({ isOpen, onClose, referralCode = 'yourname', stats = {}, userType = 'guest', hostName = '' }) {
+export default function ReferralModal({ isOpen, onClose, referralCode = 'yourname', stats = {}, userType = 'guest', referrerName = '' }) {
   const [copied, setCopied] = useState(false);
 
   const referralLink = `https://splitlease.com/ref/${referralCode}`;
@@ -240,9 +251,9 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'yournam
           {subtitleText}
         </p>
 
-        {/* Host Referral Card - only shown for hosts with a name */}
-        {isHost && hostName && (
-          <HostReferralCard hostName={hostName} />
+        {/* Referral Card - shown when referrer name is provided */}
+        {referrerName && (
+          <ReferralCard referrerName={referrerName} isHost={isHost} />
         )}
 
         <div className="referral-share-section">

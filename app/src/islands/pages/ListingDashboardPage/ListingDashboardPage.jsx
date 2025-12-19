@@ -333,7 +333,7 @@ export default function ListingDashboardPage() {
         onClose={() => setShowReferralModal(false)}
         referralCode={currentUser?._id || currentUser?.id || 'user'}
         userType="host"
-        hostName={currentUser?.['Name - First'] || currentUser?.firstName || currentUser?.name || ''}
+        referrerName={currentUser?.['Name - First'] || currentUser?.firstName || currentUser?.name || ''}
       />
     </>
   );
