@@ -24,6 +24,7 @@ import {
   CancellationPolicySection,
 } from './components';
 import '../../../styles/components/listing-dashboard.css';
+import '../AccountProfilePage/AccountProfilePage.css'; // For ReferralModal styles
 
 export default function ListingDashboardPage() {
   const [showReferralModal, setShowReferralModal] = useState(false);
