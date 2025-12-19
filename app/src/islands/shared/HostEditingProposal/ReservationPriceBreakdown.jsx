@@ -1,30 +1,46 @@
 /**
- * ReservationPriceBreakdown - Displays pricing and schedule details
+ * ReservationPriceBreakdown - Displays pricing and schedule details for hosts
  *
- * Shows proposal details with highlighting for changed values
+ * Shows proposal details with highlighting for changed values.
+ * Host-focused: displays compensation only, not guest pricing.
  */
 
-import { formatCurrency, formatDate } from './types'
+import { formatCurrency, formatDate, getDayName } from './types'
+
+/**
+ * Convert day index (string or number) to day name
+ * Handles both "0" (string) and 0 (number) formats from database
+ */
+function formatDayDisplay(dayValue) {
+  if (dayValue === null || dayValue === undefined) return ''
+
+  // If it's already a day name (e.g., "Sunday"), return as-is
+  if (typeof dayValue === 'string' && isNaN(parseInt(dayValue, 10))) {
+    return dayValue
+  }
+
+  // Convert index to day name
+  const index = typeof dayValue === 'string' ? parseInt(dayValue, 10) : dayValue
+  return getDayName(index) || dayValue
+}
 
 /**
  * ReservationPriceBreakdown Component
  *
+ * Host-focused breakdown showing compensation details only.
+ * Guest pricing (price per night, total price, etc.) is intentionally excluded.
+ *
  * @param {Object} props
  * @param {Date} props.moveInDate - Move-in date
- * @param {string} props.checkInDay - Check-in day name
- * @param {string} props.checkOutDay - Check-out day name
+ * @param {string|number} props.checkInDay - Check-in day (name or 0-based index)
+ * @param {string|number} props.checkOutDay - Check-out day (name or 0-based index)
  * @param {Object} props.reservationSpan - Reservation span object
  * @param {number} props.weeksReservationSpan - Number of weeks
  * @param {Array} props.houseRules - Array of house rules
  * @param {string[]} props.nightsSelected - Array of selected night names
  * @param {number} props.nightlyCompensation - Nightly compensation amount
- * @param {number} props.nightlyPrice - Nightly price
  * @param {number} props.totalCompensation - Total compensation
- * @param {number} props.totalPrice - Total price
  * @param {number} props.hostCompensationPer4Weeks - Host compensation per 4 weeks
- * @param {number} props.pricePer4Weeks - Price per 4 weeks
- * @param {number} props.damageDeposit - Damage deposit
- * @param {number} props.cleaningFee - Cleaning/maintenance fee
  * @param {boolean} props.isVisible - Whether component is visible
  * @param {Object} props.originalValues - Original values for comparison
  */
@@ -37,13 +53,8 @@ export function ReservationPriceBreakdown({
   houseRules = [],
   nightsSelected = [],
   nightlyCompensation = 0,
-  nightlyPrice = 0,
   totalCompensation = 0,
-  totalPrice = 0,
   hostCompensationPer4Weeks = 0,
-  pricePer4Weeks = 0,
-  damageDeposit = 0,
-  cleaningFee = 0,
   isVisible = true,
   originalValues
 }) {
@@ -124,9 +135,9 @@ export function ReservationPriceBreakdown({
       <div className={getRowClass(hasChanged.checkInDay)}>
         <span className="hep-breakdown-row-label">Check-in</span>
         <span className="hep-breakdown-row-value">
-          {checkInDay}
+          {formatDayDisplay(checkInDay)}
           {hasChanged.checkInDay && originalValues?.checkInDay && (
-            <span className="hep-original-value">was: {originalValues.checkInDay}</span>
+            <span className="hep-original-value">was: {formatDayDisplay(originalValues.checkInDay)}</span>
           )}
         </span>
       </div>
@@ -134,9 +145,9 @@ export function ReservationPriceBreakdown({
       <div className={getRowClass(hasChanged.checkOutDay)}>
         <span className="hep-breakdown-row-label">Check-out</span>
         <span className="hep-breakdown-row-value">
-          {checkOutDay}
+          {formatDayDisplay(checkOutDay)}
           {hasChanged.checkOutDay && originalValues?.checkOutDay && (
-            <span className="hep-original-value">was: {originalValues.checkOutDay}</span>
+            <span className="hep-original-value">was: {formatDayDisplay(originalValues.checkOutDay)}</span>
           )}
         </span>
       </div>
@@ -196,20 +207,6 @@ export function ReservationPriceBreakdown({
         </span>
       </div>
 
-      <div className="hep-breakdown-row">
-        <span className="hep-breakdown-row-label">Compensation/night</span>
-        <span className="hep-breakdown-row-value">
-          {formatCurrency(nightlyCompensation)}
-        </span>
-      </div>
-
-      <div className="hep-breakdown-row">
-        <span className="hep-breakdown-row-label">Price per night</span>
-        <span className="hep-breakdown-row-value">
-          {formatCurrency(nightlyPrice)}
-        </span>
-      </div>
-
       <div className={getRowClass(schedulingChanged)}>
         <span className="hep-breakdown-row-label">Nights reserved</span>
         <span className="hep-breakdown-row-value">
@@ -222,17 +219,17 @@ export function ReservationPriceBreakdown({
         </span>
       </div>
 
-      <div className={getRowClass(schedulingChanged)}>
-        <span className="hep-breakdown-row-label">Total Compensation</span>
+      <div className="hep-breakdown-row">
+        <span className="hep-breakdown-row-label">Compensation/night</span>
         <span className="hep-breakdown-row-value">
-          {formatCurrency(totalCompensation)}
+          {formatCurrency(nightlyCompensation)}
         </span>
       </div>
 
       <div className={getRowClass(schedulingChanged)}>
-        <span className="hep-breakdown-row-label">Total Price</span>
+        <span className="hep-breakdown-row-label">Total Compensation</span>
         <span className="hep-breakdown-row-value">
-          {formatCurrency(totalPrice)}
+          {formatCurrency(totalCompensation)}
         </span>
       </div>
 
@@ -242,32 +239,6 @@ export function ReservationPriceBreakdown({
           {formatCurrency(hostCompensationPer4Weeks)}
         </span>
       </div>
-
-      <div className={`hep-breakdown-row hep-breakdown-row-highlight${schedulingChanged ? ' hep-breakdown-row-changed' : ''}`}>
-        <span className="hep-breakdown-row-label">Price per 4 weeks</span>
-        <span className="hep-breakdown-row-value">
-          {formatCurrency(pricePer4Weeks)}
-        </span>
-      </div>
-
-      <div className="hep-breakdown-row">
-        <span className="hep-breakdown-row-label">Refundable Damage Deposit</span>
-        <span className="hep-breakdown-row-value">
-          {formatCurrency(damageDeposit)}
-        </span>
-      </div>
-
-      <div className="hep-breakdown-row">
-        <span className="hep-breakdown-row-label">Maintenance Fee</span>
-        <span className="hep-breakdown-row-value">
-          {formatCurrency(cleaningFee)}
-        </span>
-      </div>
-
-      <p className="hep-breakdown-footnote">
-        *Refundable Damage Deposit is collected before move-in and returned after
-        checkout if no damages occur.
-      </p>
     </div>
   )
 }

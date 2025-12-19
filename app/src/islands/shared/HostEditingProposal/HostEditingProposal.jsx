@@ -228,15 +228,13 @@ export function HostEditingProposal({
   // Calculate approximate move-out date
   const approxMoveOut = addWeeks(editedMoveInDate, editedWeeks)
 
-  // Calculate pricing (simplified - in production integrate with pricing logic)
+  // Calculate host compensation (host-facing view, no guest pricing)
   const nightsPerWeek = editedNightsSelected.length
   const totalNights = nightsPerWeek * editedWeeks
   const nightlyPrice = getProposalValue('proposalNightlyPrice', 0) ||
                        getProposalValue('proposal nightly price', 0) || 100
-  const nightlyCompensation = nightlyPrice * 0.85 // Example: 85% goes to host
-  const totalPrice = nightlyPrice * totalNights
+  const nightlyCompensation = nightlyPrice * 0.85 // 85% goes to host
   const totalCompensation = nightlyCompensation * totalNights
-  const pricePer4Weeks = editedWeeks > 0 ? (totalPrice / editedWeeks) * 4 : 0
   const compensationPer4Weeks = editedWeeks > 0 ? (totalCompensation / editedWeeks) * 4 : 0
 
   // Handlers
@@ -523,13 +521,8 @@ export function HostEditingProposal({
             houseRules={editedHouseRules}
             nightsSelected={editedNightsSelected}
             nightlyCompensation={nightlyCompensation}
-            nightlyPrice={nightlyPrice}
             totalCompensation={totalCompensation}
-            totalPrice={totalPrice}
             hostCompensationPer4Weeks={compensationPer4Weeks}
-            pricePer4Weeks={pricePer4Weeks}
-            damageDeposit={getProposalValue('damageDeposit', 0) || getProposalValue('damage deposit', 0)}
-            cleaningFee={getProposalValue('cleaningFee', 0) || getProposalValue('cleaning fee', 0)}
             isVisible={true}
             originalValues={originalValues}
           />
