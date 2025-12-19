@@ -74,8 +74,8 @@ export default function PricingEditSection({
   });
 
   // Weekly pricing
-  const [weeksOffered, setWeeksOffered] = useState('');
-  const [weeklyRate, setWeeklyRate] = useState(listing?.weeklyRate || 0);
+  const [weeksOffered, setWeeksOffered] = useState(listing?.weeksOffered || '');
+  const [weeklyRate, setWeeklyRate] = useState(listing?.weeklyHostRate || 0);
 
   // Monthly pricing
   const [monthlyRate, setMonthlyRate] = useState(listing?.monthlyHostRate || 0);
@@ -857,6 +857,17 @@ export default function PricingEditSection({
               </div>
             </div>
           )}
+
+          {/* Bottom Save Button - More intuitive placement */}
+          <div className="pricing-edit-footer">
+            <button
+              className={`pricing-edit-save-bottom ${!isFormValid() ? 'pricing-edit-save-bottom--disabled' : ''}`}
+              onClick={handleSave}
+              disabled={!isFormValid() || isSaving}
+            >
+              {isSaving ? 'Saving...' : getSaveButtonText()}
+            </button>
+          </div>
         </div>
       </div>
 

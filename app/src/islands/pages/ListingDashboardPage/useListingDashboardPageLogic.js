@@ -314,6 +314,8 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
     damageDeposit: dbListing['💰Damage Deposit'] || 0,
     maintenanceFee: dbListing['💰Cleaning Cost / Maintenance Fee'] || 0,
     monthlyHostRate: dbListing['💰Monthly Host Rate'] || 0,
+    weeklyHostRate: dbListing['💰Weekly Host Rate'] || 0,
+    weeksOffered: dbListing['Weeks offered'] || '',
 
     // Availability
     leaseTermMin: dbListing['Minimum Weeks'] || 6,
