@@ -1269,7 +1269,7 @@
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2f6fed, #4aa8ff);
+  background: linear-gradient(135deg, var(--sl-primary), var(--sl-primary-light));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1300,7 +1300,7 @@
 }
 
 .referral-banner-btn {
-  background: #2f6fed;
+  background: var(--sl-primary);
   color: #ffffff;
   border: none;
   border-radius: 12px;
@@ -1313,7 +1313,7 @@
 }
 
 .referral-banner-btn:hover {
-  background: #255cd4;
+  background: var(--sl-primary-dark);
   transform: translateY(-1px);
 }
 
