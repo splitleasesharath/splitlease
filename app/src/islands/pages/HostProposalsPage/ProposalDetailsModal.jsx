@@ -196,6 +196,21 @@ export default function ProposalDetailsModal({
   const progress = getProgressSteps();
 
   /**
+   * Determine which step is the "last completed" (rightmost filled dot)
+   * This step will be shown in green to indicate current progress
+   */
+  const getLastCompletedStep = () => {
+    if (progress.initialPayment.completed) return 'initialPayment';
+    if (progress.leaseDocs.completed) return 'leaseDocs';
+    if (progress.hostReview.completed) return 'hostReview';
+    if (progress.rentalApp.completed) return 'rentalApp';
+    if (progress.proposalSubmitted.completed) return 'proposalSubmitted';
+    return null;
+  };
+
+  const lastCompletedStep = getLastCompletedStep();
+
+  /**
    * Get CSS class for a progress step
    * Priority: cancelled > completed > current > (default incomplete)
    */
@@ -204,6 +219,13 @@ export default function ProposalDetailsModal({
     if (step.completed) return 'completed';
     if (step.current) return 'current';
     return '';
+  };
+
+  /**
+   * Check if a step should be shown in green (last completed step)
+   */
+  const isLastCompleted = (stepName) => {
+    return !isCancelled && lastCompletedStep === stepName;
   };
 
   /**
@@ -466,36 +488,48 @@ export default function ProposalDetailsModal({
                 <div className="progress-tracker">
                   {/* Row 1: Circles and connecting lines (no gaps) */}
                   <div className="progress-tracker-line">
-                    {/* Step 1: Proposal Submitted - Green when awaiting rental app */}
+                    {/* Step 1: Proposal Submitted */}
                     <div className={`progress-step ${getStepClass(progress.proposalSubmitted)}`}>
                       <div
                         className="step-circle"
-                        style={isAwaitingRentalApp ? { backgroundColor: '#065F46' } : undefined}
+                        style={isLastCompleted('proposalSubmitted') ? { backgroundColor: '#065F46' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.proposalSubmitted, progress.rentalApp)}`}></div>
 
                     {/* Step 2: Rental Application */}
                     <div className={`progress-step ${getStepClass(progress.rentalApp)}`}>
-                      <div className="step-circle"></div>
+                      <div
+                        className="step-circle"
+                        style={isLastCompleted('rentalApp') ? { backgroundColor: '#065F46' } : undefined}
+                      ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.rentalApp, progress.hostReview)}`}></div>
 
                     {/* Step 3: Host Review */}
                     <div className={`progress-step ${getStepClass(progress.hostReview)}`}>
-                      <div className="step-circle"></div>
+                      <div
+                        className="step-circle"
+                        style={isLastCompleted('hostReview') ? { backgroundColor: '#065F46' } : undefined}
+                      ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.hostReview, progress.leaseDocs)}`}></div>
 
                     {/* Step 4: Lease Documents */}
                     <div className={`progress-step ${getStepClass(progress.leaseDocs)}`}>
-                      <div className="step-circle"></div>
+                      <div
+                        className="step-circle"
+                        style={isLastCompleted('leaseDocs') ? { backgroundColor: '#065F46' } : undefined}
+                      ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.leaseDocs, progress.initialPayment)}`}></div>
 
                     {/* Step 5: Initial Payment */}
                     <div className={`progress-step ${getStepClass(progress.initialPayment)}`}>
-                      <div className="step-circle"></div>
+                      <div
+                        className="step-circle"
+                        style={isLastCompleted('initialPayment') ? { backgroundColor: '#065F46' } : undefined}
+                      ></div>
                     </div>
                   </div>
 
