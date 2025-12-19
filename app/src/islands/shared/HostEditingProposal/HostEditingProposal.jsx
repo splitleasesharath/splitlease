@@ -22,7 +22,8 @@ import {
   getCheckInDay,
   getCheckOutDay,
   nightsToDays,
-  nightNamesToIndices
+  nightNamesToIndices,
+  nightIndicesToNames
 } from './types'
 import { ReservationPriceBreakdown } from './ReservationPriceBreakdown'
 import { ScheduleSelector } from './ScheduleSelector'
@@ -58,6 +59,7 @@ export function HostEditingProposal({
   const [proceedButtonLocked, setProceedButtonLocked] = useState(false)
 
   // Extract proposal data with fallbacks
+  // Handles both camelCase and database field names (with spaces)
   const getProposalDate = (field, fallback = null) => {
     const value = proposal?.[field] || proposal?.[field.replace(/([A-Z])/g, ' $1').trim()]
     if (!value) return fallback ? new Date(fallback) : new Date()
@@ -70,24 +72,66 @@ export function HostEditingProposal({
            fallback
   }
 
+  /**
+   * Extract nights selected from proposal, handling multiple formats:
+   * - Database: "Nights Selected (Nights list)" = [0, 5] (indices)
+   * - Alternative: "nightsSelected" = ['Sunday Night', 'Friday Night'] (names)
+   * Returns array of night names for component use
+   */
+  const extractNightsSelected = () => {
+    // Try database format first: array of indices
+    const nightIndices = proposal?.['Nights Selected (Nights list)']
+    if (Array.isArray(nightIndices) && nightIndices.length > 0 && typeof nightIndices[0] === 'number') {
+      return nightIndicesToNames(nightIndices)
+    }
+    // Try camelCase format (already names)
+    const nightNames = proposal?.nightsSelected
+    if (Array.isArray(nightNames) && nightNames.length > 0) {
+      return nightNames
+    }
+    // Default fallback
+    return ['Monday Night', 'Tuesday Night', 'Wednesday Night', 'Thursday Night']
+  }
+
+  /**
+   * Extract check-in day from proposal
+   */
+  const extractCheckInDay = () => {
+    return proposal?.['check in day'] || proposal?.checkInDay || 'Monday'
+  }
+
+  /**
+   * Extract check-out day from proposal
+   */
+  const extractCheckOutDay = () => {
+    return proposal?.['check out day'] || proposal?.checkOutDay || 'Friday'
+  }
+
+  /**
+   * Extract reservation span weeks from proposal
+   */
+  const extractReservationSpanWeeks = () => {
+    return proposal?.['Reservation Span (Weeks)'] || proposal?.reservationSpanWeeks || 8
+  }
+
   // Form state - holds edited values
   const [editedMoveInDate, setEditedMoveInDate] = useState(() =>
     getProposalDate('moveInRangeStart', proposal?.['Move in range start'])
   )
   const [editedReservationSpan, setEditedReservationSpan] = useState(() =>
-    findReservationSpanByWeeks(getProposalValue('reservationSpanWeeks', 8)) || RESERVATION_SPANS[2]
+    findReservationSpanByWeeks(extractReservationSpanWeeks()) || RESERVATION_SPANS[2]
   )
   const [editedWeeks, setEditedWeeks] = useState(() =>
-    getProposalValue('reservationSpanWeeks', 8)
+    extractReservationSpanWeeks()
   )
   const [editedCheckInDay, setEditedCheckInDay] = useState(() =>
-    getProposalValue('checkInDay', 'Monday')
+    extractCheckInDay()
   )
   const [editedCheckOutDay, setEditedCheckOutDay] = useState(() =>
-    getProposalValue('checkOutDay', 'Friday')
+    extractCheckOutDay()
   )
   const [editedNightsSelected, setEditedNightsSelected] = useState(() =>
-    getProposalValue('nightsSelected', ['Monday Night', 'Tuesday Night', 'Wednesday Night', 'Thursday Night'])
+    extractNightsSelected()
   )
   const [editedDaysSelected, setEditedDaysSelected] = useState(() =>
     getProposalValue('daysSelected', ['Monday', 'Tuesday', 'Wednesday', 'Thursday'])
@@ -306,15 +350,15 @@ export function HostEditingProposal({
   const guestName = `${guest?.firstName || guest?.['First Name'] || ''} ${guest?.lastName || guest?.['Last Name'] || ''}`.trim() || 'Guest'
   const listingTitle = listing?.title || listing?.Name || 'Listing'
 
-  // Get original values for comparison
+  // Get original values for comparison (using the same extraction functions as form initialization)
   const originalValues = {
     moveInDate: getProposalDate('moveInRangeStart', proposal?.['Move in range start']),
-    checkInDay: getProposalValue('checkInDay', 'Monday'),
-    checkOutDay: getProposalValue('checkOutDay', 'Friday'),
-    reservationSpan: findReservationSpanByWeeks(getProposalValue('reservationSpanWeeks', 8)),
-    weeksReservationSpan: getProposalValue('reservationSpanWeeks', 8),
+    checkInDay: extractCheckInDay(),
+    checkOutDay: extractCheckOutDay(),
+    reservationSpan: findReservationSpanByWeeks(extractReservationSpanWeeks()),
+    weeksReservationSpan: extractReservationSpanWeeks(),
     houseRules: getProposalValue('houseRules', []),
-    nightsSelected: getProposalValue('nightsSelected', [])
+    nightsSelected: extractNightsSelected()
   }
 
   return (
