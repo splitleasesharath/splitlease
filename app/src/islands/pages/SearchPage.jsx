@@ -549,6 +549,25 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
   // Get listing ID for FavoriteButton
   const favoriteListingId = listing.id || listing._id;
 
+  // Get availability message - hardcoded variety for now
+  const getAvailabilityMessage = () => {
+    const id = listing.id || listing._id || '';
+    // Use a simple hash of the listing ID to deterministically assign messages
+    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const messageIndex = hash % 4;
+
+    const messages = [
+      { text: 'Available in 1 week', className: 'availability-soon' },
+      { text: 'Available in 2 weeks', className: 'availability-soon' },
+      { text: 'Available in 3 weeks', className: 'availability-later' },
+      { text: 'Message Split Lease\nfor Availability', className: '' },
+    ];
+
+    return messages[messageIndex];
+  };
+
+  const availabilityInfo = getAvailabilityMessage();
+
   // Calculate dynamic price based on selected nights from day selector
   // Uses the same calculatePrice function as View Split Lease page
   const calculateDynamicPrice = () => {
@@ -833,7 +852,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
           ) : (
             <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
           )}
-          <div className="availability-note">Message Split Lease<br/>for Availability</div>
+          <div className={`availability-note ${availabilityInfo.className}`}>{availabilityInfo.text.split('\n').map((line, i) => i === 0 ? line : <><br key={i}/>{line}</>)}</div>
         </div>
       </div>
     </a>

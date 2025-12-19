@@ -936,6 +936,15 @@
     line-height: 1.4;
 }
 
+.listing-price-sidebar .availability-note.availability-soon {
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.listing-price-sidebar .availability-note.availability-later {
+    color: #d97706;
+}
+
 /* Legacy listing-info (for compatibility) */
 .listing-info {
     flex: 0 1 auto;
