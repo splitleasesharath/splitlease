@@ -314,6 +314,17 @@ export const routes = [
     protected: false,
     cloudflareInternal: false,
     hasDynamicSegment: false
+  },
+
+  // ===== DEMO/PROTOTYPE PAGES =====
+  {
+    path: '/referral-demo',
+    file: 'referral-demo.html',
+    aliases: ['/referral-demo.html'],
+    protected: false,
+    cloudflareInternal: false,
+    hasDynamicSegment: false,
+    devOnly: true
   }
 ];
 
