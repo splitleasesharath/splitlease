@@ -316,12 +316,74 @@ export default function PricingEditSection({
     return 'Save';
   };
 
+  // Build a human-readable list of what changed
+  const getChangeSummary = () => {
+    const changes = [];
+    const originalLeaseStyle = listing?.leaseStyle || 'Nightly';
+
+    // Check lease style change
+    if (selectedRentalType !== originalLeaseStyle) {
+      changes.push(`Lease style: ${originalLeaseStyle} → ${selectedRentalType}`);
+    }
+
+    // Check common fields
+    if (damageDeposit !== (listing?.damageDeposit || 500)) {
+      changes.push(`Damage deposit: $${listing?.damageDeposit || 500} → $${damageDeposit}`);
+    }
+    if (maintenanceFee !== (listing?.maintenanceFee || 125)) {
+      changes.push(`Maintenance fee: $${listing?.maintenanceFee || 125} → $${maintenanceFee}`);
+    }
+
+    // Rental-type specific changes
+    if (selectedRentalType === 'Nightly') {
+      const originalNights = listing?.nightsAvailable || [];
+      if (selectedNights.length !== originalNights.length ||
+          !selectedNights.every((n) => originalNights.includes(n))) {
+        changes.push(`Available nights updated (${selectedNights.length} nights)`);
+      }
+      if (minNights !== (listing?.nightsPerWeekMin || 2) ||
+          maxNights !== (listing?.nightsPerWeekMax || 7)) {
+        changes.push(`Nights range: ${minNights}-${maxNights}`);
+      }
+      // Check if any pricing changed
+      const originalComp = listing?.weeklyCompensation || {};
+      const pricingChanged = [2, 3, 4, 5].some(
+        (n) => nightlyPricing[n] !== (originalComp[n] || 0)
+      );
+      if (pricingChanged) {
+        changes.push('Nightly rates updated');
+      }
+    } else if (selectedRentalType === 'Weekly') {
+      if (weeklyRate !== (listing?.weeklyHostRate || 0)) {
+        changes.push(`Weekly rate: $${weeklyRate}/week`);
+      }
+      if (weeksOffered !== (listing?.weeksOffered || '')) {
+        const patternLabels = {
+          '1': '1 week on/off',
+          '2': '2 weeks on/off',
+          '3': '1 on, 3 off',
+          'custom': 'Custom',
+        };
+        changes.push(`Weekly pattern: ${patternLabels[weeksOffered] || weeksOffered}`);
+      }
+    } else if (selectedRentalType === 'Monthly') {
+      if (monthlyRate !== (listing?.monthlyHostRate || 0)) {
+        changes.push(`Monthly rate: $${monthlyRate}/month`);
+      }
+    }
+
+    return changes;
+  };
+
   // Handle save
   const handleSave = async () => {
     if (!isFormValid()) return;
 
     setIsSaving(true);
     try {
+      // Get change summary before saving
+      const changeSummary = getChangeSummary();
+
       const updates = {
         'rental type': selectedRentalType,
         '💰Damage Deposit': damageDeposit,
@@ -374,10 +436,26 @@ export default function PricingEditSection({
       }
 
       await onSave(updates);
+
+      // Show success toast with change summary
+      const toastContent = changeSummary.length > 0
+        ? changeSummary.slice(0, 3).join(' • ') + (changeSummary.length > 3 ? ` (+${changeSummary.length - 3} more)` : '')
+        : 'Pricing settings saved';
+
+      window.showToast?.({
+        title: 'Pricing Updated!',
+        content: toastContent,
+        type: 'success'
+      });
+
       onClose();
     } catch (error) {
       console.error('Error saving pricing:', error);
-      alert('Failed to save pricing. Please try again.');
+      window.showToast?.({
+        title: 'Save Failed',
+        content: 'Failed to save pricing. Please try again.',
+        type: 'error'
+      });
     } finally {
       setIsSaving(false);
     }
