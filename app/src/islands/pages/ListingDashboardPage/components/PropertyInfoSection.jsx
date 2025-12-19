@@ -1,3 +1,6 @@
+import { useState, useRef } from 'react';
+import InformationalText from '../../../shared/InformationalText';
+
 // Icon components (inline SVGs)
 const DownloadIcon = () => (
   <svg
@@ -17,6 +20,24 @@ const DownloadIcon = () => (
   </svg>
 );
 
+const QuestionMarkIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="14"
+    height="14"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+    <path d="M12 17h.01" />
+  </svg>
+);
+
 const StarIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -33,6 +54,58 @@ const StarIcon = () => (
   </svg>
 );
 
+/**
+ * Determine the appropriate status message based on listing state
+ * @param {Object} listing - The listing object with isOnline, isApproved, isComplete
+ * @returns {Object} { title, content, expandedContent } for the InformationalText component
+ */
+function getStatusInfo(listing) {
+  const { isOnline, isApproved, isComplete } = listing;
+
+  // Listing is live and visible
+  if (isOnline && isApproved && isComplete) {
+    return {
+      title: 'Listing is Live',
+      content: 'Your listing is approved and visible to guests. People can now find and book your space on Split Lease.',
+      expandedContent: null
+    };
+  }
+
+  // Under review - submitted but not yet approved
+  if (!isApproved && isComplete && !isOnline) {
+    return {
+      title: 'Under Review',
+      content: 'Your listing is being reviewed by the Split Lease team. This typically takes 24-48 hours.',
+      expandedContent: 'Our team reviews each listing to ensure quality and safety standards are met. You\'ll receive an email notification once your listing is approved and ready to go live. If we need any additional information, we\'ll reach out via email.'
+    };
+  }
+
+  // Incomplete draft - not all required fields filled
+  if (!isComplete) {
+    return {
+      title: 'Listing Incomplete',
+      content: 'Your listing is missing required information. Complete all sections to submit for review.',
+      expandedContent: 'To make your listing visible to guests, please fill out all required fields including photos, pricing, availability, and property details. Once complete, your listing will be submitted for review.'
+    };
+  }
+
+  // Approved but offline - host deactivated
+  if (isApproved && !isOnline) {
+    return {
+      title: 'Listing Paused',
+      content: 'Your listing has been approved but is currently offline. You can reactivate it anytime to make it visible to guests again.',
+      expandedContent: null
+    };
+  }
+
+  // Fallback for any other state
+  return {
+    title: 'Listing Status',
+    content: 'Your listing is currently offline. Contact support if you need help getting your listing approved.',
+    expandedContent: null
+  };
+}
+
 // Simple date formatter
 function formatDate(date) {
   const options = { year: 'numeric', month: 'long', day: 'numeric' };
@@ -40,6 +113,11 @@ function formatDate(date) {
 }
 
 export default function PropertyInfoSection({ listing, onImportReviews, onEdit }) {
+  const [showStatusInfo, setShowStatusInfo] = useState(false);
+  const statusTriggerRef = useRef(null);
+
+  const statusInfo = getStatusInfo(listing);
+
   return (
     <div id="property-info" className="listing-dashboard-property">
       {/* Section Header with Edit Button */}
@@ -72,15 +150,23 @@ export default function PropertyInfoSection({ listing, onImportReviews, onEdit }
 
         <p className="listing-dashboard-property__status">
           <span className="listing-dashboard-property__status-label">Status:</span>
-          <span
-            className={`listing-dashboard-property__status-value ${
-              listing.isOnline
-                ? 'listing-dashboard-property__status-value--online'
-                : 'listing-dashboard-property__status-value--offline'
-            }`}
-          >
-            Listing is {listing.isOnline ? 'online' : 'offline'}
-          </span>
+          {listing.isOnline ? (
+            <span className="listing-dashboard-property__status-value listing-dashboard-property__status-value--online">
+              Listing is online
+            </span>
+          ) : (
+            <button
+              ref={statusTriggerRef}
+              className="listing-dashboard-property__status-trigger"
+              onClick={() => setShowStatusInfo(true)}
+              type="button"
+            >
+              <span className="listing-dashboard-property__status-value listing-dashboard-property__status-value--offline">
+                Listing is offline
+              </span>
+              <QuestionMarkIcon />
+            </button>
+          )}
         </p>
 
         <p className="listing-dashboard-property__active-since">
@@ -98,6 +184,17 @@ export default function PropertyInfoSection({ listing, onImportReviews, onEdit }
           <span>Show my reviews</span>
         </button>
       </div>
+
+      {/* Status Information Tooltip - uses shared InformationalText component */}
+      <InformationalText
+        isOpen={showStatusInfo}
+        onClose={() => setShowStatusInfo(false)}
+        triggerRef={statusTriggerRef}
+        title={statusInfo.title}
+        content={statusInfo.content}
+        expandedContent={statusInfo.expandedContent}
+        showMoreAvailable={!!statusInfo.expandedContent}
+      />
     </div>
   );
 }

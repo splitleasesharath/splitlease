@@ -6,7 +6,9 @@ import { generateListingDescription, generateListingTitle } from '../../../lib/a
 import { getCommonHouseRules } from '../../shared/EditListingDetails/services/houseRulesService';
 import { getCommonSafetyFeatures } from '../../shared/EditListingDetails/services/safetyFeaturesService';
 import { getCommonInUnitAmenities, getCommonBuildingAmenities } from '../../shared/EditListingDetails/services/amenitiesService';
-import { getNeighborhoodByZipCode } from '../../shared/EditListingDetails/services/neighborhoodService';
+import { getNeighborhoodByZipCode, getNeighborhoodByName } from '../../shared/EditListingDetails/services/neighborhoodService';
+import { generateNeighborhoodDescription } from '../../../lib/aiService';
+import { getBoroughForZipCode } from '../../../lib/nycZipCodes';
 
 /**
  * Safely parse a JSON string or return the value if already an array
@@ -227,6 +229,8 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
       id: listingId,
       address: locationAddress.address || dbListing['Not Found - Location - Address '] || '',
       hoodsDisplay: dbListing['Location - Hood'] || '',
+      // Resolve borough display name from zip code (since DB stores FK ID)
+      boroughDisplay: getBoroughForZipCode(dbListing['Location - Zip Code']) || '',
       city: dbListing['Location - City'] || '',
       state: dbListing['Location - State'] || '',
       zipCode: dbListing['Location - Zip Code'] || '',
@@ -237,6 +241,8 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
     // Status
     status: dbListing.Active ? 'Online' : 'Offline',
     isOnline: dbListing.Active || false,
+    isApproved: dbListing.Approved || false,
+    isComplete: dbListing.Complete || false,
     createdAt: dbListing['Created Date'] ? new Date(dbListing['Created Date']) : null,
     activeSince: dbListing['Created Date'] ? new Date(dbListing['Created Date']) : null,
     updatedAt: dbListing['Modified Date'] ? new Date(dbListing['Modified Date']) : null,
@@ -504,6 +510,50 @@ export default function useListingDashboardPageLogic() {
     }
   }, [listing]);
 
+  // Copy link handler - defined before handleCardClick so it can be used in the switch
+  const handleCopyLink = useCallback(async () => {
+    if (!listing?.id) {
+      window.showToast?.({
+        title: 'Error',
+        content: 'No listing ID available',
+        type: 'error'
+      });
+      return;
+    }
+
+    const listingUrl = `${window.location.origin}/view-split-lease/${listing.id}`;
+
+    try {
+      // Modern Clipboard API (preferred)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(listingUrl);
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement('textarea');
+        textArea.value = listingUrl;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
+
+      window.showToast?.({
+        title: 'Link Copied!',
+        content: 'Listing link has been copied to your clipboard',
+        type: 'success'
+      });
+    } catch (err) {
+      console.error('Failed to copy link:', err);
+      window.showToast?.({
+        title: 'Copy Failed',
+        content: 'Unable to copy link to clipboard',
+        type: 'error'
+      });
+    }
+  }, [listing?.id]);
+
   // Action card click handler
   const handleCardClick = useCallback((cardId) => {
     switch (cardId) {
@@ -513,7 +563,7 @@ export default function useListingDashboardPageLogic() {
         }
         break;
       case 'copy-link':
-        // Handled by SecondaryActions component
+        handleCopyLink();
         break;
       case 'proposals':
         setActiveTab('proposals');
@@ -533,7 +583,7 @@ export default function useListingDashboardPageLogic() {
       default:
         console.log('Unknown card clicked:', cardId);
     }
-  }, [listing]);
+  }, [listing, handleCopyLink]);
 
   // Back to all listings handler
   const handleBackClick = useCallback(() => {
@@ -548,11 +598,6 @@ export default function useListingDashboardPageLogic() {
       description: newDescription,
     }));
     // TODO: Debounce and save to backend
-  }, []);
-
-  // Copy link handler
-  const handleCopyLink = useCallback(() => {
-    console.log('Link copied');
   }, []);
 
   // AI Assistant handler - opens the AI Import Assistant modal
@@ -602,6 +647,9 @@ export default function useListingDashboardPageLogic() {
   const [isAIGenerating, setIsAIGenerating] = useState(false);
   const [isAIComplete, setIsAIComplete] = useState(false);
   const [aiGeneratedData, setAiGeneratedData] = useState({});
+
+  // Track which fields were modified by AI for highlighting
+  const [highlightedFields, setHighlightedFields] = useState(new Set());
 
   // ============================================================================
   // GOLD STANDARD AUTH PATTERN - Fetch current user data with fallback
@@ -735,11 +783,69 @@ export default function useListingDashboardPageLogic() {
   }, []);
 
   const handleAIImportComplete = useCallback((generatedData) => {
-    console.log('✅ AI Import complete, refreshing listing data...');
-    // Refresh listing data to show updated values
+    console.log('✅ AI Import complete, updating local state instantly...');
+    console.log('📋 Generated data:', generatedData);
+
+    // Build set of changed fields for highlighting
+    const changedFields = new Set();
+
+    // Update listing state instantly with generated data
+    setListing(prev => {
+      if (!prev) return prev;
+
+      const updates = { ...prev };
+
+      // Update title if generated
+      if (generatedData.name && generatedData.name !== prev.title) {
+        updates.title = generatedData.name;
+        updates.Name = generatedData.name;
+        changedFields.add('name');
+      }
+
+      // Update description if generated
+      if (generatedData.description && generatedData.description !== prev.description) {
+        updates.description = generatedData.description;
+        updates.Description = generatedData.description;
+        changedFields.add('description');
+      }
+
+      // Update neighborhood description if generated
+      if (generatedData.neighborhood && generatedData.neighborhood !== prev.descriptionNeighborhood) {
+        updates.descriptionNeighborhood = generatedData.neighborhood;
+        updates['Description - Neighborhood'] = generatedData.neighborhood;
+        changedFields.add('neighborhood');
+      }
+
+      // Mark amenities/rules/safety as changed if counts > 0
+      if (generatedData.inUnitAmenitiesCount > 0 || generatedData.buildingAmenitiesCount > 0) {
+        changedFields.add('amenities');
+      }
+      if (generatedData.houseRulesCount > 0) {
+        changedFields.add('rules');
+      }
+      if (generatedData.safetyFeaturesCount > 0) {
+        changedFields.add('safety');
+      }
+
+      return updates;
+    });
+
+    // Set highlighted fields for visual feedback
+    setHighlightedFields(changedFields);
+    console.log('✨ Highlighting changed fields:', [...changedFields]);
+
+    // Auto-clear highlights after 8 seconds
+    setTimeout(() => {
+      setHighlightedFields(new Set());
+    }, 8000);
+
+    // Silent background refresh to sync any related data (like resolved amenity names)
     const listingId = getListingIdFromUrl();
     if (listingId) {
-      fetchListing(listingId);
+      // Small delay to let state update complete first
+      setTimeout(() => {
+        fetchListing(listingId);
+      }, 500);
     }
   }, [fetchListing, getListingIdFromUrl]);
 
@@ -923,19 +1029,65 @@ export default function useListingDashboardPageLogic() {
         setAiGenerationStatus(prev => ({ ...prev, buildingAmenities: 'complete' }));
       }
 
-      // 3. Load Neighborhood Description
+      // 3. Load Neighborhood Description (cascade: Name → ZIP → AI)
       setAiGenerationStatus(prev => ({ ...prev, neighborhood: 'loading' }));
       try {
-        const zipCode = listing.location?.zipCode;
-        if (zipCode) {
-          const neighborhood = await getNeighborhoodByZipCode(zipCode);
-          if (neighborhood && neighborhood.description) {
-            generatedResults.neighborhood = neighborhood.description;
-            generatedResults.neighborhoodName = neighborhood.neighborhoodName;
-            enrichedNeighborhood = neighborhood.neighborhoodName || enrichedNeighborhood;
-            await updateListing(listingId, { 'Description - Neighborhood': neighborhood.description });
+        let neighborhoodResult = null;
+
+        // First, try by neighborhood name (Location - Hood)
+        const hoodName = listing.location?.hoodsDisplay;
+        if (hoodName) {
+          console.log('🏘️ Trying neighborhood lookup by name:', hoodName);
+          neighborhoodResult = await getNeighborhoodByName(hoodName);
+          if (neighborhoodResult?.description) {
+            console.log('✅ Found neighborhood by name:', hoodName);
           }
         }
+
+        // Second, fallback to ZIP code lookup
+        if (!neighborhoodResult?.description) {
+          const zipCode = listing.location?.zipCode;
+          if (zipCode) {
+            console.log('🏘️ Trying neighborhood lookup by ZIP:', zipCode);
+            neighborhoodResult = await getNeighborhoodByZipCode(zipCode);
+            if (neighborhoodResult?.description) {
+              console.log('✅ Found neighborhood by ZIP:', zipCode);
+            }
+          }
+        }
+
+        // Third, fallback to AI generation
+        if (!neighborhoodResult?.description) {
+          console.log('🏘️ No database match, trying AI generation...');
+          const addressData = {
+            fullAddress: listing.location?.address || '',
+            city: listing.location?.city || '',
+            state: listing.location?.state || '',
+            zip: listing.location?.zipCode || '',
+          };
+
+          if (addressData.city || addressData.fullAddress) {
+            const aiDescription = await generateNeighborhoodDescription(addressData);
+            if (aiDescription) {
+              neighborhoodResult = {
+                description: aiDescription,
+                neighborhoodName: hoodName || '',
+              };
+              console.log('✅ Generated neighborhood via AI');
+            }
+          }
+        }
+
+        // Save result if we have one
+        if (neighborhoodResult?.description) {
+          generatedResults.neighborhood = neighborhoodResult.description;
+          generatedResults.neighborhoodName = neighborhoodResult.neighborhoodName;
+          enrichedNeighborhood = neighborhoodResult.neighborhoodName || enrichedNeighborhood;
+          await updateListing(listingId, { 'Description - Neighborhood': neighborhoodResult.description });
+        } else {
+          console.warn('⚠️ No neighborhood description found via any method');
+        }
+
         setAiGenerationStatus(prev => ({ ...prev, neighborhood: 'complete' }));
       } catch (err) {
         console.error('❌ Error loading neighborhood:', err);
@@ -1318,6 +1470,7 @@ export default function useListingDashboardPageLogic() {
     isAIGenerating,
     isAIComplete,
     aiGeneratedData,
+    highlightedFields,
 
     // Photo management handlers
     handleSetCoverPhoto,

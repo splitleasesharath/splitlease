@@ -58,6 +58,7 @@ export default function ListingDashboardPage() {
     isAIGenerating,
     isAIComplete,
     aiGeneratedData,
+    highlightedFields,
     handleSetCoverPhoto,
     handleDeletePhoto,
     handleReorderPhotos,
@@ -152,24 +153,34 @@ export default function ListingDashboardPage() {
             />
 
             {/* Property Info Section */}
-            <PropertyInfoSection
-              listing={listing}
-              onImportReviews={handleImportReviews}
-              onEdit={() => handleEditSection('name')}
-            />
+            <div className={highlightedFields?.has('name') ? 'listing-dashboard-section--ai-highlighted' : ''}>
+              <PropertyInfoSection
+                listing={listing}
+                onImportReviews={handleImportReviews}
+                onEdit={() => handleEditSection('name')}
+              />
+            </div>
 
             {/* Description Section */}
-            <DescriptionSection
-              listing={listing}
-              onEditLodging={() => handleEditSection('description')}
-              onEditNeighborhood={() => handleEditSection('neighborhood')}
-            />
+            <div className={
+              (highlightedFields?.has('description') || highlightedFields?.has('neighborhood'))
+                ? 'listing-dashboard-section--ai-highlighted'
+                : ''
+            }>
+              <DescriptionSection
+                listing={listing}
+                onEditLodging={() => handleEditSection('description')}
+                onEditNeighborhood={() => handleEditSection('neighborhood')}
+              />
+            </div>
 
             {/* Amenities Section */}
-            <AmenitiesSection
-              listing={listing}
-              onEdit={() => handleEditSection('amenities')}
-            />
+            <div className={highlightedFields?.has('amenities') ? 'listing-dashboard-section--ai-highlighted' : ''}>
+              <AmenitiesSection
+                listing={listing}
+                onEdit={() => handleEditSection('amenities')}
+              />
+            </div>
 
             {/* Details Section */}
             <DetailsSection
@@ -184,10 +195,16 @@ export default function ListingDashboardPage() {
             />
 
             {/* Rules Section */}
-            <RulesSection
-              listing={listing}
-              onEdit={() => handleEditSection('rules')}
-            />
+            <div className={
+              (highlightedFields?.has('rules') || highlightedFields?.has('safety'))
+                ? 'listing-dashboard-section--ai-highlighted'
+                : ''
+            }>
+              <RulesSection
+                listing={listing}
+                onEdit={() => handleEditSection('rules')}
+              />
+            </div>
 
             {/* Availability Section */}
             <AvailabilitySection
@@ -237,10 +254,11 @@ export default function ListingDashboardPage() {
             Name: listing.title,
             Description: listing.description,
             'Description - Neighborhood': listing.descriptionNeighborhood,
+            'Location - Address': { address: listing.location?.address },
             'Location - City': listing.location?.city,
             'Location - State': listing.location?.state,
             'Location - Zip Code': listing.location?.zipCode,
-            'Location - Borough': listing.location?.hoodsDisplay,
+            'Location - Borough': listing.location?.boroughDisplay,
             'Location - Hood': listing.location?.hoodsDisplay,
             'Features - Type of Space': listing.features?.typeOfSpace?.id,
             'Features - Qty Bedrooms': listing.features?.bedrooms,

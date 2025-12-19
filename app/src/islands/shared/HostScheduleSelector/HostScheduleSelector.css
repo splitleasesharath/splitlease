@@ -6,9 +6,7 @@
 
 /* Root container - no border */
 .hss-host-schedule-selector {
-  display: block;
-  width: 100%;
-  max-width: 100%;
+  display: inline-block;
   border: none;
   border-radius: 0;
   padding: 0;
@@ -23,20 +21,18 @@
   padding: 0;
   margin: 0;
   border: none;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  width: 100%;
-  max-width: 100%;
   box-sizing: border-box;
 }
 
 /* Individual night cell - Default state */
 .hss-night-cell {
-  width: auto;
-  height: auto;
+  width: 42px;
+  height: 42px;
   min-width: 32px;
   max-width: 48px;
-  flex: 1 1 0;
+  flex: 0 0 42px;
   aspect-ratio: 1 / 1;
   background-color: #b2b2b2;
   border: none;
@@ -193,14 +189,22 @@
   transform: scale(0.95);
 }
 
-/* Responsive adjustments for tablets */
-@media (max-width: 768px) {
+/* Responsive adjustments for mobile - full width behavior */
+@media (max-width: 480px) {
+  .hss-host-schedule-selector {
+    display: block;
+    width: 100%;
+  }
+
   .hss-nights-grid {
+    justify-content: space-between;
+    width: 100%;
     gap: 6px;
   }
 
   .hss-night-cell {
     width: auto;
+    height: auto;
     min-width: 28px;
     flex: 1 1 0;
     max-width: 48px;

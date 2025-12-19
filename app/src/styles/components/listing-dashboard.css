@@ -538,6 +538,38 @@
   color: #dc2626;
 }
 
+/* Status Trigger Button - clickable offline status */
+.listing-dashboard-property__status-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  transition: opacity 0.2s ease;
+}
+
+.listing-dashboard-property__status-trigger:hover {
+  opacity: 0.8;
+}
+
+.listing-dashboard-property__status-trigger:hover .listing-dashboard-property__status-value--offline {
+  text-decoration: underline;
+}
+
+.listing-dashboard-property__status-trigger svg {
+  color: #6b7280;
+  flex-shrink: 0;
+  transition: color 0.2s ease;
+}
+
+.listing-dashboard-property__status-trigger:hover svg {
+  color: var(--ld-accent-purple);
+}
+
 .listing-dashboard-property__active-since {
   margin: 0;
   color: var(--ld-text-secondary);
@@ -2675,4 +2707,197 @@
   .pricing-edit-nights-range__inputs {
     flex-wrap: wrap;
   }
+}
+
+/* =====================================================
+   AI-GENERATED CONTENT HIGHLIGHT ANIMATION
+   ===================================================== */
+
+/**
+ * Applied to sections modified by AI Import Assistant
+ * Creates a pulsing purple glow effect that fades after 8 seconds
+ */
+.listing-dashboard-section--ai-highlighted {
+  position: relative;
+  animation: aiHighlightPulse 2s ease-in-out 3, aiHighlightFadeOut 2s ease-out 6s forwards;
+  border-radius: 12px;
+  margin: -12px;
+  padding: 12px;
+}
+
+@keyframes aiHighlightPulse {
+  0% {
+    box-shadow: 0 0 0 3px rgba(107, 79, 187, 0.4), 0 0 20px rgba(107, 79, 187, 0.2);
+    background-color: rgba(107, 79, 187, 0.06);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(107, 79, 187, 0.6), 0 0 30px rgba(107, 79, 187, 0.3);
+    background-color: rgba(107, 79, 187, 0.1);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(107, 79, 187, 0.4), 0 0 20px rgba(107, 79, 187, 0.2);
+    background-color: rgba(107, 79, 187, 0.06);
+  }
+}
+
+@keyframes aiHighlightFadeOut {
+  from {
+    box-shadow: 0 0 0 3px rgba(107, 79, 187, 0.4), 0 0 20px rgba(107, 79, 187, 0.2);
+    background-color: rgba(107, 79, 187, 0.06);
+  }
+  to {
+    box-shadow: 0 0 0 0 transparent;
+    background-color: transparent;
+  }
+}
+
+/* AI highlight badge - "AI Updated" label */
+.listing-dashboard-section--ai-highlighted::before {
+  content: '✨ AI Updated';
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  background: linear-gradient(135deg, #6b4fbb 0%, #31135d 100%);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 12px;
+  z-index: 1;
+  animation: aiBadgeFadeIn 0.3s ease-out, aiBadgeFadeOut 0.5s ease-out 7.5s forwards;
+}
+
+@keyframes aiBadgeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aiBadgeFadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   Confirmation Modal for Pricing Edit
+   ============================================ */
+.pricing-edit-overlay .host-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+  padding: 24px;
+}
+
+.pricing-edit-overlay .host-modal {
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing-edit-overlay .host-modal--small {
+  width: 100%;
+  max-width: 400px;
+}
+
+.pricing-edit-overlay .host-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.pricing-edit-overlay .host-modal__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.pricing-edit-overlay .host-modal__close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 28px;
+  line-height: 1;
+  color: #6b7280;
+  padding: 0;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.pricing-edit-overlay .host-modal__close:hover {
+  color: #1f2937;
+  background-color: #f3f4f6;
+}
+
+.pricing-edit-overlay .host-modal__content {
+  padding: 24px;
+}
+
+.pricing-edit-overlay .host-confirm-modal__message {
+  margin: 0 0 24px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #4b5563;
+}
+
+.pricing-edit-overlay .host-confirm-modal__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.pricing-edit-overlay .host-confirm-modal__actions .btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.pricing-edit-overlay .host-confirm-modal__actions .btn--danger {
+  background-color: #dc2626;
+  color: #ffffff;
+}
+
+.pricing-edit-overlay .host-confirm-modal__actions .btn--danger:hover {
+  background-color: #b91c1c;
+}
+
+.pricing-edit-overlay .host-confirm-modal__actions .btn--secondary {
+  background-color: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.pricing-edit-overlay .host-confirm-modal__actions .btn--secondary:hover {
+  background-color: #e5e7eb;
 }

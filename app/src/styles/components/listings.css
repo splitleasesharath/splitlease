@@ -485,49 +485,33 @@
     padding: 16px 24px 16px 20px;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    gap: 4px;
+    justify-content: space-between;
 }
 
 .listing-info-top {
     margin-bottom: 0;
-    display: flex;
-    flex-direction: column;
 }
 
-/* Meta Section - Inline dot-separated text */
+/* Meta Section - Info Dense Style */
 .listing-meta {
-    display: inline;
-    padding: 0;
-    border: none;
-    margin: 4px 0 0 0;
-    order: 3;
-    font-size: 14px;
-    color: #666;
-    line-height: 1.4;
+    display: flex;
+    gap: 16px;
+    padding: 12px 0;
+    border-top: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+    margin: 12px 0;
 }
 
 .listing-meta .meta-item {
-    display: inline;
-    font-size: 14px;
-    color: #666;
+    font-size: 13px;
+    color: #555;
     background: none;
     border: none;
     padding: 0;
 }
 
-.listing-meta .meta-item::after {
-    content: ' · ';
-    color: #999;
-}
-
-.listing-meta .meta-item:last-child::after {
-    display: none;
-}
-
 .listing-meta .meta-item strong {
-    color: #666;
-    font-weight: 400;
+    color: #111;
 }
 
 /* Host Row - Bottom Left (F7b Layout) */
@@ -709,21 +693,17 @@
     min-width: auto;
 }
 
-/* Host Section Layout - New hierarchy: Price → CTA → Hosted by */
+/* Two-line Host Section Layout (matching FavoriteListingsPage) */
 .listing-host-section {
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    margin-top: auto;
-    padding-top: 12px;
+    gap: 10px;
+    margin-top: 8px;
 }
 
-/* Inline Price Display */
+/* Inline Price Display - Hidden on desktop, shown on mobile */
 .listing-host-section .inline-price {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    order: 1;
+    display: none;
 }
 
 .listing-host-section .inline-price .price-current {
@@ -745,53 +725,63 @@
     margin-left: 4px;
 }
 
-/* Host Profile - Simple "Hosted by" text */
 .listing-host-section .host-profile {
     display: flex;
     align-items: center;
-    gap: 8px;
-    order: 3;
+    gap: 10px;
 }
 
 .listing-host-section .host-avatar {
-    width: 24px;
-    height: 24px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    display: none;
 }
 
 .listing-host-section .host-avatar-placeholder {
-    display: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6C5CE7 0%, #8A7FF9 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
 }
 
 .listing-host-section .host-name {
-    font-size: 13px;
-    font-weight: 400;
-    color: #666;
+    font-size: 14px;
+    font-weight: 600;
+    color: #424242;
     display: flex;
     align-items: center;
     gap: 4px;
 }
 
-.listing-host-section .host-name::before {
-    content: 'Hosted by ';
-}
-
 .listing-host-section .verified-badge {
-    display: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
+    background: #4A90E2;
+    border-radius: 50%;
+    color: white;
+    font-size: 10px;
 }
 
-/* Action Buttons - Single prominent CTA */
 .listing-host-section .action-buttons {
     display: flex;
     gap: 10px;
-    order: 2;
 }
 
 .listing-host-section .action-button {
-    padding: 10px 20px;
+    flex: 1;
+    padding: 10px 16px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
@@ -802,7 +792,6 @@
     justify-content: center;
     gap: 6px;
     white-space: nowrap;
-    flex: 0 0 auto;
 }
 
 .listing-host-section .action-button.primary {
@@ -812,87 +801,148 @@
 }
 
 .listing-host-section .action-button.primary:hover {
-    background: #5B4BD6;
+    background: #7C6CF7;
     box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
 }
 
 .listing-host-section .action-button.secondary {
-    background: #6C5CE7;
-    color: white;
-    border: none;
+    background: white;
+    color: #6C5CE7;
+    border: 2px solid #6C5CE7;
 }
 
 .listing-host-section .action-button.secondary:hover {
-    background: #5B4BD6;
-    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+    background: #F0F4FF;
+    box-shadow: 0 2px 4px rgba(108, 92, 231, 0.15);
 }
 
 .listing-host-section .action-button svg {
     width: 14px;
     height: 14px;
     flex-shrink: 0;
-    display: none;
 }
 
 /* Create Proposal Button - in listing-host-section */
 .listing-host-section .create-proposal-btn {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 20px;
+    gap: 0.375rem;
+    padding: 8px 14px;
     background: #6C5CE7;
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
 }
 
 .listing-host-section .create-proposal-btn:hover {
-    background: #5B4BD6;
-    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+    background: #4c1d95;
+    transform: translateY(-1px);
 }
 
 .listing-host-section .create-proposal-btn svg {
     flex-shrink: 0;
-    display: none;
 }
 
 /* View Proposal Button - in listing-host-section */
 .listing-host-section .view-proposal-btn {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 10px 20px;
-    background: #6C5CE7;
+    gap: 0.375rem;
+    padding: 8px 14px;
+    background: #10b981;
     color: white;
     border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
 }
 
 .listing-host-section .view-proposal-btn:hover {
-    background: #5B4BD6;
-    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+    background: #047857;
+    transform: translateY(-1px);
 }
 
 .listing-host-section .view-proposal-btn svg {
     flex-shrink: 0;
+}
+
+/* Price Sidebar - Right Side (F7b Layout with subtle background) */
+.listing-price-sidebar {
+    width: 150px;
+    background: #f9f7fc;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-left: 1px solid #f0e6ff;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.listing-price-sidebar:hover {
+    background: #f3eef8;
+}
+
+.listing-price-sidebar .price-main {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a1a;
+    line-height: 1;
+}
+
+.listing-price-sidebar .price-period {
+    font-size: 13px;
+    color: #666;
+    margin-top: 2px;
+}
+
+.listing-price-sidebar .price-divider {
     display: none;
 }
 
-/* Price Sidebar - Hidden on desktop, price shown inline */
-.listing-price-sidebar {
-    display: none;
+.listing-price-sidebar .price-starting {
+    font-size: 12px;
+    color: #888;
+    margin-top: 8px;
+    line-height: 1.3;
+}
+
+.listing-price-sidebar .price-starting span {
+    display: block;
+    font-weight: 500;
+}
+
+.listing-price-sidebar .price-context {
+    font-size: 12px;
+    color: #888;
+    margin-top: 8px;
+}
+
+.listing-price-sidebar .availability-note {
+    font-size: 11px;
+    color: #999;
+    margin-top: 12px;
+    line-height: 1.4;
+}
+
+.listing-price-sidebar .availability-note.availability-soon {
+    color: #16a34a;
+    font-weight: 500;
+}
+
+.listing-price-sidebar .availability-note.availability-later {
+    color: #d97706;
 }
 
 /* Legacy listing-info (for compatibility) */
@@ -903,26 +953,25 @@
     gap: 0.25rem;
 }
 
-/* Location - Second in visual hierarchy */
+/* Location */
 .listing-location {
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 14px;
+    font-size: 12px;
     color: #666;
-    margin-bottom: 0;
-    order: 2;
+    margin-bottom: 4px;
 }
 
 .listing-location svg {
     width: 12px;
     height: 12px;
-    color: #666;
+    color: #31135D;
     flex-shrink: 0;
 }
 
 .location-text {
-    font-size: 14px;
+    font-size: 12px;
     color: #666;
 }
 
@@ -977,15 +1026,14 @@
     opacity: 1;
 }
 
-/* Title - First in visual hierarchy */
+/* Title */
 .listing-title {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 600;
-    color: #1a1a1a;
-    margin-bottom: 0;
+    color: #111;
+    margin-bottom: 6px;
     line-height: 1.3;
     transition: color 0.2s;
-    order: 1;
     /* Truncate to 2 lines with ellipsis */
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -1367,6 +1415,32 @@
         margin-top: 4px;
         padding-top: 0;
         border-top: none;
+    }
+
+    /* Show inline-price on mobile */
+    .listing-host-section .inline-price {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        order: 0;
+        margin-bottom: 8px;
+    }
+
+    /* Hide host avatar on mobile, show "Hosted by" text instead */
+    .listing-host-section .host-avatar {
+        display: none;
+    }
+
+    .listing-host-section .host-avatar-placeholder {
+        display: none;
+    }
+
+    .listing-host-section .host-name::before {
+        content: 'Hosted by ';
+    }
+
+    .listing-host-section .verified-badge {
+        display: none;
     }
 
     /* Action buttons - Full width, prominent */

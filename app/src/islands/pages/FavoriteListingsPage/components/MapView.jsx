@@ -83,10 +83,11 @@ const MapView = ({
       bounds.push(position);
 
       // Create custom price pin HTML
+      // Use same price field pattern as Search page GoogleMap.jsx
       const priceHtml = `
         <div class="price-pin ${selectedListingId === listing.id ? 'selected' : ''}">
           <div class="price-pin-content">
-            $${listing.pricingList?.startingNightlyPrice || listing.listerPriceDisplay || 0}
+            $${listing.price?.starting || listing['Starting nightly price'] || 0}
           </div>
           <div class="price-pin-arrow"></div>
         </div>
@@ -108,11 +109,12 @@ const MapView = ({
       });
 
       // Popup with listing info
+      // Use same price field pattern as Search page GoogleMap.jsx
       const popupHtml = `
         <div class="map-popup">
           <h4>${listing.name}</h4>
           <p>${listing.location?.borough || ''}, ${listing.location?.hood || ''}</p>
-          <p class="map-popup-price">$${listing.pricingList?.startingNightlyPrice || listing.listerPriceDisplay || 0}/night</p>
+          <p class="map-popup-price">$${listing.price?.starting || listing['Starting nightly price'] || 0}/night</p>
           <p class="map-popup-features">
             ${listing.features?.qtyBedrooms || 0} bed • ${listing.features?.qtyBathrooms || 0} bath
           </p>

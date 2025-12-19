@@ -23,6 +23,8 @@ import { createDay } from '../../lib/scheduleSelector/dayHelpers.js';
 import { calculateNextAvailableCheckIn } from '../../logic/calculators/scheduling/calculateNextAvailableCheckIn.js';
 import { shiftMoveInDateIfPast } from '../../logic/calculators/scheduling/shiftMoveInDateIfPast.js';
 // NOTE: adaptDaysToBubble removed - database now uses 0-indexed days natively
+import { countSelectedNights } from '../../lib/scheduleSelector/nightCalculations.js';
+import { calculatePrice } from '../../lib/scheduleSelector/priceCalculations.js';
 import ProposalSuccessModal from '../modals/ProposalSuccessModal.jsx';
 
 // ============================================================================
@@ -506,7 +508,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing }) {
+function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
 
@@ -547,52 +549,58 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
   // Get listing ID for FavoriteButton
   const favoriteListingId = listing.id || listing._id;
 
-  // Calculate dynamic price using default 5 nights (Monday-Friday pattern)
-  // Uses the same formula as priceCalculations.js for Nightly rental type
+  // Get availability message - hardcoded variety for now
+  const getAvailabilityMessage = () => {
+    const id = listing.id || listing._id || '';
+    // Use a simple hash of the listing ID to deterministically assign messages
+    const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const messageIndex = hash % 4;
+
+    const messages = [
+      { text: 'Available in 1 week', className: 'availability-soon' },
+      { text: 'Available in 2 weeks', className: 'availability-soon' },
+      { text: 'Available in 3 weeks', className: 'availability-later' },
+      { text: 'Message Split Lease\nfor Availability', className: '' },
+    ];
+
+    return messages[messageIndex];
+  };
+
+  const availabilityInfo = getAvailabilityMessage();
+
+  // Calculate dynamic price based on selected nights from day selector
+  // Uses the same calculatePrice function as View Split Lease page
   const calculateDynamicPrice = () => {
-    const nightsCount = 5; // Default to 5 nights (Mon-Fri)
+    const nightsCount = selectedNightsCount;
 
-    const priceFieldMap = {
-      2: 'Price 2 nights selected',
-      3: 'Price 3 nights selected',
-      4: 'Price 4 nights selected',
-      5: 'Price 5 nights selected',
-      6: 'Price 6 nights selected',
-      7: 'Price 7 nights selected'
-    };
-
-    // Get the host compensation rate for the selected nights
-    let nightlyHostRate = 0;
-    if (nightsCount >= 2 && nightsCount <= 7) {
-      const fieldName = priceFieldMap[nightsCount];
-      nightlyHostRate = listing[fieldName] || 0;
+    // If 0 nights, show starting price (need at least 2 days = 1 night for a valid stay)
+    if (nightsCount < 1) {
+      return listing['Starting nightly price'] || listing.price?.starting || 0;
     }
 
-    // Fallback to starting price if no specific rate found
-    if (!nightlyHostRate || nightlyHostRate === 0) {
-      nightlyHostRate = listing['Starting nightly price'] || listing.price?.starting || 0;
+    try {
+      // Create a mock nights array with the correct length
+      // calculatePrice only uses .length to get nightsCount
+      const mockNightsArray = Array(nightsCount).fill({ nightNumber: 0 });
+
+      // Use the same pricing calculation as View Split Lease page
+      // Default reservationSpan of 13 weeks (standard booking period)
+      const priceBreakdown = calculatePrice(mockNightsArray, listing, 13, null);
+
+      console.log(`[PropertyCard] Dynamic price for ${listing.title}:`, {
+        nightsCount,
+        rentalType: listing.rentalType,
+        hostRate: listing[`💰Nightly Host Rate for ${nightsCount} nights`],
+        pricePerNight: priceBreakdown.pricePerNight,
+        valid: priceBreakdown.valid
+      });
+
+      // Return the guest-facing price per night
+      return priceBreakdown.pricePerNight || listing['Starting nightly price'] || listing.price?.starting || 0;
+    } catch (error) {
+      console.warn(`[PropertyCard] Price calculation failed for listing ${listing.id}:`, error.message);
+      return listing['Starting nightly price'] || listing.price?.starting || 0;
     }
-
-    // Apply the same markup calculation as priceCalculations.js
-    // Step 1: Calculate base price (host rate × nights)
-    const basePrice = nightlyHostRate * nightsCount;
-
-    // Step 2: Apply full-time discount (only for 7 nights, 13% discount)
-    const fullTimeDiscount = nightsCount === 7 ? basePrice * 0.13 : 0;
-
-    // Step 3: Price after discounts
-    const priceAfterDiscounts = basePrice - fullTimeDiscount;
-
-    // Step 4: Apply site markup (17%)
-    const siteMarkup = priceAfterDiscounts * 0.17;
-
-    // Step 5: Calculate total price
-    const totalPrice = basePrice - fullTimeDiscount + siteMarkup;
-
-    // Step 6: Calculate price per night (guest-facing price)
-    const pricePerNight = totalPrice / nightsCount;
-
-    return pricePerNight;
   };
 
   const dynamicPrice = calculateDynamicPrice();
@@ -839,8 +847,12 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
           <div className="price-main">${dynamicPrice.toFixed(2)}</div>
           <div className="price-period">/night</div>
           <div className="price-divider"></div>
-          <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
-          <div className="availability-note">Message Split Lease<br/>for Availability</div>
+          {selectedNightsCount >= 1 ? (
+            <div className="price-context">for {selectedNightsCount} night{selectedNightsCount !== 1 ? 's' : ''}/week</div>
+          ) : (
+            <div className="price-starting">Starting at<span>${parseFloat(startingPrice).toFixed(2)}/night</span></div>
+          )}
+          <div className={`availability-note ${availabilityInfo.className}`}>{availabilityInfo.text.split('\n').map((line, i) => i === 0 ? line : <><br key={i}/>{line}</>)}</div>
         </div>
       </div>
     </a>
@@ -850,7 +862,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
 /**
  * ListingsGrid - Grid of property cards with lazy loading
  */
-function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId }) {
+function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactModal, onOpenInfoModal, mapRef, isLoggedIn, userId, favoritedListingIds, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalsByListingId, selectedNightsCount }) {
 
   const sentinelRef = useRef(null);
 
@@ -904,6 +916,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             showCreateProposalButton={showCreateProposalButton}
             onOpenCreateProposalModal={onOpenCreateProposalModal}
             proposalForListing={proposalForListing}
+            selectedNightsCount={selectedNightsCount}
           />
         );
       })}
@@ -1028,6 +1041,10 @@ export default function SearchPage() {
   const [priceTier, setPriceTier] = useState(urlFilters.priceTier);
   const [sortBy, setSortBy] = useState(urlFilters.sortBy);
   const [neighborhoodSearch, setNeighborhoodSearch] = useState('');
+
+  // Dynamic pricing state - tracks selected nights from day selector
+  // Default: Mon-Fri = 5 days = 4 nights (nights = days - 1)
+  const [selectedNightsCount, setSelectedNightsCount] = useState(4);
 
   // UI state
   const [filterPanelActive, setFilterPanelActive] = useState(false);
@@ -2034,12 +2051,26 @@ export default function SearchPage() {
         full: dbListing['💰Nightly Host Rate for 7 nights'] || 0
       },
       'Starting nightly price': dbListing['Standarized Minimum Nightly Price (Filter)'] || 0,
-      'Price 2 nights selected': dbListing['💰Nightly Host Rate for 2 nights'] || null,
-      'Price 3 nights selected': dbListing['💰Nightly Host Rate for 3 nights'] || null,
-      'Price 4 nights selected': dbListing['💰Nightly Host Rate for 4 nights'] || null,
-      'Price 5 nights selected': dbListing['💰Nightly Host Rate for 5 nights'] || null,
-      'Price 6 nights selected': null,
-      'Price 7 nights selected': dbListing['💰Nightly Host Rate for 7 nights'] || null,
+      // Host rate fields needed by calculatePrice from priceCalculations.js
+      '💰Nightly Host Rate for 2 nights': dbListing['💰Nightly Host Rate for 2 nights'] || null,
+      '💰Nightly Host Rate for 3 nights': dbListing['💰Nightly Host Rate for 3 nights'] || null,
+      '💰Nightly Host Rate for 4 nights': dbListing['💰Nightly Host Rate for 4 nights'] || null,
+      '💰Nightly Host Rate for 5 nights': dbListing['💰Nightly Host Rate for 5 nights'] || null,
+      '💰Nightly Host Rate for 7 nights': dbListing['💰Nightly Host Rate for 7 nights'] || null,
+      // Rental type for calculatePrice dispatch (Monthly/Weekly/Nightly)
+      'rental type': dbListing['rental type'] || 'Nightly',
+      rentalType: dbListing['rental type'] || 'Nightly',
+      // Monthly rate if needed
+      '💰Monthly Host Rate': dbListing['💰Monthly Host Rate'] || null,
+      // Weekly rate if needed
+      '💰Weekly Host Rate': dbListing['💰Weekly Host Rate'] || null,
+      // Fees
+      '💰Cleaning Cost / Maintenance Fee': dbListing['💰Cleaning Cost / Maintenance Fee'] || 0,
+      '💰Damage Deposit': dbListing['💰Damage Deposit'] || 0,
+      '💰Unit Markup': dbListing['💰Unit Markup'] || 0,
+      // Weeks offered pattern
+      'Weeks offered': dbListing['Weeks offered'] || 'Every week',
+      weeksOffered: dbListing['Weeks offered'] || 'Every week',
       type: propertyType,
       squareFeet: dbListing['Features - SQFT Area'] || null,
       maxGuests: dbListing['Features - Qty Guests'] || 1,
@@ -2054,7 +2085,6 @@ export default function SearchPage() {
       // Photos loaded via batch fetch BEFORE transformation
       images: images || [],
       description: `${(dbListing['Features - Qty Bedrooms'] || 0) === 0 ? 'Studio' : `${dbListing['Features - Qty Bedrooms']} bedroom`} • ${dbListing['Features - Qty Bathrooms'] || 0} bathroom`,
-      weeks_offered: dbListing['Weeks offered'] || 'Every week',
       // Parse JSONB field that may be stringified JSON or native array
       days_available: parseJsonArray(dbListing['Days Available (List of Days)']),
       isNew: false
@@ -2177,10 +2207,10 @@ export default function SearchPage() {
     let initialDays = [];
     if (daysParam) {
       try {
-        const oneBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
-        initialDays = oneBased
-          .filter(d => d >= 1 && d <= 7)
-          .map(d => d - 1)  // Convert to 0-based
+        // URL stores 0-based day indices (0=Sun, 6=Sat) matching JS Date.getDay()
+        const zeroBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+        initialDays = zeroBased
+          .filter(d => d >= 0 && d <= 6)  // Valid 0-based day range
           .map(dayIndex => createDay(dayIndex, true));
       } catch (e) {
         console.warn('Failed to parse days from URL:', e);
@@ -2540,8 +2570,12 @@ export default function SearchPage() {
 
     const selectorProps = {
       onSelectionChange: (days) => {
-        console.log('Schedule selector changed (display only, not used for filtering):', days);
-        // No state update - schedule selection is for display purposes only
+        console.log('Schedule selector changed:', days);
+        // Calculate nights from days (nights = days - 1)
+        const nightsCount = countSelectedNights(days);
+        console.log(`[SearchPage] Days selected: ${days.length}, Nights: ${nightsCount}`);
+        // Update nights count for dynamic pricing (0 nights is valid - shows starting price)
+        setSelectedNightsCount(nightsCount);
       },
       onError: (error) => console.error('AuthAwareSearchScheduleSelector error:', error),
       weekPattern: weekPattern
@@ -2790,6 +2824,7 @@ export default function SearchPage() {
                       showCreateProposalButton={showCreateProposalButton}
                       onOpenCreateProposalModal={handleOpenCreateProposalModal}
                       proposalsByListingId={proposalsByListingId}
+                      selectedNightsCount={selectedNightsCount}
                     />
                   </div>
                 )}
@@ -2816,6 +2851,7 @@ export default function SearchPage() {
                 showCreateProposalButton={showCreateProposalButton}
                 onOpenCreateProposalModal={handleOpenCreateProposalModal}
                 proposalsByListingId={proposalsByListingId}
+                selectedNightsCount={selectedNightsCount}
               />
             )}
           </div>

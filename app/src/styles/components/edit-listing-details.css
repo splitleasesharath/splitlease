@@ -712,3 +712,166 @@
   color: var(--color-text-secondary, #6B7280);
   text-align: center;
 }
+
+/* ================================
+   Address Autocomplete Styles
+   ================================ */
+
+/* Address Section Container */
+.eld-address-section {
+  margin-bottom: var(--spacing-lg, 16px);
+}
+
+/* Address Note (private label) */
+.eld-address-note {
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--color-text-secondary, #6B7280);
+}
+
+/* Address Input Wrapper (for positioning checkmark) */
+.eld-address-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* Address Input Field */
+.eld-address-input {
+  padding-right: 40px; /* Space for checkmark */
+}
+
+/* Address Valid State */
+.eld-address-input.eld-address-valid {
+  border-color: var(--color-success, #059669);
+}
+
+.eld-address-input.eld-address-valid:focus {
+  border-color: var(--color-success, #059669);
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+/* Address Error State */
+.eld-address-input.eld-address-error {
+  border-color: var(--color-error, #DC2626);
+}
+
+.eld-address-input.eld-address-error:focus {
+  border-color: var(--color-error, #DC2626);
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+/* Address Checkmark */
+.eld-address-checkmark {
+  position: absolute;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-success, #059669);
+  pointer-events: none;
+}
+
+/* Address Success Message */
+.eld-address-success {
+  font-size: 12px;
+  color: var(--color-success, #059669);
+  margin-top: var(--spacing-xs, 4px);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Address Error Message */
+.eld-address-error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  background-color: rgba(220, 38, 38, 0.05);
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  border-radius: var(--radius-sm, 6px);
+  margin-top: var(--spacing-sm, 8px);
+  color: var(--color-error, #DC2626);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.eld-address-error-message svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.eld-address-error-message span {
+  flex: 1;
+}
+
+/* Manual Entry Toggle Link */
+.eld-manual-toggle {
+  margin-top: var(--spacing-sm, 8px);
+  font-size: 13px;
+}
+
+/* Manual Address Fields Container */
+.eld-manual-fields {
+  margin-top: var(--spacing-md, 12px);
+  padding-top: var(--spacing-md, 12px);
+  border-top: 1px solid var(--color-border, #E5E7EB);
+}
+
+.eld-manual-fields-expanded {
+  background-color: var(--color-background-light, #F7F8F9);
+  padding: var(--spacing-md, 12px);
+  border-radius: var(--radius-sm, 6px);
+  border-top: none;
+}
+
+/* Manual Entry Hint */
+.eld-manual-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-text-secondary, #6B7280);
+  margin-bottom: var(--spacing-md, 12px);
+}
+
+.eld-manual-hint svg {
+  color: var(--color-primary, #321662);
+}
+
+/* Google Places Autocomplete Dropdown Override */
+.pac-container {
+  z-index: 10002 !important; /* Above modal overlay (10000) */
+  border-radius: var(--radius-sm, 6px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--color-border, #E5E7EB);
+  font-family: inherit;
+}
+
+.pac-item {
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pac-item:hover {
+  background-color: var(--color-background-light, #F7F8F9);
+}
+
+.pac-item-selected {
+  background-color: var(--color-background-light, #F7F8F9);
+}
+
+.pac-icon {
+  margin-right: 8px;
+}
+
+.pac-item-query {
+  font-size: 14px;
+  color: var(--color-text-primary, #1F2937);
+}
+
+.pac-matched {
+  font-weight: 600;
+}

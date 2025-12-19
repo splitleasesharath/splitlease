@@ -95,3 +95,15 @@ export const BATHROOM_OPTIONS = [1, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6];
 export const GUEST_OPTIONS = [1, 2, 3, 4, 5, 6];
 
 export const NEIGHBORHOOD_TEMPLATE = 'Located in a vibrant neighborhood with easy access to public transportation, restaurants, cafes, and local shops. The area is known for its friendly community atmosphere and walkability.';
+
+// Borough options for NYC and surrounding areas (matching Supabase reference_table.zat_geo_borough_toplevel)
+export const BOROUGH_OPTIONS = [
+  { value: 'Manhattan', label: 'Manhattan' },
+  { value: 'Brooklyn', label: 'Brooklyn' },
+  { value: 'Queens', label: 'Queens' },
+  { value: 'Bronx', label: 'Bronx' },
+  { value: 'Staten Island', label: 'Staten Island' },
+  { value: 'Hudson County NJ', label: 'Hudson County NJ' },
+  { value: 'Bergen County NJ', label: 'Bergen County NJ' },
+  { value: 'Essex County NJ', label: 'Essex County NJ' }
+];

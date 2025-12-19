@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { HostScheduleSelector } from '../../../shared/HostScheduleSelector';
 import InformationalText from '../../../shared/InformationalText';
+import { ConfirmModal } from '../../HostOverviewPage/components/HostOverviewModals';
 
 // Rental type options with descriptions
 const RENTAL_TYPES = [
@@ -90,6 +91,57 @@ export default function PricingEditSection({
   // Informational text state
   const [activeInfoTooltip, setActiveInfoTooltip] = useState(null);
 
+  // Confirmation modal state
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Detect if any changes have been made compared to original listing
+  const hasChanges = useMemo(() => {
+    // Check rental type change
+    if (selectedRentalType !== (listing?.leaseStyle || 'Nightly')) return true;
+
+    // Check common fields
+    if (damageDeposit !== (listing?.damageDeposit || 500)) return true;
+    if (maintenanceFee !== (listing?.maintenanceFee || 125)) return true;
+
+    // Check nightly-specific fields
+    if (selectedRentalType === 'Nightly') {
+      const originalNights = listing?.nightsAvailable || [];
+      if (selectedNights.length !== originalNights.length) return true;
+      if (!selectedNights.every((n) => originalNights.includes(n))) return true;
+      if (minNights !== (listing?.nightsPerWeekMin || 2)) return true;
+      if (maxNights !== (listing?.nightsPerWeekMax || 7)) return true;
+      // Check pricing changes
+      const originalComp = listing?.weeklyCompensation || {};
+      if (nightlyPricing[2] !== (originalComp[2] || 0)) return true;
+      if (nightlyPricing[3] !== (originalComp[3] || 0)) return true;
+      if (nightlyPricing[4] !== (originalComp[4] || 0)) return true;
+      if (nightlyPricing[5] !== (originalComp[5] || 0)) return true;
+    }
+
+    // Check weekly-specific fields
+    if (selectedRentalType === 'Weekly') {
+      if (weeklyRate !== (listing?.weeklyRate || 0)) return true;
+    }
+
+    // Check monthly-specific fields
+    if (selectedRentalType === 'Monthly') {
+      if (monthlyRate !== (listing?.monthlyHostRate || 0)) return true;
+    }
+
+    return false;
+  }, [
+    selectedRentalType,
+    damageDeposit,
+    maintenanceFee,
+    selectedNights,
+    minNights,
+    maxNights,
+    nightlyPricing,
+    weeklyRate,
+    monthlyRate,
+    listing,
+  ]);
+
   // Refs for informational text tooltips
   const pricingControlsInfoRef = useRef(null);
   const damageDepositInfoRef = useRef(null);
@@ -151,6 +203,24 @@ export default function PricingEditSection({
     e.stopPropagation();
     setActiveInfoTooltip(activeInfoTooltip === tooltipId ? null : tooltipId);
   };
+
+  // Handle back button click - show confirmation if changes exist
+  const handleBackClick = useCallback(() => {
+    console.log('🔙 Back button clicked, hasChanges:', hasChanges);
+    if (hasChanges) {
+      console.log('📋 Showing confirmation modal');
+      setShowConfirmModal(true);
+    } else {
+      console.log('✅ No changes, closing directly');
+      onClose();
+    }
+  }, [hasChanges, onClose]);
+
+  // Handle confirmation modal confirm (discard changes)
+  const handleConfirmDiscard = useCallback(() => {
+    setShowConfirmModal(false);
+    onClose();
+  }, [onClose]);
 
   // Update selected nights when rental type changes
   useEffect(() => {
@@ -328,7 +398,7 @@ export default function PricingEditSection({
       <div className="pricing-edit-container">
         {/* Header with back button */}
         <div className="pricing-edit-header">
-          <button className="pricing-edit-back" onClick={onClose}>
+          <button className="pricing-edit-back" onClick={handleBackClick}>
             <svg
               width="20"
               height="20"
@@ -513,7 +583,6 @@ export default function PricingEditSection({
                   </button>
                 </div>
                 <HostScheduleSelector
-                  listing={{ nightsAvailable: selectedNights }}
                   selectedNights={selectedNights}
                   onSelectionChange={handleNightSelectionChange}
                   isClickable={isOwner}
@@ -868,6 +937,18 @@ export default function PricingEditSection({
         content={infoContent.monthlyAgreement.content}
         expandedContent={infoContent.monthlyAgreement.expandedContent}
         showMoreAvailable={true}
+      />
+
+      {/* Unsaved changes confirmation modal */}
+      <ConfirmModal
+        isOpen={showConfirmModal}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={handleConfirmDiscard}
+        title="Discard Changes?"
+        message="Are you sure you want to go back? Any unsaved changes will be lost."
+        confirmText="Yes, Discard"
+        cancelText="No, Keep Editing"
+        variant="danger"
       />
     </div>
   );

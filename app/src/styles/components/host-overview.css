@@ -1035,7 +1035,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 10001; /* Higher than pricing-edit-overlay (10000) */
   padding: var(--ho-spacing-xl);
   animation: modalFadeIn 0.3s ease-out;
 }

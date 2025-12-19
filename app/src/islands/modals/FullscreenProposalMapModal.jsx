@@ -148,13 +148,46 @@ export default function FullscreenProposalMapModal({
 
   /**
    * Handle pin click - close modal and navigate to that proposal
+   * Shows feedback to user about the selection
    */
   const handlePinClick = useCallback((proposalId) => {
+    // Find the proposal name for feedback
+    const proposal = activeProposals.find(p => p._id === proposalId);
+    const listingName = proposal?.listing?.Name || 'Proposal';
+
     if (onProposalSelect) {
       onProposalSelect(proposalId);
     }
     onClose();
-  }, [onProposalSelect, onClose]);
+
+    // Show brief toast notification
+    const toast = document.createElement('div');
+    toast.className = 'proposal-selected-toast';
+    toast.innerHTML = `<span>✓</span> Viewing: ${listingName}`;
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #31135d;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-family: 'Lato', 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 9999;
+      animation: slideUp 0.3s ease-out;
+    `;
+    document.body.appendChild(toast);
+
+    // Remove toast after 2 seconds
+    setTimeout(() => {
+      toast.style.animation = 'fadeOut 0.3s ease-out forwards';
+      setTimeout(() => toast.remove(), 300);
+    }, 2000);
+  }, [onProposalSelect, onClose, activeProposals]);
 
   /**
    * Update marker highlights when selected proposal changes
@@ -285,13 +318,23 @@ export default function FullscreenProposalMapModal({
       window.addEventListener('google-maps-loaded', initMap);
       return () => window.removeEventListener('google-maps-loaded', initMap);
     }
+  }, [isOpen]);
 
-    // Cleanup on unmount or close
-    return () => {
+  /**
+   * Reset map state when modal closes
+   * This ensures a fresh map is created when modal reopens
+   */
+  useEffect(() => {
+    if (!isOpen) {
       // Clear markers
       markersRef.current.forEach(marker => marker.setMap(null));
       markersRef.current = [];
-    };
+
+      // Reset map reference so it gets recreated on next open
+      googleMapRef.current = null;
+      setMapLoaded(false);
+      setIsLoading(true);
+    }
   }, [isOpen]);
 
   /**
