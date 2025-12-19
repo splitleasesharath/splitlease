@@ -112,6 +112,25 @@ function FacebookIcon() {
   );
 }
 
+// SMS/Message icon
+function SmsIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+    </svg>
+  );
+}
+
 export default function ReferralModal({ isOpen, onClose, referralCode = 'yourname', stats = {} }) {
   const [copied, setCopied] = useState(false);
 
@@ -156,6 +175,12 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'yournam
 
   const handleFacebook = () => {
     window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`, '_blank');
+  };
+
+  const handleSms = () => {
+    const text = encodeURIComponent(`Get $50 off your first Split Lease booking! Use my referral link: ${referralLink}`);
+    // sms: works on both iOS and Android
+    window.location.href = `sms:?&body=${text}`;
   };
 
   const handleOverlayClick = (e) => {
@@ -203,6 +228,9 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'yournam
         </div>
 
         <div className="referral-share-actions">
+          <button className="referral-secondary-btn" onClick={handleSms}>
+            <SmsIcon /> SMS
+          </button>
           <button className="referral-secondary-btn" onClick={handleTelegram}>
             <SendIcon /> Telegram
           </button>
