@@ -820,8 +820,9 @@ export default function PreviewSplitLeasePage() {
 
   const handleSaveEdit = async (updatedListing) => {
     // Update the local listing state with the new data
+    // Note: Don't close the modal here - let EditListingDetails handle closing
+    // after showing the success toast
     setListing(prev => ({ ...prev, ...updatedListing }));
-    handleCloseEditModal();
   };
 
   const handleUpdateListing = async (id, updates) => {
