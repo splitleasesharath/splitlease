@@ -271,7 +271,10 @@ export default function ScheduleCohost({
   };
 
   const handleDetailsChange = (e) => {
-    const value = sanitizeInput(e.target.value);
+    // Don't use sanitizeInput here - it trims trailing spaces which prevents typing spaces
+    // Only strip script tags for XSS protection, preserve whitespace for UX
+    let value = e.target.value;
+    value = value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
     if (value.length <= 1000) {
       setDetails(value);
     }
@@ -308,7 +311,7 @@ export default function ScheduleCohost({
       listingId,
       selectedTimes: selectedTimeSlots,
       subject: selectedSubjects.join(', '),
-      details,
+      details: details.trim(), // Trim on submit, not during typing
     });
 
     setIsLoading(false);
