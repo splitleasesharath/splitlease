@@ -1589,7 +1589,7 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px; /* Reduced 30% from 18px */
+  margin-bottom: 10px; /* Reduced 40% from 18px */
 }
 
 .host-referral-card__brand {
