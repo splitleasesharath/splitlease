@@ -700,21 +700,17 @@
 
 /* Referral section */
 .vm-success-modal-referral {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   padding: 16px 20px;
   background: #F9FAFB;
   border-top: 1px solid #E5E7EB;
 }
 
-.vm-success-modal-referral-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
 .vm-success-modal-referral-icon {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: linear-gradient(135deg, var(--vm-purple-accent, #5C20B6), #8B5CF6);
   display: flex;
@@ -725,8 +721,8 @@
 
 .vm-success-modal-referral-icon svg {
   color: white;
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .vm-success-modal-referral-content {
@@ -749,65 +745,35 @@
   margin-top: 2px;
 }
 
-/* Share buttons row */
-.vm-success-modal-share-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.vm-success-modal-share-btn {
+.vm-success-modal-referral-btn {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  background: white;
-  color: #374151;
-  border: 1px solid #D1D5DB;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-}
-
-.vm-success-modal-share-btn:hover {
-  background: #F3F4F6;
-  border-color: #9CA3AF;
-}
-
-.vm-success-modal-share-btn:first-child {
+  gap: 6px;
   background: var(--vm-purple-accent, #5C20B6);
   color: white;
-  border-color: var(--vm-purple-accent, #5C20B6);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
-.vm-success-modal-share-btn:first-child:hover {
+.vm-success-modal-referral-btn:hover {
   background: #4a1a94;
-  border-color: #4a1a94;
-}
-
-.vm-success-modal-share-btn svg {
-  width: 16px;
-  height: 16px;
 }
 
 @media (max-width: 480px) {
-  .vm-success-modal-share-buttons {
-    justify-content: center;
+  .vm-success-modal-referral {
+    flex-wrap: wrap;
   }
 
-  .vm-success-modal-share-btn {
-    flex: 1;
-    min-width: 48px;
-    padding: 10px 8px;
-  }
-
-  .vm-success-modal-share-btn:first-child {
-    flex: none;
+  .vm-success-modal-referral-btn {
     width: 100%;
-    margin-bottom: 4px;
+    justify-content: center;
+    margin-top: 8px;
   }
 }
