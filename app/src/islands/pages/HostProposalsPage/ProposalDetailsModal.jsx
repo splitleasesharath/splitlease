@@ -176,8 +176,8 @@ export default function ProposalDetailsModal({
             <h2 className="modal-title">{guestName}'s Proposal</h2>
             <div className="modal-schedule">
               <span className="schedule-text">
-                {checkInDay} to {checkOutDay}
-                {counterOfferHappened && ' (Proposed by You)'}
+                {checkInDay} to {checkOutDay} (check-out)
+                {counterOfferHappened && ' · Proposed by You'}
               </span>
               <DayIndicator activeDays={activeDays} size="medium" />
             </div>

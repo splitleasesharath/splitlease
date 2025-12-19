@@ -128,7 +128,7 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
 
         {/* Schedule Info - shows check-in to check-out range */}
         <p className="schedule-text">
-          {checkInDay} to {checkOutDay}
+          {checkInDay} to {checkOutDay} (check-out)
         </p>
 
         {/* Day Indicator */}
