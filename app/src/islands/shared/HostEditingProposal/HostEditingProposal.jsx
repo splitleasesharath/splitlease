@@ -208,17 +208,19 @@ export function HostEditingProposal({
   }, [proposal, isFirstOpen])
 
   // Check if any values have changed
+  // Uses the same extraction functions as initialization to ensure consistent comparison
   const hasChanges = useCallback(() => {
     const originalMoveIn = getProposalDate('moveInRangeStart', proposal?.['Move in range start'])
     const dateChanged = formatDate(originalMoveIn, 'short') !== formatDate(editedMoveInDate, 'short')
 
-    const originalWeeks = getProposalValue('reservationSpanWeeks', 8)
+    const originalWeeks = extractReservationSpanWeeks()
     const originalSpan = findReservationSpanByWeeks(originalWeeks)
     const spanChanged = originalWeeks !== editedWeeks ||
                         originalSpan?.value !== editedReservationSpan?.value
 
-    const originalCheckIn = getProposalValue('checkInDay', 'Monday')
-    const originalCheckOut = getProposalValue('checkOutDay', 'Friday')
+    // Use extraction functions for consistent field name handling
+    const originalCheckIn = extractCheckInDay()
+    const originalCheckOut = extractCheckOutDay()
     const scheduleChanged = originalCheckIn !== editedCheckInDay ||
                            originalCheckOut !== editedCheckOutDay
 
