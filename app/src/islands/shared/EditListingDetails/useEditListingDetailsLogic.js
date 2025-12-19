@@ -375,7 +375,17 @@ export function useEditListingDetailsLogic({ listing, editSection, onClose, onSa
   }, []);
 
   const showToast = useCallback((message, subMessage, type = 'success') => {
-    setToast({ type, message, subMessage });
+    // Use global toast system (positioned top-right) instead of local modal toast
+    if (window.showToast) {
+      window.showToast({
+        title: message,
+        content: subMessage || undefined,
+        type: type
+      });
+    } else {
+      // Fallback to local toast if global not available
+      setToast({ type, message, subMessage });
+    }
   }, []);
 
   const dismissToast = useCallback(() => {
