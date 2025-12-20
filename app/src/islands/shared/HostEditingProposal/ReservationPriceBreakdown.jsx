@@ -143,12 +143,10 @@ export function ReservationPriceBreakdown({
       )}
 
       <div className={getRowClass(hasChanged.moveInDate)}>
-        <span className="hep-breakdown-row-label">
-          Move-in
-          {onEditField && <EditButton onClick={() => onEditField('moveInDate')} label="move-in date" />}
-        </span>
+        <span className="hep-breakdown-row-label">Move-in</span>
         <span className="hep-breakdown-row-value">
           {formatDate(moveInDate)}
+          {onEditField && <EditButton onClick={() => onEditField('moveInDate')} label="move-in date" />}
           {hasChanged.moveInDate && originalValues?.moveInDate && (
             <span className="hep-original-value">
               was: {formatDate(originalValues.moveInDate, 'short')}
@@ -158,12 +156,10 @@ export function ReservationPriceBreakdown({
       </div>
 
       <div className={getRowClass(hasChanged.checkInDay)}>
-        <span className="hep-breakdown-row-label">
-          Check-in
-          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="schedule" />}
-        </span>
+        <span className="hep-breakdown-row-label">Check-in</span>
         <span className="hep-breakdown-row-value">
           {formatDayDisplay(checkInDay)}
+          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="schedule" />}
           {hasChanged.checkInDay && originalValues?.checkInDay && (
             <span className="hep-original-value">was: {formatDayDisplay(originalValues.checkInDay)}</span>
           )}
@@ -171,12 +167,10 @@ export function ReservationPriceBreakdown({
       </div>
 
       <div className={getRowClass(hasChanged.checkOutDay)}>
-        <span className="hep-breakdown-row-label">
-          Check-out
-          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="schedule" />}
-        </span>
+        <span className="hep-breakdown-row-label">Check-out</span>
         <span className="hep-breakdown-row-value">
           {formatDayDisplay(checkOutDay)}
+          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="schedule" />}
           {hasChanged.checkOutDay && originalValues?.checkOutDay && (
             <span className="hep-original-value">was: {formatDayDisplay(originalValues.checkOutDay)}</span>
           )}
@@ -184,12 +178,10 @@ export function ReservationPriceBreakdown({
       </div>
 
       <div className={getRowClass(hasChanged.reservationSpan || hasChanged.weeksReservationSpan)}>
-        <span className="hep-breakdown-row-label">
-          Reservation Length
-          {onEditField && <EditButton onClick={() => onEditField('reservationSpan')} label="reservation length" />}
-        </span>
+        <span className="hep-breakdown-row-label">Reservation Length</span>
         <span className="hep-breakdown-row-value">
           {weeksReservationSpan} weeks
+          {onEditField && <EditButton onClick={() => onEditField('reservationSpan')} label="reservation length" />}
           {(hasChanged.reservationSpan || hasChanged.weeksReservationSpan) &&
             originalValues?.weeksReservationSpan && (
               <span className="hep-original-value">
@@ -200,14 +192,12 @@ export function ReservationPriceBreakdown({
       </div>
 
       <div className={getRowClass(hasChanged.houseRules)}>
-        <span className="hep-breakdown-row-label">
-          Your House Rules
-          {onEditField && <EditButton onClick={() => onEditField('houseRules')} label="house rules" />}
-        </span>
+        <span className="hep-breakdown-row-label">Your House Rules</span>
         <span className="hep-breakdown-row-value">
           {houseRules.length > 0
             ? houseRules.map(rule => rule.name || rule.Display || rule).join(', ')
             : 'None specified'}
+          {onEditField && <EditButton onClick={() => onEditField('houseRules')} label="house rules" />}
           {hasChanged.houseRules && originalValues?.houseRules && (
             <span className="hep-original-value">
               was: {originalValues.houseRules.length > 0
@@ -219,12 +209,10 @@ export function ReservationPriceBreakdown({
       </div>
 
       <div className={getRowClass(hasChanged.nightsSelected)}>
-        <span className="hep-breakdown-row-label">
-          Weekly Pattern
-          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="weekly pattern" />}
-        </span>
+        <span className="hep-breakdown-row-label">Weekly Pattern</span>
         <span className="hep-breakdown-row-value">
           {nightsSelected.length} nights/week
+          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="weekly pattern" />}
           {hasChanged.nightsSelected && originalValues?.nightsSelected && (
             <span className="hep-original-value">
               was: {originalValues.nightsSelected.length} nights/week
