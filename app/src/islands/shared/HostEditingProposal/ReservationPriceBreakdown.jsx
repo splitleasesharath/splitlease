@@ -61,6 +61,8 @@ function EditButton({ onClick, label }) {
  * @param {number} props.nightlyCompensation - Nightly compensation amount
  * @param {number} props.totalCompensation - Total compensation
  * @param {number} props.hostCompensationPer4Weeks - Host compensation per 4 weeks
+ * @param {number} props.originalTotalCompensation - Original total compensation for comparison
+ * @param {number} props.originalCompensationPer4Weeks - Original compensation per 4 weeks for comparison
  * @param {boolean} props.isVisible - Whether component is visible
  * @param {Object} props.originalValues - Original values for comparison
  * @param {function} props.onEditField - Callback when edit button clicked (field: string) => void
@@ -76,6 +78,8 @@ export function ReservationPriceBreakdown({
   nightlyCompensation = 0,
   totalCompensation = 0,
   hostCompensationPer4Weeks = 0,
+  originalTotalCompensation,
+  originalCompensationPer4Weeks,
   isVisible = true,
   originalValues,
   onEditField
@@ -244,6 +248,11 @@ export function ReservationPriceBreakdown({
         <span className="hep-breakdown-row-label">Total Compensation</span>
         <span className="hep-breakdown-row-value">
           {formatCurrency(totalCompensation)}
+          {schedulingChanged && originalTotalCompensation !== undefined && (
+            <span className="hep-original-value">
+              was: {formatCurrency(originalTotalCompensation)}
+            </span>
+          )}
         </span>
       </div>
 
@@ -251,6 +260,11 @@ export function ReservationPriceBreakdown({
         <span className="hep-breakdown-row-label">Compensation / 4 weeks</span>
         <span className="hep-breakdown-row-value">
           {formatCurrency(hostCompensationPer4Weeks)}
+          {schedulingChanged && originalCompensationPer4Weeks !== undefined && (
+            <span className="hep-original-value">
+              was: {formatCurrency(originalCompensationPer4Weeks)}
+            </span>
+          )}
         </span>
       </div>
     </div>

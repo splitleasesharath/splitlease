@@ -205,14 +205,16 @@
 .hep-input-base {
   font-family: var(--hep-font-sans);
   font-weight: 400;
-  font-size: 18px;
+  font-size: 16px;
   color: var(--hep-text-secondary);
   background-color: var(--hep-primary-white);
   border: 1px solid var(--hep-text-tertiary);
   border-radius: 2px;
   box-shadow: inset -2px -2px 4px var(--hep-shadow-gray);
   padding: 8px 12px;
+  height: 42px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .hep-input-base::placeholder {
@@ -243,11 +245,12 @@
 }
 
 .hep-dropdown {
-  font-size: 14px;
+  font-size: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
+  height: 42px;
 }
 
 .hep-dropdown:disabled {
@@ -301,6 +304,7 @@
 
 .hep-input-number {
   width: 100%;
+  height: 42px;
 }
 
 /* Multi-select */

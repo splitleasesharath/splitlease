@@ -329,6 +329,15 @@ export function HostEditingProposal({
   const totalCompensation = nightlyCompensation * totalNights
   const compensationPer4Weeks = editedWeeks > 0 ? (totalCompensation / editedWeeks) * 4 : 0
 
+  // Calculate original compensation values for comparison
+  const originalNightsPerWeek = extractNightsSelected().length
+  const originalWeeksValue = extractReservationSpanWeeks()
+  const originalTotalNights = originalNightsPerWeek * originalWeeksValue
+  const originalTotalCompensation = nightlyCompensation * originalTotalNights
+  const originalCompensationPer4Weeks = originalWeeksValue > 0
+    ? (originalTotalCompensation / originalWeeksValue) * 4
+    : 0
+
   // Handlers
   const handleToggleView = () => {
     setView(view === 'general' ? 'editing' : 'general')
@@ -624,6 +633,8 @@ export function HostEditingProposal({
             nightlyCompensation={nightlyCompensation}
             totalCompensation={totalCompensation}
             hostCompensationPer4Weeks={compensationPer4Weeks}
+            originalTotalCompensation={originalTotalCompensation}
+            originalCompensationPer4Weeks={originalCompensationPer4Weeks}
             isVisible={true}
             originalValues={originalValues}
             onEditField={handleEditField}
