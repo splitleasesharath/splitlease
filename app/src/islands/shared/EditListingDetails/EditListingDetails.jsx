@@ -21,13 +21,13 @@ import {
   KITCHEN_TYPES,
   STORAGE_TYPES,
   PARKING_OPTIONS,
-  CANCELLATION_POLICIES,
   BEDROOM_OPTIONS,
   BED_OPTIONS,
   BATHROOM_OPTIONS,
   GUEST_OPTIONS,
   BOROUGH_OPTIONS
 } from './constants';
+import { getAllCancellationPolicies } from '../../../lib/dataLookups';
 import '../../../styles/components/edit-listing-details.css';
 
 /**
@@ -860,8 +860,8 @@ export function EditListingDetails({ listing, editSection, focusField, onClose, 
             onChange={(e) => handleInputChange('Cancellation Policy', e.target.value)}
           >
             <option value="">Select policy</option>
-            {CANCELLATION_POLICIES.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            {getAllCancellationPolicies().map(policy => (
+              <option key={policy.id} value={policy.id}>{policy.display}</option>
             ))}
           </select>
         </div>

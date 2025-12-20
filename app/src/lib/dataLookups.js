@@ -513,6 +513,18 @@ export function getCancellationPolicy(policyId) {
 }
 
 /**
+ * Get all cancellation policies from cache (for dropdown options)
+ * @returns {Array<{id: string, display: string}>} Array of policy options
+ */
+export function getAllCancellationPolicies() {
+  const policies = [];
+  lookupCache.cancellationPolicies.forEach((policy, id) => {
+    policies.push({ id, display: policy.display });
+  });
+  return policies;
+}
+
+/**
  * Get storage option data by ID (synchronous lookup from cache)
  * @param {string} storageId - The storage option ID
  * @returns {object|null} The storage option data {title, summaryGuest} or null

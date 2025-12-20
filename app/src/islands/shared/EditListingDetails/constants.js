@@ -73,12 +73,7 @@ export const PARKING_OPTIONS = [
   { value: 'Nearby Parking Structure', label: 'Nearby Parking Structure' }
 ];
 
-export const CANCELLATION_POLICIES = [
-  { value: 'Standard', label: 'Standard' },
-  { value: 'Flexible', label: 'Flexible' },
-  { value: 'Moderate', label: 'Moderate' },
-  { value: 'Strict', label: 'Strict' }
-];
+// CANCELLATION_POLICIES removed - now fetched from reference table via getAllCancellationPolicies()
 
 export const BEDROOM_OPTIONS = [
   { value: 0, label: 'Studio' },
