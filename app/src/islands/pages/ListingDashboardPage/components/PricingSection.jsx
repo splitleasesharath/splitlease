@@ -44,13 +44,6 @@ export default function PricingSection({ listing, onEdit }) {
             <p>
               <strong>Selected Lease Style:</strong> {listing?.leaseStyle || 'Nightly'}
             </p>
-            {/* Show Nights/Week only for Nightly */}
-            {isNightly && (
-              <p>
-                <strong>Nights / Week</strong>{' '}
-                {listing?.nightsPerWeekMin || 2} to {listing?.nightsPerWeekMax || 7}
-              </p>
-            )}
             {/* Show Weekly Pattern for Weekly style */}
             {isWeekly && listing?.weeksOffered && (
               <p>
