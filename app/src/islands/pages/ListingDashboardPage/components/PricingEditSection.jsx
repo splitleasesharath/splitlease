@@ -394,18 +394,19 @@ export default function PricingEditSection({
 
       // Add rental-type specific fields
       if (selectedRentalType === 'Nightly') {
-        // Convert night IDs back to Bubble format (1-7)
+        // Convert night IDs to JS 0-indexed format (0=Sunday...6=Saturday)
+        // Database now uses JS standard format natively
         const nightMap = {
-          sunday: 1,
-          monday: 2,
-          tuesday: 3,
-          wednesday: 4,
-          thursday: 5,
-          friday: 6,
-          saturday: 7,
+          sunday: 0,
+          monday: 1,
+          tuesday: 2,
+          wednesday: 3,
+          thursday: 4,
+          friday: 5,
+          saturday: 6,
         };
-        const bubbleDays = selectedNights.map((n) => nightMap[n]).sort();
-        updates['Days Available (List of Days)'] = JSON.stringify(bubbleDays);
+        const dayIndices = selectedNights.map((n) => nightMap[n]).sort((a, b) => a - b);
+        updates['Days Available (List of Days)'] = JSON.stringify(dayIndices);
 
         // Preserve 1-night rate if available (primarily set during listing creation)
         // Note: Dashboard currently doesn't have UI to edit 1-night rate directly
