@@ -570,8 +570,10 @@ export default function useListingDashboardPageLogic() {
         handleCopyLink();
         break;
       case 'proposals':
-        setActiveTab('proposals');
-        // TODO: Navigate to proposals or scroll to section
+        // Navigate to host proposals page filtered to this listing
+        if (listing) {
+          window.location.href = `/host-proposals?listingId=${listing.id}`;
+        }
         break;
       case 'meetings':
         setActiveTab('virtual-meetings');

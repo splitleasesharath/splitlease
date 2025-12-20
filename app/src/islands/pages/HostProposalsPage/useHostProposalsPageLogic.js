@@ -261,10 +261,26 @@ export function useHostProposalsPageLogic() {
         );
 
         setListings(sortedListings);
-        setSelectedListing(sortedListings[0]);
 
-        // Fetch proposals for the first (most relevant) listing
-        const proposalsResult = await fetchProposalsForListing(sortedListings[0]._id || sortedListings[0].id);
+        // Check for listingId URL parameter to pre-select a specific listing
+        const urlParams = new URLSearchParams(window.location.search);
+        const preselectedListingId = urlParams.get('listingId');
+
+        let listingToSelect = sortedListings[0];
+        if (preselectedListingId) {
+          const matchedListing = sortedListings.find(l =>
+            (l._id || l.id) === preselectedListingId
+          );
+          if (matchedListing) {
+            listingToSelect = matchedListing;
+            console.log('[useHostProposalsPageLogic] Pre-selected listing from URL:', preselectedListingId);
+          }
+        }
+
+        setSelectedListing(listingToSelect);
+
+        // Fetch proposals for the selected listing
+        const proposalsResult = await fetchProposalsForListing(listingToSelect._id || listingToSelect.id);
         setProposals(proposalsResult);
       } else {
         setListings([]);
