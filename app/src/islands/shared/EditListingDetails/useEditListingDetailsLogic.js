@@ -192,7 +192,7 @@ export function useEditListingDetailsLogic({ listing, editSection, focusField, o
       'First Available': listing['First Available'],
       'Minimum Nights': listing['Minimum Nights'],
       'Maximum Nights': listing['Maximum Nights'],
-      'Cancellation Policy': listing['Cancellation Policy']
+      'Cancellation Policy': listing.cancellationPolicy?.display || ''
     });
     formDataInitializedRef.current = true;
   }, [listing]);
