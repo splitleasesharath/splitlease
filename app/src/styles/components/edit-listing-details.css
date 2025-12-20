@@ -72,25 +72,16 @@
   border: none;
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  transition: background-color 150ms ease;
-}
-
-.eld-popup-close svg {
-  width: 20px;
-  height: 20px;
-}
-
-.eld-popup-close svg line {
-  stroke: #6B7280;
-  transition: stroke 150ms ease;
+  font-size: 24px;
+  font-weight: 300;
+  color: #6B7280;
+  line-height: 1;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 .eld-popup-close:hover {
   background-color: #F3F4F6;
-}
-
-.eld-popup-close:hover svg line {
-  stroke: #1F2937;
+  color: #1F2937;
 }
 
 /* Popup Subtitle */
