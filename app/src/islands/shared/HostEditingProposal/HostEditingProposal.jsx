@@ -282,11 +282,16 @@ export function HostEditingProposal({
     const scheduleChanged = originalCheckIn !== editedCheckInDay ||
                            originalCheckOut !== editedCheckOutDay
 
-    const originalRules = getProposalValue('houseRules', [])
-    const originalRuleIds = new Set(originalRules.map(r => r.id))
-    const editedRuleIds = new Set(editedHouseRules.map(r => r.id))
-    const rulesChanged = originalRuleIds.size !== editedRuleIds.size ||
-                        [...originalRuleIds].some(id => !editedRuleIds.has(id))
+    // Only compare house rules if they have been initialized
+    // Before initialization, editedHouseRules is [] which would cause false positives
+    let rulesChanged = false
+    if (houseRulesInitialized) {
+      const originalRules = getProposalValue('houseRules', [])
+      const originalRuleIds = new Set(originalRules.map(r => r.id))
+      const editedRuleIds = new Set(editedHouseRules.map(r => r.id))
+      rulesChanged = originalRuleIds.size !== editedRuleIds.size ||
+                    [...originalRuleIds].some(id => !editedRuleIds.has(id))
+    }
 
     // Debug logging
     console.log('[hasChanges] Comparison:', {
@@ -304,13 +309,13 @@ export function HostEditingProposal({
       originalCheckOut,
       editedCheckOutDay,
       rulesChanged,
-      originalRulesCount: originalRuleIds.size,
-      editedRulesCount: editedRuleIds.size,
+      houseRulesInitialized,
+      editedRulesCount: editedHouseRules.length,
       result: dateChanged || spanChanged || scheduleChanged || rulesChanged
     })
 
     return dateChanged || spanChanged || scheduleChanged || rulesChanged
-  }, [proposal, editedMoveInDate, editedWeeks, editedReservationSpan, editedCheckInDay, editedCheckOutDay, editedHouseRules])
+  }, [proposal, editedMoveInDate, editedWeeks, editedReservationSpan, editedCheckInDay, editedCheckOutDay, editedHouseRules, houseRulesInitialized])
 
   // Calculate approximate move-out date
   const approxMoveOut = addWeeks(editedMoveInDate, editedWeeks)
