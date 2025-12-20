@@ -72,18 +72,22 @@
   border: none;
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  color: #6B7280;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: background-color 150ms ease;
 }
 
 .eld-popup-close svg {
-  color: inherit;
-  stroke: currentColor;
+  width: 20px;
+  height: 20px;
+  stroke: #6B7280 !important;
+  transition: stroke 150ms ease;
 }
 
 .eld-popup-close:hover {
   background-color: #F3F4F6;
-  color: #1F2937;
+}
+
+.eld-popup-close:hover svg {
+  stroke: #1F2937 !important;
 }
 
 /* Popup Subtitle */
