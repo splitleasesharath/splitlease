@@ -952,7 +952,8 @@
   border-color: var(--primary-purple);
 }
 
-.choose-meeting-btn {
+.choose-meeting-btn,
+.request-meeting-btn {
   background-color: var(--primary-purple);
   color: white;
   padding: var(--spacing-sm) var(--spacing-2xl);
@@ -964,7 +965,8 @@
   transition: background-color var(--transition-base);
 }
 
-.choose-meeting-btn:hover {
+.choose-meeting-btn:hover,
+.request-meeting-btn:hover {
   background-color: var(--primary-purple-hover);
 }
 

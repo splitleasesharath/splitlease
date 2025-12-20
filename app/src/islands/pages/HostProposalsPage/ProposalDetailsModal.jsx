@@ -245,24 +245,16 @@ export default function ProposalDetailsModal({
   const renderActionButtons = () => {
     const { key } = statusConfig;
 
-    // Awaiting rental application - host can request VM or remind guest
+    // Awaiting rental application - host can view details (VM is in its own section)
     if (key === 'Proposal Submitted by guest - Awaiting Rental Application' ||
         key === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application') {
       return (
-        <>
-          <button
-            className="action-btn secondary"
-            onClick={() => onChooseVirtualMeeting?.(proposal, null)}
-          >
-            Request Virtual Meeting
-          </button>
-          <button
-            className="action-btn modify"
-            onClick={() => onModify?.(proposal)}
-          >
-            Review / Modify
-          </button>
-        </>
+        <button
+          className="action-btn modify"
+          onClick={() => onModify?.(proposal)}
+        >
+          View Details
+        </button>
       );
     }
 
@@ -602,53 +594,73 @@ export default function ProposalDetailsModal({
             )}
           </div>
 
-          {/* Virtual Meetings Section */}
-          {virtualMeeting && (
-            <div className="collapsible-section">
-              <button
-                className="section-header"
-                onClick={() => setVirtualMeetingsExpanded(!virtualMeetingsExpanded)}
+          {/* Virtual Meetings Section - Always visible */}
+          <div className="collapsible-section">
+            <button
+              className="section-header"
+              onClick={() => setVirtualMeetingsExpanded(!virtualMeetingsExpanded)}
+            >
+              <span>Virtual meetings</span>
+              <svg
+                className={`chevron ${virtualMeetingsExpanded ? 'open' : ''}`}
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
               >
-                <span>Virtual meetings</span>
-                <svg
-                  className={`chevron ${virtualMeetingsExpanded ? 'open' : ''}`}
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                </svg>
-              </button>
-              {virtualMeetingsExpanded && (
-                <div className="section-content virtual-meeting-content">
-                  <div className="virtual-meeting-header">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
-                      <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                    <span>A virtual meeting with {guestName} has been suggested for the times:</span>
-                  </div>
-                  <div className="time-slots">
-                    {(virtualMeeting.suggestedTimes || []).map((time, index) => (
-                      <button
-                        key={index}
-                        className="time-slot"
-                        onClick={() => onChooseVirtualMeeting?.(proposal, new Date(time))}
-                      >
-                        {formatDateTime(time)}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    className="choose-meeting-btn"
-                    onClick={() => onChooseVirtualMeeting?.(proposal, virtualMeeting.suggestedTimes?.[0])}
-                  >
-                    Choose Virtual Meeting Time
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
+                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+              </svg>
+            </button>
+            {virtualMeetingsExpanded && (
+              <div className="section-content virtual-meeting-content">
+                {virtualMeeting ? (
+                  <>
+                    {/* Meeting exists - show details and respond options */}
+                    <div className="virtual-meeting-header">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+                        <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                      <span>A virtual meeting with {guestName} has been suggested for the times:</span>
+                    </div>
+                    <div className="time-slots">
+                      {(virtualMeeting.suggestedTimes || []).map((time, index) => (
+                        <button
+                          key={index}
+                          className="time-slot"
+                          onClick={() => onChooseVirtualMeeting?.(proposal, new Date(time))}
+                        >
+                          {formatDateTime(time)}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      className="choose-meeting-btn"
+                      onClick={() => onChooseVirtualMeeting?.(proposal, virtualMeeting.suggestedTimes?.[0])}
+                    >
+                      Choose Virtual Meeting Time
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {/* No meeting yet - show request option */}
+                    <div className="virtual-meeting-header">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+                        <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                      <span>Schedule a virtual meeting with {guestName} to discuss the proposal.</span>
+                    </div>
+                    <button
+                      className="request-meeting-btn"
+                      onClick={() => onChooseVirtualMeeting?.(proposal, null)}
+                    >
+                      Request Virtual Meeting
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Action Buttons - Dynamic based on status */}
