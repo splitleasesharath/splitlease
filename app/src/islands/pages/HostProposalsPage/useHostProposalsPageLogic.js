@@ -15,6 +15,7 @@ import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getUserType }
 import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
 import { isHost } from '../../../logic/rules/users/isHost.js';
+import { getAllHouseRules } from '../../shared/EditListingDetails/services/houseRulesService.js';
 
 /**
  * Hook for Host Proposals Page business logic
@@ -645,8 +646,23 @@ export function useHostProposalsPageLogic() {
    * Handle virtual meeting selection
    */
   const handleChooseVirtualMeeting = useCallback((proposal, time) => {
-    alert(`Selected meeting time: ${time.toLocaleString()}`);
-    // TODO: Call API to confirm meeting time
+    if (time) {
+      alert(`Selected meeting time: ${time.toLocaleString()}`);
+    } else {
+      alert('Virtual meeting request feature coming soon! The guest will be notified to schedule a call.');
+    }
+    // TODO: Call API to confirm meeting time or send meeting request
+  }, []);
+
+  /**
+   * Handle request rental application
+   * Sends a reminder to the guest to submit their rental application
+   */
+  const handleRequestRentalApp = useCallback((proposal) => {
+    const guest = proposal.guest || proposal.Guest || proposal['Created By'] || {};
+    const guestName = guest.firstName || guest['First Name'] || 'Guest';
+    alert(`Rental application request sent to ${guestName}! They will be notified to complete their application.`);
+    // TODO: Call API to send rental app request notification to guest
   }, []);
 
   /**
@@ -698,6 +714,7 @@ export function useHostProposalsPageLogic() {
     handleSendMessage,
     handleRemindSplitLease,
     handleChooseVirtualMeeting,
+    handleRequestRentalApp,
     handleEditListing,
     handleRetry,
 

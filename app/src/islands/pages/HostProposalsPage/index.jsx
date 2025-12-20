@@ -87,6 +87,7 @@ export default function HostProposalsPage() {
     handleSendMessage,
     handleRemindSplitLease,
     handleChooseVirtualMeeting,
+    handleRequestRentalApp,
     handleEditListing,
     handleRetry,
 
@@ -169,6 +170,7 @@ export default function HostProposalsPage() {
         onSendMessage={handleSendMessage}
         onRemindSplitLease={handleRemindSplitLease}
         onChooseVirtualMeeting={handleChooseVirtualMeeting}
+        onRequestRentalApp={handleRequestRentalApp}
       />
 
       {/* Host Editing Proposal Modal */}
