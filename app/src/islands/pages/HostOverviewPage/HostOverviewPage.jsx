@@ -298,7 +298,7 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
       {/* Schedule Cohost Modal */}
       {showScheduleCohost && (
         <ScheduleCohost
-          userId={user?.id}
+          userId={user?.userId || user?.id}
           userEmail={user?.email}
           userName={`${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
           onRequestSubmitted={handleCohostRequestSubmitted}

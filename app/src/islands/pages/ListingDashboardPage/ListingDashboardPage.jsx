@@ -296,7 +296,7 @@ export default function ListingDashboardPage() {
       {/* Schedule Cohost Modal */}
       {showScheduleCohost && (
         <ScheduleCohost
-          userId={currentUser?._id || currentUser?.id || ''}
+          userId={currentUser?.userId || currentUser?._id || currentUser?.id || ''}
           userEmail={currentUser?.email || ''}
           userName={currentUser?.firstName || currentUser?.name || ''}
           listingId={listing?.id}

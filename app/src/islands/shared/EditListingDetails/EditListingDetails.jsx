@@ -1032,8 +1032,8 @@ export function EditListingDetails({ listing, editSection, focusField, onClose, 
           <h2>{sectionTitle}</h2>
           <button className="eld-popup-close" onClick={onClose} aria-label="Close">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
+              <line x1="18" y1="6" x2="6" y2="18" stroke="#6B7280"/>
+              <line x1="6" y1="6" x2="18" y2="18" stroke="#6B7280"/>
             </svg>
           </button>
         </div>

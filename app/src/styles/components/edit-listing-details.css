@@ -78,7 +78,10 @@
 .eld-popup-close svg {
   width: 20px;
   height: 20px;
-  stroke: #6B7280 !important;
+}
+
+.eld-popup-close svg line {
+  stroke: #6B7280;
   transition: stroke 150ms ease;
 }
 
@@ -86,8 +89,8 @@
   background-color: #F3F4F6;
 }
 
-.eld-popup-close:hover svg {
-  stroke: #1F2937 !important;
+.eld-popup-close:hover svg line {
+  stroke: #1F2937;
 }
 
 /* Popup Subtitle */

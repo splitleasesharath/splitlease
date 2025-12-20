@@ -178,7 +178,16 @@ export async function createCoHostRequest(data) {
 
     if (error) {
       console.error('[cohostService] Error creating request:', error);
-      // Try to get more details from the response
+      // Try to get the actual error context from the FunctionsHttpError
+      if (error.context) {
+        try {
+          const errorBody = await error.context.json();
+          console.error('[cohostService] Error body from Edge Function:', errorBody);
+          return { success: false, error: errorBody.error || errorBody.message || 'Failed to create request' };
+        } catch (e) {
+          console.error('[cohostService] Could not parse error body:', e);
+        }
+      }
       if (response) {
         console.error('[cohostService] Response with error:', response);
       }

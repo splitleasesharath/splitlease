@@ -90,13 +90,13 @@ export async function handleCreate(
   const now = new Date().toISOString();
 
   // co_hostrequest table columns:
-  // _id, Co-Host User, Host - Landlord, Listing, Created By, status
+  // _id, Co-Host User, Host - Landlord, Listing, Created By
+  // Note: 'status' column may not exist in schema cache - omitting for now
   const coHostData: Record<string, unknown> = {
     _id: coHostRequestId,
     "Co-Host User": input.userId,
     "Created By": input.userId,
     Listing: input.listingId || null,
-    status: "Co-Host Requested",
   };
 
   console.log(`[cohost-request:create] Inserting co-host request:`, JSON.stringify(coHostData));

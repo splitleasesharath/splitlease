@@ -119,12 +119,12 @@ export function useHostOverviewPageLogic() {
       const userData = await validateTokenAndFetchUser();
       if (userData) {
         setUser({
-          id: userData._id || userData.id,
+          id: userData.userId || userData._id || userData.id,
           firstName: userData['Name - First'] || userData.firstName || 'Host',
           lastName: userData['Name - Last'] || userData.lastName || '',
           email: userData.email || '',
           // After migration, user._id serves as host reference directly
-          accountHostId: userData.accountHostId || userData._id
+          accountHostId: userData.accountHostId || userData.userId || userData._id
         });
         return userData;
       }
