@@ -272,7 +272,9 @@ export function HostEditingProposal({
     const dateChanged = formatDate(originalMoveIn, 'short') !== formatDate(editedMoveInDate, 'short')
 
     const originalWeeks = extractReservationSpanWeeks()
-    const originalSpan = findReservationSpanByWeeks(originalWeeks)
+    // Use same fallback logic as initialization: if no matching span, use 'other'
+    const originalSpan = findReservationSpanByWeeks(originalWeeks) ||
+                         RESERVATION_SPANS.find(s => s.value === 'other')
     const spanChanged = originalWeeks !== editedWeeks ||
                         originalSpan?.value !== editedReservationSpan?.value
 
