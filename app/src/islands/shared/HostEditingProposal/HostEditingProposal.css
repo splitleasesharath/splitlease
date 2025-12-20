@@ -519,6 +519,33 @@
   font-weight: 700;
   font-size: 16px;
   color: var(--hep-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hep-breakdown-edit-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: var(--hep-primary-purple);
+  opacity: 0.6;
+  transition: opacity 200ms ease, transform 200ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+}
+
+.hep-breakdown-edit-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  background-color: rgba(49, 19, 93, 0.08);
+}
+
+.hep-breakdown-row:hover .hep-breakdown-edit-btn {
+  opacity: 0.8;
 }
 
 .hep-breakdown-row-value {

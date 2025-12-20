@@ -230,6 +230,27 @@ export function HostEditingProposal({
     const rulesChanged = originalRuleIds.size !== editedRuleIds.size ||
                         [...originalRuleIds].some(id => !editedRuleIds.has(id))
 
+    // Debug logging
+    console.log('[hasChanges] Comparison:', {
+      dateChanged,
+      originalMoveIn: formatDate(originalMoveIn, 'short'),
+      editedMoveIn: formatDate(editedMoveInDate, 'short'),
+      spanChanged,
+      originalWeeks,
+      editedWeeks,
+      originalSpanValue: originalSpan?.value,
+      editedSpanValue: editedReservationSpan?.value,
+      scheduleChanged,
+      originalCheckIn,
+      editedCheckInDay,
+      originalCheckOut,
+      editedCheckOutDay,
+      rulesChanged,
+      originalRulesCount: originalRuleIds.size,
+      editedRulesCount: editedRuleIds.size,
+      result: dateChanged || spanChanged || scheduleChanged || rulesChanged
+    })
+
     return dateChanged || spanChanged || scheduleChanged || rulesChanged
   }, [proposal, editedMoveInDate, editedWeeks, editedReservationSpan, editedCheckInDay, editedCheckOutDay, editedHouseRules])
 
@@ -254,6 +275,13 @@ export function HostEditingProposal({
     const willExpand = !isEditSectionExpanded
     setIsEditSectionExpanded(willExpand)
     setView(willExpand ? 'editing' : 'general')
+  }
+
+  // Handler for edit button clicks from breakdown - opens edit section
+  const handleEditField = (field) => {
+    setIsEditSectionExpanded(true)
+    setView('editing')
+    // Could add logic to scroll to specific field if needed
   }
 
   const handleScheduleChange = (data) => {
@@ -535,6 +563,7 @@ export function HostEditingProposal({
             hostCompensationPer4Weeks={compensationPer4Weeks}
             isVisible={true}
             originalValues={originalValues}
+            onEditField={handleEditField}
           />
 
           {/* Reject Proposal Section (expanded) */}

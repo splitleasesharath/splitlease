@@ -25,6 +25,26 @@ function formatDayDisplay(dayValue) {
 }
 
 /**
+ * Edit icon button for editable fields
+ */
+function EditButton({ onClick, label }) {
+  return (
+    <button
+      type="button"
+      className="hep-breakdown-edit-btn"
+      onClick={onClick}
+      title={`Edit ${label}`}
+      aria-label={`Edit ${label}`}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    </button>
+  )
+}
+
+/**
  * ReservationPriceBreakdown Component
  *
  * Host-focused breakdown showing compensation details only.
@@ -43,6 +63,7 @@ function formatDayDisplay(dayValue) {
  * @param {number} props.hostCompensationPer4Weeks - Host compensation per 4 weeks
  * @param {boolean} props.isVisible - Whether component is visible
  * @param {Object} props.originalValues - Original values for comparison
+ * @param {function} props.onEditField - Callback when edit button clicked (field: string) => void
  */
 export function ReservationPriceBreakdown({
   moveInDate,
@@ -56,7 +77,8 @@ export function ReservationPriceBreakdown({
   totalCompensation = 0,
   hostCompensationPer4Weeks = 0,
   isVisible = true,
-  originalValues
+  originalValues,
+  onEditField
 }) {
   if (!isVisible) return null
 
@@ -121,7 +143,10 @@ export function ReservationPriceBreakdown({
       )}
 
       <div className={getRowClass(hasChanged.moveInDate)}>
-        <span className="hep-breakdown-row-label">Move-in</span>
+        <span className="hep-breakdown-row-label">
+          Move-in
+          {onEditField && <EditButton onClick={() => onEditField('moveInDate')} label="move-in date" />}
+        </span>
         <span className="hep-breakdown-row-value">
           {formatDate(moveInDate)}
           {hasChanged.moveInDate && originalValues?.moveInDate && (
@@ -133,7 +158,10 @@ export function ReservationPriceBreakdown({
       </div>
 
       <div className={getRowClass(hasChanged.checkInDay)}>
-        <span className="hep-breakdown-row-label">Check-in</span>
+        <span className="hep-breakdown-row-label">
+          Check-in
+          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="schedule" />}
+        </span>
         <span className="hep-breakdown-row-value">
           {formatDayDisplay(checkInDay)}
           {hasChanged.checkInDay && originalValues?.checkInDay && (
@@ -143,7 +171,10 @@ export function ReservationPriceBreakdown({
       </div>
 
       <div className={getRowClass(hasChanged.checkOutDay)}>
-        <span className="hep-breakdown-row-label">Check-out</span>
+        <span className="hep-breakdown-row-label">
+          Check-out
+          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="schedule" />}
+        </span>
         <span className="hep-breakdown-row-value">
           {formatDayDisplay(checkOutDay)}
           {hasChanged.checkOutDay && originalValues?.checkOutDay && (
@@ -153,7 +184,10 @@ export function ReservationPriceBreakdown({
       </div>
 
       <div className={getRowClass(hasChanged.reservationSpan || hasChanged.weeksReservationSpan)}>
-        <span className="hep-breakdown-row-label">Reservation Length</span>
+        <span className="hep-breakdown-row-label">
+          Reservation Length
+          {onEditField && <EditButton onClick={() => onEditField('reservationSpan')} label="reservation length" />}
+        </span>
         <span className="hep-breakdown-row-value">
           {weeksReservationSpan} weeks
           {(hasChanged.reservationSpan || hasChanged.weeksReservationSpan) &&
@@ -166,7 +200,10 @@ export function ReservationPriceBreakdown({
       </div>
 
       <div className={getRowClass(hasChanged.houseRules)}>
-        <span className="hep-breakdown-row-label">Your House Rules</span>
+        <span className="hep-breakdown-row-label">
+          Your House Rules
+          {onEditField && <EditButton onClick={() => onEditField('houseRules')} label="house rules" />}
+        </span>
         <span className="hep-breakdown-row-value">
           {houseRules.length > 0
             ? houseRules.map(rule => rule.name || rule.Display || rule).join(', ')
@@ -182,7 +219,10 @@ export function ReservationPriceBreakdown({
       </div>
 
       <div className={getRowClass(hasChanged.nightsSelected)}>
-        <span className="hep-breakdown-row-label">Weekly Pattern</span>
+        <span className="hep-breakdown-row-label">
+          Weekly Pattern
+          {onEditField && <EditButton onClick={() => onEditField('schedule')} label="weekly pattern" />}
+        </span>
         <span className="hep-breakdown-row-value">
           {nightsSelected.length} nights/week
           {hasChanged.nightsSelected && originalValues?.nightsSelected && (
