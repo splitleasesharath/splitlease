@@ -49,6 +49,11 @@ export function useHostProposalsPageLogic() {
   const [error, setError] = useState(null);
 
   // ============================================================================
+  // REFERENCE DATA STATE
+  // ============================================================================
+  const [allHouseRules, setAllHouseRules] = useState([]);
+
+  // ============================================================================
   // AUTH CHECK
   // ============================================================================
   useEffect(() => {
@@ -166,6 +171,22 @@ export function useHostProposalsPageLogic() {
     }
 
     checkAuth();
+  }, []);
+
+  // ============================================================================
+  // LOAD REFERENCE DATA (House Rules)
+  // ============================================================================
+  useEffect(() => {
+    async function loadReferenceData() {
+      try {
+        const rules = await getAllHouseRules();
+        setAllHouseRules(rules);
+        console.log('[HostProposals] Loaded all house rules:', rules.length);
+      } catch (err) {
+        console.error('[HostProposals] Failed to load house rules:', err);
+      }
+    }
+    loadReferenceData();
   }, []);
 
   // ============================================================================
@@ -698,6 +719,9 @@ export function useHostProposalsPageLogic() {
     selectedProposal,
     isModalOpen,
     isEditingProposal,
+
+    // Reference data
+    allHouseRules,
 
     // UI state
     isLoading,

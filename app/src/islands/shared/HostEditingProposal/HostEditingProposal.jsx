@@ -73,6 +73,55 @@ export function HostEditingProposal({
   }
 
   /**
+   * Extract and normalize house rules from proposal or listing
+   * Handles multiple formats:
+   * - Array of strings (rule names): ["No Smoking", "No Parties"]
+   * - Array of IDs (Bubble format): ["1556151847445x748291628265310200"]
+   * - Array of objects: [{id, name}, ...]
+   * Returns array of {id, name} objects matching availableHouseRules format
+   */
+  const extractHouseRules = () => {
+    // Try proposal first, then listing
+    const rawRules = proposal?.houseRules ||
+                     proposal?.['House Rules'] ||
+                     proposal?.['Features - House Rules'] ||
+                     listing?.houseRules ||
+                     listing?.['Features - House Rules'] ||
+                     []
+
+    if (!Array.isArray(rawRules) || rawRules.length === 0) {
+      return []
+    }
+
+    // If already in correct format (objects with id and name)
+    if (rawRules[0] && typeof rawRules[0] === 'object' && rawRules[0].id) {
+      return rawRules
+    }
+
+    // If array of strings, try to match with availableHouseRules
+    if (typeof rawRules[0] === 'string') {
+      // Check if they look like Bubble IDs (long numeric strings with x)
+      const looksLikeIds = rawRules[0].includes('x') && rawRules[0].length > 20
+
+      if (looksLikeIds) {
+        // Match by ID
+        return rawRules
+          .map(id => availableHouseRules.find(r => r.id === id))
+          .filter(Boolean)
+      } else {
+        // Match by name (case-insensitive)
+        return rawRules
+          .map(name => availableHouseRules.find(r =>
+            r.name?.toLowerCase() === name?.toLowerCase()
+          ))
+          .filter(Boolean)
+      }
+    }
+
+    return []
+  }
+
+  /**
    * Extract nights selected from proposal, handling multiple formats:
    * - Database: "Nights Selected (Nights list)" = [0, 5] (indices)
    * - Alternative: "nightsSelected" = ['Sunday Night', 'Friday Night'] (names)
@@ -142,9 +191,18 @@ export function HostEditingProposal({
   const [editedDaysSelected, setEditedDaysSelected] = useState(() =>
     getProposalValue('daysSelected', ['Monday', 'Tuesday', 'Wednesday', 'Thursday'])
   )
-  const [editedHouseRules, setEditedHouseRules] = useState(() =>
-    getProposalValue('houseRules', [])
-  )
+  const [editedHouseRules, setEditedHouseRules] = useState([])
+  const [houseRulesInitialized, setHouseRulesInitialized] = useState(false)
+
+  // Initialize house rules when availableHouseRules becomes available
+  useEffect(() => {
+    if (availableHouseRules.length > 0 && !houseRulesInitialized) {
+      const normalizedRules = extractHouseRules()
+      setEditedHouseRules(normalizedRules)
+      setHouseRulesInitialized(true)
+      console.log('[HostEditingProposal] Initialized house rules:', normalizedRules)
+    }
+  }, [availableHouseRules, houseRulesInitialized])
 
   // Popup states
   const [showConfirmPopup, setShowConfirmPopup] = useState(false)

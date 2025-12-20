@@ -72,6 +72,9 @@ export default function HostProposalsPage() {
     isModalOpen,
     isEditingProposal,
 
+    // Reference data
+    allHouseRules,
+
     // UI state
     isLoading,
     error,
@@ -179,7 +182,7 @@ export default function HostProposalsPage() {
           <div className="editing-proposal-container">
             <HostEditingProposal
               proposal={selectedProposal}
-              availableHouseRules={selectedListing?.houseRules || []}
+              availableHouseRules={allHouseRules}
               onAcceptAsIs={() => handleAcceptAsIs(selectedProposal)}
               onCounteroffer={handleCounteroffer}
               onReject={(reason) => handleRejectFromEditing(selectedProposal, reason)}
