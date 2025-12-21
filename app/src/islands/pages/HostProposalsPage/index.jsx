@@ -23,6 +23,7 @@ import ListingSelector from './ListingSelector.jsx';
 import ProposalGrid from './ProposalGrid.jsx';
 import ProposalDetailsModal from './ProposalDetailsModal.jsx';
 import { HostEditingProposal } from '../../shared/HostEditingProposal/index.js';
+import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 
 // ============================================================================
 // LOADING STATE COMPONENT
@@ -72,6 +73,11 @@ export default function HostProposalsPage() {
     isModalOpen,
     isEditingProposal,
 
+    // Virtual meeting state
+    isVirtualMeetingModalOpen,
+    virtualMeetingView,
+    virtualMeetingProposal,
+
     // Reference data
     allHouseRules,
 
@@ -93,6 +99,10 @@ export default function HostProposalsPage() {
     handleRequestRentalApp,
     handleEditListing,
     handleRetry,
+
+    // Virtual meeting handlers
+    handleCloseVirtualMeetingModal,
+    handleVirtualMeetingSuccess,
 
     // Editing state
     showRejectOnOpen,
@@ -177,7 +187,19 @@ export default function HostProposalsPage() {
         onRemindSplitLease={handleRemindSplitLease}
         onChooseVirtualMeeting={handleChooseVirtualMeeting}
         onRequestRentalApp={handleRequestRentalApp}
+        currentUserId={user?._id || user?.userId}
       />
+
+      {/* Virtual Meeting Manager Modal */}
+      {isVirtualMeetingModalOpen && virtualMeetingProposal && (
+        <VirtualMeetingManager
+          proposal={virtualMeetingProposal}
+          initialView={virtualMeetingView}
+          currentUser={user}
+          onClose={handleCloseVirtualMeetingModal}
+          onSuccess={handleVirtualMeetingSuccess}
+        />
+      )}
 
       {/* Host Editing Proposal Modal */}
       {isEditingProposal && selectedProposal && (

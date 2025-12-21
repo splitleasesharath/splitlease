@@ -9,6 +9,7 @@ import DayIndicator from './DayIndicator.jsx';
 import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromNights, PROGRESS_THRESHOLDS } from './types.js';
 import { formatCurrency, formatDate, formatDateTime } from './formatters.js';
 import { getStatusConfig, getUsualOrder, isTerminalStatus } from '../../../logic/constants/proposalStatuses.js';
+import { getVMButtonText, getVMButtonStyle, getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtualMeetingRules.js';
 
 /**
  * Get host-appropriate status message based on proposal status
@@ -61,6 +62,7 @@ function getHostStatusMessage(statusConfig, rentalAppSubmitted) {
  * @param {Function} [props.onRemindSplitLease] - Remind Split Lease callback
  * @param {Function} [props.onChooseVirtualMeeting] - Choose virtual meeting callback
  * @param {Function} [props.onRequestRentalApp] - Request rental application callback
+ * @param {string} [props.currentUserId] - Current user's ID for VM state determination
  */
 export default function ProposalDetailsModal({
   proposal,
@@ -72,7 +74,8 @@ export default function ProposalDetailsModal({
   onSendMessage,
   onRemindSplitLease,
   onChooseVirtualMeeting,
-  onRequestRentalApp
+  onRequestRentalApp,
+  currentUserId
 }) {
   const [guestDetailsExpanded, setGuestDetailsExpanded] = useState(true);
   const [statusExpanded, setStatusExpanded] = useState(true);
@@ -401,72 +404,78 @@ export default function ProposalDetailsModal({
           </div>
 
           {/* Virtual Meetings Section - Always visible */}
-          <div className="collapsible-section">
-            <button
-              className="section-header"
-              onClick={() => setVirtualMeetingsExpanded(!virtualMeetingsExpanded)}
-            >
-              <span>Virtual meetings</span>
-              <svg
-                className={`chevron ${virtualMeetingsExpanded ? 'open' : ''}`}
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-              >
-                <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-              </svg>
-            </button>
-            {virtualMeetingsExpanded && (
-              <div className="section-content virtual-meeting-content">
-                {virtualMeeting ? (
-                  <>
-                    {/* Meeting exists - show details and respond options */}
+          {(() => {
+            // Get VM state info for button text and style
+            const vmStateInfo = getVMStateInfo(virtualMeeting, currentUserId);
+            const vmButtonText = vmStateInfo.buttonText;
+            const vmButtonDisabled = vmStateInfo.buttonDisabled;
+            const vmState = vmStateInfo.state;
+
+            // Determine helper text based on state
+            let vmHelperText = '';
+            if (vmState === VM_STATES.NO_MEETING) {
+              vmHelperText = `Schedule a virtual meeting with ${guestName} to discuss the proposal.`;
+            } else if (vmState === VM_STATES.REQUESTED_BY_GUEST) {
+              vmHelperText = `${guestName} has requested a virtual meeting. Please respond to their request.`;
+            } else if (vmState === VM_STATES.REQUESTED_BY_HOST) {
+              vmHelperText = `You've requested a virtual meeting with ${guestName}. Waiting for their response.`;
+            } else if (vmState === VM_STATES.BOOKED_AWAITING_CONFIRMATION) {
+              vmHelperText = `A meeting time has been selected. Awaiting confirmation from Split Lease.`;
+            } else if (vmState === VM_STATES.CONFIRMED) {
+              vmHelperText = `Your virtual meeting with ${guestName} is confirmed!`;
+            } else if (vmState === VM_STATES.DECLINED) {
+              vmHelperText = `The previous meeting was declined. You can request an alternative meeting.`;
+            }
+
+            return (
+              <div className="collapsible-section">
+                <button
+                  className="section-header"
+                  onClick={() => setVirtualMeetingsExpanded(!virtualMeetingsExpanded)}
+                >
+                  <span>Virtual meetings</span>
+                  <svg
+                    className={`chevron ${virtualMeetingsExpanded ? 'open' : ''}`}
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  </svg>
+                </button>
+                {virtualMeetingsExpanded && (
+                  <div className="section-content virtual-meeting-content">
                     <div className="virtual-meeting-header">
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                         <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
                         <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                       </svg>
-                      <span>A virtual meeting with {guestName} has been suggested for the times:</span>
+                      <span>{vmHelperText}</span>
                     </div>
-                    <div className="time-slots">
-                      {(virtualMeeting.suggestedTimes || []).map((time, index) => (
-                        <button
-                          key={index}
-                          className="time-slot"
-                          onClick={() => onChooseVirtualMeeting?.(proposal, new Date(time))}
-                        >
-                          {formatDateTime(time)}
-                        </button>
-                      ))}
-                    </div>
+
+                    {/* Show suggested times if they exist and guest requested */}
+                    {virtualMeeting && vmState === VM_STATES.REQUESTED_BY_GUEST && virtualMeeting.suggestedTimes?.length > 0 && (
+                      <div className="time-slots">
+                        {virtualMeeting.suggestedTimes.map((time, index) => (
+                          <div key={index} className="time-slot-display">
+                            {formatDateTime(time)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
                     <button
-                      className="choose-meeting-btn"
-                      onClick={() => onChooseVirtualMeeting?.(proposal, virtualMeeting.suggestedTimes?.[0])}
+                      className={`request-meeting-btn ${vmButtonDisabled ? 'disabled' : ''} ${vmState === VM_STATES.CONFIRMED ? 'success' : ''}`}
+                      onClick={() => onChooseVirtualMeeting?.(proposal)}
+                      disabled={vmButtonDisabled}
                     >
-                      Choose Virtual Meeting Time
+                      {vmButtonText}
                     </button>
-                  </>
-                ) : (
-                  <>
-                    {/* No meeting yet - show request option */}
-                    <div className="virtual-meeting-header">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
-                        <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                      </svg>
-                      <span>Schedule a virtual meeting with {guestName} to discuss the proposal.</span>
-                    </div>
-                    <button
-                      className="request-meeting-btn"
-                      onClick={() => onChooseVirtualMeeting?.(proposal, null)}
-                    >
-                      Request Virtual Meeting
-                    </button>
-                  </>
+                  </div>
                 )}
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* Guest Details Section */}
           <div className="collapsible-section">

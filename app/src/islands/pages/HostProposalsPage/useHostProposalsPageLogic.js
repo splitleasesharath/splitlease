@@ -16,6 +16,7 @@ import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
 import { isHost } from '../../../logic/rules/users/isHost.js';
 import { getAllHouseRules } from '../../shared/EditListingDetails/services/houseRulesService.js';
+import { getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtualMeetingRules.js';
 
 /**
  * Hook for Host Proposals Page business logic
@@ -42,6 +43,13 @@ export function useHostProposalsPageLogic() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditingProposal, setIsEditingProposal] = useState(false);
   const [showRejectOnOpen, setShowRejectOnOpen] = useState(false);
+
+  // ============================================================================
+  // VIRTUAL MEETING STATE
+  // ============================================================================
+  const [isVirtualMeetingModalOpen, setIsVirtualMeetingModalOpen] = useState(false);
+  const [virtualMeetingView, setVirtualMeetingView] = useState('');
+  const [virtualMeetingProposal, setVirtualMeetingProposal] = useState(null);
 
   // ============================================================================
   // UI STATE
@@ -368,7 +376,8 @@ export function useHostProposalsPageLogic() {
           "about_yourself",
           "Comment",
           "Created Date",
-          "Modified Date"
+          "Modified Date",
+          "Virtual Meeting"
         `)
         .eq('Listing', listingId)
         .neq('Deleted', true)
@@ -398,6 +407,44 @@ export function useHostProposalsPageLogic() {
           proposals.forEach(p => {
             if (p.Guest && guestMap[p.Guest]) {
               p.guest = guestMap[p.Guest];
+            }
+          });
+        }
+
+        // Enrich proposals with virtual meeting data
+        const vmIds = [...new Set(proposals.map(p => p['Virtual Meeting']).filter(Boolean))];
+
+        if (vmIds.length > 0) {
+          const { data: virtualMeetings } = await supabase
+            .from('virtual_meeting')
+            .select(`
+              _id,
+              "requested by",
+              "booked date",
+              "meeting declined",
+              "confirmedBySplitLease",
+              "suggested dates and times",
+              "meeting link"
+            `)
+            .in('_id', vmIds);
+
+          const vmMap = {};
+          virtualMeetings?.forEach(vm => { vmMap[vm._id] = vm; });
+
+          // Attach virtual meeting data to each proposal (normalize field names)
+          proposals.forEach(p => {
+            if (p['Virtual Meeting'] && vmMap[p['Virtual Meeting']]) {
+              const rawVm = vmMap[p['Virtual Meeting']];
+              // Normalize field names for consistency with virtualMeetingRules.js
+              p.virtualMeeting = {
+                _id: rawVm._id,
+                requestedBy: rawVm['requested by'],
+                bookedDate: rawVm['booked date'],
+                meetingDeclined: rawVm['meeting declined'],
+                confirmedBySplitlease: rawVm['confirmedBySplitLease'],
+                suggestedTimes: rawVm['suggested dates and times'],
+                meetingLink: rawVm['meeting link']
+              };
             }
           });
         }
@@ -655,16 +702,69 @@ export function useHostProposalsPageLogic() {
   }, []);
 
   /**
-   * Handle virtual meeting selection
+   * Handle virtual meeting button click - opens VirtualMeetingManager modal
+   * Determines the appropriate view based on VM state (request, respond, details, etc.)
    */
-  const handleChooseVirtualMeeting = useCallback((proposal, time) => {
-    if (time) {
-      alert(`Selected meeting time: ${time.toLocaleString()}`);
-    } else {
-      alert('Virtual meeting request feature coming soon! The guest will be notified to schedule a call.');
+  const handleChooseVirtualMeeting = useCallback((proposal) => {
+    if (!proposal) return;
+
+    const vm = proposal.virtualMeeting;
+    const currentUserId = user?._id || user?.userId;
+
+    let view = 'request'; // Default: no VM exists, show request view
+
+    if (!vm) {
+      // No VM exists - show request view
+      view = 'request';
+    } else if (vm.meetingDeclined) {
+      // VM was declined - show request alternative view
+      view = 'request';
+    } else if (vm.confirmedBySplitlease) {
+      // VM confirmed - show details view
+      view = 'details';
+    } else if (vm.bookedDate && !vm.meetingDeclined) {
+      // VM is booked but not confirmed
+      if (vm.requestedBy === currentUserId) {
+        // Host requested - show details (awaiting guest response)
+        view = 'details';
+      } else {
+        // Guest requested - host needs to respond
+        view = 'respond';
+      }
+    } else if (vm.requestedBy && vm.requestedBy !== currentUserId) {
+      // Pending request from guest - host needs to respond
+      view = 'respond';
+    } else if (vm.requestedBy === currentUserId) {
+      // Host already requested - show details/status
+      view = 'details';
     }
-    // TODO: Call API to confirm meeting time or send meeting request
+
+    setVirtualMeetingProposal(proposal);
+    setVirtualMeetingView(view);
+    setIsVirtualMeetingModalOpen(true);
+    setIsModalOpen(false); // Close the details modal
+  }, [user]);
+
+  /**
+   * Handle closing the virtual meeting modal
+   */
+  const handleCloseVirtualMeetingModal = useCallback(() => {
+    setIsVirtualMeetingModalOpen(false);
+    setVirtualMeetingView('');
+    setVirtualMeetingProposal(null);
   }, []);
+
+  /**
+   * Handle successful virtual meeting operation - refresh proposals
+   */
+  const handleVirtualMeetingSuccess = useCallback(async () => {
+    // Refresh proposals to get updated VM data
+    if (selectedListing) {
+      const proposalsResult = await fetchProposalsForListing(selectedListing._id || selectedListing.id);
+      setProposals(proposalsResult);
+    }
+    handleCloseVirtualMeetingModal();
+  }, [selectedListing, handleCloseVirtualMeetingModal]);
 
   /**
    * Handle request rental application
@@ -712,6 +812,11 @@ export function useHostProposalsPageLogic() {
     isEditingProposal,
     showRejectOnOpen,
 
+    // Virtual meeting state
+    isVirtualMeetingModalOpen,
+    virtualMeetingView,
+    virtualMeetingProposal,
+
     // Reference data
     allHouseRules,
 
@@ -733,6 +838,10 @@ export function useHostProposalsPageLogic() {
     handleRequestRentalApp,
     handleEditListing,
     handleRetry,
+
+    // Virtual meeting handlers
+    handleCloseVirtualMeetingModal,
+    handleVirtualMeetingSuccess,
 
     // Editing handlers
     handleCloseEditing,
