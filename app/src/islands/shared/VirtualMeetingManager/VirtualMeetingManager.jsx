@@ -58,10 +58,11 @@ export default function VirtualMeetingManager({
    */
   const handleConfirmTime = async (selectedTime) => {
     try {
+      const userId = currentUser?._id || currentUser?.userId || currentUser?.id;
       const result = await virtualMeetingService.acceptMeeting(
         proposal._id || proposal.id,
         selectedTime,
-        currentUser._id || currentUser.id
+        userId
       );
 
       if (result.status === 'success') {
@@ -117,10 +118,18 @@ export default function VirtualMeetingManager({
    */
   const handleSubmitRequest = async (slots, isSuggestingAlt) => {
     try {
+      // Get user ID - check multiple field names for compatibility
+      const userId = currentUser?._id || currentUser?.userId || currentUser?.id;
+      console.log('[VM Manager] Submit request - userId:', userId, 'currentUser:', currentUser);
+
+      if (!userId) {
+        throw new Error('User ID not found - please refresh and try again');
+      }
+
       const result = await virtualMeetingService.createRequest(
         proposal._id || proposal.id,
         slots,
-        currentUser._id || currentUser.id,
+        userId,
         isSuggestingAlt,
         'America/New_York'
       );
