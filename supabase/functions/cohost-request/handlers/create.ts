@@ -10,6 +10,7 @@
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ValidationError, SupabaseSyncError } from "../../_shared/errors.ts";
 import { validateRequired } from "../../_shared/validation.ts";
+import { sendToSlack } from "../../_shared/slack.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -89,15 +90,23 @@ export async function handleCreate(
 
   const now = new Date().toISOString();
 
-  // co_hostrequest table columns:
-  // _id, Co-Host User, Host - Landlord, Listing, Created By
-  // Note: 'status' column may not exist in schema cache - omitting for now
+  // co_hostrequest table - insert required fields including timestamps
+  // The admin selection will be handled manually via Slack notification
+  // Note: "Host User" is the user making the request (the host who needs help)
+  // "Co-Host User" will be assigned later via Slack notification workflow
   const coHostData: Record<string, unknown> = {
     _id: coHostRequestId,
-    "Co-Host User": input.userId,
+    "Host User": input.userId,      // The host requesting co-host assistance
+    "Co-Host User": null,           // Will be assigned later by admin
     "Created By": input.userId,
     Listing: input.listingId || null,
+    "Created Date": now,
+    "Modified Date": now,
   };
+
+  // Log which columns we're attempting to insert
+  console.log(`[cohost-request:create] Attempting insert with columns:`, Object.keys(coHostData));
+  console.log(`[cohost-request:create] Data:`, JSON.stringify(coHostData));
 
   console.log(`[cohost-request:create] Inserting co-host request:`, JSON.stringify(coHostData));
 
@@ -112,6 +121,32 @@ export async function handleCreate(
   }
 
   console.log(`[cohost-request:create] Co-host request created successfully: ${coHostRequestId}`);
+
+  // ================================================
+  // SEND SLACK NOTIFICATION
+  // ================================================
+
+  // Fire-and-forget notification to general channel for internal cohost assignment
+  const slackMessage = {
+    text: [
+      `🙋 *New Co-Host Request*`,
+      ``,
+      `*From:* ${input.userName || 'Unknown'} (${input.userEmail || 'no email'})`,
+      `*Listing:* ${input.listingId || 'Not specified'}`,
+      `*Request ID:* ${coHostRequestId}`,
+      ``,
+      `*Preferred Times:*`,
+      ...input.selectedTimes.map((t: string) => `• ${t}`),
+      ``,
+      input.subject ? `*Topics:* ${input.subject}` : '',
+      input.details ? `*Details:* ${input.details}` : '',
+      ``,
+      `_Please assign a co-host internally._`,
+    ].filter(Boolean).join('\n'),
+  };
+
+  sendToSlack('general', slackMessage);
+  console.log(`[cohost-request:create] Slack notification sent to general channel`);
 
   // ================================================
   // RETURN RESPONSE
