@@ -207,7 +207,16 @@ export function HostEditingProposal({
   // Popup states
   const [showConfirmPopup, setShowConfirmPopup] = useState(false)
   const [showRejectSection, setShowRejectSection] = useState(false)
+  const [rejectStep, setRejectStep] = useState(1) // 1 = confirm intent, 2 = select reason
   const [rejectReason, setRejectReason] = useState('')
+
+  // Rejection reason options
+  const REJECTION_REASONS = [
+    { id: 'another_guest', label: 'Already have another guest' },
+    { id: 'price_change', label: 'Decided to change the price of my listing for that time frame' },
+    { id: 'different_schedule', label: 'Want a different schedule' },
+    { id: 'other', label: 'Other / Do not want to say' }
+  ]
 
   // Collapsible state
   const [isEditSectionExpanded, setIsEditSectionExpanded] = useState(false)
@@ -429,13 +438,19 @@ export function HostEditingProposal({
   const handleReject = async () => {
     if (onReject) {
       try {
-        await onReject(proposal, rejectReason)
+        // Find the label for the selected reason to pass human-readable text
+        const selectedReason = REJECTION_REASONS.find(r => r.id === rejectReason)
+        const reasonText = selectedReason?.label || rejectReason
+
+        await onReject(proposal, reasonText)
         onAlert?.({
           type: 'information',
           title: 'Proposal Rejected',
           content: 'The proposal has been rejected.'
         })
         setShowRejectSection(false)
+        setRejectStep(1)
+        setRejectReason('')
       } catch (error) {
         onAlert?.({
           type: 'error',
@@ -655,30 +670,55 @@ export function HostEditingProposal({
               <p className="hep-reject-confirmation">
                 Are you sure you want to reject this proposal from <strong>{guestName}</strong>?
               </p>
-              <div className="hep-form-group">
-                <textarea
-                  className="hep-input-base"
-                  placeholder="Reason for rejection (optional)"
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  rows={3}
-                />
-              </div>
+
+              {/* Step 2: Rejection reason selection (shown after first confirmation) */}
+              {rejectStep === 2 && (
+                <div className="hep-reject-reasons">
+                  {REJECTION_REASONS.map((reason) => (
+                    <label key={reason.id} className="hep-reject-reason-option">
+                      <input
+                        type="radio"
+                        name="rejectReason"
+                        value={reason.id}
+                        checked={rejectReason === reason.id}
+                        onChange={(e) => setRejectReason(e.target.value)}
+                      />
+                      <span className="hep-reject-reason-label">{reason.label}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+
               <div className="hep-reject-actions">
                 <button
                   type="button"
                   className="hep-btn hep-btn-cancel"
-                  onClick={() => setShowRejectSection(false)}
+                  onClick={() => {
+                    setShowRejectSection(false)
+                    setRejectStep(1)
+                    setRejectReason('')
+                  }}
                 >
                   Cancel
                 </button>
-                <button
-                  type="button"
-                  className="hep-btn hep-btn-destructive"
-                  onClick={handleReject}
-                >
-                  Yes, Reject
-                </button>
+                {rejectStep === 1 ? (
+                  <button
+                    type="button"
+                    className="hep-btn hep-btn-destructive"
+                    onClick={() => setRejectStep(2)}
+                  >
+                    Yes, Reject
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="hep-btn hep-btn-destructive"
+                    onClick={handleReject}
+                    disabled={!rejectReason}
+                  >
+                    Yes, Reject
+                  </button>
+                )}
               </div>
             </div>
           )}

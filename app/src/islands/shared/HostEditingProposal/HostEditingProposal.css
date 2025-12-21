@@ -652,6 +652,37 @@
   margin-bottom: 16px;
 }
 
+.hep-reject-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.hep-reject-reason-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.hep-reject-reason-option input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--hep-reject-red);
+  flex-shrink: 0;
+}
+
+.hep-reject-reason-label {
+  font-size: 14px;
+  color: var(--hep-text-primary);
+  line-height: 1.4;
+}
+
 .hep-reject-actions {
   display: flex;
   gap: 12px;
