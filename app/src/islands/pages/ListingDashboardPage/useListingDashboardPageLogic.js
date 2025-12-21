@@ -462,6 +462,26 @@ export default function useListingDashboardPageLogic() {
       });
 
       console.log('✅ Listing loaded successfully');
+
+      // Fetch existing cohost request for this listing
+      try {
+        const { data: cohostRequest, error: cohostError } = await supabase
+          .from('co_hostrequest')
+          .select('*')
+          .eq('Listing', listingId)
+          .order('"Created Date"', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (cohostError) {
+          console.warn('⚠️ Failed to fetch cohost request:', cohostError);
+        } else if (cohostRequest) {
+          console.log('📋 Found existing cohost request:', cohostRequest._id);
+          setExistingCohostRequest(cohostRequest);
+        }
+      } catch (cohostErr) {
+        console.warn('⚠️ Error fetching cohost request:', cohostErr);
+      }
     } catch (err) {
       console.error('❌ Error fetching listing:', err);
       if (!silent) {
@@ -628,6 +648,7 @@ export default function useListingDashboardPageLogic() {
   // Schedule Cohost state
   const [showScheduleCohost, setShowScheduleCohost] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [existingCohostRequest, setExistingCohostRequest] = useState(null);
 
   // Auth state (Gold Standard pattern)
   const [authState, setAuthState] = useState({
@@ -727,9 +748,17 @@ export default function useListingDashboardPageLogic() {
     setShowScheduleCohost(false);
   }, []);
 
-  const handleCohostRequestSubmitted = useCallback((requestId, virtualMeetingId) => {
-    console.log('✅ Co-host request submitted:', { requestId, virtualMeetingId });
-    // Optionally refresh data or show success notification
+  const handleCohostRequestSubmitted = useCallback((requestData) => {
+    console.log('✅ Co-host request submitted:', requestData);
+    // Store the request so UI shows tracking view on next open
+    if (requestData) {
+      setExistingCohostRequest({
+        _id: requestData.requestId || requestData._id,
+        status: 'pending',
+        createdAt: requestData.createdAt || new Date().toISOString(),
+        ...requestData,
+      });
+    }
   }, []);
 
   // Import Reviews handlers
@@ -1445,6 +1474,7 @@ export default function useListingDashboardPageLogic() {
     showScheduleCohost,
     showImportReviews,
     currentUser,
+    existingCohostRequest,
 
     // Handlers
     handleTabChange,

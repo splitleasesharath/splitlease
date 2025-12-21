@@ -102,6 +102,8 @@ export async function handleCreate(
     Listing: input.listingId || null,
     "Status - Co-Host Request": "pending",  // Initial status from os_co_host_status
     "Dates and times suggested": input.selectedTimes,  // JSONB array of datetime strings
+    "Subject": input.subject || null,       // Topics/help needed
+    "Details": input.details || null,       // Additional details text
     "Created Date": now,
     "Modified Date": now,
   };
