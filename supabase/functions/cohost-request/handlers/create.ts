@@ -101,6 +101,7 @@ export async function handleCreate(
     "Created By": input.userId,
     Listing: input.listingId || null,
     "Status - Co-Host Request": "pending",  // Initial status from os_co_host_status
+    "Dates and times suggested": input.selectedTimes,  // JSONB array of datetime strings
     "Created Date": now,
     "Modified Date": now,
   };

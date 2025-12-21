@@ -3046,6 +3046,7 @@ export default function SearchPage() {
         <ProposalSuccessModal
           proposalId={successProposalId}
           listingName={selectedListingForProposal?.title || selectedListingForProposal?.Name}
+          hasSubmittedRentalApp={loggedInUserData?.hasSubmittedRentalApp ?? false}
           onClose={() => {
             setShowSuccessModal(false);
             setSuccessProposalId(null);

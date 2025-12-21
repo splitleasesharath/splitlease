@@ -3003,6 +3003,7 @@ export default function ViewSplitLeasePage() {
         <ProposalSuccessModal
           proposalId={successProposalId}
           listingName={listing?.Name}
+          hasSubmittedRentalApp={loggedInUserData?.hasSubmittedRentalApp ?? false}
           onClose={() => {
             setShowSuccessModal(false);
             setSuccessProposalId(null);

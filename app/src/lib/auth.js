@@ -1000,7 +1000,9 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
       needForSpace: userData.needForSpace || null,
       specialNeeds: userData.specialNeeds || null,
       // Proposal count for determining first proposal flow
-      proposalCount: userData.proposalCount ?? 0
+      proposalCount: userData.proposalCount ?? 0,
+      // Rental application submission status for hiding CTA in success modal
+      hasSubmittedRentalApp: userData.hasSubmittedRentalApp ?? false
     };
 
     // Cache firstName and avatarUrl for optimistic UI on page load
