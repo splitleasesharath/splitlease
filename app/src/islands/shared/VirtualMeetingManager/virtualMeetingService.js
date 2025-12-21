@@ -85,13 +85,26 @@ export async function createVirtualMeetingRequest(
     console.log('[VM Service] Response:', { responseData, error });
 
     if (error) {
-      // Log full error details including response body
+      // Try to get the actual error message from the response body
+      let errorMessage = error.message || 'Failed to create virtual meeting';
+
+      // error.context is the Response object - try to read its body
+      if (error.context && typeof error.context.json === 'function') {
+        try {
+          const errorBody = await error.context.json();
+          console.error('[VM Service] Error response body:', errorBody);
+          errorMessage = errorBody?.error || errorBody?.message || errorMessage;
+        } catch (parseError) {
+          console.error('[VM Service] Could not parse error response:', parseError);
+        }
+      }
+
       console.error('[VM Service] Error details:', {
         message: error.message,
-        context: error.context,
+        extractedError: errorMessage,
         responseData,
       });
-      throw new Error(error.message || responseData?.error || 'Failed to create virtual meeting');
+      throw new Error(errorMessage);
     }
 
     // Check if response indicates an error
