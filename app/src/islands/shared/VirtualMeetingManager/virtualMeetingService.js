@@ -82,8 +82,22 @@ export async function createVirtualMeetingRequest(
       },
     });
 
+    console.log('[VM Service] Response:', { responseData, error });
+
     if (error) {
-      throw new Error(error.message || 'Failed to create virtual meeting');
+      // Log full error details including response body
+      console.error('[VM Service] Error details:', {
+        message: error.message,
+        context: error.context,
+        responseData,
+      });
+      throw new Error(error.message || responseData?.error || 'Failed to create virtual meeting');
+    }
+
+    // Check if response indicates an error
+    if (responseData && responseData.success === false) {
+      console.error('[VM Service] API returned error:', responseData);
+      throw new Error(responseData.error || responseData.message || 'API returned error');
     }
 
     return {
