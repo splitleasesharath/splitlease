@@ -68,6 +68,7 @@ interface ListingSubmissionData {
   'Price 3 nights selected'?: number;
   'Price 4 nights selected'?: number;
   'Price 5 nights selected'?: number;
+  'Price 6 nights selected'?: number;
   'Nightly Decay Rate'?: number;
 
   // Rules
@@ -228,6 +229,9 @@ function mapFieldsToSupabase(data: ListingSubmissionData): Record<string, unknow
   }
   if (data['Price 5 nights selected'] !== undefined) {
     mapped['💰Nightly Host Rate for 5 nights'] = data['Price 5 nights selected'];
+  }
+  if (data['Price 6 nights selected'] !== undefined) {
+    mapped['💰Nightly Host Rate for 6 nights'] = data['Price 6 nights selected'];
   }
 
   return mapped;
