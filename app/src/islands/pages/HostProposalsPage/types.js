@@ -201,8 +201,8 @@ export function getStatusTagInfo(status) {
     };
   }
 
-  // Accepted states (usualOrder >= 5 in unified system)
-  if (usualOrder >= 5) {
+  // Accepted states (usualOrder >= 3 per reference table sort_order)
+  if (usualOrder >= 3) {
     return {
       text: 'Accepted!',
       backgroundColor: '#D1FAE5',
@@ -211,7 +211,7 @@ export function getStatusTagInfo(status) {
     };
   }
 
-  // Pending review (usualOrder < 5 means not yet accepted)
+  // Pending review (usualOrder < 3 means not yet accepted)
   return {
     text: 'Pending Review',
     backgroundColor: '#FEF3C7',

@@ -93,8 +93,8 @@ export default function ProposalDetailsModal({
 
   // Terminal states detection using the unified system
   const isCancelled = isTerminalStatus(statusKey);
-  const isPending = usualOrder < 5 && !isCancelled; // usualOrder < 5 means not yet accepted (unified system uses 5 for accepted)
-  const isAccepted = usualOrder >= 5 && !isCancelled; // Accepted or beyond (usualOrder 5+ in unified system)
+  const isPending = usualOrder < 3 && !isCancelled; // usualOrder < 3 means not yet accepted (reference table uses 3 for accepted)
+  const isAccepted = usualOrder >= 3 && !isCancelled; // Accepted or beyond (sort_order 3+ in reference table)
 
   // Special state: Awaiting rental app submission - show in green as positive action
   const isAwaitingRentalApp = statusConfig.key === 'Proposal Submitted by guest - Awaiting Rental Application' ||
@@ -150,49 +150,52 @@ export default function ProposalDetailsModal({
   const activeDays = getNightsAsDayNames(nightsSelectedRaw);
 
   /**
-   * Get progress steps based on usualOrder thresholds from Bubble's "Status - Proposal" option set
+   * Get progress steps based on usualOrder thresholds from reference_table.os_proposal_status
    *
    * Step states:
-   * - 'completed': usualOrder >= threshold (purple #31135D)
-   * - 'current': actively in progress (gray #BFBFBF) - only for Host Review when rental app submitted
-   * - 'incomplete': not yet reached (light gray #EDEAF6)
-   * - 'cancelled'/'rejected': proposal was cancelled/rejected (red #DB2E2E)
+   * - 'completed': usualOrder >= threshold (green #065F46)
+   * - 'current': actively in progress (highlighted)
+   * - 'incomplete': not yet reached (light gray)
+   * - 'cancelled'/'rejected': proposal was cancelled/rejected (red)
    *
-   * Unified system usualOrder values:
-   * - 1-3: Pre-acceptance (Pending, Host Review, Proposal Submitted Awaiting Rental App)
-   * - 4: Host Counteroffer
-   * - 5: Accepted / Drafting Docs
-   * - 6: Lease Documents
+   * Reference table sort_order values:
+   * - 0: Awaiting Rental App (proposal submitted, pending rental app)
+   * - 1: Host Review (rental app submitted, under host review)
+   * - 2: Host Counteroffer
+   * - 3: Accepted / Drafting Docs
+   * - 4: Lease Documents for Review
+   * - 5: Lease Documents for Signatures
+   * - 6: Lease Signed / Awaiting Payment
    * - 7: Payment Submitted / Lease Activated
    */
   const getProgressSteps = () => {
-    // Special case: Host Review is "current" (gray) when status is Host Review AND rental app is submitted
-    const isHostReviewCurrent = statusConfig.key === 'Host Review' && rentalAppSubmitted;
+    // Special case: Host Review is "current" when status is Host Review
+    const isHostReviewCurrent = statusConfig.key === 'Host Review';
 
-    // Unified system thresholds (different from legacy types.js):
-    // - Rental App completed: usualOrder >= 3 (proposal submitted, awaiting or submitted rental app)
-    // - Host Review completed: usualOrder >= 5 (Accepted)
-    // - Lease Docs completed: usualOrder >= 6
-    // - Initial Payment completed: usualOrder >= 7
+    // Thresholds based on reference_table.os_proposal_status sort_order:
+    // - Rental App completed: usualOrder >= 1 (moved past "Awaiting Rental App" at sort_order 0)
+    // - Host Review completed: usualOrder >= 3 (Accepted / Drafting Docs)
+    // - Lease Docs completed: usualOrder >= 5 (Lease Documents for Signatures)
+    // - Initial Payment completed: usualOrder >= 7 (Payment submitted / Lease activated)
     return {
       proposalSubmitted: {
         completed: true, // Always completed once proposal exists
         current: false
       },
       rentalApp: {
-        completed: usualOrder >= 3, // Rental app step is done once past "Proposal Submitted Awaiting Rental App" (usualOrder 3)
+        completed: usualOrder >= 1, // Rental app done when past sort_order 0 (Awaiting Rental App)
         current: false
       },
       hostReview: {
-        completed: usualOrder >= 5, // Host Review completed when Accepted (usualOrder 5)
-        current: isHostReviewCurrent // Gray when in Host Review status with rental app submitted
+        completed: usualOrder >= 3, // Host Review completed when Accepted (sort_order 3)
+        current: isHostReviewCurrent // Highlighted when in Host Review status
       },
       leaseDocs: {
-        completed: usualOrder >= 6, // Lease docs sent
+        completed: usualOrder >= 5, // Lease docs for signatures (sort_order 5)
         current: false
       },
       initialPayment: {
-        completed: usualOrder >= 7, // Payment submitted / Lease activated
+        completed: usualOrder >= 7, // Payment submitted / Lease activated (sort_order 7)
         current: false
       }
     };
