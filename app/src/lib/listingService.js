@@ -1102,7 +1102,8 @@ function mapNightlyRatesToColumns(nightlyPricing) {
     '💰Nightly Host Rate for 3 nights': rates.night3 || null,
     '💰Nightly Host Rate for 4 nights': rates.night4 || null,
     '💰Nightly Host Rate for 5 nights': rates.night5 || null,
-    '💰Nightly Host Rate for 7 nights': rates.night7 || rates.night5 || null, // Use night7 if available, fallback to night5
+    '💰Nightly Host Rate for 6 nights': rates.night6 || null,
+    '💰Nightly Host Rate for 7 nights': rates.night7 || null,
   };
 }
 
