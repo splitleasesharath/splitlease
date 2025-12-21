@@ -26,8 +26,8 @@
   /* Co-host Progress Bar */
   --sc-progress-inactive: #EDEAF6;
   --sc-progress-active: #6D31C2;
-  --sc-progress-dot-size: 20px;
-  --sc-progress-bar-height: 4px;
+  --sc-progress-dot-size: 22px;
+  --sc-progress-bar-height: 5px;
 
   /* Co-host Details Section */
   --sc-details-bg: #F1F3F5;
@@ -1064,17 +1064,15 @@
    PROGRESS BAR (5-stage tracking)
    ============================================================ */
 .schedule-cohost-progress {
-  padding: 20px 16px;
+  padding: 22px 18px;
   margin: 0 20px 16px;
-  border: 1px dotted #686B6B;
-  border-radius: 0;
 }
 
 .schedule-cohost-progress-labels {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   width: 100%;
-  min-height: 28px;
+  min-height: 31px;
 }
 
 .schedule-cohost-progress-labels--top {
@@ -1087,7 +1085,7 @@
 
 .schedule-cohost-progress-label {
   font-family: 'Inter', sans-serif;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--sc-placeholder);
   text-align: center;
@@ -1293,34 +1291,34 @@
    ============================================================ */
 @media (max-width: 768px) {
   .schedule-cohost-progress {
-    padding: 16px 12px;
+    padding: 18px 14px;
     margin: 0 15px 12px;
   }
 
   .schedule-cohost-progress-label {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .schedule-cohost-progress-dot {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
   }
 }
 
 @media (max-width: 480px) {
   .schedule-cohost-progress {
-    padding: 12px 8px;
+    padding: 14px 10px;
     margin: 0 10px 10px;
   }
 
   .schedule-cohost-progress-label {
-    font-size: 9px;
+    font-size: 10px;
     letter-spacing: -0.75px;
   }
 
   .schedule-cohost-progress-dot {
-    width: 14px;
-    height: 14px;
+    width: 16px;
+    height: 16px;
   }
 
   .schedule-cohost-progress-bar {
