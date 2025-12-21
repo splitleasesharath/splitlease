@@ -488,58 +488,67 @@ export function HostEditingProposal({
     nightsSelected: extractNightsSelected()
   }
 
+  // Determine if we're in reject-only mode
+  const isRejectOnlyMode = initialShowReject && showRejectSection
+
   return (
     <div className="hep-container">
-      {/* Header */}
-      <div className="hep-section-header">
-        <h2 className="hep-title-main">Review Proposal Terms</h2>
-        <div className="hep-header-actions">
-          <button
-            type="button"
-            className="hep-icon hep-icon-edit"
-            onClick={handleToggleView}
-            title="Edit proposal"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="hep-icon hep-icon-close"
-            onClick={handleCancel}
-            title="Close"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
+      {/* Header - hidden in reject-only mode */}
+      {!isRejectOnlyMode && (
+        <div className="hep-section-header">
+          <h2 className="hep-title-main">Review Proposal Terms</h2>
+          <div className="hep-header-actions">
+            <button
+              type="button"
+              className="hep-icon hep-icon-edit"
+              onClick={handleToggleView}
+              title="Edit proposal"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="hep-icon hep-icon-close"
+              onClick={handleCancel}
+              title="Close"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Guest Info */}
-      <div className="hep-description hep-mb-16">
-        Reviewing proposal from <strong>{guestName}</strong> for <strong>{listingTitle}</strong>
-      </div>
+      {/* Guest Info - hidden in reject-only mode */}
+      {!isRejectOnlyMode && (
+        <div className="hep-description hep-mb-16">
+          Reviewing proposal from <strong>{guestName}</strong> for <strong>{listingTitle}</strong>
+        </div>
+      )}
 
-      {/* Collapsible Edit Section */}
-      <div
-        className="hep-collapsible"
-        onClick={handleToggleEditSection}
-      >
-        <span className="hep-collapsible-title">Edit Proposal Terms</span>
-        <svg
-          className={`hep-collapsible-icon ${isEditSectionExpanded ? 'hep-collapsible-icon--expanded' : ''}`}
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
+      {/* Collapsible Edit Section - hidden in reject-only mode */}
+      {!isRejectOnlyMode && (
+        <div
+          className="hep-collapsible"
+          onClick={handleToggleEditSection}
         >
-          <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </div>
+          <span className="hep-collapsible-title">Edit Proposal Terms</span>
+          <svg
+            className={`hep-collapsible-icon ${isEditSectionExpanded ? 'hep-collapsible-icon--expanded' : ''}`}
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </div>
+      )}
 
       {/* Editing Form */}
       <div className={`hep-animate-collapse ${isEditSectionExpanded && view === 'editing' ? 'expanded' : 'collapsed'}`}>
@@ -638,114 +647,148 @@ export function HostEditingProposal({
         </div>
       </div>
 
-      {/* Reservation Price Breakdown - shown in general view or as preview */}
-      {view === 'general' && (
-        <>
-          <ReservationPriceBreakdown
-            moveInDate={editedMoveInDate}
-            checkInDay={editedCheckInDay}
-            checkOutDay={editedCheckOutDay}
-            reservationSpan={editedReservationSpan}
-            weeksReservationSpan={editedWeeks}
-            houseRules={editedHouseRules}
-            nightsSelected={editedNightsSelected}
-            nightlyCompensation={nightlyCompensation}
-            totalCompensation={totalCompensation}
-            hostCompensationPer4Weeks={compensationPer4Weeks}
-            originalTotalCompensation={originalTotalCompensation}
-            originalCompensationPer4Weeks={originalCompensationPer4Weeks}
-            isVisible={true}
-            originalValues={originalValues}
-            onEditField={handleEditField}
-          />
+      {/* Reservation Price Breakdown - shown in general view, hidden in reject-only mode */}
+      {view === 'general' && !isRejectOnlyMode && (
+        <ReservationPriceBreakdown
+          moveInDate={editedMoveInDate}
+          checkInDay={editedCheckInDay}
+          checkOutDay={editedCheckOutDay}
+          reservationSpan={editedReservationSpan}
+          weeksReservationSpan={editedWeeks}
+          houseRules={editedHouseRules}
+          nightsSelected={editedNightsSelected}
+          nightlyCompensation={nightlyCompensation}
+          totalCompensation={totalCompensation}
+          hostCompensationPer4Weeks={compensationPer4Weeks}
+          originalTotalCompensation={originalTotalCompensation}
+          originalCompensationPer4Weeks={originalCompensationPer4Weeks}
+          isVisible={true}
+          originalValues={originalValues}
+          onEditField={handleEditField}
+        />
+      )}
 
-          {/* Reject Proposal Section (expanded) */}
-          {showRejectSection && (
-            <div className="hep-reject-section">
-              <div className="hep-reject-header">
-                <svg className="hep-icon-reject" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M19 7L5 7M14 11V17M10 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 7V4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span className="hep-reject-title">Reject Proposal</span>
+      {/* Reject Proposal Section */}
+      {view === 'general' && showRejectSection && (
+        <div className="hep-reject-section">
+          {/* Close button for reject-only mode */}
+          {isRejectOnlyMode && (
+            <button
+              type="button"
+              className="hep-reject-close"
+              onClick={onCancel}
+              title="Close"
+            >
+              ×
+            </button>
+          )}
+
+          <div className="hep-reject-header">
+            <svg className="hep-icon-reject" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 7L5 7M14 11V17M10 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 7V4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <span className="hep-reject-title">Reject Proposal</span>
+          </div>
+          <p className="hep-reject-warning">This action cannot be undone</p>
+          <p className="hep-reject-confirmation">
+            Are you sure you want to reject this proposal from <strong>{guestName}</strong>?
+          </p>
+
+          {/* Key proposal details - shown in reject-only mode */}
+          {isRejectOnlyMode && (
+            <div className="hep-reject-details">
+              <div className="hep-reject-detail-row">
+                <span className="hep-reject-detail-label">Reservation Span</span>
+                <span className="hep-reject-detail-value">{editedWeeks} weeks</span>
               </div>
-              <p className="hep-reject-warning">This action cannot be undone</p>
-              <p className="hep-reject-confirmation">
-                Are you sure you want to reject this proposal from <strong>{guestName}</strong>?
-              </p>
-
-              {/* Step 2: Rejection reason selection (shown after first confirmation) */}
-              {rejectStep === 2 && (
-                <div className="hep-reject-reasons">
-                  {REJECTION_REASONS.map((reason) => (
-                    <label key={reason.id} className="hep-reject-reason-option">
-                      <input
-                        type="radio"
-                        name="rejectReason"
-                        value={reason.id}
-                        checked={rejectReason === reason.id}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                      />
-                      <span className="hep-reject-reason-label">{reason.label}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-
-              <div className="hep-reject-actions">
-                <button
-                  type="button"
-                  className="hep-btn hep-btn-cancel"
-                  onClick={() => {
-                    setShowRejectSection(false)
-                    setRejectStep(1)
-                    setRejectReason('')
-                  }}
-                >
-                  Cancel
-                </button>
-                {rejectStep === 1 ? (
-                  <button
-                    type="button"
-                    className="hep-btn hep-btn-destructive"
-                    onClick={() => setRejectStep(2)}
-                  >
-                    Yes, Reject
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="hep-btn hep-btn-destructive"
-                    onClick={handleReject}
-                    disabled={!rejectReason}
-                  >
-                    Yes, Reject
-                  </button>
-                )}
+              <div className="hep-reject-detail-row">
+                <span className="hep-reject-detail-label">Compensation per Night</span>
+                <span className="hep-reject-detail-value">${nightlyCompensation?.toLocaleString() || '0'}/night</span>
+              </div>
+              <div className="hep-reject-detail-row">
+                <span className="hep-reject-detail-label">Total Compensation</span>
+                <span className="hep-reject-detail-value hep-reject-detail-total">${totalCompensation?.toLocaleString() || '0'}</span>
               </div>
             </div>
           )}
 
-          {/* Primary Actions Row - Submit/Accept and Reject side by side */}
-          {!showRejectSection && (
-            <div className="hep-primary-actions">
-              <button
-                type="button"
-                className="hep-btn hep-btn-reject-outline"
-                onClick={() => setShowRejectSection(true)}
-              >
-                Reject Proposal
-              </button>
-              <button
-                type="button"
-                className="hep-btn hep-btn-primary hep-btn-primary-large"
-                onClick={handleConfirmFromPreview}
-                disabled={proceedButtonLocked}
-              >
-                {hasChanges() ? 'Submit Edits' : 'Accept As-Is'}
-              </button>
+          {/* Step 2: Rejection reason selection (shown after first confirmation) */}
+          {rejectStep === 2 && (
+            <div className="hep-reject-reasons">
+              {REJECTION_REASONS.map((reason) => (
+                <label key={reason.id} className="hep-reject-reason-option">
+                  <input
+                    type="radio"
+                    name="rejectReason"
+                    value={reason.id}
+                    checked={rejectReason === reason.id}
+                    onChange={(e) => setRejectReason(e.target.value)}
+                  />
+                  <span className="hep-reject-reason-label">{reason.label}</span>
+                </label>
+              ))}
             </div>
           )}
-        </>
+
+          <div className="hep-reject-actions">
+            <button
+              type="button"
+              className="hep-btn hep-btn-cancel"
+              onClick={() => {
+                if (isRejectOnlyMode) {
+                  // In reject-only mode, Cancel closes the modal
+                  onCancel?.()
+                } else {
+                  // In normal mode, Cancel hides the reject section
+                  setShowRejectSection(false)
+                  setRejectStep(1)
+                  setRejectReason('')
+                }
+              }}
+            >
+              Cancel
+            </button>
+            {rejectStep === 1 ? (
+              <button
+                type="button"
+                className="hep-btn hep-btn-destructive"
+                onClick={() => setRejectStep(2)}
+              >
+                Yes, Reject
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="hep-btn hep-btn-destructive"
+                onClick={handleReject}
+                disabled={!rejectReason}
+              >
+                Yes, Reject
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Primary Actions Row - Submit/Accept and Reject side by side - hidden in reject-only mode */}
+      {view === 'general' && !showRejectSection && !isRejectOnlyMode && (
+        <div className="hep-primary-actions">
+          <button
+            type="button"
+            className="hep-btn hep-btn-reject-outline"
+            onClick={() => setShowRejectSection(true)}
+          >
+            Reject Proposal
+          </button>
+          <button
+            type="button"
+            className="hep-btn hep-btn-primary hep-btn-primary-large"
+            onClick={handleConfirmFromPreview}
+            disabled={proceedButtonLocked}
+          >
+            {hasChanges() ? 'Submit Edits' : 'Accept As-Is'}
+          </button>
+        </div>
       )}
 
       {/* Confirmation Popup */}

@@ -689,6 +689,63 @@
   justify-content: flex-end;
 }
 
+/* Reject-only mode styles */
+.hep-reject-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--hep-text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.hep-reject-close:hover {
+  color: var(--hep-text-primary);
+}
+
+.hep-reject-section {
+  position: relative;
+}
+
+.hep-reject-details {
+  background-color: var(--hep-primary-white);
+  border: 1px solid var(--hep-border-light);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.hep-reject-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.hep-reject-detail-row:not(:last-child) {
+  border-bottom: 1px solid var(--hep-border-light);
+}
+
+.hep-reject-detail-label {
+  font-size: 13px;
+  color: var(--hep-text-secondary);
+}
+
+.hep-reject-detail-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hep-text-primary);
+}
+
+.hep-reject-detail-total {
+  font-size: 16px;
+  color: var(--hep-primary-green);
+}
+
 /* ========================================
    Confirmation Popup
    ======================================== */
