@@ -416,7 +416,7 @@ export function useHostProposalsPageLogic() {
 
         if (vmIds.length > 0) {
           const { data: virtualMeetings } = await supabase
-            .from('virtual_meeting')
+            .from('virtualmeetingschedulesandlinks')
             .select(`
               _id,
               "requested by",

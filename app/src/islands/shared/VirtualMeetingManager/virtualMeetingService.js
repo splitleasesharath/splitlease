@@ -60,12 +60,21 @@ export async function createVirtualMeetingRequest(
   timezoneString = 'America/New_York'
 ) {
   try {
+    const isoTimes = timesSelected.map(toISOString);
+    console.log('[VM Service] Creating request:', {
+      proposalId,
+      timesSelectedCount: timesSelected.length,
+      timesSelectedISO: isoTimes,
+      requestedById,
+      isAlternativeTimes,
+    });
+
     const { data: responseData, error } = await supabase.functions.invoke('virtual-meeting', {
       body: {
         action: 'create',
         payload: {
           proposalId,
-          timesSelected: timesSelected.map(toISOString),
+          timesSelected: isoTimes,
           requestedById,
           isAlternativeTimes,
           timezoneString,
