@@ -47,6 +47,7 @@ const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const STATUS_ORDER = {
   'Co-Host Requested': 1,
   'Requested': 1,
+  'pending': 1, // Database stores lowercase "pending" for new requests
   'Co-Host Selected': 2,
   'Google Meet Scheduled': 3,
   'Virtual Meeting Finished': 4,
@@ -860,22 +861,43 @@ export default function ScheduleCohost({
         {stage === 'details' && coHostRequest && (
           <div className="schedule-cohost-details">
             {/* Progress Bar - shows current status in the workflow */}
-            <CohostProgressBar currentStatus={coHostRequest.status || 'Co-Host Requested'} />
+            <CohostProgressBar currentStatus={
+              coHostRequest.status
+              || coHostRequest['Status - Co-Host Request']
+              || 'Co-Host Requested'
+            } />
 
             {/* Meeting Times Summary */}
             <p className="schedule-cohost-success-text">Your suggested meeting times:</p>
             <div className="schedule-cohost-selected-times">
-              {(coHostRequest.selectedTimes || selectedTimeSlots).map((slot, index) => (
-                <div key={slot.id || index} className="schedule-cohost-selected-time">
-                  #{index + 1} - {slot.displayTime || slot.formattedTime}
-                </div>
-              ))}
+              {(() => {
+                // Handle multiple data formats:
+                // 1. Fresh submission: selectedTimes array of objects with displayTime
+                // 2. Database load: "Dates and times suggested" array of strings
+                // 3. Fallback: selectedTimeSlots from state
+                const times = coHostRequest.selectedTimes
+                  || coHostRequest['Dates and times suggested']
+                  || selectedTimeSlots
+                  || [];
+
+                return times.map((slot, index) => {
+                  // Handle both object format and string format
+                  const displayText = typeof slot === 'string'
+                    ? slot
+                    : (slot.displayTime || slot.formattedTime || '');
+                  return (
+                    <div key={slot.id || index} className="schedule-cohost-selected-time">
+                      #{index + 1} - {displayText}
+                    </div>
+                  );
+                });
+              })()}
             </div>
 
-            {/* Topics/Subject */}
-            {coHostRequest.subject && (
+            {/* Topics/Subject - handles both legacy and new field names */}
+            {(coHostRequest.subject || coHostRequest['Request notes']) && (
               <div className="schedule-cohost-details-subject">
-                <strong>Topics:</strong> {coHostRequest.subject}
+                <strong>Request:</strong> {coHostRequest.subject || coHostRequest['Request notes']}
               </div>
             )}
 
@@ -921,11 +943,11 @@ export default function ScheduleCohost({
 
             {/* Metadata - Creation date and ID */}
             <div className="schedule-cohost-metadata-centered">
-              {coHostRequest.createdDate && (
-                <p>Created: {formatDateForDisplay(new Date(coHostRequest.createdDate))}</p>
+              {(coHostRequest.createdDate || coHostRequest['Created Date']) && (
+                <p>Created: {formatDateForDisplay(new Date(coHostRequest.createdDate || coHostRequest['Created Date']))}</p>
               )}
-              {coHostRequest.id && (
-                <p>Unique ID: {coHostRequest.id}</p>
+              {(coHostRequest.id || coHostRequest._id) && (
+                <p>Unique ID: {coHostRequest.id || coHostRequest._id}</p>
               )}
             </div>
           </div>
