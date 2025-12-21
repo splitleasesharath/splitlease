@@ -100,10 +100,14 @@ export interface NightlyPricing {
     night3: number;
     night4: number;
     night5: number;
+    night6: number;
+    night7: number;
     cumulativeNight2: number;
     cumulativeNight3: number;
     cumulativeNight4: number;
     cumulativeNight5: number;
+    cumulativeNight6: number;
+    cumulativeNight7: number;
   };
 }
 
