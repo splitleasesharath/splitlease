@@ -94,6 +94,9 @@ export default function HostProposalsPage() {
     handleEditListing,
     handleRetry,
 
+    // Editing state
+    showRejectOnOpen,
+
     // Editing handlers
     handleCloseEditing,
     handleAcceptAsIs,
@@ -183,6 +186,7 @@ export default function HostProposalsPage() {
             <HostEditingProposal
               proposal={selectedProposal}
               availableHouseRules={allHouseRules}
+              initialShowReject={showRejectOnOpen}
               onAcceptAsIs={() => handleAcceptAsIs(selectedProposal)}
               onCounteroffer={handleCounteroffer}
               onReject={(reason) => handleRejectFromEditing(selectedProposal, reason)}

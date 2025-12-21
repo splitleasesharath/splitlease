@@ -41,6 +41,7 @@ export function useHostProposalsPageLogic() {
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditingProposal, setIsEditingProposal] = useState(false);
+  const [showRejectOnOpen, setShowRejectOnOpen] = useState(false);
 
   // ============================================================================
   // UI STATE
@@ -514,42 +515,14 @@ export function useHostProposalsPageLogic() {
   }, [selectedListing, handleCloseModal]);
 
   /**
-   * Handle reject proposal
+   * Handle reject proposal - opens HostEditingProposal with reject section visible
    */
-  const handleRejectProposal = useCallback(async (proposal) => {
-    if (!confirm('Are you sure you want to reject this proposal?')) {
-      return;
-    }
-
-    try {
-      // Use proposal Edge Function to update status
-      const { data, error } = await supabase.functions.invoke('proposal', {
-        body: {
-          action: 'update',
-          payload: {
-            proposalId: proposal._id || proposal.id,
-            status: 'Declined'
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      // Refresh proposals
-      if (selectedListing) {
-        const proposalsResult = await fetchProposalsForListing(selectedListing._id || selectedListing.id);
-        setProposals(proposalsResult);
-      }
-
-      handleCloseModal();
-      alert('Proposal rejected.');
-      console.log('[useHostProposalsPageLogic] Proposal rejected:', proposal._id);
-
-    } catch (err) {
-      console.error('Failed to reject proposal:', err);
-      alert('Failed to reject proposal. Please try again.');
-    }
-  }, [selectedListing, handleCloseModal]);
+  const handleRejectProposal = useCallback((proposal) => {
+    setSelectedProposal(proposal);
+    setIsModalOpen(false); // Close the details modal
+    setShowRejectOnOpen(true); // Signal to open with reject section visible
+    setIsEditingProposal(true); // Open the editing view
+  }, []);
 
   /**
    * Handle modify proposal - open HostEditingProposal component
@@ -557,6 +530,7 @@ export function useHostProposalsPageLogic() {
   const handleModifyProposal = useCallback((proposal) => {
     setSelectedProposal(proposal);
     setIsModalOpen(false); // Close the details modal
+    setShowRejectOnOpen(false); // Don't show reject section
     setIsEditingProposal(true); // Open the editing view
   }, []);
 
@@ -566,6 +540,7 @@ export function useHostProposalsPageLogic() {
   const handleCloseEditing = useCallback(() => {
     setIsEditingProposal(false);
     setSelectedProposal(null);
+    setShowRejectOnOpen(false); // Reset reject section state
   }, []);
 
   /**
@@ -735,6 +710,7 @@ export function useHostProposalsPageLogic() {
     selectedProposal,
     isModalOpen,
     isEditingProposal,
+    showRejectOnOpen,
 
     // Reference data
     allHouseRules,

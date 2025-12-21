@@ -37,6 +37,7 @@ import './HostEditingProposal.css'
  * @param {Object} props.proposal - The proposal data
  * @param {Array} props.availableHouseRules - List of available house rules
  * @param {boolean} props.isInternalUsage - Flag for internal usage mode
+ * @param {boolean} props.initialShowReject - If true, open directly to the reject section
  * @param {function} props.onAcceptAsIs - Callback when proposal is accepted without changes
  * @param {function} props.onCounteroffer - Callback when counteroffer is submitted
  * @param {function} props.onReject - Callback when proposal is rejected
@@ -47,6 +48,7 @@ export function HostEditingProposal({
   proposal,
   availableHouseRules = [],
   isInternalUsage = false,
+  initialShowReject = false,
   onAcceptAsIs,
   onCounteroffer,
   onReject,
@@ -206,7 +208,7 @@ export function HostEditingProposal({
 
   // Popup states
   const [showConfirmPopup, setShowConfirmPopup] = useState(false)
-  const [showRejectSection, setShowRejectSection] = useState(false)
+  const [showRejectSection, setShowRejectSection] = useState(initialShowReject)
   const [rejectStep, setRejectStep] = useState(1) // 1 = confirm intent, 2 = select reason
   const [rejectReason, setRejectReason] = useState('')
 
