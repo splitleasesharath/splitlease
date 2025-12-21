@@ -431,6 +431,10 @@ export default function PricingEditSection({
           nightlyPricing[5],
           5
         );
+        updates['💰Nightly Host Rate for 6 nights'] = calculateNightlyRate(
+          nightlyPricing[5],
+          6
+        ); // Use 5-night rate for 6
         updates['💰Nightly Host Rate for 7 nights'] = calculateNightlyRate(
           nightlyPricing[5],
           7
