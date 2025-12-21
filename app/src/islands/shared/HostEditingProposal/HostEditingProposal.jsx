@@ -210,7 +210,7 @@ export function HostEditingProposal({
   const [showConfirmPopup, setShowConfirmPopup] = useState(false)
   const [showRejectSection, setShowRejectSection] = useState(initialShowReject)
   const [rejectStep, setRejectStep] = useState(1) // 1 = confirm intent, 2 = select reason
-  const [rejectReason, setRejectReason] = useState('')
+  const [rejectReason, setRejectReason] = useState('other') // Default to "Other / Do not want to say"
 
   // Rejection reason options
   const REJECTION_REASONS = [
@@ -452,7 +452,7 @@ export function HostEditingProposal({
         })
         setShowRejectSection(false)
         setRejectStep(1)
-        setRejectReason('')
+        setRejectReason('other')
       } catch (error) {
         onAlert?.({
           type: 'error',
@@ -742,7 +742,7 @@ export function HostEditingProposal({
                   // In normal mode, Cancel hides the reject section
                   setShowRejectSection(false)
                   setRejectStep(1)
-                  setRejectReason('')
+                  setRejectReason('other')
                 }
               }}
             >
