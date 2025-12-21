@@ -414,13 +414,15 @@ export default function ProposalDetailsModal({
             const vmButtonDisabled = vmStateInfo.buttonDisabled;
             const vmState = vmStateInfo.state;
 
-            // Determine helper text based on state
+            // Determine helper text based on state (perspective-neutral states)
             let vmHelperText = '';
             if (vmState === VM_STATES.NO_MEETING) {
               vmHelperText = `Schedule a virtual meeting with ${guestName} to discuss the proposal.`;
-            } else if (vmState === VM_STATES.REQUESTED_BY_GUEST) {
+            } else if (vmState === VM_STATES.REQUESTED_BY_OTHER) {
+              // Other party (guest) requested, host should respond
               vmHelperText = `${guestName} has requested a virtual meeting. Please respond to their request.`;
-            } else if (vmState === VM_STATES.REQUESTED_BY_HOST) {
+            } else if (vmState === VM_STATES.REQUESTED_BY_ME) {
+              // Current user (host) requested, waiting for guest
               vmHelperText = `You've requested a virtual meeting with ${guestName}. Waiting for their response.`;
             } else if (vmState === VM_STATES.BOOKED_AWAITING_CONFIRMATION) {
               vmHelperText = `A meeting time has been selected. Awaiting confirmation from Split Lease.`;
@@ -456,8 +458,8 @@ export default function ProposalDetailsModal({
                       <span>{vmHelperText}</span>
                     </div>
 
-                    {/* Show suggested times if they exist and guest requested */}
-                    {virtualMeeting && vmState === VM_STATES.REQUESTED_BY_GUEST && virtualMeeting.suggestedTimes?.length > 0 && (
+                    {/* Show suggested times if they exist and other party requested */}
+                    {virtualMeeting && vmState === VM_STATES.REQUESTED_BY_OTHER && virtualMeeting.suggestedTimes?.length > 0 && (
                       <div className="time-slots">
                         {virtualMeeting.suggestedTimes.map((time, index) => (
                           <div key={index} className="time-slot-display">
