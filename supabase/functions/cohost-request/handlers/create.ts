@@ -100,6 +100,7 @@ export async function handleCreate(
     "Co-Host User": null,           // Will be assigned later by admin
     "Created By": input.userId,
     Listing: input.listingId || null,
+    "Status - Co-Host Request": "pending",  // Initial status from os_co_host_status
     "Created Date": now,
     "Modified Date": now,
   };
