@@ -145,6 +145,7 @@ export default function ListingDashboardPage() {
               counts={counts}
               onBackClick={handleBackClick}
               onInviteClick={() => setShowReferralModal(true)}
+              listingId={listing.id}
             />
 
             {/* Alert Banner - Schedule Cohost CTA */}
