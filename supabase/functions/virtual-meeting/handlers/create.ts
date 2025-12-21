@@ -184,10 +184,16 @@ export async function handleCreate(
   // UPDATE PROPOSAL WITH VIRTUAL MEETING LINK
   // ================================================
 
+  // Determine if requester is host or guest
+  const requesterIsHost = input.requestedById === hostUserData._id;
+  const requestVirtualMeetingValue = requesterIsHost ? "host" : "guest";
+
+  console.log(`[virtual-meeting:create] Requester: ${input.requestedById}, Host: ${hostUserData._id}, Value: ${requestVirtualMeetingValue}`);
+
   const { error: proposalUpdateError } = await supabase
     .from("proposal")
     .update({
-      "request virtual meeting": "guest",
+      "request virtual meeting": requestVirtualMeetingValue,
       "virtual meeting": virtualMeetingId,
       "Modified Date": now,
     })
