@@ -377,7 +377,7 @@ export function useHostProposalsPageLogic() {
           "Comment",
           "Created Date",
           "Modified Date",
-          "Virtual Meeting"
+          "virtual meeting"
         `)
         .eq('Listing', listingId)
         .neq('Deleted', true)
@@ -412,7 +412,7 @@ export function useHostProposalsPageLogic() {
         }
 
         // Enrich proposals with virtual meeting data
-        const vmIds = [...new Set(proposals.map(p => p['Virtual Meeting']).filter(Boolean))];
+        const vmIds = [...new Set(proposals.map(p => p['virtual meeting']).filter(Boolean))];
 
         if (vmIds.length > 0) {
           const { data: virtualMeetings } = await supabase
@@ -433,8 +433,8 @@ export function useHostProposalsPageLogic() {
 
           // Attach virtual meeting data to each proposal (normalize field names)
           proposals.forEach(p => {
-            if (p['Virtual Meeting'] && vmMap[p['Virtual Meeting']]) {
-              const rawVm = vmMap[p['Virtual Meeting']];
+            if (p['virtual meeting'] && vmMap[p['virtual meeting']]) {
+              const rawVm = vmMap[p['virtual meeting']];
               // Normalize field names for consistency with virtualMeetingRules.js
               p.virtualMeeting = {
                 _id: rawVm._id,
