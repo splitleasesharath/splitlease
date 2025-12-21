@@ -10,7 +10,7 @@
  * - Supports post-meeting rating
  */
 
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   generateCalendarDays,
   generateTimeSlots,
@@ -42,6 +42,28 @@ const SUBJECT_OPTIONS = [
 
 // Days of week header
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// Status order mapping for progress bar (from design spec)
+const STATUS_ORDER = {
+  'Co-Host Requested': 1,
+  'Requested': 1,
+  'Co-Host Selected': 2,
+  'Google Meet Scheduled': 3,
+  'Virtual Meeting Finished': 4,
+  'Google Meet Finished': 4,
+  'Finished': 5,
+  'Request closed': 5,
+  'Closed': 5,
+};
+
+// Progress bar stage definitions
+const COHOST_STAGES = [
+  { order: 1, label: 'Requested', labelPosition: 'below' },
+  { order: 2, label: 'Co-Host Selected', labelPosition: 'above' },
+  { order: 3, label: 'Google Meet Scheduled', labelPosition: 'below' },
+  { order: 4, label: 'Google Meet Finished', labelPosition: 'above' },
+  { order: 5, label: 'Finished', labelPosition: 'below' },
+];
 
 // Toast types with colors (from workflow spec)
 const TOAST_TYPES = {
@@ -100,28 +122,136 @@ function Toast({ toast, onClose }) {
 }
 
 /**
+ * Progress bar component showing 5-stage co-host request tracking
+ */
+function CohostProgressBar({ currentStatus }) {
+  const currentStageOrder = STATUS_ORDER[currentStatus] || 1;
+
+  const topLabels = COHOST_STAGES.filter((s) => s.labelPosition === 'above');
+  const bottomLabels = COHOST_STAGES.filter((s) => s.labelPosition === 'below');
+
+  return (
+    <div
+      className="schedule-cohost-progress"
+      role="progressbar"
+      aria-valuenow={currentStageOrder}
+      aria-valuemin="1"
+      aria-valuemax="5"
+      aria-label="Co-host request progress"
+    >
+      {/* Top labels row */}
+      <div className="schedule-cohost-progress-labels schedule-cohost-progress-labels--top">
+        {COHOST_STAGES.map((stage) => (
+          <span
+            key={stage.order}
+            className={`schedule-cohost-progress-label ${
+              stage.labelPosition === 'above' && currentStageOrder >= stage.order
+                ? 'schedule-cohost-progress-label--active'
+                : ''
+            }`}
+          >
+            {stage.labelPosition === 'above' ? stage.label : ''}
+          </span>
+        ))}
+      </div>
+
+      {/* Dots and bars row */}
+      <div className="schedule-cohost-progress-track">
+        {COHOST_STAGES.map((stage, index) => (
+          <React.Fragment key={stage.order}>
+            {index > 0 && (
+              <div
+                className={`schedule-cohost-progress-bar ${
+                  currentStageOrder >= stage.order ? 'schedule-cohost-progress-bar--active' : ''
+                }`}
+              />
+            )}
+            <div
+              className={`schedule-cohost-progress-dot ${
+                currentStageOrder >= stage.order ? 'schedule-cohost-progress-dot--active' : ''
+              }`}
+            />
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Bottom labels row */}
+      <div className="schedule-cohost-progress-labels schedule-cohost-progress-labels--bottom">
+        {COHOST_STAGES.map((stage) => (
+          <span
+            key={stage.order}
+            className={`schedule-cohost-progress-label ${
+              stage.labelPosition === 'below' && currentStageOrder >= stage.order
+                ? 'schedule-cohost-progress-label--active'
+                : ''
+            }`}
+          >
+            {stage.labelPosition === 'below' ? stage.label : ''}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
  * Star rating component for post-meeting feedback
+ * Supports half-star ratings (0.5 increments)
  */
 function StarRating({ value, onChange, disabled }) {
   const [hoverValue, setHoverValue] = useState(0);
 
+  const handleStarClick = (starIndex, isHalf) => {
+    if (disabled) return;
+    const newValue = isHalf ? starIndex - 0.5 : starIndex;
+    onChange(newValue);
+  };
+
+  const handleMouseMove = (starIndex, e) => {
+    if (disabled) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const isLeftHalf = e.clientX - rect.left < rect.width / 2;
+    setHoverValue(isLeftHalf ? starIndex - 0.5 : starIndex);
+  };
+
+  const displayValue = hoverValue || value;
+
   return (
-    <div className="schedule-cohost-star-rating">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          className={`schedule-cohost-star ${
-            star <= (hoverValue || value) ? 'schedule-cohost-star--filled' : ''
-          }`}
-          onClick={() => !disabled && onChange(star)}
-          onMouseEnter={() => !disabled && setHoverValue(star)}
-          onMouseLeave={() => setHoverValue(0)}
-          disabled={disabled}
-        >
-          ★
-        </button>
-      ))}
+    <div className="schedule-cohost-star-rating-container">
+      {[1, 2, 3, 4, 5].map((star) => {
+        // Calculate fill percentage for this star
+        let fillPercent = 0;
+        if (displayValue >= star) {
+          fillPercent = 100;
+        } else if (displayValue >= star - 0.5) {
+          fillPercent = 50;
+        }
+
+        return (
+          <div
+            key={star}
+            className={`schedule-cohost-star-wrapper ${disabled ? 'schedule-cohost-star-wrapper--disabled' : ''}`}
+            onMouseMove={(e) => handleMouseMove(star, e)}
+            onMouseLeave={() => setHoverValue(0)}
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect();
+              const isLeftHalf = e.clientX - rect.left < rect.width / 2;
+              handleStarClick(star, isLeftHalf);
+            }}
+            aria-label={`Rate ${star} out of 5 stars`}
+          >
+            {/* Background star (unfilled) */}
+            <span className="schedule-cohost-star-bg">★</span>
+            {/* Filled portion */}
+            <span
+              className="schedule-cohost-star-fill"
+              style={{ width: `${fillPercent}%` }}
+            >
+              ★
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -729,10 +859,11 @@ export default function ScheduleCohost({
         {/* Details Stage (after submission or viewing existing request) */}
         {stage === 'details' && coHostRequest && (
           <div className="schedule-cohost-details">
-            <div className="schedule-cohost-success-icon">✓</div>
-            <h3 className="schedule-cohost-success-title">Your request has been submitted!</h3>
-            <p className="schedule-cohost-success-text">Your suggested meeting times:</p>
+            {/* Progress Bar - shows current status in the workflow */}
+            <CohostProgressBar currentStatus={coHostRequest.status || 'Co-Host Requested'} />
 
+            {/* Meeting Times Summary */}
+            <p className="schedule-cohost-success-text">Your suggested meeting times:</p>
             <div className="schedule-cohost-selected-times">
               {(coHostRequest.selectedTimes || selectedTimeSlots).map((slot, index) => (
                 <div key={slot.id || index} className="schedule-cohost-selected-time">
@@ -741,54 +872,62 @@ export default function ScheduleCohost({
               ))}
             </div>
 
+            {/* Topics/Subject */}
             {coHostRequest.subject && (
               <div className="schedule-cohost-details-subject">
                 <strong>Topics:</strong> {coHostRequest.subject}
               </div>
             )}
 
+            {/* Info message */}
             <p className="schedule-cohost-success-info">
               We'll reach out to confirm a time that works for everyone. You'll receive a confirmation email and SMS shortly.
             </p>
 
-            {/* Show rating option if meeting is completed */}
-            {coHostRequest.status === 'Virtual Meeting Finished' && (
-              <div className="schedule-cohost-rating-section">
-                <h4 className="schedule-cohost-rating-title">How was your meeting?</h4>
+            {/* Rating Section - only visible when meeting is completed (status >= stage 4) */}
+            {(STATUS_ORDER[coHostRequest.status] >= 4) && (
+              <div className="schedule-cohost-details-section">
+                <h4 className="schedule-cohost-details-title">How was your meeting?</h4>
                 <StarRating value={rating} onChange={setRating} disabled={isLoading} />
                 <textarea
-                  className="schedule-cohost-textarea"
+                  className="schedule-cohost-feedback-textarea"
                   value={ratingMessage}
                   onChange={(e) => setRatingMessage(sanitizeInput(e.target.value))}
-                  placeholder="Any feedback? (optional)"
+                  placeholder="Anything you would like to share about your Co-Host experience? (optional)"
                   rows={3}
+                  aria-label="Feedback message (optional)"
                 />
                 <button
-                  className="schedule-cohost-submit"
+                  className="schedule-cohost-submit-rating-btn"
                   onClick={handleSubmitRating}
                   disabled={rating === 0 || isLoading}
                   type="button"
                 >
-                  Submit Rating
+                  {isLoading ? 'Submitting...' : 'Submit Rating'}
                 </button>
               </div>
             )}
 
-            <button
-              className="schedule-cohost-done-btn"
-              onClick={onClose}
-              type="button"
-            >
-              Done
-            </button>
+            {/* Done Button */}
+            <div className="schedule-cohost-actions">
+              <button
+                className="schedule-cohost-done-btn"
+                onClick={onClose}
+                type="button"
+              >
+                Done
+              </button>
+            </div>
 
-            {/* Request ID */}
-            {coHostRequest.id && (
-              <div className="schedule-cohost-metadata">
-                <span className="schedule-cohost-metadata-label">Request ID:</span>
-                <span className="schedule-cohost-metadata-value">{coHostRequest.id}</span>
-              </div>
-            )}
+            {/* Metadata - Creation date and ID */}
+            <div className="schedule-cohost-metadata-centered">
+              {coHostRequest.createdDate && (
+                <p>Created: {formatDateForDisplay(new Date(coHostRequest.createdDate))}</p>
+              )}
+              {coHostRequest.id && (
+                <p>Unique ID: {coHostRequest.id}</p>
+              )}
+            </div>
           </div>
         )}
       </div>
