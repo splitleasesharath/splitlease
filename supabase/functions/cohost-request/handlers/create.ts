@@ -90,6 +90,13 @@ export async function handleCreate(
 
   const now = new Date().toISOString();
 
+  // Combine subject (topics) and details into single "Request notes" field
+  // Format: "Topics: X, Y, Z\n\nAdditional details here"
+  const requestNotes = [
+    input.subject ? `Topics: ${input.subject}` : null,
+    input.details ? input.details : null,
+  ].filter(Boolean).join('\n\n') || null;
+
   // co_hostrequest table - insert required fields including timestamps
   // The admin selection will be handled manually via Slack notification
   // Note: "Host User" is the user making the request (the host who needs help)
@@ -102,8 +109,7 @@ export async function handleCreate(
     Listing: input.listingId || null,
     "Status - Co-Host Request": "pending",  // Initial status from os_co_host_status
     "Dates and times suggested": input.selectedTimes,  // JSONB array of datetime strings
-    "Subject": input.subject || null,       // Topics/help needed
-    "Details": input.details || null,       // Additional details text
+    "Request notes": requestNotes,  // Combined topics + freeform details
     "Created Date": now,
     "Modified Date": now,
   };
