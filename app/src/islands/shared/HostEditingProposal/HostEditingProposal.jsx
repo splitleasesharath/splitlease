@@ -469,10 +469,13 @@ export function HostEditingProposal({
     onCancel?.()
   }
 
-  // Get guest and listing info
-  const guest = proposal?.guest || proposal?._guest || {}
+  // Get guest and listing info - handle both Bubble and Supabase field formats
+  const guest = proposal?.guest || proposal?.Guest || proposal?._guest || proposal?.['Created By'] || {}
   const listing = proposal?.listing || proposal?._listing || {}
-  const guestName = `${guest?.firstName || guest?.['First Name'] || ''} ${guest?.lastName || guest?.['Last Name'] || ''}`.trim() || 'Guest'
+  // Extract first name using all possible field variations
+  const guestFirstName = guest?.firstName || guest?.['Name - First'] || guest?.['First Name'] || guest?.first_name || ''
+  const guestLastName = guest?.lastName || guest?.['Name - Last'] || guest?.['Last Name'] || guest?.last_name || ''
+  const guestName = `${guestFirstName} ${guestLastName}`.trim() || 'Guest'
   const listingTitle = listing?.title || listing?.Name || 'Listing'
 
   // Get original values for comparison (using the same extraction functions as form initialization)
