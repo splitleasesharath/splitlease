@@ -458,8 +458,8 @@ export default function ProposalDetailsModal({
                       <span>{vmHelperText}</span>
                     </div>
 
-                    {/* Show suggested times if they exist and other party requested */}
-                    {virtualMeeting && vmState === VM_STATES.REQUESTED_BY_OTHER && virtualMeeting.suggestedTimes?.length > 0 && (
+                    {/* Show suggested times if they exist (for both requester and responder) */}
+                    {virtualMeeting && (vmState === VM_STATES.REQUESTED_BY_OTHER || vmState === VM_STATES.REQUESTED_BY_ME) && virtualMeeting.suggestedTimes?.length > 0 && (
                       <div className="time-slots">
                         {virtualMeeting.suggestedTimes.map((time, index) => (
                           <div key={index} className="time-slot-display">

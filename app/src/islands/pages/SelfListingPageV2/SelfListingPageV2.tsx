@@ -1654,6 +1654,7 @@ export function SelfListingPageV2() {
         {addressError && (
           <span className="error-message">{addressError}</span>
         )}
+        {/* TODO(human): Fix address display for NYC boroughs where city is empty */}
         {isAddressValid && formData.address.neighborhood && (
           <span className="address-info">
             {formData.address.neighborhood}, {formData.address.city}
