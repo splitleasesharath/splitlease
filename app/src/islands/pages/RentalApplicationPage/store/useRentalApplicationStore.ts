@@ -38,6 +38,11 @@ interface UseRentalApplicationStoreReturn {
   // Persistence
   saveDraft: () => boolean;
   reset: () => void;
+  loadFromDatabase: (
+    formData: Partial<RentalApplicationFormData>,
+    occupants?: Occupant[],
+    verificationStatus?: Partial<VerificationStatus>
+  ) => void;
 
   // Utilities
   getDebugSummary: () => object;
@@ -100,6 +105,14 @@ export function useRentalApplicationStore(): UseRentalApplicationStoreReturn {
     rentalApplicationLocalStore.reset();
   }, []);
 
+  const loadFromDatabase = useCallback((
+    formData: Partial<RentalApplicationFormData>,
+    occupants?: Occupant[],
+    verificationStatus?: Partial<VerificationStatus>
+  ) => {
+    rentalApplicationLocalStore.loadFromDatabase(formData, occupants, verificationStatus);
+  }, []);
+
   const getDebugSummary = useCallback(() => {
     return rentalApplicationLocalStore.getDebugSummary();
   }, []);
@@ -128,6 +141,7 @@ export function useRentalApplicationStore(): UseRentalApplicationStoreReturn {
     // Persistence
     saveDraft,
     reset,
+    loadFromDatabase,
 
     // Utilities
     getDebugSummary,

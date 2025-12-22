@@ -23,6 +23,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { checkAuthStatus, getSessionId, getAuthToken } from '../../lib/auth.js';
 import { useRentalApplicationStore } from './RentalApplicationPage/store/index.ts';
+import { mapDatabaseToFormData } from './RentalApplicationPage/utils/rentalApplicationFieldMapper.ts';
 
 // Extend window interface for Google Maps
 // @ts-ignore
@@ -102,6 +103,7 @@ export function useRentalApplicationPageLogic() {
     updateOccupant: storeUpdateOccupant,
     updateVerificationStatus,
     reset: resetStore,
+    loadFromDatabase,
   } = store;
 
   // ============================================================================
@@ -136,6 +138,15 @@ export function useRentalApplicationPageLogic() {
 
   // Track if user data has been pre-populated
   const hasPrePopulated = useRef(false);
+
+  // Track if application data has been loaded from database
+  const hasLoadedFromDatabase = useRef(false);
+
+  // Loading state for database fetch
+  const [isLoadingFromDatabase, setIsLoadingFromDatabase] = useState(true);
+
+  // Track if this is a previously submitted application
+  const [isSubmittedApplication, setIsSubmittedApplication] = useState(false);
 
   // Address autocomplete refs
   const addressInputRef = useRef(null);
@@ -454,6 +465,120 @@ export function useRentalApplicationPageLogic() {
   }, [formData, updateFormData]);
 
   // ============================================================================
+  // FETCH SAVED RENTAL APPLICATION FROM DATABASE
+  // ============================================================================
+
+  // Fetch saved rental application if user has one
+  useEffect(() => {
+    async function fetchSavedRentalApplication() {
+      // Only run once
+      if (hasLoadedFromDatabase.current) {
+        setIsLoadingFromDatabase(false);
+        return;
+      }
+
+      try {
+        // Check if user is authenticated
+        const isAuthenticated = await checkAuthStatus();
+        if (!isAuthenticated) {
+          console.log('[RentalApplication] User not authenticated, skipping database fetch');
+          setIsLoadingFromDatabase(false);
+          return;
+        }
+
+        // Get user ID from session
+        const userId = getSessionId();
+        if (!userId) {
+          console.log('[RentalApplication] No user ID found, skipping database fetch');
+          setIsLoadingFromDatabase(false);
+          return;
+        }
+
+        // Check if localStorage already has substantial data (draft in progress)
+        // If user has been filling out form, don't overwrite with database
+        const hasLocalDraft = formData.fullName && formData.signature && isDirty;
+        if (hasLocalDraft) {
+          console.log('[RentalApplication] Local draft in progress, skipping database fetch');
+          setIsLoadingFromDatabase(false);
+          hasLoadedFromDatabase.current = true;
+          return;
+        }
+
+        console.log('[RentalApplication] Checking for saved rental application...');
+
+        // Fetch user record to check for existing rental application
+        const { data: userData, error: userError } = await supabase
+          .from('user')
+          .select('_id, "Rental Application"')
+          .eq('_id', userId)
+          .single();
+
+        if (userError || !userData) {
+          console.log('[RentalApplication] User not found or error:', userError);
+          setIsLoadingFromDatabase(false);
+          hasLoadedFromDatabase.current = true;
+          return;
+        }
+
+        if (!userData['Rental Application']) {
+          console.log('[RentalApplication] User has no saved rental application');
+          setIsLoadingFromDatabase(false);
+          hasLoadedFromDatabase.current = true;
+          return;
+        }
+
+        console.log('[RentalApplication] Found saved rental application:', userData['Rental Application']);
+
+        // Fetch full rental application via Edge Function
+        const token = getAuthToken();
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            action: 'get',
+            payload: { user_id: userId },
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success || !result.data) {
+          console.error('[RentalApplication] Failed to fetch application:', result.error);
+          setIsLoadingFromDatabase(false);
+          hasLoadedFromDatabase.current = true;
+          return;
+        }
+
+        console.log('[RentalApplication] Loaded rental application data from database');
+
+        // Transform database fields to form fields
+        const { formData: mappedFormData, occupants: mappedOccupants } = mapDatabaseToFormData(result.data);
+
+        // Load into store (this will NOT save to localStorage)
+        loadFromDatabase(mappedFormData, mappedOccupants);
+
+        // Track if this was a submitted application
+        if (result.data.submitted) {
+          setIsSubmittedApplication(true);
+        }
+
+        hasLoadedFromDatabase.current = true;
+        setIsLoadingFromDatabase(false);
+
+      } catch (error) {
+        console.error('[RentalApplication] Error fetching saved application:', error);
+        setIsLoadingFromDatabase(false);
+        hasLoadedFromDatabase.current = true;
+      }
+    }
+
+    fetchSavedRentalApplication();
+  }, [formData.fullName, formData.signature, isDirty, loadFromDatabase]);
+
+  // ============================================================================
   // GOOGLE PLACES AUTOCOMPLETE (for Current Address)
   // ============================================================================
 
@@ -679,6 +804,8 @@ export function useRentalApplicationPageLogic() {
     submitSuccess,
     submitError,
     lastSaved,
+    isLoadingFromDatabase,
+    isSubmittedApplication,
 
     // Constants
     maxOccupants: MAX_OCCUPANTS,
