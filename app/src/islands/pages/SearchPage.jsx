@@ -763,7 +763,7 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               <span className="price-current">${dynamicPrice.toFixed(2)}</span>
               <span className="price-period">/ night</span>
               {startingPrice > 0 && startingPrice !== dynamicPrice && (
-                <span className="price-original">${parseFloat(startingPrice).toFixed(2)}</span>
+                <span className="price-min">from ${parseFloat(startingPrice).toFixed(2)}</span>
               )}
             </div>
             {/* Host Profile - Simple text */}

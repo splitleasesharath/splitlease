@@ -718,11 +718,11 @@
     font-weight: 400;
 }
 
-.listing-host-section .inline-price .price-original {
-    font-size: 14px;
-    color: #999;
-    text-decoration: line-through;
-    margin-left: 4px;
+.listing-host-section .inline-price .price-min {
+    font-size: 12px;
+    color: #666;
+    margin-left: 8px;
+    font-style: italic;
 }
 
 .listing-host-section .host-profile {
