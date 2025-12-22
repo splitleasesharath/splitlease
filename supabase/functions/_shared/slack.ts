@@ -40,7 +40,7 @@ export type SlackChannel = 'database' | 'acquisition' | 'general';
 const CHANNEL_ENV_MAP: Record<SlackChannel, string> = {
   database: 'SLACK_WEBHOOK_DATABASE_WEBHOOK',
   acquisition: 'SLACK_WEBHOOK_ACQUISITION',
-  general: 'SLACK_WEBHOOK_GENERAL',
+  general: 'SLACK_WEBHOOK_DB_GENERAL',
 };
 
 function getWebhookUrl(channel: SlackChannel): string | null {

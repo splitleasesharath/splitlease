@@ -108,7 +108,7 @@ In your Supabase Dashboard → Project Settings → Edge Functions → Secrets, 
 | `SLACK_BOT_TOKEN` | `xoxb-...` | Bot User OAuth Token from Step 1.3 |
 | `SLACK_SIGNING_SECRET` | `abc123...` | Signing Secret from Step 1.4 |
 | `SLACK_COHOST_CHANNEL_ID` | `C0123ABC...` | Channel ID from Step 1.5 |
-| `SLACK_WEBHOOK_GENERAL` | `https://hooks.slack.com/...` | (Keep existing - for simple notifications) |
+| `SLACK_WEBHOOK_DB_GENERAL` | `https://hooks.slack.com/...` | (Keep existing - for simple notifications fallback) |
 
 ### Step 2.2: Verify Secrets Are Set
 
