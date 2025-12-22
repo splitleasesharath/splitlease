@@ -10,7 +10,7 @@
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ValidationError, SupabaseSyncError } from "../../_shared/errors.ts";
 import { validateRequired } from "../../_shared/validation.ts";
-import { sendToSlack } from "../../_shared/slack.ts";
+import { sendToSlack, sendInteractiveMessage } from "../../_shared/slack.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Types
@@ -133,30 +133,138 @@ export async function handleCreate(
   console.log(`[cohost-request:create] Co-host request created successfully: ${coHostRequestId}`);
 
   // ================================================
-  // SEND SLACK NOTIFICATION
+  // SEND INTERACTIVE SLACK MESSAGE
   // ================================================
 
-  // Fire-and-forget notification to general channel for internal cohost assignment
-  const slackMessage = {
-    text: [
-      `🙋 *New Co-Host Request*`,
-      ``,
-      `*From:* ${input.userName || 'Unknown'} (${input.userEmail || 'no email'})`,
-      `*Listing:* ${input.listingId || 'Not specified'}`,
-      `*Request ID:* ${coHostRequestId}`,
-      ``,
-      `*Preferred Times:*`,
-      ...input.selectedTimes.map((t: string) => `• ${t}`),
-      ``,
-      input.subject ? `*Topics:* ${input.subject}` : '',
-      input.details ? `*Details:* ${input.details}` : '',
-      ``,
-      `_Please assign a co-host internally._`,
-    ].filter(Boolean).join('\n'),
-  };
+  const channelId = Deno.env.get('SLACK_COHOST_CHANNEL_ID');
 
-  sendToSlack('general', slackMessage);
-  console.log(`[cohost-request:create] Slack notification sent to general channel`);
+  if (!channelId) {
+    // Fallback to simple webhook if Bot API not configured
+    console.warn('[cohost-request:create] SLACK_COHOST_CHANNEL_ID not configured, using webhook fallback');
+    const slackMessage = {
+      text: [
+        `🙋 *New Co-Host Request*`,
+        ``,
+        `*From:* ${input.userName || 'Unknown'} (${input.userEmail || 'no email'})`,
+        `*Listing:* ${input.listingId || 'Not specified'}`,
+        `*Request ID:* ${coHostRequestId}`,
+        ``,
+        `*Preferred Times:*`,
+        ...input.selectedTimes.map((t: string) => `• ${t}`),
+        ``,
+        input.subject ? `*Topics:* ${input.subject}` : '',
+        input.details ? `*Details:* ${input.details}` : '',
+        ``,
+        `_Please assign a co-host internally._`,
+      ].filter(Boolean).join('\n'),
+    };
+    sendToSlack('general', slackMessage);
+  } else {
+    // Build interactive message with "Claim" button
+    const blocks = [
+      {
+        type: "header",
+        text: {
+          type: "plain_text",
+          text: "🙋 New Co-Host Request",
+          emoji: true
+        }
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: `*From:*\n${input.userName || 'Unknown'}`
+          },
+          {
+            type: "mrkdwn",
+            text: `*Email:*\n${input.userEmail || 'No email'}`
+          }
+        ]
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: `*Request ID:*\n\`${coHostRequestId}\``
+          },
+          {
+            type: "mrkdwn",
+            text: `*Listing:*\n${input.listingId || 'Not specified'}`
+          }
+        ]
+      },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Preferred Times:*\n${input.selectedTimes.map((t: string) => `• ${t}`).join('\n')}`
+        }
+      },
+      ...(input.subject ? [{
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Topics:*\n${input.subject}`
+        }
+      }] : []),
+      ...(input.details ? [{
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Details:*\n${input.details}`
+        }
+      }] : []),
+      {
+        type: "divider"
+      },
+      {
+        type: "actions",
+        block_id: "cohost_claim_actions",
+        elements: [
+          {
+            type: "button",
+            text: {
+              type: "plain_text",
+              text: "✋ Claim This Request",
+              emoji: true
+            },
+            style: "primary",
+            action_id: "claim_cohost_request",
+            value: JSON.stringify({
+              requestId: coHostRequestId,
+              hostUserId: input.userId,
+              hostEmail: input.userEmail,
+              hostName: input.userName,
+              listingId: input.listingId,
+              preferredTimes: input.selectedTimes
+            })
+          }
+        ]
+      }
+    ];
+
+    const fallbackText = `New Co-Host Request from ${input.userName || 'Unknown'} - Request ID: ${coHostRequestId}`;
+
+    const slackResult = await sendInteractiveMessage(channelId, blocks, fallbackText);
+
+    if (slackResult.ok && slackResult.ts) {
+      // Store the message timestamp so we can update it later when claimed
+      await supabase
+        .from("co_hostrequest")
+        .update({ "Slack Message TS": slackResult.ts })
+        .eq("_id", coHostRequestId);
+
+      console.log(`[cohost-request:create] Interactive Slack message sent, ts: ${slackResult.ts}`);
+    } else {
+      console.error(`[cohost-request:create] Failed to send interactive Slack message: ${slackResult.error}`);
+      // Don't fail the request - Slack notification is non-critical
+    }
+  }
+
+  console.log(`[cohost-request:create] Slack notification processed`);
 
   // ================================================
   // RETURN RESPONSE

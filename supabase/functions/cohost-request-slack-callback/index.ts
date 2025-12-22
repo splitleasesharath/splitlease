@@ -1,0 +1,468 @@
+/**
+ * Slack Callback Handler for Co-Host Requests
+ * Split Lease - Supabase Edge Functions
+ *
+ * Handles interactive elements from Slack:
+ * 1. Button clicks (claim_cohost_request) - Opens modal form
+ * 2. Modal submissions (cohost_assignment_modal) - Updates database, notifies host
+ *
+ * CRITICAL: Must respond within 3 seconds or Slack times out
+ * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
+ */
+
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-slack-signature, x-slack-request-timestamp',
+};
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface SlackPayload {
+  type: string;
+  trigger_id?: string;
+  user: { id: string; name: string; username: string };
+  channel?: { id: string };
+  message?: { ts: string };
+  actions?: Array<{ action_id: string; value: string }>;
+  view?: {
+    private_metadata: string;
+    state: {
+      values: Record<string, Record<string, { selected_date?: string; selected_time?: string; value?: string }>>;
+    };
+  };
+}
+
+interface RequestMetadata {
+  requestId: string;
+  hostUserId: string;
+  hostEmail: string;
+  hostName: string;
+  listingId?: string;
+  preferredTimes: string[];
+  adminSlackId?: string;
+  adminSlackName?: string;
+  channelId?: string;
+  messageTs?: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
+serve(async (req: Request) => {
+  // Handle CORS preflight
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
+  }
+
+  console.log('[slack-callback] Received request');
+
+  try {
+    // Slack sends form-urlencoded data for interactive components
+    const formData = await req.text();
+    const params = new URLSearchParams(formData);
+    const payloadStr = params.get('payload');
+
+    if (!payloadStr) {
+      console.error('[slack-callback] Missing payload parameter');
+      return new Response('Missing payload', { status: 400 });
+    }
+
+    const payload: SlackPayload = JSON.parse(payloadStr);
+    console.log('[slack-callback] Payload type:', payload.type);
+    console.log('[slack-callback] User:', payload.user?.name);
+
+    // Initialize Supabase client with service role for admin operations
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    // Route based on payload type
+    switch (payload.type) {
+      case 'block_actions':
+        return await handleButtonClick(payload, supabase);
+
+      case 'view_submission':
+        return await handleModalSubmission(payload, supabase);
+
+      default:
+        console.warn('[slack-callback] Unknown payload type:', payload.type);
+        return new Response('Unknown payload type', { status: 400 });
+    }
+
+  } catch (error) {
+    console.error('[slack-callback] Error:', error);
+    return new Response(JSON.stringify({ error: (error as Error).message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Button Click Handler
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Handle "Claim This Request" button click
+ * Opens a modal for the admin to enter meeting details
+ */
+async function handleButtonClick(
+  payload: SlackPayload,
+  _supabase: unknown
+): Promise<Response> {
+  const action = payload.actions?.[0];
+
+  if (action?.action_id !== 'claim_cohost_request') {
+    console.warn('[slack-callback] Unknown action:', action?.action_id);
+    return new Response('Unknown action', { status: 400 });
+  }
+
+  const requestData: RequestMetadata = JSON.parse(action.value);
+  const triggerId = payload.trigger_id;
+  const adminUserId = payload.user.id;
+  const adminUserName = payload.user.name || payload.user.username;
+
+  console.log(`[slack-callback] Admin ${adminUserName} (${adminUserId}) claiming request ${requestData.requestId}`);
+
+  // Build modal view for assignment form
+  const modalView = {
+    type: "modal",
+    callback_id: "cohost_assignment_modal",
+    private_metadata: JSON.stringify({
+      ...requestData,
+      adminSlackId: adminUserId,
+      adminSlackName: adminUserName,
+      channelId: payload.channel?.id,
+      messageTs: payload.message?.ts
+    }),
+    title: {
+      type: "plain_text",
+      text: "Assign Co-Host",
+      emoji: true
+    },
+    submit: {
+      type: "plain_text",
+      text: "Confirm Assignment",
+      emoji: true
+    },
+    close: {
+      type: "plain_text",
+      text: "Cancel"
+    },
+    blocks: [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Claiming request for:* ${requestData.hostName || 'Unknown'}\n*Request ID:* \`${requestData.requestId}\``
+        }
+      },
+      {
+        type: "divider"
+      },
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Host's Preferred Times:*\n${requestData.preferredTimes.map((t: string) => `• ${t}`).join('\n')}`
+        }
+      },
+      {
+        type: "input",
+        block_id: "meeting_date_block",
+        element: {
+          type: "datepicker",
+          action_id: "meeting_date",
+          placeholder: {
+            type: "plain_text",
+            text: "Select a date"
+          }
+        },
+        label: {
+          type: "plain_text",
+          text: "Meeting Date",
+          emoji: true
+        }
+      },
+      {
+        type: "input",
+        block_id: "meeting_time_block",
+        element: {
+          type: "timepicker",
+          action_id: "meeting_time",
+          placeholder: {
+            type: "plain_text",
+            text: "Select a time"
+          }
+        },
+        label: {
+          type: "plain_text",
+          text: "Meeting Time (EST)",
+          emoji: true
+        }
+      },
+      {
+        type: "input",
+        block_id: "google_meet_block",
+        optional: true,
+        element: {
+          type: "plain_text_input",
+          action_id: "google_meet_link",
+          placeholder: {
+            type: "plain_text",
+            text: "https://meet.google.com/xxx-xxxx-xxx"
+          }
+        },
+        label: {
+          type: "plain_text",
+          text: "Google Meet Link (optional)",
+          emoji: true
+        }
+      },
+      {
+        type: "input",
+        block_id: "admin_notes_block",
+        optional: true,
+        element: {
+          type: "plain_text_input",
+          action_id: "admin_notes",
+          multiline: true,
+          placeholder: {
+            type: "plain_text",
+            text: "Any internal notes about this request..."
+          }
+        },
+        label: {
+          type: "plain_text",
+          text: "Internal Notes (not shared with host)",
+          emoji: true
+        }
+      }
+    ]
+  };
+
+  // Open the modal using Slack API
+  const token = Deno.env.get('SLACK_BOT_TOKEN');
+
+  if (!token) {
+    console.error('[slack-callback] SLACK_BOT_TOKEN not configured');
+    return new Response('Bot token not configured', { status: 500 });
+  }
+
+  const response = await fetch('https://slack.com/api/views.open', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      trigger_id: triggerId,
+      view: modalView
+    })
+  });
+
+  const result = await response.json();
+
+  if (!result.ok) {
+    console.error('[slack-callback] Failed to open modal:', result.error);
+    return new Response(JSON.stringify({ error: result.error }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  console.log('[slack-callback] Modal opened successfully');
+
+  // Return empty 200 to acknowledge the button click
+  return new Response('', { status: 200 });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Modal Submission Handler
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Handle modal form submission
+ * Updates database and triggers host notification
+ */
+async function handleModalSubmission(
+  payload: SlackPayload,
+  supabase: ReturnType<typeof createClient>
+): Promise<Response> {
+  const values = payload.view!.state.values;
+  const metadata: RequestMetadata = JSON.parse(payload.view!.private_metadata);
+
+  // Extract form values
+  const meetingDate = values.meeting_date_block.meeting_date.selected_date;
+  const meetingTime = values.meeting_time_block.meeting_time.selected_time;
+  const googleMeetLink = values.google_meet_block?.google_meet_link?.value || null;
+  const adminNotes = values.admin_notes_block?.admin_notes?.value || null;
+
+  if (!meetingDate || !meetingTime) {
+    console.error('[slack-callback] Missing meeting date or time');
+    return new Response(JSON.stringify({
+      response_action: "errors",
+      errors: {
+        meeting_date_block: "Please select a meeting date",
+        meeting_time_block: "Please select a meeting time"
+      }
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  // Combine date and time into ISO timestamp (treating as EST)
+  const meetingDateTime = new Date(`${meetingDate}T${meetingTime}:00-05:00`).toISOString();
+
+  console.log(`[slack-callback] Assigning co-host for request ${metadata.requestId}`);
+  console.log(`[slack-callback] Admin: ${metadata.adminSlackName} (${metadata.adminSlackId})`);
+  console.log(`[slack-callback] Meeting: ${meetingDateTime}`);
+
+  // Update the co-host request in database
+  const updateData: Record<string, unknown> = {
+    "Co-Host User": metadata.adminSlackId, // Store Slack ID for now - map to user ID if needed
+    "Status - Co-Host Request": "co-host selected",
+    "Meeting Date Time": meetingDateTime,
+    "Modified Date": new Date().toISOString()
+  };
+
+  if (googleMeetLink) {
+    updateData["Google Meet Link"] = googleMeetLink;
+  }
+  if (adminNotes) {
+    updateData["Admin Notes"] = adminNotes;
+  }
+
+  const { error: updateError } = await supabase
+    .from('co_hostrequest')
+    .update(updateData)
+    .eq('_id', metadata.requestId);
+
+  if (updateError) {
+    console.error('[slack-callback] Database update failed:', updateError);
+    console.error('[slack-callback] Error details - code:', updateError.code, 'message:', updateError.message);
+    return new Response(JSON.stringify({
+      response_action: "errors",
+      errors: {
+        meeting_date_block: `Database error: ${updateError.message}. Please try again.`
+      }
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  console.log('[slack-callback] Database updated successfully');
+
+  // Update the original Slack message to show it's been claimed
+  const token = Deno.env.get('SLACK_BOT_TOKEN');
+
+  if (token && metadata.channelId && metadata.messageTs) {
+    const updatedBlocks = [
+      {
+        type: "header",
+        text: {
+          type: "plain_text",
+          text: "✅ Co-Host Request Assigned",
+          emoji: true
+        }
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: `*Host:*\n${metadata.hostName || 'Unknown'}`
+          },
+          {
+            type: "mrkdwn",
+            text: `*Assigned To:*\n<@${metadata.adminSlackId}>`
+          }
+        ]
+      },
+      {
+        type: "section",
+        fields: [
+          {
+            type: "mrkdwn",
+            text: `*Request ID:*\n\`${metadata.requestId}\``
+          },
+          {
+            type: "mrkdwn",
+            text: `*Meeting:*\n${meetingDate} at ${meetingTime} EST`
+          }
+        ]
+      },
+      ...(googleMeetLink ? [{
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `*Google Meet:*\n<${googleMeetLink}|Join Meeting>`
+        }
+      }] : []),
+      {
+        type: "context",
+        elements: [
+          {
+            type: "mrkdwn",
+            text: `Claimed by <@${metadata.adminSlackId}> • Host notification will be sent`
+          }
+        ]
+      }
+    ];
+
+    await fetch('https://slack.com/api/chat.update', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        channel: metadata.channelId,
+        ts: metadata.messageTs,
+        blocks: updatedBlocks,
+        text: `Co-Host request ${metadata.requestId} assigned to ${metadata.adminSlackName}`
+      })
+    });
+
+    console.log('[slack-callback] Original Slack message updated');
+  }
+
+  // Trigger host notification (fire-and-forget)
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
+
+  if (supabaseUrl && supabaseAnonKey) {
+    fetch(`${supabaseUrl}/functions/v1/cohost-request`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'notify-host',
+        payload: {
+          requestId: metadata.requestId,
+          hostEmail: metadata.hostEmail,
+          hostName: metadata.hostName,
+          cohostName: metadata.adminSlackName,
+          meetingDateTime,
+          googleMeetLink
+        }
+      })
+    }).catch(err => {
+      console.error('[slack-callback] Failed to trigger host notification:', err);
+    });
+
+    console.log('[slack-callback] Host notification triggered');
+  }
+
+  // Return empty response to close the modal
+  return new Response('', { status: 200 });
+}

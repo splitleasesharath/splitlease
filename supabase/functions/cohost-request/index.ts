@@ -5,6 +5,7 @@
  * Main router for co-host request operations:
  * - create: Create a new co-host request with virtual meeting
  * - rate: Submit rating for a completed session
+ * - notify-host: Send email notification after admin claims request
  *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
  */
@@ -23,14 +24,15 @@ import { createErrorCollector, ErrorCollector } from "../_shared/slack.ts";
 
 import { handleCreate } from "./handlers/create.ts";
 import { handleRate } from "./handlers/rate.ts";
+import { handleNotifyHost } from "./handlers/notify-host.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ["create", "rate"] as const;
+const ALLOWED_ACTIONS = ["create", "rate", "notify-host"] as const;
 // NOTE: All actions are public until Supabase auth migration is complete
-const PUBLIC_ACTIONS = ["create", "rate"] as const;
+const PUBLIC_ACTIONS = ["create", "rate", "notify-host"] as const;
 
 type Action = (typeof ALLOWED_ACTIONS)[number];
 
@@ -155,6 +157,10 @@ Deno.serve(async (req: Request) => {
 
       case "rate":
         result = await handleRate(body.payload, user, serviceClient);
+        break;
+
+      case "notify-host":
+        result = await handleNotifyHost(body.payload, serviceClient);
         break;
 
       default:

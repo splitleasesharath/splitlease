@@ -7,6 +7,7 @@
  * PERFORMANCE: Fire-and-forget pattern - ZERO latency impact
  * CONSOLIDATION: One message per request, not per error
  * WEBHOOK: Uses SLACK_WEBHOOK_DATABASE_WEBHOOK for all error logs
+ * BOT API: Uses SLACK_BOT_TOKEN for interactive messages with buttons/modals
  */
 
 // Types
@@ -14,6 +15,17 @@
 
 interface SlackMessage {
   text: string;
+}
+
+interface SlackBlock {
+  type: string;
+  [key: string]: unknown;
+}
+
+interface SlackInteractiveResult {
+  ok: boolean;
+  ts?: string;
+  error?: string;
 }
 
 interface CollectedError {
@@ -55,6 +67,94 @@ export function sendToSlack(channel: SlackChannel, message: SlackMessage): void 
   }).catch((e) => {
     console.error('[slack] Failed to send message:', e.message);
   });
+}
+
+// ─────────────────────────────────────────────────────────────
+// Bot API Functions (for interactive messages)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Send interactive message using Slack Bot API
+ * Unlike webhooks, this supports buttons/modals and returns message_ts
+ *
+ * Requires: SLACK_BOT_TOKEN and SLACK_COHOST_CHANNEL_ID secrets
+ */
+export async function sendInteractiveMessage(
+  channelId: string,
+  blocks: SlackBlock[],
+  text: string
+): Promise<SlackInteractiveResult> {
+  const token = Deno.env.get('SLACK_BOT_TOKEN');
+
+  if (!token) {
+    console.error('[slack] SLACK_BOT_TOKEN not configured');
+    return { ok: false, error: 'Bot token not configured' };
+  }
+
+  try {
+    const response = await fetch('https://slack.com/api/chat.postMessage', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        channel: channelId,
+        blocks,
+        text, // Fallback text for notifications
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!result.ok) {
+      console.error('[slack] Bot API error:', result.error);
+      return { ok: false, error: result.error };
+    }
+
+    return { ok: true, ts: result.ts };
+  } catch (error) {
+    console.error('[slack] Failed to send interactive message:', error);
+    return { ok: false, error: (error as Error).message };
+  }
+}
+
+/**
+ * Update an existing Slack message
+ * Used to update the original request message after admin claims it
+ */
+export async function updateSlackMessage(
+  channelId: string,
+  messageTs: string,
+  blocks: SlackBlock[],
+  text: string
+): Promise<SlackInteractiveResult> {
+  const token = Deno.env.get('SLACK_BOT_TOKEN');
+
+  if (!token) {
+    return { ok: false, error: 'Bot token not configured' };
+  }
+
+  try {
+    const response = await fetch('https://slack.com/api/chat.update', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        channel: channelId,
+        ts: messageTs,
+        blocks,
+        text,
+      }),
+    });
+
+    const result = await response.json();
+    return { ok: result.ok, error: result.error };
+  } catch (error) {
+    return { ok: false, error: (error as Error).message };
+  }
 }
 
 /**
