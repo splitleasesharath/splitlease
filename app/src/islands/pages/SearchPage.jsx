@@ -763,7 +763,17 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               <span className="price-current">${dynamicPrice.toFixed(2)}</span>
               <span className="price-period">/ night</span>
               {startingPrice > 0 && startingPrice !== dynamicPrice && (
-                <span className="price-min">from ${parseFloat(startingPrice).toFixed(2)}</span>
+                <span
+                  className="price-min-trigger"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onOpenInfoModal(listing, priceInfoTriggerRef);
+                  }}
+                >
+                  from ${parseFloat(startingPrice).toFixed(2)}/night
+                  <span className="price-info-icon">?</span>
+                </span>
               )}
             </div>
             {/* Host Profile - Simple text */}
