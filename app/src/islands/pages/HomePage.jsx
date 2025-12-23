@@ -264,6 +264,78 @@ function ScheduleCardsAlt() {
 }
 
 // ============================================================================
+// INTERNAL COMPONENT: Schedule Cards Alt 2 (Minimal Gallery Row)
+// ============================================================================
+
+function ScheduleCardsAlt2() {
+  const schedules = [
+    {
+      id: 'weeknight',
+      label: 'Weeknights',
+      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json',
+      days: '2,3,4,5,6',
+    },
+    {
+      id: 'weekend',
+      label: 'Weekends',
+      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json',
+      days: '6,7,1,2',
+    },
+    {
+      id: 'monthly',
+      label: 'Full Month',
+      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
+      days: '1,2,3,4,5,6,7',
+    },
+  ];
+
+  const handleClick = (days) => {
+    window.location.href = `/search.html?days-selected=${days}`;
+  };
+
+  const handleMouseEnter = (e) => {
+    const player = e.currentTarget.querySelector('lottie-player');
+    if (player) player.play();
+  };
+
+  const handleMouseLeave = (e) => {
+    const player = e.currentTarget.querySelector('lottie-player');
+    if (player) player.stop();
+  };
+
+  return (
+    <section className="schedule-alt2-section">
+      <div className="schedule-alt2-container">
+        <h2 className="schedule-alt2-title">Pick your schedule</h2>
+
+        <div className="schedule-alt2-row">
+          {schedules.map((schedule) => (
+            <div
+              key={schedule.id}
+              className="schedule-alt2-item"
+              onClick={() => handleClick(schedule.days)}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
+              <div className="schedule-alt2-lottie">
+                <lottie-player
+                  src={schedule.lottieUrl}
+                  background="transparent"
+                  speed="1"
+                  style={{ width: '180px', height: '130px' }}
+                  loop
+                ></lottie-player>
+              </div>
+              <span className="schedule-alt2-label">{schedule.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================================
 // INTERNAL COMPONENT: Local Section (Centered Icon Cards)
 // ============================================================================
 
@@ -689,6 +761,8 @@ export default function HomePage() {
       <InvertedScheduleCards />
 
       <ScheduleCardsAlt />
+
+      <ScheduleCardsAlt2 />
 
       <LocalSectionAlt onExploreRentals={handleExploreRentals} />
 

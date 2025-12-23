@@ -114,3 +114,102 @@
         justify-content: center;
     }
 }
+
+
+/* ================================================
+   Schedule Section Alt 2 - Minimal Gallery Row
+   ================================================ */
+
+.schedule-alt2-section {
+    padding: 4rem 2rem;
+    background: #f9fafb;
+}
+
+.schedule-alt2-container {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.schedule-alt2-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin: 0 0 2.5rem 0;
+}
+
+.schedule-alt2-row {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+}
+
+.schedule-alt2-item {
+    background: white;
+    border: 2px solid transparent;
+    border-radius: 20px;
+    padding: 1.5rem 2rem 1.25rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.schedule-alt2-item:hover {
+    border-color: #5B5FCF;
+    transform: translateY(-6px);
+    box-shadow: 0 16px 40px rgba(91, 95, 207, 0.15);
+}
+
+.schedule-alt2-lottie {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.schedule-alt2-lottie lottie-player {
+    background: transparent !important;
+}
+
+.schedule-alt2-label {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #1d1d1f;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.schedule-alt2-item:hover .schedule-alt2-label {
+    opacity: 1;
+    color: #5B5FCF;
+}
+
+/* Responsive Alt 2 */
+@media (max-width: 768px) {
+    .schedule-alt2-section {
+        padding: 3rem 1.5rem;
+    }
+
+    .schedule-alt2-title {
+        font-size: 1.5rem;
+    }
+
+    .schedule-alt2-row {
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .schedule-alt2-item {
+        width: 100%;
+        max-width: 280px;
+        padding: 1.25rem 1.5rem 1rem;
+    }
+
+    .schedule-alt2-lottie lottie-player {
+        width: 150px !important;
+        height: 110px !important;
+    }
+}
