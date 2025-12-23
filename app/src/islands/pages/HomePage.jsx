@@ -325,6 +325,10 @@ function ScheduleCardsAlt2() {
                   style={{ width: '180px', height: '130px' }}
                   loop
                 ></lottie-player>
+                <svg className="schedule-alt2-progress" viewBox="0 0 100 100">
+                  <circle className="schedule-alt2-progress-bg" cx="50" cy="50" r="45" />
+                  <circle className="schedule-alt2-progress-bar" cx="50" cy="50" r="45" />
+                </svg>
               </div>
               <span className="schedule-alt2-label">{schedule.label}</span>
             </div>

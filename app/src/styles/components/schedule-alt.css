@@ -167,10 +167,48 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    position: relative;
 }
 
 .schedule-alt2-lottie lottie-player {
     background: transparent !important;
+    position: relative;
+    z-index: 1;
+}
+
+/* Circular Progress */
+.schedule-alt2-progress {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    transform: rotate(-90deg);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.schedule-alt2-item:hover .schedule-alt2-progress {
+    opacity: 1;
+}
+
+.schedule-alt2-progress-bg {
+    fill: none;
+    stroke: #e5e7eb;
+    stroke-width: 3;
+}
+
+.schedule-alt2-progress-bar {
+    fill: none;
+    stroke: #5B5FCF;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-dasharray: 283;
+    stroke-dashoffset: 283;
+    transition: stroke-dashoffset 0s;
+}
+
+.schedule-alt2-item:hover .schedule-alt2-progress-bar {
+    stroke-dashoffset: 0;
+    transition: stroke-dashoffset 2s ease-out;
 }
 
 .schedule-alt2-label {
