@@ -192,92 +192,71 @@ function InvertedScheduleCards() {
 }
 
 // ============================================================================
-// INTERNAL COMPONENT: Schedule Cards Alt (Horizontal Showcase)
+// INTERNAL COMPONENT: Schedule Cards Alt (Visual Tabs Design)
 // ============================================================================
 
 function ScheduleCardsAlt() {
+  const [activeIndex, setActiveIndex] = useState(0);
+
   const schedules = [
     {
       id: 'weeknight',
-      title: 'Weeknights',
-      description: 'Perfect for commuters. Stay Mon–Fri, go home on weekends.',
+      label: 'Weeknights',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json',
       days: '2,3,4,5,6',
-      accent: '#5B5FCF',
     },
     {
       id: 'weekend',
-      title: 'Weekends',
-      description: 'Your city escape. Enjoy Fri–Sun in a new neighborhood.',
+      label: 'Weekends',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json',
       days: '6,7,1,2',
-      accent: '#10B981',
     },
     {
       id: 'monthly',
-      title: 'Full Month',
-      description: 'Maximum flexibility. The whole place, every day.',
+      label: 'Full Month',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
       days: '1,2,3,4,5,6,7',
-      accent: '#F59E0B',
     },
   ];
 
-  const handleExploreClick = (days) => {
-    window.location.href = `/search.html?days-selected=${days}`;
-  };
-
-  const handleMouseEnter = (e) => {
-    const player = e.currentTarget.querySelector('lottie-player');
-    if (player) player.play();
-  };
-
-  const handleMouseLeave = (e) => {
-    const player = e.currentTarget.querySelector('lottie-player');
-    if (player) player.stop();
+  const handleExploreClick = () => {
+    window.location.href = `/search.html?days-selected=${schedules[activeIndex].days}`;
   };
 
   return (
     <section className="schedule-alt-section">
       <div className="schedule-alt-container">
-        <div className="schedule-alt-header">
-          <span className="schedule-alt-eyebrow">Flexible Scheduling</span>
-          <h2>Pick your rhythm</h2>
+        <div className="schedule-alt-tabs">
+          {schedules.map((schedule, index) => (
+            <button
+              key={schedule.id}
+              className={`schedule-alt-tab ${index === activeIndex ? 'active' : ''}`}
+              onClick={() => setActiveIndex(index)}
+            >
+              {schedule.label}
+            </button>
+          ))}
         </div>
 
-        <div className="schedule-alt-cards">
-          {schedules.map((schedule) => (
-            <div
-              key={schedule.id}
-              className="schedule-alt-card"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              onClick={() => handleExploreClick(schedule.days)}
-              style={{ '--accent-color': schedule.accent }}
-            >
-              <div className="schedule-alt-card-inner">
-                <div className="schedule-alt-lottie">
-                  <lottie-player
-                    src={schedule.lottieUrl}
-                    background="transparent"
-                    speed="1"
-                    style={{ width: '160px', height: '110px' }}
-                    loop
-                  ></lottie-player>
-                </div>
-                <div className="schedule-alt-card-content">
-                  <h3>{schedule.title}</h3>
-                  <p>{schedule.description}</p>
-                </div>
-              </div>
-              <div className="schedule-alt-card-cta">
-                <span>Browse listings</span>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </div>
-            </div>
-          ))}
+        <div className="schedule-alt-display">
+          <div className="schedule-alt-lottie-wrapper">
+            <lottie-player
+              key={schedules[activeIndex].id}
+              src={schedules[activeIndex].lottieUrl}
+              background="transparent"
+              speed="1"
+              style={{ width: '280px', height: '200px' }}
+              loop
+              autoplay
+            ></lottie-player>
+          </div>
+
+          <button className="schedule-alt-cta" onClick={handleExploreClick}>
+            Browse {schedules[activeIndex].label} Listings
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
         </div>
       </div>
     </section>
