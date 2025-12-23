@@ -1992,7 +1992,11 @@
 /* Featured Spaces Responsive */
 @media (max-width: 968px) {
     .featured-spaces {
-        padding: 60px 24px;
+        padding: 3rem 0;
+    }
+
+    .featured-spaces-container {
+        padding: 0 1.5rem;
     }
 
     .spaces-header h2 {
@@ -2000,12 +2004,104 @@
     }
 
     .spaces-grid {
-        grid-template-columns: 1fr;
-        gap: 24px;
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        gap: 16px;
+        padding: 0 1.5rem;
+        margin: 0 -1.5rem;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .spaces-grid::-webkit-scrollbar {
+        display: none;
+    }
+
+    .spaces-grid .space-card {
+        flex: 0 0 280px;
+        scroll-snap-align: start;
+    }
+
+    .spaces-cta-wrapper {
+        padding: 0 1.5rem;
+    }
+
+    .spaces-cta-button {
+        width: 100%;
+        justify-content: center;
     }
 }
 
 @media (max-width: 640px) {
+    .featured-spaces {
+        padding: 2.5rem 0;
+    }
+
+    .featured-spaces-container {
+        padding: 0 1rem;
+    }
+
+    .spaces-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .spaces-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .spaces-grid {
+        gap: 12px;
+        padding: 0 1rem;
+        margin: 0 -1rem;
+    }
+
+    .spaces-grid .space-card {
+        flex: 0 0 260px;
+    }
+
+    .featured-spaces .space-image {
+        height: 170px;
+    }
+
+    .featured-spaces .space-info {
+        padding: 16px;
+    }
+
+    .featured-spaces .space-title {
+        font-size: 15px;
+    }
+
+    .featured-spaces .space-location {
+        font-size: 12px;
+        margin-bottom: 10px;
+    }
+
+    .featured-spaces .space-features {
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .featured-spaces .feature-tag {
+        padding: 3px 9px;
+        font-size: 10px;
+    }
+
+    .featured-spaces .space-schedule {
+        padding-top: 10px;
+    }
+
+    .spaces-cta-wrapper {
+        padding: 0 1rem;
+        margin-top: 2rem;
+    }
+
+    .spaces-cta-button {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+    }
+
     .category-filters {
         gap: 8px;
     }
