@@ -660,24 +660,11 @@ function FeaturedSpacesSection() {
                     <span className="feature-tag">Storage</span>
                   </div>
                   <div className="space-schedule">
-                    <span className="available-days">
-                      {listing.availableDays.length > 0
-                        ? `${listing.availableDays.length} nights available`
-                        : 'Schedule flexible'}
-                    </span>
+                    <span className="available-days">all nights available</span>
                     <div className="day-indicators">
-                      {[0, 1, 2, 3, 4, 5, 6].map((dayIdx) => {
-                        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                        const isAvailable = listing.availableDays.some(d =>
-                          d === dayNames[dayIdx] || d === dayIdx || d === String(dayIdx)
-                        );
-                        return (
-                          <span
-                            key={dayIdx}
-                            className={`day-dot ${isAvailable ? 'available' : ''}`}
-                          />
-                        );
-                      })}
+                      {[0, 1, 2, 3, 4, 5, 6].map((dayIdx) => (
+                        <span key={dayIdx} className="day-dot available" />
+                      ))}
                     </div>
                   </div>
                 </div>
