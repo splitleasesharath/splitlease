@@ -32,9 +32,22 @@ interface SlackPayload {
   view?: {
     private_metadata: string;
     state: {
-      values: Record<string, Record<string, { selected_date?: string; selected_time?: string; value?: string }>>;
+      values: Record<string, Record<string, {
+        selected_date?: string;
+        selected_time?: string;
+        value?: string;
+        selected_option?: { value: string };
+      }>>;
     };
   };
+}
+
+interface CohostAdmin {
+  id: number;
+  name: string;
+  display: string;
+  email: string;
+  user_id: string;
 }
 
 interface RequestMetadata {
@@ -115,7 +128,7 @@ serve(async (req: Request) => {
  */
 async function handleButtonClick(
   payload: SlackPayload,
-  _supabase: unknown
+  supabase: ReturnType<typeof createClient>
 ): Promise<Response> {
   const action = payload.actions?.[0];
 
@@ -130,6 +143,44 @@ async function handleButtonClick(
   const adminUserName = payload.user.name || payload.user.username;
 
   console.log(`[slack-callback] Admin ${adminUserName} (${adminUserId}) claiming request ${requestData.requestId}`);
+
+  // Fetch available co-hosts from reference table
+  const { data: cohostAdmins, error: cohostError } = await supabase
+    .from('reference_table.os_cohost_admins')
+    .select('id, name, display, email, user_id')
+    .neq('name', 'co-host_requested_waiting') // Exclude placeholder entry
+    .order('display');
+
+  if (cohostError) {
+    console.error('[slack-callback] Failed to fetch co-hosts:', cohostError);
+  }
+
+  const cohostList: CohostAdmin[] = cohostAdmins || [];
+  console.log(`[slack-callback] Found ${cohostList.length} available co-hosts`);
+
+  // Build co-host dropdown options
+  const cohostOptions = cohostList.map((cohost) => ({
+    text: {
+      type: "plain_text",
+      text: cohost.display,
+      emoji: true
+    },
+    value: JSON.stringify({
+      userId: cohost.user_id,
+      display: cohost.display,
+      email: cohost.email
+    })
+  }));
+
+  // Build preferred times as radio button options
+  const preferredTimeOptions = requestData.preferredTimes.map((time: string, index: number) => ({
+    text: {
+      type: "plain_text",
+      text: time,
+      emoji: true
+    },
+    value: `time_${index}_${time}`
+  }));
 
   // Build modal view for assignment form
   const modalView = {
@@ -167,16 +218,60 @@ async function handleButtonClick(
       {
         type: "divider"
       },
+      // Co-host selection dropdown
       {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*Host's Preferred Times:*\n${requestData.preferredTimes.map((t: string) => `• ${t}`).join('\n')}`
+        type: "input",
+        block_id: "cohost_select_block",
+        element: {
+          type: "static_select",
+          action_id: "cohost_select",
+          placeholder: {
+            type: "plain_text",
+            text: "Select a co-host"
+          },
+          options: cohostOptions.length > 0 ? cohostOptions : [{
+            text: { type: "plain_text", text: "No co-hosts available" },
+            value: "none"
+          }]
+        },
+        label: {
+          type: "plain_text",
+          text: "Assign Co-Host",
+          emoji: true
         }
+      },
+      {
+        type: "divider"
+      },
+      // Preferred times as radio buttons
+      {
+        type: "input",
+        block_id: "preferred_time_block",
+        element: {
+          type: "radio_buttons",
+          action_id: "preferred_time_select",
+          options: preferredTimeOptions.length > 0 ? preferredTimeOptions : [{
+            text: { type: "plain_text", text: "No times specified" },
+            value: "none"
+          }]
+        },
+        label: {
+          type: "plain_text",
+          text: "Select Host's Preferred Time",
+          emoji: true
+        }
+      },
+      {
+        type: "context",
+        elements: [{
+          type: "mrkdwn",
+          text: "_Or specify a custom date/time below if none of the above work_"
+        }]
       },
       {
         type: "input",
         block_id: "meeting_date_block",
+        optional: true,
         element: {
           type: "datepicker",
           action_id: "meeting_date",
@@ -187,13 +282,14 @@ async function handleButtonClick(
         },
         label: {
           type: "plain_text",
-          text: "Meeting Date",
+          text: "Custom Meeting Date (optional)",
           emoji: true
         }
       },
       {
         type: "input",
         block_id: "meeting_time_block",
+        optional: true,
         element: {
           type: "timepicker",
           action_id: "meeting_time",
@@ -204,7 +300,7 @@ async function handleButtonClick(
         },
         label: {
           type: "plain_text",
-          text: "Meeting Time (EST)",
+          text: "Custom Meeting Time (optional)",
           emoji: true
         }
       },
@@ -299,39 +395,85 @@ async function handleModalSubmission(
   const values = payload.view!.state.values;
   const metadata: RequestMetadata = JSON.parse(payload.view!.private_metadata);
 
-  // Extract form values
-  const meetingDate = values.meeting_date_block.meeting_date.selected_date;
-  const meetingTime = values.meeting_time_block.meeting_time.selected_time;
-  const googleMeetLink = values.google_meet_block?.google_meet_link?.value || null;
-  const adminNotes = values.admin_notes_block?.admin_notes?.value || null;
-
-  if (!meetingDate || !meetingTime) {
-    console.error('[slack-callback] Missing meeting date or time');
+  // Extract co-host selection (required)
+  const cohostSelection = values.cohost_select_block?.cohost_select?.selected_option;
+  if (!cohostSelection || cohostSelection.value === 'none') {
+    console.error('[slack-callback] No co-host selected');
     return new Response(JSON.stringify({
       response_action: "errors",
       errors: {
-        meeting_date_block: "Please select a meeting date",
-        meeting_time_block: "Please select a meeting time"
+        cohost_select_block: "Please select a co-host"
       }
     }), {
       headers: { 'Content-Type': 'application/json' }
     });
   }
 
-  // Combine date and time into ISO timestamp (treating as EST)
-  const meetingDateTime = new Date(`${meetingDate}T${meetingTime}:00-05:00`).toISOString();
+  // Parse co-host data from selection value
+  const cohostData = JSON.parse(cohostSelection.value) as {
+    userId: string;
+    display: string;
+    email: string;
+  };
+
+  console.log(`[slack-callback] Selected co-host: ${cohostData.display} (${cohostData.userId})`);
+
+  // Extract preferred time selection
+  const preferredTimeSelection = values.preferred_time_block?.preferred_time_select?.selected_option;
+  const selectedPreferredTime = preferredTimeSelection?.value?.startsWith('time_')
+    ? preferredTimeSelection.value.replace(/^time_\d+_/, '') // Extract the time string
+    : null;
+
+  // Extract custom date/time (optional override)
+  const customMeetingDate = values.meeting_date_block?.meeting_date?.selected_date;
+  const customMeetingTime = values.meeting_time_block?.meeting_time?.selected_time;
+
+  // Determine final meeting time: custom overrides preferred
+  let meetingDateTime: string | null = null;
+  let meetingDisplayText: string;
+
+  if (customMeetingDate && customMeetingTime) {
+    // Use custom date/time
+    meetingDateTime = new Date(`${customMeetingDate}T${customMeetingTime}:00-05:00`).toISOString();
+    meetingDisplayText = `${customMeetingDate} at ${customMeetingTime} EST`;
+    console.log(`[slack-callback] Using custom meeting time: ${meetingDisplayText}`);
+  } else if (selectedPreferredTime) {
+    // Use selected preferred time (store as text, it's already formatted)
+    meetingDisplayText = selectedPreferredTime;
+    console.log(`[slack-callback] Using preferred time: ${meetingDisplayText}`);
+    // Note: Preferred times are free-form text like "Monday 2pm EST" - store as-is
+  } else {
+    console.error('[slack-callback] No meeting time selected');
+    return new Response(JSON.stringify({
+      response_action: "errors",
+      errors: {
+        preferred_time_block: "Please select a preferred time or enter a custom date/time"
+      }
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+
+  const googleMeetLink = values.google_meet_block?.google_meet_link?.value || null;
+  const adminNotes = values.admin_notes_block?.admin_notes?.value || null;
 
   console.log(`[slack-callback] Assigning co-host for request ${metadata.requestId}`);
-  console.log(`[slack-callback] Admin: ${metadata.adminSlackName} (${metadata.adminSlackId})`);
-  console.log(`[slack-callback] Meeting: ${meetingDateTime}`);
+  console.log(`[slack-callback] Co-Host: ${cohostData.display} (User ID: ${cohostData.userId})`);
+  console.log(`[slack-callback] Meeting: ${meetingDisplayText}`);
 
   // Update the co-host request in database
+  // Store both the user ID reference AND the display name (Bubble.io dual-reference pattern)
   const updateData: Record<string, unknown> = {
-    "Co-Host User": metadata.adminSlackId, // Store Slack ID for now - map to user ID if needed
-    "Status - Co-Host Request": "co-host selected",
-    "Meeting Date Time": meetingDateTime,
+    "Co-Host User": cohostData.userId,           // FK to user._id
+    "Co-Host selected (OS)": cohostData.display, // Display name from os_cohost_admins
+    "Status - Co-Host Request": "Co-Host Selected",
     "Modified Date": new Date().toISOString()
   };
+
+  // Store meeting time - prefer ISO timestamp if available, otherwise store the text
+  if (meetingDateTime) {
+    updateData["Meeting Date Time"] = meetingDateTime;
+  }
 
   if (googleMeetLink) {
     updateData["Google Meet Link"] = googleMeetLink;
@@ -382,7 +524,7 @@ async function handleModalSubmission(
           },
           {
             type: "mrkdwn",
-            text: `*Assigned To:*\n<@${metadata.adminSlackId}>`
+            text: `*Assigned Co-Host:*\n${cohostData.display}`
           }
         ]
       },
@@ -395,7 +537,7 @@ async function handleModalSubmission(
           },
           {
             type: "mrkdwn",
-            text: `*Meeting:*\n${meetingDate} at ${meetingTime} EST`
+            text: `*Meeting:*\n${meetingDisplayText}`
           }
         ]
       },
@@ -411,7 +553,7 @@ async function handleModalSubmission(
         elements: [
           {
             type: "mrkdwn",
-            text: `Claimed by <@${metadata.adminSlackId}> • Host notification will be sent`
+            text: `Processed by <@${metadata.adminSlackId}> • Host notification will be sent`
           }
         ]
       }
@@ -427,7 +569,7 @@ async function handleModalSubmission(
         channel: metadata.channelId,
         ts: metadata.messageTs,
         blocks: updatedBlocks,
-        text: `Co-Host request ${metadata.requestId} assigned to ${metadata.adminSlackName}`
+        text: `Co-Host request ${metadata.requestId} assigned to ${cohostData.display}`
       })
     });
 
@@ -451,8 +593,9 @@ async function handleModalSubmission(
           requestId: metadata.requestId,
           hostEmail: metadata.hostEmail,
           hostName: metadata.hostName,
-          cohostName: metadata.adminSlackName,
-          meetingDateTime,
+          cohostName: cohostData.display,
+          cohostEmail: cohostData.email,
+          meetingDateTime: meetingDateTime || meetingDisplayText,
           googleMeetLink
         }
       })
