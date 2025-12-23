@@ -135,5 +135,13 @@
 
     .local-alt-button {
         width: 100%;
+        background: transparent;
+        color: #6366F1;
+        border: 2px solid #6366F1;
+    }
+
+    .local-alt-button:hover {
+        background: #6366F1;
+        color: white;
     }
 }

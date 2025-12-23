@@ -2031,6 +2031,14 @@
     .spaces-cta-button {
         width: 100%;
         justify-content: center;
+        background: transparent;
+        color: #6366F1;
+        border: 2px solid #6366F1;
+    }
+
+    .spaces-cta-button:hover {
+        background: #6366F1;
+        color: white;
     }
 }
 
