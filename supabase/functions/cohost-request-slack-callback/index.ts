@@ -144,18 +144,49 @@ async function handleButtonClick(
 
   console.log(`[slack-callback] Admin ${adminUserName} (${adminUserId}) claiming request ${requestData.requestId}`);
 
-  // Fetch available co-hosts from reference table
+  // Fetch available co-hosts from reference table using raw SQL
+  // (Supabase client doesn't support schema.table notation directly)
   const { data: cohostAdmins, error: cohostError } = await supabase
-    .from('reference_table.os_cohost_admins')
-    .select('id, name, display, email, user_id')
-    .neq('name', 'co-host_requested_waiting') // Exclude placeholder entry
-    .order('display');
+    .rpc('get_cohost_admins');
+
+  // Fallback to direct query if RPC doesn't exist
+  let cohostList: CohostAdmin[] = [];
 
   if (cohostError) {
-    console.error('[slack-callback] Failed to fetch co-hosts:', cohostError);
-  }
+    console.log('[slack-callback] RPC not available, using direct SQL query');
+    // Use raw SQL query to access the reference_table schema
+    const { data: sqlResult, error: sqlError } = await supabase
+      .from('os_cohost_admins')
+      .select('id, name, display, email, user_id')
+      .neq('name', 'co-host_requested_waiting')
+      .order('display');
 
-  const cohostList: CohostAdmin[] = cohostAdmins || [];
+    if (sqlError) {
+      console.error('[slack-callback] Failed to fetch co-hosts:', sqlError);
+      // Try one more approach - query from reference_table schema via schema option
+      const schemaClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+        { db: { schema: 'reference_table' } }
+      );
+
+      const { data: schemaResult, error: schemaError } = await schemaClient
+        .from('os_cohost_admins')
+        .select('id, name, display, email, user_id')
+        .neq('name', 'co-host_requested_waiting')
+        .order('display');
+
+      if (schemaError) {
+        console.error('[slack-callback] Schema query also failed:', schemaError);
+      } else {
+        cohostList = (schemaResult || []) as CohostAdmin[];
+      }
+    } else {
+      cohostList = (sqlResult || []) as CohostAdmin[];
+    }
+  } else {
+    cohostList = (cohostAdmins || []) as CohostAdmin[];
+  }
   console.log(`[slack-callback] Found ${cohostList.length} available co-hosts`);
 
   // Build co-host dropdown options
