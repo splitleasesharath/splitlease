@@ -1,13 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { createRoot } from 'react-dom/client';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import SearchScheduleSelector from '../shared/SearchScheduleSelector.jsx';
 import AiSignupMarketReport from '../shared/AiSignupMarketReport';
 import { checkAuthStatus } from '../../lib/auth.js';
+import { supabase } from '../../lib/supabase.js';
+import { fetchPhotoUrls, parseJsonArray } from '../../lib/supabaseUtils.js';
+import { getNeighborhoodName, getBoroughName, initializeLookups } from '../../lib/dataLookups.js';
 import {
   PROPERTY_IDS,
-  FAQ_URL
+  FAQ_URL,
+  SEARCH_URL,
+  VIEW_LISTING_URL
 } from '../../lib/constants.js';
 
 // ============================================================================
@@ -466,6 +471,269 @@ function SupportSection() {
 }
 
 // ============================================================================
+// INTERNAL COMPONENT: Featured Spaces Section (from why-split-lease)
+// ============================================================================
+
+function FeaturedSpacesSection() {
+  const [boroughs, setBoroughs] = useState([]);
+  const [selectedBorough, setSelectedBorough] = useState('all');
+  const [featuredListings, setFeaturedListings] = useState([]);
+  const [isLoadingListings, setIsLoadingListings] = useState(true);
+
+  // Initialize data lookups and load boroughs on mount
+  useEffect(() => {
+    const init = async () => {
+      await initializeLookups();
+
+      try {
+        const { data, error } = await supabase
+          .schema('reference_table')
+          .from('zat_geo_borough_toplevel')
+          .select('_id, "Display Borough"')
+          .order('"Display Borough"', { ascending: true });
+
+        if (error) throw error;
+
+        const boroughList = data
+          .filter(b => b['Display Borough'] && b['Display Borough'].trim())
+          .map(b => ({
+            id: b._id,
+            name: b['Display Borough'].trim(),
+            value: b['Display Borough'].trim().toLowerCase()
+              .replace(/\s+county\s+nj/i, '')
+              .replace(/\s+/g, '-')
+          }))
+          .filter(b => ['manhattan', 'brooklyn', 'queens', 'bronx', 'staten-island'].includes(b.value));
+
+        setBoroughs(boroughList);
+      } catch (err) {
+        console.error('Failed to load boroughs:', err);
+      }
+    };
+
+    init();
+  }, []);
+
+  // Fetch listings based on selected borough
+  const fetchFeaturedListings = useCallback(async () => {
+    if (boroughs.length === 0) return;
+
+    setIsLoadingListings(true);
+    try {
+      let query = supabase
+        .from('listing')
+        .select(`
+          _id,
+          "Name",
+          "Location - Borough",
+          "Location - Hood",
+          "Location - Address",
+          "Features - Photos",
+          "Features - Qty Bedrooms",
+          "Features - Qty Bathrooms",
+          "Days Available (List of Days)"
+        `)
+        .eq('"Complete"', true)
+        .or('"Active".eq.true,"Active".is.null')
+        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null');
+
+      if (selectedBorough !== 'all') {
+        const borough = boroughs.find(b => b.value === selectedBorough);
+        if (borough) {
+          query = query.eq('"Location - Borough"', borough.id);
+        }
+      }
+
+      query = query.limit(3);
+
+      const { data: listings, error } = await query;
+
+      if (error) throw error;
+
+      if (!listings || listings.length === 0) {
+        setFeaturedListings([]);
+        setIsLoadingListings(false);
+        return;
+      }
+
+      const legacyPhotoIds = [];
+      listings.forEach(listing => {
+        const photos = parseJsonArray(listing['Features - Photos']);
+        if (photos && photos.length > 0) {
+          const firstPhoto = photos[0];
+          if (typeof firstPhoto === 'string') {
+            legacyPhotoIds.push(firstPhoto);
+          }
+        }
+      });
+
+      const photoMap = legacyPhotoIds.length > 0
+        ? await fetchPhotoUrls(legacyPhotoIds)
+        : {};
+
+      const transformedListings = listings.map(listing => {
+        const photos = parseJsonArray(listing['Features - Photos']);
+        const firstPhoto = photos?.[0];
+
+        let photoUrl = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
+        if (typeof firstPhoto === 'object' && firstPhoto !== null) {
+          let url = firstPhoto.url || firstPhoto.Photo || '';
+          if (url.startsWith('//')) url = 'https:' + url;
+          if (url) photoUrl = url;
+        } else if (typeof firstPhoto === 'string' && photoMap[firstPhoto]) {
+          photoUrl = photoMap[firstPhoto];
+        }
+
+        const neighborhoodName = getNeighborhoodName(listing['Location - Hood']);
+        const boroughName = getBoroughName(listing['Location - Borough']);
+        const location = [neighborhoodName, boroughName].filter(Boolean).join(', ') || 'New York, NY';
+
+        const availableDays = parseJsonArray(listing['Days Available (List of Days)']) || [];
+
+        return {
+          id: listing._id,
+          title: listing['Name'] || 'NYC Space',
+          location,
+          image: photoUrl,
+          bedrooms: listing['Features - Qty Bedrooms'] || 0,
+          bathrooms: listing['Features - Qty Bathrooms'] || 0,
+          availableDays,
+        };
+      });
+
+      setFeaturedListings(transformedListings);
+    } catch (err) {
+      console.error('Failed to fetch featured listings:', err);
+      setFeaturedListings([]);
+    } finally {
+      setIsLoadingListings(false);
+    }
+  }, [boroughs, selectedBorough]);
+
+  useEffect(() => {
+    fetchFeaturedListings();
+  }, [fetchFeaturedListings]);
+
+  return (
+    <section className="featured-spaces">
+      <div className="outlined-bubble outlined-bubble-1"></div>
+      <div className="outlined-bubble outlined-bubble-2"></div>
+      <div className="outlined-bubble outlined-bubble-3"></div>
+
+      <div className="featured-spaces-container">
+        <div className="spaces-header">
+          <div className="spaces-eyebrow">Browse Spaces</div>
+          <h2 className="spaces-title">Featured NYC Spaces</h2>
+        </div>
+
+        <div className="category-filters">
+          <div
+            className={`filter-pill ${selectedBorough === 'all' ? 'active' : ''}`}
+            onClick={() => setSelectedBorough('all')}
+          >
+            All Spaces
+          </div>
+          {boroughs.map(borough => (
+            <div
+              key={borough.id}
+              className={`filter-pill ${selectedBorough === borough.value ? 'active' : ''}`}
+              onClick={() => setSelectedBorough(borough.value)}
+            >
+              {borough.name}
+            </div>
+          ))}
+        </div>
+
+        <div className="spaces-grid">
+          {isLoadingListings ? (
+            <>
+              {[1, 2, 3].map(i => (
+                <div key={i} className="space-card loading">
+                  <div className="space-image-skeleton"></div>
+                  <div className="space-info">
+                    <div className="skeleton-text title"></div>
+                    <div className="skeleton-text location"></div>
+                    <div className="skeleton-text features"></div>
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : featuredListings.length === 0 ? (
+            <div className="no-listings-message">
+              <p>No listings available in this area. Try selecting a different borough.</p>
+            </div>
+          ) : (
+            featuredListings.map(listing => (
+              <div
+                key={listing.id}
+                className="space-card"
+                onClick={() => window.location.href = `${VIEW_LISTING_URL}/${listing.id}`}
+              >
+                <div style={{ position: 'relative' }}>
+                  <img
+                    src={listing.image}
+                    alt={listing.title}
+                    className="space-image"
+                    onError={(e) => {
+                      e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
+                    }}
+                  />
+                  <div className="space-badge">Verified</div>
+                </div>
+                <div className="space-info">
+                  <h3 className="space-title">{listing.title}</h3>
+                  <div className="space-location">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#6B7280" strokeWidth="2"/>
+                      <circle cx="12" cy="9" r="2.5" stroke="#6B7280" strokeWidth="2"/>
+                    </svg>
+                    {listing.location}
+                  </div>
+                  <div className="space-features">
+                    <span className="feature-tag">
+                      {listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bed${listing.bedrooms !== 1 ? 's' : ''}`}
+                    </span>
+                    <span className="feature-tag">{listing.bathrooms} bath{listing.bathrooms !== 1 ? 's' : ''}</span>
+                    <span className="feature-tag">Storage</span>
+                  </div>
+                  <div className="space-schedule">
+                    <span className="available-days">
+                      {listing.availableDays.length > 0
+                        ? `${listing.availableDays.length} nights available`
+                        : 'Schedule flexible'}
+                    </span>
+                    <div className="day-indicators">
+                      {[0, 1, 2, 3, 4, 5, 6].map((dayIdx) => {
+                        const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+                        const isAvailable = listing.availableDays.some(d =>
+                          d === dayNames[dayIdx] || d === dayIdx || d === String(dayIdx)
+                        );
+                        return (
+                          <span
+                            key={dayIdx}
+                            className={`day-dot ${isAvailable ? 'available' : ''}`}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '48px' }}>
+          <a href={SEARCH_URL} className="cta-button cta-primary">
+            <span>Browse All NYC Spaces</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================================
 // INTERNAL COMPONENT: Floating Badge
 // ============================================================================
 
@@ -617,6 +885,8 @@ export default function HomePage() {
       <LocalSectionAlt onExploreRentals={handleExploreRentals} />
 
       <ListingsPreview selectedDays={selectedDays} />
+
+      <FeaturedSpacesSection />
 
       <SupportSection />
 
