@@ -339,6 +339,7 @@ export default function Footer() {
         onClose={() => setShowReferralModal(false)}
         referralCode="splitlease"
         userType={normalizedType === NORMALIZED_USER_TYPES.HOST || normalizedType === NORMALIZED_USER_TYPES.TRIAL_HOST ? 'host' : 'guest'}
+        referrerName="Split Lease"
       />
 
       {/* Toast Notifications */}
