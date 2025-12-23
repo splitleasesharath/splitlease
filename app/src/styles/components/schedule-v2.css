@@ -41,11 +41,10 @@
     background: white;
     border: 1px solid #e5e7eb;
     border-radius: 16px;
-    padding: 1.5rem;
+    padding: 1.5rem 1.5rem 1rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
@@ -59,46 +58,27 @@
 
 .schedule-card-v2:hover .schedule-card-v2-arrow {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
 }
 
 .schedule-card-v2-lottie {
-    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .schedule-card-v2-lottie lottie-player {
     background: transparent !important;
 }
 
-.schedule-card-v2-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.25rem;
-}
-
-.schedule-card-v2-content h3 {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #1d1d1f;
-    margin: 0;
-}
-
-.schedule-card-v2-subtitle {
-    font-size: 0.875rem;
-    color: #6b7280;
-}
-
 .schedule-card-v2-arrow {
-    position: absolute;
-    bottom: 1.25rem;
-    right: 1.25rem;
     width: 24px;
     height: 24px;
     color: #5B5FCF;
     opacity: 0;
-    transform: translateX(-8px);
+    transform: translateY(-4px);
     transition: all 0.3s ease;
+    margin-top: 0.5rem;
 }
 
 .schedule-card-v2-arrow svg {
@@ -115,30 +95,19 @@
 
     .schedule-card-v2 {
         flex-direction: row;
-        text-align: left;
-        padding: 1.25rem;
-        gap: 1rem;
-    }
-
-    .schedule-card-v2-lottie {
-        margin-bottom: 0;
-        flex-shrink: 0;
+        padding: 1rem 1.25rem;
+        justify-content: space-between;
     }
 
     .schedule-card-v2-lottie lottie-player {
-        width: 80px !important;
-        height: 60px !important;
-    }
-
-    .schedule-card-v2-content {
-        align-items: flex-start;
-        flex: 1;
+        width: 140px !important;
+        height: 100px !important;
     }
 
     .schedule-card-v2-arrow {
-        position: static;
         opacity: 1;
         transform: none;
+        margin-top: 0;
         flex-shrink: 0;
     }
 

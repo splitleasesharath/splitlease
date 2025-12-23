@@ -174,13 +174,9 @@ function InvertedScheduleCards() {
                   src={schedule.lottieUrl}
                   background="transparent"
                   speed="1"
-                  style={{ width: '180px', height: '120px' }}
+                  style={{ width: '200px', height: '140px' }}
                   loop
                 ></lottie-player>
-              </div>
-              <div className="schedule-card-v2-content">
-                <h3>{schedule.title}</h3>
-                <span className="schedule-card-v2-subtitle">{schedule.subtitle}</span>
               </div>
               <div className="schedule-card-v2-arrow">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
