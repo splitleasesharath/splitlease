@@ -81,7 +81,7 @@
 
 .referral-subtext {
     font-size: 0.8rem;
-    margin-bottom: 0.75rem;
+    margin-bottom: 0.5rem;
     color: rgba(255, 255, 255, 0.7);
     line-height: 1.4;
 }
@@ -133,12 +133,10 @@
     margin-bottom: 0.25rem;
 }
 
-.footer-column:nth-child(4),
 .footer-column:nth-child(5) {
     justify-content: flex-start;
 }
 
-.footer-column:nth-child(4) > *:last-child,
 .footer-column:nth-child(5) > *:last-child {
     margin-top: auto;
 }
@@ -158,6 +156,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 8px;
+    margin-top: 0;
 }
 
 .share-btn:hover {
