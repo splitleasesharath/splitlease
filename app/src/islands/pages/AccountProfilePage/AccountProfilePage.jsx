@@ -179,13 +179,14 @@ export default function AccountProfilePage() {
           </div>
         </main>
 
-        {/* Fixed Save Bar (Editor View only) */}
-        {logic.isEditorView && (
+        {/* Fixed Save Bar (Editor View or Preview Mode for own profile) */}
+        {(logic.isEditorView || logic.previewMode) && (
           <FixedSaveBar
             onPreview={logic.handlePreviewProfile}
             onSave={logic.handleSave}
             saving={logic.saving}
             disabled={!logic.isDirty}
+            previewMode={logic.previewMode}
           />
         )}
 

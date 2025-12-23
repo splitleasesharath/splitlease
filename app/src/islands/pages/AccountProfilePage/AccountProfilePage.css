@@ -959,6 +959,21 @@
   cursor: not-allowed;
 }
 
+/* Preview Mode Save Bar */
+.fixed-save-bar--preview-mode {
+  background: var(--sl-primary-soft);
+  border-top: 2px solid var(--sl-primary);
+}
+
+.preview-mode-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--sl-primary);
+}
+
 /* ============================================================================
    PUBLIC VIEW STYLES
    ============================================================================ */

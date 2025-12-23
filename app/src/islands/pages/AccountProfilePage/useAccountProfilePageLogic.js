@@ -230,17 +230,30 @@ export function useAccountProfilePageLogic() {
   const [rentalApplicationStatus, setRentalApplicationStatus] = useState('not_started'); // 'not_started' | 'in_progress' | 'submitted'
   const [rentalApplicationProgress, setRentalApplicationProgress] = useState(0);
 
+  // Preview mode state - when true, shows public view even for own profile
+  const [previewMode, setPreviewMode] = useState(false);
+
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
 
   /**
-   * Determine if current user is viewing their own profile (editor view)
-   * or someone else's profile (public view)
+   * Determine if user is the owner of this profile (even in preview mode)
    */
-  const isEditorView = useMemo(() => {
+  const isOwnProfile = useMemo(() => {
     return isAuthenticated && loggedInUserId && profileUserId && loggedInUserId === profileUserId;
   }, [isAuthenticated, loggedInUserId, profileUserId]);
+
+  /**
+   * Determine if current user is viewing their own profile (editor view)
+   * or someone else's profile (public view)
+   * Note: Preview mode forces public view even for own profile
+   */
+  const isEditorView = useMemo(() => {
+    // If preview mode is active, show public view even for own profile
+    if (previewMode) return false;
+    return isOwnProfile;
+  }, [isOwnProfile, previewMode]);
 
   const isPublicView = useMemo(() => {
     return !isEditorView;
@@ -745,12 +758,17 @@ export function useAccountProfilePageLogic() {
   }, [profileData]);
 
   /**
-   * Preview public profile
+   * Toggle preview mode to show public view of own profile
    */
   const handlePreviewProfile = useCallback(() => {
-    // Open public view in new tab (just reload page for now)
-    // In the future, could implement a preview mode
-    console.log('Preview profile clicked');
+    setPreviewMode(prev => !prev);
+  }, []);
+
+  /**
+   * Exit preview mode and return to editor view
+   */
+  const handleExitPreview = useCallback(() => {
+    setPreviewMode(false);
   }, []);
 
   // ============================================================================
@@ -967,6 +985,9 @@ export function useAccountProfilePageLogic() {
     isEditorView,
     isPublicView,
     isAuthenticated,
+    isOwnProfile,
+    previewMode,
+    handleExitPreview,
 
     // Profile data
     profileData,
