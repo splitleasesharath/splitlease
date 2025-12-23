@@ -287,7 +287,7 @@ function ListingsPreview({ selectedDays = [] }) {
       id: PROPERTY_IDS.FURNISHED_1BR,
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102537155x544568166750526000/harlem4.webp',
-      title: 'Fully furnished 1bdr apartment',
+      title: '1bdr apartment',
       location: 'Harlem, Manhattan',
       bedrooms: 1,
       bathrooms: 1,
