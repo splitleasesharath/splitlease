@@ -200,7 +200,7 @@ export async function handleCreate(
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `*Preferred Times:*\n${input.selectedTimes.map((t: string) => `• ${t}`).join('\n')}`
+          text: `*Preferred Times (EST):*\n${input.selectedTimes.map((t: string) => `• ${t}`).join('\n')}`
         }
       },
       ...(input.subject ? [{

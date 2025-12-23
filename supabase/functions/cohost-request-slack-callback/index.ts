@@ -264,7 +264,7 @@ async function handleButtonClick(
         },
         label: {
           type: "plain_text",
-          text: "Select Host's Preferred Time",
+          text: "Select Host's Preferred Time (EST)",
           emoji: true
         }
       },
