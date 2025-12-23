@@ -115,8 +115,8 @@ function ScheduleSection() {
       days: '6,7,1,2',
     },
     {
-      id: 'monthly',
-      label: 'Full Month',
+      id: 'fullweek',
+      label: 'Full Week',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
       days: '1,2,3,4,5,6,7',
     },
