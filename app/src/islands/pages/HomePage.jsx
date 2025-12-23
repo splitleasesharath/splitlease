@@ -475,12 +475,11 @@ function SupportSection() {
 // ============================================================================
 
 function FeaturedSpacesSection() {
-  const [boroughs, setBoroughs] = useState([]);
-  const [selectedBorough, setSelectedBorough] = useState('manhattan');
+  const [manhattanId, setManhattanId] = useState(null);
   const [featuredListings, setFeaturedListings] = useState([]);
   const [isLoadingListings, setIsLoadingListings] = useState(true);
 
-  // Initialize data lookups and load boroughs on mount
+  // Initialize data lookups and get Manhattan borough ID
   useEffect(() => {
     const init = async () => {
       await initializeLookups();
@@ -490,39 +489,22 @@ function FeaturedSpacesSection() {
           .schema('reference_table')
           .from('zat_geo_borough_toplevel')
           .select('_id, "Display Borough"')
-          .order('"Display Borough"', { ascending: true });
+          .ilike('"Display Borough"', 'Manhattan')
+          .single();
 
         if (error) throw error;
-
-        const boroughList = data
-          .filter(b => b['Display Borough'] && b['Display Borough'].trim())
-          .map(b => ({
-            id: b._id,
-            name: b['Display Borough'].trim(),
-            value: b['Display Borough'].trim().toLowerCase()
-              .replace(/\s+county\s+nj/i, '')
-              .replace(/\s+/g, '-')
-          }))
-          .filter(b => ['manhattan', 'brooklyn', 'queens', 'bronx', 'staten-island'].includes(b.value))
-          .sort((a, b) => {
-            // Manhattan first, then alphabetically
-            if (a.value === 'manhattan') return -1;
-            if (b.value === 'manhattan') return 1;
-            return a.name.localeCompare(b.name);
-          });
-
-        setBoroughs(boroughList);
+        if (data) setManhattanId(data._id);
       } catch (err) {
-        console.error('Failed to load boroughs:', err);
+        console.error('Failed to load Manhattan borough:', err);
       }
     };
 
     init();
   }, []);
 
-  // Fetch listings based on selected borough
+  // Fetch Manhattan listings
   const fetchFeaturedListings = useCallback(async () => {
-    if (boroughs.length === 0) return;
+    if (!manhattanId) return;
 
     setIsLoadingListings(true);
     try {
@@ -540,15 +522,10 @@ function FeaturedSpacesSection() {
           "Days Available (List of Days)"
         `)
         .eq('"Complete"', true)
+        .eq('"Location - Borough"', manhattanId)
         .or('"Active".eq.true,"Active".is.null')
-        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null');
-
-      const borough = boroughs.find(b => b.value === selectedBorough);
-      if (borough) {
-        query = query.eq('"Location - Borough"', borough.id);
-      }
-
-      query = query.limit(3);
+        .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null')
+        .limit(3);
 
       const { data: listings, error } = await query;
 
@@ -612,7 +589,7 @@ function FeaturedSpacesSection() {
     } finally {
       setIsLoadingListings(false);
     }
-  }, [boroughs, selectedBorough]);
+  }, [manhattanId]);
 
   useEffect(() => {
     fetchFeaturedListings();
@@ -628,18 +605,6 @@ function FeaturedSpacesSection() {
         <div className="spaces-header">
           <div className="spaces-eyebrow">Browse Spaces</div>
           <h2 className="spaces-title">Featured NYC Spaces</h2>
-        </div>
-
-        <div className="category-filters">
-          {boroughs.map(borough => (
-            <div
-              key={borough.id}
-              className={`filter-pill ${selectedBorough === borough.value ? 'active' : ''}`}
-              onClick={() => setSelectedBorough(borough.value)}
-            >
-              {borough.name}
-            </div>
-          ))}
         </div>
 
         <div className="spaces-grid">
