@@ -1,0 +1,193 @@
+/**
+ * RentalApplicationCard.css
+ *
+ * Styles for the rental application card on Account Profile page.
+ */
+
+/* Card content layout */
+.rental-app-card__content {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+/* Icon container */
+.rental-app-card__icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background: var(--sl-primary-soft, #F3F0FF);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sl-primary, #5B21B6);
+}
+
+/* Info section */
+.rental-app-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rental-app-card__heading {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sl-text-main, #111827);
+  margin: 0 0 4px 0;
+}
+
+.rental-app-card__description {
+  font-size: 14px;
+  color: var(--sl-text-secondary, #4B5563);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Time estimate badge */
+.rental-app-card__time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 4px 10px;
+  background: var(--sl-bg-subtle, #F9FAFB);
+  border-radius: 20px;
+  font-size: 12px;
+  color: var(--sl-text-tertiary, #6B7280);
+}
+
+.rental-app-card__time svg {
+  color: var(--sl-text-tertiary, #6B7280);
+}
+
+/* Progress bar */
+.rental-app-card__progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.rental-app-card__progress-bar {
+  flex: 1;
+  height: 8px;
+  background: var(--sl-border-subtle, #E5E7EB);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.rental-app-card__progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sl-primary, #5B21B6), #7C3AED);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.rental-app-card__progress-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sl-primary, #5B21B6);
+  min-width: 40px;
+}
+
+/* CTA Button */
+.rental-app-card__cta {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 18px;
+  background: var(--sl-primary, #5B21B6);
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  white-space: nowrap;
+}
+
+.rental-app-card__cta:hover {
+  background: #4C1D95;
+  transform: translateY(-1px);
+}
+
+.rental-app-card__cta:active {
+  transform: translateY(0);
+}
+
+.rental-app-card__cta svg {
+  transition: transform 0.2s ease;
+}
+
+.rental-app-card__cta:hover svg {
+  transform: translateX(2px);
+}
+
+/* Success state */
+.rental-app-card--success .profile-card-header {
+  border-bottom: none;
+}
+
+.rental-app-card__success {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 8px 0;
+}
+
+.rental-app-card__success-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  background: #ECFDF5;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #10B981;
+}
+
+.rental-app-card__success-content {
+  flex: 1;
+}
+
+.rental-app-card__success-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #059669;
+  margin: 0 0 4px 0;
+}
+
+.rental-app-card__success-text {
+  font-size: 14px;
+  color: var(--sl-text-secondary, #4B5563);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .rental-app-card__content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .rental-app-card__icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .rental-app-card__cta {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .rental-app-card__success {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}

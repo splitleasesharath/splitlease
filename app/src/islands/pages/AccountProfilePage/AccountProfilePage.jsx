@@ -22,6 +22,7 @@ import PublicView from './components/PublicView.jsx';
 import FixedSaveBar from './components/shared/FixedSaveBar.jsx';
 import ReferralBanner from './components/ReferralBanner.jsx';
 import ReferralModal from './components/ReferralModal.jsx';
+import RentalApplicationWizardModal from './components/RentalApplicationWizardModal/RentalApplicationWizardModal.jsx';
 import './AccountProfilePage.css';
 
 // ============================================================================
@@ -158,6 +159,10 @@ export default function AccountProfilePage() {
                 loadingListings={logic.loadingListings}
                 onListingClick={logic.handleListingClick}
                 onCreateListing={logic.handleCreateListing}
+                // Rental application props (guest-only)
+                rentalApplicationStatus={logic.rentalApplicationStatus}
+                rentalApplicationProgress={logic.rentalApplicationProgress}
+                onOpenRentalWizard={logic.handleOpenRentalWizard}
               />
             ) : (
               <PublicView
@@ -213,6 +218,15 @@ export default function AccountProfilePage() {
           userType={logic.isHostUser ? 'host' : 'guest'}
           referrerName={logic.profileData?.['Name - First'] || logic.profileData?.firstName || ''}
         />
+
+        {/* Rental Application Wizard (Guest-only) */}
+        {!logic.isHostUser && (
+          <RentalApplicationWizardModal
+            isOpen={logic.showRentalWizardModal}
+            onClose={logic.handleCloseRentalWizard}
+            onSuccess={logic.handleRentalWizardSuccess}
+          />
+        )}
 
         <Footer />
       </div>

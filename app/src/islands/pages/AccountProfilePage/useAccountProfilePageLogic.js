@@ -225,6 +225,11 @@ export function useAccountProfilePageLogic() {
   const [hostListings, setHostListings] = useState([]);
   const [loadingListings, setLoadingListings] = useState(false);
 
+  // Rental application wizard state (guest-only)
+  const [showRentalWizardModal, setShowRentalWizardModal] = useState(false);
+  const [rentalApplicationStatus, setRentalApplicationStatus] = useState('not_started'); // 'not_started' | 'in_progress' | 'submitted'
+  const [rentalApplicationProgress, setRentalApplicationProgress] = useState(0);
+
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
@@ -520,6 +525,74 @@ export function useAccountProfilePageLogic() {
   }, [fetchReferenceData, fetchProfileData, fetchHostListings]);
 
   // ============================================================================
+  // RENTAL APPLICATION STATUS (Guest-only)
+  // ============================================================================
+
+  /**
+   * Compute rental application status based on:
+   * 1. Database field (already submitted)
+   * 2. localStorage draft (in progress)
+   * 3. Default (not started)
+   */
+  useEffect(() => {
+    // Only compute for guest users viewing their own profile
+    if (!isEditorView || isHostUser) return;
+
+    // Check if already submitted in database
+    if (profileData?.['Rental Application']) {
+      setRentalApplicationStatus('submitted');
+      setRentalApplicationProgress(100);
+      return;
+    }
+
+    // Check localStorage for draft
+    try {
+      const draft = localStorage.getItem('rentalApplicationDraft');
+      if (draft) {
+        const draftData = JSON.parse(draft);
+        // Calculate progress based on filled fields
+        const fields = [
+          'fullName', 'dob', 'email', 'phone',
+          'currentAddress', 'lengthResided',
+          'employmentStatus',
+          'signature'
+        ];
+        const optionalFields = [
+          'apartmentUnit', 'renting',
+          'employerName', 'jobTitle', 'businessName',
+          'hasPets', 'isSmoker', 'needsParking', 'references'
+        ];
+
+        let filled = 0;
+        let total = fields.length;
+
+        fields.forEach(field => {
+          if (draftData[field] && String(draftData[field]).trim()) filled++;
+        });
+
+        // Add bonus for optional fields
+        optionalFields.forEach(field => {
+          if (draftData[field] && String(draftData[field]).trim()) filled += 0.5;
+        });
+
+        const progress = Math.min(100, Math.round((filled / total) * 100));
+
+        if (progress > 0) {
+          setRentalApplicationStatus('in_progress');
+          setRentalApplicationProgress(progress);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Error reading rental application draft:', e);
+    }
+
+    // Default: not started
+    setRentalApplicationStatus('not_started');
+    setRentalApplicationProgress(0);
+  }, [isEditorView, isHostUser, profileData]);
+
+  // ============================================================================
   // FORM HANDLERS
   // ============================================================================
 
@@ -729,6 +802,29 @@ export function useAccountProfilePageLogic() {
   }, []);
 
   // ============================================================================
+  // RENTAL APPLICATION WIZARD HANDLERS (Guest-only)
+  // ============================================================================
+
+  const handleOpenRentalWizard = useCallback(() => {
+    setShowRentalWizardModal(true);
+  }, []);
+
+  const handleCloseRentalWizard = useCallback(() => {
+    setShowRentalWizardModal(false);
+  }, []);
+
+  const handleRentalWizardSuccess = useCallback(() => {
+    // On successful submission, update status and close modal
+    setRentalApplicationStatus('submitted');
+    setRentalApplicationProgress(100);
+    setShowRentalWizardModal(false);
+    // Refresh profile data to reflect the submitted application
+    if (profileUserId) {
+      fetchProfileData(profileUserId);
+    }
+  }, [profileUserId, fetchProfileData]);
+
+  // ============================================================================
   // PHOTO HANDLERS
   // ============================================================================
 
@@ -930,6 +1026,14 @@ export function useAccountProfilePageLogic() {
     hostListings,
     loadingListings,
     handleListingClick,
-    handleCreateListing
+    handleCreateListing,
+
+    // Rental application (guest-only)
+    rentalApplicationStatus,
+    rentalApplicationProgress,
+    showRentalWizardModal,
+    handleOpenRentalWizard,
+    handleCloseRentalWizard,
+    handleRentalWizardSuccess
   };
 }
