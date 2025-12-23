@@ -167,7 +167,7 @@ function ScheduleSection() {
               src={schedules[activeIndex].lottieUrl}
               background="transparent"
               speed="1"
-              style={{ width: '280px', height: '200px' }}
+              style={{ width: '340px', height: '240px' }}
               loop
               autoplay
             ></lottie-player>

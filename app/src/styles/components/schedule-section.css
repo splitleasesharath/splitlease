@@ -1,7 +1,7 @@
 /* Schedule Section - Interactive Tabs Design */
 
 .schedule-section {
-    padding: 4rem 2rem;
+    padding: 4rem 2rem 6rem;
     background: white;
 }
 
@@ -37,7 +37,7 @@
     border-radius: 50px;
     padding: 4px;
     gap: 4px;
-    margin-bottom: 2.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .schedule-section-tab {
@@ -67,7 +67,7 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2rem;
+    gap: 2.5rem;
 }
 
 .schedule-section-lottie {
