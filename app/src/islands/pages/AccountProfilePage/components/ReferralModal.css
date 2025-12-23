@@ -306,4 +306,9 @@
     gap: 12px;
     align-items: center;
   }
+
+  /* Hide gift card on mobile */
+  .host-referral-card {
+    display: none;
+  }
 }
