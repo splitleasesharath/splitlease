@@ -477,8 +477,13 @@ async function handleModalSubmission(
   };
 
   // Store meeting time - prefer ISO timestamp if available, otherwise store the text
+  // Note: "Meeting Date Time" is a text field, so we can store either ISO or display text
   if (meetingDateTime) {
+    // Custom date/time selected - store as ISO
     updateData["Meeting Date Time"] = meetingDateTime;
+  } else if (meetingDisplayText) {
+    // Preferred time selected - store the display text (e.g., "Monday, December 23 at 2:00 PM EST")
+    updateData["Meeting Date Time"] = meetingDisplayText;
   }
 
   if (googleMeetLink) {

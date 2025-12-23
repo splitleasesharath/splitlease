@@ -54,24 +54,46 @@ export async function handleNotifyHost(
   // FORMAT MEETING DATE/TIME
   // ================================================
 
+  // meetingDateTime can be:
+  // 1. ISO timestamp (from custom date/time picker): "2024-12-23T14:00:00-05:00"
+  // 2. Display text (from preferred times): "Monday, December 23, 2024 at 02:00 PM EST"
+
+  let formattedDate: string;
+  let formattedTime: string;
+
   const meetingDate = new Date(input.meetingDateTime);
 
-  const formattedDate = meetingDate.toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'America/New_York'
-  });
+  if (!isNaN(meetingDate.getTime())) {
+    // Valid ISO date - format for display
+    formattedDate = meetingDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'America/New_York'
+    });
 
-  const formattedTime = meetingDate.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-    timeZone: 'America/New_York'
-  });
+    formattedTime = meetingDate.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'America/New_York'
+    });
+  } else {
+    // Display text - use as-is (already formatted, includes EST)
+    // Parse "Monday, December 23, 2024 at 02:00 PM EST" into date and time parts
+    const parts = input.meetingDateTime.split(' at ');
+    if (parts.length === 2) {
+      formattedDate = parts[0].trim();
+      formattedTime = parts[1].replace(' EST', '').trim();
+    } else {
+      // Fallback: use the whole string
+      formattedDate = input.meetingDateTime;
+      formattedTime = '';
+    }
+  }
 
-  console.log(`[cohost-request:notify-host] Meeting: ${formattedDate} at ${formattedTime} EST`);
+  console.log(`[cohost-request:notify-host] Meeting: ${formattedDate}${formattedTime ? ` at ${formattedTime} EST` : ''}`);
 
   // ================================================
   // BUILD EMAIL CONTENT
@@ -106,10 +128,12 @@ export async function handleNotifyHost(
             <td style="padding: 8px 0; font-weight: bold;">Date:</td>
             <td style="padding: 8px 0;">${formattedDate}</td>
           </tr>
+          ${formattedTime ? `
           <tr>
             <td style="padding: 8px 0; font-weight: bold;">Time:</td>
             <td style="padding: 8px 0;">${formattedTime} EST</td>
           </tr>
+          ` : ''}
           ${input.googleMeetLink ? `
           <tr>
             <td style="padding: 8px 0; font-weight: bold;">Join:</td>
@@ -164,7 +188,7 @@ MEETING DETAILS
 ---------------
 Co-Host: ${input.cohostName}
 Date: ${formattedDate}
-Time: ${formattedTime} EST
+${formattedTime ? `Time: ${formattedTime} EST` : ''}
 ${input.googleMeetLink ? `Join: ${input.googleMeetLink}` : ''}
 
 Your co-host will help guide you through the hosting process and answer any questions you may have about listing your space on Split Lease.
