@@ -95,107 +95,10 @@ function ValuePropositions() {
 }
 
 // ============================================================================
-// INTERNAL COMPONENT: Schedule Cards (Clean Elevated Design)
+// INTERNAL COMPONENT: Schedule Section (Interactive Tabs Design)
 // ============================================================================
 
-function InvertedScheduleCards() {
-  const schedules = [
-    {
-      id: 'weeknight',
-      title: 'Weeknights',
-      subtitle: 'Mon – Fri',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json',
-      days: '2,3,4,5,6',
-    },
-    {
-      id: 'weekend',
-      title: 'Weekends',
-      subtitle: 'Fri – Sun',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json',
-      days: '6,7,1,2',
-    },
-    {
-      id: 'monthly',
-      title: 'Full Month',
-      subtitle: 'Every day',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
-      days: '1,2,3,4,5,6,7',
-    },
-  ];
-
-  const handleExploreClick = (days) => {
-    const searchUrl = `/search.html?days-selected=${days}`;
-    window.location.href = searchUrl;
-  };
-
-  const handleMouseEnter = (e) => {
-    const player = e.currentTarget.querySelector('lottie-player');
-    if (player) player.play();
-  };
-
-  const handleMouseLeave = (e) => {
-    const player = e.currentTarget.querySelector('lottie-player');
-    if (player) player.stop();
-  };
-
-  // Load Lottie player script
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
-    script.async = true;
-    document.body.appendChild(script);
-
-    return () => {
-      if (script.parentNode) {
-        document.body.removeChild(script);
-      }
-    };
-  }, []);
-
-  return (
-    <section className="schedule-section-v2">
-      <div className="schedule-section-v2-container">
-        <div className="schedule-section-v2-header">
-          <h2>Choose your schedule</h2>
-          <p>Stop playing room roulette. Pick the days that work for you.</p>
-        </div>
-
-        <div className="schedule-cards-grid">
-          {schedules.map((schedule) => (
-            <div
-              key={schedule.id}
-              className="schedule-card-v2"
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              onClick={() => handleExploreClick(schedule.days)}
-            >
-              <div className="schedule-card-v2-lottie">
-                <lottie-player
-                  src={schedule.lottieUrl}
-                  background="transparent"
-                  speed="1"
-                  style={{ width: '200px', height: '140px' }}
-                  loop
-                ></lottie-player>
-              </div>
-              <div className="schedule-card-v2-arrow">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ============================================================================
-// INTERNAL COMPONENT: Schedule Cards Alt (Visual Tabs Design)
-// ============================================================================
-
-function ScheduleCardsAlt() {
+function ScheduleSection() {
   const [activeIndex, setActiveIndex] = useState(0);
 
   const schedules = [
@@ -223,14 +126,28 @@ function ScheduleCardsAlt() {
     window.location.href = `/search.html?days-selected=${schedules[activeIndex].days}`;
   };
 
+  // Load Lottie player script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
   return (
-    <section className="schedule-alt-section">
-      <div className="schedule-alt-container">
-        <div className="schedule-alt-tabs">
+    <section className="schedule-section">
+      <div className="schedule-section-container">
+        <div className="schedule-section-tabs">
           {schedules.map((schedule, index) => (
             <button
               key={schedule.id}
-              className={`schedule-alt-tab ${index === activeIndex ? 'active' : ''}`}
+              className={`schedule-section-tab ${index === activeIndex ? 'active' : ''}`}
               onClick={() => setActiveIndex(index)}
             >
               {schedule.label}
@@ -238,8 +155,8 @@ function ScheduleCardsAlt() {
           ))}
         </div>
 
-        <div className="schedule-alt-display">
-          <div className="schedule-alt-lottie-wrapper">
+        <div className="schedule-section-display">
+          <div className="schedule-section-lottie">
             <lottie-player
               key={schedules[activeIndex].id}
               src={schedules[activeIndex].lottieUrl}
@@ -251,88 +168,12 @@ function ScheduleCardsAlt() {
             ></lottie-player>
           </div>
 
-          <button className="schedule-alt-cta" onClick={handleExploreClick}>
+          <button className="schedule-section-cta" onClick={handleExploreClick}>
             Browse {schedules[activeIndex].label} Listings
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M5 12h14M12 5l7 7-7 7" />
             </svg>
           </button>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ============================================================================
-// INTERNAL COMPONENT: Schedule Cards Alt 2 (Minimal Gallery Row)
-// ============================================================================
-
-function ScheduleCardsAlt2() {
-  const schedules = [
-    {
-      id: 'weeknight',
-      label: 'Weeknights',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json',
-      days: '2,3,4,5,6',
-    },
-    {
-      id: 'weekend',
-      label: 'Weekends',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json',
-      days: '6,7,1,2',
-    },
-    {
-      id: 'monthly',
-      label: 'Full Month',
-      lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
-      days: '1,2,3,4,5,6,7',
-    },
-  ];
-
-  const handleClick = (days) => {
-    window.location.href = `/search.html?days-selected=${days}`;
-  };
-
-  const handleMouseEnter = (e) => {
-    const player = e.currentTarget.querySelector('lottie-player');
-    if (player) player.play();
-  };
-
-  const handleMouseLeave = (e) => {
-    const player = e.currentTarget.querySelector('lottie-player');
-    if (player) player.stop();
-  };
-
-  return (
-    <section className="schedule-alt2-section">
-      <div className="schedule-alt2-container">
-        <h2 className="schedule-alt2-title">Pick your schedule</h2>
-
-        <div className="schedule-alt2-row">
-          {schedules.map((schedule) => (
-            <div
-              key={schedule.id}
-              className="schedule-alt2-item"
-              onClick={() => handleClick(schedule.days)}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-            >
-              <div className="schedule-alt2-lottie">
-                <lottie-player
-                  src={schedule.lottieUrl}
-                  background="transparent"
-                  speed="1"
-                  style={{ width: '180px', height: '130px' }}
-                  loop
-                ></lottie-player>
-                <svg className="schedule-alt2-progress" viewBox="0 0 100 100">
-                  <circle className="schedule-alt2-progress-bg" cx="50" cy="50" r="45" />
-                  <circle className="schedule-alt2-progress-bar" cx="50" cy="50" r="45" />
-                </svg>
-              </div>
-              <span className="schedule-alt2-label">{schedule.label}</span>
-            </div>
-          ))}
         </div>
       </div>
     </section>
@@ -762,11 +603,7 @@ export default function HomePage() {
 
       <ValuePropositions />
 
-      <InvertedScheduleCards />
-
-      <ScheduleCardsAlt />
-
-      <ScheduleCardsAlt2 />
+      <ScheduleSection />
 
       <LocalSectionAlt onExploreRentals={handleExploreRentals} />
 

@@ -1,0 +1,116 @@
+/* Schedule Section - Interactive Tabs Design */
+
+.schedule-section {
+    padding: 4rem 2rem;
+    background: white;
+}
+
+.schedule-section-container {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+/* Pill Tabs */
+.schedule-section-tabs {
+    display: inline-flex;
+    background: #f3f4f6;
+    border-radius: 50px;
+    padding: 4px;
+    gap: 4px;
+    margin-bottom: 2.5rem;
+}
+
+.schedule-section-tab {
+    padding: 0.625rem 1.5rem;
+    border: none;
+    background: transparent;
+    border-radius: 50px;
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.schedule-section-tab:hover {
+    color: #1d1d1f;
+}
+
+.schedule-section-tab.active {
+    background: white;
+    color: #1d1d1f;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* Display Area */
+.schedule-section-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+
+.schedule-section-lottie {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.schedule-section-lottie lottie-player {
+    background: transparent !important;
+}
+
+/* CTA Button */
+.schedule-section-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #5B5FCF;
+    color: white;
+    border: none;
+    padding: 0.875rem 1.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.schedule-section-cta:hover {
+    background: #4a4eb8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(91, 95, 207, 0.3);
+}
+
+.schedule-section-cta svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .schedule-section {
+        padding: 3rem 1.5rem;
+    }
+
+    .schedule-section-tabs {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .schedule-section-tab {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .schedule-section-lottie lottie-player {
+        width: 220px !important;
+        height: 160px !important;
+    }
+
+    .schedule-section-cta {
+        width: 100%;
+        justify-content: center;
+    }
+}
