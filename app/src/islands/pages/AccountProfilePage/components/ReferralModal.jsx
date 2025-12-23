@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from 'react';
+import './ReferralModal.css';
 
 // Send icon (Telegram-style)
 function SendIcon() {
