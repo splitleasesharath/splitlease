@@ -271,7 +271,7 @@ function ListingsPreview({ selectedDays = [] }) {
       location: 'Financial District, Manhattan',
       bedrooms: 'Studio',
       bathrooms: 1,
-      availableDays: [1, 2, 3, 4, 5], // Mon-Fri (0-indexed)
+      availableDays: [0, 1, 2, 3, 4, 5, 6], // All days
     },
     {
       id: PROPERTY_IDS.PIED_A_TERRE,
@@ -281,7 +281,7 @@ function ListingsPreview({ selectedDays = [] }) {
       location: 'Upper East Side, Manhattan',
       bedrooms: 2,
       bathrooms: 1,
-      availableDays: [0, 5, 6], // Weekends (Fri-Sun)
+      availableDays: [0, 1, 2, 3, 4, 5, 6], // All days
     },
     {
       id: PROPERTY_IDS.FURNISHED_1BR,
@@ -291,7 +291,7 @@ function ListingsPreview({ selectedDays = [] }) {
       location: 'Harlem, Manhattan',
       bedrooms: 1,
       bathrooms: 1,
-      availableDays: [1, 2, 3, 4], // Mon-Thu
+      availableDays: [0, 1, 2, 3, 4, 5, 6], // All days
     },
     {
       id: PROPERTY_IDS.FURNISHED_STUDIO,
@@ -360,11 +360,7 @@ function ListingsPreview({ selectedDays = [] }) {
                   <span className="feature-tag">Storage</span>
                 </div>
                 <div className="space-schedule">
-                  <span className="available-days">
-                    {listing.availableDays.length > 0
-                      ? `${listing.availableDays.length} nights available`
-                      : 'Schedule flexible'}
-                  </span>
+                  <span className="available-days">all days available</span>
                   <div className="day-indicators">
                     {[0, 1, 2, 3, 4, 5, 6].map((dayIdx) => (
                       <span
