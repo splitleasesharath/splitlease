@@ -11,6 +11,25 @@
     text-align: center;
 }
 
+/* Header */
+.schedule-section-header {
+    margin-bottom: 2rem;
+}
+
+.schedule-section-eyebrow {
+    font-size: 1rem;
+    color: #6b7280;
+    margin: 0 0 0.5rem 0;
+}
+
+.schedule-section-header h2 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin: 0;
+    line-height: 1.15;
+}
+
 /* Pill Tabs */
 .schedule-section-tabs {
     display: inline-flex;
@@ -92,6 +111,10 @@
 @media (max-width: 768px) {
     .schedule-section {
         padding: 3rem 1.5rem;
+    }
+
+    .schedule-section-header h2 {
+        font-size: 1.75rem;
     }
 
     .schedule-section-tabs {

@@ -143,6 +143,11 @@ function ScheduleSection() {
   return (
     <section className="schedule-section">
       <div className="schedule-section-container">
+        <div className="schedule-section-header">
+          <p className="schedule-section-eyebrow">Stop playing room roulette!</p>
+          <h2>Choose Your Split Schedule</h2>
+        </div>
+
         <div className="schedule-section-tabs">
           {schedules.map((schedule, index) => (
             <button
