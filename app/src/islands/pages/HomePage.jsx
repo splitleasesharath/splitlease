@@ -297,7 +297,7 @@ function ListingsPreview({ selectedDays = [] }) {
       id: PROPERTY_IDS.FURNISHED_STUDIO,
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1701198008563x119014198947512200/julia4.jpg',
-      title: 'Furnished Studio Apt for Rent',
+      title: 'Furnished Studio',
       location: "Hell's Kitchen, Manhattan",
       bedrooms: 'Studio',
       bathrooms: 1,
