@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { MessageSquare } from 'lucide-react';
 import { supabase } from '../../lib/supabase.js';
 
 // Format host name: "John Smith" -> "John S."
@@ -280,7 +281,7 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
           borderBottom: '1px solid #e5e7eb'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <span style={{ fontSize: '1.5rem' }}>💬</span>
+            <MessageSquare size={24} color="#5B21B6" />
             <h3 style={{
               fontSize: '1.25rem',
               fontWeight: '600',
