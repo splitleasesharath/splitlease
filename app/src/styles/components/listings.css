@@ -2013,6 +2013,7 @@
         margin: 0 -1.5rem;
         scrollbar-width: none;
         -ms-overflow-style: none;
+        scroll-padding-left: 1.5rem;
     }
 
     .spaces-grid::-webkit-scrollbar {
@@ -2067,6 +2068,7 @@
         gap: 12px;
         padding: 0 1rem;
         margin: 0 -1rem;
+        scroll-padding-left: 1rem;
     }
 
     .spaces-grid .space-card {
