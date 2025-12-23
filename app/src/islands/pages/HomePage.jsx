@@ -224,66 +224,7 @@ function InvertedScheduleCards() {
 }
 
 // ============================================================================
-// INTERNAL COMPONENT: Local Section (V5 Design)
-// ============================================================================
-
-function LocalSection({ onExploreRentals }) {
-  const features = [
-    {
-      number: '1',
-      title: 'Move-in Ready',
-      description: 'Fully-furnished spaces ensure move-in is a breeze.',
-    },
-    {
-      number: '2',
-      title: 'Everything You Need',
-      description: 'Store items like toiletries, a second monitor, work attire, and anything else you may need to make yourself at home.',
-    },
-    {
-      number: '3',
-      title: 'Total Flexibility',
-      description: 'Forget HOAs. Switch neighborhoods seasonally, discover amazing flexibility.',
-    },
-  ];
-
-  return (
-    <section className="local-section">
-      <div className="local-container">
-        <div className="local-content-wrapper">
-          <div className="local-left-section">
-            <h1>Choose when to be a local</h1>
-            <p className="local-description">
-              Enjoy a second-home lifestyle on your schedule. Stay in the city on the days you need, relax in fully-set spaces, and experience NYC living with long-term comfort and total flexibility.
-            </p>
-            <div className="local-cta-group">
-              <button className="local-primary-button" onClick={onExploreRentals}>
-                Explore Rentals
-              </button>
-              <a href="/why-split-lease.html" className="local-secondary-button">
-                Learn More
-              </a>
-            </div>
-          </div>
-
-          <div className="local-right-section">
-            {features.map((feature, index) => (
-              <div key={index} className="local-feature-item">
-                <div className="local-feature-number">{feature.number}</div>
-                <div className="local-feature-content">
-                  <h3>{feature.title}</h3>
-                  <p>{feature.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ============================================================================
-// INTERNAL COMPONENT: Local Section Alt (Alternative Design)
+// INTERNAL COMPONENT: Local Section (Centered Icon Cards)
 // ============================================================================
 
 function LocalSectionAlt({ onExploreRentals }) {
@@ -706,8 +647,6 @@ export default function HomePage() {
       <ValuePropositions />
 
       <InvertedScheduleCards />
-
-      <LocalSection onExploreRentals={handleExploreRentals} />
 
       <LocalSectionAlt onExploreRentals={handleExploreRentals} />
 
