@@ -2020,7 +2020,7 @@
     }
 
     .spaces-grid .space-card {
-        flex: 0 0 280px;
+        flex: 0 0 240px;
         scroll-snap-align: start;
     }
 
@@ -2070,11 +2070,11 @@
     }
 
     .spaces-grid .space-card {
-        flex: 0 0 260px;
+        flex: 0 0 220px;
     }
 
     .featured-spaces .space-image {
-        height: 170px;
+        height: 150px;
     }
 
     .featured-spaces .space-info {
