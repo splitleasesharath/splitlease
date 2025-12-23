@@ -9,7 +9,6 @@ import { supabase } from '../../lib/supabase.js';
 import { fetchPhotoUrls, parseJsonArray } from '../../lib/supabaseUtils.js';
 import { getNeighborhoodName, getBoroughName, initializeLookups } from '../../lib/dataLookups.js';
 import {
-  PROPERTY_IDS,
   FAQ_URL,
   SEARCH_URL,
   VIEW_LISTING_URL
@@ -258,136 +257,6 @@ function LocalSectionAlt({ onExploreRentals }) {
           </a>
         </div>
       </div>
-    </section>
-  );
-}
-
-// ============================================================================
-// INTERNAL COMPONENT: Listings Preview
-// ============================================================================
-
-function ListingsPreview({ selectedDays = [] }) {
-  const listings = [
-    {
-      id: PROPERTY_IDS.ONE_PLATT_STUDIO,
-      image:
-        'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1586448035769x259434561490871740/255489_1_6782895-650-570.jpg',
-      title: 'One Platt | Studio',
-      location: 'Financial District, Manhattan',
-      bedrooms: 'Studio',
-      bathrooms: 1,
-      availableDays: [0, 1, 2, 3, 4, 5, 6], // All days
-    },
-    {
-      id: PROPERTY_IDS.PIED_A_TERRE,
-      image:
-        'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102430270x309647360933492400/pied4.webp',
-      title: 'Perfect 2 BR Apartment',
-      location: 'Upper East Side, Manhattan',
-      bedrooms: 2,
-      bathrooms: 1,
-      availableDays: [0, 1, 2, 3, 4, 5, 6], // All days
-    },
-    {
-      id: PROPERTY_IDS.FURNISHED_1BR,
-      image:
-        'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102537155x544568166750526000/harlem4.webp',
-      title: '1bdr apartment',
-      location: 'Harlem, Manhattan',
-      bedrooms: 1,
-      bathrooms: 1,
-      availableDays: [0, 1, 2, 3, 4, 5, 6], // All days
-    },
-    {
-      id: PROPERTY_IDS.FURNISHED_STUDIO,
-      image:
-        'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1701198008563x119014198947512200/julia4.jpg',
-      title: 'Furnished Studio',
-      location: "Hell's Kitchen, Manhattan",
-      bedrooms: 'Studio',
-      bathrooms: 1,
-      availableDays: [0, 1, 2, 3, 4, 5, 6], // Full week
-    },
-  ];
-
-  const handleListingClick = (propertyId) => {
-    const propertyUrl = `/view-split-lease/${propertyId}`;
-    window.location.href = propertyUrl;
-  };
-
-  const handleShowMore = () => {
-    if (selectedDays.length > 0) {
-      const oneBased = selectedDays.map(idx => idx + 1);
-      const daysParam = oneBased.join(',');
-      window.location.href = `/search.html?days-selected=${daysParam}`;
-    } else {
-      window.location.href = '/search.html';
-    }
-  };
-
-  return (
-    <section className="listings-section">
-      <h2>Check Out Some Listings</h2>
-      <div className="listings-container">
-        <div className="listings-grid">
-          {listings.map((listing, index) => (
-            <div
-              key={index}
-              className="space-card"
-              data-property-id={listing.id}
-              onClick={() => handleListingClick(listing.id)}
-            >
-              <div style={{ position: 'relative' }}>
-                <img
-                  src={listing.image}
-                  alt={listing.title}
-                  className="space-image"
-                  onError={(e) => {
-                    e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
-                  }}
-                />
-                <div className="space-badge">Verified</div>
-              </div>
-              <div className="space-info">
-                <h3 className="space-title">{listing.title}</h3>
-                <div className="space-location">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#6B7280" strokeWidth="2"/>
-                    <circle cx="12" cy="9" r="2.5" stroke="#6B7280" strokeWidth="2"/>
-                  </svg>
-                  {listing.location}
-                </div>
-                <div className="space-features">
-                  <span className="feature-tag">
-                    {listing.bedrooms === 'Studio' ? 'Studio' : `${listing.bedrooms} bed${listing.bedrooms !== 1 ? 's' : ''}`}
-                  </span>
-                  <span className="feature-tag">{listing.bathrooms} bath{listing.bathrooms !== 1 ? 's' : ''}</span>
-                  <span className="feature-tag">Storage</span>
-                </div>
-                <div className="space-schedule">
-                  <span className="available-days">all days available</span>
-                  <div className="day-indicators">
-                    {[0, 1, 2, 3, 4, 5, 6].map((dayIdx) => (
-                      <span
-                        key={dayIdx}
-                        className={`day-dot ${listing.availableDays.includes(dayIdx) ? 'available' : ''}`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        <div className="scroll-indicators">
-          {listings.map((_, index) => (
-            <span key={index} className={`indicator ${index === 0 ? 'active' : ''}`} data-slide={index}></span>
-          ))}
-        </div>
-      </div>
-      <button className="show-more-btn" onClick={handleShowMore}>
-        Show me more Rentals
-      </button>
     </section>
   );
 }
@@ -832,8 +701,6 @@ export default function HomePage() {
       <ScheduleSection />
 
       <LocalSectionAlt onExploreRentals={handleExploreRentals} />
-
-      <ListingsPreview selectedDays={selectedDays} />
 
       <FeaturedSpacesSection />
 
