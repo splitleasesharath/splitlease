@@ -1811,6 +1811,9 @@
     font-weight: 700;
     color: #111827;
     margin-bottom: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .featured-spaces .space-location {
