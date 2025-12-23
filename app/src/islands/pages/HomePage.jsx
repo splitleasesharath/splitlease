@@ -394,54 +394,6 @@ function ListingsPreview({ selectedDays = [] }) {
 function SupportSection() {
   const supportOptions = [
     {
-      icon: 'https://s3.amazonaws.com/appforest_uf/f1612395570366x477803304486100100/COLOR',
-      label: 'Instant Live-Chat',
-      link: FAQ_URL,
-    },
-    {
-      icon: 'https://s3.amazonaws.com/appforest_uf/f1612395570375x549911933429149100/COLOR',
-      label: 'Browse our FAQs',
-      link: FAQ_URL,
-    },
-    {
-      icon: '/images/support-centre-icon.svg',
-      label: 'Support Centre',
-      link: '/help-center',
-      isInternal: true,
-    },
-  ];
-
-  return (
-    <section className="support-section">
-      <h2>Get personal support</h2>
-      <div className="support-options">
-        {supportOptions.map((option, index) => (
-          <a
-            key={index}
-            href={option.link}
-            {...(option.isInternal ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
-            className="support-card-link"
-          >
-            <div className="support-card">
-              <div className="support-icon">
-                <img src={option.icon} alt={option.label} />
-              </div>
-              <p>{option.label}</p>
-            </div>
-          </a>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// ============================================================================
-// INTERNAL COMPONENT: Support Section Alt (Clean minimal design)
-// ============================================================================
-
-function SupportSectionAlt() {
-  const supportOptions = [
-    {
       icon: (
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#31135D" strokeWidth="1.5">
           <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -667,8 +619,6 @@ export default function HomePage() {
       <ListingsPreview selectedDays={selectedDays} />
 
       <SupportSection />
-
-      <SupportSectionAlt />
 
       <Footer />
 
