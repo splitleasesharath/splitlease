@@ -5,18 +5,17 @@ import { checkAuthStatus, getUserType } from '../../lib/auth.js';
 import { normalizeUserType, NORMALIZED_USER_TYPES } from './LoggedInAvatar/useLoggedInAvatarData.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import ImportListingModal from './ImportListingModal/ImportListingModal.jsx';
+import ReferralModal from '../pages/AccountProfilePage/components/ReferralModal.jsx';
 import { useToast } from './Toast.jsx';
 import Toast from './Toast.jsx';
 
 export default function Footer() {
-  const [referralMethod, setReferralMethod] = useState('text');
-  const [referralContact, setReferralContact] = useState('');
   const [importUrl, setImportUrl] = useState('');
   const [importEmail, setImportEmail] = useState('');
-  const [isSubmittingReferral, setIsSubmittingReferral] = useState(false);
   const [isSubmittingImport, setIsSubmittingImport] = useState(false);
   const [showCreateListingModal, setShowCreateListingModal] = useState(false);
   const [showImportListingModal, setShowImportListingModal] = useState(false);
+  const [showReferralModal, setShowReferralModal] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userType, setUserType] = useState(null); // 'Host' or 'Guest'
   const { toasts, showToast, removeToast } = useToast();
@@ -33,88 +32,6 @@ export default function Footer() {
     };
     checkAuth();
   }, []);
-
-  // Handle referral method change
-  const handleReferralMethodChange = (method) => {
-    setReferralMethod(method);
-    setReferralContact(''); // Clear input when switching methods
-  };
-
-  // Get placeholder text based on referral method
-  const getReferralPlaceholder = () => {
-    return referralMethod === 'text'
-      ? "Your friend's phone number"
-      : "Your friend's email";
-  };
-
-  // Handle referral submission via Edge Function
-  // ✅ MIGRATED: Now uses Supabase Edge Functions
-  const handleReferralSubmit = async () => {
-    if (!referralContact.trim()) {
-      showToast({
-        title: 'Missing Information',
-        content: 'Please enter contact information.',
-        type: 'error'
-      });
-      return;
-    }
-
-    // Basic validation
-    if (referralMethod === 'email' && !referralContact.includes('@')) {
-      showToast({
-        title: 'Invalid Email',
-        content: 'Please enter a valid email address.',
-        type: 'error'
-      });
-      return;
-    }
-
-    setIsSubmittingReferral(true);
-
-    console.log('[Footer] Submitting referral via Edge Function', {
-      method: referralMethod,
-      contact: referralContact
-    });
-
-    try {
-      // Submit referral via Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('bubble-proxy', {
-        body: {
-          action: 'submit_referral',
-          payload: {
-            method: referralMethod,
-            contact: referralContact,
-          },
-        },
-      });
-
-      if (error) {
-        console.error('[Footer] Edge Function error:', error);
-        throw new Error(error.message || 'Failed to send referral');
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to send referral');
-      }
-
-      console.log('[Footer] ✅ Referral submitted successfully');
-      showToast({
-        title: 'Referral Sent!',
-        content: `Your friend will receive your referral via ${referralMethod}.`,
-        type: 'success'
-      });
-      setReferralContact('');
-    } catch (error) {
-      console.error('[Footer] Referral error:', error);
-      showToast({
-        title: 'Referral Failed',
-        content: 'Please try again later.',
-        type: 'error'
-      });
-    } finally {
-      setIsSubmittingReferral(false);
-    }
-  };
 
   // Handle import submission (footer inline form)
   const handleImportSubmit = async () => {
@@ -238,43 +155,16 @@ export default function Footer() {
           <div className="footer-column">
             <h4>Refer a friend</h4>
             <p className="referral-text">
-              You get $50 and they get $50 *after their first booking
+              Give $50, Get $50
             </p>
-            <div className="referral-options">
-              <label>
-                <input
-                  type="radio"
-                  name="referral"
-                  value="text"
-                  checked={referralMethod === 'text'}
-                  onChange={() => handleReferralMethodChange('text')}
-                />
-                Text
-              </label>
-              <label>
-                <input
-                  type="radio"
-                  name="referral"
-                  value="email"
-                  checked={referralMethod === 'email'}
-                  onChange={() => handleReferralMethodChange('email')}
-                />
-                Email
-              </label>
-            </div>
-            <input
-              type="text"
-              placeholder={getReferralPlaceholder()}
-              className="referral-input"
-              value={referralContact}
-              onChange={(e) => setReferralContact(e.target.value)}
-            />
+            <p className="referral-subtext">
+              Share via WhatsApp, Email, SMS, or copy your unique link
+            </p>
             <button
               className="share-btn"
-              onClick={handleReferralSubmit}
-              disabled={isSubmittingReferral}
+              onClick={() => setShowReferralModal(true)}
             >
-              {isSubmittingReferral ? 'Sharing...' : 'Share now'}
+              Invite Friends
             </button>
           </div>
 
@@ -434,6 +324,14 @@ export default function Footer() {
         }}
         currentUserEmail=""
         isLoading={isSubmittingImport}
+      />
+
+      {/* Referral Modal */}
+      <ReferralModal
+        isOpen={showReferralModal}
+        onClose={() => setShowReferralModal(false)}
+        referralCode="splitlease"
+        userType={normalizedType === NORMALIZED_USER_TYPES.HOST || normalizedType === NORMALIZED_USER_TYPES.TRIAL_HOST ? 'host' : 'guest'}
       />
 
       {/* Toast Notifications */}
