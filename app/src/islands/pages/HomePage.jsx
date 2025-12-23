@@ -537,9 +537,12 @@ function FeaturedSpacesSection() {
           )}
         </div>
 
-        <div style={{ textAlign: 'center', marginTop: '48px' }}>
-          <a href={SEARCH_URL} className="cta-button cta-primary">
-            <span>Browse All NYC Spaces</span>
+        <div className="spaces-cta-wrapper">
+          <a href={SEARCH_URL} className="spaces-cta-button">
+            Browse All NYC Spaces
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
           </a>
         </div>
       </div>

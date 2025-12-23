@@ -1928,6 +1928,40 @@
     margin: 0;
 }
 
+/* CTA Button */
+.spaces-cta-wrapper {
+    text-align: center;
+    margin-top: 2.5rem;
+}
+
+.spaces-cta-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: #5B5FCF;
+    color: white;
+    text-decoration: none;
+    border: none;
+    padding: 0.875rem 1.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.spaces-cta-button:hover {
+    background: #4a4eb8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(91, 95, 207, 0.3);
+    color: white;
+}
+
+.spaces-cta-button svg {
+    width: 18px;
+    height: 18px;
+}
+
 /* CTA Button styles */
 .cta-button {
     padding: 16px 40px;
