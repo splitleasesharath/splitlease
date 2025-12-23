@@ -143,7 +143,7 @@
 
 .share-btn {
     width: 100%;
-    background: var(--sl-primary, #6366F1);
+    background: #5B21B6;
     color: #ffffff;
     border: none;
     border-radius: 12px;
@@ -157,11 +157,10 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-top: 0;
 }
 
 .share-btn:hover {
-    background: var(--sl-primary-dark, #4F46E5);
+    background: #4C1D95;
     transform: translateY(-1px);
 }
 
