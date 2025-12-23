@@ -3,9 +3,12 @@
  *
  * "Reasons to Host Me" chip selection card.
  * Shows selectable chips for good guest reasons.
+ *
+ * Public View: Shows green reason tags with check icons (per design).
  */
 
 import React from 'react';
+import { Check } from 'lucide-react';
 import ProfileCard from '../shared/ProfileCard.jsx';
 import SelectableChip from '../shared/SelectableChip.jsx';
 
@@ -22,17 +25,14 @@ export default function ReasonsCard({
 
   if (readOnly) {
     return (
-      <ProfileCard title="Reasons to Host">
+      <ProfileCard title="Reasons to Host Me">
         {selectedReasonNames.length > 0 ? (
-          <div className="chip-container">
+          <div className="public-reasons-grid">
             {selectedReasonNames.map((name, index) => (
-              <SelectableChip
-                key={index}
-                label={name}
-                selected={true}
-                variant="success"
-                readOnly={true}
-              />
+              <div key={index} className="public-reason-tag">
+                <Check size={14} />
+                <span>{name}</span>
+              </div>
             ))}
           </div>
         ) : (

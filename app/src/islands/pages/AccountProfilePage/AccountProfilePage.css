@@ -989,6 +989,131 @@
   white-space: pre-wrap;
 }
 
+/* Bio Text - Paragraph style for public view cards */
+.public-bio-text {
+  font-size: 1.05rem;
+  line-height: 1.75;
+  color: var(--sl-text-secondary);
+  white-space: pre-wrap;
+}
+
+/* Profile Card Subtitle */
+.profile-card-subtitle {
+  font-size: 0.95rem;
+  color: var(--sl-text-tertiary);
+  margin-top: 4px;
+}
+
+/* ============================================================================
+   SCHEDULE & COMMUTE - PUBLIC VIEW
+   ============================================================================ */
+
+.public-schedule-section {
+  margin-bottom: 24px;
+}
+
+.public-schedule-section:last-child {
+  margin-bottom: 0;
+}
+
+.public-schedule-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--sl-text-secondary);
+  margin-bottom: 12px;
+}
+
+/* Day Pills (Visual Day Selector) */
+.public-day-selector {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.public-day-pill {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--sl-border-subtle);
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--sl-text-tertiary);
+}
+
+.public-day-pill--active {
+  background: var(--sl-primary);
+  color: white;
+  border-color: var(--sl-primary);
+  box-shadow: 0 4px 12px rgba(49, 19, 93, 0.2);
+}
+
+/* Transport Badge */
+.public-transport-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  background: var(--sl-bg-body);
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.95rem;
+  color: var(--sl-text-main);
+}
+
+.public-transport-badge svg {
+  color: var(--sl-primary);
+}
+
+/* ============================================================================
+   REASONS TO HOST - PUBLIC VIEW
+   ============================================================================ */
+
+.public-reasons-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.public-reason-tag {
+  padding: 10px 16px;
+  border-radius: 100px;
+  background: var(--sl-success-bg);
+  color: var(--sl-success);
+  font-size: 0.9rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.public-reason-tag svg {
+  flex-shrink: 0;
+}
+
+/* ============================================================================
+   STORAGE ITEMS - PUBLIC VIEW
+   ============================================================================ */
+
+.public-items-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.public-item-tag {
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: var(--sl-bg-body);
+  color: var(--sl-text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid var(--sl-border-subtle);
+}
+
 /* ============================================================================
    LOADING & ERROR STATES
    ============================================================================ */

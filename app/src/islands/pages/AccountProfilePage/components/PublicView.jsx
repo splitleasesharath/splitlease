@@ -3,13 +3,15 @@
  *
  * Public/read-only mode wrapper that renders profile cards for viewing.
  * Shown when user is viewing someone else's profile.
+ *
+ * Design Reference: Guest_Profile_Public_v3.html
  */
 
 import React from 'react';
 import AboutCard from './cards/AboutCard.jsx';
-import RequirementsCard from './cards/RequirementsCard.jsx';
+import WhySplitLeaseCard from './cards/WhySplitLeaseCard.jsx';
+import MyRequirementsCard from './cards/MyRequirementsCard.jsx';
 import ScheduleCommuteCard from './cards/ScheduleCommuteCard.jsx';
-import TrustVerificationCard from './cards/TrustVerificationCard.jsx';
 import ReasonsCard from './cards/ReasonsCard.jsx';
 import StorageItemsCard from './cards/StorageItemsCard.jsx';
 import VideoIntroCard from './cards/VideoIntroCard.jsx';
@@ -46,16 +48,17 @@ export default function PublicView({
   const goodGuestReasons = profileData?.['Good Guest Reasons'] || [];
   const storageItems = profileData?.['storage'] || [];
   const videoUrl = profileData?.['Video Intro URL'] || null;
+  const firstName = profileData?.['Name - First'] || 'this guest';
 
   // Transportation options for display
   const transportationOptions = [
     { value: '', label: 'Not specified' },
-    { value: 'car', label: 'Car' },
-    { value: 'public_transit', label: 'Public Transit' },
-    { value: 'bicycle', label: 'Bicycle' },
-    { value: 'walking', label: 'Walking' },
-    { value: 'rideshare', label: 'Rideshare (Uber/Lyft)' },
-    { value: 'other', label: 'Other' }
+    { value: 'car', label: 'Mostly drive', icon: 'car' },
+    { value: 'public_transit', label: 'Public transit', icon: 'train' },
+    { value: 'bicycle', label: 'Bicycle', icon: 'bike' },
+    { value: 'walking', label: 'Walk', icon: 'footprints' },
+    { value: 'rideshare', label: 'Rideshare', icon: 'car' },
+    { value: 'other', label: 'Other', icon: 'compass' }
   ];
 
   return (
@@ -64,14 +67,20 @@ export default function PublicView({
       <AboutCard
         bio={bio}
         readOnly={true}
+        firstName={firstName}
       />
 
-      {/* Guest-only: Requirements */}
-      {!isHostUser && (needForSpace || specialNeeds) && (
-        <RequirementsCard
-          needForSpace={needForSpace}
-          specialNeeds={specialNeeds}
-          readOnly={true}
+      {/* Guest-only: Why I Want a Split Lease */}
+      {!isHostUser && needForSpace && (
+        <WhySplitLeaseCard
+          content={needForSpace}
+        />
+      )}
+
+      {/* Guest-only: My Requirements */}
+      {!isHostUser && specialNeeds && (
+        <MyRequirementsCard
+          content={specialNeeds}
         />
       )}
 
@@ -84,12 +93,6 @@ export default function PublicView({
           readOnly={true}
         />
       )}
-
-      {/* Trust & Verification - Always shown */}
-      <TrustVerificationCard
-        verifications={verifications}
-        readOnly={true}
-      />
 
       {/* Guest-only: Reasons to Host */}
       {!isHostUser && goodGuestReasons.length > 0 && (
