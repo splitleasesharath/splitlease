@@ -436,6 +436,84 @@ function SupportSection() {
 }
 
 // ============================================================================
+// INTERNAL COMPONENT: Support Section Alt (Clean minimal design)
+// ============================================================================
+
+function SupportSectionAlt() {
+  const supportOptions = [
+    {
+      icon: (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#31135D" strokeWidth="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="10" r="1" fill="#31135D"/>
+          <circle cx="8" cy="10" r="1" fill="#31135D"/>
+          <circle cx="16" cy="10" r="1" fill="#31135D"/>
+        </svg>
+      ),
+      title: 'Live Chat',
+      description: 'Get instant answers from our team',
+      link: FAQ_URL,
+    },
+    {
+      icon: (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#31135D" strokeWidth="1.5">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <circle cx="12" cy="17" r="0.5" fill="#31135D"/>
+        </svg>
+      ),
+      title: 'FAQs',
+      description: 'Browse common questions',
+      link: FAQ_URL,
+    },
+    {
+      icon: (
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#31135D" strokeWidth="1.5">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+          <line x1="8" y1="6" x2="16" y2="6"/>
+          <line x1="8" y1="10" x2="14" y2="10"/>
+        </svg>
+      ),
+      title: 'Help Center',
+      description: 'Guides and resources',
+      link: '/help-center',
+      isInternal: true,
+    },
+  ];
+
+  return (
+    <section className="support-section-alt">
+      <div className="support-section-alt-container">
+        <div className="support-section-alt-header">
+          <p className="support-section-alt-eyebrow">Need Help?</p>
+          <h2>We're here for you</h2>
+        </div>
+        <div className="support-section-alt-grid">
+          {supportOptions.map((option, index) => (
+            <a
+              key={index}
+              href={option.link}
+              {...(option.isInternal ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
+              className="support-alt-card"
+            >
+              <div className="support-alt-icon">{option.icon}</div>
+              <div className="support-alt-content">
+                <h3>{option.title}</h3>
+                <p>{option.description}</p>
+              </div>
+              <svg className="support-alt-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================================
 // INTERNAL COMPONENT: Floating Badge
 // ============================================================================
 
@@ -589,6 +667,8 @@ export default function HomePage() {
       <ListingsPreview selectedDays={selectedDays} />
 
       <SupportSection />
+
+      <SupportSectionAlt />
 
       <Footer />
 
