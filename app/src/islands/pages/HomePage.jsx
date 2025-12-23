@@ -468,7 +468,7 @@ function FeaturedSpacesSection() {
     <section className="featured-spaces">
       <div className="featured-spaces-container">
         <div className="spaces-header">
-          <h2 className="spaces-title">Check Out Some Listings</h2>
+          <h2>Check Out Some Listings</h2>
         </div>
 
         <div className="spaces-grid">
