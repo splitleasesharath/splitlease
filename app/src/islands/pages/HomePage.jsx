@@ -466,10 +466,6 @@ function FeaturedSpacesSection() {
 
   return (
     <section className="featured-spaces">
-      <div className="outlined-bubble outlined-bubble-1"></div>
-      <div className="outlined-bubble outlined-bubble-2"></div>
-      <div className="outlined-bubble outlined-bubble-3"></div>
-
       <div className="featured-spaces-container">
         <div className="spaces-header">
           <h2 className="spaces-title">Check Out Some Listings</h2>

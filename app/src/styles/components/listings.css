@@ -1662,50 +1662,18 @@
 }
 
 /* ========================================
-   Featured Spaces Section (from why-split-lease)
+   Featured Spaces Section
    ======================================== */
 
 .featured-spaces {
-    background: white;
-    padding: 100px 32px;
-    margin: 0;
-    position: relative;
-    overflow: hidden;
-}
-
-.featured-spaces .outlined-bubble {
-    position: absolute;
-    border-radius: 50%;
-    border: 3px solid #31135D;
-    opacity: 0.08;
-}
-
-.featured-spaces .outlined-bubble-1 {
-    width: 400px;
-    height: 400px;
-    top: -120px;
-    left: -120px;
-}
-
-.featured-spaces .outlined-bubble-2 {
-    width: 280px;
-    height: 280px;
-    bottom: -90px;
-    right: 10%;
-}
-
-.featured-spaces .outlined-bubble-3 {
-    width: 160px;
-    height: 160px;
-    top: 40%;
-    left: 12%;
+    padding: 4rem 2rem;
+    max-width: var(--max-width);
+    margin: 0 auto;
 }
 
 .featured-spaces-container {
     max-width: 1200px;
     margin: 0 auto;
-    position: relative;
-    z-index: 2;
 }
 
 .spaces-header {
