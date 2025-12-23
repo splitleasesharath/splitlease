@@ -451,6 +451,48 @@
 }
 
 /* ============================================
+   V2 ADDITIONS - Professional/High-Status Tone
+   ============================================ */
+
+/* Subtle badge variant for V2 */
+.referral-landing-hero__badge--subtle {
+  background: rgba(124, 58, 237, 0.06);
+  border: 1px solid rgba(124, 58, 237, 0.12);
+  font-size: 13px;
+  padding: 8px 16px;
+}
+
+.referral-landing-hero__badge--subtle svg {
+  width: 16px;
+  height: 16px;
+  opacity: 0.8;
+}
+
+/* Bonus note styling for form */
+.referral-landing-form-card__bonus-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 13px;
+  color: #7C3AED;
+  font-weight: 500;
+}
+
+/* Low-pressure closing note */
+.referral-landing-no-obligation {
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: center;
+  margin-top: 8px;
+  font-style: italic;
+}
+
+/* V2 Hero subtitle with strong tag styling */
+.referral-landing-hero__subtitle strong {
+  color: #7C3AED;
+  font-weight: 600;
+}
+
+/* ============================================
    TRUST SECTION
    ============================================ */
 .referral-landing-trust {

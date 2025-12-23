@@ -283,6 +283,78 @@ function LocalSection({ onExploreRentals }) {
 }
 
 // ============================================================================
+// INTERNAL COMPONENT: Local Section Alt (Alternative Design)
+// ============================================================================
+
+function LocalSectionAlt({ onExploreRentals }) {
+  const features = [
+    {
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+      ),
+      title: 'Move-in Ready',
+      description: 'Fully-furnished spaces ensure move-in is a breeze.',
+    },
+    {
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+          <line x1="12" y1="22.08" x2="12" y2="12" />
+        </svg>
+      ),
+      title: 'Everything You Need',
+      description: 'Store items like toiletries, a second monitor, work attire, and more.',
+    },
+    {
+      icon: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 6v6l4 2" />
+        </svg>
+      ),
+      title: 'Total Flexibility',
+      description: 'Switch neighborhoods seasonally, discover amazing flexibility.',
+    },
+  ];
+
+  return (
+    <section className="local-alt-section">
+      <div className="local-alt-container">
+        <div className="local-alt-header">
+          <h2>Choose when to be a local</h2>
+          <p>Enjoy a second-home lifestyle on your schedule. Stay in the city on the days you need, relax in fully-set spaces.</p>
+        </div>
+
+        <div className="local-alt-grid">
+          {features.map((feature, index) => (
+            <div key={index} className="local-alt-card">
+              <div className="local-alt-icon">
+                {feature.icon}
+              </div>
+              <h3>{feature.title}</h3>
+              <p>{feature.description}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="local-alt-cta">
+          <button className="local-alt-button" onClick={onExploreRentals}>
+            Explore Rentals
+          </button>
+          <a href="/why-split-lease.html" className="local-alt-link">
+            Learn More →
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================================
 // INTERNAL COMPONENT: Listings Preview
 // ============================================================================
 
@@ -636,6 +708,8 @@ export default function HomePage() {
       <InvertedScheduleCards />
 
       <LocalSection onExploreRentals={handleExploreRentals} />
+
+      <LocalSectionAlt onExploreRentals={handleExploreRentals} />
 
       <ListingsPreview selectedDays={selectedDays} />
 
