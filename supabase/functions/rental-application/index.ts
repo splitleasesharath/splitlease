@@ -23,14 +23,15 @@ import { createErrorCollector, ErrorCollector } from "../_shared/slack.ts";
 
 import { handleSubmit } from "./handlers/submit.ts";
 import { handleGet } from "./handlers/get.ts";
+import { handleUpload } from "./handlers/upload.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ["submit", "get"] as const;
-// Submit and get are public to support legacy Bubble token users (user_id comes from payload)
-const PUBLIC_ACTIONS: string[] = ["submit", "get"];
+const ALLOWED_ACTIONS = ["submit", "get", "upload"] as const;
+// Submit, get, and upload are public to support legacy Bubble token users (user_id comes from payload)
+const PUBLIC_ACTIONS: string[] = ["submit", "get", "upload"];
 
 type Action = (typeof ALLOWED_ACTIONS)[number];
 
@@ -162,6 +163,16 @@ Deno.serve(async (req: Request) => {
         }
         console.log(`[rental-application] Using user_id: ${getUserId} (from ${userId ? 'JWT' : 'payload'})`);
         result = await handleGet(body.payload, supabaseAdmin, getUserId);
+        break;
+
+      case "upload":
+        // For public action, get user_id from payload (supports legacy Bubble token users)
+        const uploadUserId = userId || (body.payload.user_id as string);
+        if (!uploadUserId) {
+          throw new AuthenticationError("User ID required for upload action (provide in payload or via JWT)");
+        }
+        console.log(`[rental-application] Using user_id: ${uploadUserId} (from ${userId ? 'JWT' : 'payload'})`);
+        result = await handleUpload(body.payload, supabaseAdmin, uploadUserId);
         break;
 
       default:

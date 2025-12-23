@@ -37,6 +37,13 @@ interface DatabaseRentalApplication {
   'signature (text)': string | null;
   submitted: boolean;
   'percentage % done': number | null;
+  // File URL fields
+  'proof of employment': string | null;
+  'alternate guarantee': string | null;
+  'credit score': string | null;
+  'State ID - Front': string | null;
+  'State ID - Back': string | null;
+  'government ID': string | null;
 }
 
 /**
@@ -131,6 +138,14 @@ export function mapDatabaseToFormData(
 
     // Signature - prefer signature (text) if available
     signature: db['signature (text)'] || db.signature || '',
+
+    // File URLs
+    proofOfEmploymentUrl: db['proof of employment'] || '',
+    alternateGuaranteeUrl: db['alternate guarantee'] || '',
+    creditScoreUrl: db['credit score'] || '',
+    stateIdFrontUrl: db['State ID - Front'] || '',
+    stateIdBackUrl: db['State ID - Back'] || '',
+    governmentIdUrl: db['government ID'] || '',
   };
 
   // Parse occupants

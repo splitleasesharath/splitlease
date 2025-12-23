@@ -69,6 +69,13 @@ export interface RentalApplicationFormData {
   showCreditScore: boolean;
   // Signature
   signature: string;
+  // File URLs (uploaded to Supabase Storage)
+  proofOfEmploymentUrl: string;
+  alternateGuaranteeUrl: string;
+  creditScoreUrl: string;
+  stateIdFrontUrl: string;
+  stateIdBackUrl: string;
+  governmentIdUrl: string;
 }
 
 // Store state type
@@ -119,6 +126,13 @@ const DEFAULT_FORM_DATA: RentalApplicationFormData = {
   showCreditScore: false,
   // Signature
   signature: '',
+  // File URLs
+  proofOfEmploymentUrl: '',
+  alternateGuaranteeUrl: '',
+  creditScoreUrl: '',
+  stateIdFrontUrl: '',
+  stateIdBackUrl: '',
+  governmentIdUrl: '',
 };
 
 const DEFAULT_VERIFICATION_STATUS: VerificationStatus = {

@@ -39,6 +39,13 @@ interface RentalApplicationResponse {
   "signature (text)": string | null;
   submitted: boolean;
   "percentage % done": number | null;
+  // File URL fields
+  "proof of employment": string | null;
+  "alternate guarantee": string | null;
+  "credit score": string | null;
+  "State ID - Front": string | null;
+  "State ID - Back": string | null;
+  "government ID": string | null;
 }
 
 /**
@@ -129,7 +136,13 @@ export async function handleGet(
       signature,
       "signature (text)",
       submitted,
-      "percentage % done"
+      "percentage % done",
+      "proof of employment",
+      "alternate guarantee",
+      "credit score",
+      "State ID - Front",
+      "State ID - Back",
+      "government ID"
     `)
     .eq('_id', rentalAppId)
     .single();

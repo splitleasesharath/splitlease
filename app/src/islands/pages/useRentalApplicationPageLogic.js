@@ -80,6 +80,23 @@ const EMPLOYMENT_STATUS_OPTIONS = [
 
 const MAX_OCCUPANTS = 6;
 
+// Map frontend file keys to formData URL field names and backend file types
+const FILE_TYPE_MAP = {
+  employmentProof: { urlField: 'proofOfEmploymentUrl', backendType: 'employmentProof' },
+  alternateGuarantee: { urlField: 'alternateGuaranteeUrl', backendType: 'alternateGuarantee' },
+  altGuarantee: { urlField: 'alternateGuaranteeUrl', backendType: 'altGuarantee' },
+  creditScore: { urlField: 'creditScoreUrl', backendType: 'creditScore' },
+  stateIdFront: { urlField: 'stateIdFrontUrl', backendType: 'stateIdFront' },
+  stateIdBack: { urlField: 'stateIdBackUrl', backendType: 'stateIdBack' },
+  governmentId: { urlField: 'governmentIdUrl', backendType: 'governmentId' },
+};
+
+// Max file size (10MB)
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+// Allowed MIME types
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+
 export function useRentalApplicationPageLogic() {
   // ============================================================================
   // STORE INTEGRATION
@@ -119,6 +136,7 @@ export function useRentalApplicationPageLogic() {
   });
 
   // File uploads (cannot be serialized to localStorage)
+  // Contains File objects for local preview, while URLs are stored in formData
   const [uploadedFiles, setUploadedFiles] = useState({
     employmentProof: null,
     alternateGuarantee: null,
@@ -126,6 +144,10 @@ export function useRentalApplicationPageLogic() {
     creditScore: null,
     references: []
   });
+
+  // Upload progress and errors for each file type
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [uploadErrors, setUploadErrors] = useState({});
 
   // Field validation states
   const [fieldErrors, setFieldErrors] = useState({});
@@ -323,12 +345,43 @@ export function useRentalApplicationPageLogic() {
   }, [storeUpdateOccupant]);
 
   // ============================================================================
-  // HANDLERS - File Uploads (local state, not persisted)
+  // HANDLERS - File Uploads (upload to Supabase Storage immediately)
   // ============================================================================
 
-  const handleFileUpload = useCallback((uploadKey, files, multiple = false) => {
+  const handleFileUpload = useCallback(async (uploadKey, files, multiple = false) => {
     if (!files || files.length === 0) return;
 
+    const file = files[0];
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadErrors(prev => ({
+        ...prev,
+        [uploadKey]: `File too large. Maximum size is 10MB.`
+      }));
+      return;
+    }
+
+    // Validate MIME type
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      setUploadErrors(prev => ({
+        ...prev,
+        [uploadKey]: `Invalid file type. Allowed: JPEG, PNG, WebP, PDF.`
+      }));
+      return;
+    }
+
+    // Clear any previous errors
+    setUploadErrors(prev => {
+      const next = { ...prev };
+      delete next[uploadKey];
+      return next;
+    });
+
+    // Set uploading state
+    setUploadProgress(prev => ({ ...prev, [uploadKey]: 'uploading' }));
+
+    // Store file locally for preview
     if (multiple) {
       setUploadedFiles(prev => ({
         ...prev,
@@ -337,10 +390,111 @@ export function useRentalApplicationPageLogic() {
     } else {
       setUploadedFiles(prev => ({
         ...prev,
-        [uploadKey]: files[0]
+        [uploadKey]: file
       }));
     }
-  }, []);
+
+    // Get user ID for upload
+    const userId = getSessionId();
+    if (!userId) {
+      setUploadErrors(prev => ({
+        ...prev,
+        [uploadKey]: 'You must be logged in to upload files.'
+      }));
+      setUploadProgress(prev => {
+        const next = { ...prev };
+        delete next[uploadKey];
+        return next;
+      });
+      return;
+    }
+
+    try {
+      // Convert file to base64
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          // Extract base64 data (remove data:mime;base64, prefix)
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Get file type mapping
+      const mapping = FILE_TYPE_MAP[uploadKey];
+      if (!mapping) {
+        console.warn(`[RentalApplication] Unknown upload key: ${uploadKey}`);
+        setUploadProgress(prev => {
+          const next = { ...prev };
+          delete next[uploadKey];
+          return next;
+        });
+        return;
+      }
+
+      // Upload via Edge Function
+      const token = getAuthToken();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          action: 'upload',
+          payload: {
+            user_id: userId,
+            fileType: mapping.backendType,
+            fileName: file.name,
+            fileData: base64Data,
+            mimeType: file.type,
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      console.log(`[RentalApplication] File uploaded successfully:`, result.data);
+
+      // Store the URL in formData
+      updateFormData({ [mapping.urlField]: result.data.url });
+
+      // Mark upload as complete
+      setUploadProgress(prev => ({ ...prev, [uploadKey]: 'complete' }));
+
+      // Clear progress after a short delay
+      setTimeout(() => {
+        setUploadProgress(prev => {
+          const next = { ...prev };
+          delete next[uploadKey];
+          return next;
+        });
+      }, 2000);
+
+    } catch (error) {
+      console.error(`[RentalApplication] File upload failed:`, error);
+      setUploadErrors(prev => ({
+        ...prev,
+        [uploadKey]: error.message || 'Upload failed. Please try again.'
+      }));
+      setUploadProgress(prev => {
+        const next = { ...prev };
+        delete next[uploadKey];
+        return next;
+      });
+      // Remove the local file preview on error
+      setUploadedFiles(prev => ({
+        ...prev,
+        [uploadKey]: multiple ? [] : null
+      }));
+    }
+  }, [updateFormData]);
 
   const handleFileRemove = useCallback((uploadKey, fileIndex = null) => {
     if (fileIndex !== null) {
@@ -356,7 +510,20 @@ export function useRentalApplicationPageLogic() {
         [uploadKey]: null
       }));
     }
-  }, []);
+
+    // Also clear the URL from formData
+    const mapping = FILE_TYPE_MAP[uploadKey];
+    if (mapping) {
+      updateFormData({ [mapping.urlField]: '' });
+    }
+
+    // Clear any errors
+    setUploadErrors(prev => {
+      const next = { ...prev };
+      delete next[uploadKey];
+      return next;
+    });
+  }, [updateFormData]);
 
   // ============================================================================
   // HANDLERS - Verification
@@ -788,6 +955,8 @@ export function useRentalApplicationPageLogic() {
     verificationStatus,
     verificationLoading,
     uploadedFiles,
+    uploadProgress,
+    uploadErrors,
 
     // Validation
     fieldErrors,
