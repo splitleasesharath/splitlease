@@ -47,7 +47,6 @@ interface CohostAdmin {
   name: string;
   display: string;
   email: string;
-  user_id: string;
 }
 
 interface RequestMetadata {
@@ -144,52 +143,29 @@ async function handleButtonClick(
 
   console.log(`[slack-callback] Admin ${adminUserName} (${adminUserId}) claiming request ${requestData.requestId}`);
 
-  // Fetch available co-hosts from reference table using raw SQL
-  // (Supabase client doesn't support schema.table notation directly)
-  const { data: cohostAdmins, error: cohostError } = await supabase
-    .rpc('get_cohost_admins');
+  // Fetch available co-hosts from reference_table schema
+  // Supabase client requires a separate client instance with schema option
+  const schemaClient = createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { db: { schema: 'reference_table' } }
+  );
 
-  // Fallback to direct query if RPC doesn't exist
-  let cohostList: CohostAdmin[] = [];
+  const { data: cohostAdmins, error: cohostError } = await schemaClient
+    .from('os_cohost_admins')
+    .select('id, name, display, email')
+    .neq('name', 'cohost_requested_waiting')
+    .order('display');
 
   if (cohostError) {
-    console.log('[slack-callback] RPC not available, using direct SQL query');
-    // Use raw SQL query to access the reference_table schema
-    const { data: sqlResult, error: sqlError } = await supabase
-      .from('os_cohost_admins')
-      .select('id, name, display, email, user_id')
-      .neq('name', 'co-host_requested_waiting')
-      .order('display');
-
-    if (sqlError) {
-      console.error('[slack-callback] Failed to fetch co-hosts:', sqlError);
-      // Try one more approach - query from reference_table schema via schema option
-      const schemaClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
-        { db: { schema: 'reference_table' } }
-      );
-
-      const { data: schemaResult, error: schemaError } = await schemaClient
-        .from('os_cohost_admins')
-        .select('id, name, display, email, user_id')
-        .neq('name', 'co-host_requested_waiting')
-        .order('display');
-
-      if (schemaError) {
-        console.error('[slack-callback] Schema query also failed:', schemaError);
-      } else {
-        cohostList = (schemaResult || []) as CohostAdmin[];
-      }
-    } else {
-      cohostList = (sqlResult || []) as CohostAdmin[];
-    }
-  } else {
-    cohostList = (cohostAdmins || []) as CohostAdmin[];
+    console.error('[slack-callback] Failed to fetch co-hosts:', cohostError);
   }
+
+  const cohostList: CohostAdmin[] = (cohostAdmins || []) as CohostAdmin[];
   console.log(`[slack-callback] Found ${cohostList.length} available co-hosts`);
 
   // Build co-host dropdown options
+  // Note: We store 'name' as the identifier since there's no user_id column
   const cohostOptions = cohostList.map((cohost) => ({
     text: {
       type: "plain_text",
@@ -197,8 +173,8 @@ async function handleButtonClick(
       emoji: true
     },
     value: JSON.stringify({
-      userId: cohost.user_id,
-      display: cohost.display,
+      name: cohost.name,        // Internal identifier (e.g., "sharath")
+      display: cohost.display,  // Display name (e.g., "Sharath")
       email: cohost.email
     })
   }));
@@ -442,12 +418,12 @@ async function handleModalSubmission(
 
   // Parse co-host data from selection value
   const cohostData = JSON.parse(cohostSelection.value) as {
-    userId: string;
-    display: string;
+    name: string;     // Internal identifier (e.g., "sharath")
+    display: string;  // Display name (e.g., "Sharath")
     email: string;
   };
 
-  console.log(`[slack-callback] Selected co-host: ${cohostData.display} (${cohostData.userId})`);
+  console.log(`[slack-callback] Selected co-host: ${cohostData.display} (${cohostData.name})`);
 
   // Extract preferred time selection
   const preferredTimeSelection = values.preferred_time_block?.preferred_time_select?.selected_option;
@@ -489,13 +465,12 @@ async function handleModalSubmission(
   const adminNotes = values.admin_notes_block?.admin_notes?.value || null;
 
   console.log(`[slack-callback] Assigning co-host for request ${metadata.requestId}`);
-  console.log(`[slack-callback] Co-Host: ${cohostData.display} (User ID: ${cohostData.userId})`);
+  console.log(`[slack-callback] Co-Host: ${cohostData.display} (name: ${cohostData.name})`);
   console.log(`[slack-callback] Meeting: ${meetingDisplayText}`);
 
   // Update the co-host request in database
-  // Store both the user ID reference AND the display name (Bubble.io dual-reference pattern)
+  // Store the display name (matches os_cohost_admins.display pattern from Bubble.io)
   const updateData: Record<string, unknown> = {
-    "Co-Host User": cohostData.userId,           // FK to user._id
     "Co-Host selected (OS)": cohostData.display, // Display name from os_cohost_admins
     "Status - Co-Host Request": "Co-Host Selected",
     "Modified Date": new Date().toISOString()
