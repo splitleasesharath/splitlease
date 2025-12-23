@@ -476,7 +476,7 @@ function SupportSection() {
 
 function FeaturedSpacesSection() {
   const [boroughs, setBoroughs] = useState([]);
-  const [selectedBorough, setSelectedBorough] = useState('all');
+  const [selectedBorough, setSelectedBorough] = useState('manhattan');
   const [featuredListings, setFeaturedListings] = useState([]);
   const [isLoadingListings, setIsLoadingListings] = useState(true);
 
@@ -503,7 +503,13 @@ function FeaturedSpacesSection() {
               .replace(/\s+county\s+nj/i, '')
               .replace(/\s+/g, '-')
           }))
-          .filter(b => ['manhattan', 'brooklyn', 'queens', 'bronx', 'staten-island'].includes(b.value));
+          .filter(b => ['manhattan', 'brooklyn', 'queens', 'bronx', 'staten-island'].includes(b.value))
+          .sort((a, b) => {
+            // Manhattan first, then alphabetically
+            if (a.value === 'manhattan') return -1;
+            if (b.value === 'manhattan') return 1;
+            return a.name.localeCompare(b.name);
+          });
 
         setBoroughs(boroughList);
       } catch (err) {
@@ -537,11 +543,9 @@ function FeaturedSpacesSection() {
         .or('"Active".eq.true,"Active".is.null')
         .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null');
 
-      if (selectedBorough !== 'all') {
-        const borough = boroughs.find(b => b.value === selectedBorough);
-        if (borough) {
-          query = query.eq('"Location - Borough"', borough.id);
-        }
+      const borough = boroughs.find(b => b.value === selectedBorough);
+      if (borough) {
+        query = query.eq('"Location - Borough"', borough.id);
       }
 
       query = query.limit(3);
@@ -627,12 +631,6 @@ function FeaturedSpacesSection() {
         </div>
 
         <div className="category-filters">
-          <div
-            className={`filter-pill ${selectedBorough === 'all' ? 'active' : ''}`}
-            onClick={() => setSelectedBorough('all')}
-          >
-            All Spaces
-          </div>
           {boroughs.map(borough => (
             <div
               key={borough.id}
