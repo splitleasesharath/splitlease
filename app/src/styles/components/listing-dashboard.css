@@ -834,6 +834,43 @@
   color: var(--ld-accent-purple);
 }
 
+/* Section Footer with bottom edit button */
+.listing-dashboard-section__footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;
+  margin-top: 16px;
+  border-top: 1px solid var(--ld-border);
+}
+
+.listing-dashboard-section__edit-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: var(--ld-accent-purple);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.listing-dashboard-section__edit-bottom:hover {
+  background-color: #7c3aed;
+  transform: translateY(-1px);
+}
+
+.listing-dashboard-section__edit-bottom:active {
+  transform: translateY(0);
+}
+
+.listing-dashboard-section__edit-bottom svg {
+  flex-shrink: 0;
+}
+
 .listing-dashboard-section__add-btn {
   display: flex;
   align-items: center;
@@ -2130,6 +2167,43 @@
   color: var(--ld-text-secondary);
 }
 
+/* Weekly Rate Display (similar to monthly) */
+.listing-dashboard-pricing__weekly-rate {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #f3e8ff 0%, #fdf4ff 100%);
+  border-radius: 12px;
+}
+
+.listing-dashboard-pricing__weekly-rate-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ld-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.listing-dashboard-pricing__weekly-rate-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--ld-accent-purple);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+
+.listing-dashboard-pricing__weekly-rate-period {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ld-text-secondary);
+}
+
 /* Responsive adjustments */
 @media (max-width: 550px) {
   .ld-nightly-legend__swatch {
@@ -2312,6 +2386,41 @@
 
 .pricing-edit-save--disabled,
 .pricing-edit-save:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Bottom Save Button Footer */
+.pricing-edit-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 32px;
+  margin-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pricing-edit-save-bottom {
+  padding: 14px 48px;
+  background-color: var(--ld-success);
+  color: #FCFAFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 200px;
+  text-align: center;
+}
+
+.pricing-edit-save-bottom:hover:not(:disabled) {
+  background-color: #1f0b38;
+  transform: translateY(-1px);
+}
+
+.pricing-edit-save-bottom--disabled,
+.pricing-edit-save-bottom:disabled {
   background-color: #9ca3af;
   cursor: not-allowed;
   transform: none;

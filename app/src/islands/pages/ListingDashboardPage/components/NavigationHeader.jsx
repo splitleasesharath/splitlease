@@ -116,11 +116,14 @@ const GiftIcon = () => (
   </svg>
 );
 
-export default function NavigationHeader({ activeTab, onTabChange, counts, onBackClick, onInviteClick }) {
-  // Handle tab click - special case for all-listings which navigates away
+export default function NavigationHeader({ activeTab, onTabChange, counts, onBackClick, onInviteClick, listingId }) {
+  // Handle tab click - some tabs navigate to different pages
   const handleTabClick = (tabId) => {
     if (tabId === 'all-listings') {
       window.location.href = '/host-overview';
+    } else if (tabId === 'proposals') {
+      // Navigate to host proposals page filtered to this listing
+      window.location.href = `/host-proposals?listingId=${listingId}`;
     } else {
       onTabChange(tabId);
     }

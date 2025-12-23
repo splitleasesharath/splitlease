@@ -43,8 +43,6 @@
   min-height: 40px;
   display: flex;
   flex-direction: column;
-  overflow-x: hidden;
-  overflow-y: auto;
   font-family: var(--hep-font-sans);
   box-sizing: border-box;
   padding: 16px;
@@ -207,14 +205,16 @@
 .hep-input-base {
   font-family: var(--hep-font-sans);
   font-weight: 400;
-  font-size: 18px;
+  font-size: 16px;
   color: var(--hep-text-secondary);
   background-color: var(--hep-primary-white);
   border: 1px solid var(--hep-text-tertiary);
   border-radius: 2px;
   box-shadow: inset -2px -2px 4px var(--hep-shadow-gray);
   padding: 8px 12px;
+  height: 42px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .hep-input-base::placeholder {
@@ -245,11 +245,12 @@
 }
 
 .hep-dropdown {
-  font-size: 14px;
+  font-size: 16px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
+  height: 42px;
 }
 
 .hep-dropdown:disabled {
@@ -303,6 +304,7 @@
 
 .hep-input-number {
   width: 100%;
+  height: 42px;
 }
 
 /* Multi-select */
@@ -399,19 +401,12 @@
    ======================================== */
 
 .hep-editing-terms {
-  border: 1px dotted var(--hep-gray-border);
-  border-radius: 0;
   width: 100%;
-  max-height: 920px;
   padding: 16px;
-  overflow-x: hidden;
-  overflow-y: auto;
   margin-top: 16px;
 }
 
 .hep-proposal-row {
-  border: 1px dotted var(--hep-gray-border);
-  border-radius: 0;
   width: 100%;
   min-height: 27px;
   display: flex;
@@ -503,9 +498,6 @@
 
 .hep-breakdown-container {
   width: 100%;
-  max-height: 815px;
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
 .hep-breakdown-title {
@@ -531,6 +523,32 @@
   font-weight: 700;
   font-size: 16px;
   color: var(--hep-text-primary);
+}
+
+.hep-breakdown-edit-btn {
+  background: none;
+  border: none;
+  padding: 4px;
+  margin-left: 8px;
+  cursor: pointer;
+  color: var(--hep-primary-purple);
+  opacity: 0.5;
+  transition: opacity 200ms ease, transform 200ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.hep-breakdown-edit-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+  background-color: rgba(49, 19, 93, 0.08);
+}
+
+.hep-breakdown-row:hover .hep-breakdown-edit-btn {
+  opacity: 0.8;
 }
 
 .hep-breakdown-row-value {
@@ -602,7 +620,8 @@
    ======================================== */
 
 .hep-reject-section {
-  border: 1px dotted var(--hep-gray-border);
+  background-color: rgba(200, 35, 51, 0.05);
+  border-radius: 8px;
   padding: 16px;
   margin-top: 16px;
 }
@@ -633,10 +652,98 @@
   margin-bottom: 16px;
 }
 
+.hep-reject-reasons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.hep-reject-reason-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  padding: 8px 0;
+}
+
+.hep-reject-reason-option input[type="radio"] {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--hep-reject-red);
+  flex-shrink: 0;
+}
+
+.hep-reject-reason-label {
+  font-size: 14px;
+  color: var(--hep-text-primary);
+  line-height: 1.4;
+}
+
 .hep-reject-actions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
+}
+
+/* Reject-only mode styles */
+.hep-reject-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--hep-text-secondary);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.hep-reject-close:hover {
+  color: var(--hep-text-primary);
+}
+
+.hep-reject-section {
+  position: relative;
+}
+
+.hep-reject-details {
+  background-color: var(--hep-primary-white);
+  border: 1px solid var(--hep-border-light);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+
+.hep-reject-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.hep-reject-detail-row:not(:last-child) {
+  border-bottom: 1px solid var(--hep-border-light);
+}
+
+.hep-reject-detail-label {
+  font-size: 13px;
+  color: var(--hep-text-secondary);
+}
+
+.hep-reject-detail-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hep-text-primary);
+}
+
+.hep-reject-detail-total {
+  font-size: 16px;
+  color: var(--hep-primary-green);
 }
 
 /* ========================================
@@ -744,14 +851,58 @@
 }
 
 /* ========================================
+   Primary Actions (Side by Side Layout)
+   ======================================== */
+
+.hep-primary-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+  padding: 16px 0;
+}
+
+.hep-btn-reject-outline {
+  background-color: transparent;
+  border: 1px solid var(--hep-reject-red);
+  color: var(--hep-reject-red);
+  font-weight: 500;
+  font-size: 14px;
+  height: 44px;
+  padding: 0 20px;
+  flex-shrink: 0;
+}
+
+.hep-btn-reject-outline:hover:not(:disabled) {
+  background-color: rgba(200, 35, 51, 0.05);
+}
+
+.hep-btn-primary-large {
+  flex: 1;
+  max-width: none;
+  min-width: 0;
+  font-size: 18px;
+  font-weight: 700;
+  height: 48px;
+  padding: 0 32px;
+  box-shadow: 0 2px 8px rgba(49, 19, 93, 0.2);
+}
+
+.hep-btn-primary-large:hover:not(:disabled) {
+  box-shadow: 0 4px 16px rgba(49, 19, 93, 0.35);
+  transform: translateY(-1px);
+  transition: all 200ms ease;
+}
+
+/* ========================================
    Schedule Selector (Host)
    ======================================== */
 
 .hss-host-schedule-selector {
   padding: 16px;
-  border: 1px dotted var(--hep-gray-border);
-  border-radius: 4px;
-  overflow: hidden;
+  background-color: rgba(49, 19, 93, 0.03);
+  border-radius: 8px;
 }
 
 .hss-nights-grid {
@@ -921,6 +1072,20 @@
 
   .hep-title-main {
     font-size: 22px;
+  }
+
+  .hep-primary-actions {
+    flex-direction: column-reverse;
+    gap: 12px;
+  }
+
+  .hep-primary-actions .hep-btn-primary-large {
+    width: 100%;
+    flex: none;
+  }
+
+  .hep-primary-actions .hep-btn-reject-outline {
+    width: 100%;
   }
 }
 

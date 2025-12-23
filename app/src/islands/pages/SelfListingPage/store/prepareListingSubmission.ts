@@ -55,6 +55,7 @@ interface BubbleListingPayload {
   'Price 3 nights selected': number | null;
   'Price 4 nights selected': number | null;
   'Price 5 nights selected': number | null;
+  'Price 6 nights selected': number | null;
   'Nightly Decay Rate': number | null;
 
   // Rules
@@ -109,9 +110,10 @@ function calculateNightlyPrices(nightlyPricing: NightlyPricing | undefined): {
   price3: number | null;
   price4: number | null;
   price5: number | null;
+  price6: number | null;
 } {
   if (!nightlyPricing || !nightlyPricing.oneNightPrice) {
-    return { price1: null, price2: null, price3: null, price4: null, price5: null };
+    return { price1: null, price2: null, price3: null, price4: null, price5: null, price6: null };
   }
 
   const { oneNightPrice, calculatedRates } = nightlyPricing;
@@ -122,6 +124,7 @@ function calculateNightlyPrices(nightlyPricing: NightlyPricing | undefined): {
     price3: calculatedRates?.cumulativeNight3 ?? null,
     price4: calculatedRates?.cumulativeNight4 ?? null,
     price5: calculatedRates?.cumulativeNight5 ?? null,
+    price6: calculatedRates?.cumulativeNight6 ?? null,
   };
 }
 
@@ -192,6 +195,7 @@ export function prepareListingSubmission(formData: ListingFormData): BubbleListi
     'Price 3 nights selected': nightlyPrices.price3,
     'Price 4 nights selected': nightlyPrices.price4,
     'Price 5 nights selected': nightlyPrices.price5,
+    'Price 6 nights selected': nightlyPrices.price6,
     'Nightly Decay Rate': pricing.nightlyPricing?.decayPerNight ?? null,
 
     // Rules

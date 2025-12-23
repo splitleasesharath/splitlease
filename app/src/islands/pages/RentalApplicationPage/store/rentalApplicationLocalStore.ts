@@ -69,6 +69,13 @@ export interface RentalApplicationFormData {
   showCreditScore: boolean;
   // Signature
   signature: string;
+  // File URLs (uploaded to Supabase Storage)
+  proofOfEmploymentUrl: string;
+  alternateGuaranteeUrl: string;
+  creditScoreUrl: string;
+  stateIdFrontUrl: string;
+  stateIdBackUrl: string;
+  governmentIdUrl: string;
 }
 
 // Store state type
@@ -119,6 +126,13 @@ const DEFAULT_FORM_DATA: RentalApplicationFormData = {
   showCreditScore: false,
   // Signature
   signature: '',
+  // File URLs
+  proofOfEmploymentUrl: '',
+  alternateGuaranteeUrl: '',
+  creditScoreUrl: '',
+  stateIdFrontUrl: '',
+  stateIdBackUrl: '',
+  governmentIdUrl: '',
 };
 
 const DEFAULT_VERIFICATION_STATUS: VerificationStatus = {
@@ -347,6 +361,34 @@ class RentalApplicationLocalStore {
     localStorage.removeItem(STORAGE_KEYS.LAST_SAVED);
 
     console.log('[RentalAppStore] Store reset to default state');
+    this.notifyListeners();
+  }
+
+  /**
+   * Load data from database (for returning users with submitted applications)
+   * This overwrites current store state and marks as not dirty.
+   * Does NOT save to localStorage - database is the source of truth for submitted apps.
+   */
+  loadFromDatabase(
+    formData: Partial<RentalApplicationFormData>,
+    occupants?: Occupant[],
+    verificationStatus?: Partial<VerificationStatus>
+  ): void {
+    this.state.formData = { ...DEFAULT_FORM_DATA, ...formData };
+
+    if (occupants) {
+      this.state.occupants = occupants;
+    }
+
+    if (verificationStatus) {
+      this.state.verificationStatus = { ...DEFAULT_VERIFICATION_STATUS, ...verificationStatus };
+    }
+
+    // Mark as not dirty - data came from database, not user input
+    this.state.isDirty = false;
+    this.state.lastSaved = null; // No local save - data from DB
+
+    console.log('[RentalAppStore] Loaded data from database');
     this.notifyListeners();
   }
 

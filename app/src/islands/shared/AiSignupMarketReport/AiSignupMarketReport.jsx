@@ -580,7 +580,125 @@ const PARSING_LOTTIE_URL = 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.
 const LOADING_LOTTIE_URL = 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1722533720265x199451206376484160/Animation%20-%201722533570126.json';
 const SUCCESS_LOTTIE_URL = 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1745939792891x394981453861459140/Report.json';
 
+// Topic definitions for freeform input detection
+const FREEFORM_TOPICS = [
+  {
+    id: 'schedule',
+    label: 'Schedule',
+    patterns: [
+      /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/i,
+      /\b(weekday|weekend|weekly|daily|monthly)\b/i,
+      /\b(morning|afternoon|evening|night)\b/i,
+      /\b(schedule|timing|hours|days?|time)\b/i,
+      /\b(\d+\s*(am|pm|days?|weeks?|months?))\b/i,
+    ],
+  },
+  {
+    id: 'patterns',
+    label: 'Patterns',
+    patterns: [
+      /\b(every|recurring|regular|repeat|routine)\b/i,
+      /\b(alternating|rotating|flexible|fixed)\b/i,
+      /\b(once|twice|three times)\s+(a|per)\s+(week|month)\b/i,
+      /\b(pattern|frequency|interval)\b/i,
+    ],
+  },
+  {
+    id: 'commute',
+    label: 'Commute',
+    patterns: [
+      /\b(commute|commuting|travel|traveling)\b/i,
+      /\b(subway|metro|train|bus|drive|driving)\b/i,
+      /\b(office|work|job|workplace)\b/i,
+      /\b(remote|hybrid|in-?person)\b/i,
+      /\b(transit|transportation)\b/i,
+    ],
+  },
+  {
+    id: 'location',
+    label: 'Location',
+    patterns: [
+      /\b(manhattan|brooklyn|queens|bronx|staten island)\b/i,
+      /\b(midtown|downtown|uptown|village|heights)\b/i,
+      /\b(near|close to|walking distance|neighborhood)\b/i,
+      /\b(area|location|place|spot|zone)\b/i,
+      /\b(east side|west side|upper|lower)\b/i,
+    ],
+  },
+  {
+    id: 'needs',
+    label: 'Needs',
+    patterns: [
+      /\b(need|require|want|looking for|must have)\b/i,
+      /\b(quiet|peaceful|private|furnished|unfurnished)\b/i,
+      /\b(pet|dog|cat|animal)\b/i,
+      /\b(laundry|kitchen|bathroom|bedroom)\b/i,
+      /\b(wifi|internet|utilities|amenities)\b/i,
+    ],
+  },
+  {
+    id: 'background',
+    label: 'About You',
+    patterns: [
+      /\b(i am|i'm|my name|myself)\b/i,
+      /\b(student|professional|nurse|doctor|teacher|engineer)\b/i,
+      /\b(work at|working at|employed|job at)\b/i,
+      /\b(years? old|age|background|bio)\b/i,
+      /\b(relocating|moving|new to|visiting)\b/i,
+    ],
+  },
+  {
+    id: 'storage',
+    label: 'Storage',
+    patterns: [
+      /\b(storage|store|closet|space for)\b/i,
+      /\b(luggage|bags?|boxes?|belongings)\b/i,
+      /\b(bring|keep|leave|store)\b/i,
+      /\b(furniture|stuff|things|items)\b/i,
+    ],
+  },
+];
+
+// TODO(human): Implement the topic detection logic
+function detectTopics(text) {
+  if (!text || text.trim().length === 0) {
+    return [];
+  }
+
+  const detectedTopics = [];
+
+  for (const topic of FREEFORM_TOPICS) {
+    const isDetected = topic.patterns.some(pattern => pattern.test(text));
+    if (isDetected) {
+      detectedTopics.push(topic.id);
+    }
+  }
+
+  return detectedTopics;
+}
+
+function TopicIndicators({ detectedTopics }) {
+  return (
+    <div className="topic-indicators">
+      {FREEFORM_TOPICS.map((topic) => {
+        const isDetected = detectedTopics.includes(topic.id);
+        return (
+          <span
+            key={topic.id}
+            className={`topic-chip ${isDetected ? 'topic-detected' : ''}`}
+          >
+            {isDetected && <span className="topic-checkmark">✓</span>}
+            {topic.label}
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function FreeformInput({ value, onChange }) {
+  const detectedTopics = detectTopics(value);
+
   return (
     <div className="freeform-container">
       <div className="freeform-header">
@@ -600,6 +718,8 @@ Send to (415) 555-5555 and guest@mail.com`}
         rows={8}
         aria-label="Market research description"
       />
+
+      <TopicIndicators detectedTopics={detectedTopics} />
 
       <div className="freeform-animation-message">
         <p className="freeform-helper-text">
@@ -1402,6 +1522,39 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           margin: 0;
           font-size: 14px;
           color: #718096;
+        }
+
+        /* Topic Indicators */
+        .topic-indicators {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 8px;
+          padding: 12px 0;
+        }
+
+        .topic-chip {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          padding: 6px 12px;
+          font-size: 13px;
+          font-weight: 500;
+          color: #a0aec0;
+          background: #f7fafc;
+          border: 1px solid #e2e8f0;
+          border-radius: 16px;
+          transition: all 0.3s ease;
+        }
+
+        .topic-chip.topic-detected {
+          color: #22543d;
+          background: #c6f6d5;
+          border-color: #68d391;
+        }
+
+        .topic-checkmark {
+          font-weight: 700;
+          color: #38a169;
         }
 
         /* Contact Form */

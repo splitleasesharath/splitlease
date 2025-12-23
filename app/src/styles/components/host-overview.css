@@ -100,6 +100,23 @@
   border-left: 4px solid var(--ho-color-primary-blue);
 }
 
+.help-banner__content {
+  display: flex;
+  align-items: center;
+  gap: var(--ho-spacing-md);
+  flex: 1;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: opacity var(--ho-transition-normal);
+}
+
+.help-banner__content:hover {
+  opacity: 0.8;
+}
+
 .help-banner__icon {
   font-size: 24px;
   flex-shrink: 0;
@@ -1177,14 +1194,19 @@
   }
 
   .help-banner {
-    flex-direction: column;
+    flex-direction: row;
     align-items: flex-start;
     text-align: left;
   }
 
+  .help-banner__content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .help-banner__close {
-    align-self: flex-end;
-    margin-top: calc(-1 * var(--ho-spacing-lg));
+    align-self: flex-start;
+    flex-shrink: 0;
   }
 
   .action-buttons {

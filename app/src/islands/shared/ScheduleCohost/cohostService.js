@@ -148,34 +148,68 @@ export function formatDateForBubble(date) {
  */
 export async function createCoHostRequest(data) {
   try {
-    // Format times for Bubble API
+    // Format times for storage
     const formattedTimes = data.selectedTimes.map((slot) => {
       return formatDateForBubble(slot.dateTime);
     });
 
-    const { data: response, error } = await supabase.functions.invoke('bubble-proxy', {
+    // Log the payload for debugging
+    const payload = {
+      userId: data.userId,
+      userEmail: data.userEmail,
+      userName: data.userName,
+      listingId: data.listingId || null,
+      selectedTimes: formattedTimes,
+      subject: data.subject || '',
+      details: data.details || '',
+    };
+    console.log('[cohostService] Sending payload:', payload);
+
+    const { data: response, error } = await supabase.functions.invoke('cohost-request', {
       body: {
-        action: 'cohost-request',
-        method: 'create',
-        payload: {
-          'Subject': data.subject || '',
-          'details submitted (optional)': data.details || '',
-          'Co-Host User': data.userId,
-          'Listing': data.listingId,
-          'selected_times': formattedTimes,
-          'suggested dates and times': formattedTimes,
-          userEmail: data.userEmail,
-          userName: data.userName,
-          'Status - Co-Host Request': 'Co-Host Requested',
-        },
+        action: 'create',
+        payload,
       },
     });
 
+    // Log full response for debugging
+    console.log('[cohostService] Response:', response);
+    console.log('[cohostService] Error:', error);
+
     if (error) {
       console.error('[cohostService] Error creating request:', error);
+      // Try to get the actual error context from the FunctionsHttpError
+      if (error.context) {
+        try {
+          const errorBody = await error.context.json();
+          console.error('[cohostService] Error body from Edge Function:', errorBody);
+          return { success: false, error: errorBody.error || errorBody.message || 'Failed to create request' };
+        } catch (e) {
+          console.error('[cohostService] Could not parse error body:', e);
+        }
+      }
+      if (response) {
+        console.error('[cohostService] Response with error:', response);
+      }
       return { success: false, error: error.message || 'Failed to create request' };
     }
 
+    // Check if the response indicates failure
+    if (response && response.success === false) {
+      console.error('[cohostService] Edge Function returned error:', response.error);
+      return { success: false, error: response.error || 'Failed to create request' };
+    }
+
+    // Handle Edge Function response format { success: true, data: { ... } }
+    if (response?.success && response?.data) {
+      return {
+        success: true,
+        requestId: response.data.requestId,
+        virtualMeetingId: response.data.virtualMeetingId,
+      };
+    }
+
+    // Handle direct response format (backwards compatibility)
     return {
       success: true,
       requestId: response?.requestId || response?._id,
@@ -196,13 +230,12 @@ export async function createCoHostRequest(data) {
  */
 export async function submitRating(requestId, rating, message) {
   try {
-    const { error } = await supabase.functions.invoke('bubble-proxy', {
+    const { data: response, error } = await supabase.functions.invoke('cohost-request', {
       body: {
-        action: 'cohost-request',
-        method: 'rate',
+        action: 'rate',
         payload: {
           requestId,
-          'Rating': rating,
+          Rating: rating,
           'Rating message (optional)': message || '',
         },
       },
@@ -211,6 +244,11 @@ export async function submitRating(requestId, rating, message) {
     if (error) {
       console.error('[cohostService] Error submitting rating:', error);
       return { success: false, error: error.message || 'Failed to submit rating' };
+    }
+
+    // Check for Edge Function error response
+    if (response && !response.success) {
+      return { success: false, error: response.error || 'Failed to submit rating' };
     }
 
     return { success: true };

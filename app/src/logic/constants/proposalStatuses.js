@@ -43,55 +43,37 @@ export const PROPOSAL_STATUSES = {
   },
 
   // ===== ACTIVE PROPOSAL FLOW =====
+  // usualOrder values match reference_table.os_proposal_status sort_order
+  // sort_order: -1 = terminal (cancelled/rejected), 0-7 = active flow
 
-  // usualOrder 1: Pending
-  PENDING: {
-    key: 'Pending',
-    color: 'blue',
-    label: 'Pending',
-    stage: 1,
-    usualOrder: 1,
-    actions: ['cancel_proposal', 'request_vm', 'send_message']
-  },
-
-  // usualOrder 2: Host Review
-  HOST_REVIEW: {
-    key: 'Host Review',
-    color: 'blue',
-    label: 'Under Host Review',
-    stage: 3,
-    usualOrder: 2,
-    actions: ['request_vm', 'cancel_proposal', 'send_message']
-  },
-
-  // usualOrder 3: Proposal Submitted, Awaiting Rental Application
+  // usualOrder 0: Proposal Submitted, Awaiting Rental Application
   PROPOSAL_SUBMITTED_AWAITING_RENTAL_APP: {
     key: 'Proposal Submitted by guest - Awaiting Rental Application',
     color: 'blue',
     label: 'Submit Rental Application',
     stage: 1,
-    usualOrder: 3,
+    usualOrder: 0,
     actions: ['submit_rental_app', 'cancel_proposal', 'request_vm', 'send_message']
   },
 
-  // Suggested proposal by Split Lease agent - awaiting rental application
+  // Suggested proposal by Split Lease agent - awaiting rental application (sort_order 0)
   SUGGESTED_PROPOSAL_AWAITING_RENTAL_APP: {
     key: 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application',
     color: 'purple',
     label: 'Suggested Proposal - Submit Rental App',
     stage: 1,
-    usualOrder: 3,
+    usualOrder: 0,
     isSuggestedBySL: true,
     actions: ['submit_rental_app', 'cancel_proposal', 'request_vm', 'send_message']
   },
 
-  // Suggested proposal by Split Lease agent - pending confirmation
+  // Suggested proposal by Split Lease agent - pending confirmation (sort_order 0)
   SUGGESTED_PROPOSAL_PENDING_CONFIRMATION: {
     key: 'Proposal Submitted for guest by Split Lease - Pending Confirmation',
     color: 'purple',
     label: 'Suggested Proposal - Pending Confirmation',
     stage: 1,
-    usualOrder: 3,
+    usualOrder: 0,
     isSuggestedBySL: true,
     actions: ['confirm_proposal', 'cancel_proposal', 'request_vm', 'send_message']
   },
@@ -101,71 +83,91 @@ export const PROPOSAL_STATUSES = {
     color: 'blue',
     label: 'Awaiting Confirmation',
     stage: 1,
-    usualOrder: 3,
+    usualOrder: 0,
     actions: ['cancel_proposal', 'request_vm', 'send_message']
   },
 
-  // usualOrder 3 (variant): Rental Application Submitted
+  // Legacy pending status (treated as sort_order 0)
+  PENDING: {
+    key: 'Pending',
+    color: 'blue',
+    label: 'Pending',
+    stage: 1,
+    usualOrder: 0,
+    actions: ['cancel_proposal', 'request_vm', 'send_message']
+  },
+
+  // usualOrder 1: Host Review (after rental app submitted)
+  HOST_REVIEW: {
+    key: 'Host Review',
+    color: 'blue',
+    label: 'Under Host Review',
+    stage: 3,
+    usualOrder: 1,
+    actions: ['request_vm', 'cancel_proposal', 'send_message']
+  },
+
+  // Rental Application Submitted - transitional state before Host Review (sort_order 1)
   RENTAL_APP_SUBMITTED: {
     key: 'Rental Application Submitted',
     color: 'blue',
     label: 'Application Under Review',
     stage: 2,
-    usualOrder: 3,
+    usualOrder: 1,
     actions: ['request_vm', 'cancel_proposal', 'send_message']
   },
 
-  // usualOrder 4: Host Counteroffer
+  // usualOrder 2: Host Counteroffer
   COUNTEROFFER_SUBMITTED_AWAITING_GUEST_REVIEW: {
     key: 'Host Counteroffer Submitted / Awaiting Guest Review',
     color: 'yellow',
     label: 'Review Host Counteroffer',
     stage: 3,
-    usualOrder: 4,
+    usualOrder: 2,
     actions: ['review_counteroffer', 'compare_terms', 'accept_counteroffer', 'decline_counteroffer', 'request_vm', 'send_message']
   },
 
-  // usualOrder 5: Accepted / Drafting
+  // usualOrder 3: Accepted / Drafting
   PROPOSAL_OR_COUNTEROFFER_ACCEPTED: {
     key: 'Proposal or Counteroffer Accepted / Drafting Lease Documents',
     color: 'green',
     label: 'Accepted - Drafting Lease',
     stage: 4,
-    usualOrder: 5,
+    usualOrder: 3,
     actions: ['request_vm', 'send_message']
   },
 
-  // usualOrder 5 (variant): Review Documents
+  // Reviewing Documents (variant of sort_order 3)
   REVIEWING_DOCUMENTS: {
     key: 'Reviewing Documents',
     color: 'blue',
     label: 'Reviewing Documents',
     stage: 4,
-    usualOrder: 5,
+    usualOrder: 3,
     actions: ['review_documents', 'request_vm', 'send_message']
   },
 
-  // usualOrder 6: Lease Documents
+  // usualOrder 4: Lease Documents Sent for Review
   LEASE_DOCUMENTS_SENT_FOR_REVIEW: {
     key: 'Lease Documents Sent for Review',
     color: 'blue',
     label: 'Review Lease Documents',
     stage: 4,
-    usualOrder: 6,
+    usualOrder: 4,
     actions: ['review_documents', 'request_vm', 'send_message']
   },
 
-  // Lease documents sent for legal signatures
+  // usualOrder 5: Lease documents sent for legal signatures
   LEASE_DOCUMENTS_SENT_FOR_SIGNATURES: {
     key: 'Lease Documents Sent for Signatures',
     color: 'green',
     label: 'Sign Lease Documents',
     stage: 5,
-    usualOrder: 6,
+    usualOrder: 5,
     actions: ['sign_documents', 'request_vm', 'send_message']
   },
 
-  // Lease signed, awaiting payment (note: lowercase "payment" matches Bubble)
+  // usualOrder 6: Lease signed, awaiting payment (note: lowercase "payment" matches Bubble)
   LEASE_DOCUMENTS_SIGNED_AWAITING_PAYMENT: {
     key: 'Lease Documents Signed / Awaiting Initial payment',
     color: 'green',
@@ -175,7 +177,7 @@ export const PROPOSAL_STATUSES = {
     actions: ['submit_payment', 'request_vm', 'send_message']
   },
 
-  // Legacy key format (keeping for backwards compatibility)
+  // Legacy key format (keeping for backwards compatibility) - sort_order 6
   LEASE_SIGNED_AWAITING_INITIAL_PAYMENT: {
     key: 'Lease Signed / Awaiting Initial Payment',
     color: 'green',

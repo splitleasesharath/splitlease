@@ -39,6 +39,7 @@ export default function ListingDashboardPage() {
     showScheduleCohost,
     showImportReviews,
     currentUser,
+    existingCohostRequest,
     handleTabChange,
     handleCardClick,
     handleBackClick,
@@ -145,10 +146,14 @@ export default function ListingDashboardPage() {
               counts={counts}
               onBackClick={handleBackClick}
               onInviteClick={() => setShowReferralModal(true)}
+              listingId={listing.id}
             />
 
             {/* Alert Banner - Schedule Cohost CTA */}
-            <AlertBanner onScheduleCohost={handleScheduleCohost} />
+            <AlertBanner
+              onScheduleCohost={handleScheduleCohost}
+              existingRequest={existingCohostRequest}
+            />
 
             {/* Action Cards Grid */}
             <ActionCardGrid counts={counts} onCardClick={handleCardClick} />
@@ -296,10 +301,11 @@ export default function ListingDashboardPage() {
       {/* Schedule Cohost Modal */}
       {showScheduleCohost && (
         <ScheduleCohost
-          userId={currentUser?._id || currentUser?.id || ''}
+          userId={currentUser?.userId || currentUser?._id || currentUser?.id || ''}
           userEmail={currentUser?.email || ''}
           userName={currentUser?.firstName || currentUser?.name || ''}
           listingId={listing?.id}
+          existingRequest={existingCohostRequest}
           onRequestSubmitted={handleCohostRequestSubmitted}
           onClose={handleCloseScheduleCohost}
         />

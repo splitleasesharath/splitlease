@@ -511,6 +511,7 @@ function FilterPanel({
 function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
+  const mobilePriceInfoTriggerRef = useRef(null);
 
   const hasImages = listing.images && listing.images.length > 0;
   const hasMultipleImages = listing.images && listing.images.length > 1;
@@ -763,7 +764,18 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
               <span className="price-current">${dynamicPrice.toFixed(2)}</span>
               <span className="price-period">/ night</span>
               {startingPrice > 0 && startingPrice !== dynamicPrice && (
-                <span className="price-original">${parseFloat(startingPrice).toFixed(2)}</span>
+                <span
+                  ref={mobilePriceInfoTriggerRef}
+                  className="price-min-trigger"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onOpenInfoModal(listing, mobilePriceInfoTriggerRef);
+                  }}
+                >
+                  from ${parseFloat(startingPrice).toFixed(2)}/night
+                  <span className="price-info-icon">?</span>
+                </span>
               )}
             </div>
             {/* Host Profile - Simple text */}
@@ -3046,6 +3058,7 @@ export default function SearchPage() {
         <ProposalSuccessModal
           proposalId={successProposalId}
           listingName={selectedListingForProposal?.title || selectedListingForProposal?.Name}
+          hasSubmittedRentalApp={loggedInUserData?.hasSubmittedRentalApp ?? false}
           onClose={() => {
             setShowSuccessModal(false);
             setSuccessProposalId(null);

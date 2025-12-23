@@ -74,8 +74,8 @@ export default function PricingEditSection({
   });
 
   // Weekly pricing
-  const [weeksOffered, setWeeksOffered] = useState('');
-  const [weeklyRate, setWeeklyRate] = useState(listing?.weeklyRate || 0);
+  const [weeksOffered, setWeeksOffered] = useState(listing?.weeksOffered || '');
+  const [weeklyRate, setWeeklyRate] = useState(listing?.weeklyHostRate || 0);
 
   // Monthly pricing
   const [monthlyRate, setMonthlyRate] = useState(listing?.monthlyHostRate || 0);
@@ -316,12 +316,74 @@ export default function PricingEditSection({
     return 'Save';
   };
 
+  // Build a human-readable list of what changed
+  const getChangeSummary = () => {
+    const changes = [];
+    const originalLeaseStyle = listing?.leaseStyle || 'Nightly';
+
+    // Check lease style change
+    if (selectedRentalType !== originalLeaseStyle) {
+      changes.push(`Lease style: ${originalLeaseStyle} → ${selectedRentalType}`);
+    }
+
+    // Check common fields
+    if (damageDeposit !== (listing?.damageDeposit || 500)) {
+      changes.push(`Damage deposit: $${listing?.damageDeposit || 500} → $${damageDeposit}`);
+    }
+    if (maintenanceFee !== (listing?.maintenanceFee || 125)) {
+      changes.push(`Maintenance fee: $${listing?.maintenanceFee || 125} → $${maintenanceFee}`);
+    }
+
+    // Rental-type specific changes
+    if (selectedRentalType === 'Nightly') {
+      const originalNights = listing?.nightsAvailable || [];
+      if (selectedNights.length !== originalNights.length ||
+          !selectedNights.every((n) => originalNights.includes(n))) {
+        changes.push(`Available nights updated (${selectedNights.length} nights)`);
+      }
+      if (minNights !== (listing?.nightsPerWeekMin || 2) ||
+          maxNights !== (listing?.nightsPerWeekMax || 7)) {
+        changes.push(`Nights range: ${minNights}-${maxNights}`);
+      }
+      // Check if any pricing changed
+      const originalComp = listing?.weeklyCompensation || {};
+      const pricingChanged = [2, 3, 4, 5].some(
+        (n) => nightlyPricing[n] !== (originalComp[n] || 0)
+      );
+      if (pricingChanged) {
+        changes.push('Nightly rates updated');
+      }
+    } else if (selectedRentalType === 'Weekly') {
+      if (weeklyRate !== (listing?.weeklyHostRate || 0)) {
+        changes.push(`Weekly rate: $${weeklyRate}/week`);
+      }
+      if (weeksOffered !== (listing?.weeksOffered || '')) {
+        const patternLabels = {
+          '1': '1 week on/off',
+          '2': '2 weeks on/off',
+          '3': '1 on, 3 off',
+          'custom': 'Custom',
+        };
+        changes.push(`Weekly pattern: ${patternLabels[weeksOffered] || weeksOffered}`);
+      }
+    } else if (selectedRentalType === 'Monthly') {
+      if (monthlyRate !== (listing?.monthlyHostRate || 0)) {
+        changes.push(`Monthly rate: $${monthlyRate}/month`);
+      }
+    }
+
+    return changes;
+  };
+
   // Handle save
   const handleSave = async () => {
     if (!isFormValid()) return;
 
     setIsSaving(true);
     try {
+      // Get change summary before saving
+      const changeSummary = getChangeSummary();
+
       const updates = {
         'rental type': selectedRentalType,
         '💰Damage Deposit': damageDeposit,
@@ -332,18 +394,25 @@ export default function PricingEditSection({
 
       // Add rental-type specific fields
       if (selectedRentalType === 'Nightly') {
-        // Convert night IDs back to Bubble format (1-7)
+        // Convert night IDs to JS 0-indexed format (0=Sunday...6=Saturday)
+        // Database now uses JS standard format natively
         const nightMap = {
-          sunday: 1,
-          monday: 2,
-          tuesday: 3,
-          wednesday: 4,
-          thursday: 5,
-          friday: 6,
-          saturday: 7,
+          sunday: 0,
+          monday: 1,
+          tuesday: 2,
+          wednesday: 3,
+          thursday: 4,
+          friday: 5,
+          saturday: 6,
         };
-        const bubbleDays = selectedNights.map((n) => nightMap[n]).sort();
-        updates['Days Available (List of Days)'] = JSON.stringify(bubbleDays);
+        const dayIndices = selectedNights.map((n) => nightMap[n]).sort((a, b) => a - b);
+        updates['Days Available (List of Days)'] = JSON.stringify(dayIndices);
+
+        // Preserve 1-night rate if available (primarily set during listing creation)
+        // Note: Dashboard currently doesn't have UI to edit 1-night rate directly
+        if (listing?.pricing?.[1]) {
+          updates['💰Nightly Host Rate for 1 night'] = listing.pricing[1];
+        }
 
         // Calculate nightly rates from weekly compensation
         updates['💰Nightly Host Rate for 2 nights'] = calculateNightlyRate(
@@ -362,22 +431,42 @@ export default function PricingEditSection({
           nightlyPricing[5],
           5
         );
+        updates['💰Nightly Host Rate for 6 nights'] = calculateNightlyRate(
+          nightlyPricing[5],
+          6
+        ); // Use 5-night rate for 6
         updates['💰Nightly Host Rate for 7 nights'] = calculateNightlyRate(
           nightlyPricing[5],
           7
         ); // Use 5-night rate for 7
       } else if (selectedRentalType === 'Weekly') {
-        updates['Weeks Offered'] = weeksOffered;
+        updates['Weeks offered'] = weeksOffered;
         updates['💰Weekly Host Rate'] = weeklyRate;
       } else if (selectedRentalType === 'Monthly') {
         updates['💰Monthly Host Rate'] = monthlyRate;
       }
 
       await onSave(updates);
+
+      // Show success toast with change summary
+      const toastContent = changeSummary.length > 0
+        ? changeSummary.slice(0, 3).join(' • ') + (changeSummary.length > 3 ? ` (+${changeSummary.length - 3} more)` : '')
+        : 'Pricing settings saved';
+
+      window.showToast?.({
+        title: 'Pricing Updated!',
+        content: toastContent,
+        type: 'success'
+      });
+
       onClose();
     } catch (error) {
       console.error('Error saving pricing:', error);
-      alert('Failed to save pricing. Please try again.');
+      window.showToast?.({
+        title: 'Save Failed',
+        content: 'Failed to save pricing. Please try again.',
+        type: 'error'
+      });
     } finally {
       setIsSaving(false);
     }
@@ -857,6 +946,17 @@ export default function PricingEditSection({
               </div>
             </div>
           )}
+
+          {/* Bottom Save Button - More intuitive placement */}
+          <div className="pricing-edit-footer">
+            <button
+              className={`pricing-edit-save-bottom ${!isFormValid() ? 'pricing-edit-save-bottom--disabled' : ''}`}
+              onClick={handleSave}
+              disabled={!isFormValid() || isSaving}
+            >
+              {isSaving ? 'Saving...' : getSaveButtonText()}
+            </button>
+          </div>
         </div>
       </div>
 

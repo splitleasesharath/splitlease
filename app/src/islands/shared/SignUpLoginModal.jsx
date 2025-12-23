@@ -342,6 +342,26 @@ const ArrowLeftIcon = () => (
   </svg>
 );
 
+const LoadingSpinner = ({ size = 18 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    style={{
+      animation: 'spin 1s linear infinite',
+      marginRight: '8px',
+      verticalAlign: 'middle'
+    }}
+  >
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" />
+    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" />
+  </svg>
+);
+
 // Generate arrays for date selectors
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -843,6 +863,22 @@ export default function SignUpLoginModal({
     setIsLoading(false);
   };
 
+  // Inject keyframe animation for spinner
+  useEffect(() => {
+    const styleId = 'signup-modal-spinner-styles';
+    if (!document.getElementById(styleId)) {
+      const style = document.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        @keyframes spin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+  }, []);
+
   if (!isOpen) return null;
 
   // ============================================================================
@@ -945,10 +981,20 @@ export default function SignUpLoginModal({
           disabled={isLoading || !loginData.email || !loginData.password}
           style={{
             ...styles.buttonPrimary,
-            ...(isLoading || !loginData.email || !loginData.password ? styles.buttonDisabled : {})
+            ...(isLoading || !loginData.email || !loginData.password ? styles.buttonDisabled : {}),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         >
-          {isLoading ? 'Logging in...' : 'Login'}
+          {isLoading ? (
+            <>
+              <LoadingSpinner size={18} />
+              Logging in...
+            </>
+          ) : (
+            'Login'
+          )}
         </button>
 
         {/* Show additional options after email is entered */}
@@ -1218,10 +1264,20 @@ export default function SignUpLoginModal({
           disabled={isLoading || passwordMismatch}
           style={{
             ...styles.buttonPrimary,
-            ...(isLoading || passwordMismatch ? styles.buttonDisabled : {})
+            ...(isLoading || passwordMismatch ? styles.buttonDisabled : {}),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
         >
-          {isLoading ? 'Creating Account...' : 'Agree and Sign Up'}
+          {isLoading ? (
+            <>
+              <LoadingSpinner size={18} />
+              Creating Account...
+            </>
+          ) : (
+            'Agree and Sign Up'
+          )}
         </button>
 
         <button

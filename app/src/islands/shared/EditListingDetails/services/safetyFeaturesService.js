@@ -14,7 +14,8 @@ export async function getCommonSafetyFeatures() {
     console.log('[safetyFeaturesService] Fetching common safety features...');
 
     const { data, error } = await supabase
-      .from('zfut_safetyfeatures')
+      .schema('reference_table')
+      .from('zat_features_safetyfeature')
       .select('Name, "pre-set?"')
       .eq('"pre-set?"', true)
       .order('Name', { ascending: true });

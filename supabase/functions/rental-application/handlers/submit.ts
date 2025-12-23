@@ -59,6 +59,13 @@ interface RentalApplicationPayload {
   };
   // Signature
   signature: string;
+  // File URLs (uploaded via storage)
+  proofOfEmploymentUrl?: string;
+  alternateGuaranteeUrl?: string;
+  creditScoreUrl?: string;
+  stateIdFrontUrl?: string;
+  stateIdBackUrl?: string;
+  governmentIdUrl?: string;
 }
 
 /**
@@ -209,6 +216,13 @@ export async function handleSubmit(
     // Signature
     signature: input.signature,
     'signature (text)': input.signature,
+    // File URLs
+    'proof of employment': input.proofOfEmploymentUrl || null,
+    'alternate guarantee': input.alternateGuaranteeUrl || null,
+    'credit score': input.creditScoreUrl || null,
+    'State ID - Front': input.stateIdFrontUrl || null,
+    'State ID - Back': input.stateIdBackUrl || null,
+    'government ID': input.governmentIdUrl || null,
     // Status
     submitted: true,
     'percentage % done': 100,

@@ -57,10 +57,12 @@ export function getNightlyRateByFrequency({ listing, nightsSelected }) {
 
   // Map nights to price fields
   const priceFieldMap = {
+    1: '💰Nightly Host Rate for 1 night',
     2: '💰Nightly Host Rate for 2 nights',
     3: '💰Nightly Host Rate for 3 nights',
     4: '💰Nightly Host Rate for 4 nights',
     5: '💰Nightly Host Rate for 5 nights',
+    6: '💰Nightly Host Rate for 6 nights',
     7: '💰Nightly Host Rate for 7 nights'
   }
 

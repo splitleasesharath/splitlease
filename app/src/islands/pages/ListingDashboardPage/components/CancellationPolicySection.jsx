@@ -85,7 +85,7 @@ export default function CancellationPolicySection({ listing, onPolicyChange, onR
         </select>
 
         <a
-          href="/policies/cancellation-and-refund-policy"
+          href="/policies#cancellation-and-refund-policy"
           target="_blank"
           rel="noopener noreferrer"
           className="listing-dashboard-cancellation__link"

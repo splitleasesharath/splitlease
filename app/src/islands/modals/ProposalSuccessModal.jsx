@@ -10,7 +10,8 @@
 export default function ProposalSuccessModal({
   proposalId,
   listingName,
-  onClose
+  onClose,
+  hasSubmittedRentalApp = false
 }) {
   // Handle navigation to rental application
   const handleGoToRentalApp = () => {
@@ -201,44 +202,68 @@ export default function ProposalSuccessModal({
           </p>
         )}
 
-        {/* Next steps info */}
-        <div style={styles.infoBox}>
-          <h4 style={styles.infoTitle}>
-            What's Next?
-          </h4>
-          <p style={styles.infoText}>
-            Complete your rental application to increase your chances of approval.
-            The host will review your proposal and application together.
-          </p>
-        </div>
+        {/* Next steps info - only show if rental app not submitted */}
+        {!hasSubmittedRentalApp && (
+          <div style={styles.infoBox}>
+            <h4 style={styles.infoTitle}>
+              What's Next?
+            </h4>
+            <p style={styles.infoText}>
+              Complete your rental application to increase your chances of approval.
+              The host will review your proposal and application together.
+            </p>
+          </div>
+        )}
+
+        {/* Already submitted info */}
+        {hasSubmittedRentalApp && (
+          <div style={styles.infoBox}>
+            <h4 style={styles.infoTitle}>
+              What's Next?
+            </h4>
+            <p style={styles.infoText}>
+              Your rental application is already on file. The host will review your proposal and get back to you soon.
+            </p>
+          </div>
+        )}
 
         {/* CTA Buttons */}
         <div style={styles.buttonContainer}>
-          {/* Primary CTA - Rental Application */}
-          <button
-            onClick={handleGoToRentalApp}
-            style={styles.primaryButton}
-            onMouseOver={(e) => e.target.style.backgroundColor = '#6d28d9'}
-            onMouseOut={(e) => e.target.style.backgroundColor = '#7c3aed'}
-          >
-            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Submit Rental Application
-            <span style={styles.recommendedBadge}>(Recommended)</span>
-          </button>
+          {/* Primary CTA - Rental Application (only show if not submitted) */}
+          {!hasSubmittedRentalApp && (
+            <button
+              onClick={handleGoToRentalApp}
+              style={styles.primaryButton}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#6d28d9'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#7c3aed'}
+            >
+              <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Submit Rental Application
+              <span style={styles.recommendedBadge}>(Recommended)</span>
+            </button>
+          )}
 
-          {/* Secondary CTA - Guest Dashboard */}
+          {/* Guest Dashboard - Primary when rental app submitted, Secondary otherwise */}
           <button
             onClick={handleGoToGuestDashboard}
-            style={styles.secondaryButton}
+            style={hasSubmittedRentalApp ? styles.primaryButton : styles.secondaryButton}
             onMouseOver={(e) => {
-              e.target.style.backgroundColor = '#f5f3ff';
-              e.target.style.borderColor = '#6d28d9';
+              if (hasSubmittedRentalApp) {
+                e.target.style.backgroundColor = '#6d28d9';
+              } else {
+                e.target.style.backgroundColor = '#f5f3ff';
+                e.target.style.borderColor = '#6d28d9';
+              }
             }}
             onMouseOut={(e) => {
-              e.target.style.backgroundColor = '#FFFFFF';
-              e.target.style.borderColor = '#7c3aed';
+              if (hasSubmittedRentalApp) {
+                e.target.style.backgroundColor = '#7c3aed';
+              } else {
+                e.target.style.backgroundColor = '#FFFFFF';
+                e.target.style.borderColor = '#7c3aed';
+              }
             }}
           >
             <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">

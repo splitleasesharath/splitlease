@@ -93,6 +93,9 @@ export function useHostOverviewPageLogic() {
   const [showImportListingModal, setShowImportListingModal] = useState(false);
   const [importListingLoading, setImportListingLoading] = useState(false);
 
+  // Schedule cohost modal state
+  const [showScheduleCohost, setShowScheduleCohost] = useState(false);
+
   // ============================================================================
   // TOAST NOTIFICATIONS
   // ============================================================================
@@ -116,12 +119,12 @@ export function useHostOverviewPageLogic() {
       const userData = await validateTokenAndFetchUser();
       if (userData) {
         setUser({
-          id: userData._id || userData.id,
+          id: userData.userId || userData._id || userData.id,
           firstName: userData['Name - First'] || userData.firstName || 'Host',
           lastName: userData['Name - Last'] || userData.lastName || '',
           email: userData.email || '',
           // After migration, user._id serves as host reference directly
-          accountHostId: userData.accountHostId || userData._id
+          accountHostId: userData.accountHostId || userData.userId || userData._id
         });
         return userData;
       }
@@ -589,6 +592,19 @@ export function useHostOverviewPageLogic() {
     setShowImportListingModal(false);
   }, []);
 
+  const handleScheduleCohost = useCallback(() => {
+    setShowScheduleCohost(true);
+  }, []);
+
+  const handleCloseScheduleCohost = useCallback(() => {
+    setShowScheduleCohost(false);
+  }, []);
+
+  const handleCohostRequestSubmitted = useCallback(() => {
+    showToast('Success', 'Your co-host request has been submitted!', 'success');
+    setShowScheduleCohost(false);
+  }, [showToast]);
+
   const handleImportListingSubmit = useCallback(async ({ listingUrl, emailAddress }) => {
     setImportListingLoading(true);
     try {
@@ -798,6 +814,7 @@ export function useHostOverviewPageLogic() {
     showCreateListingModal,
     showImportListingModal,
     importListingLoading,
+    showScheduleCohost,
 
     // Action handlers
     handleCreateNewListing,
@@ -805,6 +822,9 @@ export function useHostOverviewPageLogic() {
     handleImportListing,
     handleCloseImportListingModal,
     handleImportListingSubmit,
+    handleScheduleCohost,
+    handleCloseScheduleCohost,
+    handleCohostRequestSubmitted,
     handleCreateNewManual,
     handleEditListing,
     handlePreviewListing,

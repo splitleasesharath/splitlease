@@ -15,6 +15,8 @@ import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getUserType }
 import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
 import { isHost } from '../../../logic/rules/users/isHost.js';
+import { getAllHouseRules } from '../../shared/EditListingDetails/services/houseRulesService.js';
+import { getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtualMeetingRules.js';
 
 /**
  * Hook for Host Proposals Page business logic
@@ -39,12 +41,26 @@ export function useHostProposalsPageLogic() {
   const [proposals, setProposals] = useState([]);
   const [selectedProposal, setSelectedProposal] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditingProposal, setIsEditingProposal] = useState(false);
+  const [showRejectOnOpen, setShowRejectOnOpen] = useState(false);
+
+  // ============================================================================
+  // VIRTUAL MEETING STATE
+  // ============================================================================
+  const [isVirtualMeetingModalOpen, setIsVirtualMeetingModalOpen] = useState(false);
+  const [virtualMeetingView, setVirtualMeetingView] = useState('');
+  const [virtualMeetingProposal, setVirtualMeetingProposal] = useState(null);
 
   // ============================================================================
   // UI STATE
   // ============================================================================
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // ============================================================================
+  // REFERENCE DATA STATE
+  // ============================================================================
+  const [allHouseRules, setAllHouseRules] = useState([]);
 
   // ============================================================================
   // AUTH CHECK
@@ -167,6 +183,22 @@ export function useHostProposalsPageLogic() {
   }, []);
 
   // ============================================================================
+  // LOAD REFERENCE DATA (House Rules)
+  // ============================================================================
+  useEffect(() => {
+    async function loadReferenceData() {
+      try {
+        const rules = await getAllHouseRules();
+        setAllHouseRules(rules);
+        console.log('[HostProposals] Loaded all house rules:', rules.length);
+      } catch (err) {
+        console.error('[HostProposals] Failed to load house rules:', err);
+      }
+    }
+    loadReferenceData();
+  }, []);
+
+  // ============================================================================
   // DATA LOADING
   // ============================================================================
 
@@ -238,10 +270,26 @@ export function useHostProposalsPageLogic() {
         );
 
         setListings(sortedListings);
-        setSelectedListing(sortedListings[0]);
 
-        // Fetch proposals for the first (most relevant) listing
-        const proposalsResult = await fetchProposalsForListing(sortedListings[0]._id || sortedListings[0].id);
+        // Check for listingId URL parameter to pre-select a specific listing
+        const urlParams = new URLSearchParams(window.location.search);
+        const preselectedListingId = urlParams.get('listingId');
+
+        let listingToSelect = sortedListings[0];
+        if (preselectedListingId) {
+          const matchedListing = sortedListings.find(l =>
+            (l._id || l.id) === preselectedListingId
+          );
+          if (matchedListing) {
+            listingToSelect = matchedListing;
+            console.log('[useHostProposalsPageLogic] Pre-selected listing from URL:', preselectedListingId);
+          }
+        }
+
+        setSelectedListing(listingToSelect);
+
+        // Fetch proposals for the selected listing
+        const proposalsResult = await fetchProposalsForListing(listingToSelect._id || listingToSelect.id);
         setProposals(proposalsResult);
       } else {
         setListings([]);
@@ -328,7 +376,8 @@ export function useHostProposalsPageLogic() {
           "about_yourself",
           "Comment",
           "Created Date",
-          "Modified Date"
+          "Modified Date",
+          "virtual meeting"
         `)
         .eq('Listing', listingId)
         .neq('Deleted', true)
@@ -358,6 +407,44 @@ export function useHostProposalsPageLogic() {
           proposals.forEach(p => {
             if (p.Guest && guestMap[p.Guest]) {
               p.guest = guestMap[p.Guest];
+            }
+          });
+        }
+
+        // Enrich proposals with virtual meeting data
+        const vmIds = [...new Set(proposals.map(p => p['virtual meeting']).filter(Boolean))];
+
+        if (vmIds.length > 0) {
+          const { data: virtualMeetings } = await supabase
+            .from('virtualmeetingschedulesandlinks')
+            .select(`
+              _id,
+              "requested by",
+              "booked date",
+              "meeting declined",
+              "confirmedBySplitLease",
+              "suggested dates and times",
+              "meeting link"
+            `)
+            .in('_id', vmIds);
+
+          const vmMap = {};
+          virtualMeetings?.forEach(vm => { vmMap[vm._id] = vm; });
+
+          // Attach virtual meeting data to each proposal (normalize field names)
+          proposals.forEach(p => {
+            if (p['virtual meeting'] && vmMap[p['virtual meeting']]) {
+              const rawVm = vmMap[p['virtual meeting']];
+              // Normalize field names for consistency with virtualMeetingRules.js
+              p.virtualMeeting = {
+                _id: rawVm._id,
+                requestedBy: rawVm['requested by'],
+                bookedDate: rawVm['booked date'],
+                meetingDeclined: rawVm['meeting declined'],
+                confirmedBySplitlease: rawVm['confirmedBySplitLease'],
+                suggestedTimes: rawVm['suggested dates and times'],
+                meetingLink: rawVm['meeting link']
+              };
             }
           });
         }
@@ -475,21 +562,54 @@ export function useHostProposalsPageLogic() {
   }, [selectedListing, handleCloseModal]);
 
   /**
-   * Handle reject proposal
+   * Handle reject proposal - opens HostEditingProposal with reject section visible
    */
-  const handleRejectProposal = useCallback(async (proposal) => {
-    if (!confirm('Are you sure you want to reject this proposal?')) {
-      return;
-    }
+  const handleRejectProposal = useCallback((proposal) => {
+    setSelectedProposal(proposal);
+    setIsModalOpen(false); // Close the details modal
+    setShowRejectOnOpen(true); // Signal to open with reject section visible
+    setIsEditingProposal(true); // Open the editing view
+  }, []);
 
+  /**
+   * Handle modify proposal - open HostEditingProposal component
+   */
+  const handleModifyProposal = useCallback((proposal) => {
+    setSelectedProposal(proposal);
+    setIsModalOpen(false); // Close the details modal
+    setShowRejectOnOpen(false); // Don't show reject section
+    setIsEditingProposal(true); // Open the editing view
+  }, []);
+
+  /**
+   * Handle closing the editing view
+   */
+  const handleCloseEditing = useCallback(() => {
+    setIsEditingProposal(false);
+    setSelectedProposal(null);
+    setShowRejectOnOpen(false); // Reset reject section state
+  }, []);
+
+  /**
+   * Handle accept proposal as-is from editing view
+   */
+  const handleAcceptAsIs = useCallback(async (proposal) => {
+    await handleAcceptProposal(proposal);
+    setIsEditingProposal(false);
+  }, [handleAcceptProposal]);
+
+  /**
+   * Handle counteroffer submission from editing view
+   */
+  const handleCounteroffer = useCallback(async (counterofferData) => {
     try {
-      // Use proposal Edge Function to update status
+      // Use proposal Edge Function to create counteroffer
       const { data, error } = await supabase.functions.invoke('proposal', {
         body: {
-          action: 'update',
+          action: 'counteroffer',
           payload: {
-            proposalId: proposal._id || proposal.id,
-            status: 'Declined'
+            proposalId: selectedProposal._id || selectedProposal.id,
+            ...counterofferData
           }
         }
       });
@@ -502,24 +622,58 @@ export function useHostProposalsPageLogic() {
         setProposals(proposalsResult);
       }
 
-      handleCloseModal();
+      setIsEditingProposal(false);
+      setSelectedProposal(null);
+      alert('Counteroffer sent successfully!');
+      console.log('[useHostProposalsPageLogic] Counteroffer sent:', selectedProposal._id);
+
+    } catch (err) {
+      console.error('Failed to send counteroffer:', err);
+      alert('Failed to send counteroffer. Please try again.');
+    }
+  }, [selectedProposal, selectedListing]);
+
+  /**
+   * Handle reject from editing view
+   */
+  const handleRejectFromEditing = useCallback(async (proposal, reason) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('proposal', {
+        body: {
+          action: 'update',
+          payload: {
+            proposalId: proposal._id || proposal.id,
+            status: 'Declined',
+            rejectionReason: reason
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      // Refresh proposals
+      if (selectedListing) {
+        const proposalsResult = await fetchProposalsForListing(selectedListing._id || selectedListing.id);
+        setProposals(proposalsResult);
+      }
+
+      setIsEditingProposal(false);
+      setSelectedProposal(null);
       alert('Proposal rejected.');
-      console.log('[useHostProposalsPageLogic] Proposal rejected:', proposal._id);
+      console.log('[useHostProposalsPageLogic] Proposal rejected from editing:', proposal._id);
 
     } catch (err) {
       console.error('Failed to reject proposal:', err);
       alert('Failed to reject proposal. Please try again.');
     }
-  }, [selectedListing, handleCloseModal]);
+  }, [selectedListing]);
 
   /**
-   * Handle modify proposal - open edit flow
+   * Handle alert notifications from editing component
    */
-  const handleModifyProposal = useCallback((proposal) => {
-    const guest = proposal.guest || proposal.Guest || proposal['Created By'] || {};
-    const guestName = guest.firstName || guest['First Name'] || 'Guest';
-    alert(`Opening review/modify for proposal from ${guestName}`);
-    // TODO: Navigate to edit proposal page or open edit modal
+  const handleEditingAlert = useCallback((message, type = 'info') => {
+    // For now, use simple alert. Can be replaced with toast system later.
+    alert(message);
   }, []);
 
   /**
@@ -548,11 +702,79 @@ export function useHostProposalsPageLogic() {
   }, []);
 
   /**
-   * Handle virtual meeting selection
+   * Handle virtual meeting button click - opens VirtualMeetingManager modal
+   * Determines the appropriate view based on VM state (request, respond, details, etc.)
    */
-  const handleChooseVirtualMeeting = useCallback((proposal, time) => {
-    alert(`Selected meeting time: ${time.toLocaleString()}`);
-    // TODO: Call API to confirm meeting time
+  const handleChooseVirtualMeeting = useCallback((proposal) => {
+    if (!proposal) return;
+
+    const vm = proposal.virtualMeeting;
+    const currentUserId = user?._id || user?.userId;
+
+    let view = 'request'; // Default: no VM exists, show request view
+
+    if (!vm) {
+      // No VM exists - show request view
+      view = 'request';
+    } else if (vm.meetingDeclined) {
+      // VM was declined - show request alternative view
+      view = 'request';
+    } else if (vm.confirmedBySplitlease) {
+      // VM confirmed - show details view
+      view = 'details';
+    } else if (vm.bookedDate && !vm.meetingDeclined) {
+      // VM is booked but not confirmed
+      if (vm.requestedBy === currentUserId) {
+        // Host requested - show details (awaiting guest response)
+        view = 'details';
+      } else {
+        // Guest requested - host needs to respond
+        view = 'respond';
+      }
+    } else if (vm.requestedBy && vm.requestedBy !== currentUserId) {
+      // Pending request from guest - host needs to respond
+      view = 'respond';
+    } else if (vm.requestedBy === currentUserId) {
+      // Host already requested - show details/status
+      view = 'details';
+    }
+
+    setVirtualMeetingProposal(proposal);
+    setVirtualMeetingView(view);
+    setIsVirtualMeetingModalOpen(true);
+    setIsModalOpen(false); // Close the details modal
+  }, [user]);
+
+  /**
+   * Handle closing the virtual meeting modal
+   */
+  const handleCloseVirtualMeetingModal = useCallback(() => {
+    setIsVirtualMeetingModalOpen(false);
+    setVirtualMeetingView('');
+    setVirtualMeetingProposal(null);
+  }, []);
+
+  /**
+   * Handle successful virtual meeting operation - refresh proposals
+   */
+  const handleVirtualMeetingSuccess = useCallback(async () => {
+    // Refresh proposals to get updated VM data
+    if (selectedListing) {
+      const proposalsResult = await fetchProposalsForListing(selectedListing._id || selectedListing.id);
+      setProposals(proposalsResult);
+    }
+    handleCloseVirtualMeetingModal();
+  }, [selectedListing, handleCloseVirtualMeetingModal]);
+
+  /**
+   * Handle request rental application
+   * Sends a reminder to the guest to submit their rental application
+   */
+  const handleRequestRentalApp = useCallback((proposal) => {
+    const guest = proposal.guest || proposal.Guest || proposal['Created By'] || {};
+    const guestName = guest.firstName || guest['First Name'] || 'Guest';
+    alert(`Rental application request sent to ${guestName}! They will be notified to complete their application.`);
+    // TODO: Call API to send rental app request notification to guest
   }, []);
 
   /**
@@ -587,6 +809,16 @@ export function useHostProposalsPageLogic() {
     proposals,
     selectedProposal,
     isModalOpen,
+    isEditingProposal,
+    showRejectOnOpen,
+
+    // Virtual meeting state
+    isVirtualMeetingModalOpen,
+    virtualMeetingView,
+    virtualMeetingProposal,
+
+    // Reference data
+    allHouseRules,
 
     // UI state
     isLoading,
@@ -603,7 +835,19 @@ export function useHostProposalsPageLogic() {
     handleSendMessage,
     handleRemindSplitLease,
     handleChooseVirtualMeeting,
+    handleRequestRentalApp,
     handleEditListing,
-    handleRetry
+    handleRetry,
+
+    // Virtual meeting handlers
+    handleCloseVirtualMeetingModal,
+    handleVirtualMeetingSuccess,
+
+    // Editing handlers
+    handleCloseEditing,
+    handleAcceptAsIs,
+    handleCounteroffer,
+    handleRejectFromEditing,
+    handleEditingAlert
   };
 }

@@ -105,10 +105,14 @@ export const Section4Pricing: React.FC<Section4Props> = ({
                   night3: prices.n3,
                   night4: prices.n4,
                   night5: prices.n5,
+                  night6: prices.n6,
+                  night7: prices.n7,
                   cumulativeNight2: prices.n1 + prices.n2,
                   cumulativeNight3: prices.n1 + prices.n2 + prices.n3,
                   cumulativeNight4: prices.n1 + prices.n2 + prices.n3 + prices.n4,
-                  cumulativeNight5: prices.n1 + prices.n2 + prices.n3 + prices.n4 + prices.n5
+                  cumulativeNight5: prices.n1 + prices.n2 + prices.n3 + prices.n4 + prices.n5,
+                  cumulativeNight6: prices.n1 + prices.n2 + prices.n3 + prices.n4 + prices.n5 + prices.n6,
+                  cumulativeNight7: prices.n1 + prices.n2 + prices.n3 + prices.n4 + prices.n5 + prices.n6 + prices.n7
                 }
               };
               onChange({ ...data, nightlyPricing });

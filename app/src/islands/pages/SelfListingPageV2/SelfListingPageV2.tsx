@@ -1656,7 +1656,9 @@ export function SelfListingPageV2() {
         )}
         {isAddressValid && formData.address.neighborhood && (
           <span className="address-info">
-            {formData.address.neighborhood}, {formData.address.city}
+            {formData.address.city
+              ? `${formData.address.neighborhood}, ${formData.address.city}`
+              : formData.address.neighborhood}
           </span>
         )}
       </div>
