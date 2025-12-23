@@ -1,0 +1,148 @@
+/* Schedule Section V2 - Clean Elevated Design */
+
+.schedule-section-v2 {
+    padding: 4rem 2rem;
+    background: var(--bg-light);
+}
+
+.schedule-section-v2-container {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.schedule-section-v2-header {
+    text-align: center;
+    margin-bottom: 3rem;
+}
+
+.schedule-section-v2-header h2 {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin-bottom: 0.75rem;
+    line-height: 1.15;
+}
+
+.schedule-section-v2-header p {
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    color: #6b7280;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.schedule-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+}
+
+.schedule-card-v2 {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.schedule-card-v2:hover {
+    border-color: #5B5FCF;
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(91, 95, 207, 0.12);
+}
+
+.schedule-card-v2:hover .schedule-card-v2-arrow {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.schedule-card-v2-lottie {
+    margin-bottom: 1rem;
+}
+
+.schedule-card-v2-lottie lottie-player {
+    background: transparent !important;
+}
+
+.schedule-card-v2-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.schedule-card-v2-content h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1d1d1f;
+    margin: 0;
+}
+
+.schedule-card-v2-subtitle {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.schedule-card-v2-arrow {
+    position: absolute;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    width: 24px;
+    height: 24px;
+    color: #5B5FCF;
+    opacity: 0;
+    transform: translateX(-8px);
+    transition: all 0.3s ease;
+}
+
+.schedule-card-v2-arrow svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .schedule-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .schedule-card-v2 {
+        flex-direction: row;
+        text-align: left;
+        padding: 1.25rem;
+        gap: 1rem;
+    }
+
+    .schedule-card-v2-lottie {
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .schedule-card-v2-lottie lottie-player {
+        width: 80px !important;
+        height: 60px !important;
+    }
+
+    .schedule-card-v2-content {
+        align-items: flex-start;
+        flex: 1;
+    }
+
+    .schedule-card-v2-arrow {
+        position: static;
+        opacity: 1;
+        transform: none;
+        flex-shrink: 0;
+    }
+
+    .schedule-section-v2-header h2 {
+        font-size: 1.75rem;
+    }
+}

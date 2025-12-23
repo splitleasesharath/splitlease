@@ -95,28 +95,31 @@ function ValuePropositions() {
 }
 
 // ============================================================================
-// INTERNAL COMPONENT: Schedule Cards (Inverted Delivery Card Style)
+// INTERNAL COMPONENT: Schedule Cards (Clean Elevated Design)
 // ============================================================================
 
 function InvertedScheduleCards() {
   const schedules = [
     {
       id: 'weeknight',
-      title: 'Weeknight Listings',
+      title: 'Weeknights',
+      subtitle: 'Mon – Fri',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800679546x885675666145660000/Days-of-the-week-lottie.json',
-      days: '2,3,4,5,6', // Monday-Friday
+      days: '2,3,4,5,6',
     },
     {
       id: 'weekend',
-      title: 'Weekend Listings',
+      title: 'Weekends',
+      subtitle: 'Fri – Sun',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800745354x526611430283845360/weekend-lottie%20%281%29.json',
-      days: '6,7,1,2', // Fri-Sun+Mon
+      days: '6,7,1,2',
     },
     {
       id: 'monthly',
-      title: 'Monthly Listings',
+      title: 'Full Month',
+      subtitle: 'Every day',
       lottieUrl: 'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/f1736800780466x583314971697148400/Weeks-of-the-month-lottie.json',
-      days: '1,2,3,4,5,6,7', // All days
+      days: '1,2,3,4,5,6,7',
     },
   ];
 
@@ -126,41 +129,13 @@ function InvertedScheduleCards() {
   };
 
   const handleMouseEnter = (e) => {
-    const card = e.currentTarget;
-    const player = card.querySelector('lottie-player');
-    const progressLine = card.querySelector('.lottie-progress-line');
-
-    if (player && progressLine) {
-      player.play();
-
-      // Animate progress line
-      const updateProgress = () => {
-        if (player.getLottie) {
-          const lottieInstance = player.getLottie();
-          if (lottieInstance) {
-            const progress = (lottieInstance.currentFrame / lottieInstance.totalFrames) * 100;
-            progressLine.style.width = `${progress}%`;
-          }
-        }
-        if (!player.paused) {
-          requestAnimationFrame(updateProgress);
-        }
-      };
-      updateProgress();
-    }
+    const player = e.currentTarget.querySelector('lottie-player');
+    if (player) player.play();
   };
 
   const handleMouseLeave = (e) => {
-    const card = e.currentTarget;
-    const player = card.querySelector('lottie-player');
-    const progressLine = card.querySelector('.lottie-progress-line');
-
-    if (player) {
-      player.stop();
-    }
-    if (progressLine) {
-      progressLine.style.width = '0%';
-    }
+    const player = e.currentTarget.querySelector('lottie-player');
+    if (player) player.stop();
   };
 
   // Load Lottie player script
@@ -178,46 +153,43 @@ function InvertedScheduleCards() {
   }, []);
 
   return (
-    <section className="inverted-schedule-section">
-      <div className="schedule-header">
-        <h2>Stop playing room roulette!</h2>
-        <h1>Choose Your Split Schedule</h1>
-      </div>
+    <section className="schedule-section-v2">
+      <div className="schedule-section-v2-container">
+        <div className="schedule-section-v2-header">
+          <h2>Choose your schedule</h2>
+          <p>Stop playing room roulette. Pick the days that work for you.</p>
+        </div>
 
-      <div className="inverted-schedule-grid">
-        {schedules.map((schedule) => (
-          <div
-            key={schedule.id}
-            className="lottie-card-v11"
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-          >
-            <div className="visual-section">
-              <div className="lottie-animation">
+        <div className="schedule-cards-grid">
+          {schedules.map((schedule) => (
+            <div
+              key={schedule.id}
+              className="schedule-card-v2"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onClick={() => handleExploreClick(schedule.days)}
+            >
+              <div className="schedule-card-v2-lottie">
                 <lottie-player
                   src={schedule.lottieUrl}
-                  background="white"
+                  background="transparent"
                   speed="1"
-                  style={{ width: '100%', maxWidth: '240px', height: '160px', transform: 'scale(1.15)' }}
+                  style={{ width: '180px', height: '120px' }}
                   loop
                 ></lottie-player>
               </div>
-              <div className="lottie-progress-bar">
-                <div className="lottie-progress-line"></div>
+              <div className="schedule-card-v2-content">
+                <h3>{schedule.title}</h3>
+                <span className="schedule-card-v2-subtitle">{schedule.subtitle}</span>
+              </div>
+              <div className="schedule-card-v2-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M5 12h14M12 5l7 7-7 7" />
+                </svg>
               </div>
             </div>
-            <div className="content-section">
-              <div className="card-footer">
-                <button
-                  className="btn-primary"
-                  onClick={() => handleExploreClick(schedule.days)}
-                >
-                  Explore listings
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </section>
   );
