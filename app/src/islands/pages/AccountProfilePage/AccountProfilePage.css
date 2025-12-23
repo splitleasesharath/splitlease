@@ -1662,11 +1662,10 @@
   font-weight: 500;
 }
 
-/* Host Referral Card - Mobile */
+/* Host Referral Card - Mobile: Hide on small screens */
 @media (max-width: 480px) {
   .host-referral-card {
-    max-width: 360px;
-    padding: 24px 28px;
+    display: none;
   }
 
   .host-referral-card__amount {
