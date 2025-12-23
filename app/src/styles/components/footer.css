@@ -143,7 +143,28 @@
     margin-top: auto;
 }
 
-.share-btn,
+.share-btn {
+    width: 100%;
+    background: var(--sl-primary, #6366F1);
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.share-btn:hover {
+    background: var(--sl-primary-dark, #4F46E5);
+    transform: translateY(-1px);
+}
+
 .import-btn {
     width: 100%;
     background: #5B21B6;
@@ -162,7 +183,6 @@
     margin-bottom: 1rem;
 }
 
-.share-btn:hover,
 .import-btn:hover {
     background: #4C1D95;
     transform: translateY(-2px);
