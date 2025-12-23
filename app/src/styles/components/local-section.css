@@ -10,6 +10,10 @@
     max-width: 1100px;
     width: 100%;
     margin: 0 auto;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    padding: 3rem;
 }
 
 .local-content-wrapper {
@@ -160,6 +164,10 @@
 @media (max-width: 640px) {
     .local-section {
         padding: 3rem 1.5rem;
+    }
+
+    .local-container {
+        padding: 2rem 1.5rem;
     }
 
     .local-left-section h1 {
