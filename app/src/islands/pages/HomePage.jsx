@@ -269,7 +269,9 @@ function ListingsPreview({ selectedDays = [] }) {
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1586448035769x259434561490871740/255489_1_6782895-650-570.jpg',
       title: 'One Platt | Studio',
       location: 'Financial District, Manhattan',
-      description: 'Studio - 1 bed - 1 bathroom - Free Storage',
+      bedrooms: 'Studio',
+      bathrooms: 1,
+      availableDays: [1, 2, 3, 4, 5], // Mon-Fri (0-indexed)
     },
     {
       id: PROPERTY_IDS.PIED_A_TERRE,
@@ -277,7 +279,9 @@ function ListingsPreview({ selectedDays = [] }) {
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102430270x309647360933492400/pied4.webp',
       title: 'Perfect 2 BR Apartment',
       location: 'Upper East Side, Manhattan',
-      description: '2 bedrooms - 2 bed(s) - 1 bathroom - Free Storage',
+      bedrooms: 2,
+      bathrooms: 1,
+      availableDays: [0, 5, 6], // Weekends (Fri-Sun)
     },
     {
       id: PROPERTY_IDS.FURNISHED_1BR,
@@ -285,33 +289,33 @@ function ListingsPreview({ selectedDays = [] }) {
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1746102537155x544568166750526000/harlem4.webp',
       title: 'Fully furnished 1bdr apartment',
       location: 'Harlem, Manhattan',
-      description: '1 bedroom - 1 bed - 1 bathroom - Free Storage',
+      bedrooms: 1,
+      bathrooms: 1,
+      availableDays: [1, 2, 3, 4], // Mon-Thu
     },
     {
       id: PROPERTY_IDS.FURNISHED_STUDIO,
       image:
         'https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=384,h=313,f=auto,dpr=1.25,fit=contain,q=75/f1701198008563x119014198947512200/julia4.jpg',
       title: 'Furnished Studio Apt for Rent',
-      location: 'Hell\'s Kitchen, Manhattan',
-      description: 'Studio - 1 bed - 1 bathroom - Free Storage',
+      location: "Hell's Kitchen, Manhattan",
+      bedrooms: 'Studio',
+      bathrooms: 1,
+      availableDays: [0, 1, 2, 3, 4, 5, 6], // Full week
     },
   ];
 
   const handleListingClick = (propertyId) => {
-    // Redirect to local view-split-lease page with property ID in path (clean URL)
     const propertyUrl = `/view-split-lease/${propertyId}`;
     window.location.href = propertyUrl;
   };
 
   const handleShowMore = () => {
-    // Navigate to search page with current day selection
     if (selectedDays.length > 0) {
-      // Convert 0-based indices to 1-based for URL (0→1, 1→2, etc.)
       const oneBased = selectedDays.map(idx => idx + 1);
       const daysParam = oneBased.join(',');
       window.location.href = `/search.html?days-selected=${daysParam}`;
     } else {
-      // No selection, navigate without parameter
       window.location.href = '/search.html';
     }
   };
@@ -324,82 +328,56 @@ function ListingsPreview({ selectedDays = [] }) {
           {listings.map((listing, index) => (
             <div
               key={index}
-              className="listing-card"
+              className="space-card"
               data-property-id={listing.id}
               onClick={() => handleListingClick(listing.id)}
             >
-              <div
-                className="listing-image"
-                style={{
-                  backgroundImage: `url('${listing.image}')`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                }}
-              ></div>
-              <div className="listing-details">
-                <div className="listing-location">
-                  <svg className="location-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
+              <div style={{ position: 'relative' }}>
+                <img
+                  src={listing.image}
+                  alt={listing.title}
+                  className="space-image"
+                  onError={(e) => {
+                    e.target.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop';
+                  }}
+                />
+                <div className="space-badge">Verified</div>
+              </div>
+              <div className="space-info">
+                <h3 className="space-title">{listing.title}</h3>
+                <div className="space-location">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="#6B7280" strokeWidth="2"/>
+                    <circle cx="12" cy="9" r="2.5" stroke="#6B7280" strokeWidth="2"/>
                   </svg>
-                  <span>{listing.location}</span>
+                  {listing.location}
                 </div>
-                <h3>{listing.title}</h3>
-                <div className="listing-meta">
-                  {listing.description.split(' - ').map((item, idx) => {
-                    const trimmed = item.trim();
-                    let icon = null;
-
-                    // Determine icon based on content
-                    if (trimmed.toLowerCase().includes('bedroom') || trimmed.toLowerCase() === 'studio') {
-                      icon = (
-                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                          <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                        </svg>
-                      );
-                    } else if (trimmed.toLowerCase().includes('bed')) {
-                      icon = (
-                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M2 4v16"></path>
-                          <path d="M2 8h18a2 2 0 0 1 2 2v10"></path>
-                          <path d="M2 17h20"></path>
-                          <path d="M6 8V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"></path>
-                        </svg>
-                      );
-                    } else if (trimmed.toLowerCase().includes('bathroom')) {
-                      icon = (
-                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M9 6 6.5 3.5a1.5 1.5 0 0 0-1-.5C4.683 3 4 3.683 4 4.5V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"></path>
-                          <line x1="10" y1="5" x2="8" y2="7"></line>
-                          <line x1="2" y1="12" x2="22" y2="12"></line>
-                          <line x1="7" y1="19" x2="7" y2="22"></line>
-                          <line x1="17" y1="19" x2="17" y2="22"></line>
-                        </svg>
-                      );
-                    } else if (trimmed.toLowerCase().includes('storage')) {
-                      icon = (
-                        <svg className="meta-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                          <line x1="12" y1="22.08" x2="12" y2="12"></line>
-                        </svg>
-                      );
-                    }
-
-                    return icon ? (
-                      <span key={idx} className="meta-item">
-                        {icon}
-                        <span>{trimmed}</span>
-                      </span>
-                    ) : null;
-                  })}
+                <div className="space-features">
+                  <span className="feature-tag">
+                    {listing.bedrooms === 'Studio' ? 'Studio' : `${listing.bedrooms} bed${listing.bedrooms !== 1 ? 's' : ''}`}
+                  </span>
+                  <span className="feature-tag">{listing.bathrooms} bath{listing.bathrooms !== 1 ? 's' : ''}</span>
+                  <span className="feature-tag">Storage</span>
+                </div>
+                <div className="space-schedule">
+                  <span className="available-days">
+                    {listing.availableDays.length > 0
+                      ? `${listing.availableDays.length} nights available`
+                      : 'Schedule flexible'}
+                  </span>
+                  <div className="day-indicators">
+                    {[0, 1, 2, 3, 4, 5, 6].map((dayIdx) => (
+                      <span
+                        key={dayIdx}
+                        className={`day-dot ${listing.availableDays.includes(dayIdx) ? 'available' : ''}`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           ))}
         </div>
-        {/* Scroll indicators for mobile */}
         <div className="scroll-indicators">
           {listings.map((_, index) => (
             <span key={index} className={`indicator ${index === 0 ? 'active' : ''}`} data-slide={index}></span>
