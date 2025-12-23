@@ -197,38 +197,34 @@ function LocalSectionAlt({ onExploreRentals }) {
   const features = [
     {
       icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
         </svg>
       ),
       title: 'Move-in Ready',
       description: 'Fully-furnished spaces ensure move-in is a breeze.',
-      variant: 'dark',
     },
     {
       icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <path d="M16 10a4 4 0 0 1-8 0" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+          <line x1="12" y1="22.08" x2="12" y2="12" />
         </svg>
       ),
       title: 'Everything You Need',
       description: 'Store items like toiletries, a second monitor, work attire, and more.',
-      variant: 'light',
     },
     {
       icon: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <polyline points="23 4 23 10 17 10" />
-          <polyline points="1 20 1 14 7 14" />
-          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <circle cx="12" cy="12" r="10" />
+          <path d="M12 6v6l4 2" />
         </svg>
       ),
       title: 'Total Flexibility',
       description: 'Switch neighborhoods seasonally, discover amazing flexibility.',
-      variant: 'purple',
     },
   ];
 
@@ -242,7 +238,7 @@ function LocalSectionAlt({ onExploreRentals }) {
 
         <div className="local-alt-grid">
           {features.map((feature, index) => (
-            <div key={index} className={`local-alt-card ${feature.variant}`}>
+            <div key={index} className="local-alt-card">
               <div className="local-alt-icon">
                 {feature.icon}
               </div>
