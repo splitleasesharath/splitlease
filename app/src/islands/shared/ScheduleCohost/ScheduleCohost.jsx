@@ -44,18 +44,27 @@ const SUBJECT_OPTIONS = [
 const DAYS_OF_WEEK = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // Status order mapping for progress bar (from design spec)
+// Keys are lowercase for case-insensitive matching
 const STATUS_ORDER = {
-  'Co-Host Requested': 1,
-  'Requested': 1,
+  'co-host requested': 1,
+  'requested': 1,
   'pending': 1, // Database stores lowercase "pending" for new requests
-  'Co-Host Selected': 2,
-  'Google Meet Scheduled': 3,
-  'Virtual Meeting Finished': 4,
-  'Google Meet Finished': 4,
-  'Finished': 5,
-  'Request closed': 5,
-  'Closed': 5,
+  'co-host selected': 2,
+  'google meet scheduled': 3,
+  'virtual meeting finished': 4,
+  'google meet finished': 4,
+  'finished': 5,
+  'request closed': 5,
+  'closed': 5,
 };
+
+/**
+ * Get the order number for a status (case-insensitive)
+ */
+function getStatusOrder(status) {
+  if (!status) return 1;
+  return STATUS_ORDER[status.toLowerCase()] || 1;
+}
 
 // Progress bar stage definitions
 const COHOST_STAGES = [
@@ -126,7 +135,7 @@ function Toast({ toast, onClose }) {
  * Progress bar component showing 5-stage co-host request tracking
  */
 function CohostProgressBar({ currentStatus }) {
-  const currentStageOrder = STATUS_ORDER[currentStatus] || 1;
+  const currentStageOrder = getStatusOrder(currentStatus);
 
   const topLabels = COHOST_STAGES.filter((s) => s.labelPosition === 'above');
   const bottomLabels = COHOST_STAGES.filter((s) => s.labelPosition === 'below');
@@ -867,6 +876,36 @@ export default function ScheduleCohost({
               || 'Co-Host Requested'
             } />
 
+            {/* Assigned Co-Host Info - shown once a co-host is selected */}
+            {(coHostRequest['Co-Host selected (OS)'] || coHostRequest.cohostName) && (
+              <div className="schedule-cohost-assigned-info">
+                <div className="schedule-cohost-assigned-cohost">
+                  <span className="schedule-cohost-assigned-label">Your Co-Host:</span>
+                  <span className="schedule-cohost-assigned-value">
+                    {coHostRequest['Co-Host selected (OS)'] || coHostRequest.cohostName}
+                  </span>
+                </div>
+                {(coHostRequest['Meeting Date Time'] || coHostRequest.meetingDateTime) && (
+                  <div className="schedule-cohost-assigned-meeting">
+                    <span className="schedule-cohost-assigned-label">Meeting Time:</span>
+                    <span className="schedule-cohost-assigned-value">
+                      {coHostRequest['Meeting Date Time'] || coHostRequest.meetingDateTime}
+                    </span>
+                  </div>
+                )}
+                {(coHostRequest['Google Meet Link'] || coHostRequest.googleMeetLink) && (
+                  <a
+                    href={coHostRequest['Google Meet Link'] || coHostRequest.googleMeetLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="schedule-cohost-meet-link"
+                  >
+                    Join Google Meet
+                  </a>
+                )}
+              </div>
+            )}
+
             {/* Meeting Times Summary */}
             <p className="schedule-cohost-success-text">Your suggested meeting times:</p>
             <div className="schedule-cohost-selected-times">
@@ -907,7 +946,7 @@ export default function ScheduleCohost({
             </p>
 
             {/* Rating Section - only visible when meeting is completed (status >= stage 4) */}
-            {(STATUS_ORDER[coHostRequest.status] >= 4) && (
+            {(getStatusOrder(coHostRequest.status || coHostRequest['Status - Co-Host Request']) >= 4) && (
               <div className="schedule-cohost-details-section">
                 <h4 className="schedule-cohost-details-title">How was your meeting?</h4>
                 <StarRating value={rating} onChange={setRating} disabled={isLoading} />
