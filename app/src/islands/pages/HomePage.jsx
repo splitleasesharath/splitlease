@@ -603,8 +603,7 @@ function FeaturedSpacesSection() {
 
       <div className="featured-spaces-container">
         <div className="spaces-header">
-          <div className="spaces-eyebrow">Browse Spaces</div>
-          <h2 className="spaces-title">Featured NYC Spaces</h2>
+          <h2 className="spaces-title">Check Out Some Listings</h2>
         </div>
 
         <div className="spaces-grid">
