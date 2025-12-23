@@ -39,6 +39,17 @@ export const routes = [
     devOnly: true
   },
 
+  // ===== INDEX DESIGN (design exploration, development only) =====
+  {
+    path: '/index-design',
+    file: 'index-design.html',
+    aliases: ['/index-design.html'],
+    protected: false,
+    cloudflareInternal: false,
+    hasDynamicSegment: false,
+    devOnly: true
+  },
+
   // ===== SEARCH PAGES =====
   {
     path: '/search',
