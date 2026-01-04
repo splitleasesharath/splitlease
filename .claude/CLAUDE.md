@@ -322,4 +322,4 @@ These subagents may ONLY be invoked **before** starting the pipeline or **after*
 
 ---
 
-**VERSION**: 11.0 | **UPDATED**: 2025-12-17
+**VERSION**: 11.1 | **UPDATED**: 2026-01-04
