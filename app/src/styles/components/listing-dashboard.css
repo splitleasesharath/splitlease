@@ -17,6 +17,7 @@
   min-height: 100vh;
   background-color: var(--ld-background);
   padding: 24px 16px;
+  padding-top: 100px; /* Account for fixed header */
 }
 
 .listing-dashboard__container {
@@ -95,12 +96,23 @@
   color: var(--ld-accent-purple);
 }
 
+.listing-dashboard-nav__tabs-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 24px 16px;
+  gap: 16px;
+}
+
 .listing-dashboard-nav__tabs {
   display: flex;
   gap: 16px;
-  padding: 24px 24px 16px;
   overflow-x: auto;
+  overflow-y: visible;
   -webkit-overflow-scrolling: touch;
+  flex: 1;
+  padding-top: 8px; /* Space for badge overflow */
+  margin-top: -8px; /* Compensate for padding */
 }
 
 .listing-dashboard-nav__tab {
@@ -145,6 +157,32 @@
   font-size: 12px;
   font-weight: 600;
   border-radius: 50%;
+}
+
+.listing-dashboard-nav__invite-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, var(--ld-accent-purple, #5C20B6), #8B5CF6);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.listing-dashboard-nav__invite-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(92, 32, 182, 0.3);
+}
+
+.listing-dashboard-nav__invite-btn svg {
+  flex-shrink: 0;
 }
 
 /* Alert Banner */
@@ -794,6 +832,43 @@
 
 .listing-dashboard-section__edit:hover {
   color: var(--ld-accent-purple);
+}
+
+/* Section Footer with bottom edit button */
+.listing-dashboard-section__footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;
+  margin-top: 16px;
+  border-top: 1px solid var(--ld-border);
+}
+
+.listing-dashboard-section__edit-bottom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background-color: var(--ld-accent-purple);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.listing-dashboard-section__edit-bottom:hover {
+  background-color: #7c3aed;
+  transform: translateY(-1px);
+}
+
+.listing-dashboard-section__edit-bottom:active {
+  transform: translateY(0);
+}
+
+.listing-dashboard-section__edit-bottom svg {
+  flex-shrink: 0;
 }
 
 .listing-dashboard-section__add-btn {
@@ -1891,13 +1966,30 @@
     border-radius: 16px;
   }
 
-  .listing-dashboard-nav__tabs {
+  .listing-dashboard-nav__tabs-row {
     padding: 16px;
+    flex-wrap: wrap;
+  }
+
+  .listing-dashboard-nav__tabs {
+    flex: 1 1 100%;
+    order: 2;
+    margin-top: 12px;
   }
 
   .listing-dashboard-nav__tab {
     padding: 10px 12px;
     font-size: 13px;
+  }
+
+  .listing-dashboard-nav__invite-btn {
+    order: 1;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+
+  .listing-dashboard-nav__invite-btn span {
+    display: none;
   }
 
   .listing-dashboard-action-grid {
@@ -2070,6 +2162,43 @@
 }
 
 .listing-dashboard-pricing__monthly-rate-period {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ld-text-secondary);
+}
+
+/* Weekly Rate Display (similar to monthly) */
+.listing-dashboard-pricing__weekly-rate {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: center;
+  padding: 16px;
+  background: linear-gradient(135deg, #f3e8ff 0%, #fdf4ff 100%);
+  border-radius: 12px;
+}
+
+.listing-dashboard-pricing__weekly-rate-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ld-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.listing-dashboard-pricing__weekly-rate-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--ld-accent-purple);
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+}
+
+.listing-dashboard-pricing__weekly-rate-period {
   font-size: 16px;
   font-weight: 500;
   color: var(--ld-text-secondary);
@@ -2257,6 +2386,41 @@
 
 .pricing-edit-save--disabled,
 .pricing-edit-save:disabled {
+  background-color: #9ca3af;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Bottom Save Button Footer */
+.pricing-edit-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: 32px;
+  margin-top: 24px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.pricing-edit-save-bottom {
+  padding: 14px 48px;
+  background-color: var(--ld-success);
+  color: #FCFAFF;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 200px;
+  text-align: center;
+}
+
+.pricing-edit-save-bottom:hover:not(:disabled) {
+  background-color: #1f0b38;
+  transform: translateY(-1px);
+}
+
+.pricing-edit-save-bottom--disabled,
+.pricing-edit-save-bottom:disabled {
   background-color: #9ca3af;
   cursor: not-allowed;
   transform: none;

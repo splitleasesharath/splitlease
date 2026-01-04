@@ -1,3 +1,8 @@
+/**
+ * Safety Features Service
+ * Fetches common safety features from Supabase where pre-set is true
+ */
+
 import { supabase } from '../../../../lib/supabase.js';
 
 export interface SafetyFeature {
@@ -13,32 +18,31 @@ export interface SafetyFeature {
  */
 export async function getCommonSafetyFeatures(): Promise<string[]> {
   try {
-    console.log('Fetching common safety features...');
+    console.log('[safetyService] Fetching common safety features...');
 
     const { data, error } = await supabase
-      .from('zfut_safetyfeatures')
+      .schema('reference_table')
+      .from('zat_features_safetyfeature')
       .select('Name, "pre-set?"')
       .eq('"pre-set?"', true)
       .order('Name', { ascending: true });
 
-    console.log('Supabase safety features response:', { data, error });
-
     if (error) {
-      console.error('Error fetching common safety features:', error);
+      console.error('[safetyService] Error fetching common safety features:', error);
       return [];
     }
 
     if (!data || data.length === 0) {
-      console.warn('No common safety features found');
+      console.warn('[safetyService] No common safety features found');
       return [];
     }
 
     // Extract just the names
-    const names = data.map((feature) => feature.Name);
-    console.log('Fetched common safety features:', names);
+    const names = data.map((feature: SafetyFeature) => feature.Name);
+    console.log('[safetyService] Fetched common safety features:', names);
     return names;
   } catch (err) {
-    console.error('Unexpected error in getCommonSafetyFeatures:', err);
+    console.error('[safetyService] Unexpected error:', err);
     return [];
   }
 }

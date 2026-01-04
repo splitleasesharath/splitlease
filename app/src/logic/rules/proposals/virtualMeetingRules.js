@@ -16,14 +16,23 @@
 
 /**
  * Virtual Meeting State Enum
+ *
+ * IMPORTANT: State names are PERSPECTIVE-NEUTRAL
+ * - REQUESTED_BY_ME: Current user requested, waiting for other party's response
+ * - REQUESTED_BY_OTHER: Other party requested, current user should respond
+ *
+ * Legacy aliases are provided for backward compatibility with existing code.
  */
 export const VM_STATES = {
   NO_MEETING: 'no_meeting',
-  REQUESTED_BY_GUEST: 'requested_by_guest',
-  REQUESTED_BY_HOST: 'requested_by_host',
+  REQUESTED_BY_ME: 'requested_by_me',           // Current user requested
+  REQUESTED_BY_OTHER: 'requested_by_other',     // Other party requested
   BOOKED_AWAITING_CONFIRMATION: 'booked_awaiting_confirmation',
   CONFIRMED: 'confirmed',
-  DECLINED: 'declined'
+  DECLINED: 'declined',
+  // Legacy aliases (for backward compatibility - will be removed in future)
+  REQUESTED_BY_GUEST: 'requested_by_me',        // Alias → REQUESTED_BY_ME
+  REQUESTED_BY_HOST: 'requested_by_other'       // Alias → REQUESTED_BY_OTHER
 };
 
 /**
@@ -56,11 +65,11 @@ export function getVirtualMeetingState(virtualMeeting, currentUserId) {
 
   // State 2: VM requested but no booked date yet
   if (virtualMeeting.requestedBy === currentUserId) {
-    return VM_STATES.REQUESTED_BY_GUEST;
+    return VM_STATES.REQUESTED_BY_ME;
   }
 
-  // Requested by host, guest needs to respond
-  return VM_STATES.REQUESTED_BY_HOST;
+  // Other party requested, current user should respond
+  return VM_STATES.REQUESTED_BY_OTHER;
 }
 
 /**

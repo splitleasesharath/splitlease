@@ -16,6 +16,7 @@ import StorageItemsCard from './cards/StorageItemsCard.jsx';
 import VideoIntroCard from './cards/VideoIntroCard.jsx';
 import AccountSettingsCard from './cards/AccountSettingsCard.jsx';
 import ListingsCard from './cards/ListingsCard.jsx';
+import RentalApplicationCard from './RentalApplicationCard.jsx';
 
 export default function EditorView({
   formData,
@@ -40,7 +41,11 @@ export default function EditorView({
   hostListings = [],
   loadingListings = false,
   onListingClick,
-  onCreateListing
+  onCreateListing,
+  // Rental application props (guest-only)
+  rentalApplicationStatus = 'not_started',
+  rentalApplicationProgress = 0,
+  onOpenRentalWizard
 }) {
   return (
     <>
@@ -122,6 +127,15 @@ export default function EditorView({
         videoUrl={profileData?.['Video Intro URL'] || null}
         onUpload={() => console.log('Video upload clicked')}
       />
+
+      {/* Guest-only: Rental Application */}
+      {!isHostUser && (
+        <RentalApplicationCard
+          applicationStatus={rentalApplicationStatus}
+          progress={rentalApplicationProgress}
+          onOpenWizard={onOpenRentalWizard}
+        />
+      )}
 
       {/* Account Settings - Always shown */}
       <AccountSettingsCard

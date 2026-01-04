@@ -17,6 +17,7 @@ import Header from '../../shared/Header.jsx';
 import Footer from '../../shared/Footer.jsx';
 import CreateDuplicateListingModal from '../../shared/CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import ImportListingModal from '../../shared/ImportListingModal/ImportListingModal.jsx';
+import ScheduleCohost from '../../shared/ScheduleCohost/ScheduleCohost.jsx';
 
 // Local components
 import { ListingCard, ClaimListingCard, HouseManualCard, VirtualMeetingCard } from './components/HostOverviewCards.jsx';
@@ -58,6 +59,7 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
     showCreateListingModal,
     showImportListingModal,
     importListingLoading,
+    showScheduleCohost,
 
     // Action handlers
     handleCreateNewListing,
@@ -65,6 +67,9 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
     handleImportListing,
     handleCloseImportListingModal,
     handleImportListingSubmit,
+    handleScheduleCohost,
+    handleCloseScheduleCohost,
+    handleCohostRequestSubmitted,
     handleCreateNewManual,
     handleEditListing,
     handlePreviewListing,
@@ -139,10 +144,16 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
 
             {showHelpBanner && (
               <div className="help-banner">
-                <span className="help-banner__icon">&#128161;</span>
-                <p className="help-banner__text">
-                  Need help setting up? Ask a Specialist Co-host!
-                </p>
+                <button
+                  className="help-banner__content"
+                  onClick={handleScheduleCohost}
+                  type="button"
+                >
+                  <span className="help-banner__icon">&#128161;</span>
+                  <p className="help-banner__text">
+                    Need help setting up? Ask a Specialist Co-host!
+                  </p>
+                </button>
                 <button
                   className="help-banner__close"
                   onClick={() => setShowHelpBanner(false)}
@@ -283,6 +294,17 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
         currentUserEmail={user?.email || ''}
         isLoading={importListingLoading}
       />
+
+      {/* Schedule Cohost Modal */}
+      {showScheduleCohost && (
+        <ScheduleCohost
+          userId={user?.userId || user?.id}
+          userEmail={user?.email}
+          userName={`${user?.firstName || ''} ${user?.lastName || ''}`.trim()}
+          onRequestSubmitted={handleCohostRequestSubmitted}
+          onClose={handleCloseScheduleCohost}
+        />
+      )}
     </div>
   );
 }

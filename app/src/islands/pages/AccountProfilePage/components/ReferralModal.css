@@ -1,0 +1,314 @@
+/* ReferralModal Styles */
+
+.referral-modal-overlay {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 16px;
+}
+
+.referral-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 520px;
+  width: 100%;
+  padding: 24px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  animation: modalFadeIn 0.2s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.referral-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.referral-modal-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.referral-modal-close {
+  background: none;
+  border: none;
+  padding: 4px;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.referral-modal-close:hover {
+  color: #1a1a1a;
+}
+
+.referral-modal-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 12px 0 20px;
+}
+
+.referral-share-section label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.referral-share-link {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.referral-share-link input {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #1a1a1a;
+  background: #f9fafb;
+}
+
+.referral-share-link input:focus {
+  outline: none;
+  border-color: #6366F1;
+}
+
+.referral-share-link button {
+  background: #6366F1;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.referral-share-link button:hover {
+  background: #4F46E5;
+}
+
+.referral-share-actions {
+  display: flex;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.referral-share-actions:first-of-type {
+  margin-top: 16px;
+}
+
+.referral-secondary-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.referral-secondary-btn:hover {
+  border-color: #6366F1;
+  background: #EEF2FF;
+}
+
+.referral-secondary-btn svg {
+  color: #6366F1;
+}
+
+.referral-rewards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.referral-reward-item strong {
+  display: block;
+  font-size: 20px;
+  font-weight: 700;
+  color: #6366F1;
+}
+
+.referral-reward-item span {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+  display: block;
+}
+
+.referral-modal-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  padding-top: 16px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.referral-modal-footer a {
+  color: #6366F1;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.referral-modal-footer a:hover {
+  opacity: 0.8;
+}
+
+/* Host Referral Gift Card */
+.host-referral-card {
+  width: 100%;
+  max-width: 414px;
+  aspect-ratio: 1.75 / 1;
+  background: #ffffff;
+  border-radius: 18px;
+  position: relative;
+  padding: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin: 16px auto;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.host-referral-card__corner-accent {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 120px;
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  border-radius: 0 18px 0 100%;
+  opacity: 0.1;
+}
+
+.host-referral-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.host-referral-card__brand {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #6366F1;
+}
+
+.host-referral-card__amount {
+  font-size: 32px;
+  font-weight: 800;
+  color: #6366F1;
+  line-height: 1;
+}
+
+.host-referral-card__content {
+  margin-top: 12px;
+}
+
+.host-referral-card__sent-by {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.host-referral-card__name {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1a;
+  margin-top: 2px;
+}
+
+.host-referral-card__message {
+  font-size: 13px;
+  color: #6b7280;
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
+.host-referral-card__footer {
+  position: absolute;
+  bottom: 16px;
+  left: 20px;
+  right: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.host-referral-card__valid {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.host-referral-card__badge {
+  background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.host-referral-card__badge-text {
+  font-size: 10px;
+  font-weight: 600;
+  color: #ffffff;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 480px) {
+  .referral-modal {
+    padding: 20px;
+  }
+
+  .referral-rewards {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .referral-modal-footer {
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+  }
+
+  /* Hide gift card on mobile */
+  .host-referral-card {
+    display: none;
+  }
+}

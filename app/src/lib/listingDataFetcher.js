@@ -90,6 +90,7 @@ export async function fetchListingComplete(listingId) {
         "neighborhood (manual input by user)",
         "Time to Station (commute)",
         "Map HTML Web",
+        "💰Nightly Host Rate for 1 night",
         "💰Nightly Host Rate for 2 nights",
         "💰Nightly Host Rate for 3 nights",
         "💰Nightly Host Rate for 4 nights",
@@ -423,6 +424,7 @@ export function getListingIdFromUrl() {
  */
 export function getNightlyPrice(listing, nightsSelected) {
   const priceMap = {
+    1: listing['💰Nightly Host Rate for 1 night'],
     2: listing['💰Nightly Host Rate for 2 nights'],
     3: listing['💰Nightly Host Rate for 3 nights'],
     4: listing['💰Nightly Host Rate for 4 nights'],

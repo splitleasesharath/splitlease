@@ -22,6 +22,8 @@ import { useHostProposalsPageLogic } from './useHostProposalsPageLogic.js';
 import ListingSelector from './ListingSelector.jsx';
 import ProposalGrid from './ProposalGrid.jsx';
 import ProposalDetailsModal from './ProposalDetailsModal.jsx';
+import { HostEditingProposal } from '../../shared/HostEditingProposal/index.js';
+import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 
 // ============================================================================
 // LOADING STATE COMPONENT
@@ -69,6 +71,15 @@ export default function HostProposalsPage() {
     proposals,
     selectedProposal,
     isModalOpen,
+    isEditingProposal,
+
+    // Virtual meeting state
+    isVirtualMeetingModalOpen,
+    virtualMeetingView,
+    virtualMeetingProposal,
+
+    // Reference data
+    allHouseRules,
 
     // UI state
     isLoading,
@@ -85,8 +96,23 @@ export default function HostProposalsPage() {
     handleSendMessage,
     handleRemindSplitLease,
     handleChooseVirtualMeeting,
+    handleRequestRentalApp,
     handleEditListing,
-    handleRetry
+    handleRetry,
+
+    // Virtual meeting handlers
+    handleCloseVirtualMeetingModal,
+    handleVirtualMeetingSuccess,
+
+    // Editing state
+    showRejectOnOpen,
+
+    // Editing handlers
+    handleCloseEditing,
+    handleAcceptAsIs,
+    handleCounteroffer,
+    handleRejectFromEditing,
+    handleEditingAlert
   } = useHostProposalsPageLogic();
 
   // Don't render content if redirecting (auth failed)
@@ -160,7 +186,38 @@ export default function HostProposalsPage() {
         onSendMessage={handleSendMessage}
         onRemindSplitLease={handleRemindSplitLease}
         onChooseVirtualMeeting={handleChooseVirtualMeeting}
+        onRequestRentalApp={handleRequestRentalApp}
+        currentUserId={user?._id || user?.userId}
       />
+
+      {/* Virtual Meeting Manager Modal */}
+      {isVirtualMeetingModalOpen && virtualMeetingProposal && (
+        <VirtualMeetingManager
+          proposal={virtualMeetingProposal}
+          initialView={virtualMeetingView}
+          currentUser={user}
+          onClose={handleCloseVirtualMeetingModal}
+          onSuccess={handleVirtualMeetingSuccess}
+        />
+      )}
+
+      {/* Host Editing Proposal Modal */}
+      {isEditingProposal && selectedProposal && (
+        <div className="editing-proposal-overlay">
+          <div className="editing-proposal-container">
+            <HostEditingProposal
+              proposal={selectedProposal}
+              availableHouseRules={allHouseRules}
+              initialShowReject={showRejectOnOpen}
+              onAcceptAsIs={() => handleAcceptAsIs(selectedProposal)}
+              onCounteroffer={handleCounteroffer}
+              onReject={(reason) => handleRejectFromEditing(selectedProposal, reason)}
+              onCancel={handleCloseEditing}
+              onAlert={handleEditingAlert}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 }

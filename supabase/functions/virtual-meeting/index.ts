@@ -88,6 +88,7 @@ Deno.serve(async (req: Request) => {
     validateAction(body.action, [...ALLOWED_ACTIONS]);
 
     console.log(`[virtual-meeting] Action: ${body.action}`);
+    console.log(`[virtual-meeting] Payload:`, JSON.stringify(body.payload, null, 2));
 
     // Create error collector after we know the action
     collector = createErrorCollector('virtual-meeting', body.action);
@@ -193,7 +194,9 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     console.error(`[virtual-meeting] ========== ERROR ==========`);
-    console.error(`[virtual-meeting]`, error);
+    console.error(`[virtual-meeting] Error name:`, (error as Error).name);
+    console.error(`[virtual-meeting] Error message:`, (error as Error).message);
+    console.error(`[virtual-meeting] Full error:`, error);
 
     // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
     if (collector) {

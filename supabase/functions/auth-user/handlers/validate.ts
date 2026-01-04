@@ -66,7 +66,7 @@ export async function handleValidate(
     let userError = null;
 
     // Note: "Account - Host / Landlord" column was removed - user._id is now used directly as host reference
-    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "About Me / Bio", "need for Space", "special needs", "Proposals List"';
+    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "About Me / Bio", "need for Space", "special needs", "Proposals List", "Rental Application"';
 
     // First attempt: query by _id (Bubble-style ID)
     console.log(`[validate] Attempting to find user by _id: ${user_id}`);
@@ -133,7 +133,29 @@ export async function handleValidate(
       throw new SupabaseSyncError(`User not found with _id or email: ${user_id}`);
     }
 
-    // Step 2: Format user data
+    // Step 2: Check rental application submission status
+    let hasSubmittedRentalApp = false;
+    const rentalAppId = userData['Rental Application'];
+
+    if (rentalAppId) {
+      console.log(`[validate] User has rental application: ${rentalAppId}, checking submission status...`);
+      const { data: rentalAppData, error: rentalAppError } = await supabase
+        .from('rentalapplication')
+        .select('submitted')
+        .eq('_id', rentalAppId)
+        .maybeSingle();
+
+      if (rentalAppError) {
+        console.warn(`[validate] Failed to fetch rental application: ${rentalAppError.message}`);
+      } else if (rentalAppData) {
+        hasSubmittedRentalApp = rentalAppData.submitted === true;
+        console.log(`[validate] Rental application submitted: ${hasSubmittedRentalApp}`);
+      }
+    } else {
+      console.log(`[validate] User has no rental application`);
+    }
+
+    // Step 3: Format user data
     console.log(`[validate] User found: ${userData['Name - First']}`);
 
     // Handle protocol-relative URLs for profile photos
@@ -164,13 +186,16 @@ export async function handleValidate(
       needForSpace: userData['need for Space'] || null,
       specialNeeds: userData['special needs'] || null,
       // Proposal count for showing/hiding Create Proposal CTA on search page
-      proposalCount: proposalCount
+      proposalCount: proposalCount,
+      // Rental application submission status for hiding CTA in success modal
+      hasSubmittedRentalApp: hasSubmittedRentalApp
     };
 
     console.log(`[validate] ✅ Validation complete`);
     console.log(`[validate]    User: ${userDataObject.firstName}`);
     console.log(`[validate]    Type: ${userDataObject.userType}`);
     console.log(`[validate]    Proposals: ${userDataObject.proposalCount}`);
+    console.log(`[validate]    Rental App Submitted: ${userDataObject.hasSubmittedRentalApp}`);
     console.log(`[validate] ========== VALIDATION COMPLETE ==========`);
 
     return userDataObject;

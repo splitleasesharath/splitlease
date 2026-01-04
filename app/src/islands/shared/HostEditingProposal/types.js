@@ -38,12 +38,15 @@ export const RESERVATION_SPANS = [
   { value: '6-weeks', label: '6 weeks', weeks: 6, months: 1.5, days: 42 },
   { value: '7-weeks', label: '7 weeks', weeks: 7, months: 1.75, days: 49 },
   { value: '8-weeks', label: '8 weeks', weeks: 8, months: 2, days: 56 },
-  { value: '9-weeks', label: '9 weeks (~2 months)', weeks: 9, months: 2, days: 63 },
+  { value: '9-weeks', label: '9 weeks (~2 months)', weeks: 9, months: 2.25, days: 63 },
   { value: '10-weeks', label: '10 weeks', weeks: 10, months: 2.5, days: 70 },
   { value: '12-weeks', label: '12 weeks', weeks: 12, months: 3, days: 84 },
-  { value: '13-weeks', label: '13 weeks (3 months)', weeks: 13, months: 3, days: 91 },
+  { value: '13-weeks', label: '13 weeks (3 months)', weeks: 13, months: 3.25, days: 91 },
   { value: '16-weeks', label: '16 weeks', weeks: 16, months: 4, days: 112 },
-  { value: '17-weeks', label: '17 weeks (~4 months)', weeks: 17, months: 4, days: 119 },
+  { value: '17-weeks', label: '17 weeks (~4 months)', weeks: 17, months: 4.25, days: 119 },
+  { value: '20-weeks', label: '20 weeks (5 months)', weeks: 20, months: 5, days: 140 },
+  { value: '22-weeks', label: '22 weeks (~5.5 months)', weeks: 22, months: 5.5, days: 154 },
+  { value: '26-weeks', label: '26 weeks (6 months)', weeks: 26, months: 6.5, days: 182 },
   { value: 'other', label: 'Other', weeks: 0, months: 0, days: 0 }
 ]
 

@@ -155,12 +155,12 @@ function normalizeVMObject(vm) {
  */
 function getModalViewForState(vmState) {
   switch (vmState) {
-    case VM_STATES.REQUESTED_BY_HOST:
+    case VM_STATES.REQUESTED_BY_OTHER:
       return 'respond';
     case VM_STATES.BOOKED_AWAITING_CONFIRMATION:
     case VM_STATES.CONFIRMED:
       return 'details';
-    case VM_STATES.REQUESTED_BY_GUEST:
+    case VM_STATES.REQUESTED_BY_ME:
     case VM_STATES.NO_MEETING:
     case VM_STATES.DECLINED:
     default:
@@ -170,12 +170,15 @@ function getModalViewForState(vmState) {
 
 /**
  * Get the context message to display based on VM state
+ * Note: On guest proposals page, "other party" = host
  */
 function getCardMessage(vmState, hostName) {
   switch (vmState) {
-    case VM_STATES.REQUESTED_BY_HOST:
+    case VM_STATES.REQUESTED_BY_OTHER:
+      // Other party (host) requested, guest should respond
       return `${hostName} has suggested times for a virtual meeting:`;
-    case VM_STATES.REQUESTED_BY_GUEST:
+    case VM_STATES.REQUESTED_BY_ME:
+      // Current user (guest) requested, waiting for host
       return `You've requested a virtual meeting. Waiting for ${hostName}'s response.`;
     case VM_STATES.BOOKED_AWAITING_CONFIRMATION:
       return `Your meeting is scheduled. Waiting for Split Lease confirmation.`;
@@ -192,7 +195,7 @@ function getCardMessage(vmState, hostName) {
  */
 function getStateBadge(vmState) {
   switch (vmState) {
-    case VM_STATES.REQUESTED_BY_GUEST:
+    case VM_STATES.REQUESTED_BY_ME:
       return { text: 'Awaiting Response', className: 'vm-section-badge-waiting' };
     case VM_STATES.BOOKED_AWAITING_CONFIRMATION:
       return { text: 'Pending Confirmation', className: 'vm-section-badge-pending' };
@@ -209,14 +212,14 @@ function getStateBadge(vmState) {
  */
 function getPrimaryButtonConfig(vmStateInfo, vmState) {
   switch (vmState) {
-    case VM_STATES.REQUESTED_BY_HOST:
+    case VM_STATES.REQUESTED_BY_OTHER:
       return {
         text: 'Respond to Virtual Meeting',
         className: 'vm-section-primary-btn vm-section-primary-btn--respond',
         disabled: false,
         view: 'respond'
       };
-    case VM_STATES.REQUESTED_BY_GUEST:
+    case VM_STATES.REQUESTED_BY_ME:
       return {
         text: 'Meeting Requested',
         className: 'vm-section-primary-btn vm-section-primary-btn--disabled',
@@ -410,7 +413,7 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
             className="vm-section-cancel-btn"
             onClick={() => onOpenVMModal(proposal, 'cancel')}
           >
-            {vmState === VM_STATES.REQUESTED_BY_GUEST ? 'Cancel Request' : 'Cancel Virtual Meeting'}
+            {vmState === VM_STATES.REQUESTED_BY_ME ? 'Cancel Request' : 'Cancel Virtual Meeting'}
           </button>
         )}
       </div>

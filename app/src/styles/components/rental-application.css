@@ -558,6 +558,93 @@
     border-color: var(--rental-app-success);
 }
 
+.upload-box.uploading {
+    border-color: var(--rental-app-primary);
+    background-color: #f5f0ff;
+    cursor: wait;
+}
+
+.upload-box.complete {
+    border-style: solid;
+    border-color: var(--rental-app-success);
+    background-color: #f0fff0;
+}
+
+.upload-box.error {
+    border-color: var(--rental-app-error);
+    background-color: #fff0f0;
+}
+
+.upload-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--rental-app-border-light);
+    border-top: 3px solid var(--rental-app-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.upload-icon.success {
+    color: var(--rental-app-success);
+}
+
+.upload-error {
+    color: var(--rental-app-error);
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+/* Existing file display */
+.existing-file-display {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background-color: #f0fff0;
+    border: 1px solid var(--rental-app-success);
+    border-radius: 8px;
+}
+
+.existing-file-display .file-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--rental-app-primary);
+    text-decoration: none;
+    font-size: 14px;
+    flex: 1;
+}
+
+.existing-file-display .file-link:hover {
+    text-decoration: underline;
+}
+
+.existing-file-display .file-link svg {
+    fill: var(--rental-app-primary);
+}
+
+.btn-replace-file {
+    padding: 6px 12px;
+    font-size: 13px;
+    background-color: var(--rental-app-white);
+    border: 1px solid var(--rental-app-border-light);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--rental-app-text-secondary);
+    transition: all 0.2s ease;
+}
+
+.btn-replace-file:hover {
+    background-color: #f5f5f5;
+    border-color: var(--rental-app-primary);
+    color: var(--rental-app-primary);
+}
+
 .upload-icon {
     font-size: 32px;
 }

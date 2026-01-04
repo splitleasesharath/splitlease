@@ -23,6 +23,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase.js';
 import { checkAuthStatus, getSessionId, getAuthToken } from '../../lib/auth.js';
 import { useRentalApplicationStore } from './RentalApplicationPage/store/index.ts';
+import { mapDatabaseToFormData } from './RentalApplicationPage/utils/rentalApplicationFieldMapper.ts';
 
 // Extend window interface for Google Maps
 // @ts-ignore
@@ -79,6 +80,23 @@ const EMPLOYMENT_STATUS_OPTIONS = [
 
 const MAX_OCCUPANTS = 6;
 
+// Map frontend file keys to formData URL field names and backend file types
+const FILE_TYPE_MAP = {
+  employmentProof: { urlField: 'proofOfEmploymentUrl', backendType: 'employmentProof' },
+  alternateGuarantee: { urlField: 'alternateGuaranteeUrl', backendType: 'alternateGuarantee' },
+  altGuarantee: { urlField: 'alternateGuaranteeUrl', backendType: 'altGuarantee' },
+  creditScore: { urlField: 'creditScoreUrl', backendType: 'creditScore' },
+  stateIdFront: { urlField: 'stateIdFrontUrl', backendType: 'stateIdFront' },
+  stateIdBack: { urlField: 'stateIdBackUrl', backendType: 'stateIdBack' },
+  governmentId: { urlField: 'governmentIdUrl', backendType: 'governmentId' },
+};
+
+// Max file size (10MB)
+const MAX_FILE_SIZE = 10 * 1024 * 1024;
+
+// Allowed MIME types
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+
 export function useRentalApplicationPageLogic() {
   // ============================================================================
   // STORE INTEGRATION
@@ -102,6 +120,7 @@ export function useRentalApplicationPageLogic() {
     updateOccupant: storeUpdateOccupant,
     updateVerificationStatus,
     reset: resetStore,
+    loadFromDatabase,
   } = store;
 
   // ============================================================================
@@ -117,6 +136,7 @@ export function useRentalApplicationPageLogic() {
   });
 
   // File uploads (cannot be serialized to localStorage)
+  // Contains File objects for local preview, while URLs are stored in formData
   const [uploadedFiles, setUploadedFiles] = useState({
     employmentProof: null,
     alternateGuarantee: null,
@@ -124,6 +144,10 @@ export function useRentalApplicationPageLogic() {
     creditScore: null,
     references: []
   });
+
+  // Upload progress and errors for each file type
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [uploadErrors, setUploadErrors] = useState({});
 
   // Field validation states
   const [fieldErrors, setFieldErrors] = useState({});
@@ -136,6 +160,15 @@ export function useRentalApplicationPageLogic() {
 
   // Track if user data has been pre-populated
   const hasPrePopulated = useRef(false);
+
+  // Track if application data has been loaded from database
+  const hasLoadedFromDatabase = useRef(false);
+
+  // Loading state for database fetch
+  const [isLoadingFromDatabase, setIsLoadingFromDatabase] = useState(true);
+
+  // Track if this is a previously submitted application
+  const [isSubmittedApplication, setIsSubmittedApplication] = useState(false);
 
   // Address autocomplete refs
   const addressInputRef = useRef(null);
@@ -312,12 +345,43 @@ export function useRentalApplicationPageLogic() {
   }, [storeUpdateOccupant]);
 
   // ============================================================================
-  // HANDLERS - File Uploads (local state, not persisted)
+  // HANDLERS - File Uploads (upload to Supabase Storage immediately)
   // ============================================================================
 
-  const handleFileUpload = useCallback((uploadKey, files, multiple = false) => {
+  const handleFileUpload = useCallback(async (uploadKey, files, multiple = false) => {
     if (!files || files.length === 0) return;
 
+    const file = files[0];
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      setUploadErrors(prev => ({
+        ...prev,
+        [uploadKey]: `File too large. Maximum size is 10MB.`
+      }));
+      return;
+    }
+
+    // Validate MIME type
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
+      setUploadErrors(prev => ({
+        ...prev,
+        [uploadKey]: `Invalid file type. Allowed: JPEG, PNG, WebP, PDF.`
+      }));
+      return;
+    }
+
+    // Clear any previous errors
+    setUploadErrors(prev => {
+      const next = { ...prev };
+      delete next[uploadKey];
+      return next;
+    });
+
+    // Set uploading state
+    setUploadProgress(prev => ({ ...prev, [uploadKey]: 'uploading' }));
+
+    // Store file locally for preview
     if (multiple) {
       setUploadedFiles(prev => ({
         ...prev,
@@ -326,10 +390,111 @@ export function useRentalApplicationPageLogic() {
     } else {
       setUploadedFiles(prev => ({
         ...prev,
-        [uploadKey]: files[0]
+        [uploadKey]: file
       }));
     }
-  }, []);
+
+    // Get user ID for upload
+    const userId = getSessionId();
+    if (!userId) {
+      setUploadErrors(prev => ({
+        ...prev,
+        [uploadKey]: 'You must be logged in to upload files.'
+      }));
+      setUploadProgress(prev => {
+        const next = { ...prev };
+        delete next[uploadKey];
+        return next;
+      });
+      return;
+    }
+
+    try {
+      // Convert file to base64
+      const base64Data = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          // Extract base64 data (remove data:mime;base64, prefix)
+          const base64 = reader.result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Get file type mapping
+      const mapping = FILE_TYPE_MAP[uploadKey];
+      if (!mapping) {
+        console.warn(`[RentalApplication] Unknown upload key: ${uploadKey}`);
+        setUploadProgress(prev => {
+          const next = { ...prev };
+          delete next[uploadKey];
+          return next;
+        });
+        return;
+      }
+
+      // Upload via Edge Function
+      const token = getAuthToken();
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          action: 'upload',
+          payload: {
+            user_id: userId,
+            fileType: mapping.backendType,
+            fileName: file.name,
+            fileData: base64Data,
+            mimeType: file.type,
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'Upload failed');
+      }
+
+      console.log(`[RentalApplication] File uploaded successfully:`, result.data);
+
+      // Store the URL in formData
+      updateFormData({ [mapping.urlField]: result.data.url });
+
+      // Mark upload as complete
+      setUploadProgress(prev => ({ ...prev, [uploadKey]: 'complete' }));
+
+      // Clear progress after a short delay
+      setTimeout(() => {
+        setUploadProgress(prev => {
+          const next = { ...prev };
+          delete next[uploadKey];
+          return next;
+        });
+      }, 2000);
+
+    } catch (error) {
+      console.error(`[RentalApplication] File upload failed:`, error);
+      setUploadErrors(prev => ({
+        ...prev,
+        [uploadKey]: error.message || 'Upload failed. Please try again.'
+      }));
+      setUploadProgress(prev => {
+        const next = { ...prev };
+        delete next[uploadKey];
+        return next;
+      });
+      // Remove the local file preview on error
+      setUploadedFiles(prev => ({
+        ...prev,
+        [uploadKey]: multiple ? [] : null
+      }));
+    }
+  }, [updateFormData]);
 
   const handleFileRemove = useCallback((uploadKey, fileIndex = null) => {
     if (fileIndex !== null) {
@@ -345,7 +510,20 @@ export function useRentalApplicationPageLogic() {
         [uploadKey]: null
       }));
     }
-  }, []);
+
+    // Also clear the URL from formData
+    const mapping = FILE_TYPE_MAP[uploadKey];
+    if (mapping) {
+      updateFormData({ [mapping.urlField]: '' });
+    }
+
+    // Clear any errors
+    setUploadErrors(prev => {
+      const next = { ...prev };
+      delete next[uploadKey];
+      return next;
+    });
+  }, [updateFormData]);
 
   // ============================================================================
   // HANDLERS - Verification
@@ -452,6 +630,120 @@ export function useRentalApplicationPageLogic() {
 
     fetchAndPopulateUserData();
   }, [formData, updateFormData]);
+
+  // ============================================================================
+  // FETCH SAVED RENTAL APPLICATION FROM DATABASE
+  // ============================================================================
+
+  // Fetch saved rental application if user has one
+  useEffect(() => {
+    async function fetchSavedRentalApplication() {
+      // Only run once
+      if (hasLoadedFromDatabase.current) {
+        setIsLoadingFromDatabase(false);
+        return;
+      }
+
+      try {
+        // Check if user is authenticated
+        const isAuthenticated = await checkAuthStatus();
+        if (!isAuthenticated) {
+          console.log('[RentalApplication] User not authenticated, skipping database fetch');
+          setIsLoadingFromDatabase(false);
+          return;
+        }
+
+        // Get user ID from session
+        const userId = getSessionId();
+        if (!userId) {
+          console.log('[RentalApplication] No user ID found, skipping database fetch');
+          setIsLoadingFromDatabase(false);
+          return;
+        }
+
+        // Check if localStorage already has substantial data (draft in progress)
+        // If user has been filling out form, don't overwrite with database
+        const hasLocalDraft = formData.fullName && formData.signature && isDirty;
+        if (hasLocalDraft) {
+          console.log('[RentalApplication] Local draft in progress, skipping database fetch');
+          setIsLoadingFromDatabase(false);
+          hasLoadedFromDatabase.current = true;
+          return;
+        }
+
+        console.log('[RentalApplication] Checking for saved rental application...');
+
+        // Fetch user record to check for existing rental application
+        const { data: userData, error: userError } = await supabase
+          .from('user')
+          .select('_id, "Rental Application"')
+          .eq('_id', userId)
+          .single();
+
+        if (userError || !userData) {
+          console.log('[RentalApplication] User not found or error:', userError);
+          setIsLoadingFromDatabase(false);
+          hasLoadedFromDatabase.current = true;
+          return;
+        }
+
+        if (!userData['Rental Application']) {
+          console.log('[RentalApplication] User has no saved rental application');
+          setIsLoadingFromDatabase(false);
+          hasLoadedFromDatabase.current = true;
+          return;
+        }
+
+        console.log('[RentalApplication] Found saved rental application:', userData['Rental Application']);
+
+        // Fetch full rental application via Edge Function
+        const token = getAuthToken();
+        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            action: 'get',
+            payload: { user_id: userId },
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success || !result.data) {
+          console.error('[RentalApplication] Failed to fetch application:', result.error);
+          setIsLoadingFromDatabase(false);
+          hasLoadedFromDatabase.current = true;
+          return;
+        }
+
+        console.log('[RentalApplication] Loaded rental application data from database');
+
+        // Transform database fields to form fields
+        const { formData: mappedFormData, occupants: mappedOccupants } = mapDatabaseToFormData(result.data);
+
+        // Load into store (this will NOT save to localStorage)
+        loadFromDatabase(mappedFormData, mappedOccupants);
+
+        // Track if this was a submitted application
+        if (result.data.submitted) {
+          setIsSubmittedApplication(true);
+        }
+
+        hasLoadedFromDatabase.current = true;
+        setIsLoadingFromDatabase(false);
+
+      } catch (error) {
+        console.error('[RentalApplication] Error fetching saved application:', error);
+        setIsLoadingFromDatabase(false);
+        hasLoadedFromDatabase.current = true;
+      }
+    }
+
+    fetchSavedRentalApplication();
+  }, [formData.fullName, formData.signature, isDirty, loadFromDatabase]);
 
   // ============================================================================
   // GOOGLE PLACES AUTOCOMPLETE (for Current Address)
@@ -663,6 +955,8 @@ export function useRentalApplicationPageLogic() {
     verificationStatus,
     verificationLoading,
     uploadedFiles,
+    uploadProgress,
+    uploadErrors,
 
     // Validation
     fieldErrors,
@@ -679,6 +973,8 @@ export function useRentalApplicationPageLogic() {
     submitSuccess,
     submitError,
     lastSaved,
+    isLoadingFromDatabase,
+    isSubmittedApplication,
 
     // Constants
     maxOccupants: MAX_OCCUPANTS,

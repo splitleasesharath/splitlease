@@ -6,8 +6,49 @@
 
 import { useState } from 'react';
 import DayIndicator from './DayIndicator.jsx';
-import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromNights, PROPOSAL_STATUSES, PROGRESS_THRESHOLDS } from './types.js';
+import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromNights, PROGRESS_THRESHOLDS } from './types.js';
 import { formatCurrency, formatDate, formatDateTime } from './formatters.js';
+import { getStatusConfig, getUsualOrder, isTerminalStatus } from '../../../logic/constants/proposalStatuses.js';
+import { getVMButtonText, getVMButtonStyle, getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtualMeetingRules.js';
+
+/**
+ * Get host-appropriate status message based on proposal status
+ * Maps guest-facing labels to host-appropriate action messages
+ *
+ * @param {Object} statusConfig - Status configuration from getStatusConfig()
+ * @param {boolean} rentalAppSubmitted - Whether rental application has been submitted
+ * @returns {string} Host-facing status message
+ */
+function getHostStatusMessage(statusConfig, rentalAppSubmitted) {
+  const { key, usualOrder } = statusConfig;
+
+  // Map status keys to host-appropriate messages
+  const hostMessages = {
+    // Pre-acceptance states
+    'Proposal Submitted by guest - Awaiting Rental Application': 'Request Rental App Submission',
+    'Proposal Submitted for guest by Split Lease - Awaiting Rental Application': 'Request Rental App Submission',
+    'Proposal Submitted for guest by Split Lease - Pending Confirmation': 'Awaiting Guest Confirmation',
+    'Pending': 'Proposal Pending',
+    'Pending Confirmation': 'Awaiting Guest Confirmation',
+    'Host Review': rentalAppSubmitted ? 'Rental App Received - Review & Decide' : 'Under Your Review',
+    'Rental Application Submitted': 'Rental App Received - Review & Decide',
+
+    // Counteroffer states
+    'Host Counteroffer Submitted / Awaiting Guest Review': 'Counteroffer Sent - Awaiting Guest Response',
+
+    // Post-acceptance states
+    'Proposal or Counteroffer Accepted / Drafting Lease Documents': 'Accepted - Drafting Lease Documents',
+    'Reviewing Documents': 'Documents Under Review',
+    'Lease Documents Sent for Review': 'Lease Documents Sent to Guest',
+    'Lease Documents Sent for Signatures': 'Awaiting Signatures',
+    'Lease Documents Signed / Awaiting Initial payment': 'Awaiting Initial Payment',
+    'Lease Signed / Awaiting Initial Payment': 'Awaiting Initial Payment',
+    'Initial Payment Submitted / Lease activated ': 'Lease Activated!',
+  };
+
+  // Return mapped message or fallback to status label
+  return hostMessages[key] || statusConfig.label || 'Review Proposal';
+}
 
 /**
  * @param {Object} props
@@ -20,6 +61,8 @@ import { formatCurrency, formatDate, formatDateTime } from './formatters.js';
  * @param {Function} [props.onSendMessage] - Send message callback
  * @param {Function} [props.onRemindSplitLease] - Remind Split Lease callback
  * @param {Function} [props.onChooseVirtualMeeting] - Choose virtual meeting callback
+ * @param {Function} [props.onRequestRentalApp] - Request rental application callback
+ * @param {string} [props.currentUserId] - Current user's ID for VM state determination
  */
 export default function ProposalDetailsModal({
   proposal,
@@ -30,7 +73,9 @@ export default function ProposalDetailsModal({
   onModify,
   onSendMessage,
   onRemindSplitLease,
-  onChooseVirtualMeeting
+  onChooseVirtualMeeting,
+  onRequestRentalApp,
+  currentUserId
 }) {
   const [guestDetailsExpanded, setGuestDetailsExpanded] = useState(true);
   const [statusExpanded, setStatusExpanded] = useState(true);
@@ -38,16 +83,22 @@ export default function ProposalDetailsModal({
 
   if (!proposal || !isOpen) return null;
 
-  // Get status info
-  const status = proposal.status || proposal.Status || {};
-  const statusId = status.id || status._id || status;
-  const statusConfig = PROPOSAL_STATUSES[statusId] || {};
-  const statusInfo = getStatusTagInfo(status);
+  // Get status info - use unified status system for proper matching
+  // Database stores full Bubble status strings like "Proposal Submitted by guest - Awaiting Rental Application"
+  const statusRaw = proposal.Status || proposal.status || '';
+  const statusKey = typeof statusRaw === 'string' ? statusRaw : (statusRaw?.id || statusRaw?._id || '');
+  const statusConfig = getStatusConfig(statusKey);
+  const statusInfo = getStatusTagInfo(statusRaw);
   const usualOrder = statusConfig.usualOrder ?? 0;
 
-  const isCancelled = ['cancelled_by_guest', 'cancelled_by_splitlease', 'rejected_by_host'].includes(statusId);
-  const isPending = usualOrder < 3; // Not yet accepted
-  const isAccepted = usualOrder >= 3 && !isCancelled; // Accepted or beyond
+  // Terminal states detection using the unified system
+  const isCancelled = isTerminalStatus(statusKey);
+  const isPending = usualOrder < 3 && !isCancelled; // usualOrder < 3 means not yet accepted (reference table uses 3 for accepted)
+  const isAccepted = usualOrder >= 3 && !isCancelled; // Accepted or beyond (sort_order 3+ in reference table)
+
+  // Special state: Awaiting rental app submission - show in green as positive action
+  const isAwaitingRentalApp = statusConfig.key === 'Proposal Submitted by guest - Awaiting Rental Application' ||
+                              statusConfig.key === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application';
 
   // Check if rental application has been submitted (for "current" state on Host Review)
   const rentalApplication = proposal.rentalApplication || proposal['rental application'] || proposal['Rental Application'];
@@ -99,43 +150,73 @@ export default function ProposalDetailsModal({
   const activeDays = getNightsAsDayNames(nightsSelectedRaw);
 
   /**
-   * Get progress steps based on usualOrder thresholds from Bubble's "Status - Proposal" option set
+   * Get progress steps based on usualOrder thresholds from reference_table.os_proposal_status
    *
    * Step states:
-   * - 'completed': usualOrder >= threshold (purple #31135D)
-   * - 'current': actively in progress (gray #BFBFBF) - only for Host Review when rental app submitted
-   * - 'incomplete': not yet reached (light gray #EDEAF6)
-   * - 'cancelled'/'rejected': proposal was cancelled/rejected (red #DB2E2E)
+   * - 'completed': usualOrder >= threshold (green #065F46)
+   * - 'current': actively in progress (highlighted)
+   * - 'incomplete': not yet reached (light gray)
+   * - 'cancelled'/'rejected': proposal was cancelled/rejected (red)
+   *
+   * Reference table sort_order values:
+   * - 0: Awaiting Rental App (proposal submitted, pending rental app)
+   * - 1: Host Review (rental app submitted, under host review)
+   * - 2: Host Counteroffer
+   * - 3: Accepted / Drafting Docs
+   * - 4: Lease Documents for Review
+   * - 5: Lease Documents for Signatures
+   * - 6: Lease Signed / Awaiting Payment
+   * - 7: Payment Submitted / Lease Activated
    */
   const getProgressSteps = () => {
-    // Special case: Host Review is "current" (gray) when status is host_review AND rental app is submitted
-    const isHostReviewCurrent = statusId === 'host_review' && rentalAppSubmitted;
+    // Special case: Host Review is "current" when status is Host Review
+    const isHostReviewCurrent = statusConfig.key === 'Host Review';
 
+    // Thresholds based on reference_table.os_proposal_status sort_order:
+    // - Rental App completed: usualOrder >= 1 (moved past "Awaiting Rental App" at sort_order 0)
+    // - Host Review completed: usualOrder >= 3 (Accepted / Drafting Docs)
+    // - Lease Docs completed: usualOrder >= 5 (Lease Documents for Signatures)
+    // - Initial Payment completed: usualOrder >= 7 (Payment submitted / Lease activated)
     return {
       proposalSubmitted: {
         completed: true, // Always completed once proposal exists
         current: false
       },
       rentalApp: {
-        completed: usualOrder >= PROGRESS_THRESHOLDS.rentalApp, // usualOrder >= 1
+        completed: usualOrder >= 1, // Rental app done when past sort_order 0 (Awaiting Rental App)
         current: false
       },
       hostReview: {
-        completed: usualOrder >= PROGRESS_THRESHOLDS.hostReview, // usualOrder >= 3 (Accepted)
-        current: isHostReviewCurrent // Gray when in host_review status with rental app submitted
+        completed: usualOrder >= 3, // Host Review completed when Accepted (sort_order 3)
+        current: isHostReviewCurrent // Highlighted when in Host Review status
       },
       leaseDocs: {
-        completed: usualOrder >= PROGRESS_THRESHOLDS.leaseDocs, // usualOrder >= 4
+        completed: usualOrder >= 5, // Lease docs for signatures (sort_order 5)
         current: false
       },
       initialPayment: {
-        completed: usualOrder >= PROGRESS_THRESHOLDS.initialPayment, // usualOrder >= 7
+        completed: usualOrder >= 7, // Payment submitted / Lease activated (sort_order 7)
         current: false
       }
     };
   };
 
   const progress = getProgressSteps();
+
+  /**
+   * Determine which step is the "last completed" (rightmost filled dot)
+   * This step will be shown in green to indicate current progress
+   */
+  const getLastCompletedStep = () => {
+    if (progress.initialPayment.completed) return 'initialPayment';
+    if (progress.leaseDocs.completed) return 'leaseDocs';
+    if (progress.hostReview.completed) return 'hostReview';
+    if (progress.rentalApp.completed) return 'rentalApp';
+    if (progress.proposalSubmitted.completed) return 'proposalSubmitted';
+    return null;
+  };
+
+  const lastCompletedStep = getLastCompletedStep();
 
   /**
    * Get CSS class for a progress step
@@ -149,6 +230,13 @@ export default function ProposalDetailsModal({
   };
 
   /**
+   * Check if a step should be shown in green (last completed step)
+   */
+  const isLastCompleted = (stepName) => {
+    return !isCancelled && lastCompletedStep === stepName;
+  };
+
+  /**
    * Get CSS class for a progress line (between two steps)
    * Line is completed if BOTH adjacent steps are completed
    */
@@ -156,6 +244,94 @@ export default function ProposalDetailsModal({
     if (isCancelled) return 'cancelled';
     if (prevStep.completed && nextStep.completed) return 'completed';
     return '';
+  };
+
+  /**
+   * Render action buttons based on current proposal status
+   * Different statuses require different host actions
+   */
+  const renderActionButtons = () => {
+    const { key } = statusConfig;
+
+    // Awaiting rental application - host can request rental app or view details
+    if (key === 'Proposal Submitted by guest - Awaiting Rental Application' ||
+        key === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application') {
+      return (
+        <>
+          <button
+            className="action-btn accept"
+            onClick={() => onRequestRentalApp?.(proposal)}
+          >
+            Request Rental App
+          </button>
+          <button
+            className="action-btn modify"
+            onClick={() => onModify?.(proposal)}
+          >
+            View Details
+          </button>
+        </>
+      );
+    }
+
+    // Host counteroffer sent - waiting for guest
+    if (key === 'Host Counteroffer Submitted / Awaiting Guest Review') {
+      return (
+        <>
+          <button
+            className="action-btn secondary"
+            onClick={() => onSendMessage?.(proposal)}
+          >
+            Send Message
+          </button>
+          <button
+            className="action-btn modify"
+            onClick={() => onModify?.(proposal)}
+          >
+            See Details
+          </button>
+        </>
+      );
+    }
+
+    // Post-acceptance states
+    if (isAccepted) {
+      return (
+        <>
+          <button
+            className="action-btn secondary"
+            onClick={() => onModify?.(proposal)}
+          >
+            See Details
+          </button>
+          <button
+            className="action-btn primary"
+            onClick={() => onRemindSplitLease?.(proposal)}
+          >
+            Remind Split Lease
+          </button>
+        </>
+      );
+    }
+
+    // Default pending state (Host Review, Rental App Submitted, etc.)
+    // Host can accept, reject, or modify
+    return (
+      <>
+        <button
+          className="action-btn accept"
+          onClick={() => onAccept?.(proposal)}
+        >
+          Accept Proposal
+        </button>
+        <button
+          className="action-btn modify"
+          onClick={() => onModify?.(proposal)}
+        >
+          Review / Modify
+        </button>
+      </>
+    );
   };
 
   return (
@@ -176,8 +352,8 @@ export default function ProposalDetailsModal({
             <h2 className="modal-title">{guestName}'s Proposal</h2>
             <div className="modal-schedule">
               <span className="schedule-text">
-                {checkInDay} to {checkOutDay}
-                {counterOfferHappened && ' (Proposed by You)'}
+                {checkInDay} to {checkOutDay} (check-out)
+                {counterOfferHappened && ' · Proposed by You'}
               </span>
               <DayIndicator activeDays={activeDays} size="medium" />
             </div>
@@ -229,6 +405,82 @@ export default function ProposalDetailsModal({
               </span>
             </div>
           </div>
+
+          {/* Virtual Meetings Section - Always visible */}
+          {(() => {
+            // Get VM state info for button text and style
+            const vmStateInfo = getVMStateInfo(virtualMeeting, currentUserId);
+            const vmButtonText = vmStateInfo.buttonText;
+            const vmButtonDisabled = vmStateInfo.buttonDisabled;
+            const vmState = vmStateInfo.state;
+
+            // Determine helper text based on state (perspective-neutral states)
+            let vmHelperText = '';
+            if (vmState === VM_STATES.NO_MEETING) {
+              vmHelperText = `Schedule a virtual meeting with ${guestName} to discuss the proposal.`;
+            } else if (vmState === VM_STATES.REQUESTED_BY_OTHER) {
+              // Other party (guest) requested, host should respond
+              vmHelperText = `${guestName} has requested a virtual meeting. Please respond to their request.`;
+            } else if (vmState === VM_STATES.REQUESTED_BY_ME) {
+              // Current user (host) requested, waiting for guest
+              vmHelperText = `You've requested a virtual meeting with ${guestName}. Waiting for their response.`;
+            } else if (vmState === VM_STATES.BOOKED_AWAITING_CONFIRMATION) {
+              vmHelperText = `A meeting time has been selected. Awaiting confirmation from Split Lease.`;
+            } else if (vmState === VM_STATES.CONFIRMED) {
+              vmHelperText = `Your virtual meeting with ${guestName} is confirmed!`;
+            } else if (vmState === VM_STATES.DECLINED) {
+              vmHelperText = `The previous meeting was declined. You can request an alternative meeting.`;
+            }
+
+            return (
+              <div className="collapsible-section">
+                <button
+                  className="section-header"
+                  onClick={() => setVirtualMeetingsExpanded(!virtualMeetingsExpanded)}
+                >
+                  <span>Virtual meetings</span>
+                  <svg
+                    className={`chevron ${virtualMeetingsExpanded ? 'open' : ''}`}
+                    width="20"
+                    height="20"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                  </svg>
+                </button>
+                {virtualMeetingsExpanded && (
+                  <div className="section-content virtual-meeting-content">
+                    <div className="virtual-meeting-header">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+                        <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                      <span>{vmHelperText}</span>
+                    </div>
+
+                    {/* Show suggested times if they exist (for both requester and responder) */}
+                    {virtualMeeting && (vmState === VM_STATES.REQUESTED_BY_OTHER || vmState === VM_STATES.REQUESTED_BY_ME) && virtualMeeting.suggestedTimes?.length > 0 && (
+                      <div className="time-slots">
+                        {virtualMeeting.suggestedTimes.map((time, index) => (
+                          <div key={index} className="time-slot-display">
+                            {formatDateTime(time)}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <button
+                      className={`request-meeting-btn ${vmButtonDisabled ? 'disabled' : ''} ${vmState === VM_STATES.CONFIRMED ? 'success' : ''}`}
+                      onClick={() => onChooseVirtualMeeting?.(proposal)}
+                      disabled={vmButtonDisabled}
+                    >
+                      {vmButtonText}
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Guest Details Section */}
           <div className="collapsible-section">
@@ -322,31 +574,46 @@ export default function ProposalDetailsModal({
                   <div className="progress-tracker-line">
                     {/* Step 1: Proposal Submitted */}
                     <div className={`progress-step ${getStepClass(progress.proposalSubmitted)}`}>
-                      <div className="step-circle"></div>
+                      <div
+                        className="step-circle"
+                        style={isLastCompleted('proposalSubmitted') ? { backgroundColor: '#065F46' } : undefined}
+                      ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.proposalSubmitted, progress.rentalApp)}`}></div>
 
                     {/* Step 2: Rental Application */}
                     <div className={`progress-step ${getStepClass(progress.rentalApp)}`}>
-                      <div className="step-circle"></div>
+                      <div
+                        className="step-circle"
+                        style={isLastCompleted('rentalApp') ? { backgroundColor: '#065F46' } : undefined}
+                      ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.rentalApp, progress.hostReview)}`}></div>
 
                     {/* Step 3: Host Review */}
                     <div className={`progress-step ${getStepClass(progress.hostReview)}`}>
-                      <div className="step-circle"></div>
+                      <div
+                        className="step-circle"
+                        style={isLastCompleted('hostReview') ? { backgroundColor: '#065F46' } : undefined}
+                      ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.hostReview, progress.leaseDocs)}`}></div>
 
                     {/* Step 4: Lease Documents */}
                     <div className={`progress-step ${getStepClass(progress.leaseDocs)}`}>
-                      <div className="step-circle"></div>
+                      <div
+                        className="step-circle"
+                        style={isLastCompleted('leaseDocs') ? { backgroundColor: '#065F46' } : undefined}
+                      ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.leaseDocs, progress.initialPayment)}`}></div>
 
                     {/* Step 5: Initial Payment */}
                     <div className={`progress-step ${getStepClass(progress.initialPayment)}`}>
-                      <div className="step-circle"></div>
+                      <div
+                        className="step-circle"
+                        style={isLastCompleted('initialPayment') ? { backgroundColor: '#065F46' } : undefined}
+                      ></div>
                     </div>
                   </div>
 
@@ -374,12 +641,15 @@ export default function ProposalDetailsModal({
                   </div>
                 </div>
 
-                {/* Status Box */}
+                {/* Status Box - Shows host-appropriate status message */}
+                {/* Green for: accepted OR awaiting rental app (positive action state) */}
+                {/* Yellow for: other pending states */}
+                {/* Red for: cancelled/rejected */}
                 <div
                   className="status-box"
                   style={{
-                    backgroundColor: isCancelled ? '#FEE2E2' : (isAccepted ? '#D1FAE5' : '#FEF3C7'),
-                    borderColor: isCancelled ? '#991B1B' : (isAccepted ? '#065F46' : '#924026')
+                    backgroundColor: isCancelled ? '#FEE2E2' : ((isAccepted || isAwaitingRentalApp) ? '#D1FAE5' : '#FEF3C7'),
+                    borderColor: isCancelled ? '#991B1B' : ((isAccepted || isAwaitingRentalApp) ? '#065F46' : '#924026')
                   }}
                 >
                   {isCancelled ? (
@@ -394,71 +664,30 @@ export default function ProposalDetailsModal({
                       <svg width="20" height="20" viewBox="0 0 20 20" fill="#065F46">
                         <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM8 15L3 10L4.41 8.59L8 12.17L15.59 4.58L17 6L8 15Z"/>
                       </svg>
-                      <span>Status: Alternative terms Accepted! Lease Documents will be sent to you via HelloSign</span>
+                      <span>Status: {statusConfig.label || 'Accepted'} - Lease Documents will be sent via HelloSign</span>
+                    </>
+                  ) : isAwaitingRentalApp ? (
+                    <>
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill="#065F46">
+                        <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM8 15L3 10L4.41 8.59L8 12.17L15.59 4.58L17 6L8 15Z"/>
+                      </svg>
+                      <span>Status: {getHostStatusMessage(statusConfig, rentalAppSubmitted)}</span>
                     </>
                   ) : (
                     <>
                       <svg width="20" height="20" viewBox="0 0 20 20" fill="#924026">
                         <path d="M10 0C4.48 0 0 4.48 0 10C0 15.52 4.48 20 10 20C15.52 20 20 15.52 20 10C20 4.48 15.52 0 10 0ZM11 15H9V13H11V15ZM11 11H9V5H11V11Z"/>
                       </svg>
-                      <span>Status: Review the Proposal</span>
+                      <span>Status: {getHostStatusMessage(statusConfig, rentalAppSubmitted)}</span>
                     </>
                   )}
                 </div>
               </div>
             )}
           </div>
-
-          {/* Virtual Meetings Section */}
-          {virtualMeeting && (
-            <div className="collapsible-section">
-              <button
-                className="section-header"
-                onClick={() => setVirtualMeetingsExpanded(!virtualMeetingsExpanded)}
-              >
-                <span>Virtual meetings</span>
-                <svg
-                  className={`chevron ${virtualMeetingsExpanded ? 'open' : ''}`}
-                  width="20"
-                  height="20"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M5 7.5L10 12.5L15 7.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-                </svg>
-              </button>
-              {virtualMeetingsExpanded && (
-                <div className="section-content virtual-meeting-content">
-                  <div className="virtual-meeting-header">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
-                      <path d="M16 2V6M8 2V6M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                    <span>A virtual meeting with {guestName} has been suggested for the times:</span>
-                  </div>
-                  <div className="time-slots">
-                    {(virtualMeeting.suggestedTimes || []).map((time, index) => (
-                      <button
-                        key={index}
-                        className="time-slot"
-                        onClick={() => onChooseVirtualMeeting?.(proposal, new Date(time))}
-                      >
-                        {formatDateTime(time)}
-                      </button>
-                    ))}
-                  </div>
-                  <button
-                    className="choose-meeting-btn"
-                    onClick={() => onChooseVirtualMeeting?.(proposal, virtualMeeting.suggestedTimes?.[0])}
-                  >
-                    Choose Virtual Meeting Time
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Action Buttons */}
+        {/* Action Buttons - Dynamic based on status */}
         {!isCancelled && (
           <div className="modal-actions">
             <button
@@ -467,37 +696,7 @@ export default function ProposalDetailsModal({
             >
               Reject Proposal
             </button>
-            {isPending ? (
-              <>
-                <button
-                  className="action-btn accept"
-                  onClick={() => onAccept?.(proposal)}
-                >
-                  Accept Proposal
-                </button>
-                <button
-                  className="action-btn modify"
-                  onClick={() => onModify?.(proposal)}
-                >
-                  Review / Modify
-                </button>
-              </>
-            ) : isAccepted ? (
-              <>
-                <button
-                  className="action-btn secondary"
-                  onClick={() => onModify?.(proposal)}
-                >
-                  See Details
-                </button>
-                <button
-                  className="action-btn primary"
-                  onClick={() => onRemindSplitLease?.(proposal)}
-                >
-                  Remind Split Lease
-                </button>
-              </>
-            ) : null}
+            {renderActionButtons()}
           </div>
         )}
       </div>

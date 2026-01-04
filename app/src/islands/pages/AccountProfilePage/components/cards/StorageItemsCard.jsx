@@ -3,6 +3,8 @@
  *
  * Storage items chip selection card.
  * Shows selectable chips for items the guest needs to store.
+ *
+ * Public View: Shows gray item tags with subtle border (per design).
  */
 
 import React from 'react';
@@ -22,16 +24,14 @@ export default function StorageItemsCard({
 
   if (readOnly) {
     return (
-      <ProfileCard title="Storage Needs">
+      <ProfileCard
+        title="Items I Typically Store"
+        subtitle="Things I may keep at the space"
+      >
         {selectedItemNames.length > 0 ? (
-          <div className="chip-container">
+          <div className="public-items-grid">
             {selectedItemNames.map((name, index) => (
-              <SelectableChip
-                key={index}
-                label={name}
-                selected={true}
-                readOnly={true}
-              />
+              <span key={index} className="public-item-tag">{name}</span>
             ))}
           </div>
         ) : (

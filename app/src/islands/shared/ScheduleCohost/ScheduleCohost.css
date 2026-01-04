@@ -22,6 +22,20 @@
   --sc-tag-border: #C9C9C9;
   --sc-disabled: #DDDDDD;
   --sc-alert-yellow: #FFF6B2;
+
+  /* Co-host Progress Bar */
+  --sc-progress-inactive: #EDEAF6;
+  --sc-progress-active: #6D31C2;
+  --sc-progress-dot-size: 22px;
+  --sc-progress-bar-height: 5px;
+
+  /* Co-host Details Section */
+  --sc-details-bg: #F1F3F5;
+  --sc-details-border: #000000;
+  --sc-star-unselected: #E3E3E3;
+  --sc-star-selected: #FDE16D;
+  --sc-focus-blue: #52A8EC;
+  --sc-submit-green: #1F8E16;
 }
 
 /* ============================================================
@@ -1044,4 +1058,336 @@
   font-family: 'Lato', sans-serif;
   font-size: 14px;
   color: var(--sc-text-dark);
+}
+
+/* ============================================================
+   ASSIGNED CO-HOST INFO (shown after admin assigns co-host)
+   ============================================================ */
+.schedule-cohost-assigned-info {
+  background: linear-gradient(135deg, var(--sc-purple-primary) 0%, var(--sc-purple-deep) 100%);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 16px 20px 24px;
+  color: var(--sc-white);
+}
+
+.schedule-cohost-assigned-cohost,
+.schedule-cohost-assigned-meeting {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.schedule-cohost-assigned-cohost:last-child,
+.schedule-cohost-assigned-meeting:last-child {
+  margin-bottom: 0;
+}
+
+.schedule-cohost-assigned-label {
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  opacity: 0.9;
+}
+
+.schedule-cohost-assigned-value {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.schedule-cohost-meet-link {
+  display: inline-block;
+  background-color: var(--sc-white);
+  color: var(--sc-purple-primary);
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  margin-top: 8px;
+  transition: all 0.2s ease;
+}
+
+.schedule-cohost-meet-link:hover {
+  background-color: var(--sc-tag-bg);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   PROGRESS BAR (5-stage tracking)
+   ============================================================ */
+.schedule-cohost-progress {
+  padding: 22px 18px;
+  margin: 0 20px 16px;
+}
+
+.schedule-cohost-progress-labels {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  width: 100%;
+  min-height: 31px;
+}
+
+.schedule-cohost-progress-labels--top {
+  margin-bottom: 8px;
+}
+
+.schedule-cohost-progress-labels--bottom {
+  margin-top: 8px;
+}
+
+.schedule-cohost-progress-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sc-placeholder);
+  text-align: center;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  transition: color 0.3s ease;
+}
+
+.schedule-cohost-progress-label--active {
+  color: var(--sc-text-dark);
+}
+
+.schedule-cohost-progress-track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.schedule-cohost-progress-dot {
+  width: var(--sc-progress-dot-size);
+  height: var(--sc-progress-dot-size);
+  border-radius: 50%;
+  background-color: var(--sc-progress-inactive);
+  flex-shrink: 0;
+  transition: background-color 0.3s ease;
+}
+
+.schedule-cohost-progress-dot--active {
+  background-color: var(--sc-progress-active);
+}
+
+.schedule-cohost-progress-bar {
+  flex-grow: 1;
+  height: var(--sc-progress-bar-height);
+  background-color: var(--sc-progress-inactive);
+  margin: 0 4px;
+  transition: background-color 0.3s ease;
+}
+
+.schedule-cohost-progress-bar--active {
+  background-color: var(--sc-progress-active);
+}
+
+/* ============================================================
+   DETAILS SECTION (Rating/Feedback - post-meeting)
+   ============================================================ */
+.schedule-cohost-details-section {
+  background-color: var(--sc-details-bg);
+  border: 1px solid var(--sc-details-border);
+  border-radius: 10px;
+  padding: 16px;
+  margin: 24px 20px 0;
+}
+
+.schedule-cohost-details-title {
+  font-family: 'Lato', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--sc-text-light);
+  text-align: center;
+  margin: 0 0 12px;
+}
+
+.schedule-cohost-feedback-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #686B6B;
+  border-radius: 4px;
+  font-family: 'Lato', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--sc-text-light);
+  resize: vertical;
+  min-height: 80px;
+  margin-top: 16px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.schedule-cohost-feedback-textarea:focus {
+  outline: none;
+  border-color: var(--sc-focus-blue);
+  box-shadow: 0 0 0 3px rgba(82, 168, 236, 0.25);
+}
+
+.schedule-cohost-feedback-textarea::placeholder {
+  color: var(--sc-placeholder);
+}
+
+.schedule-cohost-submit-rating-btn {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 2px solid var(--sc-submit-green);
+  border-radius: 8px;
+  padding: 12px 32px;
+  font-family: 'Lato', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--sc-submit-green);
+  cursor: pointer;
+  margin-top: 16px;
+  transition: all 0.2s;
+  letter-spacing: -1px;
+}
+
+.schedule-cohost-submit-rating-btn:hover:not(:disabled) {
+  background-color: var(--sc-submit-green);
+  color: var(--sc-white);
+}
+
+.schedule-cohost-submit-rating-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   METADATA CENTERED
+   ============================================================ */
+.schedule-cohost-metadata-centered {
+  margin-top: 24px;
+  text-align: center;
+  font-family: 'Lato', sans-serif;
+  font-size: 12px;
+  color: var(--sc-text-medium);
+}
+
+.schedule-cohost-metadata-centered p {
+  margin: 4px 0;
+}
+
+/* ============================================================
+   HALF-STAR RATING SUPPORT
+   ============================================================ */
+.schedule-cohost-star-rating-container {
+  display: flex;
+  justify-content: center;
+  margin: 15px 0;
+}
+
+.schedule-cohost-star-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  font-size: 32px;
+  color: var(--sc-star-unselected);
+  transition: transform 0.2s;
+}
+
+.schedule-cohost-star-wrapper:hover {
+  transform: scale(1.1);
+}
+
+.schedule-cohost-star-wrapper--disabled {
+  cursor: default;
+}
+
+.schedule-cohost-star-wrapper--disabled:hover {
+  transform: none;
+}
+
+.schedule-cohost-star-bg {
+  color: var(--sc-star-unselected);
+}
+
+.schedule-cohost-star-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  color: var(--sc-star-selected);
+}
+
+.schedule-cohost-star-half-left,
+.schedule-cohost-star-half-right {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.schedule-cohost-star-half-left {
+  left: 0;
+}
+
+.schedule-cohost-star-half-right {
+  right: 0;
+}
+
+/* Update existing star colors to match spec */
+.schedule-cohost-star {
+  color: var(--sc-star-unselected);
+}
+
+.schedule-cohost-star--filled {
+  color: var(--sc-star-selected);
+}
+
+/* ============================================================
+   PROGRESS BAR RESPONSIVE
+   ============================================================ */
+@media (max-width: 768px) {
+  .schedule-cohost-progress {
+    padding: 18px 14px;
+    margin: 0 15px 12px;
+  }
+
+  .schedule-cohost-progress-label {
+    font-size: 11px;
+  }
+
+  .schedule-cohost-progress-dot {
+    width: 18px;
+    height: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .schedule-cohost-progress {
+    padding: 14px 10px;
+    margin: 0 10px 10px;
+  }
+
+  .schedule-cohost-progress-label {
+    font-size: 10px;
+    letter-spacing: -0.75px;
+  }
+
+  .schedule-cohost-progress-dot {
+    width: 16px;
+    height: 16px;
+  }
+
+  .schedule-cohost-progress-bar {
+    margin: 0 2px;
+  }
+
+  .schedule-cohost-details-section {
+    margin: 16px 10px 0;
+    padding: 12px;
+  }
+
+  .schedule-cohost-submit-rating-btn {
+    font-size: 16px;
+    padding: 10px 24px;
+  }
 }

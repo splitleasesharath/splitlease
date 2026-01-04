@@ -225,17 +225,35 @@ export function useAccountProfilePageLogic() {
   const [hostListings, setHostListings] = useState([]);
   const [loadingListings, setLoadingListings] = useState(false);
 
+  // Rental application wizard state (guest-only)
+  const [showRentalWizardModal, setShowRentalWizardModal] = useState(false);
+  const [rentalApplicationStatus, setRentalApplicationStatus] = useState('not_started'); // 'not_started' | 'in_progress' | 'submitted'
+  const [rentalApplicationProgress, setRentalApplicationProgress] = useState(0);
+
+  // Preview mode state - when true, shows public view even for own profile
+  const [previewMode, setPreviewMode] = useState(false);
+
   // ============================================================================
   // COMPUTED VALUES
   // ============================================================================
 
   /**
-   * Determine if current user is viewing their own profile (editor view)
-   * or someone else's profile (public view)
+   * Determine if user is the owner of this profile (even in preview mode)
    */
-  const isEditorView = useMemo(() => {
+  const isOwnProfile = useMemo(() => {
     return isAuthenticated && loggedInUserId && profileUserId && loggedInUserId === profileUserId;
   }, [isAuthenticated, loggedInUserId, profileUserId]);
+
+  /**
+   * Determine if current user is viewing their own profile (editor view)
+   * or someone else's profile (public view)
+   * Note: Preview mode forces public view even for own profile
+   */
+  const isEditorView = useMemo(() => {
+    // If preview mode is active, show public view even for own profile
+    if (previewMode) return false;
+    return isOwnProfile;
+  }, [isOwnProfile, previewMode]);
 
   const isPublicView = useMemo(() => {
     return !isEditorView;
@@ -520,6 +538,74 @@ export function useAccountProfilePageLogic() {
   }, [fetchReferenceData, fetchProfileData, fetchHostListings]);
 
   // ============================================================================
+  // RENTAL APPLICATION STATUS (Guest-only)
+  // ============================================================================
+
+  /**
+   * Compute rental application status based on:
+   * 1. Database field (already submitted)
+   * 2. localStorage draft (in progress)
+   * 3. Default (not started)
+   */
+  useEffect(() => {
+    // Only compute for guest users viewing their own profile
+    if (!isEditorView || isHostUser) return;
+
+    // Check if already submitted in database
+    if (profileData?.['Rental Application']) {
+      setRentalApplicationStatus('submitted');
+      setRentalApplicationProgress(100);
+      return;
+    }
+
+    // Check localStorage for draft
+    try {
+      const draft = localStorage.getItem('rentalApplicationDraft');
+      if (draft) {
+        const draftData = JSON.parse(draft);
+        // Calculate progress based on filled fields
+        const fields = [
+          'fullName', 'dob', 'email', 'phone',
+          'currentAddress', 'lengthResided',
+          'employmentStatus',
+          'signature'
+        ];
+        const optionalFields = [
+          'apartmentUnit', 'renting',
+          'employerName', 'jobTitle', 'businessName',
+          'hasPets', 'isSmoker', 'needsParking', 'references'
+        ];
+
+        let filled = 0;
+        let total = fields.length;
+
+        fields.forEach(field => {
+          if (draftData[field] && String(draftData[field]).trim()) filled++;
+        });
+
+        // Add bonus for optional fields
+        optionalFields.forEach(field => {
+          if (draftData[field] && String(draftData[field]).trim()) filled += 0.5;
+        });
+
+        const progress = Math.min(100, Math.round((filled / total) * 100));
+
+        if (progress > 0) {
+          setRentalApplicationStatus('in_progress');
+          setRentalApplicationProgress(progress);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Error reading rental application draft:', e);
+    }
+
+    // Default: not started
+    setRentalApplicationStatus('not_started');
+    setRentalApplicationProgress(0);
+  }, [isEditorView, isHostUser, profileData]);
+
+  // ============================================================================
   // FORM HANDLERS
   // ============================================================================
 
@@ -672,12 +758,17 @@ export function useAccountProfilePageLogic() {
   }, [profileData]);
 
   /**
-   * Preview public profile
+   * Toggle preview mode to show public view of own profile
    */
   const handlePreviewProfile = useCallback(() => {
-    // Open public view in new tab (just reload page for now)
-    // In the future, could implement a preview mode
-    console.log('Preview profile clicked');
+    setPreviewMode(prev => !prev);
+  }, []);
+
+  /**
+   * Exit preview mode and return to editor view
+   */
+  const handleExitPreview = useCallback(() => {
+    setPreviewMode(false);
   }, []);
 
   // ============================================================================
@@ -727,6 +818,29 @@ export function useAccountProfilePageLogic() {
     // Navigate to password reset page
     window.location.href = '/reset-password';
   }, []);
+
+  // ============================================================================
+  // RENTAL APPLICATION WIZARD HANDLERS (Guest-only)
+  // ============================================================================
+
+  const handleOpenRentalWizard = useCallback(() => {
+    setShowRentalWizardModal(true);
+  }, []);
+
+  const handleCloseRentalWizard = useCallback(() => {
+    setShowRentalWizardModal(false);
+  }, []);
+
+  const handleRentalWizardSuccess = useCallback(() => {
+    // On successful submission, update status and close modal
+    setRentalApplicationStatus('submitted');
+    setRentalApplicationProgress(100);
+    setShowRentalWizardModal(false);
+    // Refresh profile data to reflect the submitted application
+    if (profileUserId) {
+      fetchProfileData(profileUserId);
+    }
+  }, [profileUserId, fetchProfileData]);
 
   // ============================================================================
   // PHOTO HANDLERS
@@ -871,6 +985,9 @@ export function useAccountProfilePageLogic() {
     isEditorView,
     isPublicView,
     isAuthenticated,
+    isOwnProfile,
+    previewMode,
+    handleExitPreview,
 
     // Profile data
     profileData,
@@ -930,6 +1047,14 @@ export function useAccountProfilePageLogic() {
     hostListings,
     loadingListings,
     handleListingClick,
-    handleCreateListing
+    handleCreateListing,
+
+    // Rental application (guest-only)
+    rentalApplicationStatus,
+    rentalApplicationProgress,
+    showRentalWizardModal,
+    handleOpenRentalWizard,
+    handleCloseRentalWizard,
+    handleRentalWizardSuccess
   };
 }

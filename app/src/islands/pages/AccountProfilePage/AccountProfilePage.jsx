@@ -9,7 +9,7 @@
  * - Public View: User viewing someone else's profile (read-only)
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import Header from '../../shared/Header.jsx';
 import Footer from '../../shared/Footer.jsx';
 import { ToastProvider } from '../../shared/Toast.jsx';
@@ -20,6 +20,9 @@ import ProfileSidebar from './components/ProfileSidebar.jsx';
 import EditorView from './components/EditorView.jsx';
 import PublicView from './components/PublicView.jsx';
 import FixedSaveBar from './components/shared/FixedSaveBar.jsx';
+import ReferralBanner from './components/ReferralBanner.jsx';
+import ReferralModal from './components/ReferralModal.jsx';
+import RentalApplicationWizardModal from './components/RentalApplicationWizardModal/RentalApplicationWizardModal.jsx';
 import './AccountProfilePage.css';
 
 // ============================================================================
@@ -64,6 +67,7 @@ function ErrorState({ error }) {
 
 export default function AccountProfilePage() {
   const logic = useAccountProfilePageLogic();
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   // Show loading state
   if (logic.loading) {
@@ -122,6 +126,14 @@ export default function AccountProfilePage() {
 
           {/* Main Feed */}
           <div className="account-profile-feed">
+            {/* Referral Banner - shown only in Editor View (user viewing own profile) */}
+            {logic.isEditorView && (
+              <ReferralBanner
+                onInviteClick={() => setShowReferralModal(true)}
+                userType={logic.isHostUser ? 'host' : 'guest'}
+              />
+            )}
+
             {logic.isEditorView ? (
               <EditorView
                 formData={logic.formData}
@@ -147,6 +159,10 @@ export default function AccountProfilePage() {
                 loadingListings={logic.loadingListings}
                 onListingClick={logic.handleListingClick}
                 onCreateListing={logic.handleCreateListing}
+                // Rental application props (guest-only)
+                rentalApplicationStatus={logic.rentalApplicationStatus}
+                rentalApplicationProgress={logic.rentalApplicationProgress}
+                onOpenRentalWizard={logic.handleOpenRentalWizard}
               />
             ) : (
               <PublicView
@@ -163,13 +179,14 @@ export default function AccountProfilePage() {
           </div>
         </main>
 
-        {/* Fixed Save Bar (Editor View only) */}
-        {logic.isEditorView && (
+        {/* Fixed Save Bar (Editor View or Preview Mode for own profile) */}
+        {(logic.isEditorView || logic.previewMode) && (
           <FixedSaveBar
             onPreview={logic.handlePreviewProfile}
             onSave={logic.handleSave}
             saving={logic.saving}
             disabled={!logic.isDirty}
+            previewMode={logic.previewMode}
           />
         )}
 
@@ -189,6 +206,28 @@ export default function AccountProfilePage() {
           }}
           onClose={logic.handleClosePhoneEditModal}
         />
+
+        <ReferralModal
+          isOpen={showReferralModal}
+          onClose={() => setShowReferralModal(false)}
+          referralCode={logic.profileData?.['Referral Code'] || logic.profileUserId || 'user'}
+          stats={{
+            friendsReferred: logic.profileData?.['Friends Referred'] || 0,
+            rewardsClaimed: logic.profileData?.['Rewards Claimed'] || 0,
+            totalRewards: logic.profileData?.['Total Rewards'] || 0
+          }}
+          userType={logic.isHostUser ? 'host' : 'guest'}
+          referrerName={logic.profileData?.['Name - First'] || logic.profileData?.firstName || ''}
+        />
+
+        {/* Rental Application Wizard (Guest-only) */}
+        {!logic.isHostUser && (
+          <RentalApplicationWizardModal
+            isOpen={logic.showRentalWizardModal}
+            onClose={logic.handleCloseRentalWizard}
+            onSuccess={logic.handleRentalWizardSuccess}
+          />
+        )}
 
         <Footer />
       </div>

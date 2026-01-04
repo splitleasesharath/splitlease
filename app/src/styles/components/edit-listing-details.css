@@ -72,12 +72,16 @@
   border: none;
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
-  color: var(--color-text-secondary, #6B7280);
-  transition: background-color 150ms ease;
+  font-size: 24px;
+  font-weight: 300;
+  color: #6B7280;
+  line-height: 1;
+  transition: background-color 150ms ease, color 150ms ease;
 }
 
 .eld-popup-close:hover {
-  background-color: var(--color-background-light, #F7F8F9);
+  background-color: #F3F4F6;
+  color: #1F2937;
 }
 
 /* Popup Subtitle */

@@ -154,6 +154,7 @@ The database stores days natively in this format. No conversion needed.
 - **Send only changed fields when updating database records** (prevents FK constraint violations)
 - **Log full error details** on database errors: `code`, `message`, `details`, `hint`
 - Test edit flows with listings that have null FK values (legacy data)
+- **Informational text triggers**: When adding a `?` icon to open informational text modals, make the accompanying text label clickable too (not just the `?`). Wrap both the text and `?` in a single clickable container.
 
 ### DON'T
 - Expose API keys in frontend code

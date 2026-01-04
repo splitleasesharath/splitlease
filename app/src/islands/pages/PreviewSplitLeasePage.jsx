@@ -90,7 +90,7 @@ function EditSectionButton({ onClick, label = 'Edit' }) {
 // SECTION HEADER WITH EDIT BUTTON
 // ============================================================================
 
-function SectionHeader({ title, onEdit, editSection }) {
+function SectionHeader({ title, onEdit, editSection, focusField }) {
   return (
     <div style={{
       display: 'flex',
@@ -106,7 +106,7 @@ function SectionHeader({ title, onEdit, editSection }) {
         {title}
       </h2>
       {onEdit && (
-        <EditSectionButton onClick={() => onEdit(editSection)} />
+        <EditSectionButton onClick={() => onEdit(editSection, focusField)} />
       )}
     </div>
   );
@@ -546,6 +546,7 @@ export default function PreviewSplitLeasePage() {
   // Edit modal state
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editSection, setEditSection] = useState(null);
+  const [editFocusField, setEditFocusField] = useState(null);
 
   // Booking widget state (display only - no proposal creation)
   const [moveInDate, setMoveInDate] = useState(null);
@@ -808,27 +809,68 @@ export default function PreviewSplitLeasePage() {
     }));
   };
 
-  const handleOpenEditModal = (section) => {
+  const handleOpenEditModal = (section, focusField = null) => {
     setEditSection(section);
+    setEditFocusField(focusField);
     setEditModalOpen(true);
   };
 
   const handleCloseEditModal = () => {
     setEditModalOpen(false);
     setEditSection(null);
+    setEditFocusField(null);
   };
 
   const handleSaveEdit = async (updatedListing) => {
     // Update the local listing state with the new data
+    // Note: Don't close the modal here - let EditListingDetails handle closing
+    // after showing the success toast
     setListing(prev => ({ ...prev, ...updatedListing }));
-    handleCloseEditModal();
   };
 
   const handleUpdateListing = async (id, updates) => {
-    // TODO: Implement API call to update listing
-    console.log('Updating listing:', id, updates);
-    // For now, just return the updates
-    return { ...listing, ...updates };
+    console.log('📝 Updating listing:', id, updates);
+
+    // Map UI field names to database column names (handles quirky column names with leading spaces)
+    const fieldMapping = {
+      'First Available': ' First Available', // DB column has leading space
+    };
+
+    // Transform updates to use correct database column names
+    const dbUpdates = {};
+    for (const [key, value] of Object.entries(updates)) {
+      const dbColumnName = fieldMapping[key] || key;
+      dbUpdates[dbColumnName] = value;
+    }
+
+    console.log('📋 DB updates:', dbUpdates);
+
+    // Perform the update
+    const { error: updateError } = await supabase
+      .from('listing')
+      .update(dbUpdates)
+      .eq('_id', id);
+
+    if (updateError) {
+      console.error('❌ Error updating listing:', updateError);
+      console.error('❌ Error details:', updateError.code, updateError.message, updateError.details, updateError.hint);
+      throw updateError;
+    }
+
+    // Fetch the updated row separately for reliable data retrieval
+    const { data, error: fetchError } = await supabase
+      .from('listing')
+      .select('*')
+      .eq('_id', id)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.warn('⚠️ Update succeeded but failed to fetch updated data:', fetchError);
+      return { _id: id, ...dbUpdates };
+    }
+
+    console.log('✅ Listing updated:', data);
+    return data;
   };
 
   const scrollToSection = (sectionRef, shouldZoomMap = false) => {
@@ -1151,6 +1193,7 @@ export default function PreviewSplitLeasePage() {
                 title="Commute"
                 onEdit={handleOpenEditModal}
                 editSection="details"
+                focusField="parking"
               />
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {listing.parkingOption && (
@@ -1872,6 +1915,7 @@ export default function PreviewSplitLeasePage() {
         <EditListingDetails
           listing={listing}
           editSection={editSection}
+          focusField={editFocusField}
           onClose={handleCloseEditModal}
           onSave={handleSaveEdit}
           updateListing={handleUpdateListing}

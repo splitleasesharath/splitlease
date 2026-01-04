@@ -60,3 +60,128 @@
     font-weight: 600;
     color: var(--text-dark);
 }
+
+/* ============================================
+   Support Section Alt - Clean minimal design
+   ============================================ */
+
+.support-section-alt {
+    padding: 4rem 2rem 6rem;
+    background: white;
+}
+
+.support-section-alt-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.support-section-alt-header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+}
+
+.support-section-alt-eyebrow {
+    font-size: 0.875rem;
+    color: #6B7280;
+    margin: 0 0 0.5rem 0;
+    font-weight: 500;
+}
+
+.support-section-alt-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1d1d1f;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.support-section-alt-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.support-alt-card {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    padding: 1.25rem 1.5rem;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 16px;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
+}
+
+.support-alt-card:hover {
+    border-color: #D1D5DB;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateX(4px);
+}
+
+.support-alt-icon {
+    width: 48px;
+    height: 48px;
+    background: #F9FAFB;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.support-alt-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.support-alt-content h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 0.25rem 0;
+}
+
+.support-alt-content p {
+    font-size: 0.875rem;
+    color: #6B7280;
+    margin: 0;
+}
+
+.support-alt-arrow {
+    color: #9CA3AF;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.support-alt-card:hover .support-alt-arrow {
+    color: #31135D;
+    transform: translateX(4px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .support-section-alt {
+        padding: 3rem 1.5rem 4rem;
+    }
+
+    .support-section-alt-header h2 {
+        font-size: 1.5rem;
+    }
+
+    .support-alt-card {
+        padding: 1rem 1.25rem;
+        gap: 1rem;
+    }
+
+    .support-alt-icon {
+        width: 40px;
+        height: 40px;
+    }
+
+    .support-alt-icon svg {
+        width: 24px;
+        height: 24px;
+    }
+}

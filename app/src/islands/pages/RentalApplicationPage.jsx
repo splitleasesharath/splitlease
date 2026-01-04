@@ -28,6 +28,8 @@ export default function RentalApplicationPage({ requireAuth = false, isAuthentic
     verificationStatus,
     verificationLoading,
     uploadedFiles,
+    uploadProgress,
+    uploadErrors,
 
     // Validation
     fieldErrors,
@@ -112,6 +114,101 @@ export default function RentalApplicationPage({ requireAuth = false, isAuthentic
           </>
         )}
       </button>
+    );
+  };
+
+  // Render file upload box with existing file display and upload progress
+  const renderFileUploadBox = (uploadKey, inputId, helperText, urlField) => {
+    const existingUrl = formData[urlField];
+    const localFile = uploadedFiles[uploadKey];
+    const isUploading = uploadProgress[uploadKey] === 'uploading';
+    const isComplete = uploadProgress[uploadKey] === 'complete';
+    const error = uploadErrors[uploadKey];
+
+    // If there's an existing URL from the database (previously uploaded)
+    if (existingUrl && !localFile) {
+      return (
+        <div className="form-group">
+          <div className="existing-file-display">
+            <a
+              href={existingUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="file-link"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M14 2H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"/>
+              </svg>
+              View uploaded document
+            </a>
+            <button
+              type="button"
+              className="btn-replace-file"
+              onClick={() => document.getElementById(inputId).click()}
+            >
+              Replace
+            </button>
+            <input
+              type="file"
+              id={inputId}
+              accept="image/*,.pdf"
+              onChange={(e) => handleFileUpload(uploadKey, e.target.files)}
+              hidden
+            />
+          </div>
+          <p className="helper-text">{helperText}</p>
+        </div>
+      );
+    }
+
+    // Show upload box (for new uploads or replacements)
+    return (
+      <div className="form-group">
+        <div
+          className={`upload-box ${localFile ? 'has-file' : ''} ${isUploading ? 'uploading' : ''} ${isComplete ? 'complete' : ''} ${error ? 'error' : ''}`}
+          onClick={() => !isUploading && document.getElementById(inputId).click()}
+        >
+          {isUploading ? (
+            <>
+              <span className="upload-spinner" />
+              <span className="upload-text">Uploading...</span>
+            </>
+          ) : isComplete ? (
+            <>
+              <span className="upload-icon success">&#10003;</span>
+              <span className="upload-text">Upload complete!</span>
+            </>
+          ) : (
+            <>
+              <span className="upload-icon">&#128206;</span>
+              <span className="upload-text">Click to upload an image</span>
+            </>
+          )}
+          <input
+            type="file"
+            id={inputId}
+            accept="image/*,.pdf"
+            onChange={(e) => handleFileUpload(uploadKey, e.target.files)}
+            hidden
+          />
+        </div>
+        <p className="helper-text">{helperText}</p>
+        {error && <p className="upload-error">{error}</p>}
+        {localFile && !isUploading && (
+          <div className="file-preview">
+            <div className="file-preview-item">
+              <span className="file-name">{localFile.name}</span>
+              <button
+                type="button"
+                className="remove-file"
+                onClick={() => handleFileRemove(uploadKey)}
+              >
+                &times;
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     );
   };
 
@@ -488,34 +585,11 @@ export default function RentalApplicationPage({ requireAuth = false, isAuthentic
 
                     <div className="form-group">
                       <label className="form-label">Proof of Employment</label>
-                      <div
-                        className={`upload-box ${uploadedFiles.employmentProof ? 'has-file' : ''}`}
-                        onClick={() => document.getElementById('employmentProofFile').click()}
-                      >
-                        <span className="upload-icon">&#128206;</span>
-                        <span className="upload-text">Click to upload an image</span>
-                        <input
-                          type="file"
-                          id="employmentProofFile"
-                          accept="image/*,.pdf"
-                          onChange={(e) => handleFileUpload('employmentProof', e.target.files)}
-                          hidden
-                        />
-                      </div>
-                      <p className="helper-text">Upload a recent pay stub or employment letter</p>
-                      {uploadedFiles.employmentProof && (
-                        <div className="file-preview">
-                          <div className="file-preview-item">
-                            <span className="file-name">{uploadedFiles.employmentProof.name}</span>
-                            <button
-                              type="button"
-                              className="remove-file"
-                              onClick={() => handleFileRemove('employmentProof')}
-                            >
-                              &times;
-                            </button>
-                          </div>
-                        </div>
+                      {renderFileUploadBox(
+                        'employmentProof',
+                        'employmentProofFile',
+                        'Upload a recent pay stub or employment letter',
+                        'proofOfEmploymentUrl'
                       )}
                     </div>
                   </div>
@@ -681,34 +755,11 @@ export default function RentalApplicationPage({ requireAuth = false, isAuthentic
 
                     <div className="form-group">
                       <label className="form-label">Alternative Guarantee Document</label>
-                      <div
-                        className={`upload-box ${uploadedFiles.alternateGuarantee ? 'has-file' : ''}`}
-                        onClick={() => document.getElementById('alternateGuaranteeFile').click()}
-                      >
-                        <span className="upload-icon">&#128206;</span>
-                        <span className="upload-text">Click to upload an image</span>
-                        <input
-                          type="file"
-                          id="alternateGuaranteeFile"
-                          accept="image/*,.pdf"
-                          onChange={(e) => handleFileUpload('alternateGuarantee', e.target.files)}
-                          hidden
-                        />
-                      </div>
-                      <p className="helper-text">Upload supporting documentation</p>
-                      {uploadedFiles.alternateGuarantee && (
-                        <div className="file-preview">
-                          <div className="file-preview-item">
-                            <span className="file-name">{uploadedFiles.alternateGuarantee.name}</span>
-                            <button
-                              type="button"
-                              className="remove-file"
-                              onClick={() => handleFileRemove('alternateGuarantee')}
-                            >
-                              &times;
-                            </button>
-                          </div>
-                        </div>
+                      {renderFileUploadBox(
+                        'alternateGuarantee',
+                        'alternateGuaranteeFile',
+                        'Upload supporting documentation',
+                        'alternateGuaranteeUrl'
                       )}
                     </div>
                   </div>
@@ -735,33 +786,11 @@ export default function RentalApplicationPage({ requireAuth = false, isAuthentic
                     </div>
                     <div className="form-group">
                       <label className="form-label">Alternative Guarantee Document</label>
-                      <div
-                        className={`upload-box ${uploadedFiles.altGuarantee ? 'has-file' : ''}`}
-                        onClick={() => document.getElementById('altGuaranteeFile').click()}
-                      >
-                        <span className="upload-icon">&#128206;</span>
-                        <span className="upload-text">Click to upload an image</span>
-                        <input
-                          type="file"
-                          id="altGuaranteeFile"
-                          accept="image/*,.pdf"
-                          onChange={(e) => handleFileUpload('altGuarantee', e.target.files)}
-                          hidden
-                        />
-                      </div>
-                      {uploadedFiles.altGuarantee && (
-                        <div className="file-preview">
-                          <div className="file-preview-item">
-                            <span className="file-name">{uploadedFiles.altGuarantee.name}</span>
-                            <button
-                              type="button"
-                              className="remove-file"
-                              onClick={() => handleFileRemove('altGuarantee')}
-                            >
-                              &times;
-                            </button>
-                          </div>
-                        </div>
+                      {renderFileUploadBox(
+                        'altGuarantee',
+                        'altGuaranteeFile',
+                        'Upload supporting documentation',
+                        'alternateGuaranteeUrl'
                       )}
                     </div>
                   </div>
@@ -950,36 +979,12 @@ export default function RentalApplicationPage({ requireAuth = false, isAuthentic
                   </div>
 
                   {formData.showCreditScore && (
-                    <div className="form-group">
-                      <div
-                        className={`upload-box ${uploadedFiles.creditScore ? 'has-file' : ''}`}
-                        onClick={() => document.getElementById('creditScoreFile').click()}
-                      >
-                        <span className="upload-icon">&#128206;</span>
-                        <span className="upload-text">Click to upload an image</span>
-                        <input
-                          type="file"
-                          id="creditScoreFile"
-                          accept="image/*,.pdf"
-                          onChange={(e) => handleFileUpload('creditScore', e.target.files)}
-                          hidden
-                        />
-                      </div>
-                      {uploadedFiles.creditScore && (
-                        <div className="file-preview">
-                          <div className="file-preview-item">
-                            <span className="file-name">{uploadedFiles.creditScore.name}</span>
-                            <button
-                              type="button"
-                              className="remove-file"
-                              onClick={() => handleFileRemove('creditScore')}
-                            >
-                              &times;
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    renderFileUploadBox(
+                      'creditScore',
+                      'creditScoreFile',
+                      'Upload a screenshot of your credit score',
+                      'creditScoreUrl'
+                    )
                   )}
                 </div>
               </section>

@@ -73,10 +73,31 @@ export async function handleCreate(
   }
 
   const proposalData = proposal as unknown as ProposalData;
-  console.log(`[virtual-meeting:create] Found proposal, guest: ${proposalData.Guest}, listing: ${proposalData.Listing}`);
+  console.log(`[virtual-meeting:create] Found proposal, guest: ${proposalData.Guest}, listing: ${proposalData.Listing}, hostUser: ${proposalData["Host User"]}`);
 
-  // Fetch Host User directly (Host User column now contains user._id)
-  const hostUserId = proposalData["Host User"];
+  // Fetch Host User - try proposal's "Host User" first, fallback to listing's "Host User"
+  let hostUserId = proposalData["Host User"];
+
+  if (!hostUserId && proposalData.Listing) {
+    console.log(`[virtual-meeting:create] Proposal has no Host User, fetching from listing: ${proposalData.Listing}`);
+    const { data: listing, error: listingError } = await supabase
+      .from("listing")
+      .select(`"Host User"`)
+      .eq("_id", proposalData.Listing)
+      .single();
+
+    if (listingError || !listing) {
+      console.error(`[virtual-meeting:create] Listing fetch failed:`, listingError);
+      throw new ValidationError(`Cannot determine host: listing not found ${proposalData.Listing}`);
+    }
+
+    hostUserId = listing["Host User"];
+    console.log(`[virtual-meeting:create] Got host from listing: ${hostUserId}`);
+  }
+
+  if (!hostUserId) {
+    throw new ValidationError(`Cannot determine host user for proposal ${input.proposalId}`);
+  }
 
   const { data: hostUser, error: hostUserError } = await supabase
     .from("user")
@@ -184,10 +205,16 @@ export async function handleCreate(
   // UPDATE PROPOSAL WITH VIRTUAL MEETING LINK
   // ================================================
 
+  // Determine if requester is host or guest
+  const requesterIsHost = input.requestedById === hostUserData._id;
+  const requestVirtualMeetingValue = requesterIsHost ? "host" : "guest";
+
+  console.log(`[virtual-meeting:create] Requester: ${input.requestedById}, Host: ${hostUserData._id}, Value: ${requestVirtualMeetingValue}`);
+
   const { error: proposalUpdateError } = await supabase
     .from("proposal")
     .update({
-      "request virtual meeting": "guest",
+      "request virtual meeting": requestVirtualMeetingValue,
       "virtual meeting": virtualMeetingId,
       "Modified Date": now,
     })

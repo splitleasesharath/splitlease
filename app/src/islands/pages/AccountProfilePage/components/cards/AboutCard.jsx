@@ -2,6 +2,7 @@
  * AboutCard.jsx
  *
  * Bio/About section with textarea for longer description.
+ * Public view shows "About {firstName}" with bio-text styling.
  */
 
 import React from 'react';
@@ -12,17 +13,21 @@ const MAX_BIO_LENGTH = 500;
 export default function AboutCard({
   bio,
   onFieldChange,
-  readOnly = false
+  readOnly = false,
+  firstName = ''
 }) {
   const charCount = (bio || '').length;
 
   if (readOnly) {
+    // Use dynamic title "About {firstName}" if provided, else "About"
+    const title = firstName ? `About ${firstName}` : 'About';
+
     return (
-      <ProfileCard title="About">
+      <ProfileCard title={title}>
         {bio ? (
-          <p className="public-profile-bio">{bio}</p>
+          <p className="public-bio-text">{bio}</p>
         ) : (
-          <p className="public-profile-bio" style={{ color: 'var(--sl-text-tertiary)' }}>
+          <p className="public-bio-text" style={{ color: 'var(--sl-text-tertiary)' }}>
             No bio provided
           </p>
         )}

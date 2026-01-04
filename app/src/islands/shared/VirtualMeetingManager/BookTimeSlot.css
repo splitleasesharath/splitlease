@@ -196,30 +196,33 @@
 
 .vm-selected-slots {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 8px;
-  min-height: 60px;
+  min-height: 40px;
   padding: 10px;
   background: rgb(247, 248, 249);
   border-radius: 6px;
   border: none;
+  justify-content: center;
+  align-items: center;
 }
 
 .vm-slot-badge {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 6px 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 4px 10px;
   font-family: 'Alata', sans-serif;
-  font-size: 13px;
+  font-size: 12px;
   color: #374151;
   font-weight: 400;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
   gap: 6px;
-  transition: background 0.2s;
+  transition: background 0.2s, border-color 0.2s;
+  white-space: nowrap;
 }
 
 .vm-slot-badge::before {
@@ -233,7 +236,8 @@
 }
 
 .vm-slot-badge:hover {
-  background: rgba(0, 0, 0, 0.03);
+  background: #f9fafb;
+  border-color: #d1d5db;
 }
 
 .vm-remove-slot-btn {
@@ -383,13 +387,14 @@
   }
 
   .vm-selected-slots {
-    min-height: 50px;
+    min-height: 36px;
     padding: 8px;
+    gap: 6px;
   }
 
   .vm-slot-badge {
-    font-size: 12px;
-    padding: 4px 0;
+    font-size: 11px;
+    padding: 3px 8px;
   }
 
   .vm-time-slots-list {
