@@ -11,9 +11,11 @@ import { supabase } from '../../lib/supabase.js';
  */
 /**
  * Multi-email placeholders that support multiple email addresses
- * Format: $$cc$$ and $$bcc$$ can have multiple emails added via UI
+ * These get converted to JSON arrays: [{"email": "e1"},{"email": "e2"}]
+ *
+ * Bubble conversion: comma separator → "},{"email":" to build array
  */
-const MULTI_EMAIL_PLACEHOLDERS = ['$$cc$$', '$$bcc$$'];
+const MULTI_EMAIL_PLACEHOLDERS = ['$$to$$', '$$cc$$', '$$bcc$$'];
 
 export default function useEmailUnitPageLogic() {
   // State
