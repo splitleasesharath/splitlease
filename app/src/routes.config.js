@@ -324,6 +324,14 @@ export const routes = [
     cloudflareInternal: false,
     hasDynamicSegment: false
   },
+  {
+    path: '/_email-unit',
+    file: '_email-unit.html',
+    aliases: ['/_email-unit.html'],
+    protected: false,
+    cloudflareInternal: false,
+    hasDynamicSegment: false
+  },
 
   // ===== DEMO/PROTOTYPE PAGES =====
   {

@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2025-12-23T19:24:05.795Z
+# Generated: 2026-01-05T08:34:33.903Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -133,6 +133,11 @@
 /_internal-test  /_internal-test.html  200
 /_internal-test/  /_internal-test.html  200
 /_internal-test.html  /_internal-test.html  200
+
+# /_email-unit
+/_email-unit  /_email-unit.html  200
+/_email-unit/  /_email-unit.html  200
+/_email-unit.html  /_email-unit.html  200
 
 # Note: Cloudflare Pages automatically serves /404.html for not found routes
 # No explicit catch-all rule needed - native 404.html support handles this
