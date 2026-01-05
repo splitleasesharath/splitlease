@@ -2,14 +2,21 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../lib/supabase.js';
 
 /**
- * useEmailUnitPageLogic - Logic hook for Email Unit Preview Page
+ * useEmailSmsUnitPageLogic - Logic hook for Email & SMS Unit Page
  *
  * Handles:
  * - Fetching email templates from Supabase reference_table
  * - Managing template selection and placeholder values
  * - Manual preview generation (not real-time)
  * - Sending test emails
+ * - Fetching Twilio numbers from os_twilio_numbers table
+ * - Sending test SMS messages
  */
+
+/**
+ * SMS character limit (standard SMS segment)
+ */
+const SMS_CHAR_LIMIT = 160;
 
 /**
  * Fixed from email address for all sent emails
@@ -24,8 +31,8 @@ const FROM_EMAIL = 'tech@leasesplit.com';
  */
 const MULTI_EMAIL_PLACEHOLDERS = ['$$to$$', '$$cc$$', '$$bcc$$'];
 
-export default function useEmailUnitPageLogic() {
-  // State
+export default function useEmailSmsUnitPageLogic() {
+  // ===== EMAIL STATE =====
   const [templates, setTemplates] = useState([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [placeholderValues, setPlaceholderValues] = useState({});
@@ -35,6 +42,15 @@ export default function useEmailUnitPageLogic() {
   const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState(null); // { success: bool, message: string }
+
+  // ===== SMS STATE =====
+  const [twilioNumbers, setTwilioNumbers] = useState([]);
+  const [smsFromNumber, setSmsFromNumber] = useState(''); // Selected phone_number_international
+  const [smsToNumber, setSmsToNumber] = useState(''); // 10-digit phone number
+  const [smsBody, setSmsBody] = useState('');
+  const [smsLoading, setSmsLoading] = useState(true);
+  const [smsSending, setSmsSending] = useState(false);
+  const [smsResult, setSmsResult] = useState(null); // { success: bool, message: string }
 
   // Get the selected template object
   const selectedTemplate = useMemo(() => {
@@ -51,13 +67,37 @@ export default function useEmailUnitPageLogic() {
   const canSendEmail = useMemo(() => {
     if (!selectedTemplate) return false;
     const toEmails = multiEmailValues['$$to$$'] || [];
+    const hasValidTo = toEmails.some(email => email && email.trim().length > 0);
+
+    // Debug logging - remove after fixing
+    console.log('[canSendEmail] Check:', {
+      hasTemplate: !!selectedTemplate,
+      toEmails,
+      hasValidTo,
+      allMultiEmailKeys: Object.keys(multiEmailValues),
+      multiEmailValues
+    });
+
     // At least one valid To email required
-    return toEmails.some(email => email && email.trim().length > 0);
+    return hasValidTo;
   }, [selectedTemplate, multiEmailValues]);
+
+  // Check if SMS can be sent (all fields filled)
+  const canSendSms = useMemo(() => {
+    const hasFromNumber = smsFromNumber && smsFromNumber.trim().length > 0;
+    const hasToNumber = smsToNumber && smsToNumber.trim().length === 10;
+    const hasBody = smsBody && smsBody.trim().length > 0;
+    return hasFromNumber && hasToNumber && hasBody;
+  }, [smsFromNumber, smsToNumber, smsBody]);
 
   // Load templates on mount
   useEffect(() => {
     loadTemplates();
+  }, []);
+
+  // Load Twilio numbers on mount
+  useEffect(() => {
+    loadTwilioNumbers();
   }, []);
 
   /**
@@ -80,10 +120,36 @@ export default function useEmailUnitPageLogic() {
 
       setTemplates(data || []);
     } catch (err) {
-      console.error('[useEmailUnitPageLogic] Error loading templates:', err);
+      console.error('[useEmailSmsUnitPageLogic] Error loading templates:', err);
       setError('Unable to load email templates. Please try again later.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  /**
+   * Fetch Twilio phone numbers from Supabase
+   */
+  async function loadTwilioNumbers() {
+    try {
+      setSmsLoading(true);
+
+      const { data, error: fetchError } = await supabase
+        .schema('reference_table')
+        .from('os_twilio_numbers')
+        .select('id, name, display, phone_number, phone_number_international')
+        .order('name', { ascending: true });
+
+      if (fetchError) {
+        throw fetchError;
+      }
+
+      setTwilioNumbers(data || []);
+    } catch (err) {
+      console.error('[useEmailSmsUnitPageLogic] Error loading Twilio numbers:', err);
+      // Don't set error state for SMS loading failure - just log it
+    } finally {
+      setSmsLoading(false);
     }
   }
 
@@ -106,9 +172,19 @@ export default function useEmailUnitPageLogic() {
           // Initialize multi-email fields with one empty entry
           initialMultiEmails[p.key] = [''];
         } else {
-          // Pre-fill with placeholder text for quicker testing
-          initialValues[p.key] = p.key;
+          // Pre-fill with placeholder name (without $$ wrapper) for quicker testing
+          // e.g., $$header$$ → "header", $$body text$$ → "body text"
+          initialValues[p.key] = p.key.replace(/^\$\$/, '').replace(/\$\$$/, '');
         }
+      });
+
+      // Debug logging - remove after fixing
+      console.log('[handleTemplateChange] Initialized:', {
+        templateId,
+        allPlaceholderKeys: newPlaceholders.map(p => p.key),
+        multiEmailKeys: Object.keys(initialMultiEmails),
+        hasToPlaceholder: newPlaceholders.some(p => p.key === '$$to$$'),
+        initialMultiEmails
       });
 
       setPlaceholderValues(initialValues);
@@ -262,8 +338,90 @@ export default function useEmailUnitPageLogic() {
     setSendResult(null);
   }
 
+  // ===== SMS HANDLERS =====
+
+  /**
+   * Handle SMS from number change
+   */
+  function handleSmsFromChange(phoneNumberInternational) {
+    setSmsFromNumber(phoneNumberInternational);
+  }
+
+  /**
+   * Handle SMS to number change (10 digits only)
+   */
+  function handleSmsToChange(value) {
+    // Only allow digits, max 10
+    const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
+    setSmsToNumber(digitsOnly);
+  }
+
+  /**
+   * Handle SMS body change (with character limit)
+   */
+  function handleSmsBodyChange(value) {
+    // Allow up to SMS_CHAR_LIMIT characters
+    setSmsBody(value.slice(0, SMS_CHAR_LIMIT));
+  }
+
+  /**
+   * Send SMS using the send-sms Edge Function
+   */
+  async function sendSms() {
+    if (!canSendSms) {
+      return;
+    }
+
+    setSmsSending(true);
+    setSmsResult(null);
+
+    try {
+      // Format to number as E.164 (add +1 for US)
+      const formattedToNumber = `+1${smsToNumber}`;
+
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'send',
+          payload: {
+            to: formattedToNumber,
+            from: smsFromNumber, // Already in E.164 format from DB
+            body: smsBody,
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSmsResult({ success: true, message: 'SMS sent successfully!' });
+        // Clear form after successful send
+        setSmsToNumber('');
+        setSmsBody('');
+      } else {
+        setSmsResult({ success: false, message: result.error || 'Failed to send SMS' });
+      }
+    } catch (err) {
+      console.error('[useEmailSmsUnitPageLogic] Error sending SMS:', err);
+      setSmsResult({ success: false, message: err.message || 'Failed to send SMS' });
+    } finally {
+      setSmsSending(false);
+    }
+  }
+
+  /**
+   * Clear SMS result message
+   */
+  function clearSmsResult() {
+    setSmsResult(null);
+  }
+
   return {
-    // State
+    // ===== EMAIL STATE =====
     templates,
     selectedTemplateId,
     selectedTemplate,
@@ -278,7 +436,7 @@ export default function useEmailUnitPageLogic() {
     sendResult,
     fromEmail: FROM_EMAIL,
 
-    // Handlers
+    // ===== EMAIL HANDLERS =====
     handleTemplateChange,
     handlePlaceholderChange,
     handleMultiEmailChange,
@@ -288,6 +446,24 @@ export default function useEmailUnitPageLogic() {
     updatePreview,
     sendEmail,
     clearSendResult,
+
+    // ===== SMS STATE =====
+    twilioNumbers,
+    smsFromNumber,
+    smsToNumber,
+    smsBody,
+    smsLoading,
+    smsSending,
+    smsResult,
+    canSendSms,
+    smsCharLimit: SMS_CHAR_LIMIT,
+
+    // ===== SMS HANDLERS =====
+    handleSmsFromChange,
+    handleSmsToChange,
+    handleSmsBodyChange,
+    sendSms,
+    clearSmsResult,
   };
 }
 

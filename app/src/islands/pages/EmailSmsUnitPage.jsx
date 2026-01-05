@@ -1,19 +1,21 @@
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
-import useEmailUnitPageLogic from './useEmailUnitPageLogic.js';
+import useEmailSmsUnitPageLogic from './useEmailSmsUnitPageLogic.js';
 
 /**
- * EmailUnitPage - Internal page for previewing email templates
+ * EmailSmsUnitPage - Internal page for email templates and SMS testing
  *
  * Features:
  * - Dropdown selector for email templates from database
  * - Dynamic form fields based on template's Placeholder array
- * - Live preview of email HTML with placeholder substitution
+ * - Manual preview of email HTML with placeholder substitution
+ * - SMS sending section with Twilio number selection
  *
- * Follows the Hollow Component pattern - all logic is in useEmailUnitPageLogic.js
+ * Follows the Hollow Component pattern - all logic is in useEmailSmsUnitPageLogic.js
  */
-export default function EmailUnitPage() {
+export default function EmailSmsUnitPage() {
   const {
+    // Email state
     templates,
     selectedTemplateId,
     selectedTemplate,
@@ -27,6 +29,7 @@ export default function EmailUnitPage() {
     sending,
     sendResult,
     fromEmail,
+    // Email handlers
     handleTemplateChange,
     handlePlaceholderChange,
     handleMultiEmailChange,
@@ -36,7 +39,23 @@ export default function EmailUnitPage() {
     updatePreview,
     sendEmail,
     clearSendResult,
-  } = useEmailUnitPageLogic();
+    // SMS state
+    twilioNumbers,
+    smsFromNumber,
+    smsToNumber,
+    smsBody,
+    smsLoading,
+    smsSending,
+    smsResult,
+    canSendSms,
+    smsCharLimit,
+    // SMS handlers
+    handleSmsFromChange,
+    handleSmsToChange,
+    handleSmsBodyChange,
+    sendSms,
+    clearSmsResult,
+  } = useEmailSmsUnitPageLogic();
 
   // Loading state
   if (loading) {
@@ -70,7 +89,7 @@ export default function EmailUnitPage() {
       <main style={styles.container}>
         {/* Left Panel - Template Selection & Form */}
         <section style={styles.leftPanel}>
-          <h1 style={styles.pageTitle}>Email Template Preview</h1>
+          <h1 style={styles.pageTitle}>Email & SMS Unit</h1>
 
           {/* Template Selector */}
           <div style={styles.selectorContainer}>
@@ -187,48 +206,49 @@ export default function EmailUnitPage() {
             </div>
           )}
 
-          {/* Action Buttons */}
+          {/* Action Buttons - Sticky at bottom */}
           {selectedTemplate && (
             <div style={styles.actionButtons}>
-              <button
-                type="button"
-                onClick={updatePreview}
-                style={styles.updatePreviewButton}
-              >
-                Update Preview
-              </button>
-              <button
-                type="button"
-                onClick={sendEmail}
-                disabled={!canSendEmail || sending}
-                style={{
-                  ...styles.sendEmailButton,
-                  ...((!canSendEmail || sending) ? styles.disabledButton : {}),
-                }}
-              >
-                {sending ? 'Sending...' : 'Send Email'}
-              </button>
-            </div>
-          )}
-
-          {/* Send Result Message */}
-          {sendResult && (
-            <div
-              style={{
-                ...styles.resultMessage,
-                ...(sendResult.success ? styles.successMessage : styles.errorMessage),
-              }}
-              onClick={clearSendResult}
-            >
-              {sendResult.message}
-              <span style={styles.closeHint}>(click to dismiss)</span>
+              {/* Send Result Message */}
+              {sendResult && (
+                <div
+                  style={{
+                    ...styles.resultMessage,
+                    ...(sendResult.success ? styles.successMessage : styles.errorMessage),
+                  }}
+                  onClick={clearSendResult}
+                >
+                  {sendResult.message}
+                  <span style={styles.closeHint}>(click to dismiss)</span>
+                </div>
+              )}
+              <div style={styles.buttonRow}>
+                <button
+                  type="button"
+                  onClick={updatePreview}
+                  style={styles.updatePreviewButton}
+                >
+                  Update Preview
+                </button>
+                <button
+                  type="button"
+                  onClick={sendEmail}
+                  disabled={!canSendEmail || sending}
+                  style={{
+                    ...styles.sendEmailButton,
+                    ...((!canSendEmail || sending) ? styles.disabledButton : {}),
+                  }}
+                >
+                  {sending ? 'Sending...' : 'Send Email'}
+                </button>
+              </div>
             </div>
           )}
         </section>
 
         {/* Right Panel - Email Preview */}
         <section style={styles.rightPanel}>
-          <h2 style={styles.previewTitle}>Preview</h2>
+          <h2 style={styles.previewTitle}>Email Preview</h2>
           <div style={styles.previewContainer}>
             {previewHtml ? (
               <iframe
@@ -245,6 +265,103 @@ export default function EmailUnitPage() {
           </div>
         </section>
       </main>
+
+      {/* SMS Section */}
+      <section style={styles.smsSection}>
+        <div style={styles.smsContainer}>
+          <h2 style={styles.smsSectionTitle}>Send SMS</h2>
+
+          {/* From Number Dropdown */}
+          <div style={styles.smsFormField}>
+            <label htmlFor="sms-from" style={styles.smsLabel}>
+              From Number
+            </label>
+            <select
+              id="sms-from"
+              value={smsFromNumber}
+              onChange={(e) => handleSmsFromChange(e.target.value)}
+              style={styles.smsSelect}
+              disabled={smsLoading}
+            >
+              <option value="">-- Select a number --</option>
+              {twilioNumbers.map(num => (
+                <option key={num.id} value={num.phone_number_international}>
+                  {num.display || num.name} ({num.phone_number_international})
+                </option>
+              ))}
+            </select>
+            {smsLoading && <span style={styles.loadingHint}>Loading numbers...</span>}
+          </div>
+
+          {/* To Number Input */}
+          <div style={styles.smsFormField}>
+            <label htmlFor="sms-to" style={styles.smsLabel}>
+              To Number (10 digits)
+            </label>
+            <div style={styles.smsToInputContainer}>
+              <span style={styles.smsToPrefix}>+1</span>
+              <input
+                id="sms-to"
+                type="tel"
+                value={smsToNumber}
+                onChange={(e) => handleSmsToChange(e.target.value)}
+                style={styles.smsToInput}
+                placeholder="5551234567"
+                maxLength={10}
+              />
+            </div>
+            <span style={styles.smsFieldHint}>
+              {smsToNumber.length}/10 digits
+            </span>
+          </div>
+
+          {/* SMS Body */}
+          <div style={styles.smsFormField}>
+            <label htmlFor="sms-body" style={styles.smsLabel}>
+              Message
+            </label>
+            <textarea
+              id="sms-body"
+              value={smsBody}
+              onChange={(e) => handleSmsBodyChange(e.target.value)}
+              style={styles.smsTextarea}
+              placeholder="Enter your SMS message..."
+              rows={4}
+            />
+            <span style={styles.smsFieldHint}>
+              {smsBody.length}/{smsCharLimit} characters
+            </span>
+          </div>
+
+          {/* SMS Result Message */}
+          {smsResult && (
+            <div
+              style={{
+                ...styles.resultMessage,
+                ...(smsResult.success ? styles.successMessage : styles.errorMessage),
+              }}
+              onClick={clearSmsResult}
+            >
+              {smsResult.message}
+              <span style={styles.closeHint}>(click to dismiss)</span>
+            </div>
+          )}
+
+          {/* Send SMS Button */}
+          <button
+            type="button"
+            onClick={sendSms}
+            disabled={!canSendSms || smsSending}
+            style={{
+              ...styles.smsSendButton,
+              ...((!canSendSms || smsSending) ? styles.disabledButton : {}),
+            }}
+          >
+            {smsSending ? 'Sending...' : 'Send SMS'}
+          </button>
+        </div>
+      </section>
+
       <Footer />
     </>
   );
@@ -264,6 +381,7 @@ const styles = {
     flex: '0 0 40%',
     maxWidth: '500px',
     padding: '24px',
+    paddingBottom: '0', // Sticky buttons handle their own space
     backgroundColor: '#f9fafb',
     borderRadius: '8px',
     overflowY: 'auto',
@@ -456,13 +574,27 @@ const styles = {
     color: '#6b7280',
     cursor: 'not-allowed',
   },
-  // Action buttons container
+  // Action buttons container - sticky at bottom of left panel
   actionButtons: {
     display: 'flex',
+    flexDirection: 'column',
     gap: '12px',
-    marginTop: '24px',
-    paddingTop: '24px',
+    paddingTop: '16px',
+    paddingBottom: '24px', // Match panel padding
     borderTop: '1px solid #e5e7eb',
+    position: 'sticky',
+    bottom: 0,
+    backgroundColor: '#f9fafb', // Match left panel background
+    marginLeft: '-24px', // Extend to panel edges
+    marginRight: '-24px',
+    marginBottom: '-24px', // Counteract parent padding removal
+    paddingLeft: '24px',
+    paddingRight: '24px',
+    zIndex: 10,
+  },
+  buttonRow: {
+    display: 'flex',
+    gap: '12px',
   },
   updatePreviewButton: {
     flex: '1',
@@ -492,7 +624,6 @@ const styles = {
   },
   // Result message
   resultMessage: {
-    marginTop: '16px',
     padding: '12px 16px',
     borderRadius: '6px',
     fontSize: '14px',
@@ -514,5 +645,102 @@ const styles = {
   closeHint: {
     fontSize: '12px',
     opacity: 0.7,
+  },
+  // ===== SMS SECTION STYLES =====
+  smsSection: {
+    backgroundColor: '#f3f4f6',
+    padding: '24px 20px',
+    borderTop: '1px solid #e5e7eb',
+  },
+  smsContainer: {
+    maxWidth: '500px',
+    margin: '0 auto',
+    backgroundColor: '#ffffff',
+    padding: '24px',
+    borderRadius: '8px',
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+  },
+  smsSectionTitle: {
+    fontSize: '20px',
+    fontWeight: '600',
+    marginBottom: '20px',
+    color: '#111827',
+  },
+  smsFormField: {
+    marginBottom: '16px',
+  },
+  smsLabel: {
+    display: 'block',
+    fontSize: '14px',
+    fontWeight: '500',
+    marginBottom: '6px',
+    color: '#374151',
+  },
+  smsSelect: {
+    width: '100%',
+    padding: '10px 12px',
+    fontSize: '14px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    backgroundColor: '#ffffff',
+    boxSizing: 'border-box',
+  },
+  smsToInputContainer: {
+    display: 'flex',
+    alignItems: 'center',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    overflow: 'hidden',
+  },
+  smsToPrefix: {
+    padding: '10px 12px',
+    backgroundColor: '#f3f4f6',
+    color: '#6b7280',
+    fontSize: '14px',
+    fontWeight: '500',
+    borderRight: '1px solid #d1d5db',
+  },
+  smsToInput: {
+    flex: '1',
+    padding: '10px 12px',
+    fontSize: '14px',
+    border: 'none',
+    outline: 'none',
+    boxSizing: 'border-box',
+  },
+  smsTextarea: {
+    width: '100%',
+    padding: '10px 12px',
+    fontSize: '14px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    resize: 'vertical',
+    boxSizing: 'border-box',
+    fontFamily: 'inherit',
+  },
+  smsFieldHint: {
+    display: 'block',
+    fontSize: '12px',
+    color: '#6b7280',
+    marginTop: '4px',
+  },
+  loadingHint: {
+    display: 'block',
+    fontSize: '12px',
+    color: '#6b7280',
+    marginTop: '4px',
+    fontStyle: 'italic',
+  },
+  smsSendButton: {
+    width: '100%',
+    padding: '12px 16px',
+    fontSize: '14px',
+    fontWeight: '600',
+    backgroundColor: '#8b5cf6', // Purple for SMS to differentiate from email
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    marginTop: '8px',
   },
 };

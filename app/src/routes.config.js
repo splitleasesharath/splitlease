@@ -325,9 +325,9 @@ export const routes = [
     hasDynamicSegment: false
   },
   {
-    path: '/_email-unit',
-    file: '_email-unit.html',
-    aliases: ['/_email-unit.html'],
+    path: '/_email-sms-unit',
+    file: '_email-sms-unit.html',
+    aliases: ['/_email-sms-unit.html'],
     protected: false,
     cloudflareInternal: false,
     hasDynamicSegment: false
