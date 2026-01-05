@@ -93,6 +93,8 @@ Before investigating ANY issue, you must understand the system you're working wi
 You MUST create a markdown file in `.claude/plans/New/` with the naming convention:
 `YYYYMMDDHHMMSS-debug-<short-description>.md`
 
+> **⚠️ CONTEXT RULE**: Do NOT automatically scan or load existing files from `.claude/plans/` at the start of your investigation. That folder contains historical files that may be outdated and will overload context. Only reference specific plan files if the user explicitly mentions them. You may WRITE new debug analysis files to `.claude/plans/New/`, but do not preemptively read from it.
+
 Your markdown file must include these sections:
 
 ```markdown
