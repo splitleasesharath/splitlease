@@ -41,6 +41,8 @@ export async function handleSend(
     from_name,
     subject: providedSubject,
     variables,
+    cc_emails,
+    bcc_emails,
   } = payload as SendEmailPayload;
 
   // Validate email format
@@ -145,6 +147,29 @@ export async function handleSend(
   } catch (parseError) {
     console.error('[send-email:send] Failed to parse processed template as JSON:', parseError);
     throw new Error(`Template ${template_id} produced invalid JSON after placeholder processing`);
+  }
+
+  // Inject CC and BCC recipients into personalizations if provided
+  if ((cc_emails && cc_emails.length > 0) || (bcc_emails && bcc_emails.length > 0)) {
+    const personalizations = sendGridBody.personalizations as Array<Record<string, unknown>>;
+    if (personalizations && personalizations.length > 0) {
+      // Add CC recipients
+      if (cc_emails && cc_emails.length > 0) {
+        const validCcEmails = cc_emails.filter(email => email && email.trim() && email.includes('@'));
+        if (validCcEmails.length > 0) {
+          personalizations[0].cc = validCcEmails.map(email => ({ email: email.trim() }));
+          console.log('[send-email:send] Added CC recipients:', validCcEmails.length);
+        }
+      }
+      // Add BCC recipients
+      if (bcc_emails && bcc_emails.length > 0) {
+        const validBccEmails = bcc_emails.filter(email => email && email.trim() && email.includes('@'));
+        if (validBccEmails.length > 0) {
+          personalizations[0].bcc = validBccEmails.map(email => ({ email: email.trim() }));
+          console.log('[send-email:send] Added BCC recipients:', validBccEmails.length);
+        }
+      }
+    }
   }
 
   const sendGridResponse = await sendEmailRaw(sendgridApiKey, sendgridEmailEndpoint, sendGridBody);
