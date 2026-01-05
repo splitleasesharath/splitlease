@@ -214,9 +214,13 @@ function extractPlaceholders(placeholderArray) {
 /**
  * JSON fragment placeholders - these are NOT inside strings in the template.
  * They get replaced with JSON structures or removed entirely if empty.
- * Only CC and BCC are JSON fragments; others are inside strings.
+ *
+ * Format examples:
+ * - $$cc$$ → ,"cc": [{"email": "email1"},{"email": "email2"}]
+ * - $$bcc$$ → ,"bcc": [{"email": "email1"},{"email": "email2"}]
+ * - $$reply_to$$ → "reply_to": {"email": "email" $$reply_to name$$},
  */
-const JSON_FRAGMENT_PLACEHOLDERS = ['$$cc$$', '$$bcc$$'];
+const JSON_FRAGMENT_PLACEHOLDERS = ['$$cc$$', '$$bcc$$', '$$reply_to$$'];
 
 /**
  * Generate preview HTML with placeholder substitution
