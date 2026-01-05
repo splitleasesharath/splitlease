@@ -184,6 +184,88 @@
   padding: 40px;
 }
 
+/* Mobile View: Card List */
+.policies-mobile-wrapper {
+  display: none;
+  flex-direction: column;
+  width: 95%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 0 16px;
+  gap: 16px;
+}
+
+.policies-mobile-page-title {
+  font-family: var(--font-heading);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-dark);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+/* Mobile Policy Card */
+.policies-mobile-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg-white);
+  border: 1px solid var(--border-color, #E6E6E6);
+  border-radius: var(--rounded-md, 8px);
+  padding: 24px 20px;
+  text-align: center;
+  gap: 12px;
+}
+
+.policies-mobile-card-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-light, #F9FAFB);
+  border-radius: 50%;
+  color: var(--primary-purple, #4A2B6B);
+}
+
+.policies-mobile-card-icon i {
+  font-size: 24px;
+}
+
+.policies-mobile-card-title {
+  font-family: var(--font-heading);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.policies-mobile-card-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--primary-purple, #4A2B6B);
+  color: white;
+  font-family: var(--font-inter, 'Inter', sans-serif);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px 24px;
+  border-radius: var(--rounded-md, 8px);
+  text-decoration: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  margin-top: 4px;
+}
+
+.policies-mobile-card-button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.policies-mobile-card-button i {
+  font-size: 12px;
+}
+
 /* Responsive Layout */
 @media (max-width: 1200px) {
   .policies-content-wrapper {
@@ -192,45 +274,31 @@
 }
 
 @media (max-width: 900px) {
+  /* Hide desktop layout, show mobile */
   .policies-content-wrapper {
-    flex-direction: column;
-    width: 95%;
-    gap: 24px;
+    display: none;
   }
 
-  .policies-sidebar {
-    position: static;
-    width: 100%;
-    margin-bottom: 24px;
-  }
-
-  .policies-main-content {
-    width: 100%;
-  }
-
-  .policies-page-title {
-    font-size: 28px;
-  }
-
-  .policies-pdf-container iframe {
-    height: 600px;
+  .policies-mobile-wrapper {
+    display: flex;
   }
 }
 
 @media (max-width: 480px) {
-  .policies-main-content {
-    padding: 24px;
-  }
-
-  .policies-page-title {
+  .policies-mobile-page-title {
     font-size: 24px;
   }
 
-  .policies-sidebar-title {
-    font-size: 20px;
+  .policies-mobile-card {
+    padding: 20px 16px;
   }
 
-  .policies-nav-item {
+  .policies-mobile-card-title {
     font-size: 16px;
+  }
+
+  .policies-mobile-card-button {
+    width: 100%;
+    justify-content: center;
   }
 }
