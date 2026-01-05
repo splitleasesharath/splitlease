@@ -19,11 +19,16 @@ export default function EmailUnitPage() {
     selectedTemplate,
     placeholders,
     placeholderValues,
+    multiEmailValues,
     previewHtml,
     loading,
     error,
     handleTemplateChange,
     handlePlaceholderChange,
+    handleMultiEmailChange,
+    addMultiEmail,
+    removeMultiEmail,
+    isMultiEmailPlaceholder,
   } = useEmailUnitPageLogic();
 
   // Loading state
@@ -94,8 +99,46 @@ export default function EmailUnitPage() {
               {placeholders.map(p => (
                 <div key={p.key} style={styles.formField}>
                   <label style={styles.fieldLabel}>{p.label}</label>
-                  {/* Use textarea for body text, input for others */}
-                  {p.key.toLowerCase().includes('body') || p.key.toLowerCase().includes('text') ? (
+
+                  {/* Multi-email fields (CC/BCC) with add/remove buttons */}
+                  {isMultiEmailPlaceholder(p.key) ? (
+                    <div style={styles.multiEmailContainer}>
+                      {(multiEmailValues[p.key] || ['']).map((email, index) => (
+                        <div key={index} style={styles.multiEmailRow}>
+                          <input
+                            type="email"
+                            value={email}
+                            onChange={(e) => handleMultiEmailChange(p.key, index, e.target.value)}
+                            style={styles.multiEmailInput}
+                            placeholder={`Enter email address`}
+                          />
+                          {/* Remove button (only show if more than 1 email) */}
+                          {(multiEmailValues[p.key] || []).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeMultiEmail(p.key, index)}
+                              style={styles.removeButton}
+                              title="Remove email"
+                            >
+                              −
+                            </button>
+                          )}
+                          {/* Add button (only on last row) */}
+                          {index === (multiEmailValues[p.key] || []).length - 1 && (
+                            <button
+                              type="button"
+                              onClick={() => addMultiEmail(p.key)}
+                              style={styles.addButton}
+                              title="Add another email"
+                            >
+                              +
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : /* Use textarea for body text, input for others */
+                  p.key.toLowerCase().includes('body') || p.key.toLowerCase().includes('text') ? (
                     <textarea
                       value={placeholderValues[p.key] || ''}
                       onChange={(e) => handlePlaceholderChange(p.key, e.target.value)}
@@ -295,5 +338,52 @@ const styles = {
   errorText: {
     color: '#dc2626',
     fontSize: '16px',
+  },
+  // Multi-email styles (CC/BCC)
+  multiEmailContainer: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '8px',
+  },
+  multiEmailRow: {
+    display: 'flex',
+    gap: '8px',
+    alignItems: 'center',
+  },
+  multiEmailInput: {
+    flex: '1',
+    padding: '8px 12px',
+    fontSize: '14px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    boxSizing: 'border-box',
+  },
+  addButton: {
+    width: '32px',
+    height: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10b981',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '18px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
+  },
+  removeButton: {
+    width: '32px',
+    height: '32px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ef4444',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    fontSize: '18px',
+    fontWeight: 'bold',
+    cursor: 'pointer',
   },
 };

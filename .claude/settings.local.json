@@ -15,5 +15,8 @@
     "deny": [],
     "ask": []
   },
-  "outputStyle": "Learning"
+  "outputStyle": "Learning",
+  "enabledPlugins": {
+    "supabase@claude-plugins-official": true
+  }
 }
