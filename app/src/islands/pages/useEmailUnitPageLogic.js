@@ -106,7 +106,8 @@ export default function useEmailUnitPageLogic() {
           // Initialize multi-email fields with one empty entry
           initialMultiEmails[p.key] = [''];
         } else {
-          initialValues[p.key] = '';
+          // Pre-fill with placeholder text for quicker testing
+          initialValues[p.key] = p.key;
         }
       });
 
