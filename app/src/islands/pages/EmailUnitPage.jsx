@@ -23,12 +23,19 @@ export default function EmailUnitPage() {
     previewHtml,
     loading,
     error,
+    canSendEmail,
+    sending,
+    sendResult,
+    fromEmail,
     handleTemplateChange,
     handlePlaceholderChange,
     handleMultiEmailChange,
     addMultiEmail,
     removeMultiEmail,
     isMultiEmailPlaceholder,
+    updatePreview,
+    sendEmail,
+    clearSendResult,
   } = useEmailUnitPageLogic();
 
   // Loading state
@@ -90,6 +97,19 @@ export default function EmailUnitPage() {
             <p style={styles.description}>
               {selectedTemplate.Description || 'No description available'}
             </p>
+          )}
+
+          {/* From Email (non-editable) */}
+          {selectedTemplate && (
+            <div style={styles.formField}>
+              <label style={styles.fieldLabel}>From Email</label>
+              <input
+                type="text"
+                value={fromEmail}
+                disabled
+                style={styles.disabledInput}
+              />
+            </div>
           )}
 
           {/* Placeholder Form */}
@@ -166,11 +186,49 @@ export default function EmailUnitPage() {
               <p>This template has no configurable placeholders</p>
             </div>
           )}
+
+          {/* Action Buttons */}
+          {selectedTemplate && (
+            <div style={styles.actionButtons}>
+              <button
+                type="button"
+                onClick={updatePreview}
+                style={styles.updatePreviewButton}
+              >
+                Update Preview
+              </button>
+              <button
+                type="button"
+                onClick={sendEmail}
+                disabled={!canSendEmail || sending}
+                style={{
+                  ...styles.sendEmailButton,
+                  ...((!canSendEmail || sending) ? styles.disabledButton : {}),
+                }}
+              >
+                {sending ? 'Sending...' : 'Send Email'}
+              </button>
+            </div>
+          )}
+
+          {/* Send Result Message */}
+          {sendResult && (
+            <div
+              style={{
+                ...styles.resultMessage,
+                ...(sendResult.success ? styles.successMessage : styles.errorMessage),
+              }}
+              onClick={clearSendResult}
+            >
+              {sendResult.message}
+              <span style={styles.closeHint}>(click to dismiss)</span>
+            </div>
+          )}
         </section>
 
         {/* Right Panel - Email Preview */}
         <section style={styles.rightPanel}>
-          <h2 style={styles.previewTitle}>Live Preview</h2>
+          <h2 style={styles.previewTitle}>Preview</h2>
           <div style={styles.previewContainer}>
             {previewHtml ? (
               <iframe
@@ -181,7 +239,7 @@ export default function EmailUnitPage() {
               />
             ) : (
               <div style={styles.emptyPreview}>
-                <p>Select a template to see preview</p>
+                <p>{selectedTemplate ? 'Click "Update Preview" to see the email' : 'Select a template to get started'}</p>
               </div>
             )}
           </div>
@@ -385,5 +443,76 @@ const styles = {
     fontSize: '18px',
     fontWeight: 'bold',
     cursor: 'pointer',
+  },
+  // Disabled input for From Email
+  disabledInput: {
+    width: '100%',
+    padding: '8px 12px',
+    fontSize: '14px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    boxSizing: 'border-box',
+    backgroundColor: '#f3f4f6',
+    color: '#6b7280',
+    cursor: 'not-allowed',
+  },
+  // Action buttons container
+  actionButtons: {
+    display: 'flex',
+    gap: '12px',
+    marginTop: '24px',
+    paddingTop: '24px',
+    borderTop: '1px solid #e5e7eb',
+  },
+  updatePreviewButton: {
+    flex: '1',
+    padding: '12px 16px',
+    fontSize: '14px',
+    fontWeight: '600',
+    backgroundColor: '#3b82f6',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+  },
+  sendEmailButton: {
+    flex: '1',
+    padding: '12px 16px',
+    fontSize: '14px',
+    fontWeight: '600',
+    backgroundColor: '#10b981',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '6px',
+    cursor: 'pointer',
+  },
+  disabledButton: {
+    backgroundColor: '#9ca3af',
+    cursor: 'not-allowed',
+  },
+  // Result message
+  resultMessage: {
+    marginTop: '16px',
+    padding: '12px 16px',
+    borderRadius: '6px',
+    fontSize: '14px',
+    cursor: 'pointer',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  successMessage: {
+    backgroundColor: '#d1fae5',
+    color: '#065f46',
+    border: '1px solid #6ee7b7',
+  },
+  errorMessage: {
+    backgroundColor: '#fee2e2',
+    color: '#991b1b',
+    border: '1px solid #fca5a5',
+  },
+  closeHint: {
+    fontSize: '12px',
+    opacity: 0.7,
   },
 };

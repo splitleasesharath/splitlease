@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../lib/supabase.js';
 
 /**
@@ -7,8 +7,15 @@ import { supabase } from '../../lib/supabase.js';
  * Handles:
  * - Fetching email templates from Supabase reference_table
  * - Managing template selection and placeholder values
- * - Generating live HTML preview with placeholder substitution
+ * - Manual preview generation (not real-time)
+ * - Sending test emails
  */
+
+/**
+ * Fixed from email address for all sent emails
+ */
+const FROM_EMAIL = 'tech@leasesplit.com';
+
 /**
  * Multi-email placeholders that support multiple email addresses
  * These get converted to JSON arrays: [{"email": "e1"},{"email": "e2"}]
@@ -23,8 +30,11 @@ export default function useEmailUnitPageLogic() {
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [placeholderValues, setPlaceholderValues] = useState({});
   const [multiEmailValues, setMultiEmailValues] = useState({}); // { '$$cc$$': ['', ''], '$$bcc$$': [''] }
+  const [previewHtml, setPreviewHtml] = useState(''); // Manual preview (not real-time)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState(null); // { success: bool, message: string }
 
   // Get the selected template object
   const selectedTemplate = useMemo(() => {
@@ -37,14 +47,13 @@ export default function useEmailUnitPageLogic() {
     return extractPlaceholders(selectedTemplate?.Placeholder);
   }, [selectedTemplate]);
 
-  // Generate preview HTML with placeholder substitution
-  const previewHtml = useMemo(() => {
-    if (!selectedTemplate) return '';
-    return generatePreviewHtml(
-      selectedTemplate['Email Template JSON'],
-      placeholderValues
-    );
-  }, [selectedTemplate, placeholderValues]);
+  // Check if required fields are filled (at least one To email)
+  const canSendEmail = useMemo(() => {
+    if (!selectedTemplate) return false;
+    const toEmails = multiEmailValues['$$to$$'] || [];
+    // At least one valid To email required
+    return toEmails.some(email => email && email.trim().length > 0);
+  }, [selectedTemplate, multiEmailValues]);
 
   // Load templates on mount
   useEffect(() => {
@@ -62,8 +71,8 @@ export default function useEmailUnitPageLogic() {
       const { data, error: fetchError } = await supabase
         .schema('reference_table')
         .from('zat_email_html_template_eg_sendbasicemailwf_')
-        .select('_id, Name, Description, Placeholder, "Email Template JSON", Logo')
-        .order('Name', { ascending: true });
+        .select('_id, Name, Description, Placeholder, "Email Template JSON", Logo, "Created Date"')
+        .order('Created Date', { ascending: false });
 
       if (fetchError) {
         throw fetchError;
@@ -170,6 +179,88 @@ export default function useEmailUnitPageLogic() {
     return MULTI_EMAIL_PLACEHOLDERS.includes(key);
   }
 
+  /**
+   * Manually update the preview (not real-time)
+   * Called when user clicks "Update Preview" button
+   */
+  function updatePreview() {
+    if (!selectedTemplate) {
+      setPreviewHtml('');
+      return;
+    }
+    const html = generatePreviewHtml(
+      selectedTemplate['Email Template JSON'],
+      placeholderValues
+    );
+    setPreviewHtml(html);
+  }
+
+  /**
+   * Send test email using the send-email Edge Function
+   */
+  async function sendEmail() {
+    if (!canSendEmail || !selectedTemplate) {
+      return;
+    }
+
+    setSending(true);
+    setSendResult(null);
+
+    try {
+      // Get to emails (filter out empty)
+      const toEmails = (multiEmailValues['$$to$$'] || []).filter(e => e && e.trim());
+      const ccEmails = (multiEmailValues['$$cc$$'] || []).filter(e => e && e.trim());
+      const bccEmails = (multiEmailValues['$$bcc$$'] || []).filter(e => e && e.trim());
+
+      // Build variables object for the email
+      const variables = { ...placeholderValues };
+
+      // Call the send-email Edge Function
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          action: 'send',
+          payload: {
+            template_id: selectedTemplate._id,
+            to_email: toEmails[0], // Primary recipient
+            from_email: FROM_EMAIL,
+            from_name: 'Split Lease',
+            subject: placeholderValues['$$subject$$'] || 'Test Email',
+            variables,
+            // Additional recipients if any
+            ...(ccEmails.length > 0 && { cc_emails: ccEmails }),
+            ...(bccEmails.length > 0 && { bcc_emails: bccEmails }),
+            ...(toEmails.length > 1 && { additional_to: toEmails.slice(1) }),
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSendResult({ success: true, message: 'Email sent successfully!' });
+      } else {
+        setSendResult({ success: false, message: result.error || 'Failed to send email' });
+      }
+    } catch (err) {
+      console.error('[useEmailUnitPageLogic] Error sending email:', err);
+      setSendResult({ success: false, message: err.message || 'Failed to send email' });
+    } finally {
+      setSending(false);
+    }
+  }
+
+  /**
+   * Clear the send result message
+   */
+  function clearSendResult() {
+    setSendResult(null);
+  }
+
   return {
     // State
     templates,
@@ -181,6 +272,10 @@ export default function useEmailUnitPageLogic() {
     previewHtml,
     loading,
     error,
+    canSendEmail,
+    sending,
+    sendResult,
+    fromEmail: FROM_EMAIL,
 
     // Handlers
     handleTemplateChange,
@@ -189,6 +284,9 @@ export default function useEmailUnitPageLogic() {
     addMultiEmail,
     removeMultiEmail,
     isMultiEmailPlaceholder,
+    updatePreview,
+    sendEmail,
+    clearSendResult,
   };
 }
 
