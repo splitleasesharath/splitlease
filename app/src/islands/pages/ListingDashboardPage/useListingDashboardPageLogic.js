@@ -1439,6 +1439,57 @@ export default function useListingDashboardPageLogic() {
     }
   }, []);
 
+  // Handle availability field changes - save to database
+  const handleAvailabilityChange = useCallback(async (fieldName, value) => {
+    const listingId = getListingIdFromUrl();
+    if (!listingId) {
+      window.showToast?.({
+        title: 'Error',
+        content: 'No listing ID available',
+        type: 'error'
+      });
+      return;
+    }
+
+    try {
+      // Map UI field names to database column names
+      const fieldMapping = {
+        'checkInTime': 'NEW Date Check-in Time',
+        'checkOutTime': 'NEW Date Check-out Time',
+        'earliestAvailableDate': ' First Available', // DB column has leading space
+        'leaseTermMin': 'Minimum Weeks',
+        'leaseTermMax': 'Maximum Weeks'
+      };
+
+      const dbFieldName = fieldMapping[fieldName];
+      if (!dbFieldName) {
+        console.error('Unknown availability field:', fieldName);
+        return;
+      }
+
+      await updateListing(listingId, { [dbFieldName]: value });
+
+      // Update local state
+      setListing((prev) => ({
+        ...prev,
+        [fieldName]: value
+      }));
+
+      window.showToast?.({
+        title: 'Changes Saved',
+        content: 'Availability settings updated successfully',
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Failed to save availability field:', error);
+      window.showToast?.({
+        title: 'Save Failed',
+        content: 'Could not save changes. Please try again.',
+        type: 'error'
+      });
+    }
+  }, [getListingIdFromUrl, updateListing]);
+
   // Handle blocked dates change - save to database
   const handleBlockedDatesChange = useCallback(async (newBlockedDates) => {
     const listingId = getListingIdFromUrl();
@@ -1528,5 +1579,8 @@ export default function useListingDashboardPageLogic() {
 
     // Blocked dates handler
     handleBlockedDatesChange,
+
+    // Availability fields handler
+    handleAvailabilityChange,
   };
 }

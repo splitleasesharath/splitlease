@@ -81,6 +81,7 @@ export default function ListingDashboardPage() {
     handleSaveEdit,
     updateListing,
     handleBlockedDatesChange,
+    handleAvailabilityChange,
   } = useListingDashboardPageLogic();
 
   // Loading state
@@ -230,6 +231,7 @@ export default function ListingDashboardPage() {
               listing={listing}
               onEdit={() => handleEditSection('availability')}
               onBlockedDatesChange={handleBlockedDatesChange}
+              onAvailabilityChange={handleAvailabilityChange}
             />
 
             {/* Photos Section */}

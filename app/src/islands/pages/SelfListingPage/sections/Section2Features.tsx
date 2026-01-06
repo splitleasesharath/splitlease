@@ -199,6 +199,12 @@ export const Section2Features: React.FC<Section2Props> = ({
     const newErrors: Record<string, string> = {};
     const errorOrder: string[] = [];
 
+    // Validate amenities inside unit (required)
+    if (data.amenitiesInsideUnit.length === 0) {
+      newErrors.amenitiesInsideUnit = 'At least one amenity inside unit is required';
+      errorOrder.push('amenitiesInsideUnit');
+    }
+
     if (!data.descriptionOfLodging || data.descriptionOfLodging.trim().length === 0) {
       newErrors.descriptionOfLodging = 'Description of lodging is required';
       errorOrder.push('descriptionOfLodging');
@@ -227,7 +233,7 @@ export const Section2Features: React.FC<Section2Props> = ({
         {/* Left Column: Amenities Inside Unit */}
         <div className="form-group">
           <div className="label-with-action">
-            <label>Amenities inside Unit</label>
+            <label>Amenities inside Unit<span className="required">*</span></label>
             <button
               type="button"
               className="btn-link"
@@ -237,7 +243,7 @@ export const Section2Features: React.FC<Section2Props> = ({
               {isLoadingInUnitAmenities ? 'loading...' : 'load common'}
             </button>
           </div>
-          <div className="checkbox-grid">
+          <div id="amenitiesInsideUnit" className="checkbox-grid">
             {isLoadingAmenityLists ? (
               <span className="loading-text">Loading amenities...</span>
             ) : inUnitAmenities.length === 0 ? (
@@ -255,6 +261,9 @@ export const Section2Features: React.FC<Section2Props> = ({
               ))
             )}
           </div>
+          {errors.amenitiesInsideUnit && (
+            <span className="error-message">{errors.amenitiesInsideUnit}</span>
+          )}
         </div>
 
         {/* Right Column: Amenities Outside Unit (In Building) */}

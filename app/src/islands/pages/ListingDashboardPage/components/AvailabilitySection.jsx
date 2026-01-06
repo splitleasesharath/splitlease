@@ -50,7 +50,15 @@ const getDatesBetween = (startDate, endDate) => {
   return dates;
 };
 
-export default function AvailabilitySection({ listing, onEdit, onBlockedDatesChange }) {
+// Format date for date input (YYYY-MM-DD)
+const formatDateForInput = (date) => {
+  if (!date) return '';
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return '';
+  return d.toISOString().split('T')[0];
+};
+
+export default function AvailabilitySection({ listing, onEdit, onBlockedDatesChange, onAvailabilityChange }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dateSelectionMode, setDateSelectionMode] = useState('individual'); // 'range' or 'individual'
 
@@ -282,7 +290,10 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
                 value={listing?.leaseTermMin || 6}
                 min={6}
                 max={52}
-                readOnly
+                onChange={(e) => {
+                  const val = Math.min(52, Math.max(6, parseInt(e.target.value) || 6));
+                  onAvailabilityChange?.('leaseTermMin', val);
+                }}
               />
               <span>-</span>
               <input
@@ -290,7 +301,10 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
                 value={listing?.leaseTermMax || 52}
                 min={6}
                 max={52}
-                readOnly
+                onChange={(e) => {
+                  const val = Math.min(52, Math.max(6, parseInt(e.target.value) || 52));
+                  onAvailabilityChange?.('leaseTermMax', val);
+                }}
               />
             </div>
           </div>
@@ -299,10 +313,10 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
           <div className="listing-dashboard-availability__field">
             <label>What is the earliest date someone could rent from you?</label>
             <input
-              type="text"
-              value={formatDate(listing?.earliestAvailableDate)}
-              readOnly
+              type="date"
+              value={formatDateForInput(listing?.earliestAvailableDate)}
               className="listing-dashboard-availability__date-input"
+              onChange={(e) => onAvailabilityChange?.('earliestAvailableDate', e.target.value)}
             />
           </div>
 
@@ -310,16 +324,25 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
           <div className="listing-dashboard-availability__times">
             <div className="listing-dashboard-availability__time-field">
               <label>Check In Time</label>
-              <select value={listing?.checkInTime || '1:00 pm'} disabled>
+              <select
+                value={listing?.checkInTime || '1:00 pm'}
+                onChange={(e) => onAvailabilityChange?.('checkInTime', e.target.value)}
+              >
+                <option value="12:00 pm">12:00 pm</option>
                 <option value="1:00 pm">1:00 pm</option>
                 <option value="2:00 pm">2:00 pm</option>
                 <option value="3:00 pm">3:00 pm</option>
                 <option value="4:00 pm">4:00 pm</option>
+                <option value="5:00 pm">5:00 pm</option>
               </select>
             </div>
             <div className="listing-dashboard-availability__time-field">
               <label>Check Out Time</label>
-              <select value={listing?.checkOutTime || '1:00 pm'} disabled>
+              <select
+                value={listing?.checkOutTime || '11:00 am'}
+                onChange={(e) => onAvailabilityChange?.('checkOutTime', e.target.value)}
+              >
+                <option value="9:00 am">9:00 am</option>
                 <option value="10:00 am">10:00 am</option>
                 <option value="11:00 am">11:00 am</option>
                 <option value="12:00 pm">12:00 pm</option>
