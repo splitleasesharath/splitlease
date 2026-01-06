@@ -839,25 +839,133 @@ export default function SignUpLoginModal({
     setIsLoading(true);
     setError('');
 
+    // Always show the same message for security (prevents email enumeration)
+    const showSuccessMessage = () => {
+      showToast({
+        title: 'Check Your Inbox',
+        content: 'If an account with that email exists, a magic login link has been sent.',
+        type: 'info'
+      });
+    };
+
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('auth-user', {
+      // Step 1: Check if user exists (using Supabase directly)
+      const { data: userData, error: userError } = await supabase
+        .from('user')
+        .select('_id, "Name - First", email')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+
+      if (userError) {
+        console.error('[handleMagicLink] Error checking user:', userError);
+        // Don't expose error - show success for security
+        showSuccessMessage();
+        setIsLoading(false);
+        return;
+      }
+
+      if (!userData) {
+        // User doesn't exist - still show success message for security
+        console.log('[handleMagicLink] No user found for email');
+        showSuccessMessage();
+        setIsLoading(false);
+        return;
+      }
+
+      // Step 2: User exists - fetch BCC email addresses from os_slack_channels
+      console.log('[handleMagicLink] Fetching BCC email addresses from os_slack_channels');
+
+      const { data: channelData, error: channelError } = await supabase
+        .schema('reference_table')
+        .from('os_slack_channels')
+        .select('email_address')
+        .in('name', ['bots_log', 'customer_activation']);
+
+      let bccEmails = [];
+      if (!channelError && channelData) {
+        bccEmails = channelData
+          .map(c => c.email_address)
+          .filter(e => e && e.trim() && e.includes('@'));
+        console.log('[handleMagicLink] BCC emails:', bccEmails);
+      } else if (channelError) {
+        console.warn('[handleMagicLink] Error fetching BCC channels:', channelError);
+        // Continue without BCC - don't fail the whole operation
+      }
+
+      // Step 3: Generate magic link
+      console.log('[handleMagicLink] User found, generating magic link');
+
+      const redirectTo = `${window.location.origin}/account-profile/${userData._id}`;
+
+      const { data: magicLinkData, error: magicLinkError } = await supabase.functions.invoke('auth-user', {
         body: {
-          action: 'magic-link',
-          payload: { email }
+          action: 'generate_magic_link',
+          payload: {
+            email: email.toLowerCase().trim(),
+            redirectTo: redirectTo
+          }
         }
       });
 
-      if (fnError || !data?.success) {
-        setError('Unable to send magic link. Please try again.');
-      } else {
-        showToast({
-          title: 'Magic Link Sent',
-          content: `Check your inbox at ${email} for the login link.`,
-          type: 'success'
-        });
+      if (magicLinkError || !magicLinkData?.success) {
+        console.error('[handleMagicLink] Error generating magic link:', magicLinkError || magicLinkData);
+        // Don't expose error - show success for security
+        showSuccessMessage();
+        setIsLoading(false);
+        return;
       }
+
+      const magicLink = magicLinkData.data.action_link;
+      const firstName = userData['Name - First'] || 'there';
+
+      // Step 4: Send magic link email using send-email edge function
+      console.log('[handleMagicLink] Sending magic link email');
+
+      // Build the body text with the user's first name
+      const bodyText = `Hi ${firstName}. Please use the link below to log in to your Split Lease account. Once logged in, you can update your password from the profile page. Please feel free to text (937) 673-7470 with any queries.`;
+
+      const { data: emailData, error: emailError } = await supabase.functions.invoke('send-email', {
+        body: {
+          action: 'send',
+          payload: {
+            template_id: '1757433099447x202755280527849400', // Security 2 template
+            to_email: email.toLowerCase().trim(),
+            variables: {
+              toemail: email.toLowerCase().trim(),
+              fromemail: 'tech@leasesplit.com',
+              fromname: 'Split Lease',
+              subject: 'Your Split Lease Magic Login Link',
+              preheadertext: 'Click the link to log in without a password',
+              title: 'Magic Login Link',
+              bodytext: bodyText,
+              buttonurl: magicLink,
+              buttontext: 'Log In Now',
+              bannertext1: 'SECURITY NOTICE',
+              bannertext2: 'This link expires in 1 hour',
+              bannertext3: "If you didn't request this, please ignore this email",
+              footermessage: 'For your security, never share this link with anyone.',
+              cc: '',  // No CC for user-facing emails
+              bcc: ''  // BCC handled via bcc_emails array
+            },
+            // Dynamic BCC from os_slack_channels
+            ...(bccEmails.length > 0 && { bcc_emails: bccEmails })
+          }
+        }
+      });
+
+      if (emailError) {
+        console.error('[handleMagicLink] Error sending email:', emailError);
+        // Still show success for security
+      } else {
+        console.log('[handleMagicLink] Magic link email sent successfully');
+      }
+
+      showSuccessMessage();
+
     } catch (err) {
-      setError('Unable to send magic link. Please try again.');
+      console.error('[handleMagicLink] Unexpected error:', err);
+      // Don't expose error - show success for security
+      showSuccessMessage();
     }
 
     setIsLoading(false);

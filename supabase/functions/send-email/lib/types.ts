@@ -12,6 +12,8 @@ export interface SendEmailPayload {
   from_name?: string;            // Sender name (optional, uses default)
   subject?: string;              // Email subject (optional, may come from template)
   variables: Record<string, string>;  // Key-value pairs for placeholder replacement
+  cc_emails?: string[];          // CC recipients (optional)
+  bcc_emails?: string[];         // BCC recipients (optional)
 }
 
 // Email template from database (reference_table.zat_email_html_template_eg_sendbasicemailwf_)

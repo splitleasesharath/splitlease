@@ -106,18 +106,29 @@ Deno.serve(async (req: Request) => {
 
     if (body.action === 'send') {
       const authHeader = req.headers.get("Authorization");
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        throw new AuthenticationError("Missing or invalid Authorization header. Use Bearer token.");
+
+      // Templates that can be sent without user authentication
+      // (anon key is still required via Supabase client - this only bypasses user auth check)
+      const PUBLIC_TEMPLATES = [
+        '1757433099447x202755280527849400', // Security 2 - Magic Login Link
+      ];
+
+      const templateId = body.payload?.template_id;
+      const isPublicTemplate = PUBLIC_TEMPLATES.includes(templateId);
+
+      if (!isPublicTemplate) {
+        // Require authenticated user for non-public templates
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          throw new AuthenticationError("Missing or invalid Authorization header. Use Bearer token.");
+        }
+
+        const token = authHeader.replace("Bearer ", "");
+        if (!token) {
+          throw new AuthenticationError("Empty Bearer token");
+        }
       }
 
-      // For now, we validate that a token is present
-      // Future: Validate token against Supabase Auth or API key whitelist
-      const token = authHeader.replace("Bearer ", "");
-      if (!token) {
-        throw new AuthenticationError("Empty Bearer token");
-      }
-
-      console.log(`[send-email] Authorization header present`);
+      console.log(`[send-email] Authorization: ${isPublicTemplate ? 'Public template (anon allowed)' : 'Bearer token present'}`);
     }
 
     // ─────────────────────────────────────────────────────────
