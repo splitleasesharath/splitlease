@@ -10,6 +10,7 @@ interface Section2Props {
   onNext: () => void;
   onBack: () => void;
   zipCode?: string;
+  showToast: (options: { title: string; content?: string; type?: 'success' | 'error' | 'warning' | 'info'; duration?: number }) => void;
 }
 
 export const Section2Features: React.FC<Section2Props> = ({
@@ -17,7 +18,8 @@ export const Section2Features: React.FC<Section2Props> = ({
   onChange,
   onNext,
   onBack,
-  zipCode
+  zipCode,
+  showToast
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingNeighborhood, setIsLoadingNeighborhood] = useState(false);
@@ -219,6 +221,12 @@ export const Section2Features: React.FC<Section2Props> = ({
     if (errorKeys.length === 0) {
       onNext();
     } else {
+      showToast({
+        title: 'Required Fields Missing',
+        content: 'Please complete all required fields before proceeding.',
+        type: 'warning',
+        duration: 5000
+      });
       scrollToFirstError(errorKeys);
     }
   };
@@ -243,6 +251,9 @@ export const Section2Features: React.FC<Section2Props> = ({
               {isLoadingInUnitAmenities ? 'loading...' : 'load common'}
             </button>
           </div>
+          {errors.amenitiesInsideUnit && (
+            <span className="error-message">{errors.amenitiesInsideUnit}</span>
+          )}
           <div id="amenitiesInsideUnit" className="checkbox-grid">
             {isLoadingAmenityLists ? (
               <span className="loading-text">Loading amenities...</span>
@@ -261,9 +272,6 @@ export const Section2Features: React.FC<Section2Props> = ({
               ))
             )}
           </div>
-          {errors.amenitiesInsideUnit && (
-            <span className="error-message">{errors.amenitiesInsideUnit}</span>
-          )}
         </div>
 
         {/* Right Column: Amenities Outside Unit (In Building) */}

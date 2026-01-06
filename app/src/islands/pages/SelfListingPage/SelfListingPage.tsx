@@ -767,6 +767,7 @@ export const SelfListingPage: React.FC = () => {
               onNext={handleNext}
               onBack={handleBack}
               zipCode={formData.spaceSnapshot.address.zip}
+              showToast={showToast}
             />
           )}
 
