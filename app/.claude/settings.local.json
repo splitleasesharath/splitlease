@@ -6,7 +6,10 @@
       "Bash(netstat:*)",
       "Bash(findstr:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(powershell -Command \"Get-Date -Format ''yyyy-MM-dd''\")",
+      "Bash(python:*)",
+      "Bash(dir \"C:\\\\Users\\\\Split Lease\\\\My Drive\\\\!Agent Context and Tools\\\\SL21\\\\Claude Logs\"\")"
     ]
   }
 }
