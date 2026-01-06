@@ -791,6 +791,7 @@ export const SelfListingPage: React.FC = () => {
               onChange={updateRules}
               onNext={handleNext}
               onBack={handleBack}
+              showToast={showToast}
             />
           )}
 

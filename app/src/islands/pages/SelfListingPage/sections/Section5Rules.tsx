@@ -8,9 +8,10 @@ interface Section5Props {
   onChange: (data: Rules) => void;
   onNext: () => void;
   onBack: () => void;
+  showToast: (options: { title: string; content?: string; type?: 'success' | 'error' | 'warning' | 'info' }) => void;
 }
 
-export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onChange, onNext, onBack }) => {
+export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onChange, onNext, onBack, showToast }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
@@ -41,6 +42,12 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
   };
 
   const toggleHouseRule = (rule: string) => {
+    // If trying to add a rule and already at max, show toast and return
+    if (!data.houseRules.includes(rule) && data.houseRules.length >= 12) {
+      showToast({ title: 'Maximum reached', content: 'You can select up to 12 house rules', type: 'info' });
+      return;
+    }
+
     const updated = data.houseRules.includes(rule)
       ? data.houseRules.filter((r) => r !== rule)
       : [...data.houseRules, rule];
