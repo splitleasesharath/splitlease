@@ -239,7 +239,7 @@ export const Section2Features: React.FC<Section2Props> = ({
       {/* Amenities Two-Column Layout */}
       <div className="features-two-column">
         {/* Left Column: Amenities Inside Unit */}
-        <div className="form-group">
+        <div id="amenitiesInsideUnit" className="form-group">
           <div className="label-with-action">
             <label>Amenities inside Unit<span className="required">*</span></label>
             <button
@@ -254,7 +254,7 @@ export const Section2Features: React.FC<Section2Props> = ({
           {errors.amenitiesInsideUnit && (
             <span className="error-message">{errors.amenitiesInsideUnit}</span>
           )}
-          <div id="amenitiesInsideUnit" className="checkbox-grid">
+          <div className="checkbox-grid">
             {isLoadingAmenityLists ? (
               <span className="loading-text">Loading amenities...</span>
             ) : inUnitAmenities.length === 0 ? (
