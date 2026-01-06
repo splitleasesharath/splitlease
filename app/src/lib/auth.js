@@ -38,7 +38,10 @@ import {
   getFirstName as getSecureFirstName,
   getAvatarUrl as getSecureAvatarUrl,
   setFirstName as setSecureFirstName,
-  setAvatarUrl as setSecureAvatarUrl
+  setAvatarUrl as setSecureAvatarUrl,
+  setLinkedInOAuthUserType,
+  getLinkedInOAuthUserType,
+  clearLinkedInOAuthUserType
 } from './secureStorage.js';
 
 // ============================================================================
@@ -1369,5 +1372,142 @@ export async function updatePassword(newPassword) {
       success: false,
       error: 'Network error. Please check your connection and try again.'
     };
+  }
+}
+
+// ============================================================================
+// LinkedIn OAuth Functions
+// ============================================================================
+
+/**
+ * Initiate LinkedIn OAuth signup flow
+ * Stores user type in localStorage before redirecting to LinkedIn
+ *
+ * @param {string} userType - 'Host' or 'Guest'
+ * @returns {Promise<Object>} Result with success status or error
+ */
+export async function initiateLinkedInOAuth(userType) {
+  console.log('[Auth] Initiating LinkedIn OAuth with userType:', userType);
+
+  // Store user type before redirect
+  setLinkedInOAuthUserType(userType);
+
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'linkedin_oidc',
+      options: {
+        redirectTo: `${window.location.origin}/account-profile`,
+        scopes: 'openid profile email',
+      }
+    });
+
+    if (error) {
+      clearLinkedInOAuthUserType();
+      return { success: false, error: error.message };
+    }
+
+    // OAuth redirect will happen automatically
+    return { success: true, data };
+  } catch (err) {
+    clearLinkedInOAuthUserType();
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Handle LinkedIn OAuth callback after redirect
+ * Creates user record if new user, or links accounts if existing
+ *
+ * @returns {Promise<Object>} Result with user data or error
+ */
+export async function handleLinkedInOAuthCallback() {
+  console.log('[Auth] Handling LinkedIn OAuth callback');
+
+  // Get the session from OAuth callback
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    clearLinkedInOAuthUserType();
+    return {
+      success: false,
+      error: sessionError?.message || 'No session found after OAuth'
+    };
+  }
+
+  // Check if this is a fresh OAuth session (from LinkedIn)
+  const user = session.user;
+  const isLinkedInProvider = user?.app_metadata?.provider === 'linkedin_oidc';
+
+  if (!isLinkedInProvider) {
+    return { success: false, error: 'Not a LinkedIn OAuth session' };
+  }
+
+  // Retrieve stored user type
+  const userType = getLinkedInOAuthUserType() || 'Guest';
+
+  // Extract LinkedIn data from user_metadata
+  const linkedInData = {
+    email: user.email,
+    firstName: user.user_metadata?.given_name || user.user_metadata?.first_name || '',
+    lastName: user.user_metadata?.family_name || user.user_metadata?.last_name || '',
+    supabaseUserId: user.id,
+  };
+
+  console.log('[Auth] LinkedIn data:', linkedInData);
+  console.log('[Auth] Stored userType:', userType);
+
+  // Call Edge Function to create/link user record
+  try {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        action: 'oauth_signup',
+        payload: {
+          ...linkedInData,
+          userType,
+          provider: 'linkedin_oidc',
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok || !data.success) {
+      clearLinkedInOAuthUserType();
+      return {
+        success: false,
+        error: data.error || 'Failed to create user record',
+        isDuplicate: data.isDuplicate || false,
+        existingEmail: data.existingEmail || null,
+      };
+    }
+
+    // Clear OAuth storage keys
+    clearLinkedInOAuthUserType();
+
+    // Store session data
+    setAuthToken(session.access_token);
+    setSessionId(data.data.user_id);
+    setAuthState(true, data.data.user_id);
+    if (userType) {
+      setUserType(userType);
+    }
+
+    return {
+      success: true,
+      data: data.data,
+      isNewUser: data.data.isNewUser,
+    };
+
+  } catch (err) {
+    clearLinkedInOAuthUserType();
+    return { success: false, error: err.message };
   }
 }

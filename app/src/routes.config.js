@@ -293,6 +293,15 @@ export const routes = [
     internalName: 'reset-password-view',
     hasDynamicSegment: false
   },
+  {
+    path: '/auth/verify',
+    file: 'auth-verify.html',
+    aliases: ['/auth/verify.html'],
+    protected: false,
+    cloudflareInternal: true,  // IMPORTANT: Prevents 308 redirects that strip query params
+    internalName: 'auth-verify-view',
+    hasDynamicSegment: false
+  },
 
   // ===== ERROR PAGES =====
   {
