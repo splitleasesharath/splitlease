@@ -682,6 +682,16 @@ export function useHostOverviewPageLogic() {
     window.open(`/preview-split-lease/${listing.id || listing._id}`, '_blank');
   }, [showToast]);
 
+  const handleViewProposals = useCallback((listing) => {
+    // Navigate to host-proposals page with listing pre-selected
+    window.location.href = `/host-proposals?listingId=${listing.id || listing._id}`;
+  }, []);
+
+  const handleListingCardClick = useCallback((listing) => {
+    // Navigate to listing dashboard (same as Manage button but for card click)
+    window.location.href = `/listing-dashboard?id=${listing.id || listing._id}`;
+  }, []);
+
   const handleSeeDetails = useCallback((listing) => {
     showToast('Details', `Viewing details for ${listing.name || listing.Name}...`, 'information');
     // Navigate to claim listing details
@@ -828,6 +838,8 @@ export function useHostOverviewPageLogic() {
     handleCreateNewManual,
     handleEditListing,
     handlePreviewListing,
+    handleViewProposals,
+    handleListingCardClick,
     handleSeeDetails,
     handleEditManual,
     handleViewVisits,
