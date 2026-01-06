@@ -325,7 +325,14 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
     earliestAvailableDate: dbListing[' First Available'] ? new Date(dbListing[' First Available']) : new Date(),
     checkInTime: dbListing['NEW Date Check-in Time'] || '1:00 pm',
     checkOutTime: dbListing['NEW Date Check-out Time'] || '1:00 pm',
-    blockedDates: safeParseJsonArray(dbListing['Dates - Blocked']),
+    // Normalize blocked dates to YYYY-MM-DD format (handles both ISO timestamps and plain dates)
+    blockedDates: safeParseJsonArray(dbListing['Dates - Blocked']).map(dateStr => {
+      if (typeof dateStr === 'string') {
+        // Extract YYYY-MM-DD from ISO timestamp or return as-is if already YYYY-MM-DD
+        return dateStr.split('T')[0];
+      }
+      return dateStr;
+    }),
 
     // Cancellation Policy
     cancellationPolicy: dbListing['Cancellation Policy'] || 'Standard',
