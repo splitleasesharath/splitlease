@@ -627,7 +627,7 @@
 .listing-card__actions {
   display: flex;
   gap: var(--ho-spacing-sm);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-top: auto;
 }
 
