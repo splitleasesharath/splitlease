@@ -24,8 +24,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { loginUser, signupUser, validateTokenAndFetchUser, initiateLinkedInOAuth, handleLinkedInOAuthCallback } from '../../lib/auth.js';
-import { getLinkedInOAuthUserType } from '../../lib/secureStorage.js';
+import { loginUser, signupUser, validateTokenAndFetchUser, initiateLinkedInOAuth, handleLinkedInOAuthCallback, initiateLinkedInOAuthLogin, handleLinkedInOAuthLoginCallback } from '../../lib/auth.js';
+import { getLinkedInOAuthUserType, getLinkedInOAuthLoginFlow } from '../../lib/secureStorage.js';
 import { supabase } from '../../lib/supabase.js';
 import Toast, { useToast } from './Toast.jsx';
 
@@ -827,8 +827,14 @@ export default function SignUpLoginModal({
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [passwordMismatch, setPasswordMismatch] = useState(false);
 
-  // Duplicate email state (for OAuth flows)
+  // Duplicate email state (for OAuth signup flows)
   const [duplicateEmailData, setDuplicateEmailData] = useState({
+    email: '',
+    showModal: false
+  });
+
+  // User not found state (for OAuth login flows)
+  const [userNotFoundData, setUserNotFoundData] = useState({
     email: '',
     showModal: false
   });
@@ -931,6 +937,76 @@ export default function SignUpLoginModal({
     };
 
     handleCallback();
+  }, []); // Only run once on mount
+
+  // OAuth LOGIN callback detection (separate from signup flow)
+  useEffect(() => {
+    // Check if this is a login flow
+    const isLoginFlow = getLinkedInOAuthLoginFlow();
+    if (!isLoginFlow) return;
+
+    // Check if we're returning from OAuth (look for access_token or code in URL hash)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const hasAccessToken = hashParams.get('access_token');
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasCode = urlParams.get('code');
+
+    if (!hasAccessToken && !hasCode) return;
+
+    // We're returning from OAuth login - handle the callback
+    const handleLoginCallback = async () => {
+      setIsLoading(true);
+
+      showToast({
+        title: 'Logging in...',
+        content: 'Verifying your LinkedIn account',
+        type: 'info',
+        duration: 3000
+      });
+
+      const result = await handleLinkedInOAuthLoginCallback();
+
+      setIsLoading(false);
+
+      if (result.success) {
+        showToast({
+          title: 'Login Successful!',
+          content: 'Welcome back to Split Lease.',
+          type: 'success',
+          duration: 4000
+        });
+
+        if (onAuthSuccess) {
+          onAuthSuccess(result);
+        }
+
+        // Close modal and stay on current page (no redirect)
+        setTimeout(() => {
+          onClose();
+          if (!skipReload) {
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
+          }
+        }, 1500);
+      } else if (result.userNotFound) {
+        // Show user not found modal - prompt to sign up
+        setUserNotFoundData({
+          email: result.email,
+          showModal: true
+        });
+      } else {
+        showToast({
+          title: 'Login Failed',
+          content: result.error || 'Please try again.',
+          type: 'error',
+          duration: 5000
+        });
+        setError(result.error || 'OAuth login failed. Please try again.');
+      }
+    };
+
+    handleLoginCallback();
   }, []); // Only run once on mount
 
   // Handle escape key
@@ -1665,11 +1741,17 @@ export default function SignUpLoginModal({
         <p style={styles.subtitle}>Log in to your Split Lease account</p>
       </div>
 
-      {/* LinkedIn OAuth Button (placeholder) */}
+      {/* LinkedIn OAuth Button */}
       <button
         type="button"
         style={styles.linkedinBtn}
-        onClick={() => alert('LinkedIn OAuth login coming soon!')}
+        onClick={async () => {
+          const result = await initiateLinkedInOAuthLogin();
+          if (!result.success) {
+            setError(result.error || 'Failed to start LinkedIn login');
+          }
+        }}
+        disabled={isLoading}
       >
         <div style={styles.linkedinIcon}>in</div>
         <div style={styles.linkedinText}>
@@ -2360,6 +2442,60 @@ export default function SignUpLoginModal({
               onClick={() => setDuplicateEmailData({ email: '', showModal: false })}
             >
               Try a different email
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* User not found modal (for OAuth login when account doesn't exist) */}
+      {userNotFoundData.showModal && (
+        <div style={styles.overlay} onClick={() => setUserNotFoundData({ email: '', showModal: false })}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <button
+              style={styles.closeBtn}
+              onClick={() => setUserNotFoundData({ email: '', showModal: false })}
+              aria-label="Close"
+            >
+              <CloseIcon />
+            </button>
+
+            <div style={styles.logoContainer}>
+              <img src={LOGO_URL} alt="Split Lease" style={styles.logo} />
+            </div>
+
+            <div style={styles.header}>
+              <h1 style={styles.title}>No Account Found</h1>
+              <p style={styles.subtitle}>
+                We couldn't find an account with <strong>{userNotFoundData.email}</strong>.
+              </p>
+            </div>
+
+            <p style={{ ...styles.helperText, textAlign: 'center', marginBottom: '20px' }}>
+              Would you like to create a new account instead?
+            </p>
+
+            <button
+              type="button"
+              style={styles.buttonPrimary}
+              onClick={() => {
+                setUserNotFoundData({ email: '', showModal: false });
+                // Pre-fill signup data with the email from LinkedIn
+                setSignupData({ ...signupData, email: userNotFoundData.email });
+                goToUserType();
+              }}
+            >
+              Sign up instead
+            </button>
+
+            <button
+              type="button"
+              style={{ ...styles.buttonSecondary, marginTop: '12px' }}
+              onClick={() => {
+                setUserNotFoundData({ email: '', showModal: false });
+                goToLogin();
+              }}
+            >
+              Try a different login method
             </button>
           </div>
         </div>

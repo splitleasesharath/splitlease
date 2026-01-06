@@ -65,6 +65,9 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
   // State for showing all blocked dates
   const [showAllBlockedDates, setShowAllBlockedDates] = useState(false);
 
+  // State for showing past blocked dates (collapsed by default)
+  const [showPastBlockedDates, setShowPastBlockedDates] = useState(false);
+
   // Format date for display
   const formatDate = (date) => {
     if (!date) return '';
@@ -229,6 +232,18 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
     return blockedDates
       .filter((dateKey) => dateKey >= todayKey)
       .sort();
+  }, [blockedDates]);
+
+  // Get past blocked dates (for expandable history section)
+  const pastBlockedDates = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayKey = formatDateKey(today);
+
+    return blockedDates
+      .filter((dateKey) => dateKey < todayKey)
+      .sort()
+      .reverse(); // Most recent past dates first
   }, [blockedDates]);
 
   // Dates to display (limited or all based on showAllBlockedDates)
@@ -399,6 +414,33 @@ export default function AvailabilitySection({ listing, onEdit, onBlockedDatesCha
                 <p className="listing-dashboard-availability__no-blocked">
                   You don't have any future date blocked yet
                 </p>
+              )}
+
+              {/* Past blocked dates - expandable section */}
+              {pastBlockedDates.length > 0 && (
+                <div className="listing-dashboard-availability__past-dates">
+                  <button
+                    type="button"
+                    className="listing-dashboard-availability__past-dates-toggle"
+                    onClick={() => setShowPastBlockedDates(!showPastBlockedDates)}
+                  >
+                    <span>{showPastBlockedDates ? '▼' : '▶'}</span>
+                    <span>Past blocked dates ({pastBlockedDates.length})</span>
+                  </button>
+                  {showPastBlockedDates && (
+                    <div className="listing-dashboard-availability__blocked-list listing-dashboard-availability__blocked-list--past">
+                      {pastBlockedDates.map((dateKey) => (
+                        <span key={dateKey} className="listing-dashboard-availability__blocked-date listing-dashboard-availability__blocked-date--past">
+                          {new Date(dateKey + 'T00:00:00').toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           </div>

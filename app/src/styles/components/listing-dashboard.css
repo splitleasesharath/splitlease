@@ -1539,6 +1539,44 @@
   border-color: var(--ld-accent-purple);
 }
 
+/* Past blocked dates - expandable section */
+.listing-dashboard-availability__past-dates {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.listing-dashboard-availability__past-dates-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  color: var(--ld-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.listing-dashboard-availability__past-dates-toggle:hover {
+  color: var(--ld-accent-purple);
+}
+
+.listing-dashboard-availability__past-dates-toggle span:first-child {
+  font-size: 10px;
+  width: 12px;
+}
+
+.listing-dashboard-availability__blocked-list--past {
+  margin-top: 8px;
+}
+
+.listing-dashboard-availability__blocked-date--past {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
 .listing-dashboard-availability__calendar {
   flex: 1.5;
   max-width: 550px;

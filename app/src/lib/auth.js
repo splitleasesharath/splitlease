@@ -41,7 +41,10 @@ import {
   setAvatarUrl as setSecureAvatarUrl,
   setLinkedInOAuthUserType,
   getLinkedInOAuthUserType,
-  clearLinkedInOAuthUserType
+  clearLinkedInOAuthUserType,
+  setLinkedInOAuthLoginFlow,
+  getLinkedInOAuthLoginFlow,
+  clearLinkedInOAuthLoginFlow
 } from './secureStorage.js';
 
 // ============================================================================
@@ -1450,6 +1453,7 @@ export async function handleLinkedInOAuthCallback() {
     email: user.email,
     firstName: user.user_metadata?.given_name || user.user_metadata?.first_name || '',
     lastName: user.user_metadata?.family_name || user.user_metadata?.last_name || '',
+    profilePhoto: user.user_metadata?.picture || user.user_metadata?.avatar_url || null,
     supabaseUserId: user.id,
   };
 
@@ -1508,6 +1512,156 @@ export async function handleLinkedInOAuthCallback() {
 
   } catch (err) {
     clearLinkedInOAuthUserType();
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Initiate LinkedIn OAuth login flow
+ * Sets login flow flag and redirects to current page after OAuth
+ *
+ * @returns {Promise<Object>} Result with success status or error
+ */
+export async function initiateLinkedInOAuthLogin() {
+  console.log('[Auth] Initiating LinkedIn OAuth Login');
+
+  // Clear any existing signup flow flags to prevent conflicts
+  clearLinkedInOAuthUserType();
+
+  // Set login flow flag before redirect
+  setLinkedInOAuthLoginFlow(true);
+
+  try {
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'linkedin_oidc',
+      options: {
+        // Stay on current page after OAuth (no redirect to profile)
+        redirectTo: window.location.href,
+        scopes: 'openid profile email',
+      }
+    });
+
+    if (error) {
+      clearLinkedInOAuthLoginFlow();
+      return { success: false, error: error.message };
+    }
+
+    // OAuth redirect will happen automatically
+    return { success: true, data };
+  } catch (err) {
+    clearLinkedInOAuthLoginFlow();
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Handle LinkedIn OAuth login callback
+ * Verifies user exists in database, returns session data or error
+ *
+ * @returns {Promise<Object>} Result with user data or error (userNotFound: true if account doesn't exist)
+ */
+export async function handleLinkedInOAuthLoginCallback() {
+  console.log('[Auth] Handling LinkedIn OAuth Login callback');
+
+  // Verify this is a login flow
+  if (!getLinkedInOAuthLoginFlow()) {
+    console.log('[Auth] Not a login flow callback, skipping');
+    return { success: false, error: 'Not a login flow' };
+  }
+
+  try {
+    // Get the session from OAuth callback
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError || !session) {
+      clearLinkedInOAuthLoginFlow();
+      return {
+        success: false,
+        error: sessionError?.message || 'No session found after OAuth'
+      };
+    }
+
+    // Check if this is a fresh OAuth session (from LinkedIn)
+    const user = session.user;
+    const isLinkedInProvider = user?.app_metadata?.provider === 'linkedin_oidc';
+
+    if (!isLinkedInProvider) {
+      clearLinkedInOAuthLoginFlow();
+      return { success: false, error: 'Not a LinkedIn OAuth session' };
+    }
+
+    // Extract LinkedIn data
+    const email = user.email;
+    const supabaseUserId = user.id;
+
+    console.log('[Auth] LinkedIn OAuth login data:', { email, supabaseUserId });
+
+    // Call Edge Function to verify user exists
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/auth-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        action: 'oauth_login',
+        payload: {
+          email,
+          supabaseUserId,
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        }
+      })
+    });
+
+    const data = await response.json();
+
+    // Always clear the login flow flag
+    clearLinkedInOAuthLoginFlow();
+
+    if (!response.ok || !data.success) {
+      // Check if user was not found
+      if (data.data?.userNotFound) {
+        console.log('[Auth] User not found for OAuth login:', email);
+        return {
+          success: false,
+          userNotFound: true,
+          email: email,
+          error: 'No account found with this email'
+        };
+      }
+
+      return {
+        success: false,
+        error: data.error || 'Failed to login'
+      };
+    }
+
+    // Store session data
+    const { user_id, user_type, supabase_user_id, access_token, refresh_token } = data.data;
+
+    setAuthToken(session.access_token);
+    setSessionId(user_id);
+    setAuthState(true, user_id);
+    if (user_type) {
+      setUserType(user_type);
+    }
+
+    // Store Supabase user ID for reference
+    if (supabase_user_id) {
+      localStorage.setItem('splitlease_supabase_user_id', supabase_user_id);
+    }
+
+    console.log('[Auth] LinkedIn OAuth login successful');
+    return {
+      success: true,
+      data: data.data
+    };
+
+  } catch (err) {
+    clearLinkedInOAuthLoginFlow();
+    console.error('[Auth] LinkedIn OAuth login callback error:', err);
     return { success: false, error: err.message };
   }
 }
