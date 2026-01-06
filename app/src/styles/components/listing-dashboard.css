@@ -1542,7 +1542,14 @@
 .listing-dashboard-availability__calendar {
   flex: 1.5;
   max-width: 550px;
-  min-width: 400px;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .listing-dashboard-availability__calendar {
+    min-width: 400px;
+  }
 }
 
 .listing-dashboard-availability__calendar-header {
