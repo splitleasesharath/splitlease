@@ -626,15 +626,16 @@
 
 .listing-card__actions {
   display: flex;
-  gap: var(--ho-spacing-sm);
+  gap: var(--ho-spacing-xs);
   flex-wrap: nowrap;
   margin-top: auto;
 }
 
 .listing-card__actions .btn {
-  padding: var(--ho-spacing-xs) var(--ho-spacing-md);
-  font-size: 13px;
-  min-height: 32px;
+  padding: var(--ho-spacing-xs) var(--ho-spacing-sm);
+  font-size: 12px;
+  min-height: 30px;
+  white-space: nowrap;
 }
 
 /* Listing Card Pricing */
