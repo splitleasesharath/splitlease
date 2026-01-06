@@ -36,6 +36,7 @@ import { handleRequestPasswordReset } from './handlers/resetPassword.ts';
 import { handleUpdatePassword } from './handlers/updatePassword.ts';
 import { handleGenerateMagicLink } from './handlers/generateMagicLink.ts';
 import { handleOAuthSignup } from './handlers/oauthSignup.ts';
+import { handleOAuthLogin } from './handlers/oauthLogin.ts';
 
 console.log('[auth-user] Edge Function started');
 
@@ -78,7 +79,7 @@ Deno.serve(async (req) => {
     collector = createErrorCollector('auth-user', action);
 
     // Validate action is supported
-    const allowedActions = ['login', 'signup', 'logout', 'validate', 'request_password_reset', 'update_password', 'generate_magic_link', 'oauth_signup'];
+    const allowedActions = ['login', 'signup', 'logout', 'validate', 'request_password_reset', 'update_password', 'generate_magic_link', 'oauth_signup', 'oauth_login'];
     validateAction(action, allowedActions);
 
     console.log(`[auth-user] Action: ${action}`);
@@ -142,6 +143,11 @@ Deno.serve(async (req) => {
       case 'oauth_signup':
         // OAuth signup - create user record from OAuth provider data (LinkedIn, Google)
         result = await handleOAuthSignup(supabaseUrl, supabaseServiceKey, payload);
+        break;
+
+      case 'oauth_login':
+        // OAuth login - verify user exists and return session data
+        result = await handleOAuthLogin(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       default:
