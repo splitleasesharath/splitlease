@@ -10,13 +10,14 @@
       "Bash(npx wrangler:*)",
       "Bash(git push:*)",
       "Bash(git pull:*)",
-      "mcp__playwright__browser_snapshot"
+      "mcp__playwright__browser_snapshot",
+      "Bash(powershell:*)"
     ],
     "deny": [],
     "ask": []
   },
-  "outputStyle": "Learning",
   "enabledPlugins": {
     "supabase@claude-plugins-official": true
-  }
+  },
+  "outputStyle": "Learning"
 }
