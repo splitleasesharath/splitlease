@@ -37,6 +37,12 @@ import type { SendSmsPayload, SendSmsResult } from "./lib/types.ts";
 const ALLOWED_ACTIONS = ["send", "health"] as const;
 type Action = (typeof ALLOWED_ACTIONS)[number];
 
+// Phone numbers that can send SMS without user authentication
+// Used for magic link SMS sent to unauthenticated users
+const PUBLIC_FROM_NUMBERS = [
+  '+14155692985',  // Magic link SMS
+] as const;
+
 interface RequestBody {
   action: Action;
   payload: SendSmsPayload;
@@ -171,17 +177,25 @@ Deno.serve(async (req: Request) => {
 
     // 2. Check authorization for send action
     if (body.action === 'send') {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        throw new AuthenticationError("Missing or invalid Authorization header. Use Bearer token.");
-      }
+      // Check if this is a public SMS (magic link from known number)
+      const fromNumber = body.payload?.from;
+      const isPublicSms = fromNumber && PUBLIC_FROM_NUMBERS.includes(fromNumber as typeof PUBLIC_FROM_NUMBERS[number]);
 
-      const token = authHeader.replace("Bearer ", "");
-      if (!token) {
-        throw new AuthenticationError("Empty Bearer token");
-      }
+      if (isPublicSms) {
+        console.log(`[send-sms] Public SMS from ${fromNumber} - bypassing user auth`);
+      } else {
+        const authHeader = req.headers.get("Authorization");
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+          throw new AuthenticationError("Missing or invalid Authorization header. Use Bearer token.");
+        }
 
-      console.log(`[send-sms] Authorization header present`);
+        const token = authHeader.replace("Bearer ", "");
+        if (!token) {
+          throw new AuthenticationError("Empty Bearer token");
+        }
+
+        console.log(`[send-sms] Authorization header present`);
+      }
     }
 
     // 3. Route to handler

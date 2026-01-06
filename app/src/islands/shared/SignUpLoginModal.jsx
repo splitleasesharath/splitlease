@@ -852,7 +852,7 @@ export default function SignUpLoginModal({
       // Step 1: Check if user exists (using Supabase directly)
       const { data: userData, error: userError } = await supabase
         .from('user')
-        .select('_id, "Name - First", email')
+        .select('_id, "Name - First", email, "Phone Number (as text)"')
         .eq('email', email.toLowerCase().trim())
         .maybeSingle();
 
@@ -958,6 +958,56 @@ export default function SignUpLoginModal({
         // Still show success for security
       } else {
         console.log('[handleMagicLink] Magic link email sent successfully');
+      }
+
+      // Step 5: Send SMS if user has a phone number
+      const rawPhone = userData['Phone Number (as text)'];
+      if (rawPhone && rawPhone.trim()) {
+        console.log('[handleMagicLink] User has phone number, sending SMS');
+
+        // Format phone to E.164 (+1xxxxxxxxxx)
+        const digitsOnly = rawPhone.replace(/\D/g, '');
+        let formattedPhone = null;
+
+        if (digitsOnly.length === 10) {
+          // 10 digits: assume US, prepend +1
+          formattedPhone = `+1${digitsOnly}`;
+        } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+          // 11 digits starting with 1: prepend +
+          formattedPhone = `+${digitsOnly}`;
+        } else if (rawPhone.startsWith('+') && digitsOnly.length >= 10) {
+          // Already has + prefix
+          formattedPhone = `+${digitsOnly}`;
+        }
+
+        if (formattedPhone) {
+          const smsBody = `Passwords are tricky. Please use this magic link and you can update your password right from the profile page: ${magicLink}`;
+
+          try {
+            const { data: smsData, error: smsError } = await supabase.functions.invoke('send-sms', {
+              body: {
+                action: 'send',
+                payload: {
+                  from: '+14155692985',
+                  to: formattedPhone,
+                  body: smsBody
+                }
+              }
+            });
+
+            if (smsError) {
+              console.error('[handleMagicLink] Error sending SMS:', smsError);
+              // Don't fail - SMS is supplementary to email
+            } else {
+              console.log('[handleMagicLink] Magic link SMS sent successfully');
+            }
+          } catch (smsErr) {
+            console.error('[handleMagicLink] SMS exception:', smsErr);
+            // Don't fail - SMS is supplementary
+          }
+        } else {
+          console.log('[handleMagicLink] Could not format phone number:', rawPhone);
+        }
       }
 
       showSuccessMessage();

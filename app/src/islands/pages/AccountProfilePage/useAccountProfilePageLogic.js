@@ -13,7 +13,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase.js';
-import { getSessionId, checkAuthStatus, validateTokenAndFetchUser } from '../../../lib/auth.js';
+import { getSessionId, checkAuthStatus, validateTokenAndFetchUser, checkUrlForAuthError, clearAuthErrorFromUrl } from '../../../lib/auth.js';
 import { isHost } from '../../../logic/rules/users/isHost.js';
 
 // ============================================================================
@@ -476,6 +476,31 @@ export function useAccountProfilePageLogic() {
   useEffect(() => {
     async function initialize() {
       try {
+        // FIRST: Check for auth errors in URL hash (e.g., expired magic link)
+        // This must happen before any auth checks to prevent redirect loops
+        const authError = checkUrlForAuthError();
+        if (authError) {
+          console.log('[AccountProfile] Auth error detected in URL:', authError);
+
+          // Clear the error from URL to prevent re-processing on reload
+          clearAuthErrorFromUrl();
+
+          // Set user-friendly error message based on error type
+          let errorMessage = 'Authentication failed. ';
+          if (authError.errorCode === 'otp_expired') {
+            errorMessage = 'This magic login link has expired or already been used. Please request a new login link.';
+          } else if (authError.errorCode === 'access_denied') {
+            errorMessage = 'Access denied. The login link may have expired or been used already. Please request a new login link.';
+          } else if (authError.errorDescription) {
+            errorMessage = authError.errorDescription;
+          } else {
+            errorMessage = 'The login link is invalid or has expired. Please request a new login link.';
+          }
+
+          // Throw error to be caught and displayed
+          throw new Error(errorMessage);
+        }
+
         // Check authentication status FIRST to potentially use as fallback
         // We need the validated user ID (Bubble _id) for accurate comparison
         // getSessionId() may return Supabase UUID instead of Bubble _id due to
