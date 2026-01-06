@@ -162,22 +162,29 @@ const RhythmSection = () => {
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start start", "end end"]
+    offset: ["start end", "end start"]
   });
 
-  // Text Animations
-  const opacity1 = useTransform(scrollYProgress, [0.1, 0.25, 0.35], [0, 1, 0]);
-  const y1 = useTransform(scrollYProgress, [0.1, 0.25, 0.35], [20, 0, -20]);
+  // Smoothed scroll progress
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001
+  });
 
-  const opacity2 = useTransform(scrollYProgress, [0.4, 0.55, 0.65], [0, 1, 0]);
-  const y2 = useTransform(scrollYProgress, [0.4, 0.55, 0.65], [20, 0, -20]);
+  // Text Animations - adjusted for better timing with viewport-based scroll
+  const opacity1 = useTransform(smoothProgress, [0.15, 0.25, 0.35], [0, 1, 0]);
+  const y1 = useTransform(smoothProgress, [0.15, 0.25, 0.35], [30, 0, -30]);
 
-  const opacity3 = useTransform(scrollYProgress, [0.7, 0.85, 0.95], [0, 1, 0]);
-  const y3 = useTransform(scrollYProgress, [0.7, 0.85, 0.95], [20, 0, -20]);
+  const opacity2 = useTransform(smoothProgress, [0.35, 0.45, 0.55], [0, 1, 0]);
+  const y2 = useTransform(smoothProgress, [0.35, 0.45, 0.55], [30, 0, -30]);
+
+  const opacity3 = useTransform(smoothProgress, [0.55, 0.65, 0.85], [0, 1, 1]);
+  const y3 = useTransform(smoothProgress, [0.55, 0.65, 0.75], [30, 0, 0]);
 
   // Monthly Fill Animation
-  const fillHeight = useTransform(scrollYProgress, [0.75, 0.9], [0, 70]);
-  const fillY = useTransform(scrollYProgress, [0.75, 0.9], [90, 20]);
+  const fillHeight = useTransform(smoothProgress, [0.6, 0.75], [0, 70]);
+  const fillY = useTransform(smoothProgress, [0.6, 0.75], [90, 20]);
 
   return (
     <section ref={containerRef} className="relative h-[400vh] bg-[#0f0a1a]">
@@ -256,7 +263,7 @@ const RhythmSection = () => {
                 </defs>
 
                 {/* Nightly: Active Particles */}
-                <motion.g style={{ opacity: useTransform(scrollYProgress, [0.1, 0.25, 0.4], [0, 1, 0]) }}>
+                <motion.g style={{ opacity: useTransform(smoothProgress, [0.15, 0.25, 0.35], [0, 1, 0]) }}>
                   <circle cx="50" cy="60" r="15" fill="#c084fc" filter="blur(20px)" opacity="0.5">
                     <animate attributeName="r" values="15;25;15" dur="3s" repeatCount="indefinite" />
                   </circle>
@@ -280,7 +287,7 @@ const RhythmSection = () => {
                 </motion.g>
 
                 {/* Weekly: Flowing Waves */}
-                <motion.g style={{ opacity: useTransform(scrollYProgress, [0.4, 0.55, 0.7], [0, 1, 0]) }} clipPath="url(#house-clip)">
+                <motion.g style={{ opacity: useTransform(smoothProgress, [0.35, 0.45, 0.55], [0, 1, 0]) }} clipPath="url(#house-clip)">
                   <path d="M-100 40 Q -50 30 0 40 T 100 40 T 200 40" fill="none" stroke="#34d399" strokeWidth="1" strokeOpacity="0.5">
                     <animateTransform attributeName="transform" type="translate" from="0 0" to="-100 0" dur="4s" repeatCount="indefinite" />
                   </path>
@@ -293,7 +300,7 @@ const RhythmSection = () => {
                 </motion.g>
 
                 {/* Monthly: Solid Fill */}
-                <motion.g style={{ opacity: useTransform(scrollYProgress, [0.7, 0.75, 1], [0, 1, 1]) }} clipPath="url(#house-clip)">
+                <motion.g style={{ opacity: useTransform(smoothProgress, [0.55, 0.6, 1], [0, 1, 1]) }} clipPath="url(#house-clip)">
                   <rect x="0" y="0" width="100" height="100" fill="#60a5fa" opacity="0.1" />
                   <motion.rect
                     x="0"
@@ -310,11 +317,11 @@ const RhythmSection = () => {
 
               {/* Outer Glow Ring */}
               <motion.div
-                className="absolute -inset-10 rounded-full blur-3xl opacity-20 transition-colors duration-700"
+                className="absolute -inset-10 rounded-full blur-3xl opacity-30 transition-colors duration-700"
                 style={{
                   background: useTransform(
-                    scrollYProgress,
-                    [0.2, 0.5, 0.8],
+                    smoothProgress,
+                    [0.2, 0.45, 0.65],
                     ['#c084fc', '#34d399', '#60a5fa']
                   )
                 }}
