@@ -1,0 +1,190 @@
+/* ========================================
+   Auth Verify Page Styles
+   Following patterns from reset-password.css
+   ======================================== */
+
+.auth-verify-page {
+  min-height: 100vh;
+  display: flex;
+  /* Use flex-start to prevent content going behind header */
+  align-items: flex-start;
+  justify-content: center;
+  /* Account for fixed header (~80px) plus extra spacing */
+  padding: calc(100px + var(--spacing-2xl)) var(--spacing-2xl) var(--spacing-2xl);
+  background: var(--bg-light-gray);
+  box-sizing: border-box;
+  /* Allow scrolling if content doesn't fit */
+  overflow-y: auto;
+}
+
+.auth-verify-container {
+  background: var(--white);
+  border-radius: var(--rounded-xl);
+  padding: var(--spacing-4xl);
+  width: 100%;
+  max-width: 440px;
+  box-shadow: var(--shadow-lg);
+  /* Use margin auto for vertical centering - won't go above padding area */
+  margin: auto 0;
+  /* Prevent shrinking below content size */
+  flex-shrink: 0;
+}
+
+.auth-verify-container h1 {
+  font-family: var(--font-inter);
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--primary-purple);
+  text-align: center;
+  margin-bottom: var(--spacing-2xl);
+}
+
+/* ========================================
+   Loading State
+   ======================================== */
+
+.auth-verify-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--spacing-2xl);
+}
+
+.auth-verify-loading .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--primary-purple);
+  border-radius: var(--rounded-full);
+  animation: auth-verify-spin 1s linear infinite;
+  margin-bottom: var(--spacing-lg);
+}
+
+.auth-verify-loading p {
+  color: var(--text-gray);
+  font-size: var(--text-md);
+  text-align: center;
+}
+
+@keyframes auth-verify-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   Success State
+   ======================================== */
+
+.auth-verify-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-xl);
+}
+
+.auth-verify-success .success-icon {
+  width: 60px;
+  height: 60px;
+  background: var(--success-green);
+  color: var(--white);
+  border-radius: var(--rounded-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-verify-success .success-message {
+  color: var(--text-dark);
+  font-size: var(--text-lg);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-relaxed);
+}
+
+.auth-verify-success .redirect-notice {
+  font-size: var(--text-base);
+  color: var(--text-gray);
+}
+
+/* ========================================
+   Error State
+   ======================================== */
+
+.auth-verify-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-xl);
+}
+
+.auth-verify-error .error-icon {
+  width: 60px;
+  height: 60px;
+  background: #fef2f2;
+  color: #ef4444;
+  border-radius: var(--rounded-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-verify-error .error-message {
+  color: var(--text-dark);
+  font-size: var(--text-md);
+  line-height: var(--line-height-relaxed);
+  max-width: 320px;
+}
+
+/* ========================================
+   Button Styles
+   ======================================== */
+
+.auth-verify-page .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--input-height-lg);
+  padding: 0 var(--spacing-2xl);
+  background: var(--primary-purple);
+  color: var(--white);
+  border: none;
+  border-radius: var(--rounded-lg);
+  font-family: var(--font-inter);
+  font-size: var(--text-md);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color var(--transition-base) var(--easing-ease);
+}
+
+.auth-verify-page .btn-primary:hover {
+  background: var(--primary-purple-hover);
+}
+
+.auth-verify-page .btn-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(49, 19, 93, 0.3);
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+
+@media (max-width: 600px) {
+  .auth-verify-page {
+    /* Keep header offset on mobile, reduce horizontal padding */
+    padding: calc(100px + var(--spacing-lg)) var(--spacing-lg) var(--spacing-lg);
+  }
+
+  .auth-verify-container {
+    padding: var(--spacing-2xl);
+  }
+
+  .auth-verify-container h1 {
+    font-size: var(--text-xl);
+  }
+}
