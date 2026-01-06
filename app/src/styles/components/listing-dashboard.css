@@ -3206,3 +3206,24 @@ body.listing-dashboard-page .logo-image {
 body.listing-dashboard-page .logo-text {
   display: none;
 }
+
+/* Fix header text/icons for white background */
+body.listing-dashboard-page .user-name-wrapper {
+  color: #1f2937;
+}
+
+body.listing-dashboard-page .user-name-wrapper svg {
+  color: #1f2937;
+}
+
+body.listing-dashboard-page .nav-link {
+  color: #1f2937;
+}
+
+body.listing-dashboard-page .dropdown-arrow {
+  color: #1f2937;
+}
+
+body.listing-dashboard-page .hamburger-line {
+  background-color: #1f2937;
+}
