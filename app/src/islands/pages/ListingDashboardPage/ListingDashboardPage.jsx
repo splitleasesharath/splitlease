@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../../shared/Header';
 import Footer from '../../shared/Footer';
 import { EditListingDetails } from '../../shared/EditListingDetails/EditListingDetails';
@@ -28,6 +28,14 @@ import '../AccountProfilePage/AccountProfilePage.css'; // For ReferralModal styl
 
 export default function ListingDashboardPage() {
   const [showReferralModal, setShowReferralModal] = useState(false);
+
+  // Add body class for page-specific header styling
+  useEffect(() => {
+    document.body.classList.add('listing-dashboard-page');
+    return () => {
+      document.body.classList.remove('listing-dashboard-page');
+    };
+  }, []);
 
   const {
     activeTab,

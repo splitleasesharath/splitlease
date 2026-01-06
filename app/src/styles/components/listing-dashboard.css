@@ -3187,3 +3187,22 @@
 .pricing-edit-overlay .host-confirm-modal__actions .btn--secondary:hover {
   background-color: #e5e7eb;
 }
+
+/* ============================================
+   Page-specific Header Styling
+   Only applies to listing-dashboard page
+   ============================================ */
+body.listing-dashboard-page .main-header {
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+body.listing-dashboard-page .logo-image {
+  content: url('https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=48&auto=enhance&dpr=2&q=100&fit=max');
+  width: 40px;
+  height: 40px;
+}
+
+body.listing-dashboard-page .logo-text {
+  display: none;
+}
