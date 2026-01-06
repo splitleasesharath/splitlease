@@ -24,8 +24,8 @@
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { loginUser, signupUser, validateTokenAndFetchUser, initiateLinkedInOAuth, handleLinkedInOAuthCallback, initiateLinkedInOAuthLogin, handleLinkedInOAuthLoginCallback } from '../../lib/auth.js';
-import { getLinkedInOAuthUserType, getLinkedInOAuthLoginFlow } from '../../lib/secureStorage.js';
+import { loginUser, signupUser, validateTokenAndFetchUser, initiateLinkedInOAuth, handleLinkedInOAuthCallback, initiateLinkedInOAuthLogin } from '../../lib/auth.js';
+import { getLinkedInOAuthUserType } from '../../lib/secureStorage.js';
 import { supabase } from '../../lib/supabase.js';
 import Toast, { useToast } from './Toast.jsx';
 
@@ -785,7 +785,8 @@ export default function SignUpLoginModal({
   onAuthSuccess,
   disableClose = false,
   defaultUserType = null, // 'host' or 'guest' for route-based prefilling
-  skipReload = false // When true, don't reload page after auth success (for modal flows)
+  skipReload = false, // When true, don't reload page after auth success (for modal flows)
+  prefillEmail = null // Email to prefill in signup form (from OAuth user not found)
 }) {
   // Toast notifications (with fallback rendering when no ToastProvider)
   const { toasts, showToast, removeToast } = useToast();
@@ -862,8 +863,16 @@ export default function SignUpLoginModal({
           userType: defaultUserType === 'host' ? USER_TYPES.HOST : USER_TYPES.GUEST
         }));
       }
+
+      // Prefill email if provided (e.g., from OAuth user not found)
+      if (prefillEmail) {
+        setSignupData(prev => ({
+          ...prev,
+          email: prefillEmail
+        }));
+      }
     }
-  }, [isOpen, initialView, defaultUserType]);
+  }, [isOpen, initialView, defaultUserType, prefillEmail]);
 
   // Check password match in real-time
   useEffect(() => {
@@ -939,75 +948,10 @@ export default function SignUpLoginModal({
     handleCallback();
   }, []); // Only run once on mount
 
-  // OAuth LOGIN callback detection (separate from signup flow)
-  useEffect(() => {
-    // Check if this is a login flow
-    const isLoginFlow = getLinkedInOAuthLoginFlow();
-    if (!isLoginFlow) return;
-
-    // Check if we're returning from OAuth (look for access_token or code in URL hash)
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const hasAccessToken = hashParams.get('access_token');
-    const urlParams = new URLSearchParams(window.location.search);
-    const hasCode = urlParams.get('code');
-
-    if (!hasAccessToken && !hasCode) return;
-
-    // We're returning from OAuth login - handle the callback
-    const handleLoginCallback = async () => {
-      setIsLoading(true);
-
-      showToast({
-        title: 'Logging in...',
-        content: 'Verifying your LinkedIn account',
-        type: 'info',
-        duration: 3000
-      });
-
-      const result = await handleLinkedInOAuthLoginCallback();
-
-      setIsLoading(false);
-
-      if (result.success) {
-        showToast({
-          title: 'Login Successful!',
-          content: 'Welcome back to Split Lease.',
-          type: 'success',
-          duration: 4000
-        });
-
-        if (onAuthSuccess) {
-          onAuthSuccess(result);
-        }
-
-        // Close modal and stay on current page (no redirect)
-        setTimeout(() => {
-          onClose();
-          if (!skipReload) {
-            setTimeout(() => {
-              window.location.reload();
-            }, 500);
-          }
-        }, 1500);
-      } else if (result.userNotFound) {
-        // Show user not found modal - prompt to sign up
-        setUserNotFoundData({
-          email: result.email,
-          showModal: true
-        });
-      } else {
-        showToast({
-          title: 'Login Failed',
-          content: result.error || 'Please try again.',
-          type: 'error',
-          duration: 5000
-        });
-        setError(result.error || 'OAuth login failed. Please try again.');
-      }
-    };
-
-    handleLoginCallback();
-  }, []); // Only run once on mount
+  // NOTE: OAuth LOGIN callback detection has been moved to global handler
+  // See app/src/lib/oauthCallbackHandler.js
+  // The global handler processes OAuth callbacks during app initialization (before React mounts)
+  // and dispatches custom events that Header.jsx listens for to update UI
 
   // Handle escape key
   useEffect(() => {

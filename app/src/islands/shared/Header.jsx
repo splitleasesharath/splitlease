@@ -16,6 +16,7 @@ export default function Header({ autoShowLogin = false }) {
   // Auth Modal State (using new SignUpLoginModal)
   const [showAuthModal, setShowAuthModal] = useState(autoShowLogin);
   const [authModalInitialView, setAuthModalInitialView] = useState('initial'); // 'initial', 'login', 'signup'
+  const [prefillEmail, setPrefillEmail] = useState(null); // Email to prefill in signup form (from OAuth user not found)
 
   // User Authentication State
   // CRITICAL: Initialize with cached data synchronously to prevent flickering
@@ -228,6 +229,40 @@ export default function Header({ autoShowLogin = false }) {
     };
   }, []);
 
+  // Listen for global OAuth callback results (from oauthCallbackHandler.js)
+  // This handles cases where OAuth login callback is processed before React mounts
+  useEffect(() => {
+    const handleOAuthSuccess = (event) => {
+      // OAuth login succeeded - Header's onAuthStateChange will update UI
+      // No toast needed here as the page will update automatically
+      console.log('[Header] OAuth login success:', event.detail);
+    };
+
+    const handleOAuthError = (event) => {
+      console.log('[Header] OAuth login error:', event.detail.error);
+      // Could show error toast here if needed, but typically the user
+      // will see the modal with error state
+    };
+
+    const handleUserNotFound = (event) => {
+      console.log('[Header] OAuth user not found:', event.detail.email);
+      // Open signup modal with email prefilled
+      setPrefillEmail(event.detail.email);
+      setAuthModalInitialView('signup');
+      setShowAuthModal(true);
+    };
+
+    window.addEventListener('oauth-login-success', handleOAuthSuccess);
+    window.addEventListener('oauth-login-error', handleOAuthError);
+    window.addEventListener('oauth-login-user-not-found', handleUserNotFound);
+
+    return () => {
+      window.removeEventListener('oauth-login-success', handleOAuthSuccess);
+      window.removeEventListener('oauth-login-error', handleOAuthError);
+      window.removeEventListener('oauth-login-user-not-found', handleUserNotFound);
+    };
+  }, []);
+
   // Monitor user type from localStorage for conditional header visibility
   useEffect(() => {
     // Function to read user type from localStorage using secureStorage module
@@ -340,6 +375,7 @@ export default function Header({ autoShowLogin = false }) {
   // Handle auth modal close
   const handleAuthModalClose = () => {
     setShowAuthModal(false);
+    setPrefillEmail(null); // Clear prefilled email when modal closes
   };
 
   // Handle successful authentication
@@ -679,6 +715,7 @@ export default function Header({ autoShowLogin = false }) {
         initialView={authModalInitialView}
         onAuthSuccess={handleAuthSuccess}
         disableClose={autoShowLogin && isProtectedPage()}
+        prefillEmail={prefillEmail}
       />
 
       {/* CreateDuplicateListingModal */}
