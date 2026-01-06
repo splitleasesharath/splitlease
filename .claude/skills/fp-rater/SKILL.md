@@ -42,18 +42,28 @@ Evaluate the file against these 7 principles (score out of 10):
 
 ## Output Format
 
-After completing file edits, append this exact format at the bottom of your response:
+After completing file edits, append this exact table format at the bottom of your response:
 
 ```
-Rating Allegiance to Functional Programming: X/10
+Allegiance to Functional Programming
+┌─────────────────────────┬───────┐
+│ File                    │ Score │
+├─────────────────────────┼───────┤
+│ filename.ext            │ X/10  │
+└─────────────────────────┴───────┘
 ```
 
-Replace X with the numeric score. Include ONLY this line - no explanations, no breakdown, no additional commentary.
+Replace `filename.ext` with the actual file name and X with the numeric score. Include ONLY this table - no explanations, no breakdown, no additional commentary.
 
 ## Example
 
 After editing `userService.ts`, append:
 
 ```
-Rating Allegiance to Functional Programming: 7/10
+Allegiance to Functional Programming
+┌─────────────────────────┬───────┐
+│ File                    │ Score │
+├─────────────────────────┼───────┤
+│ userService.ts          │ 7/10  │
+└─────────────────────────┴───────┘
 ```
