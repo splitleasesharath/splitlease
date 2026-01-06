@@ -543,8 +543,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--ho-spacing-md);
-  padding: var(--ho-spacing-lg) var(--ho-spacing-xl);
-  min-width: 0;
+  padding: var(--ho-spacing-lg) var(--ho-spacing-md);
+  min-width: 240px;
 }
 
 .listing-card__right {
@@ -552,9 +552,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--ho-spacing-lg) var(--ho-spacing-xl);
+  padding: var(--ho-spacing-lg) var(--ho-spacing-md);
   background-color: var(--ho-color-light-gray);
-  min-width: 140px;
+  min-width: 120px;
 }
 
 .listing-card__header {
