@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Split Lease - Sign Up Mockup (3-Step Flow)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Feather Icons -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <style>
+    /* ========================================
+       CSS Variables - Premium Design System
+       ======================================== */
+    :root {
+      /* Primary Colors - Indigo accent (like ReferralModal) */
+      --primary-purple: #31135D;
+      --accent-indigo: #6366F1;
+      --accent-indigo-hover: #4F46E5;
+      --accent-indigo-light: #EEF2FF;
+      --accent-violet: #8B5CF6;
+
+      /* Status Colors */
+      --success-green: #22C55E;
+      --success-teal: #10B981;
+      --error-red: #dc2626;
+
+      /* Text Colors */
+      --text-dark: #1a1a1a;
+      --text-gray: #6b7280;
+      --text-light-gray: #9ca3af;
+      --text-description: #374151;
+
+      /* Background Colors */
+      --bg-white: #ffffff;
+      --bg-light: #f9fafb;
+      --bg-light-gray: #f3f4f6;
+
+      /* Border Colors */
+      --border-color: #e5e7eb;
+      --border-light: #d1d5db;
+
+      /* LinkedIn Blue */
+      --linkedin-blue: #0a66c2;
+      --linkedin-blue-hover: #004182;
+
+      /* Shadows - Premium style */
+      --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.15);
+      --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.08);
+      --shadow-hover: 0 8px 30px rgba(99, 102, 241, 0.15);
+
+      /* Border Radius - Slightly larger for premium feel */
+      --rounded-sm: 6px;
+      --rounded-md: 10px;
+      --rounded-lg: 12px;
+      --rounded-xl: 16px;
+
+      /* Font */
+      --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: var(--font-inter);
+      background: linear-gradient(135deg, var(--primary-purple) 0%, #5a2d8f 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    /* Modal Overlay */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 10000;
+    }
+
+    @keyframes modalFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Modal - Premium wider style like ReferralModal */
+    .modal {
+      background: var(--bg-white);
+      border-radius: var(--rounded-xl);
+      padding: 24px;
+      max-width: 480px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-modal);
+      animation: modalFadeIn 0.2s ease;
+      position: relative;
+    }
+
+    /* Close Button */
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-light-gray);
+      transition: color 0.2s ease;
+      z-index: 10;
+    }
+
+    .modal-close:hover {
+      color: var(--text-dark);
+    }
+
+    /* Logo */
+    .logo-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .logo {
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
+    }
+
+    /* Progress Indicator - Premium style */
+    .progress-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .progress-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--border-color);
+      transition: all 0.3s ease;
+    }
+
+    .progress-dot.active {
+      background: var(--accent-indigo);
+      transform: scale(1.2);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+    }
+
+    .progress-dot.completed {
+      background: var(--success-teal);
+    }
+
+    .progress-line {
+      width: 48px;
+      height: 2px;
+      background: var(--border-color);
+      transition: background 0.3s ease;
+    }
+
+    .progress-line.completed {
+      background: var(--success-teal);
+    }
+
+    .step-label {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-light-gray);
+      margin-bottom: 20px;
+    }
+
+    /* Headers */
+    .header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-dark);
+      margin: 0 0 8px 0;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-gray);
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    .subtitle-accent {
+      color: var(--accent-indigo);
+      font-weight: 600;
+    }
+
+    /* User Type Cards - Premium style */
+    .user-type-card {
+      border: 1px solid var(--border-color);
+      border-radius: var(--rounded-md);
+      padding: 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: var(--bg-light);
+    }
+
+    .user-type-card:hover {
+      border-color: var(--accent-indigo);
+      background: var(--accent-indigo-light);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .user-type-card.selected {
+      border-color: var(--accent-indigo);
+      background: var(--accent-indigo-light);
+      box-shadow: var(--shadow-hover);
+    }
+
+    .user-type-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--rounded-md);
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-indigo);
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+
+    .user-type-content h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dark);
+      margin-bottom: 2px;
+    }
+
+    .user-type-content p {
+      font-size: 13px;
+      color: var(--text-gray);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    /* LinkedIn Button - Premium style */
+    .linkedin-btn {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--linkedin-blue);
+      background: var(--linkedin-blue);
+      border-radius: var(--rounded-md);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .linkedin-btn:hover {
+      background: var(--linkedin-blue-hover);
+      border-color: var(--linkedin-blue-hover);
+      box-shadow: 0 4px 12px rgba(10, 102, 194, 0.25);
+    }
+
+    .linkedin-btn .icon {
+      width: 32px;
+      height: 32px;
+      background: white;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: var(--linkedin-blue);
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .linkedin-btn .text {
+      flex: 1;
+      text-align: left;
+    }
+
+    .linkedin-btn .text .primary {
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      display: block;
+    }
+
+    .linkedin-btn .text .secondary {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.8);
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* LinkedIn Connected State */
+    .linkedin-connected {
+      width: 100%;
+      padding: 14px 16px;
+      border: 1px solid var(--success-teal);
+      background: rgba(16, 185, 129, 0.08);
+      border-radius: var(--rounded-md);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .linkedin-connected .check {
+      width: 32px;
+      height: 32px;
+      background: var(--success-teal);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .linkedin-connected .info {
+      flex: 1;
+    }
+
+    .linkedin-connected .info .name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-dark);
+    }
+
+    .linkedin-connected .info .email {
+      font-size: 12px;
+      color: var(--text-gray);
+    }
+
+    .linkedin-connected .change {
+      font-size: 13px;
+      color: var(--accent-indigo);
+      cursor: pointer;
+      text-decoration: none;
+      font-weight: 500;
+      transition: opacity 0.2s ease;
+    }
+
+    .linkedin-connected .change:hover {
+      opacity: 0.8;
+    }
+
+    /* Divider - Premium style */
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 20px 0;
+    }
+
+    .divider-line {
+      flex: 1;
+      height: 1px;
+      background: var(--border-color);
+    }
+
+    .divider-text {
+      font-size: 13px;
+      color: var(--text-light-gray);
+      font-weight: 500;
+    }
+
+    /* Form Fields - Premium style */
+    .form-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      flex: 1;
+      margin-bottom: 16px;
+    }
+
+    .form-row .form-group {
+      margin-bottom: 0;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-light-gray);
+      margin-bottom: 6px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--rounded-md);
+      font-size: 14px;
+      color: var(--text-dark);
+      transition: border-color 0.2s ease;
+      outline: none;
+      font-family: var(--font-inter);
+      background: var(--bg-light);
+    }
+
+    .form-input:focus {
+      border-color: var(--accent-indigo);
+      background: white;
+    }
+
+    .form-input::placeholder {
+      color: var(--text-light-gray);
+    }
+
+    .form-input.prefilled {
+      background: var(--bg-light);
+      border-color: var(--border-color);
+    }
+
+    .prefill-badge {
+      font-size: 11px;
+      color: var(--success-teal);
+      margin-left: 6px;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .helper-text {
+      font-size: 12px;
+      color: var(--text-gray);
+      margin-top: 6px;
+      line-height: 1.4;
+    }
+
+    /* Password Field */
+    .password-wrapper {
+      position: relative;
+    }
+
+    .password-wrapper .form-input {
+      padding-right: 44px;
+    }
+
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-gray);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 4px;
+      transition: color 0.2s ease;
+    }
+
+    .password-toggle:hover {
+      color: var(--text-dark);
+    }
+
+    /* Password Requirements - Premium style */
+    .password-requirements {
+      margin-top: 12px;
+      padding: 12px;
+      background: var(--bg-light);
+      border-radius: var(--rounded-md);
+    }
+
+    .requirement {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-gray);
+      margin-bottom: 6px;
+    }
+
+    .requirement:last-child {
+      margin-bottom: 0;
+    }
+
+    .requirement .icon {
+      width: 16px;
+      height: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .requirement.met {
+      color: var(--success-teal);
+    }
+
+    /* Buttons - Premium style */
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: var(--accent-indigo);
+      color: white;
+      border: none;
+      border-radius: var(--rounded-md);
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s ease, box-shadow 0.2s ease;
+      margin-top: 8px;
+      font-family: var(--font-inter);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-indigo-hover);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+    }
+
+    .btn-primary:disabled {
+      background: var(--border-color);
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    .btn-secondary {
+      width: 100%;
+      padding: 12px;
+      background: var(--bg-light);
+      border: 1px solid var(--border-color);
+      border-radius: var(--rounded-md);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-dark);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: var(--font-inter);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--accent-indigo);
+      background: var(--accent-indigo-light);
+    }
+
+    /* Back Button - Premium style */
+    .back-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      background: none;
+      border: none;
+      color: var(--accent-indigo);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      padding: 12px;
+      margin-top: 8px;
+      font-family: var(--font-inter);
+      transition: opacity 0.2s ease;
+    }
+
+    .back-btn:hover {
+      opacity: 0.8;
+    }
+
+    /* Footer Links - Premium style */
+    .footer-link {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+      font-size: 13px;
+      color: var(--text-gray);
+    }
+
+    .footer-link a, .footer-link button {
+      color: var(--accent-indigo);
+      text-decoration: none;
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: inherit;
+      font-weight: 500;
+      font-family: var(--font-inter);
+      transition: opacity 0.2s ease;
+    }
+
+    .footer-link a:hover, .footer-link button:hover {
+      opacity: 0.8;
+    }
+
+    /* Legal Text */
+    .legal-text {
+      font-size: 12px;
+      color: var(--text-gray);
+      text-align: center;
+      margin-top: 16px;
+      line-height: 1.5;
+    }
+
+    .legal-text a {
+      color: var(--accent-indigo);
+      text-decoration: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .legal-text a:hover {
+      opacity: 0.8;
+    }
+
+    /* Success State - Premium style */
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      color: var(--success-teal);
+    }
+
+    .success-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-violet) 100%);
+      color: white;
+      padding: 8px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-top: 20px;
+    }
+
+    /* Step Display */
+    .step {
+      display: none;
+    }
+
+    .step.active {
+      display: block;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 480px) {
+      .modal {
+        padding: 20px;
+      }
+
+      .form-row {
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .title {
+        font-size: 18px;
+      }
+
+      .user-type-card {
+        padding: 14px;
+      }
+    }
+
+    /* Demo Controls */
+    .demo-controls {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: white;
+      padding: 12px 20px;
+      border-radius: var(--rounded-lg);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      display: flex;
+      gap: 8px;
+      z-index: 100;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .demo-btn {
+      padding: 8px 14px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-light);
+      border-radius: var(--rounded-md);
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-dark);
+      transition: all 0.2s ease;
+      font-family: var(--font-inter);
+    }
+
+    .demo-btn:hover {
+      border-color: var(--accent-indigo);
+      background: var(--accent-indigo-light);
+    }
+
+    .demo-btn.active {
+      background: var(--accent-indigo);
+      color: white;
+      border-color: var(--accent-indigo);
+    }
+
+    /* Feather icon sizing */
+    .feather {
+      width: 20px;
+      height: 20px;
+      stroke-width: 2;
+    }
+
+    .feather-sm {
+      width: 16px;
+      height: 16px;
+    }
+
+    .feather-lg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .feather-xl {
+      width: 40px;
+      height: 40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="modal-overlay">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">
+        <i data-feather="x"></i>
+      </button>
+
+      <!-- Login View -->
+      <div class="step" id="stepLogin">
+        <div class="logo-container">
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
+        </div>
+
+        <div class="header">
+          <h1 class="title">Welcome back!</h1>
+          <p class="subtitle">Log in to your Split Lease account</p>
+        </div>
+
+        <!-- Social Login Options -->
+        <button class="linkedin-btn" onclick="alert('LinkedIn OAuth login')">
+          <div class="icon">in</div>
+          <div class="text">
+            <span class="primary">Continue with LinkedIn</span>
+          </div>
+          <i data-feather="chevron-right" class="feather" style="color: white; opacity: 0.7;"></i>
+        </button>
+
+        <button class="btn-secondary" style="margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 10px;" onclick="alert('Google OAuth login')">
+          <svg width="18" height="18" viewBox="0 0 24 24">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          Continue with Google
+        </button>
+
+        <div class="divider">
+          <div class="divider-line"></div>
+          <span class="divider-text">or</span>
+          <div class="divider-line"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="loginEmail" placeholder="john@example.com">
+        </div>
+
+        <div class="form-group" style="margin-bottom: 8px;">
+          <label class="form-label">Password</label>
+          <div class="password-wrapper">
+            <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password">
+            <button class="password-toggle" onclick="toggleLoginPassword()">
+              <i data-feather="eye" id="loginEyeIcon" class="feather-sm"></i>
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+          <a href="#" onclick="showMagicLink(); return false;" style="font-size: 13px; color: var(--accent-indigo); text-decoration: none; font-weight: 500;">Log in without password</a>
+          <a href="#" onclick="showForgotPassword(); return false;" style="font-size: 13px; color: var(--accent-indigo); text-decoration: none; font-weight: 500;">Forgot password?</a>
+        </div>
+
+        <button class="btn-primary" onclick="alert('Logging in...')">Log In</button>
+
+        <div class="footer-link">
+          Don't have an account? <a href="#" onclick="goToStep(0); return false;">Sign up</a>
+        </div>
+      </div>
+
+      <!-- Forgot Password View -->
+      <div class="step" id="stepForgotPassword">
+        <div class="logo-container">
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
+        </div>
+
+        <div class="header">
+          <h1 class="title">Reset your password</h1>
+          <p class="subtitle">Enter your email and we'll send you a link to reset your password</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="resetEmail" placeholder="john@example.com">
+        </div>
+
+        <button class="btn-primary" onclick="showResetSent()">Send Reset Link</button>
+
+        <button class="back-btn" onclick="showLogin()">
+          <i data-feather="arrow-left" class="feather-sm"></i>
+          Back to login
+        </button>
+      </div>
+
+      <!-- Reset Email Sent View -->
+      <div class="step" id="stepResetSent">
+        <div class="success-icon">
+          <i data-feather="mail" class="feather-xl"></i>
+        </div>
+
+        <div class="header">
+          <h1 class="title">Check your email</h1>
+          <p class="subtitle">We've sent a password reset link to<br><strong id="resetEmailDisplay">john@example.com</strong></p>
+        </div>
+
+        <button class="btn-secondary" onclick="showLogin()">
+          <i data-feather="arrow-left" class="feather-sm" style="margin-right: 6px;"></i>
+          Back to login
+        </button>
+
+        <p class="helper-text" style="text-align: center; margin-top: 16px;">
+          Didn't receive the email? <a href="#" onclick="alert('Resending...'); return false;" style="color: var(--accent-indigo); text-decoration: none; font-weight: 500;">Resend</a>
+        </p>
+      </div>
+
+      <!-- Magic Link View -->
+      <div class="step" id="stepMagicLink">
+        <div class="logo-container">
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
+        </div>
+
+        <div class="header">
+          <h1 class="title">Log in without password</h1>
+          <p class="subtitle">We'll send you a magic link to sign in instantly</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="magicLinkEmail" placeholder="john@example.com">
+        </div>
+
+        <button class="btn-primary" onclick="showMagicLinkSent()">Send Magic Link</button>
+
+        <button class="back-btn" onclick="showLogin()">
+          <i data-feather="arrow-left" class="feather-sm"></i>
+          Back to login
+        </button>
+      </div>
+
+      <!-- Magic Link Sent View -->
+      <div class="step" id="stepMagicLinkSent">
+        <div class="success-icon">
+          <i data-feather="mail" class="feather-xl"></i>
+        </div>
+
+        <div class="header">
+          <h1 class="title">Check your email</h1>
+          <p class="subtitle">We've sent a magic link to<br><strong id="magicLinkEmailDisplay">john@example.com</strong></p>
+        </div>
+
+        <p class="helper-text" style="text-align: center; margin-bottom: 16px; color: var(--text-gray);">
+          Click the link in your email to sign in instantly. No password needed!
+        </p>
+
+        <button class="btn-secondary" onclick="showLogin()">
+          <i data-feather="arrow-left" class="feather-sm" style="margin-right: 6px;"></i>
+          Back to login
+        </button>
+
+        <p class="helper-text" style="text-align: center; margin-top: 16px;">
+          Didn't receive the email? <a href="#" onclick="alert('Resending magic link...'); return false;" style="color: var(--accent-indigo); text-decoration: none; font-weight: 500;">Resend</a>
+        </p>
+      </div>
+
+      <!-- Step 0: Entry Point -->
+      <div class="step active" id="step0">
+        <div class="logo-container">
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
+        </div>
+
+        <div class="header">
+          <h1 class="title">Welcome to Split Lease</h1>
+          <p class="subtitle">How can we help you today?</p>
+        </div>
+
+        <div class="user-type-card" onclick="goToStep(1)">
+          <div class="user-type-icon">
+            <i data-feather="user-plus" class="feather-lg"></i>
+          </div>
+          <div class="user-type-content">
+            <h3>I'm new around here</h3>
+            <p>Create an account to get started</p>
+          </div>
+        </div>
+
+        <div class="user-type-card" onclick="showLogin()">
+          <div class="user-type-icon">
+            <i data-feather="log-in" class="feather-lg"></i>
+          </div>
+          <div class="user-type-content">
+            <h3>Log into my account</h3>
+            <p>Welcome back! Sign in to continue</p>
+          </div>
+        </div>
+
+        <div class="user-type-card" onclick="goToMarketReport()">
+          <div class="user-type-icon">
+            <i data-feather="bar-chart-2" class="feather-lg"></i>
+          </div>
+          <div class="user-type-content">
+            <h3>Sign Up with Market Report</h3>
+            <p>Get NYC rental insights and create an account</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 1: User Type -->
+      <div class="step" id="step1">
+        <div class="logo-container">
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
+        </div>
+
+        <div class="header">
+          <h1 class="title">What brings you here?</h1>
+          <p class="subtitle">I'm here to...</p>
+        </div>
+
+        <div class="user-type-card" onclick="selectUserType('guest', this)">
+          <div class="user-type-icon">
+            <i data-feather="home" class="feather-lg"></i>
+          </div>
+          <div class="user-type-content">
+            <h3>Find a place to stay</h3>
+            <p>Browse flexible rentals across NYC</p>
+          </div>
+        </div>
+
+        <div class="user-type-card" onclick="selectUserType('host', this)">
+          <div class="user-type-icon">
+            <i data-feather="key" class="feather-lg"></i>
+          </div>
+          <div class="user-type-content">
+            <h3>Share my space</h3>
+            <p>List your place for nightly, weekly, or monthly stays</p>
+          </div>
+        </div>
+
+        <button class="back-btn" onclick="goToStep(0)">
+          <i data-feather="arrow-left" class="feather-sm"></i>
+          Back
+        </button>
+      </div>
+
+      <!-- Step 2: Identity -->
+      <div class="step" id="step2">
+        <div class="logo-container">
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
+        </div>
+
+        <div class="header">
+          <h1 class="title">Nice to meet you!</h1>
+          <p class="subtitle">Tell us a bit about yourself</p>
+        </div>
+
+        <!-- LinkedIn Button (default state) -->
+        <div id="linkedinDefault">
+          <button class="linkedin-btn" onclick="connectLinkedIn()">
+            <div class="icon">in</div>
+            <div class="text">
+              <span class="primary">Continue with LinkedIn</span>
+              <span class="secondary">Auto-fill your info • Get verified badge</span>
+            </div>
+            <i data-feather="chevron-right" class="feather" style="color: white; opacity: 0.7;"></i>
+          </button>
+
+          <div class="divider">
+            <div class="divider-line"></div>
+            <span class="divider-text">or enter manually</span>
+            <div class="divider-line"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">First Name</label>
+              <input type="text" class="form-input" id="firstName" placeholder="John">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Last Name</label>
+              <input type="text" class="form-input" id="lastName" placeholder="Smith">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-input" id="email" placeholder="john@example.com">
+            <p class="helper-text">We'll use this for login and important updates</p>
+          </div>
+        </div>
+
+        <!-- LinkedIn Connected State (hidden by default) -->
+        <div id="linkedinConnected" style="display: none;">
+          <div class="linkedin-connected">
+            <div class="check">
+              <i data-feather="check" class="feather-sm"></i>
+            </div>
+            <div class="info">
+              <div class="name">John Smith</div>
+              <div class="email">john.smith@company.com</div>
+            </div>
+            <a class="change" onclick="disconnectLinkedIn()">Change</a>
+          </div>
+
+          <div class="divider">
+            <div class="divider-line"></div>
+            <span class="divider-text">Your info</span>
+            <div class="divider-line"></div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">
+                First Name
+                <span class="prefill-badge"><i data-feather="check" style="width:12px;height:12px;"></i> LinkedIn</span>
+              </label>
+              <input type="text" class="form-input prefilled" value="John">
+            </div>
+            <div class="form-group">
+              <label class="form-label">
+                Last Name
+                <span class="prefill-badge"><i data-feather="check" style="width:12px;height:12px;"></i> LinkedIn</span>
+              </label>
+              <input type="text" class="form-input prefilled" value="Smith">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              Email
+              <span class="prefill-badge"><i data-feather="check" style="width:12px;height:12px;"></i> LinkedIn</span>
+            </label>
+            <input type="email" class="form-input prefilled" value="john.smith@company.com">
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="continueFromIdentity()">Continue</button>
+
+        <button class="back-btn" onclick="goToStep(1)">
+          <i data-feather="arrow-left" class="feather-sm"></i>
+          Back
+        </button>
+      </div>
+
+      <!-- Step 3: Password (only for email signup, skipped for OAuth) -->
+      <div class="step" id="step3">
+        <div class="logo-container">
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
+        </div>
+
+        <div class="header">
+          <h1 class="title" id="step3Title">Almost there, John!</h1>
+          <p class="subtitle">Create a password to secure your account</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="password-wrapper">
+            <input type="password" class="form-input" id="password" placeholder="Create a password" oninput="checkPassword()">
+            <button class="password-toggle" onclick="togglePassword()">
+              <i data-feather="eye" id="eyeIcon" class="feather-sm"></i>
+            </button>
+          </div>
+          <div class="password-requirements">
+            <div class="requirement" id="req-length">
+              <span class="icon"><i data-feather="circle" class="feather-sm"></i></span>
+              <span>At least 8 characters</span>
+            </div>
+            <div class="requirement" id="req-mix">
+              <span class="icon"><i data-feather="circle" class="feather-sm"></i></span>
+              <span>Mix of letters and numbers</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="createAccount()" id="createBtn" disabled>Create Account</button>
+
+        <p class="legal-text">
+          By creating an account, you agree to our<br>
+          <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>
+        </p>
+
+        <button class="back-btn" onclick="goToStep(2)">
+          <i data-feather="arrow-left" class="feather-sm"></i>
+          Back
+        </button>
+      </div>
+
+      <!-- Success State -->
+      <div class="step" id="stepSuccess">
+        <div class="success-icon">
+          <i data-feather="check" class="feather-xl"></i>
+        </div>
+
+        <div class="header">
+          <h1 class="title">Welcome to Split Lease!</h1>
+          <p class="subtitle">Your account has been created successfully.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Demo Controls -->
+  <div class="demo-controls">
+    <button class="demo-btn active" onclick="goToStep(0)">Entry</button>
+    <button class="demo-btn" onclick="showLogin()">Login</button>
+    <button class="demo-btn" onclick="goToStep(1)">User Type</button>
+    <button class="demo-btn" onclick="goToStep(2)">Identity</button>
+    <button class="demo-btn" onclick="goToStep(3)">Password</button>
+    <button class="demo-btn" onclick="showSuccess()">Success</button>
+    <button class="demo-btn" onclick="toggleLinkedIn()">LinkedIn</button>
+  </div>
+
+  <script>
+    // Initialize Feather icons
+    feather.replace();
+
+    let currentStep = 0;
+    let selectedUserType = null;
+    let linkedInConnected = false;
+    let passwordVisible = false;
+    let loginPasswordVisible = false;
+
+    function showLogin() {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('stepLogin').classList.add('active');
+      updateDemoButtons('login');
+      feather.replace();
+    }
+
+    function showForgotPassword() {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('stepForgotPassword').classList.add('active');
+      updateDemoButtons('forgot');
+      feather.replace();
+    }
+
+    function showResetSent() {
+      const email = document.getElementById('resetEmail').value || 'john@example.com';
+      document.getElementById('resetEmailDisplay').textContent = email;
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('stepResetSent').classList.add('active');
+      updateDemoButtons('reset');
+      feather.replace();
+    }
+
+    function showMagicLink() {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('stepMagicLink').classList.add('active');
+      updateDemoButtons('magiclink');
+      feather.replace();
+    }
+
+    function showMagicLinkSent() {
+      const email = document.getElementById('magicLinkEmail').value || 'john@example.com';
+      document.getElementById('magicLinkEmailDisplay').textContent = email;
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('stepMagicLinkSent').classList.add('active');
+      updateDemoButtons('magiclinksent');
+      feather.replace();
+    }
+
+    function toggleLoginPassword() {
+      const input = document.getElementById('loginPassword');
+      const icon = document.getElementById('loginEyeIcon');
+      loginPasswordVisible = !loginPasswordVisible;
+
+      if (loginPasswordVisible) {
+        input.type = 'text';
+        icon.setAttribute('data-feather', 'eye-off');
+      } else {
+        input.type = 'password';
+        icon.setAttribute('data-feather', 'eye');
+      }
+      feather.replace();
+    }
+
+    function updateDemoButtons(view) {
+      const buttons = document.querySelectorAll('.demo-btn');
+      buttons.forEach(btn => btn.classList.remove('active'));
+
+      if (view === 'login' || view === 'forgot' || view === 'reset' || view === 'magiclink' || view === 'magiclinksent') {
+        buttons[1].classList.add('active'); // Login button
+      }
+    }
+
+    function selectUserType(type, element) {
+      selectedUserType = type;
+      document.querySelectorAll('.user-type-card').forEach(card => {
+        card.classList.remove('selected');
+      });
+      element.classList.add('selected');
+
+      // Auto-advance after short delay
+      setTimeout(() => goToStep(2), 300);
+    }
+
+    function goToStep(step) {
+      currentStep = step;
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+
+      document.getElementById('step' + step).classList.add('active');
+
+      // Update demo buttons
+      const buttons = document.querySelectorAll('.demo-btn');
+      buttons.forEach(btn => btn.classList.remove('active'));
+
+      // Map step numbers to button indices: Entry(0)=0, Login=1, UserType(1)=2, Identity(2)=3, Password(3)=4, Success=5
+      if (step === 0) buttons[0].classList.add('active');
+      else if (step === 1) buttons[2].classList.add('active');
+      else if (step === 2) buttons[3].classList.add('active');
+      else if (step === 3) buttons[4].classList.add('active');
+
+      // Update Step 3 title with name
+      if (step === 3) {
+        const name = linkedInConnected ? 'John' : (document.getElementById('firstName').value || 'there');
+        document.getElementById('step3Title').textContent = `Almost there, ${name}!`;
+      }
+
+      // Re-initialize Feather icons for new content
+      feather.replace();
+    }
+
+    function goToMarketReport() {
+      // Placeholder for market report signup flow
+      alert('Market Report sign-up flow - Coming soon!\n\nThis will take users to a special sign-up flow where they can access NYC rental market insights.');
+    }
+
+    function continueFromIdentity() {
+      // If LinkedIn connected, skip password step and go straight to success
+      if (linkedInConnected) {
+        showSuccess();
+      } else {
+        // Email signup requires password
+        goToStep(3);
+      }
+    }
+
+    function connectLinkedIn() {
+      linkedInConnected = true;
+      document.getElementById('linkedinDefault').style.display = 'none';
+      document.getElementById('linkedinConnected').style.display = 'block';
+      feather.replace();
+
+      // Auto-advance to Success after LinkedIn connection (no password needed!)
+      setTimeout(() => showSuccess(), 500);
+    }
+
+    function disconnectLinkedIn() {
+      linkedInConnected = false;
+      document.getElementById('linkedinDefault').style.display = 'block';
+      document.getElementById('linkedinConnected').style.display = 'none';
+    }
+
+    function toggleLinkedIn() {
+      if (linkedInConnected) {
+        disconnectLinkedIn();
+      } else {
+        connectLinkedIn();
+      }
+    }
+
+    function togglePassword() {
+      const input = document.getElementById('password');
+      const icon = document.getElementById('eyeIcon');
+      passwordVisible = !passwordVisible;
+
+      if (passwordVisible) {
+        input.type = 'text';
+        icon.setAttribute('data-feather', 'eye-off');
+      } else {
+        input.type = 'password';
+        icon.setAttribute('data-feather', 'eye');
+      }
+      feather.replace();
+    }
+
+    function checkPassword() {
+      const password = document.getElementById('password').value;
+      const reqLength = document.getElementById('req-length');
+      const reqMix = document.getElementById('req-mix');
+      const createBtn = document.getElementById('createBtn');
+
+      const hasLength = password.length >= 8;
+      const hasMix = /[a-zA-Z]/.test(password) && /[0-9]/.test(password);
+
+      // Update requirement indicators
+      if (hasLength) {
+        reqLength.classList.add('met');
+        reqLength.querySelector('.icon').innerHTML = '<i data-feather="check-circle" class="feather-sm"></i>';
+      } else {
+        reqLength.classList.remove('met');
+        reqLength.querySelector('.icon').innerHTML = '<i data-feather="circle" class="feather-sm"></i>';
+      }
+
+      if (hasMix) {
+        reqMix.classList.add('met');
+        reqMix.querySelector('.icon').innerHTML = '<i data-feather="check-circle" class="feather-sm"></i>';
+      } else {
+        reqMix.classList.remove('met');
+        reqMix.querySelector('.icon').innerHTML = '<i data-feather="circle" class="feather-sm"></i>';
+      }
+
+      feather.replace();
+      createBtn.disabled = !(hasLength && hasMix);
+    }
+
+    function createAccount() {
+      showSuccess();
+    }
+
+    function showSuccess() {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('stepSuccess').classList.add('active');
+
+      // Show LinkedIn badge if connected
+      document.getElementById('linkedinBadge').style.display = linkedInConnected ? 'flex' : 'none';
+
+      // Update demo buttons (Success is index 5)
+      document.querySelectorAll('.demo-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === 5);
+      });
+
+      feather.replace();
+    }
+
+    function closeModal() {
+      alert('Modal closed');
+    }
+  </script>
+</body>
+</html>

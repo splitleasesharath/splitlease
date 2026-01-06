@@ -2037,9 +2037,6 @@ export function SelfListingPageV2() {
           >
             ×
           </button>
-          <div className="continue-phone-icon">
-            <Smartphone size={48} color="#5b21b6" />
-          </div>
           <h2>Continue on Your Phone</h2>
           <p>
             {isSavingDraft
