@@ -162,7 +162,7 @@ const RhythmSection = () => {
   const containerRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: containerRef,
-    offset: ["start end", "end start"]
+    offset: ["start start", "end end"]
   });
 
   // Smoothed scroll progress
@@ -172,23 +172,23 @@ const RhythmSection = () => {
     restDelta: 0.001
   });
 
-  // Text Animations - adjusted for better timing with viewport-based scroll
-  const opacity1 = useTransform(smoothProgress, [0.15, 0.25, 0.35], [0, 1, 0]);
-  const y1 = useTransform(smoothProgress, [0.15, 0.25, 0.35], [30, 0, -30]);
+  // Text Animations - three phases across the scroll
+  const opacity1 = useTransform(smoothProgress, [0, 0.15, 0.3], [0, 1, 0]);
+  const y1 = useTransform(smoothProgress, [0, 0.15, 0.3], [30, 0, -30]);
 
-  const opacity2 = useTransform(smoothProgress, [0.35, 0.45, 0.55], [0, 1, 0]);
-  const y2 = useTransform(smoothProgress, [0.35, 0.45, 0.55], [30, 0, -30]);
+  const opacity2 = useTransform(smoothProgress, [0.3, 0.45, 0.6], [0, 1, 0]);
+  const y2 = useTransform(smoothProgress, [0.3, 0.45, 0.6], [30, 0, -30]);
 
-  const opacity3 = useTransform(smoothProgress, [0.55, 0.65, 0.85], [0, 1, 1]);
-  const y3 = useTransform(smoothProgress, [0.55, 0.65, 0.75], [30, 0, 0]);
+  const opacity3 = useTransform(smoothProgress, [0.6, 0.75, 1], [0, 1, 1]);
+  const y3 = useTransform(smoothProgress, [0.6, 0.75, 0.9], [30, 0, 0]);
 
   // Monthly Fill Animation
-  const fillHeight = useTransform(smoothProgress, [0.6, 0.75], [0, 70]);
-  const fillY = useTransform(smoothProgress, [0.6, 0.75], [90, 20]);
+  const fillHeight = useTransform(smoothProgress, [0.65, 0.85], [0, 70]);
+  const fillY = useTransform(smoothProgress, [0.65, 0.85], [90, 20]);
 
   return (
-    <section ref={containerRef} className="relative h-[400vh] bg-[#0f0a1a]">
-      <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
+    <section ref={containerRef} className="relative h-[300vh] bg-[#0f0a1a]">
+      <div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden pt-20">
 
         {/* Ambient Background */}
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-[#31135d]/20 via-[#0f0a1a] to-[#0f0a1a]" />
@@ -263,7 +263,7 @@ const RhythmSection = () => {
                 </defs>
 
                 {/* Nightly: Active Particles */}
-                <motion.g style={{ opacity: useTransform(smoothProgress, [0.15, 0.25, 0.35], [0, 1, 0]) }}>
+                <motion.g style={{ opacity: useTransform(smoothProgress, [0, 0.15, 0.3], [0, 1, 0]) }}>
                   <circle cx="50" cy="60" r="15" fill="#c084fc" filter="blur(20px)" opacity="0.5">
                     <animate attributeName="r" values="15;25;15" dur="3s" repeatCount="indefinite" />
                   </circle>
@@ -287,7 +287,7 @@ const RhythmSection = () => {
                 </motion.g>
 
                 {/* Weekly: Flowing Waves */}
-                <motion.g style={{ opacity: useTransform(smoothProgress, [0.35, 0.45, 0.55], [0, 1, 0]) }} clipPath="url(#house-clip)">
+                <motion.g style={{ opacity: useTransform(smoothProgress, [0.3, 0.45, 0.6], [0, 1, 0]) }} clipPath="url(#house-clip)">
                   <path d="M-100 40 Q -50 30 0 40 T 100 40 T 200 40" fill="none" stroke="#34d399" strokeWidth="1" strokeOpacity="0.5">
                     <animateTransform attributeName="transform" type="translate" from="0 0" to="-100 0" dur="4s" repeatCount="indefinite" />
                   </path>
@@ -300,7 +300,7 @@ const RhythmSection = () => {
                 </motion.g>
 
                 {/* Monthly: Solid Fill */}
-                <motion.g style={{ opacity: useTransform(smoothProgress, [0.55, 0.6, 1], [0, 1, 1]) }} clipPath="url(#house-clip)">
+                <motion.g style={{ opacity: useTransform(smoothProgress, [0.6, 0.7, 1], [0, 1, 1]) }} clipPath="url(#house-clip)">
                   <rect x="0" y="0" width="100" height="100" fill="#60a5fa" opacity="0.1" />
                   <motion.rect
                     x="0"
@@ -321,7 +321,7 @@ const RhythmSection = () => {
                 style={{
                   background: useTransform(
                     smoothProgress,
-                    [0.2, 0.45, 0.65],
+                    [0.1, 0.4, 0.7],
                     ['#c084fc', '#34d399', '#60a5fa']
                   )
                 }}
