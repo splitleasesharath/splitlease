@@ -178,6 +178,7 @@ export default function ListingDashboardPage() {
                 listing={listing}
                 onImportReviews={handleImportReviews}
                 onEdit={() => handleEditSection('name')}
+                reviewCount={counts.reviews}
               />
             </div>
 

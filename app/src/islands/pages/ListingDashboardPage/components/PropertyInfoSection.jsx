@@ -112,7 +112,7 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('en-US', options);
 }
 
-export default function PropertyInfoSection({ listing, onImportReviews, onEdit }) {
+export default function PropertyInfoSection({ listing, onImportReviews, onEdit, reviewCount = 0 }) {
   const [showStatusInfo, setShowStatusInfo] = useState(false);
   const statusTriggerRef = useRef(null);
 
@@ -179,9 +179,17 @@ export default function PropertyInfoSection({ listing, onImportReviews, onEdit }
 
       {/* Review Section */}
       <div className="listing-dashboard-property__reviews">
-        <button className="listing-dashboard-property__reviews-btn">
+        <button
+          className="listing-dashboard-property__reviews-btn"
+          onClick={onImportReviews}
+        >
           <StarIcon />
-          <span>Show my reviews</span>
+          <span>
+            {reviewCount > 0
+              ? `Show my reviews (${reviewCount})`
+              : 'Upload reviews from other sites'
+            }
+          </span>
         </button>
       </div>
 

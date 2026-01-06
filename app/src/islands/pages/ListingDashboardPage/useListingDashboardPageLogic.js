@@ -354,7 +354,7 @@ export default function useListingDashboardPageLogic() {
   // State
   const [activeTab, setActiveTab] = useState('manage');
   const [listing, setListing] = useState(null);
-  const [counts, setCounts] = useState({ proposals: 0, virtualMeetings: 0, leases: 0 });
+  const [counts, setCounts] = useState({ proposals: 0, virtualMeetings: 0, leases: 0, reviews: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -398,12 +398,13 @@ export default function useListingDashboardPageLogic() {
       console.log('✅ Found listing:', listingData._id);
 
       // Fetch lookup tables and related data in parallel
-      const [lookups, photosResult, proposalsResult, leasesResult, meetingsResult] = await Promise.all([
+      const [lookups, photosResult, proposalsResult, leasesResult, meetingsResult, reviewsResult] = await Promise.all([
         fetchLookupTables(),
         supabase.from('listing_photo').select('*').eq('Listing', listingId).eq('Active', true).order('SortOrder', { ascending: true }),
         supabase.from('proposal').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
         supabase.from('bookings_leases').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
         supabase.from('virtualmeetingschedulesandlinks').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
+        supabase.from('external_reviews').select('*', { count: 'exact', head: true }).eq('listing_id', listingId),
       ]);
 
       // Extract photos - check if embedded in Features - Photos or in listing_photo table
@@ -459,6 +460,11 @@ export default function useListingDashboardPageLogic() {
         console.warn('⚠️ Failed to fetch meetings count:', meetingsError);
       }
 
+      const { count: reviewsCount, error: reviewsError } = reviewsResult;
+      if (reviewsError) {
+        console.warn('⚠️ Failed to fetch reviews count:', reviewsError);
+      }
+
       const transformedListing = transformListingData(listingData, photos || [], lookups);
 
       setListing(transformedListing);
@@ -466,6 +472,7 @@ export default function useListingDashboardPageLogic() {
         proposals: proposalsCount || 0,
         virtualMeetings: meetingsCount || 0,
         leases: leasesCount || 0,
+        reviews: reviewsCount || 0,
       });
 
       console.log('✅ Listing loaded successfully');
