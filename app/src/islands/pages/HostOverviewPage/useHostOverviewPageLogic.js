@@ -358,6 +358,48 @@ export function useHostOverviewPageLogic() {
         total: uniqueListings.length
       });
 
+      // Fetch proposal and lease counts for all listings
+      if (uniqueListings.length > 0) {
+        const listingIds = uniqueListings.map(l => l.id);
+
+        // Fetch proposals grouped by listing
+        const { data: proposalData } = await supabase
+          .from('proposal')
+          .select('Listing')
+          .in('Listing', listingIds);
+
+        // Fetch leases grouped by listing
+        const { data: leaseData } = await supabase
+          .from('bookings_leases')
+          .select('Listing')
+          .in('Listing', listingIds);
+
+        // Count proposals per listing
+        const proposalCounts = {};
+        (proposalData || []).forEach(p => {
+          if (p.Listing) {
+            proposalCounts[p.Listing] = (proposalCounts[p.Listing] || 0) + 1;
+          }
+        });
+
+        // Count leases per listing
+        const leaseCounts = {};
+        (leaseData || []).forEach(l => {
+          if (l.Listing) {
+            leaseCounts[l.Listing] = (leaseCounts[l.Listing] || 0) + 1;
+          }
+        });
+
+        // Merge counts into listings
+        uniqueListings.forEach(listing => {
+          listing.proposalsCount = proposalCounts[listing.id] || 0;
+          listing.leasesCount = leaseCounts[listing.id] || 0;
+        });
+
+        console.log('[HostOverview] Proposal counts:', proposalCounts);
+        console.log('[HostOverview] Lease counts:', leaseCounts);
+      }
+
       return uniqueListings;
     } catch (err) {
       console.error('Error fetching host listings:', err);
