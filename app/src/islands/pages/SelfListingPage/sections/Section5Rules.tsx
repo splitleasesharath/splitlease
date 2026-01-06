@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import type { Rules, CancellationPolicy, GenderPreference, RentalType } from '../types/listing.types';
 import { HOUSE_RULES } from '../types/listing.types';
 
@@ -13,13 +13,9 @@ interface Section5Props {
 
 export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onChange, onNext, onBack, showToast }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
-  const [selectedEndDate, setSelectedEndDate] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectionMode, setSelectionMode] = useState<'individual' | 'range'>('range');
-  const [tempSelectedDates, setTempSelectedDates] = useState<Date[]>([]);
-  const datePickerRef = useRef<HTMLDivElement>(null);
+  const [selectionMode, setSelectionMode] = useState<'individual' | 'range'>('individual');
 
   // Scroll to first error field
   const scrollToFirstError = useCallback((errorKeys: string[]) => {
@@ -66,56 +62,67 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
     handleChange('blockedDates', updated);
   };
 
-  const handleAddDates = () => {
-    if (selectionMode === 'range') {
-      if (!selectedStartDate) return;
+  // Toggle a single blocked date (add if not present, remove if present)
+  const toggleBlockedDate = (date: Date) => {
+    const dateStr = date.toDateString();
+    const isBlocked = data.blockedDates.some((d) => d.toDateString() === dateStr);
 
-      const endDate = selectedEndDate || selectedStartDate;
-      const dates: Date[] = [];
-      const currentDate = new Date(selectedStartDate);
-
-      while (currentDate <= endDate) {
-        dates.push(new Date(currentDate));
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-
-      handleChange('blockedDates', [...data.blockedDates, ...dates]);
+    if (isBlocked) {
+      // Remove the date
+      const updated = data.blockedDates.filter((d) => d.toDateString() !== dateStr);
+      handleChange('blockedDates', updated);
     } else {
-      // Individual mode
-      handleChange('blockedDates', [...data.blockedDates, ...tempSelectedDates]);
+      // Add the date
+      handleChange('blockedDates', [...data.blockedDates, date]);
+    }
+  };
+
+  // Add multiple dates to blocked list (for range selection)
+  const addBlockedDates = (dates: Date[]) => {
+    // Filter out dates that are already blocked
+    const newDates = dates.filter(
+      (date) => !data.blockedDates.some((d) => d.toDateString() === date.toDateString())
+    );
+    handleChange('blockedDates', [...data.blockedDates, ...newDates]);
+  };
+
+  // Get all dates between two dates (inclusive)
+  const getDatesBetween = (startDate: Date, endDate: Date): Date[] => {
+    const dates: Date[] = [];
+    let start = new Date(startDate);
+    let end = new Date(endDate);
+
+    // Ensure start is before end
+    if (start > end) {
+      const temp = start;
+      start = end;
+      end = temp;
     }
 
-    // Reset state
-    setShowDatePicker(false);
-    setSelectedStartDate(null);
-    setSelectedEndDate(null);
-    setTempSelectedDates([]);
+    const current = new Date(start);
+    while (current <= end) {
+      dates.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+
+    return dates;
   };
 
   const handleDateClick = (date: Date) => {
-    if (selectionMode === 'range') {
-      if (!selectedStartDate) {
-        setSelectedStartDate(date);
-      } else if (!selectedEndDate) {
-        if (date >= selectedStartDate) {
-          setSelectedEndDate(date);
-        } else {
-          setSelectedStartDate(date);
-          setSelectedEndDate(null);
-        }
-      } else {
-        setSelectedStartDate(date);
-        setSelectedEndDate(null);
-      }
+    if (selectionMode === 'individual') {
+      // Individual mode: toggle the clicked date
+      toggleBlockedDate(date);
     } else {
-      // Individual mode - toggle date selection
-      const dateStr = date.toDateString();
-      const isSelected = tempSelectedDates.some((d) => d.toDateString() === dateStr);
-
-      if (isSelected) {
-        setTempSelectedDates(tempSelectedDates.filter((d) => d.toDateString() !== dateStr));
+      // Range mode: wait for two clicks
+      if (!selectedStartDate) {
+        // First click: set the start of the range
+        setSelectedStartDate(date);
       } else {
-        setTempSelectedDates([...tempSelectedDates, date]);
+        // Second click: block all dates in the range
+        const rangeDates = getDatesBetween(selectedStartDate, date);
+        addBlockedDates(rangeDates);
+        // Reset range start for next selection
+        setSelectedStartDate(null);
       }
     }
   };
@@ -154,24 +161,12 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
   const handleModeChange = (mode: 'individual' | 'range') => {
     setSelectionMode(mode);
     setSelectedStartDate(null);
-    setSelectedEndDate(null);
-    setTempSelectedDates([]);
   };
 
   const isDateBlocked = (date: Date) => {
     return data.blockedDates.some(
       (blocked) => blocked.toDateString() === date.toDateString()
     );
-  };
-
-  const isDateInRange = (date: Date) => {
-    if (selectionMode === 'individual') {
-      return tempSelectedDates.some((d) => d.toDateString() === date.toDateString());
-    }
-
-    if (!selectedStartDate) return false;
-    if (!selectedEndDate) return date.toDateString() === selectedStartDate.toDateString();
-    return date >= selectedStartDate && date <= selectedEndDate;
   };
 
   const validateForm = (): string[] => {
@@ -376,210 +371,159 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
         </div>
       </div>
 
-      {/* Block Dates */}
+      {/* Block Dates - Dashboard Style Layout */}
       <div className="form-group block-dates-section">
-        <div className="block-dates-layout">
-          {/* Left side - Info and Button */}
-          <div className="block-dates-left">
-            <label className="block-dates-label">Block Dates</label>
-            <p className="block-dates-description">Select dates when your property will not be available</p>
-            <button
-              type="button"
-              className="btn-secondary add-date-btn"
-              onClick={() => setShowDatePicker(!showDatePicker)}
-            >
-              {showDatePicker ? 'Close Calendar' : 'Add Date'}
-            </button>
+        <label className="block-dates-label">Block Dates</label>
+        <div className="availability-calendar-container">
+          {/* Left Side - Instructions and Blocked Dates List */}
+          <div className="availability-instructions">
+            <p className="availability-description">Add or remove blocked dates by selecting a range or individual days.</p>
 
-            {/* Blocked dates list */}
-            {data.blockedDates.length > 0 && (
-              <div className="blocked-dates-list">
-                <h5>Blocked Dates ({data.blockedDates.length})</h5>
-                <div className="blocked-dates-items">
-                  {data.blockedDates.slice(0, 5).map((date, idx) => (
-                    <div key={idx} className="blocked-date-item">
-                      {date.toLocaleDateString()}
+            <div className="availability-mode-toggle">
+              <label className="availability-mode-option">
+                <input
+                  type="radio"
+                  name="selectionMode"
+                  checked={selectionMode === 'range'}
+                  onChange={() => handleModeChange('range')}
+                />
+                <span>Range</span>
+              </label>
+              <label className="availability-mode-option">
+                <input
+                  type="radio"
+                  name="selectionMode"
+                  checked={selectionMode === 'individual'}
+                  onChange={() => handleModeChange('individual')}
+                />
+                <span>Individual dates</span>
+              </label>
+            </div>
+
+            {selectedStartDate && selectionMode === 'range' && (
+              <p className="availability-range-hint">
+                Range start selected: {selectedStartDate.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}. Click another date to complete the range.
+              </p>
+            )}
+
+            <div className="availability-blocked-info">
+              <p className="availability-blocked-title"><strong>Dates Blocked by You</strong></p>
+              {data.blockedDates.length > 0 ? (
+                <div className="availability-blocked-list">
+                  {data.blockedDates.slice(0, 10).map((date, idx) => (
+                    <span key={idx} className="availability-blocked-date">
+                      {date.toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
                       <button
                         type="button"
+                        className="availability-remove-date"
                         onClick={() => removeBlockedDate(date)}
-                        className="remove-date-btn"
-                        title="Remove date"
+                        title="Remove blocked date"
                       >
-                        ✕
+                        ×
                       </button>
-                    </div>
+                    </span>
                   ))}
-                  {data.blockedDates.length > 5 && (
-                    <p className="more-dates">+{data.blockedDates.length - 5} more</p>
+                  {data.blockedDates.length > 10 && (
+                    <span className="availability-more-dates">
+                      +{data.blockedDates.length - 10} more dates
+                    </span>
                   )}
                 </div>
-              </div>
-            )}
+              ) : (
+                <p className="availability-no-blocked">
+                  You don't have any future date blocked yet
+                </p>
+              )}
+            </div>
           </div>
 
-          {/* Right side - Calendar (desktop inline, mobile popup) */}
-          {showDatePicker && (
-            <>
-              {/* Mobile overlay - only on mobile */}
-              <div className="modal-overlay mobile-only" onClick={() => setShowDatePicker(false)} />
+          {/* Right Side - Calendar */}
+          <div className="availability-calendar">
+            {/* Calendar Header */}
+            <div className="month-navigation">
+              <button type="button" onClick={goToPreviousMonth} className="nav-btn">
+                ‹
+              </button>
+              <span className="current-month">
+                {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+              </span>
+              <button type="button" onClick={goToNextMonth} className="nav-btn">
+                ›
+              </button>
+            </div>
 
-              {/* Calendar container - popup on mobile, inline on desktop */}
-              <div className="date-picker-container" ref={datePickerRef}>
-              <div className="date-picker-header">
-                <h4>Block Dates</h4>
-                <button
-                  type="button"
-                  className="modal-close-btn"
-                  onClick={() => setShowDatePicker(false)}
-                  title="Close"
-                >
-                  ✕
-                </button>
+            {/* Day Headers */}
+            <div className="calendar-day-headers">
+              <div>Sun</div>
+              <div>Mon</div>
+              <div>Tue</div>
+              <div>Wed</div>
+              <div>Thu</div>
+              <div>Fri</div>
+              <div>Sat</div>
+            </div>
+
+            {/* Calendar Grid */}
+            <div className="calendar-grid">
+              {generateCalendarDays().map((date, index) => {
+                if (!date) {
+                  return <div key={index} className="calendar-day empty" />;
+                }
+
+                const isBlocked = isDateBlocked(date);
+                const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
+                const isRangeStart = selectionMode === 'range' && selectedStartDate &&
+                  date.toDateString() === selectedStartDate.toDateString();
+                const isSelectable = !isPast;
+
+                return (
+                  <div
+                    key={index}
+                    className={`calendar-day ${isBlocked ? 'blocked' : ''} ${
+                      isPast ? 'past' : ''
+                    } ${isRangeStart ? 'range-start' : ''} ${
+                      isSelectable ? 'selectable' : ''
+                    }`}
+                    onClick={() => isSelectable && handleDateClick(date)}
+                    role={isSelectable ? 'button' : undefined}
+                    tabIndex={isSelectable ? 0 : undefined}
+                    onKeyDown={(e) => {
+                      if (isSelectable && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        handleDateClick(date);
+                      }
+                    }}
+                  >
+                    {String(date.getDate()).padStart(2, '0')}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="calendar-legend">
+              <div className="calendar-legend__item">
+                <span className="calendar-legend__dot calendar-legend__dot--restricted" />
+                <span>Restricted Weekly</span>
               </div>
-
-              {/* Selection Mode Toggle */}
-              <div className="selection-mode-toggle">
-                <label className="mode-option">
-                  <input
-                    type="radio"
-                    name="selectionMode"
-                    checked={selectionMode === 'range'}
-                    onChange={() => handleModeChange('range')}
-                  />
-                  <span>Range Selection</span>
-                </label>
-                <label className="mode-option">
-                  <input
-                    type="radio"
-                    name="selectionMode"
-                    checked={selectionMode === 'individual'}
-                    onChange={() => handleModeChange('individual')}
-                  />
-                  <span>Individual Dates</span>
-                </label>
+              <div className="calendar-legend__item">
+                <span className="calendar-legend__dot calendar-legend__dot--blocked" />
+                <span>Blocked Manually</span>
               </div>
-
-              <p className="date-picker-instructions">
-                {selectionMode === 'range'
-                  ? 'Click a start date, then click an end date to select a range'
-                  : 'Click to select individual dates'}
-              </p>
-
-              {/* Month Navigation */}
-              <div className="month-navigation">
-                <button type="button" onClick={goToPreviousMonth} className="nav-btn">
-                  ‹
-                </button>
-                <span className="current-month">
-                  {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-                </span>
-                <button type="button" onClick={goToNextMonth} className="nav-btn">
-                  ›
-                </button>
+              <div className="calendar-legend__item">
+                <span className="calendar-legend__dot calendar-legend__dot--available" />
+                <span>Available</span>
               </div>
-
-              {/* Selected Display */}
-              {((selectionMode === 'range' && selectedStartDate) ||
-                (selectionMode === 'individual' && tempSelectedDates.length > 0)) && (
-                <div className="selected-range-display">
-                  <strong>Selected:</strong>{' '}
-                  {selectionMode === 'range' ? (
-                    <>
-                      {selectedStartDate?.toLocaleDateString()}
-                      {selectedEndDate && ` - ${selectedEndDate.toLocaleDateString()}`}
-                    </>
-                  ) : (
-                    `${tempSelectedDates.length} date${tempSelectedDates.length !== 1 ? 's' : ''}`
-                  )}
-                </div>
-              )}
-
-              {/* Calendar Grid with Day Headers */}
-              <div className="calendar-container">
-                <div className="calendar-day-headers">
-                  <div>Sun</div>
-                  <div>Mon</div>
-                  <div>Tue</div>
-                  <div>Wed</div>
-                  <div>Thu</div>
-                  <div>Fri</div>
-                  <div>Sat</div>
-                </div>
-                <div className="calendar-grid">
-                  {generateCalendarDays().map((date, index) => {
-                    if (!date) {
-                      return <div key={index} className="calendar-day empty" />;
-                    }
-
-                    const isBlocked = isDateBlocked(date);
-                    const isInRange = isDateInRange(date);
-                    const isPast = date < new Date(new Date().setHours(0, 0, 0, 0));
-
-                    return (
-                      <button
-                        key={index}
-                        type="button"
-                        className={`calendar-day ${isBlocked ? 'blocked' : ''} ${
-                          isInRange ? 'in-range' : ''
-                        } ${isPast ? 'past' : ''}`}
-                        onClick={() => !isPast && !isBlocked && handleDateClick(date)}
-                        disabled={isPast || isBlocked}
-                      >
-                        {String(date.getDate()).padStart(2, '0')}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Legend */}
-              <div className="calendar-legend">
-                <div className="calendar-legend__item">
-                  <span className="calendar-legend__dot calendar-legend__dot--restricted" />
-                  <span>Restricted Weekly</span>
-                </div>
-                <div className="calendar-legend__item">
-                  <span className="calendar-legend__dot calendar-legend__dot--blocked" />
-                  <span>Blocked Manually</span>
-                </div>
-                <div className="calendar-legend__item">
-                  <span className="calendar-legend__dot calendar-legend__dot--available" />
-                  <span>Available</span>
-                </div>
-                <div className="calendar-legend__item">
-                  <span className="calendar-legend__dot calendar-legend__dot--first" />
-                  <span>First Available</span>
-                </div>
-              </div>
-
-              <div className="date-picker-actions">
-                <button
-                  type="button"
-                  className="btn-secondary"
-                  onClick={() => {
-                    setShowDatePicker(false);
-                    setSelectedStartDate(null);
-                    setSelectedEndDate(null);
-                    setTempSelectedDates([]);
-                  }}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="btn-primary"
-                  onClick={handleAddDates}
-                  disabled={
-                    (selectionMode === 'range' && !selectedStartDate) ||
-                    (selectionMode === 'individual' && tempSelectedDates.length === 0)
-                  }
-                >
-                  Add Blocked Dates
-                </button>
+              <div className="calendar-legend__item">
+                <span className="calendar-legend__dot calendar-legend__dot--first" />
+                <span>First Available</span>
               </div>
             </div>
-          </>
-        )}
+          </div>
         </div>
       </div>
 

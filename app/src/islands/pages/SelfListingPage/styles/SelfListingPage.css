@@ -1626,191 +1626,182 @@ textarea {
   }
 }
 
-/* Block Dates Layout - Desktop: Side by Side, Mobile: Popup */
-.block-dates-layout {
-  display: grid;
-  grid-template-columns: 400px 1fr;
-  gap: 3rem;
-  align-items: start;
+/* Block Dates Section - Dashboard Style Layout */
+.block-dates-section {
+  margin-top: 2rem;
 }
 
-.block-dates-left {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* Blocked Dates List in Left Column */
-.blocked-dates-list {
-  margin-top: 1rem;
-  padding: 1.5rem;
-  background: #f9f9f9;
-  border-radius: 12px;
-  border: 1px solid #e5e5e5;
-}
-
-.blocked-dates-list h5 {
-  margin: 0 0 1rem 0;
+.block-dates-label {
+  display: block;
   font-size: 1rem;
   font-weight: 600;
-  color: #333;
+  color: #1a1a1a;
+  margin-bottom: 1rem;
 }
 
-.blocked-dates-items {
+.availability-calendar-container {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-}
-
-.blocked-date-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.75rem 1rem;
-  background: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 0.95rem;
-}
-
-.blocked-date-item .remove-date-btn {
-  background: none;
-  border: none;
-  color: #d32f2f;
-  cursor: pointer;
-  padding: 0.25rem 0.5rem;
-  font-size: 1.25rem;
-  line-height: 1;
-  transition: all 0.2s;
-}
-
-.blocked-date-item .remove-date-btn:hover {
-  background: #ffebee;
-  border-radius: 4px;
-}
-
-.more-dates {
-  font-size: 0.9rem;
-  color: #666;
-  margin: 0.5rem 0 0 0;
-  text-align: center;
-}
-
-/* Date Picker Container - Desktop: Inline, Mobile: Popup */
-.date-picker-container {
+  gap: 24px;
   background: #ffffff;
-  border-radius: 16px;
-  padding: 2rem;
-  border: 2px solid #e0e0e0;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
 }
 
-/* Mobile Overlay - Hidden on desktop */
-.modal-overlay.mobile-only {
-  display: none;
-}
-
-/* Desktop Styles */
-@media (min-width: 1025px) {
-  .date-picker-container {
-    position: static;
-    transform: none;
-    box-shadow: none;
-    width: 100%;
-    max-width: none;
-    max-height: none;
+@media (min-width: 768px) {
+  .availability-calendar-container {
+    flex-direction: row;
   }
 }
 
-/* Mobile/Tablet Styles - Calendar becomes popup */
-@media (max-width: 1024px) {
-  .block-dates-layout {
-    grid-template-columns: 1fr;
-    gap: 2rem;
-  }
-
-  .modal-overlay.mobile-only {
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 1000;
-    backdrop-filter: blur(2px);
-  }
-
-  .date-picker-container {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 1001;
-    max-width: 90%;
-    max-height: 90vh;
-    overflow-y: auto;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  }
-}
-
-.date-picker-header {
+/* Left Side - Instructions */
+.availability-instructions {
+  flex: 1;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e0e0e0;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.modal-close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  color: #666;
+.availability-description {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.availability-mode-toggle {
+  display: flex;
+  gap: 20px;
+}
+
+.availability-mode-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #1a1a1a;
   cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s;
 }
 
-.modal-close-btn:hover {
-  background: #f5f5f5;
-  color: #333;
-}
-
-/* Selection Mode Toggle */
-.selection-mode-toggle {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 8px;
-}
-
-.mode-option {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.availability-mode-option input[type="radio"] {
+  width: 16px;
+  height: 16px;
   cursor: pointer;
+  accent-color: #6b46c1;
+}
+
+.availability-mode-option span {
+  cursor: pointer;
+}
+
+.availability-range-hint {
+  padding: 8px 12px;
+  background-color: #ede9fe;
+  color: #5b21b6;
+  border-radius: 6px;
+  font-size: 13px;
+  margin: 0;
+}
+
+.availability-blocked-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.availability-blocked-title {
+  font-size: 14px;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.availability-no-blocked {
+  color: #6b7280;
+  font-style: italic;
+  font-size: 14px;
+  margin: 0;
+}
+
+.availability-blocked-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.availability-blocked-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background-color: #fee2e2;
+  color: #dc2626;
+  border-radius: 4px;
+  font-size: 12px;
   font-weight: 500;
 }
 
-.mode-option input[type="radio"] {
-  width: 18px;
-  height: 18px;
+.availability-remove-date {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.availability-remove-date:hover {
+  background-color: #fecaca;
+}
+
+.availability-more-dates {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  background-color: #f3f4f6;
+  color: #6b46c1;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Right Side - Calendar */
+.availability-calendar {
+  flex: 1.5;
+  max-width: 550px;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .availability-calendar {
+    min-width: 350px;
+  }
+}
+
+/* Range start styling */
+.calendar-day.range-start {
+  background-color: #ddd6fe;
+  color: #5b21b6;
+  font-weight: 600;
+}
+
+.calendar-day.selectable {
   cursor: pointer;
 }
 
-.mode-option span {
-  cursor: pointer;
-  user-select: none;
+.calendar-day.selectable:hover {
+  background-color: #f3f4f6;
 }
+
+/* Legacy styles removed - using dashboard-style layout */
 
 /* Month Navigation - Dashboard Style */
 .month-navigation {
