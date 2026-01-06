@@ -525,10 +525,30 @@ export const Section5Rules: React.FC<Section5Props> = ({ data, rentalType, onCha
                         onClick={() => !isPast && !isBlocked && handleDateClick(date)}
                         disabled={isPast || isBlocked}
                       >
-                        {date.getDate()}
+                        {String(date.getDate()).padStart(2, '0')}
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Legend */}
+              <div className="calendar-legend">
+                <div className="calendar-legend__item">
+                  <span className="calendar-legend__dot calendar-legend__dot--restricted" />
+                  <span>Restricted Weekly</span>
+                </div>
+                <div className="calendar-legend__item">
+                  <span className="calendar-legend__dot calendar-legend__dot--blocked" />
+                  <span>Blocked Manually</span>
+                </div>
+                <div className="calendar-legend__item">
+                  <span className="calendar-legend__dot calendar-legend__dot--available" />
+                  <span>Available</span>
+                </div>
+                <div className="calendar-legend__item">
+                  <span className="calendar-legend__dot calendar-legend__dot--first" />
+                  <span>First Available</span>
                 </div>
               </div>
 
