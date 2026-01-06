@@ -1453,6 +1453,7 @@ export async function handleLinkedInOAuthCallback() {
     email: user.email,
     firstName: user.user_metadata?.given_name || user.user_metadata?.first_name || '',
     lastName: user.user_metadata?.family_name || user.user_metadata?.last_name || '',
+    profilePhoto: user.user_metadata?.picture || user.user_metadata?.avatar_url || null,
     supabaseUserId: user.id,
   };
 

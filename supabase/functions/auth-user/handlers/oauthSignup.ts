@@ -28,6 +28,7 @@ interface OAuthSignupPayload {
   supabaseUserId: string;
   access_token: string;
   refresh_token: string;
+  profilePhoto?: string | null; // Optional - LinkedIn profile picture URL
 }
 
 function mapUserTypeToDisplay(userType: string): string {
@@ -59,6 +60,7 @@ export async function handleOAuthSignup(
     supabaseUserId,
     access_token,
     refresh_token,
+    profilePhoto = null,
   } = payload;
 
   const userTypeDisplay = mapUserTypeToDisplay(userType);
@@ -67,6 +69,7 @@ export async function handleOAuthSignup(
   console.log(`[oauth-signup] Email: ${email}`);
   console.log(`[oauth-signup] Name: ${firstName} ${lastName}`);
   console.log(`[oauth-signup] UserType: ${userType} -> ${userTypeDisplay}`);
+  console.log(`[oauth-signup] Profile Photo: ${profilePhoto ? 'provided' : 'not provided'}`);
 
   // Initialize Supabase admin client
   const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
@@ -133,6 +136,7 @@ export async function handleOAuthSignup(
       'Name - Full': fullName,
       'Date of Birth': null, // OAuth signup skips DOB
       'Phone Number (as text)': null, // OAuth signup skips phone
+      'Profile Photo': profilePhoto || null, // LinkedIn profile picture (if available)
       'Type - User Current': userTypeDisplay,
       'Type - User Signup': userTypeDisplay,
       'Created Date': now,
