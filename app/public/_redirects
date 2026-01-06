@@ -64,6 +64,10 @@
 /list-with-us  /_internal/list-with-us-view  200
 /list-with-us/  /_internal/list-with-us-view  200
 
+# /list-with-us-v2 → list-with-us-v2.html
+/list-with-us-v2  /_internal/list-with-us-v2-view  200
+/list-with-us-v2/  /_internal/list-with-us-v2-view  200
+
 # /why-split-lease → why-split-lease.html
 /why-split-lease  /_internal/why-split-lease-view  200
 /why-split-lease/  /_internal/why-split-lease-view  200
