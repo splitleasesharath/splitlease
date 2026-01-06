@@ -1077,6 +1077,31 @@
   flex-shrink: 0;
 }
 
+/* Empty state tag for amenities */
+.listing-dashboard-amenities__empty-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #f3f4f6;
+  border: 1px dashed var(--ld-border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--ld-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.listing-dashboard-amenities__empty-tag:hover {
+  background-color: #e5e7eb;
+  border-color: var(--ld-accent-purple);
+  color: var(--ld-accent-purple);
+}
+
+.listing-dashboard-amenities__empty-tag svg {
+  flex-shrink: 0;
+}
+
 /* Updated Details Section */
 .listing-dashboard-details__specs {
   display: flex;
@@ -1132,6 +1157,31 @@
 
 .listing-dashboard-details__safety-icon {
   color: var(--ld-accent-purple);
+  flex-shrink: 0;
+}
+
+/* Empty state tag for details/safety features */
+.listing-dashboard-details__empty-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #f3f4f6;
+  border: 1px dashed var(--ld-border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--ld-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.listing-dashboard-details__empty-tag:hover {
+  background-color: #e5e7eb;
+  border-color: var(--ld-accent-purple);
+  color: var(--ld-accent-purple);
+}
+
+.listing-dashboard-details__empty-tag svg {
   flex-shrink: 0;
 }
 

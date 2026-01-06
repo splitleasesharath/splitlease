@@ -69,11 +69,30 @@ const DefaultIcon = () => (
   </svg>
 );
 
+// Empty state component - clickable tag to add amenities
+const EmptyAmenityTag = ({ onClick }) => (
+  <button
+    type="button"
+    className="listing-dashboard-amenities__empty-tag"
+    onClick={onClick}
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M8 12h8" />
+      <path d="M12 8v8" />
+    </svg>
+    <span>No amenities selected</span>
+  </button>
+);
+
 export default function AmenitiesSection({ listing, onEdit }) {
   const inUnitAmenities = listing?.inUnitAmenities || [];
   const buildingAmenities = listing?.buildingAmenities || [];
 
   const getIcon = (name) => amenityIcons[name] || <DefaultIcon />;
+
+  const hasInUnitAmenities = inUnitAmenities.length > 0;
+  const hasBuildingAmenities = buildingAmenities.length > 0;
 
   return (
     <div id="amenities" className="listing-dashboard-section">
@@ -90,31 +109,39 @@ export default function AmenitiesSection({ listing, onEdit }) {
         {/* In-unit Amenities */}
         <div className="listing-dashboard-amenities__group">
           <h3 className="listing-dashboard-amenities__group-title">In-unit</h3>
-          <div className="listing-dashboard-amenities__grid">
-            {inUnitAmenities.map((amenity) => (
-              <div key={amenity.id} className="listing-dashboard-amenities__item">
-                <span className="listing-dashboard-amenities__icon">
-                  {getIcon(amenity.name)}
-                </span>
-                <span className="listing-dashboard-amenities__name">{amenity.name}</span>
-              </div>
-            ))}
-          </div>
+          {hasInUnitAmenities ? (
+            <div className="listing-dashboard-amenities__grid">
+              {inUnitAmenities.map((amenity) => (
+                <div key={amenity.id} className="listing-dashboard-amenities__item">
+                  <span className="listing-dashboard-amenities__icon">
+                    {getIcon(amenity.name)}
+                  </span>
+                  <span className="listing-dashboard-amenities__name">{amenity.name}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyAmenityTag onClick={onEdit} />
+          )}
         </div>
 
         {/* Building/Neighborhood Amenities */}
         <div className="listing-dashboard-amenities__group">
           <h3 className="listing-dashboard-amenities__group-title">Building / Neighborhood</h3>
-          <div className="listing-dashboard-amenities__grid">
-            {buildingAmenities.map((amenity) => (
-              <div key={amenity.id} className="listing-dashboard-amenities__item">
-                <span className="listing-dashboard-amenities__icon">
-                  {getIcon(amenity.name)}
-                </span>
-                <span className="listing-dashboard-amenities__name">{amenity.name}</span>
-              </div>
-            ))}
-          </div>
+          {hasBuildingAmenities ? (
+            <div className="listing-dashboard-amenities__grid">
+              {buildingAmenities.map((amenity) => (
+                <div key={amenity.id} className="listing-dashboard-amenities__item">
+                  <span className="listing-dashboard-amenities__icon">
+                    {getIcon(amenity.name)}
+                  </span>
+                  <span className="listing-dashboard-amenities__name">{amenity.name}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyAmenityTag onClick={onEdit} />
+          )}
         </div>
       </div>
     </div>
