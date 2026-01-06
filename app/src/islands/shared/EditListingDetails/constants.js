@@ -87,7 +87,7 @@ export const BEDROOM_OPTIONS = [
 
 export const BED_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
 
-export const BATHROOM_OPTIONS = [1, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6];
+export const BATHROOM_OPTIONS = [1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 6];
 
 export const GUEST_OPTIONS = [1, 2, 3, 4, 5, 6];
 
