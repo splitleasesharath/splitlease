@@ -2204,6 +2204,9 @@
   text-align: center;
   animation: slideIn 0.3s ease;
   position: relative;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  margin: 100px 20px 20px 20px;
 }
 
 .continue-phone-modal .modal-close-btn {

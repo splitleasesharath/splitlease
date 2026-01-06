@@ -147,17 +147,9 @@
     }
 
     .logo {
-      width: 56px;
-      height: 56px;
-      background: linear-gradient(135deg, var(--accent-indigo) 0%, var(--accent-violet) 100%);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: 700;
-      font-size: 1.25rem;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+      width: 50px;
+      height: 50px;
+      object-fit: contain;
     }
 
     /* Progress Indicator - Premium style */
@@ -785,7 +777,7 @@
       <!-- Login View -->
       <div class="step" id="stepLogin">
         <div class="logo-container">
-          <div class="logo">SL</div>
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
         </div>
 
         <div class="header">
@@ -833,21 +825,22 @@
           </div>
         </div>
 
-        <div style="text-align: right; margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
+          <a href="#" onclick="showMagicLink(); return false;" style="font-size: 13px; color: var(--accent-indigo); text-decoration: none; font-weight: 500;">Log in without password</a>
           <a href="#" onclick="showForgotPassword(); return false;" style="font-size: 13px; color: var(--accent-indigo); text-decoration: none; font-weight: 500;">Forgot password?</a>
         </div>
 
         <button class="btn-primary" onclick="alert('Logging in...')">Log In</button>
 
         <div class="footer-link">
-          Don't have an account? <a href="#" onclick="goToStep(1); return false;">Sign up</a>
+          Don't have an account? <a href="#" onclick="goToStep(0); return false;">Sign up</a>
         </div>
       </div>
 
       <!-- Forgot Password View -->
       <div class="step" id="stepForgotPassword">
         <div class="logo-container">
-          <div class="logo">SL</div>
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
         </div>
 
         <div class="header">
@@ -889,23 +882,105 @@
         </p>
       </div>
 
-      <!-- Step 1: User Type -->
-      <div class="step active" id="step1">
-        <div class="progress-container">
-          <div class="progress-dot active"></div>
-          <div class="progress-line"></div>
-          <div class="progress-dot"></div>
-          <div class="progress-line"></div>
-          <div class="progress-dot"></div>
-        </div>
-        <div class="step-label">Step 1 of 3</div>
-
+      <!-- Magic Link View -->
+      <div class="step" id="stepMagicLink">
         <div class="logo-container">
-          <div class="logo">SL</div>
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
+        </div>
+
+        <div class="header">
+          <h1 class="title">Log in without password</h1>
+          <p class="subtitle">We'll send you a magic link to sign in instantly</p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" class="form-input" id="magicLinkEmail" placeholder="john@example.com">
+        </div>
+
+        <button class="btn-primary" onclick="showMagicLinkSent()">Send Magic Link</button>
+
+        <button class="back-btn" onclick="showLogin()">
+          <i data-feather="arrow-left" class="feather-sm"></i>
+          Back to login
+        </button>
+      </div>
+
+      <!-- Magic Link Sent View -->
+      <div class="step" id="stepMagicLinkSent">
+        <div class="success-icon">
+          <i data-feather="mail" class="feather-xl"></i>
+        </div>
+
+        <div class="header">
+          <h1 class="title">Check your email</h1>
+          <p class="subtitle">We've sent a magic link to<br><strong id="magicLinkEmailDisplay">john@example.com</strong></p>
+        </div>
+
+        <p class="helper-text" style="text-align: center; margin-bottom: 16px; color: var(--text-gray);">
+          Click the link in your email to sign in instantly. No password needed!
+        </p>
+
+        <button class="btn-secondary" onclick="showLogin()">
+          <i data-feather="arrow-left" class="feather-sm" style="margin-right: 6px;"></i>
+          Back to login
+        </button>
+
+        <p class="helper-text" style="text-align: center; margin-top: 16px;">
+          Didn't receive the email? <a href="#" onclick="alert('Resending magic link...'); return false;" style="color: var(--accent-indigo); text-decoration: none; font-weight: 500;">Resend</a>
+        </p>
+      </div>
+
+      <!-- Step 0: Entry Point -->
+      <div class="step active" id="step0">
+        <div class="logo-container">
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
         </div>
 
         <div class="header">
           <h1 class="title">Welcome to Split Lease</h1>
+          <p class="subtitle">How can we help you today?</p>
+        </div>
+
+        <div class="user-type-card" onclick="goToStep(1)">
+          <div class="user-type-icon">
+            <i data-feather="user-plus" class="feather-lg"></i>
+          </div>
+          <div class="user-type-content">
+            <h3>I'm new around here</h3>
+            <p>Create an account to get started</p>
+          </div>
+        </div>
+
+        <div class="user-type-card" onclick="showLogin()">
+          <div class="user-type-icon">
+            <i data-feather="log-in" class="feather-lg"></i>
+          </div>
+          <div class="user-type-content">
+            <h3>Log into my account</h3>
+            <p>Welcome back! Sign in to continue</p>
+          </div>
+        </div>
+
+        <div class="user-type-card" onclick="goToMarketReport()">
+          <div class="user-type-icon">
+            <i data-feather="bar-chart-2" class="feather-lg"></i>
+          </div>
+          <div class="user-type-content">
+            <h3>Sign Up with Market Report</h3>
+            <p>Get NYC rental insights and create an account</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 1: User Type -->
+      <div class="step" id="step1">
+        <div class="logo-container">
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
+        </div>
+
+        <div class="header">
+          <h1 class="title">What brings you here?</h1>
           <p class="subtitle">I'm here to...</p>
         </div>
 
@@ -929,24 +1004,16 @@
           </div>
         </div>
 
-        <div class="footer-link">
-          Already have an account? <a href="#" onclick="goToStep(0); return false;">Log in</a>
-        </div>
+        <button class="back-btn" onclick="goToStep(0)">
+          <i data-feather="arrow-left" class="feather-sm"></i>
+          Back
+        </button>
       </div>
 
       <!-- Step 2: Identity -->
       <div class="step" id="step2">
-        <div class="progress-container">
-          <div class="progress-dot completed"></div>
-          <div class="progress-line completed"></div>
-          <div class="progress-dot active"></div>
-          <div class="progress-line"></div>
-          <div class="progress-dot"></div>
-        </div>
-        <div class="step-label">Step 2 of 3</div>
-
         <div class="logo-container">
-          <div class="logo">SL</div>
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
         </div>
 
         <div class="header">
@@ -1034,7 +1101,7 @@
           </div>
         </div>
 
-        <button class="btn-primary" onclick="goToStep(3)">Continue</button>
+        <button class="btn-primary" onclick="continueFromIdentity()">Continue</button>
 
         <button class="back-btn" onclick="goToStep(1)">
           <i data-feather="arrow-left" class="feather-sm"></i>
@@ -1042,19 +1109,10 @@
         </button>
       </div>
 
-      <!-- Step 3: Password -->
+      <!-- Step 3: Password (only for email signup, skipped for OAuth) -->
       <div class="step" id="step3">
-        <div class="progress-container">
-          <div class="progress-dot completed"></div>
-          <div class="progress-line completed"></div>
-          <div class="progress-dot completed"></div>
-          <div class="progress-line completed"></div>
-          <div class="progress-dot active"></div>
-        </div>
-        <div class="step-label">Step 3 of 3</div>
-
         <div class="logo-container">
-          <div class="logo">SL</div>
+          <img src="https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max" alt="Split Lease" class="logo">
         </div>
 
         <div class="header">
@@ -1105,43 +1163,17 @@
           <h1 class="title">Welcome to Split Lease!</h1>
           <p class="subtitle">Your account has been created successfully.</p>
         </div>
-
-        <div class="user-type-card" id="successCTA1" onclick="alert('Navigate to search')">
-          <div class="user-type-icon">
-            <i data-feather="search" class="feather-lg"></i>
-          </div>
-          <div class="user-type-content">
-            <h3>Browse Listings</h3>
-            <p>Find your perfect flexible rental</p>
-          </div>
-        </div>
-
-        <div style="text-align: center; color: var(--text-light-gray); font-size: 12px; margin: 10px 0;">or</div>
-
-        <div class="user-type-card" id="successCTA2" onclick="alert('Navigate to create listing')">
-          <div class="user-type-icon">
-            <i data-feather="plus" class="feather-lg"></i>
-          </div>
-          <div class="user-type-content">
-            <h3>Create a Listing</h3>
-            <p>Share your space with trusted renters</p>
-          </div>
-        </div>
-
-        <div id="linkedinBadge" class="success-badge" style="display: none; margin: 20px auto 0; justify-content: center;">
-          <i data-feather="check-circle" class="feather-sm"></i>
-          LinkedIn Verified
-        </div>
       </div>
     </div>
   </div>
 
   <!-- Demo Controls -->
   <div class="demo-controls">
+    <button class="demo-btn active" onclick="goToStep(0)">Entry</button>
     <button class="demo-btn" onclick="showLogin()">Login</button>
-    <button class="demo-btn active" onclick="goToStep(1)">Step 1</button>
-    <button class="demo-btn" onclick="goToStep(2)">Step 2</button>
-    <button class="demo-btn" onclick="goToStep(3)">Step 3</button>
+    <button class="demo-btn" onclick="goToStep(1)">User Type</button>
+    <button class="demo-btn" onclick="goToStep(2)">Identity</button>
+    <button class="demo-btn" onclick="goToStep(3)">Password</button>
     <button class="demo-btn" onclick="showSuccess()">Success</button>
     <button class="demo-btn" onclick="toggleLinkedIn()">LinkedIn</button>
   </div>
@@ -1150,7 +1182,7 @@
     // Initialize Feather icons
     feather.replace();
 
-    let currentStep = 1;
+    let currentStep = 0;
     let selectedUserType = null;
     let linkedInConnected = false;
     let passwordVisible = false;
@@ -1179,6 +1211,22 @@
       feather.replace();
     }
 
+    function showMagicLink() {
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('stepMagicLink').classList.add('active');
+      updateDemoButtons('magiclink');
+      feather.replace();
+    }
+
+    function showMagicLinkSent() {
+      const email = document.getElementById('magicLinkEmail').value || 'john@example.com';
+      document.getElementById('magicLinkEmailDisplay').textContent = email;
+      document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+      document.getElementById('stepMagicLinkSent').classList.add('active');
+      updateDemoButtons('magiclinksent');
+      feather.replace();
+    }
+
     function toggleLoginPassword() {
       const input = document.getElementById('loginPassword');
       const icon = document.getElementById('loginEyeIcon');
@@ -1198,8 +1246,8 @@
       const buttons = document.querySelectorAll('.demo-btn');
       buttons.forEach(btn => btn.classList.remove('active'));
 
-      if (view === 'login' || view === 'forgot' || view === 'reset') {
-        buttons[0].classList.add('active'); // Login button
+      if (view === 'login' || view === 'forgot' || view === 'reset' || view === 'magiclink' || view === 'magiclinksent') {
+        buttons[1].classList.add('active'); // Login button
       }
     }
 
@@ -1218,17 +1266,17 @@
       currentStep = step;
       document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
 
-      if (step === 0) {
-        showLogin();
-        return;
-      }
-
       document.getElementById('step' + step).classList.add('active');
 
-      // Update demo buttons (offset by 1 for the Login button)
-      document.querySelectorAll('.demo-btn').forEach((btn, i) => {
-        btn.classList.toggle('active', i === step);
-      });
+      // Update demo buttons
+      const buttons = document.querySelectorAll('.demo-btn');
+      buttons.forEach(btn => btn.classList.remove('active'));
+
+      // Map step numbers to button indices: Entry(0)=0, Login=1, UserType(1)=2, Identity(2)=3, Password(3)=4, Success=5
+      if (step === 0) buttons[0].classList.add('active');
+      else if (step === 1) buttons[2].classList.add('active');
+      else if (step === 2) buttons[3].classList.add('active');
+      else if (step === 3) buttons[4].classList.add('active');
 
       // Update Step 3 title with name
       if (step === 3) {
@@ -1240,11 +1288,29 @@
       feather.replace();
     }
 
+    function goToMarketReport() {
+      // Placeholder for market report signup flow
+      alert('Market Report sign-up flow - Coming soon!\n\nThis will take users to a special sign-up flow where they can access NYC rental market insights.');
+    }
+
+    function continueFromIdentity() {
+      // If LinkedIn connected, skip password step and go straight to success
+      if (linkedInConnected) {
+        showSuccess();
+      } else {
+        // Email signup requires password
+        goToStep(3);
+      }
+    }
+
     function connectLinkedIn() {
       linkedInConnected = true;
       document.getElementById('linkedinDefault').style.display = 'none';
       document.getElementById('linkedinConnected').style.display = 'block';
       feather.replace();
+
+      // Auto-advance to Success after LinkedIn connection (no password needed!)
+      setTimeout(() => showSuccess(), 500);
     }
 
     function disconnectLinkedIn() {
@@ -1317,9 +1383,9 @@
       // Show LinkedIn badge if connected
       document.getElementById('linkedinBadge').style.display = linkedInConnected ? 'flex' : 'none';
 
-      // Update demo buttons (Success is index 4)
+      // Update demo buttons (Success is index 5)
       document.querySelectorAll('.demo-btn').forEach((btn, i) => {
-        btn.classList.toggle('active', i === 4);
+        btn.classList.toggle('active', i === 5);
       });
 
       feather.replace();
