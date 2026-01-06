@@ -203,18 +203,23 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         supabase.rpc('get_user_junction_counts', { p_user_id: userId }),
 
         // 9. Count proposals where user is the GUEST (proposals they submitted)
+        //    Excludes: Deleted=true and Status='Proposal Cancelled by Guest'
+        //    Includes: Cancelled by Host/Split Lease (guest may want to manually delete)
         supabase
           .from('proposal')
           .select('_id', { count: 'exact', head: true })
           .eq('Guest', userId)
-          .or('"Deleted".is.null,"Deleted".eq.false'),
+          .or('"Deleted".is.null,"Deleted".eq.false')
+          .neq('Status', 'Proposal Cancelled by Guest'),
 
         // 10. Count proposals where user is the HOST (proposals received on their listings)
+        //     Excludes: Deleted=true and Status='Proposal Cancelled by Guest'
         supabase
           .from('proposal')
           .select('_id', { count: 'exact', head: true })
           .eq('Host User', userId)
           .or('"Deleted".is.null,"Deleted".eq.false')
+          .neq('Status', 'Proposal Cancelled by Guest')
       ]);
 
       // Process user data
