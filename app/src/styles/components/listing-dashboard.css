@@ -521,9 +521,23 @@
 /* Property Info Section */
 .listing-dashboard-property {
   padding: 24px;
+  margin: 16px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--ld-border-color);
+}
+
+@media (max-width: 640px) {
+  .listing-dashboard-property {
+    padding: 16px;
+    margin: 12px;
+    border-radius: 12px;
+    gap: 16px;
+  }
 }
 
 .listing-dashboard-property__header {
@@ -694,9 +708,23 @@
 /* Details Section */
 .listing-dashboard-details {
   padding: 24px;
+  margin: 16px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--ld-border-color);
+}
+
+@media (max-width: 640px) {
+  .listing-dashboard-details {
+    padding: 16px;
+    margin: 12px;
+    border-radius: 12px;
+    gap: 16px;
+  }
 }
 
 .listing-dashboard-details__header {
@@ -853,7 +881,19 @@
 /* Section Common Styles */
 .listing-dashboard-section {
   padding: 24px;
-  border-top: 1px solid var(--ld-border-color);
+  margin: 16px;
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--ld-border-color);
+}
+
+@media (max-width: 640px) {
+  .listing-dashboard-section {
+    padding: 16px;
+    margin: 12px;
+    border-radius: 12px;
+  }
 }
 
 .listing-dashboard-section__header {
@@ -2105,17 +2145,8 @@
     right: 0;
   }
 
-  .listing-dashboard-property,
-  .listing-dashboard-details {
-    padding: 16px;
-  }
-
   .listing-dashboard-details__select {
     max-width: 100%;
-  }
-
-  .listing-dashboard-section {
-    padding: 16px;
   }
 
   .listing-dashboard-section__header {
