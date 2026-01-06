@@ -198,6 +198,12 @@ See: `.claude/plans/Documents/20251217091827-edit-listing-409-regression-report.
 └── Documents/  # Analysis documents (prefix: YYYYMMDDHHMMSS)
 ```
 
+> **⚠️ CONTEXT LOADING RULE**: Do NOT automatically scan, glob, or load files from `.claude/plans/` at the start of a conversation. This folder contains many historical files that may be outdated and will overload initial context. Only access specific plan files when:
+> - The user explicitly references a plan by name/path
+> - You need to write a NEW plan to `.claude/plans/New/`
+> - The user asks you to execute a specific plan
+> - The user explicitly asks to review the plans folder
+
 ---
 
 ## Task Orchestration Workflow (MANDATORY)
@@ -322,4 +328,4 @@ These subagents may ONLY be invoked **before** starting the pipeline or **after*
 
 ---
 
-**VERSION**: 11.0 | **UPDATED**: 2025-12-17
+**VERSION**: 11.1 | **UPDATED**: 2026-01-04

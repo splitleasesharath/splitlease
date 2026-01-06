@@ -123,6 +123,8 @@ Your plans must follow this format:
 - Plans must be complete enough that another developer (or AI agent) can execute them without additional context
 - Include a summary of all files referenced at the bottom of every plan
 
+> **⚠️ CONTEXT RULE**: Do NOT automatically scan or load existing files from `.claude/plans/` at the start of your planning. That folder contains historical files that may be outdated and will overload context. Only reference specific plan files if the user explicitly mentions them. You may WRITE new plans to `.claude/plans/New/`, but do not preemptively read from it.
+
 ## When Information is Missing
 
 - Ask clarifying questions before creating an incomplete plan

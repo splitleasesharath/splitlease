@@ -1137,6 +1137,51 @@ export async function logoutUser() {
 }
 
 // ============================================================================
+// URL Auth Error Detection (Magic Link / OTP Errors)
+// ============================================================================
+
+/**
+ * Check URL hash for Supabase auth errors
+ * Returns error info if present, null otherwise
+ *
+ * When Supabase redirects after a failed magic link (expired OTP, already used, etc.),
+ * it includes error params in the URL hash:
+ * #error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid+or+has+expired
+ *
+ * @returns {Object|null} Error object with error, errorCode, errorDescription, or null if no error
+ */
+export function checkUrlForAuthError() {
+  const hash = window.location.hash;
+  if (!hash) return null;
+
+  const params = new URLSearchParams(hash.substring(1));
+  const error = params.get('error');
+  const errorCode = params.get('error_code');
+  const errorDescription = params.get('error_description');
+
+  if (error || errorCode) {
+    return {
+      error,
+      errorCode,
+      errorDescription: errorDescription ? decodeURIComponent(errorDescription.replace(/\+/g, ' ')) : null
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Clear auth error params from URL hash
+ * Call this after handling the error to prevent re-processing
+ * Uses replaceState to not add to browser history
+ */
+export function clearAuthErrorFromUrl() {
+  if (window.location.hash) {
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+  }
+}
+
+// ============================================================================
 // Password Reset Functions
 // ============================================================================
 

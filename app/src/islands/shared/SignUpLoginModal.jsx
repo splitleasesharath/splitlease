@@ -33,11 +33,25 @@ import Toast, { useToast } from './Toast.jsx';
 // ============================================================================
 
 const VIEWS = {
-  INITIAL: 'initial',
+  // Entry point
+  ENTRY: 'entry',
+  // Signup flow
+  USER_TYPE: 'user-type',       // Step 1: Guest/Host selection
+  IDENTITY: 'identity',         // Step 2: Name, email, birthday (+ LinkedIn/Google)
+  PASSWORD: 'password',         // Step 3: Password creation
+  // Login flow
   LOGIN: 'login',
-  SIGNUP_STEP1: 'signup-step1',
-  SIGNUP_STEP2: 'signup-step2',
-  PASSWORD_RESET: 'password-reset'
+  // Password/Magic link flows
+  PASSWORD_RESET: 'password-reset',
+  RESET_SENT: 'reset-sent',
+  MAGIC_LINK: 'magic-link',
+  MAGIC_LINK_SENT: 'magic-link-sent',
+  // Success
+  SUCCESS: 'success',
+  // Legacy aliases (for backward compatibility with initialView prop)
+  INITIAL: 'entry',
+  SIGNUP_STEP1: 'user-type',
+  SIGNUP_STEP2: 'identity'
 };
 
 const USER_TYPES = {
@@ -46,272 +60,551 @@ const USER_TYPES = {
 };
 
 // ============================================================================
-// Styles
+// Styles - Premium Design System (matching signup-mockup-v2.html)
 // ============================================================================
 
 const styles = {
+  // Modal & Overlay
   overlay: {
     position: 'fixed',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 10000,
-    animation: 'fadeIn 200ms ease-out'
+    padding: '16px',
+    zIndex: 10000
   },
   modal: {
-    backgroundColor: 'white',
+    backgroundColor: '#ffffff',
     borderRadius: '12px',
-    padding: '2rem',
-    maxWidth: '407px',
-    width: '90%',
+    padding: '24px',
+    maxWidth: '400px',
+    width: '100%',
     maxHeight: '90vh',
     overflowY: 'auto',
-    boxShadow: '0 50px 80px rgba(0, 0, 0, 0.25)',
-    animation: 'slideIn 200ms ease-out',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
     position: 'relative'
   },
   closeBtn: {
     position: 'absolute',
-    top: '1rem',
-    right: '1rem',
-    background: 'none',
+    top: '16px',
+    right: '16px',
+    width: '32px',
+    height: '32px',
     border: 'none',
-    fontSize: '1.5rem',
-    color: '#6b7280',
+    background: 'none',
     cursor: 'pointer',
-    padding: '0.25rem',
-    lineHeight: 1,
-    zIndex: 1
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#9ca3af',
+    transition: 'color 0.2s ease',
+    zIndex: 10
   },
+
+  // Logo
   logoContainer: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: '1rem'
+    marginBottom: '12px'
   },
   logo: {
-    width: '50px',
-    height: '50px',
-    backgroundColor: '#6c40f5',
+    width: '36px',
+    height: '36px',
+    objectFit: 'contain'
+  },
+
+  // Header
+  header: {
+    textAlign: 'center',
+    marginBottom: '24px'
+  },
+  title: {
+    fontSize: '20px',
+    fontWeight: '700',
+    color: '#1a1a1a',
+    margin: '0 0 8px 0'
+  },
+  subtitle: {
+    fontSize: '14px',
+    color: '#6b7280',
+    lineHeight: 1.5,
+    margin: 0
+  },
+  subtitleAccent: {
+    color: '#6366F1',
+    fontWeight: '600'
+  },
+
+  // User type cards
+  userTypeCard: {
+    border: '1px solid #e5e7eb',
+    borderRadius: '10px',
+    padding: '16px',
+    marginBottom: '12px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '14px',
+    backgroundColor: '#f9fafb'
+  },
+  userTypeCardSelected: {
+    borderColor: '#6366F1',
+    backgroundColor: '#EEF2FF',
+    boxShadow: '0 8px 30px rgba(99, 102, 241, 0.15)'
+  },
+  userTypeIcon: {
+    width: '48px',
+    height: '48px',
+    borderRadius: '10px',
+    backgroundColor: 'white',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: '#6366F1',
+    flexShrink: 0,
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)'
+  },
+  userTypeContent: {
+    flex: 1
+  },
+  userTypeTitle: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#1a1a1a',
+    marginBottom: '2px'
+  },
+  userTypeDesc: {
+    fontSize: '13px',
+    color: '#6b7280',
+    margin: 0,
+    lineHeight: 1.4
+  },
+
+  // LinkedIn button
+  linkedinBtn: {
+    width: '100%',
+    padding: '14px 16px',
+    border: '1px solid #0a66c2',
+    backgroundColor: '#0a66c2',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '4px'
+  },
+  linkedinIcon: {
+    width: '32px',
+    height: '32px',
+    backgroundColor: 'white',
+    borderRadius: '6px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontWeight: '700',
+    color: '#0a66c2',
+    fontSize: '16px',
+    flexShrink: 0
+  },
+  linkedinText: {
+    flex: 1,
+    textAlign: 'left'
+  },
+  linkedinPrimary: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: 'white',
+    display: 'block'
+  },
+  linkedinSecondary: {
+    fontSize: '12px',
+    color: 'rgba(255, 255, 255, 0.8)',
+    display: 'block',
+    marginTop: '2px'
+  },
+
+  // Google button
+  googleBtn: {
+    width: '100%',
+    padding: '14px 16px',
+    backgroundColor: '#f9fafb',
+    border: '1px solid #e5e7eb',
+    borderRadius: '10px',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '10px',
+    marginTop: '8px',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#1a1a1a'
+  },
+
+  // LinkedIn connected state
+  linkedinConnected: {
+    width: '100%',
+    padding: '14px 16px',
+    border: '1px solid #10B981',
+    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    borderRadius: '10px',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '4px'
+  },
+  linkedinConnectedCheck: {
+    width: '32px',
+    height: '32px',
+    backgroundColor: '#10B981',
     borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     color: 'white',
-    fontWeight: 'bold',
-    fontSize: '1.25rem'
+    flexShrink: 0
   },
-  header: {
-    textAlign: 'center',
-    marginBottom: '1.5rem'
+  linkedinConnectedInfo: {
+    flex: 1
   },
-  title: {
-    fontSize: '1.5rem',
-    fontWeight: '700',
-    color: '#1A1A2E',
-    margin: 0,
-    marginBottom: '0.5rem'
+  linkedinConnectedName: {
+    fontSize: '14px',
+    fontWeight: '600',
+    color: '#1a1a1a'
   },
-  subtitle: {
-    fontSize: '1rem',
-    color: '#6c40f5',
-    margin: 0
+  linkedinConnectedEmail: {
+    fontSize: '12px',
+    color: '#6b7280'
   },
-  helperText: {
-    fontSize: '0.75rem',
-    color: '#6b7280',
-    marginTop: '0.25rem',
-    marginBottom: 0
+  linkedinConnectedChange: {
+    fontSize: '13px',
+    color: '#6366F1',
+    cursor: 'pointer',
+    textDecoration: 'none',
+    fontWeight: '500',
+    background: 'none',
+    border: 'none',
+    transition: 'opacity 0.2s ease'
   },
-  requiredNote: {
-    fontSize: '0.75rem',
-    color: '#6b7280',
-    marginBottom: '1rem'
+
+  // Divider
+  divider: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    margin: '20px 0'
+  },
+  dividerLine: {
+    flex: 1,
+    height: '1px',
+    backgroundColor: '#e5e7eb'
+  },
+  dividerText: {
+    fontSize: '13px',
+    color: '#9ca3af',
+    fontWeight: '500'
+  },
+
+  // Form elements
+  formRow: {
+    display: 'flex',
+    gap: '12px',
+    marginBottom: '16px'
   },
   formGroup: {
-    marginBottom: '1rem'
+    flex: 1,
+    marginBottom: '16px'
+  },
+  formGroupInRow: {
+    flex: 1,
+    marginBottom: 0
   },
   label: {
     display: 'block',
-    fontSize: '0.875rem',
+    fontSize: '13px',
     fontWeight: '500',
-    color: '#374151',
-    marginBottom: '0.5rem'
+    color: '#9ca3af',
+    marginBottom: '6px'
+  },
+  prefillBadge: {
+    fontSize: '11px',
+    color: '#10B981',
+    marginLeft: '6px',
+    fontWeight: '500',
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '2px'
   },
   input: {
     width: '100%',
-    padding: '0.75rem',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '1rem',
+    padding: '10px 12px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '10px',
+    fontSize: '14px',
+    color: '#1a1a1a',
+    transition: 'border-color 0.2s ease, background-color 0.2s ease',
     outline: 'none',
     boxSizing: 'border-box',
-    transition: 'border-color 0.15s ease'
+    backgroundColor: '#f9fafb',
+    fontFamily: 'inherit'
   },
   inputFocused: {
-    borderColor: '#6c40f5'
+    borderColor: '#6366F1',
+    backgroundColor: 'white'
   },
   inputError: {
     borderColor: '#dc2626'
   },
   inputSuccess: {
-    borderColor: '#408141'
+    borderColor: '#10B981'
   },
+  inputPrefilled: {
+    backgroundColor: '#f9fafb',
+    borderColor: '#e5e7eb'
+  },
+  helperText: {
+    fontSize: '12px',
+    color: '#6b7280',
+    marginTop: '6px',
+    lineHeight: 1.4
+  },
+
+  // Select
+  select: {
+    width: '100%',
+    padding: '10px 12px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '10px',
+    fontSize: '14px',
+    color: '#1a1a1a',
+    outline: 'none',
+    boxSizing: 'border-box',
+    backgroundColor: '#f9fafb',
+    cursor: 'pointer',
+    transition: 'border-color 0.2s ease',
+    fontFamily: 'inherit'
+  },
+
+  // Password field
   passwordWrapper: {
     position: 'relative'
   },
   inputWithIcon: {
-    paddingRight: '3rem'
+    paddingRight: '44px'
   },
   togglePasswordBtn: {
     position: 'absolute',
-    right: '0.75rem',
+    right: '12px',
     top: '50%',
     transform: 'translateY(-50%)',
     background: 'none',
     border: 'none',
     cursor: 'pointer',
     color: '#6b7280',
-    fontSize: '1.25rem',
-    padding: '0.25rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '4px',
+    transition: 'color 0.2s ease'
+  },
+
+  // Password requirements
+  passwordRequirements: {
+    marginTop: '12px',
+    padding: '12px',
+    backgroundColor: '#f9fafb',
+    borderRadius: '10px'
+  },
+  requirement: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    fontSize: '13px',
+    color: '#6b7280',
+    marginBottom: '6px'
+  },
+  requirementLast: {
+    marginBottom: 0
+  },
+  requirementMet: {
+    color: '#10B981'
+  },
+  requirementIcon: {
+    width: '16px',
+    height: '16px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center'
   },
-  select: {
-    width: '100%',
-    padding: '0.75rem',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '1rem',
-    outline: 'none',
-    boxSizing: 'border-box',
-    backgroundColor: 'white',
-    cursor: 'pointer',
-    transition: 'border-color 0.15s ease'
-  },
-  errorBox: {
-    padding: '0.75rem',
-    backgroundColor: '#fee2e2',
-    border: '1px solid #fecaca',
-    borderRadius: '6px',
-    marginBottom: '1rem'
-  },
-  errorText: {
-    fontSize: '0.875rem',
-    color: '#dc2626',
-    margin: 0
-  },
-  inlineError: {
-    fontSize: '0.75rem',
-    color: '#dc2626',
-    marginTop: '0.25rem'
-  },
+
+  // Buttons
   buttonPrimary: {
     width: '100%',
-    padding: '0.875rem',
-    backgroundColor: '#6c40f5',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    fontWeight: '600',
+    padding: '12px',
+    backgroundColor: '#6366F1',
     color: 'white',
+    border: 'none',
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontWeight: '500',
     cursor: 'pointer',
-    transition: 'background-color 0.15s ease',
-    marginBottom: '0.75rem'
+    transition: 'background 0.2s ease, box-shadow 0.2s ease',
+    marginTop: '8px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontFamily: 'inherit'
+  },
+  buttonPrimaryHover: {
+    backgroundColor: '#4F46E5',
+    boxShadow: '0 4px 12px rgba(99, 102, 241, 0.25)'
+  },
+  buttonDisabled: {
+    backgroundColor: '#e5e7eb',
+    cursor: 'not-allowed',
+    boxShadow: 'none'
   },
   buttonSecondary: {
     width: '100%',
-    padding: '0.875rem',
-    backgroundColor: 'white',
-    border: '2px solid #6c40f5',
-    borderRadius: '8px',
-    fontSize: '1rem',
-    fontWeight: '600',
-    color: '#6c40f5',
+    padding: '12px',
+    backgroundColor: '#f9fafb',
+    border: '1px solid #e5e7eb',
+    borderRadius: '10px',
+    fontSize: '14px',
+    fontWeight: '500',
+    color: '#1a1a1a',
     cursor: 'pointer',
-    transition: 'all 0.15s ease',
-    marginBottom: '0.75rem'
+    transition: 'all 0.2s ease',
+    fontFamily: 'inherit',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  buttonDisabled: {
-    backgroundColor: '#9CA3AF',
-    cursor: 'not-allowed',
-    opacity: 0.7
+
+  // Back button
+  backBtn: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    width: '100%',
+    background: 'none',
+    border: 'none',
+    color: '#6366F1',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '500',
+    padding: '12px',
+    marginTop: '8px',
+    fontFamily: 'inherit',
+    transition: 'opacity 0.2s ease'
+  },
+
+  // Footer link
+  footerLink: {
+    textAlign: 'center',
+    marginTop: '20px',
+    paddingTop: '16px',
+    borderTop: '1px solid #e5e7eb',
+    fontSize: '13px',
+    color: '#6b7280'
+  },
+  link: {
+    color: '#6366F1',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    background: 'none',
+    border: 'none',
+    fontSize: 'inherit',
+    fontWeight: '500',
+    fontFamily: 'inherit',
+    transition: 'opacity 0.2s ease'
   },
   linkText: {
     textAlign: 'center',
     marginTop: '1rem'
   },
-  link: {
-    color: '#6c40f5',
-    textDecoration: 'underline',
-    cursor: 'pointer',
-    background: 'none',
-    border: 'none',
-    fontSize: 'inherit',
-    fontWeight: '500'
-  },
-  divider: {
-    display: 'flex',
-    alignItems: 'center',
-    margin: '1.5rem 0',
-    color: '#9CA3AF'
-  },
-  dividerLine: {
-    flex: 1,
-    height: '1px',
-    backgroundColor: '#E5E7EB'
-  },
-  dividerText: {
-    padding: '0 1rem',
-    fontSize: '0.875rem'
-  },
+
+  // Legal text
   termsText: {
-    fontSize: '0.75rem',
+    fontSize: '12px',
     color: '#6b7280',
     textAlign: 'center',
-    marginTop: '1rem',
+    marginTop: '16px',
     lineHeight: 1.5
   },
-  goBackBtn: {
+
+  // Success state
+  successIcon: {
+    width: '80px',
+    height: '80px',
+    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%)',
+    borderRadius: '50%',
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem',
-    background: 'none',
-    border: 'none',
-    color: '#6c40f5',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
-    fontWeight: '500',
-    padding: 0,
-    marginTop: '1rem'
+    justifyContent: 'center',
+    margin: '0 auto 20px',
+    color: '#10B981'
   },
+
+  // Error box
+  errorBox: {
+    padding: '12px',
+    backgroundColor: '#fee2e2',
+    border: '1px solid #fecaca',
+    borderRadius: '10px',
+    marginBottom: '16px'
+  },
+  errorText: {
+    fontSize: '13px',
+    color: '#dc2626',
+    margin: 0
+  },
+  inlineError: {
+    fontSize: '12px',
+    color: '#dc2626',
+    marginTop: '6px'
+  },
+
+  // Date inputs (for birthday)
   dateInputsRow: {
     display: 'flex',
-    gap: '0.5rem'
+    gap: '8px'
   },
   dateSelect: {
     flex: 1,
-    padding: '0.75rem',
-    border: '1px solid #d1d5db',
-    borderRadius: '6px',
-    fontSize: '1rem',
+    padding: '10px 12px',
+    border: '1px solid #e5e7eb',
+    borderRadius: '10px',
+    fontSize: '14px',
     outline: 'none',
-    backgroundColor: 'white',
-    cursor: 'pointer'
+    backgroundColor: '#f9fafb',
+    cursor: 'pointer',
+    fontFamily: 'inherit'
   },
+
+  // Section label
   sectionLabel: {
-    fontSize: '0.75rem',
-    fontWeight: '600',
+    fontSize: '13px',
+    fontWeight: '500',
+    color: '#9ca3af',
+    marginBottom: '12px'
+  },
+
+  // Required note
+  requiredNote: {
+    fontSize: '12px',
     color: '#6b7280',
-    textTransform: 'uppercase',
-    letterSpacing: '0.05em',
-    marginBottom: '1rem'
+    marginBottom: '16px'
   }
 };
 
@@ -362,6 +655,98 @@ const LoadingSpinner = ({ size = 18 }) => (
   </svg>
 );
 
+// Close icon (X)
+const CloseIcon = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="6" x2="6" y2="18" />
+    <line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+
+// Feather-style icons for user type cards
+const UserPlusIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+    <circle cx="8.5" cy="7" r="4" />
+    <line x1="20" y1="8" x2="20" y2="14" />
+    <line x1="23" y1="11" x2="17" y2="11" />
+  </svg>
+);
+
+const LogInIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+    <polyline points="10 17 15 12 10 7" />
+    <line x1="15" y1="12" x2="3" y2="12" />
+  </svg>
+);
+
+const BarChartIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10" />
+    <line x1="12" y1="20" x2="12" y2="4" />
+    <line x1="6" y1="20" x2="6" y2="14" />
+  </svg>
+);
+
+const HomeIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+    <polyline points="9 22 9 12 15 12 15 22" />
+  </svg>
+);
+
+const KeyIcon = ({ size = 24 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+  </svg>
+);
+
+const ChevronRightIcon = ({ size = 20 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="9 18 15 12 9 6" />
+  </svg>
+);
+
+const MailIcon = ({ size = 40 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+    <polyline points="22,6 12,13 2,6" />
+  </svg>
+);
+
+const CheckIcon = ({ size = 40 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+
+const CheckCircleIcon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
+  </svg>
+);
+
+const CircleIcon = ({ size = 16 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="12" cy="12" r="10" />
+  </svg>
+);
+
+// Google logo SVG
+const GoogleLogo = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24">
+    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+  </svg>
+);
+
+// Split Lease logo URL
+const LOGO_URL = 'https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=&auto=enhance&dpr=1&q=100&fit=max';
+
 // Generate arrays for date selectors
 const months = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -405,7 +790,7 @@ export default function SignUpLoginModal({
   const { toasts, showToast, removeToast } = useToast();
 
   // View state
-  const [currentView, setCurrentView] = useState(VIEWS.INITIAL);
+  const [currentView, setCurrentView] = useState(VIEWS.ENTRY);
 
   // Signup form state (persisted between steps)
   const [signupData, setSignupData] = useState({
@@ -416,10 +801,13 @@ export default function SignUpLoginModal({
     birthMonth: '',
     birthDay: '',
     birthYear: '',
-    phoneNumber: '',
+    phoneNumber: '', // Kept for backend compatibility, but not collected in UI
     password: '',
     confirmPassword: ''
   });
+
+  // Card hover states for user type cards
+  const [hoveredCard, setHoveredCard] = useState(null);
 
   // Login form state
   const [loginData, setLoginData] = useState({
@@ -445,13 +833,14 @@ export default function SignUpLoginModal({
       if (initialView === 'login') {
         setCurrentView(VIEWS.LOGIN);
       } else if (initialView === 'signup' || initialView === 'signup-step1') {
-        setCurrentView(VIEWS.SIGNUP_STEP1);
-      } else if (initialView === 'signup-step2') {
-        setCurrentView(VIEWS.SIGNUP_STEP2);
+        setCurrentView(VIEWS.USER_TYPE);
+      } else if (initialView === 'signup-step2' || initialView === 'identity') {
+        setCurrentView(VIEWS.IDENTITY);
       } else {
-        setCurrentView(VIEWS.INITIAL);
+        setCurrentView(VIEWS.ENTRY);
       }
       setError('');
+      setHoveredCard(null);
 
       // Prefill user type if provided
       if (defaultUserType) {
@@ -522,6 +911,28 @@ export default function SignUpLoginModal({
   }, [defaultUserType]);
 
   // Navigation helpers
+  const goToEntry = () => {
+    setCurrentView(VIEWS.ENTRY);
+    setError('');
+    setHoveredCard(null);
+  };
+
+  const goToUserType = () => {
+    setCurrentView(VIEWS.USER_TYPE);
+    setError('');
+    setHoveredCard(null);
+  };
+
+  const goToIdentity = () => {
+    setCurrentView(VIEWS.IDENTITY);
+    setError('');
+  };
+
+  const goToPassword = () => {
+    setCurrentView(VIEWS.PASSWORD);
+    setError('');
+  };
+
   const goToLogin = () => {
     setCurrentView(VIEWS.LOGIN);
     setError('');
@@ -531,33 +942,33 @@ export default function SignUpLoginModal({
     }
   };
 
-  const goToSignupStep1 = () => {
-    setCurrentView(VIEWS.SIGNUP_STEP1);
-    setError('');
-  };
-
-  const goToSignupStep2 = () => {
-    setCurrentView(VIEWS.SIGNUP_STEP2);
-    setError('');
-  };
-
   const goToPasswordReset = () => {
     setCurrentView(VIEWS.PASSWORD_RESET);
     setResetEmail(loginData.email); // Preserve email from login
     setError('');
   };
 
-  const goToInitial = () => {
-    setCurrentView(VIEWS.INITIAL);
+  const goToMagicLink = () => {
+    setCurrentView(VIEWS.MAGIC_LINK);
+    setResetEmail(loginData.email); // Preserve email from login
     setError('');
   };
 
-  // Handle signup step 1 continue
-  const handleSignupStep1Continue = (e) => {
+  const showSuccess = () => {
+    setCurrentView(VIEWS.SUCCESS);
+  };
+
+  // Legacy aliases for backward compatibility
+  const goToSignupStep1 = goToUserType;
+  const goToSignupStep2 = goToIdentity;
+  const goToInitial = goToEntry;
+
+  // Handle identity step continue (Step 2 → Step 3)
+  const handleIdentityContinue = (e) => {
     e.preventDefault();
     setError('');
 
-    // Validate step 1
+    // Validate identity fields
     if (!signupData.firstName.trim()) {
       setError('First name is required.');
       return;
@@ -577,15 +988,7 @@ export default function SignUpLoginModal({
       return;
     }
 
-    goToSignupStep2();
-  };
-
-  // Handle final signup submission
-  const handleSignupSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-
-    // Validate step 2
+    // Validate birthday
     if (!signupData.birthMonth || !signupData.birthDay || !signupData.birthYear) {
       setError('Please enter your date of birth.');
       return;
@@ -596,23 +999,33 @@ export default function SignUpLoginModal({
       return;
     }
 
-    if (!signupData.phoneNumber.trim()) {
-      setError('Phone number is required.');
-      return;
-    }
+    goToPassword();
+  };
 
+  // Legacy alias
+  const handleSignupStep1Continue = handleIdentityContinue;
+
+  // Handle final signup submission (Step 3)
+  const handleSignupSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    // Validate password
     if (!signupData.password) {
       setError('Password is required.');
       return;
     }
 
-    if (signupData.password.length < 4) {
-      setError('Password must be at least 4 characters.');
+    if (signupData.password.length < 8) {
+      setError('Password must be at least 8 characters.');
       return;
     }
 
-    if (signupData.password !== signupData.confirmPassword) {
-      setError('Passwords do not match.');
+    // Check for mix of letters and numbers
+    const hasLetters = /[a-zA-Z]/.test(signupData.password);
+    const hasNumbers = /[0-9]/.test(signupData.password);
+    if (!hasLetters || !hasNumbers) {
+      setError('Password must contain both letters and numbers.');
       return;
     }
 
@@ -637,16 +1050,18 @@ export default function SignUpLoginModal({
     }, 1500);
 
     // Call signup with extended data
+    // Note: Pass password as both password and retype since we removed confirm field
+    // (password validation is done via requirements UI in renderPasswordView)
     const result = await signupUser(
       signupData.email,
       signupData.password,
-      signupData.confirmPassword,
+      signupData.password, // Use same password for retype since we validate via requirements UI
       {
         firstName: signupData.firstName,
         lastName: signupData.lastName,
         userType: signupData.userType,
         birthDate: `${signupData.birthYear}-${String(signupData.birthMonth).padStart(2, '0')}-${String(signupData.birthDay).padStart(2, '0')}`,
-        phoneNumber: signupData.phoneNumber
+        phoneNumber: signupData.phoneNumber || '' // Empty string if not provided
       }
     );
 
@@ -806,30 +1221,21 @@ export default function SignUpLoginModal({
         console.error('Password reset error:', fnError);
       }
 
-      // Always show success message to prevent email enumeration
-      showToast({
-        title: 'Check Your Inbox',
-        content: 'If an account with that email exists, a password reset link has been sent.',
-        type: 'info'
-      });
-      goToLogin();
+      // Navigate to confirmation view instead of showing toast
+      setCurrentView(VIEWS.RESET_SENT);
     } catch (err) {
       console.error('Password reset error:', err);
-      // Still show success message for security
-      showToast({
-        title: 'Check Your Inbox',
-        content: 'If an account with that email exists, a password reset link has been sent.',
-        type: 'info'
-      });
-      goToLogin();
+      // Still navigate to confirmation view for security (prevent email enumeration)
+      setCurrentView(VIEWS.RESET_SENT);
     }
 
     setIsLoading(false);
   };
 
   // Handle magic link request
-  const handleMagicLink = async () => {
-    const email = currentView === VIEWS.PASSWORD_RESET ? resetEmail : loginData.email;
+  const handleMagicLink = async (e) => {
+    if (e) e.preventDefault();
+    const email = (currentView === VIEWS.PASSWORD_RESET || currentView === VIEWS.MAGIC_LINK) ? resetEmail : loginData.email;
 
     if (!email.trim()) {
       setError('Please enter your email address first.');
@@ -839,25 +1245,179 @@ export default function SignUpLoginModal({
     setIsLoading(true);
     setError('');
 
+    // Navigate to confirmation view for security (prevents email enumeration)
+    const showSuccessView = () => {
+      setCurrentView(VIEWS.MAGIC_LINK_SENT);
+    };
+
     try {
-      const { data, error: fnError } = await supabase.functions.invoke('auth-user', {
+      // Step 1: Check if user exists (using Supabase directly)
+      const { data: userData, error: userError } = await supabase
+        .from('user')
+        .select('_id, "Name - First", email, "Phone Number (as text)"')
+        .eq('email', email.toLowerCase().trim())
+        .maybeSingle();
+
+      if (userError) {
+        console.error('[handleMagicLink] Error checking user:', userError);
+        // Don't expose error - show success for security
+        showSuccessView();
+        setIsLoading(false);
+        return;
+      }
+
+      if (!userData) {
+        // User doesn't exist - still show success view for security
+        console.log('[handleMagicLink] No user found for email');
+        showSuccessView();
+        setIsLoading(false);
+        return;
+      }
+
+      // Step 2: User exists - fetch BCC email addresses from os_slack_channels
+      console.log('[handleMagicLink] Fetching BCC email addresses from os_slack_channels');
+
+      const { data: channelData, error: channelError } = await supabase
+        .schema('reference_table')
+        .from('os_slack_channels')
+        .select('email_address')
+        .in('name', ['bots_log', 'customer_activation']);
+
+      let bccEmails = [];
+      if (!channelError && channelData) {
+        bccEmails = channelData
+          .map(c => c.email_address)
+          .filter(e => e && e.trim() && e.includes('@'));
+        console.log('[handleMagicLink] BCC emails:', bccEmails);
+      } else if (channelError) {
+        console.warn('[handleMagicLink] Error fetching BCC channels:', channelError);
+        // Continue without BCC - don't fail the whole operation
+      }
+
+      // Step 3: Generate magic link
+      console.log('[handleMagicLink] User found, generating magic link');
+
+      const redirectTo = `${window.location.origin}/account-profile/${userData._id}`;
+
+      const { data: magicLinkData, error: magicLinkError } = await supabase.functions.invoke('auth-user', {
         body: {
-          action: 'magic-link',
-          payload: { email }
+          action: 'generate_magic_link',
+          payload: {
+            email: email.toLowerCase().trim(),
+            redirectTo: redirectTo
+          }
         }
       });
 
-      if (fnError || !data?.success) {
-        setError('Unable to send magic link. Please try again.');
-      } else {
-        showToast({
-          title: 'Magic Link Sent',
-          content: `Check your inbox at ${email} for the login link.`,
-          type: 'success'
-        });
+      if (magicLinkError || !magicLinkData?.success) {
+        console.error('[handleMagicLink] Error generating magic link:', magicLinkError || magicLinkData);
+        // Don't expose error - show success for security
+        showSuccessView();
+        setIsLoading(false);
+        return;
       }
+
+      const magicLink = magicLinkData.data.action_link;
+      const firstName = userData['Name - First'] || 'there';
+
+      // Step 4: Send magic link email using send-email edge function
+      console.log('[handleMagicLink] Sending magic link email');
+
+      // Build the body text with the user's first name
+      const bodyText = `Hi ${firstName}. Please use the link below to log in to your Split Lease account. Once logged in, you can update your password from the profile page. Please feel free to text (937) 673-7470 with any queries.`;
+
+      const { data: emailData, error: emailError } = await supabase.functions.invoke('send-email', {
+        body: {
+          action: 'send',
+          payload: {
+            template_id: '1757433099447x202755280527849400', // Security 2 template
+            to_email: email.toLowerCase().trim(),
+            variables: {
+              toemail: email.toLowerCase().trim(),
+              fromemail: 'tech@leasesplit.com',
+              fromname: 'Split Lease',
+              subject: 'Your Split Lease Magic Login Link',
+              preheadertext: 'Click the link to log in without a password',
+              title: 'Magic Login Link',
+              bodytext: bodyText,
+              buttonurl: magicLink,
+              buttontext: 'Log In Now',
+              bannertext1: 'SECURITY NOTICE',
+              bannertext2: 'This link expires in 1 hour',
+              bannertext3: "If you didn't request this, please ignore this email",
+              footermessage: 'For your security, never share this link with anyone.',
+              cc: '',  // No CC for user-facing emails
+              bcc: ''  // BCC handled via bcc_emails array
+            },
+            // Dynamic BCC from os_slack_channels
+            ...(bccEmails.length > 0 && { bcc_emails: bccEmails })
+          }
+        }
+      });
+
+      if (emailError) {
+        console.error('[handleMagicLink] Error sending email:', emailError);
+        // Still show success for security
+      } else {
+        console.log('[handleMagicLink] Magic link email sent successfully');
+      }
+
+      // Step 5: Send SMS if user has a phone number
+      const rawPhone = userData['Phone Number (as text)'];
+      if (rawPhone && rawPhone.trim()) {
+        console.log('[handleMagicLink] User has phone number, sending SMS');
+
+        // Format phone to E.164 (+1xxxxxxxxxx)
+        const digitsOnly = rawPhone.replace(/\D/g, '');
+        let formattedPhone = null;
+
+        if (digitsOnly.length === 10) {
+          // 10 digits: assume US, prepend +1
+          formattedPhone = `+1${digitsOnly}`;
+        } else if (digitsOnly.length === 11 && digitsOnly.startsWith('1')) {
+          // 11 digits starting with 1: prepend +
+          formattedPhone = `+${digitsOnly}`;
+        } else if (rawPhone.startsWith('+') && digitsOnly.length >= 10) {
+          // Already has + prefix
+          formattedPhone = `+${digitsOnly}`;
+        }
+
+        if (formattedPhone) {
+          const smsBody = `Passwords are tricky. Please use this magic link and you can update your password right from the profile page: ${magicLink}`;
+
+          try {
+            const { data: smsData, error: smsError } = await supabase.functions.invoke('send-sms', {
+              body: {
+                action: 'send',
+                payload: {
+                  from: '+14155692985',
+                  to: formattedPhone,
+                  body: smsBody
+                }
+              }
+            });
+
+            if (smsError) {
+              console.error('[handleMagicLink] Error sending SMS:', smsError);
+              // Don't fail - SMS is supplementary to email
+            } else {
+              console.log('[handleMagicLink] Magic link SMS sent successfully');
+            }
+          } catch (smsErr) {
+            console.error('[handleMagicLink] SMS exception:', smsErr);
+            // Don't fail - SMS is supplementary
+          }
+        } else {
+          console.log('[handleMagicLink] Could not format phone number:', rawPhone);
+        }
+      }
+
+      showSuccessView();
+
     } catch (err) {
-      setError('Unable to send magic link. Please try again.');
+      console.error('[handleMagicLink] Unexpected error:', err);
+      // Don't expose error - show success for security
+      showSuccessView();
     }
 
     setIsLoading(false);
@@ -885,70 +1445,206 @@ export default function SignUpLoginModal({
   // Render Functions for Each View
   // ============================================================================
 
-  const renderInitialView = () => (
+  // Entry View (Step 0) - Premium card-based selection
+  const renderEntryView = () => (
     <>
       <div style={styles.logoContainer}>
-        <div style={styles.logo}>SL</div>
+        <img src={LOGO_URL} alt="Split Lease" style={styles.logo} />
       </div>
+
       <div style={styles.header}>
-        <h2 style={styles.title}>Welcome to Split Lease!</h2>
-        <p style={styles.subtitle}>Have we met before?</p>
+        <h1 style={styles.title}>Welcome to Split Lease</h1>
+        <p style={styles.subtitle}>How can we help you today?</p>
       </div>
 
-      <button
-        style={styles.buttonSecondary}
-        onClick={goToSignupStep1}
-      >
-        I'm new around here
-      </button>
-
-      <button
-        style={styles.buttonSecondary}
-        onClick={goToLogin}
-      >
-        Log into my account
-      </button>
-
-      <button
-        style={styles.buttonPrimary}
-        onClick={() => {
-          // Market report signup - for now just go to signup
-          goToSignupStep1();
+      {/* Card: I'm new around here */}
+      <div
+        style={{
+          ...styles.userTypeCard,
+          ...(hoveredCard === 'new' ? styles.userTypeCardSelected : {})
         }}
+        onClick={goToUserType}
+        onMouseEnter={() => setHoveredCard('new')}
+        onMouseLeave={() => setHoveredCard(null)}
       >
-        Sign Up with Market Report
+        <div style={styles.userTypeIcon}>
+          <UserPlusIcon size={24} />
+        </div>
+        <div style={styles.userTypeContent}>
+          <div style={styles.userTypeTitle}>I'm new around here</div>
+          <p style={styles.userTypeDesc}>Create an account to get started</p>
+        </div>
+      </div>
+
+      {/* Card: Log into my account */}
+      <div
+        style={{
+          ...styles.userTypeCard,
+          ...(hoveredCard === 'login' ? styles.userTypeCardSelected : {})
+        }}
+        onClick={goToLogin}
+        onMouseEnter={() => setHoveredCard('login')}
+        onMouseLeave={() => setHoveredCard(null)}
+      >
+        <div style={styles.userTypeIcon}>
+          <LogInIcon size={24} />
+        </div>
+        <div style={styles.userTypeContent}>
+          <div style={styles.userTypeTitle}>Log into my account</div>
+          <p style={styles.userTypeDesc}>Welcome back! Sign in to continue</p>
+        </div>
+      </div>
+
+      {/* Card: Market Report */}
+      <div
+        style={{
+          ...styles.userTypeCard,
+          ...(hoveredCard === 'market' ? styles.userTypeCardSelected : {})
+        }}
+        onClick={goToUserType}
+        onMouseEnter={() => setHoveredCard('market')}
+        onMouseLeave={() => setHoveredCard(null)}
+      >
+        <div style={styles.userTypeIcon}>
+          <BarChartIcon size={24} />
+        </div>
+        <div style={styles.userTypeContent}>
+          <div style={styles.userTypeTitle}>Sign Up with Market Report</div>
+          <p style={styles.userTypeDesc}>Get NYC rental insights and create an account</p>
+        </div>
+      </div>
+    </>
+  );
+
+  // Legacy alias
+  const renderInitialView = renderEntryView;
+
+  // User Type View (Step 1) - Guest/Host selection
+  const renderUserTypeView = () => (
+    <>
+      <div style={styles.logoContainer}>
+        <img src={LOGO_URL} alt="Split Lease" style={styles.logo} />
+      </div>
+
+      <div style={styles.header}>
+        <h1 style={styles.title}>What brings you here?</h1>
+        <p style={styles.subtitle}>I'm here to...</p>
+      </div>
+
+      {/* Guest card */}
+      <div
+        style={{
+          ...styles.userTypeCard,
+          ...(hoveredCard === 'guest' || signupData.userType === USER_TYPES.GUEST ? styles.userTypeCardSelected : {})
+        }}
+        onClick={() => {
+          setSignupData({ ...signupData, userType: USER_TYPES.GUEST });
+          setTimeout(goToIdentity, 200);
+        }}
+        onMouseEnter={() => setHoveredCard('guest')}
+        onMouseLeave={() => setHoveredCard(null)}
+      >
+        <div style={styles.userTypeIcon}>
+          <HomeIcon size={24} />
+        </div>
+        <div style={styles.userTypeContent}>
+          <div style={styles.userTypeTitle}>Find a place to stay</div>
+          <p style={styles.userTypeDesc}>Browse flexible rentals across NYC</p>
+        </div>
+      </div>
+
+      {/* Host card */}
+      <div
+        style={{
+          ...styles.userTypeCard,
+          ...(hoveredCard === 'host' || signupData.userType === USER_TYPES.HOST ? styles.userTypeCardSelected : {})
+        }}
+        onClick={() => {
+          setSignupData({ ...signupData, userType: USER_TYPES.HOST });
+          setTimeout(goToIdentity, 200);
+        }}
+        onMouseEnter={() => setHoveredCard('host')}
+        onMouseLeave={() => setHoveredCard(null)}
+      >
+        <div style={styles.userTypeIcon}>
+          <KeyIcon size={24} />
+        </div>
+        <div style={styles.userTypeContent}>
+          <div style={styles.userTypeTitle}>Share my space</div>
+          <p style={styles.userTypeDesc}>List your place for nightly, weekly, or monthly stays</p>
+        </div>
+      </div>
+
+      <button style={styles.backBtn} onClick={goToEntry}>
+        <ArrowLeftIcon /> Back
       </button>
     </>
   );
 
+  // Login View - Premium styling with OAuth buttons
   const renderLoginView = () => (
     <>
       <div style={styles.logoContainer}>
-        <div style={styles.logo}>SL</div>
-      </div>
-      <div style={styles.header}>
-        <h2 style={styles.title}>Welcome back!</h2>
+        <img src={LOGO_URL} alt="Split Lease" style={styles.logo} />
       </div>
 
-      <div style={styles.sectionLabel}>Login</div>
+      <div style={styles.header}>
+        <h1 style={styles.title}>Welcome back!</h1>
+        <p style={styles.subtitle}>Log in to your Split Lease account</p>
+      </div>
+
+      {/* LinkedIn OAuth Button (placeholder) */}
+      <button
+        type="button"
+        style={styles.linkedinBtn}
+        onClick={() => alert('LinkedIn OAuth login coming soon!')}
+      >
+        <div style={styles.linkedinIcon}>in</div>
+        <div style={styles.linkedinText}>
+          <span style={styles.linkedinPrimary}>Continue with LinkedIn</span>
+        </div>
+        <ChevronRightIcon size={20} style={{ color: 'white', opacity: 0.7 }} />
+      </button>
+
+      {/* Google OAuth Button (placeholder) */}
+      <button
+        type="button"
+        style={styles.googleBtn}
+        onClick={() => alert('Google OAuth login coming soon!')}
+      >
+        <GoogleLogo />
+        Continue with Google
+      </button>
+
+      <div style={styles.divider}>
+        <div style={styles.dividerLine} />
+        <span style={styles.dividerText}>or</span>
+        <div style={styles.dividerLine} />
+      </div>
 
       <form onSubmit={handleLoginSubmit}>
         <div style={styles.formGroup}>
-          <label style={styles.label}>Email *</label>
+          <label style={styles.label}>Email</label>
           <input
             type="email"
             value={loginData.email}
             onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
             required
-            placeholder="example@example.com"
+            placeholder="john@example.com"
             style={styles.input}
-            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#6366F1';
+              e.target.style.backgroundColor = 'white';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e5e7eb';
+              e.target.style.backgroundColor = '#f9fafb';
+            }}
           />
         </div>
 
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Password *</label>
+        <div style={{ ...styles.formGroup, marginBottom: '8px' }}>
+          <label style={styles.label}>Password</label>
           <div style={styles.passwordWrapper}>
             <input
               type={showLoginPassword ? 'text' : 'password'}
@@ -957,8 +1653,14 @@ export default function SignUpLoginModal({
               required
               placeholder="Enter your password"
               style={{ ...styles.input, ...styles.inputWithIcon }}
-              onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#6366F1';
+                e.target.style.backgroundColor = 'white';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e5e7eb';
+                e.target.style.backgroundColor = '#f9fafb';
+              }}
             />
             <button
               type="button"
@@ -968,6 +1670,15 @@ export default function SignUpLoginModal({
               <EyeIcon open={showLoginPassword} />
             </button>
           </div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <button type="button" onClick={goToMagicLink} style={{ ...styles.link, fontSize: '13px' }}>
+            Log in without password
+          </button>
+          <button type="button" onClick={goToPasswordReset} style={{ ...styles.link, fontSize: '13px' }}>
+            Forgot password?
+          </button>
         </div>
 
         {error && (
@@ -981,10 +1692,7 @@ export default function SignUpLoginModal({
           disabled={isLoading || !loginData.email || !loginData.password}
           style={{
             ...styles.buttonPrimary,
-            ...(isLoading || !loginData.email || !loginData.password ? styles.buttonDisabled : {}),
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            ...(isLoading || !loginData.email || !loginData.password ? styles.buttonDisabled : {})
           }}
         >
           {isLoading ? (
@@ -993,152 +1701,127 @@ export default function SignUpLoginModal({
               Logging in...
             </>
           ) : (
-            'Login'
+            'Log In'
           )}
         </button>
 
-        {/* Show additional options after email is entered */}
-        {loginData.email && (
-          <>
-            <div style={styles.linkText}>
-              <button type="button" onClick={handleMagicLink} style={styles.link}>
-                Log in Without Password
-              </button>
-            </div>
-            <div style={styles.linkText}>
-              <button type="button" onClick={goToPasswordReset} style={styles.link}>
-                Forgot Password? Reset here
-              </button>
-            </div>
-          </>
-        )}
-
-        <div style={{ ...styles.divider }}>
-          <div style={styles.dividerLine} />
-          <span style={styles.dividerText}>or</span>
-          <div style={styles.dividerLine} />
-        </div>
-
-        <div style={styles.linkText}>
-          <span style={{ color: '#6b7280' }}>Don't have an account? </span>
-          <button type="button" onClick={goToSignupStep1} style={styles.link}>
-            Sign Up Here
+        <div style={styles.footerLink}>
+          Don't have an account?{' '}
+          <button type="button" onClick={goToUserType} style={styles.link}>
+            Sign up
           </button>
         </div>
       </form>
     </>
   );
 
-  const renderSignupStep1 = () => (
+  // Identity View (Step 2) - Name, email, birthday with OAuth options
+  const renderIdentityView = () => (
     <>
       <div style={styles.logoContainer}>
-        <div style={styles.logo}>SL</div>
+        <img src={LOGO_URL} alt="Split Lease" style={styles.logo} />
       </div>
+
       <div style={styles.header}>
-        <h2 style={styles.title}>Nice To Meet You!</h2>
+        <h1 style={styles.title}>Nice to meet you!</h1>
+        <p style={styles.subtitle}>Tell us a bit about yourself</p>
       </div>
 
-      <p style={styles.requiredNote}>*Must match your government ID</p>
+      {/* LinkedIn OAuth Button (placeholder) */}
+      <button
+        type="button"
+        style={styles.linkedinBtn}
+        onClick={() => alert('LinkedIn OAuth signup coming soon!')}
+      >
+        <div style={styles.linkedinIcon}>in</div>
+        <div style={styles.linkedinText}>
+          <span style={styles.linkedinPrimary}>Continue with LinkedIn</span>
+          <span style={styles.linkedinSecondary}>Auto-fill your info • Get verified badge</span>
+        </div>
+        <ChevronRightIcon size={20} style={{ color: 'white', opacity: 0.7 }} />
+      </button>
 
-      <form onSubmit={handleSignupStep1Continue}>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>First Name *</label>
-          <input
-            type="text"
-            value={signupData.firstName}
-            onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
-            required
-            placeholder="First Name"
-            style={styles.input}
-            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-          />
+      {/* Google OAuth Button (placeholder) */}
+      <button
+        type="button"
+        style={styles.googleBtn}
+        onClick={() => alert('Google OAuth signup coming soon!')}
+      >
+        <GoogleLogo />
+        Continue with Google
+      </button>
+
+      <div style={styles.divider}>
+        <div style={styles.dividerLine} />
+        <span style={styles.dividerText}>or enter manually</span>
+        <div style={styles.dividerLine} />
+      </div>
+
+      <form onSubmit={handleIdentityContinue}>
+        <div style={styles.formRow}>
+          <div style={styles.formGroupInRow}>
+            <label style={styles.label}>First Name</label>
+            <input
+              type="text"
+              value={signupData.firstName}
+              onChange={(e) => setSignupData({ ...signupData, firstName: e.target.value })}
+              required
+              placeholder="John"
+              style={styles.input}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#6366F1';
+                e.target.style.backgroundColor = 'white';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e5e7eb';
+                e.target.style.backgroundColor = '#f9fafb';
+              }}
+            />
+          </div>
+          <div style={styles.formGroupInRow}>
+            <label style={styles.label}>Last Name</label>
+            <input
+              type="text"
+              value={signupData.lastName}
+              onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
+              required
+              placeholder="Smith"
+              style={styles.input}
+              onFocus={(e) => {
+                e.target.style.borderColor = '#6366F1';
+                e.target.style.backgroundColor = 'white';
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = '#e5e7eb';
+                e.target.style.backgroundColor = '#f9fafb';
+              }}
+            />
+          </div>
         </div>
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>Last Name *</label>
-          <input
-            type="text"
-            value={signupData.lastName}
-            onChange={(e) => setSignupData({ ...signupData, lastName: e.target.value })}
-            required
-            placeholder="Last Name"
-            style={styles.input}
-            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-          />
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Email *</label>
+          <label style={styles.label}>Email</label>
           <input
             type="email"
             value={signupData.email}
             onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
             required
-            placeholder="example@example.com"
+            placeholder="john@example.com"
             style={styles.input}
-            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#6366F1';
+              e.target.style.backgroundColor = 'white';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#e5e7eb';
+              e.target.style.backgroundColor = '#f9fafb';
+            }}
           />
-          <p style={styles.helperText}>
-            Your email serves as your User ID and primary communication channel
-          </p>
-        </div>
-
-        {error && (
-          <div style={styles.errorBox}>
-            <p style={styles.errorText}>{error}</p>
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={isLoading}
-          style={{
-            ...styles.buttonPrimary,
-            ...(isLoading ? styles.buttonDisabled : {})
-          }}
-        >
-          Continue
-        </button>
-
-        <div style={styles.linkText}>
-          <span style={{ color: '#6b7280' }}>Have an account? </span>
-          <button type="button" onClick={goToLogin} style={styles.link}>
-            Log In
-          </button>
-        </div>
-      </form>
-    </>
-  );
-
-  const renderSignupStep2 = () => (
-    <>
-      <div style={styles.logoContainer}>
-        <div style={styles.logo}>SL</div>
-      </div>
-      <div style={styles.header}>
-        <h2 style={styles.title}>Hi, {signupData.firstName}!</h2>
-      </div>
-
-      <form onSubmit={handleSignupSubmit}>
-        <div style={styles.formGroup}>
-          <label style={styles.label}>I am signing up to be *</label>
-          <select
-            value={signupData.userType}
-            onChange={(e) => setSignupData({ ...signupData, userType: e.target.value })}
-            style={styles.select}
-            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-          >
-            <option value={USER_TYPES.GUEST}>A Guest (I would like to rent a space)</option>
-            <option value={USER_TYPES.HOST}>A Host (I have a space available to rent)</option>
-          </select>
+          <p style={styles.helperText}>We'll use this for login and important updates</p>
         </div>
 
         <div style={styles.formGroup}>
-          <label style={styles.label}>Birth Date (select month, year and day) *</label>
+          <label style={styles.label}>Birthday</label>
           <div style={styles.dateInputsRow}>
             <select
               value={signupData.birthMonth}
@@ -1171,79 +1854,7 @@ export default function SignUpLoginModal({
               ))}
             </select>
           </div>
-          <p style={styles.helperText}>
-            To use our service, you must be 18 years old. Your date of birth will be kept confidential.
-          </p>
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Phone Number *</label>
-          <input
-            type="tel"
-            value={signupData.phoneNumber}
-            onChange={(e) => setSignupData({ ...signupData, phoneNumber: e.target.value })}
-            required
-            placeholder="(555) 555-5555"
-            style={styles.input}
-            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-          />
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Password *</label>
-          <div style={styles.passwordWrapper}>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={signupData.password}
-              onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-              required
-              minLength={4}
-              placeholder="Enter your password"
-              style={{ ...styles.input, ...styles.inputWithIcon }}
-              onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              style={styles.togglePasswordBtn}
-            >
-              <EyeIcon open={showPassword} />
-            </button>
-          </div>
-        </div>
-
-        <div style={styles.formGroup}>
-          <label style={styles.label}>Re-enter Password *</label>
-          <div style={styles.passwordWrapper}>
-            <input
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={signupData.confirmPassword}
-              onChange={(e) => setSignupData({ ...signupData, confirmPassword: e.target.value })}
-              required
-              minLength={4}
-              placeholder="Retype your password"
-              style={{
-                ...styles.input,
-                ...styles.inputWithIcon,
-                ...(passwordMismatch ? styles.inputError : {}),
-                ...(signupData.confirmPassword && !passwordMismatch && signupData.password === signupData.confirmPassword ? styles.inputSuccess : {})
-              }}
-              onFocus={(e) => e.target.style.borderColor = passwordMismatch ? '#dc2626' : '#6c40f5'}
-              onBlur={(e) => e.target.style.borderColor = passwordMismatch ? '#dc2626' : '#d1d5db'}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              style={styles.togglePasswordBtn}
-            >
-              <EyeIcon open={showConfirmPassword} />
-            </button>
-          </div>
-          {passwordMismatch && (
-            <p style={styles.inlineError}>The passwords don't match</p>
-          )}
+          <p style={styles.helperText}>Required for age verification</p>
         </div>
 
         {error && (
@@ -1252,66 +1863,166 @@ export default function SignUpLoginModal({
           </div>
         )}
 
-        <p style={styles.termsText}>
-          By signing up or logging in, you agree to the Split Lease{' '}
-          <a href="/terms" target="_blank" style={{ color: '#6c40f5' }}>Terms of Use</a>,{' '}
-          <a href="/privacy" target="_blank" style={{ color: '#6c40f5' }}>Privacy Policy</a> and{' '}
-          <a href="/guidelines" target="_blank" style={{ color: '#6c40f5' }}>Community Guidelines</a>.
-        </p>
-
         <button
           type="submit"
-          disabled={isLoading || passwordMismatch}
+          disabled={isLoading}
           style={{
             ...styles.buttonPrimary,
-            ...(isLoading || passwordMismatch ? styles.buttonDisabled : {}),
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
+            ...(isLoading ? styles.buttonDisabled : {})
           }}
         >
-          {isLoading ? (
-            <>
-              <LoadingSpinner size={18} />
-              Creating Account...
-            </>
-          ) : (
-            'Agree and Sign Up'
-          )}
+          Continue
         </button>
 
-        <button
-          type="button"
-          onClick={goToSignupStep1}
-          style={styles.goBackBtn}
-        >
-          <ArrowLeftIcon /> Go Back
+        <button type="button" style={styles.backBtn} onClick={goToUserType}>
+          <ArrowLeftIcon /> Back
         </button>
       </form>
     </>
   );
 
+  // Legacy alias
+  const renderSignupStep1 = renderIdentityView;
+
+  // Password View (Step 3) - Password creation with requirements
+  const renderPasswordView = () => {
+    // Password validation state
+    const hasLength = signupData.password.length >= 8;
+    const hasLetters = /[a-zA-Z]/.test(signupData.password);
+    const hasNumbers = /[0-9]/.test(signupData.password);
+    const hasMix = hasLetters && hasNumbers;
+    const isValid = hasLength && hasMix;
+
+    return (
+      <>
+        <div style={styles.logoContainer}>
+          <img src={LOGO_URL} alt="Split Lease" style={styles.logo} />
+        </div>
+
+        <div style={styles.header}>
+          <h1 style={styles.title}>Almost there, {signupData.firstName || 'there'}!</h1>
+          <p style={styles.subtitle}>Create a password to secure your account</p>
+        </div>
+
+        <form onSubmit={handleSignupSubmit}>
+          <div style={styles.formGroup}>
+            <label style={styles.label}>Password</label>
+            <div style={styles.passwordWrapper}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={signupData.password}
+                onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                required
+                placeholder="Create a password"
+                style={{ ...styles.input, ...styles.inputWithIcon }}
+                onFocus={(e) => {
+                  e.target.style.borderColor = '#6366F1';
+                  e.target.style.backgroundColor = 'white';
+                }}
+                onBlur={(e) => {
+                  e.target.style.borderColor = '#e5e7eb';
+                  e.target.style.backgroundColor = '#f9fafb';
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                style={styles.togglePasswordBtn}
+              >
+                <EyeIcon open={showPassword} />
+              </button>
+            </div>
+
+            {/* Password requirements */}
+            <div style={styles.passwordRequirements}>
+              <div style={{
+                ...styles.requirement,
+                ...(hasLength ? styles.requirementMet : {})
+              }}>
+                <span style={styles.requirementIcon}>
+                  {hasLength ? <CheckCircleIcon size={16} /> : <CircleIcon size={16} />}
+                </span>
+                <span>At least 8 characters</span>
+              </div>
+              <div style={{
+                ...styles.requirement,
+                ...styles.requirementLast,
+                ...(hasMix ? styles.requirementMet : {})
+              }}>
+                <span style={styles.requirementIcon}>
+                  {hasMix ? <CheckCircleIcon size={16} /> : <CircleIcon size={16} />}
+                </span>
+                <span>Mix of letters and numbers</span>
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div style={styles.errorBox}>
+              <p style={styles.errorText}>{error}</p>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading || !isValid}
+            style={{
+              ...styles.buttonPrimary,
+              ...(isLoading || !isValid ? styles.buttonDisabled : {})
+            }}
+          >
+            {isLoading ? (
+              <>
+                <LoadingSpinner size={18} />
+                Creating Account...
+              </>
+            ) : (
+              'Create Account'
+            )}
+          </button>
+
+          <p style={styles.termsText}>
+            By creating an account, you agree to our{' '}
+            <a href="/terms" target="_blank" style={{ color: '#6366F1' }}>Terms of Service</a> and{' '}
+            <a href="/privacy" target="_blank" style={{ color: '#6366F1' }}>Privacy Policy</a>
+          </p>
+
+          <button type="button" style={styles.backBtn} onClick={goToIdentity}>
+            <ArrowLeftIcon /> Back
+          </button>
+        </form>
+      </>
+    );
+  };
+
+  // Legacy alias
+  const renderSignupStep2 = renderPasswordView;
+
   const renderPasswordResetView = () => (
     <>
       <div style={styles.logoContainer}>
-        <div style={styles.logo}>SL</div>
+        <img src={LOGO_URL} alt="Split Lease" style={styles.logoImage} />
       </div>
       <div style={styles.header}>
-        <h2 style={styles.title}>Enter your email to reset your password.</h2>
+        <div style={styles.headerIcon}>
+          <KeyIcon />
+        </div>
+        <h2 style={styles.title}>Reset your password</h2>
+        <p style={styles.subtitle}>Enter your email address and we'll send you a link to reset your password.</p>
       </div>
 
       <form onSubmit={handlePasswordReset}>
         <div style={styles.formGroup}>
-          <label style={styles.label}>Email *</label>
+          <label style={styles.label}>Email address</label>
           <input
             type="email"
             value={resetEmail}
             onChange={(e) => setResetEmail(e.target.value)}
             required
-            placeholder="example@example.com"
+            placeholder="you@example.com"
             style={styles.input}
-            onFocus={(e) => e.target.style.borderColor = '#6c40f5'}
-            onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+            onFocus={(e) => e.target.style.borderColor = styles.colors.primary}
+            onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
           />
         </div>
 
@@ -1329,27 +2040,168 @@ export default function SignUpLoginModal({
             ...(isLoading || !resetEmail ? styles.buttonDisabled : {})
           }}
         >
-          {isLoading ? 'Sending...' : 'Reset my password'}
+          {isLoading ? 'Sending reset link...' : 'Send reset link'}
         </button>
 
         <button
           type="button"
-          onClick={handleMagicLink}
-          disabled={isLoading || !resetEmail}
+          onClick={goToMagicLink}
+          disabled={isLoading}
           style={{
             ...styles.buttonSecondary,
-            ...(isLoading || !resetEmail ? { opacity: 0.5, cursor: 'not-allowed' } : {})
+            marginTop: '12px'
           }}
         >
-          Send me a magic login link
+          <MailIcon /> Send me a magic login link instead
         </button>
 
-        <div style={styles.linkText}>
-          <button type="button" onClick={goToLogin} style={styles.link}>
-            Cancel
-          </button>
-        </div>
+        <button type="button" style={styles.backBtn} onClick={goToLogin}>
+          <ArrowLeftIcon /> Back to login
+        </button>
       </form>
+    </>
+  );
+
+  const renderMagicLinkView = () => (
+    <>
+      <div style={styles.logoContainer}>
+        <img src={LOGO_URL} alt="Split Lease" style={styles.logoImage} />
+      </div>
+      <div style={styles.header}>
+        <div style={styles.headerIcon}>
+          <MailIcon />
+        </div>
+        <h2 style={styles.title}>Magic link login</h2>
+        <p style={styles.subtitle}>Enter your email and we'll send you a link to sign in instantly—no password needed.</p>
+      </div>
+
+      <form onSubmit={handleMagicLink}>
+        <div style={styles.formGroup}>
+          <label style={styles.label}>Email address</label>
+          <input
+            type="email"
+            value={resetEmail}
+            onChange={(e) => setResetEmail(e.target.value)}
+            required
+            placeholder="you@example.com"
+            style={styles.input}
+            onFocus={(e) => e.target.style.borderColor = styles.colors.primary}
+            onBlur={(e) => e.target.style.borderColor = '#E5E7EB'}
+          />
+        </div>
+
+        {error && (
+          <div style={styles.errorBox}>
+            <p style={styles.errorText}>{error}</p>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isLoading || !resetEmail}
+          style={{
+            ...styles.buttonPrimary,
+            ...(isLoading || !resetEmail ? styles.buttonDisabled : {})
+          }}
+        >
+          {isLoading ? 'Sending magic link...' : 'Send magic link'}
+        </button>
+
+        <button type="button" style={styles.backBtn} onClick={goToLogin}>
+          <ArrowLeftIcon /> Back to login
+        </button>
+      </form>
+    </>
+  );
+
+  const renderResetSentView = () => (
+    <>
+      <div style={styles.logoContainer}>
+        <img src={LOGO_URL} alt="Split Lease" style={styles.logoImage} />
+      </div>
+      <div style={styles.header}>
+        <div style={{ ...styles.headerIcon, backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
+          <CheckCircleIcon />
+        </div>
+        <h2 style={styles.title}>Check your email</h2>
+        <p style={styles.subtitle}>
+          We've sent a password reset link to <strong>{resetEmail}</strong>.
+          Click the link in the email to reset your password.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={goToLogin}
+        style={styles.buttonPrimary}
+      >
+        Return to login
+      </button>
+
+      <p style={{ ...styles.linkText, marginTop: '16px' }}>
+        Didn't receive the email?{' '}
+        <button type="button" onClick={handlePasswordReset} style={styles.link} disabled={isLoading}>
+          {isLoading ? 'Resending...' : 'Resend'}
+        </button>
+      </p>
+    </>
+  );
+
+  const renderMagicLinkSentView = () => (
+    <>
+      <div style={styles.logoContainer}>
+        <img src={LOGO_URL} alt="Split Lease" style={styles.logoImage} />
+      </div>
+      <div style={styles.header}>
+        <div style={{ ...styles.headerIcon, backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
+          <CheckCircleIcon />
+        </div>
+        <h2 style={styles.title}>Magic link sent!</h2>
+        <p style={styles.subtitle}>
+          We've sent a magic login link to <strong>{resetEmail}</strong>.
+          Click the link in the email to sign in instantly.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={goToLogin}
+        style={styles.buttonPrimary}
+      >
+        Return to login
+      </button>
+
+      <p style={{ ...styles.linkText, marginTop: '16px' }}>
+        Didn't receive the email?{' '}
+        <button type="button" onClick={handleMagicLink} style={styles.link} disabled={isLoading}>
+          {isLoading ? 'Resending...' : 'Resend'}
+        </button>
+      </p>
+    </>
+  );
+
+  const renderSuccessView = () => (
+    <>
+      <div style={styles.logoContainer}>
+        <img src={LOGO_URL} alt="Split Lease" style={styles.logoImage} />
+      </div>
+      <div style={styles.header}>
+        <div style={{ ...styles.headerIcon, backgroundColor: 'rgba(16, 185, 129, 0.1)' }}>
+          <CheckCircleIcon />
+        </div>
+        <h2 style={styles.title}>You're all set!</h2>
+        <p style={styles.subtitle}>
+          Your account has been created successfully. Welcome to Split Lease!
+        </p>
+      </div>
+
+      <button
+        type="button"
+        onClick={onClose}
+        style={styles.buttonPrimary}
+      >
+        Get started
+      </button>
     </>
   );
 
@@ -1364,16 +2216,21 @@ export default function SignUpLoginModal({
           {/* Close button */}
           {!disableClose && (
             <button style={styles.closeBtn} onClick={onClose} aria-label="Close">
-              &times;
+              <CloseIcon />
             </button>
           )}
 
           {/* Render current view */}
-          {currentView === VIEWS.INITIAL && renderInitialView()}
+          {currentView === VIEWS.ENTRY && renderEntryView()}
+          {currentView === VIEWS.USER_TYPE && renderUserTypeView()}
+          {currentView === VIEWS.IDENTITY && renderIdentityView()}
+          {currentView === VIEWS.PASSWORD && renderPasswordView()}
           {currentView === VIEWS.LOGIN && renderLoginView()}
-          {currentView === VIEWS.SIGNUP_STEP1 && renderSignupStep1()}
-          {currentView === VIEWS.SIGNUP_STEP2 && renderSignupStep2()}
           {currentView === VIEWS.PASSWORD_RESET && renderPasswordResetView()}
+          {currentView === VIEWS.MAGIC_LINK && renderMagicLinkView()}
+          {currentView === VIEWS.RESET_SENT && renderResetSentView()}
+          {currentView === VIEWS.MAGIC_LINK_SENT && renderMagicLinkSentView()}
+          {currentView === VIEWS.SUCCESS && renderSuccessView()}
         </div>
       </div>
 

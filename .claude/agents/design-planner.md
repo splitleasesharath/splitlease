@@ -127,4 +127,6 @@ Before finalizing your plan, verify:
 
 Save your implementation plan to: `.claude/plans/New/[YYYYMMDDHHMMSS]-design-[feature-name].md`
 
+> **⚠️ CONTEXT RULE**: Do NOT automatically scan or load existing files from `.claude/plans/` at the start of your analysis. That folder contains historical files that may be outdated. Only reference specific plan files if the user explicitly mentions them. You may WRITE new design plans to `.claude/plans/New/`, but do not preemptively read from it.
+
 Remember: Your value is in precision and faithfulness to the user's vision, not in creative contribution. A perfect plan is one where the implemented result matches exactly what the user pictured in their mind.

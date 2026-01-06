@@ -104,12 +104,13 @@ export default function NotificationSettingsIsland({ userId }) {
   }, []);
 
   const {
-    preferences,
     loading,
     error,
-    togglePreference,
+    toggleChannel,
     isTogglePending,
-    refetch
+    isChannelEnabled,
+    refetch,
+    CHANNELS
   } = useNotificationSettings(userId);
 
   // Loading state
@@ -160,12 +161,12 @@ export default function NotificationSettingsIsland({ userId }) {
           <NotificationCategoryRow
             key={category.id}
             category={category}
-            smsEnabled={preferences[category.smsColumn] || false}
-            emailEnabled={preferences[category.emailColumn] || false}
-            onToggleSms={togglePreference}
-            onToggleEmail={togglePreference}
-            smsPending={isTogglePending(category.smsColumn)}
-            emailPending={isTogglePending(category.emailColumn)}
+            smsEnabled={isChannelEnabled(category.dbColumn, CHANNELS.SMS)}
+            emailEnabled={isChannelEnabled(category.dbColumn, CHANNELS.EMAIL)}
+            onToggleSms={() => toggleChannel(category.dbColumn, CHANNELS.SMS)}
+            onToggleEmail={() => toggleChannel(category.dbColumn, CHANNELS.EMAIL)}
+            smsPending={isTogglePending(category.dbColumn, CHANNELS.SMS)}
+            emailPending={isTogglePending(category.dbColumn, CHANNELS.EMAIL)}
             isLast={index === NOTIFICATION_CATEGORIES.length - 1}
           />
         ))}

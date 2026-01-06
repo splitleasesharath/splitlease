@@ -64,7 +64,7 @@ export default function NotificationCategoryRow({
         <div style={styles.toggleWrapper}>
           <NotificationToggle
             checked={smsEnabled}
-            onChange={() => onToggleSms(category.smsColumn)}
+            onChange={onToggleSms}
             disabled={smsPending}
             ariaLabel={`${category.label} SMS notifications`}
           />
@@ -72,7 +72,7 @@ export default function NotificationCategoryRow({
         <div style={styles.toggleWrapper}>
           <NotificationToggle
             checked={emailEnabled}
-            onChange={() => onToggleEmail(category.emailColumn)}
+            onChange={onToggleEmail}
             disabled={emailPending}
             ariaLabel={`${category.label} Email notifications`}
           />

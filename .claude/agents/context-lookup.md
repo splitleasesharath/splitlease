@@ -45,6 +45,8 @@ You are a read-only investigator. You observe, analyze, and report. You NEVER mo
    - Import/export relationships
    - Type definitions
 
+   > **⚠️ CONTEXT RULE**: Do NOT automatically scan or load files from `.claude/plans/`. That folder contains historical files that may be outdated and will overload context. Only reference specific plan files if the user explicitly asks about them.
+
 3. **Synthesize Findings**: Organize your analysis to directly address the query:
    - Lead with the direct answer
    - Support with evidence (file paths, code snippets)

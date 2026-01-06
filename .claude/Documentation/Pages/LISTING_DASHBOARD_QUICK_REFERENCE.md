@@ -99,10 +99,10 @@ listing-dashboard.jsx (Entry Point)
 | `app/src/islands/shared/Header.jsx` | Site navigation header |
 | `app/src/islands/shared/Footer.jsx` | Site footer |
 | `app/src/islands/shared/EditListingDetails/EditListingDetails.jsx` | Multi-section edit modal |
-| `app/src/islands/shared/ScheduleCohost.jsx` | Co-host scheduling modal |
-| `app/src/islands/shared/ImportListingReviewsModal.jsx` | Reviews import request modal |
-| `app/src/islands/shared/AIImportAssistantModal.jsx` | AI content generation modal |
-| `app/src/islands/shared/HostScheduleSelector.jsx` | Nights available selector |
+| `app/src/islands/shared/ScheduleCohost/ScheduleCohost.jsx` | Co-host scheduling modal |
+| `app/src/islands/shared/ImportListingReviewsModal/ImportListingReviewsModal.jsx` | Reviews import request modal |
+| `app/src/islands/shared/AIImportAssistantModal/AIImportAssistantModal.jsx` | AI content generation modal |
+| `app/src/islands/shared/HostScheduleSelector/HostScheduleSelector.jsx` | Nights available selector |
 
 ### Types & Data
 | File | Purpose |

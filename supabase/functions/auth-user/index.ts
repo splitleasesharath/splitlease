@@ -12,6 +12,7 @@
  * - validate: Validate token and fetch user data - via Bubble + Supabase
  * - request_password_reset: Send password reset email - via Supabase Auth (native)
  * - update_password: Update password after reset link clicked - via Supabase Auth (native)
+ * - generate_magic_link: Generate magic link without sending email - via Supabase Auth (native)
  *
  * Security:
  * - NO user authentication on these endpoints (you can't require auth to log in!)
@@ -33,6 +34,7 @@ import { handleLogout } from './handlers/logout.ts';
 import { handleValidate } from './handlers/validate.ts';
 import { handleRequestPasswordReset } from './handlers/resetPassword.ts';
 import { handleUpdatePassword } from './handlers/updatePassword.ts';
+import { handleGenerateMagicLink } from './handlers/generateMagicLink.ts';
 
 console.log('[auth-user] Edge Function started');
 
@@ -75,7 +77,7 @@ Deno.serve(async (req) => {
     collector = createErrorCollector('auth-user', action);
 
     // Validate action is supported
-    const allowedActions = ['login', 'signup', 'logout', 'validate', 'request_password_reset', 'update_password'];
+    const allowedActions = ['login', 'signup', 'logout', 'validate', 'request_password_reset', 'update_password', 'generate_magic_link'];
     validateAction(action, allowedActions);
 
     console.log(`[auth-user] Action: ${action}`);
@@ -129,6 +131,11 @@ Deno.serve(async (req) => {
       case 'update_password':
         // Password update uses Supabase Auth natively (no Bubble dependency)
         result = await handleUpdatePassword(supabaseUrl, supabaseServiceKey, payload);
+        break;
+
+      case 'generate_magic_link':
+        // Generate magic link without sending email (for custom email flows)
+        result = await handleGenerateMagicLink(supabaseUrl, supabaseServiceKey, payload);
         break;
 
       default:

@@ -107,6 +107,16 @@
 /rental-application
   Content-Type: text/html; charset=utf-8
 
+# Referral page - serve as HTML (uses _internal pattern)
+/referral
+  Content-Type: text/html; charset=utf-8
+/ref
+  Content-Type: text/html; charset=utf-8
+
+# Host Guarantee page - serve as HTML (uses _internal pattern)
+/host-guarantee
+  Content-Type: text/html; charset=utf-8
+
 # Internal files (no extension) - serve as HTML
 /_internal/*
   Content-Type: text/html; charset=utf-8

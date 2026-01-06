@@ -23,6 +23,8 @@ When given a cleanup request, you will:
 
 Your plans MUST be saved to `.claude/plans/New/` with the naming format: `YYYYMMDDHHMMSS-cleanup-<descriptive-name>.md`
 
+> **⚠️ CONTEXT RULE**: Do NOT automatically scan or load existing files from `.claude/plans/` at the start of your analysis. That folder contains historical files that may be outdated. Only reference specific plan files if the user explicitly mentions them. You may WRITE new plans to `.claude/plans/New/`, but do not preemptively read from it.
+
 Every plan document must include:
 
 ### 1. Executive Summary

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl } from '../../lib/auth.js';
+import { redirectToLogin, loginUser, signupUser, logoutUser, validateTokenAndFetchUser, isProtectedPage, getAuthToken, getFirstName, getAvatarUrl, checkUrlForAuthError } from '../../lib/auth.js';
 import { SIGNUP_LOGIN_URL, SEARCH_URL, HOST_OVERVIEW_URL } from '../../lib/constants.js';
 import { getUserType as getStoredUserType, getAuthState } from '../../lib/secureStorage.js';
 import { supabase } from '../../lib/supabase.js';
@@ -123,9 +123,19 @@ export default function Header({ autoShowLogin = false }) {
             // If on a protected page and token validation failed:
             // - If autoShowLogin is true, show the modal (don't redirect)
             // - Otherwise, redirect to home
+            // IMPORTANT: Check for auth errors in URL hash first to prevent redirect loops
+            // When a magic link fails, the error params remain in the URL and we should
+            // let the page handle the error instead of redirecting
             if (isProtectedPage() && !autoShowLogin) {
-              console.log('⚠️ Invalid token on protected page - redirecting to home');
-              window.location.replace('/');
+              // Check if there's an auth error in URL - if so, let the page handle it
+              const authError = checkUrlForAuthError();
+              if (authError) {
+                console.log('⚠️ Auth error present in URL, not redirecting to prevent loop');
+                // Let the page component handle the error display
+              } else {
+                console.log('⚠️ Invalid token on protected page - redirecting to home');
+                window.location.replace('/');
+              }
             } else if (isProtectedPage() && autoShowLogin) {
               console.log('⚠️ Invalid token on protected page - auth modal will be shown');
             }

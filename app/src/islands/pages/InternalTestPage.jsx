@@ -150,7 +150,7 @@ export default function InternalTestPage() {
 
   /**
    * Send test SMS via send-sms Edge Function
-   * Uses Twilio to deliver templated SMS
+   * Direct Twilio proxy - sends to/from/body
    */
   const handleSendSMS = async () => {
     setLoading(prev => ({ ...prev, 2: true }));
@@ -159,6 +159,9 @@ export default function InternalTestPage() {
     try {
       // Get current session for Bearer token
       const { data: { session } } = await supabase.auth.getSession();
+
+      const timestamp = new Date().toLocaleTimeString();
+      const messageBody = `Test SMS from Split Lease Internal Test Page. Sent at: ${timestamp}`;
 
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-sms`,
@@ -171,12 +174,9 @@ export default function InternalTestPage() {
           body: JSON.stringify({
             action: 'send',
             payload: {
-              template_id: 'test_sms_template', // Will need a valid template ID
-              to_phone: '+13137575323',
-              variables: {
-                test_message: 'Test SMS from Internal Test Page',
-                timestamp: new Date().toLocaleTimeString(),
-              }
+              to: '+13137575323',
+              from: '+14155692985',
+              body: messageBody,
             }
           })
         }
@@ -354,10 +354,10 @@ export default function InternalTestPage() {
           <h3 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>Test Configuration</h3>
           <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
             <li><strong>Send Email:</strong> Opens preview sidebar → To: splitleasesharath@gmail.com</li>
-            <li><strong>Send SMS:</strong> To: +1 (313) 757-5323</li>
+            <li><strong>Send SMS:</strong> To: +1 (313) 757-5323 | From: +1 (415) 569-2985</li>
             <li><strong>Email Template ID:</strong> 1756320055390x685004717147094100 ("General Email Template 4")</li>
             <li><strong>Email Placeholders:</strong> title, bodytext1, bodytext2, button_url, button_text, logourl, preheadertext</li>
-            <li><strong>SMS Template ID:</strong> test_sms_template (needs valid ID)</li>
+            <li><strong>SMS Payload:</strong> Direct Twilio proxy (to, from, body) - no templates</li>
           </ul>
         </div>
       </main>
