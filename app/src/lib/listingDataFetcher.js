@@ -250,6 +250,7 @@ export async function fetchListingComplete(listingId) {
       if (userData) {
         hostData = {
           _id: userData._id,
+          userId: userData._id,  // Alias for consumers expecting userId
           'Name - First': userData['Name - First'],
           'Name - Last': userData['Name - Last'],
           'Profile Photo': userData['Profile Photo'],
