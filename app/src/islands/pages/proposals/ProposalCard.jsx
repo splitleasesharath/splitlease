@@ -802,8 +802,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
   // Cancel proposal modal state
   const [showCancelModal, setShowCancelModal] = useState(false);
 
-  // Delete proposal confirmation state
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // Delete proposal loading state
   const [isDeleting, setIsDeleting] = useState(false);
 
   // Status and progress - derive dynamically from statusConfig
@@ -966,19 +965,18 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
   // Handler for delete proposal (soft-delete for already-cancelled proposals)
   const handleDeleteProposal = async () => {
-    if (!proposal?._id) return;
+    if (!proposal?._id || isDeleting) return;
 
     setIsDeleting(true);
     try {
       await executeDeleteProposal(proposal._id);
       console.log('[ProposalCard] Proposal deleted successfully');
-      setShowDeleteConfirm(false);
-      // Reload page to refresh the list
+      // Show toast and reload
+      alert('Proposal deleted');
       window.location.reload();
     } catch (error) {
       console.error('[ProposalCard] Error deleting proposal:', error);
       alert(`Failed to delete proposal: ${error.message}`);
-    } finally {
       setIsDeleting(false);
     }
   };
@@ -1241,8 +1239,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                     } else if (buttonConfig.guestAction1.action === 'submit_rental_app') {
                       goToRentalApplication(proposal._id);
                     } else if (buttonConfig.guestAction1.action === 'delete_proposal') {
-                      // Show simple delete confirmation (for already-cancelled proposals)
-                      setShowDeleteConfirm(true);
+                      // Soft-delete for already-cancelled proposals
+                      handleDeleteProposal();
                     }
                     // TODO: Add handlers for other actions (remind_sl, accept_counteroffer, etc.)
                   }}
@@ -1294,8 +1292,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                     // Navigate to house manual or open modal
                     // TODO: Implement house manual navigation
                   } else if (buttonConfig.cancelButton.action === 'delete_proposal') {
-                    // Show simple delete confirmation (for already-cancelled proposals)
-                    setShowDeleteConfirm(true);
+                    // Soft-delete for already-cancelled proposals
+                    handleDeleteProposal();
                   } else if (
                     buttonConfig.cancelButton.action === 'cancel_proposal' ||
                     buttonConfig.cancelButton.action === 'reject_counteroffer' ||
@@ -1365,42 +1363,6 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
         onClose={closeCancelModal}
         onConfirm={handleCancelConfirm}
       />
-
-      {/* Simple Delete Confirmation Modal (for already-cancelled proposals) */}
-      {showDeleteConfirm && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-          onClick={() => setShowDeleteConfirm(false)}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4 p-6"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-lg font-semibold text-gray-900 mb-3">
-              Remove from list?
-            </h3>
-            <p className="text-gray-600 mb-6">
-              This will remove the proposal from your list. This action cannot be undone.
-            </p>
-            <div className="flex gap-3">
-              <button
-                className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors"
-                onClick={() => setShowDeleteConfirm(false)}
-                disabled={isDeleting}
-              >
-                Cancel
-              </button>
-              <button
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                onClick={handleDeleteProposal}
-                disabled={isDeleting}
-              >
-                {isDeleting ? 'Removing...' : 'Remove'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Virtual Meeting Manager Modal */}
       {showVMModal && (
