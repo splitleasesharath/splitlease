@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Stop hook: Commit Tracker - Auto-instructs /goodbye
-Checks commit count and tells Claude to run /goodbye when >= 20.
+Stop hook: Commit Tracker - Auto-instructs goodbye-skill
+Checks commit count and tells Claude to run goodbye-skill when >= 20.
 """
 
 import json
@@ -30,14 +30,14 @@ def main():
 
         # Check if we've hit the threshold
         if commit_count >= 20:
-            # Instruct Claude to run /goodbye
+            # Instruct Claude to run goodbye-skill
             print("\n" + "="*60, file=sys.stderr)
             print("🎯 COMMIT THRESHOLD REACHED!", file=sys.stderr)
             print("="*60, file=sys.stderr)
             print(f"\n📊 You've made {commit_count} commits in this session.", file=sys.stderr)
             print("\n⚠️  AUTOMATIC ACTION REQUIRED:", file=sys.stderr)
-            print("   Please run the /goodbye skill to document this session.", file=sys.stderr)
-            print("   (The /goodbye skill will handle everything and reset the counter)", file=sys.stderr)
+            print("   Please run the goodbye-skill to document this session.", file=sys.stderr)
+            print("   (The goodbye-skill will handle everything and reset the counter)", file=sys.stderr)
             print("\n" + "="*60 + "\n", file=sys.stderr)
         else:
             # Just show current progress

@@ -9,7 +9,7 @@
 
 ## Overview
 
-This system automatically tracks local git commits and instructs Claude to run the `/goodbye` skill when you reach 20 commits. The skill creates conversation logs, uploads them to Google Drive, sends notifications to Slack, and resets the counter - all automatically.
+This system automatically tracks local git commits and instructs Claude to run the `goodbye-skill` when you reach 20 commits. The skill creates conversation logs, uploads them to Google Drive, sends notifications to Slack, and resets the counter - all automatically.
 
 ---
 
@@ -33,11 +33,11 @@ This system automatically tracks local git commits and instructs Claude to run t
 │      ↓                                                       │
 │  .claude/hooks/commit_tracker_stop.py (on stop)             │
 │      ↓                                                       │
-│  INSTRUCTS CLAUDE: "Run /goodbye to document"                │
+│  INSTRUCTS CLAUDE: "Run goodbye-skill to document"           │
 │      ↓                                                       │
-│  Claude sees message and runs /goodbye skill                 │
+│  Claude sees message and runs goodbye-skill                  │
 │      ↓                                                       │
-│  /goodbye skill (.claude/skills/goodbye/SKILL.md):          │
+│  goodbye-skill (.claude/skills/goodbye-skill/SKILL.md):     │
 │    1. Create conversation log in Google Drive                │
 │    2. Get shareable Drive link (via get_drive_link.py)       │
 │    3. Post to Slack with clickable link                      │
@@ -46,7 +46,7 @@ This system automatically tracks local git commits and instructs Claude to run t
 └──────────────────────────────────────────────────────────────┘
 ```
 
-**Key Design Pattern:** The stop hook doesn't execute the workflow - it just tells Claude what to do. The `/goodbye` skill handles all logic. This avoids code duplication and makes the skill reusable.
+**Key Design Pattern:** The stop hook doesn't execute the workflow - it just tells Claude what to do. The `goodbye-skill` handles all logic. This avoids code duplication and makes the skill reusable.
 
 ---
 
@@ -74,19 +74,19 @@ Commit counter: 15 (goodbye triggers at 20)
 
 ### 3. Stop Hook (Auto-Instruct)
 **File:** [.claude/hooks/commit_tracker_stop.py](.claude/hooks/commit_tracker_stop.py)
-**Purpose:** Instructs Claude to run /goodbye when threshold is reached
+**Purpose:** Instructs Claude to run goodbye-skill when threshold is reached
 **Trigger:** When Claude stops (end of session)
 **Behavior:**
 - Reads commit count
 - If < 20: Shows progress message
-- If >= 20: Prints instruction message for Claude to run /goodbye
+- If >= 20: Prints instruction message for Claude to run goodbye-skill
 
 **Simplified Design:** No workflow logic here - just detection and instruction!
 
 ### 4. Goodbye Skill
-**File:** [.claude/skills/goodbye/SKILL.md](.claude/skills/goodbye/SKILL.md)
+**File:** [.claude/skills/goodbye-skill/SKILL.md](.claude/skills/goodbye-skill/SKILL.md)
 **Purpose:** Execute complete goodbye workflow and reset counter
-**Invocation:** `/goodbye` command (manual or auto-triggered by stop hook)
+**Invocation:** Skill tool invocation (automatic via stop hook instruction)
 **Steps:**
 1. Get system info (date, hostname)
 2. Create conversation log in Google Drive
@@ -107,7 +107,7 @@ Commit counter: 15 (goodbye triggers at 20)
     {
       "name": "commit_tracker",
       "path": ".claude/hooks/commit_tracker_stop.py",
-      "description": "Tracks commits and auto-instructs /goodbye at 20 commits"
+      "description": "Tracks commits and auto-instructs goodbye-skill at 20 commits"
     }
   ]
 }
@@ -182,16 +182,14 @@ Commit counter: 20 (goodbye triggers at 20)
 📊 You've made 20 commits in this session.
 
 ⚠️  AUTOMATIC ACTION REQUIRED:
-   Please run the /goodbye skill to document this session.
-   (The /goodbye skill will handle everything and reset the counter)
+   Please run the goodbye-skill to document this session.
+   (The goodbye-skill will handle everything and reset the counter)
 
 ============================================================
 
-# Claude sees this message and automatically runs:
+# Claude sees this message and automatically runs goodbye-skill using Skill tool
 
-/goodbye
-
-# The /goodbye skill then executes:
+# The goodbye-skill then executes:
 
 📅 Getting system info...
 📄 Creating conversation log...
@@ -336,7 +334,7 @@ mv .claude/hooks.json.disabled .claude/hooks.json
 | Commit counter | `.claude/commit_count.txt` |
 | Stop hook (Python) | `.claude/hooks/commit_tracker_stop.py` |
 | Hook registration | `.claude/hooks.json` |
-| **Goodbye skill** | **`.claude/skills/goodbye/SKILL.md`** |
+| **Goodbye skill** | **`.claude/skills/goodbye-skill/SKILL.md`** |
 | Drive link script | `C:\Users\Split Lease\.claude\google-drive-tools\get_drive_link.py` |
 | Conversation logs | `%googleDrivePath%!Agent Context and Tools\SL1\Claude Logs\` |
 | Slack webhook | `https://hooks.slack.com/services/TM545C1T7/B09HFGZNVQV/...` |
@@ -347,12 +345,12 @@ mv .claude/hooks.json.disabled .claude/hooks.json
 
 ✅ **Automatic Documentation**: Never forget to document important sessions
 ✅ **Commit-Based Trigger**: Documents after meaningful work (20 commits)
-✅ **Auto-Instruct Pattern**: Claude automatically runs /goodbye when instructed by stop hook
+✅ **Auto-Instruct Pattern**: Claude automatically runs goodbye-skill when instructed by stop hook
 ✅ **Slack Integration**: Team notifications with clickable links
 ✅ **Google Drive Storage**: Persistent, searchable logs
 ✅ **Transparent**: Shows progress on every commit
 ✅ **Resilient**: Retries on failure (counter not reset until success)
-✅ **Reusable Skill**: /goodbye can be run manually anytime, not just at 20 commits
+✅ **Reusable Skill**: goodbye-skill can be invoked manually anytime, not just at 20 commits
 ✅ **Clean Architecture**: Hook detects, skill executes (separation of concerns)
 ✅ **No Code Duplication**: All workflow logic in one place (the skill)
 
