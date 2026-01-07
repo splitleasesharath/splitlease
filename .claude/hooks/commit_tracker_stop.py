@@ -124,7 +124,7 @@ def get_drive_link(log_path):
 def send_to_slack(drive_url, filename, hostname, commit_count):
     """Send condensed summary to Slack webhook."""
     try:
-        webhook_url = "https://hooks.slack.com/services/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"
+        webhook_url = "https://hooks.slack.com/services/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"
 
         # Create Slack message with clickable link
         message = {
