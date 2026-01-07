@@ -251,18 +251,21 @@ export function useGuestProposalsPageLogic() {
    * @param {string} proposalId - The ID of the deleted proposal
    */
   const handleProposalDeleted = useCallback((proposalId) => {
-    // Remove deleted proposal from local state
-    setProposals(prevProposals => prevProposals.filter(p => p._id !== proposalId));
+    // Remove deleted proposal from local state and update selected proposal atomically
+    setProposals(prevProposals => {
+      const remaining = prevProposals.filter(p => p._id !== proposalId);
 
-    // If the deleted proposal was selected, select the first remaining one
-    setSelectedProposal(prev => {
-      if (prev?._id === proposalId) {
-        const remaining = proposals.filter(p => p._id !== proposalId);
-        return remaining.length > 0 ? remaining[0] : null;
-      }
-      return prev;
+      // If the deleted proposal was selected, select the first remaining one
+      setSelectedProposal(prev => {
+        if (prev?._id === proposalId) {
+          return remaining.length > 0 ? remaining[0] : null;
+        }
+        return prev;
+      });
+
+      return remaining;
     });
-  }, [proposals]);
+  }, []);
 
   // ============================================================================
   // DERIVED STATE
