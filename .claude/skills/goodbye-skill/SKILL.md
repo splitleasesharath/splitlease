@@ -128,8 +128,10 @@ Use the **Write** tool to create this file.
 
 Then send to Slack webhook:
 ```bash
-curl -X POST -H "Content-Type: application/json" --data @".claude/condensed_summary.json" https://hooks.slack.com/services/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
+curl -X POST -H "Content-Type: application/json" --data @".claude/condensed_summary.json" "$SLACK_WEBHOOK_URL"
 ```
+
+**Note**: Set `SLACK_WEBHOOK_URL` environment variable with your Slack incoming webhook URL.
 
 Expected response: `ok`
 
@@ -198,8 +200,9 @@ If any critical step fails (log creation, Drive link, Slack), **DO NOT** reset t
 - Drive token: `.claude/google-drive-tools/token.pickle`
 
 **Slack Webhook:**
-```
-https://hooks.slack.com/services/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
+```bash
+# Set via environment variable
+export SLACK_WEBHOOK_URL="your_webhook_url_here"
 ```
 
 ---
