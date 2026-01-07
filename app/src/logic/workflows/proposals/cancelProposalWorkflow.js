@@ -139,3 +139,40 @@ export async function cancelProposalFromCompareTerms(proposalId, reason = 'Count
   console.log('[cancelProposalWorkflow] Cancel triggered from Compare Terms modal (workflow crkZs5)');
   return executeCancelProposal(proposalId, reason);
 }
+
+/**
+ * Soft-delete a proposal (hide from user's list)
+ *
+ * Used for already-cancelled/rejected proposals where the guest just wants
+ * to remove it from their view. Sets deleted = true without changing status.
+ *
+ * @param {string} proposalId - Proposal ID to delete
+ * @returns {Promise<Object>} Updated proposal data
+ */
+export async function executeDeleteProposal(proposalId) {
+  if (!proposalId) {
+    throw new Error('Proposal ID is required');
+  }
+
+  const now = new Date().toISOString();
+
+  console.log('[cancelProposalWorkflow] Soft-deleting proposal:', proposalId);
+
+  const { data, error } = await supabase
+    .from('proposal')
+    .update({
+      'deleted': true,
+      'Modified Date': now
+    })
+    .eq('_id', proposalId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('[cancelProposalWorkflow] Error deleting proposal:', error);
+    throw new Error(`Failed to delete proposal: ${error.message}`);
+  }
+
+  console.log('[cancelProposalWorkflow] Proposal deleted successfully:', proposalId);
+  return data;
+}
