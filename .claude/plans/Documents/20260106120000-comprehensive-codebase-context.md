@@ -1,20 +1,21 @@
 # Split Lease Codebase - Comprehensive Context Document
 
-**Generated**: 2026-01-06
+**Generated**: 2026-01-07 (Updated)
 **Purpose**: Complete LLM-ready context for deep research and analysis
 **Scope**: `app/` (Frontend) + `supabase/` (Backend)
-**Total Files**: 534+ frontend files, 19 Edge Functions, 13 shared utilities
+**Total Files**: 534+ frontend files, 19 Edge Functions, 17 shared utilities (incl. 4 FP modules)
 
 ---
 
 ## Table of Contents
 
 1. [System Overview](#system-overview)
-2. [Frontend Architecture (app/)](#frontend-architecture-app)
-3. [Backend Architecture (supabase/)](#backend-architecture-supabase)
-4. [Data Flow & Integration](#data-flow--integration)
-5. [Critical Conventions](#critical-conventions)
-6. [Development Workflow](#development-workflow)
+2. [Recent Changes (January 2026)](#recent-changes-january-2026)
+3. [Frontend Architecture (app/)](#frontend-architecture-app)
+4. [Backend Architecture (supabase/)](#backend-architecture-supabase)
+5. [Data Flow & Integration](#data-flow--integration)
+6. [Critical Conventions](#critical-conventions)
+7. [Development Workflow](#development-workflow)
 
 ---
 
@@ -68,6 +69,149 @@
 - **Split Scheduling**: Multiple guests book different days of the same property
 - **Repeat Stays**: Recurring weekly/monthly rentals
 - **Proposal-Based Booking**: Guest submits proposal → Host reviews → Negotiate → Accept
+
+---
+
+## Recent Changes (January 2026)
+
+### Major Architectural Improvements
+
+#### 1. Functional Programming Refactoring (11 Edge Functions)
+
+**Completed**: January 2-7, 2026
+**Impact**: All 11 major Edge Functions refactored to functional programming orchestration pattern
+
+**Edge Functions Refactored**:
+1. `auth-user` - Authentication operations
+2. `proposal` - Proposal CRUD with queue sync
+3. `listing` - Listing CRUD with atomic sync
+4. `messages` - Real-time messaging
+5. `ai-gateway` - OpenAI proxy with prompts
+6. `bubble_sync` - Queue processor
+7. `cohost-request` - Co-host management
+8. `rental-application` - Application processing
+9. `send-email` - SendGrid integration
+10. `send-sms` - Twilio integration
+11. `virtual-meeting` - Meeting orchestration
+
+**Pattern Changes**:
+- **Before**: ~50+ mutable `let` declarations per function, switch statement routing, mixed side effects
+- **After**: Immutable context objects, handler map routing, side effects isolated to boundaries
+- **New FP Utilities** (in `supabase/functions/_shared/fp/`):
+  - `result.ts` - Result type for functional error handling (`ok`, `err`, `map`, `chain`, `fromPromise`)
+  - `pipeline.ts` - Function composition (`pipe`, `pipeAsync`, `compose`, `tap`)
+  - `errorLog.ts` - Immutable error logging (replaces ErrorCollector class)
+  - `orchestration.ts` - Shared request/response utilities (`parseRequest`, `validateAction`, `routeToHandler`)
+
+**Benefits**:
+- Easier to test (pure functions)
+- Reduced bug surface area (immutable data)
+- Clearer error handling (Result type)
+- Standardized routing pattern
+
+**Reference**: Plan file `.claude/plans/Done/20260107163045-cleanup-edge-function-fp-refactor.md`
+
+---
+
+#### 2. Linting Configuration Added
+
+**Completed**: January 7, 2026
+
+**Frontend ESLint** ([app/eslint.config.js](../app/eslint.config.js)):
+- React 18.2 settings configured
+- `react-hooks` plugin enabled
+  - `rules-of-hooks`: error
+  - `exhaustive-deps`: warn
+- `no-unused-vars`: warn (with `_` prefix ignore pattern)
+- `no-undef`: error
+
+**Edge Functions Deno Lint** ([supabase/functions/deno.json](../supabase/functions/deno.json)):
+- Recommended rules enabled
+- Includes: `ban-untagged-todo`, `no-unused-vars`
+- Excludes: `no-explicit-any` (pragmatic for Edge Functions)
+- Formatting: 2-space indent, 100 char line width, single quotes
+
+**Linting Commands**:
+```bash
+# Frontend (from app/)
+bun run lint         # Check for issues
+bun run lint:fix     # Auto-fix where possible
+bun run lint:check   # CI mode (fails on warnings)
+
+# Edge Functions (from project root, requires Deno)
+deno lint supabase/functions/        # Check TypeScript
+deno fmt --check supabase/functions/ # Check formatting
+```
+
+**Reference**: Plan file `.claude/plans/Done/20260107140000-add-eslint-configuration.md`
+
+---
+
+#### 3. Cancellation Reasons Reference Table
+
+**Completed**: January 6, 2026
+**Migration**: `20260106_create_cancellation_reasons_table.sql`
+
+Added `cancellation_reasons` reference table with predefined reasons for both guest and host cancellations:
+
+**Guest Reasons**:
+- Schedule change
+- Found alternative housing
+- Financial reasons
+- Personal emergency
+- Property concerns
+- Other
+
+**Host Reasons**:
+- Property unavailable
+- Booking conflict
+- Guest concerns
+- Personal reasons
+- Maintenance issues
+- Other
+
+**Usage**: CancellationModal component now uses database-driven dropdown instead of hardcoded options
+
+**Reference**: Plan file `.claude/plans/Done/20260106143000-cancellation-reasons-reference-table.md`
+
+---
+
+#### 4. Amenities Icon Fix
+
+**Completed**: January 5, 2026
+
+**Change**: Switched from hardcoded SVG icons to database `icon_url` column
+
+**Before**:
+- Hardcoded SVG paths in frontend code
+- Difficult to add/modify amenities
+- Inconsistent icon rendering
+
+**After**:
+- `amenity.icon_url` references Supabase Storage bucket
+- Admin can update icons without code deployment
+- Consistent rendering across all contexts
+
+**Files Modified**:
+- Amenity selector components
+- Listing detail displays
+
+---
+
+#### 5. Other Recent Additions
+
+**LinkedIn OAuth Signup** (December 2025):
+- Added LinkedIn as OAuth provider
+- Auth verification page for OAuth callbacks
+- Magic login link functionality
+
+**Notification Settings Island** (December 2025):
+- Shared island component for managing notification preferences
+- Email and SMS opt-in/opt-out
+
+**Unified Cancellation Modal** (December 2025):
+- Single modal component for both guest and host cancellation flows
+- Dynamic reason selection based on user role
 
 ---
 
@@ -1285,9 +1429,290 @@ supabase/
 
 ---
 
-### Shared Utilities (_shared/) - 13 Modules
+### Shared Utilities (_shared/) - 17 Modules
 
-#### 1. types.ts (Core TypeScript Interfaces)
+#### Functional Programming Utilities (fp/) - 4 Modules
+
+##### 1. result.ts (Result Type for Functional Error Handling)
+```typescript
+// Result type - replaces try/catch with explicit error handling
+export type Result<T, E = Error> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly error: E };
+
+// Constructors
+export const ok = <T>(value: T): Result<T, never> => ({
+  ok: true,
+  value
+});
+
+export const err = <E>(error: E): Result<never, E> => ({
+  ok: false,
+  error
+});
+
+// Combinators
+export function map<T, U, E>(
+  result: Result<T, E>,
+  fn: (value: T) => U
+): Result<U, E> {
+  return result.ok ? ok(fn(result.value)) : result;
+}
+
+export function chain<T, U, E>(
+  result: Result<T, E>,
+  fn: (value: T) => Result<U, E>
+): Result<U, E> {
+  return result.ok ? fn(result.value) : result;
+}
+
+// Promise integration
+export async function fromPromise<T>(
+  promise: Promise<T>
+): Promise<Result<T, Error>> {
+  try {
+    const value = await promise;
+    return ok(value);
+  } catch (error) {
+    return err(error as Error);
+  }
+}
+```
+
+**Usage in Edge Functions**:
+```typescript
+// Before (imperative with try/catch)
+try {
+  const user = await getUser(id);
+  const validated = validateUser(user);
+  return { success: true, data: validated };
+} catch (error) {
+  return { success: false, error: error.message };
+}
+
+// After (functional with Result)
+const userResult = await fromPromise(getUser(id));
+const validatedResult = chain(userResult, validateUser);
+
+return validatedResult.ok
+  ? { success: true, data: validatedResult.value }
+  : { success: false, error: validatedResult.error.message };
+```
+
+---
+
+##### 2. pipeline.ts (Function Composition Utilities)
+```typescript
+// Synchronous pipeline
+export function pipe<A, B>(
+  value: A,
+  fn1: (a: A) => B
+): B;
+export function pipe<A, B, C>(
+  value: A,
+  fn1: (a: A) => B,
+  fn2: (b: B) => C
+): C;
+// ... (overloads for up to 10 functions)
+
+// Async pipeline
+export function pipeAsync<A, B>(
+  value: A,
+  fn1: (a: A) => Promise<B>
+): Promise<B>;
+export function pipeAsync<A, B, C>(
+  value: A,
+  fn1: (a: A) => Promise<B>,
+  fn2: (b: B) => Promise<C>
+): Promise<C>;
+// ... (overloads for up to 10 functions)
+
+// Function composition (right-to-left)
+export function compose<A, B, C>(
+  fn2: (b: B) => C,
+  fn1: (a: A) => B
+): (a: A) => C {
+  return (a: A) => fn2(fn1(a));
+}
+
+// Tap (side effects without changing value)
+export function tap<T>(fn: (value: T) => void): (value: T) => T {
+  return (value: T) => {
+    fn(value);
+    return value;
+  };
+}
+```
+
+**Usage in Edge Functions**:
+```typescript
+// Before
+const parsed = parseRequest(req);
+const validated = validateAction(parsed.action);
+const result = await handleAction(validated);
+return formatResponse(result);
+
+// After
+return pipeAsync(
+  req,
+  parseRequest,
+  validateAction,
+  handleAction,
+  formatResponse
+);
+```
+
+---
+
+##### 3. errorLog.ts (Immutable Error Logging)
+```typescript
+// Replaces the old mutable ErrorCollector class
+export interface ErrorEntry {
+  readonly timestamp: string;
+  readonly message: string;
+  readonly context?: Record<string, unknown>;
+  readonly stack?: string;
+}
+
+export type ErrorLog = readonly ErrorEntry[];
+
+// Add error to log (returns new log, doesn't mutate)
+export function logError(
+  log: ErrorLog,
+  message: string,
+  context?: Record<string, unknown>
+): ErrorLog {
+  const entry: ErrorEntry = {
+    timestamp: new Date().toISOString(),
+    message,
+    context,
+    stack: new Error().stack
+  };
+  return [...log, entry];
+}
+
+// Create initial empty log
+export const emptyLog: ErrorLog = [];
+
+// Format log for Slack reporting
+export function formatErrorLog(log: ErrorLog): string {
+  return log.map(entry => {
+    const contextStr = entry.context
+      ? `\nContext: ${JSON.stringify(entry.context, null, 2)}`
+      : '';
+    return `[${entry.timestamp}] ${entry.message}${contextStr}`;
+  }).join('\n\n');
+}
+```
+
+**Usage in Edge Functions**:
+```typescript
+// Before (mutable ErrorCollector)
+const errors = new ErrorCollector();
+errors.add('Validation failed', { field: 'email' });
+errors.add('Auth failed', { userId });
+await errors.reportToSlack();
+
+// After (immutable ErrorLog)
+let errorLog = emptyLog;
+errorLog = logError(errorLog, 'Validation failed', { field: 'email' });
+errorLog = logError(errorLog, 'Auth failed', { userId });
+await reportToSlack(formatErrorLog(errorLog));
+```
+
+---
+
+##### 4. orchestration.ts (Shared Request/Response Utilities)
+```typescript
+// Parse Edge Function request
+export function parseRequest<T>(
+  req: Request
+): Result<{ action: string; payload: T }, ValidationError> {
+  try {
+    const json = await req.json();
+    if (!json.action || typeof json.action !== 'string') {
+      return err(new ValidationError('Missing or invalid action field'));
+    }
+    return ok({ action: json.action, payload: json.payload });
+  } catch (error) {
+    return err(new ValidationError('Invalid JSON'));
+  }
+}
+
+// Validate action against allowed list
+export function validateAction(
+  allowed: readonly string[],
+  action: string
+): Result<string, ValidationError> {
+  return allowed.includes(action)
+    ? ok(action)
+    : err(new ValidationError(`Unknown action: ${action}. Allowed: ${allowed.join(', ')}`));
+}
+
+// Route to handler using map
+export function routeToHandler<P, R>(
+  handlers: Readonly<Record<string, (payload: P) => Promise<R>>>,
+  action: string,
+  payload: P
+): Promise<Result<R, Error>> {
+  const handler = handlers[action];
+  if (!handler) {
+    return Promise.resolve(err(new Error(`No handler for action: ${action}`)));
+  }
+  return fromPromise(handler(payload));
+}
+
+// Format success response
+export function successResponse<T>(data: T): EdgeFunctionResponse<T> {
+  return { success: true, data };
+}
+
+// Format error response
+export function errorResponse(error: Error): EdgeFunctionResponse<never> {
+  return { success: false, error: error.message };
+}
+```
+
+**Usage in Edge Functions**:
+```typescript
+// Standard orchestration pattern
+Deno.serve(async (req: Request) => {
+  const allowedActions = ['create', 'update', 'delete'] as const;
+
+  const handlers = {
+    create: handleCreate,
+    update: handleUpdate,
+    delete: handleDelete
+  };
+
+  // Parse → Validate → Route → Execute → Respond
+  const requestResult = await parseRequest(req);
+  if (!requestResult.ok) {
+    return new Response(JSON.stringify(errorResponse(requestResult.error)));
+  }
+
+  const { action, payload } = requestResult.value;
+  const actionResult = validateAction(allowedActions, action);
+  if (!actionResult.ok) {
+    return new Response(JSON.stringify(errorResponse(actionResult.error)));
+  }
+
+  const handlerResult = await routeToHandler(handlers, action, payload);
+  const response = handlerResult.ok
+    ? successResponse(handlerResult.value)
+    : errorResponse(handlerResult.error);
+
+  return new Response(JSON.stringify(response), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
+});
+```
+
+---
+
+#### Core Utilities
+
+##### 5. types.ts (Core TypeScript Interfaces)
 ```typescript
 // Edge Function request/response
 export interface EdgeFunctionRequest<T = any> {
@@ -1323,7 +1748,7 @@ export interface AuthResponse {
 
 ---
 
-#### 2. cors.ts (CORS Headers)
+##### 6. cors.ts (CORS Headers)
 ```typescript
 export const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -1334,7 +1759,7 @@ export const corsHeaders = {
 
 ---
 
-#### 3. errors.ts (Error Classes - NO FALLBACK)
+##### 7. errors.ts (Error Classes - NO FALLBACK)
 ```typescript
 // Bubble API errors (NO generic fallback - real error shown)
 export class BubbleApiError extends Error {
@@ -1381,7 +1806,7 @@ export class OpenAIError extends Error {
 
 ---
 
-#### 4. validation.ts (Input Validation)
+##### 8. validation.ts (Input Validation)
 ```typescript
 export function validateEmail(email: string): boolean {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -1408,7 +1833,7 @@ export function validateAction(action: string, allowedActions: string[]): void {
 
 ---
 
-#### 5. bubbleSync.ts (Atomic Sync Service)
+##### 9. bubbleSync.ts (Atomic Sync Service)
 ```typescript
 // Atomic Create-and-Sync Pattern
 export class BubbleSyncService {
@@ -1472,7 +1897,7 @@ export class BubbleSyncService {
 
 ---
 
-#### 6. openai.ts (OpenAI Wrapper)
+##### 10. openai.ts (OpenAI Wrapper)
 ```typescript
 export function getApiKey(): string {
   const key = Deno.env.get('OPENAI_API_KEY');
@@ -1535,7 +1960,7 @@ export async function* stream(prompt: string, model = 'gpt-4'): AsyncGenerator<s
 
 ---
 
-#### 7. aiTypes.ts (AI Type Definitions)
+##### 11. aiTypes.ts (AI Type Definitions)
 ```typescript
 export interface PromptConfig {
   name: string;
@@ -1570,7 +1995,7 @@ export interface CompletionResult {
 
 ---
 
-#### 8. queueSync.ts (Queue-Based Sync Helper)
+##### 12. queueSync.ts (Queue-Based Sync Helper)
 ```typescript
 // Enqueue record for Bubble sync
 export async function enqueueBubbleSync(params: {
@@ -1643,7 +2068,7 @@ export async function triggerQueueProcessing(): Promise<void> {
 
 ---
 
-#### 9. junctionHelpers.ts (Junction Table Operations)
+##### 13. junctionHelpers.ts (Junction Table Operations)
 ```typescript
 // Dual-write pattern during JSONB → junction migration
 export async function addUserProposal(userId: string, proposalId: string): Promise<void> {
@@ -1677,7 +2102,7 @@ export async function removeListingAmenity(listingId: string, amenity: string): 
 
 ---
 
-#### 10. messagingHelpers.ts (Native Messaging Utilities)
+##### 14. messagingHelpers.ts (Native Messaging Utilities)
 ```typescript
 // Generate Bubble-compatible ID (for legacy compatibility)
 export function generateBubbleId(): string {
@@ -1743,7 +2168,7 @@ export async function sendMessage(params: {
 
 ---
 
-#### 11. geoLookup.ts (Geo Utilities)
+##### 15. geoLookup.ts (Geo Utilities)
 ```typescript
 // Hardcoded NYC ZIP → Borough/Neighborhood mappings
 export function getBoroughByZipCode(zip: string): string | null {
@@ -1781,7 +2206,7 @@ export function lookupGeoByZipCode(zip: string): { borough: string | null; neigh
 
 ---
 
-#### 12. jsonUtils.ts (JSONB Parsing)
+##### 16. jsonUtils.ts (JSONB Parsing)
 ```typescript
 // Parse JSONB array field (handles string or array)
 export function parseJsonArray(value: any): any[] {
@@ -1819,7 +2244,7 @@ export function stringifyJsonValue(value: any): string {
 
 ---
 
-#### 13. slack.ts (Slack Integration with Error Collector)
+##### 17. slack.ts (Slack Integration with Functional API)
 ```typescript
 // Error collector for consolidated Slack reporting
 class ErrorCollector {
@@ -2574,10 +2999,12 @@ supabase secrets set SLACK_WEBHOOK_URL=https://hooks.slack.com/...
 |----------|-------|---------|
 | **Frontend Files** | 534+ | 34 entry points, 30+ pages, 39 shared components, 57 logic modules, 32 utils |
 | **Backend Functions** | 19 | 4 core, 1 infrastructure, 3 AI, 5 specialized, 3 notifications, 2 workflow |
-| **Shared Utilities** | 13 | types, cors, errors, validation, bubbleSync, openai, queueSync, etc. |
-| **Database Tables** | 15+ | listing, proposal, user, message, sync_queue, junctions, etc. |
+| **Shared Utilities** | 17 | 4 FP modules (result, pipeline, errorLog, orchestration) + 13 core utilities |
+| **FP Refactored Functions** | 11 | All major Edge Functions refactored to functional orchestration pattern |
+| **Linting Configurations** | 2 | ESLint (frontend React), Deno lint (Edge Functions) |
+| **Database Tables** | 16+ | listing, proposal, user, message, sync_queue, cancellation_reasons, junctions, etc. |
 | **HTML Pages** | 27 | Independent pages with full routing |
-| **Routes** | 27 | Managed via routes.config.js (single source of truth) |
+| **Routes** | 30+ | Managed via routes.config.js (single source of truth) |
 | **Business Logic Layers** | 4 | Calculators (9), Rules (22), Processors (14), Workflows (12) |
 | **Day Indexing** | 0-based | JavaScript standard (0=Sun, 6=Sat), converted to 1-based for Bubble |
 | **Sync Modes** | 2 | Atomic (immediate), Queue-based (async) |
@@ -2601,6 +3028,9 @@ supabase secrets set SLACK_WEBHOOK_URL=https://hooks.slack.com/...
 | Shared Components | `app/src/islands/shared/` |
 | Edge Functions | `supabase/functions/` |
 | Shared Edge Utilities | `supabase/functions/_shared/` |
+| FP Utilities | `supabase/functions/_shared/fp/` |
+| ESLint Config | `app/eslint.config.js` |
+| Deno Lint Config | `supabase/functions/deno.json` |
 | Database Migrations | `supabase/migrations/` |
 | Supabase Config | `supabase/config.toml` |
 
@@ -2613,14 +3043,15 @@ supabase secrets set SLACK_WEBHOOK_URL=https://hooks.slack.com/...
 3. **Four-Layer Logic** - Calculators → Rules → Processors → Workflows
 4. **Route Registry** - Single source of truth for all routes
 5. **Action-Based APIs** - All Edge Functions use `{ action, payload }`
-6. **Dual-Sync** - Atomic (creates) + Queue-based (updates)
-7. **Native Supabase** - New features bypass Bubble entirely
-8. **NO FALLBACK** - Real errors or nothing, no generic messages
-9. **Day Indexing** - 0-based everywhere except Bubble (1-based)
-10. **Changed Fields Only** - Prevent FK violations on updates
-11. **Fire-and-Forget Async** - Notifications don't block responses
-12. **Error Consolidation** - ONE Slack message per request
-13. **Informational Triggers** - Both text and `?` clickable
+6. **Functional Orchestration** - Edge Functions use FP pattern (Result type, immutable context, pure functions)
+7. **Dual-Sync** - Atomic (creates) + Queue-based (updates)
+8. **Native Supabase** - New features bypass Bubble entirely
+9. **NO FALLBACK** - Real errors or nothing, no generic messages
+10. **Day Indexing** - 0-based everywhere except Bubble (1-based)
+11. **Changed Fields Only** - Prevent FK violations on updates
+12. **Fire-and-Forget Async** - Notifications don't block responses
+13. **Error Consolidation** - ONE Slack message per request
+14. **Informational Triggers** - Both text and `?` clickable
 
 ---
 
