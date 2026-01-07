@@ -48,6 +48,26 @@ const DefaultProfileIcon = () => (
 );
 
 /**
+ * Format a short date for proposal identification
+ * Shows just month and day, e.g., "Dec 12"
+ */
+function formatShortDate(dateStr) {
+  if (!dateStr) return '';
+
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (e) {
+    return '';
+  }
+}
+
+/**
  * Format a date/time string for display
  * Expected format from Bubble: ISO datetime or readable string
  */
@@ -327,6 +347,9 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
   const listingName = listing?.Name || 'Listing';
   const displayTitle = `${hostName} - ${listingName}`;
 
+  // Get proposal creation date for disambiguation when multiple proposals exist for same listing
+  const proposalDate = formatShortDate(proposal['Created Date'] || proposal.createdDate);
+  const proposalSubtitle = proposalDate ? `Proposal from ${proposalDate}` : null;
   // Get suggested dates/times using the shared parser
   const suggestedDates = parseSuggestedDates(vm?.['suggested dates and times']);
 
@@ -373,6 +396,10 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
                 </span>
               )}
             </div>
+            {/* Proposal date subtitle for disambiguation */}
+            {proposalSubtitle && (
+              <div className="vm-section-subtitle">{proposalSubtitle}</div>
+            )}
             <div className="vm-section-message-row">
               <CalendarIcon />
               <span className="vm-section-message">{messageText}</span>

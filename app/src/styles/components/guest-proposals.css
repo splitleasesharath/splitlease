@@ -1143,6 +1143,15 @@
   white-space: pre-wrap;
 }
 
+.vm-section-subtitle {
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  color: rgb(107, 114, 128);
+  padding-left: 5px;
+  margin-top: -2px;
+}
+
 .vm-section-message-row {
   display: flex;
   flex-direction: row;
