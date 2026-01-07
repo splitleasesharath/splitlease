@@ -400,14 +400,24 @@ export const Section6Photos: React.FC<Section6Props> = ({
         <button type="button" className="btn-back" onClick={onBack} disabled={isUploading}>
           Back
         </button>
-        <button
-          type="button"
-          className="btn-next"
-          onClick={handleNext}
-          disabled={data.photos.length < data.minRequired || isUploading}
-        >
-          {isUploading ? 'Uploading...' : 'Next'}
-        </button>
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button
+            type="button"
+            className="btn-skip"
+            onClick={onNext}
+            disabled={isUploading}
+          >
+            Skip for Now
+          </button>
+          <button
+            type="button"
+            className="btn-next"
+            onClick={handleNext}
+            disabled={data.photos.length < data.minRequired || isUploading}
+          >
+            {isUploading ? 'Uploading...' : 'Next'}
+          </button>
+        </div>
       </div>
     </div>
   );

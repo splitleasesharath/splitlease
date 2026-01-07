@@ -1278,6 +1278,17 @@ textarea {
   background: #f3f0ff;
 }
 
+.btn-skip {
+  background: #ffffff;
+  color: #6b46c1;
+  border: 2px solid #e0e0e0;
+}
+
+.btn-skip:hover {
+  background: #f8f8f8;
+  border-color: #d0d0d0;
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .listing-container {

@@ -48,7 +48,9 @@ async function fetchLookupTables() {
       .select('_id, "Name", "Icon"');
     if (amenities) {
       amenities.forEach((a) => {
+        // Index by both ID and Name to support both lookup patterns
         lookups.amenities[a._id] = { name: a.Name, icon: a.Icon };
+        lookups.amenities[a.Name] = { name: a.Name, icon: a.Icon };
       });
     }
 
