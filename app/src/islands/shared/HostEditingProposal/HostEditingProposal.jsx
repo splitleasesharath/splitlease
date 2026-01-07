@@ -28,7 +28,7 @@ import {
 import { ReservationPriceBreakdown } from './ReservationPriceBreakdown'
 import { ScheduleSelector } from './ScheduleSelector'
 import { DateInput, ReservationSpanDropdown, NumberInput, HouseRulesMultiSelect } from './FormInputs'
-import { getHostRejectionReasons } from '../../../lib/dataLookups.js'
+import CancelProposalModal from '../../modals/CancelProposalModal.jsx'
 import './HostEditingProposal.css'
 
 /**
@@ -209,32 +209,7 @@ export function HostEditingProposal({
 
   // Popup states
   const [showConfirmPopup, setShowConfirmPopup] = useState(false)
-  const [showRejectSection, setShowRejectSection] = useState(initialShowReject)
-  const [rejectStep, setRejectStep] = useState(1) // 1 = confirm intent, 2 = select reason
-  const [rejectReason, setRejectReason] = useState('') // Will be set when reasons load
-
-  // Rejection reason options - from cached reference data with fallback
-  const getReasonOptions = () => {
-    const cachedReasons = getHostRejectionReasons();
-
-    if (cachedReasons.length > 0) {
-      return cachedReasons.map(r => ({
-        id: String(r.id),
-        label: r.reason
-      }));
-    }
-
-    // Fallback for initial render before cache is populated
-    console.warn('[HostEditingProposal] Cache empty, using fallback rejection reasons');
-    return [
-      { id: 'another_guest', label: 'Already have another guest' },
-      { id: 'price_change', label: 'Decided to change the price of my listing for that time frame' },
-      { id: 'different_schedule', label: 'Want a different schedule' },
-      { id: 'other', label: 'Other / Do not want to say' }
-    ];
-  };
-
-  const REJECTION_REASONS = getReasonOptions();
+  const [showRejectModal, setShowRejectModal] = useState(initialShowReject)
 
   // Collapsible state
   const [isEditSectionExpanded, setIsEditSectionExpanded] = useState(false)
@@ -453,22 +428,16 @@ export function HostEditingProposal({
     }
   }
 
-  const handleReject = async () => {
+  const handleReject = async (reasonText) => {
     if (onReject) {
       try {
-        // Find the label for the selected reason to pass human-readable text
-        const selectedReason = REJECTION_REASONS.find(r => r.id === rejectReason)
-        const reasonText = selectedReason?.label || rejectReason
-
         await onReject(proposal, reasonText)
         onAlert?.({
           type: 'information',
           title: 'Proposal Rejected',
           content: 'The proposal has been rejected.'
         })
-        setShowRejectSection(false)
-        setRejectStep(1)
-        setRejectReason('other')
+        setShowRejectModal(false)
       } catch (error) {
         onAlert?.({
           type: 'error',
@@ -506,7 +475,7 @@ export function HostEditingProposal({
   }
 
   // Determine if we're in reject-only mode
-  const isRejectOnlyMode = initialShowReject && showRejectSection
+  const isRejectOnlyMode = initialShowReject && showRejectModal
 
   return (
     <div className="hep-container">
@@ -685,115 +654,13 @@ export function HostEditingProposal({
         />
       )}
 
-      {/* Reject Proposal Section */}
-      {view === 'general' && showRejectSection && (
-        <div className="hep-reject-section">
-          {/* Close button for reject-only mode */}
-          {isRejectOnlyMode && (
-            <button
-              type="button"
-              className="hep-reject-close"
-              onClick={onCancel}
-              title="Close"
-            >
-              ×
-            </button>
-          )}
-
-          <div className="hep-reject-header">
-            <svg className="hep-icon-reject" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 7L5 7M14 11V17M10 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 7V4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span className="hep-reject-title">Reject Proposal</span>
-          </div>
-          <p className="hep-reject-warning">This action cannot be undone</p>
-          <p className="hep-reject-confirmation">
-            Are you sure you want to reject this proposal from <strong>{guestName}</strong>?
-          </p>
-
-          {/* Key proposal details - shown in reject-only mode */}
-          {isRejectOnlyMode && (
-            <div className="hep-reject-details">
-              <div className="hep-reject-detail-row">
-                <span className="hep-reject-detail-label">Reservation Span</span>
-                <span className="hep-reject-detail-value">{editedWeeks} weeks</span>
-              </div>
-              <div className="hep-reject-detail-row">
-                <span className="hep-reject-detail-label">Compensation per Night</span>
-                <span className="hep-reject-detail-value">${nightlyCompensation?.toLocaleString() || '0'}/night</span>
-              </div>
-              <div className="hep-reject-detail-row">
-                <span className="hep-reject-detail-label">Total Compensation</span>
-                <span className="hep-reject-detail-value hep-reject-detail-total">${totalCompensation?.toLocaleString() || '0'}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Rejection reason selection (shown after first confirmation) */}
-          {rejectStep === 2 && (
-            <div className="hep-reject-reasons">
-              {REJECTION_REASONS.map((reason) => (
-                <label key={reason.id} className="hep-reject-reason-option">
-                  <input
-                    type="radio"
-                    name="rejectReason"
-                    value={reason.id}
-                    checked={rejectReason === reason.id}
-                    onChange={(e) => setRejectReason(e.target.value)}
-                  />
-                  <span className="hep-reject-reason-label">{reason.label}</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          <div className="hep-reject-actions">
-            <button
-              type="button"
-              className="hep-btn hep-btn-cancel"
-              onClick={() => {
-                if (isRejectOnlyMode) {
-                  // In reject-only mode, Cancel closes the modal
-                  onCancel?.()
-                } else {
-                  // In normal mode, Cancel hides the reject section
-                  setShowRejectSection(false)
-                  setRejectStep(1)
-                  setRejectReason('other')
-                }
-              }}
-            >
-              Cancel
-            </button>
-            {rejectStep === 1 ? (
-              <button
-                type="button"
-                className="hep-btn hep-btn-destructive"
-                onClick={() => setRejectStep(2)}
-              >
-                Yes, Reject
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="hep-btn hep-btn-destructive"
-                onClick={handleReject}
-                disabled={!rejectReason}
-              >
-                Yes, Reject
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Primary Actions Row - Submit/Accept and Reject side by side - hidden in reject-only mode */}
-      {view === 'general' && !showRejectSection && !isRejectOnlyMode && (
+      {view === 'general' && !isRejectOnlyMode && (
         <div className="hep-primary-actions">
           <button
             type="button"
             className="hep-btn hep-btn-reject-outline"
-            onClick={() => setShowRejectSection(true)}
+            onClick={() => setShowRejectModal(true)}
           >
             Reject Proposal
           </button>
@@ -807,6 +674,21 @@ export function HostEditingProposal({
           </button>
         </div>
       )}
+
+      {/* Reject Proposal Modal - using shared component */}
+      <CancelProposalModal
+        isOpen={showRejectModal}
+        proposal={proposal}
+        userType="host"
+        buttonText="Reject Proposal"
+        onClose={() => {
+          setShowRejectModal(false)
+          if (isRejectOnlyMode) {
+            onCancel?.()
+          }
+        }}
+        onConfirm={handleReject}
+      />
 
       {/* Confirmation Popup */}
       {showConfirmPopup && (
