@@ -28,6 +28,7 @@ import {
 import { ReservationPriceBreakdown } from './ReservationPriceBreakdown'
 import { ScheduleSelector } from './ScheduleSelector'
 import { DateInput, ReservationSpanDropdown, NumberInput, HouseRulesMultiSelect } from './FormInputs'
+import { getHostRejectionReasons } from '../../../lib/dataLookups.js'
 import './HostEditingProposal.css'
 
 /**
@@ -210,15 +211,30 @@ export function HostEditingProposal({
   const [showConfirmPopup, setShowConfirmPopup] = useState(false)
   const [showRejectSection, setShowRejectSection] = useState(initialShowReject)
   const [rejectStep, setRejectStep] = useState(1) // 1 = confirm intent, 2 = select reason
-  const [rejectReason, setRejectReason] = useState('other') // Default to "Other / Do not want to say"
+  const [rejectReason, setRejectReason] = useState('') // Will be set when reasons load
 
-  // Rejection reason options
-  const REJECTION_REASONS = [
-    { id: 'another_guest', label: 'Already have another guest' },
-    { id: 'price_change', label: 'Decided to change the price of my listing for that time frame' },
-    { id: 'different_schedule', label: 'Want a different schedule' },
-    { id: 'other', label: 'Other / Do not want to say' }
-  ]
+  // Rejection reason options - from cached reference data with fallback
+  const getReasonOptions = () => {
+    const cachedReasons = getHostRejectionReasons();
+
+    if (cachedReasons.length > 0) {
+      return cachedReasons.map(r => ({
+        id: String(r.id),
+        label: r.reason
+      }));
+    }
+
+    // Fallback for initial render before cache is populated
+    console.warn('[HostEditingProposal] Cache empty, using fallback rejection reasons');
+    return [
+      { id: 'another_guest', label: 'Already have another guest' },
+      { id: 'price_change', label: 'Decided to change the price of my listing for that time frame' },
+      { id: 'different_schedule', label: 'Want a different schedule' },
+      { id: 'other', label: 'Other / Do not want to say' }
+    ];
+  };
+
+  const REJECTION_REASONS = getReasonOptions();
 
   // Collapsible state
   const [isEditSectionExpanded, setIsEditSectionExpanded] = useState(false)
