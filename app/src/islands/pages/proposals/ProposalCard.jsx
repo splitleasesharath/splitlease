@@ -1321,9 +1321,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                     buttonConfig.cancelButton.action === 'reject_counteroffer' ||
                     buttonConfig.cancelButton.action === 'reject_proposal'
                   ) {
-                    // Open GuestEditingProposalModal in cancel view
-                    setProposalDetailsModalInitialView('cancel');
-                    setShowProposalDetailsModal(true);
+                    // Open standalone CancelProposalModal
+                    openCancelModal();
                   }
                 }}
               >

@@ -6,9 +6,6 @@
  * Following the Hollow Component pattern - all business logic handled by parent.
  */
 
-// DEBUG: If you see this log, the new version is loaded
-console.log('[CancelProposalModal] v2.0 REDESIGN loaded');
-
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
 import { getGuestCancellationReasons, getHostRejectionReasons } from '../../lib/dataLookups.js'
