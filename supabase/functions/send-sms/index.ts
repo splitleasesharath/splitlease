@@ -8,21 +8,37 @@
  * Twilio: POST form-urlencoded with HTTP Basic Auth
  *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
+ *
+ * FP ARCHITECTURE:
+ * - Pure functions for validation, routing, and response formatting
+ * - Immutable data structures (no let reassignment in orchestration)
+ * - Side effects isolated to boundaries (entry/exit of handler)
+ * - Result type for error propagation (exceptions only at outer boundary)
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { corsHeaders } from "../_shared/cors.ts";
 import {
   ValidationError,
   AuthenticationError,
-  formatErrorResponse,
-  getStatusCodeFromError,
 } from "../_shared/errors.ts";
-import { validateRequired, validateAction } from "../_shared/validation.ts";
-import { createErrorCollector, ErrorCollector } from "../_shared/slack.ts";
+
+// FP Utilities
+import { Result, ok, err } from "../_shared/fp/result.ts";
+import {
+  parseRequest,
+  validateAction,
+  routeToHandler,
+  formatSuccessResponse,
+  formatErrorResponseHttp,
+  formatCorsResponse,
+  CorsPreflightSignal,
+  extractAuthToken,
+} from "../_shared/fp/orchestration.ts";
+import { createErrorLog, addError, setAction, ErrorLog } from "../_shared/fp/errorLog.ts";
+import { reportErrorLog } from "../_shared/slack.ts";
+import { validateRequired } from "../_shared/validation.ts";
 
 import {
-  buildTwilioEndpoint,
   buildTwilioRequestBody,
   sendSms,
   isSuccessResponse,
@@ -31,39 +47,36 @@ import {
 import type { SendSmsPayload, SendSmsResult } from "./lib/types.ts";
 
 // ─────────────────────────────────────────────────────────────
-// Configuration
+// Configuration (Immutable)
 // ─────────────────────────────────────────────────────────────
 
 const ALLOWED_ACTIONS = ["send", "health"] as const;
-type Action = (typeof ALLOWED_ACTIONS)[number];
+type Action = typeof ALLOWED_ACTIONS[number];
 
 // Phone numbers that can send SMS without user authentication
-// Used for magic link SMS sent to unauthenticated users
-const PUBLIC_FROM_NUMBERS = [
+const PUBLIC_FROM_NUMBERS: ReadonlySet<string> = new Set([
   '+14155692985',  // Magic link SMS
-] as const;
-
-interface RequestBody {
-  action: Action;
-  payload: SendSmsPayload;
-}
+]);
 
 // E.164 phone format validation
 const E164_REGEX = /^\+[1-9]\d{1,14}$/;
 
-function validatePhoneNumber(phone: string, fieldName: string): void {
+// ─────────────────────────────────────────────────────────────
+// Pure Functions
+// ─────────────────────────────────────────────────────────────
+
+const validatePhoneNumber = (phone: string, fieldName: string): void => {
   if (!E164_REGEX.test(phone)) {
     throw new ValidationError(
       `${fieldName} must be in E.164 format (e.g., +15551234567). Got: ${phone}`
     );
   }
-}
+};
 
-// ─────────────────────────────────────────────────────────────
-// Health Check Handler
-// ─────────────────────────────────────────────────────────────
-
-function handleHealth(): { status: string; timestamp: string; actions: string[]; secrets: Record<string, boolean> } {
+/**
+ * Health check handler
+ */
+const handleHealth = (): { status: string; timestamp: string; actions: readonly string[]; secrets: Record<string, boolean> } => {
   const twilioAccountSidConfigured = !!Deno.env.get('TWILIO_ACCOUNT_SID');
   const twilioAuthTokenConfigured = !!Deno.env.get('TWILIO_AUTH_TOKEN');
   const allConfigured = twilioAccountSidConfigured && twilioAuthTokenConfigured;
@@ -71,27 +84,26 @@ function handleHealth(): { status: string; timestamp: string; actions: string[];
   return {
     status: allConfigured ? 'healthy' : 'unhealthy (missing secrets)',
     timestamp: new Date().toISOString(),
-    actions: [...ALLOWED_ACTIONS],
+    actions: ALLOWED_ACTIONS,
     secrets: {
       TWILIO_ACCOUNT_SID: twilioAccountSidConfigured,
       TWILIO_AUTH_TOKEN: twilioAuthTokenConfigured,
     },
   };
-}
+};
 
-// ─────────────────────────────────────────────────────────────
-// Send Handler - Direct Twilio Proxy
-// ─────────────────────────────────────────────────────────────
-
-async function handleSend(payload: SendSmsPayload): Promise<SendSmsResult> {
+/**
+ * Send SMS handler
+ */
+const handleSend = async (payload: SendSmsPayload): Promise<SendSmsResult> => {
   console.log('[send-sms] Processing send request...');
 
-  // 1. Validate required fields
+  // Validate required fields
   validateRequired(payload.to, 'payload.to');
   validateRequired(payload.from, 'payload.from');
   validateRequired(payload.body, 'payload.body');
 
-  // 2. Validate phone formats
+  // Validate phone formats
   validatePhoneNumber(payload.to, 'payload.to');
   validatePhoneNumber(payload.from, 'payload.from');
 
@@ -99,7 +111,7 @@ async function handleSend(payload: SendSmsPayload): Promise<SendSmsResult> {
   console.log('[send-sms] From:', payload.from);
   console.log('[send-sms] Body length:', payload.body.length);
 
-  // 3. Get Twilio credentials
+  // Get Twilio credentials
   const accountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
 
@@ -107,14 +119,14 @@ async function handleSend(payload: SendSmsPayload): Promise<SendSmsResult> {
     throw new Error('Missing Twilio credentials (TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN)');
   }
 
-  // 4. Build request body (URL-encoded)
+  // Build request body (URL-encoded)
   const requestBody = buildTwilioRequestBody({
     toPhone: payload.to,
     fromPhone: payload.from,
     body: payload.body,
   });
 
-  // 5. Send to Twilio
+  // Send to Twilio
   const response = await sendSms(accountSid, authToken, requestBody);
 
   if (!isSuccessResponse(response)) {
@@ -132,64 +144,66 @@ async function handleSend(payload: SendSmsPayload): Promise<SendSmsResult> {
     status: 'queued',
     sent_at: new Date().toISOString(),
   };
-}
+};
+
+// Handler map (immutable record)
+const handlers: Readonly<Record<Action, Function>> = {
+  send: handleSend,
+  health: handleHealth,
+};
+
+/**
+ * Check if from number is public (doesn't require auth)
+ */
+const isPublicFromNumber = (fromNumber: string | undefined): boolean =>
+  fromNumber !== undefined && PUBLIC_FROM_NUMBERS.has(fromNumber);
 
 // ─────────────────────────────────────────────────────────────
-// Main Handler
+// Effect Boundary (Side Effects Isolated Here)
 // ─────────────────────────────────────────────────────────────
 
-console.log("[send-sms] Edge Function started");
+console.log("[send-sms] Edge Function started (FP mode)");
 
 Deno.serve(async (req: Request) => {
-  console.log(`[send-sms] ========== REQUEST ==========`);
-  console.log(`[send-sms] Method: ${req.method}`);
-
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { status: 200, headers: corsHeaders });
-  }
-
-  // Only POST allowed
-  if (req.method !== "POST") {
-    return new Response(
-      JSON.stringify({ success: false, error: "Method not allowed" }),
-      {
-        status: 405,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  }
-
-  // Error collector for consolidated error reporting
-  let collector: ErrorCollector | null = null;
+  const correlationId = crypto.randomUUID().slice(0, 8);
+  let errorLog: ErrorLog = createErrorLog('send-sms', 'unknown', correlationId);
 
   try {
-    // 1. Parse and validate request
-    const body: RequestBody = await req.json();
+    console.log(`[send-sms] ========== REQUEST ==========`);
+    console.log(`[send-sms] Method: ${req.method}`);
 
-    validateRequired(body.action, "action");
-    validateAction(body.action, [...ALLOWED_ACTIONS]);
+    const parseResult = await parseRequest(req);
 
-    console.log(`[send-sms] Action: ${body.action}`);
+    if (!parseResult.ok) {
+      if (parseResult.error instanceof CorsPreflightSignal) {
+        return formatCorsResponse();
+      }
+      throw parseResult.error;
+    }
 
-    // Create error collector after we know the action
-    collector = createErrorCollector('send-sms', body.action);
+    const { action, payload, headers } = parseResult.value;
+    errorLog = setAction(errorLog, action);
+    console.log(`[send-sms] Action: ${action}`);
 
-    // 2. Check authorization for send action
-    if (body.action === 'send') {
-      // Check if this is a public SMS (magic link from known number)
-      const fromNumber = body.payload?.from;
-      const isPublicSms = fromNumber && PUBLIC_FROM_NUMBERS.includes(fromNumber as typeof PUBLIC_FROM_NUMBERS[number]);
+    const actionResult = validateAction(ALLOWED_ACTIONS, action);
+    if (!actionResult.ok) {
+      throw actionResult.error;
+    }
 
-      if (isPublicSms) {
+    // Check authorization for send action
+    if (action === 'send') {
+      const fromNumber = payload?.from as string | undefined;
+      const isPublic = isPublicFromNumber(fromNumber);
+
+      if (isPublic) {
         console.log(`[send-sms] Public SMS from ${fromNumber} - bypassing user auth`);
       } else {
-        const authHeader = req.headers.get("Authorization");
-        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        const tokenResult = extractAuthToken(headers);
+        if (!tokenResult.ok) {
           throw new AuthenticationError("Missing or invalid Authorization header. Use Bearer token.");
         }
 
-        const token = authHeader.replace("Bearer ", "");
+        const token = tokenResult.value.replace("Bearer ", "");
         if (!token) {
           throw new AuthenticationError("Empty Bearer token");
         }
@@ -198,45 +212,25 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // 3. Route to handler
-    let result;
-
-    switch (body.action) {
-      case "send":
-        validateRequired(body.payload, "payload");
-        result = await handleSend(body.payload);
-        break;
-
-      case "health":
-        result = handleHealth();
-        break;
-
-      default:
-        throw new ValidationError(`Unhandled action: ${body.action}`);
+    const handlerResult = routeToHandler(handlers, action);
+    if (!handlerResult.ok) {
+      throw handlerResult.error;
     }
+
+    const handler = handlerResult.value;
+    const result = action === 'health' ? handler() : await handler(payload as SendSmsPayload);
 
     console.log(`[send-sms] ========== SUCCESS ==========`);
 
-    return new Response(JSON.stringify({ success: true, data: result }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return formatSuccessResponse(result);
+
   } catch (error) {
     console.error(`[send-sms] ========== ERROR ==========`);
     console.error(`[send-sms]`, error);
 
-    // Report to Slack (fire-and-forget)
-    if (collector) {
-      collector.add(error as Error, 'Fatal error in main handler');
-      collector.reportToSlack();
-    }
+    errorLog = addError(errorLog, error as Error, 'Fatal error in main handler');
+    reportErrorLog(errorLog);
 
-    const statusCode = getStatusCodeFromError(error as Error);
-    const errorResponse = formatErrorResponse(error as Error);
-
-    return new Response(JSON.stringify(errorResponse), {
-      status: statusCode,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return formatErrorResponseHttp(error as Error);
   }
 });
