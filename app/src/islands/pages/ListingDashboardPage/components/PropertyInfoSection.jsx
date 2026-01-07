@@ -177,21 +177,18 @@ export default function PropertyInfoSection({ listing, onImportReviews, onEdit, 
         </p>
       </div>
 
-      {/* Review Section */}
-      <div className="listing-dashboard-property__reviews">
-        <button
-          className="listing-dashboard-property__reviews-btn"
-          onClick={onImportReviews}
-        >
-          <StarIcon />
-          <span>
-            {reviewCount > 0
-              ? `Show my reviews (${reviewCount})`
-              : 'Upload reviews from other sites'
-            }
-          </span>
-        </button>
-      </div>
+      {/* Review Section - Only show when reviews exist */}
+      {reviewCount > 0 && (
+        <div className="listing-dashboard-property__reviews">
+          <button
+            className="listing-dashboard-property__reviews-btn"
+            onClick={onImportReviews}
+          >
+            <StarIcon />
+            <span>Show my reviews ({reviewCount})</span>
+          </button>
+        </div>
+      )}
 
       {/* Status Information Tooltip - uses shared InformationalText component */}
       <InformationalText
