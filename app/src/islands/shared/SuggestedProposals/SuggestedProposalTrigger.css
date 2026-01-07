@@ -1,0 +1,132 @@
+/**
+ * SuggestedProposalTrigger Styles
+ *
+ * Floating button positioned at bottom-right with animated label.
+ */
+
+.sp-trigger-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 998;
+}
+
+/* Animated label */
+.sp-trigger-label {
+  background: #250856;
+  color: #FFFFFF;
+  padding: 10px 16px;
+  border-radius: 20px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(37, 8, 86, 0.25);
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+}
+
+.sp-trigger-label--visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* Main button */
+.sp-trigger-btn {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #250856 0%, #3d1a7e 100%);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(37, 8, 86, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.sp-trigger-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 20px rgba(37, 8, 86, 0.45);
+}
+
+.sp-trigger-btn:active {
+  transform: scale(0.95);
+}
+
+.sp-trigger-btn--active {
+  background: linear-gradient(135deg, #3d1a7e 0%, #5a2d9e 100%);
+}
+
+/* Lightbulb icon */
+.sp-trigger-icon {
+  width: 26px;
+  height: 26px;
+  color: #FFFFFF;
+}
+
+/* Count badge */
+.sp-trigger-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 22px;
+  height: 22px;
+  background: #EF4444;
+  color: #FFFFFF;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+}
+
+/* Pulse animation for attention */
+@keyframes sp-pulse {
+  0% {
+    box-shadow: 0 4px 16px rgba(37, 8, 86, 0.35);
+  }
+  50% {
+    box-shadow: 0 4px 24px rgba(37, 8, 86, 0.55), 0 0 0 8px rgba(37, 8, 86, 0.1);
+  }
+  100% {
+    box-shadow: 0 4px 16px rgba(37, 8, 86, 0.35);
+  }
+}
+
+.sp-trigger-btn:not(.sp-trigger-btn--active) {
+  animation: sp-pulse 2s ease-in-out infinite;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .sp-trigger-container {
+    bottom: 16px;
+    right: 16px;
+  }
+
+  .sp-trigger-btn {
+    width: 48px;
+    height: 48px;
+  }
+
+  .sp-trigger-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .sp-trigger-label {
+    display: none; /* Hide label on mobile to save space */
+  }
+}
