@@ -1077,6 +1077,12 @@
   flex-shrink: 0;
 }
 
+.listing-dashboard-amenities__icon-img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
 /* Empty state tag for amenities */
 .listing-dashboard-amenities__empty-tag {
   display: inline-flex;
