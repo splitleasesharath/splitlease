@@ -73,6 +73,8 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
     handleCreateNewManual,
     handleEditListing,
     handlePreviewListing,
+    handleViewProposals,
+    handleListingCardClick,
     handleSeeDetails,
     handleEditManual,
     handleViewVisits,
@@ -209,6 +211,8 @@ export default function HostOverviewPage({ requireAuth = false, isAuthenticated 
                     listing={listing}
                     onEdit={handleEditListing}
                     onPreview={handlePreviewListing}
+                    onProposals={handleViewProposals}
+                    onCardClick={handleListingCardClick}
                     onDelete={() => handleDeleteClick(listing, 'listing')}
                   />
                 ))}

@@ -43,6 +43,12 @@
 /reset-password/*
   Content-Type: text/html; charset=utf-8
 
+# Auth Verify page - serve as HTML (uses _internal pattern)
+/auth/verify
+  Content-Type: text/html; charset=utf-8
+/auth/verify/*
+  Content-Type: text/html; charset=utf-8
+
 # Self Listing V2 page - serve as HTML (uses _internal pattern)
 /self-listing-v2
   Content-Type: text/html; charset=utf-8

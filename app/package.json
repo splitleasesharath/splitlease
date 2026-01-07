@@ -8,7 +8,10 @@
     "prebuild": "bun run generate-routes",
     "build": "vite build",
     "preview": "vite preview --port 8000",
-    "deploy": "wrangler pages deploy dist --project-name splitlease"
+    "deploy": "wrangler pages deploy dist --project-name splitlease",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
+    "lint:check": "eslint src/ --max-warnings 0"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -32,6 +35,10 @@
     "@vitejs/plugin-react": "^4.2.0",
     "dotenv": "^17.2.3",
     "esbuild": "^0.27.0",
+    "eslint": "^9.39.2",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "globals": "^17.0.0",
     "supabase": "^2.58.5",
     "vite": "^5.0.0"
   }

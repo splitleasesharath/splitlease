@@ -15,6 +15,7 @@
 
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { executeCancelProposal } from '../../logic/workflows/proposals/cancelProposalWorkflow.js'
+import CancelProposalModal from './CancelProposalModal.jsx'
 import './GuestEditingProposalModal.css'
 
 // ============================================================================
@@ -267,138 +268,6 @@ function DayNightSelector({
             <span className="dns-single-letter">{day.singleLetter}</span>
           </div>
         ))}
-      </div>
-    </div>
-  )
-}
-
-// ============================================================================
-// SUB-COMPONENT: CancelProposalModalInner
-// ============================================================================
-
-function CancelProposalModalInner({
-  isVisible,
-  proposal,
-  listing,
-  onCancel,
-  onConfirm
-}) {
-  const [showReasonInput, setShowReasonInput] = useState(false)
-  const [cancellationReason, setCancellationReason] = useState('')
-
-  const handleYesClick = useCallback(() => {
-    if (!showReasonInput) {
-      setShowReasonInput(true)
-    } else {
-      onConfirm(cancellationReason || undefined)
-    }
-  }, [showReasonInput, cancellationReason, onConfirm])
-
-  const handleCancelClick = useCallback(() => {
-    setShowReasonInput(false)
-    setCancellationReason('')
-    onCancel()
-  }, [onCancel])
-
-  const handleCloseClick = useCallback(() => {
-    setShowReasonInput(false)
-    setCancellationReason('')
-    onCancel()
-  }, [onCancel])
-
-  if (!isVisible) {
-    return null
-  }
-
-  const listingName = listing?.Name || proposal?.listing?.Name || 'this listing'
-  const listingPhoto = listing?.['Features - Photos']?.[0]?.Photo ||
-                       proposal?._listing?.['Features - Photos']?.[0]?.Photo ||
-                       null
-
-  return (
-    <div className="cancel-proposal-modal">
-      <div className="cpm-container">
-        {/* Header */}
-        <div className="cpm-header">
-          <button
-            type="button"
-            className="cpm-close-button"
-            onClick={handleCloseClick}
-            aria-label="Close"
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-
-          {/* Warning icon */}
-          <div className="cpm-warning-icon">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 7L5 7M14 11V17M10 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 7V4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7" stroke="#FF0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-
-          <h2 className="cpm-title">Cancel Proposal?</h2>
-          <p className="cpm-subtitle">This action is irreversible</p>
-        </div>
-
-        {/* Content */}
-        <div className="cpm-content">
-          {/* Listing photo */}
-          <div className="cpm-listing-photo">
-            {listingPhoto ? (
-              <img src={listingPhoto} alt={listingName} className="cpm-photo-image" />
-            ) : (
-              <div className="cpm-photo-placeholder">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <rect x="3" y="3" width="18" height="18" rx="2" stroke="#6B6B6B" strokeWidth="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5" fill="#6B6B6B"/>
-                  <path d="M21 15L16 10L5 21" stroke="#6B6B6B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span className="cpm-photo-text">Listing Photo</span>
-              </div>
-            )}
-          </div>
-
-          <p className="cpm-confirmation-text">
-            Are you sure you want to cancel this proposal for <strong>{listingName}</strong>?
-          </p>
-
-          {/* Reason for cancellation - conditionally visible */}
-          {showReasonInput && (
-            <div className="cpm-reason-section">
-              <label htmlFor="cancellation-reason" className="cpm-reason-label">
-                Reason for cancellation (optional):
-              </label>
-              <textarea
-                id="cancellation-reason"
-                className="cpm-reason-input"
-                value={cancellationReason}
-                onChange={(e) => setCancellationReason(e.target.value)}
-                placeholder="Enter your reason for canceling this proposal..."
-                rows={3}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Action buttons */}
-        <div className="cpm-actions">
-          <button
-            type="button"
-            className="cpm-button cpm-button--secondary"
-            onClick={handleCancelClick}
-          >
-            Back
-          </button>
-          <button
-            type="button"
-            className="cpm-button cpm-button--destructive"
-            onClick={handleYesClick}
-          >
-            Yes, Cancel
-          </button>
-        </div>
       </div>
     </div>
   )
@@ -1240,11 +1109,12 @@ export default function GuestEditingProposalModal({
         )}
 
         {/* Cancel proposal modal */}
-        <CancelProposalModalInner
-          isVisible={view === 'cancel'}
+        <CancelProposalModal
+          isOpen={view === 'cancel'}
           proposal={proposal}
           listing={listing || proposal?._listing}
-          onCancel={handleDismissCancel}
+          userType="guest"
+          onClose={handleDismissCancel}
           onConfirm={handleConfirmCancel}
         />
       </div>

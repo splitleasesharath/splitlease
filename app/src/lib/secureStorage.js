@@ -36,7 +36,9 @@ const STATE_KEYS = {
   USER_TYPE: 'sl_user_type',
   SESSION_VALID: 'sl_session_valid',
   FIRST_NAME: 'sl_first_name',
-  AVATAR_URL: 'sl_avatar_url'
+  AVATAR_URL: 'sl_avatar_url',
+  LINKEDIN_OAUTH_USER_TYPE: 'sl_linkedin_oauth_user_type',
+  LINKEDIN_OAUTH_LOGIN_FLOW: 'sl_linkedin_oauth_login_flow',
 };
 
 /**
@@ -291,6 +293,59 @@ export function migrateFromLegacyStorage() {
   }
 
   return false;
+}
+
+/**
+ * Set LinkedIn OAuth user type before redirect
+ * @param {string} userType - 'Host' or 'Guest'
+ */
+export function setLinkedInOAuthUserType(userType) {
+  if (userType) {
+    localStorage.setItem(STATE_KEYS.LINKEDIN_OAUTH_USER_TYPE, userType);
+  }
+}
+
+/**
+ * Get LinkedIn OAuth user type (stored before redirect)
+ * @returns {string|null} User type or null
+ */
+export function getLinkedInOAuthUserType() {
+  return localStorage.getItem(STATE_KEYS.LINKEDIN_OAUTH_USER_TYPE);
+}
+
+/**
+ * Clear LinkedIn OAuth user type after callback handling
+ */
+export function clearLinkedInOAuthUserType() {
+  localStorage.removeItem(STATE_KEYS.LINKEDIN_OAUTH_USER_TYPE);
+}
+
+/**
+ * Set LinkedIn OAuth login flow flag before redirect
+ * Distinguishes login flow from signup flow
+ * @param {boolean} isLoginFlow - Whether this is a login attempt
+ */
+export function setLinkedInOAuthLoginFlow(isLoginFlow) {
+  if (isLoginFlow) {
+    localStorage.setItem(STATE_KEYS.LINKEDIN_OAUTH_LOGIN_FLOW, 'true');
+  } else {
+    localStorage.removeItem(STATE_KEYS.LINKEDIN_OAUTH_LOGIN_FLOW);
+  }
+}
+
+/**
+ * Get LinkedIn OAuth login flow flag
+ * @returns {boolean} True if this is a login flow
+ */
+export function getLinkedInOAuthLoginFlow() {
+  return localStorage.getItem(STATE_KEYS.LINKEDIN_OAUTH_LOGIN_FLOW) === 'true';
+}
+
+/**
+ * Clear LinkedIn OAuth login flow flag after callback handling
+ */
+export function clearLinkedInOAuthLoginFlow() {
+  localStorage.removeItem(STATE_KEYS.LINKEDIN_OAUTH_LOGIN_FLOW);
 }
 
 /**

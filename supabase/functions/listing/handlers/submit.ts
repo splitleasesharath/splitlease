@@ -234,6 +234,11 @@ function mapFieldsToSupabase(data: ListingSubmissionData): Record<string, unknow
     mapped['💰Nightly Host Rate for 6 nights'] = data['Price 6 nights selected'];
   }
 
+  // Blocked dates mapping
+  if (data['Blocked Dates'] !== undefined) {
+    mapped['Dates - Blocked'] = data['Blocked Dates'];
+  }
+
   return mapped;
 }
 

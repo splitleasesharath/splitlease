@@ -48,7 +48,9 @@ async function fetchLookupTables() {
       .select('_id, "Name", "Icon"');
     if (amenities) {
       amenities.forEach((a) => {
+        // Index by both ID and Name to support both lookup patterns
         lookups.amenities[a._id] = { name: a.Name, icon: a.Icon };
+        lookups.amenities[a.Name] = { name: a.Name, icon: a.Icon };
       });
     }
 
@@ -325,7 +327,14 @@ function transformListingData(dbListing, photos = [], lookups = {}) {
     earliestAvailableDate: dbListing[' First Available'] ? new Date(dbListing[' First Available']) : new Date(),
     checkInTime: dbListing['NEW Date Check-in Time'] || '1:00 pm',
     checkOutTime: dbListing['NEW Date Check-out Time'] || '1:00 pm',
-    blockedDates: safeParseJsonArray(dbListing['Dates - Blocked']),
+    // Normalize blocked dates to YYYY-MM-DD format (handles both ISO timestamps and plain dates)
+    blockedDates: safeParseJsonArray(dbListing['Dates - Blocked']).map(dateStr => {
+      if (typeof dateStr === 'string') {
+        // Extract YYYY-MM-DD from ISO timestamp or return as-is if already YYYY-MM-DD
+        return dateStr.split('T')[0];
+      }
+      return dateStr;
+    }),
 
     // Cancellation Policy
     cancellationPolicy: dbListing['Cancellation Policy'] || 'Standard',
@@ -347,7 +356,7 @@ export default function useListingDashboardPageLogic() {
   // State
   const [activeTab, setActiveTab] = useState('manage');
   const [listing, setListing] = useState(null);
-  const [counts, setCounts] = useState({ proposals: 0, virtualMeetings: 0, leases: 0 });
+  const [counts, setCounts] = useState({ proposals: 0, virtualMeetings: 0, leases: 0, reviews: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -391,12 +400,13 @@ export default function useListingDashboardPageLogic() {
       console.log('✅ Found listing:', listingData._id);
 
       // Fetch lookup tables and related data in parallel
-      const [lookups, photosResult, proposalsResult, leasesResult, meetingsResult] = await Promise.all([
+      const [lookups, photosResult, proposalsResult, leasesResult, meetingsResult, reviewsResult] = await Promise.all([
         fetchLookupTables(),
         supabase.from('listing_photo').select('*').eq('Listing', listingId).eq('Active', true).order('SortOrder', { ascending: true }),
         supabase.from('proposal').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
         supabase.from('bookings_leases').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
         supabase.from('virtualmeetingschedulesandlinks').select('*', { count: 'exact', head: true }).eq('Listing', listingId),
+        supabase.from('external_reviews').select('*', { count: 'exact', head: true }).eq('listing_id', listingId),
       ]);
 
       // Extract photos - check if embedded in Features - Photos or in listing_photo table
@@ -452,6 +462,11 @@ export default function useListingDashboardPageLogic() {
         console.warn('⚠️ Failed to fetch meetings count:', meetingsError);
       }
 
+      const { count: reviewsCount, error: reviewsError } = reviewsResult;
+      if (reviewsError) {
+        console.warn('⚠️ Failed to fetch reviews count:', reviewsError);
+      }
+
       const transformedListing = transformListingData(listingData, photos || [], lookups);
 
       setListing(transformedListing);
@@ -459,6 +474,7 @@ export default function useListingDashboardPageLogic() {
         proposals: proposalsCount || 0,
         virtualMeetings: meetingsCount || 0,
         leases: leasesCount || 0,
+        reviews: reviewsCount || 0,
       });
 
       console.log('✅ Listing loaded successfully');
@@ -1432,6 +1448,57 @@ export default function useListingDashboardPageLogic() {
     }
   }, []);
 
+  // Handle availability field changes - save to database
+  const handleAvailabilityChange = useCallback(async (fieldName, value) => {
+    const listingId = getListingIdFromUrl();
+    if (!listingId) {
+      window.showToast?.({
+        title: 'Error',
+        content: 'No listing ID available',
+        type: 'error'
+      });
+      return;
+    }
+
+    try {
+      // Map UI field names to database column names
+      const fieldMapping = {
+        'checkInTime': 'NEW Date Check-in Time',
+        'checkOutTime': 'NEW Date Check-out Time',
+        'earliestAvailableDate': ' First Available', // DB column has leading space
+        'leaseTermMin': 'Minimum Weeks',
+        'leaseTermMax': 'Maximum Weeks'
+      };
+
+      const dbFieldName = fieldMapping[fieldName];
+      if (!dbFieldName) {
+        console.error('Unknown availability field:', fieldName);
+        return;
+      }
+
+      await updateListing(listingId, { [dbFieldName]: value });
+
+      // Update local state
+      setListing((prev) => ({
+        ...prev,
+        [fieldName]: value
+      }));
+
+      window.showToast?.({
+        title: 'Changes Saved',
+        content: 'Availability settings updated successfully',
+        type: 'success'
+      });
+    } catch (error) {
+      console.error('Failed to save availability field:', error);
+      window.showToast?.({
+        title: 'Save Failed',
+        content: 'Could not save changes. Please try again.',
+        type: 'error'
+      });
+    }
+  }, [getListingIdFromUrl, updateListing]);
+
   // Handle blocked dates change - save to database
   const handleBlockedDatesChange = useCallback(async (newBlockedDates) => {
     const listingId = getListingIdFromUrl();
@@ -1521,5 +1588,8 @@ export default function useListingDashboardPageLogic() {
 
     // Blocked dates handler
     handleBlockedDatesChange,
+
+    // Availability fields handler
+    handleAvailabilityChange,
   };
 }

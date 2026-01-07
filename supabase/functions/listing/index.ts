@@ -6,115 +6,167 @@
  * - create: Create a new listing
  * - get: Get listing details
  * - submit: Full listing submission with all form data
+ * - createMockupProposal: Create mockup proposal for a listing
+ * - delete: Delete a listing
  *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
+ *
+ * FP ARCHITECTURE:
+ * - Pure functions for validation, routing, and response formatting
+ * - Immutable data structures (no let reassignment in orchestration)
+ * - Side effects isolated to boundaries (entry/exit of handler)
+ * - Result type for error propagation (exceptions only at outer boundary)
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { corsHeaders } from "../_shared/cors.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   ValidationError,
   AuthenticationError,
-  formatErrorResponse,
-  getStatusCodeFromError,
 } from "../_shared/errors.ts";
-import { validateRequired, validateAction } from "../_shared/validation.ts";
-import { createErrorCollector, ErrorCollector } from "../_shared/slack.ts";
 
+// FP Utilities
+import { Result, ok, err } from "../_shared/fp/result.ts";
+import {
+  parseRequest,
+  validateAction,
+  routeToHandler,
+  isPublicAction,
+  getSupabaseConfig,
+  getBubbleConfig,
+  formatSuccessResponse,
+  formatErrorResponseHttp,
+  formatCorsResponse,
+  CorsPreflightSignal,
+  extractAuthToken,
+} from "../_shared/fp/orchestration.ts";
+import { createErrorLog, addError, setAction, ErrorLog } from "../_shared/fp/errorLog.ts";
+import { reportErrorLog } from "../_shared/slack.ts";
+
+// Handlers
 import { handleCreate } from "./handlers/create.ts";
 import { handleGet } from "./handlers/get.ts";
 import { handleSubmit } from "./handlers/submit.ts";
 import { handleCreateMockupProposal } from "./handlers/createMockupProposal.ts";
 import { handleDelete } from "./handlers/delete.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // ─────────────────────────────────────────────────────────────
-// Configuration
+// Configuration (Immutable)
 // ─────────────────────────────────────────────────────────────
 
 const ALLOWED_ACTIONS = ["create", "get", "submit", "createMockupProposal", "delete"] as const;
+
 // All listing actions are public (auth handled by Bubble workflow)
-const PUBLIC_ACTIONS = ["create", "get", "createMockupProposal", "delete"] as const;
+const PUBLIC_ACTIONS: ReadonlySet<string> = new Set(["create", "get", "createMockupProposal", "delete"]);
 
-type Action = (typeof ALLOWED_ACTIONS)[number];
+type Action = typeof ALLOWED_ACTIONS[number];
 
-interface RequestBody {
-  action: Action;
-  payload: Record<string, unknown>;
+// Handler map (immutable record) - replaces switch statement
+const handlers: Readonly<Record<Action, Function>> = {
+  create: handleCreate,
+  get: handleGet,
+  submit: handleSubmit,
+  createMockupProposal: handleCreateMockupProposal,
+  delete: handleDelete,
+};
+
+// ─────────────────────────────────────────────────────────────
+// Pure Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Get combined configuration for listing operations
+ */
+interface ListingConfig {
+  readonly supabaseUrl: string;
+  readonly supabaseServiceKey: string;
+  readonly bubbleBaseUrl: string;
+  readonly bubbleApiKey: string;
 }
 
+const getListingConfig = (): Result<ListingConfig, Error> => {
+  const supabaseResult = getSupabaseConfig();
+  if (!supabaseResult.ok) {
+    return supabaseResult;
+  }
+
+  const bubbleResult = getBubbleConfig();
+  if (!bubbleResult.ok) {
+    return bubbleResult;
+  }
+
+  return ok({
+    supabaseUrl: supabaseResult.value.supabaseUrl,
+    supabaseServiceKey: supabaseResult.value.supabaseServiceKey,
+    bubbleBaseUrl: bubbleResult.value.bubbleBaseUrl,
+    bubbleApiKey: bubbleResult.value.bubbleApiKey,
+  });
+};
+
 // ─────────────────────────────────────────────────────────────
-// Main Handler
+// Effect Boundary (Side Effects Isolated Here)
 // ─────────────────────────────────────────────────────────────
 
-console.log("[listing] Edge Function started");
+console.log("[listing] Edge Function started (FP mode)");
 
 Deno.serve(async (req: Request) => {
-  console.log(`[listing] ========== REQUEST ==========`);
-  console.log(`[listing] Method: ${req.method}`);
-
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { status: 200, headers: corsHeaders });
-  }
-
-  // Only POST allowed
-  if (req.method !== "POST") {
-    return new Response(
-      JSON.stringify({ success: false, error: "Method not allowed" }),
-      {
-        status: 405,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  }
-
-  // Error collector for consolidated error reporting (ONE RUN = ONE LOG)
-  let collector: ErrorCollector | null = null;
+  // Initialize immutable error log with correlation ID
+  const correlationId = crypto.randomUUID().slice(0, 8);
+  let errorLog: ErrorLog = createErrorLog('listing', 'unknown', correlationId);
 
   try {
-    // ─────────────────────────────────────────────────────────
-    // 1. Parse and validate request
-    // ─────────────────────────────────────────────────────────
-
-    const body: RequestBody = await req.json();
-
-    validateRequired(body.action, "action");
-    validateRequired(body.payload, "payload");
-    validateAction(body.action, [...ALLOWED_ACTIONS]);
-
-    console.log(`[listing] Action: ${body.action}`);
-
-    // Create error collector after we know the action
-    collector = createErrorCollector('listing', body.action);
-
-    const isPublicAction = PUBLIC_ACTIONS.includes(
-      body.action as (typeof PUBLIC_ACTIONS)[number]
-    );
+    console.log(`[listing] ========== REQUEST ==========`);
+    console.log(`[listing] Method: ${req.method}`);
 
     // ─────────────────────────────────────────────────────────
-    // 2. Check environment variables
+    // Step 1: Parse request (side effect boundary for req.json())
     // ─────────────────────────────────────────────────────────
 
-    const bubbleBaseUrl = Deno.env.get("BUBBLE_API_BASE_URL");
-    const bubbleApiKey = Deno.env.get("BUBBLE_API_KEY");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const parseResult = await parseRequest(req);
 
-    if (!bubbleBaseUrl || !bubbleApiKey || !supabaseUrl || !supabaseServiceKey) {
-      throw new Error("Missing required environment variables");
+    if (!parseResult.ok) {
+      // Handle CORS preflight (not an error, just control flow)
+      if (parseResult.error instanceof CorsPreflightSignal) {
+        return formatCorsResponse();
+      }
+      throw parseResult.error;
+    }
+
+    const { action, payload, headers } = parseResult.value;
+
+    // Update error log with action (immutable transformation)
+    errorLog = setAction(errorLog, action);
+    console.log(`[listing] Action: ${action}`);
+
+    // ─────────────────────────────────────────────────────────
+    // Step 2: Validate action (pure)
+    // ─────────────────────────────────────────────────────────
+
+    const actionResult = validateAction(ALLOWED_ACTIONS, action);
+    if (!actionResult.ok) {
+      throw actionResult.error;
     }
 
     // ─────────────────────────────────────────────────────────
-    // 3. Authenticate user for protected actions
+    // Step 3: Get configuration (pure with env read)
     // ─────────────────────────────────────────────────────────
 
-    if (!isPublicAction) {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) {
-        throw new AuthenticationError("Missing Authorization header");
-      }
+    const configResult = getListingConfig();
+    if (!configResult.ok) {
+      throw configResult.error;
+    }
+    const config = configResult.value;
 
+    // ─────────────────────────────────────────────────────────
+    // Step 4: Authenticate for protected actions
+    // ─────────────────────────────────────────────────────────
+
+    const requireAuth = !isPublicAction(PUBLIC_ACTIONS, action);
+    if (requireAuth) {
+      const tokenResult = extractAuthToken(headers);
+      if (!tokenResult.ok) {
+        throw tokenResult.error;
+      }
       // For now, we trust the auth header is valid
       // The submit action validates user via the payload (user_email)
       console.log(`[listing] Auth header present for protected action`);
@@ -123,66 +175,78 @@ Deno.serve(async (req: Request) => {
     }
 
     // ─────────────────────────────────────────────────────────
-    // 4. Route to handler
+    // Step 5: Route to handler (pure lookup + execution)
     // ─────────────────────────────────────────────────────────
 
-    let result;
-
-    switch (body.action) {
-      case "create":
-        result = await handleCreate(body.payload);
-        break;
-
-      case "get":
-        result = await handleGet(body.payload);
-        break;
-
-      case "submit":
-        result = await handleSubmit(body.payload);
-        break;
-
-      case "createMockupProposal": {
-        // Create Supabase client for mockup proposal handler
-        const supabase = createClient(supabaseUrl, supabaseServiceKey);
-        await handleCreateMockupProposal(supabase, body.payload as {
-          listingId: string;
-          hostUserId: string;
-          hostEmail: string;
-        });
-        result = { success: true, message: "Mockup proposal creation initiated" };
-        break;
-      }
-
-      case "delete":
-        result = await handleDelete(body.payload);
-        break;
-
-      default:
-        throw new ValidationError(`Unhandled action: ${body.action}`);
+    const handlerResult = routeToHandler(handlers, action);
+    if (!handlerResult.ok) {
+      throw handlerResult.error;
     }
+
+    // Execute handler - the only remaining side effect
+    const handler = handlerResult.value;
+    const result = await executeHandler(handler, action as Action, payload, config);
 
     console.log(`[listing] ========== SUCCESS ==========`);
 
-    return new Response(JSON.stringify({ success: true, data: result }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return formatSuccessResponse(result);
+
   } catch (error) {
     console.error(`[listing] ========== ERROR ==========`);
     console.error(`[listing]`, error);
 
-    // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
-    if (collector) {
-      collector.add(error as Error, 'Fatal error in main handler');
-      collector.reportToSlack();
-    }
+    // Add error to log (immutable)
+    errorLog = addError(errorLog, error as Error, 'Fatal error in main handler');
 
-    const statusCode = getStatusCodeFromError(error as Error);
-    const errorResponse = formatErrorResponse(error as Error);
+    // Report to Slack (side effect at boundary)
+    reportErrorLog(errorLog);
 
-    return new Response(JSON.stringify(errorResponse), {
-      status: statusCode,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return formatErrorResponseHttp(error as Error);
   }
 });
+
+// ─────────────────────────────────────────────────────────────
+// Handler Execution (Encapsulates action-specific logic)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Execute the appropriate handler with correct parameters
+ * This function handles the different signatures of each handler
+ */
+async function executeHandler(
+  handler: Function,
+  action: Action,
+  payload: Record<string, unknown>,
+  config: ListingConfig
+): Promise<unknown> {
+  switch (action) {
+    case "create":
+      return handler(payload);
+
+    case "get":
+      return handler(payload);
+
+    case "submit":
+      return handler(payload);
+
+    case "createMockupProposal": {
+      // Create Supabase client for mockup proposal handler
+      const supabase = createClient(config.supabaseUrl, config.supabaseServiceKey);
+      await handler(supabase, payload as {
+        listingId: string;
+        hostUserId: string;
+        hostEmail: string;
+      });
+      return { success: true, message: "Mockup proposal creation initiated" };
+    }
+
+    case "delete":
+      return handler(payload);
+
+    default: {
+      // Exhaustive check - TypeScript ensures all cases are handled
+      const _exhaustive: never = action;
+      throw new ValidationError(`Unhandled action: ${action}`);
+    }
+  }
+}

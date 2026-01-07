@@ -30,6 +30,8 @@ const lookupCache = {
   parking: new Map(),        // parkingId -> {label}
   cancellationPolicies: new Map(), // cancellationPolicyId -> {display}
   storage: new Map(),        // storageId -> {title, summaryGuest}
+  guestCancellationReasons: new Map(), // reasonId -> {reason, displayOrder}
+  hostCancellationReasons: new Map(),  // reasonId -> {reason, displayOrder}
   initialized: false
 };
 
@@ -72,7 +74,8 @@ export async function initializeLookups() {
       initializeHouseRuleLookups(),
       initializeParkingLookups(),
       initializeCancellationPolicyLookups(),
-      initializeStorageLookups()
+      initializeStorageLookups(),
+      initializeCancellationReasonLookups()
     ]);
 
     lookupCache.initialized = true;
@@ -335,6 +338,43 @@ async function initializeStorageLookups() {
   }
 }
 
+/**
+ * Fetch and cache all cancellation/rejection reasons for both guests and hosts
+ * @returns {Promise<void>}
+ */
+async function initializeCancellationReasonLookups() {
+  try {
+    const { data, error } = await supabase
+      .schema('reference_table')
+      .from(DATABASE.TABLES.CANCELLATION_REASON)
+      .select('id, user_type, reason, display_order')
+      .eq('is_active', true)
+      .order('display_order', { ascending: true });
+
+    if (error) throw error;
+
+    if (data && Array.isArray(data)) {
+      data.forEach(item => {
+        const cacheData = {
+          id: item.id,
+          reason: item.reason,
+          displayOrder: item.display_order
+        };
+
+        if (item.user_type === 'guest') {
+          lookupCache.guestCancellationReasons.set(item.id, cacheData);
+        } else if (item.user_type === 'host') {
+          lookupCache.hostCancellationReasons.set(item.id, cacheData);
+        }
+      });
+      console.log(`Cached ${lookupCache.guestCancellationReasons.size} guest cancellation reasons`);
+      console.log(`Cached ${lookupCache.hostCancellationReasons.size} host rejection reasons`);
+    }
+  } catch (error) {
+    console.error('Failed to initialize cancellation reason lookups:', error);
+  }
+}
+
 // ============================================================================
 // Lookup Functions (Synchronous - use cached data)
 // ============================================================================
@@ -541,6 +581,40 @@ export function getStorageOption(storageId) {
   return storage;
 }
 
+/**
+ * Get all active guest cancellation reasons as array (for dropdown population)
+ * Returns reasons sorted by display_order
+ * @returns {Array<{id: number, reason: string, displayOrder: number}>} Array of reason options
+ */
+export function getGuestCancellationReasons() {
+  const reasons = [];
+  lookupCache.guestCancellationReasons.forEach((data, id) => {
+    reasons.push({
+      id,
+      reason: data.reason,
+      displayOrder: data.displayOrder
+    });
+  });
+  return reasons.sort((a, b) => a.displayOrder - b.displayOrder);
+}
+
+/**
+ * Get all active host rejection reasons as array (for dropdown population)
+ * Returns reasons sorted by display_order
+ * @returns {Array<{id: number, reason: string, displayOrder: number}>} Array of reason options
+ */
+export function getHostRejectionReasons() {
+  const reasons = [];
+  lookupCache.hostCancellationReasons.forEach((data, id) => {
+    reasons.push({
+      id,
+      reason: data.reason,
+      displayOrder: data.displayOrder
+    });
+  });
+  return reasons.sort((a, b) => a.displayOrder - b.displayOrder);
+}
+
 // ============================================================================
 // Async Lookup Functions (for individual queries if needed)
 // ============================================================================
@@ -628,6 +702,9 @@ export async function refreshLookups() {
   lookupCache.houseRules.clear();
   lookupCache.parking.clear();
   lookupCache.cancellationPolicies.clear();
+  lookupCache.storage.clear();
+  lookupCache.guestCancellationReasons.clear();
+  lookupCache.hostCancellationReasons.clear();
   lookupCache.initialized = false;
   await initializeLookups();
 }
@@ -646,6 +723,9 @@ export function getCacheStats() {
     houseRules: lookupCache.houseRules.size,
     parking: lookupCache.parking.size,
     cancellationPolicies: lookupCache.cancellationPolicies.size,
+    storage: lookupCache.storage.size,
+    guestCancellationReasons: lookupCache.guestCancellationReasons.size,
+    hostCancellationReasons: lookupCache.hostCancellationReasons.size,
     initialized: lookupCache.initialized
   };
 }

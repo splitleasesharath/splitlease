@@ -371,6 +371,24 @@
   color: var(--ho-color-text-primary);
 }
 
+.btn--proposals {
+  background-color: #FED7AA;
+  color: #92400E;
+  border-radius: var(--ho-radius-pill);
+  padding: var(--ho-spacing-xs) var(--ho-spacing-md);
+  min-height: 32px;
+  font-weight: 600;
+}
+
+.btn--proposals:hover:not(:disabled) {
+  background-color: #FDBA74;
+  color: #78350F;
+}
+
+.btn--proposals:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
 .btn--full-width {
   width: 100%;
 }
@@ -525,8 +543,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--ho-spacing-md);
-  padding: var(--ho-spacing-lg) var(--ho-spacing-xl);
-  min-width: 0;
+  padding: var(--ho-spacing-lg) var(--ho-spacing-md);
+  min-width: 240px;
 }
 
 .listing-card__right {
@@ -534,9 +552,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--ho-spacing-lg) var(--ho-spacing-xl);
+  padding: var(--ho-spacing-lg) var(--ho-spacing-md);
   background-color: var(--ho-color-light-gray);
-  min-width: 140px;
+  min-width: 120px;
 }
 
 .listing-card__header {
@@ -608,15 +626,16 @@
 
 .listing-card__actions {
   display: flex;
-  gap: var(--ho-spacing-sm);
-  flex-wrap: wrap;
+  gap: var(--ho-spacing-xs);
+  flex-wrap: nowrap;
   margin-top: auto;
 }
 
 .listing-card__actions .btn {
-  padding: var(--ho-spacing-xs) var(--ho-spacing-md);
-  font-size: 13px;
-  min-height: 32px;
+  padding: var(--ho-spacing-xs) var(--ho-spacing-sm);
+  font-size: 12px;
+  min-height: 30px;
+  white-space: nowrap;
 }
 
 /* Listing Card Pricing */

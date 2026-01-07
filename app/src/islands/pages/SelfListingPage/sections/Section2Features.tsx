@@ -10,6 +10,7 @@ interface Section2Props {
   onNext: () => void;
   onBack: () => void;
   zipCode?: string;
+  showToast: (options: { title: string; content?: string; type?: 'success' | 'error' | 'warning' | 'info'; duration?: number }) => void;
 }
 
 export const Section2Features: React.FC<Section2Props> = ({
@@ -17,7 +18,8 @@ export const Section2Features: React.FC<Section2Props> = ({
   onChange,
   onNext,
   onBack,
-  zipCode
+  zipCode,
+  showToast
 }) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoadingNeighborhood, setIsLoadingNeighborhood] = useState(false);
@@ -199,6 +201,12 @@ export const Section2Features: React.FC<Section2Props> = ({
     const newErrors: Record<string, string> = {};
     const errorOrder: string[] = [];
 
+    // Validate amenities inside unit (required)
+    if (data.amenitiesInsideUnit.length === 0) {
+      newErrors.amenitiesInsideUnit = 'At least one amenity inside unit is required';
+      errorOrder.push('amenitiesInsideUnit');
+    }
+
     if (!data.descriptionOfLodging || data.descriptionOfLodging.trim().length === 0) {
       newErrors.descriptionOfLodging = 'Description of lodging is required';
       errorOrder.push('descriptionOfLodging');
@@ -213,6 +221,12 @@ export const Section2Features: React.FC<Section2Props> = ({
     if (errorKeys.length === 0) {
       onNext();
     } else {
+      showToast({
+        title: 'Required Fields Missing',
+        content: 'Please complete all required fields before proceeding.',
+        type: 'warning',
+        duration: 5000
+      });
       scrollToFirstError(errorKeys);
     }
   };
@@ -225,9 +239,9 @@ export const Section2Features: React.FC<Section2Props> = ({
       {/* Amenities Two-Column Layout */}
       <div className="features-two-column">
         {/* Left Column: Amenities Inside Unit */}
-        <div className="form-group">
+        <div id="amenitiesInsideUnit" className="form-group">
           <div className="label-with-action">
-            <label>Amenities inside Unit</label>
+            <label>Amenities inside Unit<span className="required">*</span></label>
             <button
               type="button"
               className="btn-link"
@@ -237,6 +251,9 @@ export const Section2Features: React.FC<Section2Props> = ({
               {isLoadingInUnitAmenities ? 'loading...' : 'load common'}
             </button>
           </div>
+          {errors.amenitiesInsideUnit && (
+            <span className="error-message">{errors.amenitiesInsideUnit}</span>
+          )}
           <div className="checkbox-grid">
             {isLoadingAmenityLists ? (
               <span className="loading-text">Loading amenities...</span>

@@ -11,19 +11,38 @@
  * - notify_participants: Send SMS/Email notifications to participants
  *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
+ *
+ * FP ARCHITECTURE:
+ * - Pure functions for validation, routing, and response formatting
+ * - Immutable data structures (no let reassignment in orchestration)
+ * - Side effects isolated to boundaries (entry/exit of handler)
+ * - Result type for error propagation (exceptions only at outer boundary)
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/cors.ts";
 import {
   ValidationError,
   AuthenticationError,
-  formatErrorResponse,
-  getStatusCodeFromError,
 } from "../_shared/errors.ts";
-import { validateRequired, validateAction } from "../_shared/validation.ts";
-import { createErrorCollector, ErrorCollector } from "../_shared/slack.ts";
+
+// FP Utilities
+import { Result, ok, err } from "../_shared/fp/result.ts";
+import {
+  parseRequest,
+  validateAction,
+  routeToHandler,
+  isPublicAction,
+  getSupabaseConfig,
+  formatSuccessResponse,
+  formatErrorResponseHttp,
+  formatCorsResponse,
+  CorsPreflightSignal,
+  AuthenticatedUser,
+  extractAuthToken,
+} from "../_shared/fp/orchestration.ts";
+import { createErrorLog, addError, setUserId, setAction, ErrorLog } from "../_shared/fp/errorLog.ts";
+import { reportErrorLog } from "../_shared/slack.ts";
 
 import { handleCreate } from "./handlers/create.ts";
 import { handleDelete } from "./handlers/delete.ts";
@@ -33,183 +52,149 @@ import { handleSendCalendarInvite } from "./handlers/sendCalendarInvite.ts";
 import { handleNotifyParticipants } from "./handlers/notifyParticipants.ts";
 
 // ─────────────────────────────────────────────────────────────
-// Configuration
+// Configuration (Immutable)
 // ─────────────────────────────────────────────────────────────
 
 const ALLOWED_ACTIONS = ["create", "delete", "accept", "decline", "send_calendar_invite", "notify_participants"] as const;
+
 // NOTE: All actions are public until Supabase auth migration is complete
-const PUBLIC_ACTIONS = ["create", "delete", "accept", "decline", "send_calendar_invite", "notify_participants"] as const;
+const PUBLIC_ACTIONS: ReadonlySet<string> = new Set([
+  "create", "delete", "accept", "decline", "send_calendar_invite", "notify_participants"
+]);
 
-type Action = (typeof ALLOWED_ACTIONS)[number];
+type Action = typeof ALLOWED_ACTIONS[number];
 
-interface RequestBody {
-  action: Action;
-  payload: Record<string, unknown>;
-}
+// Handler map (immutable record) - replaces switch statement
+const handlers: Readonly<Record<Action, Function>> = {
+  create: handleCreate,
+  delete: handleDelete,
+  accept: handleAccept,
+  decline: handleDecline,
+  send_calendar_invite: handleSendCalendarInvite,
+  notify_participants: handleNotifyParticipants,
+};
 
 // ─────────────────────────────────────────────────────────────
-// Main Handler
+// Pure Functions
 // ─────────────────────────────────────────────────────────────
 
-console.log("[virtual-meeting] Edge Function started");
+/**
+ * Authenticate user from request headers
+ * Returns Result with user or error
+ */
+const authenticateUser = async (
+  headers: Headers,
+  supabaseUrl: string,
+  supabaseAnonKey: string,
+  requireAuth: boolean
+): Promise<Result<AuthenticatedUser | null, AuthenticationError>> => {
+  if (!requireAuth) {
+    return ok(null);
+  }
+
+  const tokenResult = extractAuthToken(headers);
+  if (!tokenResult.ok) {
+    return tokenResult;
+  }
+
+  const authClient = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: tokenResult.value } },
+  });
+
+  const { data: { user: authUser }, error: authError } = await authClient.auth.getUser();
+
+  if (authError || !authUser) {
+    return err(new AuthenticationError("Invalid or expired token"));
+  }
+
+  return ok({ id: authUser.id, email: authUser.email ?? "" });
+};
+
+// ─────────────────────────────────────────────────────────────
+// Effect Boundary (Side Effects Isolated Here)
+// ─────────────────────────────────────────────────────────────
+
+console.log("[virtual-meeting] Edge Function started (FP mode)");
 
 Deno.serve(async (req: Request) => {
-  console.log(`[virtual-meeting] ========== REQUEST ==========`);
-  console.log(`[virtual-meeting] Method: ${req.method}`);
-
-  // Handle CORS preflight
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { status: 200, headers: corsHeaders });
-  }
-
-  // Only POST allowed
-  if (req.method !== "POST") {
-    return new Response(
-      JSON.stringify({ success: false, error: "Method not allowed" }),
-      {
-        status: 405,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
-  }
-
-  // Error collector for consolidated error reporting (ONE RUN = ONE LOG)
-  let collector: ErrorCollector | null = null;
+  const correlationId = crypto.randomUUID().slice(0, 8);
+  let errorLog: ErrorLog = createErrorLog('virtual-meeting', 'unknown', correlationId);
 
   try {
-    // ─────────────────────────────────────────────────────────
-    // 1. Parse and validate request
-    // ─────────────────────────────────────────────────────────
+    console.log(`[virtual-meeting] ========== REQUEST ==========`);
+    console.log(`[virtual-meeting] Method: ${req.method}`);
 
-    const body: RequestBody = await req.json();
+    const parseResult = await parseRequest(req);
 
-    validateRequired(body.action, "action");
-    validateRequired(body.payload, "payload");
-    validateAction(body.action, [...ALLOWED_ACTIONS]);
-
-    console.log(`[virtual-meeting] Action: ${body.action}`);
-    console.log(`[virtual-meeting] Payload:`, JSON.stringify(body.payload, null, 2));
-
-    // Create error collector after we know the action
-    collector = createErrorCollector('virtual-meeting', body.action);
-
-    const isPublicAction = PUBLIC_ACTIONS.includes(
-      body.action as (typeof PUBLIC_ACTIONS)[number]
-    );
-
-    // ─────────────────────────────────────────────────────────
-    // 2. Get environment variables
-    // ─────────────────────────────────────────────────────────
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error("Missing required environment variables");
+    if (!parseResult.ok) {
+      if (parseResult.error instanceof CorsPreflightSignal) {
+        return formatCorsResponse();
+      }
+      throw parseResult.error;
     }
 
-    // ─────────────────────────────────────────────────────────
-    // 3. Authenticate user (skip for public actions)
-    // ─────────────────────────────────────────────────────────
+    const { action, payload, headers } = parseResult.value;
+    errorLog = setAction(errorLog, action);
+    console.log(`[virtual-meeting] Action: ${action}`);
+    console.log(`[virtual-meeting] Payload:`, JSON.stringify(payload, null, 2));
 
-    let user: { id: string; email: string } | null = null;
+    const actionResult = validateAction(ALLOWED_ACTIONS, action);
+    if (!actionResult.ok) {
+      throw actionResult.error;
+    }
 
-    if (!isPublicAction) {
-      const authHeader = req.headers.get("Authorization");
-      if (!authHeader) {
-        throw new AuthenticationError("Missing Authorization header");
-      }
+    const configResult = getSupabaseConfig();
+    if (!configResult.ok) {
+      throw configResult.error;
+    }
+    const config = configResult.value;
 
-      // Client for auth validation
-      const authClient = createClient(supabaseUrl, supabaseAnonKey!, {
-        global: { headers: { Authorization: authHeader } },
-      });
+    const requireAuth = !isPublicAction(PUBLIC_ACTIONS, action);
+    const authResult = await authenticateUser(
+      headers,
+      config.supabaseUrl,
+      config.supabaseAnonKey,
+      requireAuth
+    );
 
-      const {
-        data: { user: authUser },
-        error: authError,
-      } = await authClient.auth.getUser();
+    if (!authResult.ok) {
+      throw authResult.error;
+    }
 
-      if (authError || !authUser) {
-        console.error(`[virtual-meeting] Auth failed:`, authError?.message);
-        throw new AuthenticationError("Invalid or expired token");
-      }
+    const user = authResult.value;
 
-      user = { id: authUser.id, email: authUser.email || "" };
+    if (user) {
+      errorLog = setUserId(errorLog, user.id);
       console.log(`[virtual-meeting] Authenticated: ${user.email}`);
-      collector.setContext({ userId: user.id });
     } else {
       console.log(`[virtual-meeting] Public action - skipping authentication`);
     }
 
-    // Service client for data operations (bypasses RLS)
-    const serviceClient = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+    const serviceClient = createClient(config.supabaseUrl, config.supabaseServiceKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // ─────────────────────────────────────────────────────────
-    // 4. Route to handler
-    // ─────────────────────────────────────────────────────────
-
-    let result;
-
-    switch (body.action) {
-      case "create":
-        result = await handleCreate(body.payload, user, serviceClient);
-        break;
-
-      case "delete":
-        result = await handleDelete(body.payload, user, serviceClient);
-        break;
-
-      case "accept":
-        result = await handleAccept(body.payload, user, serviceClient);
-        break;
-
-      case "decline":
-        result = await handleDecline(body.payload, user, serviceClient);
-        break;
-
-      case "send_calendar_invite":
-        result = await handleSendCalendarInvite(body.payload, user, serviceClient);
-        break;
-
-      case "notify_participants":
-        result = await handleNotifyParticipants(body.payload, user, serviceClient);
-        break;
-
-      default:
-        throw new ValidationError(`Unhandled action: ${body.action}`);
+    const handlerResult = routeToHandler(handlers, action);
+    if (!handlerResult.ok) {
+      throw handlerResult.error;
     }
+
+    const handler = handlerResult.value;
+    const result = await handler(payload, user, serviceClient);
 
     console.log(`[virtual-meeting] ========== SUCCESS ==========`);
 
-    return new Response(JSON.stringify({ success: true, data: result }), {
-      status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return formatSuccessResponse(result);
+
   } catch (error) {
     console.error(`[virtual-meeting] ========== ERROR ==========`);
     console.error(`[virtual-meeting] Error name:`, (error as Error).name);
     console.error(`[virtual-meeting] Error message:`, (error as Error).message);
     console.error(`[virtual-meeting] Full error:`, error);
 
-    // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
-    if (collector) {
-      collector.add(error as Error, 'Fatal error in main handler');
-      collector.reportToSlack();
-    }
+    errorLog = addError(errorLog, error as Error, 'Fatal error in main handler');
+    reportErrorLog(errorLog);
 
-    const statusCode = getStatusCodeFromError(error as Error);
-    const errorResponse = formatErrorResponse(error as Error);
-
-    return new Response(JSON.stringify(errorResponse), {
-      status: statusCode,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return formatErrorResponseHttp(error as Error);
   }
 });

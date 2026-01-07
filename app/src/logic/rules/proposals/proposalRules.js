@@ -14,6 +14,7 @@
  */
 
 import { PROPOSAL_STATUSES, isTerminalStatus, isCompletedStatus, getActionsForStatus } from '../../../lib/constants/proposalStatuses.js';
+import { getGuestCancellationReasons } from '../../../lib/dataLookups.js';
 
 /**
  * Check if a proposal can be cancelled by the guest
@@ -288,11 +289,21 @@ export function getCancelButtonText(proposal) {
 }
 
 /**
- * Get available cancellation reason options
+ * Get available cancellation reason options for guests
+ * Fetches from cached reference data (initialized via dataLookups.js)
+ * Falls back to hardcoded values if cache is empty (for resilience during initialization)
  *
- * @returns {Array<string>} Array of reason options
+ * @returns {Array<string>} Array of reason option strings
  */
 export function getCancellationReasonOptions() {
+  const cachedReasons = getGuestCancellationReasons();
+
+  if (cachedReasons.length > 0) {
+    return cachedReasons.map(r => r.reason);
+  }
+
+  // Fallback for initial render before cache is populated
+  console.warn('[getCancellationReasonOptions] Cache empty, using fallback values');
   return [
     'Found another property',
     'Changed move-in dates',

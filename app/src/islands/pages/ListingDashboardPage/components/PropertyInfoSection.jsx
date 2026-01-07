@@ -112,7 +112,7 @@ function formatDate(date) {
   return new Date(date).toLocaleDateString('en-US', options);
 }
 
-export default function PropertyInfoSection({ listing, onImportReviews, onEdit }) {
+export default function PropertyInfoSection({ listing, onImportReviews, onEdit, reviewCount = 0 }) {
   const [showStatusInfo, setShowStatusInfo] = useState(false);
   const statusTriggerRef = useRef(null);
 
@@ -177,13 +177,18 @@ export default function PropertyInfoSection({ listing, onImportReviews, onEdit }
         </p>
       </div>
 
-      {/* Review Section */}
-      <div className="listing-dashboard-property__reviews">
-        <button className="listing-dashboard-property__reviews-btn">
-          <StarIcon />
-          <span>Show my reviews</span>
-        </button>
-      </div>
+      {/* Review Section - Only show when reviews exist */}
+      {reviewCount > 0 && (
+        <div className="listing-dashboard-property__reviews">
+          <button
+            className="listing-dashboard-property__reviews-btn"
+            onClick={onImportReviews}
+          >
+            <StarIcon />
+            <span>Show my reviews ({reviewCount})</span>
+          </button>
+        </div>
+      )}
 
       {/* Status Information Tooltip - uses shared InformationalText component */}
       <InformationalText

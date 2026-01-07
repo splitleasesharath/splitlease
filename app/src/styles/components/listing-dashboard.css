@@ -189,16 +189,25 @@
 .listing-dashboard-alert {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin: 16px 24px;
-  padding: 16px 20px;
+  gap: 10px;
+  margin: 12px 16px;
+  padding: 12px 16px;
   background-color: #eff6ff;
   border: 2px dashed #93c5fd;
   border-radius: 8px;
   position: relative;
-  width: calc(100% - 48px);
+  width: calc(100% - 32px);
   text-align: left;
   font-family: inherit;
+}
+
+@media (min-width: 768px) {
+  .listing-dashboard-alert {
+    gap: 12px;
+    margin: 16px 24px;
+    padding: 16px 20px;
+    width: calc(100% - 48px);
+  }
 }
 
 /* Clickable variant */
@@ -310,14 +319,15 @@
 /* Action Card Grid */
 .listing-dashboard-action-grid {
   display: grid;
-  grid-template-columns: repeat(1, 1fr);
-  gap: 20px;
-  padding: 24px;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  padding: 16px 24px;
 }
 
 @media (min-width: 768px) {
   .listing-dashboard-action-grid {
-    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+    padding: 24px;
   }
 }
 
@@ -334,13 +344,21 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  padding: 32px;
+  gap: 10px;
+  padding: 20px 16px;
   background-color: white;
   border: 1px solid var(--ld-border-color);
-  border-radius: 16px;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+@media (min-width: 768px) {
+  .listing-dashboard-action-card {
+    gap: 16px;
+    padding: 32px;
+    border-radius: 16px;
+  }
 }
 
 .listing-dashboard-action-card:hover {
@@ -350,30 +368,63 @@
 
 .listing-dashboard-action-card__badge {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 12px;
-  height: 12px;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
   background-color: #ef4444;
   border-radius: 50%;
+}
+
+@media (min-width: 768px) {
+  .listing-dashboard-action-card__badge {
+    top: 12px;
+    right: 12px;
+    width: 12px;
+    height: 12px;
+  }
 }
 
 .listing-dashboard-action-card__icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   background-color: #f3f4f6;
   border-radius: 8px;
   color: var(--ld-accent-purple);
 }
 
+.listing-dashboard-action-card__icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+@media (min-width: 768px) {
+  .listing-dashboard-action-card__icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .listing-dashboard-action-card__icon svg {
+    width: 32px;
+    height: 32px;
+  }
+}
+
 .listing-dashboard-action-card__label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--ld-text-primary);
   text-align: center;
+  line-height: 1.3;
+}
+
+@media (min-width: 768px) {
+  .listing-dashboard-action-card__label {
+    font-size: 14px;
+  }
 }
 
 /* Secondary Actions */
@@ -470,9 +521,23 @@
 /* Property Info Section */
 .listing-dashboard-property {
   padding: 24px;
+  margin: 16px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--ld-border-color);
+}
+
+@media (max-width: 640px) {
+  .listing-dashboard-property {
+    padding: 16px;
+    margin: 12px;
+    border-radius: 12px;
+    gap: 16px;
+  }
 }
 
 .listing-dashboard-property__header {
@@ -643,9 +708,23 @@
 /* Details Section */
 .listing-dashboard-details {
   padding: 24px;
+  margin: 16px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--ld-border-color);
+}
+
+@media (max-width: 640px) {
+  .listing-dashboard-details {
+    padding: 16px;
+    margin: 12px;
+    border-radius: 12px;
+    gap: 16px;
+  }
 }
 
 .listing-dashboard-details__header {
@@ -802,14 +881,28 @@
 /* Section Common Styles */
 .listing-dashboard-section {
   padding: 24px;
-  border-top: 1px solid var(--ld-border-color);
+  margin: 16px;
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--ld-border-color);
+}
+
+@media (max-width: 640px) {
+  .listing-dashboard-section {
+    padding: 16px;
+    margin: 12px;
+    border-radius: 12px;
+  }
 }
 
 .listing-dashboard-section__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding-bottom: 12px;
   margin-bottom: 16px;
+  border-bottom: 1px solid var(--ld-border-color);
 }
 
 .listing-dashboard-section__title {
@@ -820,18 +913,20 @@
 }
 
 .listing-dashboard-section__edit {
-  background: none;
+  background-color: var(--ld-success);
   border: none;
-  color: #2563eb;
-  font-size: 14px;
+  color: white;
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  padding: 0;
-  text-decoration: underline;
+  padding: 8px 20px;
+  border-radius: 20px;
+  transition: background-color 0.2s;
+  text-decoration: none;
 }
 
 .listing-dashboard-section__edit:hover {
-  color: var(--ld-accent-purple);
+  background-color: #1f0b38;
 }
 
 /* Section Footer with bottom edit button */
@@ -982,6 +1077,37 @@
   flex-shrink: 0;
 }
 
+.listing-dashboard-amenities__icon-img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* Empty state tag for amenities */
+.listing-dashboard-amenities__empty-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #f3f4f6;
+  border: 1px dashed var(--ld-border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--ld-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.listing-dashboard-amenities__empty-tag:hover {
+  background-color: #e5e7eb;
+  border-color: var(--ld-accent-purple);
+  color: var(--ld-accent-purple);
+}
+
+.listing-dashboard-amenities__empty-tag svg {
+  flex-shrink: 0;
+}
+
 /* Updated Details Section */
 .listing-dashboard-details__specs {
   display: flex;
@@ -1037,6 +1163,31 @@
 
 .listing-dashboard-details__safety-icon {
   color: var(--ld-accent-purple);
+  flex-shrink: 0;
+}
+
+/* Empty state tag for details/safety features */
+.listing-dashboard-details__empty-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #f3f4f6;
+  border: 1px dashed var(--ld-border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--ld-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.listing-dashboard-details__empty-tag:hover {
+  background-color: #e5e7eb;
+  border-color: var(--ld-accent-purple);
+  color: var(--ld-accent-purple);
+}
+
+.listing-dashboard-details__empty-tag svg {
   flex-shrink: 0;
 }
 
@@ -1444,10 +1595,55 @@
   border-color: var(--ld-accent-purple);
 }
 
+/* Past blocked dates - expandable section */
+.listing-dashboard-availability__past-dates {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.listing-dashboard-availability__past-dates-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  color: var(--ld-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.listing-dashboard-availability__past-dates-toggle:hover {
+  color: var(--ld-accent-purple);
+}
+
+.listing-dashboard-availability__past-dates-toggle span:first-child {
+  font-size: 10px;
+  width: 12px;
+}
+
+.listing-dashboard-availability__blocked-list--past {
+  margin-top: 8px;
+}
+
+.listing-dashboard-availability__blocked-date--past {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
 .listing-dashboard-availability__calendar {
   flex: 1.5;
   max-width: 550px;
-  min-width: 400px;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .listing-dashboard-availability__calendar {
+    min-width: 400px;
+  }
 }
 
 .listing-dashboard-availability__calendar-header {
@@ -1612,6 +1808,51 @@
 
 .listing-dashboard-availability__legend-dot--first {
   background-color: var(--ld-accent-purple);
+}
+
+/* Enable interactive states for availability inputs */
+.listing-dashboard-availability__time-field select:not([disabled]) {
+  cursor: pointer;
+}
+
+.listing-dashboard-availability__time-field select:not([disabled]):hover {
+  border-color: var(--ld-accent);
+}
+
+.listing-dashboard-availability__time-field select:not([disabled]):focus {
+  border-color: var(--ld-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(107, 79, 187, 0.1);
+}
+
+.listing-dashboard-availability__range-inputs input:not([readonly]) {
+  background-color: white;
+  cursor: text;
+}
+
+.listing-dashboard-availability__range-inputs input:not([readonly]):hover {
+  border-color: var(--ld-accent);
+}
+
+.listing-dashboard-availability__range-inputs input:not([readonly]):focus {
+  border-color: var(--ld-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(107, 79, 187, 0.1);
+}
+
+.listing-dashboard-availability__date-input:not([readonly]) {
+  background-color: white;
+  cursor: pointer;
+}
+
+.listing-dashboard-availability__date-input:not([readonly]):hover {
+  border-color: var(--ld-accent);
+}
+
+.listing-dashboard-availability__date-input:not([readonly]):focus {
+  border-color: var(--ld-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(107, 79, 187, 0.1);
 }
 
 /* Photos Section */
@@ -1993,12 +2234,47 @@
   }
 
   .listing-dashboard-action-grid {
-    padding: 16px;
-    gap: 12px;
+    padding: 12px 16px;
+    gap: 10px;
   }
 
   .listing-dashboard-action-card {
-    padding: 24px;
+    padding: 16px 12px;
+    gap: 8px;
+  }
+
+  .listing-dashboard-action-card__icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .listing-dashboard-action-card__icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .listing-dashboard-action-card__label {
+    font-size: 12px;
+  }
+
+  /* Hide alert banner subtext on small mobile */
+  .listing-dashboard-alert__subtext {
+    display: none;
+  }
+
+  .listing-dashboard-alert {
+    padding: 10px 14px;
+    margin: 10px 12px;
+    width: calc(100% - 24px);
+  }
+
+  .listing-dashboard-alert__icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .listing-dashboard-alert__text {
+    font-size: 13px;
   }
 
   .listing-dashboard-secondary {
@@ -2019,23 +2295,8 @@
     right: 0;
   }
 
-  .listing-dashboard-property,
-  .listing-dashboard-details {
-    padding: 16px;
-  }
-
   .listing-dashboard-details__select {
     max-width: 100%;
-  }
-
-  .listing-dashboard-section {
-    padding: 16px;
-  }
-
-  .listing-dashboard-section__header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
   }
 
   .listing-dashboard-amenities__grid,
@@ -3064,4 +3325,44 @@
 
 .pricing-edit-overlay .host-confirm-modal__actions .btn--secondary:hover {
   background-color: #e5e7eb;
+}
+
+/* ============================================
+   Page-specific Header Styling
+   Only applies to listing-dashboard page
+   ============================================ */
+body.listing-dashboard-page .main-header {
+  background-color: white;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+body.listing-dashboard-page .logo-image {
+  content: url('https://d1muf25xaso8hp.cloudfront.net/https%3A%2F%2F50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io%2Ff1587601671931x294112149689599100%2Fsplit%2520lease%2520purple%2520circle.png?w=48&h=48&auto=enhance&dpr=2&q=100&fit=max');
+  width: 40px;
+  height: 40px;
+}
+
+body.listing-dashboard-page .logo-text {
+  display: none;
+}
+
+/* Fix header text/icons for white background */
+body.listing-dashboard-page .user-name-wrapper {
+  color: #1f2937;
+}
+
+body.listing-dashboard-page .user-name-wrapper svg {
+  color: #1f2937;
+}
+
+body.listing-dashboard-page .nav-link {
+  color: #1f2937;
+}
+
+body.listing-dashboard-page .dropdown-arrow {
+  color: #1f2937;
+}
+
+body.listing-dashboard-page .hamburger-line {
+  background-color: #1f2937;
 }

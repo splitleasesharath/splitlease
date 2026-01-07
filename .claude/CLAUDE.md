@@ -38,6 +38,16 @@ supabase migration new <name>  # Create new migration
 # Cloudflare Deployment
 /deploy                  # Claude slash command for deployment
 npx wrangler pages deploy dist --project-name splitlease  # Manual deploy
+
+# Linting
+# Frontend (from app/ directory)
+bun run lint              # Check for issues
+bun run lint:fix          # Auto-fix where possible
+bun run lint:check        # CI mode (fails on warnings)
+
+# Edge Functions (from project root, requires Deno)
+deno lint supabase/functions/        # Check TypeScript functions
+deno fmt --check supabase/functions/ # Check formatting
 ```
 
 ---
@@ -119,6 +129,8 @@ The database stores days natively in this format. No conversion needed.
 |---------------|------------------|
 | Route Registry | `app/src/routes.config.js` |
 | Vite Config | `app/vite.config.js` |
+| ESLint Config | `app/eslint.config.js` |
+| Deno Lint Config | `supabase/functions/deno.json` |
 | Authentication | `app/src/lib/auth.js` |
 | Supabase client | `app/src/lib/supabase.js` |
 | Day utilities | `app/src/lib/dayUtils.js` |
@@ -155,6 +167,7 @@ The database stores days natively in this format. No conversion needed.
 - **Log full error details** on database errors: `code`, `message`, `details`, `hint`
 - Test edit flows with listings that have null FK values (legacy data)
 - **Informational text triggers**: When adding a `?` icon to open informational text modals, make the accompanying text label clickable too (not just the `?`). Wrap both the text and `?` in a single clickable container.
+- **ALWAYS invoke `/fp-rater` skill after creating or updating code files** - Output the FP rating table at the bottom of your response (table only, no explanations)
 
 ### DON'T
 - Expose API keys in frontend code
@@ -328,4 +341,4 @@ These subagents may ONLY be invoked **before** starting the pipeline or **after*
 
 ---
 
-**VERSION**: 11.1 | **UPDATED**: 2026-01-04
+**VERSION**: 11.3 | **UPDATED**: 2026-01-07
