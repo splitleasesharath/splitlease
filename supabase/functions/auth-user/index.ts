@@ -13,19 +13,40 @@
  * - request_password_reset: Send password reset email - via Supabase Auth (native)
  * - update_password: Update password after reset link clicked - via Supabase Auth (native)
  * - generate_magic_link: Generate magic link without sending email - via Supabase Auth (native)
+ * - oauth_signup: Create user record from OAuth provider data - via Supabase Auth
+ * - oauth_login: Verify user exists and return session data - via Supabase Auth
  *
  * Security:
  * - NO user authentication on these endpoints (you can't require auth to log in!)
  * - API keys stored server-side in Supabase Secrets
  * - Validates request format only
  * - Password reset always returns success to prevent email enumeration
+ *
+ * FP ARCHITECTURE:
+ * - Pure functions for validation, routing, and response formatting
+ * - Immutable data structures (no let reassignment in orchestration)
+ * - Side effects isolated to boundaries (entry/exit of handler)
+ * - Result type for error propagation (exceptions only at outer boundary)
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from '../_shared/cors.ts';
-import { formatErrorResponse, getStatusCodeFromError } from '../_shared/errors.ts';
-import { validateAction, validateRequiredFields } from '../_shared/validation.ts';
-import { createErrorCollector, ErrorCollector } from '../_shared/slack.ts';
+
+// FP Utilities
+import { Result, ok, err } from "../_shared/fp/result.ts";
+import {
+  parseRequest,
+  validateAction,
+  routeToHandler,
+  getSupabaseConfig,
+  getBubbleConfig,
+  formatSuccessResponse,
+  formatErrorResponseHttp,
+  formatCorsResponse,
+  CorsPreflightSignal,
+} from "../_shared/fp/orchestration.ts";
+import { createErrorLog, addError, setAction, ErrorLog } from "../_shared/fp/errorLog.ts";
+import { reportErrorLog } from "../_shared/slack.ts";
 
 // Import handlers
 import { handleLogin } from './handlers/login.ts';
@@ -38,158 +59,231 @@ import { handleGenerateMagicLink } from './handlers/generateMagicLink.ts';
 import { handleOAuthSignup } from './handlers/oauthSignup.ts';
 import { handleOAuthLogin } from './handlers/oauthLogin.ts';
 
-console.log('[auth-user] Edge Function started');
+// ─────────────────────────────────────────────────────────────
+// Configuration (Immutable)
+// ─────────────────────────────────────────────────────────────
 
-Deno.serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
-      headers: corsHeaders,
+const ALLOWED_ACTIONS = [
+  'login',
+  'signup',
+  'logout',
+  'validate',
+  'request_password_reset',
+  'update_password',
+  'generate_magic_link',
+  'oauth_signup',
+  'oauth_login',
+] as const;
+
+type Action = typeof ALLOWED_ACTIONS[number];
+
+// Actions that require Bubble API configuration
+const BUBBLE_REQUIRED_ACTIONS: ReadonlySet<string> = new Set(['validate']);
+
+// Handler map (immutable record) - replaces switch statement
+const handlers: Readonly<Record<Action, Function>> = {
+  login: handleLogin,
+  signup: handleSignup,
+  logout: handleLogout,
+  validate: handleValidate,
+  request_password_reset: handleRequestPasswordReset,
+  update_password: handleUpdatePassword,
+  generate_magic_link: handleGenerateMagicLink,
+  oauth_signup: handleOAuthSignup,
+  oauth_login: handleOAuthLogin,
+};
+
+// ─────────────────────────────────────────────────────────────
+// Pure Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Get combined configuration for auth operations
+ * Some actions need both Supabase and Bubble config
+ */
+interface AuthConfig {
+  readonly supabaseUrl: string;
+  readonly supabaseServiceKey: string;
+  readonly bubbleBaseUrl?: string;
+  readonly bubbleApiKey?: string;
+}
+
+const getAuthConfig = (action: string): Result<AuthConfig, Error> => {
+  // Supabase config is always required
+  const supabaseResult = getSupabaseConfig();
+  if (!supabaseResult.ok) {
+    return supabaseResult;
+  }
+
+  const { supabaseUrl, supabaseServiceKey } = supabaseResult.value;
+
+  // Bubble config only required for validate action
+  if (BUBBLE_REQUIRED_ACTIONS.has(action)) {
+    const bubbleResult = getBubbleConfig();
+    if (!bubbleResult.ok) {
+      return bubbleResult;
+    }
+
+    return ok({
+      supabaseUrl,
+      supabaseServiceKey,
+      bubbleBaseUrl: bubbleResult.value.bubbleBaseUrl,
+      bubbleApiKey: bubbleResult.value.bubbleApiKey,
     });
   }
 
-  // Error collector for consolidated error reporting (ONE RUN = ONE LOG)
-  let collector: ErrorCollector | null = null;
-  let action = 'unknown';
+  return ok({ supabaseUrl, supabaseServiceKey });
+};
+
+// ─────────────────────────────────────────────────────────────
+// Effect Boundary (Side Effects Isolated Here)
+// ─────────────────────────────────────────────────────────────
+
+console.log('[auth-user] Edge Function started (FP mode)');
+
+Deno.serve(async (req) => {
+  // Initialize immutable error log with correlation ID
+  const correlationId = crypto.randomUUID().slice(0, 8);
+  let errorLog: ErrorLog = createErrorLog('auth-user', 'unknown', correlationId);
 
   try {
     console.log(`[auth-user] ========== NEW AUTH REQUEST ==========`);
     console.log(`[auth-user] Method: ${req.method}`);
     console.log(`[auth-user] URL: ${req.url}`);
 
-    // Only accept POST requests
-    if (req.method !== 'POST') {
-      throw new Error('Method not allowed. Use POST.');
+    // ─────────────────────────────────────────────────────────
+    // Step 1: Parse request (side effect boundary for req.json())
+    // ─────────────────────────────────────────────────────────
+
+    const parseResult = await parseRequest(req);
+
+    if (!parseResult.ok) {
+      // Handle CORS preflight (not an error, just control flow)
+      if (parseResult.error instanceof CorsPreflightSignal) {
+        return formatCorsResponse();
+      }
+      throw parseResult.error;
     }
 
-    // NO USER AUTHENTICATION CHECK
-    // These endpoints ARE the authentication system
-    // Users calling /login or /signup are not yet authenticated
+    const { action, payload } = parseResult.value;
 
-    // Parse and validate request body
-    const body = await req.json();
-    console.log(`[auth-user] Request body:`, JSON.stringify(body, null, 2));
+    // Update error log with action (immutable transformation)
+    errorLog = setAction(errorLog, action);
+    console.log(`[auth-user] Request body:`, JSON.stringify({ action, payload }, null, 2));
 
-    validateRequiredFields(body, ['action']);
-    action = body.action;
-    const { payload } = body;
+    // ─────────────────────────────────────────────────────────
+    // Step 2: Validate action (pure)
+    // ─────────────────────────────────────────────────────────
 
-    // Create error collector after we know the action
-    collector = createErrorCollector('auth-user', action);
-
-    // Validate action is supported
-    const allowedActions = ['login', 'signup', 'logout', 'validate', 'request_password_reset', 'update_password', 'generate_magic_link', 'oauth_signup', 'oauth_login'];
-    validateAction(action, allowedActions);
+    const actionResult = validateAction(ALLOWED_ACTIONS, action);
+    if (!actionResult.ok) {
+      throw actionResult.error;
+    }
 
     console.log(`[auth-user] Action: ${action}`);
 
-    // Get configuration from secrets
-    const bubbleAuthBaseUrl = Deno.env.get('BUBBLE_API_BASE_URL');
-    const bubbleApiKey = Deno.env.get('BUBBLE_API_KEY');
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    // ─────────────────────────────────────────────────────────
+    // Step 3: Get configuration (pure with env read)
+    // ─────────────────────────────────────────────────────────
 
-    // Supabase config is required for all actions
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase configuration missing in secrets');
+    const configResult = getAuthConfig(action);
+    if (!configResult.ok) {
+      throw configResult.error;
+    }
+    const config = configResult.value;
+
+    console.log(`[auth-user] Action: ${action}, Supabase URL: ${config.supabaseUrl}`);
+
+    // ─────────────────────────────────────────────────────────
+    // Step 4: Route to handler (pure lookup + execution)
+    // ─────────────────────────────────────────────────────────
+
+    const handlerResult = routeToHandler(handlers, action);
+    if (!handlerResult.ok) {
+      throw handlerResult.error;
     }
 
-    // Bubble config is required for validate (but NOT login/signup/logout - now use Supabase Auth)
-    if ((action === 'validate') && (!bubbleAuthBaseUrl || !bubbleApiKey)) {
-      throw new Error('Bubble API configuration missing in secrets');
-    }
+    // Execute handler - the only remaining side effect
+    const handler = handlerResult.value;
+    const result = await executeHandler(handler, action as Action, payload, config);
 
-    console.log(`[auth-user] Action: ${action}, Supabase URL: ${supabaseUrl}`);
-
-    // Route to appropriate handler
-    let result;
-
-    switch (action) {
-      case 'login':
-        // Login now uses Supabase Auth natively (no Bubble dependency)
-        result = await handleLogin(supabaseUrl, supabaseServiceKey, payload);
-        break;
-
-      case 'signup':
-        // Signup now uses Supabase Auth natively (no Bubble dependency)
-        result = await handleSignup(supabaseUrl, supabaseServiceKey, payload);
-        break;
-
-      case 'logout':
-        // Logout now happens client-side (Supabase Auth), this is just a stub
-        result = await handleLogout(payload);
-        break;
-
-      case 'validate':
-        result = await handleValidate(bubbleAuthBaseUrl, bubbleApiKey, supabaseUrl, supabaseServiceKey, payload);
-        break;
-
-      case 'request_password_reset':
-        // Password reset request uses Supabase Auth natively (no Bubble dependency)
-        result = await handleRequestPasswordReset(supabaseUrl, supabaseServiceKey, payload);
-        break;
-
-      case 'update_password':
-        // Password update uses Supabase Auth natively (no Bubble dependency)
-        result = await handleUpdatePassword(supabaseUrl, supabaseServiceKey, payload);
-        break;
-
-      case 'generate_magic_link':
-        // Generate magic link without sending email (for custom email flows)
-        result = await handleGenerateMagicLink(supabaseUrl, supabaseServiceKey, payload);
-        break;
-
-      case 'oauth_signup':
-        // OAuth signup - create user record from OAuth provider data (LinkedIn, Google)
-        result = await handleOAuthSignup(supabaseUrl, supabaseServiceKey, payload);
-        break;
-
-      case 'oauth_login':
-        // OAuth login - verify user exists and return session data
-        result = await handleOAuthLogin(supabaseUrl, supabaseServiceKey, payload);
-        break;
-
-      default:
-        // This should never happen due to validateAction above
-        throw new Error(`Unknown action: ${action}`);
-    }
-
-    console.log(`[auth-user] ✅ Handler completed successfully`);
+    console.log(`[auth-user] Handler completed successfully`);
     console.log(`[auth-user] ========== REQUEST COMPLETE ==========`);
 
-    // Return success response
-    return new Response(
-      JSON.stringify({
-        success: true,
-        data: result,
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return formatSuccessResponse(result);
 
   } catch (error) {
     console.error('[auth-user] ========== ERROR ==========');
     console.error('[auth-user] Error:', error);
-    console.error('[auth-user] Error stack:', error.stack);
+    console.error('[auth-user] Error stack:', (error as Error).stack);
 
-    // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
-    if (collector) {
-      collector.add(error as Error, 'Fatal error in main handler');
-      collector.reportToSlack();
-    }
+    // Add error to log (immutable)
+    errorLog = addError(errorLog, error as Error, 'Fatal error in main handler');
 
-    const statusCode = getStatusCodeFromError(error);
-    const errorResponse = formatErrorResponse(error);
+    // Report to Slack (side effect at boundary)
+    reportErrorLog(errorLog);
 
-    return new Response(
-      JSON.stringify(errorResponse),
-      {
-        status: statusCode,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+    return formatErrorResponseHttp(error as Error);
   }
 });
+
+// ─────────────────────────────────────────────────────────────
+// Handler Execution (Encapsulates action-specific logic)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Execute the appropriate handler with correct parameters
+ * This function handles the different signatures of each handler
+ */
+async function executeHandler(
+  handler: Function,
+  action: Action,
+  payload: Record<string, unknown>,
+  config: AuthConfig
+): Promise<unknown> {
+  const { supabaseUrl, supabaseServiceKey, bubbleBaseUrl, bubbleApiKey } = config;
+
+  switch (action) {
+    case 'login':
+      // Login uses Supabase Auth natively (no Bubble dependency)
+      return handler(supabaseUrl, supabaseServiceKey, payload);
+
+    case 'signup':
+      // Signup uses Supabase Auth natively (no Bubble dependency)
+      return handler(supabaseUrl, supabaseServiceKey, payload);
+
+    case 'logout':
+      // Logout happens client-side (Supabase Auth), this is just a stub
+      return handler(payload);
+
+    case 'validate':
+      // Validate requires both Bubble and Supabase config
+      return handler(bubbleBaseUrl, bubbleApiKey, supabaseUrl, supabaseServiceKey, payload);
+
+    case 'request_password_reset':
+      // Password reset uses Supabase Auth natively
+      return handler(supabaseUrl, supabaseServiceKey, payload);
+
+    case 'update_password':
+      // Password update uses Supabase Auth natively
+      return handler(supabaseUrl, supabaseServiceKey, payload);
+
+    case 'generate_magic_link':
+      // Generate magic link without sending email
+      return handler(supabaseUrl, supabaseServiceKey, payload);
+
+    case 'oauth_signup':
+      // OAuth signup - create user record from OAuth provider data
+      return handler(supabaseUrl, supabaseServiceKey, payload);
+
+    case 'oauth_login':
+      // OAuth login - verify user exists and return session data
+      return handler(supabaseUrl, supabaseServiceKey, payload);
+
+    default: {
+      // Exhaustive check - TypeScript ensures all cases are handled
+      const _exhaustive: never = action;
+      throw new Error(`Unknown action: ${action}`);
+    }
+  }
+}
