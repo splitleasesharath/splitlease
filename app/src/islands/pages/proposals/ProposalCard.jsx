@@ -810,8 +810,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
   // Proposal details modal state (GuestEditingProposalModal)
   const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false);
-  // Initial view for the proposal details modal ('general' | 'editing' | 'cancel')
-  const [proposalDetailsModalInitialView, setProposalDetailsModalInitialView] = useState('general');
+  // Initial view for the proposal details modal ('pristine' | 'editing' | 'general' | 'cancel')
+  const [proposalDetailsModalInitialView, setProposalDetailsModalInitialView] = useState('pristine');
 
   // Virtual Meeting Manager modal state
   const [showVMModal, setShowVMModal] = useState(false);
@@ -1365,13 +1365,13 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           isVisible={showProposalDetailsModal}
           onClose={() => {
             setShowProposalDetailsModal(false);
-            setProposalDetailsModalInitialView('general'); // Reset for next open
+            setProposalDetailsModalInitialView('pristine'); // Reset for next open
           }}
           onProposalCancel={(reason) => {
             // Handle cancellation - reload page to show updated status
             console.log('Proposal cancelled with reason:', reason);
             setShowProposalDetailsModal(false);
-            setProposalDetailsModalInitialView('general');
+            setProposalDetailsModalInitialView('pristine');
             window.location.reload();
           }}
           pricePerNight={nightlyPrice}

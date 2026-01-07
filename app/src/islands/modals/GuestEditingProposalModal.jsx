@@ -1072,23 +1072,24 @@ export default function GuestEditingProposalModal({
 
             {/* Buttons section - conditionally visible */}
             {showButtons && (
-              <div className="gep-buttons">
+              <div className={`gep-buttons ${view === 'pristine' ? 'gep-buttons--vertical' : ''}`}>
                 {view === 'pristine' ? (
                   /* Pristine state: User just opened modal, hasn't edited anything */
+                  /* Edit Proposal on top, Close on bottom - stacked vertically */
                   <>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--secondary"
-                      onClick={handleClose}
-                    >
-                      Close
-                    </button>
                     <button
                       type="button"
                       className="gep-button gep-button--primary"
                       onClick={handleStartEditing}
                     >
                       Edit Proposal
+                    </button>
+                    <button
+                      type="button"
+                      className="gep-button gep-button--secondary"
+                      onClick={handleClose}
+                    >
+                      Close
                     </button>
                   </>
                 ) : view === 'editing' ? (
