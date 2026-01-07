@@ -158,15 +158,13 @@ export async function executeDeleteProposal(proposalId) {
 
   console.log('[cancelProposalWorkflow] Soft-deleting proposal:', proposalId);
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from('proposal')
     .update({
       'Deleted': true,
       'Modified Date': now
     })
-    .eq('_id', proposalId)
-    .select()
-    .single();
+    .eq('_id', proposalId);
 
   if (error) {
     console.error('[cancelProposalWorkflow] Error deleting proposal:', error);
@@ -174,5 +172,4 @@ export async function executeDeleteProposal(proposalId) {
   }
 
   console.log('[cancelProposalWorkflow] Proposal deleted successfully:', proposalId);
-  return data;
 }
