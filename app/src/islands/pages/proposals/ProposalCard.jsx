@@ -72,30 +72,17 @@ function convertDayValueToName(dayValue) {
 }
 
 /**
- * Get check-in and check-out range from proposal
- * Uses the stored check-in/check-out day fields directly (handles wrap-around weeks correctly)
+ * Get the first and last selected day range from proposal
+ * Derives directly from Days Selected to ensure consistency with displayed day badges
+ * Uses wrap-around logic for schedules spanning Saturday-Sunday boundary
  *
- * Note: Database now stores 0-indexed days natively (0=Sunday through 6=Saturday)
+ * Note: Database stores 0-indexed days (0=Sunday through 6=Saturday)
  *
  * @param {Object} proposal - Proposal object
- * @returns {string|null} "Wednesday to Sunday" format or null if unavailable
+ * @returns {string|null} "Monday to Saturday" format or null if unavailable
  */
 function getCheckInOutRange(proposal) {
-  // Use the stored check-in/out day fields directly - they handle wrap-around correctly
-  const checkInDay = proposal['check in day'];
-  const checkOutDay = proposal['check out day'];
-
-  if (checkInDay !== null && checkInDay !== undefined &&
-      checkOutDay !== null && checkOutDay !== undefined) {
-    const checkInName = convertDayValueToName(checkInDay);
-    const checkOutName = convertDayValueToName(checkOutDay);
-
-    if (checkInName && checkOutName) {
-      return `${checkInName} to ${checkOutName}`;
-    }
-  }
-
-  // Fallback: derive from Days Selected (for legacy data without check-in/out fields)
+  // Always derive from Days Selected to match the displayed day badges
   let daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
 
   // Parse if it's a JSON string
@@ -107,28 +94,50 @@ function getCheckInOutRange(proposal) {
     }
   }
 
-  if (Array.isArray(daysSelected) && daysSelected.length > 0) {
-    // Convert to day indices (0-indexed: 0=Sunday through 6=Saturday)
-    const dayIndices = daysSelected.map(day => {
-      if (typeof day === 'number') return day;
-      if (typeof day === 'string') {
-        const trimmed = day.trim();
-        const numericValue = parseInt(trimmed, 10);
-        if (!isNaN(numericValue) && String(numericValue) === trimmed) {
-          return numericValue; // 0-indexed
-        }
-        // It's a day name - find its 0-indexed position
-        const jsIndex = DAY_NAMES.indexOf(trimmed);
-        return jsIndex >= 0 ? jsIndex : -1;
-      }
-      return -1;
-    }).filter(idx => idx >= 0 && idx <= 6);
+  if (!Array.isArray(daysSelected) || daysSelected.length === 0) {
+    return null;
+  }
 
-    if (dayIndices.length > 0) {
-      // Sort to find first and last day (note: doesn't handle wrap-around, but this is fallback only)
-      dayIndices.sort((a, b) => a - b);
-      const firstDayIndex = dayIndices[0];
-      const lastDayIndex = dayIndices[dayIndices.length - 1];
+  // Convert to day indices (0-indexed: 0=Sunday through 6=Saturday)
+  const dayIndices = daysSelected.map(day => {
+    if (typeof day === 'number') return day;
+    if (typeof day === 'string') {
+      const trimmed = day.trim();
+      const numericValue = parseInt(trimmed, 10);
+      if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+        return numericValue; // 0-indexed
+      }
+      // It's a day name - find its 0-indexed position
+      const jsIndex = DAY_NAMES.indexOf(trimmed);
+      return jsIndex >= 0 ? jsIndex : -1;
+    }
+    return -1;
+  }).filter(idx => idx >= 0 && idx <= 6);
+
+  if (dayIndices.length === 0) {
+    return null;
+  }
+
+  const sorted = [...dayIndices].sort((a, b) => a - b);
+
+  // Handle wrap-around case (e.g., Fri, Sat, Sun, Mon = [0, 1, 5, 6])
+  const hasZero = sorted.includes(0);
+  const hasSix = sorted.includes(6);
+
+  if (hasZero && hasSix) {
+    // Find gap to determine actual start/end
+    let gapIndex = -1;
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] !== sorted[i - 1] + 1) {
+        gapIndex = i;
+        break;
+      }
+    }
+
+    if (gapIndex !== -1) {
+      // Wrapped selection: first day is after the gap, last day is before the gap
+      const firstDayIndex = sorted[gapIndex]; // First day after gap (e.g., Friday = 5)
+      const lastDayIndex = sorted[gapIndex - 1]; // Last day before gap (e.g., Monday = 1)
 
       const checkInName = DAY_NAMES[firstDayIndex];
       const checkOutName = DAY_NAMES[lastDayIndex];
@@ -137,6 +146,17 @@ function getCheckInOutRange(proposal) {
         return `${checkInName} to ${checkOutName}`;
       }
     }
+  }
+
+  // Standard case: first selected day to last selected day
+  const firstDayIndex = sorted[0];
+  const lastDayIndex = sorted[sorted.length - 1];
+
+  const checkInName = DAY_NAMES[firstDayIndex];
+  const checkOutName = DAY_NAMES[lastDayIndex];
+
+  if (checkInName && checkOutName) {
+    return `${checkInName} to ${checkOutName}`;
   }
 
   return null;
