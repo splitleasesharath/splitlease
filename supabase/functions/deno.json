@@ -1,0 +1,27 @@
+{
+  "lint": {
+    "include": [
+      "./**/*.ts"
+    ],
+    "exclude": [
+      "./**/*_test.ts"
+    ],
+    "rules": {
+      "tags": ["recommended"],
+      "include": [
+        "ban-untagged-todo",
+        "no-unused-vars"
+      ],
+      "exclude": [
+        "no-explicit-any"
+      ]
+    }
+  },
+  "fmt": {
+    "useTabs": false,
+    "lineWidth": 100,
+    "indentWidth": 2,
+    "singleQuote": true,
+    "proseWrap": "always"
+  }
+}
