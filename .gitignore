@@ -64,11 +64,17 @@ trees/
 # Claude hooks logs
 logs/
 
+# Commit counter (local state tracking)
+.claude/commit_count.txt
+
 # Agent output directories (root level only, not .claude/agents/)
 /agents/
 
 claude-max-output.json
 claude-max-output.jsonl
+
+# Goodbye skill temporary files (may contain webhook URLs)
+.claude/condensed_summary.json
 
 storage.json
 

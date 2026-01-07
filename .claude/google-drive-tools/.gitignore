@@ -1,0 +1,14 @@
+# Google Drive Tools - Private Files
+# DO NOT commit these files to version control
+
+# OAuth credentials (contains client secret)
+credentials.json
+
+# Authentication token (contains access/refresh tokens)
+token.pickle
+*.pickle
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo

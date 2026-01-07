@@ -31,7 +31,7 @@ export function cleanLegacyUserIdFromUrl() {
   );
 
   let needsRedirect = false;
-  let cleanPath = '/guest-proposals';
+  const cleanPath = '/guest-proposals';
   const cleanParams = new URLSearchParams();
 
   // Check for user ID in path (legacy pattern)

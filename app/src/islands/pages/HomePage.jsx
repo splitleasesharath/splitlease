@@ -377,7 +377,7 @@ function FeaturedSpacesSection() {
 
     setIsLoadingListings(true);
     try {
-      let query = supabase
+      const query = supabase
         .from('listing')
         .select(`
           _id,

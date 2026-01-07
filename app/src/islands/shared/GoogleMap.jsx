@@ -587,7 +587,7 @@ const GoogleMap = forwardRef(({
 
         let markersCreated = 0;
         let skippedNoCoordinates = 0;
-        let skippedInvalidCoordinates = [];
+        const skippedInvalidCoordinates = [];
 
         filteredListings.forEach((listing, index) => {
           console.log(`🗺️ GoogleMap: [${index + 1}/${filteredListings.length}] Processing filtered listing:`, {
@@ -672,7 +672,7 @@ const GoogleMap = forwardRef(({
         let greenMarkersCreated = 0;
         let skippedAlreadyFiltered = 0;
         let skippedNoCoordinates = 0;
-        let skippedInvalidCoordinates = [];
+        const skippedInvalidCoordinates = [];
 
         listings.forEach((listing, index) => {
           // Skip if already shown as filtered listing

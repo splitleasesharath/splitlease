@@ -602,7 +602,7 @@ export function useAccountProfilePageLogic() {
         ];
 
         let filled = 0;
-        let total = fields.length;
+        const total = fields.length;
 
         fields.forEach(field => {
           if (draftData[field] && String(draftData[field]).trim()) filled++;
