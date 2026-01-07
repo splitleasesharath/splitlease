@@ -6,6 +6,7 @@
  */
 
 import React, { useState } from 'react';
+import { useToast } from '../../../shared/Toast';
 import './ReferralModal.css';
 
 // Send icon (Telegram-style)
@@ -174,6 +175,7 @@ function ReferralCard({ referrerName, isHost }) {
 
 export default function ReferralModal({ isOpen, onClose, referralCode = 'yourname', stats = {}, userType = 'guest', referrerName = '' }) {
   const [copied, setCopied] = useState(false);
+  const { showToast } = useToast();
 
   const referralLink = `https://splitlease.com/ref/${referralCode}`;
   const isHost = userType === 'host';
@@ -193,9 +195,19 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'yournam
     try {
       await navigator.clipboard.writeText(referralLink);
       setCopied(true);
+      showToast({
+        title: 'Link copied!',
+        content: referralLink,
+        type: 'success'
+      });
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
+      showToast({
+        title: 'Failed to copy',
+        content: 'Please copy the link manually',
+        type: 'error'
+      });
     }
   };
 
@@ -308,7 +320,7 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'yournam
 
         <div className="referral-modal-footer">
           <a href="/policies#referral">View referral details</a>
-          <a href="/policies#terms">Terms & Conditions</a>
+          <a href="/policies#terms-of-use">Terms & Conditions</a>
         </div>
       </div>
     </div>
