@@ -30,10 +30,38 @@ export const VM_STATES = {
   BOOKED_AWAITING_CONFIRMATION: 'booked_awaiting_confirmation',
   CONFIRMED: 'confirmed',
   DECLINED: 'declined',
+  EXPIRED: 'expired',                           // All suggested dates passed without booking
   // Legacy aliases (for backward compatibility - will be removed in future)
   REQUESTED_BY_GUEST: 'requested_by_me',        // Alias → REQUESTED_BY_ME
   REQUESTED_BY_HOST: 'requested_by_other'       // Alias → REQUESTED_BY_OTHER
 };
+
+/**
+ * Check if all suggested dates have expired (are in the past)
+ *
+ * @param {Object} virtualMeeting - Virtual meeting object (normalized)
+ * @returns {boolean} True if all dates are expired
+ */
+export function areAllDatesExpired(virtualMeeting) {
+  if (!virtualMeeting) return false;
+
+  const now = new Date();
+  const bookedDate = virtualMeeting.bookedDate || virtualMeeting['booked date'];
+  const suggestedDates = virtualMeeting.suggestedDates || virtualMeeting['suggested dates and times'] || [];
+
+  // If there's a booked date, check if it's in the past
+  if (bookedDate) {
+    return new Date(bookedDate) < now;
+  }
+
+  // If no suggested dates, not expired (just pending)
+  if (!suggestedDates || suggestedDates.length === 0) {
+    return false;
+  }
+
+  // Check if ALL suggested dates are in the past
+  return suggestedDates.every(dateStr => new Date(dateStr) < now);
+}
 
 /**
  * Determine the current state of a virtual meeting
@@ -63,6 +91,12 @@ export function getVirtualMeetingState(virtualMeeting, currentUserId) {
     return VM_STATES.BOOKED_AWAITING_CONFIRMATION;
   }
 
+  // State 6: All suggested dates expired without booking
+  // Check AFTER booked states but BEFORE requested states
+  if (areAllDatesExpired(virtualMeeting)) {
+    return VM_STATES.EXPIRED;
+  }
+
   // State 2: VM requested but no booked date yet
   if (virtualMeeting.requestedBy === currentUserId) {
     return VM_STATES.REQUESTED_BY_ME;
@@ -85,6 +119,11 @@ export function canRequestNewMeeting(virtualMeeting) {
 
   // Can request new meeting if previous was declined
   if (virtualMeeting.meetingDeclined) {
+    return true;
+  }
+
+  // Can request new meeting if all dates expired
+  if (areAllDatesExpired(virtualMeeting)) {
     return true;
   }
 
@@ -205,6 +244,11 @@ export function getVMButtonText(virtualMeeting, currentUserId) {
     return 'Request Alternative Meeting';
   }
 
+  // Check for expired dates
+  if (areAllDatesExpired(virtualMeeting) && !virtualMeeting.bookedDate) {
+    return 'Request New Times';
+  }
+
   if (!virtualMeeting.bookedDate) {
     if (virtualMeeting.requestedBy === currentUserId) {
       return 'Meeting Requested';
@@ -238,6 +282,11 @@ export function getVMButtonStyle(virtualMeeting, currentUserId) {
 
   if (virtualMeeting.meetingDeclined) {
     return 'warning';
+  }
+
+  // Expired state - show warning/amber style to prompt action
+  if (areAllDatesExpired(virtualMeeting) && !virtualMeeting.bookedDate) {
+    return 'expired';
   }
 
   if (virtualMeeting.bookedDate && virtualMeeting.confirmedBySplitlease) {

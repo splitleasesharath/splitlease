@@ -1258,6 +1258,12 @@
   color: #065F46;
 }
 
+.vm-section-badge-expired {
+  background-color: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #F59E0B;
+}
+
 /* ============================================================================
    VM SECTION - PRIMARY ACTION BUTTONS
    State-dependent action buttons
@@ -1319,6 +1325,16 @@
   background-color: #9CA3AF;
 }
 
+/* Expired state - Amber/Orange (request new times) */
+.vm-section-primary-btn--expired {
+  background-color: #F59E0B;
+  color: white;
+}
+
+.vm-section-primary-btn--expired:hover {
+  background-color: #D97706;
+}
+
 /* ============================================================================
    VM SECTION - BOOKED DATE PILL
    Different styling for confirmed/booked dates
@@ -1328,6 +1344,14 @@
   background-color: #D1FAE5;
   color: #065F46;
   font-weight: 500;
+}
+
+/* Expired date pill styling */
+.vm-section-date-pill--expired {
+  background-color: #FEE2E2;
+  color: #991B1B;
+  text-decoration: line-through;
+  opacity: 0.7;
 }
 
 /* ============================================================================
