@@ -445,8 +445,13 @@ export const SelfListingPage: React.FC = () => {
       if (isSectionComplete(currentSection)) {
         markSectionComplete(currentSection);
       } else {
-        // Section is not complete, show alert
-        alert(`Please complete all required fields in Section ${currentSection} before proceeding.`);
+        // Section is not complete, show toast notification
+        showToast({
+          title: 'Incomplete Section',
+          content: `Please complete all required fields in Section ${currentSection} before proceeding.`,
+          type: 'warning',
+          duration: 6000
+        });
         return;
       }
 
@@ -762,6 +767,7 @@ export const SelfListingPage: React.FC = () => {
               onNext={handleNext}
               onBack={handleBack}
               zipCode={formData.spaceSnapshot.address.zip}
+              showToast={showToast}
             />
           )}
 
@@ -791,6 +797,7 @@ export const SelfListingPage: React.FC = () => {
               onChange={updateRules}
               onNext={handleNext}
               onBack={handleBack}
+              showToast={showToast}
             />
           )}
 

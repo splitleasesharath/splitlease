@@ -1077,6 +1077,37 @@
   flex-shrink: 0;
 }
 
+.listing-dashboard-amenities__icon-img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
+
+/* Empty state tag for amenities */
+.listing-dashboard-amenities__empty-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #f3f4f6;
+  border: 1px dashed var(--ld-border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--ld-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.listing-dashboard-amenities__empty-tag:hover {
+  background-color: #e5e7eb;
+  border-color: var(--ld-accent-purple);
+  color: var(--ld-accent-purple);
+}
+
+.listing-dashboard-amenities__empty-tag svg {
+  flex-shrink: 0;
+}
+
 /* Updated Details Section */
 .listing-dashboard-details__specs {
   display: flex;
@@ -1132,6 +1163,31 @@
 
 .listing-dashboard-details__safety-icon {
   color: var(--ld-accent-purple);
+  flex-shrink: 0;
+}
+
+/* Empty state tag for details/safety features */
+.listing-dashboard-details__empty-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background-color: #f3f4f6;
+  border: 1px dashed var(--ld-border-color);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--ld-text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.listing-dashboard-details__empty-tag:hover {
+  background-color: #e5e7eb;
+  border-color: var(--ld-accent-purple);
+  color: var(--ld-accent-purple);
+}
+
+.listing-dashboard-details__empty-tag svg {
   flex-shrink: 0;
 }
 
@@ -1539,6 +1595,44 @@
   border-color: var(--ld-accent-purple);
 }
 
+/* Past blocked dates - expandable section */
+.listing-dashboard-availability__past-dates {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px dashed #e5e7eb;
+}
+
+.listing-dashboard-availability__past-dates-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: none;
+  border: none;
+  padding: 4px 0;
+  color: var(--ld-text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.listing-dashboard-availability__past-dates-toggle:hover {
+  color: var(--ld-accent-purple);
+}
+
+.listing-dashboard-availability__past-dates-toggle span:first-child {
+  font-size: 10px;
+  width: 12px;
+}
+
+.listing-dashboard-availability__blocked-list--past {
+  margin-top: 8px;
+}
+
+.listing-dashboard-availability__blocked-date--past {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
 .listing-dashboard-availability__calendar {
   flex: 1.5;
   max-width: 550px;
@@ -1714,6 +1808,51 @@
 
 .listing-dashboard-availability__legend-dot--first {
   background-color: var(--ld-accent-purple);
+}
+
+/* Enable interactive states for availability inputs */
+.listing-dashboard-availability__time-field select:not([disabled]) {
+  cursor: pointer;
+}
+
+.listing-dashboard-availability__time-field select:not([disabled]):hover {
+  border-color: var(--ld-accent);
+}
+
+.listing-dashboard-availability__time-field select:not([disabled]):focus {
+  border-color: var(--ld-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(107, 79, 187, 0.1);
+}
+
+.listing-dashboard-availability__range-inputs input:not([readonly]) {
+  background-color: white;
+  cursor: text;
+}
+
+.listing-dashboard-availability__range-inputs input:not([readonly]):hover {
+  border-color: var(--ld-accent);
+}
+
+.listing-dashboard-availability__range-inputs input:not([readonly]):focus {
+  border-color: var(--ld-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(107, 79, 187, 0.1);
+}
+
+.listing-dashboard-availability__date-input:not([readonly]) {
+  background-color: white;
+  cursor: pointer;
+}
+
+.listing-dashboard-availability__date-input:not([readonly]):hover {
+  border-color: var(--ld-accent);
+}
+
+.listing-dashboard-availability__date-input:not([readonly]):focus {
+  border-color: var(--ld-accent);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(107, 79, 187, 0.1);
 }
 
 /* Photos Section */

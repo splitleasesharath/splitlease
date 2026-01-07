@@ -265,7 +265,8 @@ export const DATABASE = {
     HOUSE_RULE: 'zat_features_houserule',
     PARKING: 'zat_features_parkingoptions',
     CANCELLATION_POLICY: 'zat_features_cancellationpolicy',
-    STORAGE: 'zat_features_storageoptions'
+    STORAGE: 'zat_features_storageoptions',
+    CANCELLATION_REASON: 'cancellation_reasons'
   },
   BOROUGH_FIELDS: {
     ID: '_id',

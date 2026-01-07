@@ -81,6 +81,22 @@ const DefaultIcon = () => (
   </svg>
 );
 
+// Empty state component - clickable tag to add safety features
+const EmptySafetyTag = ({ onClick }) => (
+  <button
+    type="button"
+    className="listing-dashboard-details__empty-tag"
+    onClick={onClick}
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M8 12h8" />
+      <path d="M12 8v8" />
+    </svg>
+    <span>No safety features selected</span>
+  </button>
+);
+
 export default function DetailsSection({ listing, onEdit }) {
   const features = listing?.features || {};
   const safetyFeatures = listing?.safetyFeatures || [];
@@ -142,16 +158,20 @@ export default function DetailsSection({ listing, onEdit }) {
         {/* Safety Features */}
         <div className="listing-dashboard-details__safety">
           <h3 className="listing-dashboard-details__subtitle">Safety Features</h3>
-          <div className="listing-dashboard-details__safety-grid">
-            {safetyFeatures.map((feature) => (
-              <div key={feature.id} className="listing-dashboard-details__safety-item">
-                <span className="listing-dashboard-details__safety-icon">
-                  {getSafetyIcon(feature.name)}
-                </span>
-                <span>{feature.name}</span>
-              </div>
-            ))}
-          </div>
+          {safetyFeatures.length > 0 ? (
+            <div className="listing-dashboard-details__safety-grid">
+              {safetyFeatures.map((feature) => (
+                <div key={feature.id} className="listing-dashboard-details__safety-item">
+                  <span className="listing-dashboard-details__safety-icon">
+                    {getSafetyIcon(feature.name)}
+                  </span>
+                  <span>{feature.name}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptySafetyTag onClick={onEdit} />
+          )}
         </div>
       </div>
     </div>

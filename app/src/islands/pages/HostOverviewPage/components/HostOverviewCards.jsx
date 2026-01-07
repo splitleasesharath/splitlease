@@ -36,7 +36,7 @@ function formatCurrency(amount) {
 }
 
 // Listing Card - For host's managed listings
-export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = false }) {
+export function ListingCard({ listing, onEdit, onPreview, onDelete, onProposals, onCardClick, isMobile = false }) {
   const listingName = listing.name || listing.Name || 'Unnamed Listing';
   const borough = listing.location?.borough || listing['Location - Borough'] || 'Location not specified';
   const isComplete = listing.complete || listing.Complete;
@@ -105,8 +105,23 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
 
   const primaryRate = getPrimaryRate();
 
+  // Handle card click (navigate to listing dashboard)
+  const handleCardClick = () => {
+    if (onCardClick) {
+      onCardClick(listing);
+    }
+  };
+
+  // Handle proposals button click
+  const handleProposalsClick = (e) => {
+    e.stopPropagation();
+    if (onProposals) {
+      onProposals(listing);
+    }
+  };
+
   return (
-    <Card className="listing-card" hover>
+    <Card className="listing-card" hover onClick={handleCardClick}>
       {/* Photo Section - Left side on desktop */}
       <div className="listing-card__image-section">
         {coverPhoto ? (
@@ -153,18 +168,11 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
             </button>
           </div>
 
-          {(leasesCount > 0 || proposalsCount > 0) && (
+          {leasesCount > 0 && (
             <div className="listing-card__badges">
-              {leasesCount > 0 && (
-                <div className="badge badge--leases">
-                  Leases: {leasesCount}
-                </div>
-              )}
-              {proposalsCount > 0 && (
-                <div className="badge badge--proposals">
-                  Proposals: {proposalsCount}
-                </div>
-              )}
+              <div className="badge badge--leases">
+                Leases: {leasesCount}
+              </div>
             </div>
           )}
 
@@ -187,6 +195,14 @@ export function ListingCard({ listing, onEdit, onPreview, onDelete, isMobile = f
             >
               Preview
             </button>
+            {proposalsCount > 0 && (
+              <button
+                className="btn btn--proposals"
+                onClick={handleProposalsClick}
+              >
+                Proposals ({proposalsCount})
+              </button>
+            )}
           </div>
         </div>
 

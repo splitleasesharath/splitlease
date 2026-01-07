@@ -131,6 +131,7 @@ const DEFAULT_FORM_DATA: FormData = {
 
 const STORAGE_KEY = 'selfListingV2Draft';
 const LAST_HOST_TYPE_KEY = 'selfListingV2LastHostType';
+const LAST_MARKET_STRATEGY_KEY = 'selfListingV2LastMarketStrategy';
 
 // Host Type Options
 const HOST_TYPES = [
@@ -325,10 +326,21 @@ export function SelfListingPageV2() {
         console.error('Failed to load draft:', e);
       }
     } else {
-      // No draft exists - check if we have a last hostType preference from previous listing
+      // No draft exists - check if we have preferences from previous listing
       const lastHostType = localStorage.getItem(LAST_HOST_TYPE_KEY);
+      const lastMarketStrategy = localStorage.getItem(LAST_MARKET_STRATEGY_KEY);
+
+      const updates: Partial<FormData> = {};
+
       if (lastHostType && ['resident', 'liveout', 'coliving', 'agent'].includes(lastHostType)) {
-        setFormData(prev => ({ ...prev, hostType: lastHostType as FormData['hostType'] }));
+        updates.hostType = lastHostType as FormData['hostType'];
+      }
+      if (lastMarketStrategy && ['private', 'public'].includes(lastMarketStrategy)) {
+        updates.marketStrategy = lastMarketStrategy as FormData['marketStrategy'];
+      }
+
+      if (Object.keys(updates).length > 0) {
+        setFormData(prev => ({ ...prev, ...updates }));
       }
     }
   }, []);
@@ -928,8 +940,9 @@ export function SelfListingPageV2() {
       console.log('[SelfListingPageV2] Listing created:', result);
       setCreatedListingId(result._id);
       setSubmitSuccess(true);
-      // Save last hostType before clearing draft so it persists for next listing
+      // Save last preferences before clearing draft so they persist for next listing
       localStorage.setItem(LAST_HOST_TYPE_KEY, formData.hostType);
+      localStorage.setItem(LAST_MARKET_STRATEGY_KEY, formData.marketStrategy);
       localStorage.removeItem(STORAGE_KEY);
     } catch (error) {
       console.error('[SelfListingPageV2] Submit error:', error);
@@ -1814,19 +1827,11 @@ export function SelfListingPageV2() {
         </div>
       </label>
 
-      {/* Progress Indicator */}
-      <div className="photo-progress">
-        <div className="progress-bar-bg">
-          <div
-            className="progress-bar-fill"
-            style={{ width: `${Math.min(100, (formData.photos.length / 3) * 100)}%` }}
-          />
-        </div>
-        <p className="progress-text">
-          {formData.photos.length} of 3 minimum photos uploaded
-          {formData.photos.length >= 3 && ' ✓'}
-        </p>
-      </div>
+      {/* Photo Count */}
+      <p className="progress-text">
+        {formData.photos.length} of 3 minimum photos uploaded
+        {formData.photos.length >= 3 && ' ✓'}
+      </p>
 
       <div className="btn-group">
         <button className="btn-next" onClick={nextStep}>Continue</button>

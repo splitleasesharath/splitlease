@@ -580,7 +580,7 @@ export function useGuestProposalsPageLogic() {
   function handleSendMessage() {
     if (!selectedProposal?._host) return
 
-    window.location.href = `/messaging?user=${selectedProposal._host._id}`
+    window.location.href = `/messages?user=${selectedProposal._host._id}`
   }
 
   /**

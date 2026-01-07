@@ -38,7 +38,7 @@ export function navigateToMessaging(hostId, proposalId) {
   }
 
   // Build messaging URL with context
-  let url = `/messaging`;
+  let url = `/messages`;
   const params = new URLSearchParams();
 
   if (hostId) {

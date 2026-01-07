@@ -158,17 +158,6 @@ export const Section7Review: React.FC<Section7Props> = ({
                 value={reviewData.previousReviewsLink || ''}
                 onChange={(e) => handleChange('previousReviewsLink', e.target.value)}
               />
-              {reviewData.previousReviewsLink && (
-                <a
-                  href={reviewData.previousReviewsLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-link"
-                  style={{ marginTop: '0.5rem', display: 'inline-block' }}
-                >
-                  View Reviews →
-                </a>
-              )}
             </div>
           </div>
         </div>

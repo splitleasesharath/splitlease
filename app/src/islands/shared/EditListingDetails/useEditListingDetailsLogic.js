@@ -462,6 +462,13 @@ export function useEditListingDetailsLogic({ listing, editSection, focusField, o
   // Autosave function for checkboxes (amenities, rules, safety features)
   const handleCheckboxAutosave = useCallback(async (field, item, isChecked, itemType) => {
     const currentArray = (formData[field]) || [];
+
+    // Enforce maximum of 12 house rules
+    if (field === 'Features - House Rules' && isChecked && currentArray.length >= 12) {
+      showToast('Maximum reached', 'You can select up to 12 house rules', 'info');
+      return;
+    }
+
     let newArray;
 
     if (isChecked) {
