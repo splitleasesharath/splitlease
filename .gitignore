@@ -64,6 +64,9 @@ trees/
 # Claude hooks logs
 logs/
 
+# Commit counter (local state tracking)
+.claude/commit_count.txt
+
 # Agent output directories (root level only, not .claude/agents/)
 /agents/
 
