@@ -1827,19 +1827,11 @@ export function SelfListingPageV2() {
         </div>
       </label>
 
-      {/* Progress Indicator */}
-      <div className="photo-progress">
-        <div className="progress-bar-bg">
-          <div
-            className="progress-bar-fill"
-            style={{ width: `${Math.min(100, (formData.photos.length / 3) * 100)}%` }}
-          />
-        </div>
-        <p className="progress-text">
-          {formData.photos.length} of 3 minimum photos uploaded
-          {formData.photos.length >= 3 && ' ✓'}
-        </p>
-      </div>
+      {/* Photo Count */}
+      <p className="progress-text">
+        {formData.photos.length} of 3 minimum photos uploaded
+        {formData.photos.length >= 3 && ' ✓'}
+      </p>
 
       <div className="btn-group">
         <button className="btn-next" onClick={nextStep}>Continue</button>
