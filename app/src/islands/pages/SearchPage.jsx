@@ -749,12 +749,16 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
             <h3 className="listing-title">{listing.title}</h3>
           </div>
 
-          {/* Meta Section - Info Dense Style */}
+          {/* Meta Section - Info Dense Style (Two Rows) */}
           <div className="listing-meta">
-            <span className="meta-item"><strong>{listing.type || 'Entire Place'}</strong></span>
-            <span className="meta-item"><strong>{listing.maxGuests}</strong> guests</span>
-            <span className="meta-item"><strong>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bedroom${listing.bedrooms > 1 ? 's' : ''}`}</strong></span>
-            <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
+            <div className="meta-row">
+              <span className="meta-item"><strong>{listing.type || 'Entire Place'}</strong></span>
+              <span className="meta-item"><strong>{listing.maxGuests}</strong> guests</span>
+            </div>
+            <div className="meta-row">
+              <span className="meta-item"><strong>{listing.bedrooms === 0 ? 'Studio' : `${listing.bedrooms} bedroom${listing.bedrooms > 1 ? 's' : ''}`}</strong></span>
+              <span className="meta-item"><strong>{listing.bathrooms}</strong> bath</span>
+            </div>
           </div>
 
           {/* Host Section - Price, CTA, Hosted by */}
