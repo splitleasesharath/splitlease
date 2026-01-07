@@ -80,6 +80,7 @@ export default function ListingDashboardPage() {
     handleCloseEdit,
     handleSaveEdit,
     updateListing,
+    editFocusField,
     handleBlockedDatesChange,
     handleAvailabilityChange,
   } = useListingDashboardPageLogic();
@@ -199,7 +200,8 @@ export default function ListingDashboardPage() {
             <div className={highlightedFields?.has('amenities') ? 'listing-dashboard-section--ai-highlighted' : ''}>
               <AmenitiesSection
                 listing={listing}
-                onEdit={() => handleEditSection('amenities')}
+                onEditInUnit={() => handleEditSection('amenities')}
+                onEditBuilding={() => handleEditSection('amenities', 'building')}
               />
             </div>
 
@@ -271,6 +273,7 @@ export default function ListingDashboardPage() {
       {/* Edit Listing Details Modal */}
       {editSection && editSection !== 'pricing' && (
         <EditListingDetails
+          focusField={editFocusField}
           listing={{
             _id: listing.id,
             Name: listing.title,

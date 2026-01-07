@@ -362,6 +362,7 @@ export default function useListingDashboardPageLogic() {
 
   // Edit modal state
   const [editSection, setEditSection] = useState(null); // null = closed, or section name
+  const [editFocusField, setEditFocusField] = useState(null); // Optional field to focus/scroll to in modal
 
   // Get listing ID from URL - support both 'id' and 'listing_id' params
   const getListingIdFromUrl = useCallback(() => {
@@ -1401,12 +1402,14 @@ export default function useListingDashboardPageLogic() {
   }, [listing, getListingIdFromUrl, fetchListing]);
 
   // Edit modal handlers
-  const handleEditSection = useCallback((section) => {
+  const handleEditSection = useCallback((section, focusField = null) => {
     setEditSection(section);
+    setEditFocusField(focusField);
   }, []);
 
   const handleCloseEdit = useCallback(() => {
     setEditSection(null);
+    setEditFocusField(null);
     // Silently refresh listing data after modal closes to sync any saved changes
     const listingId = getListingIdFromUrl();
     if (listingId) {
@@ -1585,6 +1588,7 @@ export default function useListingDashboardPageLogic() {
     handleCloseEdit,
     handleSaveEdit,
     updateListing,
+    editFocusField,
 
     // Blocked dates handler
     handleBlockedDatesChange,
