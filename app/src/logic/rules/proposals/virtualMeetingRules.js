@@ -37,6 +37,30 @@ export const VM_STATES = {
 };
 
 /**
+ * Parse suggested dates - handles both array and JSON string formats
+ * @param {Array|string} suggestedDates - Dates as array or JSON string
+ * @returns {Array} Array of date strings
+ */
+function parseSuggestedDates(suggestedDates) {
+  if (!suggestedDates) return [];
+
+  // If already an array, return as-is
+  if (Array.isArray(suggestedDates)) return suggestedDates;
+
+  // If it's a string, try to parse it as JSON
+  if (typeof suggestedDates === 'string') {
+    try {
+      const parsed = JSON.parse(suggestedDates);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  return [];
+}
+
+/**
  * Check if all suggested dates have expired (are in the past)
  *
  * @param {Object} virtualMeeting - Virtual meeting object (normalized)
@@ -47,7 +71,10 @@ export function areAllDatesExpired(virtualMeeting) {
 
   const now = new Date();
   const bookedDate = virtualMeeting.bookedDate || virtualMeeting['booked date'];
-  const suggestedDates = virtualMeeting.suggestedDates || virtualMeeting['suggested dates and times'] || [];
+  const rawSuggestedDates = virtualMeeting.suggestedDates || virtualMeeting['suggested dates and times'];
+
+  // Parse suggested dates (handles JSON string or array)
+  const suggestedDates = parseSuggestedDates(rawSuggestedDates);
 
   // If there's a booked date, check if it's in the past
   if (bookedDate) {
@@ -55,7 +82,7 @@ export function areAllDatesExpired(virtualMeeting) {
   }
 
   // If no suggested dates, not expired (just pending)
-  if (!suggestedDates || suggestedDates.length === 0) {
+  if (suggestedDates.length === 0) {
     return false;
   }
 
