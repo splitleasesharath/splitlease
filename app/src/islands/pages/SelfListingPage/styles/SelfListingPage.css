@@ -1677,22 +1677,24 @@ textarea {
 .availability-mode-option {
   display: flex;
   align-items: center;
-  gap: 6px;
   font-size: 14px;
   color: #1a1a1a;
   cursor: pointer;
 }
 
 .availability-mode-option input[type="radio"] {
-  width: 16px;
-  height: 16px;
-  min-width: 16px;
-  min-height: 16px;
-  margin: 0;
+  width: 16px !important;
+  height: 16px !important;
+  min-width: 16px !important;
+  min-height: 16px !important;
+  margin: 0 !important;
+  margin-right: 8px !important;
+  padding: 0 !important;
   cursor: pointer;
   accent-color: #6b46c1;
   -webkit-appearance: auto;
   appearance: auto;
+  flex-shrink: 0;
 }
 
 .availability-mode-option span {
