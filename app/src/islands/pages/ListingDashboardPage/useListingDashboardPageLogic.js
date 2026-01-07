@@ -71,7 +71,9 @@ async function fetchLookupTables() {
       .select('_id, "Name", "Icon"');
     if (rules) {
       rules.forEach((r) => {
-        lookups.houseRules[r._id] = { name: r.Name, icon: r.Icon };
+        // Normalize protocol-relative URLs (//...) to https://
+        const icon = r.Icon && r.Icon.startsWith('//') ? 'https:' + r.Icon : r.Icon;
+        lookups.houseRules[r._id] = { name: r.Name, icon };
       });
     }
 
