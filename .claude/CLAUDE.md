@@ -38,6 +38,16 @@ supabase migration new <name>  # Create new migration
 # Cloudflare Deployment
 /deploy                  # Claude slash command for deployment
 npx wrangler pages deploy dist --project-name splitlease  # Manual deploy
+
+# Linting
+# Frontend (from app/ directory)
+bun run lint              # Check for issues
+bun run lint:fix          # Auto-fix where possible
+bun run lint:check        # CI mode (fails on warnings)
+
+# Edge Functions (from project root, requires Deno)
+deno lint supabase/functions/        # Check TypeScript functions
+deno fmt --check supabase/functions/ # Check formatting
 ```
 
 ---
@@ -119,6 +129,8 @@ The database stores days natively in this format. No conversion needed.
 |---------------|------------------|
 | Route Registry | `app/src/routes.config.js` |
 | Vite Config | `app/vite.config.js` |
+| ESLint Config | `app/eslint.config.js` |
+| Deno Lint Config | `supabase/functions/deno.json` |
 | Authentication | `app/src/lib/auth.js` |
 | Supabase client | `app/src/lib/supabase.js` |
 | Day utilities | `app/src/lib/dayUtils.js` |
@@ -329,4 +341,4 @@ These subagents may ONLY be invoked **before** starting the pipeline or **after*
 
 ---
 
-**VERSION**: 11.2 | **UPDATED**: 2026-01-07
+**VERSION**: 11.3 | **UPDATED**: 2026-01-07
