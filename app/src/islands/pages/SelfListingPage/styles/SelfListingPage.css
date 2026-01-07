@@ -1671,13 +1671,13 @@ textarea {
 
 .availability-mode-toggle {
   display: flex;
-  gap: 20px;
+  gap: 16px;
 }
 
 .availability-mode-option {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   font-size: 14px;
   color: #1a1a1a;
   cursor: pointer;
@@ -1686,12 +1686,18 @@ textarea {
 .availability-mode-option input[type="radio"] {
   width: 16px;
   height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+  margin: 0;
   cursor: pointer;
   accent-color: #6b46c1;
+  -webkit-appearance: auto;
+  appearance: auto;
 }
 
 .availability-mode-option span {
   cursor: pointer;
+  user-select: none;
 }
 
 .availability-range-hint {
