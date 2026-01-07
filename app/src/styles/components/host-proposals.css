@@ -1070,12 +1070,89 @@
   }
 
   .proposal-modal {
+    /* Slide-up sheet style on mobile */
     max-width: 100%;
-    right: -100%;
+    right: 0; /* No horizontal slide */
+    bottom: 0;
+    top: auto; /* Override desktop top: 0 */
+    height: 90vh; /* Leave some space at top */
+    height: 90dvh; /* Modern dynamic viewport height */
+    border-radius: 16px 16px 0 0; /* Rounded top corners */
+    transform: translateY(100%); /* Start off-screen at bottom */
+    transition: transform var(--transition-slow);
+    /* Ensure proper flex column layout on mobile */
+    display: flex;
+    flex-direction: column;
   }
 
-  .modal-actions {
+  .proposal-modal.open {
+    transform: translateY(0); /* Slide up into view */
+  }
+
+  /* Close button styling for mobile slide-up sheet */
+  .proposal-modal .modal-close {
+    position: absolute;
+    top: var(--spacing-lg);
+    right: var(--spacing-lg);
+    z-index: 10;
+    background-color: #F3F4F6; /* Light gray background for visibility */
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Hide original SVG and use CSS X instead for better mobile support */
+  .proposal-modal .modal-close svg {
+    display: none !important;
+  }
+
+  /* CSS X icon using pseudo-elements */
+  .proposal-modal .modal-close::before,
+  .proposal-modal .modal-close::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 2px;
+    background-color: #374151;
+    border-radius: 1px;
+  }
+
+  .proposal-modal .modal-close::before {
+    transform: rotate(45deg);
+  }
+
+  .proposal-modal .modal-close::after {
+    transform: rotate(-45deg);
+  }
+
+  /* Ensure modal content takes available space, pushing actions to bottom */
+  /* Override global mobile.css .modal-content styles that break flex layout */
+  .proposal-modal .modal-content {
+    position: static; /* Reset from mobile.css position: fixed */
+    top: auto;
+    left: auto;
+    transform: none; /* Reset from mobile.css translate(-50%, -50%) */
+    width: 100%; /* Reset from mobile.css 90vw */
+    max-width: none; /* Reset from mobile.css 400px */
+    max-height: none; /* Reset from mobile.css 80vh */
+    border-radius: 0; /* Reset from mobile.css 1rem */
+    flex: 1 1 auto;
+    min-height: 0; /* Allow flex shrinking for proper scroll behavior */
+    overflow-y: auto; /* Ensure scrolling works */
+  }
+
+  /* Action buttons fixed at bottom on mobile */
+  .proposal-modal .modal-actions {
     flex-direction: column;
+    flex-shrink: 0; /* Prevent actions from shrinking */
+    /* Add safe area for devices with home indicator */
+    padding-bottom: calc(var(--spacing-lg) + env(safe-area-inset-bottom, 0px));
+    background-color: var(--bg-light); /* Ensure background shows */
+    border-top: 1px solid var(--border-color); /* Visual separator */
   }
 
   .action-btn {
