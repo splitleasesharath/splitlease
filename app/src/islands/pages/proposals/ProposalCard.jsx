@@ -27,6 +27,7 @@ import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.js
 import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.jsx';
+import { showToast } from '../../shared/Toast.jsx';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -685,7 +686,7 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
 // MAIN COMPONENT
 // ============================================================================
 
-export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect }) {
+export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect, onProposalDeleted }) {
   if (!proposal) {
     return null;
   }
@@ -971,12 +972,16 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
     try {
       await executeDeleteProposal(proposal._id);
       console.log('[ProposalCard] Proposal deleted successfully');
-      // Show toast and reload
-      alert('Proposal deleted');
-      window.location.reload();
+      // Show toast notification
+      showToast({ title: 'Proposal deleted', type: 'success' });
+
+      // Update UI state without page reload
+      if (onProposalDeleted) {
+        onProposalDeleted(proposal._id);
+      }
     } catch (error) {
       console.error('[ProposalCard] Error deleting proposal:', error);
-      alert(`Failed to delete proposal: ${error.message}`);
+      showToast({ title: 'Failed to delete proposal', content: error.message, type: 'error' });
       setIsDeleting(false);
     }
   };

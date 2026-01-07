@@ -245,6 +245,25 @@ export function useGuestProposalsPageLogic() {
     loadProposals();
   }, [loadProposals]);
 
+  /**
+   * Handle proposal deletion (soft-delete)
+   * Removes proposal from UI state without requiring page reload
+   * @param {string} proposalId - The ID of the deleted proposal
+   */
+  const handleProposalDeleted = useCallback((proposalId) => {
+    // Remove deleted proposal from local state
+    setProposals(prevProposals => prevProposals.filter(p => p._id !== proposalId));
+
+    // If the deleted proposal was selected, select the first remaining one
+    setSelectedProposal(prev => {
+      if (prev?._id === proposalId) {
+        const remaining = proposals.filter(p => p._id !== proposalId);
+        return remaining.length > 0 ? remaining[0] : null;
+      }
+      return prev;
+    });
+  }, [proposals]);
+
   // ============================================================================
   // DERIVED STATE
   // ============================================================================
@@ -327,7 +346,8 @@ export function useGuestProposalsPageLogic() {
 
     // Handlers
     handleProposalSelect,
-    handleRetry
+    handleRetry,
+    handleProposalDeleted
   };
 }
 
