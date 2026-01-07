@@ -1030,7 +1030,7 @@ export default function useListingDashboardPageLogic() {
     const generatedResults = {};
 
     // Track enriched data as we load it - this will be used for AI title/description generation
-    let enrichedAmenities = {
+    const enrichedAmenities = {
       inUnit: listing.inUnitAmenities?.map(a => a.name) || [],
       building: listing.buildingAmenities?.map(a => a.name) || [],
     };

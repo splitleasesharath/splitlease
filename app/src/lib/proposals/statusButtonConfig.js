@@ -238,7 +238,7 @@ export function getButtonConfigForProposal(proposal) {
   const isLeaseDocsReview = status === PROPOSAL_STATUSES.LEASE_DOCUMENTS_SENT_FOR_REVIEW.key;
 
   // === Guest Action 1 Button ===
-  let guestAction1 = { visible: false, label: null, action: null, style: null };
+  const guestAction1 = { visible: false, label: null, action: null, style: null };
   const action1Label = getGuestAction1Label(status);
 
   if (action1Label) {
@@ -298,7 +298,7 @@ export function getButtonConfigForProposal(proposal) {
   }
 
   // === Guest Action 2 Button ===
-  let guestAction2 = { visible: false, label: null, action: null, style: null };
+  const guestAction2 = { visible: false, label: null, action: null, style: null };
   const action2Label = getGuestAction2Label(status);
 
   if (action2Label) {
@@ -330,7 +330,7 @@ export function getButtonConfigForProposal(proposal) {
   }
 
   // === Cancel/Delete Button ===
-  let cancelButton = { visible: false, label: 'Cancel Proposal', action: 'cancel_proposal', style: null, disabled: false };
+  const cancelButton = { visible: false, label: 'Cancel Proposal', action: 'cancel_proposal', style: null, disabled: false };
 
   // Check for lease-activated status (completed flow - no cancel button)
   const isLeaseActivated = status === PROPOSAL_STATUSES.INITIAL_PAYMENT_SUBMITTED_LEASE_ACTIVATED.key.trim();
@@ -374,7 +374,7 @@ export function getButtonConfigForProposal(proposal) {
   }
 
   // === Virtual Meeting Button ===
-  let vmButton = { visible: false, label: 'Request Virtual Meeting', action: 'request_vm', style: null, disabled: false };
+  const vmButton = { visible: false, label: 'Request Virtual Meeting', action: 'request_vm', style: null, disabled: false };
 
   // VM button hidden for certain statuses
   if (!shouldHideVirtualMeetingButton(status) && !isTerminal) {
