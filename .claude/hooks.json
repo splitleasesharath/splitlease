@@ -1,0 +1,9 @@
+{
+  "stop": [
+    {
+      "name": "commit_tracker",
+      "path": ".claude/hooks/commit_tracker_stop.py",
+      "description": "Tracks commits and auto-runs goodbye workflow at 20 commits"
+    }
+  ]
+}
