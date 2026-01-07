@@ -155,6 +155,7 @@ The database stores days natively in this format. No conversion needed.
 - **Log full error details** on database errors: `code`, `message`, `details`, `hint`
 - Test edit flows with listings that have null FK values (legacy data)
 - **Informational text triggers**: When adding a `?` icon to open informational text modals, make the accompanying text label clickable too (not just the `?`). Wrap both the text and `?` in a single clickable container.
+- **ALWAYS invoke `/fp-rater` skill after creating or updating code files** - Output the FP rating table at the bottom of your response (table only, no explanations)
 
 ### DON'T
 - Expose API keys in frontend code
@@ -328,4 +329,4 @@ These subagents may ONLY be invoked **before** starting the pipeline or **after*
 
 ---
 
-**VERSION**: 11.1 | **UPDATED**: 2026-01-04
+**VERSION**: 11.2 | **UPDATED**: 2026-01-07
