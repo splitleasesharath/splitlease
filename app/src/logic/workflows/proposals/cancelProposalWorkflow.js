@@ -161,7 +161,7 @@ export async function executeDeleteProposal(proposalId) {
   const { data, error } = await supabase
     .from('proposal')
     .update({
-      'deleted': true,
+      'Deleted': true,
       'Modified Date': now
     })
     .eq('_id', proposalId)
