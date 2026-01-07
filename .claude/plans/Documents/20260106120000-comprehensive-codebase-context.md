@@ -3055,4 +3055,12 @@ supabase secrets set SLACK_WEBHOOK_URL=https://hooks.slack.com/...
 
 ---
 
+## Technical Debt
+
+| Item | Priority | Description | Action Required |
+|------|----------|-------------|-----------------|
+| **Supabase Magic Link Email Template** | Medium | Magic link emails still use default Supabase domain (`qcfifybkaddcoimjroca.supabase.co`) instead of branded `split.lease` domain. Custom `/auth/verify` page is implemented and ready. | Update Supabase Dashboard → Authentication → Email Templates → Magic Link to use: `{{ .SiteURL }}/auth/verify?token_hash={{ .TokenHash }}&type=magiclink&redirect_to={{ .RedirectTo }}` |
+
+---
+
 **This document provides complete context for LLM-based research and analysis of the Split Lease codebase.**
