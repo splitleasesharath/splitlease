@@ -70,6 +70,9 @@ logs/
 claude-max-output.json
 claude-max-output.jsonl
 
+# Goodbye skill temporary files (may contain webhook URLs)
+.claude/condensed_summary.json
+
 storage.json
 
 deep_specs/
