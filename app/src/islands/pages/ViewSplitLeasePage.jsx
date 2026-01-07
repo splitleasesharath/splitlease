@@ -2217,8 +2217,6 @@ export default function ViewSplitLeasePage() {
             position: 'sticky',
             top: 'calc(80px + 20px)',
             alignSelf: 'flex-start',
-            maxHeight: 'calc(100vh - 80px - 40px)',
-            overflowY: 'auto',
             height: 'fit-content',
             border: '1px solid rgba(255, 255, 255, 0.2)',
             borderRadius: '16px',
