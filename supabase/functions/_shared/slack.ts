@@ -271,7 +271,34 @@ export class ErrorCollector {
 /**
  * Create error collector for a request
  * Convenience function for cleaner imports
+ *
+ * @deprecated Use createErrorLog() from './fp/errorLog.ts' for new code
  */
 export function createErrorCollector(functionName: string, action: string): ErrorCollector {
   return new ErrorCollector(functionName, action);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Functional API (FP-Friendly)
+// ─────────────────────────────────────────────────────────────
+//
+// Use these functions with the immutable ErrorLog type from './fp/errorLog.ts'
+// for pure functional error handling. The ErrorCollector class above is
+// maintained for backward compatibility only.
+
+import { ErrorLog, formatForSlack, hasErrors } from './fp/errorLog.ts';
+
+/**
+ * Report an immutable ErrorLog to Slack
+ * Side effect function - use at effect boundaries only
+ *
+ * @param log - Immutable ErrorLog to report
+ */
+export function reportErrorLog(log: ErrorLog): void {
+  if (!hasErrors(log)) {
+    return;
+  }
+
+  const message = { text: formatForSlack(log) };
+  sendToSlack('database', message);
 }
