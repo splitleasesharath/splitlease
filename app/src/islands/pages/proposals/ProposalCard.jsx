@@ -972,8 +972,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
     try {
       await executeDeleteProposal(proposal._id);
       console.log('[ProposalCard] Proposal deleted successfully');
-      // Show toast notification
-      showToast({ title: 'Proposal deleted', type: 'success' });
+      // Show toast notification (info type for neutral confirmation)
+      showToast({ title: 'Proposal deleted', type: 'info' });
 
       // Update UI state without page reload
       if (onProposalDeleted) {
