@@ -27,6 +27,7 @@
     "security-guidance@claude-plugins-official": true,
     "greptile@claude-plugins-official": true,
     "ralph-loop@claude-plugins-official": true,
-    "hookify@claude-plugins-official": true
+    "hookify@claude-plugins-official": true,
+    "typescript-lsp@claude-plugins-official": true
   }
 }
