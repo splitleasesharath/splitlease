@@ -1,12 +1,16 @@
 /**
- * CancelProposalModal Component
+ * CancelProposalModal Component - v2.0 REDESIGN
  *
  * Unified modal for confirming proposal cancellation/rejection with reason selection.
  * Supports both guest cancellation and host rejection flows via userType prop.
  * Following the Hollow Component pattern - all business logic handled by parent.
  */
 
+// DEBUG: If you see this log, the new version is loaded
+console.log('[CancelProposalModal] v2.0 REDESIGN loaded');
+
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { getGuestCancellationReasons, getHostRejectionReasons } from '../../lib/dataLookups.js'
 
 // Fallback reasons if cache is empty
@@ -137,96 +141,215 @@ export default function CancelProposalModal({
     onClose()
   }
 
-  return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      onClick={handleClose}
-    >
-      <div
-        className="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4"
-        onClick={(e) => e.stopPropagation()}
-      >
+  // Inline styles to ensure rendering works in portal (outside Tailwind scope)
+  const overlayStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 9999
+  }
+
+  const modalStyle = {
+    backgroundColor: '#ffffff',
+    borderRadius: '10px',
+    boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+    width: '100%',
+    maxWidth: '460px',
+    margin: '0 20px',
+    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+  }
+
+  const headerStyle = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    padding: '20px',
+    borderBottom: '1px solid #e5e7eb'
+  }
+
+  const headerLeftStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+  }
+
+  const titleStyle = {
+    fontSize: '18px',
+    fontWeight: '600',
+    color: '#111827',
+    margin: 0
+  }
+
+  const subtitleStyle = {
+    fontSize: '13px',
+    color: '#dc2626',
+    margin: 0
+  }
+
+  const closeButtonStyle = {
+    color: '#9ca3af',
+    fontSize: '24px',
+    lineHeight: 1,
+    padding: '4px',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer'
+  }
+
+  const bodyStyle = {
+    padding: '20px'
+  }
+
+  const messageStyle = {
+    fontSize: '15px',
+    color: '#4b5563',
+    marginBottom: '20px',
+    textAlign: 'center'
+  }
+
+  const radioListStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px'
+  }
+
+  const radioLabelStyle = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+    cursor: 'pointer',
+    padding: '6px',
+    borderRadius: '4px'
+  }
+
+  const radioInputStyle = {
+    width: '18px',
+    height: '18px',
+    accentColor: '#7c3aed'
+  }
+
+  const radioTextStyle = {
+    fontSize: '15px',
+    color: '#374151'
+  }
+
+  const textareaStyle = {
+    width: '100%',
+    padding: '10px',
+    fontSize: '15px',
+    border: '1px solid #d1d5db',
+    borderRadius: '6px',
+    resize: 'none',
+    marginTop: '14px',
+    boxSizing: 'border-box'
+  }
+
+  const footerStyle = {
+    display: 'flex',
+    gap: '14px',
+    padding: '20px',
+    borderTop: '1px solid #e5e7eb'
+  }
+
+  const cancelButtonStyle = {
+    flex: 1,
+    padding: '10px 20px',
+    backgroundColor: '#f3f4f6',
+    color: '#374151',
+    borderRadius: '6px',
+    border: 'none',
+    fontSize: '15px',
+    fontWeight: '500',
+    cursor: 'pointer'
+  }
+
+  const confirmButtonStyle = {
+    flex: 1,
+    padding: '10px 20px',
+    backgroundColor: '#b91c1c',
+    color: '#ffffff',
+    borderRadius: '6px',
+    border: 'none',
+    fontSize: '15px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    opacity: isSubmitting ? 0.5 : 1
+  }
+
+  const modalContent = (
+    <div style={overlayStyle} onClick={handleClose}>
+      <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
         {/* Header with inline icon */}
-        <div className="flex items-start justify-between p-4 border-b">
-          <div className="flex items-center gap-2">
+        <div style={headerStyle}>
+          <div style={headerLeftStyle}>
             <svg
-              className="w-5 h-5 text-red-500 flex-shrink-0"
+              width="24"
+              height="24"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="currentColor"
+              stroke="#ef4444"
               strokeWidth="2"
             >
               <path d="M19 7L5 7M14 11V17M10 11V17M5 7L6 19C6 20.1046 6.89543 21 8 21H16C17.1046 21 18 20.1046 18 19L19 7M9 7V4C9 3.44772 9.44772 3 10 3H14C14.5523 3 15 3.44772 15 4V7" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
             <div>
-              <h2 className="text-base font-semibold text-gray-900">
-                {getTitle()}?
-              </h2>
-              <p className="text-xs text-red-600">
-                This action is irreversible
-              </p>
+              <h2 style={titleStyle}>{getTitle()}?</h2>
+              <p style={subtitleStyle}>This action is irreversible</p>
             </div>
           </div>
-          <button
-            className="text-gray-400 hover:text-gray-600 text-xl leading-none p-1"
-            onClick={handleClose}
-          >
-            &times;
-          </button>
+          <button style={closeButtonStyle} onClick={handleClose}>×</button>
         </div>
 
         {/* Body */}
-        <div className="p-4">
-          {/* Confirmation Message */}
-          <p className="text-sm text-gray-600 mb-4 text-center">
-            {getConfirmationMessage()}
-          </p>
+        <div style={bodyStyle}>
+          <p style={messageStyle}>{getConfirmationMessage()}</p>
 
-          {/* Reason Selection - Simple Radio List */}
-          <div className="space-y-2">
+          {/* Reason Selection */}
+          <div style={radioListStyle}>
             {reasonOptions.map((reason) => (
-              <label
-                key={reason.id}
-                className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 py-1 px-1 rounded"
-              >
+              <label key={reason.id} style={radioLabelStyle}>
                 <input
                   type="radio"
                   name="cancellationReason"
                   value={reason.id}
                   checked={selectedReasonId === reason.id}
                   onChange={(e) => setSelectedReasonId(e.target.value)}
-                  className="w-4 h-4 text-purple-600 border-gray-300 focus:ring-purple-500"
+                  style={radioInputStyle}
                 />
-                <span className="text-sm text-gray-700">{reason.label}</span>
+                <span style={radioTextStyle}>{reason.label}</span>
               </label>
             ))}
           </div>
 
-          {/* Custom Reason Input - Only show when "Other" is selected */}
+          {/* Custom Reason Input */}
           {showCustomInput && (
-            <div className="mt-3">
-              <textarea
-                value={customReason}
-                onChange={(e) => setCustomReason(e.target.value)}
-                rows={2}
-                className="w-full p-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                placeholder="Please specify your reason..."
-              />
-            </div>
+            <textarea
+              value={customReason}
+              onChange={(e) => setCustomReason(e.target.value)}
+              rows={2}
+              style={textareaStyle}
+              placeholder="Please specify your reason..."
+            />
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 p-4 border-t">
+        <div style={footerStyle}>
           <button
-            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors text-sm font-medium"
+            style={cancelButtonStyle}
             onClick={handleClose}
             disabled={isSubmitting}
           >
             Cancel
           </button>
           <button
-            className="flex-1 px-4 py-2 bg-red-700 text-white rounded hover:bg-red-800 transition-colors disabled:opacity-50 text-sm font-medium"
+            style={confirmButtonStyle}
             onClick={handleConfirm}
             disabled={isSubmitting}
           >
@@ -236,4 +359,7 @@ export default function CancelProposalModal({
       </div>
     </div>
   )
+
+  // Portal renders modal at document.body, escaping any parent CSS constraints
+  return createPortal(modalContent, document.body)
 }
