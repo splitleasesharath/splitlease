@@ -516,6 +516,8 @@
 /* Meta Section - Info Dense Style */
 .listing-meta {
     display: flex;
+    flex-wrap: wrap;
+    align-items: center;
     gap: 16px;
     padding: 12px 0;
     border-top: 1px solid #f0f0f0;
@@ -529,6 +531,7 @@
     background: none;
     border: none;
     padding: 0;
+    white-space: nowrap;
 }
 
 .listing-meta .meta-item strong {
