@@ -1878,26 +1878,18 @@ export function SelfListingPageV2() {
         <div className="review-badge-row">
           <span
             className="review-market-badge"
-            style={{ background: formData.marketStrategy === 'private' ? '#5b21b6' : '#10b981' }}
+            style={{ background: formData.marketStrategy === 'private' ? '#31135D' : '#6D31C2' }}
           >
             {formData.marketStrategy === 'private' ? 'Private (Concierge)' : 'Public Listing'}
           </span>
         </div>
 
-        {/* Main Preview Card */}
-        <div className="review-preview-card">
-          {/* Photo Section */}
-          <div className="review-photo-section">
+        {/* Main Preview Card - Search Card Style */}
+        <div className="review-listing-card">
+          {/* Image Section - Left */}
+          <div className="review-listing-images">
             {formData.photos.length > 0 ? (
-              <div className="review-photos-grid">
-                {formData.photos.slice(0, 3).map((photo, idx) => (
-                  <div
-                    key={photo.id}
-                    className={`review-photo ${idx === 0 ? 'review-photo-main' : 'review-photo-small'}`}
-                    style={{ backgroundImage: `url(${photo.url})` }}
-                  />
-                ))}
-              </div>
+              <img src={formData.photos[0].url} alt="Listing preview" />
             ) : (
               <div className="review-photo-placeholder">
                 <span>No photos uploaded</span>
@@ -1905,41 +1897,71 @@ export function SelfListingPageV2() {
             )}
           </div>
 
-          {/* Details Section */}
-          <div className="review-details-section">
-            <h3 className="review-listing-title">
-              {formData.bedrooms} Bedroom {formData.typeOfSpace || 'Space'}
-            </h3>
-            <p className="review-listing-location">
-              {formData.address.neighborhood || formData.address.city || 'Your Location'}
-            </p>
-
-            <div className="review-details-grid">
-              <div className="review-detail-item">
-                <span className="review-detail-label">Address</span>
-                <span className="review-detail-value">{formData.address.fullAddress || '—'}</span>
-              </div>
-              <div className="review-detail-item">
-                <span className="review-detail-label">Bedrooms</span>
-                <span className="review-detail-value">{formData.bedrooms}</span>
-              </div>
-              <div className="review-detail-item">
-                <span className="review-detail-label">Bathrooms</span>
-                <span className="review-detail-value">{formData.bathrooms}</span>
-              </div>
-              <div className="review-detail-item">
-                <span className="review-detail-label">Host Type</span>
-                <span className="review-detail-value">{hostTypeDisplay}</span>
-              </div>
+          {/* Content Section - Right */}
+          <div className="review-listing-content">
+            {/* Top Row: Verified Badge (guest preview) */}
+            <div className="review-listing-top-row">
+              <span className="review-listing-badge">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                  <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                Verified
+              </span>
             </div>
 
-            {/* Pricing Highlight */}
-            <div className="review-pricing-box">
-              <div className="review-price-main">
-                <span className="review-price-amount">{priceDisplay}</span>
-                <span className="review-price-period">/ {freq}</span>
-              </div>
-              <div className="review-schedule-badge">{schedule}</div>
+            {/* Location */}
+            <div className="review-listing-location-row">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                <circle cx="12" cy="10" r="3" />
+              </svg>
+              <span>{formData.address.neighborhood || formData.address.city || 'New York'}, Manhattan</span>
+            </div>
+
+            {/* Title */}
+            <h3 className="review-listing-title">
+              {formData.bedrooms === 'Studio' ? 'Studio' : `${formData.bedrooms} Bedroom`} | {formData.typeOfSpace || 'Private Room'}
+            </h3>
+
+            {/* Property Details Row */}
+            <div className="review-listing-specs">
+              <span>{formData.typeOfSpace || 'Private Room'}</span>
+              <span className="spec-dot">·</span>
+              <span>2 guests</span>
+              <span className="spec-dot">·</span>
+              <span>{formData.bedrooms === 'Studio' ? 'Studio' : formData.bedrooms + ' bedroom'}</span>
+              <span className="spec-dot">·</span>
+              <span>{formData.bathrooms} bath</span>
+            </div>
+
+            {/* Price Row */}
+            <div className="review-listing-price-row">
+              <span className="review-price-amount">{priceDisplay}</span>
+              <span className="review-price-period">/ {freq.toLowerCase()}</span>
+              <span className="review-price-from">
+                {schedule}
+                <button type="button" className="review-price-info-btn" aria-label="Price info">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                </button>
+              </span>
+            </div>
+
+            {/* Message Button */}
+            <button type="button" className="review-message-btn">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+              </svg>
+              Message
+            </button>
+
+            {/* Host Name */}
+            <div className="review-listing-host">
+              Hosted by <span className="review-host-name">You</span>
             </div>
           </div>
         </div>
