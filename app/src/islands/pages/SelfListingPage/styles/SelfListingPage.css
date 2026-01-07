@@ -1675,11 +1675,12 @@ textarea {
 }
 
 .availability-mode-option {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   font-size: 14px;
   color: #1a1a1a;
   cursor: pointer;
+  line-height: 1;
 }
 
 .availability-mode-option input[type="radio"] {
@@ -1695,11 +1696,16 @@ textarea {
   -webkit-appearance: auto;
   appearance: auto;
   flex-shrink: 0;
+  vertical-align: middle;
+  position: relative;
+  top: 0;
 }
 
 .availability-mode-option span {
   cursor: pointer;
   user-select: none;
+  line-height: 16px;
+  vertical-align: middle;
 }
 
 .availability-range-hint {
