@@ -99,13 +99,15 @@ This ensures the file is synced to Google Drive before getting the link.
 
 ### Step 5: Get Google Drive Shareable Link
 
-Use the existing Python script:
+Use the skill's built-in Python script:
 
 ```bash
-python "C:\Users\Split Lease\.claude\google-drive-tools\get_drive_link.py" "{FULL_PATH_TO_LOG_FILE}"
+python ".claude/skills/goodbye-skill/get_drive_link.py" "{FULL_PATH_TO_LOG_FILE}"
 ```
 
 The script will output a shareable Google Drive URL. Store this as `DRIVE_URL`.
+
+**Note:** The script uses shared credentials from `.claude/google-drive-tools/` for authentication.
 
 ---
 
@@ -167,9 +169,10 @@ Report to the user:
 - Verify Google Drive is running and synced
 
 ### Drive Link Script Failed
-- Verify script exists at `C:\Users\Split Lease\.claude\google-drive-tools\get_drive_link.py`
+- Verify script exists at `.claude/skills/goodbye-skill/get_drive_link.py`
 - Check that file was created successfully before running script
-- May need to re-authenticate (delete `token.pickle` and run script manually once)
+- May need to re-authenticate (delete `.claude/google-drive-tools/token.pickle` and run script manually once)
+- Ensure credentials exist at `.claude/google-drive-tools/credentials.json`
 
 ### Slack Webhook Failed
 - Verify webhook URL is correct
@@ -190,7 +193,9 @@ If any critical step fails (log creation, Drive link, Slack), **DO NOT** reset t
 - Log: `%googleDrivePath%!Agent Context and Tools\SL1\Claude Logs\{DATE}_conversation_session-{SESSION_ID}.md`
 - Counter: `.claude/commit_count.txt`
 - Temp JSON: `.claude/condensed_summary.json`
-- Drive script: `C:\Users\Split Lease\.claude\google-drive-tools\get_drive_link.py`
+- Drive script: `.claude/skills/goodbye-skill/get_drive_link.py`
+- Drive credentials: `.claude/google-drive-tools/credentials.json`
+- Drive token: `.claude/google-drive-tools/token.pickle`
 
 **Slack Webhook:**
 ```

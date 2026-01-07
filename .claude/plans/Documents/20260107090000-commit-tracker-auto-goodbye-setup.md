@@ -335,7 +335,9 @@ mv .claude/hooks.json.disabled .claude/hooks.json
 | Stop hook (Python) | `.claude/hooks/commit_tracker_stop.py` |
 | Hook registration | `.claude/hooks.json` |
 | **Goodbye skill** | **`.claude/skills/goodbye-skill/SKILL.md`** |
-| Drive link script | `C:\Users\Split Lease\.claude\google-drive-tools\get_drive_link.py` |
+| **Drive link script** | **`.claude/skills/goodbye-skill/get_drive_link.py`** |
+| Drive credentials (shared) | `.claude/google-drive-tools/credentials.json` |
+| Drive token (shared) | `.claude/google-drive-tools/token.pickle` |
 | Conversation logs | `%googleDrivePath%!Agent Context and Tools\SL1\Claude Logs\` |
 | Slack webhook | `https://hooks.slack.com/services/TM545C1T7/B09HFGZNVQV/...` |
 
