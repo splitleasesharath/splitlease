@@ -753,7 +753,7 @@ export default function ViewSplitLeasePage() {
     const minDayOfWeek = minDate.getDay();
 
     // Calculate days to add to get to the next occurrence of the first selected day
-    let daysToAdd = (firstDayOfWeek - minDayOfWeek + 7) % 7;
+    const daysToAdd = (firstDayOfWeek - minDayOfWeek + 7) % 7;
 
     // If it's the same day, we're already on the right day
     if (daysToAdd === 0) {

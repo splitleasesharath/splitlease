@@ -7,7 +7,10 @@
     "start": "cd app && bun install --frozen-lockfile && bun run build",
     "dev": "cd app && bun install && bun run dev",
     "preview": "cd app && bun run preview",
-    "deploy": "cd app && wrangler pages deploy dist --project-name splitlease"
+    "deploy": "cd app && wrangler pages deploy dist --project-name splitlease",
+    "lint": "cd app && bun run lint",
+    "lint:fix": "cd app && bun run lint:fix",
+    "lint:check": "cd app && bun run lint:check"
   },
   "description": "Split Lease application monorepo - Cloudflare Pages deployment - Root directory: app",
   "devDependencies": {

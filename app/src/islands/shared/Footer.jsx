@@ -208,7 +208,7 @@ export default function Footer() {
       <div className="app-download-section">
         <div className="app-card">
           <img
-            src="https://50bf0464e4735aabad1cc8848a0e8b8a.cdn.bubble.io/cdn-cgi/image/w=256,h=330,f=auto,dpr=1,fit=contain/f1743107051105x956510081926083000/iphone-removebg-preview.png"
+            src="/images/iphone-app-mockup.png"
             alt="Split Lease App"
             className="app-phone-image"
             loading="lazy"

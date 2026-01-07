@@ -53,7 +53,7 @@ export function shiftMoveInDateIfPast({ previousMoveInDate, minDate }) {
   const targetDayOfWeek = previousDate.getDay();
   const minDayOfWeek = minDateObj.getDay();
 
-  let daysToAdd = (targetDayOfWeek - minDayOfWeek + 7) % 7;
+  const daysToAdd = (targetDayOfWeek - minDayOfWeek + 7) % 7;
   if (daysToAdd === 0) {
     // Already on the right day
     return minDateObj.toISOString().split('T')[0];

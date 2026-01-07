@@ -193,7 +193,20 @@ export default function ReferralModal({ isOpen, onClose, referralCode = 'yournam
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(referralLink);
+      // Try modern Clipboard API first (requires secure context)
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(referralLink);
+      } else {
+        // Fallback for non-secure contexts (HTTP localhost)
+        const textArea = document.createElement('textarea');
+        textArea.value = referralLink;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
+      }
       setCopied(true);
       showToast({
         title: 'Link copied!',
