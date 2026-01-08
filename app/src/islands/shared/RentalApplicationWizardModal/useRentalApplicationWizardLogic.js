@@ -52,6 +52,8 @@ const RELATIONSHIP_OPTIONS = [
   { value: 'child', label: 'Child' },
   { value: 'parent', label: 'Parent' },
   { value: 'sibling', label: 'Sibling' },
+  { value: 'brother-sister', label: 'Brother/Sister' },
+  { value: 'family-member', label: 'Family Member' },
   { value: 'roommate', label: 'Roommate' },
   { value: 'other', label: 'Other' }
 ];
