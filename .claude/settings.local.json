@@ -19,7 +19,8 @@
       "Bash(timeout /t 3 /nobreak)",
       "Bash(start http://localhost:8000)",
       "Bash(bun run dev)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(bun install)"
     ],
     "deny": [],
     "ask": []
