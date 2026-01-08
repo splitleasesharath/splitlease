@@ -8,7 +8,7 @@
    ============================================ */
 
 .stories-section {
-    background: linear-gradient(180deg, #fafbfc 0%, #ffffff 100%);
+    background: #fafbfc;
     padding: 140px 32px 100px;
 }
 
@@ -260,7 +260,7 @@
    ============================================ */
 
 .success-final-cta {
-    background: linear-gradient(135deg, #31135d 0%, #4a1d85 100%);
+    background: #31135d;
     padding: 100px 32px;
 }
 
