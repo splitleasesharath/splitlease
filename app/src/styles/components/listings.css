@@ -984,12 +984,13 @@
 }
 
 .listing-price-sidebar .availability-note.availability-soon {
-    color: #16a34a;
+    color: var(--secondary-purple, #6D31C2);
     font-weight: 500;
 }
 
 .listing-price-sidebar .availability-note.availability-later {
-    color: #d97706;
+    color: var(--secondary-purple, #6D31C2);
+    font-weight: 500;
 }
 
 /* Legacy listing-info (for compatibility) */
