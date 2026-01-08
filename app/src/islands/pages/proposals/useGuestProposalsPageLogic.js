@@ -55,6 +55,9 @@ export function useGuestProposalsPageLogic() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // URL parameter state for VM navigation
+  const [highlightVMButton, setHighlightVMButton] = useState(false);
+
   // ============================================================================
   // AUTHENTICATION CHECK
   // ============================================================================
@@ -221,6 +224,51 @@ export function useGuestProposalsPageLogic() {
   }, [authState.isAuthenticated, authState.isGuest, authState.isChecking, loadProposals]);
 
   // ============================================================================
+  // URL PARAMETER HANDLING (for Virtual Meetings navigation)
+  // ============================================================================
+
+  /**
+   * Handle URL parameters for Virtual Meetings navigation:
+   * - ?scrollTo=virtual-meetings - Scroll to VM section after data loads
+   * - ?highlightVMButton=true - Highlight the Request VM button with pulse animation
+   */
+  useEffect(() => {
+    // Wait for data to load and page to render
+    if (isLoading || proposals.length === 0) return;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const scrollTo = urlParams.get('scrollTo');
+    const shouldHighlightVMButton = urlParams.get('highlightVMButton') === 'true';
+
+    // Handle scroll to Virtual Meetings section
+    if (scrollTo === 'virtual-meetings') {
+      // Small delay to ensure VirtualMeetingsSection has rendered
+      setTimeout(() => {
+        const vmSection = document.getElementById('virtual-meetings');
+        if (vmSection) {
+          vmSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        // Clean URL after scrolling
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }, 100);
+    }
+
+    // Handle highlight VM button (no existing VMs, prompt user to create one)
+    if (shouldHighlightVMButton) {
+      setHighlightVMButton(true);
+      // Clean URL after setting state
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+
+      // Auto-remove highlight after 5 seconds
+      setTimeout(() => {
+        setHighlightVMButton(false);
+      }, 5000);
+    }
+  }, [isLoading, proposals]);
+
+  // ============================================================================
   // HANDLERS
   // ============================================================================
 
@@ -346,6 +394,7 @@ export function useGuestProposalsPageLogic() {
     // UI state
     isLoading: isPageLoading,
     error,
+    highlightVMButton,
 
     // Handlers
     handleProposalSelect,

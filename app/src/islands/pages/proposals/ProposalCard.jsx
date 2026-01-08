@@ -706,7 +706,7 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
 // MAIN COMPONENT
 // ============================================================================
 
-export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect, onProposalDeleted }) {
+export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect, onProposalDeleted, highlightVMButton = false }) {
   if (!proposal) {
     return null;
   }
@@ -1194,7 +1194,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 {/* VM Button (Fallback) */}
                 {vmConfig.visible && (
                   <button
-                    className={`btn-action-bar ${vmConfig.className}`}
+                    className={`btn-action-bar ${vmConfig.className} ${highlightVMButton && vmConfig.view === 'request' ? 'vm-button-pulse' : ''}`}
                     disabled={vmConfig.disabled}
                     style={vmConfig.style || undefined}
                     onClick={handleVMButtonClick}
@@ -1223,7 +1223,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
             {/* Button 1: Virtual Meeting - visibility based on vmConfig (implements 8 Bubble conditionals) */}
             {buttonConfig && vmConfig.visible && (
               <button
-                className={`btn-action-bar ${vmConfig.className}`}
+                className={`btn-action-bar ${vmConfig.className} ${highlightVMButton && vmConfig.view === 'request' ? 'vm-button-pulse' : ''}`}
                 disabled={vmConfig.disabled}
                 style={vmConfig.style || undefined}
                 onClick={handleVMButtonClick}
