@@ -59,123 +59,43 @@ const successStories = [
 ];
 
 // ============================================================================
-// INTERNAL COMPONENT: GSAP Hero Section
+// INTERNAL COMPONENT: Simple Hero Section
 // ============================================================================
 
 function HeroSection() {
   const heroRef = useRef(null);
-  const textLineTopRef = useRef(null);
-  const textLineBottomRef = useRef(null);
-  const maskRevealRef = useRef(null);
-  const revealContentRef = useRef(null);
-  const statsRef = useRef(null);
-  const statItemsRef = useRef([]);
-  const scrollIndicatorRef = useRef(null);
-
-  // Dynamic text rotation
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const scenarios = ['savings', 'results', 'flexibility'];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % scenarios.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [scenarios.length]);
+  const contentRef = useRef(null);
+  const statsRef = useRef([]);
 
   useLayoutEffect(() => {
     const hero = heroRef.current;
-    const textTop = textLineTopRef.current;
-    const textBottom = textLineBottomRef.current;
-    const maskReveal = maskRevealRef.current;
-    const revealContent = revealContentRef.current;
-    const stats = statsRef.current;
-    const statItems = statItemsRef.current.filter(Boolean);
-    const scrollIndicator = scrollIndicatorRef.current;
+    const content = contentRef.current;
+    const stats = statsRef.current.filter(Boolean);
 
-    if (!hero || !textTop || !textBottom) return;
+    if (!hero || !content) return;
 
     const ctx = gsap.context(() => {
-      // Set initial states
-      gsap.set(maskReveal, {
-        scaleY: 0,
-        transformOrigin: 'center center'
-      });
-      gsap.set(revealContent, {
+      // Simple fade-in animation on page load
+      gsap.from(content, {
         opacity: 0,
-        y: 30
+        y: 40,
+        duration: 0.8,
+        ease: 'power2.out'
       });
-      gsap.set(statItems, {
+
+      // Stats fade in with stagger
+      gsap.from(stats, {
         opacity: 0,
-        y: 60
-      });
-      gsap.set(scrollIndicator, {
-        opacity: 1
-      });
-
-      // Main timeline with scroll trigger
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: hero,
-          start: 'top top',
-          end: '+=150%',
-          pin: true,
-          scrub: 1,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            // Hide scroll indicator after 10% progress
-            if (self.progress > 0.1) {
-              gsap.to(scrollIndicator, { opacity: 0, duration: 0.3 });
-            } else {
-              gsap.to(scrollIndicator, { opacity: 1, duration: 0.3 });
-            }
-          }
-        }
-      });
-
-      // Phase 1: Split the text apart (0% - 30%)
-      tl.to(textTop, {
-        y: '-120%',
-        scale: 0.6,
-        opacity: 0.3,
-        ease: 'power2.inOut',
-        duration: 0.3
-      }, 0)
-      .to(textBottom, {
-        y: '120%',
-        scale: 0.6,
-        opacity: 0.3,
-        ease: 'power2.inOut',
-        duration: 0.3
-      }, 0);
-
-      // Phase 2: Mask reveal expands (30% - 60%)
-      tl.to(maskReveal, {
-        scaleY: 1,
-        ease: 'power3.out',
-        duration: 0.4
-      }, 0.25);
-
-      // Phase 3: Content fades in (40% - 70%)
-      tl.to(revealContent, {
-        opacity: 1,
-        y: 0,
+        y: 30,
+        stagger: 0.1,
+        duration: 0.6,
         ease: 'power2.out',
-        duration: 0.3
-      }, 0.35);
+        delay: 0.4
+      });
 
-      // Phase 4: Stats slide in with stagger (60% - 100%)
-      tl.to(statItems, {
-        opacity: 1,
-        y: 0,
-        stagger: 0.08,
-        ease: 'power2.out',
-        duration: 0.25
-      }, 0.55);
-
-      // Parallax background elements
-      gsap.to('.hero-bg-shape', {
-        y: -100,
+      // Subtle parallax on scroll
+      gsap.to(content, {
+        y: -50,
         ease: 'none',
         scrollTrigger: {
           trigger: hero,
@@ -184,88 +104,42 @@ function HeroSection() {
           scrub: 0.5
         }
       });
-
     }, hero);
 
     return () => ctx.revert();
   }, []);
 
   return (
-    <section ref={heroRef} className="gsap-hero">
-      {/* Background shapes */}
-      <div className="hero-bg-shapes">
-        <div className="hero-bg-shape shape-1"></div>
-        <div className="hero-bg-shape shape-2"></div>
-        <div className="hero-bg-shape shape-3"></div>
+    <section ref={heroRef} className="hero-section">
+      <div ref={contentRef} className="hero-content">
+        <span className="hero-eyebrow">Guest Success Stories</span>
+        <h1 className="hero-title">
+          Real guests. Real results.
+        </h1>
+        <p className="hero-subtitle">
+          See how professionals, students, and parents use Split Lease
+          for consistent, affordable NYC stays.
+        </p>
+        <a href="#stories" className="hero-cta">
+          Read Their Stories
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </a>
       </div>
 
-      {/* Main content container */}
-      <div className="gsap-hero-content">
-        {/* Large typography - splits apart on scroll */}
-        <div className="hero-text-container">
-          <div ref={textLineTopRef} className="hero-text-line hero-text-top">
-            <span className="hero-text-static">Real</span>
-            <span className="hero-text-highlight">guests.</span>
-          </div>
-          <div ref={textLineBottomRef} className="hero-text-line hero-text-bottom">
-            <span className="hero-text-static">Real</span>
-            <span className="hero-text-highlight hero-text-dynamic" key={currentIndex}>
-              {scenarios[currentIndex]}.
-            </span>
-          </div>
+      <div className="hero-stats">
+        <div ref={el => statsRef.current[0] = el} className="hero-stat">
+          <span className="stat-value">$18K</span>
+          <span className="stat-label">Avg. Annual Savings</span>
         </div>
-
-        {/* Mask reveal container - appears in center */}
-        <div ref={maskRevealRef} className="mask-reveal-container">
-          <div ref={revealContentRef} className="reveal-content">
-            <div className="reveal-eyebrow">Guest Stories</div>
-            <h2 className="reveal-headline">See how it works for them</h2>
-            <p className="reveal-hook">
-              Professionals, students, and parents share their experience
-              using Split Lease for recurring NYC stays.
-            </p>
-            <div className="reveal-cta">
-              <a href="#stories" className="reveal-cta-button">
-                View Stories
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </a>
-            </div>
-          </div>
+        <div ref={el => statsRef.current[1] = el} className="hero-stat">
+          <span className="stat-value">89%</span>
+          <span className="stat-label">Return Rate</span>
         </div>
-
-        {/* Stats - slide in from bottom */}
-        <div ref={statsRef} className="hero-stats-container">
-          <div
-            ref={el => statItemsRef.current[0] = el}
-            className="hero-stat-item"
-          >
-            <div className="hero-stat-value">$18K</div>
-            <div className="hero-stat-label">Avg. Annual Savings</div>
-          </div>
-          <div
-            ref={el => statItemsRef.current[1] = el}
-            className="hero-stat-item"
-          >
-            <div className="hero-stat-value">89%</div>
-            <div className="hero-stat-label">Return Rate</div>
-          </div>
-          <div
-            ref={el => statItemsRef.current[2] = el}
-            className="hero-stat-item"
-          >
-            <div className="hero-stat-value">4.9</div>
-            <div className="hero-stat-label">Avg. Rating</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Scroll indicator */}
-      <div ref={scrollIndicatorRef} className="scroll-indicator">
-        <div className="scroll-indicator-text">Scroll to explore</div>
-        <div className="scroll-indicator-line">
-          <div className="scroll-indicator-dot"></div>
+        <div ref={el => statsRef.current[2] = el} className="hero-stat">
+          <span className="stat-value">4.9</span>
+          <span className="stat-label">Avg. Rating</span>
         </div>
       </div>
     </section>
@@ -273,173 +147,81 @@ function HeroSection() {
 }
 
 // ============================================================================
-// INTERNAL COMPONENT: Problem Transition Section
+// INTERNAL COMPONENT: Simple Problem/Solution Section
 // ============================================================================
 
-function ProblemTransitionSection() {
+function ProblemSolutionSection() {
   const sectionRef = useRef(null);
-  const trackRef = useRef(null);
-  const painPoint1Ref = useRef(null);
-  const painPoint2Ref = useRef(null);
-  const painPoint3Ref = useRef(null);
-  const strike1Ref = useRef(null);
-  const strike2Ref = useRef(null);
-  const strike3Ref = useRef(null);
+  const problemsRef = useRef([]);
   const solutionRef = useRef(null);
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
-    const track = trackRef.current;
-    const painPoint1 = painPoint1Ref.current;
-    const painPoint2 = painPoint2Ref.current;
-    const painPoint3 = painPoint3Ref.current;
-    const strike1 = strike1Ref.current;
-    const strike2 = strike2Ref.current;
-    const strike3 = strike3Ref.current;
+    const problems = problemsRef.current.filter(Boolean);
     const solution = solutionRef.current;
 
-    if (!section || !track) return;
+    if (!section) return;
 
     const ctx = gsap.context(() => {
-      // Set initial states
-      gsap.set([strike1, strike2, strike3], {
-        strokeDashoffset: 400,
-        strokeDasharray: 400
-      });
-      gsap.set(solution, {
+      // Problems fade in with stagger on scroll
+      gsap.from(problems, {
         opacity: 0,
-        x: 100
-      });
-      gsap.set([painPoint1, painPoint2, painPoint3], {
-        opacity: 1,
-        filter: 'blur(0px)'
-      });
-
-      // Main horizontal scroll timeline
-      const tl = gsap.timeline({
+        x: -30,
+        stagger: 0.15,
+        duration: 0.6,
+        ease: 'power2.out',
         scrollTrigger: {
           trigger: section,
-          start: 'top top',
-          end: '+=200%',
-          pin: true,
-          scrub: 1,
-          anticipatePin: 1
+          start: 'top 80%',
+          toggleActions: 'play none none reverse'
         }
       });
 
-      // Phase 1: Horizontal scroll to show pain points (0% - 30%)
-      tl.to(track, {
-        x: () => -(track.scrollWidth - window.innerWidth),
-        ease: 'none',
-        duration: 0.6
-      }, 0);
-
-      // Phase 2: Draw strikethrough lines (20% - 50%)
-      tl.to(strike1, {
-        strokeDashoffset: 0,
-        ease: 'power2.inOut',
-        duration: 0.15
-      }, 0.15)
-      .to(strike2, {
-        strokeDashoffset: 0,
-        ease: 'power2.inOut',
-        duration: 0.15
-      }, 0.25)
-      .to(strike3, {
-        strokeDashoffset: 0,
-        ease: 'power2.inOut',
-        duration: 0.15
-      }, 0.35);
-
-      // Phase 3: Blur out pain points (50% - 70%)
-      tl.to([painPoint1, painPoint2, painPoint3], {
-        opacity: 0.2,
-        filter: 'blur(8px)',
-        ease: 'power2.inOut',
-        duration: 0.2
-      }, 0.5);
-
-      // Phase 4: Solution slides in (60% - 100%)
-      tl.to(solution, {
-        opacity: 1,
-        x: 0,
+      // Solution fades in after problems
+      gsap.from(solution, {
+        opacity: 0,
+        y: 30,
+        duration: 0.6,
         ease: 'power2.out',
-        duration: 0.3
-      }, 0.6);
-
+        scrollTrigger: {
+          trigger: solution,
+          start: 'top 85%',
+          toggleActions: 'play none none reverse'
+        }
+      });
     }, section);
 
     return () => ctx.revert();
   }, []);
 
   return (
-    <section ref={sectionRef} className="problem-transition-section">
-      <div ref={trackRef} className="problem-track">
-        {/* Scene A: Pain Points */}
-        <div className="problem-scene scene-pain-points">
-          <div className="pain-point-container">
-            <div ref={painPoint1Ref} className="pain-point">
-              <span className="pain-text">Hotels are expensive</span>
-              <svg className="strike-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
-                <line
-                  ref={strike1Ref}
-                  x1="0"
-                  y1="10"
-                  x2="400"
-                  y2="10"
-                  stroke="#DC2626"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
+    <section ref={sectionRef} className="problem-solution-section">
+      <div className="problem-solution-container">
+        <div className="problems-side">
+          <span className="section-label">The Problem</span>
+          <div className="problems-list">
+            <div ref={el => problemsRef.current[0] = el} className="problem-item">
+              <span className="problem-icon">✕</span>
+              <span className="problem-text">Hotels drain your budget</span>
             </div>
-          </div>
-          <div className="pain-point-container">
-            <div ref={painPoint2Ref} className="pain-point">
-              <span className="pain-text">Airbnb is inconsistent</span>
-              <svg className="strike-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
-                <line
-                  ref={strike2Ref}
-                  x1="0"
-                  y1="10"
-                  x2="400"
-                  y2="10"
-                  stroke="#DC2626"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
+            <div ref={el => problemsRef.current[1] = el} className="problem-item">
+              <span className="problem-icon">✕</span>
+              <span className="problem-text">Airbnb is inconsistent</span>
             </div>
-          </div>
-          <div className="pain-point-container">
-            <div ref={painPoint3Ref} className="pain-point">
-              <span className="pain-text">Full leases are wasteful</span>
-              <svg className="strike-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
-                <line
-                  ref={strike3Ref}
-                  x1="0"
-                  y1="10"
-                  x2="400"
-                  y2="10"
-                  stroke="#DC2626"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
+            <div ref={el => problemsRef.current[2] = el} className="problem-item">
+              <span className="problem-icon">✕</span>
+              <span className="problem-text">Full leases waste money</span>
             </div>
           </div>
         </div>
 
-        {/* Scene B: Solution */}
-        <div ref={solutionRef} className="problem-scene scene-solution">
-          <div className="solution-content">
-            <div className="solution-eyebrow">The Alternative</div>
-            <h2 className="solution-headline">These guests found a better way</h2>
-            <p className="solution-description">
-              Flexible, recurring rentals that fit their schedule.
-              Same space every time. No surprises.
-            </p>
-          </div>
+        <div ref={solutionRef} className="solution-side">
+          <span className="section-label">The Solution</span>
+          <h2 className="solution-title">Split Lease</h2>
+          <p className="solution-text">
+            Flexible, recurring rentals that match your schedule.
+            Same space every time. No surprises. No wasted nights.
+          </p>
         </div>
       </div>
     </section>
@@ -679,11 +461,11 @@ export default function GuestSuccessPage() {
     <>
       <Header />
 
-      {/* GSAP-Powered Hero Section */}
+      {/* Hero Section */}
       <HeroSection />
 
-      {/* Problem Transition Section - Horizontal Scroll with Strikethrough */}
-      <ProblemTransitionSection />
+      {/* Problem/Solution Section */}
+      <ProblemSolutionSection />
 
       {/* Stacking Stories Section - Card Deck Effect */}
       <StackingStoriesSection
