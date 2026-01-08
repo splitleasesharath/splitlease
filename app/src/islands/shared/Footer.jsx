@@ -106,10 +106,7 @@ export default function Footer() {
     <>
       {/* Main Footer */}
       <footer className="main-footer">
-        <div
-          className="footer-container"
-          style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
-        >
+        <div className="footer-container">
           {/* Company Column - Now first */}
           <div className="footer-column">
             <h4>Company</h4>
@@ -150,6 +147,9 @@ export default function Footer() {
               <a href="/faq?section=travelers">View FAQ</a>
             </div>
           )}
+
+          {/* Divider between info columns and action columns */}
+          <div className="footer-divider-vertical"></div>
 
           {/* Referral Column */}
           <div className="footer-column">

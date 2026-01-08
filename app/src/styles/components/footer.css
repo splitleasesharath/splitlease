@@ -11,10 +11,17 @@
     max-width: var(--max-width);
     margin: 0 auto;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: 1fr 1fr 1fr auto 1fr 1fr;
     gap: 1rem;
     margin-bottom: 0;
     padding: 0 2rem;
+}
+
+.footer-divider-vertical {
+    width: 1px;
+    background: rgba(255, 255, 255, 0.15);
+    align-self: stretch;
+    margin: 0 0.5rem;
 }
 
 .footer-column {
@@ -412,9 +419,10 @@
         margin-bottom: 0.3rem;
     }
 
-    /* Hide referral and import columns on mobile using class selectors */
+    /* Hide referral, import columns, and divider on mobile */
     .footer-column:has(.share-btn),
-    .footer-column.import-column {
+    .footer-column.import-column,
+    .footer-divider-vertical {
         display: none;
     }
 
