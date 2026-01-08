@@ -20,6 +20,7 @@
     "date-fns": "^4.1.0",
     "date-fns-tz": "^3.2.0",
     "framer-motion": "^12.23.24",
+    "gsap": "^3.14.2",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.553.0",
     "motion-utils": "^12.23.6",

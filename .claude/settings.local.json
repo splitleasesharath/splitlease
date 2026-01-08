@@ -11,7 +11,15 @@
       "Bash(git push:*)",
       "Bash(git pull:*)",
       "mcp__playwright__browser_snapshot",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Skill(fp-rater)",
+      "Skill(preview)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(timeout /t 3 /nobreak)",
+      "Bash(start http://localhost:8000)",
+      "Bash(bun run dev)",
+      "Bash(cat:*)"
     ],
     "deny": [],
     "ask": []
