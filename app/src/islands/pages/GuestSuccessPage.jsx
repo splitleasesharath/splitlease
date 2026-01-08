@@ -60,17 +60,34 @@ function WhyItWorksSection() {
         <h2 className="why-it-works-title">Why this works</h2>
         <div className="why-it-works-grid">
           <div className="why-card">
-            <div className="why-card-icon">🏠</div>
+            <div className="why-card-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
             <h3 className="why-card-title">Your space, every time</h3>
             <p className="why-card-text">Same apartment, same key, same routine. Your things stay there. No more packing a suitcase for a two-night trip.</p>
           </div>
           <div className="why-card">
-            <div className="why-card-icon">🤝</div>
+            <div className="why-card-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+            </div>
             <h3 className="why-card-title">Host someone like you</h3>
             <p className="why-card-text">Ex-locals who probably went to your school, work in your industry, or share your interests. Not strangers—almost-neighbors.</p>
           </div>
           <div className="why-card">
-            <div className="why-card-icon">💰</div>
+            <div className="why-card-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
             <h3 className="why-card-title">Fraction of the cost</h3>
             <p className="why-card-text">Pay only for the nights you need. No wasted rent on empty apartments. No $400/night hotels draining your budget.</p>
           </div>

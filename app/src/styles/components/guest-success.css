@@ -215,8 +215,13 @@
 }
 
 .why-card-icon {
-    font-size: 40px;
     margin-bottom: 20px;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.why-card-icon svg {
+    width: 32px;
+    height: 32px;
 }
 
 .why-card-title {
