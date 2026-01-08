@@ -273,6 +273,180 @@ function HeroSection() {
 }
 
 // ============================================================================
+// INTERNAL COMPONENT: Problem Transition Section
+// ============================================================================
+
+function ProblemTransitionSection() {
+  const sectionRef = useRef(null);
+  const trackRef = useRef(null);
+  const painPoint1Ref = useRef(null);
+  const painPoint2Ref = useRef(null);
+  const painPoint3Ref = useRef(null);
+  const strike1Ref = useRef(null);
+  const strike2Ref = useRef(null);
+  const strike3Ref = useRef(null);
+  const solutionRef = useRef(null);
+
+  useLayoutEffect(() => {
+    const section = sectionRef.current;
+    const track = trackRef.current;
+    const painPoint1 = painPoint1Ref.current;
+    const painPoint2 = painPoint2Ref.current;
+    const painPoint3 = painPoint3Ref.current;
+    const strike1 = strike1Ref.current;
+    const strike2 = strike2Ref.current;
+    const strike3 = strike3Ref.current;
+    const solution = solutionRef.current;
+
+    if (!section || !track) return;
+
+    const ctx = gsap.context(() => {
+      // Set initial states
+      gsap.set([strike1, strike2, strike3], {
+        strokeDashoffset: 400,
+        strokeDasharray: 400
+      });
+      gsap.set(solution, {
+        opacity: 0,
+        x: 100
+      });
+      gsap.set([painPoint1, painPoint2, painPoint3], {
+        opacity: 1,
+        filter: 'blur(0px)'
+      });
+
+      // Main horizontal scroll timeline
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start: 'top top',
+          end: '+=200%',
+          pin: true,
+          scrub: 1,
+          anticipatePin: 1
+        }
+      });
+
+      // Phase 1: Horizontal scroll to show pain points (0% - 30%)
+      tl.to(track, {
+        x: () => -(track.scrollWidth - window.innerWidth),
+        ease: 'none',
+        duration: 0.6
+      }, 0);
+
+      // Phase 2: Draw strikethrough lines (20% - 50%)
+      tl.to(strike1, {
+        strokeDashoffset: 0,
+        ease: 'power2.inOut',
+        duration: 0.15
+      }, 0.15)
+      .to(strike2, {
+        strokeDashoffset: 0,
+        ease: 'power2.inOut',
+        duration: 0.15
+      }, 0.25)
+      .to(strike3, {
+        strokeDashoffset: 0,
+        ease: 'power2.inOut',
+        duration: 0.15
+      }, 0.35);
+
+      // Phase 3: Blur out pain points (50% - 70%)
+      tl.to([painPoint1, painPoint2, painPoint3], {
+        opacity: 0.2,
+        filter: 'blur(8px)',
+        ease: 'power2.inOut',
+        duration: 0.2
+      }, 0.5);
+
+      // Phase 4: Solution slides in (60% - 100%)
+      tl.to(solution, {
+        opacity: 1,
+        x: 0,
+        ease: 'power2.out',
+        duration: 0.3
+      }, 0.6);
+
+    }, section);
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <section ref={sectionRef} className="problem-transition-section">
+      <div ref={trackRef} className="problem-track">
+        {/* Scene A: Pain Points */}
+        <div className="problem-scene scene-pain-points">
+          <div className="pain-point-container">
+            <div ref={painPoint1Ref} className="pain-point">
+              <span className="pain-text">Hotels are expensive</span>
+              <svg className="strike-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
+                <line
+                  ref={strike1Ref}
+                  x1="0"
+                  y1="10"
+                  x2="400"
+                  y2="10"
+                  stroke="#DC2626"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+          </div>
+          <div className="pain-point-container">
+            <div ref={painPoint2Ref} className="pain-point">
+              <span className="pain-text">Airbnb is inconsistent</span>
+              <svg className="strike-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
+                <line
+                  ref={strike2Ref}
+                  x1="0"
+                  y1="10"
+                  x2="400"
+                  y2="10"
+                  stroke="#DC2626"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+          </div>
+          <div className="pain-point-container">
+            <div ref={painPoint3Ref} className="pain-point">
+              <span className="pain-text">Full leases are wasteful</span>
+              <svg className="strike-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
+                <line
+                  ref={strike3Ref}
+                  x1="0"
+                  y1="10"
+                  x2="400"
+                  y2="10"
+                  stroke="#DC2626"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Scene B: Solution */}
+        <div ref={solutionRef} className="problem-scene scene-solution">
+          <div className="solution-content">
+            <div className="solution-eyebrow">The Alternative</div>
+            <h2 className="solution-headline">These guests found a better way</h2>
+            <p className="solution-description">
+              Flexible, recurring rentals that fit their schedule.
+              Same space every time. No surprises.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ============================================================================
 // INTERNAL COMPONENT: Story Card (Full-width)
 // ============================================================================
 
@@ -356,6 +530,9 @@ export default function GuestSuccessPage() {
 
       {/* GSAP-Powered Hero Section */}
       <HeroSection />
+
+      {/* Problem Transition Section - Horizontal Scroll with Strikethrough */}
+      <ProblemTransitionSection />
 
       {/* Featured Stories Section - White with Outlined Bubbles */}
       <section id="stories" className="featured-stories-section">
