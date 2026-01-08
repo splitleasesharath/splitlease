@@ -290,11 +290,14 @@ export default function ProposalDetailsModal({
 
   /**
    * Get CSS class for a progress line (between two steps)
-   * Line is completed if BOTH adjacent steps are completed
+   * Line is completed (purple) if:
+   * - Both adjacent steps are completed, OR
+   * - Previous step is completed AND next step is current (we've reached it)
    */
   const getLineClass = (prevStep, nextStep) => {
     if (isCancelled) return 'cancelled';
-    if (prevStep.completed && nextStep.completed) return 'completed';
+    // Line fills when we've moved past it (prev completed) AND reached the next step (completed OR current)
+    if (prevStep.completed && (nextStep.completed || nextStep.current)) return 'completed';
     return '';
   };
 
