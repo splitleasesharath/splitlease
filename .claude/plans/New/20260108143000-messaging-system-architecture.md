@@ -358,12 +358,16 @@ Before implementation, audit `os_messaging_cta` table:
 
 ---
 
+## Resolved Questions
+
+1. **SplitBot User ID**: `1634177189464x117577733821174320` (email: splitbot@leasesplit.com)
+2. **Message Timing**: Synchronous - thread creation happens after proposal creation succeeds
+3. **CTA Templates**: Use `message` column from `os_messaging_cta`, apply find & replace for `[Host name]`, `[Guest name]`, `[Listing name]`
+
 ## Open Questions
 
-1. **SplitBot User ID**: Need to identify the SplitBot user record in the database for `-Originator User` field
-2. **Message Timing**: Should thread creation be synchronous with proposal creation or async?
-3. **Error Handling**: If thread creation fails, should proposal creation rollback?
-4. **Real-time**: Confirm database triggers broadcast new messages to Realtime channels
+1. **Error Handling**: If thread creation fails, should proposal creation rollback? (Likely no - non-blocking)
+2. **Real-time**: Confirm database triggers broadcast new messages to Realtime channels
 
 ---
 
