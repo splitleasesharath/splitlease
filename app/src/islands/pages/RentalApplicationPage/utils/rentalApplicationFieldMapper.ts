@@ -296,8 +296,12 @@ export function mapDatabaseToFormData(
     }
   }
 
-  // Calculate completed steps based on filled fields
-  const completedSteps = calculateCompletedSteps(formData, occupants, employmentStatus);
+  // Determine completed steps
+  // For submitted applications: ALL steps are complete (user went through entire wizard)
+  // For in-progress: calculate based on which fields have data
+  const completedSteps = db.submitted
+    ? [1, 2, 3, 4, 5, 6, 7] // All steps complete for submitted apps
+    : calculateCompletedSteps(formData, occupants, employmentStatus);
 
   // Determine last step - if submitted, user has completed all steps
   const lastStep = db.submitted ? 7 : findLastCompletedStep(completedSteps);

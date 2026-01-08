@@ -39,15 +39,30 @@ function FileUploadBox({
 
       {hasUrl || hasFile ? (
         <div className="file-upload-box__preview">
-          <div className="file-upload-box__file">
-            <FileText size={20} />
-            <span>{hasFile?.name || 'Uploaded file'}</span>
-            {isComplete && <Check size={16} className="file-upload-box__check" />}
-          </div>
+          {/* Make the file clickable to open in new tab */}
+          {hasUrl ? (
+            <a
+              href={hasUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="file-upload-box__file file-upload-box__file--link"
+            >
+              <FileText size={20} />
+              <span>{hasFile?.name || 'View uploaded file'}</span>
+              {(isComplete || hasUrl) && <Check size={16} className="file-upload-box__check" />}
+            </a>
+          ) : (
+            <div className="file-upload-box__file">
+              <FileText size={20} />
+              <span>{hasFile?.name || 'Uploaded file'}</span>
+              {isComplete && <Check size={16} className="file-upload-box__check" />}
+            </div>
+          )}
           <button
             type="button"
             className="file-upload-box__remove"
             onClick={() => onFileRemove(uploadKey)}
+            aria-label="Remove file"
           >
             <X size={16} />
           </button>

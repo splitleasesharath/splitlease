@@ -507,6 +507,24 @@
   font-size: 14px;
 }
 
+/* Clickable file link styling */
+.file-upload-box__file--link {
+  text-decoration: none;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.file-upload-box__file--link:hover {
+  background-color: #F0FDF4;
+  text-decoration: underline;
+}
+
+.file-upload-box__file--link span {
+  color: var(--sl-primary, #5B21B6);
+}
+
 .file-upload-box__check {
   color: #10B981;
 }
