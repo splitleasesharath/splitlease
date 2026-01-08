@@ -193,25 +193,8 @@ const ListingCard = ({
           </div>
         )}
 
-        {/* Host Profile and Pricing Section */}
+        {/* Pricing and Actions Section */}
         <div className="listing-footer">
-          {/* Host Profile */}
-          <div className="host-profile">
-            <div className="host-avatar">
-              {hostInitial}
-            </div>
-            <div className="host-info">
-              <span className="host-name">
-                {hostName}
-                {isHostVerified && (
-                  <svg className="verified-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
-                  </svg>
-                )}
-              </span>
-            </div>
-          </div>
-
           {/* Pricing */}
           <div className="pricing-section">
             <div className="starting-price">
@@ -225,16 +208,33 @@ const ListingCard = ({
             <div className="current-price">{formatPrice(originalPrice)}</div>
             <div className="availability-message">Message Split Lease for Availability</div>
           </div>
-        </div>
 
-        {/* Action Buttons */}
-        <div className="action-buttons">
-          <button className="action-button secondary" onClick={handleSendMessage}>
-            Send Message
-          </button>
-          <button className="action-button primary" onClick={handleViewProposal}>
-            View Proposal
-          </button>
+          {/* Action Buttons */}
+          <div className="action-buttons">
+            <button className="action-button secondary" onClick={handleSendMessage}>
+              Send Message
+            </button>
+            <button className="action-button primary" onClick={handleViewProposal}>
+              View Proposal
+            </button>
+          </div>
+
+          {/* Host Profile */}
+          <div className="host-profile">
+            <div className="host-avatar">
+              {hostInitial}
+            </div>
+            <div className="host-info">
+              <span className="host-name">
+                Hosted by {hostName}
+                {isHostVerified && (
+                  <svg className="verified-icon" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"></path>
+                  </svg>
+                )}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
