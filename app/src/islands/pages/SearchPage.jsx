@@ -2542,6 +2542,8 @@ export default function SearchPage() {
   };
 
   // Update favorites count and show toast (API call handled by FavoriteButton component)
+  // Note: FavoriteButton already handles its own visual state immediately,
+  // so we defer the parent state update to avoid blocking the UI
   const handleToggleFavorite = (listingId, listingTitle, newState) => {
     console.log('[SearchPage] handleToggleFavorite called:', {
       listingId,
@@ -2550,23 +2552,34 @@ export default function SearchPage() {
       currentFavoritesCount: favoritesCount
     });
 
-    // Update the local set to keep heart icon state in sync
-    const newFavoritedIds = new Set(favoritedListingIds);
-    if (newState) {
-      newFavoritedIds.add(listingId);
-    } else {
-      newFavoritedIds.delete(listingId);
-    }
-    setFavoritedListingIds(newFavoritedIds);
-    // Update count to match the set size
-    setFavoritesCount(newFavoritedIds.size);
-
-    // Show toast notification
+    // Show toast notification immediately (doesn't cause heavy re-renders)
     const displayName = listingTitle || 'Listing';
     if (newState) {
       showToast(`${displayName} added to favorites`, 'success');
     } else {
       showToast(`${displayName} removed from favorites`, 'info');
+    }
+
+    // Defer parent state update to avoid blocking the immediate visual feedback
+    // FavoriteButton handles its own visual state, this is just for the header badge
+    const deferredUpdate = () => {
+      setFavoritedListingIds(prev => {
+        const updated = new Set(prev);
+        if (newState) {
+          updated.add(listingId);
+        } else {
+          updated.delete(listingId);
+        }
+        setFavoritesCount(updated.size);
+        return updated;
+      });
+    };
+
+    // Use requestIdleCallback if available, otherwise setTimeout
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(deferredUpdate);
+    } else {
+      setTimeout(deferredUpdate, 0);
     }
   };
 
