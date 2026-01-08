@@ -473,101 +473,175 @@
 }
 
 /* ============================================
-   FEATURED STORIES SECTION - White with Outlined Bubbles
+   STACKING STORIES SECTION - Card Deck Effect
    ============================================ */
 
-.featured-stories-section {
-    background: white;
-    padding: 100px 32px;
-    margin: 0;
+.stacking-stories-section {
     position: relative;
+    width: 100%;
+    height: 100vh;
+    min-height: 700px;
+    background: linear-gradient(180deg, #fafbfc 0%, #f0f2f5 100%);
     overflow: hidden;
 }
 
-.featured-stories-section .outlined-bubble {
+/* Progress Indicator - Left Side */
+.stories-progress {
     position: absolute;
-    border-radius: 50%;
-    border: 3px solid #31135D;
-    opacity: 0.08;
-}
-
-.featured-stories-section .outlined-bubble-1 {
-    width: 400px;
-    height: 400px;
-    top: -120px;
-    left: -120px;
-}
-
-.featured-stories-section .outlined-bubble-2 {
-    width: 280px;
-    height: 280px;
-    bottom: -90px;
-    right: 10%;
-}
-
-.featured-stories-section .outlined-bubble-3 {
-    width: 160px;
-    height: 160px;
-    top: 40%;
-    right: 5%;
-}
-
-.featured-stories-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    position: relative;
-    z-index: 2;
-}
-
-/* Story Feature Card */
-.story-feature-card {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 48px;
-    background: white;
-    border: 1px solid #E5E7EB;
-    border-radius: 20px;
+    left: 48px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 300px;
+    width: 4px;
+    background: rgba(49, 19, 93, 0.1);
+    border-radius: 4px;
+    z-index: 20;
     overflow: hidden;
-    margin-bottom: 48px;
-    opacity: 0;
-    transform: translateY(30px);
-    transition: all 0.6s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
-.story-feature-card.visible {
-    opacity: 1;
-    transform: translateY(0);
+.stories-progress-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(180deg, #31135D 0%, #6B21A8 100%);
+    border-radius: 4px;
+    transform-origin: bottom center;
+    will-change: transform;
 }
 
-.story-feature-card:hover {
-    box-shadow: 0 12px 32px rgba(49, 19, 93, 0.12);
-    border-color: #C4B5FD;
+.stories-progress-markers {
+    position: absolute;
+    top: 0;
+    left: 20px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 8px 0;
 }
 
-.story-feature-card.image-right {
-    direction: rtl;
+.progress-marker {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: white;
+    border: 2px solid rgba(49, 19, 93, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
 }
 
-.story-feature-card.image-right > * {
-    direction: ltr;
+.progress-marker.active {
+    background: #31135D;
+    border-color: #31135D;
+    box-shadow: 0 4px 12px rgba(49, 19, 93, 0.3);
 }
 
-.story-feature-image {
+.progress-marker .marker-number {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(49, 19, 93, 0.4);
+    transition: color 0.3s ease;
+}
+
+.progress-marker.active .marker-number {
+    color: white;
+}
+
+/* Story Counter - Bottom Right */
+.story-counter {
+    position: absolute;
+    bottom: 48px;
+    right: 48px;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    z-index: 20;
+}
+
+.counter-current {
+    font-size: 48px;
+    font-weight: 700;
+    color: #31135D;
+    line-height: 1;
+}
+
+.counter-divider {
+    font-size: 24px;
+    font-weight: 400;
+    color: rgba(49, 19, 93, 0.3);
+    margin: 0 4px;
+}
+
+.counter-total {
+    font-size: 20px;
+    font-weight: 600;
+    color: rgba(49, 19, 93, 0.4);
+}
+
+/* Cards Container */
+.stacking-cards-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    max-width: 1000px;
+    height: 550px;
+    padding: 0 120px;
+}
+
+/* Individual Stacking Card */
+.stacking-card {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 240px);
+    height: 100%;
+    will-change: transform, opacity, filter;
+}
+
+.stacking-card-inner {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    width: 100%;
+    height: 100%;
+    background: white;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow:
+        0 4px 6px rgba(0, 0, 0, 0.02),
+        0 12px 24px rgba(49, 19, 93, 0.08),
+        0 32px 64px rgba(49, 19, 93, 0.06);
+}
+
+/* Card Image Side */
+.stacking-card-image {
     position: relative;
-    min-height: 400px;
+    overflow: hidden;
 }
 
-.story-feature-image img {
+.stacking-card-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
 }
 
-.story-savings-badge {
+.card-image-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        180deg,
+        transparent 50%,
+        rgba(0, 0, 0, 0.4) 100%
+    );
+}
+
+.card-savings-badge {
     position: absolute;
     top: 20px;
     left: 20px;
@@ -580,56 +654,78 @@
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-.story-feature-card.image-right .story-savings-badge {
-    left: auto;
-    right: 20px;
+.card-location-badge {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    border-radius: 500px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
 }
 
-.story-feature-content {
-    padding: 48px;
+.card-location-badge svg {
+    color: #31135D;
+}
+
+/* Card Content Side */
+.stacking-card-content {
+    padding: 40px;
     display: flex;
     flex-direction: column;
+    overflow-y: auto;
 }
 
-.story-feature-header {
+.card-header {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
 }
 
-.story-feature-avatar {
-    width: 72px;
-    height: 72px;
+.card-avatar {
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     object-fit: cover;
     border: 3px solid #31135D;
     box-shadow: 0 4px 12px rgba(49, 19, 93, 0.15);
+    flex-shrink: 0;
 }
 
-.story-feature-person h3 {
-    font-size: 22px;
+.card-person-info {
+    flex: 1;
+}
+
+.card-name {
+    font-size: 20px;
     font-weight: 700;
     color: #111827;
     margin: 0 0 4px 0;
 }
 
-.story-role {
+.card-role {
     font-size: 14px;
     color: #6B7280;
-    font-weight: 500;
     margin: 0 0 2px 0;
 }
 
-.story-schedule {
+.card-schedule {
     font-size: 13px;
     color: #31135D;
     font-weight: 600;
     margin: 0;
 }
 
-.story-quote {
-    font-size: 20px;
+/* Quote with Word Animation */
+.card-quote {
+    font-size: 22px;
     font-weight: 600;
     color: #31135D;
     line-height: 1.5;
@@ -638,33 +734,24 @@
     border: none;
 }
 
-.story-full {
+.quote-word {
+    display: inline-block;
+    will-change: transform, opacity;
+}
+
+.card-full-story {
     font-size: 15px;
     color: #4B5563;
     line-height: 1.8;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
     flex-grow: 1;
 }
 
-.story-meta {
-    margin-bottom: 24px;
-}
-
-.story-location {
+.card-cta-button {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    color: #6B7280;
-    font-weight: 500;
-}
-
-.story-location svg {
-    color: #31135D;
-}
-
-.story-cta-button {
-    padding: 14px 32px;
+    gap: 10px;
+    padding: 14px 28px;
     background: #31135D;
     color: white;
     border: none;
@@ -677,10 +764,150 @@
     align-self: flex-start;
 }
 
-.story-cta-button:hover {
+.card-cta-button:hover {
     background: #4A2F7C;
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(49, 19, 93, 0.3);
+}
+
+.card-cta-button svg {
+    transition: transform 0.3s ease;
+}
+
+.card-cta-button:hover svg {
+    transform: translateX(4px);
+}
+
+/* Stacking Cards Responsive */
+@media (max-width: 1024px) {
+    .stories-progress {
+        left: 24px;
+        height: 200px;
+    }
+
+    .stories-progress-markers {
+        left: 16px;
+    }
+
+    .progress-marker {
+        width: 24px;
+        height: 24px;
+    }
+
+    .story-counter {
+        bottom: 24px;
+        right: 24px;
+    }
+
+    .counter-current {
+        font-size: 36px;
+    }
+
+    .stacking-cards-container {
+        padding: 0 80px;
+        height: 500px;
+    }
+
+    .stacking-card {
+        width: calc(100% - 160px);
+    }
+}
+
+@media (max-width: 768px) {
+    .stacking-stories-section {
+        min-height: 100vh;
+        height: auto;
+        padding: 80px 0;
+    }
+
+    .stories-progress {
+        display: none;
+    }
+
+    .story-counter {
+        position: static;
+        display: flex;
+        justify-content: center;
+        margin-bottom: 24px;
+    }
+
+    .stacking-cards-container {
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
+        padding: 0 24px;
+        height: auto;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .stacking-card {
+        position: relative;
+        left: auto;
+        transform: none;
+        width: 100%;
+        margin-bottom: 24px;
+    }
+
+    .stacking-card:not(:first-child) {
+        display: none;
+    }
+
+    .stacking-card-inner {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    .stacking-card-image {
+        height: 200px;
+    }
+
+    .stacking-card-content {
+        padding: 24px;
+    }
+
+    .card-header {
+        margin-bottom: 20px;
+    }
+
+    .card-avatar {
+        width: 56px;
+        height: 56px;
+    }
+
+    .card-name {
+        font-size: 18px;
+    }
+
+    .card-quote {
+        font-size: 18px;
+    }
+
+    .card-full-story {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 640px) {
+    .card-header {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .card-person-info {
+        text-align: center;
+    }
+
+    .card-quote {
+        text-align: center;
+        font-size: 16px;
+    }
+
+    .card-cta-button {
+        width: 100%;
+        justify-content: center;
+    }
 }
 
 /* ============================================
@@ -970,7 +1197,6 @@
         font-size: 10px;
     }
 
-    .featured-stories-section,
     .success-stats-section,
     .success-final-cta {
         padding: 60px 24px;
@@ -979,33 +1205,6 @@
     .success-stats-title,
     .success-cta-title {
         font-size: 32px;
-    }
-
-    .story-feature-card {
-        grid-template-columns: 1fr;
-        gap: 0;
-    }
-
-    .story-feature-card.image-right {
-        direction: ltr;
-    }
-
-    .story-feature-image {
-        min-height: 250px;
-    }
-
-    .story-feature-content {
-        padding: 32px 24px;
-    }
-
-    .story-quote {
-        font-size: 18px;
-    }
-
-    .story-cta-button {
-        width: 100%;
-        text-align: center;
-        justify-content: center;
     }
 
     .success-stats-grid {
@@ -1077,29 +1276,6 @@
         font-size: 28px;
     }
 
-    .story-feature-header {
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .story-feature-avatar {
-        width: 80px;
-        height: 80px;
-    }
-
-    .story-feature-person {
-        text-align: center;
-    }
-
-    .story-quote {
-        font-size: 16px;
-        text-align: center;
-    }
-
-    .story-meta {
-        text-align: center;
-    }
-
     .success-stats-grid {
         grid-template-columns: 1fr;
         gap: 16px;
@@ -1107,7 +1283,7 @@
 }
 
 /* Button Focus States for Accessibility */
-.story-cta-button:focus,
+.card-cta-button:focus,
 .reveal-cta-button:focus,
 .success-final-cta .cta-button:focus {
     outline: 2px solid #A855F7;
@@ -1120,7 +1296,10 @@
 .mask-reveal-container,
 .reveal-content,
 .hero-stat-item,
-.scroll-indicator {
+.scroll-indicator,
+.stacking-card,
+.stacking-stories-section,
+.quote-word {
     will-change: transform, opacity;
 }
 
@@ -1141,7 +1320,24 @@
     .mask-reveal-container,
     .reveal-content,
     .hero-stat-item,
-    .scroll-indicator {
+    .scroll-indicator,
+    .stacking-card,
+    .stacking-stories-section,
+    .quote-word {
         will-change: auto;
+    }
+
+    /* Show all cards stacked on reduced motion */
+    .stacking-card {
+        position: relative;
+        transform: none !important;
+        opacity: 1 !important;
+        filter: none !important;
+        margin-bottom: 24px;
+    }
+
+    .quote-word {
+        opacity: 1 !important;
+        transform: none !important;
     }
 }

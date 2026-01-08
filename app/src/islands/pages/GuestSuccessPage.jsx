@@ -447,71 +447,222 @@ function ProblemTransitionSection() {
 }
 
 // ============================================================================
-// INTERNAL COMPONENT: Story Card (Full-width)
+// INTERNAL COMPONENT: Stacking Stories Section
 // ============================================================================
 
-function StoryCard({ story, index, onFindSplitLease }) {
-  const [isVisible, setIsVisible] = useState(false);
-  const cardRef = useRef(null);
-  const isEven = index % 2 === 0;
+function StackingStoriesSection({ stories, onFindSplitLease }) {
+  const sectionRef = useRef(null);
+  const cardsContainerRef = useRef(null);
+  const cardRefs = useRef([]);
+  const progressRef = useRef(null);
+  const progressFillRef = useRef(null);
+  const [activeIndex, setActiveIndex] = useState(0);
 
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-          }
+  useLayoutEffect(() => {
+    const section = sectionRef.current;
+    const cardsContainer = cardsContainerRef.current;
+    const cards = cardRefs.current.filter(Boolean);
+    const progressFill = progressFillRef.current;
+
+    if (!section || !cardsContainer || cards.length === 0) return;
+
+    const ctx = gsap.context(() => {
+      const totalCards = cards.length;
+      const scrollPerCard = 100 / totalCards;
+
+      // Set initial states for all cards
+      cards.forEach((card, index) => {
+        if (index === 0) {
+          // First card starts visible
+          gsap.set(card, {
+            y: 0,
+            scale: 1,
+            opacity: 1,
+            zIndex: totalCards - index
+          });
+        } else {
+          // Other cards start below viewport
+          gsap.set(card, {
+            y: '100%',
+            scale: 0.95,
+            opacity: 0,
+            zIndex: totalCards - index
+          });
+        }
+
+        // Set quote text initial state (for word animation)
+        const quoteWords = card.querySelectorAll('.quote-word');
+        gsap.set(quoteWords, {
+          opacity: 0,
+          y: 20
         });
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
-    );
+      });
 
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
+      // Animate first card's quote on load
+      const firstCardQuoteWords = cards[0].querySelectorAll('.quote-word');
+      gsap.to(firstCardQuoteWords, {
+        opacity: 1,
+        y: 0,
+        stagger: 0.02,
+        duration: 0.4,
+        ease: 'power2.out',
+        delay: 0.3
+      });
 
-    return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
-      }
-    };
-  }, []);
+      // Main timeline with scroll trigger
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: section,
+          start: 'top top',
+          end: `+=${totalCards * 100}%`,
+          pin: true,
+          scrub: 1,
+          anticipatePin: 1,
+          onUpdate: (self) => {
+            // Update progress bar
+            if (progressFill) {
+              gsap.set(progressFill, {
+                scaleY: self.progress
+              });
+            }
+
+            // Calculate active card index
+            const newIndex = Math.min(
+              Math.floor(self.progress * totalCards),
+              totalCards - 1
+            );
+            setActiveIndex(newIndex);
+          }
+        }
+      });
+
+      // Animate each card transition
+      cards.forEach((card, index) => {
+        if (index === 0) return; // Skip first card
+
+        const prevCard = cards[index - 1];
+        const startProgress = (index - 1) / totalCards;
+        const endProgress = index / totalCards;
+        const duration = endProgress - startProgress;
+
+        // Previous card scales down and darkens
+        tl.to(prevCard, {
+          scale: 0.92,
+          filter: 'brightness(0.7)',
+          ease: 'power2.inOut',
+          duration: duration * 0.5
+        }, startProgress);
+
+        // Current card slides up
+        tl.to(card, {
+          y: 0,
+          scale: 1,
+          opacity: 1,
+          ease: 'power2.out',
+          duration: duration * 0.8
+        }, startProgress + duration * 0.1);
+
+        // Animate quote words for current card
+        const quoteWords = card.querySelectorAll('.quote-word');
+        tl.to(quoteWords, {
+          opacity: 1,
+          y: 0,
+          stagger: 0.015,
+          ease: 'power2.out',
+          duration: duration * 0.4
+        }, startProgress + duration * 0.4);
+      });
+
+    }, section);
+
+    return () => ctx.revert();
+  }, [stories]);
+
+  // Split quote into words for animation
+  const splitQuoteIntoWords = (quote) => {
+    return quote.split(' ').map((word, index) => (
+      <span key={index} className="quote-word">
+        {word}{' '}
+      </span>
+    ));
+  };
 
   return (
-    <div
-      ref={cardRef}
-      className={`story-feature-card ${isVisible ? 'visible' : ''} ${isEven ? 'image-left' : 'image-right'}`}
-    >
-      <div className="story-feature-image">
-        <img src={story.image} alt={`${story.name}'s space`} loading="lazy" />
-        <div className="story-savings-badge">{story.savings} saved</div>
+    <section ref={sectionRef} id="stories" className="stacking-stories-section">
+      {/* Progress indicator */}
+      <div ref={progressRef} className="stories-progress">
+        <div ref={progressFillRef} className="stories-progress-fill"></div>
+        <div className="stories-progress-markers">
+          {stories.map((story, index) => (
+            <div
+              key={index}
+              className={`progress-marker ${index <= activeIndex ? 'active' : ''}`}
+            >
+              <span className="marker-number">{index + 1}</span>
+            </div>
+          ))}
+        </div>
       </div>
-      <div className="story-feature-content">
-        <div className="story-feature-header">
-          <img src={story.avatar} alt={story.name} className="story-feature-avatar" loading="lazy" />
-          <div className="story-feature-person">
-            <h3>{story.name}</h3>
-            <p className="story-role">{story.role}</p>
-            <p className="story-schedule">{story.schedule}</p>
+
+      {/* Cards container */}
+      <div ref={cardsContainerRef} className="stacking-cards-container">
+        {stories.map((story, index) => (
+          <div
+            key={index}
+            ref={el => cardRefs.current[index] = el}
+            className="stacking-card"
+          >
+            <div className="stacking-card-inner">
+              {/* Image side */}
+              <div className="stacking-card-image">
+                <img src={story.image} alt={`${story.name}'s space`} loading="lazy" />
+                <div className="card-image-overlay"></div>
+                <div className="card-savings-badge">{story.savings} saved</div>
+                <div className="card-location-badge">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="2"/>
+                    <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                  {story.location}
+                </div>
+              </div>
+
+              {/* Content side */}
+              <div className="stacking-card-content">
+                <div className="card-header">
+                  <img src={story.avatar} alt={story.name} className="card-avatar" loading="lazy" />
+                  <div className="card-person-info">
+                    <h3 className="card-name">{story.name}</h3>
+                    <p className="card-role">{story.role}</p>
+                    <p className="card-schedule">{story.schedule}</p>
+                  </div>
+                </div>
+
+                <blockquote className="card-quote">
+                  "{splitQuoteIntoWords(story.quote)}"
+                </blockquote>
+
+                <p className="card-full-story">{story.fullStory}</p>
+
+                <button className="card-cta-button" onClick={onFindSplitLease}>
+                  Browse Listings
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-        <blockquote className="story-quote">"{story.quote}"</blockquote>
-        <p className="story-full">{story.fullStory}</p>
-        <div className="story-meta">
-          <span className="story-location">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="2"/>
-              <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-            {story.location}
-          </span>
-        </div>
-        <button className="story-cta-button" onClick={onFindSplitLease}>
-          Find Your NYC Space
-        </button>
+        ))}
       </div>
-    </div>
+
+      {/* Story counter */}
+      <div className="story-counter">
+        <span className="counter-current">{String(activeIndex + 1).padStart(2, '0')}</span>
+        <span className="counter-divider">/</span>
+        <span className="counter-total">{String(stories.length).padStart(2, '0')}</span>
+      </div>
+    </section>
   );
 }
 
@@ -534,23 +685,11 @@ export default function GuestSuccessPage() {
       {/* Problem Transition Section - Horizontal Scroll with Strikethrough */}
       <ProblemTransitionSection />
 
-      {/* Featured Stories Section - White with Outlined Bubbles */}
-      <section id="stories" className="featured-stories-section">
-        <div className="outlined-bubble outlined-bubble-1"></div>
-        <div className="outlined-bubble outlined-bubble-2"></div>
-        <div className="outlined-bubble outlined-bubble-3"></div>
-
-        <div className="featured-stories-container">
-          {successStories.map((story, index) => (
-            <StoryCard
-              key={index}
-              story={story}
-              index={index}
-              onFindSplitLease={handleFindSplitLease}
-            />
-          ))}
-        </div>
-      </section>
+      {/* Stacking Stories Section - Card Deck Effect */}
+      <StackingStoriesSection
+        stories={successStories}
+        onFindSplitLease={handleFindSplitLease}
+      />
 
       {/* Stats Section - Light Gray with Purple Circle Accents */}
       <section className="success-stats-section">
