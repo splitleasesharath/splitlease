@@ -85,10 +85,32 @@
     margin: 0 0 2px;
 }
 
+.story-schedule-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .story-schedule {
     font-size: 13px;
     color: #6B7280;
     margin: 0;
+}
+
+.schedule-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.schedule-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #E5E7EB;
+}
+
+.schedule-dot.active {
+    background: #31135D;
 }
 
 .story-quote {
