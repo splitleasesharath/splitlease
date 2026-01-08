@@ -2512,23 +2512,28 @@ export default function SearchPage() {
   };
 
   // Transform listing data from SearchPage format to CreateProposalFlowV2 expected format
+  // The listing object already has the correct field names from the DB transformation
   const transformListingForProposal = (listing) => {
     if (!listing) return null;
     return {
       _id: listing.id,
       Name: listing.title,
-      'Minimum Nights': 2,
-      'Maximum Nights': 7,
-      'rental type': 'Nightly',
-      'Weeks offered': listing.weeks_offered || 'Every week',
-      '💰Unit Markup': 0,
-      '💰Nightly Host Rate for 2 nights': listing['Price 2 nights selected'],
-      '💰Nightly Host Rate for 3 nights': listing['Price 3 nights selected'],
-      '💰Nightly Host Rate for 4 nights': listing['Price 4 nights selected'],
-      '💰Nightly Host Rate for 5 nights': listing['Price 5 nights selected'],
-      '💰Nightly Host Rate for 7 nights': listing['Price 7 nights selected'],
-      '💰Cleaning Cost / Maintenance Fee': 0,
-      '💰Damage Deposit': 0,
+      'Minimum Nights': listing['Minimum Nights'] || 2,
+      'Maximum Nights': listing['Maximum Nights'] || 7,
+      'rental type': listing['rental type'] || listing.rentalType || 'Nightly',
+      'Weeks offered': listing.weeks_offered || listing['Weeks offered'] || 'Every week',
+      '💰Unit Markup': listing['💰Unit Markup'] || 0,
+      // Use the correct field names that already exist on the listing object
+      '💰Nightly Host Rate for 2 nights': listing['💰Nightly Host Rate for 2 nights'],
+      '💰Nightly Host Rate for 3 nights': listing['💰Nightly Host Rate for 3 nights'],
+      '💰Nightly Host Rate for 4 nights': listing['💰Nightly Host Rate for 4 nights'],
+      '💰Nightly Host Rate for 5 nights': listing['💰Nightly Host Rate for 5 nights'],
+      '💰Nightly Host Rate for 7 nights': listing['💰Nightly Host Rate for 7 nights'],
+      // Monthly/Weekly rates for non-Nightly listings
+      '💰Monthly Host Rate': listing['💰Monthly Host Rate'],
+      '💰Weekly Host Rate': listing['💰Weekly Host Rate'],
+      '💰Cleaning Cost / Maintenance Fee': listing['💰Cleaning Cost / Maintenance Fee'] || 0,
+      '💰Damage Deposit': listing['💰Damage Deposit'] || 0,
       host: listing.host
     };
   };
