@@ -223,9 +223,6 @@ export default function DaysSelectionSection({ data, updateData, listing, zatCon
     <div className="section days-selection-section">
       <h3 className="section-title">
         Please confirm your typical weekly schedule
-        <span className="helper-icon" title="Select the days you plan to use the space each week">
-          ❓
-        </span>
       </h3>
 
       <div id="daysSelected">

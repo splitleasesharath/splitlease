@@ -5,7 +5,7 @@
  */
 
 import DayIndicator from './DayIndicator.jsx';
-import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromNights } from './types.js';
+import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromDays } from './types.js';
 import { formatCurrency, formatDate } from './formatters.js';
 
 /**
@@ -56,14 +56,16 @@ export default function ProposalCard({ proposal, onClick, onDelete }) {
   const listing = proposal.listing || proposal.Listing || {};
   const listingDescription = listing.description || listing.Description || listing['Listing Name'] || 'Restored apartment with amenities';
 
-  // Get schedule info - use Nights Selected for hosts (they care about nights, not days)
-  // Check for host counteroffer nights first, fall back to original proposal nights
+  // Get schedule info
+  // Use Nights Selected for the day indicator (shows which nights guest stays)
+  // Use Days Selected for check-in/check-out text (matches guest-facing display)
   const nightsSelectedRaw = proposal['hc nights selected'] || proposal['Nights Selected (Nights list)'] || proposal.nightsSelected || proposal['Nights Selected'];
+  const daysSelectedRaw = proposal['hc days selected'] || proposal['Days Selected'] || proposal.daysSelected;
   const moveInRangeStart = proposal.moveInRangeStart || proposal['Move in range start'] || proposal['Move In Range Start'] || proposal.move_in_range_start;
   const reservationSpanWeeks = proposal.reservationSpanWeeks || proposal['Reservation Span (Weeks)'] || proposal['Reservation Span (weeks)'] || proposal.reservation_span_weeks || 0;
 
-  // Get check-in/check-out from nights selected (more accurate than stored check-in/out days)
-  const { checkInDay, checkOutDay } = getCheckInOutFromNights(nightsSelectedRaw);
+  // Get check-in/check-out from Days Selected (matches guest-facing display)
+  const { checkInDay, checkOutDay } = getCheckInOutFromDays(daysSelectedRaw);
 
   // Get pricing info
   // "host compensation" is the per-night HOST rate (from listing pricing tiers)

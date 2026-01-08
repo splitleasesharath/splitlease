@@ -85,6 +85,7 @@ export async function fetchProposalsByIds(proposalIds) {
   }
 
   // Step 1: Fetch all proposals by IDs
+  // Filter out deleted proposals and cancelled-by-guest at database level for efficiency
   const { data: proposals, error: proposalError } = await supabase
     .from('proposal')
     .select(`
@@ -123,6 +124,8 @@ export async function fetchProposalsByIds(proposalIds) {
       "guest documents review finalized?"
     `)
     .in('_id', proposalIds)
+    .or('"Deleted".is.null,"Deleted".eq.false')
+    .neq('Status', 'Proposal Cancelled by Guest')
     .order('Created Date', { ascending: false });
 
   if (proposalError) {
@@ -130,12 +133,12 @@ export async function fetchProposalsByIds(proposalIds) {
     throw new Error(`Failed to fetch proposals: ${proposalError.message}`);
   }
 
-  // Filter out deleted proposals and proposals cancelled by guest
+  // Additional client-side safety filter (in case DB filter doesn't catch edge cases)
   const validProposals = (proposals || []).filter(p => {
     if (!p) return false;
 
-    // Exclude deleted proposals (Deleted = true)
-    if (p.Deleted === true) return false;
+    // Exclude deleted proposals (Deleted = true or "true")
+    if (p.Deleted === true || p.Deleted === 'true') return false;
 
     // Exclude proposals cancelled by guest
     if (p.Status === 'Proposal Cancelled by Guest') return false;

@@ -123,7 +123,7 @@ function mapFieldsToSupabase(data: ListingSubmissionData): Record<string, unknow
   // Direct mappings (same name)
   const directFields = [
     'Name', 'Status', 'Active', 'Description of Lodging',
-    'Bedrooms', 'Beds', 'Bathrooms', 'Address', 'City', 'State', 'Zip',
+    'Bedrooms', 'Beds', 'Bathrooms', 'Address',
   ];
 
   for (const field of directFields) {
@@ -141,6 +141,15 @@ function mapFieldsToSupabase(data: ListingSubmissionData): Record<string, unknow
   }
   if (data['Type of Parking'] !== undefined) {
     mapped['Features - Parking'] = data['Type of Parking'];
+  }
+  if (data['City'] !== undefined) {
+    mapped['Location - City'] = data['City'];
+  }
+  if (data['State'] !== undefined) {
+    mapped['Location - State'] = data['State'];
+  }
+  if (data['Zip'] !== undefined) {
+    mapped['Location - Zip Code'] = data['Zip'];
   }
   if (data['Neighborhood'] !== undefined) {
     mapped['Location - Hood'] = data['Neighborhood'];

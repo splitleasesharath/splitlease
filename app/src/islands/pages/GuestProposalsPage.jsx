@@ -102,7 +102,8 @@ export default function GuestProposalsPage() {
 
     // Handlers
     handleProposalSelect,
-    handleRetry
+    handleRetry,
+    handleProposalDeleted
   } = useGuestProposalsPageLogic();
 
   // Don't render content if redirecting (auth failed)
@@ -163,6 +164,7 @@ export default function GuestProposalsPage() {
                   buttonConfig={buttonConfig}
                   allProposals={proposals}
                   onProposalSelect={handleProposalSelect}
+                  onProposalDeleted={handleProposalDeleted}
                 />
               )}
 

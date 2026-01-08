@@ -62,6 +62,52 @@ export async function handleCreate(
   console.log(`[proposal:create] Validated input for listing: ${input.listingId}`);
 
   // ================================================
+  // DUPLICATE CHECK - Prevent multiple proposals for same guest+listing
+  // ================================================
+
+  // Check if an active proposal already exists for this guest and listing
+  // Excluded statuses: cancelled/rejected proposals can be replaced with new ones
+  const excludedStatuses = [
+    'Proposal Cancelled by Guest',
+    'Proposal Cancelled by Host',
+    'Proposal Cancelled by Split Lease',
+    'Proposal Rejected by Host',
+    'Proposal Rejected by Guest'
+  ];
+
+  const { data: existingProposals, error: duplicateCheckError } = await supabase
+    .from("proposal")
+    .select("_id, Status")
+    .eq('"Guest"', input.guestId)
+    .eq('"Listing"', input.listingId)
+    .eq('"Deleted"', false)
+    .limit(10);
+
+  if (duplicateCheckError) {
+    console.error(`[proposal:create] Duplicate check failed:`, duplicateCheckError);
+    // Non-blocking - continue with creation (fail open for better UX)
+  } else if (existingProposals && existingProposals.length > 0) {
+    // Filter to only active proposals (not cancelled/rejected)
+    const activeProposals = existingProposals.filter(
+      (p) => !excludedStatuses.includes(p.Status)
+    );
+
+    if (activeProposals.length > 0) {
+      console.error(`[proposal:create] Duplicate proposal detected:`, {
+        guestId: input.guestId,
+        listingId: input.listingId,
+        existingProposalId: activeProposals[0]._id,
+        existingStatus: activeProposals[0].Status
+      });
+      throw new ValidationError(
+        `You already have an active proposal for this listing. Please check your existing proposals.`
+      );
+    }
+  }
+
+  console.log(`[proposal:create] No duplicate proposals found, proceeding with creation`);
+
+  // ================================================
   // FETCH RELATED DATA
   // ================================================
 

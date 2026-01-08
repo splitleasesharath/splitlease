@@ -71,7 +71,11 @@ async function fetchLookupTables() {
       .select('_id, "Name", "Icon"');
     if (rules) {
       rules.forEach((r) => {
-        lookups.houseRules[r._id] = { name: r.Name, icon: r.Icon };
+        // Normalize protocol-relative URLs (//...) to https://
+        const icon = r.Icon && r.Icon.startsWith('//') ? 'https:' + r.Icon : r.Icon;
+        // Index by both ID and Name to support both lookup patterns
+        lookups.houseRules[r._id] = { name: r.Name, icon };
+        lookups.houseRules[r.Name] = { name: r.Name, icon };
       });
     }
 
@@ -362,6 +366,7 @@ export default function useListingDashboardPageLogic() {
 
   // Edit modal state
   const [editSection, setEditSection] = useState(null); // null = closed, or section name
+  const [editFocusField, setEditFocusField] = useState(null); // Optional field to focus/scroll to in modal
 
   // Get listing ID from URL - support both 'id' and 'listing_id' params
   const getListingIdFromUrl = useCallback(() => {
@@ -1401,12 +1406,14 @@ export default function useListingDashboardPageLogic() {
   }, [listing, getListingIdFromUrl, fetchListing]);
 
   // Edit modal handlers
-  const handleEditSection = useCallback((section) => {
+  const handleEditSection = useCallback((section, focusField = null) => {
     setEditSection(section);
+    setEditFocusField(focusField);
   }, []);
 
   const handleCloseEdit = useCallback(() => {
     setEditSection(null);
+    setEditFocusField(null);
     // Silently refresh listing data after modal closes to sync any saved changes
     const listingId = getListingIdFromUrl();
     if (listingId) {
@@ -1585,6 +1592,7 @@ export default function useListingDashboardPageLogic() {
     handleCloseEdit,
     handleSaveEdit,
     updateListing,
+    editFocusField,
 
     // Blocked dates handler
     handleBlockedDatesChange,

@@ -2,14 +2,25 @@
  * GuestEditingProposalModal - Complete popup for guest proposal editing
  *
  * Based on Bubble.io reusable element with view state machine
- * Implements 3-view state machine: 'editing' | 'general' | 'cancel'
+ * Implements 4-view state machine: 'pristine' | 'editing' | 'general' | 'cancel'
+ *
+ * View States & Flow:
+ * - 'pristine': Initial state when modal opens → "Close" + "Edit Proposal"
+ * - 'editing': User is actively editing fields → "Cancel edits" + "Display New Terms"
+ * - 'general': User reviewed new terms, ready to submit → "Close" + "Submit Proposal Edits"
+ * - 'cancel': Cancel proposal modal is shown (handled by separate CancelProposalModal)
+ *
+ * State Transitions:
+ * pristine → editing (click "Edit Proposal")
+ * editing → pristine (click "Cancel edits")
+ * editing → general (click "Display New Terms")
+ * general → closed (click "Close" or "Submit Proposal Edits")
  *
  * Features:
  * - Day/Night selector for schedule editing
  * - Move-in date and flexible range input
  * - Reservation span dropdown with custom weeks
  * - Price breakdown display
- * - Cancel proposal modal with reason input
  * - Responsive design with mobile support
  */
 
@@ -549,7 +560,7 @@ export default function GuestEditingProposalModal({
   proposal,
   listing,
   user,
-  initialView = 'general',
+  initialView = 'pristine',
   isVisible = true,
   isInternalUsage = false,
   pageWidth = 1200,
@@ -561,7 +572,7 @@ export default function GuestEditingProposalModal({
   totalPriceForReservation = 0,
   priceRentPer4Weeks = 0
 }) {
-  // View state machine: 'editing' | 'general' | 'cancel'
+  // View state machine: 'pristine' | 'editing' | 'general' | 'cancel'
   const [view, setView] = useState(initialView)
 
   // Form state for editing
@@ -604,9 +615,10 @@ export default function GuestEditingProposalModal({
   // Computed visibility conditions from Bubble conditionals
   const showMainView = view !== 'cancel'
   const showEditingPortion = view === 'editing'
-  const showBreakdownDetails = view === 'general'
+  const showBreakdownDetails = view === 'general' || view === 'pristine'
   const showScheduleFinancial = isStatusAccepted || view === 'editing' || isInternalUsage
-  const showButtons = view === 'editing' || view === 'general' || isStatusAccepted || isInternalUsage
+  const showButtons = view === 'editing' || view === 'general' || view === 'pristine' || isStatusAccepted || isInternalUsage
+  const isPristine = view === 'pristine'
 
   // Handle initial state setup when proposal changes
   useEffect(() => {
@@ -636,16 +648,16 @@ export default function GuestEditingProposalModal({
     }
   }, [formState.reservationSpan, formState.numberOfWeeks])
 
-  // Handle close
+  // Handle close - reset to pristine state for next opening
   const handleClose = useCallback(() => {
-    setView('general')
+    setView('pristine')
     onClose?.()
   }, [onClose])
 
-  // Handle back button
+  // Handle back button - go back one step in the state machine
   const handleBack = useCallback(() => {
     if (view === 'editing') {
-      setView('general')
+      setView('pristine')
     } else {
       handleClose()
     }
@@ -659,6 +671,11 @@ export default function GuestEditingProposalModal({
       setView('general')
     }
   }, [view])
+
+  // Handle "Edit Proposal" button click from pristine state
+  const handleStartEditing = useCallback(() => {
+    setView('editing')
+  }, [])
 
   // Handle form field changes
   const handleMoveInDateChange = useCallback((e) => {
@@ -706,9 +723,10 @@ export default function GuestEditingProposalModal({
     setIsHouseRulesVisible(prev => !prev)
   }, [])
 
-  // Handle display new terms button
+  // Handle display new terms button - transitions from editing to general (review) state
   const handleDisplayNewTerms = useCallback(() => {
     setIsPriceBreakdownVisible(true)
+    setView('general')
     onAlert?.({
       text: 'New terms calculated',
       alertType: 'information',
@@ -754,9 +772,9 @@ export default function GuestEditingProposalModal({
     handleClose
   ])
 
-  // Handle cancel edits button
+  // Handle cancel edits button - return to pristine state (discard edits)
   const handleCancelEdits = useCallback(() => {
-    setView('general')
+    setView('pristine')
   }, [])
 
   // Handle initiate cancel proposal
@@ -1054,8 +1072,28 @@ export default function GuestEditingProposalModal({
 
             {/* Buttons section - conditionally visible */}
             {showButtons && (
-              <div className="gep-buttons">
-                {view === 'editing' ? (
+              <div className={`gep-buttons ${view === 'pristine' ? 'gep-buttons--vertical' : ''}`}>
+                {view === 'pristine' ? (
+                  /* Pristine state: User just opened modal, hasn't edited anything */
+                  /* Edit Proposal on top, Close on bottom - stacked vertically */
+                  <>
+                    <button
+                      type="button"
+                      className="gep-button gep-button--primary"
+                      onClick={handleStartEditing}
+                    >
+                      Edit Proposal
+                    </button>
+                    <button
+                      type="button"
+                      className="gep-button gep-button--secondary"
+                      onClick={handleClose}
+                    >
+                      Close
+                    </button>
+                  </>
+                ) : view === 'editing' ? (
+                  /* Editing state: User is actively changing fields */
                   <>
                     <button
                       type="button"
@@ -1067,19 +1105,20 @@ export default function GuestEditingProposalModal({
                     <button
                       type="button"
                       className="gep-button gep-button--primary"
-                      onClick={handleSubmitProposalEdits}
-                    >
-                      Submit Proposal Edits
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="gep-button gep-button--outline"
                       onClick={handleDisplayNewTerms}
                     >
                       Display New Terms
+                    </button>
+                  </>
+                ) : (
+                  /* General state: User has reviewed new terms, ready to submit */
+                  <>
+                    <button
+                      type="button"
+                      className="gep-button gep-button--secondary"
+                      onClick={handleClose}
+                    >
+                      Close
                     </button>
                     <button
                       type="button"
@@ -1093,8 +1132,9 @@ export default function GuestEditingProposalModal({
               </div>
             )}
 
-            {/* Cancel Proposal Button - visible in general view */}
-            {view === 'general' && (
+            {/* Cancel Proposal Button - HIDDEN: cancellation now handled by separate CancelProposalModal shared island */}
+            {/* Keeping code for reference while CancelProposalModal issues are resolved */}
+            {false && view === 'general' && (
               <div className="gep-cancel-section">
                 <button
                   type="button"

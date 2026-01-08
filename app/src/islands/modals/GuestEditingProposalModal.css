@@ -422,6 +422,17 @@
   border-top: 1px solid var(--gep-border-color);
 }
 
+/* Vertical stacking for pristine state buttons */
+.gep-buttons--vertical {
+  flex-direction: column;
+  align-items: center;
+}
+
+.gep-buttons--vertical .gep-button {
+  width: 100%;
+  max-width: 280px;
+}
+
 .gep-button {
   padding: 12px 24px;
   border-radius: var(--gep-roundness);
