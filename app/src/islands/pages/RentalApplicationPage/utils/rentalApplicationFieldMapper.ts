@@ -81,7 +81,7 @@ function extractFirstReference(value: string[] | null | undefined): string {
 
 /**
  * Normalize employment status to match frontend dropdown values
- * Database may store "Full-time", "Part-time", etc. but frontend expects lowercase kebab-case
+ * Database may store "Full-time Employee", "Part-time", etc. but frontend expects lowercase kebab-case
  */
 function normalizeEmploymentStatus(value: string | null | undefined): string {
   if (!value) return '';
@@ -91,16 +91,24 @@ function normalizeEmploymentStatus(value: string | null | undefined): string {
 
   // Map known values to expected dropdown values
   const statusMap: Record<string, string> = {
+    // Full-time variations (including Bubble's "Full-time Employee")
     'full-time': 'full-time',
     'full time': 'full-time',
     'fulltime': 'full-time',
+    'full-time employee': 'full-time',
+    'full time employee': 'full-time',
+    // Part-time variations
     'part-time': 'part-time',
     'part time': 'part-time',
     'parttime': 'part-time',
+    'part-time employee': 'part-time',
+    'part time employee': 'part-time',
+    // Business owner variations
     'business-owner': 'business-owner',
     'business owner': 'business-owner',
     'self-employed': 'business-owner',
     'selfemployed': 'business-owner',
+    // Other statuses
     'intern': 'intern',
     'student': 'student',
     'unemployed': 'unemployed',
@@ -108,6 +116,91 @@ function normalizeEmploymentStatus(value: string | null | undefined): string {
   };
 
   return statusMap[normalized] || normalized;
+}
+
+/**
+ * Normalize DOB from ISO datetime to date-only format (YYYY-MM-DD)
+ * Database may store "1996-01-05T05:00:00.000Z" but form expects "1996-01-05"
+ */
+function normalizeDOB(value: string | null | undefined): string {
+  if (!value) return '';
+  // If it contains 'T', extract just the date portion
+  if (value.includes('T')) {
+    return value.split('T')[0];
+  }
+  return value;
+}
+
+/**
+ * Extract address string from JSONB address object
+ * Handles both parsed object and string (from database JSON)
+ */
+function extractAddressRobust(value: unknown): string {
+  if (!value) return '';
+
+  // If it's a string, try to parse it as JSON
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === 'object' && 'address' in parsed) {
+        return parsed.address || '';
+      }
+    } catch {
+      // Not JSON, return as-is if it looks like an address
+      return value;
+    }
+  }
+
+  // If it's already an object
+  if (typeof value === 'object' && value !== null && 'address' in value) {
+    return (value as { address: string }).address || '';
+  }
+
+  return '';
+}
+
+/**
+ * Normalize length resided to match dropdown values
+ * Dropdown options: 'less-than-1-year', '1-2-years', '2-5-years', '5-plus-years'
+ * Database may store "3 years", "1 year", etc.
+ */
+function normalizeLengthResided(value: string | null | undefined): string {
+  if (!value) return '';
+
+  const normalized = value.toLowerCase().trim();
+
+  // Direct matches first
+  const directMap: Record<string, string> = {
+    'less-than-1-year': 'less-than-1-year',
+    '1-2-years': '1-2-years',
+    '2-5-years': '2-5-years',
+    '5-plus-years': '5-plus-years',
+  };
+
+  if (directMap[normalized]) {
+    return directMap[normalized];
+  }
+
+  // Parse numeric values and map to ranges
+  // Extract number from strings like "3 years", "1 year", etc.
+  const numMatch = normalized.match(/(\d+)/);
+  if (numMatch) {
+    const years = parseInt(numMatch[1], 10);
+    if (years < 1) return 'less-than-1-year';
+    if (years >= 1 && years < 2) return '1-2-years';
+    if (years >= 2 && years < 5) return '2-5-years';
+    if (years >= 5) return '5-plus-years';
+  }
+
+  // Text-based matches
+  if (normalized.includes('less than') || normalized.includes('< 1')) {
+    return 'less-than-1-year';
+  }
+  if (normalized.includes('5+') || normalized.includes('more than 5') || normalized.includes('5 plus')) {
+    return '5-plus-years';
+  }
+
+  return value;
 }
 
 /**
@@ -141,14 +234,14 @@ export function mapDatabaseToFormData(
   const formData: Partial<RentalApplicationFormData> = {
     // Personal Information
     fullName: db.name || '',
-    dob: db.DOB || '',
+    dob: normalizeDOB(db.DOB),
     email: db.email || fallbackEmail || '',
     phone: db['phone number'] || '',
 
-    // Current Address
-    currentAddress: extractAddress(db['permanent address']),
+    // Current Address (use robust extractor for JSONB that may come as string)
+    currentAddress: extractAddressRobust(db['permanent address']),
     apartmentUnit: db['apartment number'] || '',
-    lengthResided: db['length resided'] || '',
+    lengthResided: normalizeLengthResided(db['length resided']),
     renting: booleanToYesNo(db.renting),
 
     // Employment Information (normalized to match dropdown values)
