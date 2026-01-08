@@ -8,55 +8,118 @@
  * CONSOLIDATION: One message per request, not per error
  * WEBHOOK: Uses SLACK_WEBHOOK_DATABASE_WEBHOOK for all error logs
  * BOT API: Uses SLACK_BOT_TOKEN for interactive messages with buttons/modals
+ *
+ * @module _shared/slack
  */
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[slack]'
+const SLACK_API_BASE_URL = 'https://slack.com/api'
+const MAX_ERRORS_SHOWN = 5
+
+/**
+ * Slack channel types
+ * @immutable
+ */
+export const SLACK_CHANNELS = Object.freeze([
+  'database',
+  'acquisition',
+  'general',
+] as const)
+
+export type SlackChannel = typeof SLACK_CHANNELS[number]
+
+/**
+ * Channel to environment variable mapping
+ * @immutable
+ */
+const CHANNEL_ENV_MAP = Object.freeze({
+  database: 'SLACK_WEBHOOK_DATABASE_WEBHOOK',
+  acquisition: 'SLACK_WEBHOOK_ACQUISITION',
+  general: 'SLACK_WEBHOOK_DB_GENERAL',
+} as const) satisfies Record<SlackChannel, string>
+
+// ─────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────
 
 interface SlackMessage {
-  text: string;
+  readonly text: string;
 }
 
 interface SlackBlock {
-  type: string;
-  [key: string]: unknown;
+  readonly type: string;
+  readonly [key: string]: unknown;
 }
 
 interface SlackInteractiveResult {
-  ok: boolean;
-  ts?: string;
-  error?: string;
+  readonly ok: boolean;
+  readonly ts?: string;
+  readonly error?: string;
 }
 
 interface CollectedError {
-  error: Error;
-  context?: string;
-  timestamp: string;
+  readonly error: Error;
+  readonly context?: string;
+  readonly timestamp: string;
 }
 
-// Webhook Configuration
-export type SlackChannel = 'database' | 'acquisition' | 'general';
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
 
-const CHANNEL_ENV_MAP: Record<SlackChannel, string> = {
-  database: 'SLACK_WEBHOOK_DATABASE_WEBHOOK',
-  acquisition: 'SLACK_WEBHOOK_ACQUISITION',
-  general: 'SLACK_WEBHOOK_DB_GENERAL',
-};
+/**
+ * Check if webhook URL is configured
+ * @pure
+ */
+const hasWebhookUrl = (url: string | undefined): url is string =>
+  url !== undefined && url.length > 0
 
+/**
+ * Check if bot token is configured
+ * @pure
+ */
+const hasBotToken = (token: string | undefined): token is string =>
+  token !== undefined && token.length > 0
+
+/**
+ * Check if there are errors to report
+ * @pure
+ */
+const hasErrorsToReport = (errors: ReadonlyArray<CollectedError>): boolean =>
+  errors.length > 0
+
+// ─────────────────────────────────────────────────────────────
+// Webhook URL Retrieval
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Get webhook URL for a channel
+ * @effectful (reads environment)
+ */
 function getWebhookUrl(channel: SlackChannel): string | null {
   const envVar = CHANNEL_ENV_MAP[channel];
-  return Deno.env.get(envVar) || null;
+  const url = Deno.env.get(envVar);
+  return hasWebhookUrl(url) ? url : null;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Webhook Functions
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Send message to Slack channel
  * Fire-and-forget - does not await, does not throw
+ * @effectful (network I/O, console logging)
  */
 export function sendToSlack(channel: SlackChannel, message: SlackMessage): void {
   const webhookUrl = getWebhookUrl(channel);
 
   if (!webhookUrl) {
-    console.warn(`[slack] ${CHANNEL_ENV_MAP[channel]} not configured, skipping notification`);
+    console.warn(`${LOG_PREFIX} ${CHANNEL_ENV_MAP[channel]} not configured, skipping notification`);
     return;
   }
 
@@ -65,7 +128,7 @@ export function sendToSlack(channel: SlackChannel, message: SlackMessage): void 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(message),
   }).catch((e) => {
-    console.error('[slack] Failed to send message:', e.message);
+    console.error(`${LOG_PREFIX} Failed to send message:`, e.message);
   });
 }
 
@@ -74,10 +137,25 @@ export function sendToSlack(channel: SlackChannel, message: SlackMessage): void 
 // ─────────────────────────────────────────────────────────────
 
 /**
+ * Build success result for Slack API
+ * @pure
+ */
+const buildSuccessResult = (ts: string): SlackInteractiveResult =>
+  Object.freeze({ ok: true, ts })
+
+/**
+ * Build error result for Slack API
+ * @pure
+ */
+const buildErrorResult = (error: string): SlackInteractiveResult =>
+  Object.freeze({ ok: false, error })
+
+/**
  * Send interactive message using Slack Bot API
  * Unlike webhooks, this supports buttons/modals and returns message_ts
  *
  * Requires: SLACK_BOT_TOKEN and SLACK_COHOST_CHANNEL_ID secrets
+ * @effectful (network I/O, environment reads, console logging)
  */
 export async function sendInteractiveMessage(
   channelId: string,
@@ -86,13 +164,13 @@ export async function sendInteractiveMessage(
 ): Promise<SlackInteractiveResult> {
   const token = Deno.env.get('SLACK_BOT_TOKEN');
 
-  if (!token) {
-    console.error('[slack] SLACK_BOT_TOKEN not configured');
-    return { ok: false, error: 'Bot token not configured' };
+  if (!hasBotToken(token)) {
+    console.error(`${LOG_PREFIX} SLACK_BOT_TOKEN not configured`);
+    return buildErrorResult('Bot token not configured');
   }
 
   try {
-    const response = await fetch('https://slack.com/api/chat.postMessage', {
+    const response = await fetch(`${SLACK_API_BASE_URL}/chat.postMessage`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -108,20 +186,21 @@ export async function sendInteractiveMessage(
     const result = await response.json();
 
     if (!result.ok) {
-      console.error('[slack] Bot API error:', result.error);
-      return { ok: false, error: result.error };
+      console.error(`${LOG_PREFIX} Bot API error:`, result.error);
+      return buildErrorResult(result.error);
     }
 
-    return { ok: true, ts: result.ts };
+    return buildSuccessResult(result.ts);
   } catch (error) {
-    console.error('[slack] Failed to send interactive message:', error);
-    return { ok: false, error: (error as Error).message };
+    console.error(`${LOG_PREFIX} Failed to send interactive message:`, error);
+    return buildErrorResult((error as Error).message);
   }
 }
 
 /**
  * Update an existing Slack message
  * Used to update the original request message after admin claims it
+ * @effectful (network I/O, environment reads)
  */
 export async function updateSlackMessage(
   channelId: string,
@@ -131,12 +210,12 @@ export async function updateSlackMessage(
 ): Promise<SlackInteractiveResult> {
   const token = Deno.env.get('SLACK_BOT_TOKEN');
 
-  if (!token) {
-    return { ok: false, error: 'Bot token not configured' };
+  if (!hasBotToken(token)) {
+    return buildErrorResult('Bot token not configured');
   }
 
   try {
-    const response = await fetch('https://slack.com/api/chat.update', {
+    const response = await fetch(`${SLACK_API_BASE_URL}/chat.update`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -151,9 +230,11 @@ export async function updateSlackMessage(
     });
 
     const result = await response.json();
-    return { ok: result.ok, error: result.error };
+    return result.ok
+      ? buildSuccessResult(result.ts)
+      : buildErrorResult(result.error);
   } catch (error) {
-    return { ok: false, error: (error as Error).message };
+    return buildErrorResult((error as Error).message);
   }
 }
 
@@ -293,6 +374,7 @@ import { ErrorLog, formatForSlack, hasErrors } from './fp/errorLog.ts';
  * Side effect function - use at effect boundaries only
  *
  * @param log - Immutable ErrorLog to report
+ * @effectful (network I/O via sendToSlack)
  */
 export function reportErrorLog(log: ErrorLog): void {
   if (!hasErrors(log)) {
@@ -302,3 +384,32 @@ export function reportErrorLog(log: ErrorLog): void {
   const message = { text: formatForSlack(log) };
   sendToSlack('database', message);
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  SLACK_API_BASE_URL,
+  MAX_ERRORS_SHOWN,
+  SLACK_CHANNELS,
+  CHANNEL_ENV_MAP,
+
+  // Predicates
+  hasWebhookUrl,
+  hasBotToken,
+  hasErrorsToReport,
+
+  // Builders
+  buildSuccessResult,
+  buildErrorResult,
+
+  // Functions
+  getWebhookUrl,
+})

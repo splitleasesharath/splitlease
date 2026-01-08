@@ -1,5 +1,6 @@
 /**
  * Shared Queue Sync Utility
+ * Split Lease - Supabase Edge Functions
  *
  * Standardized helper for enqueueing Bubble sync operations from any Edge Function.
  * All sync operations go through the sync_queue table and are processed by bubble_sync.
@@ -17,31 +18,39 @@
  * - Non-blocking for frontend response
  *
  * NO FALLBACK PRINCIPLE: Errors are logged but don't fail the main operation
+ *
+ * @module _shared/queueSync
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-export type OperationType = 'INSERT' | 'UPDATE' | 'DELETE' | 'SIGNUP_ATOMIC';
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
 
-export interface SyncQueueItem {
-  sequence: number;           // Order of processing (1, 2, 3...)
-  table: string;              // Supabase table name OR special marker (e.g., 'SIGNUP_ATOMIC')
-  recordId: string;           // The _id of the record in Supabase
-  operation: OperationType;   // INSERT, UPDATE, DELETE, or SIGNUP_ATOMIC
-  bubbleId?: string;          // Explicit bubble_id for UPDATE/DELETE operations
-  payload: Record<string, unknown>;
-}
+const LOG_PREFIX = '[QueueSync]'
+const DEFAULT_BATCH_SIZE = 10
+const UNIQUE_VIOLATION_CODE = '23505'
 
-export interface EnqueuePayload {
-  correlationId: string;      // Groups related items (e.g., proposalId, signupId)
-  items: SyncQueueItem[];
-}
+/**
+ * Supported operation types for sync queue
+ * @immutable
+ */
+export const OPERATION_TYPES = Object.freeze([
+  'INSERT',
+  'UPDATE',
+  'DELETE',
+  'SIGNUP_ATOMIC',
+] as const)
+
+export type OperationType = typeof OPERATION_TYPES[number]
 
 /**
  * Fields that Bubble API won't recognize - these are filtered out before queueing
  * CRITICAL: This prevents "Unrecognized field: X" errors from Bubble API
+ * @immutable
  */
-const BUBBLE_INCOMPATIBLE_FIELDS = new Set([
+const BUBBLE_INCOMPATIBLE_FIELDS = Object.freeze(new Set([
   'bubble_id',        // Supabase-only tracking field
   'created_at',       // Supabase timestamp (Bubble uses 'Created Date')
   'updated_at',       // Supabase timestamp (Bubble uses 'Modified Date')
@@ -51,25 +60,77 @@ const BUBBLE_INCOMPATIBLE_FIELDS = new Set([
   '_internal',        // Internal marker fields
   'sync_at',          // Internal sync timestamp
   'last_synced',      // Internal sync tracking
-]);
+]))
+
+// ─────────────────────────────────────────────────────────────
+// Type Definitions
+// ─────────────────────────────────────────────────────────────
+
+export interface SyncQueueItem {
+  readonly sequence: number;           // Order of processing (1, 2, 3...)
+  readonly table: string;              // Supabase table name OR special marker (e.g., 'SIGNUP_ATOMIC')
+  readonly recordId: string;           // The _id of the record in Supabase
+  readonly operation: OperationType;   // INSERT, UPDATE, DELETE, or SIGNUP_ATOMIC
+  readonly bubbleId?: string;          // Explicit bubble_id for UPDATE/DELETE operations
+  readonly payload: Readonly<Record<string, unknown>>;
+}
+
+export interface EnqueuePayload {
+  readonly correlationId: string;      // Groups related items (e.g., proposalId, signupId)
+  readonly items: ReadonlyArray<SyncQueueItem>;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if field is incompatible with Bubble API
+ * @pure
+ */
+const isBubbleIncompatibleField = (field: string): boolean =>
+  BUBBLE_INCOMPATIBLE_FIELDS.has(field)
+
+/**
+ * Check if value should be included (not null or undefined)
+ * @pure
+ */
+const isIncludableValue = (value: unknown): boolean =>
+  value !== null && value !== undefined
+
+/**
+ * Check if error is a unique violation (duplicate key)
+ * @pure
+ */
+const isUniqueViolation = (errorCode: string | undefined): boolean =>
+  errorCode === UNIQUE_VIOLATION_CODE
+
+// ─────────────────────────────────────────────────────────────
+// Filter Functions
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Filter out Supabase/internal fields that Bubble API won't recognize
  *
  * @param data - The data object to filter
  * @returns Filtered data object without Bubble-incompatible fields
+ * @pure
  */
 export function filterBubbleIncompatibleFields(
   data: Record<string, unknown>
 ): Record<string, unknown> {
   const filtered: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(data)) {
-    if (!BUBBLE_INCOMPATIBLE_FIELDS.has(key) && value !== null && value !== undefined) {
+    if (!isBubbleIncompatibleField(key) && isIncludableValue(value)) {
       filtered[key] = value;
     }
   }
   return filtered;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Key Generation
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Generate a unique idempotency key for a sync queue item
@@ -79,6 +140,7 @@ export function filterBubbleIncompatibleFields(
  * @param recordId - The record ID
  * @param sequence - The sequence number
  * @returns A unique idempotency key
+ * @pure
  */
 export function generateIdempotencyKey(
   correlationId: string,
@@ -88,6 +150,10 @@ export function generateIdempotencyKey(
 ): string {
   return `${correlationId}:${table}:${recordId}:${sequence}`;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Queue Operations
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Enqueue multiple sync items to the sync_queue table
@@ -99,12 +165,13 @@ export function generateIdempotencyKey(
  * @param supabase - Supabase client (admin client recommended)
  * @param payload - The items to enqueue with correlation ID
  * @throws Only throws on critical errors; duplicate entries are logged and skipped
+ * @effectful (database I/O, console logging)
  */
 export async function enqueueBubbleSync(
   supabase: SupabaseClient,
   payload: EnqueuePayload
 ): Promise<void> {
-  console.log(`[QueueSync] Enqueuing ${payload.items.length} items (correlation: ${payload.correlationId})`);
+  console.log(`${LOG_PREFIX} Enqueuing ${payload.items.length} items (correlation: ${payload.correlationId})`);
 
   // Sort items by sequence to ensure proper order
   const sortedItems = [...payload.items].sort((a, b) => a.sequence - b.sequence);
@@ -119,7 +186,7 @@ export async function enqueueBubbleSync(
 
     // CRITICAL: Filter out Bubble-incompatible fields before queuing
     // This prevents "Unrecognized field: X" errors from Bubble API
-    const cleanPayload = filterBubbleIncompatibleFields(item.payload);
+    const cleanPayload = filterBubbleIncompatibleFields(item.payload as Record<string, unknown>);
 
     // Build the queue item payload
     // Include _id for the record identifier
@@ -143,22 +210,22 @@ export async function enqueueBubbleSync(
 
       if (error) {
         // Check if it's a duplicate (already queued)
-        if (error.code === '23505') {  // Unique violation
-          console.log(`[QueueSync] Item already queued: ${idempotencyKey}`);
+        if (isUniqueViolation(error.code)) {
+          console.log(`${LOG_PREFIX} Item already queued: ${idempotencyKey}`);
         } else {
-          console.error(`[QueueSync] Failed to enqueue item:`, error);
+          console.error(`${LOG_PREFIX} Failed to enqueue item:`, error);
           throw error;
         }
       } else {
-        console.log(`[QueueSync] Enqueued: ${item.table}/${item.recordId} (${item.operation}, seq: ${item.sequence})`);
+        console.log(`${LOG_PREFIX} Enqueued: ${item.table}/${item.recordId} (${item.operation}, seq: ${item.sequence})`);
       }
     } catch (err) {
       // Log but continue - don't fail the main operation
-      console.error(`[QueueSync] Error enqueuing item:`, err);
+      console.error(`${LOG_PREFIX} Error enqueuing item:`, err);
     }
   }
 
-  console.log(`[QueueSync] Enqueue complete for correlation: ${payload.correlationId}`);
+  console.log(`${LOG_PREFIX} Enqueue complete for correlation: ${payload.correlationId}`);
 }
 
 /**
@@ -166,6 +233,7 @@ export async function enqueueBubbleSync(
  *
  * @param supabase - Supabase client
  * @param item - Single item to enqueue
+ * @effectful (database I/O via enqueueBubbleSync)
  */
 export async function enqueueSingleItem(
   supabase: SupabaseClient,
@@ -189,6 +257,7 @@ export async function enqueueSingleItem(
  *
  * @param options - Optional configuration
  * @param options.batchSize - Number of items to process (default: 10)
+ * @effectful (network I/O, environment reads, console logging)
  */
 export async function triggerQueueProcessing(
   options: { batchSize?: number } = {}
@@ -197,12 +266,12 @@ export async function triggerQueueProcessing(
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
   if (!supabaseUrl || !serviceRoleKey) {
-    console.warn('[QueueSync] Missing env vars for queue trigger');
+    console.warn(`${LOG_PREFIX} Missing env vars for queue trigger`);
     return;
   }
 
   try {
-    console.log('[QueueSync] Triggering queue processing...');
+    console.log(`${LOG_PREFIX} Triggering queue processing...`);
 
     // Fire and forget - don't await the response
     fetch(`${supabaseUrl}/functions/v1/bubble_sync`, {
@@ -213,16 +282,16 @@ export async function triggerQueueProcessing(
       },
       body: JSON.stringify({
         action: 'process_queue_data_api',
-        payload: { batch_size: options.batchSize || 10 }
+        payload: { batch_size: options.batchSize || DEFAULT_BATCH_SIZE }
       })
     }).catch(err => {
-      console.warn('[QueueSync] Queue trigger failed (non-blocking):', err.message);
+      console.warn(`${LOG_PREFIX} Queue trigger failed (non-blocking):`, err.message);
     });
 
-    console.log('[QueueSync] Queue processing triggered');
+    console.log(`${LOG_PREFIX} Queue processing triggered`);
   } catch (err) {
     // Non-blocking - log and continue
-    console.warn('[QueueSync] Failed to trigger queue (non-blocking):', err);
+    console.warn(`${LOG_PREFIX} Failed to trigger queue (non-blocking):`, err);
   }
 }
 
@@ -235,6 +304,7 @@ export async function triggerQueueProcessing(
  * @param supabase - Supabase client
  * @param userId - The generated user ID
  * @param hostAccountId - The generated host account ID
+ * @effectful (database I/O via enqueueBubbleSync)
  */
 export async function enqueueSignupSync(
   supabase: SupabaseClient,
@@ -255,3 +325,29 @@ export async function enqueueSignupSync(
     }],
   });
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  DEFAULT_BATCH_SIZE,
+  UNIQUE_VIOLATION_CODE,
+  OPERATION_TYPES,
+  BUBBLE_INCOMPATIBLE_FIELDS,
+
+  // Predicates
+  isBubbleIncompatibleField,
+  isIncludableValue,
+  isUniqueViolation,
+
+  // Functions
+  generateIdempotencyKey,
+  filterBubbleIncompatibleFields,
+})
