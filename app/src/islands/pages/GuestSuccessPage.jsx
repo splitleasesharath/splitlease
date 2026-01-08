@@ -243,17 +243,20 @@ function StoriesSection({ stories, onFindSplitLease }) {
     if (!section || cards.length === 0) return;
 
     const ctx = gsap.context(() => {
-      // Cards fade in with stagger on scroll
-      gsap.from(cards, {
-        opacity: 0,
-        y: 40,
+      // Set initial state
+      gsap.set(cards, { opacity: 0, y: 40 });
+
+      // Animate cards in with stagger on scroll
+      gsap.to(cards, {
+        opacity: 1,
+        y: 0,
         stagger: 0.15,
         duration: 0.6,
         ease: 'power2.out',
         scrollTrigger: {
           trigger: section,
-          start: 'top 80%',
-          toggleActions: 'play none none reverse'
+          start: 'top 85%',
+          toggleActions: 'play none none none'
         }
       });
     }, section);

@@ -279,6 +279,7 @@
     border-radius: 20px;
     padding: 32px;
     transition: all 0.3s ease;
+    opacity: 1; /* Ensure visibility - GSAP will handle animation */
 }
 
 .story-card:hover {
