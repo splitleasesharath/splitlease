@@ -194,14 +194,16 @@
     color: var(--accent-purple);
 }
 
-/* Hover States */
-.local-journey-card:hover {
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    border-color: var(--accent-blue);
-}
+/* Hover States - Only on devices with hover capability (not touch) */
+@media (hover: hover) {
+    .local-journey-card:hover {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border-color: var(--accent-blue);
+    }
 
-.local-journey-card:hover .local-journey-card-accent {
-    transform: scaleX(0.5);
+    .local-journey-card:hover .local-journey-card-accent {
+        transform: scaleX(0.5);
+    }
 }
 
 /* Icon Container */
@@ -229,8 +231,10 @@
     transition: transform 0.3s ease;
 }
 
-.local-journey-card:hover .local-journey-icon svg {
-    transform: scale(1.1);
+@media (hover: hover) {
+    .local-journey-card:hover .local-journey-icon svg {
+        transform: scale(1.1);
+    }
 }
 
 /* Card Typography */
@@ -311,13 +315,15 @@
     transition: transform 0.3s ease;
 }
 
-.local-journey-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-}
+@media (hover: hover) {
+    .local-journey-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
 
-.local-journey-button:hover svg {
-    transform: translateX(4px);
+    .local-journey-button:hover svg {
+        transform: translateX(4px);
+    }
 }
 
 .local-journey-button:active {
