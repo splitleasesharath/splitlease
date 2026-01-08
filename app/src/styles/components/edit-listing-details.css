@@ -605,12 +605,6 @@
   right: var(--spacing-xs, 4px);
   display: flex;
   gap: var(--spacing-xs, 4px);
-  opacity: 0;
-  transition: opacity 150ms ease;
-}
-
-.eld-photo-item:hover .eld-photo-controls {
-  opacity: 1;
 }
 
 .eld-photo-delete {
@@ -624,12 +618,14 @@
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   color: var(--color-error, #DC2626);
-  transition: background-color 150ms ease, color 150ms ease;
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }
 
 .eld-photo-delete:hover {
   background: var(--color-error, #DC2626);
   color: white;
+  transform: scale(1.1);
 }
 
 .eld-photo-badge {
