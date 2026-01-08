@@ -12,7 +12,7 @@ const successStories = [
     situation: 'Professor with split appointment',
     schedule: 'Tues–Thurs in NYC',
     days: [false, true, true, true, false, false, false], // Sun, Mon, Tue, Wed, Thu, Fri, Sat
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=300&fit=crop',
+    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face',
     quote: "I teach at Columbia two days a week and live in Boston with my family. For years I did the Amtrak shuffle and crashed on colleagues' couches. Now I have my own place in Morningside Heights—my books are there, my reading chair, my coffee routine. It's my academic home.",
     connection: "My host is a Columbia alum who works weekends. We've never met in person, but we swap book recommendations.",
     savings: '$19,000/year vs. hotels',
@@ -23,7 +23,7 @@ const successStories = [
     situation: 'Divorced dad with weekend custody',
     schedule: 'Every Fri–Sun in NYC',
     days: [true, false, false, false, false, true, true], // Sun, Mon, Tue, Wed, Thu, Fri, Sat
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=300&fit=crop',
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop&crop=face',
     quote: "After the divorce, I moved to Connecticut for work but I wasn't giving up weekends with my kids. Hotels felt cold and temporary. Now my daughter has her own bed with her stuffed animals, my son has his Xbox set up. When they walk in Friday night, they're home—not visiting.",
     connection: "The host is a nurse who works weekend shifts. Perfect schedule match, and she left a welcome note for my kids.",
     savings: '$2,400/month vs. Airbnb',
@@ -34,7 +34,7 @@ const successStories = [
     situation: 'Splits time between Connecticut & NYC',
     schedule: 'Mon–Wed in the city',
     days: [false, true, true, true, false, false, false], // Sun, Mon, Tue, Wed, Thu, Fri, Sat
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=300&fit=crop',
+    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&crop=face',
     quote: "I kept my apartment in Greenwich when I took a role that requires three days in Manhattan. Buying a second place? Insane. Hotels every week? Exhausting and expensive. This is my city home—my clothes hang in the closet, my favorite tea is in the cabinet.",
     connection: "My host went to Yale, I went to Dartmouth. We joke that we're Ivy League roommates who've never met.",
     savings: '$26,000/year vs. hotels',
@@ -45,7 +45,7 @@ const successStories = [
     situation: 'Executive MBA student',
     schedule: 'Thurs–Sat for classes',
     days: [false, false, false, false, true, true, true], // Sun, Mon, Tue, Wed, Thu, Fri, Sat
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face',
     quote: "The executive program at NYU has me in the city every weekend for two years. Hotels near campus are $350/night. A full lease for three nights a week? Wasteful. Now I have a proper study setup, my textbooks stay there, and I can actually focus on the work.",
     connection: "Host is a Stern alum who remembers the grind. He even left his old case study notes.",
     savings: '$21,000/year vs. hotels',
