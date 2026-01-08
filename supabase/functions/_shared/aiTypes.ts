@@ -3,104 +3,198 @@
  * Split Lease - Supabase Edge Functions
  *
  * NO FALLBACK PRINCIPLE: Types enforce strict data shapes
+ * All interfaces use readonly modifiers for immutability
+ *
+ * @module _shared/aiTypes
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Supported OpenAI models
+ * @immutable
+ */
+export const SUPPORTED_MODELS = Object.freeze([
+  'gpt-4o',
+  'gpt-4o-mini',
+  'gpt-4-turbo',
+  'gpt-3.5-turbo',
+] as const)
+
+/**
+ * Supported response formats
+ * @immutable
+ */
+export const RESPONSE_FORMATS = Object.freeze([
+  'text',
+  'json',
+] as const)
+
+/**
+ * Supported actions for AI Gateway
+ * @immutable
+ */
+export const AI_ACTIONS = Object.freeze([
+  'complete',
+  'stream',
+] as const)
+
+// ─────────────────────────────────────────────────────────────
+// Type Definitions
+// ─────────────────────────────────────────────────────────────
+
+export type SupportedModel = typeof SUPPORTED_MODELS[number]
+export type ResponseFormat = typeof RESPONSE_FORMATS[number]
+export type AIAction = typeof AI_ACTIONS[number]
 
 /**
  * Prompt configuration - defines a reusable prompt template
  */
 export interface PromptConfig {
-  key: string;
-  name: string;
-  description: string;
+  readonly key: string;
+  readonly name: string;
+  readonly description: string;
 
   // Template configuration
-  systemPrompt: string;
-  userPromptTemplate: string; // Supports {{variable}} interpolation
+  readonly systemPrompt: string;
+  readonly userPromptTemplate: string; // Supports {{variable}} interpolation
 
   // Model defaults (can be overridden per-request)
-  defaults: {
-    model: "gpt-4o" | "gpt-4o-mini" | "gpt-4-turbo" | "gpt-3.5-turbo";
+  readonly defaults: Readonly<{
+    model: SupportedModel;
     temperature: number;
     maxTokens: number;
-  };
+  }>;
 
   // Data loaders required for this prompt (load user data from Supabase)
-  requiredLoaders?: string[];
+  readonly requiredLoaders?: ReadonlyArray<string>;
 
   // Response format
-  responseFormat?: "text" | "json";
-  jsonSchema?: Record<string, unknown>;
+  readonly responseFormat?: ResponseFormat;
+  readonly jsonSchema?: Readonly<Record<string, unknown>>;
 }
 
 /**
  * Data loader - fetches user-specific data for prompt injection
  */
 export interface DataLoader {
-  key: string;
-  name: string;
-  load: (context: DataLoaderContext) => Promise<Record<string, unknown>>;
+  readonly key: string;
+  readonly name: string;
+  readonly load: (context: DataLoaderContext) => Promise<Record<string, unknown>>;
 }
 
 export interface DataLoaderContext {
-  userId: string;
-  userEmail: string;
-  supabaseClient: SupabaseClient;
-  variables: Record<string, unknown>;
+  readonly userId: string;
+  readonly userEmail: string;
+  readonly supabaseClient: SupabaseClient;
+  readonly variables: Readonly<Record<string, unknown>>;
 }
 
-/**
- * Request/Response types
- */
+// ─────────────────────────────────────────────────────────────
+// Request/Response Types
+// ─────────────────────────────────────────────────────────────
+
 export interface AIGatewayRequest {
-  action: "complete" | "stream";
-  payload: {
+  readonly action: AIAction;
+  readonly payload: Readonly<{
     prompt_key: string;
-    variables?: Record<string, unknown>;
-    options?: {
+    variables?: Readonly<Record<string, unknown>>;
+    options?: Readonly<{
       model?: string;
       temperature?: number;
       max_tokens?: number;
-    };
-  };
+    }>;
+  }>;
 }
 
 export interface AIGatewayResponse {
-  success: boolean;
-  data?: {
+  readonly success: boolean;
+  readonly data?: Readonly<{
     content: string;
     model: string;
-    usage: {
+    usage: Readonly<{
       prompt_tokens: number;
       completion_tokens: number;
       total_tokens: number;
-    };
-  };
-  error?: string;
+    }>;
+  }>;
+  readonly error?: string;
 }
 
-/**
- * OpenAI types
- */
+// ─────────────────────────────────────────────────────────────
+// OpenAI Types
+// ─────────────────────────────────────────────────────────────
+
+export type ChatRole = 'system' | 'user' | 'assistant'
+export type CompletionResponseFormat = 'text' | 'json_object'
+
 export interface ChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
+  readonly role: ChatRole;
+  readonly content: string;
 }
 
 export interface CompletionOptions {
-  model: string;
-  temperature: number;
-  maxTokens: number;
-  responseFormat?: "text" | "json_object";
+  readonly model: string;
+  readonly temperature: number;
+  readonly maxTokens: number;
+  readonly responseFormat?: CompletionResponseFormat;
 }
 
 export interface CompletionResult {
-  content: string;
-  model: string;
-  usage: {
+  readonly content: string;
+  readonly model: string;
+  readonly usage: Readonly<{
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
-  };
+  }>;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if model is a supported model
+ * @pure
+ */
+export const isSupportedModel = (model: string): model is SupportedModel =>
+  SUPPORTED_MODELS.includes(model as SupportedModel)
+
+/**
+ * Check if action is a valid AI action
+ * @pure
+ */
+export const isValidAIAction = (action: string): action is AIAction =>
+  AI_ACTIONS.includes(action as AIAction)
+
+/**
+ * Check if response indicates success
+ * @pure
+ */
+export const isAISuccess = (response: AIGatewayResponse): boolean =>
+  response.success === true && response.data !== undefined
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  SUPPORTED_MODELS,
+  RESPONSE_FORMATS,
+  AI_ACTIONS,
+
+  // Predicates
+  isSupportedModel,
+  isValidAIAction,
+  isAISuccess,
+})

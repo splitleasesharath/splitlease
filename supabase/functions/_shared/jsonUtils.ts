@@ -7,7 +7,59 @@
  * - Stringified JSON strings
  *
  * NO FALLBACK PRINCIPLE: Returns empty array/object on parse failure, logs warning
+ *
+ * @module _shared/jsonUtils
  */
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[parseJson]'
+const MAX_VALUE_LOG_LENGTH = 100
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is a native array
+ * @pure
+ */
+const isNativeArray = (value: unknown): value is unknown[] =>
+  Array.isArray(value)
+
+/**
+ * Check if value is a string
+ * @pure
+ */
+const isString = (value: unknown): value is string =>
+  typeof value === 'string'
+
+/**
+ * Check if value is an empty string or whitespace
+ * @pure
+ */
+const isEmptyString = (value: string): boolean =>
+  value.trim() === ''
+
+/**
+ * Check if value is a plain object (not array, not null)
+ * @pure
+ */
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value)
+
+/**
+ * Check if value is null or undefined
+ * @pure
+ */
+const isNullish = (value: unknown): value is null | undefined =>
+  value === null || value === undefined
+
+// ─────────────────────────────────────────────────────────────
+// Parse Functions
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Parse a value that may be a native array or stringified JSON array
@@ -21,6 +73,7 @@
  * @param value - Value from Supabase JSONB field
  * @param fieldName - Optional field name for logging
  * @returns Parsed array or empty array if parsing fails
+ * @effectful (console logging on warnings)
  *
  * @example
  * // Native array - returns as-is
@@ -143,8 +196,30 @@ export function parseJsonObject<T = Record<string, unknown>>(
  * @param value - Value from Supabase JSONB field
  * @param fieldName - Optional field name for logging
  * @returns Length of the array, or 0 if not an array
+ * @effectful (console logging via parseJsonArray)
  */
 export function getJsonArrayLength(value: unknown, fieldName?: string): number {
   const arr = parseJsonArray(value, fieldName);
   return arr.length;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  MAX_VALUE_LOG_LENGTH,
+
+  // Predicates
+  isNativeArray,
+  isString,
+  isEmptyString,
+  isPlainObject,
+  isNullish,
+})

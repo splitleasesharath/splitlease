@@ -3,6 +3,8 @@
  * Split Lease - Supabase Edge Functions
  *
  * NO FALLBACK PRINCIPLE: Fails fast if API key missing or API errors
+ *
+ * @module _shared/openai
  */
 
 import {
@@ -12,16 +14,74 @@ import {
 } from "./aiTypes.ts";
 import { OpenAIError } from "./errors.ts";
 
-const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[OpenAI]'
+const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
+const API_KEY_ENV_VAR = 'OPENAI_API_KEY'
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if API key is present
+ * @pure
+ */
+const hasApiKey = (key: string | undefined): key is string =>
+  key !== undefined && key.length > 0
+
+/**
+ * Check if response status indicates success
+ * @pure
+ */
+const isSuccessStatus = (status: number): boolean =>
+  status >= 200 && status < 300
+
+/**
+ * Check if response format is JSON object
+ * @pure
+ */
+const isJsonResponseFormat = (format: string | undefined): boolean =>
+  format === 'json_object'
+
+// ─────────────────────────────────────────────────────────────
+// Builders
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build completion result from API response
+ * @pure
+ */
+const buildCompletionResult = (
+  content: string,
+  model: string,
+  usage: { prompt_tokens: number; completion_tokens: number; total_tokens: number }
+): CompletionResult => Object.freeze({
+  content,
+  model,
+  usage: Object.freeze({
+    prompt_tokens: usage.prompt_tokens,
+    completion_tokens: usage.completion_tokens,
+    total_tokens: usage.total_tokens,
+  }),
+})
+
+// ─────────────────────────────────────────────────────────────
+// API Key Retrieval
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Get the OpenAI API key from environment
  * Throws immediately if not configured
+ * @effectful (reads environment)
  */
 function getApiKey(): string {
-  const key = Deno.env.get("OPENAI_API_KEY");
-  if (!key) {
-    throw new OpenAIError("OPENAI_API_KEY not configured in Supabase secrets", 500);
+  const key = Deno.env.get(API_KEY_ENV_VAR);
+  if (!hasApiKey(key)) {
+    throw new OpenAIError(`${API_KEY_ENV_VAR} not configured in Supabase secrets`, 500);
   }
   return key;
 }
@@ -29,6 +89,7 @@ function getApiKey(): string {
 /**
  * Non-streaming completion
  * NO FALLBACK: Throws on any API error
+ * @effectful (network I/O, console logging)
  */
 export async function complete(
   messages: ChatMessage[],
@@ -43,11 +104,11 @@ export async function complete(
     max_tokens: options.maxTokens,
   };
 
-  if (options.responseFormat === "json_object") {
+  if (isJsonResponseFormat(options.responseFormat)) {
     requestBody.response_format = { type: "json_object" };
   }
 
-  console.log(`[OpenAI] Calling ${options.model} with ${messages.length} messages`);
+  console.log(`${LOG_PREFIX} Calling ${options.model} with ${messages.length} messages`);
 
   const response = await fetch(OPENAI_API_URL, {
     method: "POST",
@@ -60,7 +121,7 @@ export async function complete(
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`[OpenAI] API error: ${response.status}`, errorBody);
+    console.error(`${LOG_PREFIX} API error: ${response.status}`, errorBody);
     throw new OpenAIError(
       `OpenAI API error: ${response.status}`,
       response.status,
@@ -70,22 +131,19 @@ export async function complete(
 
   const result = await response.json();
 
-  console.log(`[OpenAI] ✅ Completed. Tokens: ${result.usage.total_tokens}`);
+  console.log(`${LOG_PREFIX} ✅ Completed. Tokens: ${result.usage.total_tokens}`);
 
-  return {
-    content: result.choices[0].message.content,
-    model: result.model,
-    usage: {
-      prompt_tokens: result.usage.prompt_tokens,
-      completion_tokens: result.usage.completion_tokens,
-      total_tokens: result.usage.total_tokens,
-    },
-  };
+  return buildCompletionResult(
+    result.choices[0].message.content,
+    result.model,
+    result.usage
+  );
 }
 
 /**
  * Streaming completion - returns a ReadableStream for SSE
  * NO FALLBACK: Throws on any API error
+ * @effectful (network I/O, console logging)
  */
 export async function stream(
   messages: ChatMessage[],
@@ -101,7 +159,7 @@ export async function stream(
     stream: true,
   };
 
-  console.log(`[OpenAI] Streaming ${options.model} with ${messages.length} messages`);
+  console.log(`${LOG_PREFIX} Streaming ${options.model} with ${messages.length} messages`);
 
   const response = await fetch(OPENAI_API_URL, {
     method: "POST",
@@ -114,7 +172,7 @@ export async function stream(
 
   if (!response.ok) {
     const errorBody = await response.text();
-    console.error(`[OpenAI] Stream API error: ${response.status}`, errorBody);
+    console.error(`${LOG_PREFIX} Stream API error: ${response.status}`, errorBody);
     throw new OpenAIError(
       `OpenAI API error: ${response.status}`,
       response.status,
@@ -128,3 +186,26 @@ export async function stream(
 
   return response.body;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  OPENAI_API_URL,
+  API_KEY_ENV_VAR,
+
+  // Predicates
+  hasApiKey,
+  isSuccessStatus,
+  isJsonResponseFormat,
+
+  // Builders
+  buildCompletionResult,
+})
