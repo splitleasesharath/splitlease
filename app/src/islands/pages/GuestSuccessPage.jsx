@@ -74,7 +74,7 @@ function HeroSection() {
 
   // Dynamic text rotation
   const [currentIndex, setCurrentIndex] = useState(0);
-  const scenarios = ['consulting', 'learning', 'parenting', 'creating', 'building', 'teaching'];
+  const scenarios = ['savings', 'results', 'flexibility'];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -205,7 +205,7 @@ function HeroSection() {
         <div className="hero-text-container">
           <div ref={textLineTopRef} className="hero-text-line hero-text-top">
             <span className="hero-text-static">Real</span>
-            <span className="hero-text-highlight">People.</span>
+            <span className="hero-text-highlight">guests.</span>
           </div>
           <div ref={textLineBottomRef} className="hero-text-line hero-text-bottom">
             <span className="hero-text-static">Real</span>
@@ -218,15 +218,15 @@ function HeroSection() {
         {/* Mask reveal container - appears in center */}
         <div ref={maskRevealRef} className="mask-reveal-container">
           <div ref={revealContentRef} className="reveal-content">
-            <div className="reveal-eyebrow">Why They Chose Split Lease</div>
-            <h2 className="reveal-headline">Success Stories</h2>
+            <div className="reveal-eyebrow">Guest Stories</div>
+            <h2 className="reveal-headline">See how it works for them</h2>
             <p className="reveal-hook">
-              Discover how multi-locals like you found their NYC home base,
-              saved thousands, and stopped living out of suitcases.
+              Professionals, students, and parents share their experience
+              using Split Lease for recurring NYC stays.
             </p>
             <div className="reveal-cta">
               <a href="#stories" className="reveal-cta-button">
-                Read Their Stories
+                View Stories
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
@@ -242,28 +242,21 @@ function HeroSection() {
             className="hero-stat-item"
           >
             <div className="hero-stat-value">$18K</div>
-            <div className="hero-stat-label">Avg Yearly Savings</div>
+            <div className="hero-stat-label">Avg. Annual Savings</div>
           </div>
           <div
             ref={el => statItemsRef.current[1] = el}
             className="hero-stat-item"
           >
-            <div className="hero-stat-value">2,400+</div>
-            <div className="hero-stat-label">Happy Guests</div>
+            <div className="hero-stat-value">89%</div>
+            <div className="hero-stat-label">Return Rate</div>
           </div>
           <div
             ref={el => statItemsRef.current[2] = el}
             className="hero-stat-item"
           >
             <div className="hero-stat-value">4.9</div>
-            <div className="hero-stat-label">Guest Rating</div>
-          </div>
-          <div
-            ref={el => statItemsRef.current[3] = el}
-            className="hero-stat-item"
-          >
-            <div className="hero-stat-value">89%</div>
-            <div className="hero-stat-label">Repeat Guests</div>
+            <div className="hero-stat-label">Avg. Rating</div>
           </div>
         </div>
       </div>
@@ -390,8 +383,8 @@ export default function GuestSuccessPage() {
 
         <div className="success-stats-container">
           <div className="success-stats-header">
-            <div className="success-stats-eyebrow">The Numbers Speak</div>
-            <h2 className="success-stats-title">Trusted by Thousands of Multi-Locals</h2>
+            <div className="success-stats-eyebrow">By the Numbers</div>
+            <h2 className="success-stats-title">Platform Statistics</h2>
           </div>
           <div className="success-stats-grid">
             <div className="success-stat-card">
@@ -404,11 +397,11 @@ export default function GuestSuccessPage() {
             </div>
             <div className="success-stat-card">
               <div className="success-stat-value">89%</div>
-              <div className="success-stat-label">Repeat Guests</div>
+              <div className="success-stat-label">Return Rate</div>
             </div>
             <div className="success-stat-card">
-              <div className="success-stat-value">3.2 hrs</div>
-              <div className="success-stat-label">Avg Weekly Commute Saved</div>
+              <div className="success-stat-value">4.9</div>
+              <div className="success-stat-label">Average Rating</div>
             </div>
           </div>
         </div>
@@ -421,13 +414,13 @@ export default function GuestSuccessPage() {
         <div className="gradient-circle gradient-circle-3"></div>
 
         <div className="success-cta-card">
-          <h2 className="success-cta-title">Ready to Write Your Success Story?</h2>
+          <h2 className="success-cta-title">Find your NYC space</h2>
           <p className="success-cta-subtitle">
-            Join thousands of multi-locals who found their NYC home base. Save money, skip the hassle, leave your stuff.
+            Browse available listings and start your flexible rental arrangement.
           </p>
           <div className="success-hero-cta">
             <button className="cta-button cta-primary" onClick={handleFindSplitLease}>
-              <span>Find Your NYC Space</span>
+              <span>Browse Listings</span>
             </button>
           </div>
         </div>
