@@ -10,6 +10,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../../lib/supabase.js';
 import { checkAuthStatus, getSessionId, getAuthToken } from '../../../lib/auth.js';
 import { useRentalApplicationStore } from '../../pages/RentalApplicationPage/store/index.ts';
+import { mapDatabaseToFormData } from '../../pages/RentalApplicationPage/utils/rentalApplicationFieldMapper.ts';
 
 // Required fields (same as RentalApplicationPage)
 const REQUIRED_FIELDS = [
@@ -83,7 +84,7 @@ const FILE_TYPE_MAP = {
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
-export function useRentalApplicationWizardLogic({ onClose, onSuccess }) {
+export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus = 'not_started' }) {
   // ============================================================================
   // STORE INTEGRATION (reuse existing localStorage store)
   // ============================================================================
@@ -100,6 +101,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess }) {
     updateOccupant: storeUpdateOccupant,
     updateVerificationStatus,
     reset: resetStore,
+    loadFromDatabase,
   } = store;
 
   // ============================================================================
@@ -118,9 +120,76 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess }) {
   const [fieldValid, setFieldValid] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  const hasLoadedFromDb = useRef(false);
 
   // Address autocomplete ref
   const addressInputRef = useRef(null);
+
+  // ============================================================================
+  // DATABASE LOADING (for submitted applications)
+  // ============================================================================
+  useEffect(() => {
+    // Only fetch from database if:
+    // 1. Application is submitted (reviewing existing application)
+    // 2. Haven't already loaded from database
+    if (applicationStatus !== 'submitted' || hasLoadedFromDb.current) {
+      return;
+    }
+
+    const fetchFromDatabase = async () => {
+      setIsLoadingFromDb(true);
+      setLoadError(null);
+
+      try {
+        const token = getAuthToken();
+        const userId = getSessionId();
+
+        if (!userId) {
+          throw new Error('User not logged in');
+        }
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              action: 'get',
+              payload: { user_id: userId },
+            }),
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to load application');
+        }
+
+        if (result.data) {
+          // Transform database fields to form fields
+          const { formData: mappedFormData, occupants: mappedOccupants } = mapDatabaseToFormData(result.data);
+
+          // Load into store (this will update the reactive state)
+          loadFromDatabase(mappedFormData, mappedOccupants);
+
+          hasLoadedFromDb.current = true;
+        }
+      } catch (error) {
+        console.error('Error loading rental application from database:', error);
+        setLoadError(error.message || 'Failed to load your application');
+      } finally {
+        setIsLoadingFromDb(false);
+      }
+    };
+
+    fetchFromDatabase();
+  }, [applicationStatus, loadFromDatabase]);
 
   // ============================================================================
   // PROGRESS CALCULATION
@@ -503,6 +572,10 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess }) {
     handleSubmit,
     isSubmitting,
     submitError,
+
+    // Database loading (for review mode)
+    isLoadingFromDb,
+    loadError,
 
     // Options (for dropdowns)
     relationshipOptions: RELATIONSHIP_OPTIONS,

@@ -226,6 +226,7 @@ export default function AccountProfilePage() {
             isOpen={logic.showRentalWizardModal}
             onClose={logic.handleCloseRentalWizard}
             onSuccess={logic.handleRentalWizardSuccess}
+            applicationStatus={logic.rentalApplicationStatus}
           />
         )}
 
