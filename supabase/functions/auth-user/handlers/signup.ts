@@ -30,7 +30,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { BubbleApiError } from '../../_shared/errors.ts';
-import { validateRequiredFields } from '../../_shared/validation.ts';
+import { validateRequiredFields, trimString } from '../../_shared/validation.ts';
 import { enqueueSignupSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
 
 interface SignupAdditionalData {
@@ -67,13 +67,14 @@ export async function handleSignup(
   const { email, password, retype, additionalData } = payload;
 
   // Extract additional signup data
-  const {
-    firstName = '',
-    lastName = '',
-    userType = 'Guest',
-    birthDate = '',
-    phoneNumber = ''
-  }: SignupAdditionalData = additionalData || {};
+  const rawAdditionalData: SignupAdditionalData = additionalData || {};
+
+  // Trim name fields to prevent storing whitespace
+  const firstName = trimString(rawAdditionalData.firstName) ?? '';
+  const lastName = trimString(rawAdditionalData.lastName) ?? '';
+  const userType = rawAdditionalData.userType || 'Guest';
+  const birthDate = rawAdditionalData.birthDate || '';
+  const phoneNumber = rawAdditionalData.phoneNumber || '';
 
   // Map userType string to os_user_type.display for foreign key constraint
   // Foreign key references os_user_type(display) which contains full descriptive strings
