@@ -7,7 +7,14 @@
      COLOR VARIABLES
      ======================================== */
 
-  /* Primary Colors */
+  /* Primary Colors
+     Usage Guide:
+     - primary-purple (#31135D): Brand color, headings, important UI
+     - primary-purple-hover (#251047): Hover state for primary
+     - secondary-purple (#6D31C2): Interactive buttons, links, CTAs
+     - accent-purple (#8C68EE): Hover state for secondary, highlights
+     - chat-purple (#4B47CE): Day badges, chat elements
+  */
   --primary-purple: #31135D;
   --primary-purple-hover: #251047;
   --primary-purple-dark: #1f0a3d;

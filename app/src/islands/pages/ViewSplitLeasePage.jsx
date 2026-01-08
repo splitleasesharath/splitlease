@@ -44,7 +44,7 @@ import '../../styles/components/toast.css';
 
 /**
  * Get initial schedule selection from URL parameter
- * URL format: ?days-selected=1,2,3,4 (1-based, where 1=Sunday)
+ * URL format: ?days-selected=2,3,4,5,6 (0-based, where 0=Sunday, matching JS Date.getDay())
  * Returns: Array of Day objects (0-based, where 0=Sunday)
  */
 function getInitialScheduleFromUrl() {
@@ -57,19 +57,16 @@ function getInitialScheduleFromUrl() {
   }
 
   try {
-    // Parse 1-based indices from URL and convert to 0-based
-    const oneBased = daysParam.split(',').map(d => parseInt(d.trim(), 10));
-    const zeroBased = oneBased
-      .filter(d => d >= 1 && d <= 7) // Validate 1-based range
-      .map(d => d - 1); // Convert to 0-based (1→0, 2→1, etc.)
+    // Parse 0-based indices from URL (matching SearchPage and JS Date.getDay() convention)
+    const dayIndices = daysParam.split(',').map(d => parseInt(d.trim(), 10));
+    const validDays = dayIndices.filter(d => d >= 0 && d <= 6); // Validate 0-based range (0=Sun...6=Sat)
 
-    if (zeroBased.length > 0) {
+    if (validDays.length > 0) {
       // Convert to Day objects using createDay
-      const dayObjects = zeroBased.map(dayIndex => createDay(dayIndex, true));
+      const dayObjects = validDays.map(dayIndex => createDay(dayIndex, true));
       console.log('📅 ViewSplitLeasePage: Loaded schedule from URL:', {
         urlParam: daysParam,
-        oneBased,
-        zeroBased,
+        dayIndices: validDays,
         dayObjects: dayObjects.map(d => d.name)
       });
       return dayObjects;

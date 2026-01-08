@@ -56,10 +56,9 @@ export function getListingUrlWithProposalContext(listingId, proposalContext = {}
 
   const params = new URLSearchParams();
 
-  // Days selected: convert from 0-indexed to 1-indexed for URL (matching existing pattern)
+  // Days selected: keep as 0-indexed in URL (matching JS Date.getDay() and SearchPage convention)
   if (proposalContext.daysSelected && proposalContext.daysSelected.length > 0) {
-    const oneBasedDays = proposalContext.daysSelected.map(d => d + 1);
-    params.set('days-selected', oneBasedDays.join(','));
+    params.set('days-selected', proposalContext.daysSelected.join(','));
   }
 
   // Reservation span (weeks)

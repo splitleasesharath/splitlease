@@ -1205,7 +1205,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 <button
                   className="btn-action-bar btn-modify-proposal"
                   onClick={() => {
-                    setProposalDetailsModalInitialView('general');
+                    setProposalDetailsModalInitialView('pristine');
                     setShowProposalDetailsModal(true);
                   }}
                 >
@@ -1213,10 +1213,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 </button>
                 <button
                   className="btn-action-bar btn-cancel-proposal"
-                  onClick={() => {
-                    setProposalDetailsModalInitialView('cancel');
-                    setShowProposalDetailsModal(true);
-                  }}
+                  onClick={openCancelModal}
                 >
                   Cancel Proposal
                 </button>
@@ -1259,7 +1256,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                   onClick={() => {
                     // Handle different actions
                     if (buttonConfig.guestAction1.action === 'modify_proposal') {
-                      setProposalDetailsModalInitialView('general');
+                      setProposalDetailsModalInitialView('pristine');
                       setShowProposalDetailsModal(true);
                     } else if (buttonConfig.guestAction1.action === 'submit_rental_app') {
                       goToRentalApplication(proposal._id);
@@ -1289,7 +1286,7 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                 onClick={() => {
                   // Handle different actions
                   if (buttonConfig.guestAction2.action === 'see_details') {
-                    setProposalDetailsModalInitialView('general');
+                    setProposalDetailsModalInitialView('pristine');
                     setShowProposalDetailsModal(true);
                   }
                   // TODO: Add handlers for other actions (reject_suggestion, review_counteroffer, verify_identity)
@@ -1324,9 +1321,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                     buttonConfig.cancelButton.action === 'reject_counteroffer' ||
                     buttonConfig.cancelButton.action === 'reject_proposal'
                   ) {
-                    // Open GuestEditingProposalModal in cancel view
-                    setProposalDetailsModalInitialView('cancel');
-                    setShowProposalDetailsModal(true);
+                    // Open standalone CancelProposalModal
+                    openCancelModal();
                   }
                 }}
               >

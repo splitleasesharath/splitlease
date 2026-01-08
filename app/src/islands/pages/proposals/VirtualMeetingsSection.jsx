@@ -247,12 +247,8 @@ function getPrimaryButtonConfig(vmStateInfo, vmState) {
         view: 'respond'
       };
     case VM_STATES.REQUESTED_BY_ME:
-      return {
-        text: 'Meeting Requested',
-        className: 'vm-section-primary-btn vm-section-primary-btn--disabled',
-        disabled: true,
-        view: 'cancel'
-      };
+      // No primary button when guest requested - only show "Cancel Request" secondary button
+      return null;
     case VM_STATES.BOOKED_AWAITING_CONFIRMATION:
       return {
         text: 'View Meeting Details',

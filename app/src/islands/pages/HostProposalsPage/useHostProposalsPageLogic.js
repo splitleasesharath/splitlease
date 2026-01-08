@@ -782,7 +782,7 @@ export function useHostProposalsPageLogic() {
    */
   const handleEditListing = useCallback(() => {
     if (selectedListing) {
-      window.location.href = `/self-listing?id=${selectedListing._id || selectedListing.id}`;
+      window.location.href = `/listing-dashboard?id=${selectedListing._id || selectedListing.id}`;
     }
   }, [selectedListing]);
 
