@@ -9,19 +9,182 @@
  * 4. Fetch proposals by those specific IDs
  * 5. Fetch related listings and hosts (nested fetches)
  * 6. Return user + proposals + selected proposal
+ *
+ * @module lib/proposals/userProposalQueries
  */
 
-import { supabase } from '../supabase.js';
-import { getUserIdFromSession, getProposalIdFromQuery } from './urlParser.js';
+import { supabase } from '../supabase.js'
+import { getUserIdFromSession, getProposalIdFromQuery } from './urlParser.js'
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[userProposalQueries]'
+
+const CANCELLED_BY_GUEST_STATUS = 'Proposal Cancelled by Guest'
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is nullish
+ * @pure
+ */
+const isNullish = (value) => value === null || value === undefined
+
+/**
+ * Check if array is valid and non-empty
+ * @pure
+ */
+const isNonEmptyArray = (arr) =>
+  Array.isArray(arr) && arr.length > 0
+
+/**
+ * Check if proposal is valid (not deleted and not cancelled by guest)
+ * @pure
+ */
+const isValidProposal = (proposal) => {
+  if (!proposal) return false
+  if (proposal.Deleted === true) return false
+  if (proposal.Status === CANCELLED_BY_GUEST_STATUS) return false
+  return true
+}
+
+/**
+ * Check if photo is embedded (object format)
+ * @pure
+ */
+const isEmbeddedPhoto = (photo) =>
+  typeof photo === 'object' && photo !== null
+
+// ─────────────────────────────────────────────────────────────
+// Logging Helpers (Effectful)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * @effectful
+ */
+const logInfo = (message, data) => {
+  if (data !== undefined) {
+    console.log(`${LOG_PREFIX} ${message}:`, data)
+  } else {
+    console.log(`${LOG_PREFIX} ${message}`)
+  }
+}
+
+/**
+ * @effectful
+ */
+const logError = (message, error) => {
+  console.error(`${LOG_PREFIX} ${message}:`, error)
+}
+
+/**
+ * @effectful
+ */
+const logWarning = (message, data) => {
+  if (data !== undefined) {
+    console.warn(`${LOG_PREFIX} ${message}:`, data)
+  } else {
+    console.warn(`${LOG_PREFIX} ${message}`)
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Extraction Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Extract unique IDs from array of objects
+ * @pure
+ */
+const extractUniqueIds = (items, key) =>
+  [...new Set(items.map(item => item[key]).filter(Boolean))]
+
+/**
+ * Parse JSON string to array safely
+ * @pure
+ */
+const parseJsonArray = (value) => {
+  if (Array.isArray(value)) return value
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value)
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+/**
+ * Extract photos from listing field
+ * @pure
+ */
+const extractPhotosFromField = (photosField) => {
+  if (Array.isArray(photosField)) return photosField
+  if (typeof photosField === 'string') {
+    try {
+      return JSON.parse(photosField)
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+/**
+ * Normalize photo URL (add https: if needed)
+ * @pure
+ */
+const normalizePhotoUrl = (url) => {
+  if (!url) return ''
+  return url.startsWith('//') ? `https:${url}` : url
+}
+
+/**
+ * Extract featured photo URL from embedded photos
+ * @pure
+ */
+const extractFeaturedPhotoUrl = (photos) => {
+  if (!isNonEmptyArray(photos)) return null
+  if (!isEmbeddedPhoto(photos[0])) return null
+
+  const mainPhoto = photos.find(p => p.toggleMainPhoto) || photos[0]
+  const photoUrl = mainPhoto.url || mainPhoto.Photo || ''
+  return normalizePhotoUrl(photoUrl) || null
+}
+
+/**
+ * Build lookup map from array
+ * @pure
+ */
+const buildLookupMap = (items, keyExtractor, valueExtractor = (item) => item) =>
+  new Map(items.map(item => [keyExtractor(item), valueExtractor(item)]))
+
+/**
+ * Build empty result
+ * @pure
+ */
+const buildEmptyResult = (user) => Object.freeze({
+  user,
+  proposals: [],
+  selectedProposal: null
+})
+
+// ─────────────────────────────────────────────────────────────
+// Public API
+// ─────────────────────────────────────────────────────────────
 
 /**
  * STEP 1: Fetch user data with Proposals List
- *
+ * @effectful
  * @param {string} userId - User ID from URL path
  * @returns {Promise<Object>} User object with Proposals List
  */
 export async function fetchUserWithProposalList(userId) {
-  // Use .maybeSingle() instead of .single() to avoid 406 error when no rows found
   const { data, error } = await supabase
     .from('user')
     .select(`
@@ -34,20 +197,20 @@ export async function fetchUserWithProposalList(userId) {
       "Proposals List"
     `)
     .eq('_id', userId)
-    .maybeSingle();
+    .maybeSingle()
 
   if (error) {
-    console.error('fetchUserWithProposalList: Error fetching user:', error);
-    throw new Error(`Failed to fetch user: ${error.message}`);
+    logError('Error fetching user', error)
+    throw new Error(`Failed to fetch user: ${error.message}`)
   }
 
   if (!data) {
-    console.error('fetchUserWithProposalList: User not found with ID:', userId);
-    throw new Error(`User with ID ${userId} not found. Please check the URL.`);
+    logError('User not found with ID', userId)
+    throw new Error(`User with ID ${userId} not found. Please check the URL.`)
   }
 
-  console.log('fetchUserWithProposalList: User fetched:', data['Name - First'] || data['Name - Full']);
-  return data;
+  logInfo('User fetched', data['Name - First'] || data['Name - Full'])
+  return data
 }
 
 /**
@@ -55,33 +218,33 @@ export async function fetchUserWithProposalList(userId) {
  *
  * After migration, Proposals List is a native text[] array.
  * Supabase client returns text[] as JavaScript array directly.
- *
+ * @pure
  * @param {Object} user - User object with Proposals List
  * @returns {Array<string>} Array of proposal IDs
  */
 export function extractProposalIds(user) {
-  const proposalsList = user['Proposals List'];
+  const proposalsList = user['Proposals List']
 
-  if (!proposalsList || !Array.isArray(proposalsList)) {
-    console.warn('extractProposalIds: User has no Proposals List or invalid format');
-    return [];
+  if (!isNonEmptyArray(proposalsList)) {
+    logWarning('User has no Proposals List or invalid format')
+    return []
   }
 
-  console.log(`extractProposalIds: Extracted ${proposalsList.length} proposal IDs from user's Proposals List`);
-  return proposalsList;
+  logInfo(`Extracted ${proposalsList.length} proposal IDs from user's Proposals List`)
+  return proposalsList
 }
 
 /**
  * STEP 3: Fetch proposals by their IDs from user's Proposals List
  * Note: Some proposal IDs may be orphaned (don't exist in proposal table)
- *
+ * @effectful
  * @param {Array<string>} proposalIds - Array of proposal IDs from user's list
  * @returns {Promise<Array<Object>>} Array of proposal objects with nested data
  */
 export async function fetchProposalsByIds(proposalIds) {
-  if (!proposalIds || proposalIds.length === 0) {
-    console.warn('fetchProposalsByIds: No proposal IDs to fetch');
-    return [];
+  if (!isNonEmptyArray(proposalIds)) {
+    logWarning('No proposal IDs to fetch')
+    return []
   }
 
   // Step 1: Fetch all proposals by IDs
@@ -123,47 +286,37 @@ export async function fetchProposalsByIds(proposalIds) {
       "guest documents review finalized?"
     `)
     .in('_id', proposalIds)
-    .order('Created Date', { ascending: false });
+    .order('Created Date', { ascending: false })
 
   if (proposalError) {
-    console.error('fetchProposalsByIds: Error fetching proposals:', proposalError);
-    throw new Error(`Failed to fetch proposals: ${proposalError.message}`);
+    logError('Error fetching proposals', proposalError)
+    throw new Error(`Failed to fetch proposals: ${proposalError.message}`)
   }
 
   // Filter out deleted proposals and proposals cancelled by guest
-  const validProposals = (proposals || []).filter(p => {
-    if (!p) return false;
-
-    // Exclude deleted proposals (Deleted = true)
-    if (p.Deleted === true) return false;
-
-    // Exclude proposals cancelled by guest
-    if (p.Status === 'Proposal Cancelled by Guest') return false;
-
-    return true;
-  });
+  const validProposals = (proposals || []).filter(isValidProposal)
 
   if (validProposals.length === 0) {
-    console.log('fetchProposalsByIds: No valid proposals found');
-    return [];
+    logInfo('No valid proposals found')
+    return []
   }
 
   // Log if some proposals were orphaned
   if (validProposals.length < proposalIds.length) {
-    console.warn(`fetchProposalsByIds: Found ${validProposals.length} proposals out of ${proposalIds.length} IDs (${proposalIds.length - validProposals.length} orphaned/filtered)`);
+    logWarning(`Found ${validProposals.length} proposals out of ${proposalIds.length} IDs (${proposalIds.length - validProposals.length} orphaned/filtered)`)
   } else {
-    console.log(`fetchProposalsByIds: Fetched ${validProposals.length} proposals from user's list`);
+    logInfo(`Fetched ${validProposals.length} proposals from user's list`)
   }
 
   // Step 2: Extract unique listing IDs from proposals
-  const listingIds = [...new Set(validProposals.map(p => p.Listing).filter(Boolean))];
+  const listingIds = extractUniqueIds(validProposals, 'Listing')
 
   if (listingIds.length === 0) {
-    console.warn('fetchProposalsByIds: No listings found for proposals');
-    return validProposals.map(p => ({ ...p, listing: null }));
+    logWarning('No listings found for proposals')
+    return validProposals.map(p => ({ ...p, listing: null }))
   }
 
-  console.log(`fetchProposalsByIds: Fetching ${listingIds.length} unique listings`);
+  logInfo(`Fetching ${listingIds.length} unique listings`)
 
   // Step 3: Fetch all listings
   const { data: listings, error: listingError } = await supabase
@@ -183,50 +336,36 @@ export async function fetchProposalsByIds(proposalIds) {
       "Host User",
       "House manual"
     `)
-    .in('_id', listingIds);
+    .in('_id', listingIds)
 
   if (listingError) {
-    console.error('fetchProposalsByIds: Error fetching listings:', listingError);
-    return validProposals.map(p => ({ ...p, listing: null }));
+    logError('Error fetching listings', listingError)
+    return validProposals.map(p => ({ ...p, listing: null }))
   }
 
   // Step 3.25: Extract featured photos from embedded format or fetch from listing_photo
-  console.log(`fetchProposalsByIds: Extracting featured photos for ${listingIds.length} listings`);
+  logInfo(`Extracting featured photos for ${listingIds.length} listings`)
 
   // First, try to extract photos from embedded Features - Photos field (new format)
-  const embeddedPhotoMap = new Map();
-  const listingsNeedingPhotoFetch = [];
+  const embeddedPhotoMap = new Map()
+  const listingsNeedingPhotoFetch = []
 
-  (listings || []).forEach(listing => {
-    const photosField = listing['Features - Photos'];
-    let photos = [];
+  ;(listings || []).forEach(listing => {
+    const photos = extractPhotosFromField(listing['Features - Photos'])
+    const featuredUrl = extractFeaturedPhotoUrl(photos)
 
-    // Parse JSON if needed
-    if (Array.isArray(photosField)) {
-      photos = photosField;
-    } else if (typeof photosField === 'string') {
-      try {
-        photos = JSON.parse(photosField);
-      } catch { /* ignore */ }
-    }
-
-    // Check if first photo is an object (new embedded format)
-    if (photos.length > 0 && typeof photos[0] === 'object' && photos[0] !== null) {
-      // Find main photo or use first one
-      const mainPhoto = photos.find(p => p.toggleMainPhoto) || photos[0];
-      let photoUrl = mainPhoto.url || mainPhoto.Photo || '';
-      if (photoUrl.startsWith('//')) photoUrl = 'https:' + photoUrl;
-      if (photoUrl) embeddedPhotoMap.set(listing._id, photoUrl);
-    } else {
+    if (featuredUrl) {
+      embeddedPhotoMap.set(listing._id, featuredUrl)
+    } else if (photos.length === 0 || !isEmbeddedPhoto(photos[0])) {
       // Legacy format - need to fetch from listing_photo table
-      listingsNeedingPhotoFetch.push(listing._id);
+      listingsNeedingPhotoFetch.push(listing._id)
     }
-  });
+  })
 
-  console.log(`fetchProposalsByIds: Found ${embeddedPhotoMap.size} embedded photos, ${listingsNeedingPhotoFetch.length} need fetch`);
+  logInfo(`Found ${embeddedPhotoMap.size} embedded photos, ${listingsNeedingPhotoFetch.length} need fetch`)
 
   // Only fetch from listing_photo table for listings without embedded photos
-  let featuredPhotos = [];
+  let featuredPhotos = []
   if (listingsNeedingPhotoFetch.length > 0) {
     const { data: fetchedPhotos, error: photoError } = await supabase
       .from('listing_photo')
@@ -237,58 +376,42 @@ export async function fetchProposalsByIds(proposalIds) {
       `)
       .in('"Listing"', listingsNeedingPhotoFetch)
       .eq('"toggleMainPhoto"', true)
-      .eq('"Active"', true);
+      .eq('"Active"', true)
 
     if (photoError) {
-      console.error('fetchProposalsByIds: Error fetching featured photos:', photoError);
+      logError('Error fetching featured photos', photoError)
     } else {
-      featuredPhotos = fetchedPhotos || [];
-      console.log(`fetchProposalsByIds: Fetched ${featuredPhotos.length} photos from listing_photo table`);
+      featuredPhotos = fetchedPhotos || []
+      logInfo(`Fetched ${featuredPhotos.length} photos from listing_photo table`)
     }
   }
 
   // Step 3.5: Fetch borough, neighborhood, and house rules names from lookup tables
-  const boroughIds = [...new Set((listings || []).map(l => l['Location - Borough']).filter(Boolean))];
-  const hoodIds = [...new Set((listings || []).map(l => l['Location - Hood']).filter(Boolean))];
+  const boroughIds = extractUniqueIds(listings || [], 'Location - Borough')
+  const hoodIds = extractUniqueIds(listings || [], 'Location - Hood')
 
   // Collect all house rule IDs from all proposals
-  // House Rules field is stored as a JSON string array: "[\"id1\", \"id2\"]"
   const allHouseRuleIds = [...new Set(
     validProposals
-      .flatMap(p => {
-        const houseRulesRaw = p['House Rules'];
-        if (!houseRulesRaw) return [];
-        // Parse JSON string if needed
-        if (typeof houseRulesRaw === 'string') {
-          try {
-            return JSON.parse(houseRulesRaw);
-          } catch (e) {
-            console.warn('fetchProposalsByIds: Failed to parse House Rules JSON:', e);
-            return [];
-          }
-        }
-        // Already an array
-        if (Array.isArray(houseRulesRaw)) return houseRulesRaw;
-        return [];
-      })
+      .flatMap(p => parseJsonArray(p['House Rules']))
       .filter(Boolean)
-  )];
+  )]
 
-  console.log(`fetchProposalsByIds: Fetching ${boroughIds.length} boroughs, ${hoodIds.length} neighborhoods, ${allHouseRuleIds.length} house rules`);
+  logInfo(`Fetching ${boroughIds.length} boroughs, ${hoodIds.length} neighborhoods, ${allHouseRuleIds.length} house rules`)
 
-  let boroughs = [];
-  let hoods = [];
+  let boroughs = []
+  let hoods = []
 
   if (boroughIds.length > 0) {
     const { data: boroughsData, error: boroughError } = await supabase
       .schema('reference_table')
       .from('zat_geo_borough_toplevel')
       .select('_id, "Display Borough"')
-      .in('_id', boroughIds);
+      .in('_id', boroughIds)
 
     if (!boroughError) {
-      boroughs = boroughsData || [];
-      console.log(`fetchProposalsByIds: Fetched ${boroughs.length} boroughs`);
+      boroughs = boroughsData || []
+      logInfo(`Fetched ${boroughs.length} boroughs`)
     }
   }
 
@@ -297,38 +420,37 @@ export async function fetchProposalsByIds(proposalIds) {
       .schema('reference_table')
       .from('zat_geo_hood_mediumlevel')
       .select('_id, "Display"')
-      .in('_id', hoodIds);
+      .in('_id', hoodIds)
 
     if (!hoodError) {
-      hoods = hoodsData || [];
-      console.log(`fetchProposalsByIds: Fetched ${hoods.length} neighborhoods`);
+      hoods = hoodsData || []
+      logInfo(`Fetched ${hoods.length} neighborhoods`)
     }
   }
 
   // Step 3.6: Fetch house rules names from lookup table
-  let houseRules = [];
+  let houseRules = []
   if (allHouseRuleIds.length > 0) {
     const { data: houseRulesData, error: houseRulesError } = await supabase
       .schema('reference_table')
       .from('zat_features_houserule')
       .select('_id, "Name"')
-      .in('_id', allHouseRuleIds);
+      .in('_id', allHouseRuleIds)
 
     if (!houseRulesError) {
-      houseRules = houseRulesData || [];
-      console.log(`fetchProposalsByIds: Fetched ${houseRules.length} house rules`);
+      houseRules = houseRulesData || []
+      logInfo(`Fetched ${houseRules.length} house rules`)
     } else {
-      console.error('fetchProposalsByIds: Error fetching house rules:', houseRulesError);
+      logError('Error fetching house rules', houseRulesError)
     }
   }
 
   // Step 4: Extract unique host user IDs from listings
-  // After migration, "Host User" contains user._id directly
-  const hostUserIds = [...new Set((listings || []).map(l => l['Host User']).filter(Boolean))];
+  const hostUserIds = extractUniqueIds(listings || [], 'Host User')
 
-  console.log(`fetchProposalsByIds: Fetching ${hostUserIds.length} unique hosts`);
+  logInfo(`Fetching ${hostUserIds.length} unique hosts`)
 
-  let hosts = [];
+  let hosts = []
   if (hostUserIds.length > 0) {
     const { data: hostsData, error: hostError } = await supabase
       .from('user')
@@ -343,22 +465,22 @@ export async function fetchProposalsByIds(proposalIds) {
         "Verify - Phone",
         "user verified?"
       `)
-      .in('_id', hostUserIds);
+      .in('_id', hostUserIds)
 
     if (hostError) {
-      console.error('fetchProposalsByIds: Error fetching hosts:', hostError);
+      logError('Error fetching hosts', hostError)
     } else {
-      hosts = hostsData || [];
-      console.log(`fetchProposalsByIds: Fetched ${hosts.length} hosts`);
+      hosts = hostsData || []
+      logInfo(`Fetched ${hosts.length} hosts`)
     }
   }
 
   // Step 5.5: Extract unique guest IDs from proposals and fetch guest user data
-  const guestIds = [...new Set(validProposals.map(p => p.Guest).filter(Boolean))];
+  const guestIds = extractUniqueIds(validProposals, 'Guest')
 
-  console.log(`fetchProposalsByIds: Fetching ${guestIds.length} unique guests`);
+  logInfo(`Fetching ${guestIds.length} unique guests`)
 
-  let guests = [];
+  let guests = []
   if (guestIds.length > 0) {
     const { data: guestsData, error: guestError } = await supabase
       .from('user')
@@ -374,21 +496,21 @@ export async function fetchProposalsByIds(proposalIds) {
         "user verified?",
         "ID documents submitted?"
       `)
-      .in('_id', guestIds);
+      .in('_id', guestIds)
 
     if (guestError) {
-      console.error('fetchProposalsByIds: Error fetching guests:', guestError);
+      logError('Error fetching guests', guestError)
     } else {
-      guests = guestsData || [];
-      console.log(`fetchProposalsByIds: Fetched ${guests.length} guests`);
+      guests = guestsData || []
+      logInfo(`Fetched ${guests.length} guests`)
     }
   }
 
   // Step 6: Fetch virtual meetings for all proposals
-  console.log(`fetchProposalsByIds: Fetching virtual meetings for ${validProposals.length} proposals`);
+  logInfo(`Fetching virtual meetings for ${validProposals.length} proposals`)
 
-  const proposalIdsForVM = validProposals.map(p => p._id).filter(Boolean);
-  let virtualMeetings = [];
+  const proposalIdsForVM = extractUniqueIds(validProposals, '_id')
+  let virtualMeetings = []
 
   if (proposalIdsForVM.length > 0) {
     const { data: vmData, error: vmError } = await supabase
@@ -405,69 +527,46 @@ export async function fetchProposalsByIds(proposalIds) {
         "host name",
         "proposal"
       `)
-      .in('proposal', proposalIdsForVM);
+      .in('proposal', proposalIdsForVM)
 
     if (vmError) {
-      console.error('fetchProposalsByIds: Error fetching virtual meetings:', vmError);
+      logError('Error fetching virtual meetings', vmError)
     } else {
-      virtualMeetings = vmData || [];
-      console.log(`fetchProposalsByIds: Fetched ${virtualMeetings.length} virtual meetings`);
+      virtualMeetings = vmData || []
+      logInfo(`Fetched ${virtualMeetings.length} virtual meetings`)
     }
   }
 
-  // Create virtual meeting lookup map
-  const vmMap = new Map(virtualMeetings.map(vm => [vm.proposal, vm]));
-
   // Step 7: Create lookup maps for efficient joining
-  const listingMap = new Map((listings || []).map(l => [l._id, l]));
-  // Key hosts by their _id (Host User column now contains user._id directly)
-  const hostMap = new Map(hosts.map(h => [h._id, h]));
-  // Key guests by their _id field
-  const guestMap = new Map(guests.map(g => [g._id, g]));
-  // Key boroughs and hoods by their _id
-  const boroughMap = new Map(boroughs.map(b => [b._id, b['Display Borough']]));
-  const hoodMap = new Map(hoods.map(h => [h._id, h['Display']]));
-  // Key featured photos by their Listing ID (merge embedded + fetched photos)
+  const vmMap = buildLookupMap(virtualMeetings, vm => vm.proposal)
+  const listingMap = buildLookupMap(listings || [], l => l._id)
+  const hostMap = buildLookupMap(hosts, h => h._id)
+  const guestMap = buildLookupMap(guests, g => g._id)
+  const boroughMap = buildLookupMap(boroughs, b => b._id, b => b['Display Borough'])
+  const hoodMap = buildLookupMap(hoods, h => h._id, h => h['Display'])
+  const houseRulesMap = buildLookupMap(houseRules, r => r._id, r => r.Name)
+
+  // Merge embedded + fetched photos
   const featuredPhotoMap = new Map([
     ...embeddedPhotoMap.entries(),
     ...(featuredPhotos || []).map(p => [p.Listing, p.Photo])
-  ]);
-  // Key house rules by their _id to get names
-  const houseRulesMap = new Map(houseRules.map(r => [r._id, r.Name]));
+  ])
 
   // Step 8: Manually join the data
   const enrichedProposals = validProposals.map((proposal) => {
-    const listing = listingMap.get(proposal.Listing);
-    // Lookup host by Host User ID from listing (contains user._id directly)
-    const host = listing ? hostMap.get(listing['Host User']) : null;
-    // Lookup guest by proposal's Guest field
-    const guest = guestMap.get(proposal.Guest);
-    // Lookup borough and hood names
-    const boroughName = listing ? boroughMap.get(listing['Location - Borough']) : null;
-    const hoodName = listing ? hoodMap.get(listing['Location - Hood']) : null;
-    // Lookup featured photo URL
-    const featuredPhotoUrl = listing ? featuredPhotoMap.get(listing._id) : null;
-    // Lookup virtual meeting
-    const virtualMeeting = vmMap.get(proposal._id) || null;
+    const listing = listingMap.get(proposal.Listing)
+    const host = listing ? hostMap.get(listing['Host User']) : null
+    const guest = guestMap.get(proposal.Guest)
+    const boroughName = listing ? boroughMap.get(listing['Location - Borough']) : null
+    const hoodName = listing ? hoodMap.get(listing['Location - Hood']) : null
+    const featuredPhotoUrl = listing ? featuredPhotoMap.get(listing._id) : null
+    const virtualMeeting = vmMap.get(proposal._id) || null
 
-    // Resolve house rules IDs to names (from proposal, not listing)
-    // House Rules field is stored as a JSON string array: "[\"id1\", \"id2\"]"
-    let proposalHouseRuleIds = [];
-    const houseRulesRaw = proposal['House Rules'];
-    if (houseRulesRaw) {
-      if (typeof houseRulesRaw === 'string') {
-        try {
-          proposalHouseRuleIds = JSON.parse(houseRulesRaw);
-        } catch (e) {
-          proposalHouseRuleIds = [];
-        }
-      } else if (Array.isArray(houseRulesRaw)) {
-        proposalHouseRuleIds = houseRulesRaw;
-      }
-    }
+    // Resolve house rules IDs to names
+    const proposalHouseRuleIds = parseJsonArray(proposal['House Rules'])
     const houseRulesResolved = proposalHouseRuleIds
       .map(id => houseRulesMap.get(id))
-      .filter(Boolean);
+      .filter(Boolean)
 
     return {
       ...proposal,
@@ -482,11 +581,11 @@ export async function fetchProposalsByIds(proposalIds) {
       guest: guest || null,
       virtualMeeting,
       houseRules: houseRulesResolved
-    };
-  });
+    }
+  })
 
-  console.log(`fetchProposalsByIds: Successfully enriched ${enrichedProposals.length} proposals with listing and host data`);
-  return enrichedProposals;
+  logInfo(`Successfully enriched ${enrichedProposals.length} proposals with listing and host data`)
+  return enrichedProposals
 }
 
 /**
@@ -495,64 +594,85 @@ export async function fetchProposalsByIds(proposalIds) {
  *
  * User ID comes from secure storage (session), NOT from URL.
  * This ensures users can only view their own proposals.
- *
+ * @effectful
  * @returns {Promise<{user: Object, proposals: Array, selectedProposal: Object|null}>}
  */
 export async function fetchUserProposalsFromUrl() {
   // Step 1: Get user ID from authenticated session (NOT URL)
-  const userId = getUserIdFromSession();
-  if (!userId) {
-    throw new Error('NOT_AUTHENTICATED');
+  const userId = getUserIdFromSession()
+  if (isNullish(userId)) {
+    throw new Error('NOT_AUTHENTICATED')
   }
 
   // Step 2: Fetch user data with Proposals List
-  const user = await fetchUserWithProposalList(userId);
+  const user = await fetchUserWithProposalList(userId)
 
   // Step 3: Extract proposal IDs from user's Proposals List
-  const proposalIds = extractProposalIds(user);
+  const proposalIds = extractProposalIds(user)
 
   // Handle case where user has no proposals
-  if (proposalIds.length === 0) {
-    console.log('fetchUserProposalsFromUrl: User has no proposal IDs in their Proposals List');
-    return {
-      user,
-      proposals: [],
-      selectedProposal: null
-    };
+  if (!isNonEmptyArray(proposalIds)) {
+    logInfo('User has no proposal IDs in their Proposals List')
+    return buildEmptyResult(user)
   }
 
   // Step 4: Fetch proposals by those specific IDs
-  const proposals = await fetchProposalsByIds(proposalIds);
+  const proposals = await fetchProposalsByIds(proposalIds)
 
-  if (proposals.length === 0) {
-    console.log('fetchUserProposalsFromUrl: No valid proposals found (all IDs may be orphaned)');
-    return {
-      user,
-      proposals: [],
-      selectedProposal: null
-    };
+  if (!isNonEmptyArray(proposals)) {
+    logInfo('No valid proposals found (all IDs may be orphaned)')
+    return buildEmptyResult(user)
   }
 
   // Step 5: Check for preselected proposal
-  const preselectedId = getProposalIdFromQuery();
-  let selectedProposal = null;
+  const preselectedId = getProposalIdFromQuery()
+  let selectedProposal = null
 
   if (preselectedId) {
-    selectedProposal = proposals.find(p => p._id === preselectedId);
+    selectedProposal = proposals.find(p => p._id === preselectedId)
     if (!selectedProposal) {
-      console.warn(`fetchUserProposalsFromUrl: Preselected proposal ${preselectedId} not found, defaulting to first`);
-      selectedProposal = proposals[0] || null;
+      logWarning(`Preselected proposal ${preselectedId} not found, defaulting to first`)
+      selectedProposal = proposals[0] || null
     } else {
-      console.log('fetchUserProposalsFromUrl: Using preselected proposal:', preselectedId);
+      logInfo('Using preselected proposal', preselectedId)
     }
   } else {
-    selectedProposal = proposals[0] || null;
-    console.log('fetchUserProposalsFromUrl: Defaulting to first proposal');
+    selectedProposal = proposals[0] || null
+    logInfo('Defaulting to first proposal')
   }
 
-  return {
+  return Object.freeze({
     user,
     proposals,
     selectedProposal
-  };
+  })
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  CANCELLED_BY_GUEST_STATUS,
+
+  // Predicates
+  isNullish,
+  isNonEmptyArray,
+  isValidProposal,
+  isEmbeddedPhoto,
+
+  // Pure helpers
+  extractUniqueIds,
+  parseJsonArray,
+  extractPhotosFromField,
+  normalizePhotoUrl,
+  extractFeaturedPhotoUrl,
+  buildLookupMap,
+  buildEmptyResult
+})
