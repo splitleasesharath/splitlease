@@ -21,6 +21,8 @@ export default function LocalJourneySection({ onExploreRentals }) {
 
     if (!section || !track) return;
 
+    const isMobile = window.innerWidth <= 768;
+
     const getScrollAmount = () => {
       const trackWidth = track.scrollWidth;
       return -(trackWidth - window.innerWidth + 100);
@@ -77,42 +79,78 @@ export default function LocalJourneySection({ onExploreRentals }) {
 
       // Individual card animations - scale and opacity based on position
       cards.forEach((card, index) => {
-        // Initial state for cards (will animate in as they enter viewport center)
-        gsap.set(card, {
-          scale: 0.85,
-          opacity: 0.5,
-          rotateY: -5
-        });
+        if (isMobile) {
+          // Mobile: Simpler animation - cards start small, scale UP when active
+          gsap.set(card, {
+            scale: 0.9,
+            opacity: 0.7
+          });
 
-        // Animate each card as it enters the "active zone" (center of screen)
-        gsap.to(card, {
-          scale: 1,
-          opacity: 1,
-          rotateY: 0,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: card,
-            containerAnimation: scrollTween,
-            start: "left 80%",
-            end: "left 40%",
-            scrub: 0.5
-          }
-        });
+          // Scale up when entering center zone
+          gsap.to(card, {
+            scale: 1.05,
+            opacity: 1,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: card,
+              containerAnimation: scrollTween,
+              start: "left 70%",
+              end: "left 50%",
+              scrub: 0.3
+            }
+          });
 
-        // Animate card out as it leaves the active zone
-        gsap.to(card, {
-          scale: 0.9,
-          opacity: 0.6,
-          rotateY: 5,
-          ease: "power2.in",
-          scrollTrigger: {
-            trigger: card,
-            containerAnimation: scrollTween,
-            start: "left 30%",
-            end: "left -10%",
-            scrub: 0.5
-          }
-        });
+          // Scale back down when leaving center
+          gsap.to(card, {
+            scale: 0.9,
+            opacity: 0.7,
+            ease: "power2.in",
+            scrollTrigger: {
+              trigger: card,
+              containerAnimation: scrollTween,
+              start: "left 40%",
+              end: "left 10%",
+              scrub: 0.3
+            }
+          });
+        } else {
+          // Desktop: Original animation with rotation
+          gsap.set(card, {
+            scale: 0.85,
+            opacity: 0.5,
+            rotateY: -5
+          });
+
+          // Animate each card as it enters the "active zone" (center of screen)
+          gsap.to(card, {
+            scale: 1,
+            opacity: 1,
+            rotateY: 0,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: card,
+              containerAnimation: scrollTween,
+              start: "left 80%",
+              end: "left 40%",
+              scrub: 0.5
+            }
+          });
+
+          // Animate card out as it leaves the active zone
+          gsap.to(card, {
+            scale: 0.9,
+            opacity: 0.6,
+            rotateY: 5,
+            ease: "power2.in",
+            scrollTrigger: {
+              trigger: card,
+              containerAnimation: scrollTween,
+              start: "left 30%",
+              end: "left -10%",
+              scrub: 0.5
+            }
+          });
+        }
       });
 
     }, section);
