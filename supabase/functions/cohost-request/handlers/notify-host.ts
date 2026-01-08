@@ -5,103 +5,118 @@
  * Sends email notification to host about assigned co-host and scheduled meeting.
  * Called after admin claims a co-host request via Slack.
  *
+ * FP PATTERN: Separates pure data builders from effectful operations
+ * All data transformations are pure with @pure annotations
+ * All API/database operations are explicit with @effectful annotations
+ *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
+ *
+ * @module cohost-request/handlers/notify-host
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[cohost-request:notify-host]'
+const SCHEDULED_STATUS = 'google meet scheduled'
+const RESEND_API_URL = 'https://api.resend.com/emails'
+const EMAIL_FROM = 'Split Lease <noreply@splitlease.com>'
+const TIMEZONE = 'America/New_York'
 
 // ─────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────
 
 interface NotifyHostInput {
-  requestId: string;
-  hostEmail: string;
-  hostName: string;
-  cohostName: string;
-  meetingDateTime: string;
-  googleMeetLink?: string;
+  readonly requestId: string;
+  readonly hostEmail: string;
+  readonly hostName: string;
+  readonly cohostName: string;
+  readonly meetingDateTime: string;
+  readonly googleMeetLink?: string;
 }
 
 interface NotifyHostResponse {
-  success: boolean;
-  message: string;
+  readonly success: boolean;
+  readonly message: string;
+}
+
+interface ParsedDateTime {
+  readonly formattedDate: string;
+  readonly formattedTime: string;
 }
 
 // ─────────────────────────────────────────────────────────────
-// Handler
+// Pure Predicates
 // ─────────────────────────────────────────────────────────────
 
 /**
- * Handle notify-host action
- *
- * Steps:
- * 1. Format meeting date/time for display
- * 2. Send email notification to host
- * 3. Update request status to "google meet scheduled"
+ * Check if string is a valid ISO date
+ * @pure
  */
-export async function handleNotifyHost(
-  payload: Record<string, unknown>,
-  supabase: SupabaseClient
-): Promise<NotifyHostResponse> {
-  const input = payload as unknown as NotifyHostInput;
+const isValidIsoDate = (dateStr: string): boolean =>
+  !isNaN(new Date(dateStr).getTime())
 
-  console.log(`[cohost-request:notify-host] Processing notification for request: ${input.requestId}`);
-  console.log(`[cohost-request:notify-host] Host: ${input.hostName} (${input.hostEmail})`);
-  console.log(`[cohost-request:notify-host] Co-Host: ${input.cohostName}`);
+// ─────────────────────────────────────────────────────────────
+// Pure Data Builders
+// ─────────────────────────────────────────────────────────────
 
-  // ================================================
-  // FORMAT MEETING DATE/TIME
-  // ================================================
+/**
+ * Parse and format meeting date/time
+ * @pure
+ */
+const parseMeetingDateTime = (meetingDateTime: string): ParsedDateTime => {
+  const meetingDate = new Date(meetingDateTime);
 
-  // meetingDateTime can be:
-  // 1. ISO timestamp (from custom date/time picker): "2024-12-23T14:00:00-05:00"
-  // 2. Display text (from preferred times): "Monday, December 23, 2024 at 02:00 PM EST"
-
-  let formattedDate: string;
-  let formattedTime: string;
-
-  const meetingDate = new Date(input.meetingDateTime);
-
-  if (!isNaN(meetingDate.getTime())) {
-    // Valid ISO date - format for display
-    formattedDate = meetingDate.toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'America/New_York'
-    });
-
-    formattedTime = meetingDate.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-      timeZone: 'America/New_York'
-    });
-  } else {
-    // Display text - use as-is (already formatted, includes EST)
-    // Parse "Monday, December 23, 2024 at 02:00 PM EST" into date and time parts
-    const parts = input.meetingDateTime.split(' at ');
-    if (parts.length === 2) {
-      formattedDate = parts[0].trim();
-      formattedTime = parts[1].replace(' EST', '').trim();
-    } else {
-      // Fallback: use the whole string
-      formattedDate = input.meetingDateTime;
-      formattedTime = '';
-    }
+  if (isValidIsoDate(meetingDateTime)) {
+    return {
+      formattedDate: meetingDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: TIMEZONE
+      }),
+      formattedTime: meetingDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: TIMEZONE
+      })
+    };
   }
 
-  console.log(`[cohost-request:notify-host] Meeting: ${formattedDate}${formattedTime ? ` at ${formattedTime} EST` : ''}`);
+  // Display text format: "Monday, December 23, 2024 at 02:00 PM EST"
+  const parts = meetingDateTime.split(' at ');
+  if (parts.length === 2) {
+    return {
+      formattedDate: parts[0].trim(),
+      formattedTime: parts[1].replace(' EST', '').trim()
+    };
+  }
 
-  // ================================================
-  // BUILD EMAIL CONTENT
-  // ================================================
+  // Fallback
+  return {
+    formattedDate: meetingDateTime,
+    formattedTime: ''
+  };
+}
 
-  const emailSubject = `Your Co-Host Session is Scheduled - ${formattedDate}`;
+/**
+ * Build email subject
+ * @pure
+ */
+const buildEmailSubject = (formattedDate: string): string =>
+  `Your Co-Host Session is Scheduled - ${formattedDate}`
 
-  const emailHtml = `
+/**
+ * Build email HTML content
+ * @pure
+ */
+const buildEmailHtml = (input: NotifyHostInput, parsed: ParsedDateTime): string => `
     <!DOCTYPE html>
     <html>
     <head>
@@ -126,12 +141,12 @@ export async function handleNotifyHost(
           </tr>
           <tr>
             <td style="padding: 8px 0; font-weight: bold;">Date:</td>
-            <td style="padding: 8px 0;">${formattedDate}</td>
+            <td style="padding: 8px 0;">${parsed.formattedDate}</td>
           </tr>
-          ${formattedTime ? `
+          ${parsed.formattedTime ? `
           <tr>
             <td style="padding: 8px 0; font-weight: bold;">Time:</td>
-            <td style="padding: 8px 0;">${formattedTime} EST</td>
+            <td style="padding: 8px 0;">${parsed.formattedTime} EST</td>
           </tr>
           ` : ''}
           ${input.googleMeetLink ? `
@@ -175,9 +190,13 @@ export async function handleNotifyHost(
       </p>
     </body>
     </html>
-  `;
+  `
 
-  const emailText = `
+/**
+ * Build email plain text content
+ * @pure
+ */
+const buildEmailText = (input: NotifyHostInput, parsed: ParsedDateTime): string => `
 Your Co-Host Session is Confirmed!
 
 Hi ${input.hostName || 'there'},
@@ -187,8 +206,8 @@ Great news! Your co-host request has been assigned and your virtual meeting is s
 MEETING DETAILS
 ---------------
 Co-Host: ${input.cohostName}
-Date: ${formattedDate}
-${formattedTime ? `Time: ${formattedTime} EST` : ''}
+Date: ${parsed.formattedDate}
+${parsed.formattedTime ? `Time: ${parsed.formattedTime} EST` : ''}
 ${input.googleMeetLink ? `Join: ${input.googleMeetLink}` : ''}
 
 Your co-host will help guide you through the hosting process and answer any questions you may have about listing your space on Split Lease.
@@ -199,77 +218,197 @@ Best,
 The Split Lease Team
 
 Request ID: ${input.requestId}
-  `.trim();
+  `.trim()
+
+/**
+ * Build success response
+ * @pure
+ */
+const buildSuccessResponse = (requestId: string): NotifyHostResponse =>
+  Object.freeze({
+    success: true,
+    message: `Notification processed for request ${requestId}`
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Email Operations
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Send email via Resend API
+ * @effectful - External API call (non-blocking)
+ */
+const sendEmailViaResend = async (
+  apiKey: string,
+  to: string,
+  subject: string,
+  html: string,
+  text: string
+): Promise<void> => {
+  try {
+    const response = await fetch(RESEND_API_URL, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: EMAIL_FROM,
+        to,
+        subject,
+        html,
+        text
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error(`${LOG_PREFIX} Resend error:`, result);
+    } else {
+      console.log(`${LOG_PREFIX} Email sent successfully, id: ${result.id}`);
+    }
+  } catch (error) {
+    console.error(`${LOG_PREFIX} Failed to send email:`, error);
+  }
+}
+
+/**
+ * Log email content for manual sending
+ * @effectful - Console output
+ */
+const logEmailForManualSending = (
+  to: string,
+  subject: string,
+  text: string
+): void => {
+  console.warn(`${LOG_PREFIX} RESEND_API_KEY not configured`);
+  console.log(`${LOG_PREFIX} Email content for manual sending:`);
+  console.log(`To: ${to}`);
+  console.log(`Subject: ${subject}`);
+  console.log(`Body:\n${text}`);
+}
+
+// ─────────────────────────────────────────────────────────────
+// Database Operations
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Update request status to scheduled
+ * @effectful - Database write operation (non-blocking)
+ */
+const updateRequestStatus = async (
+  supabase: SupabaseClient,
+  requestId: string
+): Promise<void> => {
+  const { error } = await supabase
+    .from('co_hostrequest')
+    .update({
+      "Status - Co-Host Request": SCHEDULED_STATUS,
+      "Modified Date": new Date().toISOString()
+    })
+    .eq('_id', requestId);
+
+  if (error) {
+    console.error(`${LOG_PREFIX} Status update failed:`, error);
+  } else {
+    console.log(`${LOG_PREFIX} Status updated to "${SCHEDULED_STATUS}"`);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Handle notify-host action
+ * @effectful - Orchestrates email and database operations
+ *
+ * Steps:
+ * 1. Format meeting date/time for display
+ * 2. Send email notification to host
+ * 3. Update request status to "google meet scheduled"
+ */
+export async function handleNotifyHost(
+  payload: Record<string, unknown>,
+  supabase: SupabaseClient
+): Promise<NotifyHostResponse> {
+  const input = payload as unknown as NotifyHostInput;
+
+  console.log(`${LOG_PREFIX} Processing notification for request: ${input.requestId}`);
+  console.log(`${LOG_PREFIX} Host: ${input.hostName} (${input.hostEmail})`);
+  console.log(`${LOG_PREFIX} Co-Host: ${input.cohostName}`);
+
+  // ================================================
+  // FORMAT MEETING DATE/TIME
+  // ================================================
+
+  const parsed = parseMeetingDateTime(input.meetingDateTime);
+  console.log(`${LOG_PREFIX} Meeting: ${parsed.formattedDate}${parsed.formattedTime ? ` at ${parsed.formattedTime} EST` : ''}`);
+
+  // ================================================
+  // BUILD EMAIL CONTENT
+  // ================================================
+
+  const subject = buildEmailSubject(parsed.formattedDate);
+  const html = buildEmailHtml(input, parsed);
+  const text = buildEmailText(input, parsed);
 
   // ================================================
   // SEND EMAIL
   // ================================================
 
-  // Check for Resend API key
   const resendApiKey = Deno.env.get('RESEND_API_KEY');
 
   if (resendApiKey) {
-    // Send via Resend
-    console.log(`[cohost-request:notify-host] Sending email via Resend to: ${input.hostEmail}`);
-
-    try {
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${resendApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          from: 'Split Lease <noreply@splitlease.com>',
-          to: input.hostEmail,
-          subject: emailSubject,
-          html: emailHtml,
-          text: emailText
-        })
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        console.error(`[cohost-request:notify-host] Resend error:`, result);
-        // Don't throw - log and continue to update status
-      } else {
-        console.log(`[cohost-request:notify-host] Email sent successfully, id: ${result.id}`);
-      }
-    } catch (error) {
-      console.error(`[cohost-request:notify-host] Failed to send email:`, error);
-      // Don't throw - log and continue to update status
-    }
+    console.log(`${LOG_PREFIX} Sending email via Resend to: ${input.hostEmail}`);
+    await sendEmailViaResend(resendApiKey, input.hostEmail, subject, html, text);
   } else {
-    // No email service configured - log for manual follow-up
-    console.warn('[cohost-request:notify-host] RESEND_API_KEY not configured');
-    console.log('[cohost-request:notify-host] Email content for manual sending:');
-    console.log(`To: ${input.hostEmail}`);
-    console.log(`Subject: ${emailSubject}`);
-    console.log(`Body:\n${emailText}`);
+    logEmailForManualSending(input.hostEmail, subject, text);
   }
 
   // ================================================
   // UPDATE REQUEST STATUS
   // ================================================
 
-  const { error: updateError } = await supabase
-    .from('co_hostrequest')
-    .update({
-      "Status - Co-Host Request": "google meet scheduled",
-      "Modified Date": new Date().toISOString()
-    })
-    .eq('_id', input.requestId);
+  await updateRequestStatus(supabase, input.requestId);
 
-  if (updateError) {
-    console.error(`[cohost-request:notify-host] Status update failed:`, updateError);
-    // Don't throw - notification was the primary goal
-  } else {
-    console.log(`[cohost-request:notify-host] Status updated to "google meet scheduled"`);
-  }
-
-  return {
-    success: true,
-    message: `Notification processed for request ${input.requestId}`
-  };
+  return buildSuccessResponse(input.requestId);
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  SCHEDULED_STATUS,
+  RESEND_API_URL,
+  EMAIL_FROM,
+  TIMEZONE,
+
+  // Pure Predicates
+  isValidIsoDate,
+
+  // Pure Data Builders
+  parseMeetingDateTime,
+  buildEmailSubject,
+  buildEmailHtml,
+  buildEmailText,
+  buildSuccessResponse,
+
+  // Email Operations
+  sendEmailViaResend,
+  logEmailForManualSending,
+
+  // Database Operations
+  updateRequestStatus,
+
+  // Main Handler
+  handleNotifyHost,
+})

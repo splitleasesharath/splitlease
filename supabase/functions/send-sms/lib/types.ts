@@ -3,53 +3,75 @@
  * Split Lease
  *
  * Direct Twilio proxy - no templates, just forward to/from/body
+ *
+ * FP PATTERN: All interfaces use readonly modifiers for immutability
+ *
+ * @module send-sms/lib/types
  */
 
-// Request payload for send action
+// ─────────────────────────────────────────────────────────────
+// Request Types
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Request payload for send action
+ */
 export interface SendSmsPayload {
-  to: string;     // Recipient phone in E.164 format (+15551234567)
-  from: string;   // Sender phone in E.164 format
-  body: string;   // SMS message content
+  readonly to: string;     // Recipient phone in E.164 format (+15551234567)
+  readonly from: string;   // Sender phone in E.164 format
+  readonly body: string;   // SMS message content
 }
 
-// Twilio API response wrapper
+// ─────────────────────────────────────────────────────────────
+// Twilio API Types
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Twilio API response wrapper
+ */
 export interface TwilioResponse {
-  statusCode: number;
-  body?: TwilioMessageResponse | TwilioErrorResponse | string;
+  readonly statusCode: number;
+  readonly body?: TwilioMessageResponse | TwilioErrorResponse | string;
 }
 
-// Successful Twilio message response
+/**
+ * Successful Twilio message response
+ */
 export interface TwilioMessageResponse {
-  sid: string;                    // Message SID (unique identifier)
-  date_created: string;
-  date_updated: string;
-  date_sent: string | null;
-  account_sid: string;
-  to: string;
-  from: string;
-  messaging_service_sid: string | null;
-  body: string;
-  status: TwilioMessageStatus;
-  num_segments: string;
-  num_media: string;
-  direction: string;
-  api_version: string;
-  price: string | null;
-  price_unit: string;
-  error_code: string | null;
-  error_message: string | null;
-  uri: string;
+  readonly sid: string;                    // Message SID (unique identifier)
+  readonly date_created: string;
+  readonly date_updated: string;
+  readonly date_sent: string | null;
+  readonly account_sid: string;
+  readonly to: string;
+  readonly from: string;
+  readonly messaging_service_sid: string | null;
+  readonly body: string;
+  readonly status: TwilioMessageStatus;
+  readonly num_segments: string;
+  readonly num_media: string;
+  readonly direction: string;
+  readonly api_version: string;
+  readonly price: string | null;
+  readonly price_unit: string;
+  readonly error_code: string | null;
+  readonly error_message: string | null;
+  readonly uri: string;
 }
 
-// Twilio error response
+/**
+ * Twilio error response
+ */
 export interface TwilioErrorResponse {
-  code: number;
-  message: string;
-  more_info: string;
-  status: number;
+  readonly code: number;
+  readonly message: string;
+  readonly more_info: string;
+  readonly status: number;
 }
 
-// Twilio message status values
+/**
+ * Twilio message status values
+ */
 export type TwilioMessageStatus =
   | 'queued'
   | 'sending'
@@ -58,11 +80,17 @@ export type TwilioMessageStatus =
   | 'undelivered'
   | 'failed';
 
-// Result from send action
+// ─────────────────────────────────────────────────────────────
+// Response Types
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Result from send action
+ */
 export interface SendSmsResult {
-  message_sid?: string;
-  to: string;
-  from: string;
-  status: 'queued' | 'failed';
-  sent_at: string;
+  readonly message_sid?: string;
+  readonly to: string;
+  readonly from: string;
+  readonly status: 'queued' | 'failed';
+  readonly sent_at: string;
 }

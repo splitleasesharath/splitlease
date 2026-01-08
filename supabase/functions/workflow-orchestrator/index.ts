@@ -16,6 +16,12 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { createErrorCollector } from "../_shared/slack.ts";
 import type { WorkflowStep, QueueMessage } from "./lib/types.ts";
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[orchestrator]'
+
 Deno.serve(async (req: Request) => {
     if (req.method === "OPTIONS") {
         return new Response("ok", { headers: corsHeaders });
@@ -268,6 +274,7 @@ function interpolateTemplate(
 
 /**
  * Get nested value from object using dot notation
+ * @pure
  */
 function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
     return path.split(".").reduce((current: unknown, key: string) => {
@@ -277,3 +284,23 @@ function getNestedValue(obj: Record<string, unknown>, path: string): unknown {
         return undefined;
     }, obj);
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+    // Constants
+    LOG_PREFIX,
+
+    // Step Execution
+    executeStep,
+
+    // Template Interpolation (Pure)
+    interpolateTemplate,
+    getNestedValue,
+})

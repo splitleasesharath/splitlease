@@ -6,109 +6,133 @@
  * Returns null if user has no rental application.
  *
  * SUPABASE ONLY: This handler does NOT interact with Bubble
+ *
+ * FP PATTERN: Separates pure data builders from effectful database operations
+ * All data transformations are pure with @pure annotations
+ * All database operations are explicit with @effectful annotations
+ *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
+ *
+ * @module rental-application/handlers/get
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ValidationError } from "../../_shared/errors.ts";
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[RentalApp:get]'
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
 interface RentalApplicationResponse {
-  _id: string;
-  name: string;
-  email: string;
-  DOB: string | null;
-  "phone number": string | null;
-  "permanent address": { address: string } | null;
-  "apartment number": string | null;
-  "length resided": string | null;
-  renting: boolean;
-  "employment status": string | null;
-  "employer name": string | null;
-  "employer phone number": string | null;
-  "job title": string | null;
-  "Monthly Income": number | null;
-  "business legal name": string | null;
-  "year business was created?": number | null;
-  "state business registered": string | null;
-  "occupants list": Array<{ id: string; name: string; relationship: string }> | null;
-  pets: boolean;
-  smoking: boolean;
-  parking: boolean;
-  references: string[] | null;
-  signature: string | null;
-  "signature (text)": string | null;
-  submitted: boolean;
-  "percentage % done": number | null;
+  readonly _id: string;
+  readonly name: string;
+  readonly email: string;
+  readonly DOB: string | null;
+  readonly "phone number": string | null;
+  readonly "permanent address": { readonly address: string } | null;
+  readonly "apartment number": string | null;
+  readonly "length resided": string | null;
+  readonly renting: boolean;
+  readonly "employment status": string | null;
+  readonly "employer name": string | null;
+  readonly "employer phone number": string | null;
+  readonly "job title": string | null;
+  readonly "Monthly Income": number | null;
+  readonly "business legal name": string | null;
+  readonly "year business was created?": number | null;
+  readonly "state business registered": string | null;
+  readonly "occupants list": ReadonlyArray<{ readonly id: string; readonly name: string; readonly relationship: string }> | null;
+  readonly pets: boolean;
+  readonly smoking: boolean;
+  readonly parking: boolean;
+  readonly references: readonly string[] | null;
+  readonly signature: string | null;
+  readonly "signature (text)": string | null;
+  readonly submitted: boolean;
+  readonly "percentage % done": number | null;
   // File URL fields
-  "proof of employment": string | null;
-  "alternate guarantee": string | null;
-  "credit score": string | null;
-  "State ID - Front": string | null;
-  "State ID - Back": string | null;
-  "government ID": string | null;
+  readonly "proof of employment": string | null;
+  readonly "alternate guarantee": string | null;
+  readonly "credit score": string | null;
+  readonly "State ID - Front": string | null;
+  readonly "State ID - Back": string | null;
+  readonly "government ID": string | null;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Pure Predicates
+// ─────────────────────────────────────────────────────────────
+
 /**
- * Handle rental application fetch
- *
- * @param payload - Optional payload (not used currently)
- * @param supabase - Supabase client (admin)
- * @param userId - The user's ID (either Supabase UUID or Bubble _id)
- * @returns The rental application data or null if none exists
+ * Check if user ID is a Supabase UUID
+ * @pure
  */
-export async function handleGet(
-  _payload: Record<string, unknown>,
+const isSupabaseUUID = (userId: string): boolean =>
+  userId.includes('-') && userId.length === 36
+
+// ─────────────────────────────────────────────────────────────
+// Database Query Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch user data by Supabase UUID
+ * @effectful - Database read operation
+ */
+const fetchUserBySupabaseId = async (
   supabase: SupabaseClient,
-  userId: string
-): Promise<RentalApplicationResponse | null> {
-  console.log(`[RentalApp:get] Fetching rental application for user: ${userId}`);
+  supabaseUserId: string
+): Promise<{ _id: string; "Rental Application": string | null } | null> => {
+  const { data, error } = await supabase
+    .from('user')
+    .select('_id, "Rental Application"')
+    .eq('supabase_user_id', supabaseUserId)
+    .single();
 
-  // Detect if userId is a UUID (Supabase Auth) or Bubble ID (alphanumeric)
-  const isSupabaseUUID = userId.includes('-') && userId.length === 36;
-
-  let userData;
-  let userError;
-
-  if (isSupabaseUUID) {
-    // Supabase Auth user - look up by supabase_user_id
-    console.log(`[RentalApp:get] Looking up user by supabase_user_id: ${userId}`);
-    const result = await supabase
-      .from('user')
-      .select('_id, "Rental Application"')
-      .eq('supabase_user_id', userId)
-      .single();
-    userData = result.data;
-    userError = result.error;
-  } else {
-    // Legacy Bubble user - look up by _id directly
-    console.log(`[RentalApp:get] Looking up user by _id (legacy): ${userId}`);
-    const result = await supabase
-      .from('user')
-      .select('_id, "Rental Application"')
-      .eq('_id', userId)
-      .single();
-    userData = result.data;
-    userError = result.error;
-  }
-
-  if (userError || !userData) {
-    console.error(`[RentalApp:get] User fetch failed:`, userError);
-    throw new ValidationError(`User not found for ID: ${userId}`);
-  }
-
-  console.log(`[RentalApp:get] Found user: ${userData._id}`);
-
-  // Check if user has a rental application
-  const rentalAppId = userData["Rental Application"];
-  if (!rentalAppId) {
-    console.log(`[RentalApp:get] User has no rental application`);
+  if (error || !data) {
+    console.error(`${LOG_PREFIX} User fetch by supabase_user_id failed:`, error);
     return null;
   }
 
-  console.log(`[RentalApp:get] Fetching rental application: ${rentalAppId}`);
+  return data;
+}
 
-  // Fetch the rental application
-  const { data: rentalApp, error: rentalAppError } = await supabase
+/**
+ * Fetch user data by Bubble ID
+ * @effectful - Database read operation
+ */
+const fetchUserByBubbleId = async (
+  supabase: SupabaseClient,
+  bubbleId: string
+): Promise<{ _id: string; "Rental Application": string | null } | null> => {
+  const { data, error } = await supabase
+    .from('user')
+    .select('_id, "Rental Application"')
+    .eq('_id', bubbleId)
+    .single();
+
+  if (error || !data) {
+    console.error(`${LOG_PREFIX} User fetch by _id failed:`, error);
+    return null;
+  }
+
+  return data;
+}
+
+/**
+ * Fetch rental application by ID
+ * @effectful - Database read operation
+ */
+const fetchRentalApplication = async (
+  supabase: SupabaseClient,
+  rentalAppId: string
+): Promise<RentalApplicationResponse | null> => {
+  const { data, error } = await supabase
     .from('rentalapplication')
     .select(`
       _id,
@@ -147,18 +171,96 @@ export async function handleGet(
     .eq('_id', rentalAppId)
     .single();
 
-  if (rentalAppError) {
-    console.error(`[RentalApp:get] Rental application fetch failed:`, rentalAppError);
-    // Return null instead of throwing - the reference might be stale
+  if (error) {
+    console.error(`${LOG_PREFIX} Rental application fetch failed:`, error);
     return null;
   }
+
+  return data as RentalApplicationResponse | null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Handle rental application fetch
+ * @effectful - Orchestrates database operations
+ *
+ * @param _payload - Optional payload (not used currently)
+ * @param supabase - Supabase client (admin)
+ * @param userId - The user's ID (either Supabase UUID or Bubble _id)
+ * @returns The rental application data or null if none exists
+ */
+export async function handleGet(
+  _payload: Record<string, unknown>,
+  supabase: SupabaseClient,
+  userId: string
+): Promise<RentalApplicationResponse | null> {
+  console.log(`${LOG_PREFIX} Fetching rental application for user: ${userId}`);
+
+  // ================================================
+  // FETCH USER DATA
+  // ================================================
+
+  const userData = isSupabaseUUID(userId)
+    ? await fetchUserBySupabaseId(supabase, userId)
+    : await fetchUserByBubbleId(supabase, userId);
+
+  if (!userData) {
+    throw new ValidationError(`User not found for ID: ${userId}`);
+  }
+
+  console.log(`${LOG_PREFIX} Found user: ${userData._id}`);
+
+  // ================================================
+  // CHECK FOR RENTAL APPLICATION
+  // ================================================
+
+  const rentalAppId = userData["Rental Application"];
+  if (!rentalAppId) {
+    console.log(`${LOG_PREFIX} User has no rental application`);
+    return null;
+  }
+
+  console.log(`${LOG_PREFIX} Fetching rental application: ${rentalAppId}`);
+
+  // ================================================
+  // FETCH RENTAL APPLICATION
+  // ================================================
+
+  const rentalApp = await fetchRentalApplication(supabase, rentalAppId);
 
   if (!rentalApp) {
-    console.log(`[RentalApp:get] Rental application not found: ${rentalAppId}`);
+    console.log(`${LOG_PREFIX} Rental application not found: ${rentalAppId}`);
     return null;
   }
 
-  console.log(`[RentalApp:get] Successfully fetched rental application`);
+  console.log(`${LOG_PREFIX} Successfully fetched rental application`);
 
-  return rentalApp as RentalApplicationResponse;
+  return rentalApp;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+
+  // Pure Predicates
+  isSupabaseUUID,
+
+  // Database Query Helpers
+  fetchUserBySupabaseId,
+  fetchUserByBubbleId,
+  fetchRentalApplication,
+
+  // Main Handler
+  handleGet,
+})

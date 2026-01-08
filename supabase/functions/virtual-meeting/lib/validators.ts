@@ -3,12 +3,46 @@
  * Split Lease - Supabase Edge Functions
  *
  * NO FALLBACK PRINCIPLE: Validation failures throw errors immediately
+ *
+ * FP PATTERN: All validation functions are pure predicates with explicit inputs
+ * Each function validates input and throws on failure (fail-fast pattern)
+ *
+ * @module virtual-meeting/lib/validators
  */
 
 import { ValidationError } from "../../_shared/errors.ts";
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const REQUIRED_TIME_SLOTS = 3
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if a value is a non-empty string
+ * @pure
+ */
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.length > 0
+
+/**
+ * Check if a date string is valid ISO 8601
+ * @pure
+ */
+const isValidDateString = (dateStr: string): boolean =>
+  !isNaN(new Date(dateStr).getTime())
+
+// ─────────────────────────────────────────────────────────────
+// Create Validation
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Validate the create virtual meeting input payload
+ * @pure (except throws)
  * @param input - The raw input to validate
  * @throws ValidationError if input is invalid
  */
@@ -25,8 +59,8 @@ export function validateCreateVirtualMeetingInput(input: unknown): void {
   }
 
   // Exactly 3 time slots required
-  if (data.timesSelected.length !== 3) {
-    throw new ValidationError('Exactly 3 time slots are required');
+  if (data.timesSelected.length !== REQUIRED_TIME_SLOTS) {
+    throw new ValidationError(`Exactly ${REQUIRED_TIME_SLOTS} time slots are required`);
   }
 
   // Validate each time slot is a valid ISO 8601 string
@@ -54,8 +88,13 @@ export function validateCreateVirtualMeetingInput(input: unknown): void {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Delete Validation
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Validate the delete virtual meeting input payload
+ * @pure (except throws)
  * @param input - The raw input to validate
  * @throws ValidationError if input is invalid
  */
@@ -71,8 +110,13 @@ export function validateDeleteVirtualMeetingInput(input: unknown): void {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Accept Validation
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Validate the accept virtual meeting input payload
+ * @pure (except throws)
  * @param input - The raw input to validate
  * @throws ValidationError if input is invalid
  */
@@ -98,8 +142,13 @@ export function validateAcceptVirtualMeetingInput(input: unknown): void {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Decline Validation
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Validate the decline virtual meeting input payload
+ * @pure (except throws)
  * @param input - The raw input to validate
  * @throws ValidationError if input is invalid
  */
@@ -111,8 +160,13 @@ export function validateDeclineVirtualMeetingInput(input: unknown): void {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Calendar Invite Validation
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Validate the send calendar invite input payload
+ * @pure (except throws)
  * @param input - The raw input to validate
  * @throws ValidationError if input is invalid
  */
@@ -128,8 +182,13 @@ export function validateSendCalendarInviteInput(input: unknown): void {
   }
 }
 
+// ─────────────────────────────────────────────────────────────
+// Notify Participants Validation
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Validate the notify participants input payload
+ * @pure (except throws)
  * @param input - The raw input to validate
  * @throws ValidationError if input is invalid
  */
@@ -148,3 +207,28 @@ export function validateNotifyParticipantsInput(input: unknown): void {
     throw new ValidationError('virtualMeetingId is required and must be a string');
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  REQUIRED_TIME_SLOTS,
+
+  // Validation Predicates
+  isNonEmptyString,
+  isValidDateString,
+
+  // Validation Functions
+  validateCreateVirtualMeetingInput,
+  validateDeleteVirtualMeetingInput,
+  validateAcceptVirtualMeetingInput,
+  validateDeclineVirtualMeetingInput,
+  validateSendCalendarInviteInput,
+  validateNotifyParticipantsInput,
+})

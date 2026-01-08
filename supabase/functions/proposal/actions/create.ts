@@ -5,6 +5,12 @@
  * Implements Bubble CORE-create_proposal-NEW workflow (Steps 1-7, 13-23)
  *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
+ *
+ * FP PATTERN: Separates pure data builders from effectful database operations
+ * All data transformations are pure with @pure annotations
+ * All database operations are explicit with @effectful annotations
+ *
+ * @module proposal/actions/create
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -21,6 +27,7 @@ import {
   UserContext,
   RentalType,
   ReservationSpan,
+  CompensationResult,
 } from "../lib/types.ts";
 import { validateCreateProposalInput } from "../lib/validators.ts";
 import {
@@ -38,287 +45,154 @@ import {
   addUserListingFavorite,
 } from "../../_shared/junctionHelpers.ts";
 
-// ID generation is now done via RPC: generate_bubble_id()
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[proposal:create]'
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface RelatedData {
+  readonly listing: ListingData;
+  readonly guest: GuestData;
+  readonly hostUser: HostUserData;
+  readonly hostAccount: HostAccountData;
+  readonly rentalApp: RentalApplicationData | null;
+}
+
+interface CalculatedValues {
+  readonly orderRanking: number;
+  readonly complementaryNights: readonly number[];
+  readonly compensation: CompensationResult;
+  readonly moveOutDate: Date;
+  readonly status: ProposalStatusName;
+  readonly rentalType: RentalType;
+  readonly nightsPerWeek: number;
+  readonly hostNightlyRate: number;
+}
+
+interface ProposalRecord {
+  readonly _id: string;
+  readonly [key: string]: unknown;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Builders
+// ─────────────────────────────────────────────────────────────
 
 /**
- * Handle create proposal request
- *
- * NOTE: Uses camelCase input to match frontend payload format
+ * Build history entry for proposal creation
+ * @pure
  */
-export async function handleCreate(
-  payload: Record<string, unknown>,
-  user: UserContext | null,
-  supabase: SupabaseClient
-): Promise<CreateProposalResponse> {
-  console.log(`[proposal:create] Starting create for user: ${user?.email || 'public'}`);
-
-  // ================================================
-  // VALIDATION
-  // ================================================
-
-  const input = payload as unknown as CreateProposalInput;
-  validateCreateProposalInput(input);
-
-  console.log(`[proposal:create] Validated input for listing: ${input.listingId}`);
-
-  // ================================================
-  // FETCH RELATED DATA
-  // ================================================
-
-  // Fetch Listing
-  const { data: listing, error: listingError } = await supabase
-    .from("listing")
-    .select(
-      `
-      _id,
-      "Host User",
-      "rental type",
-      "Features - House Rules",
-      "💰Cleaning Cost / Maintenance Fee",
-      "💰Damage Deposit",
-      "Weeks offered",
-      "Days Available (List of Days)",
-      "Nights Available (List of Nights) ",
-      "Location - Address",
-      "Location - slightly different address",
-      "💰Weekly Host Rate",
-      "💰Nightly Host Rate for 2 nights",
-      "💰Nightly Host Rate for 3 nights",
-      "💰Nightly Host Rate for 4 nights",
-      "💰Nightly Host Rate for 5 nights",
-      "💰Nightly Host Rate for 7 nights",
-      "💰Monthly Host Rate",
-      "Deleted"
-    `
-    )
-    .eq("_id", input.listingId)
-    .single();
-
-  if (listingError || !listing) {
-    console.error(`[proposal:create] Listing fetch failed:`, listingError);
-    throw new ValidationError(`Listing not found: ${input.listingId}`);
-  }
-
-  // Check if listing is soft-deleted
-  if ((listing as Record<string, unknown>).Deleted === true) {
-    console.error(`[proposal:create] Listing is soft-deleted: ${input.listingId}`);
-    throw new ValidationError(`Cannot create proposal for deleted listing: ${input.listingId}`);
-  }
-
-  const listingData = listing as unknown as ListingData;
-  console.log(`[proposal:create] Found listing, host user: ${listingData["Host User"]}`);
-
-  // Fetch Guest User
-  const { data: guest, error: guestError } = await supabase
-    .from("user")
-    .select(
-      `
-      _id,
-      email,
-      "Rental Application",
-      "Proposals List",
-      "Favorited Listings",
-      "About Me / Bio",
-      "need for Space",
-      "special needs",
-      "Tasks Completed"
-    `
-    )
-    .eq("_id", input.guestId)
-    .single();
-
-  if (guestError || !guest) {
-    console.error(`[proposal:create] Guest fetch failed:`, guestError);
-    throw new ValidationError(`Guest not found: ${input.guestId}`);
-  }
-
-  const guestData = guest as unknown as GuestData;
-  console.log(`[proposal:create] Found guest: ${guestData.email}`);
-
-  // ================================================
-  // EARLY PROFILE SAVE: Save bio/need_for_space BEFORE proposal creation
-  // This ensures user-entered data persists even if proposal creation fails
-  // ================================================
-  const tasksCompletedEarly = parseJsonArray<string>(guestData["Tasks Completed"], "Tasks Completed");
-  const earlyProfileUpdates: Record<string, unknown> = {};
-
-  if (!guestData["About Me / Bio"] && !tasksCompletedEarly.includes("bio") && input.aboutMe) {
-    earlyProfileUpdates["About Me / Bio"] = input.aboutMe;
-    console.log(`[proposal:create] Will save bio early (before proposal creation)`);
-  }
-  if (!guestData["need for Space"] && !tasksCompletedEarly.includes("need_for_space") && input.needForSpace) {
-    earlyProfileUpdates["need for Space"] = input.needForSpace;
-    console.log(`[proposal:create] Will save need_for_space early (before proposal creation)`);
-  }
-  if (!guestData["special needs"] && !tasksCompletedEarly.includes("special_needs") && input.specialNeeds) {
-    earlyProfileUpdates["special needs"] = input.specialNeeds;
-    console.log(`[proposal:create] Will save special_needs early (before proposal creation)`);
-  }
-
-  // Save profile data immediately if there's anything to save
-  if (Object.keys(earlyProfileUpdates).length > 0) {
-    earlyProfileUpdates["Modified Date"] = new Date().toISOString();
-    const { error: earlyUpdateError } = await supabase
-      .from("user")
-      .update(earlyProfileUpdates)
-      .eq("_id", input.guestId);
-
-    if (earlyUpdateError) {
-      console.error(`[proposal:create] Early profile save failed:`, earlyUpdateError);
-      // Non-blocking - continue with proposal creation
-    } else {
-      console.log(`[proposal:create] Early profile save succeeded - data will persist even if proposal fails`);
-      // Update local guestData to reflect the save (so we don't try to save again later)
-      if (earlyProfileUpdates["About Me / Bio"]) {
-        (guestData as Record<string, unknown>)["About Me / Bio"] = earlyProfileUpdates["About Me / Bio"];
-      }
-      if (earlyProfileUpdates["need for Space"]) {
-        (guestData as Record<string, unknown>)["need for Space"] = earlyProfileUpdates["need for Space"];
-      }
-      if (earlyProfileUpdates["special needs"]) {
-        (guestData as Record<string, unknown>)["special needs"] = earlyProfileUpdates["special needs"];
-      }
-    }
-  }
-
-  // Fetch Host User directly (Host User column now contains user._id)
-  const { data: hostUser, error: hostUserError } = await supabase
-    .from("user")
-    .select(`_id, email, "Proposals List"`)
-    .eq("_id", listingData["Host User"])
-    .single();
-
-  if (hostUserError || !hostUser) {
-    console.error(`[proposal:create] Host user fetch failed:`, hostUserError);
-    throw new ValidationError(`Host user not found: ${listingData["Host User"]}`);
-  }
-
-  const hostUserData = hostUser as unknown as HostUserData;
-  // hostAccountData maintained for backwards compatibility with downstream code
-  const hostAccountData = { _id: hostUserData._id, User: hostUserData._id } as HostAccountData;
-  console.log(`[proposal:create] Found host: ${hostUserData.email}`);
-
-  // Fetch Rental Application (if exists)
-  let rentalApp: RentalApplicationData | null = null;
-  if (guestData["Rental Application"]) {
-    const { data: app } = await supabase
-      .from("rentalapplication")
-      .select("_id, submitted")
-      .eq("_id", guestData["Rental Application"])
-      .single();
-    rentalApp = app as RentalApplicationData | null;
-    console.log(`[proposal:create] Rental app found, submitted: ${rentalApp?.submitted}`);
-  }
-
-  // ================================================
-  // CALCULATIONS
-  // ================================================
-
-  // Calculate order ranking
-  // After migration, "Proposals List" is a native text[] array - no parsing needed
-  const existingProposals: string[] = guestData["Proposals List"] || [];
-  const orderRanking = calculateOrderRanking(existingProposals.length);
-
-  // Calculate complementary nights (Step 4)
-  const complementaryNights = calculateComplementaryNights(
-    listingData["Nights Available (List of Nights) "] || [],
-    input.nightsSelected
-  );
-
-  // Calculate compensation (Steps 13-18)
-  // IMPORTANT: Use the HOST's nightly rate from listing pricing tiers, NOT the guest-facing price
-  const rentalType = ((listingData["rental type"] || "nightly").toLowerCase()) as RentalType;
-  const nightsPerWeek = input.nightsSelected.length;
-
-  // Get the host's nightly rate based on the number of nights selected
-  // This matches Bubble's "host compensation" parameter which comes from listing pricing
-  const hostNightlyRate = getNightlyRateForNights(listingData, nightsPerWeek);
-
-  console.log(`[proposal:create] Host pricing calculation:`, {
-    rentalType,
-    nightsPerWeek,
-    hostNightlyRate,
-    weeklyRate: listingData["💰Weekly Host Rate"],
-    monthlyRate: listingData["💰Monthly Host Rate"],
-    guestProposalPrice: input.proposalPrice
-  });
-
-  const compensation = calculateCompensation(
-    rentalType,
-    (input.reservationSpan || "other") as ReservationSpan,
-    nightsPerWeek,
-    listingData["💰Weekly Host Rate"] || 0,
-    hostNightlyRate,
-    input.reservationSpanWeeks,
-    listingData["💰Monthly Host Rate"] || 0
-  );
-
-  // Calculate move-out date
-  const moveOutDate = calculateMoveOutDate(
-    new Date(input.moveInStartRange),
-    input.reservationSpanWeeks,
-    input.nightsSelected.length
-  );
-
-  // Determine initial status (Steps 5-7)
-  const status = determineInitialStatus(
-    !!rentalApp,
-    rentalApp?.submitted ?? false,
-    input.status as ProposalStatusName | undefined
-  );
-
-  console.log(`[proposal:create] Calculated status: ${status}, compensation:`, {
-    hostCompensationPerNight: compensation.host_compensation_per_night,
-    totalCompensation: compensation.total_compensation,
-    fourWeekRent: compensation.four_week_rent,
-    fourWeekCompensation: compensation.four_week_compensation,
-    durationMonths: compensation.duration_months
-  });
-
-  // ================================================
-  // STEP 1: CREATE PROPOSAL RECORD
-  // ================================================
-
-  // Generate Bubble-compatible ID using RPC
-  const { data: proposalId, error: idError } = await supabase.rpc('generate_bubble_id');
-  if (idError || !proposalId) {
-    console.error(`[proposal:create] ID generation failed:`, idError);
-    throw new SupabaseSyncError('Failed to generate proposal ID');
-  }
-
-  console.log(`[proposal:create] Generated proposal ID: ${proposalId}`);
-
-  const now = new Date().toISOString();
-  const historyEntry = `Proposal created on ${new Date().toLocaleString("en-US", {
+const buildHistoryEntry = (): string =>
+  `Proposal created on ${new Date().toLocaleString("en-US", {
     month: "2-digit",
     day: "2-digit",
     year: "2-digit",
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
-  })}`;
+  })}`
+
+/**
+ * Calculate all derived values from input and related data
+ * @pure
+ */
+const calculateDerivedValues = (
+  input: CreateProposalInput,
+  relatedData: RelatedData
+): CalculatedValues => {
+  const { listing, guest, rentalApp } = relatedData
+
+  // Calculate order ranking
+  const existingProposals: readonly string[] = guest["Proposals List"] || []
+  const orderRanking = calculateOrderRanking(existingProposals.length)
+
+  // Calculate complementary nights (Step 4)
+  const complementaryNights = calculateComplementaryNights(
+    listing["Nights Available (List of Nights) "] || [],
+    input.nightsSelected
+  )
+
+  // Calculate compensation (Steps 13-18)
+  const rentalType = ((listing["rental type"] || "nightly").toLowerCase()) as RentalType
+  const nightsPerWeek = input.nightsSelected.length
+  const hostNightlyRate = getNightlyRateForNights(listing, nightsPerWeek)
+
+  const compensation = calculateCompensation(
+    rentalType,
+    (input.reservationSpan || "other") as ReservationSpan,
+    nightsPerWeek,
+    listing["💰Weekly Host Rate"] || 0,
+    hostNightlyRate,
+    input.reservationSpanWeeks,
+    listing["💰Monthly Host Rate"] || 0
+  )
+
+  // Calculate move-out date
+  const moveOutDate = calculateMoveOutDate(
+    new Date(input.moveInStartRange),
+    input.reservationSpanWeeks,
+    input.nightsSelected.length
+  )
+
+  // Determine initial status (Steps 5-7)
+  const status = determineInitialStatus(
+    !!rentalApp,
+    rentalApp?.submitted ?? false,
+    input.status as ProposalStatusName | undefined
+  )
+
+  return Object.freeze({
+    orderRanking,
+    complementaryNights,
+    compensation,
+    moveOutDate,
+    status,
+    rentalType,
+    nightsPerWeek,
+    hostNightlyRate,
+  })
+}
+
+/**
+ * Build proposal data record from input and calculated values
+ * @pure
+ */
+const buildProposalData = (
+  proposalId: string,
+  input: CreateProposalInput,
+  relatedData: RelatedData,
+  calculated: CalculatedValues,
+  now: string
+): ProposalRecord => {
+  const { listing, guest, hostUser } = relatedData
+  const { compensation, complementaryNights, status, orderRanking, moveOutDate } = calculated
 
   // Default values for optional fields (tech-debt: should be collected from user)
-  const guestFlexibility = input.guestFlexibility || "Flexible";
-  const preferredGender = input.preferredGender || "any";
+  const guestFlexibility = input.guestFlexibility || "Flexible"
+  const preferredGender = input.preferredGender || "any"
+  const historyEntry = buildHistoryEntry()
 
-  const proposalData = {
+  return Object.freeze({
     _id: proposalId,
 
     // Core relationships
     Listing: input.listingId,
     Guest: input.guestId,
-    // Host User contains user._id directly
-    "Host User": hostUserData._id,
+    "Host User": hostUser._id,
     "Created By": input.guestId,
 
     // Guest info
-    "Guest email": guestData.email,
+    "Guest email": guest.email,
     "Guest flexibility": guestFlexibility,
     "preferred gender": preferredGender,
     "need for space": input.needForSpace || null,
-    about_yourself: input.aboutMe || null,        // snake_case column
-    special_needs: input.specialNeeds || null,    // snake_case column
+    about_yourself: input.aboutMe || null,
+    special_needs: input.specialNeeds || null,
     Comment: input.comment || null,
 
     // Dates
@@ -339,29 +213,27 @@ export async function handleCreate(
     "nights per week (num)": input.nightsSelected.length,
     "check in day": input.checkIn,
     "check out day": input.checkOut,
-    "Days Available": listingData["Days Available (List of Days)"],
+    "Days Available": listing["Days Available (List of Days)"],
     "Complementary Nights": complementaryNights,
 
     // Pricing
-    // CRITICAL: "host compensation" is the per-night HOST rate, not guest-facing price
-    // "Total Compensation" = host compensation per night * nights per week * weeks
     "proposal nightly price": input.proposalPrice,
     "4 week rent": input.fourWeekRent || compensation.four_week_rent,
     "Total Price for Reservation (guest)": input.estimatedBookingTotal,
     "Total Compensation (proposal - host)": compensation.total_compensation,
     "host compensation": compensation.host_compensation_per_night,
     "4 week compensation": input.fourWeekCompensation || compensation.four_week_compensation,
-    "cleaning fee": listingData["💰Cleaning Cost / Maintenance Fee"] || 0,
-    "damage deposit": listingData["💰Damage Deposit"] || 0,
+    "cleaning fee": listing["💰Cleaning Cost / Maintenance Fee"] || 0,
+    "damage deposit": listing["💰Damage Deposit"] || 0,
     "nightly price for map (text)": formatPriceForDisplay(input.proposalPrice),
 
     // From listing
-    "rental type": listingData["rental type"],
-    "House Rules": listingData["Features - House Rules"],
-    "week selection": listingData["Weeks offered"],
-    "hc house rules": listingData["Features - House Rules"],
-    "Location - Address": listingData["Location - Address"],
-    "Location - Address slightly different": listingData["Location - slightly different address"],
+    "rental type": listing["rental type"],
+    "House Rules": listing["Features - House Rules"],
+    "week selection": listing["Weeks offered"],
+    "hc house rules": listing["Features - House Rules"],
+    "Location - Address": listing["Location - Address"],
+    "Location - Address slightly different": listing["Location - slightly different address"],
 
     // Status & metadata
     Status: status,
@@ -371,159 +243,354 @@ export async function handleCreate(
     Deleted: false,
 
     // Related records
-    "rental application": guestData["Rental Application"],
-    "rental app requested": !!guestData["Rental Application"],  // NOT NULL boolean
-    "host email": hostUserData.email,
+    "rental application": guest["Rental Application"],
+    "rental app requested": !!guest["Rental Application"],
+    "host email": hostUser.email,
 
-    // Suggestion fields - NOTE: These columns don't exist yet in the proposal table
-    // TODO: Add these columns via migration if suggestion feature is needed
-    // "suggested reason (benefits)": input.suggestedReason || null,
-    // "origin proposal of this suggestion": input.originProposalId || null,
-    // "number of matches": input.numberOfMatches || null,
-
-    // Custom schedule description (user's freeform schedule request)
+    // Custom schedule description
     custom_schedule_description: input.customScheduleDescription || null,
 
     // Timestamps
     "Created Date": now,
     "Modified Date": now,
-  };
+  })
+}
 
-  console.log(`[proposal:create] Inserting proposal: ${proposalId}`);
+/**
+ * Build early profile updates for saving bio/need_for_space before proposal creation
+ * @pure
+ */
+const buildEarlyProfileUpdates = (
+  input: CreateProposalInput,
+  guest: GuestData,
+  tasksCompleted: readonly string[]
+): Readonly<Record<string, unknown>> => {
+  const updates: Record<string, unknown> = {}
 
-  const { error: insertError } = await supabase
-    .from("proposal")
-    .insert(proposalData);
-
-  if (insertError) {
-    console.error(`[proposal:create] Insert failed:`, insertError);
-    throw new SupabaseSyncError(`Failed to create proposal: ${insertError.message}`);
+  if (!guest["About Me / Bio"] && !tasksCompleted.includes("bio") && input.aboutMe) {
+    updates["About Me / Bio"] = input.aboutMe
+  }
+  if (!guest["need for Space"] && !tasksCompleted.includes("need_for_space") && input.needForSpace) {
+    updates["need for Space"] = input.needForSpace
+  }
+  if (!guest["special needs"] && !tasksCompleted.includes("special_needs") && input.specialNeeds) {
+    updates["special needs"] = input.specialNeeds
   }
 
-  console.log(`[proposal:create] Proposal created successfully`);
+  return Object.freeze(updates)
+}
 
-  // ================================================
-  // STEP 2: UPDATE GUEST USER
-  // ================================================
+/**
+ * Build guest user updates for Step 2
+ * @pure
+ */
+const buildGuestUpdates = (
+  input: CreateProposalInput,
+  guest: GuestData,
+  proposalId: string,
+  existingProposals: readonly string[],
+  now: string
+): Readonly<Record<string, unknown>> => {
+  const guestFlexibility = input.guestFlexibility || "Flexible"
+  const tasksCompleted = parseJsonArray<string>(guest["Tasks Completed"], "Tasks Completed")
+  const currentFavorites = parseJsonArray<string>(guest["Favorited Listings"], "Favorited Listings")
 
-  const guestUpdates: Record<string, unknown> = {
+  const updates: Record<string, unknown> = {
     "flexibility (last known)": guestFlexibility,
     "Recent Days Selected": input.daysSelected,
     "Modified Date": now,
-  };
-
-  // Add proposal to guest's list
-  const updatedGuestProposals = [...existingProposals, proposalId];
-  guestUpdates["Proposals List"] = updatedGuestProposals;
+    "Proposals List": [...existingProposals, proposalId],
+  }
 
   // Add listing to favorites (Step 2)
-  // CRITICAL: Parse JSONB arrays - Supabase can return as stringified JSON
-  const currentFavorites = parseJsonArray<string>(guestData["Favorited Listings"], "Favorited Listings");
   if (!currentFavorites.includes(input.listingId)) {
-    guestUpdates["Favorited Listings"] = [...currentFavorites, input.listingId];
+    updates["Favorited Listings"] = [...currentFavorites, input.listingId]
   }
 
   // Profile enrichment (Steps 20-22) - only if empty
-  // CRITICAL: Parse JSONB arrays - Supabase can return as stringified JSON
-  const tasksCompleted = parseJsonArray<string>(guestData["Tasks Completed"], "Tasks Completed");
-
-  if (!guestData["About Me / Bio"] && !tasksCompleted.includes("bio") && input.aboutMe) {
-    guestUpdates["About Me / Bio"] = input.aboutMe;
+  if (!guest["About Me / Bio"] && !tasksCompleted.includes("bio") && input.aboutMe) {
+    updates["About Me / Bio"] = input.aboutMe
   }
-  if (!guestData["need for Space"] && !tasksCompleted.includes("need_for_space") && input.needForSpace) {
-    guestUpdates["need for Space"] = input.needForSpace;
+  if (!guest["need for Space"] && !tasksCompleted.includes("need_for_space") && input.needForSpace) {
+    updates["need for Space"] = input.needForSpace
   }
-  if (!guestData["special needs"] && !tasksCompleted.includes("special_needs") && input.specialNeeds) {
-    guestUpdates["special needs"] = input.specialNeeds;
+  if (!guest["special needs"] && !tasksCompleted.includes("special_needs") && input.specialNeeds) {
+    updates["special needs"] = input.specialNeeds
   }
 
-  const { error: guestUpdateError } = await supabase
+  return Object.freeze(updates)
+}
+
+/**
+ * Build response object
+ * @pure
+ */
+const buildResponse = (
+  proposalId: string,
+  status: ProposalStatusName,
+  orderRanking: number,
+  input: CreateProposalInput,
+  hostId: string,
+  now: string
+): CreateProposalResponse =>
+  Object.freeze({
+    proposalId,
+    status,
+    orderRanking,
+    listingId: input.listingId,
+    guestId: input.guestId,
+    hostId,
+    createdAt: now,
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Database Query Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch listing from database
+ * @effectful - Database read operation
+ */
+const fetchListing = async (
+  supabase: SupabaseClient,
+  listingId: string
+): Promise<ListingData> => {
+  const { data: listing, error } = await supabase
+    .from("listing")
+    .select(`
+      _id,
+      "Host User",
+      "rental type",
+      "Features - House Rules",
+      "💰Cleaning Cost / Maintenance Fee",
+      "💰Damage Deposit",
+      "Weeks offered",
+      "Days Available (List of Days)",
+      "Nights Available (List of Nights) ",
+      "Location - Address",
+      "Location - slightly different address",
+      "💰Weekly Host Rate",
+      "💰Nightly Host Rate for 2 nights",
+      "💰Nightly Host Rate for 3 nights",
+      "💰Nightly Host Rate for 4 nights",
+      "💰Nightly Host Rate for 5 nights",
+      "💰Nightly Host Rate for 7 nights",
+      "💰Monthly Host Rate",
+      "Deleted"
+    `)
+    .eq("_id", listingId)
+    .single()
+
+  if (error || !listing) {
+    console.error(`${LOG_PREFIX} Listing fetch failed:`, error)
+    throw new ValidationError(`Listing not found: ${listingId}`)
+  }
+
+  if ((listing as Record<string, unknown>).Deleted === true) {
+    console.error(`${LOG_PREFIX} Listing is soft-deleted: ${listingId}`)
+    throw new ValidationError(`Cannot create proposal for deleted listing: ${listingId}`)
+  }
+
+  return listing as unknown as ListingData
+}
+
+/**
+ * Fetch guest user from database
+ * @effectful - Database read operation
+ */
+const fetchGuest = async (
+  supabase: SupabaseClient,
+  guestId: string
+): Promise<GuestData> => {
+  const { data: guest, error } = await supabase
     .from("user")
-    .update(guestUpdates)
-    .eq("_id", input.guestId);
+    .select(`
+      _id,
+      email,
+      "Rental Application",
+      "Proposals List",
+      "Favorited Listings",
+      "About Me / Bio",
+      "need for Space",
+      "special needs",
+      "Tasks Completed"
+    `)
+    .eq("_id", guestId)
+    .single()
 
-  if (guestUpdateError) {
-    console.error(`[proposal:create] Guest update failed:`, guestUpdateError);
+  if (error || !guest) {
+    console.error(`${LOG_PREFIX} Guest fetch failed:`, error)
+    throw new ValidationError(`Guest not found: ${guestId}`)
+  }
+
+  return guest as unknown as GuestData
+}
+
+/**
+ * Fetch host user from database
+ * @effectful - Database read operation
+ */
+const fetchHostUser = async (
+  supabase: SupabaseClient,
+  hostUserId: string
+): Promise<HostUserData> => {
+  const { data: hostUser, error } = await supabase
+    .from("user")
+    .select(`_id, email, "Proposals List"`)
+    .eq("_id", hostUserId)
+    .single()
+
+  if (error || !hostUser) {
+    console.error(`${LOG_PREFIX} Host user fetch failed:`, error)
+    throw new ValidationError(`Host user not found: ${hostUserId}`)
+  }
+
+  return hostUser as unknown as HostUserData
+}
+
+/**
+ * Fetch rental application from database
+ * @effectful - Database read operation
+ */
+const fetchRentalApp = async (
+  supabase: SupabaseClient,
+  rentalAppId: string | null
+): Promise<RentalApplicationData | null> => {
+  if (!rentalAppId) return null
+
+  const { data: app } = await supabase
+    .from("rentalapplication")
+    .select("_id, submitted")
+    .eq("_id", rentalAppId)
+    .single()
+
+  return app as RentalApplicationData | null
+}
+
+/**
+ * Generate proposal ID using RPC
+ * @effectful - Database RPC call
+ */
+const generateProposalId = async (supabase: SupabaseClient): Promise<string> => {
+  const { data: proposalId, error } = await supabase.rpc('generate_bubble_id')
+
+  if (error || !proposalId) {
+    console.error(`${LOG_PREFIX} ID generation failed:`, error)
+    throw new SupabaseSyncError('Failed to generate proposal ID')
+  }
+
+  return proposalId
+}
+
+/**
+ * Save early profile updates
+ * @effectful - Database write operation
+ */
+const saveEarlyProfileUpdates = async (
+  supabase: SupabaseClient,
+  guestId: string,
+  updates: Readonly<Record<string, unknown>>
+): Promise<void> => {
+  if (Object.keys(updates).length === 0) return
+
+  const updatesWithTimestamp = {
+    ...updates,
+    "Modified Date": new Date().toISOString(),
+  }
+
+  const { error } = await supabase
+    .from("user")
+    .update(updatesWithTimestamp)
+    .eq("_id", guestId)
+
+  if (error) {
+    console.error(`${LOG_PREFIX} Early profile save failed:`, error)
+    // Non-blocking - continue with proposal creation
+  } else {
+    console.log(`${LOG_PREFIX} Early profile save succeeded`)
+  }
+}
+
+/**
+ * Insert proposal into database
+ * @effectful - Database write operation
+ */
+const insertProposal = async (
+  supabase: SupabaseClient,
+  proposalData: ProposalRecord
+): Promise<void> => {
+  const { error } = await supabase
+    .from("proposal")
+    .insert(proposalData)
+
+  if (error) {
+    console.error(`${LOG_PREFIX} Insert failed:`, error)
+    throw new SupabaseSyncError(`Failed to create proposal: ${error.message}`)
+  }
+}
+
+/**
+ * Update guest user after proposal creation
+ * @effectful - Database write operation
+ */
+const updateGuestUser = async (
+  supabase: SupabaseClient,
+  guestId: string,
+  updates: Readonly<Record<string, unknown>>
+): Promise<void> => {
+  const { error } = await supabase
+    .from("user")
+    .update(updates)
+    .eq("_id", guestId)
+
+  if (error) {
+    console.error(`${LOG_PREFIX} Guest update failed:`, error)
     // Non-blocking - continue
   } else {
-    console.log(`[proposal:create] Guest user updated`);
+    console.log(`${LOG_PREFIX} Guest user updated`)
   }
+}
 
-  // ================================================
-  // STEP 2b: DUAL-WRITE TO JUNCTION TABLES (Guest)
-  // ================================================
-
-  // Add proposal to guest's junction table
-  await addUserProposal(supabase, input.guestId, proposalId, 'guest');
-
-  // Add listing to favorites junction table (if newly added)
-  if (!currentFavorites.includes(input.listingId)) {
-    await addUserListingFavorite(supabase, input.guestId, input.listingId);
-  }
-
-  // ================================================
-  // STEP 3: UPDATE HOST USER
-  // ================================================
-
-  // After migration, "Proposals List" is a native text[] array - no parsing needed
-  const hostProposals: string[] = hostUserData["Proposals List"] || [];
-
-  const { error: hostUpdateError } = await supabase
+/**
+ * Update host user after proposal creation
+ * @effectful - Database write operation
+ */
+const updateHostUser = async (
+  supabase: SupabaseClient,
+  hostId: string,
+  existingProposals: readonly string[],
+  proposalId: string,
+  now: string
+): Promise<void> => {
+  const { error } = await supabase
     .from("user")
     .update({
-      "Proposals List": [...hostProposals, proposalId],
+      "Proposals List": [...existingProposals, proposalId],
       "Modified Date": now,
     })
-    .eq("_id", hostAccountData.User);
+    .eq("_id", hostId)
 
-  if (hostUpdateError) {
-    console.error(`[proposal:create] Host update failed:`, hostUpdateError);
+  if (error) {
+    console.error(`${LOG_PREFIX} Host update failed:`, error)
     // Non-blocking - continue
   } else {
-    console.log(`[proposal:create] Host user updated`);
+    console.log(`${LOG_PREFIX} Host user updated`)
   }
+}
 
-  // ================================================
-  // STEP 3b: DUAL-WRITE TO JUNCTION TABLES (Host)
-  // ================================================
-
-  // Add proposal to host's junction table
-  await addUserProposal(supabase, hostAccountData.User, proposalId, 'host');
-
-  // ================================================
-  // TRIGGER ASYNC WORKFLOWS (Non-blocking)
-  // ================================================
-
-  // These are placeholder logs - actual async calls will be implemented in Phase 4
-  console.log(`[proposal:create] [ASYNC] Would trigger: proposal-communications`, {
-    proposalId: proposalId,
-    guestId: input.guestId,
-    hostId: hostAccountData.User,
-  });
-
-  console.log(`[proposal:create] [ASYNC] Would trigger: proposal-summary (ai-gateway)`, {
-    proposalId: proposalId,
-  });
-
-  console.log(`[proposal:create] [ASYNC] Would trigger: proposal-suggestions`, {
-    proposalId: proposalId,
-  });
-
-  // ================================================
-  // ENQUEUE BUBBLE SYNC (Supabase → Bubble via sync_queue)
-  // ================================================
-
-  // Enqueue sync item for the proposal creation only.
-  // The proposal record contains FK relationships (Guest, Host User, Listing)
-  // that establish the connections. We do NOT update user records' Proposals List
-  // via Data API - Bubble's Data API handles ONE record per call, and list fields
-  // like Proposals List are managed by Bubble's internal relationship system.
+/**
+ * Enqueue Bubble sync operations
+ * @effectful - Database write and HTTP request
+ */
+const enqueueBubbleSyncOperations = async (
+  supabase: SupabaseClient,
+  proposalId: string,
+  proposalData: ProposalRecord
+): Promise<void> => {
   try {
     await enqueueBubbleSync(supabase, {
       correlationId: proposalId,
-
       items: [
-        // CREATE proposal in Bubble - contains all FK relationships
         {
           sequence: 1,
           table: 'proposal',
@@ -532,31 +599,226 @@ export async function handleCreate(
           payload: proposalData,
         },
       ]
-    });
+    })
 
-    console.log(`[proposal:create] Bubble sync items enqueued (correlation: ${proposalId})`);
+    console.log(`${LOG_PREFIX} Bubble sync items enqueued (correlation: ${proposalId})`)
 
     // Trigger queue processing (fire and forget)
-    triggerQueueProcessing();
+    triggerQueueProcessing()
 
   } catch (syncError) {
     // Log but don't fail - items can be manually requeued if needed
-    console.error(`[proposal:create] Failed to enqueue Bubble sync (non-blocking):`, syncError);
+    console.error(`${LOG_PREFIX} Failed to enqueue Bubble sync (non-blocking):`, syncError)
   }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Handle create proposal request
+ * @effectful - Orchestrates multiple database operations
+ *
+ * NOTE: Uses camelCase input to match frontend payload format
+ */
+export async function handleCreate(
+  payload: Record<string, unknown>,
+  user: UserContext | null,
+  supabase: SupabaseClient
+): Promise<CreateProposalResponse> {
+  console.log(`${LOG_PREFIX} Starting create for user: ${user?.email || 'public'}`)
+
+  // ================================================
+  // VALIDATION
+  // ================================================
+
+  const input = payload as unknown as CreateProposalInput
+  validateCreateProposalInput(input)
+
+  console.log(`${LOG_PREFIX} Validated input for listing: ${input.listingId}`)
+
+  // ================================================
+  // FETCH RELATED DATA
+  // ================================================
+
+  const listing = await fetchListing(supabase, input.listingId)
+  console.log(`${LOG_PREFIX} Found listing, host user: ${listing["Host User"]}`)
+
+  const guest = await fetchGuest(supabase, input.guestId)
+  console.log(`${LOG_PREFIX} Found guest: ${guest.email}`)
+
+  // ================================================
+  // EARLY PROFILE SAVE
+  // ================================================
+
+  const tasksCompletedEarly = parseJsonArray<string>(guest["Tasks Completed"], "Tasks Completed")
+  const earlyProfileUpdates = buildEarlyProfileUpdates(input, guest, tasksCompletedEarly)
+
+  if (Object.keys(earlyProfileUpdates).length > 0) {
+    console.log(`${LOG_PREFIX} Saving profile data early (before proposal creation)`)
+    await saveEarlyProfileUpdates(supabase, input.guestId, earlyProfileUpdates)
+
+    // Update local guest data to reflect the save
+    if (earlyProfileUpdates["About Me / Bio"]) {
+      (guest as Record<string, unknown>)["About Me / Bio"] = earlyProfileUpdates["About Me / Bio"]
+    }
+    if (earlyProfileUpdates["need for Space"]) {
+      (guest as Record<string, unknown>)["need for Space"] = earlyProfileUpdates["need for Space"]
+    }
+    if (earlyProfileUpdates["special needs"]) {
+      (guest as Record<string, unknown>)["special needs"] = earlyProfileUpdates["special needs"]
+    }
+  }
+
+  const hostUser = await fetchHostUser(supabase, listing["Host User"])
+  const hostAccount: HostAccountData = { _id: hostUser._id, User: hostUser._id }
+  console.log(`${LOG_PREFIX} Found host: ${hostUser.email}`)
+
+  const rentalApp = await fetchRentalApp(supabase, guest["Rental Application"])
+  console.log(`${LOG_PREFIX} Rental app found, submitted: ${rentalApp?.submitted}`)
+
+  const relatedData: RelatedData = Object.freeze({
+    listing,
+    guest,
+    hostUser,
+    hostAccount,
+    rentalApp,
+  })
+
+  // ================================================
+  // CALCULATIONS
+  // ================================================
+
+  const calculated = calculateDerivedValues(input, relatedData)
+
+  console.log(`${LOG_PREFIX} Calculated status: ${calculated.status}, compensation:`, {
+    hostCompensationPerNight: calculated.compensation.host_compensation_per_night,
+    totalCompensation: calculated.compensation.total_compensation,
+    fourWeekRent: calculated.compensation.four_week_rent,
+    fourWeekCompensation: calculated.compensation.four_week_compensation,
+    durationMonths: calculated.compensation.duration_months
+  })
+
+  // ================================================
+  // CREATE PROPOSAL RECORD
+  // ================================================
+
+  const proposalId = await generateProposalId(supabase)
+  console.log(`${LOG_PREFIX} Generated proposal ID: ${proposalId}`)
+
+  const now = new Date().toISOString()
+  const proposalData = buildProposalData(proposalId, input, relatedData, calculated, now)
+
+  console.log(`${LOG_PREFIX} Inserting proposal: ${proposalId}`)
+  await insertProposal(supabase, proposalData)
+  console.log(`${LOG_PREFIX} Proposal created successfully`)
+
+  // ================================================
+  // UPDATE GUEST USER
+  // ================================================
+
+  const existingGuestProposals: readonly string[] = guest["Proposals List"] || []
+  const guestUpdates = buildGuestUpdates(input, guest, proposalId, existingGuestProposals, now)
+
+  await updateGuestUser(supabase, input.guestId, guestUpdates)
+
+  // ================================================
+  // DUAL-WRITE TO JUNCTION TABLES (Guest)
+  // ================================================
+
+  await addUserProposal(supabase, input.guestId, proposalId, 'guest')
+
+  const currentFavorites = parseJsonArray<string>(guest["Favorited Listings"], "Favorited Listings")
+  if (!currentFavorites.includes(input.listingId)) {
+    await addUserListingFavorite(supabase, input.guestId, input.listingId)
+  }
+
+  // ================================================
+  // UPDATE HOST USER
+  // ================================================
+
+  const hostProposals: readonly string[] = hostUser["Proposals List"] || []
+  await updateHostUser(supabase, hostAccount.User, hostProposals, proposalId, now)
+
+  // ================================================
+  // DUAL-WRITE TO JUNCTION TABLES (Host)
+  // ================================================
+
+  await addUserProposal(supabase, hostAccount.User, proposalId, 'host')
+
+  // ================================================
+  // TRIGGER ASYNC WORKFLOWS (Non-blocking)
+  // ================================================
+
+  console.log(`${LOG_PREFIX} [ASYNC] Would trigger: proposal-communications`, {
+    proposalId,
+    guestId: input.guestId,
+    hostId: hostAccount.User,
+  })
+
+  console.log(`${LOG_PREFIX} [ASYNC] Would trigger: proposal-summary (ai-gateway)`, {
+    proposalId,
+  })
+
+  console.log(`${LOG_PREFIX} [ASYNC] Would trigger: proposal-suggestions`, {
+    proposalId,
+  })
+
+  // ================================================
+  // ENQUEUE BUBBLE SYNC
+  // ================================================
+
+  await enqueueBubbleSyncOperations(supabase, proposalId, proposalData)
 
   // ================================================
   // RETURN RESPONSE
   // ================================================
 
-  console.log(`[proposal:create] Complete, returning response`);
+  console.log(`${LOG_PREFIX} Complete, returning response`)
 
-  return {
-    proposalId: proposalId,
-    status: status,
-    orderRanking: orderRanking,
-    listingId: input.listingId,
-    guestId: input.guestId,
-    hostId: hostAccountData.User,
-    createdAt: now,
-  };
+  return buildResponse(
+    proposalId,
+    calculated.status,
+    calculated.orderRanking,
+    input,
+    hostAccount.User,
+    now
+  )
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+
+  // Pure Data Builders
+  buildHistoryEntry,
+  calculateDerivedValues,
+  buildProposalData,
+  buildEarlyProfileUpdates,
+  buildGuestUpdates,
+  buildResponse,
+
+  // Database Query Helpers
+  fetchListing,
+  fetchGuest,
+  fetchHostUser,
+  fetchRentalApp,
+  generateProposalId,
+  saveEarlyProfileUpdates,
+  insertProposal,
+  updateGuestUser,
+  updateHostUser,
+  enqueueBubbleSyncOperations,
+
+  // Main Handler
+  handleCreate,
+})

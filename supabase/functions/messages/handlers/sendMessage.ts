@@ -8,6 +8,12 @@
  * - Updating thread's last message
  *
  * NO FALLBACK PRINCIPLE: Throws if message creation fails
+ *
+ * FP PATTERN: Separates pure data builders from effectful database operations
+ * All data transformations are pure with @pure annotations
+ * All database operations are explicit with @effectful annotations
+ *
+ * @module messages/handlers/sendMessage
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -21,107 +27,204 @@ import {
   findExistingThread
 } from '../../_shared/messagingHelpers.ts';
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[messages:sendMessage]'
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
 interface SendMessagePayload {
-  thread_id?: string;          // Optional if creating new thread
-  message_body: string;        // Required: Message content
+  readonly thread_id?: string;          // Optional if creating new thread
+  readonly message_body: string;        // Required: Message content
   // For new thread creation:
-  recipient_user_id?: string;  // Required if no thread_id
-  listing_id?: string;         // Optional: Associated listing
+  readonly recipient_user_id?: string;  // Required if no thread_id
+  readonly listing_id?: string;         // Optional: Associated listing
   // Message options:
-  splitbot?: boolean;          // Optional: Is Split Bot message
-  call_to_action?: string;     // Optional: CTA type
-  split_bot_warning?: string;  // Optional: Warning text
+  readonly splitbot?: boolean;          // Optional: Is Split Bot message
+  readonly call_to_action?: string;     // Optional: CTA type
+  readonly split_bot_warning?: string;  // Optional: Warning text
 }
 
 interface SendMessageResult {
-  success: boolean;
-  message_id: string;
-  thread_id: string;
-  is_new_thread: boolean;
-  timestamp: string;
+  readonly success: boolean;
+  readonly message_id: string;
+  readonly thread_id: string;
+  readonly is_new_thread: boolean;
+  readonly timestamp: string;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if user has valid email
+ * @pure
+ */
+const hasValidEmail = (user: User): user is User & { email: string } =>
+  typeof user.email === 'string' && user.email.length > 0
+
+/**
+ * Check if message body is valid
+ * @pure
+ */
+const isValidMessageBody = (body: string): boolean =>
+  body.trim().length > 0
+
+/**
+ * Check if payload has thread context
+ * @pure
+ */
+const hasThreadContext = (payload: SendMessagePayload): boolean =>
+  typeof payload.thread_id === 'string' || typeof payload.recipient_user_id === 'string'
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Builders
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build success response
+ * @pure
+ */
+const buildResponse = (
+  messageId: string,
+  threadId: string,
+  isNewThread: boolean
+): SendMessageResult =>
+  Object.freeze({
+    success: true,
+    message_id: messageId,
+    thread_id: threadId,
+    is_new_thread: isNewThread,
+    timestamp: new Date().toISOString(),
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Thread Resolution Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Find or create thread for message
+ * @effectful - Database operations
+ */
+const resolveThread = async (
+  supabase: SupabaseClient,
+  senderBubbleId: string,
+  recipientId: string,
+  listingId?: string
+): Promise<{ threadId: string; isNewThread: boolean }> => {
+  console.log(`${LOG_PREFIX} Looking for existing thread with recipient: ${recipientId}`)
+
+  // Check for existing thread (sender as guest, recipient as host)
+  let threadId = await findExistingThread(
+    supabase,
+    recipientId,  // host
+    senderBubbleId,  // guest
+    listingId
+  )
+
+  if (!threadId) {
+    // Also check reverse (sender as host, recipient as guest)
+    threadId = await findExistingThread(
+      supabase,
+      senderBubbleId,  // host
+      recipientId,  // guest
+      listingId
+    )
+  }
+
+  if (!threadId) {
+    // Create new thread (assume recipient is host, sender is guest)
+    console.log(`${LOG_PREFIX} Creating new thread...`)
+    threadId = await createThread(supabase, {
+      hostUserId: recipientId,
+      guestUserId: senderBubbleId,
+      listingId,
+      createdBy: senderBubbleId,
+    })
+    console.log(`${LOG_PREFIX} Created new thread: ${threadId}`)
+    return { threadId, isNewThread: true }
+  }
+
+  console.log(`${LOG_PREFIX} Found existing thread: ${threadId}`)
+  return { threadId, isNewThread: false }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Handle send_message action - NATIVE SUPABASE
  * No longer calls Bubble workflows - all operations are Supabase-native
+ * @effectful - Orchestrates database operations
  */
 export async function handleSendMessage(
   supabaseAdmin: SupabaseClient,
   payload: Record<string, unknown>,
   user: User
 ): Promise<SendMessageResult> {
-  console.log('[sendMessage] ========== SEND MESSAGE (NATIVE) ==========');
-  console.log('[sendMessage] User:', user.email);
+  console.log(`${LOG_PREFIX} ========== SEND MESSAGE (NATIVE) ==========`)
+  console.log(`${LOG_PREFIX} User:`, user.email)
 
-  // Validate required fields
-  const typedPayload = payload as unknown as SendMessagePayload;
-  validateRequiredFields(typedPayload, ['message_body']);
+  // ================================================
+  // VALIDATION
+  // ================================================
 
-  // Validate message body is not empty
-  if (!typedPayload.message_body.trim()) {
-    throw new ValidationError('Message body cannot be empty');
+  const typedPayload = payload as unknown as SendMessagePayload
+  validateRequiredFields(typedPayload, ['message_body'])
+
+  if (!isValidMessageBody(typedPayload.message_body)) {
+    throw new ValidationError('Message body cannot be empty')
   }
 
-  // Get sender's Bubble ID
-  if (!user.email) {
-    throw new ValidationError('Could not find user profile. Please try logging in again.');
+  if (!hasValidEmail(user)) {
+    throw new ValidationError('Could not find user profile. Please try logging in again.')
   }
 
-  const senderBubbleId = await getUserBubbleId(supabaseAdmin, user.email);
+  // ================================================
+  // FETCH SENDER
+  // ================================================
+
+  const senderBubbleId = await getUserBubbleId(supabaseAdmin, user.email)
   if (!senderBubbleId) {
-    throw new ValidationError('Could not find user profile. Please try logging in again.');
+    throw new ValidationError('Could not find user profile. Please try logging in again.')
   }
 
-  console.log('[sendMessage] Sender Bubble ID:', senderBubbleId);
+  console.log(`${LOG_PREFIX} Sender Bubble ID: ${senderBubbleId}`)
 
-  let threadId = typedPayload.thread_id;
-  let isNewThread = false;
+  // ================================================
+  // RESOLVE THREAD
+  // ================================================
 
-  // If no thread_id, we need to create or find a thread
+  let threadId = typedPayload.thread_id
+  let isNewThread = false
+
   if (!threadId) {
     if (!typedPayload.recipient_user_id) {
-      throw new ValidationError('Either thread_id or recipient_user_id is required');
+      throw new ValidationError('Either thread_id or recipient_user_id is required')
     }
 
-    const recipientId = typedPayload.recipient_user_id;
-    console.log('[sendMessage] Looking for existing thread with recipient:', recipientId);
-
-    // Check for existing thread (sender as guest, recipient as host)
-    threadId = await findExistingThread(
+    const resolved = await resolveThread(
       supabaseAdmin,
-      recipientId,  // host
-      senderBubbleId,  // guest
+      senderBubbleId,
+      typedPayload.recipient_user_id,
       typedPayload.listing_id
-    );
-
-    if (!threadId) {
-      // Also check reverse (sender as host, recipient as guest)
-      threadId = await findExistingThread(
-        supabaseAdmin,
-        senderBubbleId,  // host
-        recipientId,  // guest
-        typedPayload.listing_id
-      );
-    }
-
-    if (!threadId) {
-      // Create new thread (assume recipient is host, sender is guest)
-      console.log('[sendMessage] Creating new thread...');
-      threadId = await createThread(supabaseAdmin, {
-        hostUserId: recipientId,
-        guestUserId: senderBubbleId,
-        listingId: typedPayload.listing_id,
-        createdBy: senderBubbleId,
-      });
-      isNewThread = true;
-      console.log('[sendMessage] Created new thread:', threadId);
-    } else {
-      console.log('[sendMessage] Found existing thread:', threadId);
-    }
+    )
+    threadId = resolved.threadId
+    isNewThread = resolved.isNewThread
   }
 
-  // Create the message (triggers broadcast automatically via database trigger)
-  console.log('[sendMessage] Creating message in thread:', threadId);
+  // ================================================
+  // CREATE MESSAGE
+  // ================================================
+
+  console.log(`${LOG_PREFIX} Creating message in thread: ${threadId}`)
+
   const messageId = await createMessage(supabaseAdmin, {
     threadId,
     messageBody: typedPayload.message_body.trim(),
@@ -129,16 +232,37 @@ export async function handleSendMessage(
     isSplitBot: typedPayload.splitbot || false,
     callToAction: typedPayload.call_to_action,
     splitBotWarning: typedPayload.split_bot_warning,
-  });
+  })
 
-  console.log('[sendMessage] Message created:', messageId);
-  console.log('[sendMessage] ========== SEND COMPLETE (NATIVE) ==========');
+  console.log(`${LOG_PREFIX} Message created: ${messageId}`)
+  console.log(`${LOG_PREFIX} ========== SEND COMPLETE (NATIVE) ==========`)
 
-  return {
-    success: true,
-    message_id: messageId,
-    thread_id: threadId,
-    is_new_thread: isNewThread,
-    timestamp: new Date().toISOString(),
-  };
+  return buildResponse(messageId, threadId, isNewThread)
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+
+  // Validation Predicates
+  hasValidEmail,
+  isValidMessageBody,
+  hasThreadContext,
+
+  // Pure Data Builders
+  buildResponse,
+
+  // Thread Resolution Helpers
+  resolveThread,
+
+  // Main Handler
+  handleSendMessage,
+})

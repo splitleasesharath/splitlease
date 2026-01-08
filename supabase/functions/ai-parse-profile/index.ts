@@ -30,7 +30,16 @@ import {
   setUserStorageItems,
 } from '../_shared/junctionHelpers.ts';
 
-console.log('[ai-parse-profile] Edge Function started');
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[ai-parse-profile]'
+const ALLOWED_ACTIONS = ['queue', 'process', 'process_batch', 'queue_and_process'] as const;
+
+type Action = typeof ALLOWED_ACTIONS[number];
+
+console.log(`${LOG_PREFIX} Edge Function started`);
 
 // ============================================================================
 // Types
@@ -697,8 +706,8 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[ai-parse-profile] ========== ERROR ==========');
-    console.error('[ai-parse-profile] Error:', error);
+    console.error(`${LOG_PREFIX} ========== ERROR ==========`);
+    console.error(`${LOG_PREFIX} Error:`, error);
 
     const statusCode = error instanceof ValidationError ? 400 : 500;
 
@@ -714,3 +723,39 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  ALLOWED_ACTIONS,
+
+  // Prompt Building (Pure)
+  buildParsingPrompt,
+
+  // Regex Extraction (Pure)
+  extractSection,
+  extractCommaSeparatedList,
+  extractNumber,
+  extractAllData,
+
+  // Database Matching
+  matchBoroughId,
+  matchHoodIds,
+  matchDayIds,
+
+  // Listing Operations
+  findAndFavoriteMatchingListings,
+
+  // Queue Management
+  addToQueue,
+  processJob,
+  processBatch,
+})

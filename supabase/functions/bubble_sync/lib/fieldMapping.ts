@@ -1,5 +1,6 @@
 /**
  * Field Mapping Registry - Supabase ↔ Bubble
+ * Split Lease - bubble_sync/lib
  *
  * Handles field name transformations between Supabase and Bubble.
  *
@@ -11,235 +12,338 @@
  * 1. Fields that ARE different between systems
  * 2. Read-only fields that should never be sent to Bubble
  * 3. Excluded fields for security
+ *
+ * @module bubble_sync/lib/fieldMapping
  */
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[fieldMapping]'
 
 /**
  * Fields that are READ-ONLY in Bubble (managed by Bubble)
  * These should NEVER be included in POST/PATCH requests
+ * @immutable
  */
-export const BUBBLE_READ_ONLY_FIELDS = new Set([
-    '_id',
-    'Created Date',
-    'Modified Date',
-    'Created By',
-    'Modified By',
-    '_type',
-]);
+export const BUBBLE_READ_ONLY_FIELDS = Object.freeze(new Set([
+  '_id',
+  'Created Date',
+  'Modified Date',
+  'Created By',
+  'Modified By',
+  '_type',
+]))
 
 /**
  * Fields to EXCLUDE from sync (security/internal use only)
+ * @immutable
  */
-export const EXCLUDED_SYNC_FIELDS = new Set([
-    // Security-sensitive
-    'password_hash',
-    'password',
-    'refresh_token',
-    'access_token',
-    'api_key',
-    'service_role_key',
-    'secret',
+export const EXCLUDED_SYNC_FIELDS = Object.freeze(new Set([
+  // Security-sensitive
+  'password_hash',
+  'password',
+  'refresh_token',
+  'access_token',
+  'api_key',
+  'service_role_key',
+  'secret',
 
-    // Internal Supabase fields
-    'created_at',       // Supabase timestamp (Bubble has 'Created Date')
-    'updated_at',       // Supabase timestamp (Bubble has 'Modified Date')
-    'bubble_id',        // Internal sync tracking field
-    'sync_status',      // Internal sync status
-    'bubble_sync_error', // Internal error tracking
+  // Internal Supabase fields
+  'created_at',       // Supabase timestamp (Bubble has 'Created Date')
+  'updated_at',       // Supabase timestamp (Bubble has 'Modified Date')
+  'bubble_id',        // Internal sync tracking field
+  'sync_status',      // Internal sync status
+  'bubble_sync_error', // Internal error tracking
 
-    // Supabase-only listing fields (not in Bubble schema)
-    'host_type',        // Supabase-only: host classification
-    'market_strategy',  // Supabase-only: listing visibility strategy
-    'pending',          // Supabase-only: internal status flag
-    '_internal',        // Any internal marker fields
-]);
+  // Supabase-only listing fields (not in Bubble schema)
+  'host_type',        // Supabase-only: host classification
+  'market_strategy',  // Supabase-only: listing visibility strategy
+  'pending',          // Supabase-only: internal status flag
+  '_internal',        // Any internal marker fields
+]))
 
 /**
  * Fields that need special transformation when syncing TO Bubble
  * These are cases where Supabase field names differ from Bubble
+ * @immutable
  */
-export const FIELD_MAPPING_TO_BUBBLE: Record<string, Record<string, string>> = {
-    // Common patterns across tables
-    // Note: Most fields are preserved as-is from Bubble, so minimal mapping needed
+export const FIELD_MAPPING_TO_BUBBLE: Readonly<Record<string, Record<string, string>>> = Object.freeze({
+  // Common patterns across tables
+  // Note: Most fields are preserved as-is from Bubble, so minimal mapping needed
 
-    user: {
-        // Example mappings if Supabase uses different names
-        // 'supabase_field': 'Bubble Field Name',
-    },
+  user: Object.freeze({
+    // Example mappings if Supabase uses different names
+    // 'supabase_field': 'Bubble Field Name',
+  }),
 
-    listing: {
-        // Example: If we had snake_case versions
-        // 'features_qty_bedrooms': 'Features - Qty Bedrooms',
-    },
+  listing: Object.freeze({
+    // Example: If we had snake_case versions
+    // 'features_qty_bedrooms': 'Features - Qty Bedrooms',
+  }),
 
-    proposal: {
-        // Proposal-specific mappings
-    },
+  proposal: Object.freeze({
+    // Proposal-specific mappings
+  }),
 
-    // Add table-specific mappings as discovered
-};
+  // Add table-specific mappings as discovered
+})
 
 /**
  * Fields that need special transformation when syncing FROM Bubble
  * (Used during pull operations for reference)
+ * @immutable
  */
-export const FIELD_MAPPING_FROM_BUBBLE: Record<string, Record<string, string>> = {
-    // Reverse of TO_BUBBLE mappings
-    // Most fields are preserved as-is
-};
+export const FIELD_MAPPING_FROM_BUBBLE: Readonly<Record<string, Record<string, string>>> = Object.freeze({
+  // Reverse of TO_BUBBLE mappings
+  // Most fields are preserved as-is
+})
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface ValidationResult {
+  readonly valid: boolean;
+  readonly missing: readonly string[];
+}
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if field is read-only in Bubble
+ * @pure
+ */
+const isReadOnlyField = (fieldName: string): boolean =>
+  BUBBLE_READ_ONLY_FIELDS.has(fieldName)
+
+/**
+ * Check if field should be excluded from sync
+ * @pure
+ */
+const isExcludedField = (fieldName: string): boolean =>
+  EXCLUDED_SYNC_FIELDS.has(fieldName)
+
+/**
+ * Check if value is null or undefined
+ * @pure
+ */
+const isNullish = (value: unknown): value is null | undefined =>
+  value === null || value === undefined
+
+/**
+ * Check if table has mapping defined
+ * @pure
+ */
+const hasTableMapping = (tableName: string): boolean =>
+  tableName in FIELD_MAPPING_TO_BUBBLE
+
+// ─────────────────────────────────────────────────────────────
+// Data Transformers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Get table-specific field mapping
+ * @pure
+ */
+const getTableMapping = (tableName: string): Record<string, string> =>
+  FIELD_MAPPING_TO_BUBBLE[tableName] || {}
+
+/**
+ * Merge table mapping with custom mapping (custom takes precedence)
+ * @pure
+ */
+const mergeMapping = (
+  tableMapping: Record<string, string>,
+  customMapping?: Record<string, string>
+): Record<string, string> =>
+  customMapping ? { ...tableMapping, ...customMapping } : tableMapping
+
+/**
+ * Get mapped field name
+ * @pure
+ */
+const getMappedFieldName = (
+  fieldName: string,
+  mapping: Record<string, string>
+): string =>
+  mapping[fieldName] || fieldName
+
+// ─────────────────────────────────────────────────────────────
+// Public API
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Apply field mapping to transform Supabase data for Bubble
- *
- * @param data - Record from Supabase
- * @param tableName - Name of the table
- * @param customMapping - Optional custom field mapping override
- * @returns Transformed data for Bubble API
+ * @effectful (console logging)
  */
 export function applyFieldMappingToBubble(
-    data: Record<string, unknown>,
-    tableName: string,
-    customMapping?: Record<string, string>
+  data: Record<string, unknown>,
+  tableName: string,
+  customMapping?: Record<string, string>
 ): Record<string, unknown> {
-    const result: Record<string, unknown> = {};
+  const tableMapping = getTableMapping(tableName)
+  const mapping = mergeMapping(tableMapping, customMapping)
 
-    // Get table-specific mapping
-    const tableMapping = FIELD_MAPPING_TO_BUBBLE[tableName] || {};
+  const result: Record<string, unknown> = {}
 
-    // Merge with custom mapping (custom takes precedence)
-    const mapping = { ...tableMapping, ...customMapping };
-
-    for (const [key, value] of Object.entries(data)) {
-        // Skip read-only fields
-        if (BUBBLE_READ_ONLY_FIELDS.has(key)) {
-            console.log(`[fieldMapping] Skipping read-only field: ${key}`);
-            continue;
-        }
-
-        // Skip excluded fields
-        if (EXCLUDED_SYNC_FIELDS.has(key)) {
-            console.log(`[fieldMapping] Skipping excluded field: ${key}`);
-            continue;
-        }
-
-        // Skip null/undefined values (Bubble API doesn't like nulls for some fields)
-        if (value === null || value === undefined) {
-            continue;
-        }
-
-        // Apply mapping if exists, otherwise use original key
-        const bubbleKey = mapping[key] || key;
-
-        result[bubbleKey] = value;
+  for (const [key, value] of Object.entries(data)) {
+    // Skip read-only fields
+    if (isReadOnlyField(key)) {
+      console.log(`${LOG_PREFIX} Skipping read-only field: ${key}`)
+      continue
     }
 
-    console.log(`[fieldMapping] Mapped ${Object.keys(data).length} → ${Object.keys(result).length} fields for ${tableName}`);
+    // Skip excluded fields
+    if (isExcludedField(key)) {
+      console.log(`${LOG_PREFIX} Skipping excluded field: ${key}`)
+      continue
+    }
 
-    return result;
+    // Skip null/undefined values (Bubble API doesn't like nulls for some fields)
+    if (isNullish(value)) {
+      continue
+    }
+
+    // Apply mapping if exists, otherwise use original key
+    const bubbleKey = getMappedFieldName(key, mapping)
+    result[bubbleKey] = value
+  }
+
+  console.log(`${LOG_PREFIX} Mapped ${Object.keys(data).length} → ${Object.keys(result).length} fields for ${tableName}`)
+
+  return result
 }
 
 /**
  * Apply field mapping to transform Bubble data for Supabase
- *
- * @param data - Record from Bubble
- * @param tableName - Name of the table
- * @param customMapping - Optional custom field mapping override
- * @returns Transformed data for Supabase
+ * @effectful (minimal - pure transformation with logging)
  */
 export function applyFieldMappingFromBubble(
-    data: Record<string, unknown>,
-    tableName: string,
-    customMapping?: Record<string, string>
+  data: Record<string, unknown>,
+  tableName: string,
+  customMapping?: Record<string, string>
 ): Record<string, unknown> {
-    const result: Record<string, unknown> = {};
+  // Get table-specific mapping
+  const tableMapping = FIELD_MAPPING_FROM_BUBBLE[tableName] || {}
 
-    // Get table-specific mapping
-    const tableMapping = FIELD_MAPPING_FROM_BUBBLE[tableName] || {};
+  // Merge with custom mapping
+  const mapping = mergeMapping(tableMapping, customMapping)
 
-    // Merge with custom mapping
-    const mapping = { ...tableMapping, ...customMapping };
+  const result: Record<string, unknown> = {}
 
-    for (const [key, value] of Object.entries(data)) {
-        // Apply mapping if exists, otherwise use original key
-        const supabaseKey = mapping[key] || key;
-        result[supabaseKey] = value;
-    }
+  for (const [key, value] of Object.entries(data)) {
+    // Apply mapping if exists, otherwise use original key
+    const supabaseKey = getMappedFieldName(key, mapping)
+    result[supabaseKey] = value
+  }
 
-    return result;
+  return result
 }
 
 /**
  * Get the list of fields that should be excluded when syncing a table
+ * @pure
  */
-export function getExcludedFields(tableName: string): string[] {
-    const excluded = [...EXCLUDED_SYNC_FIELDS, ...BUBBLE_READ_ONLY_FIELDS];
+export function getExcludedFields(_tableName: string): readonly string[] {
+  const excluded = [...EXCLUDED_SYNC_FIELDS, ...BUBBLE_READ_ONLY_FIELDS]
 
-    // Add table-specific exclusions if any
-    // (can be extended based on business logic)
+  // Add table-specific exclusions if any
+  // (can be extended based on business logic)
 
-    return excluded;
+  return Object.freeze(excluded)
 }
 
 /**
  * Validate that required fields are present for Bubble
+ * @pure
  */
 export function validateRequiredFieldsForBubble(
-    data: Record<string, unknown>,
-    tableName: string,
-    requiredFields: string[]
-): { valid: boolean; missing: string[] } {
-    const missing: string[] = [];
+  data: Record<string, unknown>,
+  _tableName: string,
+  requiredFields: readonly string[]
+): ValidationResult {
+  const missing = requiredFields.filter(field =>
+    isNullish(data[field])
+  )
 
-    for (const field of requiredFields) {
-        if (!(field in data) || data[field] === null || data[field] === undefined) {
-            missing.push(field);
-        }
-    }
-
-    return {
-        valid: missing.length === 0,
-        missing,
-    };
+  return Object.freeze({
+    valid: missing.length === 0,
+    missing: Object.freeze(missing),
+  })
 }
 
 /**
  * Generate a dynamic field mapping from Supabase column names
  * Useful for auto-generating mappings
+ * @pure
  */
 export function inferBubbleFieldName(supabaseField: string): string {
-    // Most Bubble fields are preserved as-is in Supabase
-    // This function handles cases where we need to infer
+  // Most Bubble fields are preserved as-is in Supabase
+  // This function handles cases where we need to infer
 
-    // If it looks like snake_case, try to convert
-    if (supabaseField.includes('_') && !supabaseField.includes(' ')) {
-        // Could be snake_case - check if it's a known pattern
-        // For now, return as-is since most fields are already in Bubble format
-    }
+  // If it looks like snake_case, try to convert
+  if (supabaseField.includes('_') && !supabaseField.includes(' ')) {
+    // Could be snake_case - check if it's a known pattern
+    // For now, return as-is since most fields are already in Bubble format
+  }
 
-    return supabaseField;
+  return supabaseField
 }
 
 /**
  * Build a complete field mapping for a table based on actual data
  * This is useful for generating mappings from sample records
+ * @pure
  */
 export function buildFieldMappingFromSample(
-    supabaseSample: Record<string, unknown>,
-    bubbleSample: Record<string, unknown>
-): { toBubble: Record<string, string>; fromBubble: Record<string, string> } {
-    const toBubble: Record<string, string> = {};
-    const fromBubble: Record<string, string> = {};
+  supabaseSample: Record<string, unknown>,
+  bubbleSample: Record<string, unknown>
+): { readonly toBubble: Record<string, string>; readonly fromBubble: Record<string, string> } {
+  const toBubble: Record<string, string> = {}
+  const fromBubble: Record<string, string> = {}
 
-    // Find matching fields by value comparison (crude but effective)
-    // This is a development helper, not for production use
+  // Find matching fields by value comparison (crude but effective)
+  // This is a development helper, not for production use
 
-    for (const [sKey, sValue] of Object.entries(supabaseSample)) {
-        for (const [bKey, bValue] of Object.entries(bubbleSample)) {
-            if (JSON.stringify(sValue) === JSON.stringify(bValue) && sKey !== bKey) {
-                toBubble[sKey] = bKey;
-                fromBubble[bKey] = sKey;
-            }
-        }
+  for (const [sKey, sValue] of Object.entries(supabaseSample)) {
+    for (const [bKey, bValue] of Object.entries(bubbleSample)) {
+      if (JSON.stringify(sValue) === JSON.stringify(bValue) && sKey !== bKey) {
+        toBubble[sKey] = bKey
+        fromBubble[bKey] = sKey
+      }
     }
+  }
 
-    return { toBubble, fromBubble };
+  return Object.freeze({
+    toBubble: Object.freeze(toBubble),
+    fromBubble: Object.freeze(fromBubble),
+  })
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+
+  // Predicates
+  isReadOnlyField,
+  isExcludedField,
+  isNullish,
+  hasTableMapping,
+
+  // Transformers
+  getTableMapping,
+  mergeMapping,
+  getMappedFieldName,
+})

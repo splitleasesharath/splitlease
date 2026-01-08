@@ -1,7 +1,10 @@
 /**
  * Process Queue Handler
+ * Split Lease - bubble_sync/handlers
  *
  * Fetches pending items from sync_queue and pushes them to Bubble.
+ *
+ * @module bubble_sync/handlers/processQueue
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -17,149 +20,278 @@ import {
 } from '../lib/queueManager.ts';
 import { transformRecordForBubble } from '../lib/transformer.ts';
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[processQueue]'
+const DEFAULT_BATCH_SIZE = 10
+const SKIPPED_PREFIX = 'skipped'
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
 export interface ProcessQueuePayload {
-    batch_size?: number;
-    table_filter?: string;  // Optional: only process specific table
+    readonly batch_size?: number;
+    readonly table_filter?: string;
 }
 
-export async function handleProcessQueue(
-    supabase: SupabaseClient,
-    bubbleConfig: BubblePushConfig,
-    payload: ProcessQueuePayload
-): Promise<ProcessResult> {
-    const batchSize = payload?.batch_size || 10;
-    const tableFilter = payload?.table_filter;
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
 
-    console.log('[processQueue] Starting queue processing');
-    console.log('[processQueue] Batch size:', batchSize);
-    if (tableFilter) {
-        console.log('[processQueue] Table filter:', tableFilter);
-    }
+/**
+ * Check if item has valid sync configuration
+ * @pure
+ */
+const hasSyncConfig = (item: QueueItemWithConfig): boolean =>
+    Boolean(item.sync_config)
 
-    const result: ProcessResult = {
+/**
+ * Check if item has workflow configured
+ * @pure
+ */
+const hasWorkflow = (item: QueueItemWithConfig): boolean =>
+    Boolean(item.sync_config?.bubble_workflow)
+
+/**
+ * Check if operation should be synced based on config flags
+ * @pure
+ */
+const shouldSyncOperation = (item: QueueItemWithConfig): boolean => {
+    const config = item.sync_config
+    if (!config) return false
+
+    return (
+        (item.operation === 'INSERT' && config.sync_on_insert) ||
+        (item.operation === 'UPDATE' && config.sync_on_update) ||
+        (item.operation === 'DELETE' && config.sync_on_delete)
+    )
+}
+
+/**
+ * Check if error is a skip error
+ * @pure
+ */
+const isSkipError = (error: Error): boolean =>
+    Boolean(error.message?.includes(SKIPPED_PREFIX))
+
+/**
+ * Check if items array has data
+ * @pure
+ */
+const hasItems = (items: QueueItemWithConfig[]): boolean =>
+    items.length > 0
+
+// ─────────────────────────────────────────────────────────────
+// Builders
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build initial process result
+ * @pure
+ */
+const buildInitialResult = (): ProcessResult =>
+    Object.freeze({
         processed: 0,
         success: 0,
         failed: 0,
-        skipped: 0
-    };
+        skipped: 0,
+    })
 
-    try {
-        // Fetch pending items
-        let items = await fetchPendingItems(supabase, batchSize);
+/**
+ * Build push payload for Bubble
+ * @pure
+ */
+const buildPushPayload = (item: QueueItemWithConfig, transformedData: Record<string, unknown>): PushPayload =>
+    Object.freeze({
+        _id: item.record_id,
+        operation: item.operation,
+        data: transformedData,
+    })
 
-        // Apply table filter if specified
-        if (tableFilter) {
-            items = items.filter(item => item.table_name === tableFilter);
-        }
+/**
+ * Build error context
+ * @pure
+ */
+const buildErrorContext = (error: Error): Record<string, unknown> =>
+    Object.freeze({
+        stack: error.stack,
+        name: error.name,
+    })
 
-        if (items.length === 0) {
-            console.log('[processQueue] No pending items found');
-            return result;
-        }
+// ─────────────────────────────────────────────────────────────
+// Filter Helpers
+// ─────────────────────────────────────────────────────────────
 
-        console.log(`[processQueue] Processing ${items.length} items`);
+/**
+ * Filter items by table name
+ * @pure
+ */
+const filterByTable = (items: QueueItemWithConfig[], tableFilter?: string): QueueItemWithConfig[] =>
+    tableFilter ? items.filter(item => item.table_name === tableFilter) : items
 
-        // Process each item
-        for (const item of items) {
-            result.processed++;
+// ─────────────────────────────────────────────────────────────
+// Item Processor
+// ─────────────────────────────────────────────────────────────
 
-            try {
-                await processItem(supabase, bubbleConfig, item);
-                result.success++;
-            } catch (error) {
-                if (error.message?.includes('skipped')) {
-                    result.skipped++;
-                } else {
-                    result.failed++;
-                }
-            }
-        }
-
-        console.log('[processQueue] Processing complete:', result);
-        return result;
-
-    } catch (error) {
-        console.error('[processQueue] Fatal error:', error);
-        throw error;
-    }
-}
-
+/**
+ * Process a single queue item
+ * @effectful (database mutations, HTTP request, console logging)
+ */
 async function processItem(
     supabase: SupabaseClient,
     bubbleConfig: BubblePushConfig,
     item: QueueItemWithConfig
 ): Promise<void> {
-    console.log(`[processQueue] Processing item ${item.id}`);
-    console.log(`[processQueue] Table: ${item.table_name}, Record: ${item.record_id}, Op: ${item.operation}`);
+    console.log(`${LOG_PREFIX} Processing item ${item.id}`)
+    console.log(`${LOG_PREFIX} Table: ${item.table_name}, Record: ${item.record_id}, Op: ${item.operation}`)
 
     // Validate sync_config exists
-    if (!item.sync_config) {
-        await markAsSkipped(supabase, item.id, 'No sync configuration found');
-        throw new Error('skipped: No sync configuration');
+    if (!hasSyncConfig(item)) {
+        await markAsSkipped(supabase, item.id, 'No sync configuration found')
+        throw new Error(`${SKIPPED_PREFIX}: No sync configuration`)
     }
 
     // Check if workflow is configured
-    if (!item.sync_config.bubble_workflow) {
-        await markAsSkipped(supabase, item.id, 'No Bubble workflow configured');
-        throw new Error('skipped: No workflow configured');
+    if (!hasWorkflow(item)) {
+        await markAsSkipped(supabase, item.id, 'No Bubble workflow configured')
+        throw new Error(`${SKIPPED_PREFIX}: No workflow configured`)
     }
 
     // Check operation-specific flags
-    const shouldSync = (
-        (item.operation === 'INSERT' && item.sync_config.sync_on_insert) ||
-        (item.operation === 'UPDATE' && item.sync_config.sync_on_update) ||
-        (item.operation === 'DELETE' && item.sync_config.sync_on_delete)
-    );
-
-    if (!shouldSync) {
-        await markAsSkipped(supabase, item.id, `Operation ${item.operation} not enabled for this table`);
-        throw new Error(`skipped: Operation ${item.operation} not enabled`);
+    if (!shouldSyncOperation(item)) {
+        await markAsSkipped(supabase, item.id, `Operation ${item.operation} not enabled for this table`)
+        throw new Error(`${SKIPPED_PREFIX}: Operation ${item.operation} not enabled`)
     }
 
-    // Mark as processing
-    await markAsProcessing(supabase, item.id);
+    await markAsProcessing(supabase, item.id)
 
     try {
-        // Transform data for Bubble
         const transformedData = transformRecordForBubble(
             item.payload,
             item.table_name,
             item.sync_config.field_mapping || undefined,
             item.sync_config.excluded_fields || undefined
-        );
+        )
 
-        // Build push payload
-        const pushPayload: PushPayload = {
-            _id: item.record_id,
-            operation: item.operation,
-            data: transformedData
-        };
+        const pushPayload = buildPushPayload(item, transformedData)
 
-        // Call Bubble workflow
         const bubbleResponse = await callBubbleWorkflow(
             bubbleConfig,
             item.sync_config.bubble_workflow,
             pushPayload
-        );
+        )
 
-        // Mark as completed
-        await markAsCompleted(supabase, item.id, bubbleResponse);
+        await markAsCompleted(supabase, item.id, bubbleResponse)
 
-        console.log(`[processQueue] Item ${item.id} completed successfully`);
+        console.log(`${LOG_PREFIX} Item ${item.id} completed successfully`)
 
     } catch (error) {
-        console.error(`[processQueue] Item ${item.id} failed:`, error);
+        console.error(`${LOG_PREFIX} Item ${item.id} failed:`, error)
 
-        // Mark as failed with retry logic
         await markAsFailed(
             supabase,
             item.id,
-            error.message,
-            { stack: error.stack, name: error.name },
+            (error as Error).message,
+            buildErrorContext(error as Error),
             item.retry_count,
             item.max_retries
-        );
+        )
 
-        throw error;
+        throw error
     }
 }
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Process queue handler - processes pending queue items
+ * @effectful (database mutations, HTTP requests, console logging)
+ */
+export async function handleProcessQueue(
+    supabase: SupabaseClient,
+    bubbleConfig: BubblePushConfig,
+    payload: ProcessQueuePayload
+): Promise<ProcessResult> {
+    const batchSize = payload?.batch_size || DEFAULT_BATCH_SIZE
+    const tableFilter = payload?.table_filter
+
+    console.log(`${LOG_PREFIX} Starting queue processing`)
+    console.log(`${LOG_PREFIX} Batch size: ${batchSize}`)
+    if (tableFilter) {
+        console.log(`${LOG_PREFIX} Table filter: ${tableFilter}`)
+    }
+
+    const result = { ...buildInitialResult() }
+
+    try {
+        const allItems = await fetchPendingItems(supabase, batchSize)
+        const items = filterByTable(allItems, tableFilter)
+
+        if (!hasItems(items)) {
+            console.log(`${LOG_PREFIX} No pending items found`)
+            return Object.freeze(result)
+        }
+
+        console.log(`${LOG_PREFIX} Processing ${items.length} items`)
+
+        for (const item of items) {
+            result.processed++
+
+            try {
+                await processItem(supabase, bubbleConfig, item)
+                result.success++
+            } catch (error) {
+                if (isSkipError(error as Error)) {
+                    result.skipped++
+                } else {
+                    result.failed++
+                }
+            }
+        }
+
+        console.log(`${LOG_PREFIX} Processing complete:`, result)
+        return Object.freeze(result)
+
+    } catch (error) {
+        console.error(`${LOG_PREFIX} Fatal error:`, error)
+        throw error
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+    // Constants
+    LOG_PREFIX,
+    DEFAULT_BATCH_SIZE,
+    SKIPPED_PREFIX,
+
+    // Predicates
+    hasSyncConfig,
+    hasWorkflow,
+    shouldSyncOperation,
+    isSkipError,
+    hasItems,
+
+    // Builders
+    buildInitialResult,
+    buildPushPayload,
+    buildErrorContext,
+
+    // Filter Helpers
+    filterByTable,
+
+    // Item Processor
+    processItem,
+})

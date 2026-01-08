@@ -1,5 +1,6 @@
 /**
  * Geographic Lookup Utilities
+ * Split Lease - Supabase Edge Functions
  *
  * Provides functions to look up borough and neighborhood IDs from zip codes.
  * Used during listing creation to populate Location - Borough and Location - Hood FK fields.
@@ -7,26 +8,96 @@
  * Reference Tables:
  * - reference_table.zat_geo_borough_toplevel: Borough data with "Zip Codes" (jsonb array)
  * - reference_table.zat_geo_hood_mediumlevel: Neighborhood data with "Zips" (jsonb array)
+ *
+ * @module _shared/geoLookup
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-// Types for geo lookup results
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[geoLookup]'
+const ZIP_CODE_LENGTH = 5
+const ZIP_CODE_PATTERN = /^\d{5}$/
+
+// ─────────────────────────────────────────────────────────────
+// Type Definitions
+// ─────────────────────────────────────────────────────────────
+
 export interface BoroughLookupResult {
-  _id: string;
-  displayName: string;
+  readonly _id: string;
+  readonly displayName: string;
 }
 
 export interface HoodLookupResult {
-  _id: string;
-  displayName: string;
-  boroughId: string;
+  readonly _id: string;
+  readonly displayName: string;
+  readonly boroughId: string;
 }
 
 export interface GeoLookupResult {
-  borough: BoroughLookupResult | null;
-  hood: HoodLookupResult | null;
+  readonly borough: BoroughLookupResult | null;
+  readonly hood: HoodLookupResult | null;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is a valid zip code string
+ * @pure
+ */
+const isValidZipInput = (zipCode: unknown): zipCode is string =>
+  typeof zipCode === 'string' && zipCode.length > 0
+
+/**
+ * Check if cleaned zip code is valid (5 digits)
+ * @pure
+ */
+const isValidZipFormat = (cleanZip: string): boolean =>
+  ZIP_CODE_PATTERN.test(cleanZip)
+
+// ─────────────────────────────────────────────────────────────
+// Utility Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Clean and normalize zip code
+ * @pure
+ */
+const cleanZipCode = (zipCode: string): string =>
+  zipCode.trim().substring(0, ZIP_CODE_LENGTH)
+
+// ─────────────────────────────────────────────────────────────
+// Builder Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build borough lookup result
+ * @pure
+ */
+const buildBoroughResult = (id: string, displayName: string): BoroughLookupResult =>
+  Object.freeze({ _id: id, displayName })
+
+/**
+ * Build hood lookup result
+ * @pure
+ */
+const buildHoodResult = (id: string, displayName: string, boroughId: string): HoodLookupResult =>
+  Object.freeze({ _id: id, displayName, boroughId })
+
+/**
+ * Build geo lookup result
+ * @pure
+ */
+const buildGeoResult = (
+  borough: BoroughLookupResult | null,
+  hood: HoodLookupResult | null
+): GeoLookupResult =>
+  Object.freeze({ borough, hood })
 
 /**
  * Look up borough ID by zip code
@@ -35,25 +106,24 @@ export interface GeoLookupResult {
  * @param supabaseClient - Supabase client instance
  * @param zipCode - The zip code to look up (e.g., "11201")
  * @returns Borough ID and display name, or null if not found
+ * @effectful (database I/O, console logging)
  */
 export async function getBoroughByZipCode(
   supabaseClient: ReturnType<typeof createClient>,
   zipCode: string
 ): Promise<BoroughLookupResult | null> {
-  if (!zipCode || typeof zipCode !== 'string') {
-    console.log('[geoLookup] Invalid zip code provided:', zipCode);
+  if (!isValidZipInput(zipCode)) {
+    console.log(`${LOG_PREFIX} Invalid zip code provided:`, zipCode);
     return null;
   }
 
-  // Clean zip code - take first 5 digits
-  const cleanZip = zipCode.trim().substring(0, 5);
-  if (!/^\d{5}$/.test(cleanZip)) {
-    console.log('[geoLookup] Zip code not 5 digits after cleaning:', cleanZip);
+  const cleanZip = cleanZipCode(zipCode);
+  if (!isValidZipFormat(cleanZip)) {
+    console.log(`${LOG_PREFIX} Zip code not 5 digits after cleaning:`, cleanZip);
     return null;
   }
 
   try {
-    // Query borough where "Zip Codes" jsonb array contains the zip
     const { data, error } = await supabaseClient
       .schema('reference_table')
       .from('zat_geo_borough_toplevel')
@@ -63,22 +133,19 @@ export async function getBoroughByZipCode(
       .maybeSingle();
 
     if (error) {
-      console.error('[geoLookup] Error querying borough by zip:', error);
+      console.error(`${LOG_PREFIX} Error querying borough by zip:`, error);
       return null;
     }
 
     if (!data) {
-      console.log('[geoLookup] No borough found for zip:', cleanZip);
+      console.log(`${LOG_PREFIX} No borough found for zip:`, cleanZip);
       return null;
     }
 
-    console.log('[geoLookup] Found borough:', data['Display Borough'], 'for zip:', cleanZip);
-    return {
-      _id: data._id,
-      displayName: data['Display Borough']
-    };
+    console.log(`${LOG_PREFIX} Found borough:`, data['Display Borough'], 'for zip:', cleanZip);
+    return buildBoroughResult(data._id, data['Display Borough']);
   } catch (err) {
-    console.error('[geoLookup] Exception in getBoroughByZipCode:', err);
+    console.error(`${LOG_PREFIX} Exception in getBoroughByZipCode:`, err);
     return null;
   }
 }
@@ -90,25 +157,24 @@ export async function getBoroughByZipCode(
  * @param supabaseClient - Supabase client instance
  * @param zipCode - The zip code to look up (e.g., "11201")
  * @returns Hood ID, display name, and borough ID, or null if not found
+ * @effectful (database I/O, console logging)
  */
 export async function getHoodByZipCode(
   supabaseClient: ReturnType<typeof createClient>,
   zipCode: string
 ): Promise<HoodLookupResult | null> {
-  if (!zipCode || typeof zipCode !== 'string') {
-    console.log('[geoLookup] Invalid zip code provided for hood lookup:', zipCode);
+  if (!isValidZipInput(zipCode)) {
+    console.log(`${LOG_PREFIX} Invalid zip code provided for hood lookup:`, zipCode);
     return null;
   }
 
-  // Clean zip code - take first 5 digits
-  const cleanZip = zipCode.trim().substring(0, 5);
-  if (!/^\d{5}$/.test(cleanZip)) {
-    console.log('[geoLookup] Zip code not 5 digits after cleaning:', cleanZip);
+  const cleanZip = cleanZipCode(zipCode);
+  if (!isValidZipFormat(cleanZip)) {
+    console.log(`${LOG_PREFIX} Zip code not 5 digits after cleaning:`, cleanZip);
     return null;
   }
 
   try {
-    // Query hood where "Zips" jsonb array contains the zip
     const { data, error } = await supabaseClient
       .schema('reference_table')
       .from('zat_geo_hood_mediumlevel')
@@ -118,23 +184,19 @@ export async function getHoodByZipCode(
       .maybeSingle();
 
     if (error) {
-      console.error('[geoLookup] Error querying hood by zip:', error);
+      console.error(`${LOG_PREFIX} Error querying hood by zip:`, error);
       return null;
     }
 
     if (!data) {
-      console.log('[geoLookup] No hood found for zip:', cleanZip);
+      console.log(`${LOG_PREFIX} No hood found for zip:`, cleanZip);
       return null;
     }
 
-    console.log('[geoLookup] Found hood:', data['Display'], 'for zip:', cleanZip);
-    return {
-      _id: data._id,
-      displayName: data['Display'],
-      boroughId: data['Geo-Borough']
-    };
+    console.log(`${LOG_PREFIX} Found hood:`, data['Display'], 'for zip:', cleanZip);
+    return buildHoodResult(data._id, data['Display'], data['Geo-Borough']);
   } catch (err) {
-    console.error('[geoLookup] Exception in getHoodByZipCode:', err);
+    console.error(`${LOG_PREFIX} Exception in getHoodByZipCode:`, err);
     return null;
   }
 }
@@ -146,12 +208,13 @@ export async function getHoodByZipCode(
  * @param supabaseClient - Supabase client instance
  * @param zipCode - The zip code to look up (e.g., "11201")
  * @returns Object with borough and hood lookup results
+ * @effectful (database I/O, console logging)
  */
 export async function getGeoByZipCode(
   supabaseClient: ReturnType<typeof createClient>,
   zipCode: string
 ): Promise<GeoLookupResult> {
-  console.log('[geoLookup] Looking up geo data for zip:', zipCode);
+  console.log(`${LOG_PREFIX} Looking up geo data for zip:`, zipCode);
 
   // Run both lookups in parallel for efficiency
   const [borough, hood] = await Promise.all([
@@ -162,8 +225,7 @@ export async function getGeoByZipCode(
   // If we found a hood but not a borough, use the hood's borough reference
   let finalBorough = borough;
   if (!finalBorough && hood?.boroughId) {
-    console.log('[geoLookup] Using borough from hood reference:', hood.boroughId);
-    // Fetch borough display name
+    console.log(`${LOG_PREFIX} Using borough from hood reference:`, hood.boroughId);
     try {
       const { data } = await supabaseClient
         .schema('reference_table')
@@ -173,20 +235,41 @@ export async function getGeoByZipCode(
         .maybeSingle();
 
       if (data) {
-        finalBorough = {
-          _id: data._id,
-          displayName: data['Display Borough']
-        };
+        finalBorough = buildBoroughResult(data._id, data['Display Borough']);
       }
     } catch (err) {
-      console.error('[geoLookup] Error fetching borough from hood reference:', err);
+      console.error(`${LOG_PREFIX} Error fetching borough from hood reference:`, err);
     }
   }
 
-  console.log('[geoLookup] Final result - borough:', finalBorough?.displayName, 'hood:', hood?.displayName);
+  console.log(`${LOG_PREFIX} Final result - borough:`, finalBorough?.displayName, 'hood:', hood?.displayName);
 
-  return {
-    borough: finalBorough,
-    hood
-  };
+  return buildGeoResult(finalBorough, hood);
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  ZIP_CODE_LENGTH,
+  ZIP_CODE_PATTERN,
+
+  // Validation predicates
+  isValidZipInput,
+  isValidZipFormat,
+
+  // Utility functions
+  cleanZipCode,
+
+  // Builder functions
+  buildBoroughResult,
+  buildHoodResult,
+  buildGeoResult,
+})

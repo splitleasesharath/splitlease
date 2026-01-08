@@ -1,8 +1,11 @@
 /**
  * Sync Single Handler
+ * Split Lease - bubble_sync/handlers
  *
  * Manually sync a single record from Supabase to Bubble.
  * Useful for ad-hoc syncing or resyncing specific records.
+ *
+ * @module bubble_sync/handlers/syncSingle
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -10,89 +13,204 @@ import { BubblePushConfig, callBubbleWorkflow, PushPayload } from '../lib/bubble
 import { transformRecordForBubble } from '../lib/transformer.ts';
 import { addToQueue, OperationType } from '../lib/queueManager.ts';
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[syncSingle]'
+const CONFIG_TABLE = 'sync_config'
+const DEFAULT_OPERATION: OperationType = 'UPDATE'
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface SyncConfig {
+    readonly bubble_workflow: string;
+    readonly field_mapping?: Record<string, string>;
+    readonly excluded_fields?: readonly string[];
+}
+
 export interface SyncSinglePayload {
-    table_name: string;
-    record_id: string;
-    operation?: OperationType;  // Defaults to 'UPDATE'
-    use_queue?: boolean;        // If true, add to queue instead of immediate sync
+    readonly table_name: string;
+    readonly record_id: string;
+    readonly operation?: OperationType;
+    readonly use_queue?: boolean;
 }
 
 export interface SyncSingleResult {
-    synced: boolean;
-    record_id: string;
-    table_name: string;
-    operation: OperationType;
-    bubble_response?: Record<string, unknown>;
-    queue_id?: string;
+    readonly synced: boolean;
+    readonly record_id: string;
+    readonly table_name: string;
+    readonly operation: OperationType;
+    readonly bubble_response?: Readonly<Record<string, unknown>>;
+    readonly queue_id?: string;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if config has valid workflow
+ * @pure
+ */
+const hasValidWorkflow = (config: SyncConfig | null | undefined): config is SyncConfig =>
+    Boolean(config?.bubble_workflow)
+
+/**
+ * Check if data exists
+ * @pure
+ */
+const hasData = <T>(data: T | null | undefined): data is T =>
+    data !== null && data !== undefined
+
+// ─────────────────────────────────────────────────────────────
+// Builders
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build queued result (not synced yet)
+ * @pure
+ */
+const buildQueuedResult = (
+    recordId: string,
+    tableName: string,
+    operation: OperationType,
+    queueId: string
+): SyncSingleResult =>
+    Object.freeze({
+        synced: false,
+        record_id: recordId,
+        table_name: tableName,
+        operation,
+        queue_id: queueId,
+    })
+
+/**
+ * Build synced result
+ * @pure
+ */
+const buildSyncedResult = (
+    recordId: string,
+    tableName: string,
+    operation: OperationType,
+    bubbleResponse: Record<string, unknown>
+): SyncSingleResult =>
+    Object.freeze({
+        synced: true,
+        record_id: recordId,
+        table_name: tableName,
+        operation,
+        bubble_response: Object.freeze(bubbleResponse),
+    })
+
+/**
+ * Build push payload for Bubble
+ * @pure
+ */
+const buildPushPayload = (
+    recordId: string,
+    operation: OperationType,
+    transformedData: Record<string, unknown>
+): PushPayload =>
+    Object.freeze({
+        _id: recordId,
+        operation,
+        data: transformedData,
+    })
+
+// ─────────────────────────────────────────────────────────────
+// Query Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch sync configuration for table
+ * @effectful (database query)
+ */
+async function fetchSyncConfig(
+    supabase: SupabaseClient,
+    tableName: string
+): Promise<SyncConfig> {
+    const { data: syncConfig, error } = await supabase
+        .from(CONFIG_TABLE)
+        .select('*')
+        .eq('supabase_table', tableName)
+        .eq('enabled', true)
+        .single()
+
+    if (error || !hasData(syncConfig)) {
+        throw new Error(`No sync configuration found for table: ${tableName}`)
+    }
+
+    if (!hasValidWorkflow(syncConfig)) {
+        throw new Error(`No Bubble workflow configured for table: ${tableName}`)
+    }
+
+    return syncConfig
+}
+
+/**
+ * Fetch record from table by ID
+ * @effectful (database query)
+ */
+async function fetchRecord(
+    supabase: SupabaseClient,
+    tableName: string,
+    recordId: string
+): Promise<Record<string, unknown>> {
+    const { data: record, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .eq('_id', recordId)
+        .single()
+
+    if (error || !hasData(record)) {
+        throw new Error(`Record not found: ${tableName}/${recordId}`)
+    }
+
+    return record
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Sync single handler - manually syncs a single record
+ * @effectful (database queries, HTTP request, console logging)
+ */
 export async function handleSyncSingle(
     supabase: SupabaseClient,
     bubbleConfig: BubblePushConfig,
     payload: SyncSinglePayload
 ): Promise<SyncSingleResult> {
-    const { table_name, record_id, operation = 'UPDATE', use_queue = false } = payload;
+    const { table_name, record_id, operation = DEFAULT_OPERATION, use_queue = false } = payload
 
-    console.log('[syncSingle] Manual sync request');
-    console.log('[syncSingle] Table:', table_name);
-    console.log('[syncSingle] Record ID:', record_id);
-    console.log('[syncSingle] Operation:', operation);
-    console.log('[syncSingle] Use queue:', use_queue);
+    console.log(`${LOG_PREFIX} Manual sync request`)
+    console.log(`${LOG_PREFIX} Table: ${table_name}`)
+    console.log(`${LOG_PREFIX} Record ID: ${record_id}`)
+    console.log(`${LOG_PREFIX} Operation: ${operation}`)
+    console.log(`${LOG_PREFIX} Use queue: ${use_queue}`)
 
     // Validate required fields
     if (!table_name) {
-        throw new Error('table_name is required');
+        throw new Error('table_name is required')
     }
     if (!record_id) {
-        throw new Error('record_id is required');
+        throw new Error('record_id is required')
     }
 
-    // Get sync configuration for this table
-    const { data: syncConfig, error: configError } = await supabase
-        .from('sync_config')
-        .select('*')
-        .eq('supabase_table', table_name)
-        .eq('enabled', true)
-        .single();
+    // Fetch configuration and record
+    const syncConfig = await fetchSyncConfig(supabase, table_name)
+    const record = await fetchRecord(supabase, table_name, record_id)
 
-    if (configError || !syncConfig) {
-        throw new Error(`No sync configuration found for table: ${table_name}`);
-    }
-
-    if (!syncConfig.bubble_workflow) {
-        throw new Error(`No Bubble workflow configured for table: ${table_name}`);
-    }
-
-    // Fetch the record from Supabase
-    const { data: record, error: fetchError } = await supabase
-        .from(table_name)
-        .select('*')
-        .eq('_id', record_id)
-        .single();
-
-    if (fetchError || !record) {
-        throw new Error(`Record not found: ${table_name}/${record_id}`);
-    }
-
-    console.log('[syncSingle] Fetched record with', Object.keys(record).length, 'fields');
+    console.log(`${LOG_PREFIX} Fetched record with ${Object.keys(record).length} fields`)
 
     // If using queue, add to queue and return
     if (use_queue) {
-        const queueId = await addToQueue(
-            supabase,
-            table_name,
-            record_id,
-            operation,
-            record
-        );
-
-        return {
-            synced: false,
-            record_id,
-            table_name,
-            operation,
-            queue_id: queueId
-        };
+        const queueId = await addToQueue(supabase, table_name, record_id, operation, record)
+        return buildQueuedResult(record_id, table_name, operation, queueId)
     }
 
     // Transform data for Bubble
@@ -101,29 +219,41 @@ export async function handleSyncSingle(
         table_name,
         syncConfig.field_mapping || undefined,
         syncConfig.excluded_fields || undefined
-    );
+    )
 
-    // Build push payload
-    const pushPayload: PushPayload = {
-        _id: record_id,
-        operation,
-        data: transformedData
-    };
+    // Build and send push payload
+    const pushPayload = buildPushPayload(record_id, operation, transformedData)
+    const bubbleResponse = await callBubbleWorkflow(bubbleConfig, syncConfig.bubble_workflow, pushPayload)
 
-    // Call Bubble workflow
-    const bubbleResponse = await callBubbleWorkflow(
-        bubbleConfig,
-        syncConfig.bubble_workflow,
-        pushPayload
-    );
+    console.log(`${LOG_PREFIX} Sync completed successfully`)
 
-    console.log('[syncSingle] Sync completed successfully');
-
-    return {
-        synced: true,
-        record_id,
-        table_name,
-        operation,
-        bubble_response: bubbleResponse
-    };
+    return buildSyncedResult(record_id, table_name, operation, bubbleResponse)
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+    // Constants
+    LOG_PREFIX,
+    CONFIG_TABLE,
+    DEFAULT_OPERATION,
+
+    // Predicates
+    hasValidWorkflow,
+    hasData,
+
+    // Builders
+    buildQueuedResult,
+    buildSyncedResult,
+    buildPushPayload,
+
+    // Query Helpers
+    fetchSyncConfig,
+    fetchRecord,
+})

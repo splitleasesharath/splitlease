@@ -1,139 +1,175 @@
 /**
  * Type definitions for Virtual Meeting Edge Function
  * Split Lease - Supabase Edge Functions
+ *
+ * FP PATTERN: All interfaces use readonly modifiers for immutability
+ *
+ * @module virtual-meeting/lib/types
  */
 
+// ─────────────────────────────────────────────────────────────
+// Request Types - Create
+// ─────────────────────────────────────────────────────────────
+
 export interface CreateVirtualMeetingInput {
-  proposalId: string;           // Required: FK to proposal._id
-  timesSelected: string[];      // Required: Array of ISO 8601 datetime strings (exactly 3)
-  requestedById: string;        // Required: FK to user._id (current user)
-  timezoneString?: string;      // Optional: default 'America/New_York'
-  isAlternativeTimes?: boolean; // Optional: true if suggesting alternative times
+  readonly proposalId: string;           // Required: FK to proposal._id
+  readonly timesSelected: readonly string[];      // Required: Array of ISO 8601 datetime strings (exactly 3)
+  readonly requestedById: string;        // Required: FK to user._id (current user)
+  readonly timezoneString?: string;      // Optional: default 'America/New_York'
+  readonly isAlternativeTimes?: boolean; // Optional: true if suggesting alternative times
 }
+
+// ─────────────────────────────────────────────────────────────
+// Response Types - Create
+// ─────────────────────────────────────────────────────────────
 
 export interface CreateVirtualMeetingResponse {
-  virtualMeetingId: string;
-  proposalId: string;
-  requestedById: string;
-  createdAt: string;
+  readonly virtualMeetingId: string;
+  readonly proposalId: string;
+  readonly requestedById: string;
+  readonly createdAt: string;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Database Types
+// ─────────────────────────────────────────────────────────────
+
 export interface ProposalData {
-  _id: string;
-  Guest: string;
-  Listing: string;
-  'Host User': string;
+  readonly _id: string;
+  readonly Guest: string;
+  readonly Listing: string;
+  readonly 'Host User': string;
 }
 
 export interface ListingData {
-  _id: string;
-  'Host User': string;
-  'Created By': string;
+  readonly _id: string;
+  readonly 'Host User': string;
+  readonly 'Created By': string;
 }
 
 export interface UserData {
-  _id: string;
-  email: string;
-  'Name - First'?: string;
-  'Name - Full'?: string;
+  readonly _id: string;
+  readonly email: string;
+  readonly 'Name - First'?: string;
+  readonly 'Name - Full'?: string;
 }
 
 export interface HostAccountData {
-  _id: string;
-  User: string;
+  readonly _id: string;
+  readonly User: string;
 }
 
 export interface VirtualMeetingRecord {
-  _id: string;
-  'Created By': string;
-  'Created Date': string;
-  'Modified Date': string;
-  host: string;
-  guest: string;
-  proposal: string;
-  'requested by': string;
-  'meeting duration': number;
-  'suggested dates and times': string[];
-  'booked date': string | null;
-  confirmedBySplitLease: boolean;
-  'meeting declined': boolean;
-  'meeting link': string | null;
-  'guest email': string | null;
-  'guest name': string | null;
-  'host email': string | null;
-  'host name': string | null;
-  'invitation sent to guest?': boolean;
-  'invitation sent to host?': boolean;
-  'end of meeting': string | null;
-  'Listing (for Co-Host feature)': string | null;
-  pending: boolean;
+  readonly _id: string;
+  readonly 'Created By': string;
+  readonly 'Created Date': string;
+  readonly 'Modified Date': string;
+  readonly host: string;
+  readonly guest: string;
+  readonly proposal: string;
+  readonly 'requested by': string;
+  readonly 'meeting duration': number;
+  readonly 'suggested dates and times': readonly string[];
+  readonly 'booked date': string | null;
+  readonly confirmedBySplitLease: boolean;
+  readonly 'meeting declined': boolean;
+  readonly 'meeting link': string | null;
+  readonly 'guest email': string | null;
+  readonly 'guest name': string | null;
+  readonly 'host email': string | null;
+  readonly 'host name': string | null;
+  readonly 'invitation sent to guest?': boolean;
+  readonly 'invitation sent to host?': boolean;
+  readonly 'end of meeting': string | null;
+  readonly 'Listing (for Co-Host feature)': string | null;
+  readonly pending: boolean;
 }
+
+// ─────────────────────────────────────────────────────────────
+// User Context Type
+// ─────────────────────────────────────────────────────────────
 
 export interface UserContext {
-  id: string;
-  email: string;
+  readonly id: string;
+  readonly email: string;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Request/Response Types - Delete
+// ─────────────────────────────────────────────────────────────
+
 export interface DeleteVirtualMeetingInput {
-  virtualMeetingId: string;  // Required: _id of the virtual meeting to delete
-  proposalId: string;        // Required: _id of the associated proposal
+  readonly virtualMeetingId: string;  // Required: _id of the virtual meeting to delete
+  readonly proposalId: string;        // Required: _id of the associated proposal
 }
 
 export interface DeleteVirtualMeetingResponse {
-  deleted: boolean;
-  virtualMeetingId: string;
-  proposalId: string;
-  deletedAt: string;
+  readonly deleted: boolean;
+  readonly virtualMeetingId: string;
+  readonly proposalId: string;
+  readonly deletedAt: string;
 }
 
-// Accept Virtual Meeting
+// ─────────────────────────────────────────────────────────────
+// Request/Response Types - Accept
+// ─────────────────────────────────────────────────────────────
+
 export interface AcceptVirtualMeetingInput {
-  proposalId: string;           // Required: FK to proposal._id
-  bookedDate: string;           // Required: ISO 8601 datetime (selected time slot)
-  userAcceptingId: string;      // Required: FK to user._id (user accepting)
+  readonly proposalId: string;           // Required: FK to proposal._id
+  readonly bookedDate: string;           // Required: ISO 8601 datetime (selected time slot)
+  readonly userAcceptingId: string;      // Required: FK to user._id (user accepting)
 }
 
 export interface AcceptVirtualMeetingResponse {
-  success: boolean;
-  virtualMeetingId: string;
-  proposalId: string;
-  bookedDate: string;
-  updatedAt: string;
+  readonly success: boolean;
+  readonly virtualMeetingId: string;
+  readonly proposalId: string;
+  readonly bookedDate: string;
+  readonly updatedAt: string;
 }
 
-// Decline Virtual Meeting
+// ─────────────────────────────────────────────────────────────
+// Request/Response Types - Decline
+// ─────────────────────────────────────────────────────────────
+
 export interface DeclineVirtualMeetingInput {
-  proposalId: string;           // Required: FK to proposal._id
+  readonly proposalId: string;           // Required: FK to proposal._id
 }
 
 export interface DeclineVirtualMeetingResponse {
-  success: boolean;
-  proposalId: string;
-  declinedAt: string;
+  readonly success: boolean;
+  readonly proposalId: string;
+  readonly declinedAt: string;
 }
 
-// Send Calendar Invite
+// ─────────────────────────────────────────────────────────────
+// Request/Response Types - Calendar Invite
+// ─────────────────────────────────────────────────────────────
+
 export interface SendCalendarInviteInput {
-  proposalId: string;           // Required: FK to proposal._id
-  userId: string;               // Required: FK to user._id (recipient)
+  readonly proposalId: string;           // Required: FK to proposal._id
+  readonly userId: string;               // Required: FK to user._id (recipient)
 }
 
 export interface SendCalendarInviteResponse {
-  success: boolean;
-  proposalId: string;
-  userId: string;
-  triggeredAt: string;
+  readonly success: boolean;
+  readonly proposalId: string;
+  readonly userId: string;
+  readonly triggeredAt: string;
 }
 
-// Notify Participants
+// ─────────────────────────────────────────────────────────────
+// Request/Response Types - Notify Participants
+// ─────────────────────────────────────────────────────────────
+
 export interface NotifyParticipantsInput {
-  hostId: string;               // Required: FK to user._id
-  guestId: string;              // Required: FK to user._id
-  virtualMeetingId: string;     // Required: FK to virtualmeetingschedulesandlinks._id
+  readonly hostId: string;               // Required: FK to user._id
+  readonly guestId: string;              // Required: FK to user._id
+  readonly virtualMeetingId: string;     // Required: FK to virtualmeetingschedulesandlinks._id
 }
 
 export interface NotifyParticipantsResponse {
-  success: boolean;
-  virtualMeetingId: string;
-  notifiedAt: string;
+  readonly success: boolean;
+  readonly virtualMeetingId: string;
+  readonly notifiedAt: string;
 }

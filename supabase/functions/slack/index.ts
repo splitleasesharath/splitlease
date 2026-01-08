@@ -237,6 +237,25 @@ async function handleFaqInquiry(payload: FaqInquiryPayload): Promise<{ message: 
   return { message: 'Inquiry sent successfully' };
 }
 
+// ─────────────────────────────────────────────────────────────
+// Configuration (Immutable)
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[slack]'
+const ALLOWED_ACTIONS = ['faq_inquiry', 'diagnose'] as const;
+
+type Action = typeof ALLOWED_ACTIONS[number];
+
+// Handler map (immutable record) - replaces switch statement
+const handlers: Readonly<Record<Action, (payload?: FaqInquiryPayload) => Promise<unknown> | unknown>> = Object.freeze({
+  faq_inquiry: handleFaqInquiry,
+  diagnose: handleDiagnose,
+});
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -247,9 +266,9 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    console.log(`[slack] ========== NEW REQUEST ==========`);
-    console.log(`[slack] Method: ${req.method}`);
-    console.log(`[slack] URL: ${req.url}`);
+    console.log(`${LOG_PREFIX} ========== NEW REQUEST ==========`);
+    console.log(`${LOG_PREFIX} Method: ${req.method}`);
+    console.log(`${LOG_PREFIX} URL: ${req.url}`);
 
     // Only accept POST requests
     if (req.method !== 'POST') {
@@ -258,35 +277,22 @@ Deno.serve(async (req: Request) => {
 
     // Parse request body
     const body = await req.json();
-    console.log(`[slack] Request body:`, JSON.stringify(body, null, 2));
+    console.log(`${LOG_PREFIX} Request body:`, JSON.stringify(body, null, 2));
 
     validateRequiredFields(body, ['action']);
     const { action, payload } = body;
 
     // Validate action is supported
-    const allowedActions = ['faq_inquiry', 'diagnose'];
-    validateAction(action, allowedActions);
+    validateAction(action, [...ALLOWED_ACTIONS]);
 
-    console.log(`[slack] Action: ${action}`);
+    console.log(`${LOG_PREFIX} Action: ${action}`);
 
     // Route to appropriate handler
-    let result;
+    const handler = handlers[action as Action];
+    const result = await handler(payload);
 
-    switch (action) {
-      case 'faq_inquiry':
-        result = await handleFaqInquiry(payload);
-        break;
-
-      case 'diagnose':
-        result = handleDiagnose();
-        break;
-
-      default:
-        throw new ValidationError(`Unknown action: ${action}`);
-    }
-
-    console.log(`[slack] Handler completed successfully`);
-    console.log(`[slack] ========== REQUEST COMPLETE ==========`);
+    console.log(`${LOG_PREFIX} Handler completed successfully`);
+    console.log(`${LOG_PREFIX} ========== REQUEST COMPLETE ==========`);
 
     // Return success response
     return new Response(
@@ -301,9 +307,9 @@ Deno.serve(async (req: Request) => {
     );
 
   } catch (error) {
-    console.error('[slack] ========== ERROR ==========');
-    console.error('[slack] Error:', error);
-    console.error('[slack] Error stack:', error instanceof Error ? error.stack : 'No stack');
+    console.error(`${LOG_PREFIX} ========== ERROR ==========`);
+    console.error(`${LOG_PREFIX} Error:`, error);
+    console.error(`${LOG_PREFIX} Error stack:`, error instanceof Error ? error.stack : 'No stack');
 
     const statusCode = getStatusCodeFromError(error as Error);
     const errorResponse = formatErrorResponse(error as Error);
@@ -317,3 +323,34 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Configuration
+  LOG_PREFIX,
+  ALLOWED_ACTIONS,
+  handlers,
+
+  // Inlined Utilities
+  corsHeaders,
+  ValidationError,
+  formatErrorResponse,
+  getStatusCodeFromError,
+  validateEmail,
+  validateRequiredFields,
+  validateAction,
+
+  // Environment Diagnostics
+  logEnvironmentDiagnostics,
+
+  // Action Handlers
+  handleDiagnose,
+  handleFaqInquiry,
+})

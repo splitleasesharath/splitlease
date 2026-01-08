@@ -5,26 +5,51 @@
  * Handles Twilio API communication for sending SMS messages
  *
  * IMPORTANT: Twilio uses form-urlencoded POST, not JSON
+ *
+ * FP PATTERN: Separates pure data builders from effectful API operations
+ * All data transformations are pure with @pure annotations
+ * All API operations are explicit with @effectful annotations
+ *
+ * @module send-sms/lib/twilioClient
  */
 
 import type { TwilioResponse, TwilioMessageResponse } from './types.ts';
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[send-sms:twilioClient]'
+const TWILIO_API_BASE = 'https://api.twilio.com/2010-04-01/Accounts'
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface TwilioRequestParams {
+  readonly toPhone: string;
+  readonly fromPhone: string;
+  readonly body: string;
+  readonly statusCallback?: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Builders
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Build the Twilio API endpoint URL
+ * @pure
  */
 export function buildTwilioEndpoint(accountSid: string): string {
-  return `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+  return `${TWILIO_API_BASE}/${accountSid}/Messages.json`;
 }
 
 /**
  * Build Twilio SMS request body (form-urlencoded)
+ * @pure
  */
-export function buildTwilioRequestBody(params: {
-  toPhone: string;
-  fromPhone: string;
-  body: string;
-  statusCallback?: string;
-}): URLSearchParams {
+export function buildTwilioRequestBody(params: TwilioRequestParams): URLSearchParams {
   const { toPhone, fromPhone, body, statusCallback } = params;
 
   const formData = new URLSearchParams();
@@ -40,7 +65,69 @@ export function buildTwilioRequestBody(params: {
 }
 
 /**
+ * Build Basic Auth header value
+ * @pure
+ */
+const buildBasicAuthHeader = (accountSid: string, authToken: string): string =>
+  `Basic ${btoa(`${accountSid}:${authToken}`)}`
+
+/**
+ * Build response object from API response
+ * @pure
+ */
+const buildResponse = (
+  statusCode: number,
+  body?: TwilioMessageResponse | unknown | string
+): TwilioResponse =>
+  Object.freeze({
+    statusCode,
+    body,
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if Twilio response indicates success
+ * Twilio returns 201 Created for successful message creation
+ * @pure
+ */
+export function isSuccessResponse(response: TwilioResponse): boolean {
+  return response.statusCode === 201;
+}
+
+/**
+ * Check if response body is a message response
+ * @pure
+ */
+const isMessageResponse = (body: unknown): body is TwilioMessageResponse =>
+  body !== null &&
+  typeof body === 'object' &&
+  'sid' in (body as Record<string, unknown>)
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Extractors
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Extract message SID from successful response
+ * @pure
+ */
+export function getMessageSid(response: TwilioResponse): string | undefined {
+  if (isSuccessResponse(response) && isMessageResponse(response.body)) {
+    return response.body.sid;
+  }
+  return undefined;
+}
+
+// ─────────────────────────────────────────────────────────────
+// API Operations
+// ─────────────────────────────────────────────────────────────
+
+/**
  * Send SMS via Twilio API
+ * @effectful - HTTP API operation
  *
  * @param accountSid - Twilio Account SID
  * @param authToken - Twilio Auth Token
@@ -52,60 +139,68 @@ export async function sendSms(
   authToken: string,
   requestBody: URLSearchParams
 ): Promise<TwilioResponse> {
-  console.log('[twilioClient] Sending SMS via Twilio...');
-  console.log('[twilioClient] To:', requestBody.get('To'));
-  console.log('[twilioClient] Body length:', requestBody.get('Body')?.length || 0);
+  console.log(`${LOG_PREFIX} Sending SMS via Twilio...`);
+  console.log(`${LOG_PREFIX} To:`, requestBody.get('To'));
+  console.log(`${LOG_PREFIX} Body length:`, requestBody.get('Body')?.length || 0);
 
   const endpoint = buildTwilioEndpoint(accountSid);
-
-  // Twilio uses HTTP Basic Auth
-  const credentials = btoa(`${accountSid}:${authToken}`);
+  const authHeader = buildBasicAuthHeader(accountSid, authToken);
 
   const response = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Authorization': `Basic ${credentials}`,
+    headers: Object.freeze({
+      'Authorization': authHeader,
       'Content-Type': 'application/x-www-form-urlencoded',
-    },
+    }),
     body: requestBody.toString(),
   });
 
-  const result: TwilioResponse = {
-    statusCode: response.status,
-  };
-
   // Parse response body
+  let body: unknown;
   try {
-    result.body = await response.json();
+    body = await response.json();
   } catch {
-    result.body = await response.text();
+    body = await response.text();
   }
 
   if (!response.ok) {
-    console.error('[twilioClient] Twilio API error:', result.statusCode, result.body);
-  } else {
-    const messageResponse = result.body as TwilioMessageResponse;
-    console.log('[twilioClient] SMS queued successfully, SID:', messageResponse.sid);
-    console.log('[twilioClient] Status:', messageResponse.status);
+    console.error(`${LOG_PREFIX} Twilio API error:`, response.status, body);
+    return buildResponse(response.status, body);
   }
 
-  return result;
+  const messageResponse = body as TwilioMessageResponse;
+  console.log(`${LOG_PREFIX} SMS queued successfully, SID:`, messageResponse.sid);
+  console.log(`${LOG_PREFIX} Status:`, messageResponse.status);
+
+  return buildResponse(response.status, body);
 }
 
-/**
- * Check if Twilio response indicates success
- * Twilio returns 201 Created for successful message creation
- */
-export function isSuccessResponse(response: TwilioResponse): boolean {
-  return response.statusCode === 201;
-}
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
 
 /**
- * Extract message SID from successful response
+ * Exported for testing purposes
+ * @test
  */
-export function getMessageSid(response: TwilioResponse): string | undefined {
-  if (isSuccessResponse(response) && response.body && typeof response.body === 'object') {
-    return (response.body as TwilioMessageResponse).sid;
-  }
-  return undefined;
-}
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  TWILIO_API_BASE,
+
+  // Pure Data Builders
+  buildTwilioEndpoint,
+  buildTwilioRequestBody,
+  buildBasicAuthHeader,
+  buildResponse,
+
+  // Validation Predicates
+  isSuccessResponse,
+  isMessageResponse,
+
+  // Pure Data Extractors
+  getMessageSid,
+
+  // API Operations
+  sendSms,
+})

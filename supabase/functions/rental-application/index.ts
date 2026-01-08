@@ -196,3 +196,21 @@ Deno.serve(async (req: Request) => {
     return formatErrorResponseHttp(error as Error);
   }
 });
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Configuration
+  ALLOWED_ACTIONS,
+  PUBLIC_ACTIONS,
+  handlers,
+
+  // Pure Functions
+  getUserId,
+});

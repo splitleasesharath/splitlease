@@ -63,23 +63,59 @@ function validateAction(action: string, allowedActions: string[]): void {
   }
 }
 
-// ============ Allowed Actions ============
-const ALLOWED_ACTIONS = ['health'];
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
 
-// ============ Action Handlers ============
+const LOG_PREFIX = '[communications]'
+const ALLOWED_ACTIONS = ['health'] as const;
+
+type Action = typeof ALLOWED_ACTIONS[number];
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface HealthResponse {
+  readonly status: string;
+  readonly timestamp: string;
+  readonly message: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Builders
+// ─────────────────────────────────────────────────────────────
 
 /**
- * Health check endpoint
+ * Build health response
+ * @pure
  */
-function handleHealth(): { status: string; timestamp: string; message: string } {
-  return {
+const buildHealthResponse = (): HealthResponse =>
+  Object.freeze({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     message: 'Communications edge function is running. This is a placeholder - implement specific actions as needed.',
-  };
-}
+  })
 
-// ============ Main Handler ============
+// ─────────────────────────────────────────────────────────────
+// Action Handlers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Health check endpoint
+ * @pure
+ */
+const handleHealth = (): HealthResponse => buildHealthResponse()
+
+// Handler map (immutable record) - replaces switch statement
+const handlers: Readonly<Record<Action, () => HealthResponse>> = Object.freeze({
+  health: handleHealth,
+})
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
 Deno.serve(async (req: Request) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -94,9 +130,9 @@ Deno.serve(async (req: Request) => {
   let action = 'unknown';
 
   try {
-    console.log(`[communications] ========== NEW REQUEST ==========`);
-    console.log(`[communications] Method: ${req.method}`);
-    console.log(`[communications] URL: ${req.url}`);
+    console.log(`${LOG_PREFIX} ========== NEW REQUEST ==========`);
+    console.log(`${LOG_PREFIX} Method: ${req.method}`);
+    console.log(`${LOG_PREFIX} URL: ${req.url}`);
 
     // Only accept POST requests
     if (req.method !== 'POST') {
@@ -105,34 +141,25 @@ Deno.serve(async (req: Request) => {
 
     // Parse request body
     const body = await req.json();
-    console.log(`[communications] Request body:`, JSON.stringify(body, null, 2));
+    console.log(`${LOG_PREFIX} Request body:`, JSON.stringify(body, null, 2));
 
     validateRequiredFields(body, ['action']);
     action = body.action;
-    const { payload } = body;
 
     // Create error collector after we know the action
     collector = createErrorCollector('communications', action);
 
     // Validate action is supported
-    validateAction(action, ALLOWED_ACTIONS);
+    validateAction(action, [...ALLOWED_ACTIONS]);
 
-    console.log(`[communications] Action: ${action}`);
+    console.log(`${LOG_PREFIX} Action: ${action}`);
 
-    // Route to appropriate handler
-    let result;
+    // Route to handler
+    const handler = handlers[action as Action];
+    const result = handler();
 
-    switch (action) {
-      case 'health':
-        result = handleHealth();
-        break;
-
-      default:
-        throw new ValidationError(`Unknown action: ${action}`);
-    }
-
-    console.log(`[communications] Handler completed successfully`);
-    console.log(`[communications] ========== REQUEST COMPLETE ==========`);
+    console.log(`${LOG_PREFIX} Handler completed successfully`);
+    console.log(`${LOG_PREFIX} ========== REQUEST COMPLETE ==========`);
 
     // Return success response
     return new Response(
@@ -147,8 +174,8 @@ Deno.serve(async (req: Request) => {
     );
 
   } catch (error) {
-    console.error('[communications] ========== ERROR ==========');
-    console.error('[communications] Error:', error);
+    console.error(`${LOG_PREFIX} ========== ERROR ==========`);
+    console.error(`${LOG_PREFIX} Error:`, error);
 
     // Report to Slack (ONE RUN = ONE LOG, fire-and-forget)
     if (collector) {
@@ -168,3 +195,32 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  ALLOWED_ACTIONS,
+  handlers,
+
+  // Inlined Utilities
+  corsHeaders,
+  ValidationError,
+  formatErrorResponse,
+  getStatusCodeFromError,
+  validateRequiredFields,
+  validateAction,
+
+  // Pure Data Builders
+  buildHealthResponse,
+
+  // Action Handlers
+  handleHealth,
+})

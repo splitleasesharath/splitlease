@@ -3,6 +3,11 @@
  * Split Lease - Supabase Edge Functions
  *
  * Implements compensation and pricing calculations from Bubble Steps 13-18
+ *
+ * FP PATTERN: All calculation functions are pure with @pure annotations
+ * Each function depends only on its inputs and produces deterministic outputs
+ *
+ * @module proposal/lib/calculations
  */
 
 import {
@@ -11,284 +16,348 @@ import {
   ReservationSpan,
 } from "./types.ts";
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[proposal:calculations]'
+
+// ─────────────────────────────────────────────────────────────
+// Internal Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Round number to two decimal places
+ * Prevents floating point precision issues
+ * @pure
+ */
+const roundToTwoDecimals = (value: number): number =>
+  Math.round(value * 100) / 100
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is a valid array
+ * @pure
+ */
+const isValidArray = <T>(arr: T[] | undefined | null): arr is T[] =>
+  Array.isArray(arr)
+
+// ─────────────────────────────────────────────────────────────
+// Compensation Calculators (Internal)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Calculate nightly compensation
+ * @pure
+ */
+const calculateNightlyCompensation = (
+  hostNightlyRate: number,
+  nightsPerWeek: number,
+  weeks: number
+): Omit<CompensationResult, 'host_compensation_per_night'> =>
+  Object.freeze({
+    total_compensation: roundToTwoDecimals(hostNightlyRate * nightsPerWeek * weeks),
+    duration_months: roundToTwoDecimals(weeks / 4),
+    four_week_rent: roundToTwoDecimals(hostNightlyRate * nightsPerWeek * 4),
+    four_week_compensation: roundToTwoDecimals(hostNightlyRate * nightsPerWeek * 4),
+  })
+
+/**
+ * Calculate weekly compensation
+ * @pure
+ */
+const calculateWeeklyCompensation = (
+  weeklyRate: number,
+  weeks: number
+): Omit<CompensationResult, 'host_compensation_per_night'> =>
+  Object.freeze({
+    total_compensation: roundToTwoDecimals(weeklyRate * weeks),
+    duration_months: roundToTwoDecimals(weeks / 4),
+    four_week_rent: roundToTwoDecimals(weeklyRate * 4),
+    four_week_compensation: roundToTwoDecimals(weeklyRate * 4),
+  })
+
+/**
+ * Calculate monthly compensation
+ * @pure
+ */
+const calculateMonthlyCompensation = (
+  monthlyRate: number,
+  weeklyRate: number,
+  weeks: number
+): Omit<CompensationResult, 'host_compensation_per_night'> => {
+  const effectiveMonthlyRate = monthlyRate || (weeklyRate * 4)
+  const durationMonths = weeks / 4
+  return Object.freeze({
+    total_compensation: roundToTwoDecimals(effectiveMonthlyRate * durationMonths),
+    duration_months: roundToTwoDecimals(durationMonths),
+    four_week_rent: roundToTwoDecimals(effectiveMonthlyRate),
+    four_week_compensation: roundToTwoDecimals(effectiveMonthlyRate),
+  })
+}
+
+// ─────────────────────────────────────────────────────────────
+// Compensation Calculators (Exported)
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Calculate compensation based on rental type and duration
  * Mirrors Bubble workflow CORE-create_proposal-NEW Steps 13-18
+ * @pure
  *
- * IMPORTANT: host_compensation in Bubble is the HOST'S per-night rate (from listing's
+ * IMPORTANT: host_compensation in Bubble is the HOST's per-night rate (from listing's
  * pricing tiers like "💰Nightly Host Rate for X nights"), NOT the guest-facing price.
  * The Total Compensation is then calculated as:
  *   - Nightly: host_nightly_rate * nights_per_week * total_weeks
  *   - Weekly: weekly_rate * total_weeks
  *   - Monthly: monthly_rate * months
- *
- * @param rentalType - Type of rental (nightly, weekly, monthly)
- * @param reservationSpan - Duration category (1_week, 1_month, etc.)
- * @param nightsPerWeek - Number of nights per week
- * @param weeklyRate - Host's weekly rate from listing (💰Weekly Host Rate)
- * @param hostNightlyRate - Host's per-night rate from listing pricing tiers
- * @param weeks - Total number of weeks for reservation
- * @param monthlyRate - Host's monthly rate from listing (💰Monthly Host Rate), optional
- * @returns Compensation calculation result
  */
-export function calculateCompensation(
+export const calculateCompensation = (
   rentalType: RentalType,
-  reservationSpan: ReservationSpan,
+  _reservationSpan: ReservationSpan, // Prefixed - preserved for API compatibility
   nightsPerWeek: number,
   weeklyRate: number,
   hostNightlyRate: number,
   weeks: number,
   monthlyRate?: number
-): CompensationResult {
-  let totalCompensation = 0;
-  let durationMonths = 0;
-  let fourWeekRent = 0;
-  let fourWeekCompensation = 0;
+): CompensationResult => {
+  const hostCompensationPerNight = roundToTwoDecimals(hostNightlyRate)
 
-  // Per-night host compensation (used for "host compensation" field in proposal)
-  // This is the base rate that gets multiplied by nights and weeks
-  const hostCompensationPerNight = hostNightlyRate;
+  let baseCompensation: Omit<CompensationResult, 'host_compensation_per_night'>
 
   switch (rentalType) {
     case "nightly":
-      // Step 13: Nightly calculation
-      // Total = host_nightly_rate * nights_per_week * total_weeks
-      // This matches Bubble: "host compensation * nights selected:count * actual weeks"
-      totalCompensation = hostNightlyRate * nightsPerWeek * weeks;
-      fourWeekRent = hostNightlyRate * nightsPerWeek * 4;
-      fourWeekCompensation = fourWeekRent;
-      durationMonths = weeks / 4;
-      break;
+      baseCompensation = calculateNightlyCompensation(hostNightlyRate, nightsPerWeek, weeks)
+      break
 
     case "weekly":
-      // Step 14: Weekly calculation
-      // Total = weekly_rate * total_weeks
-      totalCompensation = weeklyRate * weeks;
-      fourWeekRent = weeklyRate * 4;
-      fourWeekCompensation = fourWeekRent;
-      durationMonths = weeks / 4;
-      break;
+      baseCompensation = calculateWeeklyCompensation(weeklyRate, weeks)
+      break
 
     case "monthly":
-      // Monthly uses the monthly rate directly
-      const effectiveMonthlyRate = monthlyRate || (weeklyRate * 4);
-      if (reservationSpan !== "other") {
-        // Step 15: Monthly (standard span)
-        // Duration in months = weeks / 4
-        // Total = monthly_rate * months
-        durationMonths = weeks / 4;
-        totalCompensation = effectiveMonthlyRate * durationMonths;
-        fourWeekRent = effectiveMonthlyRate;
-        fourWeekCompensation = fourWeekRent;
-      } else {
-        // Step 16: Monthly (custom/other span)
-        // Proportional calculation for non-standard durations
-        durationMonths = weeks / 4;
-        totalCompensation = effectiveMonthlyRate * durationMonths;
-        fourWeekRent = effectiveMonthlyRate;
-        fourWeekCompensation = fourWeekRent;
-      }
-      break;
+      baseCompensation = calculateMonthlyCompensation(monthlyRate || 0, weeklyRate, weeks)
+      break
 
     default:
-      // Default to nightly if unknown type
-      console.warn(
-        `[calculations] Unknown rental type "${rentalType}", defaulting to nightly`
-      );
-      totalCompensation = hostNightlyRate * nightsPerWeek * weeks;
-      fourWeekRent = hostNightlyRate * nightsPerWeek * 4;
-      fourWeekCompensation = fourWeekRent;
-      durationMonths = weeks / 4;
+      console.warn(`${LOG_PREFIX} Unknown rental type "${rentalType}", defaulting to nightly`)
+      baseCompensation = calculateNightlyCompensation(hostNightlyRate, nightsPerWeek, weeks)
   }
 
-  return {
-    total_compensation: roundToTwoDecimals(totalCompensation),
-    duration_months: roundToTwoDecimals(durationMonths),
-    four_week_rent: roundToTwoDecimals(fourWeekRent),
-    four_week_compensation: roundToTwoDecimals(fourWeekCompensation),
-    host_compensation_per_night: roundToTwoDecimals(hostCompensationPerNight),
-  };
+  return Object.freeze({
+    ...baseCompensation,
+    host_compensation_per_night: hostCompensationPerNight,
+  })
 }
+
+// ─────────────────────────────────────────────────────────────
+// Date Calculators
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Calculate move-out date based on move-in and duration
  * Formula from Bubble Step 1:
  * Move-out = move_in_start + days: (reservation_span_weeks - 1) * 7 + nights_count
- *
- * @param moveInStart - Move-in start date
- * @param reservationSpanWeeks - Number of weeks
- * @param nightsCount - Number of nights per week
- * @returns Calculated move-out date
+ * @pure
  */
-export function calculateMoveOutDate(
+export const calculateMoveOutDate = (
   moveInStart: Date,
   reservationSpanWeeks: number,
   nightsCount: number
-): Date {
-  const daysToAdd = (reservationSpanWeeks - 1) * 7 + nightsCount;
-  const moveOut = new Date(moveInStart);
-  moveOut.setDate(moveOut.getDate() + daysToAdd);
-  return moveOut;
-}
-
-/**
- * Calculate complementary nights (nights available but not selected)
- * Mirrors Bubble Step 4
- *
- * @param availableNights - All nights available on the listing
- * @param selectedNights - Nights selected by the guest
- * @returns Array of complementary night indices
- */
-export function calculateComplementaryNights(
-  availableNights: number[],
-  selectedNights: number[]
-): number[] {
-  if (!availableNights || !Array.isArray(availableNights)) return [];
-  if (!selectedNights || !Array.isArray(selectedNights)) return availableNights;
-
-  return availableNights.filter((night) => !selectedNights.includes(night));
-}
-
-/**
- * Calculate complementary days (days available but not selected)
- *
- * @param availableDays - All days available on the listing
- * @param selectedDays - Days selected by the guest
- * @returns Array of complementary day indices
- */
-export function calculateComplementaryDays(
-  availableDays: number[],
-  selectedDays: number[]
-): number[] {
-  if (!availableDays || !Array.isArray(availableDays)) return [];
-  if (!selectedDays || !Array.isArray(selectedDays)) return availableDays;
-
-  return availableDays.filter((day) => !selectedDays.includes(day));
-}
-
-/**
- * Calculate order ranking for new proposal
- * Order ranking = existing proposals count + 1
- *
- * @param existingProposalsCount - Current number of proposals for the guest
- * @returns Order ranking for the new proposal
- */
-export function calculateOrderRanking(existingProposalsCount: number): number {
-  return (existingProposalsCount || 0) + 1;
-}
-
-/**
- * Calculate total guest price including fees
- *
- * @param basePrice - Base price (total compensation)
- * @param cleaningFee - Cleaning/maintenance fee
- * @param damageDeposit - Damage deposit (optional, may be separate)
- * @returns Total price for guest
- */
-export function calculateTotalGuestPrice(
-  basePrice: number,
-  cleaningFee: number,
-  _damageDeposit: number // Prefixed with _ to indicate intentionally unused
-): number {
-  // Note: Damage deposit is typically tracked separately and refundable
-  // It may or may not be included in "total price" depending on context
-  return roundToTwoDecimals(basePrice + (cleaningFee || 0));
-}
-
-/**
- * Get nightly rate based on number of nights
- * Listings have different rates for different night counts
- *
- * @param listing - Listing data with pricing tiers
- * @param nightsPerWeek - Number of nights per week
- * @returns Appropriate nightly rate
- */
-export function getNightlyRateForNights(
-  listing: {
-    "💰Nightly Host Rate for 2 nights"?: number;
-    "💰Nightly Host Rate for 3 nights"?: number;
-    "💰Nightly Host Rate for 4 nights"?: number;
-    "💰Nightly Host Rate for 5 nights"?: number;
-    "💰Nightly Host Rate for 7 nights"?: number;
-    "💰Weekly Host Rate"?: number;
-  },
-  nightsPerWeek: number
-): number {
-  // Map nights to the appropriate rate field
-  const rateMap: Record<number, number | undefined> = {
-    2: listing["💰Nightly Host Rate for 2 nights"],
-    3: listing["💰Nightly Host Rate for 3 nights"],
-    4: listing["💰Nightly Host Rate for 4 nights"],
-    5: listing["💰Nightly Host Rate for 5 nights"],
-    7: listing["💰Nightly Host Rate for 7 nights"],
-  };
-
-  // Try exact match first
-  if (rateMap[nightsPerWeek] !== undefined) {
-    return rateMap[nightsPerWeek]!;
-  }
-
-  // For 6 nights, interpolate or use 7-night rate
-  if (nightsPerWeek === 6 && rateMap[7]) {
-    return rateMap[7]!;
-  }
-
-  // Fallback to weekly rate divided by nights, or 0
-  if (listing["💰Weekly Host Rate"] && nightsPerWeek > 0) {
-    return roundToTwoDecimals(listing["💰Weekly Host Rate"] / nightsPerWeek);
-  }
-
-  return 0;
-}
-
-/**
- * Format price for display (e.g., $1,029)
- *
- * @param price - Price value
- * @returns Formatted price string
- */
-export function formatPriceForDisplay(price: number): string {
-  return `$${Math.round(price).toLocaleString("en-US")}`;
-}
-
-/**
- * Format price range for display (e.g., "$75 - $100")
- *
- * @param minPrice - Minimum price
- * @param maxPrice - Maximum price
- * @returns Formatted price range string
- */
-export function formatPriceRangeForDisplay(
-  minPrice: number,
-  maxPrice: number
-): string {
-  if (minPrice === maxPrice) {
-    return formatPriceForDisplay(minPrice);
-  }
-  return `${formatPriceForDisplay(minPrice)} - ${formatPriceForDisplay(maxPrice)}`;
-}
-
-/**
- * Round number to two decimal places
- * Prevents floating point precision issues
- */
-function roundToTwoDecimals(value: number): number {
-  return Math.round(value * 100) / 100;
+): Date => {
+  const daysToAdd = (reservationSpanWeeks - 1) * 7 + nightsCount
+  const moveOut = new Date(moveInStart)
+  moveOut.setDate(moveOut.getDate() + daysToAdd)
+  return moveOut
 }
 
 /**
  * Calculate actual weeks between two dates
  * Useful for verifying reservation span
- *
- * @param startDate - Start date
- * @param endDate - End date
- * @returns Number of weeks (can be fractional)
+ * @pure
  */
-export function calculateWeeksBetweenDates(
+export const calculateWeeksBetweenDates = (
   startDate: Date,
   endDate: Date
-): number {
-  const diffMs = endDate.getTime() - startDate.getTime();
-  const diffDays = diffMs / (1000 * 60 * 60 * 24);
-  return roundToTwoDecimals(diffDays / 7);
+): number => {
+  const diffMs = endDate.getTime() - startDate.getTime()
+  const diffDays = diffMs / (1000 * 60 * 60 * 24)
+  return roundToTwoDecimals(diffDays / 7)
 }
+
+// ─────────────────────────────────────────────────────────────
+// Complementary Day/Night Calculators
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Calculate complementary nights (nights available but not selected)
+ * Mirrors Bubble Step 4
+ * @pure
+ */
+export const calculateComplementaryNights = (
+  availableNights: number[],
+  selectedNights: number[]
+): readonly number[] => {
+  if (!isValidArray(availableNights)) return Object.freeze([])
+  if (!isValidArray(selectedNights)) return Object.freeze([...availableNights])
+
+  return Object.freeze(availableNights.filter((night) => !selectedNights.includes(night)))
+}
+
+/**
+ * Calculate complementary days (days available but not selected)
+ * @pure
+ */
+export const calculateComplementaryDays = (
+  availableDays: number[],
+  selectedDays: number[]
+): readonly number[] => {
+  if (!isValidArray(availableDays)) return Object.freeze([])
+  if (!isValidArray(selectedDays)) return Object.freeze([...availableDays])
+
+  return Object.freeze(availableDays.filter((day) => !selectedDays.includes(day)))
+}
+
+// ─────────────────────────────────────────────────────────────
+// Order Ranking Calculator
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Calculate order ranking for new proposal
+ * Order ranking = existing proposals count + 1
+ * @pure
+ */
+export const calculateOrderRanking = (existingProposalsCount: number): number =>
+  (existingProposalsCount || 0) + 1
+
+// ─────────────────────────────────────────────────────────────
+// Price Calculators
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Calculate total guest price including fees
+ * @pure
+ */
+export const calculateTotalGuestPrice = (
+  basePrice: number,
+  cleaningFee: number,
+  _damageDeposit: number // Prefixed - tracked separately as refundable
+): number =>
+  roundToTwoDecimals(basePrice + (cleaningFee || 0))
+
+/**
+ * Listing pricing tiers interface for getNightlyRateForNights
+ */
+interface ListingPricingTiers {
+  readonly "💰Nightly Host Rate for 2 nights"?: number;
+  readonly "💰Nightly Host Rate for 3 nights"?: number;
+  readonly "💰Nightly Host Rate for 4 nights"?: number;
+  readonly "💰Nightly Host Rate for 5 nights"?: number;
+  readonly "💰Nightly Host Rate for 7 nights"?: number;
+  readonly "💰Weekly Host Rate"?: number;
+}
+
+/**
+ * Get nightly rate based on number of nights
+ * Listings have different rates for different night counts
+ * @pure
+ */
+export const getNightlyRateForNights = (
+  listing: ListingPricingTiers,
+  nightsPerWeek: number
+): number => {
+  // Map nights to the appropriate rate field
+  const rateMap: Readonly<Record<number, number | undefined>> = Object.freeze({
+    2: listing["💰Nightly Host Rate for 2 nights"],
+    3: listing["💰Nightly Host Rate for 3 nights"],
+    4: listing["💰Nightly Host Rate for 4 nights"],
+    5: listing["💰Nightly Host Rate for 5 nights"],
+    7: listing["💰Nightly Host Rate for 7 nights"],
+  })
+
+  // Try exact match first
+  if (rateMap[nightsPerWeek] !== undefined) {
+    return rateMap[nightsPerWeek]!
+  }
+
+  // For 6 nights, interpolate or use 7-night rate
+  if (nightsPerWeek === 6 && rateMap[7]) {
+    return rateMap[7]!
+  }
+
+  // Fallback to weekly rate divided by nights, or 0
+  if (listing["💰Weekly Host Rate"] && nightsPerWeek > 0) {
+    return roundToTwoDecimals(listing["💰Weekly Host Rate"] / nightsPerWeek)
+  }
+
+  return 0
+}
+
+// ─────────────────────────────────────────────────────────────
+// Formatters
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Format price for display (e.g., $1,029)
+ * @pure
+ */
+export const formatPriceForDisplay = (price: number): string =>
+  `$${Math.round(price).toLocaleString("en-US")}`
+
+/**
+ * Format price range for display (e.g., "$75 - $100")
+ * @pure
+ */
+export const formatPriceRangeForDisplay = (
+  minPrice: number,
+  maxPrice: number
+): string =>
+  minPrice === maxPrice
+    ? formatPriceForDisplay(minPrice)
+    : `${formatPriceForDisplay(minPrice)} - ${formatPriceForDisplay(maxPrice)}`
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+
+  // Internal Helpers
+  roundToTwoDecimals,
+  isValidArray,
+
+  // Internal Compensation Calculators
+  calculateNightlyCompensation,
+  calculateWeeklyCompensation,
+  calculateMonthlyCompensation,
+
+  // Exported Compensation Calculators
+  calculateCompensation,
+
+  // Date Calculators
+  calculateMoveOutDate,
+  calculateWeeksBetweenDates,
+
+  // Complementary Day/Night Calculators
+  calculateComplementaryNights,
+  calculateComplementaryDays,
+
+  // Order Ranking Calculator
+  calculateOrderRanking,
+
+  // Price Calculators
+  calculateTotalGuestPrice,
+  getNightlyRateForNights,
+
+  // Formatters
+  formatPriceForDisplay,
+  formatPriceRangeForDisplay,
+})

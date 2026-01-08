@@ -116,6 +116,10 @@ const authenticateUser = async (
 
 console.log("[virtual-meeting] Edge Function started (FP mode)");
 
+/**
+ * Virtual Meeting request orchestrator
+ * @effectful - Entry point with side effects
+ */
 Deno.serve(async (req: Request) => {
   const correlationId = crypto.randomUUID().slice(0, 8);
   let errorLog: ErrorLog = createErrorLog('virtual-meeting', 'unknown', correlationId);
@@ -197,4 +201,22 @@ Deno.serve(async (req: Request) => {
 
     return formatErrorResponseHttp(error as Error);
   }
+});
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Configuration
+  ALLOWED_ACTIONS,
+  PUBLIC_ACTIONS,
+  handlers,
+
+  // Pure Functions
+  authenticateUser,
 });

@@ -4,11 +4,21 @@
  *
  * Generates well-written listing descriptions based on user-provided listing data
  * Mirrors the original Bubble.io ChatGPT implementation
+ *
+ * @module ai-gateway/prompts/listing-description
  */
 
 import { registerPrompt } from "./_registry.ts";
 
-registerPrompt({
+// ─────────────────────────────────────────────────────────────
+// Prompt Configuration
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Listing description prompt configuration
+ * @immutable
+ */
+const LISTING_DESCRIPTION_PROMPT = Object.freeze({
   key: "listing-description",
   name: "Listing Description Generator",
   description:
@@ -46,11 +56,25 @@ Based on all this data (ignore empty constraints) please generate a well written
 
 Simply answer with the description and nothing else, keep it at a length similar to the examples provided and DO NOT make up information. This description will be used by the host as inspiration to keep highlighting the details of the listing.`,
 
-  defaults: {
+  defaults: Object.freeze({
     model: "gpt-4o-mini",
     temperature: 0.7,
     maxTokens: 500,
-  },
+  }),
 
   responseFormat: "text",
-});
+})
+
+registerPrompt(LISTING_DESCRIPTION_PROMPT);
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  LISTING_DESCRIPTION_PROMPT,
+})

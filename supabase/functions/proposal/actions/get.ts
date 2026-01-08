@@ -5,6 +5,12 @@
  * Retrieves proposal details by ID
  *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
+ *
+ * FP PATTERN: Separates pure data builders from effectful database operations
+ * All data transformations are pure with @pure annotations
+ * All database operations are explicit with @effectful annotations
+ *
+ * @module proposal/actions/get
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -12,134 +18,242 @@ import { ValidationError } from "../../_shared/errors.ts";
 import { GetProposalInput, ProposalData, ProposalStatusName } from "../lib/types.ts";
 import { getStatusStage } from "../lib/status.ts";
 
-/**
- * Response structure for get proposal
- */
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[proposal:get]'
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface ListingInfo {
+  readonly _id: string;
+  readonly Name: string;
+  readonly "Location - Address": Readonly<Record<string, unknown>>;
+}
+
+interface UserInfo {
+  readonly _id: string;
+  readonly "Name - Full": string;
+  readonly email: string;
+}
+
 interface GetProposalResponse {
-  proposal: ProposalData;
-  status_display: string;
-  status_stage: number;
-  listing?: {
-    _id: string;
-    Name: string;
-    "Location - Address": Record<string, unknown>;
-  };
-  guest?: {
-    _id: string;
-    "Name - Full": string;
-    email: string;
-  };
-  host?: {
-    _id: string;
-    "Name - Full": string;
-    email: string;
-  };
+  readonly proposal: ProposalData;
+  readonly status_display: string;
+  readonly status_stage: number;
+  readonly listing?: ListingInfo;
+  readonly guest?: UserInfo;
+  readonly host?: UserInfo;
+}
+
+interface RelatedData {
+  readonly listing: ListingInfo | null;
+  readonly guest: UserInfo | null;
+  readonly host: UserInfo | null;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Validate proposal ID is present and valid
+ * @pure
+ */
+const isValidProposalId = (value: unknown): value is string =>
+  typeof value === 'string' && value.length > 0
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Builders
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build response object from proposal and related data
+ * @pure
+ */
+const buildResponse = (
+  proposalData: ProposalData,
+  relatedData: RelatedData
+): GetProposalResponse => {
+  const statusName = proposalData.Status as ProposalStatusName
+
+  const response: Record<string, unknown> = {
+    proposal: proposalData,
+    status_display: statusName,
+    status_stage: getStatusStage(statusName),
+  }
+
+  if (relatedData.listing) {
+    response.listing = relatedData.listing
+  }
+
+  if (relatedData.guest) {
+    response.guest = relatedData.guest
+  }
+
+  if (relatedData.host) {
+    response.host = relatedData.host
+  }
+
+  return Object.freeze(response) as GetProposalResponse
+}
+
+// ─────────────────────────────────────────────────────────────
+// Database Query Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch proposal from database
+ * @effectful - Database read operation
+ */
+const fetchProposal = async (
+  supabase: SupabaseClient,
+  proposalId: string
+): Promise<ProposalData> => {
+  const { data: proposal, error } = await supabase
+    .from("proposal")
+    .select("*")
+    .eq("_id", proposalId)
+    .single()
+
+  if (error || !proposal) {
+    console.error(`${LOG_PREFIX} Proposal fetch failed:`, error)
+    throw new ValidationError(`Proposal not found: ${proposalId}`)
+  }
+
+  return proposal as unknown as ProposalData
 }
 
 /**
+ * Fetch listing info from database
+ * @effectful - Database read operation
+ */
+const fetchListingInfo = async (
+  supabase: SupabaseClient,
+  listingId: string | undefined
+): Promise<ListingInfo | null> => {
+  if (!listingId) return null
+
+  const { data: listing } = await supabase
+    .from("listing")
+    .select(`_id, Name, "Location - Address"`)
+    .eq("_id", listingId)
+    .single()
+
+  return listing as ListingInfo | null
+}
+
+/**
+ * Fetch user info from database
+ * @effectful - Database read operation
+ */
+const fetchUserInfo = async (
+  supabase: SupabaseClient,
+  userId: string | undefined
+): Promise<UserInfo | null> => {
+  if (!userId) return null
+
+  const { data: user } = await supabase
+    .from("user")
+    .select(`_id, "Name - Full", email`)
+    .eq("_id", userId)
+    .single()
+
+  return user as UserInfo | null
+}
+
+/**
+ * Fetch all related data for a proposal
+ * @effectful - Multiple database read operations
+ */
+const fetchRelatedData = async (
+  supabase: SupabaseClient,
+  proposal: ProposalData
+): Promise<RelatedData> => {
+  const [listing, guest, host] = await Promise.all([
+    fetchListingInfo(supabase, proposal.Listing),
+    fetchUserInfo(supabase, proposal.Guest),
+    fetchUserInfo(supabase, proposal["Host User"]),
+  ])
+
+  return Object.freeze({ listing, guest, host })
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
+/**
  * Handle get proposal request
+ * @effectful - Orchestrates database operations
  */
 export async function handleGet(
   payload: Record<string, unknown>,
   supabase: SupabaseClient
 ): Promise<GetProposalResponse> {
-  console.log(`[proposal:get] Starting get request`);
+  console.log(`${LOG_PREFIX} Starting get request`)
 
   // ================================================
   // VALIDATION
   // ================================================
 
-  const input = payload as unknown as GetProposalInput;
+  const input = payload as unknown as GetProposalInput
 
-  if (!input.proposal_id || typeof input.proposal_id !== "string") {
-    throw new ValidationError("proposal_id is required and must be a string");
+  if (!isValidProposalId(input.proposal_id)) {
+    throw new ValidationError("proposal_id is required and must be a string")
   }
 
-  console.log(`[proposal:get] Fetching proposal: ${input.proposal_id}`);
+  console.log(`${LOG_PREFIX} Fetching proposal: ${input.proposal_id}`)
 
   // ================================================
   // FETCH PROPOSAL
   // ================================================
 
-  const { data: proposal, error: proposalError } = await supabase
-    .from("proposal")
-    .select("*")
-    .eq("_id", input.proposal_id)
-    .single();
-
-  if (proposalError || !proposal) {
-    console.error(`[proposal:get] Proposal fetch failed:`, proposalError);
-    throw new ValidationError(`Proposal not found: ${input.proposal_id}`);
-  }
-
-  const proposalData = proposal as unknown as ProposalData;
-  console.log(`[proposal:get] Found proposal with status: ${proposalData.Status}`);
+  const proposalData = await fetchProposal(supabase, input.proposal_id)
+  console.log(`${LOG_PREFIX} Found proposal with status: ${proposalData.Status}`)
 
   // ================================================
-  // FETCH RELATED DATA (Optional enrichment)
+  // FETCH RELATED DATA
   // ================================================
 
-  let listingData;
-  let guestData;
-  let hostData;
-
-  // Fetch listing
-  if (proposalData.Listing) {
-    const listingId = proposalData.Listing;
-    const { data: listing } = await supabase
-      .from("listing")
-      .select(`_id, Name, "Location - Address"`)
-      .eq("_id", listingId)
-      .single();
-    listingData = listing;
-  }
-
-  // Fetch guest
-  if (proposalData.Guest) {
-    const { data: guest } = await supabase
-      .from("user")
-      .select(`_id, "Name - Full", email`)
-      .eq("_id", proposalData.Guest)
-      .single();
-    guestData = guest;
-  }
-
-  // Fetch host (Host User column now contains user._id directly)
-  if (proposalData["Host User"]) {
-    const { data: host } = await supabase
-      .from("user")
-      .select(`_id, "Name - Full", email`)
-      .eq("_id", proposalData["Host User"])
-      .single();
-    hostData = host;
-  }
+  const relatedData = await fetchRelatedData(supabase, proposalData)
 
   // ================================================
   // BUILD RESPONSE
   // ================================================
 
-  // Status is already in Bubble display format (e.g., "Host Review")
-  const statusName = proposalData.Status as ProposalStatusName;
+  console.log(`${LOG_PREFIX} Returning proposal with enriched data`)
 
-  const response: GetProposalResponse = {
-    proposal: proposalData,
-    status_display: statusName, // Status IS the display name in Bubble format
-    status_stage: getStatusStage(statusName),
-  };
-
-  if (listingData) {
-    response.listing = listingData as GetProposalResponse["listing"];
-  }
-
-  if (guestData) {
-    response.guest = guestData as GetProposalResponse["guest"];
-  }
-
-  if (hostData) {
-    response.host = hostData as GetProposalResponse["host"];
-  }
-
-  console.log(`[proposal:get] Returning proposal with enriched data`);
-
-  return response;
+  return buildResponse(proposalData, relatedData)
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+
+  // Validation Predicates
+  isValidProposalId,
+
+  // Pure Data Builders
+  buildResponse,
+
+  // Database Query Helpers
+  fetchProposal,
+  fetchListingInfo,
+  fetchUserInfo,
+  fetchRelatedData,
+
+  // Main Handler
+  handleGet,
+})

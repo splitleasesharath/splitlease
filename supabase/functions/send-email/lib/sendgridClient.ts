@@ -3,52 +3,129 @@
  * Split Lease - send-email Edge Function
  *
  * Handles SendGrid API communication for sending emails
+ *
+ * FP PATTERN: Separates pure data builders from effectful API operations
+ * All data transformations are pure with @pure annotations
+ * All API operations are explicit with @effectful annotations
+ *
+ * @module send-email/lib/sendgridClient
  */
 
-import type { SendGridMailRequest, SendGridResponse } from './types.ts';
+import type { SendGridMailRequest, SendGridResponse, SendGridRecipient } from './types.ts';
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[send-email:sendgridClient]'
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface BuildRequestParams {
+  readonly toEmail: string;
+  readonly toName?: string;
+  readonly fromEmail: string;
+  readonly fromName?: string;
+  readonly subject: string;
+  readonly htmlContent: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Builders
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build recipient object
+ * @pure
+ */
+const buildRecipient = (email: string, name?: string): SendGridRecipient =>
+  Object.freeze(
+    name
+      ? { email, name }
+      : { email }
+  )
 
 /**
  * Build SendGrid mail request body
+ * @pure
  */
-export function buildSendGridRequestBody(params: {
-  toEmail: string;
-  toName?: string;
-  fromEmail: string;
-  fromName?: string;
-  subject: string;
-  htmlContent: string;
-}): SendGridMailRequest {
-  const { toEmail, toName, fromEmail, fromName, subject, htmlContent } = params;
+export function buildSendGridRequestBody(params: BuildRequestParams): SendGridMailRequest {
+  const { toEmail, toName, fromEmail, fromName, subject, htmlContent } = params
+
+  return Object.freeze({
+    personalizations: Object.freeze([
+      Object.freeze({
+        to: Object.freeze([buildRecipient(toEmail, toName)]),
+        subject,
+      }),
+    ]),
+    from: buildRecipient(fromEmail, fromName),
+    content: Object.freeze([
+      Object.freeze({
+        type: 'text/html' as const,
+        value: htmlContent,
+      }),
+    ]),
+  })
+}
+
+/**
+ * Build response object from API response
+ * @pure
+ */
+const buildResponse = (
+  statusCode: number,
+  headers: Headers,
+  body?: unknown
+): SendGridResponse =>
+  Object.freeze({
+    statusCode,
+    headers: Object.freeze(Object.fromEntries(headers.entries())),
+    body,
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if SendGrid response indicates success
+ * SendGrid returns 202 Accepted for successful email sends
+ * @pure
+ */
+export function isSuccessResponse(response: SendGridResponse): boolean {
+  return response.statusCode === 202 || response.statusCode === 200
+}
+
+// ─────────────────────────────────────────────────────────────
+// API Operations
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Extract logging info from request body
+ * @pure
+ */
+const extractLoggingInfo = (
+  requestBody: Readonly<Record<string, unknown>>
+): { toEmail: string; subject: string } => {
+  const personalizations = requestBody.personalizations as
+    | readonly { to?: readonly { email?: string }[]; subject?: string }[]
+    | undefined
 
   return {
-    personalizations: [
-      {
-        to: [
-          {
-            email: toEmail,
-            ...(toName && { name: toName }),
-          },
-        ],
-        subject: subject,
-      },
-    ],
-    from: {
-      email: fromEmail,
-      ...(fromName && { name: fromName }),
-    },
-    content: [
-      {
-        type: 'text/html',
-        value: htmlContent,
-      },
-    ],
-  };
+    toEmail: personalizations?.[0]?.to?.[0]?.email || 'unknown',
+    subject: personalizations?.[0]?.subject || (requestBody.subject as string) || 'unknown',
+  }
 }
 
 /**
  * Send email via SendGrid API
+ * @effectful - HTTP API operation
  *
  * @param apiKey - SendGrid API key
+ * @param emailEndpoint - SendGrid API endpoint
  * @param requestBody - SendGrid mail request body
  * @returns SendGrid response
  */
@@ -57,16 +134,17 @@ export async function sendEmail(
   emailEndpoint: string,
   requestBody: SendGridMailRequest
 ): Promise<SendGridResponse> {
-  console.log('[sendgridClient] Sending email via SendGrid...');
-  console.log('[sendgridClient] To:', requestBody.personalizations[0].to[0].email);
-  console.log('[sendgridClient] Subject:', requestBody.personalizations[0].subject);
+  console.log(`${LOG_PREFIX} Sending email via SendGrid...`)
+  console.log(`${LOG_PREFIX} To:`, requestBody.personalizations[0].to[0].email)
+  console.log(`${LOG_PREFIX} Subject:`, requestBody.personalizations[0].subject)
 
-  return sendEmailRaw(apiKey, emailEndpoint, requestBody);
+  return sendEmailRaw(apiKey, emailEndpoint, requestBody)
 }
 
 /**
  * Send email via SendGrid API with raw JSON body
  * Used when the template already contains the full SendGrid payload structure
+ * @effectful - HTTP API operation
  *
  * @param apiKey - SendGrid API key
  * @param emailEndpoint - SendGrid API endpoint
@@ -76,56 +154,67 @@ export async function sendEmail(
 export async function sendEmailRaw(
   apiKey: string,
   emailEndpoint: string,
-  requestBody: Record<string, unknown>
+  requestBody: Readonly<Record<string, unknown>>
 ): Promise<SendGridResponse> {
-  console.log('[sendgridClient] Sending email via SendGrid (raw)...');
+  console.log(`${LOG_PREFIX} Sending email via SendGrid (raw)...`)
 
-  // Try to extract to/subject for logging
-  const personalizations = requestBody.personalizations as Array<{ to?: Array<{ email?: string }>; subject?: string }> | undefined;
-  if (personalizations?.[0]) {
-    console.log('[sendgridClient] To:', personalizations[0].to?.[0]?.email || 'unknown');
-    console.log('[sendgridClient] Subject:', personalizations[0].subject || (requestBody.subject as string) || 'unknown');
-  }
+  const loggingInfo = extractLoggingInfo(requestBody)
+  console.log(`${LOG_PREFIX} To:`, loggingInfo.toEmail)
+  console.log(`${LOG_PREFIX} Subject:`, loggingInfo.subject)
 
   const response = await fetch(emailEndpoint, {
     method: 'POST',
-    headers: {
+    headers: Object.freeze({
       'Authorization': `Bearer ${apiKey}`,
       'Content-Type': 'application/json',
-    },
+    }),
     body: JSON.stringify(requestBody),
-  });
+  })
 
-  // SendGrid returns 202 Accepted for successful sends
-  const result: SendGridResponse = {
-    statusCode: response.status,
-    headers: Object.fromEntries(response.headers.entries()),
-  };
-
-  // Try to parse body if present
+  // Handle error responses
   if (!response.ok) {
+    let body: unknown
     try {
-      result.body = await response.json();
+      body = await response.json()
     } catch {
-      result.body = await response.text();
+      body = await response.text()
     }
-    console.error('[sendgridClient] SendGrid API error:', result.statusCode, result.body);
-  } else {
-    console.log('[sendgridClient] Email sent successfully, status:', result.statusCode);
-    // Get message ID from headers if available
-    const messageId = response.headers.get('x-message-id');
-    if (messageId) {
-      result.body = { messageId };
-    }
+    console.error(`${LOG_PREFIX} SendGrid API error:`, response.status, body)
+    return buildResponse(response.status, response.headers, body)
   }
 
-  return result;
+  // Handle success responses
+  console.log(`${LOG_PREFIX} Email sent successfully, status:`, response.status)
+
+  // Get message ID from headers if available
+  const messageId = response.headers.get('x-message-id')
+  const body = messageId ? Object.freeze({ messageId }) : undefined
+
+  return buildResponse(response.status, response.headers, body)
 }
 
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
 /**
- * Check if SendGrid response indicates success
- * SendGrid returns 202 Accepted for successful email sends
+ * Exported for testing purposes
+ * @test
  */
-export function isSuccessResponse(response: SendGridResponse): boolean {
-  return response.statusCode === 202 || response.statusCode === 200;
-}
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+
+  // Pure Data Builders
+  buildRecipient,
+  buildSendGridRequestBody,
+  buildResponse,
+  extractLoggingInfo,
+
+  // Validation Predicates
+  isSuccessResponse,
+
+  // API Operations
+  sendEmail,
+  sendEmailRaw,
+})

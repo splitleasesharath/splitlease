@@ -5,25 +5,113 @@
  * NO FALLBACK PRINCIPLE: Validation failures throw errors immediately
  *
  * Day indices use JavaScript 0-based format (0=Sunday through 6=Saturday)
+ *
+ * FP PATTERN: Pure validation predicates with @pure annotations
+ * All functions depend only on their inputs
+ *
+ * @module proposal/lib/validators
  */
 
 import { ValidationError } from "../../_shared/errors.ts";
 import { CreateProposalInput, UpdateProposalInput } from "./types.ts";
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[proposal:validators]'
+
+/**
+ * Updateable fields for partial update validation
+ * @constant
+ */
+const UPDATEABLE_FIELDS: readonly string[] = Object.freeze([
+  "status",
+  "proposal_price",
+  "move_in_start_range",
+  "move_in_end_range",
+  "days_selected",
+  "nights_selected",
+  "reservation_span_weeks",
+  "comment",
+  "hc_nightly_price",
+  "hc_days_selected",
+  "hc_nights_selected",
+  "hc_move_in_date",
+  "hc_reservation_span_weeks",
+  "hc_cleaning_fee",
+  "hc_damage_deposit",
+  "hc_total_price",
+  "hc_four_week_rent",
+  "hc_check_in",
+  "hc_check_out",
+  "reason_for_cancellation",
+])
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Validate that day indices are in correct 0-6 range (JavaScript format)
+ * @pure
  */
-function validateDayIndices(days: number[]): boolean {
-  if (!Array.isArray(days)) return false;
-  return days.every((d) => Number.isInteger(d) && d >= 0 && d <= 6);
+const validateDayIndices = (days: readonly number[]): boolean => {
+  if (!Array.isArray(days)) return false
+  return days.every((d) => Number.isInteger(d) && d >= 0 && d <= 6)
 }
 
 /**
  * Validate that night indices are in correct 0-6 range (JavaScript format)
+ * @pure
  */
-function validateNightIndices(nights: number[]): boolean {
-  return validateDayIndices(nights); // Same validation logic
+const validateNightIndices = (nights: readonly number[]): boolean =>
+  validateDayIndices(nights) // Same validation logic
+
+/**
+ * Check if value is a valid string
+ * @pure
+ */
+const isValidString = (value: unknown): value is string =>
+  typeof value === 'string' && value.length > 0
+
+/**
+ * Check if value is a valid number
+ * @pure
+ */
+const isValidNumber = (value: unknown): value is number =>
+  typeof value === 'number' && !isNaN(value)
+
+/**
+ * Check if value is a non-negative number
+ * @pure
+ */
+const isNonNegativeNumber = (value: unknown): boolean =>
+  isValidNumber(value) && value >= 0
+
+/**
+ * Check if value is a positive number
+ * @pure
+ */
+const isPositiveNumber = (value: unknown): boolean =>
+  isValidNumber(value) && value > 0
+
+/**
+ * Check if value is a valid ISO date string
+ * @pure
+ */
+const isValidISODate = (value: unknown): boolean => {
+  if (typeof value !== 'string') return false
+  const date = new Date(value)
+  return !isNaN(date.getTime())
 }
+
+/**
+ * Check if value is a valid array
+ * @pure
+ */
+const isValidArray = <T>(value: unknown): value is T[] =>
+  Array.isArray(value)
 
 /**
  * Validate input for creating a new proposal
@@ -384,32 +472,38 @@ export function validateUpdateProposalInput(input: UpdateProposalInput): void {
 /**
  * Check if any update fields are provided
  * Returns true if at least one updatable field is present
+ * @pure
  */
-export function hasUpdateFields(input: UpdateProposalInput): boolean {
-  const updateableFields = [
-    "status",
-    "proposal_price",
-    "move_in_start_range",
-    "move_in_end_range",
-    "days_selected",
-    "nights_selected",
-    "reservation_span_weeks",
-    "comment",
-    "hc_nightly_price",
-    "hc_days_selected",
-    "hc_nights_selected",
-    "hc_move_in_date",
-    "hc_reservation_span_weeks",
-    "hc_cleaning_fee",
-    "hc_damage_deposit",
-    "hc_total_price",
-    "hc_four_week_rent",
-    "hc_check_in",
-    "hc_check_out",
-    "reason_for_cancellation",
-  ];
-
-  return updateableFields.some(
+export const hasUpdateFields = (input: UpdateProposalInput): boolean =>
+  UPDATEABLE_FIELDS.some(
     (field) => input[field as keyof UpdateProposalInput] !== undefined
-  );
-}
+  )
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  UPDATEABLE_FIELDS,
+
+  // Validation Predicates
+  validateDayIndices,
+  validateNightIndices,
+  isValidString,
+  isValidNumber,
+  isNonNegativeNumber,
+  isPositiveNumber,
+  isValidISODate,
+  isValidArray,
+
+  // Validation Functions
+  validateCreateProposalInput,
+  validateUpdateProposalInput,
+  hasUpdateFields,
+})

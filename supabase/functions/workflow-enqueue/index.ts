@@ -21,7 +21,14 @@ import { corsHeaders } from "../_shared/cors.ts";
 import { ValidationError, formatErrorResponse, getStatusCodeFromError } from "../_shared/errors.ts";
 import { validateRequired } from "../_shared/validation.ts";
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[workflow-enqueue]'
 const ALLOWED_ACTIONS = ["enqueue", "health", "status"] as const;
+
+type Action = typeof ALLOWED_ACTIONS[number];
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Template Variable Extraction & Validation
@@ -292,3 +299,26 @@ async function handleStatus(supabase: any, payload: any) {
 
     return execution;
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+    // Constants
+    LOG_PREFIX,
+    ALLOWED_ACTIONS,
+
+    // Template Variable Extraction (Pure)
+    extractTemplateVariables,
+    validateTemplateVariables,
+    getNestedValue,
+
+    // Action Handlers
+    handleEnqueue,
+    handleStatus,
+})

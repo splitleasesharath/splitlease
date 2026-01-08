@@ -6,69 +6,186 @@
  * 1. Fetch template from database
  * 2. Process placeholders
  * 3. Send via SendGrid
+ *
+ * FP PATTERN: Separates pure data builders from effectful database operations
+ * All data transformations are pure with @pure annotations
+ * All database operations are explicit with @effectful annotations
+ *
+ * @module send-email/handlers/send
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateRequiredFields, validateEmail } from '../../_shared/validation.ts';
-import type { SendEmailPayload, EmailTemplate, SendEmailResult } from '../lib/types.ts';
+import type { SendEmailPayload, EmailTemplate, SendEmailResult, SendGridResponse } from '../lib/types.ts';
 import { processTemplateJson, validatePlaceholders } from '../lib/templateProcessor.ts';
 import { sendEmailRaw, isSuccessResponse } from '../lib/sendgridClient.ts';
 
-// Default sender configuration
-const DEFAULT_FROM_EMAIL = 'noreply@splitlease.com';
-const DEFAULT_FROM_NAME = 'Split Lease';
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[send-email:send]'
+const DEFAULT_FROM_EMAIL = 'noreply@splitlease.com'
+const DEFAULT_FROM_NAME = 'Split Lease'
+const DEFAULT_SUBJECT = 'Message from Split Lease'
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface EnvConfig {
+  readonly supabaseUrl: string;
+  readonly supabaseServiceKey: string;
+  readonly sendgridApiKey: string;
+  readonly sendgridEmailEndpoint: string;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Builders
+// ─────────────────────────────────────────────────────────────
 
 /**
- * Handle send email action
+ * Build complete variables object with defaults
+ * @pure
  */
-export async function handleSend(
-  payload: Record<string, unknown>
-): Promise<SendEmailResult> {
-  console.log('[send-email:send] ========== SEND EMAIL ==========');
-  console.log('[send-email:send] Payload:', JSON.stringify({
-    ...payload,
-    variables: '(redacted for logging)'
-  }, null, 2));
+const buildVariables = (
+  payload: SendEmailPayload
+): Readonly<Record<string, string>> => {
+  const vars: Record<string, string> = {
+    ...payload.variables,
+    to_email: payload.to_email,
+    from_email: payload.from_email || DEFAULT_FROM_EMAIL,
+    from_name: payload.from_name || DEFAULT_FROM_NAME,
+    subject: payload.subject || payload.variables.subject || DEFAULT_SUBJECT,
+  }
 
-  // Validate required fields
-  validateRequiredFields(payload, ['template_id', 'to_email', 'variables']);
+  if (payload.to_name) {
+    vars.to_name = payload.to_name
+  }
 
-  const {
-    template_id,
-    to_email,
-    to_name,
-    from_email,
-    from_name,
-    subject: providedSubject,
-    variables,
-    cc_emails,
-    bcc_emails,
-  } = payload as SendEmailPayload;
+  return Object.freeze(vars)
+}
 
-  // Validate email format
-  validateEmail(to_email);
+/**
+ * Filter valid email addresses
+ * @pure
+ */
+const filterValidEmails = (emails: readonly string[] | undefined): readonly string[] => {
+  if (!emails) return []
+  return emails.filter(email => email && email.trim() && email.includes('@'))
+}
 
-  // Get environment variables
-  const supabaseUrl = Deno.env.get('SUPABASE_URL');
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-  const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY');
-  const sendgridEmailEndpoint = Deno.env.get('SENDGRID_EMAIL_ENDPOINT');
+/**
+ * Build recipient list from emails
+ * @pure
+ */
+const buildRecipientList = (emails: readonly string[]): readonly { email: string }[] =>
+  Object.freeze(emails.map(email => Object.freeze({ email: email.trim() })))
+
+/**
+ * Inject CC and BCC into SendGrid body
+ * @pure
+ */
+const injectCcBcc = (
+  body: Record<string, unknown>,
+  ccEmails: readonly string[] | undefined,
+  bccEmails: readonly string[] | undefined
+): Record<string, unknown> => {
+  const validCcEmails = filterValidEmails(ccEmails)
+  const validBccEmails = filterValidEmails(bccEmails)
+
+  if (validCcEmails.length === 0 && validBccEmails.length === 0) {
+    return body
+  }
+
+  const personalizations = body.personalizations as Array<Record<string, unknown>> | undefined
+  if (!personalizations || personalizations.length === 0) {
+    return body
+  }
+
+  const updatedPersonalizations = [...personalizations]
+  const first = { ...updatedPersonalizations[0] }
+
+  if (validCcEmails.length > 0) {
+    first.cc = buildRecipientList(validCcEmails)
+    console.log(`${LOG_PREFIX} Added CC recipients: ${validCcEmails.length}`)
+  }
+
+  if (validBccEmails.length > 0) {
+    first.bcc = buildRecipientList(validBccEmails)
+    console.log(`${LOG_PREFIX} Added BCC recipients: ${validBccEmails.length}`)
+  }
+
+  updatedPersonalizations[0] = first
+  return { ...body, personalizations: updatedPersonalizations }
+}
+
+/**
+ * Build success response
+ * @pure
+ */
+const buildSuccessResponse = (
+  messageId: string | undefined,
+  templateId: string,
+  toEmail: string
+): SendEmailResult =>
+  Object.freeze({
+    message_id: messageId,
+    template_id: templateId,
+    to_email: toEmail,
+    status: 'sent' as const,
+    sent_at: new Date().toISOString(),
+  })
+
+/**
+ * Extract message ID from SendGrid response
+ * @pure
+ */
+const extractMessageId = (response: SendGridResponse): string | undefined =>
+  response.body && typeof response.body === 'object'
+    ? (response.body as { messageId?: string }).messageId
+    : undefined
+
+// ─────────────────────────────────────────────────────────────
+// Environment Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Get and validate environment configuration
+ * @effectful - Reads environment variables
+ */
+const getEnvConfig = (): EnvConfig => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+  const sendgridApiKey = Deno.env.get('SENDGRID_API_KEY')
+  const sendgridEmailEndpoint = Deno.env.get('SENDGRID_EMAIL_ENDPOINT')
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Missing Supabase environment variables');
+    throw new Error('Missing Supabase environment variables')
   }
 
   if (!sendgridApiKey) {
-    throw new Error('Missing SENDGRID_API_KEY environment variable');
+    throw new Error('Missing SENDGRID_API_KEY environment variable')
   }
 
   if (!sendgridEmailEndpoint) {
-    throw new Error('Missing SENDGRID_EMAIL_ENDPOINT environment variable');
+    throw new Error('Missing SENDGRID_EMAIL_ENDPOINT environment variable')
   }
 
-  // Initialize Supabase client with reference_table schema access
-  // The reference_table schema must be exposed in API settings (Dashboard > API > Exposed schemas)
-  const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  return Object.freeze({
+    supabaseUrl,
+    supabaseServiceKey,
+    sendgridApiKey,
+    sendgridEmailEndpoint,
+  })
+}
+
+/**
+ * Create Supabase client for reference_table schema
+ * @effectful - Creates client
+ */
+const createReferenceTableClient = (url: string, key: string): SupabaseClient =>
+  createClient(url, key, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,
@@ -76,123 +193,174 @@ export async function handleSend(
     db: {
       schema: 'reference_table',
     },
-  });
+  })
 
-  // Step 1: Fetch template from database
-  console.log('[send-email:send] Step 1/3: Fetching template...');
-  console.log('[send-email:send] Looking up template_id:', template_id);
+// ─────────────────────────────────────────────────────────────
+// Database Query Helpers
+// ─────────────────────────────────────────────────────────────
 
-  const { data: template, error: templateError } = await supabase
+/**
+ * Fetch email template from database
+ * @effectful - Database read operation
+ */
+const fetchTemplate = async (
+  supabase: SupabaseClient,
+  templateId: string
+): Promise<EmailTemplate> => {
+  console.log(`${LOG_PREFIX} Looking up template_id: ${templateId}`)
+
+  const { data: template, error } = await supabase
     .from('zat_email_html_template_eg_sendbasicemailwf_')
     .select('_id, "Name", "Email Template JSON", "Description", "Email Reference", "Logo", "Placeholder"')
-    .eq('_id', template_id)
-    .single();
+    .eq('_id', templateId)
+    .single()
 
-  console.log('[send-email:send] Query result - data:', template ? 'found' : 'null');
-  console.log('[send-email:send] Query result - error:', templateError ? JSON.stringify(templateError) : 'none');
+  console.log(`${LOG_PREFIX} Query result - data: ${template ? 'found' : 'null'}`)
+  console.log(`${LOG_PREFIX} Query result - error: ${error ? JSON.stringify(error) : 'none'}`)
 
-  if (templateError || !template) {
-    console.error('[send-email:send] Template fetch error:', templateError);
-    console.error('[send-email:send] Template data:', template);
-    throw new Error(`Template not found: ${template_id}. Error: ${templateError?.message || 'No data returned'}`);
+  if (error || !template) {
+    console.error(`${LOG_PREFIX} Template fetch error:`, error)
+    throw new Error(`Template not found: ${templateId}. Error: ${error?.message || 'No data returned'}`)
   }
 
-  const emailTemplate = template as EmailTemplate;
-  console.log('[send-email:send] Template found:', emailTemplate.Name || template_id);
+  return template as EmailTemplate
+}
 
-  const templateJsonString = emailTemplate['Email Template JSON'];
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Handle send email action
+ * @effectful - Orchestrates database and API operations
+ */
+export async function handleSend(
+  payload: Record<string, unknown>
+): Promise<SendEmailResult> {
+  console.log(`${LOG_PREFIX} ========== SEND EMAIL ==========`)
+  console.log(`${LOG_PREFIX} Payload:`, JSON.stringify({
+    ...payload,
+    variables: '(redacted for logging)'
+  }, null, 2))
+
+  // ================================================
+  // VALIDATION
+  // ================================================
+
+  validateRequiredFields(payload, ['template_id', 'to_email', 'variables'])
+
+  const typedPayload = payload as SendEmailPayload
+  validateEmail(typedPayload.to_email)
+
+  // ================================================
+  // ENVIRONMENT CONFIG
+  // ================================================
+
+  const config = getEnvConfig()
+
+  // ================================================
+  // STEP 1: FETCH TEMPLATE
+  // ================================================
+
+  console.log(`${LOG_PREFIX} Step 1/3: Fetching template...`)
+
+  const supabase = createReferenceTableClient(config.supabaseUrl, config.supabaseServiceKey)
+  const emailTemplate = await fetchTemplate(supabase, typedPayload.template_id)
+
+  console.log(`${LOG_PREFIX} Template found: ${emailTemplate.Name || typedPayload.template_id}`)
+
+  const templateJsonString = emailTemplate['Email Template JSON']
   if (!templateJsonString) {
-    throw new Error(`Template ${template_id} has no content (Email Template JSON is empty)`);
+    throw new Error(`Template ${typedPayload.template_id} has no content (Email Template JSON is empty)`)
   }
 
-  // Step 2: Process template placeholders
-  // The template is a SendGrid JSON payload with $$placeholder$$ variables
-  console.log('[send-email:send] Step 2/3: Processing template placeholders...');
+  // ================================================
+  // STEP 2: PROCESS PLACEHOLDERS
+  // ================================================
 
-  // Build the complete variables object, merging payload values with provided overrides
-  const allVariables: Record<string, string> = {
-    ...variables,
-    // Override with explicit payload values if provided
-    to_email: to_email,
-    from_email: from_email || DEFAULT_FROM_EMAIL,
-    from_name: from_name || DEFAULT_FROM_NAME,
-    subject: providedSubject || variables.subject || 'Message from Split Lease',
-  };
+  console.log(`${LOG_PREFIX} Step 2/3: Processing template placeholders...`)
 
-  // Add to_name if provided
-  if (to_name) {
-    allVariables.to_name = to_name;
-  }
+  const allVariables = buildVariables(typedPayload)
+  console.log(`${LOG_PREFIX} Placeholder replacements:`, JSON.stringify(allVariables, null, 2))
 
-  // Log placeholder replacements for debugging
-  console.log('[send-email:send] Placeholder replacements:', JSON.stringify(allVariables, null, 2));
-
-  // Validate all placeholders have values (warning only)
-  const missingPlaceholders = validatePlaceholders(templateJsonString, allVariables);
+  // Validate placeholders (warning only)
+  const missingPlaceholders = validatePlaceholders(templateJsonString, allVariables)
   if (missingPlaceholders.length > 0) {
-    console.warn('[send-email:send] Missing placeholder values:', missingPlaceholders.join(', '));
+    console.warn(`${LOG_PREFIX} Missing placeholder values: ${missingPlaceholders.join(', ')}`)
   }
 
-  // Process placeholders in the entire JSON string (with JSON-safe escaping)
-  const processedJsonString = processTemplateJson(templateJsonString, allVariables);
-  console.log('[send-email:send] Template processed successfully');
-  console.log('[send-email:send] Processed JSON payload:', processedJsonString);
+  const processedJsonString = processTemplateJson(templateJsonString, allVariables)
+  console.log(`${LOG_PREFIX} Template processed successfully`)
 
-  // Step 3: Parse and send via SendGrid
-  console.log('[send-email:send] Step 3/3: Sending via SendGrid...');
+  // ================================================
+  // STEP 3: SEND VIA SENDGRID
+  // ================================================
 
-  let sendGridBody: Record<string, unknown>;
+  console.log(`${LOG_PREFIX} Step 3/3: Sending via SendGrid...`)
+
+  let sendGridBody: Record<string, unknown>
   try {
-    sendGridBody = JSON.parse(processedJsonString);
+    sendGridBody = JSON.parse(processedJsonString)
   } catch (parseError) {
-    console.error('[send-email:send] Failed to parse processed template as JSON:', parseError);
-    throw new Error(`Template ${template_id} produced invalid JSON after placeholder processing`);
+    console.error(`${LOG_PREFIX} Failed to parse processed template as JSON:`, parseError)
+    throw new Error(`Template ${typedPayload.template_id} produced invalid JSON after placeholder processing`)
   }
 
-  // Inject CC and BCC recipients into personalizations if provided
-  if ((cc_emails && cc_emails.length > 0) || (bcc_emails && bcc_emails.length > 0)) {
-    const personalizations = sendGridBody.personalizations as Array<Record<string, unknown>>;
-    if (personalizations && personalizations.length > 0) {
-      // Add CC recipients
-      if (cc_emails && cc_emails.length > 0) {
-        const validCcEmails = cc_emails.filter(email => email && email.trim() && email.includes('@'));
-        if (validCcEmails.length > 0) {
-          personalizations[0].cc = validCcEmails.map(email => ({ email: email.trim() }));
-          console.log('[send-email:send] Added CC recipients:', validCcEmails.length);
-        }
-      }
-      // Add BCC recipients
-      if (bcc_emails && bcc_emails.length > 0) {
-        const validBccEmails = bcc_emails.filter(email => email && email.trim() && email.includes('@'));
-        if (validBccEmails.length > 0) {
-          personalizations[0].bcc = validBccEmails.map(email => ({ email: email.trim() }));
-          console.log('[send-email:send] Added BCC recipients:', validBccEmails.length);
-        }
-      }
-    }
-  }
+  // Inject CC/BCC if provided
+  sendGridBody = injectCcBcc(sendGridBody, typedPayload.cc_emails, typedPayload.bcc_emails)
 
-  const sendGridResponse = await sendEmailRaw(sendgridApiKey, sendgridEmailEndpoint, sendGridBody);
+  const sendGridResponse = await sendEmailRaw(
+    config.sendgridApiKey,
+    config.sendgridEmailEndpoint,
+    sendGridBody
+  )
 
   if (!isSuccessResponse(sendGridResponse)) {
     const errorMessage = typeof sendGridResponse.body === 'object'
       ? JSON.stringify(sendGridResponse.body)
-      : String(sendGridResponse.body);
-    throw new Error(`SendGrid API error (${sendGridResponse.statusCode}): ${errorMessage}`);
+      : String(sendGridResponse.body)
+    throw new Error(`SendGrid API error (${sendGridResponse.statusCode}): ${errorMessage}`)
   }
 
-  console.log('[send-email:send] ========== SUCCESS ==========');
+  console.log(`${LOG_PREFIX} ========== SUCCESS ==========`)
 
-  // Extract message ID if available
-  const messageId = sendGridResponse.body && typeof sendGridResponse.body === 'object'
-    ? (sendGridResponse.body as { messageId?: string }).messageId
-    : undefined;
-
-  return {
-    message_id: messageId,
-    template_id: template_id,
-    to_email: to_email,
-    status: 'sent',
-    sent_at: new Date().toISOString(),
-  };
+  return buildSuccessResponse(
+    extractMessageId(sendGridResponse),
+    typedPayload.template_id,
+    typedPayload.to_email
+  )
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  DEFAULT_FROM_EMAIL,
+  DEFAULT_FROM_NAME,
+  DEFAULT_SUBJECT,
+
+  // Pure Data Builders
+  buildVariables,
+  filterValidEmails,
+  buildRecipientList,
+  injectCcBcc,
+  buildSuccessResponse,
+  extractMessageId,
+
+  // Environment Helpers
+  getEnvConfig,
+  createReferenceTableClient,
+
+  // Database Query Helpers
+  fetchTemplate,
+
+  // Main Handler
+  handleSend,
+})

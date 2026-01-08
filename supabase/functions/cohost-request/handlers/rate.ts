@@ -4,7 +4,13 @@
  *
  * Submits a rating for a completed co-host session.
  *
+ * FP PATTERN: Separates pure data builders from effectful database operations
+ * All data transformations are pure with @pure annotations
+ * All database operations are explicit with @effectful annotations
+ *
  * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
+ *
+ * @module cohost-request/handlers/rate
  */
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -13,32 +19,186 @@ import { validateRequired } from "../../_shared/validation.ts";
 import { enqueueBubbleSync, triggerQueueProcessing } from "../../_shared/queueSync.ts";
 
 // ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[cohost-request:rate]'
+const CLOSED_STATUS = 'Request closed'
+const MIN_RATING = 1
+const MAX_RATING = 5
+
+// ─────────────────────────────────────────────────────────────
 // Types
 // ─────────────────────────────────────────────────────────────
 
 interface UserContext {
-  id: string;
-  email: string;
+  readonly id: string;
+  readonly email: string;
 }
 
 interface RateCoHostRequestInput {
-  requestId: string;       // Co-host request Bubble _id
-  Rating: number;          // 1-5 star rating
-  "Rating message (optional)"?: string;  // Optional feedback message
+  readonly requestId: string;       // Co-host request Bubble _id
+  readonly Rating: number;          // 1-5 star rating
+  readonly "Rating message (optional)"?: string;  // Optional feedback message
 }
 
 interface RateCoHostRequestResponse {
-  requestId: string;
-  rating: number;
-  updatedAt: string;
+  readonly requestId: string;
+  readonly rating: number;
+  readonly updatedAt: string;
 }
 
 // ─────────────────────────────────────────────────────────────
-// Handler
+// Pure Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if rating is valid
+ * @pure
+ */
+const isValidRating = (rating: unknown): rating is number =>
+  typeof rating === 'number' && rating >= MIN_RATING && rating <= MAX_RATING
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Builders
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build update data for rating
+ * @pure
+ */
+const buildRatingUpdateData = (
+  rating: number,
+  message: string | undefined,
+  now: string
+): Record<string, unknown> =>
+  Object.freeze({
+    Rating: rating,
+    "Rating message (optional)": message || null,
+    status: CLOSED_STATUS,
+    "Modified Date": now,
+  })
+
+/**
+ * Build success response
+ * @pure
+ */
+const buildSuccessResponse = (
+  requestId: string,
+  rating: number,
+  updatedAt: string
+): RateCoHostRequestResponse =>
+  Object.freeze({
+    requestId,
+    rating,
+    updatedAt,
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Validation Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Validate rate input
+ * @pure - Throws ValidationError on invalid input
+ */
+const validateRateInput = (input: RateCoHostRequestInput): void => {
+  validateRequired(input.requestId, "requestId");
+  validateRequired(input.Rating, "Rating");
+
+  if (!isValidRating(input.Rating)) {
+    throw new ValidationError(`Rating must be a number between ${MIN_RATING} and ${MAX_RATING}`);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Database Operations
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch co-host request by ID
+ * @effectful - Database read operation
+ */
+const fetchCoHostRequest = async (
+  supabase: SupabaseClient,
+  requestId: string
+): Promise<{ _id: string; status: string }> => {
+  const { data, error } = await supabase
+    .from("co_hostrequest")
+    .select("_id, status")
+    .eq("_id", requestId)
+    .single();
+
+  if (error || !data) {
+    console.error(`${LOG_PREFIX} Request not found:`, error);
+    throw new ValidationError(`Co-host request not found: ${requestId}`);
+  }
+
+  return data;
+}
+
+/**
+ * Update co-host request with rating
+ * @effectful - Database write operation
+ */
+const updateCoHostRequestRating = async (
+  supabase: SupabaseClient,
+  requestId: string,
+  updateData: Record<string, unknown>
+): Promise<void> => {
+  const { error } = await supabase
+    .from("co_hostrequest")
+    .update(updateData)
+    .eq("_id", requestId);
+
+  if (error) {
+    console.error(`${LOG_PREFIX} Update failed:`, error);
+    throw new SupabaseSyncError(`Failed to update co-host request: ${error.message}`);
+  }
+}
+
+/**
+ * Enqueue rating update to Bubble sync
+ * @effectful - Database write operation (non-blocking)
+ */
+const enqueueRatingSync = async (
+  supabase: SupabaseClient,
+  requestId: string,
+  updateData: Record<string, unknown>
+): Promise<void> => {
+  try {
+    await enqueueBubbleSync(supabase, {
+      correlationId: requestId,
+      items: [
+        {
+          sequence: 1,
+          table: 'co_hostrequest',
+          recordId: requestId,
+          operation: 'UPDATE',
+          payload: {
+            _id: requestId,
+            ...updateData,
+          },
+        },
+      ],
+    });
+
+    console.log(`${LOG_PREFIX} Bubble sync enqueued`);
+
+    triggerQueueProcessing();
+
+  } catch (syncError) {
+    console.error(`${LOG_PREFIX} Failed to enqueue Bubble sync (non-blocking):`, syncError);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
 // ─────────────────────────────────────────────────────────────
 
 /**
  * Handle rate co-host request
+ * @effectful - Orchestrates database operations
  *
  * Steps:
  * 1. Validate input (requestId, Rating required)
@@ -52,105 +212,79 @@ export async function handleRate(
   user: UserContext | null,
   supabase: SupabaseClient
 ): Promise<RateCoHostRequestResponse> {
-  console.log(`[cohost-request:rate] Starting rate for user: ${user?.email || 'public'}`);
+  console.log(`${LOG_PREFIX} Starting rate for user: ${user?.email || 'public'}`);
 
   // ================================================
   // VALIDATION
   // ================================================
 
   const input = payload as unknown as RateCoHostRequestInput;
+  validateRateInput(input);
 
-  validateRequired(input.requestId, "requestId");
-  validateRequired(input.Rating, "Rating");
-
-  if (typeof input.Rating !== 'number' || input.Rating < 1 || input.Rating > 5) {
-    throw new ValidationError("Rating must be a number between 1 and 5");
-  }
-
-  console.log(`[cohost-request:rate] Validated input for request: ${input.requestId}`);
+  console.log(`${LOG_PREFIX} Validated input for request: ${input.requestId}`);
 
   // ================================================
   // VERIFY REQUEST EXISTS
   // ================================================
 
-  const { data: existingRequest, error: fetchError } = await supabase
-    .from("co_hostrequest")
-    .select("_id, status")
-    .eq("_id", input.requestId)
-    .single();
-
-  if (fetchError || !existingRequest) {
-    console.error(`[cohost-request:rate] Request not found:`, fetchError);
-    throw new ValidationError(`Co-host request not found: ${input.requestId}`);
-  }
-
-  console.log(`[cohost-request:rate] Found request with status: ${existingRequest.status}`);
+  const existingRequest = await fetchCoHostRequest(supabase, input.requestId);
+  console.log(`${LOG_PREFIX} Found request with status: ${existingRequest.status}`);
 
   // ================================================
   // UPDATE CO-HOST REQUEST
   // ================================================
 
   const now = new Date().toISOString();
+  const updateData = buildRatingUpdateData(input.Rating, input["Rating message (optional)"], now);
 
-  const updateData: Record<string, unknown> = {
-    Rating: input.Rating,
-    "Rating message (optional)": input["Rating message (optional)"] || null,
-    status: "Request closed",
-    "Modified Date": now,
-  };
-
-  const { error: updateError } = await supabase
-    .from("co_hostrequest")
-    .update(updateData)
-    .eq("_id", input.requestId);
-
-  if (updateError) {
-    console.error(`[cohost-request:rate] Update failed:`, updateError);
-    throw new SupabaseSyncError(`Failed to update co-host request: ${updateError.message}`);
-  }
-
-  console.log(`[cohost-request:rate] Co-host request updated successfully`);
+  await updateCoHostRequestRating(supabase, input.requestId, updateData);
+  console.log(`${LOG_PREFIX} Co-host request updated successfully`);
 
   // ================================================
   // ENQUEUE BUBBLE SYNC
   // ================================================
 
-  try {
-    await enqueueBubbleSync(supabase, {
-      correlationId: input.requestId,
-      items: [
-        {
-          sequence: 1,
-          table: 'co_hostrequest',
-          recordId: input.requestId,
-          operation: 'UPDATE',
-          payload: {
-            _id: input.requestId,
-            ...updateData,
-          },
-        },
-      ],
-    });
-
-    console.log(`[cohost-request:rate] Bubble sync enqueued`);
-
-    // Trigger queue processing (fire and forget)
-    triggerQueueProcessing();
-
-  } catch (syncError) {
-    // Log but don't fail - items can be manually requeued if needed
-    console.error(`[cohost-request:rate] Failed to enqueue Bubble sync (non-blocking):`, syncError);
-  }
+  await enqueueRatingSync(supabase, input.requestId, updateData);
 
   // ================================================
   // RETURN RESPONSE
   // ================================================
 
-  console.log(`[cohost-request:rate] Complete, returning response`);
+  console.log(`${LOG_PREFIX} Complete, returning response`);
 
-  return {
-    requestId: input.requestId,
-    rating: input.Rating,
-    updatedAt: now,
-  };
+  return buildSuccessResponse(input.requestId, input.Rating, now);
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  CLOSED_STATUS,
+  MIN_RATING,
+  MAX_RATING,
+
+  // Pure Predicates
+  isValidRating,
+
+  // Pure Data Builders
+  buildRatingUpdateData,
+  buildSuccessResponse,
+
+  // Validation Helpers
+  validateRateInput,
+
+  // Database Operations
+  fetchCoHostRequest,
+  updateCoHostRequestRating,
+  enqueueRatingSync,
+
+  // Main Handler
+  handleRate,
+})

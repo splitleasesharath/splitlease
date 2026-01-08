@@ -3,11 +3,21 @@
  * Split Lease - AI Gateway
  *
  * Generates catchy, professional listing titles based on property details
+ *
+ * @module ai-gateway/prompts/listing-title
  */
 
 import { registerPrompt } from "./_registry.ts";
 
-registerPrompt({
+// ─────────────────────────────────────────────────────────────
+// Prompt Configuration
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Listing title prompt configuration
+ * @immutable
+ */
+const LISTING_TITLE_PROMPT = Object.freeze({
   key: "listing-title",
   name: "Listing Title Generator",
   description:
@@ -64,11 +74,25 @@ VARIATION APPROACH: {{variationHint}}
 
 Output ONLY the title. No quotes, no explanation, no alternatives.`,
 
-  defaults: {
+  defaults: Object.freeze({
     model: "gpt-4o-mini",
     temperature: 0.95,
     maxTokens: 30,
-  },
+  }),
 
   responseFormat: "text",
-});
+})
+
+registerPrompt(LISTING_TITLE_PROMPT);
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  LISTING_TITLE_PROMPT,
+})

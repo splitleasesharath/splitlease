@@ -1,6 +1,6 @@
 /**
  * Validate Handler - Validate session and fetch user data
- * Split Lease - bubble-auth-proxy
+ * Split Lease - auth-user
  *
  * Flow:
  * 1. Get token and user_id from payload
@@ -14,204 +14,443 @@
  *
  * NO FALLBACK - If user not found, operation fails
  *
- * @param bubbleAuthBaseUrl - Base URL for Bubble auth API (unused, kept for signature compatibility)
- * @param bubbleApiKey - API key for Bubble (unused)
- * @param supabaseUrl - Supabase project URL
- * @param supabaseServiceKey - Service role key for bypassing RLS
- * @param payload - Request payload {token, user_id}
- * @returns {userId, firstName, fullName, email, profilePhoto, userType}
+ * @module auth-user/handlers/validate
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import type { SupabaseClient, User as AuthUser } from 'https://esm.sh/@supabase/supabase-js@2';
 import { BubbleApiError, SupabaseSyncError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[validate]'
+const HTTPS_PREFIX = 'https:'
+const PROTOCOL_RELATIVE_PREFIX = '//'
+
+/**
+ * User profile select fields
+ * @immutable
+ */
+const USER_SELECT_FIELDS = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "About Me / Bio", "need for Space", "special needs", "Proposals List", "Rental Application"'
+
+/**
+ * Rental application select fields
+ * @immutable
+ */
+const RENTAL_APP_SELECT_FIELDS = 'submitted'
+
+/**
+ * Error messages
+ * @immutable
+ */
+const ERROR_MESSAGES = Object.freeze({
+  USER_FETCH_FAILED: 'Failed to fetch user data',
+  USER_NOT_FOUND: 'User not found with _id or email',
+  VALIDATE_FAILED: 'Failed to validate token',
+} as const)
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface ValidatePayload {
+  readonly token: string;
+  readonly user_id: string;
+}
+
+interface UserData {
+  readonly _id: string;
+  readonly bubble_id?: string | null;
+  readonly 'Name - First'?: string | null;
+  readonly 'Name - Full'?: string | null;
+  readonly 'Profile Photo'?: string | null;
+  readonly 'Type - User Current'?: string | null;
+  readonly 'email as text'?: string | null;
+  readonly email?: string | null;
+  readonly 'About Me / Bio'?: string | null;
+  readonly 'need for Space'?: string | null;
+  readonly 'special needs'?: string | null;
+  readonly 'Proposals List'?: ReadonlyArray<string> | null;
+  readonly 'Rental Application'?: string | null;
+}
+
+interface RentalAppData {
+  readonly submitted?: boolean;
+}
+
+interface ValidateResult {
+  readonly userId: string;
+  readonly firstName: string | null;
+  readonly fullName: string | null;
+  readonly email: string | null;
+  readonly profilePhoto: string | null;
+  readonly userType: string | null;
+  readonly accountHostId: string;
+  readonly aboutMe: string | null;
+  readonly needForSpace: string | null;
+  readonly specialNeeds: string | null;
+  readonly proposalCount: number;
+  readonly hasSubmittedRentalApp: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is truthy (not null or undefined)
+ * @pure
+ */
+const isTruthy = <T>(value: T | null | undefined): value is T =>
+  value !== null && value !== undefined
+
+/**
+ * Check if user data exists
+ * @pure
+ */
+const hasUserData = (data: UserData | null): data is UserData =>
+  data !== null
+
+/**
+ * Check if auth user has email
+ * @pure
+ */
+const hasEmail = (user: AuthUser | null): boolean =>
+  user !== null && typeof user.email === 'string'
+
+/**
+ * Check if profile photo is protocol-relative
+ * @pure
+ */
+const isProtocolRelative = (url: string | null | undefined): boolean =>
+  typeof url === 'string' && url.startsWith(PROTOCOL_RELATIVE_PREFIX)
+
+/**
+ * Check if proposals list is an array
+ * @pure
+ */
+const isProposalArray = (list: unknown): list is ReadonlyArray<string> =>
+  Array.isArray(list)
+
+// ─────────────────────────────────────────────────────────────
+// Data Transformers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Normalize profile photo URL (handle protocol-relative URLs)
+ * @pure
+ */
+const normalizeProfilePhotoUrl = (url: string | null | undefined): string | null => {
+  if (!isTruthy(url)) return null
+  if (isProtocolRelative(url)) return HTTPS_PREFIX + url
+  return url
+}
+
+/**
+ * Extract email from user data (prefer 'email' column over 'email as text')
+ * @pure
+ */
+const extractEmail = (userData: UserData): string | null =>
+  userData.email ?? userData['email as text'] ?? null
+
+/**
+ * Count proposals from proposals list
+ * @pure
+ */
+const countProposals = (proposalsList: ReadonlyArray<string> | null | undefined): number =>
+  isProposalArray(proposalsList) ? proposalsList.length : 0
+
+// ─────────────────────────────────────────────────────────────
+// Result Builders
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build validate result from user data
+ * @pure
+ */
+const buildValidateResult = (
+  userData: UserData,
+  hasSubmittedRentalApp: boolean
+): ValidateResult =>
+  Object.freeze({
+    userId: userData._id,
+    firstName: userData['Name - First'] ?? null,
+    fullName: userData['Name - Full'] ?? null,
+    email: extractEmail(userData),
+    profilePhoto: normalizeProfilePhotoUrl(userData['Profile Photo']),
+    userType: userData['Type - User Current'] ?? null,
+    accountHostId: userData._id, // user IS their own host account
+    aboutMe: userData['About Me / Bio'] ?? null,
+    needForSpace: userData['need for Space'] ?? null,
+    specialNeeds: userData['special needs'] ?? null,
+    proposalCount: countProposals(userData['Proposals List']),
+    hasSubmittedRentalApp,
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Client Builders
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build Supabase client configuration
+ * @pure
+ */
+const buildClientConfig = () =>
+  Object.freeze({
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Database Query Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch user by _id
+ * @effectful
+ */
+const fetchUserById = async (
+  supabase: SupabaseClient,
+  userId: string
+): Promise<{ data: UserData | null; error: Error | null }> => {
+  const { data, error } = await supabase
+    .from('user')
+    .select(USER_SELECT_FIELDS)
+    .eq('_id', userId)
+    .maybeSingle()
+
+  return { data, error }
+}
+
+/**
+ * Fetch user by email
+ * @effectful
+ */
+const fetchUserByEmail = async (
+  supabase: SupabaseClient,
+  email: string
+): Promise<{ data: UserData | null; error: Error | null }> => {
+  const { data, error } = await supabase
+    .from('user')
+    .select(USER_SELECT_FIELDS)
+    .eq('email', email)
+    .maybeSingle()
+
+  return { data, error }
+}
+
+/**
+ * Fetch user by 'email as text' column
+ * @effectful
+ */
+const fetchUserByEmailText = async (
+  supabase: SupabaseClient,
+  email: string
+): Promise<{ data: UserData | null; error: Error | null }> => {
+  const { data, error } = await supabase
+    .from('user')
+    .select(USER_SELECT_FIELDS)
+    .eq('email as text', email)
+    .maybeSingle()
+
+  return { data, error }
+}
+
+/**
+ * Fetch rental application submission status
+ * @effectful
+ */
+const fetchRentalAppStatus = async (
+  supabase: SupabaseClient,
+  rentalAppId: string
+): Promise<boolean> => {
+  const { data, error } = await supabase
+    .from('rentalapplication')
+    .select(RENTAL_APP_SELECT_FIELDS)
+    .eq('_id', rentalAppId)
+    .maybeSingle()
+
+  if (error) {
+    console.warn(`${LOG_PREFIX} Failed to fetch rental application:`, error.message)
+    return false
+  }
+
+  return (data as RentalAppData | null)?.submitted === true
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Handle session validation request
+ * @effectful (database I/O, authentication, console logging)
+ */
 export async function handleValidate(
   bubbleAuthBaseUrl: string,
   bubbleApiKey: string,
   supabaseUrl: string,
   supabaseServiceKey: string,
-  payload: any
-): Promise<any> {
-  console.log('[validate] ========== SESSION VALIDATION REQUEST ==========');
+  payload: ValidatePayload
+): Promise<ValidateResult> {
+  console.log(`${LOG_PREFIX} ========== SESSION VALIDATION REQUEST ==========`);
 
   // Validate required fields
   validateRequiredFields(payload, ['token', 'user_id']);
   const { token, user_id } = payload;
 
-  console.log(`[validate] Validating session for user (_id): ${user_id}`);
+  console.log(`${LOG_PREFIX} Validating session for user (_id): ${user_id}`);
 
   try {
-    // Token validation against Bubble Data API is skipped because:
-    // 1. Workflow-issued tokens may not work with Data API privacy rules
-    // 2. The token was already validated when login succeeded
-    // 3. Bubble will reject expired tokens on actual API calls
-    // 4. We verify the user exists in Supabase below
-    console.log(`[validate] Skipping Bubble token validation (trusting login-issued token)`);
-    console.log(`[validate] Token present: ${token ? 'yes' : 'no'}`);
+    console.log(`${LOG_PREFIX} Skipping Bubble token validation (trusting login-issued token)`);
+    console.log(`${LOG_PREFIX} Token present: ${token ? 'yes' : 'no'}`);
 
-    // Step 1: Fetch user data from Supabase (validates user exists)
-    console.log(`[validate] Fetching user data from Supabase...`);
+    // Step 1: Fetch user data from Supabase
+    console.log(`${LOG_PREFIX} Fetching user data from Supabase...`);
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
+    const supabase: SupabaseClient = createClient(
+      supabaseUrl,
+      supabaseServiceKey,
+      buildClientConfig()
+    );
 
-    // Query by _id first (the primary key stored in browser after login/signup)
-    // If that fails, get email from token and query by email
-    let userData = null;
-    let userError = null;
+    let userData: UserData | null = null;
+    let userError: Error | null = null;
 
-    // Note: "Account - Host / Landlord" column was removed - user._id is now used directly as host reference
-    const userSelectFields = '_id, bubble_id, "Name - First", "Name - Full", "Profile Photo", "Type - User Current", "email as text", "email", "About Me / Bio", "need for Space", "special needs", "Proposals List", "Rental Application"';
+    // First attempt: query by _id
+    console.log(`${LOG_PREFIX} Attempting to find user by _id: ${user_id}`);
+    const byIdResult = await fetchUserById(supabase, user_id);
 
-    // First attempt: query by _id (Bubble-style ID)
-    console.log(`[validate] Attempting to find user by _id: ${user_id}`);
-    const { data: userDataById, error: errorById } = await supabase
-      .from('user')
-      .select(userSelectFields)
-      .eq('_id', user_id)
-      .maybeSingle();
-
-    if (userDataById) {
-      userData = userDataById;
-      console.log(`[validate] User found by _id`);
+    if (hasUserData(byIdResult.data)) {
+      userData = byIdResult.data;
+      console.log(`${LOG_PREFIX} User found by _id`);
     } else {
-      // Second attempt: use token to get email from Supabase Auth, then query by email
-      console.log(`[validate] User not found by _id, trying to get email from token...`);
+      // Second attempt: use token to get email from Supabase Auth
+      console.log(`${LOG_PREFIX} User not found by _id, trying to get email from token...`);
 
-      // Verify the token and get user info from Supabase Auth
       const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
 
       if (authError) {
-        console.error(`[validate] Failed to get user from token:`, authError.message);
+        console.error(`${LOG_PREFIX} Failed to get user from token:`, authError.message);
         userError = authError;
-      } else if (authUser?.email) {
-        console.log(`[validate] Got email from token: ${authUser.email}, querying by email...`);
+      } else if (hasEmail(authUser)) {
+        const email = authUser!.email!;
+        console.log(`${LOG_PREFIX} Got email from token: ${email}, querying by email...`);
 
         // Query by email
-        const { data: userDataByEmail, error: errorByEmail } = await supabase
-          .from('user')
-          .select(userSelectFields)
-          .eq('email', authUser.email)
-          .maybeSingle();
+        const byEmailResult = await fetchUserByEmail(supabase, email);
 
-        if (userDataByEmail) {
-          userData = userDataByEmail;
-          console.log(`[validate] User found by email`);
-        } else if (!userDataByEmail) {
+        if (hasUserData(byEmailResult.data)) {
+          userData = byEmailResult.data;
+          console.log(`${LOG_PREFIX} User found by email`);
+        } else {
           // Try 'email as text' column as fallback
-          const { data: userDataByEmailText, error: errorByEmailText } = await supabase
-            .from('user')
-            .select(userSelectFields)
-            .eq('email as text', authUser.email)
-            .maybeSingle();
+          const byEmailTextResult = await fetchUserByEmailText(supabase, email);
 
-          if (userDataByEmailText) {
-            userData = userDataByEmailText;
-            console.log(`[validate] User found by 'email as text'`);
+          if (hasUserData(byEmailTextResult.data)) {
+            userData = byEmailTextResult.data;
+            console.log(`${LOG_PREFIX} User found by 'email as text'`);
           } else {
-            userError = errorByEmail || errorByEmailText || errorById;
+            userError = byEmailResult.error ?? byEmailTextResult.error ?? byIdResult.error;
           }
         }
       } else {
-        console.error(`[validate] No email found in auth user`);
-        userError = errorById;
+        console.error(`${LOG_PREFIX} No email found in auth user`);
+        userError = byIdResult.error;
       }
     }
 
     if (userError) {
-      console.error(`[validate] Supabase query error:`, userError);
-      throw new SupabaseSyncError(`Failed to fetch user data: ${userError.message}`, userError);
+      console.error(`${LOG_PREFIX} Supabase query error:`, userError);
+      throw new SupabaseSyncError(`${ERROR_MESSAGES.USER_FETCH_FAILED}: ${userError.message}`, userError);
     }
 
-    if (!userData) {
-      console.error(`[validate] User not found in Supabase by _id or email: ${user_id}`);
-      throw new SupabaseSyncError(`User not found with _id or email: ${user_id}`);
+    if (!hasUserData(userData)) {
+      console.error(`${LOG_PREFIX} User not found in Supabase by _id or email: ${user_id}`);
+      throw new SupabaseSyncError(`${ERROR_MESSAGES.USER_NOT_FOUND}: ${user_id}`);
     }
 
     // Step 2: Check rental application submission status
     let hasSubmittedRentalApp = false;
     const rentalAppId = userData['Rental Application'];
 
-    if (rentalAppId) {
-      console.log(`[validate] User has rental application: ${rentalAppId}, checking submission status...`);
-      const { data: rentalAppData, error: rentalAppError } = await supabase
-        .from('rentalapplication')
-        .select('submitted')
-        .eq('_id', rentalAppId)
-        .maybeSingle();
-
-      if (rentalAppError) {
-        console.warn(`[validate] Failed to fetch rental application: ${rentalAppError.message}`);
-      } else if (rentalAppData) {
-        hasSubmittedRentalApp = rentalAppData.submitted === true;
-        console.log(`[validate] Rental application submitted: ${hasSubmittedRentalApp}`);
-      }
+    if (isTruthy(rentalAppId)) {
+      console.log(`${LOG_PREFIX} User has rental application: ${rentalAppId}, checking submission status...`);
+      hasSubmittedRentalApp = await fetchRentalAppStatus(supabase, rentalAppId);
+      console.log(`${LOG_PREFIX} Rental application submitted: ${hasSubmittedRentalApp}`);
     } else {
-      console.log(`[validate] User has no rental application`);
+      console.log(`${LOG_PREFIX} User has no rental application`);
     }
 
-    // Step 3: Format user data
-    console.log(`[validate] User found: ${userData['Name - First']}`);
+    // Step 3: Build result
+    const result = buildValidateResult(userData, hasSubmittedRentalApp);
 
-    // Handle protocol-relative URLs for profile photos
-    let profilePhoto = userData['Profile Photo'];
-    if (profilePhoto && profilePhoto.startsWith('//')) {
-      profilePhoto = 'https:' + profilePhoto;
-    }
+    console.log(`${LOG_PREFIX} ✅ Validation complete`);
+    console.log(`${LOG_PREFIX}    User: ${result.firstName}`);
+    console.log(`${LOG_PREFIX}    Type: ${result.userType}`);
+    console.log(`${LOG_PREFIX}    Proposals: ${result.proposalCount}`);
+    console.log(`${LOG_PREFIX}    Rental App Submitted: ${result.hasSubmittedRentalApp}`);
+    console.log(`${LOG_PREFIX} ========== VALIDATION COMPLETE ==========`);
 
-    // Use 'email' column first (more commonly populated), fall back to 'email as text'
-    const userEmail = userData['email'] || userData['email as text'] || null;
-
-    // Get proposal count from user's "Proposals List" array
-    const proposalsList = userData['Proposals List'];
-    const proposalCount = Array.isArray(proposalsList) ? proposalsList.length : 0;
-    console.log(`[validate] User has ${proposalCount} proposal(s)`);
-
-    const userDataObject = {
-      userId: userData._id,
-      firstName: userData['Name - First'] || null,
-      fullName: userData['Name - Full'] || null,
-      email: userEmail,
-      profilePhoto: profilePhoto || null,
-      userType: userData['Type - User Current'] || null,
-      // accountHostId is now the same as userId (user IS their own host account)
-      accountHostId: userData._id,
-      // User profile fields for proposal prefilling
-      aboutMe: userData['About Me / Bio'] || null,
-      needForSpace: userData['need for Space'] || null,
-      specialNeeds: userData['special needs'] || null,
-      // Proposal count for showing/hiding Create Proposal CTA on search page
-      proposalCount: proposalCount,
-      // Rental application submission status for hiding CTA in success modal
-      hasSubmittedRentalApp: hasSubmittedRentalApp
-    };
-
-    console.log(`[validate] ✅ Validation complete`);
-    console.log(`[validate]    User: ${userDataObject.firstName}`);
-    console.log(`[validate]    Type: ${userDataObject.userType}`);
-    console.log(`[validate]    Proposals: ${userDataObject.proposalCount}`);
-    console.log(`[validate]    Rental App Submitted: ${userDataObject.hasSubmittedRentalApp}`);
-    console.log(`[validate] ========== VALIDATION COMPLETE ==========`);
-
-    return userDataObject;
+    return result;
 
   } catch (error) {
     if (error instanceof BubbleApiError || error instanceof SupabaseSyncError) {
       throw error;
     }
 
-    console.error(`[validate] ========== VALIDATION ERROR ==========`);
-    console.error(`[validate] Error:`, error);
+    console.error(`${LOG_PREFIX} ========== VALIDATION ERROR ==========`);
+    console.error(`${LOG_PREFIX} Error:`, error);
 
     throw new BubbleApiError(
-      `Failed to validate token: ${error.message}`,
+      `${ERROR_MESSAGES.VALIDATE_FAILED}: ${(error as Error).message}`,
       500,
       error
     );
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+  HTTPS_PREFIX,
+  PROTOCOL_RELATIVE_PREFIX,
+  USER_SELECT_FIELDS,
+  RENTAL_APP_SELECT_FIELDS,
+  ERROR_MESSAGES,
+
+  // Predicates
+  isTruthy,
+  hasUserData,
+  hasEmail,
+  isProtocolRelative,
+  isProposalArray,
+
+  // Transformers
+  normalizeProfilePhotoUrl,
+  extractEmail,
+  countProposals,
+
+  // Builders
+  buildValidateResult,
+  buildClientConfig,
+
+  // Query helpers
+  fetchUserById,
+  fetchUserByEmail,
+  fetchUserByEmailText,
+  fetchRentalAppStatus,
+})

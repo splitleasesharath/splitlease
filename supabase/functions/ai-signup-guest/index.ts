@@ -9,14 +9,191 @@
  * 4. Returns the user data (including _id) for the subsequent parseProfile call
  *
  * This function bridges the gap between user creation and AI profile parsing.
+ *
+ * FP PATTERN: Separates pure data builders from effectful database operations
+ * All data transformations are pure with @pure annotations
+ * All database operations are explicit with @effectful annotations
+ *
+ * NO FALLBACK PRINCIPLE: All errors fail fast without fallback logic
  */
 
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { ValidationError } from '../_shared/errors.ts';
 
-console.log('[ai-signup-guest] Edge Function started');
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[ai-signup-guest]'
+
+console.log(`${LOG_PREFIX} Edge Function started`);
+
+// ─────────────────────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────────────────────
+
+interface SignupGuestInput {
+  readonly email: string;
+  readonly phone?: string;
+  readonly text_inputted: string;
+}
+
+interface UserData {
+  readonly _id: string;
+  readonly email: string;
+  readonly 'Name - First': string | null;
+  readonly 'Name - Last': string | null;
+}
+
+interface SignupGuestResponse {
+  readonly _id?: string;
+  readonly email: string;
+  readonly firstName?: string | null;
+  readonly lastName?: string | null;
+  readonly text_saved?: boolean;
+  readonly message?: string;
+  readonly text_captured?: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pure Predicates
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if string is non-empty
+ * @pure
+ */
+const isNonEmptyString = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim() !== ''
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Builders
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build update data for user record
+ * @pure
+ */
+const buildUserUpdateData = (textInputted: string, phone?: string): Record<string, unknown> => {
+  const updateData: Record<string, unknown> = {
+    'freeform ai signup text': textInputted,
+    'Modified Date': new Date().toISOString(),
+  };
+
+  if (phone) {
+    updateData['Phone Number (as text)'] = phone;
+  }
+
+  return Object.freeze(updateData);
+}
+
+/**
+ * Build success response for found user
+ * @pure
+ */
+const buildFoundUserResponse = (userData: UserData): SignupGuestResponse =>
+  Object.freeze({
+    _id: userData._id,
+    email: userData.email,
+    firstName: userData['Name - First'],
+    lastName: userData['Name - Last'],
+    text_saved: true
+  })
+
+/**
+ * Build response for user not found case
+ * @pure
+ */
+const buildUserNotFoundResponse = (email: string): SignupGuestResponse =>
+  Object.freeze({
+    message: 'User not found, but text captured for processing',
+    email,
+    text_captured: true
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Validation Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Validate signup guest input
+ * @pure - Throws ValidationError on invalid input
+ */
+const validateSignupInput = (input: SignupGuestInput): void => {
+  if (!isNonEmptyString(input.email)) {
+    throw new ValidationError('email is required');
+  }
+  if (!isNonEmptyString(input.text_inputted)) {
+    throw new ValidationError('text_inputted is required');
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Database Operations
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch user by email
+ * @effectful - Database read operation
+ */
+const fetchUserByEmail = async (
+  supabase: SupabaseClient,
+  email: string
+): Promise<UserData | null> => {
+  const { data, error } = await supabase
+    .from('user')
+    .select('_id, email, "Name - First", "Name - Last"')
+    .eq('email', email.toLowerCase())
+    .maybeSingle();
+
+  if (error) {
+    console.error(`${LOG_PREFIX} Error looking up user:`, error);
+    throw new Error(`Failed to look up user: ${error.message}`);
+  }
+
+  return data as UserData | null;
+}
+
+/**
+ * Update user with freeform text
+ * @effectful - Database write operation
+ */
+const updateUserFreeformText = async (
+  supabase: SupabaseClient,
+  userId: string,
+  updateData: Record<string, unknown>
+): Promise<void> => {
+  const { error } = await supabase
+    .from('user')
+    .update(updateData)
+    .eq('_id', userId);
+
+  if (error) {
+    console.error(`${LOG_PREFIX} Error updating user:`, error);
+    throw new Error(`Failed to update user: ${error.message}`);
+  }
+}
+
+/**
+ * Get Supabase client configuration
+ * @effectful - Environment access
+ */
+const getSupabaseConfig = (): { url: string; serviceKey: string } => {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Supabase configuration missing');
+  }
+
+  return { url: supabaseUrl, serviceKey: supabaseServiceKey };
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Handler
+// ─────────────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -28,8 +205,8 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('[ai-signup-guest] ========== NEW REQUEST ==========');
-    console.log('[ai-signup-guest] Method:', req.method);
+    console.log(`${LOG_PREFIX} ========== NEW REQUEST ==========`);
+    console.log(`${LOG_PREFIX} Method:`, req.method);
 
     // Only accept POST requests
     if (req.method !== 'POST') {
@@ -38,64 +215,44 @@ Deno.serve(async (req) => {
 
     // Parse request body
     const body = await req.json();
-    console.log('[ai-signup-guest] Request body:', JSON.stringify(body, null, 2));
+    console.log(`${LOG_PREFIX} Request body:`, JSON.stringify(body, null, 2));
 
-    const { email, phone, text_inputted } = body;
+    const input = body as SignupGuestInput;
 
-    // Validate required fields
-    if (!email) {
-      throw new ValidationError('email is required');
-    }
-    if (!text_inputted) {
-      throw new ValidationError('text_inputted is required');
-    }
+    // ================================================
+    // VALIDATION
+    // ================================================
 
-    console.log('[ai-signup-guest] Email:', email);
-    console.log('[ai-signup-guest] Phone:', phone || 'Not provided');
-    console.log('[ai-signup-guest] Text length:', text_inputted.length);
+    validateSignupInput(input);
 
-    // Get Supabase credentials
-    const supabaseUrl = Deno.env.get('SUPABASE_URL');
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    console.log(`${LOG_PREFIX} Email:`, input.email);
+    console.log(`${LOG_PREFIX} Phone:`, input.phone || 'Not provided');
+    console.log(`${LOG_PREFIX} Text length:`, input.text_inputted.length);
 
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error('Supabase configuration missing');
-    }
+    // ================================================
+    // GET SUPABASE CLIENT
+    // ================================================
 
-    // Initialize Supabase admin client
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
+    const config = getSupabaseConfig();
+    const supabase = createClient(config.url, config.serviceKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
     });
 
-    // ========== STEP 1: Find user by email ==========
-    console.log('[ai-signup-guest] Step 1: Looking up user by email...');
+    // ================================================
+    // FIND USER BY EMAIL
+    // ================================================
 
-    const { data: userData, error: userError } = await supabase
-      .from('user')
-      .select('_id, email, "Name - First", "Name - Last"')
-      .eq('email', email.toLowerCase())
-      .maybeSingle();
+    console.log(`${LOG_PREFIX} Step 1: Looking up user by email...`);
 
-    if (userError) {
-      console.error('[ai-signup-guest] Error looking up user:', userError);
-      throw new Error(`Failed to look up user: ${userError.message}`);
-    }
+    const userData = await fetchUserByEmail(supabase, input.email);
 
     if (!userData) {
-      console.log('[ai-signup-guest] User not found, they may not have been created yet');
+      console.log(`${LOG_PREFIX} User not found, they may not have been created yet`);
       // Return success anyway - the user might be created later
-      // The parseProfile call will fail gracefully if user doesn't exist
       return new Response(
         JSON.stringify({
           success: true,
-          data: {
-            message: 'User not found, but text captured for processing',
-            email: email,
-            text_captured: true
-          }
+          data: buildUserNotFoundResponse(input.email)
         }),
         {
           status: 200,
@@ -104,45 +261,25 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log('[ai-signup-guest] ✅ User found:', userData._id);
+    console.log(`${LOG_PREFIX} ✅ User found:`, userData._id);
 
-    // ========== STEP 2: Save freeform text to user record ==========
-    console.log('[ai-signup-guest] Step 2: Saving freeform text to user record...');
+    // ================================================
+    // UPDATE USER WITH FREEFORM TEXT
+    // ================================================
 
-    const updateData: Record<string, any> = {
-      'freeform ai signup text': text_inputted,
-      'Modified Date': new Date().toISOString(),
-    };
+    console.log(`${LOG_PREFIX} Step 2: Saving freeform text to user record...`);
 
-    // Also save phone number if provided
-    if (phone) {
-      updateData['Phone Number (as text)'] = phone;
-    }
+    const updateData = buildUserUpdateData(input.text_inputted, input.phone);
+    await updateUserFreeformText(supabase, userData._id, updateData);
 
-    const { error: updateError } = await supabase
-      .from('user')
-      .update(updateData)
-      .eq('_id', userData._id);
-
-    if (updateError) {
-      console.error('[ai-signup-guest] Error updating user:', updateError);
-      throw new Error(`Failed to update user: ${updateError.message}`);
-    }
-
-    console.log('[ai-signup-guest] ✅ Freeform text saved to user record');
-    console.log('[ai-signup-guest] ========== SUCCESS ==========');
+    console.log(`${LOG_PREFIX} ✅ Freeform text saved to user record`);
+    console.log(`${LOG_PREFIX} ========== SUCCESS ==========`);
 
     // Return user data for subsequent parseProfile call
     return new Response(
       JSON.stringify({
         success: true,
-        data: {
-          _id: userData._id,
-          email: userData.email,
-          firstName: userData['Name - First'],
-          lastName: userData['Name - Last'],
-          text_saved: true
-        }
+        data: buildFoundUserResponse(userData)
       }),
       {
         status: 200,
@@ -151,16 +288,16 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('[ai-signup-guest] ========== ERROR ==========');
-    console.error('[ai-signup-guest] Error:', error);
-    console.error('[ai-signup-guest] Error stack:', error.stack);
+    console.error(`${LOG_PREFIX} ========== ERROR ==========`);
+    console.error(`${LOG_PREFIX} Error:`, error);
+    console.error(`${LOG_PREFIX} Error stack:`, (error as Error).stack);
 
     const statusCode = error instanceof ValidationError ? 400 : 500;
 
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'An unexpected error occurred'
+        error: (error as Error).message || 'An unexpected error occurred'
       }),
       {
         status: statusCode,
@@ -169,3 +306,32 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Constants
+  LOG_PREFIX,
+
+  // Pure Predicates
+  isNonEmptyString,
+
+  // Pure Data Builders
+  buildUserUpdateData,
+  buildFoundUserResponse,
+  buildUserNotFoundResponse,
+
+  // Validation Helpers
+  validateSignupInput,
+
+  // Database Operations
+  fetchUserByEmail,
+  updateUserFreeformText,
+  getSupabaseConfig,
+})
