@@ -110,6 +110,15 @@ export default function Footer() {
           className="footer-container"
           style={{ gridTemplateColumns: `repeat(${columnCount}, 1fr)` }}
         >
+          {/* Company Column - Now first */}
+          <div className="footer-column">
+            <h4>Company</h4>
+            <a href="/faq?section=travelers&question=1692211080963x751695924087252700">About Periodic Tenancy</a>
+            <a href="/about-us">About the Team</a>
+            <a href="/careers">Careers at Split Lease</a>
+            <a href="/help-center">Blog</a>
+          </div>
+
           {/* For Hosts Column - hidden for logged-in guests */}
           {showHostsColumn && (
             <div className="footer-column">
@@ -142,15 +151,6 @@ export default function Footer() {
             </div>
           )}
 
-          {/* Company Column */}
-          <div className="footer-column">
-            <h4>Company</h4>
-            <a href="/faq?section=travelers&question=1692211080963x751695924087252700">About Periodic Tenancy</a>
-            <a href="/about-us">About the Team</a>
-            <a href="/careers">Careers at Split Lease</a>
-            <a href="/help-center">Blog</a>
-          </div>
-
           {/* Referral Column */}
           <div className="footer-column">
             <h4>Refer a friend</h4>
@@ -175,20 +175,30 @@ export default function Footer() {
             </button>
           </div>
 
-          {/* Import Listing Column */}
-          <div className="footer-column">
-            <h4>Import your listing from another site</h4>
-            <p className="import-text">No need to start from scratch</p>
+          {/* Import Listing Column - Enhanced design */}
+          <div className="footer-column import-column">
+            <div className="import-header">
+              <div className="import-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+              </div>
+              <h4>Import Your Listing</h4>
+            </div>
+            <p className="import-tagline">Already listed elsewhere?</p>
+            <p className="import-text">We'll copy everything over for you in minutes.</p>
             <input
               type="text"
-              placeholder="https://your-listing-link"
+              placeholder="Paste your listing URL"
               className="import-input"
               value={importUrl}
               onChange={(e) => setImportUrl(e.target.value)}
             />
             <input
               type="email"
-              placeholder="janedoe@your_email.com"
+              placeholder="Your email address"
               className="import-input"
               value={importEmail}
               onChange={(e) => setImportEmail(e.target.value)}
@@ -198,7 +208,7 @@ export default function Footer() {
               onClick={handleImportSubmit}
               disabled={isSubmittingImport}
             >
-              {isSubmittingImport ? 'Importing...' : 'Submit'}
+              {isSubmittingImport ? 'Importing...' : 'Import Now'}
             </button>
           </div>
         </div>

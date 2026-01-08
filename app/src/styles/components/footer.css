@@ -86,10 +86,52 @@
     line-height: 1.4;
 }
 
+/* Import Listing Column - Enhanced styling */
+.import-column {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.import-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.import-header h4 {
+    margin-bottom: 0;
+}
+
+.import-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #7C3AED 0%, #5B21B6 100%);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.import-icon svg {
+    stroke: white;
+}
+
+.import-tagline {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 0.25rem;
+}
+
 .import-text {
     font-size: 0.8rem;
     margin-bottom: 0.75rem;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.4;
 }
 
 .referral-options {
@@ -133,11 +175,12 @@
     margin-bottom: 0.25rem;
 }
 
-.footer-column:nth-child(5) {
+/* Import column is now last (5th position) */
+.import-column {
     justify-content: flex-start;
 }
 
-.footer-column:nth-child(5) > *:last-child {
+.import-column > *:last-child {
     margin-top: auto;
 }
 
@@ -381,9 +424,9 @@
         margin-bottom: 0.3rem;
     }
 
-    /* Hide referral and import columns on mobile */
-    .footer-column:nth-child(4),
-    .footer-column:nth-child(5) {
+    /* Hide referral and import columns on mobile using class selectors */
+    .footer-column:has(.share-btn),
+    .footer-column.import-column {
         display: none;
     }
 
