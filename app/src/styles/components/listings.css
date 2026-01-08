@@ -587,8 +587,8 @@
     justify-content: space-between;
     gap: 6px;
     background: white;
-    color: #6C5CE7;
-    border: 2px solid #6C5CE7;
+    color: var(--secondary-purple, #6D31C2);
+    border: 2px solid var(--secondary-purple, #6D31C2);
     padding: 8px 18px;
     border-radius: 8px;
     font-size: 13px;
@@ -601,15 +601,15 @@
 }
 
 .listing-host-row .message-btn:hover {
-    background: #F0F4FF;
-    box-shadow: 0 2px 4px rgba(108, 92, 231, 0.15);
+    background: var(--bg-off-white, #fcfaff);
+    box-shadow: 0 2px 4px rgba(109, 49, 194, 0.15);
 }
 
 .listing-host-row .message-btn svg {
     width: 14px;
     height: 14px;
     flex-shrink: 0;
-    stroke: #6C5CE7;
+    stroke: var(--secondary-purple, #6D31C2);
 }
 
 /* Create Proposal Button - Next to Message button */
@@ -618,7 +618,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 6px;
-    background: #6C5CE7;
+    background: var(--secondary-purple, #6D31C2);
     color: white;
     border: none;
     padding: 8px 18px;
@@ -633,8 +633,8 @@
 }
 
 .listing-host-row .create-proposal-btn:hover {
-    background: #7C6CF7;
-    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+    background: var(--accent-purple, #8C68EE);
+    box-shadow: 0 2px 8px rgba(109, 49, 194, 0.3);
 }
 
 .listing-host-row .create-proposal-btn svg {
@@ -649,7 +649,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 6px;
-    background: #6C5CE7;
+    background: var(--secondary-purple, #6D31C2);
     color: white;
     border: none;
     border-radius: 8px;
@@ -664,8 +664,8 @@
 }
 
 .listing-host-row .view-proposal-btn:hover {
-    background: #7C6CF7;
-    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+    background: var(--accent-purple, #8C68EE);
+    box-shadow: 0 2px 8px rgba(109, 49, 194, 0.3);
 }
 
 .listing-host-row .view-proposal-btn svg {
@@ -790,7 +790,7 @@
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #6C5CE7 0%, #8A7FF9 100%);
+    background: var(--gradient-purple-button, linear-gradient(135deg, #6D31C2 0%, #7C3AED 100%));
     color: white;
     display: flex;
     align-items: center;
@@ -842,25 +842,25 @@
 }
 
 .listing-host-section .action-button.primary {
-    background: #6C5CE7;
+    background: var(--secondary-purple, #6D31C2);
     color: white;
     border: none;
 }
 
 .listing-host-section .action-button.primary:hover {
-    background: #7C6CF7;
-    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.3);
+    background: var(--accent-purple, #8C68EE);
+    box-shadow: 0 2px 8px rgba(109, 49, 194, 0.3);
 }
 
 .listing-host-section .action-button.secondary {
     background: white;
-    color: #6C5CE7;
-    border: 2px solid #6C5CE7;
+    color: var(--secondary-purple, #6D31C2);
+    border: 2px solid var(--secondary-purple, #6D31C2);
 }
 
 .listing-host-section .action-button.secondary:hover {
-    background: #F0F4FF;
-    box-shadow: 0 2px 4px rgba(108, 92, 231, 0.15);
+    background: var(--bg-off-white, #fcfaff);
+    box-shadow: 0 2px 4px rgba(109, 49, 194, 0.15);
 }
 
 .listing-host-section .action-button svg {
@@ -875,7 +875,7 @@
     align-items: center;
     gap: 0.375rem;
     padding: 8px 14px;
-    background: #6C5CE7;
+    background: var(--secondary-purple, #6D31C2);
     color: white;
     border: none;
     border-radius: 6px;
@@ -887,7 +887,7 @@
 }
 
 .listing-host-section .create-proposal-btn:hover {
-    background: #4c1d95;
+    background: var(--primary-purple, #31135D);
     transform: translateY(-1px);
 }
 
@@ -1191,8 +1191,8 @@
 .message-btn {
     padding: 6px 12px;
     background: white;
-    color: #6C5CE7;
-    border: 2px solid #6C5CE7;
+    color: var(--secondary-purple, #6D31C2);
+    border: 2px solid var(--secondary-purple, #6D31C2);
     border-radius: 8px;
     font-size: 13px;
     font-weight: 600;
@@ -1507,15 +1507,15 @@
     }
 
     .listing-host-section .action-button.primary {
-        background: #6C5CE7;
+        background: var(--secondary-purple, #6D31C2);
         color: white;
         border: none;
     }
 
     .listing-host-section .action-button.secondary {
         background: white;
-        color: #6C5CE7;
-        border: 1.5px solid #6C5CE7;
+        color: var(--secondary-purple, #6D31C2);
+        border: 1.5px solid var(--secondary-purple, #6D31C2);
     }
 
     /* View proposal and create proposal buttons */

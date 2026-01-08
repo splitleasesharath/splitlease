@@ -112,8 +112,8 @@
 
 .inline-filters .filter-select:focus {
   outline: none;
-  border-color: #5b21b6;
-  box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
+  border-color: var(--secondary-purple, #6D31C2);
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
 }
 
 /* Neighborhood Multi-Select Dropdown */
@@ -162,8 +162,8 @@
 }
 
 .neighborhood-dropdown-container:focus-within {
-  border-color: #5b21b6;
-  box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
+  border-color: var(--secondary-purple, #6D31C2);
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
 }
 
 .inline-filters .neighborhood-search {
@@ -292,7 +292,7 @@
 .neighborhood-list input[type="checkbox"] {
   margin-right: 0.5rem;
   cursor: pointer;
-  accent-color: #5b21b6;
+  accent-color: var(--secondary-purple, #6D31C2);
 }
 
 /* Listings Count */
@@ -447,7 +447,7 @@
 
 .header-dropdown a:hover {
   background: #f3f4f6;
-  color: #5b21b6;
+  color: var(--secondary-purple, #6D31C2);
 }
 
 /* Map Header Actions - Right side container */
@@ -468,7 +468,7 @@
   height: 40px;
   border-radius: 50%;
   background: #f3f4f6;
-  color: #5b21b6;
+  color: var(--secondary-purple, #6D31C2);
   text-decoration: none;
   transition: all 0.2s ease;
 }
@@ -479,13 +479,13 @@
 }
 
 .favorites-link svg {
-  stroke: #5b21b6;
+  stroke: var(--secondary-purple, #6D31C2);
   fill: none;
   transition: fill 0.2s ease;
 }
 
 .favorites-link:hover svg {
-  fill: rgba(91, 33, 182, 0.15);
+  fill: rgba(109, 49, 194, 0.15);
 }
 
 /* Favorites Badge */
@@ -499,7 +499,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #5b21b6;
+  background: var(--secondary-purple, #6D31C2);
   color: white;
   font-size: 11px;
   font-weight: 600;
@@ -611,7 +611,7 @@
 .retry-btn,
 .reset-filters-btn {
   padding: 0.75rem 1.5rem;
-  background: #5b21b6;
+  background: var(--secondary-purple, #6D31C2);
   color: white;
   border: none;
   border-radius: 8px;
@@ -623,7 +623,7 @@
 
 .retry-btn:hover,
 .reset-filters-btn:hover {
-  background: #4c1d95;
+  background: var(--primary-purple, #31135D);
 }
 
 /* ========================================
@@ -825,7 +825,7 @@
     height: 36px;
     border-radius: 50%;
     background: #f3e8ff;
-    color: #5b21b6;
+    color: var(--secondary-purple, #6D31C2);
     text-decoration: none;
     transition: all 0.2s ease;
   }
@@ -836,13 +836,13 @@
   }
 
   .mobile-favorites-link svg {
-    fill: #5b21b6;
+    fill: var(--secondary-purple, #6D31C2);
     stroke: none;
     transition: fill 0.2s ease;
   }
 
   .mobile-favorites-link:hover svg {
-    fill: #4c1d95;
+    fill: var(--primary-purple, #31135D);
   }
 
   /* Mobile Sign In Button */
@@ -851,7 +851,7 @@
     align-items: center;
     justify-content: center;
     padding: 0.5rem 0.75rem;
-    background: #5b21b6;
+    background: var(--secondary-purple, #6D31C2);
     color: white;
     font-size: 0.8125rem;
     font-weight: 600;
@@ -863,7 +863,7 @@
   }
 
   .mobile-signin-btn:hover {
-    background: #4c1d95;
+    background: var(--primary-purple, #31135D);
   }
 
   /* Hide hamburger menu on mobile */
@@ -1106,7 +1106,7 @@
   .mobile-filter-apply-btn {
     width: 100%;
     padding: 1rem 1.5rem;
-    background: #5b21b6;
+    background: var(--secondary-purple, #6D31C2);
     color: white;
     border: none;
     border-radius: 12px;
@@ -1120,11 +1120,11 @@
   }
 
   .mobile-filter-apply-btn:hover {
-    background: #4c1d95;
+    background: var(--primary-purple, #31135D);
   }
 
   .mobile-filter-apply-btn:active {
-    background: #3b1578;
+    background: var(--primary-purple-dark, #1f0a3d);
     transform: scale(0.98);
   }
 
@@ -1186,8 +1186,8 @@
   }
 
   .inline-filters .neighborhood-dropdown-container:focus-within {
-    border-color: #5b21b6;
-    box-shadow: 0 0 0 3px rgba(91, 33, 182, 0.1);
+    border-color: var(--secondary-purple, #6D31C2);
+    box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
   }
 
   /* Improve neighborhood search input on mobile */
@@ -1390,7 +1390,7 @@
   width: 40px;
   height: 40px;
   border: 3px solid #e5e7eb;
-  border-top-color: #5b21b6;
+  border-top-color: var(--primary-purple, #31135D);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
 }
@@ -1418,7 +1418,7 @@
   }
   50% {
     transform: translate(-50%, -50%) scale(1.2);
-    box-shadow: 0 0 20px rgba(91, 33, 182, 0.6);
+    box-shadow: 0 0 20px rgba(109, 49, 194, 0.6);
   }
 }
 
