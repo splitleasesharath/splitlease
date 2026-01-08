@@ -188,10 +188,17 @@ const styles = {
     lineHeight: 1.4
   },
 
-  // LinkedIn button
+  // OAuth buttons container (side by side)
+  oauthButtonsRow: {
+    display: 'flex',
+    gap: '12px',
+    marginBottom: '4px'
+  },
+
+  // LinkedIn button (compact, side by side)
   linkedinBtn: {
-    width: '100%',
-    padding: '14px 16px',
+    flex: 1,
+    padding: '12px 16px',
     border: '1px solid #0a66c2',
     backgroundColor: '#0a66c2',
     borderRadius: '10px',
@@ -199,31 +206,29 @@ const styles = {
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
-    gap: '12px',
-    marginBottom: '4px'
+    justifyContent: 'center',
+    gap: '8px'
   },
   linkedinIcon: {
-    width: '32px',
-    height: '32px',
+    width: '20px',
+    height: '20px',
     backgroundColor: 'white',
-    borderRadius: '6px',
+    borderRadius: '4px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     fontWeight: '700',
     color: '#0a66c2',
-    fontSize: '16px',
+    fontSize: '12px',
     flexShrink: 0
   },
   linkedinText: {
-    flex: 1,
     textAlign: 'left'
   },
   linkedinPrimary: {
     fontSize: '14px',
     fontWeight: '600',
-    color: 'white',
-    display: 'block'
+    color: 'white'
   },
   linkedinSecondary: {
     fontSize: '12px',
@@ -232,10 +237,10 @@ const styles = {
     marginTop: '2px'
   },
 
-  // Google button
+  // Google button (compact, side by side)
   googleBtn: {
-    width: '100%',
-    padding: '14px 16px',
+    flex: 1,
+    padding: '12px 16px',
     backgroundColor: '#f9fafb',
     border: '1px solid #e5e7eb',
     borderRadius: '10px',
@@ -244,8 +249,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: '10px',
-    marginTop: '8px',
+    gap: '8px',
     fontSize: '14px',
     fontWeight: '500',
     color: '#1a1a1a'
@@ -1685,34 +1689,34 @@ export default function SignUpLoginModal({
         <p style={styles.subtitle}>Log in to your Split Lease account</p>
       </div>
 
-      {/* LinkedIn OAuth Button */}
-      <button
-        type="button"
-        style={styles.linkedinBtn}
-        onClick={async () => {
-          const result = await initiateLinkedInOAuthLogin();
-          if (!result.success) {
-            setError(result.error || 'Failed to start LinkedIn login');
-          }
-        }}
-        disabled={isLoading}
-      >
-        <div style={styles.linkedinIcon}>in</div>
-        <div style={styles.linkedinText}>
-          <span style={styles.linkedinPrimary}>Continue with LinkedIn</span>
-        </div>
-        <ChevronRightIcon size={20} style={{ color: 'white', opacity: 0.7 }} />
-      </button>
+      {/* OAuth Buttons Row (side by side) */}
+      <div style={styles.oauthButtonsRow}>
+        {/* LinkedIn OAuth Button */}
+        <button
+          type="button"
+          style={styles.linkedinBtn}
+          onClick={async () => {
+            const result = await initiateLinkedInOAuthLogin();
+            if (!result.success) {
+              setError(result.error || 'Failed to start LinkedIn login');
+            }
+          }}
+          disabled={isLoading}
+        >
+          <div style={styles.linkedinIcon}>in</div>
+          <span style={styles.linkedinPrimary}>LinkedIn</span>
+        </button>
 
-      {/* Google OAuth Button (placeholder) */}
-      <button
-        type="button"
-        style={styles.googleBtn}
-        onClick={() => alert('Google OAuth login coming soon!')}
-      >
-        <GoogleLogo />
-        Continue with Google
-      </button>
+        {/* Google OAuth Button */}
+        <button
+          type="button"
+          style={styles.googleBtn}
+          onClick={() => alert('Google OAuth login coming soon!')}
+        >
+          <GoogleLogo />
+          <span>Google</span>
+        </button>
+      </div>
 
       <div style={styles.divider}>
         <div style={styles.dividerLine} />
@@ -1825,35 +1829,34 @@ export default function SignUpLoginModal({
         <p style={styles.subtitle}>Tell us a bit about yourself</p>
       </div>
 
-      {/* LinkedIn OAuth Button */}
-      <button
-        type="button"
-        style={styles.linkedinBtn}
-        onClick={async () => {
-          const result = await initiateLinkedInOAuth(signupData.userType);
-          if (!result.success) {
-            setError(result.error || 'Failed to start LinkedIn signup');
-          }
-        }}
-        disabled={isLoading}
-      >
-        <div style={styles.linkedinIcon}>in</div>
-        <div style={styles.linkedinText}>
-          <span style={styles.linkedinPrimary}>Continue with LinkedIn</span>
-          <span style={styles.linkedinSecondary}>Auto-fill your info</span>
-        </div>
-        <ChevronRightIcon size={20} style={{ color: 'white', opacity: 0.7 }} />
-      </button>
+      {/* OAuth Buttons Row (side by side) */}
+      <div style={styles.oauthButtonsRow}>
+        {/* LinkedIn OAuth Button */}
+        <button
+          type="button"
+          style={styles.linkedinBtn}
+          onClick={async () => {
+            const result = await initiateLinkedInOAuth(signupData.userType);
+            if (!result.success) {
+              setError(result.error || 'Failed to start LinkedIn signup');
+            }
+          }}
+          disabled={isLoading}
+        >
+          <div style={styles.linkedinIcon}>in</div>
+          <span style={styles.linkedinPrimary}>LinkedIn</span>
+        </button>
 
-      {/* Google OAuth Button (placeholder) */}
-      <button
-        type="button"
-        style={styles.googleBtn}
-        onClick={() => alert('Google OAuth signup coming soon!')}
-      >
-        <GoogleLogo />
-        Continue with Google
-      </button>
+        {/* Google OAuth Button */}
+        <button
+          type="button"
+          style={styles.googleBtn}
+          onClick={() => alert('Google OAuth signup coming soon!')}
+        >
+          <GoogleLogo />
+          <span>Google</span>
+        </button>
+      </div>
 
       <div style={styles.divider}>
         <div style={styles.dividerLine} />
