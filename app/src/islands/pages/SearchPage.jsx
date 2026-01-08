@@ -1040,6 +1040,7 @@ export default function SearchPage() {
   const mapRef = useRef(null);
   const fetchInProgressRef = useRef(false); // Track if fetch is already in progress
   const lastFetchParamsRef = useRef(null); // Track last fetch parameters to prevent duplicates
+  const menuRef = useRef(null); // Ref for hamburger menu dropdown
 
   // Parse URL parameters for initial filter state
   const urlFilters = parseUrlToFilters();
@@ -1111,6 +1112,20 @@ export default function SearchPage() {
     };
     init();
   }, []);
+
+  // Close hamburger menu when clicking outside
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [menuOpen]);
 
   // Mobile header scroll hide/show effect
   // Note: On mobile, the scrolling element is .listings-content, not window
@@ -2916,7 +2931,7 @@ export default function SearchPage() {
                   />
                 </>
               ) : (
-                <>
+                <div ref={menuRef} style={{ position: 'relative' }}>
                   {/* Hamburger Menu - Only for logged out users */}
                   <button
                     className="hamburger-menu"
@@ -2951,7 +2966,7 @@ export default function SearchPage() {
                       <a href="/help-center">Support Centre</a>
                     </div>
                   )}
-                </>
+                </div>
               )}
             </div>
           </div>
