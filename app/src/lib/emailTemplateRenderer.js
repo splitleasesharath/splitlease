@@ -4,11 +4,89 @@
  *
  * This client-side renderer allows previewing emails before sending,
  * using the same template structure as the server-side SendGrid templates.
+ *
+ * @module lib/emailTemplateRenderer
  */
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const DEFAULT_VALUES = Object.freeze({
+  SUBJECT: 'Message from Split Lease',
+  BUTTON_URL: 'https://splitlease.com',
+  BUTTON_TEXT: 'Visit Site',
+  LOGO_URL: 'https://splitlease.com/assets/images/split-lease-logo.png'
+})
+
+const BRAND = Object.freeze({
+  NAME: 'Split Lease',
+  LOCATION: 'Greater New York Area',
+  PRIMARY_COLOR: '#4b2fa2',
+  WARNING_BG: '#FEF3C7'
+})
+
+const HTML_ENTITIES = Object.freeze({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+})
+
+// ─────────────────────────────────────────────────────────────
+// Pure Helper Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Escape HTML entities for safe rendering
+ * @pure
+ */
+const escapeHtml = (str) => {
+  if (!str) return ''
+  return str
+    .replace(/&/g, HTML_ENTITIES['&'])
+    .replace(/</g, HTML_ENTITIES['<'])
+    .replace(/>/g, HTML_ENTITIES['>'])
+    .replace(/"/g, HTML_ENTITIES['"'])
+    .replace(/'/g, HTML_ENTITIES["'"])
+}
+
+/**
+ * Build warning message section HTML
+ * @pure
+ */
+const buildWarningSection = (warningmessage) =>
+  warningmessage ? `
+          <!-- Warning Message Banner -->
+          <tr>
+            <td align="center" style="padding:16px 40px; background:${BRAND.WARNING_BG};">
+              ${warningmessage}
+            </td>
+          </tr>
+          ` : ''
+
+/**
+ * Build banner section HTML
+ * @pure
+ */
+const buildBannerSection = (banner) =>
+  banner ? `
+          <!-- Banner -->
+          <tr>
+            <td align="center" style="padding:0;">
+              ${banner}
+            </td>
+          </tr>
+          ` : ''
+
+// ─────────────────────────────────────────────────────────────
+// Public API
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Render the "General Email Template 4" with provided variables
- *
+ * @pure
  * @param {Object} params - Template parameters
  * @param {string} params.subject - Email subject (used in <title>)
  * @param {string} params.title - Main heading
@@ -23,28 +101,17 @@
  * @returns {string} Complete HTML email string
  */
 export function renderGeneralEmailTemplate({
-  subject = 'Message from Split Lease',
+  subject = DEFAULT_VALUES.SUBJECT,
   title = '',
   bodytext1 = '',
   bodytext2 = '',
-  button_url = 'https://splitlease.com',
-  button_text = 'Visit Site',
-  logourl = 'https://splitlease.com/assets/images/split-lease-logo.png',
+  button_url = DEFAULT_VALUES.BUTTON_URL,
+  button_text = DEFAULT_VALUES.BUTTON_TEXT,
+  logourl = DEFAULT_VALUES.LOGO_URL,
   preheadertext = '',
   warningmessage = '',
   banner = '',
 }) {
-  // Escape HTML entities for safe rendering
-  const escapeHtml = (str) => {
-    if (!str) return '';
-    return str
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;');
-  };
-
   return `<!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
@@ -77,38 +144,24 @@ export function renderGeneralEmailTemplate({
         <table role="presentation" width="600" cellpadding="0" cellspacing="0" class="container" style="background:#ffffff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.05); overflow:hidden;">
 
           <!-- Header with Logo + Text -->
-          <tr style="background:#4b2fa2;">
+          <tr style="background:${BRAND.PRIMARY_COLOR};">
             <td align="center" style="padding:20px 28px;">
               <table role="presentation" cellpadding="0" cellspacing="0">
                 <tr>
                   <td align="center" style="padding-right:10px;">
-                    <img src="${escapeHtml(logourl)}" alt="Split Lease Logo" width="36" height="36" />
+                    <img src="${escapeHtml(logourl)}" alt="${BRAND.NAME} Logo" width="36" height="36" />
                   </td>
                   <td align="center" style="font-size:18px; font-weight:600; color:#ffffff; font-family:'Inter', sans-serif; letter-spacing:0.2px;">
-                    Split Lease
+                    ${BRAND.NAME}
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          ${warningmessage ? `
-          <!-- Warning Message Banner -->
-          <tr>
-            <td align="center" style="padding:16px 40px; background:#FEF3C7;">
-              ${warningmessage}
-            </td>
-          </tr>
-          ` : ''}
+          ${buildWarningSection(warningmessage)}
 
-          ${banner ? `
-          <!-- Banner -->
-          <tr>
-            <td align="center" style="padding:0;">
-              ${banner}
-            </td>
-          </tr>
-          ` : ''}
+          ${buildBannerSection(banner)}
 
           <!-- Message -->
           <tr>
@@ -125,7 +178,7 @@ export function renderGeneralEmailTemplate({
                 ${escapeHtml(bodytext2)}
               </p>
               <div style="text-align:center; margin:24px 0;">
-                <a href="${escapeHtml(button_url)}" target="_blank" style="display:inline-block; background:#4b2fa2; color:#ffffff; font-size:15px; font-weight:500; padding:12px 28px; border-radius:6px;">
+                <a href="${escapeHtml(button_url)}" target="_blank" style="display:inline-block; background:${BRAND.PRIMARY_COLOR}; color:#ffffff; font-size:15px; font-weight:500; padding:12px 28px; border-radius:6px;">
                   ${escapeHtml(button_text)}
                 </a>
               </div>
@@ -135,8 +188,8 @@ export function renderGeneralEmailTemplate({
           <!-- Footer -->
           <tr>
             <td align="center" style="padding:24px; font-size:12px; color:#999; line-height:1.6; background:#fafafa;">
-              — The Split Lease Team<br/>
-              Split Lease · Greater New York Area
+              — The ${BRAND.NAME} Team<br/>
+              ${BRAND.NAME} · ${BRAND.LOCATION}
             </td>
           </tr>
 
@@ -145,13 +198,13 @@ export function renderGeneralEmailTemplate({
     </tr>
   </table>
 </body>
-</html>`;
+</html>`
 }
 
 /**
  * Generate plain text version of the email
  * Used for email clients that don't support HTML
- *
+ * @pure
  * @param {Object} params - Same parameters as renderGeneralEmailTemplate
  * @returns {string} Plain text email content
  */
@@ -159,8 +212,8 @@ export function renderGeneralEmailPlainText({
   title = '',
   bodytext1 = '',
   bodytext2 = '',
-  button_url = 'https://splitlease.com',
-  button_text = 'Visit Site',
+  button_url = DEFAULT_VALUES.BUTTON_URL,
+  button_text = DEFAULT_VALUES.BUTTON_TEXT,
 }) {
   return `${title}
 
@@ -170,7 +223,16 @@ ${bodytext2}
 
 ${button_text}: ${button_url}
 
-— The Split Lease Team
-Split Lease · Greater New York Area
-`;
+— The ${BRAND.NAME} Team
+${BRAND.NAME} · ${BRAND.LOCATION}
+`
+}
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export {
+  DEFAULT_VALUES,
+  BRAND,
+  HTML_ENTITIES
 }

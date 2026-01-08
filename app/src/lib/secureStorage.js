@@ -18,19 +18,23 @@
  * - Mitigation: Bubble API handles token expiration server-side
  */
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Storage keys for token data
  */
-const SECURE_KEYS = {
+const SECURE_KEYS = Object.freeze({
   AUTH_TOKEN: '__sl_at__',     // Auth token
   SESSION_ID: '__sl_sid__',    // Session/user ID
   REFRESH_DATA: '__sl_rd__',   // Refresh token data
-};
+})
 
 /**
  * Public state keys (non-sensitive, can be in localStorage)
  */
-const STATE_KEYS = {
+const STATE_KEYS = Object.freeze({
   IS_AUTHENTICATED: 'sl_auth_state',
   USER_ID: 'sl_user_id',
   USER_TYPE: 'sl_user_type',
@@ -39,7 +43,83 @@ const STATE_KEYS = {
   AVATAR_URL: 'sl_avatar_url',
   LINKEDIN_OAUTH_USER_TYPE: 'sl_linkedin_oauth_user_type',
   LINKEDIN_OAUTH_LOGIN_FLOW: 'sl_linkedin_oauth_login_flow',
-};
+})
+
+/**
+ * Legacy keys to clean up during migration
+ */
+const LEGACY_KEYS = Object.freeze([
+  'splitlease_auth_token',
+  'splitlease_session_id',
+  'splitlease_last_auth',
+  'splitlease_user_type',
+  'userEmail',
+  'splitlease_supabase_user_id',
+  'sl_last_activity'
+])
+
+/**
+ * Supabase key prefixes to clean up
+ */
+const SUPABASE_KEY_PREFIXES = Object.freeze(['sb-', 'supabase.'])
+
+/**
+ * Boolean string values
+ */
+const BOOL_TRUE = 'true'
+const BOOL_FALSE = 'false'
+
+const LOG_PREFIX = '[secureStorage]'
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is truthy
+ * @pure
+ */
+const isTruthy = (value) => Boolean(value)
+
+/**
+ * Check if string equals 'true'
+ * @pure
+ */
+const isStringTrue = (value) => value === BOOL_TRUE
+
+/**
+ * Check if key starts with any Supabase prefix
+ * @pure
+ */
+const isSupabaseKey = (key) =>
+  key && SUPABASE_KEY_PREFIXES.some(prefix => key.startsWith(prefix))
+
+// ─────────────────────────────────────────────────────────────
+// Pure Helper Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Convert boolean to storage string
+ * @pure
+ */
+const boolToString = (value) => value ? BOOL_TRUE : BOOL_FALSE
+
+/**
+ * Safe JSON parse with fallback
+ * @pure
+ */
+const safeJsonParse = (str, fallback = null) => {
+  if (!str) return fallback
+  try {
+    return JSON.parse(str)
+  } catch {
+    return fallback
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Storage Access Functions (Effectful)
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Store authentication token

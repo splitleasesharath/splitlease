@@ -9,11 +9,144 @@
 
 import { DAY_NAMES } from './constants.js';
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const WEEK_BOUNDS = Object.freeze({
+  DAYS_IN_WEEK: 7,
+  MIN_DAY_INDEX: 0,
+  MAX_DAY_INDEX: 6,
+  NEARLY_FULL_WEEK: 6
+})
+
+const ALL_DAYS = Object.freeze([0, 1, 2, 3, 4, 5, 6])
+
+const ERROR_MESSAGES = Object.freeze({
+  NO_DAYS_SELECTED: 'Please select at least one day',
+  NOT_CONTIGUOUS: 'Please check for contiguous nights to continue with your proposal',
+  DAYS_UNAVAILABLE: 'Some selected days are not available for this listing',
+  NO_MOVE_IN_DATE: 'Please select a move-in date',
+  PAST_DATE: 'Move-in date cannot be in the past',
+  OUTSIDE_RANGE: 'Move-in date is outside available range',
+  DATE_BLOCKED: 'Selected move-in date is not available'
+})
+
+const LOG_PREFIX = '[availabilityValidation]'
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if array has elements
+ * @pure
+ */
+const hasElements = (arr) =>
+  Array.isArray(arr) && arr.length > 0
+
+/**
+ * Check if array includes value
+ * @pure
+ */
+const includesValue = (arr, value) =>
+  arr.includes(value)
+
+/**
+ * Check if selection includes both weekend edges (wrap-around indicator)
+ * @pure
+ */
+const hasWeekendEdges = (sortedDays) =>
+  includesValue(sortedDays, WEEK_BOUNDS.MIN_DAY_INDEX) &&
+  includesValue(sortedDays, WEEK_BOUNDS.MAX_DAY_INDEX)
+
+/**
+ * Check if selection is nearly full week (6+ days)
+ * @pure
+ */
+const isNearlyFullWeek = (arr) =>
+  arr.length >= WEEK_BOUNDS.NEARLY_FULL_WEEK
+
+// ─────────────────────────────────────────────────────────────
+// Pure Helper Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Sort days array in ascending order
+ * @pure
+ */
+const sortDays = (days) =>
+  [...days].sort((a, b) => a - b)
+
+/**
+ * Check if consecutive elements differ by exactly 1
+ * @pure
+ */
+const areConsecutive = (arr) =>
+  arr.every((day, i) => i === 0 || day === arr[i - 1] + 1)
+
+/**
+ * Get days not in selection
+ * @pure
+ */
+const getNotSelectedDays = (sortedDays) =>
+  ALL_DAYS.filter(d => !sortedDays.includes(d))
+
+/**
+ * Build expected contiguous range
+ * @pure
+ */
+const buildExpectedRange = (min, max) => {
+  const range = []
+  for (let i = min; i <= max; i++) {
+    range.push(i)
+  }
+  return range
+}
+
+/**
+ * Create default validation result
+ * @pure
+ */
+const createValidationResult = (overrides = {}) =>
+  Object.freeze({
+    valid: true,
+    errors: [],
+    warnings: [],
+    showTutorial: false,
+    nightsCount: 0,
+    isContiguous: false,
+    ...overrides
+  })
+
+/**
+ * Create check-in/out result
+ * @pure
+ */
+const createCheckInOutResult = (checkInDay, checkOutDay) =>
+  Object.freeze({
+    checkInDay,
+    checkOutDay,
+    checkInName: checkInDay !== null ? DAY_NAMES[checkInDay] : null,
+    checkOutName: checkOutDay !== null ? DAY_NAMES[checkOutDay] : null
+  })
+
+/**
+ * Calculate next day with week wrap-around
+ * @pure
+ */
+const getNextDay = (dayIndex) =>
+  (dayIndex + 1) % WEEK_BOUNDS.DAYS_IN_WEEK
+
+// ─────────────────────────────────────────────────────────────
+// Core Validation Functions
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Check if selected days form a contiguous block
  * CRITICAL FUNCTION: Must be consecutive days (Mon-Fri ✓, Mon+Wed ✗)
  * Based on Bubble implementation that handles week wrap-around cases
- *
+ * @pure
  * @param {number[]} selectedDays - Array of day indices (0=Sunday, 1=Monday, ... 6=Saturday)
  * @returns {boolean} True if days are contiguous
  *
@@ -24,47 +157,29 @@ import { DAY_NAMES } from './constants.js';
  * isContiguousSelection([6, 0, 1, 2]) // true (Sat-Tue, wraps around week)
  */
 export function isContiguousSelection(selectedDays) {
-  if (!selectedDays || selectedDays.length === 0) return false;
+  if (!hasElements(selectedDays)) return false;
   if (selectedDays.length === 1) return true;
 
-  // Sort the selected days
-  const sorted = [...selectedDays].sort((a, b) => a - b);
+  const sorted = sortDays(selectedDays);
 
   // If 6 or more days selected, it's contiguous
-  if (sorted.length >= 6) return true;
+  if (isNearlyFullWeek(sorted)) return true;
 
   // Check for standard contiguous sequence (no wrap around)
-  let isStandardContiguous = true;
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i] !== sorted[i - 1] + 1) {
-      isStandardContiguous = false;
-      break;
-    }
-  }
-
-  if (isStandardContiguous) return true;
+  if (areConsecutive(sorted)) return true;
 
   // Check if selection includes both Sunday (0) and Saturday (6) - wrap-around case
-  const hasZero = sorted.includes(0);
-  const hasSix = sorted.includes(6);
-
-  if (hasZero && hasSix) {
+  if (hasWeekendEdges(sorted)) {
     // Week wrap-around case: use inverse logic (check not-selected days)
     // If the NOT selected days are contiguous, then selected days wrap around and are contiguous
-    const allDays = [0, 1, 2, 3, 4, 5, 6];
-    const notSelectedDays = allDays.filter(d => !sorted.includes(d));
+    const notSelectedDays = getNotSelectedDays(sorted);
 
     if (notSelectedDays.length === 0) return true; // All days selected
 
     // Check if not-selected days form a contiguous block
     const minNotSelected = Math.min(...notSelectedDays);
     const maxNotSelected = Math.max(...notSelectedDays);
-
-    // Generate expected contiguous range for not-selected days
-    const expectedNotSelected = [];
-    for (let i = minNotSelected; i <= maxNotSelected; i++) {
-      expectedNotSelected.push(i);
-    }
+    const expectedNotSelected = buildExpectedRange(minNotSelected, maxNotSelected);
 
     // If not-selected days are contiguous, then selected days wrap around properly
     const notSelectedContiguous = notSelectedDays.length === expectedNotSelected.length &&
@@ -77,155 +192,157 @@ export function isContiguousSelection(selectedDays) {
 }
 
 /**
+ * Find gap index in sorted array (where consecutive difference is not 1)
+ * @pure
+ */
+const findGapIndex = (sorted) => {
+  for (let i = 1; i < sorted.length; i++) {
+    if (sorted[i] !== sorted[i - 1] + 1) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/**
  * Calculate check-in and check-out days from selected days
  * Check-in is the first selected day, check-out is the day AFTER the last selected day
  * Based on SearchScheduleSelector logic for wrap-around handling
- *
+ * @pure
  * @param {number[]} selectedDays - Array of day indices (0-based)
  * @returns {object} { checkInDay: number, checkOutDay: number, checkInName: string, checkOutName: string }
  */
 export function calculateCheckInOutDays(selectedDays) {
-  if (!selectedDays || selectedDays.length === 0) {
-    return {
-      checkInDay: null,
-      checkOutDay: null,
-      checkInName: null,
-      checkOutName: null
-    };
+  if (!hasElements(selectedDays)) {
+    return createCheckInOutResult(null, null);
   }
 
-  const sorted = [...selectedDays].sort((a, b) => a - b);
+  const sorted = sortDays(selectedDays);
 
   // Handle wrap-around case (e.g., Fri, Sat, Sun, Mon)
-  const hasZero = sorted.includes(0);
-  const hasSix = sorted.includes(6);
-
-  if (hasZero && hasSix) {
-    // Find gap to determine actual start/end
-    let gapIndex = -1;
-    for (let i = 1; i < sorted.length; i++) {
-      if (sorted[i] !== sorted[i - 1] + 1) {
-        gapIndex = i;
-        break;
-      }
-    }
+  if (hasWeekendEdges(sorted)) {
+    const gapIndex = findGapIndex(sorted);
 
     if (gapIndex !== -1) {
       // Wrapped selection: check-in is after the gap (first day in wrap)
-      const checkInDay = sorted[gapIndex]; // First day after gap (e.g., Sunday = 0 or Friday = 5)
-      const lastSelectedDay = sorted[gapIndex - 1]; // Last day before gap (e.g., Saturday = 6 or Monday = 1)
+      const checkInDay = sorted[gapIndex];
+      const lastSelectedDay = sorted[gapIndex - 1];
+      const checkOutDay = getNextDay(lastSelectedDay);
 
-      // Check-out is the day AFTER the last selected day
-      const checkOutDay = (lastSelectedDay + 1) % 7;
-
-      return {
-        checkInDay,
-        checkOutDay,
-        checkInName: DAY_NAMES[checkInDay],
-        checkOutName: DAY_NAMES[checkOutDay]
-      };
+      return createCheckInOutResult(checkInDay, checkOutDay);
     }
   }
 
   // Standard case: first selected day to day after last selected day
   const checkInDay = sorted[0];
   const lastSelectedDay = sorted[sorted.length - 1];
+  const checkOutDay = getNextDay(lastSelectedDay);
 
-  // Check-out is the day AFTER the last selected day (wraps around the week if needed)
-  const checkOutDay = (lastSelectedDay + 1) % 7;
+  return createCheckInOutResult(checkInDay, checkOutDay);
+}
 
-  return {
-    checkInDay,
-    checkOutDay,
-    checkInName: DAY_NAMES[checkInDay],
-    checkOutName: DAY_NAMES[checkOutDay]
-  };
+/**
+ * Check if any selected days are unavailable
+ * @pure
+ */
+const hasUnavailableDays = (selectedDays, unavailableDayNames) => {
+  if (!hasElements(unavailableDayNames)) return false;
+  return selectedDays.some(day => unavailableDayNames.includes(DAY_NAMES[day]));
 }
 
 /**
  * Validate schedule selection against listing requirements
  * Returns validation result with errors/warnings
- *
+ * @pure
  * @param {number[]} selectedDays - Selected day indices
  * @param {object} listing - Listing object with availability data
  * @returns {object} Validation result
  */
 export function validateScheduleSelection(selectedDays, listing) {
-  const result = {
-    valid: true,
-    errors: [],
-    warnings: [],
-    showTutorial: false,
-    nightsCount: selectedDays.length,
-    isContiguous: false
-  };
+  const errors = [];
+  const warnings = [];
 
   // Check if days are selected
-  if (!selectedDays || selectedDays.length === 0) {
-    result.valid = false;
-    result.errors.push('Please select at least one day');
-    return result;
+  if (!hasElements(selectedDays)) {
+    return createValidationResult({
+      valid: false,
+      errors: [ERROR_MESSAGES.NO_DAYS_SELECTED],
+      nightsCount: 0
+    });
   }
 
   // Check contiguous requirement (CRITICAL)
-  result.isContiguous = isContiguousSelection(selectedDays);
-  if (!result.isContiguous) {
-    result.valid = false;
-    result.showTutorial = true;
-    result.errors.push('Please check for contiguous nights to continue with your proposal');
-    return result;
+  const isContiguous = isContiguousSelection(selectedDays);
+  if (!isContiguous) {
+    return createValidationResult({
+      valid: false,
+      errors: [ERROR_MESSAGES.NOT_CONTIGUOUS],
+      showTutorial: true,
+      nightsCount: selectedDays.length
+    });
   }
 
   // Check against minimum nights
   if (listing['Minimum Nights'] && selectedDays.length < listing['Minimum Nights']) {
-    result.warnings.push(`Host prefers at least ${listing['Minimum Nights']} nights per week`);
+    warnings.push(`Host prefers at least ${listing['Minimum Nights']} nights per week`);
   }
 
   // Check against maximum nights
   if (listing['Maximum Nights'] && selectedDays.length > listing['Maximum Nights']) {
-    result.warnings.push(`Host prefers at most ${listing['Maximum Nights']} nights per week`);
+    warnings.push(`Host prefers at most ${listing['Maximum Nights']} nights per week`);
   }
 
   // Check against Days Not Available
-  if (listing['Days Not Available'] && Array.isArray(listing['Days Not Available'])) {
-    const unavailableDays = listing['Days Not Available'];
-    const unavailableSelected = selectedDays.filter(day => {
-      const dayName = DAY_NAMES[day];
-      return unavailableDays.includes(dayName);
-    });
-
-    if (unavailableSelected.length > 0) {
-      result.valid = false;
-      result.errors.push('Some selected days are not available for this listing');
-    }
+  if (hasUnavailableDays(selectedDays, listing['Days Not Available'])) {
+    errors.push(ERROR_MESSAGES.DAYS_UNAVAILABLE);
   }
 
-  return result;
+  return createValidationResult({
+    valid: errors.length === 0,
+    errors,
+    warnings,
+    nightsCount: selectedDays.length,
+    isContiguous: true
+  });
+}
+
+/**
+ * Extract date string from ISO date (YYYY-MM-DD format)
+ * @pure
+ */
+const toDateString = (date) =>
+  date.toISOString().split('T')[0]
+
+/**
+ * Normalize date to midnight
+ * @pure
+ */
+const normalizeToMidnight = (date) => {
+  const normalized = new Date(date);
+  normalized.setHours(0, 0, 0, 0);
+  return normalized;
 }
 
 /**
  * Check if a specific date is blocked
- *
+ * @pure
  * @param {Date} date - Date to check
  * @param {Array} blockedDates - Array of blocked date strings
  * @returns {boolean} True if date is blocked
  */
 export function isDateBlocked(date, blockedDates) {
-  if (!date || !blockedDates || !Array.isArray(blockedDates)) return false;
+  if (!date || !hasElements(blockedDates)) return false;
 
-  const dateStr = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+  const dateStr = toDateString(date);
 
-  return blockedDates.some(blocked => {
-    if (typeof blocked === 'string') {
-      return blocked.split('T')[0] === dateStr;
-    }
-    return false;
-  });
+  return blockedDates.some(blocked =>
+    typeof blocked === 'string' && blocked.split('T')[0] === dateStr
+  );
 }
 
 /**
  * Check if a date is within available range
- *
+ * @pure
  * @param {Date} date - Date to check
  * @param {string} firstAvailable - First available date string
  * @param {string} lastAvailable - Last available date string
@@ -234,18 +351,15 @@ export function isDateBlocked(date, blockedDates) {
 export function isDateInRange(date, firstAvailable, lastAvailable) {
   if (!date) return false;
 
-  const checkDate = new Date(date);
-  checkDate.setHours(0, 0, 0, 0);
+  const checkDate = normalizeToMidnight(date);
 
   if (firstAvailable) {
-    const firstDate = new Date(firstAvailable);
-    firstDate.setHours(0, 0, 0, 0);
+    const firstDate = normalizeToMidnight(new Date(firstAvailable));
     if (checkDate < firstDate) return false;
   }
 
   if (lastAvailable) {
-    const lastDate = new Date(lastAvailable);
-    lastDate.setHours(0, 0, 0, 0);
+    const lastDate = normalizeToMidnight(new Date(lastAvailable));
     if (checkDate > lastDate) return false;
   }
 
@@ -253,92 +367,117 @@ export function isDateInRange(date, firstAvailable, lastAvailable) {
 }
 
 /**
+ * Create move-in validation result
+ * @pure
+ */
+const createMoveInResult = (valid, errors = []) =>
+  Object.freeze({ valid, errors })
+
+/**
+ * Check if date is in the past
+ * @pure
+ */
+const isDateInPast = (date) => {
+  const today = normalizeToMidnight(new Date());
+  return date < today;
+}
+
+/**
  * Validate move-in date against listing availability
- *
+ * @pure
  * @param {Date} moveInDate - Proposed move-in date
  * @param {object} listing - Listing object
  * @param {number[]} selectedDays - Selected days of week
  * @returns {object} Validation result
  */
 export function validateMoveInDate(moveInDate, listing, selectedDays) {
-  const result = {
-    valid: true,
-    errors: []
-  };
-
   if (!moveInDate) {
-    result.valid = false;
-    result.errors.push('Please select a move-in date');
-    return result;
+    return createMoveInResult(false, [ERROR_MESSAGES.NO_MOVE_IN_DATE]);
   }
 
   // Check if date is in the past
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  if (moveInDate < today) {
-    result.valid = false;
-    result.errors.push('Move-in date cannot be in the past');
-    return result;
+  if (isDateInPast(moveInDate)) {
+    return createMoveInResult(false, [ERROR_MESSAGES.PAST_DATE]);
   }
 
   // Check if date is within available range
   if (!isDateInRange(moveInDate, listing['First Available'], listing['Last Available'])) {
-    result.valid = false;
-    result.errors.push('Move-in date is outside available range');
-    return result;
+    return createMoveInResult(false, [ERROR_MESSAGES.OUTSIDE_RANGE]);
   }
 
   // Check if date is blocked
   if (isDateBlocked(moveInDate, listing['Dates - Blocked'])) {
-    result.valid = false;
-    result.errors.push('Selected move-in date is not available');
-    return result;
+    return createMoveInResult(false, [ERROR_MESSAGES.DATE_BLOCKED]);
   }
 
   // Check if move-in date's day of week matches selected schedule
-  if (selectedDays && selectedDays.length > 0) {
+  if (hasElements(selectedDays)) {
     const { checkInDay } = calculateCheckInOutDays(selectedDays);
     const moveInDayOfWeek = moveInDate.getDay();
 
     if (checkInDay !== null && moveInDayOfWeek !== checkInDay) {
-      result.valid = false;
-      result.errors.push(`Move-in date must be on a ${DAY_NAMES[checkInDay]} based on your selected schedule`);
+      return createMoveInResult(
+        false,
+        [`Move-in date must be on a ${DAY_NAMES[checkInDay]} based on your selected schedule`]
+      );
     }
   }
 
-  return result;
+  return createMoveInResult(true);
 }
 
 /**
+ * Date format options for display
+ */
+const DATE_FORMAT_OPTIONS = Object.freeze({
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric'
+})
+
+const DEFAULT_DATE_LIMIT = 5
+
+/**
+ * Format date for display
+ * @pure
+ */
+const formatDateForDisplay = (dateStr) =>
+  new Date(dateStr).toLocaleDateString('en-US', DATE_FORMAT_OPTIONS)
+
+/**
  * Get list of blocked dates in readable format
- *
+ * @pure
  * @param {Array} blockedDates - Array of blocked date strings
  * @param {number} limit - Maximum number to return (default: 5)
  * @returns {string[]} Array of formatted date strings
  */
-export function getBlockedDatesList(blockedDates, limit = 5) {
-  if (!blockedDates || !Array.isArray(blockedDates)) return [];
+export function getBlockedDatesList(blockedDates, limit = DEFAULT_DATE_LIMIT) {
+  if (!hasElements(blockedDates)) return [];
 
   return blockedDates
     .slice(0, limit)
-    .map(dateStr => {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      });
-    });
+    .map(formatDateForDisplay);
 }
 
 /**
  * Calculate number of nights from selected days
  * Nights = Days selected (continuous selection)
- *
+ * @pure
  * @param {number[]} selectedDays - Selected day indices
  * @returns {number} Number of nights
  */
 export function calculateNightsFromDays(selectedDays) {
-  if (!selectedDays || selectedDays.length === 0) return 0;
+  if (!hasElements(selectedDays)) return 0;
   return selectedDays.length; // In split lease, nights = days selected
+}
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export {
+  WEEK_BOUNDS,
+  ALL_DAYS,
+  ERROR_MESSAGES,
+  LOG_PREFIX,
+  DEFAULT_DATE_LIMIT
 }
