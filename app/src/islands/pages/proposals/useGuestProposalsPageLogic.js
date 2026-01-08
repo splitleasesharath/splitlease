@@ -235,6 +235,11 @@ export function useGuestProposalsPageLogic() {
    * - ?scrollTo=virtual-meetings - Scroll to VM section after data loads
    * - ?highlightVMButton=true - Highlight the Request VM button with pulse animation
    *
+   * UNIFIED HANDLER: Both params indicate "focus on Virtual Meetings".
+   * We check actual DOM state to decide whether to scroll (VM section exists)
+   * or highlight the button (no VM section yet). This handles the case where
+   * the menu's VM count query fails and sends the wrong param.
+   *
    * Uses a ref to ensure one-time execution per page load, preventing
    * re-processing when proposals state changes.
    */
@@ -249,52 +254,51 @@ export function useGuestProposalsPageLogic() {
     const scrollTo = urlParams.get('scrollTo');
     const shouldHighlightVMButton = urlParams.get('highlightVMButton') === 'true';
 
+    // Either param indicates "focus on Virtual Meetings"
+    const wantsVMFocus = scrollTo === 'virtual-meetings' || shouldHighlightVMButton;
+
     // If no relevant params, skip
-    if (!scrollTo && !shouldHighlightVMButton) return;
+    if (!wantsVMFocus) return;
 
     // Mark as handled to prevent re-processing
     urlParamsHandled.current = true;
 
-    console.log('[GuestProposals] Handling URL params:', { scrollTo, shouldHighlightVMButton });
+    console.log('[GuestProposals] VM focus requested:', {
+      scrollTo,
+      shouldHighlightVMButton,
+      wantsVMFocus,
+      rawSearch: window.location.search
+    });
 
-    // Handle scroll to Virtual Meetings section
-    if (scrollTo === 'virtual-meetings') {
-      // Delay to ensure VirtualMeetingsSection has rendered
-      setTimeout(() => {
-        const vmSection = document.getElementById('virtual-meetings');
-        console.log('[GuestProposals] Looking for VM section:', vmSection ? 'FOUND' : 'NOT FOUND');
+    // Unified VM focus handler - check actual DOM state
+    console.log('[GuestProposals] Will check for VM section in 300ms...');
+    setTimeout(() => {
+      const vmSection = document.getElementById('virtual-meetings');
+      console.log('[GuestProposals] VM section check:', vmSection ? 'FOUND - will scroll' : 'NOT FOUND - will highlight button');
 
-        if (vmSection) {
-          vmSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (vmSection) {
+        // VM section exists - scroll to it
+        vmSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        console.log('[GuestProposals] Scrolling to VM section');
 
-          // Clean URL after scroll animation completes (smooth scroll ~500ms)
-          setTimeout(() => {
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, '', newUrl);
-          }, 600);
-        } else {
-          // VM section not found - clean URL immediately
-          const newUrl = window.location.pathname;
-          window.history.replaceState({}, '', newUrl);
-        }
-      }, 300); // Increased delay to ensure component has mounted
-    }
+        // Clean URL after scroll animation completes
+        setTimeout(() => {
+          window.history.replaceState({}, '', window.location.pathname);
+        }, 600);
+      } else {
+        // No VM section - highlight the "Request VM" button
+        console.log('[GuestProposals] Activating pulse animation on VM button');
+        setHighlightVMButton(true);
 
-    // Handle highlight VM button (no existing VMs, prompt user to create one)
-    if (shouldHighlightVMButton) {
-      setHighlightVMButton(true);
+        // Clean URL
+        window.history.replaceState({}, '', window.location.pathname);
 
-      // Clean URL after a short delay
-      setTimeout(() => {
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, '', newUrl);
-      }, 100);
-
-      // Auto-remove highlight after 5 seconds
-      setTimeout(() => {
-        setHighlightVMButton(false);
-      }, 5000);
-    }
+        // Auto-remove highlight after 5 seconds
+        setTimeout(() => {
+          setHighlightVMButton(false);
+        }, 5000);
+      }
+    }, 300);
   }, [isLoading, proposals]);
 
   // ============================================================================
