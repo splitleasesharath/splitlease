@@ -26,7 +26,7 @@
 | Logic Layer (calculators) | 10 | 10 | DONE |
 | Logic Layer (rules) | 22 | 22 | DONE |
 | Logic Layer (processors) | 10 | 10 | DONE |
-| Logic Layer (workflows) | 12 | 0 | In Progress |
+| Logic Layer (workflows) | 12 | 12 | DONE |
 | Lib Utilities | ~24 | 0 | Pending |
 | Islands (pages) | ~27 | 0 | Pending |
 | Islands (shared) | ~50 | 0 | Pending |
@@ -88,6 +88,20 @@
 - [x] `app/src/logic/processors/proposal/processProposalData.js` - Major refactor: FIELD_NAMES, TERM_FIELDS, HC_TERM_FIELDS constants, extractStatus/hasCounteroffer/selectTermValue/buildCurrentTerms/buildOriginalTerms pure helpers
 - [x] `app/src/logic/processors/proposals/processProposalData.js` - Major refactor: 4 field name constants (USER, LISTING, VM, PROPOSAL), 15+ pure helpers (buildUserObject, buildListingObject, buildHostObject, buildVirtualMeetingObject, buildScheduleTerms, buildPricingTerms, buildCounterofferTerms, buildProposalMetadata, buildRelatedIds, etc.), Object.freeze() on all outputs
 - [x] `app/src/logic/processors/index.js` - Updated barrel exports with all new constants and pure functions
+
+### Logic Layer - Workflows - DONE
+- [x] `app/src/logic/workflows/scheduling/validateScheduleWorkflow.js` - Added DAY_NAMES, ERROR_CODES, ERROR_MESSAGES constants, validation predicates, result builders
+- [x] `app/src/logic/workflows/scheduling/validateMoveInDateWorkflow.js` - Added ERROR_CODES, ERROR_MESSAGES, DATE_CONSTANTS, validation predicates, date helpers
+- [x] `app/src/logic/workflows/auth/checkAuthStatusWorkflow.js` - Added STORAGE_KEYS, USER_TYPES, ERROR_MESSAGES constants, pure status builders
+- [x] `app/src/logic/workflows/auth/validateTokenWorkflow.js` - Added VALIDATION_ERRORS, TOKEN_SOURCES constants, pure validation helpers
+- [x] `app/src/logic/workflows/booking/acceptProposalWorkflow.js` - Added ERROR_MESSAGES, RESULT_MESSAGES, DB_FIELD_NAMES constants, validation predicates, result builders
+- [x] `app/src/logic/workflows/booking/cancelProposalWorkflow.js` - Added ERROR_MESSAGES, RESULT_MESSAGES, SOURCE_TYPES, USUAL_ORDER_THRESHOLD, decision tree evaluation as pure functions
+- [x] `app/src/logic/workflows/booking/loadProposalDetailsWorkflow.js` - Added ERROR_MESSAGES, DB_FIELD_NAMES, TABLE_NAMES, SCHEMA_NAMES, USER_SELECT_FIELDS constants, safeProcess helper
+- [x] `app/src/logic/workflows/proposals/cancelProposalWorkflow.js` - Added CANCELLATION_CONDITIONS, BUBBLE_WORKFLOWS, RESULT_MESSAGES, DB_FIELD_NAMES, CANCELLATION_REASONS constants, result builders
+- [x] `app/src/logic/workflows/proposals/counterofferWorkflow.js` - Added ERROR_MESSAGES, DECLINE_REASONS, DB_FIELD_NAMES, ORIGINAL_TERM_FIELDS, HC_TERM_FIELDS, CHANGE_LABELS constants, terms extraction and comparison helpers
+- [x] `app/src/logic/workflows/proposals/navigationWorkflow.js` - Added ROUTES, QUERY_PARAMS, LOG_PREFIX constants, pure URL building helpers, @effectful annotations
+- [x] `app/src/logic/workflows/proposals/virtualMeetingWorkflow.js` - Added ERROR_MESSAGES, DB_FIELD_NAMES, TABLE_NAMES, VM_PREFIX, LOG_PREFIX constants, pure data builders
+- [x] `app/src/logic/workflows/index.js` - Updated barrel exports with all new constants and pure functions
 
 ---
 

@@ -10,25 +10,142 @@
  * by explicitly separating:
  * - Data fetching (infrastructure - still uses Supabase client)
  * - Data processing (domain logic - uses Logic Core processors)
+ */
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const ERROR_MESSAGES = Object.freeze({
+  MISSING_PROPOSAL: 'loadProposalDetailsWorkflow: rawProposal is required',
+  MISSING_SUPABASE: 'loadProposalDetailsWorkflow: supabase client is required',
+  PROCESSING_FAILED: 'Failed to process proposal data'
+})
+
+const DB_FIELD_NAMES = Object.freeze({
+  ID: '_id',
+  LISTING: 'Listing',
+  GUEST: 'Guest',
+  CREATED_BY: 'Created By',
+  HOUSE_RULES: 'House Rules',
+  VIRTUAL_MEETING: 'virtual meeting'
+})
+
+const USER_SELECT_FIELDS = Object.freeze(`
+  _id,
+  "Name - First",
+  "Name - Full",
+  "Profile Photo",
+  "About Me / Bio",
+  "email as text",
+  "Phone Number (as text)",
+  "Verify - Linked In ID",
+  "Verify - Phone",
+  "is email confirmed",
+  "user verified?"
+`)
+
+const TABLE_NAMES = Object.freeze({
+  PROPOSAL: 'proposal',
+  LISTING: 'listing',
+  USER: 'user',
+  HOUSE_RULES: 'zat_features_houserule',
+  VIRTUAL_MEETING: 'virtualmeetingschedulesandlinks'
+})
+
+const SCHEMA_NAMES = Object.freeze({
+  REFERENCE: 'reference_table'
+})
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is truthy
+ * @pure
+ */
+const isTruthy = (value) => Boolean(value)
+
+/**
+ * Check if value is a function
+ * @pure
+ */
+const isFunction = (value) => typeof value === 'function'
+
+/**
+ * Check if array is non-empty
+ * @pure
+ */
+const hasElements = (arr) => Array.isArray(arr) && arr.length > 0
+
+// ─────────────────────────────────────────────────────────────
+// Safe Processing Helpers (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Safely process data with processor function
+ * @pure (given pure processor)
+ */
+const safeProcess = (processor, data, params) => {
+  if (!isFunction(processor) || !data) {
+    return data
+  }
+  try {
+    return processor(params)
+  } catch (err) {
+    console.warn(`Warning: Processing failed: ${err.message}`)
+    return data
+  }
+}
+
+/**
+ * Build basic proposal structure without processor
+ * @pure
+ */
+const buildBasicProposalStructure = (rawProposal, listing, guest, host) =>
+  Object.freeze({
+    ...rawProposal,
+    _listing: listing,
+    _guest: guest,
+    _host: host
+  })
+
+/**
+ * Attach enrichments to proposal
+ * @pure
+ */
+const attachEnrichments = (proposal, houseRules, virtualMeeting) => {
+  const enriched = { ...proposal }
+  if (houseRules) {
+    enriched._houseRules = houseRules
+  }
+  if (virtualMeeting) {
+    enriched._virtualMeeting = virtualMeeting
+  }
+  return enriched
+}
+
+// ─────────────────────────────────────────────────────────────
+// Main Workflow
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Load complete proposal details with all enrichments
  *
  * @param {object} params - Named parameters.
  * @param {object} params.supabase - Supabase client instance.
  * @param {object} params.rawProposal - Base proposal object (minimal data).
- * @param {object} [params.processListingData] - Listing processor function.
- * @param {object} [params.processUserData] - User processor function.
- * @param {object} [params.processProposalData] - Proposal processor function.
+ * @param {function} [params.processListingData] - Listing processor function.
+ * @param {function} [params.processUserData] - User processor function.
+ * @param {function} [params.processProposalData] - Proposal processor function.
  * @returns {Promise<object>} Fully enriched and processed proposal object.
  *
  * @throws {Error} If rawProposal is missing.
+ * @throws {Error} If supabase is missing.
  * @throws {Error} If critical data cannot be loaded.
  *
  * @example
- * import { loadProposalDetailsWorkflow } from '../logic/workflows/booking/loadProposalDetailsWorkflow.js'
- * import { processProposalData } from '../logic/processors/proposal/processProposalData.js'
- * import { processUserData } from '../logic/processors/user/processUserData.js'
- * import { processListingData } from '../logic/processors/listing/processListingData.js'
- * import { supabase } from '../lib/supabase.js'
- *
  * const enrichedProposal = await loadProposalDetailsWorkflow({
  *   supabase,
  *   rawProposal: { _id: 'abc123', Listing: 'xyz', Guest: '456' },
@@ -45,134 +162,90 @@ export async function loadProposalDetailsWorkflow({
   processProposalData
 }) {
   // Validation
-  if (!rawProposal) {
-    throw new Error('loadProposalDetailsWorkflow: rawProposal is required')
+  if (!isTruthy(rawProposal)) {
+    throw new Error(ERROR_MESSAGES.MISSING_PROPOSAL)
   }
 
-  if (!supabase) {
-    throw new Error('loadProposalDetailsWorkflow: supabase client is required')
+  if (!isTruthy(supabase)) {
+    throw new Error(ERROR_MESSAGES.MISSING_SUPABASE)
   }
 
-  // Step 1: Fetch listing data
+  // Step 1: Fetch listing data (effectful)
   let processedListing = null
-  if (rawProposal.Listing) {
+  if (rawProposal[DB_FIELD_NAMES.LISTING]) {
     const { data: listingData, error: listingError } = await supabase
-      .from('listing')
+      .from(TABLE_NAMES.LISTING)
       .select('*')
-      .eq('_id', rawProposal.Listing)
+      .eq(DB_FIELD_NAMES.ID, rawProposal[DB_FIELD_NAMES.LISTING])
       .single()
 
     if (!listingError && listingData) {
-      // Process listing if processor provided
-      if (processListingData) {
-        try {
-          processedListing = processListingData({ rawListing: listingData })
-        } catch (err) {
-          console.warn('Warning: Failed to process listing data:', err.message)
-          // Continue without processed listing - UI will handle gracefully
-        }
-      } else {
-        // No processor provided, use raw data
-        processedListing = listingData
-      }
+      processedListing = safeProcess(
+        processListingData,
+        listingData,
+        { rawListing: listingData }
+      )
     }
   }
 
-  // Step 2: Fetch guest user data
+  // Step 2: Fetch guest user data (effectful)
   let processedGuest = null
-  if (rawProposal.Guest) {
+  if (rawProposal[DB_FIELD_NAMES.GUEST]) {
     const { data: guestData, error: guestError } = await supabase
-      .from('user')
-      .select(`
-        _id,
-        "Name - First",
-        "Name - Full",
-        "Profile Photo",
-        "About Me / Bio",
-        "email as text",
-        "Phone Number (as text)",
-        "Verify - Linked In ID",
-        "Verify - Phone",
-        "is email confirmed",
-        "user verified?"
-      `)
-      .eq('_id', rawProposal.Guest)
+      .from(TABLE_NAMES.USER)
+      .select(USER_SELECT_FIELDS)
+      .eq(DB_FIELD_NAMES.ID, rawProposal[DB_FIELD_NAMES.GUEST])
       .single()
 
     if (!guestError && guestData) {
-      // Process user if processor provided
-      if (processUserData) {
-        try {
-          processedGuest = processUserData({ rawUser: guestData })
-        } catch (err) {
-          console.warn('Warning: Failed to process guest data:', err.message)
-        }
-      } else {
-        processedGuest = guestData
-      }
+      processedGuest = safeProcess(
+        processUserData,
+        guestData,
+        { rawUser: guestData }
+      )
     }
   }
 
-  // Step 3: Fetch host user data (from listing creator)
+  // Step 3: Fetch host user data (effectful)
   let processedHost = null
-  if (processedListing && processedListing['Created By']) {
+  if (processedListing && processedListing[DB_FIELD_NAMES.CREATED_BY]) {
     const { data: hostData, error: hostError } = await supabase
-      .from('user')
-      .select(`
-        _id,
-        "Name - First",
-        "Name - Full",
-        "Profile Photo",
-        "About Me / Bio",
-        "email as text",
-        "Phone Number (as text)",
-        "Verify - Linked In ID",
-        "Verify - Phone",
-        "is email confirmed",
-        "user verified?"
-      `)
-      .eq('_id', processedListing['Created By'])
+      .from(TABLE_NAMES.USER)
+      .select(USER_SELECT_FIELDS)
+      .eq(DB_FIELD_NAMES.ID, processedListing[DB_FIELD_NAMES.CREATED_BY])
       .single()
 
     if (!hostError && hostData) {
-      // Process user if processor provided
-      if (processUserData) {
-        try {
-          processedHost = processUserData({ rawUser: hostData })
-        } catch (err) {
-          console.warn('Warning: Failed to process host data:', err.message)
-        }
-      } else {
-        processedHost = hostData
-      }
+      processedHost = safeProcess(
+        processUserData,
+        hostData,
+        { rawUser: hostData }
+      )
     }
   }
 
-  // Step 4: Fetch house rules (if any)
+  // Step 4: Fetch house rules (effectful)
   let houseRules = null
-  if (
-    rawProposal['House Rules'] &&
-    Array.isArray(rawProposal['House Rules']) &&
-    rawProposal['House Rules'].length > 0
-  ) {
+  const houseRuleIds = rawProposal[DB_FIELD_NAMES.HOUSE_RULES]
+  if (hasElements(houseRuleIds)) {
     const { data: rulesData, error: rulesError } = await supabase
-      .schema('reference_table')
-      .from('zat_features_houserule')
-      .select('_id, Name, Icon')
-      .in('_id', rawProposal['House Rules'])
+      .schema(SCHEMA_NAMES.REFERENCE)
+      .from(TABLE_NAMES.HOUSE_RULES)
+      .select(`${DB_FIELD_NAMES.ID}, Name, Icon`)
+      .in(DB_FIELD_NAMES.ID, houseRuleIds)
 
     if (!rulesError && rulesData) {
       houseRules = rulesData
     }
   }
 
-  // Step 5: Fetch virtual meeting data (if any)
+  // Step 5: Fetch virtual meeting data (effectful)
   let virtualMeeting = null
-  if (rawProposal['virtual meeting']) {
+  if (rawProposal[DB_FIELD_NAMES.VIRTUAL_MEETING]) {
     const { data: vmData, error: vmError } = await supabase
-      .from('virtualmeetingschedulesandlinks')
+      .from(TABLE_NAMES.VIRTUAL_MEETING)
       .select('*')
-      .eq('_id', rawProposal['virtual meeting'])
+      .eq(DB_FIELD_NAMES.ID, rawProposal[DB_FIELD_NAMES.VIRTUAL_MEETING])
       .single()
 
     if (!vmError && vmData) {
@@ -180,9 +253,9 @@ export async function loadProposalDetailsWorkflow({
     }
   }
 
-  // Step 6: Process proposal with all enriched data
+  // Step 6: Process proposal with all enriched data (pure)
   let processedProposal
-  if (processProposalData) {
+  if (isFunction(processProposalData)) {
     try {
       processedProposal = processProposalData({
         rawProposal,
@@ -191,27 +264,28 @@ export async function loadProposalDetailsWorkflow({
         host: processedHost
       })
     } catch (err) {
-      // If processor throws, this is a critical error
-      throw new Error(`Failed to process proposal data: ${err.message}`)
+      throw new Error(`${ERROR_MESSAGES.PROCESSING_FAILED}: ${err.message}`)
     }
   } else {
-    // No processor provided, create basic structure
-    processedProposal = {
-      ...rawProposal,
-      _listing: processedListing,
-      _guest: processedGuest,
-      _host: processedHost
-    }
+    processedProposal = buildBasicProposalStructure(
+      rawProposal,
+      processedListing,
+      processedGuest,
+      processedHost
+    )
   }
 
-  // Step 7: Attach additional enrichments
-  if (houseRules) {
-    processedProposal._houseRules = houseRules
-  }
+  // Step 7: Attach enrichments (pure)
+  return attachEnrichments(processedProposal, houseRules, virtualMeeting)
+}
 
-  if (virtualMeeting) {
-    processedProposal._virtualMeeting = virtualMeeting
-  }
-
-  return processedProposal
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export {
+  ERROR_MESSAGES,
+  DB_FIELD_NAMES,
+  TABLE_NAMES,
+  SCHEMA_NAMES,
+  USER_SELECT_FIELDS
 }

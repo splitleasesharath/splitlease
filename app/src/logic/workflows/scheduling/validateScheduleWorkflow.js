@@ -9,6 +9,162 @@ import { isScheduleContiguous } from '../../rules/scheduling/isScheduleContiguou
  * @rule Must have at least one day selected.
  * @rule May optionally check against minimum/maximum nights from listing.
  * @rule Returns error codes (not UI messages) - presentation layer maps to messages.
+ * @pure Yes - deterministic, no side effects
+ */
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const DAY_NAMES = Object.freeze([
+  'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'
+])
+
+const ERROR_CODES = Object.freeze({
+  NO_DAYS_SELECTED: 'NO_DAYS_SELECTED',
+  NOT_CONTIGUOUS: 'NOT_CONTIGUOUS',
+  BELOW_MINIMUM_NIGHTS: 'BELOW_MINIMUM_NIGHTS',
+  ABOVE_MAXIMUM_NIGHTS: 'ABOVE_MAXIMUM_NIGHTS',
+  DAYS_NOT_AVAILABLE: 'DAYS_NOT_AVAILABLE'
+})
+
+const ERROR_MESSAGES = Object.freeze({
+  INVALID_DAYS: 'validateScheduleWorkflow: selectedDayIndices must be an array'
+})
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is defined (not null or undefined)
+ * @pure
+ */
+const isDefined = (value) => value !== undefined && value !== null
+
+/**
+ * Check if array is non-empty
+ * @pure
+ */
+const hasElements = (arr) => Array.isArray(arr) && arr.length > 0
+
+/**
+ * Check if value is a valid number
+ * @pure
+ */
+const isValidNumber = (value) => !isNaN(Number(value))
+
+/**
+ * Parse value to number safely
+ * @pure
+ */
+const toNumber = (value) => Number(value)
+
+// ─────────────────────────────────────────────────────────────
+// Pure Transformation Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Convert day index to day name
+ * @pure
+ */
+const getDayName = (dayIndex) => DAY_NAMES[dayIndex]
+
+/**
+ * Find unavailable days from selected days
+ * @pure
+ */
+const findUnavailableDays = (selectedDayIndices, daysNotAvailable) =>
+  selectedDayIndices.filter(dayIndex =>
+    daysNotAvailable.includes(getDayName(dayIndex))
+  )
+
+// ─────────────────────────────────────────────────────────────
+// Result Builders (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build successful validation result
+ * @pure
+ */
+const buildValidResult = (nightsCount) =>
+  Object.freeze({
+    valid: true,
+    errorCode: null,
+    nightsCount,
+    isContiguous: true
+  })
+
+/**
+ * Build no days selected error result
+ * @pure
+ */
+const buildNoDaysSelectedError = () =>
+  Object.freeze({
+    valid: false,
+    errorCode: ERROR_CODES.NO_DAYS_SELECTED,
+    nightsCount: 0,
+    isContiguous: false
+  })
+
+/**
+ * Build not contiguous error result
+ * @pure
+ */
+const buildNotContiguousError = (nightsCount) =>
+  Object.freeze({
+    valid: false,
+    errorCode: ERROR_CODES.NOT_CONTIGUOUS,
+    nightsCount,
+    isContiguous: false
+  })
+
+/**
+ * Build below minimum nights error result
+ * @pure
+ */
+const buildBelowMinimumError = (nightsCount, minimumNights) =>
+  Object.freeze({
+    valid: false,
+    errorCode: ERROR_CODES.BELOW_MINIMUM_NIGHTS,
+    nightsCount,
+    isContiguous: true,
+    minimumNights
+  })
+
+/**
+ * Build above maximum nights error result
+ * @pure
+ */
+const buildAboveMaximumError = (nightsCount, maximumNights) =>
+  Object.freeze({
+    valid: false,
+    errorCode: ERROR_CODES.ABOVE_MAXIMUM_NIGHTS,
+    nightsCount,
+    isContiguous: true,
+    maximumNights
+  })
+
+/**
+ * Build days not available error result
+ * @pure
+ */
+const buildDaysNotAvailableError = (nightsCount, unavailableDays) =>
+  Object.freeze({
+    valid: false,
+    errorCode: ERROR_CODES.DAYS_NOT_AVAILABLE,
+    nightsCount,
+    isContiguous: true,
+    unavailableDays
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Main Workflow
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Validate a schedule selection
+ * @pure
  *
  * @param {object} params - Named parameters.
  * @param {number[]} params.selectedDayIndices - Array of selected day indices (0-6).
@@ -16,7 +172,7 @@ import { isScheduleContiguous } from '../../rules/scheduling/isScheduleContiguou
  * @param {number} [params.listing.minimumNights] - Minimum nights required.
  * @param {number} [params.listing.maximumNights] - Maximum nights allowed.
  * @param {string[]} [params.listing.daysNotAvailable] - Days not available (day names).
- * @returns {object} Validation result with valid flag, errorCode, and metadata.
+ * @returns {object} Validation result with valid flag, errorCode, and metadata (frozen).
  *
  * @throws {Error} If selectedDayIndices is not an array.
  *
@@ -26,99 +182,59 @@ import { isScheduleContiguous } from '../../rules/scheduling/isScheduleContiguou
  *   listing: { minimumNights: 2, maximumNights: 7 }
  * })
  * // => { valid: true, errorCode: null, nightsCount: 5, isContiguous: true }
- *
- * const invalid = validateScheduleWorkflow({
- *   selectedDayIndices: [1, 3, 5],
- *   listing: {}
- * })
- * // => { valid: false, errorCode: 'NOT_CONTIGUOUS', nightsCount: 3, isContiguous: false }
  */
 export function validateScheduleWorkflow({ selectedDayIndices, listing = {} }) {
-  // No Fallback: Validate inputs
+  // Validation
   if (!Array.isArray(selectedDayIndices)) {
     throw new Error(
-      `validateScheduleWorkflow: selectedDayIndices must be an array, got ${typeof selectedDayIndices}`
+      `${ERROR_MESSAGES.INVALID_DAYS}, got ${typeof selectedDayIndices}`
     )
   }
 
-  // Check if any days are selected
-  if (selectedDayIndices.length === 0) {
-    return {
-      valid: false,
-      errorCode: 'NO_DAYS_SELECTED',
-      nightsCount: 0,
-      isContiguous: false
-    }
+  // Check: Any days selected
+  if (!hasElements(selectedDayIndices)) {
+    return buildNoDaysSelectedError()
   }
 
   // Calculate nights (in split lease, nights = days selected)
   const nightsCount = selectedDayIndices.length
 
-  // Check contiguous requirement (CRITICAL business rule)
-  const isContiguous = isScheduleContiguous({ selectedDayIndices })
+  // Check: Contiguous requirement
+  const contiguous = isScheduleContiguous({ selectedDayIndices })
 
-  if (!isContiguous) {
-    return {
-      valid: false,
-      errorCode: 'NOT_CONTIGUOUS',
-      nightsCount,
-      isContiguous: false
+  if (!contiguous) {
+    return buildNotContiguousError(nightsCount)
+  }
+
+  // Check: Minimum nights
+  if (isDefined(listing.minimumNights)) {
+    const minNights = toNumber(listing.minimumNights)
+    if (isValidNumber(listing.minimumNights) && nightsCount < minNights) {
+      return buildBelowMinimumError(nightsCount, minNights)
     }
   }
 
-  // Check against minimum nights (if specified)
-  if (listing.minimumNights !== undefined && listing.minimumNights !== null) {
-    const minNights = Number(listing.minimumNights)
-    if (!isNaN(minNights) && nightsCount < minNights) {
-      return {
-        valid: false,
-        errorCode: 'BELOW_MINIMUM_NIGHTS',
-        nightsCount,
-        isContiguous: true,
-        minimumNights: minNights
-      }
+  // Check: Maximum nights
+  if (isDefined(listing.maximumNights)) {
+    const maxNights = toNumber(listing.maximumNights)
+    if (isValidNumber(listing.maximumNights) && nightsCount > maxNights) {
+      return buildAboveMaximumError(nightsCount, maxNights)
     }
   }
 
-  // Check against maximum nights (if specified)
-  if (listing.maximumNights !== undefined && listing.maximumNights !== null) {
-    const maxNights = Number(listing.maximumNights)
-    if (!isNaN(maxNights) && nightsCount > maxNights) {
-      return {
-        valid: false,
-        errorCode: 'ABOVE_MAXIMUM_NIGHTS',
-        nightsCount,
-        isContiguous: true,
-        maximumNights: maxNights
-      }
+  // Check: Days not available
+  if (hasElements(listing.daysNotAvailable)) {
+    const unavailableDays = findUnavailableDays(selectedDayIndices, listing.daysNotAvailable)
+
+    if (hasElements(unavailableDays)) {
+      return buildDaysNotAvailableError(nightsCount, unavailableDays)
     }
   }
 
-  // Check against Days Not Available (if specified)
-  if (listing.daysNotAvailable && Array.isArray(listing.daysNotAvailable)) {
-    const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
-
-    const unavailableSelected = selectedDayIndices.filter(dayIndex => {
-      const dayName = DAY_NAMES[dayIndex]
-      return listing.daysNotAvailable.includes(dayName)
-    })
-
-    if (unavailableSelected.length > 0) {
-      return {
-        valid: false,
-        errorCode: 'DAYS_NOT_AVAILABLE',
-        nightsCount,
-        isContiguous: true,
-        unavailableDays: unavailableSelected
-      }
-    }
-  }
-
-  // All validations passed
-  return {
-    valid: true,
-    errorCode: null,
-    nightsCount,
-    isContiguous: true
-  }
+  return buildValidResult(nightsCount)
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export { DAY_NAMES, ERROR_CODES, ERROR_MESSAGES }

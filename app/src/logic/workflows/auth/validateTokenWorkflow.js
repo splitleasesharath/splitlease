@@ -8,9 +8,103 @@
  * @rule Step 3: Fetch and cache user type if not already stored.
  *
  * This is an orchestration workflow that coordinates:
- * - External API validation (Bubble)
- * - Database queries (Supabase)
- * - Data transformation (user profile)
+ * - External API validation (Bubble) - effectful
+ * - Database queries (Supabase) - effectful
+ * - Data transformation (user profile) - pure
+ */
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const PROTOCOL_RELATIVE_PREFIX = '//'
+const HTTPS_PREFIX = 'https:'
+
+const FIELD_NAMES = Object.freeze({
+  ID: '_id',
+  FIRST_NAME: 'Name - First',
+  FULL_NAME: 'Name - Full',
+  PROFILE_PHOTO: 'Profile Photo',
+  USER_TYPE: 'Type - User Current'
+})
+
+const ERROR_MESSAGES = Object.freeze({
+  INVALID_TOKEN: 'validateTokenWorkflow: token is required and must be a string',
+  INVALID_USER_ID: 'validateTokenWorkflow: userId is required and must be a string',
+  INVALID_VALIDATE_FN: 'validateTokenWorkflow: bubbleValidateFn must be a function',
+  INVALID_FETCH_FN: 'validateTokenWorkflow: supabaseFetchUserFn must be a function'
+})
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is a non-empty string
+ * @pure
+ */
+const isNonEmptyString = (value) =>
+  typeof value === 'string' && value.length > 0
+
+/**
+ * Check if value is a function
+ * @pure
+ */
+const isFunction = (value) => typeof value === 'function'
+
+/**
+ * Check if user type is valid (non-empty)
+ * @pure
+ */
+const isValidUserType = (userType) =>
+  userType !== null && userType !== undefined && userType !== ''
+
+// ─────────────────────────────────────────────────────────────
+// Pure Transformation Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Normalize protocol-relative URLs to HTTPS
+ * @pure
+ */
+const normalizePhotoUrl = (url) => {
+  if (!url) {
+    return null
+  }
+  if (url.startsWith(PROTOCOL_RELATIVE_PREFIX)) {
+    return HTTPS_PREFIX + url
+  }
+  return url
+}
+
+/**
+ * Resolve user type from cache or raw data
+ * @pure
+ */
+const resolveUserType = (cachedUserType, userData) =>
+  isValidUserType(cachedUserType)
+    ? cachedUserType
+    : (userData[FIELD_NAMES.USER_TYPE] || null)
+
+/**
+ * Build user result object from raw data
+ * @pure
+ */
+const buildUserResult = (userData, userType) =>
+  Object.freeze({
+    userId: userData[FIELD_NAMES.ID],
+    firstName: userData[FIELD_NAMES.FIRST_NAME] || null,
+    fullName: userData[FIELD_NAMES.FULL_NAME] || null,
+    profilePhoto: normalizePhotoUrl(userData[FIELD_NAMES.PROFILE_PHOTO]),
+    userType
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Main Workflow
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Validate token and fetch user profile data
  *
  * @param {object} params - Named parameters.
  * @param {string} params.token - Authentication token to validate.
@@ -18,10 +112,12 @@
  * @param {Function} params.bubbleValidateFn - Function to validate token with Bubble API.
  * @param {Function} params.supabaseFetchUserFn - Function to fetch user from Supabase.
  * @param {string|null} params.cachedUserType - Cached user type (if available).
- * @returns {Promise<object|null>} User data object or null if invalid.
+ * @returns {Promise<object|null>} User data object (frozen) or null if invalid.
  *
- * @throws {Error} If required parameters are missing.
- * @throws {Error} If validation or fetch functions are not provided.
+ * @throws {Error} If token is not a valid string.
+ * @throws {Error} If userId is not a valid string.
+ * @throws {Error} If bubbleValidateFn is not a function.
+ * @throws {Error} If supabaseFetchUserFn is not a function.
  *
  * @example
  * const userData = await validateTokenWorkflow({
@@ -40,66 +136,48 @@ export async function validateTokenWorkflow({
   supabaseFetchUserFn,
   cachedUserType = null
 }) {
-  // No Fallback: Strict validation
-  if (!token || typeof token !== 'string') {
-    throw new Error(
-      'validateTokenWorkflow: token is required and must be a string'
-    )
+  // Validation
+  if (!isNonEmptyString(token)) {
+    throw new Error(ERROR_MESSAGES.INVALID_TOKEN)
   }
 
-  if (!userId || typeof userId !== 'string') {
-    throw new Error(
-      'validateTokenWorkflow: userId is required and must be a string'
-    )
+  if (!isNonEmptyString(userId)) {
+    throw new Error(ERROR_MESSAGES.INVALID_USER_ID)
   }
 
-  if (typeof bubbleValidateFn !== 'function') {
-    throw new Error(
-      'validateTokenWorkflow: bubbleValidateFn must be a function'
-    )
+  if (!isFunction(bubbleValidateFn)) {
+    throw new Error(ERROR_MESSAGES.INVALID_VALIDATE_FN)
   }
 
-  if (typeof supabaseFetchUserFn !== 'function') {
-    throw new Error(
-      'validateTokenWorkflow: supabaseFetchUserFn must be a function'
-    )
+  if (!isFunction(supabaseFetchUserFn)) {
+    throw new Error(ERROR_MESSAGES.INVALID_FETCH_FN)
   }
 
-  // Step 1: Validate token via Bubble API
+  // Step 1: Validate token via Bubble API (effectful)
   const isValidToken = await bubbleValidateFn(token, userId)
 
   if (!isValidToken) {
-    // Token is invalid
     return null
   }
 
-  // Step 2: Fetch user data from Supabase
+  // Step 2: Fetch user data from Supabase (effectful)
   const userData = await supabaseFetchUserFn(userId)
 
   if (!userData) {
-    // User not found
     return null
   }
 
-  // Step 3: Handle user type (use cached or fetch from userData)
-  let userType = cachedUserType
+  // Step 3: Transform and return user data (pure)
+  const userType = resolveUserType(cachedUserType, userData)
+  return buildUserResult(userData, userType)
+}
 
-  if (!userType || userType === '') {
-    userType = userData['Type - User Current'] || null
-  }
-
-  // Handle protocol-relative URLs for profile photos
-  let profilePhoto = userData['Profile Photo']
-  if (profilePhoto && profilePhoto.startsWith('//')) {
-    profilePhoto = 'https:' + profilePhoto
-  }
-
-  // Return user data object
-  return {
-    userId: userData._id,
-    firstName: userData['Name - First'] || null,
-    fullName: userData['Name - Full'] || null,
-    profilePhoto: profilePhoto || null,
-    userType: userType
-  }
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export {
+  PROTOCOL_RELATIVE_PREFIX,
+  HTTPS_PREFIX,
+  FIELD_NAMES,
+  ERROR_MESSAGES
 }

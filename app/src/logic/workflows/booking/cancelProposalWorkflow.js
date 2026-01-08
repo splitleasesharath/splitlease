@@ -15,14 +15,217 @@
  * 6. Main page + Usual Order ≤5 + Has house manual → Alert to call, no DB update
  * 7. Main page + Usual Order >5 + Has house manual → Alert to call, no DB update
  *
+ * This is an orchestration workflow that coordinates:
+ * - Rule validation (canCancelProposal) - pure
+ * - Decision tree evaluation - pure
+ * - Database update (Supabase) - effectful
+ * - Result building - pure
+ */
+import { PROPOSAL_STATUSES } from '../../constants/proposalStatuses.js'
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const ERROR_MESSAGES = Object.freeze({
+  MISSING_SUPABASE: 'cancelProposalWorkflow: supabase client is required',
+  MISSING_PROPOSAL: 'cancelProposalWorkflow: proposal with id is required',
+  MISSING_RULE_FN: 'cancelProposalWorkflow: canCancelProposal rule function is required'
+})
+
+const RESULT_MESSAGES = Object.freeze({
+  CANNOT_CANCEL: 'This proposal cannot be cancelled (already in terminal state)',
+  SUCCESS: 'Proposal cancelled successfully',
+  CALL_USUAL_ORDER: 'Please call Split Lease to cancel this proposal (Usual Order > 5)',
+  CALL_HOUSE_MANUAL: 'Please call Split Lease to cancel this proposal (House Manual accessed)'
+})
+
+const CANCELLATION_REASONS = Object.freeze({
+  GUEST_INITIATED: 'Guest initiated cancellation'
+})
+
+const SOURCE_TYPES = Object.freeze({
+  COMPARE_MODAL: 'compare-modal',
+  MAIN: 'main'
+})
+
+const DB_FIELD_NAMES = Object.freeze({
+  STATUS: 'Status',
+  REASON: 'reason for cancellation',
+  MODIFIED_DATE: 'Modified Date',
+  ID: '_id'
+})
+
+const USUAL_ORDER_THRESHOLD = 5
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is truthy
+ * @pure
+ */
+const isTruthy = (value) => Boolean(value)
+
+/**
+ * Check if value is a function
+ * @pure
+ */
+const isFunction = (value) => typeof value === 'function'
+
+/**
+ * Check if proposal has required id
+ * @pure
+ */
+const hasProposalId = (proposal) =>
+  isTruthy(proposal) && isTruthy(proposal.id)
+
+/**
+ * Check if source is compare modal
+ * @pure
+ */
+const isFromCompareModal = (source) =>
+  source === SOURCE_TYPES.COMPARE_MODAL
+
+/**
+ * Check if usual order is below or equal to threshold
+ * @pure
+ */
+const isLowUsualOrder = (usualOrder) =>
+  usualOrder <= USUAL_ORDER_THRESHOLD
+
+/**
+ * Check if house manual was accessed
+ * @pure
+ */
+const hasAccessedManual = (proposal) =>
+  proposal.houseManualAccessed === true
+
+// ─────────────────────────────────────────────────────────────
+// Decision Tree Evaluation (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Extract decision factors from proposal
+ * @pure
+ */
+const extractDecisionFactors = (proposal, source) =>
+  Object.freeze({
+    usualOrder: proposal.usualOrder || 0,
+    hasAccessedHouseManual: hasAccessedManual(proposal),
+    isCompareModal: isFromCompareModal(source)
+  })
+
+/**
+ * Evaluate decision tree to determine action
+ * @pure
+ * @returns {{ shouldUpdate: boolean, alertMessage: string | null }}
+ */
+const evaluateDecisionTree = (factors) => {
+  const { usualOrder, hasAccessedHouseManual, isCompareModal } = factors
+
+  if (isCompareModal) {
+    // Compare Modal Source: Variations 2 & 3
+    return isLowUsualOrder(usualOrder)
+      ? { shouldUpdate: true, alertMessage: null }
+      : { shouldUpdate: false, alertMessage: RESULT_MESSAGES.CALL_USUAL_ORDER }
+  }
+
+  // Main Page Source: Variations 4, 5, 6, 7
+  if (hasAccessedHouseManual) {
+    // Variations 6 & 7: Always require phone call
+    return { shouldUpdate: false, alertMessage: RESULT_MESSAGES.CALL_HOUSE_MANUAL }
+  }
+
+  // No house manual accessed
+  return isLowUsualOrder(usualOrder)
+    ? { shouldUpdate: true, alertMessage: null }
+    : { shouldUpdate: false, alertMessage: RESULT_MESSAGES.CALL_USUAL_ORDER }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Result Builders (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build cannot cancel result
+ * @pure
+ */
+const buildCannotCancelResult = () =>
+  Object.freeze({
+    success: false,
+    message: RESULT_MESSAGES.CANNOT_CANCEL,
+    updated: false
+  })
+
+/**
+ * Build success result
+ * @pure
+ */
+const buildSuccessResult = () =>
+  Object.freeze({
+    success: true,
+    message: RESULT_MESSAGES.SUCCESS,
+    updated: true
+  })
+
+/**
+ * Build phone call required result
+ * @pure
+ */
+const buildPhoneCallResult = (alertMessage) =>
+  Object.freeze({
+    success: true,
+    message: alertMessage,
+    updated: false,
+    requiresPhoneCall: true
+  })
+
+/**
+ * Build error result
+ * @pure
+ */
+const buildErrorResult = (err) =>
+  Object.freeze({
+    success: false,
+    message: `Failed to cancel proposal: ${err.message}`,
+    updated: false,
+    error: err
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Pure Data Builders
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Build cancellation update payload
+ * @pure
+ */
+const buildCancelUpdatePayload = (timestamp) =>
+  Object.freeze({
+    [DB_FIELD_NAMES.STATUS]: PROPOSAL_STATUSES.CANCELLED_BY_GUEST.key,
+    [DB_FIELD_NAMES.REASON]: CANCELLATION_REASONS.GUEST_INITIATED,
+    [DB_FIELD_NAMES.MODIFIED_DATE]: timestamp
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Main Workflow
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Cancel a proposal following the decision tree
+ *
  * @param {object} params - Named parameters.
  * @param {object} params.supabase - Supabase client instance.
  * @param {object} params.proposal - Processed proposal object.
  * @param {string} params.source - 'main' | 'compare-modal' | 'other'.
  * @param {function} params.canCancelProposal - Rule function to check if cancellable.
- * @returns {Promise<object>} Result object with success status and message.
+ * @returns {Promise<object>} Result object with success status and message (frozen).
  *
- * @throws {Error} If required parameters are missing.
+ * @throws {Error} If supabase client is not provided.
+ * @throws {Error} If proposal with id is not provided.
+ * @throws {Error} If canCancelProposal function is not provided.
  *
  * @example
  * const result = await cancelProposalWorkflow({
@@ -31,113 +234,73 @@
  *   source: 'main',
  *   canCancelProposal
  * })
- * // => { success: true, message: 'Proposal cancelled', updated: true }
+ * // => { success: true, message: 'Proposal cancelled...', updated: true }
  */
-import { PROPOSAL_STATUSES } from '../../constants/proposalStatuses.js'
-
 export async function cancelProposalWorkflow({
   supabase,
   proposal,
-  source = 'main',
+  source = SOURCE_TYPES.MAIN,
   canCancelProposal
 }) {
   // Validation
-  if (!supabase) {
-    throw new Error('cancelProposalWorkflow: supabase client is required')
+  if (!isTruthy(supabase)) {
+    throw new Error(ERROR_MESSAGES.MISSING_SUPABASE)
   }
 
-  if (!proposal || !proposal.id) {
-    throw new Error('cancelProposalWorkflow: proposal with id is required')
+  if (!hasProposalId(proposal)) {
+    throw new Error(ERROR_MESSAGES.MISSING_PROPOSAL)
   }
 
-  if (!canCancelProposal) {
-    throw new Error('cancelProposalWorkflow: canCancelProposal rule function is required')
+  if (!isFunction(canCancelProposal)) {
+    throw new Error(ERROR_MESSAGES.MISSING_RULE_FN)
   }
 
-  // Step 1: Check if cancellation is allowed
+  // Step 1: Check if cancellation is allowed (pure rule check)
   const canCancel = canCancelProposal({
     proposalStatus: proposal.status,
     deleted: proposal.deleted
   })
 
   if (!canCancel) {
-    return {
-      success: false,
-      message: 'This proposal cannot be cancelled (already in terminal state)',
-      updated: false
-    }
+    return buildCannotCancelResult()
   }
 
-  // Step 2: Extract decision factors
-  const usualOrder = proposal.usualOrder || 0
-  const hasAccessedHouseManual = proposal.houseManualAccessed === true
-  const isFromCompareModal = source === 'compare-modal'
+  // Step 2: Extract decision factors and evaluate tree (pure)
+  const factors = extractDecisionFactors(proposal, source)
+  const { shouldUpdate, alertMessage } = evaluateDecisionTree(factors)
 
-  // Step 3: Apply decision tree
-  let shouldUpdateDatabase = false
-  let alertMessage = null
-
-  if (isFromCompareModal) {
-    // Compare Modal Source
-    if (usualOrder <= 5) {
-      // Variation 2: Update database
-      shouldUpdateDatabase = true
-    } else {
-      // Variation 3: Alert to call
-      alertMessage = 'Please call Split Lease to cancel this proposal (Usual Order > 5)'
-    }
-  } else {
-    // Main Page Source
-    if (!hasAccessedHouseManual) {
-      if (usualOrder <= 5) {
-        // Variation 4: Update database
-        shouldUpdateDatabase = true
-      } else {
-        // Variation 5: Alert to call
-        alertMessage = 'Please call Split Lease to cancel this proposal (Usual Order > 5)'
-      }
-    } else {
-      // Has accessed house manual - always alert to call (Variations 6 & 7)
-      alertMessage = 'Please call Split Lease to cancel this proposal (House Manual accessed)'
-    }
+  // Step 3: Execute action based on decision
+  if (!shouldUpdate) {
+    return buildPhoneCallResult(alertMessage)
   }
 
-  // Step 4: Execute action
-  if (shouldUpdateDatabase) {
-    try {
-      const { error } = await supabase
-        .from('proposal')
-        .update({
-          'Status': PROPOSAL_STATUSES.CANCELLED_BY_GUEST.key,
-          'reason for cancellation': 'Guest initiated cancellation',
-          'Modified Date': new Date().toISOString()
-        })
-        .eq('_id', proposal.id)
+  // Step 4: Update database (effectful)
+  try {
+    const updatePayload = buildCancelUpdatePayload(new Date().toISOString())
 
-      if (error) {
-        throw error
-      }
+    const { error } = await supabase
+      .from('proposal')
+      .update(updatePayload)
+      .eq(DB_FIELD_NAMES.ID, proposal.id)
 
-      return {
-        success: true,
-        message: 'Proposal cancelled successfully',
-        updated: true
-      }
-    } catch (err) {
-      return {
-        success: false,
-        message: `Failed to cancel proposal: ${err.message}`,
-        updated: false,
-        error: err
-      }
+    if (error) {
+      throw error
     }
-  } else {
-    // Alert only, no database update
-    return {
-      success: true,
-      message: alertMessage,
-      updated: false,
-      requiresPhoneCall: true
-    }
+
+    return buildSuccessResult()
+  } catch (err) {
+    return buildErrorResult(err)
   }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export {
+  ERROR_MESSAGES,
+  RESULT_MESSAGES,
+  CANCELLATION_REASONS,
+  SOURCE_TYPES,
+  DB_FIELD_NAMES,
+  USUAL_ORDER_THRESHOLD
 }
