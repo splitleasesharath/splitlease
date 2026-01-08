@@ -2480,7 +2480,7 @@ export default function ViewSplitLeasePage() {
                     fontWeight: '500'
                   }}
                 >
-                  {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
+                  {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want another schedule'}
                 </button>
               </div>
 
@@ -3385,7 +3385,7 @@ export default function ViewSplitLeasePage() {
                           fontWeight: '500'
                         }}
                       >
-                        {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want to specify another recurrent schedule'}
+                        {showCustomScheduleInput ? 'Hide custom schedule' : 'Click here if you want another schedule'}
                       </button>
                     </div>
 
