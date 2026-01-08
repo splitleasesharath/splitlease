@@ -8,6 +8,34 @@ import { useState } from 'react';
 import DayIndicator from './DayIndicator.jsx';
 import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromDays, PROGRESS_THRESHOLDS } from './types.js';
 import { formatCurrency, formatDate, formatDateTime } from './formatters.js';
+
+/**
+ * Get compensation label based on rental type
+ * @param {string} rentalType - 'Nightly', 'Weekly', or 'Monthly'
+ * @returns {string} Label for compensation display
+ */
+function getCompensationLabel(rentalType) {
+  switch (rentalType) {
+    case 'Monthly': return 'Compensation per Month';
+    case 'Weekly': return 'Compensation per Week';
+    case 'Nightly':
+    default: return 'Compensation per Night';
+  }
+}
+
+/**
+ * Get compensation suffix based on rental type
+ * @param {string} rentalType - 'Nightly', 'Weekly', or 'Monthly'
+ * @returns {string} Suffix for compensation value (e.g., '/night', '/week', '/month')
+ */
+function getCompensationSuffix(rentalType) {
+  switch (rentalType) {
+    case 'Monthly': return '/month';
+    case 'Weekly': return '/week';
+    case 'Nightly':
+    default: return '/night';
+  }
+}
 import { getStatusConfig, getUsualOrder, isTerminalStatus } from '../../../logic/constants/proposalStatuses.js';
 import { getVMButtonText, getVMButtonStyle, getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtualMeetingRules.js';
 
@@ -132,14 +160,19 @@ export default function ProposalDetailsModal({
   const moveInRangeEnd = proposal.moveInRangeEnd || proposal['Move in range end'] || proposal['Move In Range End'];
   const reservationSpanWeeks = proposal.reservationSpanWeeks || proposal['Reservation Span (Weeks)'] || proposal['Reservation Span (weeks)'] || 0;
 
+  // Get rental type for proper compensation display
+  // Determines if compensation should be shown as /night, /week, or /month
+  const rentalType = proposal.rentalType || proposal['rental type'] || 'Nightly';
+
   // Get pricing info
-  // "host compensation" is the per-night HOST rate (from listing pricing tiers)
-  // "Total Compensation (proposal - host)" is the total = per-night rate * nights * weeks
+  // "host compensation" is the per-period HOST rate (from listing pricing tiers)
+  // The period depends on rental type: nightly, weekly, or monthly
+  // "Total Compensation (proposal - host)" is the total compensation for the entire reservation
   const hostCompensation = proposal.hostCompensation || proposal['host compensation'] || proposal['Host Compensation'] || 0;
   const totalCompensation = proposal.totalCompensation || proposal['Total Compensation (proposal - host)'] || proposal['Total Compensation'] || 0;
-  // Use hostCompensation for per-night display - this is the HOST's rate
+  // Use hostCompensation for per-period display - this is the HOST's rate
   // NOTE: "proposal nightly price" is the GUEST-facing rate, not host compensation
-  const compensationPerNight = hostCompensation;
+  const compensationPerPeriod = hostCompensation;
   const maintenanceFee = proposal.maintenanceFee || proposal['cleaning fee'] || proposal['Maintenance Fee'] || 0;
   const damageDeposit = proposal.damageDeposit || proposal['damage deposit'] || proposal['Damage Deposit'] || 0;
   const counterOfferHappened = proposal.counterOfferHappened || proposal['Counter Offer Happened'] || false;
@@ -378,12 +411,12 @@ export default function ProposalDetailsModal({
               <span className="detail-value">{checkInTime} / {checkOutTime}</span>
             </div>
             <div className="detail-row">
-              <span className="detail-label">Compensation per Night</span>
+              <span className="detail-label">{getCompensationLabel(rentalType)}</span>
               <span className="detail-value">
                 {counterOfferHappened && (
                   <span className="original-value">${hostCompensation}</span>
                 )}
-                ${formatCurrency(compensationPerNight)}/night
+                ${formatCurrency(compensationPerPeriod)}{getCompensationSuffix(rentalType)}
               </span>
             </div>
             <div className="detail-row">
