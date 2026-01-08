@@ -172,6 +172,25 @@ export function useEditListingDetailsLogic({ listing, editSection, focusField, o
       borough = getBoroughForZipCode(zipCode);
     }
 
+    // Extract photo URLs from various sources
+    // Priority: listing.photos (resolved objects) > Features - Photos (raw field)
+    const extractPhotoUrls = () => {
+      // If listing.photos exists (from fetchListingComplete), extract URLs from objects
+      if (listing.photos && Array.isArray(listing.photos) && listing.photos.length > 0) {
+        return listing.photos
+          .map(p => typeof p === 'object' ? p.Photo : p)
+          .filter(url => url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')));
+      }
+      // Fall back to Features - Photos if it contains URLs
+      const rawPhotos = listing['Features - Photos'];
+      if (Array.isArray(rawPhotos)) {
+        return rawPhotos
+          .map(p => typeof p === 'object' ? p.Photo || p.url : p)
+          .filter(url => url && (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//')));
+      }
+      return [];
+    };
+
     setFormData({
       Name: listing.Name,
       Description: listing.Description,
@@ -192,7 +211,7 @@ export function useEditListingDetailsLogic({ listing, editSection, focusField, o
       'Features - Parking type': listing['Features - Parking type'],
       'Features - Secure Storage Option': listing['Features - Secure Storage Option'],
       'Features - House Rules': listing['Features - House Rules'],
-      'Features - Photos': listing['Features - Photos'],
+      'Features - Photos': extractPhotoUrls(),
       'Features - Amenities In-Unit': listing['Features - Amenities In-Unit'],
       'Features - Amenities In-Building': listing['Features - Amenities In-Building'],
       'Features - Safety': listing['Features - Safety'],
