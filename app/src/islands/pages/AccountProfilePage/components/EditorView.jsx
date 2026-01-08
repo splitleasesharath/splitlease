@@ -130,11 +130,13 @@ export default function EditorView({
 
       {/* Guest-only: Rental Application */}
       {!isHostUser && (
-        <RentalApplicationCard
-          applicationStatus={rentalApplicationStatus}
-          progress={rentalApplicationProgress}
-          onOpenWizard={onOpenRentalWizard}
-        />
+        <div id="rental-application-section">
+          <RentalApplicationCard
+            applicationStatus={rentalApplicationStatus}
+            progress={rentalApplicationProgress}
+            onOpenWizard={onOpenRentalWizard}
+          />
+        </div>
       )}
 
       {/* Account Settings - Always shown */}

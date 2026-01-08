@@ -289,6 +289,7 @@ export default function LoggedInAvatar({
     }
 
     // 10. Rental Application - GUEST only
+    // Navigate to account profile with rental application section focus
     if (menuVisibility.rentalApplication) {
       items.push({
         id: 'rental-application',
@@ -296,7 +297,7 @@ export default function LoggedInAvatar({
         icon: '/assets/icons/clipboard-purple.svg',
         path: effectiveUserType === NORMALIZED_USER_TYPES.HOST
           ? '/account'
-          : '/rental-application',
+          : `/account-profile/${user.id}?section=rental-application`,
       });
     }
 

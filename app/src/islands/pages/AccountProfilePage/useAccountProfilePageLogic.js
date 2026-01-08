@@ -563,6 +563,45 @@ export function useAccountProfilePageLogic() {
   }, [fetchReferenceData, fetchProfileData, fetchHostListings]);
 
   // ============================================================================
+  // URL PARAMETER HANDLING (for rental application deep linking)
+  // ============================================================================
+
+  /**
+   * Handle URL query parameters for rental application:
+   * - ?section=rental-application -> Scroll to rental application section
+   * - ?openRentalApp=true -> Auto-open the rental application wizard modal
+   *
+   * These are used when redirecting from other pages (e.g., ProposalSuccessModal,
+   * LoggedInAvatar menu, legacy /rental-application route)
+   */
+  useEffect(() => {
+    // Only process after initial load completes and for guest users
+    if (loading || isHostUser) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const section = params.get('section');
+    const openRentalApp = params.get('openRentalApp');
+
+    // Handle scroll to rental application section
+    if (section === 'rental-application') {
+      setTimeout(() => {
+        const rentalAppSection = document.getElementById('rental-application-section');
+        if (rentalAppSection) {
+          rentalAppSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
+    }
+
+    // Handle modal auto-open
+    if (openRentalApp === 'true') {
+      setShowRentalWizardModal(true);
+      // Clean URL to prevent re-opening on refresh
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
+    }
+  }, [loading, isHostUser]);
+
+  // ============================================================================
   // RENTAL APPLICATION STATUS (Guest-only)
   // ============================================================================
 

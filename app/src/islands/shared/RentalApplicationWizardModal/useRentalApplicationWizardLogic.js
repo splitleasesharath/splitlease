@@ -7,9 +7,9 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../../../../../lib/supabase.js';
-import { checkAuthStatus, getSessionId, getAuthToken } from '../../../../../lib/auth.js';
-import { useRentalApplicationStore } from '../../../RentalApplicationPage/store/index.ts';
+import { supabase } from '../../../lib/supabase.js';
+import { checkAuthStatus, getSessionId, getAuthToken } from '../../../lib/auth.js';
+import { useRentalApplicationStore } from '../../pages/RentalApplicationPage/store/index.ts';
 
 // Required fields (same as RentalApplicationPage)
 const REQUIRED_FIELDS = [
