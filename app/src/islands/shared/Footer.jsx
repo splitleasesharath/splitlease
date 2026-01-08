@@ -225,22 +225,20 @@ export default function Footer() {
           />
           <div className="app-content">
             <p className="app-tagline">
-              Now you can change
-              <br />
-              your nights
-              <br />
-              <em>on the go.</em>
+              Manage your stays<br /><em>on the go.</em>
             </p>
+            <p className="app-subtitle">Book, message hosts, and track your reservations from anywhere.</p>
             <a href="https://apps.apple.com/app/split-lease" className="app-store-btn">
               <img
                 src="https://developer.apple.com/assets/elements/badges/download-on-the-app-store.svg"
                 alt="Download on the App Store"
-                height="40"
+                height="44"
               />
             </a>
-            <p className="app-subtitle">Download at the App Store</p>
           </div>
         </div>
+
+        <div className="app-divider"></div>
 
         <div className="alexa-card">
           <img
@@ -251,39 +249,37 @@ export default function Footer() {
           />
           <div className="alexa-content">
             <p className="alexa-tagline">
-              Voice-controlled concierge,
-              <br />
-              at your service.
+              Voice-controlled<br /><em>concierge.</em>
             </p>
+            <p className="alexa-subtitle">Check in, get property info, and request support hands-free.</p>
             <a href="https://www.amazon.com/dp/B08XYZ123" className="alexa-btn">
-              <span className="amazon-logo">
-                Available on
-                <br />
-                <strong>amazon.com</strong>
-              </span>
+              <img
+                src="https://images-na.ssl-images-amazon.com/images/G/01/mobile-apps/devportal2/res/images/amazon-appstore-badge-english-black.png"
+                alt="Available on Amazon"
+                height="44"
+              />
             </a>
-            <p className="alexa-command">"Alexa, enable Split Lease"</p>
           </div>
         </div>
       </div>
 
       {/* Footer Bottom */}
       <div className="footer-bottom">
-        <a href="https://app.split.lease/terms">
-          <svg
-            width="12"
-            height="12"
-            viewBox="0 0 12 12"
-            fill="currentColor"
-            style={{ marginRight: '0.5rem' }}
-          >
-            <path d="M2 2h8v8H2z" stroke="currentColor" strokeWidth="1" fill="none" />
-            <path d="M4 6h4M4 8h3" />
-          </svg>
-          Terms of Use
-        </a>
-        <span>Made with love in New York City</span>
-        <span>© 2025 SplitLease</span>
+        <div className="footer-bottom-left">
+          <a href="https://app.split.lease/terms" className="footer-link">
+            Terms of Use
+          </a>
+          <span className="footer-divider">|</span>
+          <a href="/policies" className="footer-link">
+            Privacy Policy
+          </a>
+        </div>
+        <div className="footer-bottom-center">
+          <span>Made with love in New York City</span>
+        </div>
+        <div className="footer-bottom-right">
+          <span>© 2025 Split Lease Inc.</span>
+        </div>
       </div>
 
       {/* Create Listing Modal */}
