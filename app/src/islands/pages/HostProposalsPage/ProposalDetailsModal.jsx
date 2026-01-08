@@ -202,53 +202,46 @@ export default function ProposalDetailsModal({
   const activeDays = getNightsAsDayNames(nightsSelectedRaw);
 
   /**
-   * Get progress steps based on usualOrder thresholds from reference_table.os_proposal_status
+   * Get progress steps based on usualOrder thresholds
    *
-   * Step states:
-   * - 'completed': usualOrder >= threshold (green #065F46)
-   * - 'current': actively in progress (highlighted)
-   * - 'incomplete': not yet reached (light gray)
-   * - 'cancelled'/'rejected': proposal was cancelled/rejected (red)
+   * Progress bar shows 5 steps matching the proposal journey:
+   * 1. Proposal Submitted (always complete once proposal exists)
+   * 2. Rental App Submitted (usualOrder >= 1)
+   * 3. Host Review (usualOrder >= 1, current when exactly 1-2)
+   * 4. Lease Docs (usualOrder >= 4)
+   * 5. Initial Payment (usualOrder >= 7)
    *
-   * Reference table sort_order values:
-   * - 0: Awaiting Rental App (proposal submitted, pending rental app)
-   * - 1: Host Review (rental app submitted, under host review)
-   * - 2: Host Counteroffer
-   * - 3: Accepted / Drafting Docs
-   * - 4: Lease Documents for Review
-   * - 5: Lease Documents for Signatures
-   * - 6: Lease Signed / Awaiting Payment
-   * - 7: Payment Submitted / Lease Activated
+   * The "current" step (where we are NOW) gets the green highlight.
+   * Completed steps get purple fill, incomplete steps are grey.
    */
   const getProgressSteps = () => {
-    // Special case: Host Review is "current" when status is Host Review
-    const isHostReviewCurrent = statusConfig.key === 'Host Review';
+    // Determine current step based on usualOrder ranges
+    // usualOrder 0: At "Proposal Submitted" / "Awaiting Rental App"
+    // usualOrder 1-2: At "Host Review" (includes counteroffer)
+    // usualOrder 3-4: At "Lease Docs" phase
+    // usualOrder 5-6: At "Lease Docs" / "Awaiting Payment"
+    // usualOrder 7: At "Initial Payment" / Complete
 
-    // Thresholds based on reference_table.os_proposal_status sort_order:
-    // - Rental App completed: usualOrder >= 1 (moved past "Awaiting Rental App" at sort_order 0)
-    // - Host Review completed: usualOrder >= 3 (Accepted / Drafting Docs)
-    // - Lease Docs completed: usualOrder >= 5 (Lease Documents for Signatures)
-    // - Initial Payment completed: usualOrder >= 7 (Payment submitted / Lease activated)
     return {
       proposalSubmitted: {
         completed: true, // Always completed once proposal exists
-        current: false
+        current: usualOrder === 0 // Current when awaiting rental app
       },
       rentalApp: {
-        completed: usualOrder >= 1, // Rental app done when past sort_order 0 (Awaiting Rental App)
-        current: false
+        completed: usualOrder >= 1, // Completed once rental app submitted
+        current: false // This is a transitional step, not a "waiting" step
       },
       hostReview: {
-        completed: usualOrder >= 3, // Host Review completed when Accepted (sort_order 3)
-        current: isHostReviewCurrent // Highlighted when in Host Review status
+        completed: usualOrder >= 3, // Completed when accepted
+        current: usualOrder >= 1 && usualOrder < 3 // Current during Host Review & Counteroffer
       },
       leaseDocs: {
-        completed: usualOrder >= 5, // Lease docs for signatures (sort_order 5)
-        current: false
+        completed: usualOrder >= 6, // Completed when awaiting payment
+        current: usualOrder >= 3 && usualOrder < 6 // Current during lease doc phases
       },
       initialPayment: {
-        completed: usualOrder >= 7, // Payment submitted / Lease activated (sort_order 7)
-        current: false
+        completed: usualOrder >= 7, // Completed when lease activated
+        current: usualOrder === 6 // Current when awaiting payment
       }
     };
   };
@@ -256,10 +249,17 @@ export default function ProposalDetailsModal({
   const progress = getProgressSteps();
 
   /**
-   * Determine which step is the "last completed" (rightmost filled dot)
-   * This step will be shown in green to indicate current progress
+   * Determine which step should show the green highlight
+   * Priority: current step > last completed step
    */
-  const getLastCompletedStep = () => {
+  const getHighlightedStep = () => {
+    // First check for current step (where we are now)
+    if (progress.initialPayment.current) return 'initialPayment';
+    if (progress.leaseDocs.current) return 'leaseDocs';
+    if (progress.hostReview.current) return 'hostReview';
+    if (progress.proposalSubmitted.current) return 'proposalSubmitted';
+
+    // Fallback to last completed step
     if (progress.initialPayment.completed) return 'initialPayment';
     if (progress.leaseDocs.completed) return 'leaseDocs';
     if (progress.hostReview.completed) return 'hostReview';
@@ -268,7 +268,7 @@ export default function ProposalDetailsModal({
     return null;
   };
 
-  const lastCompletedStep = getLastCompletedStep();
+  const highlightedStep = getHighlightedStep();
 
   /**
    * Get CSS class for a progress step
@@ -282,10 +282,10 @@ export default function ProposalDetailsModal({
   };
 
   /**
-   * Check if a step should be shown in green (last completed step)
+   * Check if a step should be shown in green (highlighted step = current or last completed)
    */
-  const isLastCompleted = (stepName) => {
-    return !isCancelled && lastCompletedStep === stepName;
+  const isHighlighted = (stepName) => {
+    return !isCancelled && highlightedStep === stepName;
   };
 
   /**
@@ -628,7 +628,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.proposalSubmitted)}`}>
                       <div
                         className="step-circle"
-                        style={isLastCompleted('proposalSubmitted') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('proposalSubmitted') ? { backgroundColor: '#065F46' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.proposalSubmitted, progress.rentalApp)}`}></div>
@@ -637,7 +637,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.rentalApp)}`}>
                       <div
                         className="step-circle"
-                        style={isLastCompleted('rentalApp') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('rentalApp') ? { backgroundColor: '#065F46' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.rentalApp, progress.hostReview)}`}></div>
@@ -646,7 +646,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.hostReview)}`}>
                       <div
                         className="step-circle"
-                        style={isLastCompleted('hostReview') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('hostReview') ? { backgroundColor: '#065F46' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.hostReview, progress.leaseDocs)}`}></div>
@@ -655,7 +655,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.leaseDocs)}`}>
                       <div
                         className="step-circle"
-                        style={isLastCompleted('leaseDocs') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('leaseDocs') ? { backgroundColor: '#065F46' } : undefined}
                       ></div>
                     </div>
                     <div className={`progress-line ${getLineClass(progress.leaseDocs, progress.initialPayment)}`}></div>
@@ -664,7 +664,7 @@ export default function ProposalDetailsModal({
                     <div className={`progress-step ${getStepClass(progress.initialPayment)}`}>
                       <div
                         className="step-circle"
-                        style={isLastCompleted('initialPayment') ? { backgroundColor: '#065F46' } : undefined}
+                        style={isHighlighted('initialPayment') ? { backgroundColor: '#065F46' } : undefined}
                       ></div>
                     </div>
                   </div>
