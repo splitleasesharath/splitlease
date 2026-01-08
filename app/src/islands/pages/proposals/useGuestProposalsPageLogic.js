@@ -16,7 +16,7 @@
  * - Redirects to home if not authenticated or not a Guest
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchUserProposalsFromUrl } from '../../../lib/proposals/userProposalQueries.js';
 import { updateUrlWithProposal, cleanLegacyUserIdFromUrl } from '../../../lib/proposals/urlParser.js';
 import { transformProposalData, getProposalDisplayText } from '../../../lib/proposals/dataTransformers.js';
@@ -57,6 +57,9 @@ export function useGuestProposalsPageLogic() {
 
   // URL parameter state for VM navigation
   const [highlightVMButton, setHighlightVMButton] = useState(false);
+
+  // Track if we've already handled URL params (prevent re-processing)
+  const urlParamsHandled = useRef(false);
 
   // ============================================================================
   // AUTHENTICATION CHECK
@@ -231,35 +234,61 @@ export function useGuestProposalsPageLogic() {
    * Handle URL parameters for Virtual Meetings navigation:
    * - ?scrollTo=virtual-meetings - Scroll to VM section after data loads
    * - ?highlightVMButton=true - Highlight the Request VM button with pulse animation
+   *
+   * Uses a ref to ensure one-time execution per page load, preventing
+   * re-processing when proposals state changes.
    */
   useEffect(() => {
     // Wait for data to load and page to render
     if (isLoading || proposals.length === 0) return;
 
+    // Only handle URL params once per page load
+    if (urlParamsHandled.current) return;
+
     const urlParams = new URLSearchParams(window.location.search);
     const scrollTo = urlParams.get('scrollTo');
     const shouldHighlightVMButton = urlParams.get('highlightVMButton') === 'true';
 
+    // If no relevant params, skip
+    if (!scrollTo && !shouldHighlightVMButton) return;
+
+    // Mark as handled to prevent re-processing
+    urlParamsHandled.current = true;
+
+    console.log('[GuestProposals] Handling URL params:', { scrollTo, shouldHighlightVMButton });
+
     // Handle scroll to Virtual Meetings section
     if (scrollTo === 'virtual-meetings') {
-      // Small delay to ensure VirtualMeetingsSection has rendered
+      // Delay to ensure VirtualMeetingsSection has rendered
       setTimeout(() => {
         const vmSection = document.getElementById('virtual-meetings');
+        console.log('[GuestProposals] Looking for VM section:', vmSection ? 'FOUND' : 'NOT FOUND');
+
         if (vmSection) {
           vmSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+          // Clean URL after scroll animation completes (smooth scroll ~500ms)
+          setTimeout(() => {
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+          }, 600);
+        } else {
+          // VM section not found - clean URL immediately
+          const newUrl = window.location.pathname;
+          window.history.replaceState({}, '', newUrl);
         }
-        // Clean URL after scrolling
-        const newUrl = window.location.pathname;
-        window.history.replaceState({}, '', newUrl);
-      }, 100);
+      }, 300); // Increased delay to ensure component has mounted
     }
 
     // Handle highlight VM button (no existing VMs, prompt user to create one)
     if (shouldHighlightVMButton) {
       setHighlightVMButton(true);
-      // Clean URL after setting state
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
+
+      // Clean URL after a short delay
+      setTimeout(() => {
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }, 100);
 
       // Auto-remove highlight after 5 seconds
       setTimeout(() => {
