@@ -583,13 +583,14 @@ export function useAccountProfilePageLogic() {
     const openRentalApp = params.get('openRentalApp');
 
     // Handle scroll to rental application section
+    // Use requestAnimationFrame to scroll after next paint (faster than setTimeout)
     if (section === 'rental-application') {
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         const rentalAppSection = document.getElementById('rental-application-section');
         if (rentalAppSection) {
           rentalAppSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
-      }, 100);
+      });
     }
 
     // Handle modal auto-open
