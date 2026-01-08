@@ -3,7 +3,7 @@
  * Displays an interactive Google Map with listing markers
  *
  * Features:
- * - Green markers for all active listings
+ * - Blue markers for all active listings
  * - Purple markers for filtered search results
  * - Price labels on markers
  * - Clickable markers with listing info
@@ -46,7 +46,7 @@ const MapLegend = memo(({ showAllListings, onToggle }) => (
       <div className="legend-item">
         <span
           className="legend-marker"
-          style={{ backgroundColor: COLORS.SUCCESS }}
+          style={{ backgroundColor: COLORS.ACCENT }}
         ></span>
         <span>All Active Listings</span>
       </div>
@@ -103,7 +103,7 @@ const AIResearchButton = memo(({ onAIResearchClick }) => {
 AIResearchButton.displayName = 'AIResearchButton';
 
 const GoogleMap = forwardRef(({
-  listings = [],           // All listings to show as green markers
+  listings = [],           // All listings to show as blue markers
   filteredListings = [],   // Filtered subset to show as purple markers
   selectedListing = null,  // Currently selected/highlighted listing
   onMarkerClick = null,    // Callback when marker clicked: (listing) => void
@@ -659,9 +659,9 @@ const GoogleMap = forwardRef(({
         console.log('⚠️ GoogleMap: No filtered listings to create purple markers for');
       }
 
-      // Create markers for all listings (green) - background context
+      // Create markers for all listings (blue) - background context
       if (showAllListings && listings && listings.length > 0) {
-        console.log('🗺️ GoogleMap: Starting green marker creation for all listings (background layer):', listings.length);
+        console.log('🗺️ GoogleMap: Starting blue marker creation for all listings (background layer):', listings.length);
         console.log('🗺️ GoogleMap: First 3 all listings:', listings.slice(0, 3).map(l => ({
           id: l.id,
           title: l.title,
@@ -715,18 +715,18 @@ const GoogleMap = forwardRef(({
             lng: listing.coordinates.lng
           };
 
-          console.log(`✅ GoogleMap: Creating green marker for listing ${listing.id}:`, {
+          console.log(`✅ GoogleMap: Creating blue marker for listing ${listing.id}:`, {
             position,
             price: listing.price?.starting || listing['Starting nightly price'],
             title: listing.title
           });
 
-          // Create green marker for all listings
+          // Create blue marker for all listings
           const marker = createPriceMarker(
             map,
             position,
             listing.price?.starting || listing['Starting nightly price'] || 0,
-            COLORS.SUCCESS, // Green
+            COLORS.ACCENT, // Blue
             listing
           );
 
@@ -735,10 +735,10 @@ const GoogleMap = forwardRef(({
           hasValidMarkers = true;
           greenMarkersCreated++;
 
-          console.log(`✅ GoogleMap: Green marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
+          console.log(`✅ GoogleMap: Blue marker created successfully for ${listing.id}, total markers so far: ${markersRef.current.length}`);
         });
 
-        console.log('📊 GoogleMap: Green marker creation summary:', {
+        console.log('📊 GoogleMap: Blue marker creation summary:', {
           totalAllListings: listings.length,
           markersCreated: greenMarkersCreated,
           skippedAlreadyFiltered,
@@ -747,7 +747,7 @@ const GoogleMap = forwardRef(({
           invalidListings: skippedInvalidCoordinates
         });
       } else {
-        console.log('⚠️ GoogleMap: No all listings to create green markers for (showAllListings:', showAllListings, ', listings.length:', listings?.length, ')');
+        console.log('⚠️ GoogleMap: No all listings to create blue markers for (showAllListings:', showAllListings, ', listings.length:', listings?.length, ')');
       }
 
       // Fit map to show all markers
