@@ -330,6 +330,7 @@ export default function CreateProposalFlowV2({
 
     // Pricing (ONLY from ListingScheduleSelector - initialized from parent)
     pricePerNight: pricingBreakdown?.pricePerNight || 0,
+    nightsPerWeek: nightsSelected,
     numberOfNights: nightsSelected * reservationSpan,
     totalPrice: pricingBreakdown?.reservationTotal || 0,
     pricePerFourWeeks: pricingBreakdown?.fourWeekRent || 0,
@@ -357,6 +358,7 @@ export default function CreateProposalFlowV2({
         pricePerNight: internalPricingBreakdown.pricePerNight,
         pricePerFourWeeks: internalPricingBreakdown.fourWeekRent,
         totalPrice: internalPricingBreakdown.reservationTotal,
+        nightsPerWeek: nightsPerWeek,
         numberOfNights: totalNights,
         firstFourWeeksTotal: firstFourWeeksTotal
       }));

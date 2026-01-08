@@ -166,7 +166,8 @@ export default function ReviewSection({ data, listing, onEditUserDetails, onEdit
         {(() => {
           const weeksOffered = listing?.['Weeks offered'] || listing?.weeks_offered;
           const scheduleInfo = getWeeksOfferedDescription(weeksOffered);
-          const nightsPerWeek = data.nightsPerWeek || data.numberOfNights; // nights per week selection
+          // nightsPerWeek: derive from numberOfNights/reservationSpan if not directly available
+          const nightsPerWeek = data.nightsPerWeek || (data.reservationSpan ? Math.round(data.numberOfNights / data.reservationSpan) : 3);
 
           if (scheduleInfo) {
             // For alternating schedules, calculate actual nights based on actual occupancy weeks
