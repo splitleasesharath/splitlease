@@ -778,6 +778,18 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
                 </span>
               )}
             </div>
+            {/* Host Profile */}
+            <div className="host-profile">
+              {listing.host?.image ? (
+                <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
+              ) : (
+                <div className="host-avatar-placeholder">?</div>
+              )}
+              <span className="host-name">
+                Hosted by {formatHostName(listing.host?.name)}
+                {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
+              </span>
+            </div>
             {/* Action Buttons */}
             <div className="action-buttons">
               <button
@@ -830,18 +842,6 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
                   </button>
                 )
               )}
-            </div>
-            {/* Host Profile - Simple text */}
-            <div className="host-profile">
-              {listing.host?.image ? (
-                <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
-              ) : (
-                <div className="host-avatar-placeholder">?</div>
-              )}
-              <span className="host-name">
-                Hosted by {formatHostName(listing.host?.name)}
-                {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
-              </span>
             </div>
           </div>
         </div>
