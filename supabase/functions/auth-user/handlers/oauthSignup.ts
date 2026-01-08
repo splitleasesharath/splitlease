@@ -16,7 +16,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { BubbleApiError } from '../../_shared/errors.ts';
-import { validateRequiredFields } from '../../_shared/validation.ts';
+import { validateRequiredFields, trimString } from '../../_shared/validation.ts';
 import { enqueueSignupSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
 
 interface OAuthSignupPayload {
@@ -53,8 +53,8 @@ export async function handleOAuthSignup(
 
   const {
     email,
-    firstName = '',
-    lastName = '',
+    firstName: rawFirstName = '',
+    lastName: rawLastName = '',
     userType = 'Guest',
     provider,
     supabaseUserId,
@@ -62,6 +62,10 @@ export async function handleOAuthSignup(
     refresh_token,
     profilePhoto = null,
   } = payload;
+
+  // Trim name fields to prevent storing whitespace
+  const firstName = trimString(rawFirstName) ?? '';
+  const lastName = trimString(rawLastName) ?? '';
 
   const userTypeDisplay = mapUserTypeToDisplay(userType);
 
