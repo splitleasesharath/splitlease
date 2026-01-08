@@ -5,26 +5,363 @@
  * Creates listings directly in the `listing` table using generate_bubble_id() RPC.
  *
  * NO FALLBACK: If operation fails, we fail. No workarounds.
+ *
+ * @module lib/listingService
  */
 
 import { supabase } from './supabase.js';
 import { getUserId } from './secureStorage.js';
 import { uploadPhotos } from './photoUpload.js';
 
-// ============================================================================
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const LOG_PREFIX = '[ListingService]'
+
+const ZIP_CODE_PATTERN = /^\d{5}$/
+
+const CANCELLATION_POLICY_MAP = Object.freeze({
+  'Standard': '1665431440883x653177548350901500',
+  'Additional Host Restrictions': '1665431684611x656977293321267800',
+  'Prior to First-Time Arrival': '1599791792265x281203802121463780',
+  'After First-Time Arrival': '1599791785559x603327510287017500'
+})
+
+const PARKING_TYPE_MAP = Object.freeze({
+  'Street Parking': '1642428637379x970678957586007000',
+  'No Parking': '1642428658755x946399373738815900',
+  'Off-Street Parking': '1642428710705x523449235750343100',
+  'Attached Garage': '1642428740411x489476808574605760',
+  'Detached Garage': '1642428749714x405527148800546750',
+  'Nearby Parking Structure': '1642428759346x972313924643388700'
+})
+
+const SPACE_TYPE_MAP = Object.freeze({
+  'Private Room': '1569530159044x216130979074711000',
+  'Entire Place': '1569530331984x152755544104023800',
+  'Shared Room': '1585742011301x719941865479153400',
+  'All Spaces': '1588063597111x228486447854442800'
+})
+
+const STORAGE_OPTION_MAP = Object.freeze({
+  'In the room': '1606866759190x694414586166435100',
+  'In a locked closet': '1606866790336x155474305631091200',
+  'In a suitcase': '1606866843299x274753427318384030'
+})
+
+const STATE_ABBREVIATION_MAP = Object.freeze({
+  'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
+  'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
+  'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
+  'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
+  'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
+  'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
+  'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
+  'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
+  'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
+  'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
+  'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
+  'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
+  'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia'
+})
+
+const DAY_INDEX_MAP = Object.freeze({
+  sunday: 0,
+  monday: 1,
+  tuesday: 2,
+  wednesday: 3,
+  thursday: 4,
+  friday: 5,
+  saturday: 6
+})
+
+const DAY_NAME_MAP = Object.freeze({
+  sunday: 'Sunday',
+  monday: 'Monday',
+  tuesday: 'Tuesday',
+  wednesday: 'Wednesday',
+  thursday: 'Thursday',
+  friday: 'Friday',
+  saturday: 'Saturday'
+})
+
+const DAY_ORDER = Object.freeze([
+  'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'
+])
+
+const DB_COLUMN_PATTERNS = Object.freeze([
+  'Name',
+  'Description',
+  'Features - ',
+  'Location - ',
+  'Description - ',
+  'Kitchen Type',
+  'Cancellation Policy',
+  'First Available'
+])
+
+const COLUMN_NAME_NORMALIZATION_MAP = Object.freeze({
+  'First Available': ' First Available',
+  'Nights Available (List of Nights)': 'Nights Available (List of Nights) ',
+  'Not Found - Location - Address': 'Not Found - Location - Address '
+})
+
+const DEFAULT_VALUES = Object.freeze({
+  RENTAL_TYPE: 'Monthly',
+  PREFERRED_GENDER: 'No Preference',
+  NUMBER_OF_GUESTS: 2,
+  CHECK_IN_TIME: '2:00 PM',
+  CHECK_OUT_TIME: '11:00 AM',
+  MAXIMUM_WEEKS: 52,
+  MINIMUM_NIGHTS: 1,
+  WEEKS_OFFERED: 'Every week',
+  MARKET_STRATEGY: 'private'
+})
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is a valid 5-digit zip code
+ * @pure
+ */
+const isValidZipCode = (zipCode) => {
+  if (!zipCode) return false
+  const cleanZip = String(zipCode).trim().substring(0, 5)
+  return ZIP_CODE_PATTERN.test(cleanZip)
+}
+
+/**
+ * Check if user ID is a Supabase UUID (contains dashes)
+ * @pure
+ */
+const isSupabaseUUID = (userId) =>
+  userId && userId.includes('-')
+
+/**
+ * Check if formData uses flat database column names
+ * @pure
+ */
+const isFlatDatabaseFormat = (formData) => {
+  const keys = Object.keys(formData)
+  return keys.some(key =>
+    DB_COLUMN_PATTERNS.some(pattern => key === pattern || key.startsWith(pattern))
+  )
+}
+
+/**
+ * Check if listing is deleted
+ * @pure
+ */
+const isDeleted = (listing) =>
+  listing?.Deleted === true
+
+/**
+ * Check if all photos have URLs
+ * @pure
+ */
+const allPhotosHaveUrls = (photos) =>
+  photos.every(p => p.url && (p.url.startsWith('http://') || p.url.startsWith('https://')))
+
+// ─────────────────────────────────────────────────────────────
+// Pure Mapping Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Clean zip code to 5 digits
+ * @pure
+ */
+const cleanZipCode = (zipCode) =>
+  String(zipCode).trim().substring(0, 5)
+
+/**
+ * Map cancellation policy display name to FK ID
+ * @pure
+ */
+const mapCancellationPolicyToId = (policyName) => {
+  const result = !policyName
+    ? CANCELLATION_POLICY_MAP['Standard']
+    : (CANCELLATION_POLICY_MAP[policyName] || CANCELLATION_POLICY_MAP['Standard'])
+  return result
+}
+
+/**
+ * Map parking type display name to FK ID
+ * @pure
+ */
+const mapParkingTypeToId = (parkingType) =>
+  parkingType ? (PARKING_TYPE_MAP[parkingType] || null) : null
+
+/**
+ * Map space type display name to FK ID
+ * @pure
+ */
+const mapSpaceTypeToId = (spaceType) =>
+  spaceType ? (SPACE_TYPE_MAP[spaceType] || null) : null
+
+/**
+ * Map storage option display name to FK ID
+ * @pure
+ */
+const mapStorageOptionToId = (storageOption) =>
+  storageOption ? (STORAGE_OPTION_MAP[storageOption] || null) : null
+
+/**
+ * Map state abbreviation to full name
+ * @pure
+ */
+const mapStateToDisplayName = (stateInput) => {
+  if (!stateInput) return null
+  if (stateInput.length > 2) return stateInput
+  return STATE_ABBREVIATION_MAP[stateInput.toUpperCase()] || stateInput
+}
+
+/**
+ * Map available nights object to array of day indices
+ * @pure
+ */
+const mapAvailableNightsToArray = (availableNights) => {
+  const result = []
+  for (const [day, isSelected] of Object.entries(availableNights)) {
+    if (isSelected && DAY_INDEX_MAP[day] !== undefined) {
+      result.push(DAY_INDEX_MAP[day])
+    }
+  }
+  return result.sort((a, b) => a - b)
+}
+
+/**
+ * Map available nights object to day name strings
+ * @pure
+ */
+const mapAvailableNightsToNames = (availableNights) => {
+  const result = []
+  for (const day of DAY_ORDER) {
+    if (availableNights[day] && DAY_NAME_MAP[day]) {
+      result.push(DAY_NAME_MAP[day])
+    }
+  }
+  return result
+}
+
+/**
+ * Map nightly pricing to rate columns
+ * @pure
+ */
+const mapNightlyRatesToColumns = (nightlyPricing) => {
+  if (!nightlyPricing?.calculatedRates) return {}
+
+  const rates = nightlyPricing.calculatedRates
+  return Object.freeze({
+    '💰Nightly Host Rate for 1 night': rates.night1 || null,
+    '💰Nightly Host Rate for 2 nights': rates.night2 || null,
+    '💰Nightly Host Rate for 3 nights': rates.night3 || null,
+    '💰Nightly Host Rate for 4 nights': rates.night4 || null,
+    '💰Nightly Host Rate for 5 nights': rates.night5 || null,
+    '💰Nightly Host Rate for 6 nights': rates.night6 || null,
+    '💰Nightly Host Rate for 7 nights': rates.night7 || null
+  })
+}
+
+/**
+ * Normalize database column names
+ * @pure
+ */
+const normalizeDatabaseColumns = (formData) => {
+  const normalized = {}
+  for (const [key, value] of Object.entries(formData)) {
+    if (COLUMN_NAME_NORMALIZATION_MAP[key]) {
+      normalized[COLUMN_NAME_NORMALIZATION_MAP[key]] = value
+    } else {
+      normalized[key] = value
+    }
+  }
+  return normalized
+}
+
+/**
+ * Build photo object for storage
+ * @pure
+ */
+const buildPhotoObject = (photo, index) =>
+  Object.freeze({
+    id: photo.id,
+    url: photo.url || photo.Photo,
+    Photo: photo.url || photo.Photo,
+    'Photo (thumbnail)': photo['Photo (thumbnail)'] || photo.url || photo.Photo,
+    caption: photo.caption || '',
+    displayOrder: photo.displayOrder ?? index,
+    SortOrder: photo.SortOrder ?? photo.displayOrder ?? index,
+    toggleMainPhoto: photo.toggleMainPhoto ?? (index === 0),
+    storagePath: photo.storagePath || null
+  })
+
+/**
+ * Build address JSONB object
+ * @pure
+ */
+const buildAddressObject = (address) =>
+  Object.freeze({
+    address: address.fullAddress,
+    number: address.number,
+    street: address.street,
+    lat: address.latitude,
+    lng: address.longitude,
+    validated: address.validated || false
+  })
+
+// ─────────────────────────────────────────────────────────────
+// Logging Helpers
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Log info message
+ * @effectful
+ */
+const logInfo = (message, data) => {
+  if (data !== undefined) {
+    console.log(`${LOG_PREFIX} ${message}:`, data)
+  } else {
+    console.log(`${LOG_PREFIX} ${message}`)
+  }
+}
+
+/**
+ * Log error message
+ * @effectful
+ */
+const logError = (message, error) => {
+  console.error(`${LOG_PREFIX} ${message}:`, error)
+}
+
+/**
+ * Log warning message
+ * @effectful
+ */
+const logWarning = (message, data) => {
+  if (data !== undefined) {
+    console.warn(`${LOG_PREFIX} ${message}:`, data)
+  } else {
+    console.warn(`${LOG_PREFIX} ${message}`)
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // GEO LOOKUP UTILITIES
-// ============================================================================
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Look up borough ID by zip code from reference table
+ * @effectful
  * @param {string} zipCode - The zip code to look up
  * @returns {Promise<string|null>} Borough _id or null if not found
  */
 async function getBoroughIdByZipCode(zipCode) {
-  if (!zipCode) return null;
+  if (!isValidZipCode(zipCode)) return null
 
-  const cleanZip = String(zipCode).trim().substring(0, 5);
-  if (!/^\d{5}$/.test(cleanZip)) return null;
+  const cleanZip = cleanZipCode(zipCode)
 
   try {
     const { data, error } = await supabase
@@ -33,31 +370,31 @@ async function getBoroughIdByZipCode(zipCode) {
       .select('_id, "Display Borough"')
       .contains('Zip Codes', [cleanZip])
       .limit(1)
-      .maybeSingle();
+      .maybeSingle()
 
     if (error || !data) {
-      console.log('[ListingService] No borough found for zip:', cleanZip);
-      return null;
+      logInfo('No borough found for zip', cleanZip)
+      return null
     }
 
-    console.log('[ListingService] ✅ Found borough:', data['Display Borough'], 'for zip:', cleanZip);
-    return data._id;
+    logInfo(`Found borough: ${data['Display Borough']} for zip`, cleanZip)
+    return data._id
   } catch (err) {
-    console.error('[ListingService] Error looking up borough:', err);
-    return null;
+    logError('Error looking up borough', err)
+    return null
   }
 }
 
 /**
  * Look up hood (neighborhood) ID by zip code from reference table
+ * @effectful
  * @param {string} zipCode - The zip code to look up
  * @returns {Promise<string|null>} Hood _id or null if not found
  */
 async function getHoodIdByZipCode(zipCode) {
-  if (!zipCode) return null;
+  if (!isValidZipCode(zipCode)) return null
 
-  const cleanZip = String(zipCode).trim().substring(0, 5);
-  if (!/^\d{5}$/.test(cleanZip)) return null;
+  const cleanZip = cleanZipCode(zipCode)
 
   try {
     const { data, error } = await supabase
@@ -66,36 +403,41 @@ async function getHoodIdByZipCode(zipCode) {
       .select('_id, "Display"')
       .contains('Zips', [cleanZip])
       .limit(1)
-      .maybeSingle();
+      .maybeSingle()
 
     if (error || !data) {
-      console.log('[ListingService] No hood found for zip:', cleanZip);
-      return null;
+      logInfo('No hood found for zip', cleanZip)
+      return null
     }
 
-    console.log('[ListingService] ✅ Found hood:', data['Display'], 'for zip:', cleanZip);
-    return data._id;
+    logInfo(`Found hood: ${data['Display']} for zip`, cleanZip)
+    return data._id
   } catch (err) {
-    console.error('[ListingService] Error looking up hood:', err);
-    return null;
+    logError('Error looking up hood', err)
+    return null
   }
 }
 
 /**
  * Look up both borough and hood IDs by zip code
+ * @effectful
  * @param {string} zipCode - The zip code to look up
  * @returns {Promise<{boroughId: string|null, hoodId: string|null}>}
  */
 async function getGeoIdsByZipCode(zipCode) {
-  console.log('[ListingService] Looking up geo IDs for zip:', zipCode);
+  logInfo('Looking up geo IDs for zip', zipCode)
 
   const [boroughId, hoodId] = await Promise.all([
     getBoroughIdByZipCode(zipCode),
     getHoodIdByZipCode(zipCode)
-  ]);
+  ])
 
-  return { boroughId, hoodId };
+  return { boroughId, hoodId }
 }
+
+// ─────────────────────────────────────────────────────────────
+// Public API
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Create a new listing directly in the listing table
@@ -108,89 +450,75 @@ async function getGeoIdsByZipCode(zipCode) {
  * 5. Link listing to user's Listings array using _id
  * 6. Return the complete listing
  *
+ * @effectful
  * @param {object} formData - Complete form data from SelfListingPage
  * @returns {Promise<object>} - Created listing with _id
  */
 export async function createListing(formData) {
-  console.log('[ListingService] Creating listing directly in listing table');
+  logInfo('Creating listing directly in listing table')
 
   // Get current user ID from storage
-  const storedUserId = getUserId();
-  console.log('[ListingService] Stored user ID:', storedUserId);
+  const storedUserId = getUserId()
+  logInfo('Stored user ID', storedUserId)
 
   // Resolve user._id - this is used for BOTH "Created By" AND "Host User"
   // user._id is used directly as the host reference
-  let userId = storedUserId;
-  const isSupabaseUUID = storedUserId && storedUserId.includes('-');
+  let userId = storedUserId
 
-  if (isSupabaseUUID) {
-    console.log('[ListingService] Detected Supabase Auth UUID, resolving user._id by email...');
-    const { data: { session } } = await supabase.auth.getSession();
+  if (isSupabaseUUID(storedUserId)) {
+    logInfo('Detected Supabase Auth UUID, resolving user._id by email...')
+    const { data: { session } } = await supabase.auth.getSession()
 
     if (session?.user?.email) {
       // Fetch user._id - this is all we need since user._id = host account ID
       // Note: Some users have email in 'email' column, others in 'email as text' (legacy Bubble column)
-      const { data: userData, error: userError } = await supabase
+      const { data: userData } = await supabase
         .from('user')
         .select('_id')
         .or(`email.eq.${session.user.email},email as text.eq.${session.user.email}`)
-        .maybeSingle();
+        .maybeSingle()
 
       if (userData?._id) {
-        userId = userData._id;
-        console.log('[ListingService] ✅ Resolved user._id:', userId);
+        userId = userData._id
+        logInfo('Resolved user._id', userId)
       } else {
-        console.warn('[ListingService] ⚠️ Could not resolve user data, using stored ID:', storedUserId);
+        logWarning('Could not resolve user data, using stored ID', storedUserId)
       }
     }
   }
 
-  console.log('[ListingService] User ID (for Created By and Host User):', userId);
+  logInfo('User ID (for Created By and Host User)', userId)
 
   // Step 1: Generate Bubble-compatible _id via RPC
-  const { data: generatedId, error: rpcError } = await supabase.rpc('generate_bubble_id');
+  const { data: generatedId, error: rpcError } = await supabase.rpc('generate_bubble_id')
 
   if (rpcError || !generatedId) {
-    console.error('[ListingService] ❌ Failed to generate listing ID:', rpcError);
-    throw new Error('Failed to generate listing ID');
+    logError('Failed to generate listing ID', rpcError)
+    throw new Error('Failed to generate listing ID')
   }
 
-  console.log('[ListingService] ✅ Generated listing _id:', generatedId);
+  logInfo('Generated listing _id', generatedId)
 
   // Step 2: Process photos - they should already be uploaded to Supabase Storage
   // The Section6Photos component now uploads directly, so we just format them here
-  let uploadedPhotos = [];
+  let uploadedPhotos = []
   if (formData.photos?.photos?.length > 0) {
-    console.log('[ListingService] Processing photos...');
+    logInfo('Processing photos...')
 
     // Check if photos already have Supabase URLs (uploaded during form editing)
-    const allPhotosHaveUrls = formData.photos.photos.every(
-      (p) => p.url && (p.url.startsWith('http://') || p.url.startsWith('https://'))
-    );
-
-    if (allPhotosHaveUrls) {
+    if (allPhotosHaveUrls(formData.photos.photos)) {
       // Photos are already uploaded - just format them
-      console.log('[ListingService] ✅ Photos already uploaded to storage');
-      uploadedPhotos = formData.photos.photos.map((p, i) => ({
-        id: p.id,
-        url: p.url,
-        Photo: p.url,
-        'Photo (thumbnail)': p.url,
-        storagePath: p.storagePath || null,
-        caption: p.caption || '',
-        displayOrder: p.displayOrder ?? i,
-        SortOrder: p.displayOrder ?? i,
-        toggleMainPhoto: i === 0
-      }));
+      logInfo('Photos already uploaded to storage')
+      uploadedPhotos = formData.photos.photos.map(buildPhotoObject)
     } else {
       // Legacy path: Some photos may still need uploading (shouldn't happen with new flow)
-      console.log('[ListingService] Uploading remaining photos to Supabase Storage...');
+      logInfo('Uploading remaining photos to Supabase Storage...')
       try {
-        uploadedPhotos = await uploadPhotos(formData.photos.photos, generatedId);
-        console.log('[ListingService] ✅ Photos uploaded:', uploadedPhotos.length);
+        uploadedPhotos = await uploadPhotos(formData.photos.photos, generatedId)
+        logInfo('Photos uploaded', uploadedPhotos.length)
       } catch (uploadError) {
-        console.error('[ListingService] ❌ Photo upload failed:', uploadError);
-        throw new Error('Failed to upload photos: ' + uploadError.message);
+        logError('Photo upload failed', uploadError)
+        throw new Error('Failed to upload photos: ' + uploadError.message)
       }
     }
   }
@@ -205,59 +533,69 @@ export async function createListing(formData) {
   };
 
   // Step 2b: Look up borough and hood IDs from zip code
-  const zipCode = formData.spaceSnapshot?.address?.zip;
-  let boroughId = null;
-  let hoodId = null;
+  const zipCode = formData.spaceSnapshot?.address?.zip
+  let boroughId = null
+  let hoodId = null
 
   if (zipCode) {
-    console.log('[ListingService] Looking up borough/hood for zip:', zipCode);
-    const geoIds = await getGeoIdsByZipCode(zipCode);
-    boroughId = geoIds.boroughId;
-    hoodId = geoIds.hoodId;
+    logInfo('Looking up borough/hood for zip', zipCode)
+    const geoIds = await getGeoIdsByZipCode(zipCode)
+    boroughId = geoIds.boroughId
+    hoodId = geoIds.hoodId
   }
 
   // Step 3: Map form data to listing table columns
   // Pass userId for both "Created By" and "Host User", plus geo IDs
-  const listingData = mapFormDataToListingTable(formDataWithPhotos, userId, generatedId, userId, boroughId, hoodId);
+  const listingData = mapFormDataToListingTable(formDataWithPhotos, userId, generatedId, userId, boroughId, hoodId)
 
   // Debug: Log the cancellation policy value being inserted
-  console.log('[ListingService] Cancellation Policy value to insert:', listingData['Cancellation Policy']);
-  console.log('[ListingService] Rules from form:', formDataWithPhotos.rules);
+  logInfo('Cancellation Policy value to insert', listingData['Cancellation Policy'])
+  logInfo('Rules from form', formDataWithPhotos.rules)
 
   // Step 4: Insert directly into listing table
   const { data, error } = await supabase
     .from('listing')
     .insert(listingData)
     .select()
-    .single();
+    .single()
 
   if (error) {
-    console.error('[ListingService] ❌ Error creating listing in Supabase:', error);
-    console.error('[ListingService] ❌ Full listing data that failed:', JSON.stringify(listingData, null, 2));
-    throw new Error(error.message || 'Failed to create listing');
+    logError('Error creating listing in Supabase', error)
+    logError('Full listing data that failed', JSON.stringify(listingData, null, 2))
+    throw new Error(error.message || 'Failed to create listing')
   }
 
-  console.log('[ListingService] ✅ Listing created in listing table with _id:', data._id);
+  logInfo('Listing created in listing table with _id', data._id)
 
   // Step 5: Link listing to user's Listings array using _id
   // This MUST succeed - if it fails, the user won't see their listing
   if (!userId) {
-    console.error('[ListingService] ❌ No userId provided - cannot link listing to user');
-    throw new Error('User ID is required to create a listing');
+    logError('No userId provided - cannot link listing to user')
+    throw new Error('User ID is required to create a listing')
   }
 
-  await linkListingToHost(userId, data._id);
-  console.log('[ListingService] ✅ Listing linked to user account');
+  await linkListingToHost(userId, data._id)
+  logInfo('Listing linked to user account')
 
   // NOTE: Bubble sync disabled - see /docs/tech-debt/BUBBLE_SYNC_DISABLED.md
   // The listing is now created directly in Supabase without Bubble synchronization
 
   // Step 6: Trigger mockup proposal creation for first-time hosts (non-blocking)
   triggerMockupProposalIfFirstListing(userId, data._id).catch(err => {
-    console.warn('[ListingService] ⚠️ Mockup proposal creation failed (non-blocking):', err.message);
-  });
+    logWarning('Mockup proposal creation failed (non-blocking)', err.message)
+  })
 
-  return data;
+  return data
+}
+
+/**
+ * Append listing ID to array if not already present
+ * @pure
+ */
+const appendListingId = (currentListings, listingId) => {
+  if (!currentListings) return [listingId]
+  if (currentListings.includes(listingId)) return currentListings
+  return [...currentListings, listingId]
 }
 
 /**
@@ -268,31 +606,29 @@ export async function createListing(formData) {
  * - Supabase UUID (contains dashes): Look up user by email from auth session
  * - Bubble ID (timestamp format): Direct lookup by _id
  *
+ * @effectful
  * @param {string} userId - The user's Supabase Auth UUID or Bubble _id
  * @param {string} listingId - The listing's _id (Bubble-compatible ID)
  * @returns {Promise<void>}
  */
 async function linkListingToHost(userId, listingId) {
-  console.log('[ListingService] Linking listing _id to host:', userId, listingId);
+  logInfo('Linking listing _id to host', { userId, listingId })
 
-  let userData = null;
-  let fetchError = null;
+  let userData = null
+  let fetchError = null
 
-  // Check if userId is a Supabase Auth UUID (contains dashes) or Bubble ID
-  const isSupabaseUUID = userId && userId.includes('-');
-
-  if (isSupabaseUUID) {
+  if (isSupabaseUUID(userId)) {
     // Get user email from Supabase Auth session
-    console.log('[ListingService] Detected Supabase Auth UUID, looking up user by email...');
-    const { data: { session } } = await supabase.auth.getSession();
+    logInfo('Detected Supabase Auth UUID, looking up user by email...')
+    const { data: { session } } = await supabase.auth.getSession()
 
     if (!session?.user?.email) {
-      console.error('[ListingService] ❌ No email found in auth session');
-      throw new Error('Could not retrieve user email from session');
+      logError('No email found in auth session')
+      throw new Error('Could not retrieve user email from session')
     }
 
-    const userEmail = session.user.email;
-    console.log('[ListingService] Looking up user by email:', userEmail);
+    const userEmail = session.user.email
+    logInfo('Looking up user by email', userEmail)
 
     // Look up user by email in public.user table
     // Note: Some users have email in 'email' column, others in 'email as text' (legacy Bubble column)
@@ -300,54 +636,72 @@ async function linkListingToHost(userId, listingId) {
       .from('user')
       .select('_id, Listings')
       .or(`email.eq.${userEmail},email as text.eq.${userEmail}`)
-      .maybeSingle();
+      .maybeSingle()
 
-    userData = result.data;
-    fetchError = result.error;
+    userData = result.data
+    fetchError = result.error
   } else {
     // Legacy path: Direct lookup by Bubble _id
-    console.log('[ListingService] Using Bubble ID for user lookup');
+    logInfo('Using Bubble ID for user lookup')
     const result = await supabase
       .from('user')
       .select('_id, Listings')
       .eq('_id', userId)
-      .maybeSingle();
+      .maybeSingle()
 
-    userData = result.data;
-    fetchError = result.error;
+    userData = result.data
+    fetchError = result.error
   }
 
   if (fetchError) {
-    console.error('[ListingService] ❌ Error fetching user:', fetchError);
-    throw fetchError;
+    logError('Error fetching user', fetchError)
+    throw fetchError
   }
 
   if (!userData) {
-    console.error('[ListingService] ❌ No user found for userId:', userId);
-    throw new Error(`User not found: ${userId}`);
+    logError('No user found for userId', userId)
+    throw new Error(`User not found: ${userId}`)
   }
 
-  console.log('[ListingService] ✅ Found user with Bubble _id:', userData._id);
+  logInfo('Found user with Bubble _id', userData._id)
 
-  // Add the new listing ID to the array
-  const currentListings = userData.Listings || [];
-  if (!currentListings.includes(listingId)) {
-    currentListings.push(listingId);
-  }
+  // Add the new listing ID to the array (pure operation)
+  const updatedListings = appendListingId(userData.Listings, listingId)
 
   // Update the user with the new Listings array
   const { error: updateError } = await supabase
     .from('user')
-    .update({ Listings: currentListings })
-    .eq('_id', userData._id);
+    .update({ Listings: updatedListings })
+    .eq('_id', userData._id)
 
   if (updateError) {
-    console.error('[ListingService] ❌ Error updating user Listings:', updateError);
-    throw updateError;
+    logError('Error updating user Listings', updateError)
+    throw updateError
   }
 
-  console.log('[ListingService] ✅ user Listings updated:', currentListings);
+  logInfo('User Listings updated', updatedListings)
 }
+
+/**
+ * Check if this is the user's first listing
+ * @pure
+ */
+const isFirstListing = (listings) =>
+  Array.isArray(listings) && listings.length === 1
+
+/**
+ * Build mockup proposal request payload
+ * @pure
+ */
+const buildMockupProposalPayload = (listingId, hostUserId, hostEmail) =>
+  Object.freeze({
+    action: 'createMockupProposal',
+    payload: Object.freeze({
+      listingId,
+      hostUserId,
+      hostEmail,
+    }),
+  })
 
 /**
  * Trigger mockup proposal creation for first-time hosts
@@ -359,227 +713,99 @@ async function linkListingToHost(userId, listingId) {
  * - Supabase Auth UUID (contains dashes): Lookup by email from auth session
  * - Bubble ID (timestamp format): Direct lookup by _id
  *
+ * @effectful
  * @param {string} userId - The user's Supabase Auth UUID or Bubble _id
  * @param {string} listingId - The newly created listing's _id
  * @returns {Promise<void>}
  */
 async function triggerMockupProposalIfFirstListing(userId, listingId) {
-  console.log('[ListingService] Step 6: Checking if first listing for mockup proposal...');
+  logInfo('Step 6: Checking if first listing for mockup proposal...')
 
-  let userData = null;
-  let fetchError = null;
+  let userData = null
+  let fetchError = null
 
-  // Check if userId is a Supabase Auth UUID (contains dashes) or Bubble ID
-  const isSupabaseUUID = userId && userId.includes('-');
-
-  if (isSupabaseUUID) {
+  if (isSupabaseUUID(userId)) {
     // Get user email from Supabase Auth session
-    console.log('[ListingService] Detected Supabase Auth UUID, looking up user by email...');
-    const { data: { session } } = await supabase.auth.getSession();
+    logInfo('Detected Supabase Auth UUID, looking up user by email...')
+    const { data: { session } } = await supabase.auth.getSession()
 
     if (!session?.user?.email) {
-      console.warn('[ListingService] ⚠️ No email found in auth session for mockup proposal check');
-      return;
+      logWarning('No email found in auth session for mockup proposal check')
+      return
     }
 
-    const sessionEmail = session.user.email;
-    console.log('[ListingService] Looking up user by email for mockup check:', sessionEmail);
+    const sessionEmail = session.user.email
+    logInfo('Looking up user by email for mockup check', sessionEmail)
 
     // Look up user by email in public.user table
     const result = await supabase
       .from('user')
       .select('_id, email, Listings')
       .or(`email.eq.${sessionEmail},email as text.eq.${sessionEmail}`)
-      .maybeSingle();
+      .maybeSingle()
 
-    userData = result.data;
-    fetchError = result.error;
+    userData = result.data
+    fetchError = result.error
   } else {
     // Legacy path: Direct lookup by Bubble _id
-    console.log('[ListingService] Using Bubble ID for mockup proposal user lookup');
+    logInfo('Using Bubble ID for mockup proposal user lookup')
     const result = await supabase
       .from('user')
       .select('_id, email, Listings')
       .eq('_id', userId)
-      .maybeSingle();
+      .maybeSingle()
 
-    userData = result.data;
-    fetchError = result.error;
+    userData = result.data
+    fetchError = result.error
   }
 
   if (fetchError || !userData) {
-    console.warn('[ListingService] ⚠️ Could not fetch user for mockup proposal check:', fetchError?.message);
-    return;
+    logWarning('Could not fetch user for mockup proposal check', fetchError?.message)
+    return
   }
 
-  console.log('[ListingService] ✅ Found user for mockup check with Bubble _id:', userData._id);
+  logInfo('Found user for mockup check with Bubble _id', userData._id)
 
-  const listings = userData.Listings || [];
-  const userEmail = userData.email;
+  const listings = userData.Listings || []
+  const userEmail = userData.email
 
   // Only create mockup proposal for first listing
-  if (listings.length !== 1) {
-    console.log(`[ListingService] ⏭️ Skipping mockup proposal - not first listing (count: ${listings.length})`);
-    return;
+  if (!isFirstListing(listings)) {
+    logInfo(`Skipping mockup proposal - not first listing (count: ${listings.length})`)
+    return
   }
 
   if (!userEmail) {
-    console.warn('[ListingService] ⚠️ Missing email for mockup proposal');
-    return;
+    logWarning('Missing email for mockup proposal')
+    return
   }
 
-  console.log('[ListingService] 🎯 First listing detected, triggering mockup proposal creation...');
+  logInfo('First listing detected, triggering mockup proposal creation...')
 
   // Get the Supabase URL from environment or config
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 
   // Call the listing edge function with createMockupProposal action
   // IMPORTANT: Use userData._id (Bubble-compatible ID), not userId (may be Supabase UUID)
+  const requestPayload = buildMockupProposalPayload(listingId, userData._id, userEmail)
+
   const response = await fetch(`${supabaseUrl}/functions/v1/listing`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      action: 'createMockupProposal',
-      payload: {
-        listingId: listingId,
-        hostUserId: userData._id,
-        hostEmail: userEmail,
-      },
-    }),
-  });
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestPayload),
+  })
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`Edge function returned ${response.status}: ${errorText}`);
+    const errorText = await response.text()
+    throw new Error(`Edge function returned ${response.status}: ${errorText}`)
   }
 
-  const result = await response.json();
-  console.log('[ListingService] ✅ Mockup proposal creation triggered:', result);
+  const result = await response.json()
+  logInfo('Mockup proposal creation triggered', result)
 }
 
-/**
- * Map cancellation policy display name to its database FK ID
- * The 'Cancellation Policy' column has a foreign key constraint to reference_table.zat_features_cancellationpolicy
- *
- * @param {string|null} policyName - Human-readable policy name (e.g., 'Standard')
- * @returns {string|null} - The FK ID for the policy, or null if not found
- */
-function mapCancellationPolicyToId(policyName) {
-  const policyMap = {
-    'Standard': '1665431440883x653177548350901500',
-    'Additional Host Restrictions': '1665431684611x656977293321267800',
-    'Prior to First-Time Arrival': '1599791792265x281203802121463780',
-    'After First-Time Arrival': '1599791785559x603327510287017500',
-  };
-
-  const result = !policyName ? policyMap['Standard'] : (policyMap[policyName] || policyMap['Standard']);
-  console.log('[ListingService] Cancellation policy mapping:', { input: policyName, output: result });
-  return result;
-}
-
-/**
- * Map parking type display name to its database FK ID
- * The 'Features - Parking type' column has a foreign key constraint to reference_table.zat_features_parkingoptions
- *
- * @param {string|null} parkingType - Human-readable parking type (e.g., 'Street Parking')
- * @returns {string|null} - The FK ID for the parking type, or null if not provided
- */
-function mapParkingTypeToId(parkingType) {
-  const parkingMap = {
-    'Street Parking': '1642428637379x970678957586007000',
-    'No Parking': '1642428658755x946399373738815900',
-    'Off-Street Parking': '1642428710705x523449235750343100',
-    'Attached Garage': '1642428740411x489476808574605760',
-    'Detached Garage': '1642428749714x405527148800546750',
-    'Nearby Parking Structure': '1642428759346x972313924643388700',
-  };
-
-  if (!parkingType) return null; // Parking type is optional
-  const result = parkingMap[parkingType] || null;
-  console.log('[ListingService] Parking type mapping:', { input: parkingType, output: result });
-  return result;
-}
-
-/**
- * Map listing type (Type of Space) display name to its database FK ID
- * The 'Features - Type of Space' column has a foreign key constraint to reference_table.zat_features_listingtype
- *
- * @param {string|null} spaceType - Human-readable space type (e.g., 'Private Room')
- * @returns {string|null} - The FK ID for the space type, or null if not provided
- */
-function mapSpaceTypeToId(spaceType) {
-  const spaceTypeMap = {
-    'Private Room': '1569530159044x216130979074711000',
-    'Entire Place': '1569530331984x152755544104023800',
-    'Shared Room': '1585742011301x719941865479153400',
-    'All Spaces': '1588063597111x228486447854442800',
-  };
-
-  if (!spaceType) return null; // Space type is optional
-  const result = spaceTypeMap[spaceType] || null;
-  console.log('[ListingService] Space type mapping:', { input: spaceType, output: result });
-  return result;
-}
-
-/**
- * Map storage option display name to its database FK ID
- * The 'Features - Secure Storage Option' column has a foreign key constraint to reference_table.zat_features_storageoptions
- *
- * @param {string|null} storageOption - Human-readable storage option (e.g., 'In the room')
- * @returns {string|null} - The FK ID for the storage option, or null if not provided
- */
-function mapStorageOptionToId(storageOption) {
-  const storageMap = {
-    'In the room': '1606866759190x694414586166435100',
-    'In a locked closet': '1606866790336x155474305631091200',
-    'In a suitcase': '1606866843299x274753427318384030',
-  };
-
-  if (!storageOption) return null; // Storage option is optional
-  const result = storageMap[storageOption] || null;
-  console.log('[ListingService] Storage option mapping:', { input: storageOption, output: result });
-  return result;
-}
-
-/**
- * Map state abbreviation to full state name for FK constraint
- * The 'Location - State' column has a FK to reference_table.os_us_states.display
- * which expects full state names like "New York", not abbreviations like "NY"
- *
- * @param {string|null} stateInput - State abbreviation (e.g., 'NY') or full name
- * @returns {string|null} - Full state name for FK, or null if not provided
- */
-function mapStateToDisplayName(stateInput) {
-  if (!stateInput) return null;
-
-  // If it's already a full state name (more than 2 chars), return as-is
-  if (stateInput.length > 2) {
-    return stateInput;
-  }
-
-  // Map of state abbreviations to full display names
-  const stateAbbreviationMap = {
-    'AL': 'Alabama', 'AK': 'Alaska', 'AZ': 'Arizona', 'AR': 'Arkansas',
-    'CA': 'California', 'CO': 'Colorado', 'CT': 'Connecticut', 'DE': 'Delaware',
-    'FL': 'Florida', 'GA': 'Georgia', 'HI': 'Hawaii', 'ID': 'Idaho',
-    'IL': 'Illinois', 'IN': 'Indiana', 'IA': 'Iowa', 'KS': 'Kansas',
-    'KY': 'Kentucky', 'LA': 'Louisiana', 'ME': 'Maine', 'MD': 'Maryland',
-    'MA': 'Massachusetts', 'MI': 'Michigan', 'MN': 'Minnesota', 'MS': 'Mississippi',
-    'MO': 'Missouri', 'MT': 'Montana', 'NE': 'Nebraska', 'NV': 'Nevada',
-    'NH': 'New Hampshire', 'NJ': 'New Jersey', 'NM': 'New Mexico', 'NY': 'New York',
-    'NC': 'North Carolina', 'ND': 'North Dakota', 'OH': 'Ohio', 'OK': 'Oklahoma',
-    'OR': 'Oregon', 'PA': 'Pennsylvania', 'RI': 'Rhode Island', 'SC': 'South Carolina',
-    'SD': 'South Dakota', 'TN': 'Tennessee', 'TX': 'Texas', 'UT': 'Utah',
-    'VT': 'Vermont', 'VA': 'Virginia', 'WA': 'Washington', 'WV': 'West Virginia',
-    'WI': 'Wisconsin', 'WY': 'Wyoming', 'DC': 'District of Columbia',
-  };
-
-  const result = stateAbbreviationMap[stateInput.toUpperCase()] || stateInput;
-  console.log('[ListingService] State mapping:', { input: stateInput, output: result });
-  return result;
-}
+// NOTE: Mapping functions (mapCancellationPolicyToId, mapParkingTypeToId, mapSpaceTypeToId,
+// mapStorageOptionToId, mapStateToDisplayName) are defined above in the Pure Mapping Functions section
 
 /**
  * Map SelfListingPage form data to listing table columns
@@ -741,36 +967,7 @@ function mapFormDataToListingTable(formData, userId, generatedId, hostAccountId 
   };
 }
 
-/**
- * Map available nights object to array of day name strings
- * Used for 'Nights Available (List of Nights)' column
- *
- * @param {object} availableNights - {sunday: bool, monday: bool, ...}
- * @returns {string[]} - Array of day names like ["Monday", "Tuesday", ...]
- */
-function mapAvailableNightsToNames(availableNights) {
-  const dayNameMapping = {
-    sunday: 'Sunday',
-    monday: 'Monday',
-    tuesday: 'Tuesday',
-    wednesday: 'Wednesday',
-    thursday: 'Thursday',
-    friday: 'Friday',
-    saturday: 'Saturday',
-  };
-
-  const result = [];
-  // Maintain proper day order
-  const dayOrder = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-
-  for (const day of dayOrder) {
-    if (availableNights[day] && dayNameMapping[day]) {
-      result.push(dayNameMapping[day]);
-    }
-  }
-
-  return result;
-}
+// NOTE: mapAvailableNightsToNames is defined above in the Pure Mapping Functions section
 
 // ============================================================================
 // DISABLED FUNCTIONS - Moved to tech-debt
@@ -778,50 +975,53 @@ function mapAvailableNightsToNames(availableNights) {
 // ============================================================================
 
 /**
+ * Add modified date timestamp to listing data
+ * @pure
+ */
+const addModifiedTimestamp = (listingData) => ({
+  ...listingData,
+  'Modified Date': new Date().toISOString()
+})
+
+/**
  * Update an existing listing in listing table
+ * @effectful
  * @param {string} listingId - The listing's _id (Bubble-compatible ID)
  * @param {object} formData - Updated form data (can be flat DB columns or nested SelfListingPage format)
  * @returns {Promise<object>} - Updated listing
  */
 export async function updateListing(listingId, formData) {
-  console.log('[ListingService] Updating listing:', listingId);
+  logInfo('Updating listing', listingId)
 
   if (!listingId) {
-    throw new Error('Listing ID is required for update');
+    throw new Error('Listing ID is required for update')
   }
 
-  // Check if formData is already in flat database column format
-  // (e.g., from EditListingDetails which uses DB column names directly)
-  const isFlatDbFormat = isFlatDatabaseFormat(formData);
+  // Transform data based on format (pure operations)
+  const rawListingData = isFlatDatabaseFormat(formData)
+    ? normalizeDatabaseColumns(formData)
+    : mapFormDataToListingTableForUpdate(formData)
 
-  let listingData;
-  if (isFlatDbFormat) {
-    // Already using database column names - normalize special columns
-    listingData = normalizeDatabaseColumns(formData);
-    console.log('[ListingService] Using flat DB format update');
-  } else {
-    // Nested SelfListingPage format - needs mapping
-    // Note: For updates, we use the existing _id, not generate a new one
-    listingData = mapFormDataToListingTableForUpdate(formData);
-    console.log('[ListingService] Using mapped SelfListingPage format');
-  }
+  logInfo(isFlatDatabaseFormat(formData)
+    ? 'Using flat DB format update'
+    : 'Using mapped SelfListingPage format')
 
-  listingData['Modified Date'] = new Date().toISOString();
+  const listingData = addModifiedTimestamp(rawListingData)
 
   const { data, error } = await supabase
     .from('listing')
     .update(listingData)
     .eq('_id', listingId)
     .select()
-    .single();
+    .single()
 
   if (error) {
-    console.error('[ListingService] ❌ Error updating listing:', error);
-    throw new Error(error.message || 'Failed to update listing');
+    logError('Error updating listing', error)
+    throw new Error(error.message || 'Failed to update listing')
   }
 
-  console.log('[ListingService] ✅ Listing updated:', data._id);
-  return data;
+  logInfo('Listing updated', data._id)
+  return data
 }
 
 /**
@@ -938,295 +1138,108 @@ function mapFormDataToListingTableForUpdate(formData) {
   return updateData;
 }
 
-/**
- * Check if formData uses flat database column names
- * @param {object} formData - Form data to check
- * @returns {boolean} - True if using flat DB column format
- */
-function isFlatDatabaseFormat(formData) {
-  // Database column names have specific patterns
-  const dbColumnPatterns = [
-    'Name',
-    'Description',
-    'Features - ',
-    'Location - ',
-    'Description - ',
-    'Kitchen Type',
-    'Cancellation Policy',
-    'First Available'
-  ];
-
-  const keys = Object.keys(formData);
-  return keys.some(key =>
-    dbColumnPatterns.some(pattern => key === pattern || key.startsWith(pattern))
-  );
-}
+// NOTE: isFlatDatabaseFormat and normalizeDatabaseColumns are defined above in the Pure Mapping Functions section
 
 /**
- * Normalize database column names to handle quirks like leading/trailing spaces
- * Some Bubble-synced columns have unusual names that must be preserved exactly
- * @param {object} formData - Form data with database column names
- * @returns {object} - Normalized data ready for database update
+ * Check if error is a "not found" PostgreSQL error
+ * @pure
  */
-function normalizeDatabaseColumns(formData) {
-  // Map of common field names to their actual database column names
-  // (handles leading/trailing spaces from Bubble sync)
-  const columnNameMap = {
-    'First Available': ' First Available', // DB column has leading space
-    'Nights Available (List of Nights)': 'Nights Available (List of Nights) ', // DB column has trailing space
-    'Not Found - Location - Address': 'Not Found - Location - Address ' // DB column has trailing space
-  };
-
-  const normalized = {};
-
-  for (const [key, value] of Object.entries(formData)) {
-    // Check if this key needs to be remapped
-    if (columnNameMap[key]) {
-      normalized[columnNameMap[key]] = value;
-    } else {
-      normalized[key] = value;
-    }
-  }
-
-  return normalized;
-}
+const isNotFoundError = (error) =>
+  error?.code === 'PGRST116'
 
 /**
  * Get a listing by _id from listing table
+ * @effectful
  * @param {string} listingId - The listing's _id (Bubble-compatible ID)
  * @returns {Promise<object|null>} - Listing data or null if not found
  */
 export async function getListingById(listingId) {
-  console.log('[ListingService] Fetching listing:', listingId);
+  logInfo('Fetching listing', listingId)
 
   if (!listingId) {
-    throw new Error('Listing ID is required');
+    throw new Error('Listing ID is required')
   }
 
   const { data, error } = await supabase
     .from('listing')
     .select('*')
     .eq('_id', listingId)
-    .single();
+    .single()
 
   if (error) {
-    if (error.code === 'PGRST116') {
-      // No rows returned
-      console.log('[ListingService] Listing not found:', listingId);
-      return null;
+    if (isNotFoundError(error)) {
+      logInfo('Listing not found', listingId)
+      return null
     }
-    console.error('[ListingService] ❌ Error fetching listing:', error);
-    throw new Error(error.message || 'Failed to fetch listing');
+    logError('Error fetching listing', error)
+    throw new Error(error.message || 'Failed to fetch listing')
   }
 
   // Check if listing is soft-deleted
-  if (data && data.Deleted === true) {
-    console.log('[ListingService] Listing is soft-deleted:', listingId);
-    return null;
+  if (isDeleted(data)) {
+    logInfo('Listing is soft-deleted', listingId)
+    return null
   }
 
-  console.log('[ListingService] ✅ Listing fetched:', data._id);
-  return data;
+  logInfo('Listing fetched', data._id)
+  return data
 }
+
+/**
+ * Create draft form data by merging with isDraft flag
+ * @pure
+ */
+const createDraftFormData = (formData) => ({
+  ...formData,
+  isDraft: true
+})
 
 /**
  * Save a draft listing
  * Note: Drafts are now primarily saved to localStorage via the store.
  * This function creates/updates a listing in the database if needed.
  *
+ * @effectful
  * @param {object} formData - Form data to save as draft
  * @param {string|null} existingId - Existing listing _id if updating
  * @returns {Promise<object>} - Saved listing
  */
 export async function saveDraft(formData, existingId = null) {
-  console.log('[ListingService] Saving draft, existingId:', existingId);
+  logInfo('Saving draft, existingId', existingId)
 
-  if (existingId) {
-    return updateListing(existingId, { ...formData, isDraft: true });
-  }
+  const draftFormData = createDraftFormData(formData)
 
-  return createListing({ ...formData, isDraft: true });
+  return existingId
+    ? updateListing(existingId, draftFormData)
+    : createListing(draftFormData)
 }
 
 // ============================================================================
-// HELPER FUNCTIONS
+// DATABASE → FORM DATA MAPPING
+// NOTE: mapAvailableNightsToArray and mapNightlyRatesToColumns are defined
+// above in the Pure Mapping Functions section
 // ============================================================================
 
 /**
- * Map available nights object to array of day numbers for database
- *
- * Day indices use JavaScript's 0-based standard (matching Date.getDay()):
- * 0=Sunday, 1=Monday, 2=Tuesday, 3=Wednesday, 4=Thursday, 5=Friday, 6=Saturday
- *
- * @param {object} availableNights - {sunday: bool, monday: bool, ...}
- * @returns {number[]} - Array of 0-based day numbers (0-6)
+ * Map for converting 1-based day numbers back to day names
+ * @constant
  */
-function mapAvailableNightsToArray(availableNights) {
-  const dayMapping = {
-    sunday: 0,
-    monday: 1,
-    tuesday: 2,
-    wednesday: 3,
-    thursday: 4,
-    friday: 5,
-    saturday: 6,
-  };
-
-  const result = [];
-  for (const [day, isSelected] of Object.entries(availableNights)) {
-    if (isSelected && dayMapping[day] !== undefined) {
-      result.push(dayMapping[day]);
-    }
-  }
-
-  return result.sort((a, b) => a - b);
-}
+const DAY_NUMBER_TO_NAME_MAP = Object.freeze({
+  1: 'sunday',
+  2: 'monday',
+  3: 'tuesday',
+  4: 'wednesday',
+  5: 'thursday',
+  6: 'friday',
+  7: 'saturday',
+})
 
 /**
- * Map nightly pricing object to individual rate columns
- * Used for search/filtering on price fields
- *
- * @param {object|null} nightlyPricing - Pricing object with calculatedRates
- * @returns {object} - Individual rate columns
+ * Default available nights object (all false)
+ * @pure
  */
-function mapNightlyRatesToColumns(nightlyPricing) {
-  if (!nightlyPricing?.calculatedRates) {
-    return {};
-  }
-
-  const rates = nightlyPricing.calculatedRates;
-
-  return {
-    '💰Nightly Host Rate for 1 night': rates.night1 || null,
-    '💰Nightly Host Rate for 2 nights': rates.night2 || null,
-    '💰Nightly Host Rate for 3 nights': rates.night3 || null,
-    '💰Nightly Host Rate for 4 nights': rates.night4 || null,
-    '💰Nightly Host Rate for 5 nights': rates.night5 || null,
-    '💰Nightly Host Rate for 6 nights': rates.night6 || null,
-    '💰Nightly Host Rate for 7 nights': rates.night7 || null,
-  };
-}
-
-/**
- * Map database record back to form data structure
- * Used when loading an existing listing for editing
- *
- * @param {object} dbRecord - Database record from listing table
- * @returns {object} - Form data structure for SelfListingPage
- */
-export function mapDatabaseToFormData(dbRecord) {
-  if (!dbRecord) return null;
-
-  const address = dbRecord['Location - Address'] || {};
-  const coordinates = dbRecord['Location - Coordinates'] || {};
-  const formMetadata = dbRecord.form_metadata || {};
-
-  return {
-    id: dbRecord.id,
-    spaceSnapshot: {
-      listingName: dbRecord.Name || '',
-      typeOfSpace: dbRecord['Features - Type of Space'] || '',
-      bedrooms: dbRecord['Features - Qty Bedrooms'] || 2,
-      beds: dbRecord['Features - Qty Beds'] || 2,
-      bathrooms: dbRecord['Features - Qty Bathrooms'] || 2.5,
-      typeOfKitchen: dbRecord['Kitchen Type'] || '',
-      typeOfParking: dbRecord['Features - Parking type'] || '',
-      address: {
-        fullAddress: address.address || '',
-        number: address.number || '',
-        street: address.street || '',
-        city: dbRecord['Location - City'] || '',
-        state: dbRecord['Location - State'] || '',
-        zip: dbRecord['Location - Zip Code'] || '',
-        neighborhood: dbRecord['neighborhood (manual input by user)'] || '',
-        latitude: coordinates.lat || address.lat || null,
-        longitude: coordinates.lng || address.lng || null,
-        validated: dbRecord.address_validated || false,
-      },
-    },
-    features: {
-      amenitiesInsideUnit: dbRecord['Features - Amenities In-Unit'] || [],
-      amenitiesOutsideUnit: dbRecord['Features - Amenities In-Building'] || [],
-      descriptionOfLodging: dbRecord.Description || '',
-      neighborhoodDescription: dbRecord['Description - Neighborhood'] || '',
-    },
-    leaseStyles: {
-      rentalType: dbRecord['rental type'] || 'Monthly',
-      availableNights: mapArrayToAvailableNights(
-        dbRecord['Days Available (List of Days)']
-      ),
-      weeklyPattern: dbRecord.weekly_pattern || '',
-      subsidyAgreement: dbRecord.subsidy_agreement || false,
-    },
-    pricing: {
-      damageDeposit: dbRecord['💰Damage Deposit'] || 500,
-      maintenanceFee: dbRecord['💰Cleaning Cost / Maintenance Fee'] || 0,
-      weeklyCompensation: dbRecord['💰Weekly Host Rate'] || null,
-      monthlyCompensation: dbRecord['💰Monthly Host Rate'] || null,
-      nightlyPricing: dbRecord.nightly_pricing || null,
-    },
-    rules: {
-      cancellationPolicy: dbRecord['Cancellation Policy'] || '',
-      preferredGender: dbRecord['Preferred Gender'] || 'No Preference',
-      numberOfGuests: dbRecord['Features - Qty Guests'] || 2,
-      checkInTime: dbRecord['NEW Date Check-in Time'] || '2:00 PM',
-      checkOutTime: dbRecord['NEW Date Check-out Time'] || '11:00 AM',
-      idealMinDuration: dbRecord.ideal_min_duration || 2,
-      idealMaxDuration: dbRecord.ideal_max_duration || 6,
-      houseRules: dbRecord['Features - House Rules'] || [],
-      blockedDates: dbRecord['Dates - Blocked'] || [],
-    },
-    photos: {
-      photos: (dbRecord['Features - Photos'] || []).map((p, index) => ({
-        id: p.id,
-        url: p.url || p.Photo,
-        Photo: p.Photo || p.url,
-        'Photo (thumbnail)': p['Photo (thumbnail)'] || p.url || p.Photo,
-        caption: p.caption || '',
-        displayOrder: p.displayOrder ?? index,
-        SortOrder: p.SortOrder ?? p.displayOrder ?? index,
-        toggleMainPhoto: p.toggleMainPhoto ?? (index === 0),
-        storagePath: p.storagePath || null
-      })),
-      minRequired: 3,
-    },
-    review: {
-      safetyFeatures: dbRecord['Features - Safety'] || [],
-      squareFootage: dbRecord['Features - SQFT Area'] || null,
-      firstDayAvailable: dbRecord[' First Available'] || '',
-      agreedToTerms: dbRecord.agreed_to_terms || false,
-      optionalNotes: dbRecord.optional_notes || '',
-      previousReviewsLink: dbRecord.previous_reviews_link || '',
-    },
-    currentSection: formMetadata.currentSection || 1,
-    completedSections: formMetadata.completedSections || [],
-    isDraft: formMetadata.isDraft !== false,
-    isSubmitted: formMetadata.isSubmitted || false,
-
-    // V2 fields
-    hostType: dbRecord.host_type || null,
-    marketStrategy: dbRecord.market_strategy || 'private',
-  };
-}
-
-/**
- * Map array of 1-based day numbers to available nights object
- *
- * @param {number[]} daysArray - Array of 1-based day numbers
- * @returns {object} - {sunday: bool, monday: bool, ...}
- */
-function mapArrayToAvailableNights(daysArray) {
-  const dayMapping = {
-    1: 'sunday',
-    2: 'monday',
-    3: 'tuesday',
-    4: 'wednesday',
-    5: 'thursday',
-    6: 'friday',
-    7: 'saturday',
-  };
-
-  const result = {
+const createDefaultAvailableNights = () =>
+  Object.freeze({
     sunday: false,
     monday: false,
     tuesday: false,
@@ -1234,16 +1247,221 @@ function mapArrayToAvailableNights(daysArray) {
     thursday: false,
     friday: false,
     saturday: false,
-  };
+  })
 
-  if (Array.isArray(daysArray)) {
-    for (const dayNum of daysArray) {
-      const dayName = dayMapping[dayNum];
-      if (dayName) {
-        result[dayName] = true;
-      }
+/**
+ * Map array of 1-based day numbers to available nights object
+ * @pure
+ * @param {number[]} daysArray - Array of 1-based day numbers
+ * @returns {object} - {sunday: bool, monday: bool, ...}
+ */
+const mapArrayToAvailableNights = (daysArray) => {
+  const defaults = createDefaultAvailableNights()
+
+  if (!Array.isArray(daysArray)) return defaults
+
+  const result = { ...defaults }
+  for (const dayNum of daysArray) {
+    const dayName = DAY_NUMBER_TO_NAME_MAP[dayNum]
+    if (dayName) {
+      result[dayName] = true
     }
   }
 
-  return result;
+  return Object.freeze(result)
 }
+
+/**
+ * Build space snapshot section from database record
+ * @pure
+ */
+const buildSpaceSnapshotFromDb = (dbRecord) => {
+  const address = dbRecord['Location - Address'] || {}
+  const coordinates = dbRecord['Location - Coordinates'] || {}
+
+  return Object.freeze({
+    listingName: dbRecord.Name || '',
+    typeOfSpace: dbRecord['Features - Type of Space'] || '',
+    bedrooms: dbRecord['Features - Qty Bedrooms'] || 2,
+    beds: dbRecord['Features - Qty Beds'] || 2,
+    bathrooms: dbRecord['Features - Qty Bathrooms'] || 2.5,
+    typeOfKitchen: dbRecord['Kitchen Type'] || '',
+    typeOfParking: dbRecord['Features - Parking type'] || '',
+    address: Object.freeze({
+      fullAddress: address.address || '',
+      number: address.number || '',
+      street: address.street || '',
+      city: dbRecord['Location - City'] || '',
+      state: dbRecord['Location - State'] || '',
+      zip: dbRecord['Location - Zip Code'] || '',
+      neighborhood: dbRecord['neighborhood (manual input by user)'] || '',
+      latitude: coordinates.lat || address.lat || null,
+      longitude: coordinates.lng || address.lng || null,
+      validated: dbRecord.address_validated || false,
+    }),
+  })
+}
+
+/**
+ * Build features section from database record
+ * @pure
+ */
+const buildFeaturesFromDb = (dbRecord) =>
+  Object.freeze({
+    amenitiesInsideUnit: dbRecord['Features - Amenities In-Unit'] || [],
+    amenitiesOutsideUnit: dbRecord['Features - Amenities In-Building'] || [],
+    descriptionOfLodging: dbRecord.Description || '',
+    neighborhoodDescription: dbRecord['Description - Neighborhood'] || '',
+  })
+
+/**
+ * Build lease styles section from database record
+ * @pure
+ */
+const buildLeaseStylesFromDb = (dbRecord) =>
+  Object.freeze({
+    rentalType: dbRecord['rental type'] || DEFAULT_VALUES.RENTAL_TYPE,
+    availableNights: mapArrayToAvailableNights(dbRecord['Days Available (List of Days)']),
+    weeklyPattern: dbRecord.weekly_pattern || '',
+    subsidyAgreement: dbRecord.subsidy_agreement || false,
+  })
+
+/**
+ * Build pricing section from database record
+ * @pure
+ */
+const buildPricingFromDb = (dbRecord) =>
+  Object.freeze({
+    damageDeposit: dbRecord['💰Damage Deposit'] || 500,
+    maintenanceFee: dbRecord['💰Cleaning Cost / Maintenance Fee'] || 0,
+    weeklyCompensation: dbRecord['💰Weekly Host Rate'] || null,
+    monthlyCompensation: dbRecord['💰Monthly Host Rate'] || null,
+    nightlyPricing: dbRecord.nightly_pricing || null,
+  })
+
+/**
+ * Build rules section from database record
+ * @pure
+ */
+const buildRulesFromDb = (dbRecord) =>
+  Object.freeze({
+    cancellationPolicy: dbRecord['Cancellation Policy'] || '',
+    preferredGender: dbRecord['Preferred Gender'] || DEFAULT_VALUES.PREFERRED_GENDER,
+    numberOfGuests: dbRecord['Features - Qty Guests'] || DEFAULT_VALUES.NUMBER_OF_GUESTS,
+    checkInTime: dbRecord['NEW Date Check-in Time'] || DEFAULT_VALUES.CHECK_IN_TIME,
+    checkOutTime: dbRecord['NEW Date Check-out Time'] || DEFAULT_VALUES.CHECK_OUT_TIME,
+    idealMinDuration: dbRecord.ideal_min_duration || 2,
+    idealMaxDuration: dbRecord.ideal_max_duration || 6,
+    houseRules: dbRecord['Features - House Rules'] || [],
+    blockedDates: dbRecord['Dates - Blocked'] || [],
+  })
+
+/**
+ * Build photos section from database record
+ * @pure
+ */
+const buildPhotosFromDb = (dbRecord) =>
+  Object.freeze({
+    photos: (dbRecord['Features - Photos'] || []).map(buildPhotoObject),
+    minRequired: 3,
+  })
+
+/**
+ * Build review section from database record
+ * @pure
+ */
+const buildReviewFromDb = (dbRecord) =>
+  Object.freeze({
+    safetyFeatures: dbRecord['Features - Safety'] || [],
+    squareFootage: dbRecord['Features - SQFT Area'] || null,
+    firstDayAvailable: dbRecord[' First Available'] || '',
+    agreedToTerms: dbRecord.agreed_to_terms || false,
+    optionalNotes: dbRecord.optional_notes || '',
+    previousReviewsLink: dbRecord.previous_reviews_link || '',
+  })
+
+/**
+ * Map database record back to form data structure
+ * Used when loading an existing listing for editing
+ * @pure
+ * @param {object} dbRecord - Database record from listing table
+ * @returns {object|null} - Form data structure for SelfListingPage
+ */
+export function mapDatabaseToFormData(dbRecord) {
+  if (!dbRecord) return null
+
+  const formMetadata = dbRecord.form_metadata || {}
+
+  return Object.freeze({
+    id: dbRecord.id,
+    spaceSnapshot: buildSpaceSnapshotFromDb(dbRecord),
+    features: buildFeaturesFromDb(dbRecord),
+    leaseStyles: buildLeaseStylesFromDb(dbRecord),
+    pricing: buildPricingFromDb(dbRecord),
+    rules: buildRulesFromDb(dbRecord),
+    photos: buildPhotosFromDb(dbRecord),
+    review: buildReviewFromDb(dbRecord),
+    currentSection: formMetadata.currentSection || 1,
+    completedSections: formMetadata.completedSections || [],
+    isDraft: formMetadata.isDraft !== false,
+    isSubmitted: formMetadata.isSubmitted || false,
+    hostType: dbRecord.host_type || null,
+    marketStrategy: dbRecord.market_strategy || DEFAULT_VALUES.MARKET_STRATEGY,
+  })
+}
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+
+export const __test__ = Object.freeze({
+  // Constants
+  CANCELLATION_POLICY_MAP,
+  PARKING_TYPE_MAP,
+  SPACE_TYPE_MAP,
+  STORAGE_OPTION_MAP,
+  STATE_ABBREVIATION_MAP,
+  DAY_INDEX_MAP,
+  DAY_NAME_MAP,
+  DAY_ORDER,
+  DAY_NUMBER_TO_NAME_MAP,
+  DEFAULT_VALUES,
+
+  // Validation predicates
+  isValidZipCode,
+  isSupabaseUUID,
+  isFlatDatabaseFormat,
+  isDeleted,
+  allPhotosHaveUrls,
+  isNotFoundError,
+  isFirstListing,
+
+  // Pure mapping functions
+  cleanZipCode,
+  mapCancellationPolicyToId,
+  mapParkingTypeToId,
+  mapSpaceTypeToId,
+  mapStorageOptionToId,
+  mapStateToDisplayName,
+  mapAvailableNightsToArray,
+  mapAvailableNightsToNames,
+  mapNightlyRatesToColumns,
+  mapArrayToAvailableNights,
+  normalizeDatabaseColumns,
+  buildPhotoObject,
+  buildAddressObject,
+  appendListingId,
+  buildMockupProposalPayload,
+  addModifiedTimestamp,
+  createDraftFormData,
+
+  // Database to form data builders
+  buildSpaceSnapshotFromDb,
+  buildFeaturesFromDb,
+  buildLeaseStylesFromDb,
+  buildPricingFromDb,
+  buildRulesFromDb,
+  buildPhotosFromDb,
+  buildReviewFromDb,
+  createDefaultAvailableNights,
+})
