@@ -1,7 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { SEARCH_URL } from '../../lib/constants.js';
+
+gsap.registerPlugin(ScrollTrigger);
 
 // ============================================================================
 // DATA: Success Stories
@@ -53,6 +57,227 @@ const successStories = [
     location: 'Morningside Heights'
   }
 ];
+
+// ============================================================================
+// INTERNAL COMPONENT: GSAP Hero Section
+// ============================================================================
+
+function HeroSection() {
+  const heroRef = useRef(null);
+  const textLineTopRef = useRef(null);
+  const textLineBottomRef = useRef(null);
+  const maskRevealRef = useRef(null);
+  const revealContentRef = useRef(null);
+  const statsRef = useRef(null);
+  const statItemsRef = useRef([]);
+  const scrollIndicatorRef = useRef(null);
+
+  // Dynamic text rotation
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scenarios = ['consulting', 'learning', 'parenting', 'creating', 'building', 'teaching'];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % scenarios.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [scenarios.length]);
+
+  useLayoutEffect(() => {
+    const hero = heroRef.current;
+    const textTop = textLineTopRef.current;
+    const textBottom = textLineBottomRef.current;
+    const maskReveal = maskRevealRef.current;
+    const revealContent = revealContentRef.current;
+    const stats = statsRef.current;
+    const statItems = statItemsRef.current.filter(Boolean);
+    const scrollIndicator = scrollIndicatorRef.current;
+
+    if (!hero || !textTop || !textBottom) return;
+
+    const ctx = gsap.context(() => {
+      // Set initial states
+      gsap.set(maskReveal, {
+        scaleY: 0,
+        transformOrigin: 'center center'
+      });
+      gsap.set(revealContent, {
+        opacity: 0,
+        y: 30
+      });
+      gsap.set(statItems, {
+        opacity: 0,
+        y: 60
+      });
+      gsap.set(scrollIndicator, {
+        opacity: 1
+      });
+
+      // Main timeline with scroll trigger
+      const tl = gsap.timeline({
+        scrollTrigger: {
+          trigger: hero,
+          start: 'top top',
+          end: '+=150%',
+          pin: true,
+          scrub: 1,
+          anticipatePin: 1,
+          onUpdate: (self) => {
+            // Hide scroll indicator after 10% progress
+            if (self.progress > 0.1) {
+              gsap.to(scrollIndicator, { opacity: 0, duration: 0.3 });
+            } else {
+              gsap.to(scrollIndicator, { opacity: 1, duration: 0.3 });
+            }
+          }
+        }
+      });
+
+      // Phase 1: Split the text apart (0% - 30%)
+      tl.to(textTop, {
+        y: '-120%',
+        scale: 0.6,
+        opacity: 0.3,
+        ease: 'power2.inOut',
+        duration: 0.3
+      }, 0)
+      .to(textBottom, {
+        y: '120%',
+        scale: 0.6,
+        opacity: 0.3,
+        ease: 'power2.inOut',
+        duration: 0.3
+      }, 0);
+
+      // Phase 2: Mask reveal expands (30% - 60%)
+      tl.to(maskReveal, {
+        scaleY: 1,
+        ease: 'power3.out',
+        duration: 0.4
+      }, 0.25);
+
+      // Phase 3: Content fades in (40% - 70%)
+      tl.to(revealContent, {
+        opacity: 1,
+        y: 0,
+        ease: 'power2.out',
+        duration: 0.3
+      }, 0.35);
+
+      // Phase 4: Stats slide in with stagger (60% - 100%)
+      tl.to(statItems, {
+        opacity: 1,
+        y: 0,
+        stagger: 0.08,
+        ease: 'power2.out',
+        duration: 0.25
+      }, 0.55);
+
+      // Parallax background elements
+      gsap.to('.hero-bg-shape', {
+        y: -100,
+        ease: 'none',
+        scrollTrigger: {
+          trigger: hero,
+          start: 'top top',
+          end: 'bottom top',
+          scrub: 0.5
+        }
+      });
+
+    }, hero);
+
+    return () => ctx.revert();
+  }, []);
+
+  return (
+    <section ref={heroRef} className="gsap-hero">
+      {/* Background shapes */}
+      <div className="hero-bg-shapes">
+        <div className="hero-bg-shape shape-1"></div>
+        <div className="hero-bg-shape shape-2"></div>
+        <div className="hero-bg-shape shape-3"></div>
+      </div>
+
+      {/* Main content container */}
+      <div className="gsap-hero-content">
+        {/* Large typography - splits apart on scroll */}
+        <div className="hero-text-container">
+          <div ref={textLineTopRef} className="hero-text-line hero-text-top">
+            <span className="hero-text-static">Real</span>
+            <span className="hero-text-highlight">People.</span>
+          </div>
+          <div ref={textLineBottomRef} className="hero-text-line hero-text-bottom">
+            <span className="hero-text-static">Real</span>
+            <span className="hero-text-highlight hero-text-dynamic" key={currentIndex}>
+              {scenarios[currentIndex]}.
+            </span>
+          </div>
+        </div>
+
+        {/* Mask reveal container - appears in center */}
+        <div ref={maskRevealRef} className="mask-reveal-container">
+          <div ref={revealContentRef} className="reveal-content">
+            <div className="reveal-eyebrow">Why They Chose Split Lease</div>
+            <h2 className="reveal-headline">Success Stories</h2>
+            <p className="reveal-hook">
+              Discover how multi-locals like you found their NYC home base,
+              saved thousands, and stopped living out of suitcases.
+            </p>
+            <div className="reveal-cta">
+              <a href="#stories" className="reveal-cta-button">
+                Read Their Stories
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats - slide in from bottom */}
+        <div ref={statsRef} className="hero-stats-container">
+          <div
+            ref={el => statItemsRef.current[0] = el}
+            className="hero-stat-item"
+          >
+            <div className="hero-stat-value">$18K</div>
+            <div className="hero-stat-label">Avg Yearly Savings</div>
+          </div>
+          <div
+            ref={el => statItemsRef.current[1] = el}
+            className="hero-stat-item"
+          >
+            <div className="hero-stat-value">2,400+</div>
+            <div className="hero-stat-label">Happy Guests</div>
+          </div>
+          <div
+            ref={el => statItemsRef.current[2] = el}
+            className="hero-stat-item"
+          >
+            <div className="hero-stat-value">4.9</div>
+            <div className="hero-stat-label">Guest Rating</div>
+          </div>
+          <div
+            ref={el => statItemsRef.current[3] = el}
+            className="hero-stat-item"
+          >
+            <div className="hero-stat-value">89%</div>
+            <div className="hero-stat-label">Repeat Guests</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Scroll indicator */}
+      <div ref={scrollIndicatorRef} className="scroll-indicator">
+        <div className="scroll-indicator-text">Scroll to explore</div>
+        <div className="scroll-indicator-line">
+          <div className="scroll-indicator-dot"></div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 // ============================================================================
 // INTERNAL COMPONENT: Story Card (Full-width)
@@ -128,31 +353,6 @@ function StoryCard({ story, index, onFindSplitLease }) {
 // ============================================================================
 
 export default function GuestSuccessPage() {
-  // Dynamic text rotation for hero
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [fadeOut, setFadeOut] = useState(false);
-
-  const scenarios = [
-    { type: 'work', action: 'consulting' },
-    { type: 'study', action: 'learning' },
-    { type: 'custody', action: 'parenting' },
-    { type: 'care', action: 'supporting' },
-    { type: 'perform', action: 'creating' },
-    { type: 'teach', action: 'educating' }
-  ];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFadeOut(true);
-      setTimeout(() => {
-        setCurrentIndex((prev) => (prev + 1) % scenarios.length);
-        setFadeOut(false);
-      }, 300);
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [scenarios.length]);
-
   const handleFindSplitLease = () => {
     window.location.href = SEARCH_URL;
   };
@@ -161,76 +361,11 @@ export default function GuestSuccessPage() {
     <>
       <Header />
 
-      {/* Hero Section - Floating People Pattern */}
-      <section className="success-hero">
-        {/* Floating People */}
-        <div className="floating-person success-person-1">
-          <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop" alt="Guest" />
-        </div>
-        <div className="floating-person success-person-2">
-          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop" alt="Guest" />
-        </div>
-        <div className="floating-person success-person-3">
-          <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop" alt="Guest" />
-        </div>
-        <div className="floating-person success-person-4">
-          <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop" alt="Guest" />
-        </div>
-        <div className="floating-person success-person-5">
-          <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop" alt="Guest" />
-        </div>
-        <div className="floating-person success-person-6">
-          <img src="https://images.unsplash.com/photo-1519345182560-3f2917c472ef?w=200&h=200&fit=crop" alt="Guest" />
-        </div>
-
-        <div className="success-hero-container">
-          <div className="success-hero-content">
-            <div className="hero-badge">Success Stories</div>
-            <h1 className="success-hero-title">
-              <span className="hero-line-1">Real people.</span>
-              <span className="hero-line-2">
-                Real <span className={`dynamic-text ${fadeOut ? 'fade-out' : ''}`}>{scenarios[currentIndex].action}</span>.
-              </span>
-              <span className="hero-line-3">Real savings.</span>
-            </h1>
-            <p className="success-hero-subtitle">
-              Discover how multi-locals like you found their NYC home base, saved thousands, and stopped living out of suitcases.
-            </p>
-            <div className="hero-stats">
-              <div className="stat-item">
-                <div className="stat-value">$18K</div>
-                <div className="stat-label">Avg Yearly Savings</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-value">2,400+</div>
-                <div className="stat-label">Happy Guests</div>
-              </div>
-              <div className="stat-item">
-                <div className="stat-value">4.9</div>
-                <div className="stat-label">Guest Rating</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stories Introduction - Light Gray with Gradient Blobs */}
-      <section className="stories-intro-section">
-        <div className="gradient-blob gradient-blob-1"></div>
-        <div className="gradient-blob gradient-blob-2"></div>
-
-        <div className="stories-intro-container">
-          <div className="stories-intro-eyebrow">Why They Chose Split Lease</div>
-          <h2 className="stories-intro-title">Every Story Starts With a Problem</h2>
-          <p className="stories-intro-description">
-            Hotels too expensive. Airbnb too inconsistent. Full-time leases too wasteful.
-            These guests found a better way—and you can too.
-          </p>
-        </div>
-      </section>
+      {/* GSAP-Powered Hero Section */}
+      <HeroSection />
 
       {/* Featured Stories Section - White with Outlined Bubbles */}
-      <section className="featured-stories-section">
+      <section id="stories" className="featured-stories-section">
         <div className="outlined-bubble outlined-bubble-1"></div>
         <div className="outlined-bubble outlined-bubble-2"></div>
         <div className="outlined-bubble outlined-bubble-3"></div>
