@@ -36,6 +36,23 @@ function getCompensationSuffix(rentalType) {
     default: return '/night';
   }
 }
+
+/**
+ * Format duration display based on rental type
+ * Monthly listings show duration in months, others show weeks
+ * @param {string} rentalType - 'Nightly', 'Weekly', or 'Monthly'
+ * @param {number} weeks - Reservation span in weeks
+ * @returns {string} Formatted duration string
+ */
+function formatDuration(rentalType, weeks) {
+  if (rentalType === 'Monthly') {
+    // Convert weeks to months (approximately 4.33 weeks per month)
+    const months = weeks / 4.33;
+    const roundedMonths = Math.round(months * 10) / 10; // Round to 1 decimal
+    return `${roundedMonths} month${roundedMonths !== 1 ? 's' : ''}`;
+  }
+  return `${weeks} week${weeks !== 1 ? 's' : ''}`;
+}
 import { getStatusConfig, getUsualOrder, isTerminalStatus } from '../../../logic/constants/proposalStatuses.js';
 import { getVMButtonText, getVMButtonStyle, getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtualMeetingRules.js';
 
@@ -398,7 +415,7 @@ export default function ProposalDetailsModal({
           <div className="proposal-details">
             <div className="detail-row">
               <span className="detail-label">Duration</span>
-              <span className="detail-value">{reservationSpanWeeks} weeks</span>
+              <span className="detail-value">{formatDuration(rentalType, reservationSpanWeeks)}</span>
             </div>
             <div className="detail-row">
               <span className="detail-label">Move-in Range</span>
