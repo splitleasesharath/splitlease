@@ -1,3 +1,41 @@
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+const isValidDate = (date) => date instanceof Date && !isNaN(date.getTime())
+const isNullish = (value) => value === null || value === undefined
+
+// ─────────────────────────────────────────────────────────────
+// Date Helpers (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Normalize date to midnight (returns new Date, immutable)
+ * @pure
+ */
+const normalizeToMidnight = (date) => {
+  const normalized = new Date(date)
+  normalized.setHours(0, 0, 0, 0)
+  return normalized
+}
+
+/**
+ * Parse and validate a date bound value
+ * Returns normalized Date or null for invalid
+ * @pure
+ */
+const parseDateBound = (bound, boundName) => {
+  if (isNullish(bound)) {
+    return null
+  }
+  const parsed = new Date(bound)
+  if (!isValidDate(parsed)) {
+    throw new Error(
+      `isDateInRange: ${boundName} is not a valid date: ${bound}`
+    )
+  }
+  return normalizeToMidnight(parsed)
+}
+
 /**
  * Check if a date is within the available range.
  *
@@ -5,6 +43,7 @@
  * @rule Date must be >= firstAvailable (if specified).
  * @rule Date must be <= lastAvailable (if specified).
  * @rule Null/undefined bounds are treated as unbounded (no restriction).
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters.
  * @param {Date} params.date - Date to check.
@@ -23,43 +62,26 @@
  * // => true
  */
 export function isDateInRange({ date, firstAvailable, lastAvailable }) {
-  // No Fallback: Validate date
-  if (!(date instanceof Date) || isNaN(date.getTime())) {
+  // Validation: Date must be valid
+  if (!isValidDate(date)) {
     throw new Error(
       'isDateInRange: date must be a valid Date object'
     )
   }
 
-  // Normalize check date (ignore time component)
-  const checkDate = new Date(date)
-  checkDate.setHours(0, 0, 0, 0)
+  // Pure transformation: Normalize dates to midnight
+  const checkDate = normalizeToMidnight(date)
+  const minDate = parseDateBound(firstAvailable, 'firstAvailable')
+  const maxDate = parseDateBound(lastAvailable, 'lastAvailable')
 
-  // Check first available bound
-  if (firstAvailable !== null && firstAvailable !== undefined) {
-    const firstDate = new Date(firstAvailable)
-    if (isNaN(firstDate.getTime())) {
-      throw new Error(
-        `isDateInRange: firstAvailable is not a valid date: ${firstAvailable}`
-      )
-    }
-    firstDate.setHours(0, 0, 0, 0)
-    if (checkDate < firstDate) {
-      return false
-    }
+  // Check lower bound (if specified)
+  if (minDate !== null && checkDate < minDate) {
+    return false
   }
 
-  // Check last available bound
-  if (lastAvailable !== null && lastAvailable !== undefined) {
-    const lastDate = new Date(lastAvailable)
-    if (isNaN(lastDate.getTime())) {
-      throw new Error(
-        `isDateInRange: lastAvailable is not a valid date: ${lastAvailable}`
-      )
-    }
-    lastDate.setHours(0, 0, 0, 0)
-    if (checkDate > lastDate) {
-      return false
-    }
+  // Check upper bound (if specified)
+  if (maxDate !== null && checkDate > maxDate) {
+    return false
   }
 
   return true

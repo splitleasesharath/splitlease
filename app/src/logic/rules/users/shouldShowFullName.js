@@ -1,3 +1,13 @@
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+const isString = (value) => typeof value === 'string'
+const isBoolean = (value) => typeof value === 'boolean'
+const isNullish = (value) => value === null || value === undefined
+const isNonEmptyString = (value) => isString(value) && value.trim().length > 0
+const hasValidLastName = (lastName) =>
+  !isNullish(lastName) && isNonEmptyString(lastName)
+
 /**
  * Determines if the full user name (first + last) should be displayed.
  *
@@ -6,6 +16,7 @@
  * @rule Show full name only if lastName exists and viewport is not mobile
  * @rule Mobile viewports show first name only for space conservation
  * @rule If no lastName, always show first name only
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters
  * @param {string} params.firstName - User's first name (required)
@@ -19,30 +30,16 @@
  * shouldShowFullName({ firstName: 'John', lastName: null, isMobile: false }) // false
  */
 export function shouldShowFullName({ firstName, lastName, isMobile }) {
-  // NO FALLBACK: firstName is required
-  if (typeof firstName !== 'string' || firstName.trim().length === 0) {
-    throw new Error('shouldShowFullName requires a valid firstName');
+  // Validation: firstName is required
+  if (!isNonEmptyString(firstName)) {
+    throw new Error('shouldShowFullName requires a valid firstName')
   }
 
-  // Validate isMobile is a boolean
-  if (typeof isMobile !== 'boolean') {
-    throw new Error('shouldShowFullName requires isMobile to be a boolean');
+  // Validation: isMobile must be boolean
+  if (!isBoolean(isMobile)) {
+    throw new Error('shouldShowFullName requires isMobile to be a boolean')
   }
 
-  // Don't show full name on mobile (space constraints)
-  if (isMobile) {
-    return false;
-  }
-
-  // Don't show full name if lastName is missing or empty
-  if (lastName === null || lastName === undefined) {
-    return false;
-  }
-
-  if (typeof lastName !== 'string' || lastName.trim().length === 0) {
-    return false;
-  }
-
-  // Show full name: not mobile AND has valid lastName
-  return true;
+  // Predicate composition: show full name = NOT mobile AND has valid lastName
+  return !isMobile && hasValidLastName(lastName)
 }

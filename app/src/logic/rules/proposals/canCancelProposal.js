@@ -1,3 +1,17 @@
+import { isTerminalStatus, isCompletedStatus } from '../../constants/proposalStatuses.js'
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+const isNonEmptyString = (value) => typeof value === 'string' && value.length > 0
+
+/**
+ * Check if status allows cancellation (not terminal and not completed)
+ * @pure
+ */
+const isCancellableStatus = (normalizedStatus) =>
+  !isTerminalStatus(normalizedStatus) && !isCompletedStatus(normalizedStatus)
+
 /**
  * Determine if a guest can cancel their proposal.
  *
@@ -6,6 +20,7 @@
  * @rule Once completed, proposals cannot be cancelled (only disputes apply).
  * @rule Already cancelled/rejected/expired proposals cannot be re-cancelled.
  * @rule Deleted proposals cannot be cancelled.
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters.
  * @param {string} params.proposalStatus - The "Proposal Status" field from Supabase.
@@ -22,26 +37,20 @@
  * canCancelProposal({ proposalStatus: 'Cancelled by Guest' })
  * // => false (already cancelled)
  */
-import { isTerminalStatus, isCompletedStatus } from '../../constants/proposalStatuses.js'
-
 export function canCancelProposal({ proposalStatus, deleted = false }) {
-  // Deleted proposals cannot be cancelled
+  // Guard: Deleted proposals cannot be cancelled
   if (deleted) {
     return false
   }
 
-  // Validation
-  if (!proposalStatus || typeof proposalStatus !== 'string') {
+  // Guard: Invalid status means cannot cancel
+  if (!isNonEmptyString(proposalStatus)) {
     return false
   }
 
-  const status = proposalStatus.trim()
+  // Pure transformation and predicate composition
+  const normalizedStatus = proposalStatus.trim()
 
-  if (isTerminalStatus(status) || isCompletedStatus(status)) {
-    return false
-  }
-
-  // Can cancel if in any active state
-  // Includes: Draft, Pending, Host Countered, VM Requested, VM Confirmed, Accepted, Verified
-  return true
+  // Can cancel if in any active (non-terminal, non-completed) state
+  return isCancellableStatus(normalizedStatus)
 }

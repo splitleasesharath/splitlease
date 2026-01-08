@@ -1,8 +1,24 @@
+// ─────────────────────────────────────────────────────────────
+// Constants (Immutable)
+// ─────────────────────────────────────────────────────────────
+const VALID_WEEK_PATTERNS = Object.freeze([
+  'every-week',
+  'one-on-off',
+  'two-on-off',
+  'one-three-off'
+])
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+const isString = (value) => typeof value === 'string'
+
 /**
  * Check if week pattern filter value is valid.
  *
  * @intent Validate week pattern selection for search filters.
  * @rule Valid patterns: 'every-week', 'one-on-off', 'two-on-off', 'one-three-off'.
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters.
  * @param {string} params.weekPattern - Week pattern value to validate.
@@ -18,14 +34,18 @@
  * // => false
  */
 export function isValidWeekPattern({ weekPattern }) {
-  // No Fallback: Validate input
-  if (typeof weekPattern !== 'string') {
+  // Validation: Type check
+  if (!isString(weekPattern)) {
     throw new Error(
       `isValidWeekPattern: weekPattern must be a string, got ${typeof weekPattern}`
     )
   }
 
-  const validPatterns = ['every-week', 'one-on-off', 'two-on-off', 'one-three-off']
-
-  return validPatterns.includes(weekPattern)
+  // Declarative membership check
+  return VALID_WEEK_PATTERNS.includes(weekPattern)
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing and reuse)
+// ─────────────────────────────────────────────────────────────
+export { VALID_WEEK_PATTERNS }

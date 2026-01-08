@@ -1,8 +1,56 @@
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+const PHOTOS_FIELD = 'Features - Photos'
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+const isNullish = (value) => value === null || value === undefined
+const isString = (value) => typeof value === 'string'
+const isNonEmptyArray = (arr) => Array.isArray(arr) && arr.length > 0
+
+// ─────────────────────────────────────────────────────────────
+// Photo Helpers (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Safely parse JSON string to array
+ * Returns empty array on failure (pure, no exceptions)
+ * @pure
+ */
+const safeParseJsonArray = (jsonString) => {
+  try {
+    const parsed = JSON.parse(jsonString)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Normalize photos value to array (handles string or array input)
+ * @pure
+ */
+const normalizePhotos = (photos) => {
+  if (isNullish(photos)) {
+    return []
+  }
+  if (isString(photos)) {
+    return safeParseJsonArray(photos)
+  }
+  if (Array.isArray(photos)) {
+    return photos
+  }
+  return []
+}
+
 /**
  * Check if a listing has photos.
  *
  * @intent Validate that a listing has at least one photo for search display.
  * @rule Listings without photos must not appear in search results.
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters.
  * @param {object} params.listing - The listing object to check.
@@ -18,32 +66,19 @@
  * // => false
  */
 export function hasListingPhotos({ listing }) {
-  // No Fallback: Validate input
-  if (listing === null || listing === undefined) {
+  // Validation: Listing must exist
+  if (isNullish(listing)) {
     throw new Error('hasListingPhotos: listing cannot be null or undefined')
   }
 
-  const photos = listing['Features - Photos']
+  // Pure transformation pipeline
+  const photos = listing[PHOTOS_FIELD]
+  const normalizedPhotos = normalizePhotos(photos)
 
-  // Check for null, undefined, or empty array
-  if (!photos) {
-    return false
-  }
-
-  // Handle string representation (JSON array from database)
-  if (typeof photos === 'string') {
-    try {
-      const parsed = JSON.parse(photos)
-      return Array.isArray(parsed) && parsed.length > 0
-    } catch {
-      return false
-    }
-  }
-
-  // Handle array directly
-  if (Array.isArray(photos)) {
-    return photos.length > 0
-  }
-
-  return false
+  return isNonEmptyArray(normalizedPhotos)
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export { PHOTOS_FIELD }

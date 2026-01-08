@@ -1,9 +1,44 @@
+// ─────────────────────────────────────────────────────────────
+// Constants (Immutable)
+// ─────────────────────────────────────────────────────────────
+const PROTECTED_PATHS = Object.freeze([
+  '/account-profile',
+  '/host-dashboard'
+])
+
+const HTML_EXTENSION_REGEX = /\.html$/
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+const isString = (value) => typeof value === 'string'
+
+// ─────────────────────────────────────────────────────────────
+// Path Helpers (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Remove .html extension from path (immutable)
+ * @pure
+ */
+const normalizePathname = (pathname) =>
+  pathname.replace(HTML_EXTENSION_REGEX, '')
+
+/**
+ * Check if normalized path matches a protected path
+ * @pure
+ */
+const matchesProtectedPath = (normalizedPath, protectedPath) =>
+  normalizedPath === protectedPath ||
+  normalizedPath.startsWith(protectedPath + '/')
+
 /**
  * Check if current page is a protected page requiring authentication.
  *
  * @intent Determine if the current URL requires user authentication.
  * @rule Protected pages redirect to home if user is not logged in.
  * @rule Handles both clean URLs (/account-profile) and .html URLs (/account-profile.html).
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters.
  * @param {string} params.pathname - Current URL pathname.
@@ -19,23 +54,23 @@
  * // => false
  */
 export function isProtectedPage({ pathname }) {
-  // No Fallback: Validate input
-  if (typeof pathname !== 'string') {
+  // Validation: Type check
+  if (!isString(pathname)) {
     throw new Error(
       `isProtectedPage: pathname must be a string, got ${typeof pathname}`
     )
   }
 
-  const protectedPaths = [
-    '/account-profile',
-    '/host-dashboard'
-  ]
+  // Pure transformation pipeline
+  const normalizedPath = normalizePathname(pathname)
 
-  // Normalize path by removing .html extension for consistent matching
-  const normalizedPath = pathname.replace(/\.html$/, '')
-
-  // Check if current path matches any protected path exactly or starts with it
-  return protectedPaths.some(path =>
-    normalizedPath === path || normalizedPath.startsWith(path + '/')
+  // Declarative check using array method
+  return PROTECTED_PATHS.some((path) =>
+    matchesProtectedPath(normalizedPath, path)
   )
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export { PROTECTED_PATHS }

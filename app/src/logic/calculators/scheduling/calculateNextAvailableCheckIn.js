@@ -1,3 +1,57 @@
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+const MIN_DAY_INDEX = 0
+const MAX_DAY_INDEX = 6
+const DAYS_IN_WEEK = 7
+
+// ─────────────────────────────────────────────────────────────
+// Validation Helpers (Pure Predicates)
+// ─────────────────────────────────────────────────────────────
+const isValidDayIndex = (day) =>
+  typeof day === 'number' &&
+  !isNaN(day) &&
+  day >= MIN_DAY_INDEX &&
+  day <= MAX_DAY_INDEX
+
+const isValidDate = (date) => !isNaN(new Date(date).getTime())
+
+const findInvalidDay = (days) => days.find((day) => !isValidDayIndex(day)) ?? null
+
+// ─────────────────────────────────────────────────────────────
+// Calculation Helpers (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Sort days and return first day (immutable)
+ * @pure
+ */
+const getFirstSelectedDay = (days) =>
+  [...days].sort((a, b) => a - b)[0]
+
+/**
+ * Calculate days to add to reach target day-of-week
+ * @pure
+ */
+const calculateDaysUntilTargetDay = (currentDayOfWeek, targetDayOfWeek) =>
+  (targetDayOfWeek - currentDayOfWeek + DAYS_IN_WEEK) % DAYS_IN_WEEK
+
+/**
+ * Format date as ISO date string (YYYY-MM-DD)
+ * @pure
+ */
+const formatDateISO = (date) => date.toISOString().split('T')[0]
+
+/**
+ * Add days to a date (returns new Date, immutable)
+ * @pure
+ */
+const addDays = (date, days) => {
+  const result = new Date(date)
+  result.setDate(date.getDate() + days)
+  return result
+}
+
 /**
  * Calculate the next available check-in date based on selected day-of-week and minimum date.
  * Smart default calculation for move-in dates.
@@ -7,6 +61,7 @@
  * @rule Check-in must be on or after the minimum allowed date (e.g., 2 weeks from today).
  * @rule If minDate already falls on the correct day-of-week, use that date.
  * @rule Otherwise, find the next occurrence of the target day-of-week.
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters.
  * @param {number[]} params.selectedDayIndices - Array of selected day indices (0-6, sorted).
@@ -25,49 +80,47 @@
  * // => '2025-12-03' (next Wednesday)
  */
 export function calculateNextAvailableCheckIn({ selectedDayIndices, minDate }) {
-  // No Fallback: Validate inputs
+  // Validation: Array type and non-empty
   if (!Array.isArray(selectedDayIndices) || selectedDayIndices.length === 0) {
     throw new Error(
       'calculateNextAvailableCheckIn: selectedDayIndices must be a non-empty array'
     )
   }
 
-  // Validate all day indices
-  for (const day of selectedDayIndices) {
-    if (typeof day !== 'number' || isNaN(day) || day < 0 || day > 6) {
-      throw new Error(
-        `calculateNextAvailableCheckIn: Invalid day index ${day}, must be 0-6`
-      )
-    }
+  // Validation: All valid day indices (declarative)
+  const invalidDay = findInvalidDay(selectedDayIndices)
+  if (invalidDay !== null) {
+    throw new Error(
+      `calculateNextAvailableCheckIn: Invalid day index ${invalidDay}, must be ${MIN_DAY_INDEX}-${MAX_DAY_INDEX}`
+    )
   }
 
-  // Parse and validate minDate
-  const minDateObj = new Date(minDate)
-  if (isNaN(minDateObj.getTime())) {
+  // Validation: Valid date
+  if (!isValidDate(minDate)) {
     throw new Error(
       `calculateNextAvailableCheckIn: minDate is not a valid date: ${minDate}`
     )
   }
 
-  // Get the first selected day (check-in day of week)
-  // Days should already be sorted, but sort to be safe
-  const sortedDays = [...selectedDayIndices].sort((a, b) => a - b)
-  const firstDayOfWeek = sortedDays[0]
+  // Parse minDate
+  const minDateObj = new Date(minDate)
 
-  // Get the day of week for the minimum date
-  const minDayOfWeek = minDateObj.getDay()
+  // Get target day-of-week (first selected day)
+  const targetDayOfWeek = getFirstSelectedDay(selectedDayIndices)
 
-  // Calculate days to add to get to the next occurrence of the first selected day
-  const daysToAdd = (firstDayOfWeek - minDayOfWeek + 7) % 7
+  // Get current day-of-week from minDate
+  const currentDayOfWeek = minDateObj.getDay()
+
+  // Calculate days to add
+  const daysToAdd = calculateDaysUntilTargetDay(currentDayOfWeek, targetDayOfWeek)
 
   // If daysToAdd is 0, we're already on the right day
   if (daysToAdd === 0) {
-    return minDateObj.toISOString().split('T')[0]
+    return formatDateISO(minDateObj)
   }
 
-  // Add the days to get to the next occurrence of the selected day
-  const nextCheckInDate = new Date(minDateObj)
-  nextCheckInDate.setDate(minDateObj.getDate() + daysToAdd)
+  // Calculate next check-in date (immutable - creates new Date)
+  const nextCheckInDate = addDays(minDateObj, daysToAdd)
 
-  return nextCheckInDate.toISOString().split('T')[0]
+  return formatDateISO(nextCheckInDate)
 }

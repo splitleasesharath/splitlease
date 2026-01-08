@@ -1,9 +1,15 @@
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+const isBoolean = (value) => typeof value === 'boolean'
+
 /**
  * Check if a session is valid.
  *
  * @intent Determine if the user has a valid active session.
  * @rule Session is valid if auth state is set to true.
  * @rule Bubble API handles actual token expiry - this just checks state.
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters.
  * @param {boolean} params.authState - Current authentication state.
@@ -16,8 +22,8 @@
  * // => true
  */
 export function isSessionValid({ authState }) {
-  // No Fallback: Validate input
-  if (typeof authState !== 'boolean') {
+  // Validation: Type check
+  if (!isBoolean(authState)) {
     throw new Error(
       `isSessionValid: authState must be a boolean, got ${typeof authState}`
     )

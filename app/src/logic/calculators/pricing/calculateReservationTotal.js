@@ -1,8 +1,21 @@
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+const WEEKS_IN_BILLING_CYCLE = 4
+
+// ─────────────────────────────────────────────────────────────
+// Validation Helpers (Pure Predicates)
+// ─────────────────────────────────────────────────────────────
+const isValidNumber = (value) => typeof value === 'number' && !isNaN(value)
+const isNonNegative = (value) => value >= 0
+const isPositive = (value) => value > 0
+
 /**
  * Calculate estimated reservation total for the full stay period.
  *
  * @intent Determine the total cost across all weeks of the reservation.
  * @rule Total is calculated as (4-week rent) * (total weeks / 4).
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters for clarity.
  * @param {number} params.fourWeekRent - The calculated 4-week rent amount.
@@ -18,32 +31,32 @@
  * // => 5200 (1600 * 13 / 4)
  */
 export function calculateReservationTotal({ fourWeekRent, totalWeeks }) {
-  // No Fallback: Strict type validation
-  if (typeof fourWeekRent !== 'number' || isNaN(fourWeekRent)) {
+  // Validation: Type checks
+  if (!isValidNumber(fourWeekRent)) {
     throw new Error(
       `calculateReservationTotal: fourWeekRent must be a number, got ${typeof fourWeekRent}`
     )
   }
 
-  if (typeof totalWeeks !== 'number' || isNaN(totalWeeks)) {
+  if (!isValidNumber(totalWeeks)) {
     throw new Error(
       `calculateReservationTotal: totalWeeks must be a number, got ${typeof totalWeeks}`
     )
   }
 
-  // Business rule validation
-  if (fourWeekRent < 0) {
+  // Validation: Business rules
+  if (!isNonNegative(fourWeekRent)) {
     throw new Error(
       `calculateReservationTotal: fourWeekRent cannot be negative, got ${fourWeekRent}`
     )
   }
 
-  if (totalWeeks <= 0) {
+  if (!isPositive(totalWeeks)) {
     throw new Error(
       `calculateReservationTotal: totalWeeks must be positive, got ${totalWeeks}`
     )
   }
 
-  // Pure calculation
-  return fourWeekRent * (totalWeeks / 4)
+  // Pure calculation: scale 4-week rent to total weeks
+  return fourWeekRent * (totalWeeks / WEEKS_IN_BILLING_CYCLE)
 }

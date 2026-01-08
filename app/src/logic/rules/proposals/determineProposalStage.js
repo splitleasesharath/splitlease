@@ -1,3 +1,16 @@
+import { getStageFromStatus, isTerminalStatus } from '../../constants/proposalStatuses.js'
+
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+const STAGE_CANCELLED = 6
+const STAGE_DEFAULT = 1
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+const isNonEmptyString = (value) => typeof value === 'string' && value.length > 0
+
 /**
  * Determine the current stage (1-6) of a proposal in the guest journey.
  *
@@ -9,6 +22,7 @@
  *   Stage 4: Accepted (Accepted, Verified)
  *   Stage 5: Completed (Completed)
  *   Stage 6: Cancelled (Cancelled by Guest, Cancelled by Host, Rejected, Expired)
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters.
  * @param {string} params.proposalStatus - The "Proposal Status" field from Supabase.
@@ -21,25 +35,31 @@
  * const stage = determineProposalStage({ proposalStatus: 'Host Countered' })
  * // => 2
  */
-import { getStageFromStatus, isTerminalStatus } from '../../constants/proposalStatuses.js'
-
 export function determineProposalStage({ proposalStatus, deleted = false }) {
-  // Validation
-  if (!proposalStatus || typeof proposalStatus !== 'string') {
+  // Validation: Status is required
+  if (!isNonEmptyString(proposalStatus)) {
     throw new Error('determineProposalStage: proposalStatus is required and must be a string')
   }
 
-  // Deleted proposals are always stage 6 (Cancelled)
+  // Guard: Deleted proposals are always stage 6 (Cancelled)
   if (deleted) {
-    return 6
+    return STAGE_CANCELLED
   }
 
-  const status = proposalStatus.trim()
+  // Pure transformation
+  const normalizedStatus = proposalStatus.trim()
 
-  if (isTerminalStatus(status)) {
-    return 6
+  // Guard: Terminal statuses are stage 6
+  if (isTerminalStatus(normalizedStatus)) {
+    return STAGE_CANCELLED
   }
 
-  const stage = getStageFromStatus(status)
-  return stage ?? 1
+  // Get stage from status lookup, default to stage 1
+  const stage = getStageFromStatus(normalizedStatus)
+  return stage ?? STAGE_DEFAULT
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export { STAGE_CANCELLED, STAGE_DEFAULT }

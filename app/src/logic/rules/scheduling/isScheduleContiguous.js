@@ -1,3 +1,75 @@
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+const MIN_DAY_INDEX = 0
+const MAX_DAY_INDEX = 6
+const DAYS_IN_WEEK = 7
+const MIN_DAYS_FOR_GUARANTEED_CONTIGUOUS = 6
+
+const ALL_DAYS = Object.freeze([0, 1, 2, 3, 4, 5, 6])
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+const isValidNumber = (value) => typeof value === 'number' && !isNaN(value)
+const isInRange = (value, min, max) => value >= min && value <= max
+const isValidDayIndex = (day) => isValidNumber(day) && isInRange(day, MIN_DAY_INDEX, MAX_DAY_INDEX)
+
+// ─────────────────────────────────────────────────────────────
+// Array Helpers (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Sort days ascending (immutable)
+ * @pure
+ */
+const sortDays = (days) => [...days].sort((a, b) => a - b)
+
+/**
+ * Find first invalid day in array
+ * @pure
+ */
+const findInvalidDay = (days) => days.find((day) => !isValidDayIndex(day))
+
+/**
+ * Check if sorted array is consecutive (each element is previous + 1)
+ * @pure
+ */
+const isConsecutiveSequence = (sortedDays) =>
+  sortedDays.every((day, i) => i === 0 || day === sortedDays[i - 1] + 1)
+
+/**
+ * Check if selection wraps around week boundary (has both 0 and 6)
+ * @pure
+ */
+const hasWeekWrap = (sortedDays) =>
+  sortedDays.includes(MIN_DAY_INDEX) && sortedDays.includes(MAX_DAY_INDEX)
+
+/**
+ * Get days NOT in the selection
+ * @pure
+ */
+const getUnselectedDays = (sortedSelectedDays) =>
+  ALL_DAYS.filter((d) => !sortedSelectedDays.includes(d))
+
+/**
+ * Generate range of integers from min to max (inclusive)
+ * @pure
+ */
+const range = (min, max) =>
+  Array.from({ length: max - min + 1 }, (_, i) => min + i)
+
+/**
+ * Check if array equals expected contiguous range
+ * @pure
+ */
+const isContiguousRange = (days) => {
+  if (days.length === 0) return true
+  const expected = range(Math.min(...days), Math.max(...days))
+  return days.length === expected.length &&
+    days.every((day, index) => day === expected[index])
+}
+
 /**
  * Check if selected days form a contiguous (consecutive) block.
  *
@@ -6,6 +78,7 @@
  * @rule Handles week wrap-around cases (Fri-Sun ✓, Sat-Tue ✓).
  * @rule For wrap-around, uses inverse logic: if unselected days are contiguous, selected days wrap around properly.
  * @rule 6 or more days is always contiguous (only 1 gap maximum).
+ * @pure Yes - deterministic, no side effects
  *
  * This function consolidates the contiguous validation logic that previously existed in:
  * - availabilityValidation.js (isContiguousSelection)
@@ -25,83 +98,63 @@
  * isScheduleContiguous({ selectedDayIndices: [6, 0, 1, 2] }) // => true (Sat-Tue, wraps around week)
  */
 export function isScheduleContiguous({ selectedDayIndices }) {
-  // No Fallback: Validate input
+  // Validation: Array type
   if (!Array.isArray(selectedDayIndices)) {
     throw new Error(
       `isScheduleContiguous: selectedDayIndices must be an array, got ${typeof selectedDayIndices}`
     )
   }
 
-  // Empty selection is not contiguous
+  // Edge case: Empty selection is not contiguous
   if (selectedDayIndices.length === 0) {
     return false
   }
 
-  // Single day is contiguous
+  // Edge case: Single day is always contiguous
   if (selectedDayIndices.length === 1) {
     return true
   }
 
-  // Validate all day indices
-  for (const day of selectedDayIndices) {
-    if (typeof day !== 'number' || isNaN(day) || day < 0 || day > 6) {
-      throw new Error(
-        `isScheduleContiguous: Invalid day index ${day}, must be 0-6`
-      )
-    }
+  // Validation: All day indices must be valid (declarative)
+  const invalidDay = findInvalidDay(selectedDayIndices)
+  if (invalidDay !== undefined) {
+    throw new Error(
+      `isScheduleContiguous: Invalid day index ${invalidDay}, must be ${MIN_DAY_INDEX}-${MAX_DAY_INDEX}`
+    )
   }
 
-  // Sort the selected days
-  const sorted = [...selectedDayIndices].sort((a, b) => a - b)
+  // Pure transformation: Sort days
+  const sorted = sortDays(selectedDayIndices)
 
-  // If 6 or more days selected, it's contiguous (only 1 gap or no gaps)
-  if (sorted.length >= 6) {
+  // Optimization: 6+ days is always contiguous (at most 1 gap possible)
+  if (sorted.length >= MIN_DAYS_FOR_GUARANTEED_CONTIGUOUS) {
     return true
   }
 
   // Check for standard contiguous sequence (no wrap around)
-  let isStandardContiguous = true
-  for (let i = 1; i < sorted.length; i++) {
-    if (sorted[i] !== sorted[i - 1] + 1) {
-      isStandardContiguous = false
-      break
-    }
-  }
-
-  if (isStandardContiguous) {
+  if (isConsecutiveSequence(sorted)) {
     return true
   }
 
-  // Check if selection includes both Sunday (0) and Saturday (6) - wrap-around case
-  const hasZero = sorted.includes(0)
-  const hasSix = sorted.includes(6)
+  // Check for week wrap-around case (Sat-Sun boundary)
+  if (hasWeekWrap(sorted)) {
+    // Use inverse logic: if unselected days form a contiguous block,
+    // then selected days form a valid wrap-around selection
+    const unselected = getUnselectedDays(sorted)
 
-  if (hasZero && hasSix) {
-    // Week wrap-around case: use inverse logic (check not-selected days)
-    // If the NOT selected days are contiguous, then selected days wrap around and are contiguous
-    const allDays = [0, 1, 2, 3, 4, 5, 6]
-    const notSelectedDays = allDays.filter(d => !sorted.includes(d))
-
-    if (notSelectedDays.length === 0) {
-      return true // All days selected
+    // All days selected = contiguous
+    if (unselected.length === 0) {
+      return true
     }
 
-    // Check if not-selected days form a contiguous block
-    const minNotSelected = Math.min(...notSelectedDays)
-    const maxNotSelected = Math.max(...notSelectedDays)
-
-    // Generate expected contiguous range for not-selected days
-    const expectedNotSelected = []
-    for (let i = minNotSelected; i <= maxNotSelected; i++) {
-      expectedNotSelected.push(i)
-    }
-
-    // If not-selected days are contiguous, then selected days wrap around properly
-    const notSelectedContiguous = notSelectedDays.length === expectedNotSelected.length &&
-      notSelectedDays.every((day, index) => day === expectedNotSelected[index])
-
-    return notSelectedContiguous
+    // If unselected days are contiguous, selected days wrap around properly
+    return isContiguousRange(unselected)
   }
 
   return false
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export { MIN_DAY_INDEX, MAX_DAY_INDEX, DAYS_IN_WEEK }

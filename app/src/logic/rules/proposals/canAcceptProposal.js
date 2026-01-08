@@ -1,3 +1,24 @@
+import { PROPOSAL_STATUSES } from '../../constants/proposalStatuses.js'
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+const isNonEmptyString = (value) => typeof value === 'string' && value.length > 0
+
+/**
+ * Get the acceptability status key (cached for performance)
+ * @pure
+ */
+const getAcceptableStatusKey = () =>
+  PROPOSAL_STATUSES.COUNTEROFFER_SUBMITTED_AWAITING_GUEST_REVIEW.key.trim()
+
+/**
+ * Check if status matches the acceptable status for acceptance
+ * @pure
+ */
+const isAcceptableStatus = (normalizedStatus) =>
+  normalizedStatus === getAcceptableStatusKey()
+
 /**
  * Determine if a guest can accept a proposal (or host counteroffer).
  *
@@ -6,6 +27,7 @@
  * @rule Original proposals don't need acceptance (they're sent to host).
  * @rule Once accepted, VM scheduled, or cancelled, acceptance is not applicable.
  * @rule Deleted proposals cannot be accepted.
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters.
  * @param {string} params.proposalStatus - The "Proposal Status" field from Supabase.
@@ -22,22 +44,19 @@
  * canAcceptProposal({ proposalStatus: 'Accepted' })
  * // => false (already accepted)
  */
-import { PROPOSAL_STATUSES } from '../../constants/proposalStatuses.js'
-
 export function canAcceptProposal({ proposalStatus, deleted = false }) {
-  // Deleted proposals cannot be accepted
+  // Guard: Deleted proposals cannot be accepted
   if (deleted) {
     return false
   }
 
-  // Validation
-  if (!proposalStatus || typeof proposalStatus !== 'string') {
+  // Guard: Invalid status means cannot accept
+  if (!isNonEmptyString(proposalStatus)) {
     return false
   }
 
-  const status = proposalStatus.trim()
+  // Pure transformation and predicate application
+  const normalizedStatus = proposalStatus.trim()
 
-  // Can only accept when host has countered
-  // This is the only status where guest needs to make an "accept" decision
-  return status === PROPOSAL_STATUSES.COUNTEROFFER_SUBMITTED_AWAITING_GUEST_REVIEW.key.trim()
+  return isAcceptableStatus(normalizedStatus)
 }

@@ -1,8 +1,24 @@
+// ─────────────────────────────────────────────────────────────
+// Constants (Immutable)
+// ─────────────────────────────────────────────────────────────
+const VALID_SORT_OPTIONS = Object.freeze([
+  'recommended',
+  'price-low',
+  'most-viewed',
+  'recent'
+])
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+const isString = (value) => typeof value === 'string'
+
 /**
  * Check if sort option value is valid.
  *
  * @intent Validate sort option selection for search results.
  * @rule Valid options: 'recommended', 'price-low', 'most-viewed', 'recent'.
+ * @pure Yes - deterministic, no side effects
  *
  * @param {object} params - Named parameters.
  * @param {string} params.sortBy - Sort option value to validate.
@@ -18,14 +34,18 @@
  * // => false
  */
 export function isValidSortOption({ sortBy }) {
-  // No Fallback: Validate input
-  if (typeof sortBy !== 'string') {
+  // Validation: Type check
+  if (!isString(sortBy)) {
     throw new Error(
       `isValidSortOption: sortBy must be a string, got ${typeof sortBy}`
     )
   }
 
-  const validOptions = ['recommended', 'price-low', 'most-viewed', 'recent']
-
-  return validOptions.includes(sortBy)
+  // Declarative membership check
+  return VALID_SORT_OPTIONS.includes(sortBy)
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing and reuse)
+// ─────────────────────────────────────────────────────────────
+export { VALID_SORT_OPTIONS }
