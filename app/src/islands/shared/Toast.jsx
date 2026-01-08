@@ -50,7 +50,7 @@ let toastId = 0;
 // Alert type styles matching Bubble's configuration
 const ALERT_STYLES = {
   success: {
-    textColor: '#22C55E',
+    textColor: '#16A34A', // Darker green for better readability
     progressColor: '#22C55E',
     icon: 'success'
   },

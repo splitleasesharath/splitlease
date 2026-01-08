@@ -25,6 +25,7 @@ import { createListing, saveDraft, getListingById } from '../../../lib/listingSe
 import { isGuest } from '../../../logic/rules/users/isGuest.js';
 import { supabase } from '../../../lib/supabase.js';
 import { NYC_BOUNDS, isValidServiceArea, getBoroughForZipCode } from '../../../lib/nycZipCodes';
+import { fetchInformationalTexts } from '../../../lib/informationalTextsFetcher.js';
 import './styles/SelfListingPageV2.css';
 import '../../../styles/components/toast.css';
 
@@ -195,6 +196,7 @@ export function SelfListingPageV2() {
 
   // Informational text tooltip state
   const [activeInfoTooltip, setActiveInfoTooltip] = useState<string | null>(null);
+  const [informationalTexts, setInformationalTexts] = useState<Record<string, { desktop?: string; mobile?: string; desktopPlus?: string; showMore?: boolean }>>({});
 
   // Refs for informational text tooltips
   const leaseStyleNightlyInfoRef = useRef<HTMLButtonElement>(null);
@@ -208,58 +210,82 @@ export function SelfListingPageV2() {
   const securityDepositInfoRef = useRef<HTMLButtonElement>(null);
   const utilitiesInfoRef = useRef<HTMLButtonElement>(null);
 
-  // Informational text content
-  const infoContent = {
+  // Mapping of tooltip IDs to database tag titles with fallback content
+  const infoContentConfig: Record<string, { title: string; dbTag: string; fallbackContent: string; fallbackExpanded: string }> = {
     leaseStyleNightly: {
       title: 'Nightly Rental',
-      content: 'Rent by the night with flexible availability. Perfect for hosts who want maximum control over their schedule.',
-      expandedContent: 'With nightly rentals, you can select specific nights of the week to make available. Guests book individual nights, and you receive payment for each night booked. This model offers the highest flexibility but requires more active management.',
+      dbTag: 'Nightly Rental',
+      fallbackContent: 'Rent by the night with flexible availability. Perfect for hosts who want maximum control over their schedule.',
+      fallbackExpanded: 'With nightly rentals, you can select specific nights of the week to make available. Guests book individual nights, and you receive payment for each night booked. This model offers the highest flexibility but requires more active management.',
     },
     leaseStyleWeekly: {
       title: 'Weekly Rental',
-      content: 'Rent in weekly patterns with consistent schedules. Ideal for hosts with predictable routines.',
-      expandedContent: 'Weekly rentals allow you to set patterns like "one week on, one week off." This provides predictable income and less turnover than nightly rentals while maintaining some flexibility.',
+      dbTag: 'Weekly Rental',
+      fallbackContent: 'Rent in weekly patterns with consistent schedules. Ideal for hosts with predictable routines.',
+      fallbackExpanded: 'Weekly rentals allow you to set patterns like "one week on, one week off." This provides predictable income and less turnover than nightly rentals while maintaining some flexibility.',
     },
     leaseStyleMonthly: {
       title: 'Monthly Rental',
-      content: 'Traditional month-to-month rental with stable, predictable income.',
-      expandedContent: 'With monthly rentals, you receive a fixed monthly rate regardless of how many nights your guest uses. Split Lease may sublease unused nights to maximize occupancy. This model offers the most predictable income with minimal management.',
+      dbTag: 'Monthly Rental',
+      fallbackContent: 'Traditional month-to-month rental with stable, predictable income.',
+      fallbackExpanded: 'With monthly rentals, you receive a fixed monthly rate regardless of how many nights your guest uses. Split Lease may sublease unused nights to maximize occupancy. This model offers the most predictable income with minimal management.',
     },
     baseNightlyRate: {
       title: 'Base Nightly Rate',
-      content: 'This is your starting price per night. Consecutive nights automatically get discounted based on your Long Stay Discount setting.',
-      expandedContent: 'Set this to the rate you want for a single night stay. Multi-night bookings will be cheaper per night, encouraging longer stays and reducing your turnover effort.',
+      dbTag: 'Base Nightly Rate',
+      fallbackContent: 'This is your starting price per night. Consecutive nights automatically get discounted based on your Long Stay Discount setting.',
+      fallbackExpanded: 'Set this to the rate you want for a single night stay. Multi-night bookings will be cheaper per night, encouraging longer stays and reducing your turnover effort.',
     },
     longStayDiscount: {
       title: 'Long Stay Discount',
-      content: 'The percentage discount applied to consecutive nights. Higher discounts encourage longer bookings.',
-      expandedContent: 'A 20% discount means each consecutive night gets progressively cheaper. For example, if your base rate is $100, night 2 might be $95, night 3 might be $90, and so on. This creates an incentive for guests to book longer stays.',
+      dbTag: 'Long Stay Discount',
+      fallbackContent: 'The percentage discount applied to consecutive nights. Higher discounts encourage longer bookings.',
+      fallbackExpanded: 'A 20% discount means each consecutive night gets progressively cheaper. For example, if your base rate is $100, night 2 might be $95, night 3 might be $90, and so on. This creates an incentive for guests to book longer stays.',
     },
     damageDeposit: {
       title: 'Damage Deposit',
-      content: 'A refundable security deposit to protect your property against damages during the stay.',
-      expandedContent: 'The damage deposit is held during the guest\'s stay and returned within 7 days after checkout, minus any deductions for damages. We recommend a minimum of $500 for adequate protection.',
+      dbTag: 'Damage Deposit',
+      fallbackContent: 'A refundable security deposit to protect your property against damages during the stay.',
+      fallbackExpanded: 'The damage deposit is held during the guest\'s stay and returned within 7 days after checkout, minus any deductions for damages. We recommend a minimum of $500 for adequate protection.',
     },
     cleaningFee: {
-      title: 'Cleaning Fee',
-      content: 'A one-time fee charged to guests to cover cleaning costs between stays.',
-      expandedContent: 'This fee helps ensure your property stays in top condition for each guest. It covers professional cleaning, fresh linens, and general turnover preparation.',
+      title: 'Maintenance Fee',
+      dbTag: 'Regular Maintenance Fee',
+      fallbackContent: 'A recurring monthly fee to cover cleaning and maintenance costs between guest stays.',
+      fallbackExpanded: 'Typically, a fee for cleaning and maintenance is charged every four weeks. This includes DIY or housekeeper cleaning costs.',
     },
     desiredRent: {
       title: 'Desired Rent',
-      content: 'The total amount you want to receive for each rental period (weekly or monthly).',
-      expandedContent: 'This is your take-home amount before any Split Lease service fees. Set this based on your costs (mortgage, utilities, etc.) plus your desired profit margin.',
+      dbTag: 'Desired Rent',
+      fallbackContent: 'The total amount you want to receive for each rental period (weekly or monthly).',
+      fallbackExpanded: 'This is your take-home amount before any Split Lease service fees. Set this based on your costs (mortgage, utilities, etc.) plus your desired profit margin.',
     },
     securityDeposit: {
       title: 'Security Deposit',
-      content: 'A refundable deposit held for the duration of the lease to cover potential damages.',
-      expandedContent: 'For weekly and monthly rentals, we recommend at least one week or month\'s rent as a security deposit. This is refunded at the end of the lease if no damages occur.',
+      dbTag: 'Security Deposit',
+      fallbackContent: 'A refundable deposit held for the duration of the lease to cover potential damages.',
+      fallbackExpanded: 'For weekly and monthly rentals, we recommend at least one week or month\'s rent as a security deposit. This is refunded at the end of the lease if no damages occur.',
     },
     utilities: {
       title: 'Utilities',
-      content: 'Specify whether utilities are included in the rent or charged separately.',
-      expandedContent: 'If utilities are not included, specify the estimated monthly cost so guests know what to expect. Common utilities include electricity, gas, water, internet, and trash removal.',
+      dbTag: 'Utilities',
+      fallbackContent: 'Specify whether utilities are included in the rent or charged separately.',
+      fallbackExpanded: 'If utilities are not included, specify the estimated monthly cost so guests know what to expect. Common utilities include electricity, gas, water, internet, and trash removal.',
     },
+  };
+
+  // Helper to get informational text content (database-first with fallback)
+  const getInfoContent = (tooltipId: string) => {
+    const config = infoContentConfig[tooltipId];
+    if (!config) return { title: '', content: '', expandedContent: '', showMore: false };
+
+    const dbEntry = informationalTexts[config.dbTag];
+    return {
+      title: config.title,
+      content: dbEntry?.desktop || config.fallbackContent,
+      expandedContent: dbEntry?.desktopPlus || config.fallbackExpanded,
+      showMore: dbEntry?.showMore ?? true,
+    };
   };
 
   // Handle info tooltip toggle
@@ -267,6 +293,15 @@ export function SelfListingPageV2() {
     e.stopPropagation();
     setActiveInfoTooltip(activeInfoTooltip === tooltipId ? null : tooltipId);
   };
+
+  // Fetch informational texts from database on mount
+  useEffect(() => {
+    const loadInformationalTexts = async () => {
+      const texts = await fetchInformationalTexts();
+      setInformationalTexts(texts);
+    };
+    loadInformationalTexts();
+  }, []);
 
   // Access control state - guests should not access this page
   const [isCheckingAccess, setIsCheckingAccess] = useState(true);
@@ -2241,100 +2276,100 @@ export function SelfListingPageV2() {
         isOpen={activeInfoTooltip === 'leaseStyleNightly'}
         onClose={() => setActiveInfoTooltip(null)}
         triggerRef={leaseStyleNightlyInfoRef}
-        title={infoContent.leaseStyleNightly.title}
-        content={infoContent.leaseStyleNightly.content}
-        expandedContent={infoContent.leaseStyleNightly.expandedContent}
-        showMoreAvailable={true}
+        title={getInfoContent('leaseStyleNightly').title}
+        content={getInfoContent('leaseStyleNightly').content}
+        expandedContent={getInfoContent('leaseStyleNightly').expandedContent}
+        showMoreAvailable={getInfoContent('leaseStyleNightly').showMore}
       />
 
       <InformationalText
         isOpen={activeInfoTooltip === 'leaseStyleWeekly'}
         onClose={() => setActiveInfoTooltip(null)}
         triggerRef={leaseStyleWeeklyInfoRef}
-        title={infoContent.leaseStyleWeekly.title}
-        content={infoContent.leaseStyleWeekly.content}
-        expandedContent={infoContent.leaseStyleWeekly.expandedContent}
-        showMoreAvailable={true}
+        title={getInfoContent('leaseStyleWeekly').title}
+        content={getInfoContent('leaseStyleWeekly').content}
+        expandedContent={getInfoContent('leaseStyleWeekly').expandedContent}
+        showMoreAvailable={getInfoContent('leaseStyleWeekly').showMore}
       />
 
       <InformationalText
         isOpen={activeInfoTooltip === 'leaseStyleMonthly'}
         onClose={() => setActiveInfoTooltip(null)}
         triggerRef={leaseStyleMonthlyInfoRef}
-        title={infoContent.leaseStyleMonthly.title}
-        content={infoContent.leaseStyleMonthly.content}
-        expandedContent={infoContent.leaseStyleMonthly.expandedContent}
-        showMoreAvailable={true}
+        title={getInfoContent('leaseStyleMonthly').title}
+        content={getInfoContent('leaseStyleMonthly').content}
+        expandedContent={getInfoContent('leaseStyleMonthly').expandedContent}
+        showMoreAvailable={getInfoContent('leaseStyleMonthly').showMore}
       />
 
       <InformationalText
         isOpen={activeInfoTooltip === 'baseNightlyRate'}
         onClose={() => setActiveInfoTooltip(null)}
         triggerRef={baseNightlyRateInfoRef}
-        title={infoContent.baseNightlyRate.title}
-        content={infoContent.baseNightlyRate.content}
-        expandedContent={infoContent.baseNightlyRate.expandedContent}
-        showMoreAvailable={true}
+        title={getInfoContent('baseNightlyRate').title}
+        content={getInfoContent('baseNightlyRate').content}
+        expandedContent={getInfoContent('baseNightlyRate').expandedContent}
+        showMoreAvailable={getInfoContent('baseNightlyRate').showMore}
       />
 
       <InformationalText
         isOpen={activeInfoTooltip === 'longStayDiscount'}
         onClose={() => setActiveInfoTooltip(null)}
         triggerRef={longStayDiscountInfoRef}
-        title={infoContent.longStayDiscount.title}
-        content={infoContent.longStayDiscount.content}
-        expandedContent={infoContent.longStayDiscount.expandedContent}
-        showMoreAvailable={true}
+        title={getInfoContent('longStayDiscount').title}
+        content={getInfoContent('longStayDiscount').content}
+        expandedContent={getInfoContent('longStayDiscount').expandedContent}
+        showMoreAvailable={getInfoContent('longStayDiscount').showMore}
       />
 
       <InformationalText
         isOpen={activeInfoTooltip === 'damageDeposit'}
         onClose={() => setActiveInfoTooltip(null)}
         triggerRef={damageDepositInfoRef}
-        title={infoContent.damageDeposit.title}
-        content={infoContent.damageDeposit.content}
-        expandedContent={infoContent.damageDeposit.expandedContent}
-        showMoreAvailable={true}
+        title={getInfoContent('damageDeposit').title}
+        content={getInfoContent('damageDeposit').content}
+        expandedContent={getInfoContent('damageDeposit').expandedContent}
+        showMoreAvailable={getInfoContent('damageDeposit').showMore}
       />
 
       <InformationalText
         isOpen={activeInfoTooltip === 'cleaningFee'}
         onClose={() => setActiveInfoTooltip(null)}
         triggerRef={cleaningFeeInfoRef}
-        title={infoContent.cleaningFee.title}
-        content={infoContent.cleaningFee.content}
-        expandedContent={infoContent.cleaningFee.expandedContent}
-        showMoreAvailable={true}
+        title={getInfoContent('cleaningFee').title}
+        content={getInfoContent('cleaningFee').content}
+        expandedContent={getInfoContent('cleaningFee').expandedContent}
+        showMoreAvailable={getInfoContent('cleaningFee').showMore}
       />
 
       <InformationalText
         isOpen={activeInfoTooltip === 'desiredRent'}
         onClose={() => setActiveInfoTooltip(null)}
         triggerRef={desiredRentInfoRef}
-        title={infoContent.desiredRent.title}
-        content={infoContent.desiredRent.content}
-        expandedContent={infoContent.desiredRent.expandedContent}
-        showMoreAvailable={true}
+        title={getInfoContent('desiredRent').title}
+        content={getInfoContent('desiredRent').content}
+        expandedContent={getInfoContent('desiredRent').expandedContent}
+        showMoreAvailable={getInfoContent('desiredRent').showMore}
       />
 
       <InformationalText
         isOpen={activeInfoTooltip === 'securityDeposit'}
         onClose={() => setActiveInfoTooltip(null)}
         triggerRef={securityDepositInfoRef}
-        title={infoContent.securityDeposit.title}
-        content={infoContent.securityDeposit.content}
-        expandedContent={infoContent.securityDeposit.expandedContent}
-        showMoreAvailable={true}
+        title={getInfoContent('securityDeposit').title}
+        content={getInfoContent('securityDeposit').content}
+        expandedContent={getInfoContent('securityDeposit').expandedContent}
+        showMoreAvailable={getInfoContent('securityDeposit').showMore}
       />
 
       <InformationalText
         isOpen={activeInfoTooltip === 'utilities'}
         onClose={() => setActiveInfoTooltip(null)}
         triggerRef={utilitiesInfoRef}
-        title={infoContent.utilities.title}
-        content={infoContent.utilities.content}
-        expandedContent={infoContent.utilities.expandedContent}
-        showMoreAvailable={true}
+        title={getInfoContent('utilities').title}
+        content={getInfoContent('utilities').content}
+        expandedContent={getInfoContent('utilities').expandedContent}
+        showMoreAvailable={getInfoContent('utilities').showMore}
       />
     </div>
   );

@@ -53,6 +53,7 @@ interface ListingData {
   '💰Nightly Host Rate for 3 nights'?: number;
   '💰Nightly Host Rate for 4 nights'?: number;
   '💰Nightly Host Rate for 5 nights'?: number;
+  '💰Nightly Host Rate for 6 nights'?: number;
   '💰Nightly Host Rate for 7 nights'?: number;
   '💰Cleaning Cost / Maintenance Fee'?: number;
   '💰Damage Deposit'?: number;
@@ -78,17 +79,13 @@ function getNightlyRateForNights(listing: ListingData, nightsPerWeek: number): n
     3: listing['💰Nightly Host Rate for 3 nights'],
     4: listing['💰Nightly Host Rate for 4 nights'],
     5: listing['💰Nightly Host Rate for 5 nights'],
+    6: listing['💰Nightly Host Rate for 6 nights'],
     7: listing['💰Nightly Host Rate for 7 nights'],
   };
 
   // Try exact match first
   if (rateMap[nightsPerWeek] !== undefined && rateMap[nightsPerWeek]! > 0) {
     return rateMap[nightsPerWeek]!;
-  }
-
-  // For 6 nights, use 7-night rate
-  if (nightsPerWeek === 6 && rateMap[7] && rateMap[7] > 0) {
-    return rateMap[7]!;
   }
 
   // Fallback to weekly rate divided by nights, or 0
@@ -204,31 +201,33 @@ function getDayNightConfig(rentalType: string, listing: ListingData): {
 
     case 'nightly':
     default:
-      // Check if >5 nights available
+      // Check if >5 nights available (full or near-full availability)
       if (availableNights.length > 5) {
-        // Full availability
+        // Full availability: Use weekday pattern (Mon-Fri checkout = 4 nights staying)
+        // This creates a realistic demonstration proposal matching typical guest booking patterns
         return {
-          daysSelected: [1, 2, 3, 4, 5, 6, 7], // All days
-          nightsSelected: [1, 2, 3, 4, 5, 6, 7], // All nights
-          checkIn: 1,                            // Sunday
-          checkOut: 1,                           // Sunday (next week)
-          checkInDayJS: 0,                      // Sunday in JS
-          nightsPerWeek: 7,
-          reservationSpanWeeks: 4,
+          daysSelected: [2, 3, 4, 5, 6],  // Mon-Fri (Bubble format)
+          nightsSelected: [2, 3, 4, 5],   // Mon-Thu nights (4 staying nights)
+          checkIn: 2,                      // Monday
+          checkOut: 6,                     // Friday
+          checkInDayJS: 1,                // Monday in JS
+          nightsPerWeek: 4,
+          reservationSpanWeeks: 13,       // Minimum 13 weeks (matches real proposal requirements)
         };
       } else {
-        // Use listing's actual availability
-        const nightsCount = availableNights.length || 4; // Default to 4 if empty
-        const sortedDays = availableDays.length > 0
-          ? [...availableDays].sort((a, b) => a - b)
-          : [2, 3, 4, 5, 6]; // Default Mon-Fri
+        // Limited availability: Use available nights minus one for flexibility
+        const nightsCount = Math.max(1, availableNights.length - 1);
         const sortedNights = availableNights.length > 0
-          ? [...availableNights].sort((a, b) => a - b)
+          ? [...availableNights].sort((a, b) => a - b).slice(0, nightsCount)
           : [2, 3, 4, 5]; // Default Mon-Thu
 
-        const checkInDay = sortedDays[0] || 2;
-        let checkOutDay = (sortedDays[sortedDays.length - 1] || 6) + 1;
+        // Days = nights + checkout day
+        const lastNight = sortedNights[sortedNights.length - 1];
+        let checkOutDay = lastNight + 1;
         if (checkOutDay > 7) checkOutDay = 1;
+
+        const sortedDays = [...sortedNights, checkOutDay].sort((a, b) => a - b);
+        const checkInDay = sortedDays[0];
 
         // Convert first day to JS format for date calculation
         // Bubble: Sun=1 -> JS: Sun=0, so subtract 1
@@ -241,7 +240,7 @@ function getDayNightConfig(rentalType: string, listing: ListingData): {
           checkOut: checkOutDay,
           checkInDayJS: checkInDayJS,
           nightsPerWeek: nightsCount,
-          reservationSpanWeeks: 4,
+          reservationSpanWeeks: 13,       // Minimum 13 weeks (matches real proposal requirements)
         };
       }
   }
@@ -386,6 +385,7 @@ export async function handleCreateMockupProposal(
         "💰Nightly Host Rate for 3 nights",
         "💰Nightly Host Rate for 4 nights",
         "💰Nightly Host Rate for 5 nights",
+        "💰Nightly Host Rate for 6 nights",
         "💰Nightly Host Rate for 7 nights",
         "💰Cleaning Cost / Maintenance Fee",
         "💰Damage Deposit",

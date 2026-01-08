@@ -292,9 +292,97 @@ export function getNightsAsDayNames(nightsSelected) {
 }
 
 /**
+ * Get check-in and check-out days from Days Selected
+ * Derives directly from Days Selected to ensure consistency with displayed day badges
+ * Uses wrap-around logic for schedules spanning Saturday-Sunday boundary
+ *
+ * Days Selected = days the guest will be PRESENT (includes checkout day)
+ * e.g., Thu, Fri, Sat, Sun (4 days) for 3 nights Thu-Fri-Sat
+ *
+ * Database uses 0-based indexing: 0=Sunday, 1=Monday, ..., 6=Saturday
+ *
+ * @param {number[]|string} daysSelected - Array of 0-based day indices or JSON string
+ * @returns {{ checkInDay: string, checkOutDay: string }} Check-in and check-out day names
+ */
+export function getCheckInOutFromDays(daysSelected) {
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+  if (!daysSelected) return { checkInDay: '', checkOutDay: '' };
+
+  // Parse if it's a JSON string
+  let days = daysSelected;
+  if (typeof daysSelected === 'string') {
+    try {
+      days = JSON.parse(daysSelected);
+    } catch (e) {
+      return { checkInDay: '', checkOutDay: '' };
+    }
+  }
+
+  if (!Array.isArray(days) || days.length === 0) return { checkInDay: '', checkOutDay: '' };
+
+  // Convert to day indices (0-indexed: 0=Sunday through 6=Saturday)
+  const dayIndices = days.map(day => {
+    if (typeof day === 'number') return day;
+    if (typeof day === 'string') {
+      const trimmed = day.trim();
+      const numericValue = parseInt(trimmed, 10);
+      if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+        return numericValue; // 0-indexed
+      }
+      // It's a day name - find its 0-indexed position
+      const jsIndex = dayNames.indexOf(trimmed);
+      return jsIndex >= 0 ? jsIndex : -1;
+    }
+    return -1;
+  }).filter(idx => idx >= 0 && idx <= 6);
+
+  if (dayIndices.length === 0) return { checkInDay: '', checkOutDay: '' };
+
+  const sorted = [...dayIndices].sort((a, b) => a - b);
+
+  // Handle wrap-around case (e.g., Fri, Sat, Sun, Mon = [0, 1, 5, 6])
+  const hasZero = sorted.includes(0);
+  const hasSix = sorted.includes(6);
+
+  if (hasZero && hasSix) {
+    // Find gap to determine actual start/end
+    let gapIndex = -1;
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] !== sorted[i - 1] + 1) {
+        gapIndex = i;
+        break;
+      }
+    }
+
+    if (gapIndex !== -1) {
+      // Wrapped selection: first day is after the gap, last day is before the gap
+      const firstDayIndex = sorted[gapIndex]; // First day after gap (e.g., Friday = 5)
+      const lastDayIndex = sorted[gapIndex - 1]; // Last day before gap (e.g., Monday = 1)
+
+      return {
+        checkInDay: dayNames[firstDayIndex] || '',
+        checkOutDay: dayNames[lastDayIndex] || ''
+      };
+    }
+  }
+
+  // Standard case: first selected day to last selected day
+  const firstDayIndex = sorted[0];
+  const lastDayIndex = sorted[sorted.length - 1];
+
+  return {
+    checkInDay: dayNames[firstDayIndex] || '',
+    checkOutDay: dayNames[lastDayIndex] || ''
+  };
+}
+
+/**
  * Get check-in and check-out days from nights selected
  * Check-in is the first night's day, check-out is the day after the last night
  * Database uses 0-based indexing: 0=Sunday, 1=Monday, ..., 6=Saturday
+ *
+ * @deprecated Use getCheckInOutFromDays() instead for consistency with guest-facing display
  *
  * @param {number[]|string} nightsSelected - Array of 0-based day indices or JSON string
  * @returns {{ checkInDay: string, checkOutDay: string }} Check-in and check-out day names
@@ -324,6 +412,35 @@ export function getCheckInOutFromNights(nightsSelected) {
 
   if (sortedNights.length === 0) return { checkInDay: '', checkOutDay: '' };
 
+  // Handle wrap-around case (e.g., Fri, Sat, Sun, Mon = [0, 1, 5, 6])
+  // Check if schedule wraps around Saturday-Sunday boundary
+  const hasZero = sortedNights.includes(0);
+  const hasSix = sortedNights.includes(6);
+
+  if (hasZero && hasSix) {
+    // Find the gap to determine actual start/end
+    let gapIndex = -1;
+    for (let i = 1; i < sortedNights.length; i++) {
+      if (sortedNights[i] !== sortedNights[i - 1] + 1) {
+        gapIndex = i;
+        break;
+      }
+    }
+
+    if (gapIndex !== -1) {
+      // Wrapped selection: check-in is first day after gap, check-out is day after last day before gap
+      const firstNight = sortedNights[gapIndex]; // First night after gap (e.g., 5 = Friday)
+      const lastNight = sortedNights[gapIndex - 1]; // Last night before gap (e.g., 1 = Monday)
+      const checkOutIndex = (lastNight + 1) % 7; // Day after last night
+
+      return {
+        checkInDay: dayNames[firstNight] || '',
+        checkOutDay: dayNames[checkOutIndex] || ''
+      };
+    }
+  }
+
+  // Standard case: first selected night to day after last selected night
   const firstNight = sortedNights[0]; // Check-in day (0-based)
   const lastNight = sortedNights[sortedNights.length - 1]; // Last night stayed
 

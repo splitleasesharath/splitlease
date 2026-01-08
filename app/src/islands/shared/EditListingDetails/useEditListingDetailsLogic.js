@@ -31,7 +31,8 @@ const FOCUS_FIELD_SECTIONS = {
   minNights: 'availability',
   maxNights: 'availability',
   cancellation: 'availability',
-  firstAvailable: 'availability'
+  firstAvailable: 'availability',
+  building: 'building' // Building amenities section - scroll to this subsection
 };
 
 /**
@@ -81,7 +82,8 @@ export function useEditListingDetailsLogic({ listing, editSection, focusField, o
     minNights: useRef(null),
     maxNights: useRef(null),
     cancellation: useRef(null),
-    firstAvailable: useRef(null)
+    firstAvailable: useRef(null),
+    building: useRef(null) // Ref for Building amenities section (for scrolling)
   };
 
   // Photo drag and drop state
@@ -144,9 +146,14 @@ export function useEditListingDetailsLogic({ listing, editSection, focusField, o
     const focusTimer = setTimeout(() => {
       const ref = fieldRefs[focusField];
       if (ref?.current) {
-        ref.current.focus();
-        // Scroll the field into view within the modal
-        ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // For section refs (like 'building'), just scroll without focusing
+        // For input refs, focus and scroll
+        if (focusField === 'building') {
+          ref.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } else {
+          ref.current.focus();
+          ref.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
       }
     }, 150);
 

@@ -158,13 +158,13 @@
    Toast Type Variants
    ======================================== */
 
-/* Success - Green */
+/* Success - Green (using darker shade for better contrast) */
 .toast-success {
   border-left: 4px solid #22C55E;
 }
 
 .toast-success .toast-title {
-  color: #22C55E;
+  color: #16A34A; /* Darker green for better readability on white background */
 }
 
 /* Error - Red */

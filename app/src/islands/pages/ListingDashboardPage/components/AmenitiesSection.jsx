@@ -37,7 +37,7 @@ const EmptyAmenityTag = ({ onClick }) => (
   </button>
 );
 
-export default function AmenitiesSection({ listing, onEdit }) {
+export default function AmenitiesSection({ listing, onEditInUnit, onEditBuilding }) {
   const inUnitAmenities = listing?.inUnitAmenities || [];
   const buildingAmenities = listing?.buildingAmenities || [];
 
@@ -49,7 +49,7 @@ export default function AmenitiesSection({ listing, onEdit }) {
       {/* Section Header */}
       <div className="listing-dashboard-section__header">
         <h2 className="listing-dashboard-section__title">Amenities</h2>
-        <button className="listing-dashboard-section__edit" onClick={onEdit}>
+        <button className="listing-dashboard-section__edit" onClick={onEditInUnit}>
           edit
         </button>
       </div>
@@ -71,7 +71,7 @@ export default function AmenitiesSection({ listing, onEdit }) {
               ))}
             </div>
           ) : (
-            <EmptyAmenityTag onClick={onEdit} />
+            <EmptyAmenityTag onClick={onEditInUnit} />
           )}
         </div>
 
@@ -90,7 +90,7 @@ export default function AmenitiesSection({ listing, onEdit }) {
               ))}
             </div>
           ) : (
-            <EmptyAmenityTag onClick={onEdit} />
+            <EmptyAmenityTag onClick={onEditBuilding} />
           )}
         </div>
       </div>

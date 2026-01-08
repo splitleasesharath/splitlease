@@ -24,7 +24,8 @@ import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMee
 import {
   getVirtualMeetingState,
   getVMStateInfo,
-  VM_STATES
+  VM_STATES,
+  areAllDatesExpired
 } from '../../../logic/rules/proposals/virtualMeetingRules.js';
 
 // Calendar icon SVG (inline to match Bubble's design)
@@ -45,6 +46,26 @@ const DefaultProfileIcon = () => (
     <path d="M8 42c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="#6B4EFF"/>
   </svg>
 );
+
+/**
+ * Format a short date for proposal identification
+ * Shows just month and day, e.g., "Dec 12"
+ */
+function formatShortDate(dateStr) {
+  if (!dateStr) return '';
+
+  try {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '';
+
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  } catch (e) {
+    return '';
+  }
+}
 
 /**
  * Format a date/time string for display
@@ -160,6 +181,8 @@ function getModalViewForState(vmState) {
     case VM_STATES.BOOKED_AWAITING_CONFIRMATION:
     case VM_STATES.CONFIRMED:
       return 'details';
+    case VM_STATES.EXPIRED:
+      return 'request'; // Open request form to submit new times
     case VM_STATES.REQUESTED_BY_ME:
     case VM_STATES.NO_MEETING:
     case VM_STATES.DECLINED:
@@ -184,6 +207,8 @@ function getCardMessage(vmState, hostName) {
       return `Your meeting is scheduled. Waiting for Split Lease confirmation.`;
     case VM_STATES.CONFIRMED:
       return `Your virtual meeting is confirmed!`;
+    case VM_STATES.EXPIRED:
+      return `Your meeting request expired without a response. You can request new times.`;
     default:
       return `A virtual meeting with ${hostName} has been suggested:`;
   }
@@ -201,6 +226,8 @@ function getStateBadge(vmState) {
       return { text: 'Pending Confirmation', className: 'vm-section-badge-pending' };
     case VM_STATES.CONFIRMED:
       return { text: 'Confirmed', className: 'vm-section-badge-confirmed' };
+    case VM_STATES.EXPIRED:
+      return { text: 'Expired', className: 'vm-section-badge-expired' };
     default:
       return null;
   }
@@ -240,21 +267,30 @@ function getPrimaryButtonConfig(vmStateInfo, vmState) {
         disabled: false,
         view: 'details'
       };
+    case VM_STATES.EXPIRED:
+      return {
+        text: 'Request New Times',
+        className: 'vm-section-primary-btn vm-section-primary-btn--expired',
+        disabled: false,
+        view: 'request'
+      };
     default:
       return null;
   }
 }
 
 /**
- * Filter proposals to only those with active virtual meetings
+ * Filter proposals to only those with virtual meetings (active OR expired)
  *
- * Based on Bubble's List filter conditions:
+ * Based on Bubble's List filter conditions with modification:
  * - virtual meeting isn't empty
  * - Status <> Proposal Cancelled by Guest
  * - Status <> Proposal Rejected by Host
  * - Status <> Proposal Cancelled by Split Lease
- * - booked date > current OR suggested dates last item > current
  * - meeting declined is no
+ *
+ * NOTE: We now INCLUDE expired VMs (where all dates are in the past)
+ * so users can see expired requests and create new ones.
  */
 function filterProposalsWithActiveVM(proposals) {
   if (!proposals || !Array.isArray(proposals)) return [];
@@ -284,17 +320,8 @@ function filterProposalsWithActiveVM(proposals) {
       return false;
     }
 
-    // Either booked date is in future OR any suggested date is in future
-    const bookedDate = vm['booked date'];
-    const suggestedDates = vm['suggested dates and times'];
-
-    const hasFutureBookedDate = isFutureDateTime(bookedDate);
-    const hasFutureSuggestedDate = hasAnyFutureSuggestedDate(suggestedDates);
-
-    if (!hasFutureBookedDate && !hasFutureSuggestedDate) {
-      return false;
-    }
-
+    // Include ALL VMs that aren't declined (including expired ones)
+    // This allows users to see expired requests and create new ones
     return true;
   });
 }
@@ -320,6 +347,9 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
   const listingName = listing?.Name || 'Listing';
   const displayTitle = `${hostName} - ${listingName}`;
 
+  // Get proposal creation date for disambiguation when multiple proposals exist for same listing
+  const proposalDate = formatShortDate(proposal['Created Date'] || proposal.createdDate);
+  const proposalSubtitle = proposalDate ? `Proposal from ${proposalDate}` : null;
   // Get suggested dates/times using the shared parser
   const suggestedDates = parseSuggestedDates(vm?.['suggested dates and times']);
 
@@ -366,6 +396,10 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
                 </span>
               )}
             </div>
+            {/* Proposal date subtitle for disambiguation */}
+            {proposalSubtitle && (
+              <div className="vm-section-subtitle">{proposalSubtitle}</div>
+            )}
             <div className="vm-section-message-row">
               <CalendarIcon />
               <span className="vm-section-message">{messageText}</span>
@@ -385,11 +419,17 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
         {/* Suggested dates/times (when not yet booked) */}
         {showSuggestedDates && (
           <div className="vm-section-dates-row">
-            {suggestedDates.map((dateTime, index) => (
-              <div key={index} className="vm-section-date-pill">
-                {formatDateTime(dateTime)}
-              </div>
-            ))}
+            {suggestedDates.map((dateTime, index) => {
+              const isExpired = !isFutureDateTime(dateTime);
+              return (
+                <div
+                  key={index}
+                  className={`vm-section-date-pill ${isExpired ? 'vm-section-date-pill--expired' : ''}`}
+                >
+                  {formatDateTime(dateTime)}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -407,8 +447,8 @@ function VirtualMeetingCard({ proposal, currentUserId, onOpenVMModal }) {
           </button>
         )}
 
-        {/* Cancel button - always show unless VM is confirmed or user is waiting for response */}
-        {vmState !== VM_STATES.CONFIRMED && (
+        {/* Cancel button - always show unless VM is confirmed or expired */}
+        {vmState !== VM_STATES.CONFIRMED && vmState !== VM_STATES.EXPIRED && (
           <button
             className="vm-section-cancel-btn"
             onClick={() => onOpenVMModal(proposal, 'cancel')}

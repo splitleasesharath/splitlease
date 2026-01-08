@@ -20,12 +20,14 @@ import { formatPrice, formatDate } from '../../../lib/proposals/dataTransformers
 import { getStatusConfig, getActionsForStatus, isTerminalStatus, isCompletedStatus, isSuggestedProposal, shouldShowStatusBanner, getUsualOrder } from '../../../logic/constants/proposalStatuses.js';
 import { shouldHideVirtualMeetingButton } from '../../../lib/proposals/statusButtonConfig.js';
 import { navigateToMessaging } from '../../../logic/workflows/proposals/navigationWorkflow.js';
+import { executeDeleteProposal } from '../../../logic/workflows/proposals/cancelProposalWorkflow.js';
 import { goToRentalApplication, getListingUrlWithProposalContext } from '../../../lib/navigation.js';
 import HostProfileModal from '../../modals/HostProfileModal.jsx';
 import GuestEditingProposalModal from '../../modals/GuestEditingProposalModal.jsx';
 import CancelProposalModal from '../../modals/CancelProposalModal.jsx';
 import VirtualMeetingManager from '../../shared/VirtualMeetingManager/VirtualMeetingManager.jsx';
 import FullscreenProposalMapModal from '../../modals/FullscreenProposalMapModal.jsx';
+import { showToast } from '../../shared/Toast.jsx';
 
 // Day abbreviations for schedule display (single letter like Bubble)
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -70,30 +72,17 @@ function convertDayValueToName(dayValue) {
 }
 
 /**
- * Get check-in and check-out range from proposal
- * Uses the stored check-in/check-out day fields directly (handles wrap-around weeks correctly)
+ * Get the first and last selected day range from proposal
+ * Derives directly from Days Selected to ensure consistency with displayed day badges
+ * Uses wrap-around logic for schedules spanning Saturday-Sunday boundary
  *
- * Note: Database now stores 0-indexed days natively (0=Sunday through 6=Saturday)
+ * Note: Database stores 0-indexed days (0=Sunday through 6=Saturday)
  *
  * @param {Object} proposal - Proposal object
- * @returns {string|null} "Wednesday to Sunday" format or null if unavailable
+ * @returns {string|null} "Monday to Saturday" format or null if unavailable
  */
 function getCheckInOutRange(proposal) {
-  // Use the stored check-in/out day fields directly - they handle wrap-around correctly
-  const checkInDay = proposal['check in day'];
-  const checkOutDay = proposal['check out day'];
-
-  if (checkInDay !== null && checkInDay !== undefined &&
-      checkOutDay !== null && checkOutDay !== undefined) {
-    const checkInName = convertDayValueToName(checkInDay);
-    const checkOutName = convertDayValueToName(checkOutDay);
-
-    if (checkInName && checkOutName) {
-      return `${checkInName} to ${checkOutName}`;
-    }
-  }
-
-  // Fallback: derive from Days Selected (for legacy data without check-in/out fields)
+  // Always derive from Days Selected to match the displayed day badges
   let daysSelected = proposal['Days Selected'] || proposal.hcDaysSelected || [];
 
   // Parse if it's a JSON string
@@ -105,28 +94,50 @@ function getCheckInOutRange(proposal) {
     }
   }
 
-  if (Array.isArray(daysSelected) && daysSelected.length > 0) {
-    // Convert to day indices (0-indexed: 0=Sunday through 6=Saturday)
-    const dayIndices = daysSelected.map(day => {
-      if (typeof day === 'number') return day;
-      if (typeof day === 'string') {
-        const trimmed = day.trim();
-        const numericValue = parseInt(trimmed, 10);
-        if (!isNaN(numericValue) && String(numericValue) === trimmed) {
-          return numericValue; // 0-indexed
-        }
-        // It's a day name - find its 0-indexed position
-        const jsIndex = DAY_NAMES.indexOf(trimmed);
-        return jsIndex >= 0 ? jsIndex : -1;
-      }
-      return -1;
-    }).filter(idx => idx >= 0 && idx <= 6);
+  if (!Array.isArray(daysSelected) || daysSelected.length === 0) {
+    return null;
+  }
 
-    if (dayIndices.length > 0) {
-      // Sort to find first and last day (note: doesn't handle wrap-around, but this is fallback only)
-      dayIndices.sort((a, b) => a - b);
-      const firstDayIndex = dayIndices[0];
-      const lastDayIndex = dayIndices[dayIndices.length - 1];
+  // Convert to day indices (0-indexed: 0=Sunday through 6=Saturday)
+  const dayIndices = daysSelected.map(day => {
+    if (typeof day === 'number') return day;
+    if (typeof day === 'string') {
+      const trimmed = day.trim();
+      const numericValue = parseInt(trimmed, 10);
+      if (!isNaN(numericValue) && String(numericValue) === trimmed) {
+        return numericValue; // 0-indexed
+      }
+      // It's a day name - find its 0-indexed position
+      const jsIndex = DAY_NAMES.indexOf(trimmed);
+      return jsIndex >= 0 ? jsIndex : -1;
+    }
+    return -1;
+  }).filter(idx => idx >= 0 && idx <= 6);
+
+  if (dayIndices.length === 0) {
+    return null;
+  }
+
+  const sorted = [...dayIndices].sort((a, b) => a - b);
+
+  // Handle wrap-around case (e.g., Fri, Sat, Sun, Mon = [0, 1, 5, 6])
+  const hasZero = sorted.includes(0);
+  const hasSix = sorted.includes(6);
+
+  if (hasZero && hasSix) {
+    // Find gap to determine actual start/end
+    let gapIndex = -1;
+    for (let i = 1; i < sorted.length; i++) {
+      if (sorted[i] !== sorted[i - 1] + 1) {
+        gapIndex = i;
+        break;
+      }
+    }
+
+    if (gapIndex !== -1) {
+      // Wrapped selection: first day is after the gap, last day is before the gap
+      const firstDayIndex = sorted[gapIndex]; // First day after gap (e.g., Friday = 5)
+      const lastDayIndex = sorted[gapIndex - 1]; // Last day before gap (e.g., Monday = 1)
 
       const checkInName = DAY_NAMES[firstDayIndex];
       const checkOutName = DAY_NAMES[lastDayIndex];
@@ -135,6 +146,17 @@ function getCheckInOutRange(proposal) {
         return `${checkInName} to ${checkOutName}`;
       }
     }
+  }
+
+  // Standard case: first selected day to last selected day
+  const firstDayIndex = sorted[0];
+  const lastDayIndex = sorted[sorted.length - 1];
+
+  const checkInName = DAY_NAMES[firstDayIndex];
+  const checkOutName = DAY_NAMES[lastDayIndex];
+
+  if (checkInName && checkOutName) {
+    return `${checkInName} to ${checkOutName}`;
   }
 
   return null;
@@ -684,7 +706,7 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
 // MAIN COMPONENT
 // ============================================================================
 
-export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect }) {
+export default function ProposalCard({ proposal, transformedProposal, statusConfig, buttonConfig, allProposals = [], onProposalSelect, onProposalDeleted }) {
   if (!proposal) {
     return null;
   }
@@ -788,8 +810,8 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
   // Proposal details modal state (GuestEditingProposalModal)
   const [showProposalDetailsModal, setShowProposalDetailsModal] = useState(false);
-  // Initial view for the proposal details modal ('general' | 'editing' | 'cancel')
-  const [proposalDetailsModalInitialView, setProposalDetailsModalInitialView] = useState('general');
+  // Initial view for the proposal details modal ('pristine' | 'editing' | 'general' | 'cancel')
+  const [proposalDetailsModalInitialView, setProposalDetailsModalInitialView] = useState('pristine');
 
   // Virtual Meeting Manager modal state
   const [showVMModal, setShowVMModal] = useState(false);
@@ -800,6 +822,9 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
 
   // Cancel proposal modal state
   const [showCancelModal, setShowCancelModal] = useState(false);
+
+  // Delete proposal loading state
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Status and progress - derive dynamically from statusConfig
   const status = proposal.Status;
@@ -957,6 +982,28 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
     console.log('[ProposalCard] Cancel confirmed with reason:', reason);
     // TODO: Implement actual cancel API call here
     closeCancelModal();
+  };
+
+  // Handler for delete proposal (soft-delete for already-cancelled proposals)
+  const handleDeleteProposal = async () => {
+    if (!proposal?._id || isDeleting) return;
+
+    setIsDeleting(true);
+    try {
+      await executeDeleteProposal(proposal._id);
+      console.log('[ProposalCard] Proposal deleted successfully');
+      // Show toast notification (info type for neutral confirmation)
+      showToast({ title: 'Proposal deleted', type: 'info' });
+
+      // Update UI state without page reload
+      if (onProposalDeleted) {
+        onProposalDeleted(proposal._id);
+      }
+    } catch (error) {
+      console.error('[ProposalCard] Error deleting proposal:', error);
+      showToast({ title: 'Failed to delete proposal', content: error.message, type: 'error' });
+      setIsDeleting(false);
+    }
   };
 
   // Handler for VM button click
@@ -1216,6 +1263,9 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                       setShowProposalDetailsModal(true);
                     } else if (buttonConfig.guestAction1.action === 'submit_rental_app') {
                       goToRentalApplication(proposal._id);
+                    } else if (buttonConfig.guestAction1.action === 'delete_proposal') {
+                      // Soft-delete for already-cancelled proposals
+                      handleDeleteProposal();
                     }
                     // TODO: Add handlers for other actions (remind_sl, accept_counteroffer, etc.)
                   }}
@@ -1266,9 +1316,11 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
                   if (buttonConfig.cancelButton.action === 'see_house_manual') {
                     // Navigate to house manual or open modal
                     // TODO: Implement house manual navigation
+                  } else if (buttonConfig.cancelButton.action === 'delete_proposal') {
+                    // Soft-delete for already-cancelled proposals
+                    handleDeleteProposal();
                   } else if (
                     buttonConfig.cancelButton.action === 'cancel_proposal' ||
-                    buttonConfig.cancelButton.action === 'delete_proposal' ||
                     buttonConfig.cancelButton.action === 'reject_counteroffer' ||
                     buttonConfig.cancelButton.action === 'reject_proposal'
                   ) {
@@ -1313,13 +1365,13 @@ export default function ProposalCard({ proposal, transformedProposal, statusConf
           isVisible={showProposalDetailsModal}
           onClose={() => {
             setShowProposalDetailsModal(false);
-            setProposalDetailsModalInitialView('general'); // Reset for next open
+            setProposalDetailsModalInitialView('pristine'); // Reset for next open
           }}
           onProposalCancel={(reason) => {
             // Handle cancellation - reload page to show updated status
             console.log('Proposal cancelled with reason:', reason);
             setShowProposalDetailsModal(false);
-            setProposalDetailsModalInitialView('general');
+            setProposalDetailsModalInitialView('pristine');
             window.location.reload();
           }}
           pricePerNight={nightlyPrice}

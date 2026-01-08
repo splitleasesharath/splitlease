@@ -337,10 +337,13 @@ export function getButtonConfigForProposal(proposal) {
 
   // Determine cancel button visibility and label based on Bubble conditionals
   if (isTerminal) {
-    // Terminal states show "Delete Proposal"
-    cancelButton.visible = true;
-    cancelButton.label = 'Delete Proposal';
-    cancelButton.action = 'delete_proposal';
+    // Terminal states show "Delete Proposal" - but only if guestAction1 isn't already showing it
+    // This prevents duplicate "Delete Proposal" buttons
+    if (guestAction1.action !== 'delete_proposal') {
+      cancelButton.visible = true;
+      cancelButton.label = 'Delete Proposal';
+      cancelButton.action = 'delete_proposal';
+    }
   } else if (isLeaseActivated) {
     // Lease activated: Cancel button is HIDDEN (lease is complete, only "Go to Leases" shows)
     cancelButton.visible = false;

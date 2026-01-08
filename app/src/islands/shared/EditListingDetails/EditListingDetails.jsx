@@ -444,7 +444,7 @@ export function EditListingDetails({ listing, editSection, focusField, onClose, 
         </div>
       </div>
 
-      <div className="eld-collapsible-section">
+      <div className="eld-collapsible-section" ref={fieldRefs.building}>
         <div className="eld-collapsible-header" onClick={() => toggleSection('building')}>
           <div className="eld-collapsible-header-left">
             <span className="eld-icon">

@@ -85,6 +85,9 @@ export async function fetchListingComplete(listingId) {
         "Features - Photos",
         "Location - Address",
         "Location - slightly different address",
+        "Location - City",
+        "Location - State",
+        "Location - Zip Code",
         "Location - Hood",
         "Location - Borough",
         "neighborhood (manual input by user)",
@@ -250,6 +253,7 @@ export async function fetchListingComplete(listingId) {
       if (userData) {
         hostData = {
           _id: userData._id,
+          userId: userData._id,  // Alias for consumers expecting userId
           'Name - First': userData['Name - First'],
           'Name - Last': userData['Name - Last'],
           'Profile Photo': userData['Profile Photo'],

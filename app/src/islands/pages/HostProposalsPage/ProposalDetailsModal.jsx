@@ -6,7 +6,7 @@
 
 import { useState } from 'react';
 import DayIndicator from './DayIndicator.jsx';
-import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromNights, PROGRESS_THRESHOLDS } from './types.js';
+import { getStatusTagInfo, getNightsAsDayNames, getCheckInOutFromDays, PROGRESS_THRESHOLDS } from './types.js';
 import { formatCurrency, formatDate, formatDateTime } from './formatters.js';
 import { getStatusConfig, getUsualOrder, isTerminalStatus } from '../../../logic/constants/proposalStatuses.js';
 import { getVMButtonText, getVMButtonStyle, getVMStateInfo, VM_STATES } from '../../../logic/rules/proposals/virtualMeetingRules.js';
@@ -118,12 +118,14 @@ export default function ProposalDetailsModal({
   const emailVerified = guest.emailVerified || guest['Email Verified'] || false;
   const identityVerified = guest.identityVerified || guest['Identity Verified'] || false;
 
-  // Get schedule info - use Nights Selected for hosts (they care about nights, not days)
-  // Check for host counteroffer nights first, fall back to original proposal nights
+  // Get schedule info
+  // Use Nights Selected for the day indicator (shows which nights guest stays)
+  // Use Days Selected for check-in/check-out text (matches guest-facing display)
   const nightsSelectedRaw = proposal['hc nights selected'] || proposal['Nights Selected (Nights list)'] || proposal.nightsSelected || proposal['Nights Selected'];
+  const daysSelectedRaw = proposal['hc days selected'] || proposal['Days Selected'] || proposal.daysSelected;
 
-  // Get check-in/check-out from nights selected (more accurate than stored check-in/out days)
-  const { checkInDay, checkOutDay } = getCheckInOutFromNights(nightsSelectedRaw);
+  // Get check-in/check-out from Days Selected (matches guest-facing display)
+  const { checkInDay, checkOutDay } = getCheckInOutFromDays(daysSelectedRaw);
   const checkInTime = proposal.checkInTime || proposal['Check In Time'] || '2:00 pm';
   const checkOutTime = proposal.checkOutTime || proposal['Check Out Time'] || '11:00 am';
   const moveInRangeStart = proposal.moveInRangeStart || proposal['Move in range start'] || proposal['Move In Range Start'];
