@@ -313,8 +313,9 @@ function calculateActualWeeks(reservationSpan, weeksOffered) {
   // Calculate actual weeks based on the cycle
   // For alternating schedules: cycles = reservationSpan / cycleWeeks
   // actualWeeks = cycles * weeksOn
+  // Use Math.ceil to match pricing calculation (guest pays for partial weeks)
   const cycles = reservationSpan / normalized.cycleWeeks;
-  const actualWeeks = Math.floor(cycles * normalized.weeksOn);
+  const actualWeeks = Math.ceil(cycles * normalized.weeksOn);
 
   return {
     actualWeeks,
