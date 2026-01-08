@@ -7,73 +7,128 @@
  * - Nested object flattening
  * - Type conversions
  * - Default values for missing data
+ *
+ * @module lib/proposals/dataTransformers
  */
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is nullish
+ * @pure
+ */
+const isNullish = (value) => value === null || value === undefined
+
+/**
+ * Check if value is a non-empty string
+ * @pure
+ */
+const isNonEmptyString = (value) =>
+  typeof value === 'string' && value.length > 0
+
+/**
+ * Check if value is a valid address JSONB object
+ * @pure
+ */
+const isAddressObject = (value) =>
+  typeof value === 'object' && value !== null && 'address' in value
+
+/**
+ * Check if price is valid
+ * @pure
+ */
+const isValidPrice = (price) =>
+  price !== null && price !== undefined && !Number.isNaN(Number(price))
+
+/**
+ * Check if date is valid
+ * @pure
+ */
+const isValidDate = (date) => {
+  if (!date) return false
+  const dateObj = typeof date === 'string' ? new Date(date) : date
+  return !Number.isNaN(dateObj.getTime())
+}
+
+// ─────────────────────────────────────────────────────────────
+// Pure Transformation Functions
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Transform user data from Bubble.io format
- *
+ * @pure
  * @param {Object} rawUser - Raw user object from Supabase
- * @returns {Object} Transformed user object
+ * @returns {Object|null} Transformed user object
  */
 export function transformUserData(rawUser) {
-  if (!rawUser) return null;
+  if (isNullish(rawUser)) return null
 
-  return {
+  return Object.freeze({
     id: rawUser._id,
     firstName: rawUser['Name - First'],
     lastName: rawUser['Name - Last'],
     fullName: rawUser['Name - Full'],
     profilePhoto: rawUser['Profile Photo'],
     proposalsList: rawUser['Proposals List']
-  };
+  })
+}
+
+/**
+ * Extract address string from JSONB or string data
+ * @pure
+ * @param {Object|string} addressData - Raw address data
+ * @returns {string|null} Address string
+ */
+const extractAddressString = (addressData) => {
+  if (isAddressObject(addressData)) return addressData.address
+  if (isNonEmptyString(addressData)) return addressData
+  return null
 }
 
 /**
  * Transform listing data from Bubble.io format
- *
+ * @pure
  * @param {Object} rawListing - Raw listing object from Supabase
- * @returns {Object} Transformed listing object
+ * @returns {Object|null} Transformed listing object
  */
 export function transformListingData(rawListing) {
-  if (!rawListing) return null;
+  if (isNullish(rawListing)) return null
 
-  // Extract address from JSONB structure
-  const addressData = rawListing['Location - Address'];
-  const addressString = typeof addressData === 'object' && addressData?.address
-    ? addressData.address
-    : (typeof addressData === 'string' ? addressData : null);
+  const addressData = rawListing['Location - Address']
 
-  return {
+  return Object.freeze({
     id: rawListing._id,
     name: rawListing.Name,
     description: rawListing.Description,
-    address: addressString,
-    addressData: addressData, // Keep full JSONB for map coordinates
+    address: extractAddressString(addressData),
+    addressData: addressData,
     borough: rawListing['Location - Borough'],
     hood: rawListing['Location - Hood'],
-    boroughName: rawListing.boroughName, // Resolved name from lookup table
-    hoodName: rawListing.hoodName, // Resolved name from lookup table
+    boroughName: rawListing.boroughName,
+    hoodName: rawListing.hoodName,
     city: rawListing['Location - City'],
     state: rawListing['Location - State'],
     zipCode: rawListing['Location - Zip Code'],
     photos: rawListing['Features - Photos'],
-    featuredPhotoUrl: rawListing.featuredPhotoUrl, // Featured photo from listing_photo table
-    houseRules: rawListing.houseRules || [], // Use resolved house rules from query layer
+    featuredPhotoUrl: rawListing.featuredPhotoUrl,
+    houseRules: rawListing.houseRules || [],
     checkInTime: rawListing['NEW Date Check-in Time'],
     checkOutTime: rawListing['NEW Date Check-out Time']
-  };
+  })
 }
 
 /**
  * Transform host data from Bubble.io format
- *
+ * @pure
  * @param {Object} rawHost - Raw host object from Supabase
- * @returns {Object} Transformed host object
+ * @returns {Object|null} Transformed host object
  */
 export function transformHostData(rawHost) {
-  if (!rawHost) return null;
+  if (isNullish(rawHost)) return null
 
-  return {
+  return Object.freeze({
     id: rawHost._id,
     firstName: rawHost['Name - First'],
     lastName: rawHost['Name - Last'],
@@ -83,19 +138,19 @@ export function transformHostData(rawHost) {
     linkedInVerified: rawHost['Verify - Linked In ID'],
     phoneVerified: rawHost['Verify - Phone'],
     userVerified: rawHost['user verified?']
-  };
+  })
 }
 
 /**
  * Transform guest data from Bubble.io format
- *
+ * @pure
  * @param {Object} rawGuest - Raw guest object from Supabase
- * @returns {Object} Transformed guest object
+ * @returns {Object|null} Transformed guest object
  */
 export function transformGuestData(rawGuest) {
-  if (!rawGuest) return null;
+  if (isNullish(rawGuest)) return null
 
-  return {
+  return Object.freeze({
     id: rawGuest._id,
     firstName: rawGuest['Name - First'],
     lastName: rawGuest['Name - Last'],
@@ -105,49 +160,48 @@ export function transformGuestData(rawGuest) {
     linkedInVerified: rawGuest['Verify - Linked In ID'],
     phoneVerified: rawGuest['Verify - Phone'],
     userVerified: rawGuest['user verified?']
-  };
+  })
 }
 
 /**
  * Transform virtual meeting data from Bubble.io format
- *
+ * @pure
  * @param {Object} rawVirtualMeeting - Raw virtual meeting object from Supabase
- * @returns {Object} Transformed virtual meeting object
+ * @returns {Object|null} Transformed virtual meeting object
  */
 export function transformVirtualMeetingData(rawVirtualMeeting) {
-  if (!rawVirtualMeeting) return null;
+  if (isNullish(rawVirtualMeeting)) return null
 
-  return {
+  return Object.freeze({
     id: rawVirtualMeeting._id,
     bookedDate: rawVirtualMeeting['booked date'],
     confirmedBySplitlease: rawVirtualMeeting.confirmedBySplitLease,
     meetingLink: rawVirtualMeeting['meeting link'],
     meetingDeclined: rawVirtualMeeting['meeting declined'],
     requestedBy: rawVirtualMeeting['requested by'],
-    suggestedTimeslots: rawVirtualMeeting['suggested dates and times'], // JSONB array of ISO datetimes
+    suggestedTimeslots: rawVirtualMeeting['suggested dates and times'],
     guestName: rawVirtualMeeting['guest name'],
     hostName: rawVirtualMeeting['host name'],
     proposalId: rawVirtualMeeting.proposal
-  };
+  })
 }
 
 /**
  * Transform complete proposal data from Bubble.io format
  * Includes nested transformations for listing, host, and virtual meeting
- *
+ * @pure
  * @param {Object} rawProposal - Raw proposal object from Supabase
- * @returns {Object} Transformed proposal object
+ * @returns {Object|null} Transformed proposal object
  */
 export function transformProposalData(rawProposal) {
-  if (!rawProposal) return null;
+  if (isNullish(rawProposal)) return null
 
-  // Extract nested data
-  const rawListing = rawProposal.listing;
-  const rawHost = rawListing?.host;
-  const rawGuest = rawProposal.guest;
-  const rawVirtualMeeting = rawProposal.virtualMeeting;
+  const rawListing = rawProposal.listing
+  const rawHost = rawListing?.host
+  const rawGuest = rawProposal.guest
+  const rawVirtualMeeting = rawProposal.virtualMeeting
 
-  return {
+  return Object.freeze({
     id: rawProposal._id,
     status: rawProposal.Status,
     deleted: rawProposal.Deleted,
@@ -177,71 +231,129 @@ export function transformProposalData(rawProposal) {
     rentalApplicationId: rawProposal['rental application'],
     virtualMeetingId: rawProposal['virtual meeting'],
     isFinalized: rawProposal['Is Finalized'],
-
-    // House rules (resolved from query layer)
     houseRules: rawProposal.houseRules || [],
-
-    // Nested transformed data
     listing: transformListingData(rawListing),
     host: transformHostData(rawHost),
     guest: transformGuestData(rawGuest),
     virtualMeeting: transformVirtualMeetingData(rawVirtualMeeting)
-  };
+  })
 }
+
+/**
+ * Default values for display text
+ */
+const DISPLAY_DEFAULTS = Object.freeze({
+  HOST_NAME: 'Host',
+  LISTING_NAME: 'Property'
+})
 
 /**
  * Get display text for proposal in dropdown
  * Format: "{host name} - {listing name}"
- * Shows the host who owns the listing, allowing guests to identify proposals by host
- *
+ * @pure
  * @param {Object} proposal - Transformed proposal object
- * @returns {string} Display text for dropdown option
+ * @returns {string|null} Display text for dropdown option
  */
 export function getProposalDisplayText(proposal) {
-  if (!proposal) return null;
+  if (isNullish(proposal)) return null
 
-  const hostName = proposal.host?.firstName || proposal.host?.fullName || 'Host';
-  const listingName = proposal.listing?.name || 'Property';
+  const hostName = proposal.host?.firstName || proposal.host?.fullName || DISPLAY_DEFAULTS.HOST_NAME
+  const listingName = proposal.listing?.name || DISPLAY_DEFAULTS.LISTING_NAME
 
-  return `${hostName} - ${listingName}`;
+  return `${hostName} - ${listingName}`
 }
+
+/**
+ * Currency formatting options
+ */
+const CURRENCY_OPTIONS = Object.freeze({
+  WITH_CENTS: Object.freeze({
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }),
+  WITHOUT_CENTS: Object.freeze({
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+  })
+})
+
+/**
+ * Get currency formatter options based on cents preference
+ * @pure
+ */
+const getCurrencyOptions = (includeCents) =>
+  includeCents ? CURRENCY_OPTIONS.WITH_CENTS : CURRENCY_OPTIONS.WITHOUT_CENTS
 
 /**
  * Format price for display
- *
+ * @pure
  * @param {number} price - Price value
  * @param {boolean} includeCents - Whether to include cents
- * @returns {string} Formatted price string
+ * @returns {string|null} Formatted price string
  */
 export function formatPrice(price, includeCents = true) {
-  if (price === null || price === undefined) return null;
+  if (!isValidPrice(price)) return null
 
-  const formatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: includeCents ? 2 : 0,
-    maximumFractionDigits: includeCents ? 2 : 0
-  });
-
-  return formatter.format(price);
+  const formatter = new Intl.NumberFormat('en-US', getCurrencyOptions(includeCents))
+  return formatter.format(price)
 }
 
 /**
+ * Date formatting options
+ */
+const DATE_FORMAT_OPTIONS = Object.freeze({
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric'
+})
+
+/**
+ * Convert to Date object if string
+ * @pure
+ */
+const toDateObject = (date) =>
+  typeof date === 'string' ? new Date(date) : date
+
+/**
  * Format date for display
- *
+ * @pure
  * @param {string|Date} date - Date value
- * @returns {string} Formatted date string
+ * @returns {string|null} Formatted date string
  */
 export function formatDate(date) {
-  if (!date) return null;
+  if (!isValidDate(date)) return null
 
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-
-  if (isNaN(dateObj.getTime())) return null;
-
-  return dateObj.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+  const dateObj = toDateObject(date)
+  return dateObj.toLocaleDateString('en-US', DATE_FORMAT_OPTIONS)
 }
+
+// ─────────────────────────────────────────────────────────────
+// Exported Test Constants
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Exported for testing purposes
+ * @test
+ */
+export const __test__ = Object.freeze({
+  // Predicates
+  isNullish,
+  isNonEmptyString,
+  isAddressObject,
+  isValidPrice,
+  isValidDate,
+
+  // Helpers
+  extractAddressString,
+  getCurrencyOptions,
+  toDateObject,
+
+  // Constants
+  DISPLAY_DEFAULTS,
+  CURRENCY_OPTIONS,
+  DATE_FORMAT_OPTIONS
+})
