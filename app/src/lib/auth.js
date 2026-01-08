@@ -1,6 +1,5 @@
 /**
  * Split Lease Authentication Utilities
- * Extracted from input/index/script.js
  *
  * Provides authentication-related functions for:
  * - Cookie checking and parsing
@@ -11,8 +10,7 @@
  *
  * No fallback mechanisms - returns null or throws error on auth failure
  *
- * Usage:
- *   import { checkAuthStatus, getUsernameFromCookies } from './auth.js'
+ * @module lib/auth
  */
 
 import {
@@ -47,66 +45,220 @@ import {
   clearLinkedInOAuthLoginFlow
 } from './secureStorage.js';
 
-// ============================================================================
-// Auth State Management
-// ============================================================================
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const COOKIE_NAMES = Object.freeze({
+  LOGGED_IN: 'loggedIn',
+  USERNAME: 'username'
+})
+
+const COOKIE_VALUES = Object.freeze({
+  TRUE: 'true'
+})
+
+const AUTH_TIMING = Object.freeze({
+  SESSION_INIT_DELAY_MS: 200,
+  SESSION_VERIFY_DELAY_MS: 100,
+  MAX_VERIFY_ATTEMPTS: 5
+})
+
+const PROTECTED_PATHS = Object.freeze([
+  '/guest-proposals',
+  '/host-proposals',
+  '/account-profile',
+  '/host-dashboard',
+  '/self-listing',
+  '/listing-dashboard',
+  '/host-overview',
+  '/favorite-listings',
+  '/rental-application',
+  '/preview-split-lease'
+])
+
+const VALIDATION_RULES = Object.freeze({
+  MIN_PASSWORD_LENGTH: 4
+})
+
+const LOG_PREFIX = '[auth]'
+
+// ─────────────────────────────────────────────────────────────
+// Mutable State (Required for Auth Module)
+// ─────────────────────────────────────────────────────────────
 
 let isUserLoggedInState = false;
 let authCheckAttempts = 0;
 const MAX_AUTH_CHECK_ATTEMPTS = SESSION_VALIDATION.MAX_AUTH_CHECK_ATTEMPTS;
 
-// ============================================================================
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if string is non-empty
+ * @pure
+ */
+const isNonEmptyString = (value) =>
+  typeof value === 'string' && value.length > 0
+
+/**
+ * Check if browser environment available
+ * @pure
+ */
+const isBrowserEnvironment = () =>
+  typeof window !== 'undefined'
+
+/**
+ * Check if document cookies available
+ * @pure
+ */
+const hasCookies = () =>
+  isBrowserEnvironment() && typeof document !== 'undefined'
+
+/**
+ * Check if password meets minimum length
+ * @pure
+ */
+const isValidPasswordLength = (password) =>
+  isNonEmptyString(password) && password.length >= VALIDATION_RULES.MIN_PASSWORD_LENGTH
+
+/**
+ * Check if passwords match
+ * @pure
+ */
+const doPasswordsMatch = (password, retype) =>
+  password === retype
+
+// ─────────────────────────────────────────────────────────────
+// Pure Helper Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Parse cookies from document.cookie string
+ * @pure
+ */
+const parseCookies = (cookieString) =>
+  cookieString.split('; ')
+
+/**
+ * Find cookie by name prefix
+ * @pure
+ */
+const findCookieByName = (cookies, name) =>
+  cookies.find(c => c.startsWith(`${name}=`))
+
+/**
+ * Extract cookie value after = sign
+ * @pure
+ */
+const extractCookieValue = (cookie) =>
+  cookie ? cookie.split('=')[1] : null
+
+/**
+ * Decode and clean username (remove quotes)
+ * @pure
+ */
+const cleanUsername = (rawValue) => {
+  if (!rawValue) return null
+  const decoded = decodeURIComponent(rawValue)
+  return decoded.replace(/^["']|["']$/g, '')
+}
+
+/**
+ * Build URL with return parameter
+ * @pure
+ */
+const buildReturnUrl = (baseUrl, returnUrl) =>
+  returnUrl ? `${baseUrl}?returnTo=${encodeURIComponent(returnUrl)}` : baseUrl
+
+/**
+ * Normalize pathname by removing .html extension
+ * @pure
+ */
+const normalizePathname = (pathname) =>
+  pathname.replace(/\.html$/, '')
+
+/**
+ * Check if path matches protected route
+ * @pure
+ */
+const isPathProtected = (normalizedPath, protectedPaths) =>
+  protectedPaths.some(path =>
+    normalizedPath === path || normalizedPath.startsWith(path + '/')
+  )
+
+/**
+ * Create success result object
+ * @pure
+ */
+const createSuccessResult = (data = {}) =>
+  Object.freeze({ success: true, ...data })
+
+/**
+ * Create error result object
+ * @pure
+ */
+const createErrorResult = (error) =>
+  Object.freeze({ success: false, error })
+
+/**
+ * Extract Supabase storage key from URL
+ * @pure
+ */
+const getSupabaseStorageKey = (supabaseUrl) => {
+  if (!supabaseUrl) return null
+  const parts = supabaseUrl.split('//')
+  if (parts.length < 2) return null
+  const domain = parts[1].split('.')[0]
+  return domain ? `sb-${domain}-auth-token` : null
+}
+
+// ─────────────────────────────────────────────────────────────
 // Cookie Parsing Utilities
-// ============================================================================
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Parse username from document cookies
  * Decodes URL-encoded cookie values and removes surrounding quotes
- *
+ * @effectful - reads document.cookie
  * @returns {string|null} Username if found, null if no username cookie exists
  */
 export function getUsernameFromCookies() {
-  const cookies = document.cookie.split('; ');
-  const usernameCookie = cookies.find(c => c.startsWith('username='));
-
-  if (usernameCookie) {
-    let username = decodeURIComponent(usernameCookie.split('=')[1]);
-    // Remove surrounding quotes if present (both single and double quotes)
-    username = username.replace(/^["']|["']$/g, '');
-    return username;
-  }
-
-  return null;
+  const cookies = parseCookies(document.cookie)
+  const usernameCookie = findCookieByName(cookies, COOKIE_NAMES.USERNAME)
+  const rawValue = extractCookieValue(usernameCookie)
+  return cleanUsername(rawValue)
 }
 
 /**
  * Check Split Lease cookies from Bubble app
  * Verifies both loggedIn and username cookies
- *
+ * @effectful - reads document.cookie, logs to console
  * @returns {Object} Authentication status object
  *   - isLoggedIn: boolean indicating if user is logged in
  *   - username: string with username or null if not set
  */
 export function checkSplitLeaseCookies() {
-  const cookies = document.cookie.split('; ');
-  const loggedInCookie = cookies.find(c => c.startsWith('loggedIn='));
-  const usernameCookie = cookies.find(c => c.startsWith('username='));
+  const cookies = parseCookies(document.cookie)
+  const loggedInCookie = findCookieByName(cookies, COOKIE_NAMES.LOGGED_IN)
+  const usernameCookie = findCookieByName(cookies, COOKIE_NAMES.USERNAME)
 
-  const isLoggedIn = loggedInCookie ? loggedInCookie.split('=')[1] === 'true' : false;
-  const username = getUsernameFromCookies();
+  const loggedInValue = extractCookieValue(loggedInCookie)
+  const isLoggedIn = loggedInValue === COOKIE_VALUES.TRUE
+  const username = getUsernameFromCookies()
 
-  // Log the authentication status to console
-  console.log('🔐 Split Lease Cookie Auth Check:');
-  console.log('   Logged In:', isLoggedIn);
-  console.log('   Username:', username || 'not set');
-  console.log('   Raw Cookies:', { loggedInCookie, usernameCookie });
+  console.log(`${LOG_PREFIX} 🔐 Split Lease Cookie Auth Check:`)
+  console.log(`${LOG_PREFIX}    Logged In:`, isLoggedIn)
+  console.log(`${LOG_PREFIX}    Username:`, username || 'not set')
+  console.log(`${LOG_PREFIX}    Raw Cookies:`, { loggedInCookie, usernameCookie })
 
-  return { isLoggedIn, username };
+  return Object.freeze({ isLoggedIn, username })
 }
 
-// ============================================================================
+// ─────────────────────────────────────────────────────────────
 // Authentication Status Checking
-// ============================================================================
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Lightweight authentication status check
@@ -118,11 +270,11 @@ export function checkSplitLeaseCookies() {
  *
  * No fallback mechanisms - returns boolean directly
  * On failure: returns false without fallback logic
- *
+ * @effectful - reads storage, makes network requests, modifies state
  * @returns {Promise<boolean>} True if user is authenticated, false otherwise
  */
 export async function checkAuthStatus() {
-  console.log('🔍 Checking authentication status...');
+  console.log(`${LOG_PREFIX} 🔍 Checking authentication status...`);
 
   // Try to migrate from legacy storage first
   const migrated = await migrateFromLegacyStorage();
@@ -207,37 +359,34 @@ export async function checkAuthStatus() {
   return false;
 }
 
-// ============================================================================
+// ─────────────────────────────────────────────────────────────
 // Session Management
-// ============================================================================
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Validate session by checking if tokens exist
  * Bubble API handles actual token expiry - we validate on each request
- *
+ * @effectful - reads storage state
  * @returns {boolean} True if session is valid, false if expired or missing
  */
 export function isSessionValid() {
-  // Simply check if auth state is set
-  // Bubble will reject expired tokens on API calls
   return getAuthState();
 }
 
 /**
  * Clear authentication data from storage
  * Removes all auth tokens, session IDs, timestamps, user type, and cookies
+ * @effectful - modifies storage and module state
  */
 export function clearAuthData() {
-  // Use secure storage clear (handles both secure tokens and state)
   clearAllAuthData();
-
   isUserLoggedInState = false;
-  console.log('🗑️ Authentication data cleared (secure storage and cookies)');
+  console.log(`${LOG_PREFIX} 🗑️ Authentication data cleared (secure storage and cookies)`);
 }
 
-// ============================================================================
+// ─────────────────────────────────────────────────────────────
 // Token Management
-// ============================================================================
+// ─────────────────────────────────────────────────────────────
 
 /**
  * Get authentication token from secure storage
@@ -1042,30 +1191,12 @@ export async function validateTokenAndFetchUser({ clearOnFailure = true } = {}) 
  *
  * Handles both clean URLs (/guest-proposals) and .html URLs (/guest-proposals.html)
  * by normalizing the path before comparison
- *
+ * @effectful - reads window.location
  * @returns {boolean} True if current page requires authentication
  */
 export function isProtectedPage() {
-  const protectedPaths = [
-    '/guest-proposals',
-    '/host-proposals',
-    '/account-profile',
-    '/host-dashboard',
-    '/self-listing',
-    '/listing-dashboard',
-    '/host-overview',
-    '/favorite-listings',
-    '/rental-application',
-    '/preview-split-lease'
-  ];
-
-  // Normalize path by removing .html extension for consistent matching
-  const currentPath = window.location.pathname.replace(/\.html$/, '');
-
-  // Check if current path matches any protected path exactly or starts with it
-  return protectedPaths.some(path =>
-    currentPath === path || currentPath.startsWith(path + '/')
-  );
+  const currentPath = normalizePathname(window.location.pathname)
+  return isPathProtected(currentPath, PROTECTED_PATHS)
 }
 
 /**
@@ -1653,7 +1784,7 @@ export async function handleLinkedInOAuthLoginCallback() {
       localStorage.setItem('splitlease_supabase_user_id', supabase_user_id);
     }
 
-    console.log('[Auth] LinkedIn OAuth login successful');
+    console.log(`${LOG_PREFIX} LinkedIn OAuth login successful`);
     return {
       success: true,
       data: data.data
@@ -1661,7 +1792,19 @@ export async function handleLinkedInOAuthLoginCallback() {
 
   } catch (err) {
     clearLinkedInOAuthLoginFlow();
-    console.error('[Auth] LinkedIn OAuth login callback error:', err);
+    console.error(`${LOG_PREFIX} LinkedIn OAuth login callback error:`, err);
     return { success: false, error: err.message };
   }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export {
+  COOKIE_NAMES,
+  COOKIE_VALUES,
+  AUTH_TIMING,
+  PROTECTED_PATHS,
+  VALIDATION_RULES,
+  LOG_PREFIX
 }
