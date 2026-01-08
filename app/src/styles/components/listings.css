@@ -513,10 +513,13 @@
     margin-bottom: 0;
 }
 
-/* Meta Section - Info Dense Style */
+/* Meta Section - Info Dense Style (wraps only when needed) */
 .listing-meta {
     display: flex;
-    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+    row-gap: 2px;
+    column-gap: 6px;
     padding: 12px 0;
     border-top: 1px solid #f0f0f0;
     border-bottom: 1px solid #f0f0f0;
@@ -529,6 +532,13 @@
     background: none;
     border: none;
     padding: 0;
+    white-space: nowrap;
+}
+
+.listing-meta .meta-item:not(:last-child)::after {
+    content: '·';
+    margin-left: 6px;
+    color: #999;
 }
 
 .listing-meta .meta-item strong {
@@ -1422,7 +1432,7 @@
     }
 
     .listing-meta .meta-item:last-child::after {
-        display: none;
+        content: none;
     }
 
     /*

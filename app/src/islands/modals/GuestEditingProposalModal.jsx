@@ -575,6 +575,9 @@ export default function GuestEditingProposalModal({
   // View state machine: 'pristine' | 'editing' | 'general' | 'cancel'
   const [view, setView] = useState(initialView)
 
+  // Debug log to verify initial view state
+  console.log('[GuestEditingProposalModal] initialView:', initialView, '| current view:', view)
+
   // Form state for editing
   const [formState, setFormState] = useState(() => ({
     moveInDate: proposal?.hcMoveInDate ? new Date(proposal.hcMoveInDate) :
