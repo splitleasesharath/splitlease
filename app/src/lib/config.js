@@ -23,8 +23,77 @@
  *   </script>
  */
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const ENVIRONMENTS = Object.freeze({
+  DEVELOPMENT: 'development',
+  STAGING: 'staging',
+  PRODUCTION: 'production'
+})
+
+const DEV_HOSTNAMES = Object.freeze(['localhost', '127.0.0.1', ''])
+
+const STAGING_INDICATORS = Object.freeze(['staging', 'test', 'preview'])
+
+const EVENT_CONFIG_LOADED = 'env-config-loaded'
+
+const API_KEY_PREVIEW_LENGTH = 20
+
+const LOG_PREFIX = '[config]'
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if hostname indicates development environment
+ * @pure
+ */
+const isDevelopmentHost = (hostname) =>
+  DEV_HOSTNAMES.includes(hostname)
+
+/**
+ * Check if hostname indicates staging environment
+ * @pure
+ */
+const isStagingHost = (hostname) =>
+  STAGING_INDICATORS.some(indicator => hostname.includes(indicator))
+
+// ─────────────────────────────────────────────────────────────
+// Pure Helper Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Determine environment from hostname
+ * @pure
+ */
+const detectEnvironment = (hostname) => {
+  if (isDevelopmentHost(hostname)) {
+    return ENVIRONMENTS.DEVELOPMENT
+  }
+
+  if (isStagingHost(hostname)) {
+    return ENVIRONMENTS.STAGING
+  }
+
+  return ENVIRONMENTS.PRODUCTION
+}
+
+/**
+ * Create preview of API key for logging
+ * @pure
+ */
+const createApiKeyPreview = (key) =>
+  key ? `${key.substring(0, API_KEY_PREVIEW_LENGTH)}...` : 'NOT SET'
+
+// ─────────────────────────────────────────────────────────────
+// Environment Configuration (Effectful)
+// ─────────────────────────────────────────────────────────────
+
 // Expose environment variables to global window object
-window.ENV = {
+window.ENV = Object.freeze({
   // Google Maps
   GOOGLE_MAPS_API_KEY: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
 
@@ -36,29 +105,14 @@ window.ENV = {
   HOTJAR_SITE_ID: import.meta.env.VITE_HOTJAR_SITE_ID,
 
   // Environment detection
-  ENVIRONMENT: (function() {
-    if (window.location.hostname === 'localhost' ||
-        window.location.hostname === '127.0.0.1' ||
-        window.location.hostname === '') {
-      return 'development';
-    }
-
-    if (window.location.hostname.includes('staging') ||
-        window.location.hostname.includes('test') ||
-        window.location.hostname.includes('preview')) {
-      return 'staging';
-    }
-
-    return 'production';
-  })()
-};
+  ENVIRONMENT: detectEnvironment(window.location.hostname)
+});
 
 // Log configuration loaded (useful for debugging)
-console.log('✅ Environment configuration loaded');
-console.log('  Environment:', window.ENV.ENVIRONMENT);
-console.log('  Google Maps API Key:', window.ENV.GOOGLE_MAPS_API_KEY ?
-  window.ENV.GOOGLE_MAPS_API_KEY.substring(0, 20) + '...' : 'NOT SET');
-console.log('  Supabase URL:', window.ENV.SUPABASE_URL || 'NOT SET');
+console.log(`${LOG_PREFIX} ✅ Environment configuration loaded`);
+console.log(`${LOG_PREFIX}   Environment:`, window.ENV.ENVIRONMENT);
+console.log(`${LOG_PREFIX}   Google Maps API Key:`, createApiKeyPreview(window.ENV.GOOGLE_MAPS_API_KEY));
+console.log(`${LOG_PREFIX}   Supabase URL:`, window.ENV.SUPABASE_URL || 'NOT SET');
 
 // Dispatch event to notify that config is ready
-window.dispatchEvent(new Event('env-config-loaded'));
+window.dispatchEvent(new Event(EVENT_CONFIG_LOADED));

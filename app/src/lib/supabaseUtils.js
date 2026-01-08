@@ -10,6 +10,135 @@
 import { supabase } from './supabase.js';
 import { DATABASE } from './constants.js';
 
+// ─────────────────────────────────────────────────────────────
+// Constants
+// ─────────────────────────────────────────────────────────────
+
+const TABLE_NAMES = Object.freeze({
+  LISTING_PHOTO: 'listing_photo',
+  USER: 'user'
+})
+
+const FIELD_NAMES = Object.freeze({
+  ID: '_id',
+  PHOTO: 'Photo',
+  FULL_NAME: 'Name - Full',
+  PROFILE_PHOTO: 'Profile Photo',
+  FEATURES: 'Features',
+  KITCHEN_TYPE: 'Kitchen Type'
+})
+
+const URL_PROTOCOL = Object.freeze({
+  HTTPS: 'https:',
+  PROTOCOL_RELATIVE_PREFIX: '//'
+})
+
+const LOG_PREFIX = '[supabaseUtils]'
+
+/**
+ * Amenities configuration with icons and priority
+ */
+const AMENITIES_MAP = Object.freeze({
+  'wifi': { icon: '📶', name: 'WiFi', priority: 1 },
+  'furnished': { icon: '🛋️', name: 'Furnished', priority: 2 },
+  'pet': { icon: '🐕', name: 'Pet-Friendly', priority: 3 },
+  'dog': { icon: '🐕', name: 'Pet-Friendly', priority: 3 },
+  'cat': { icon: '🐕', name: 'Pet-Friendly', priority: 3 },
+  'washer': { icon: '🧺', name: 'Washer/Dryer', priority: 4 },
+  'dryer': { icon: '🧺', name: 'Washer/Dryer', priority: 4 },
+  'parking': { icon: '🅿️', name: 'Parking', priority: 5 },
+  'elevator': { icon: '🏢', name: 'Elevator', priority: 6 },
+  'gym': { icon: '💪', name: 'Gym', priority: 7 },
+  'doorman': { icon: '🚪', name: 'Doorman', priority: 8 },
+  'ac': { icon: '❄️', name: 'A/C', priority: 9 },
+  'air conditioning': { icon: '❄️', name: 'A/C', priority: 9 },
+  'kitchen': { icon: '🍳', name: 'Kitchen', priority: 10 },
+  'balcony': { icon: '🌿', name: 'Balcony', priority: 11 },
+  'workspace': { icon: '💻', name: 'Workspace', priority: 12 },
+  'desk': { icon: '💻', name: 'Workspace', priority: 12 }
+})
+
+// ─────────────────────────────────────────────────────────────
+// Validation Predicates (Pure Functions)
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Check if value is an array
+ * @pure
+ */
+const isArray = (value) => Array.isArray(value)
+
+/**
+ * Check if value is a string
+ * @pure
+ */
+const isString = (value) => typeof value === 'string'
+
+/**
+ * Check if value is an object (not null)
+ * @pure
+ */
+const isObject = (value) => typeof value === 'object' && value !== null
+
+/**
+ * Check if array has elements
+ * @pure
+ */
+const hasElements = (arr) => isArray(arr) && arr.length > 0
+
+/**
+ * Check if URL starts with protocol-relative prefix
+ * @pure
+ */
+const isProtocolRelativeUrl = (url) =>
+  url.startsWith(URL_PROTOCOL.PROTOCOL_RELATIVE_PREFIX)
+
+/**
+ * Check if URL is valid (starts with http, https, or //)
+ * @pure
+ */
+const isValidUrl = (url) =>
+  url.startsWith('http://') ||
+  url.startsWith('https://') ||
+  isProtocolRelativeUrl(url)
+
+// ─────────────────────────────────────────────────────────────
+// Pure Helper Functions
+// ─────────────────────────────────────────────────────────────
+
+/**
+ * Normalize URL by adding https: protocol if needed
+ * @pure
+ */
+const normalizeUrl = (url) =>
+  isProtocolRelativeUrl(url)
+    ? URL_PROTOCOL.HTTPS + url
+    : url
+
+/**
+ * Safe JSON parse with empty array fallback
+ * @pure
+ */
+const safeJsonParse = (str) => {
+  try {
+    const parsed = JSON.parse(str)
+    return isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * Sort amenities by priority
+ * @pure
+ */
+const sortByPriority = (arr) =>
+  [...arr].sort((a, b) => a.priority - b.priority)
+
+// ─────────────────────────────────────────────────────────────
+// Main Functions
+// ─────────────────────────────────────────────────────────────
+
 /**
  * Parse a value that may be a native array or stringified JSON array
  *
@@ -18,139 +147,194 @@ import { DATABASE } from './constants.js';
  * - Stringified JSON arrays: '["Monday", "Tuesday"]'
  *
  * This utility handles both cases robustly, following the NO FALLBACK principle.
- *
+ * @pure
  * @param {any} value - Value from Supabase JSONB field
  * @returns {Array} - Parsed array or empty array if parsing fails
  */
 export function parseJsonArray(value) {
   // Already a native array? Return as-is
-  if (Array.isArray(value)) {
+  if (isArray(value)) {
     return value;
   }
 
   // Stringified JSON? Try to parse
-  if (typeof value === 'string') {
-    try {
-      const parsed = JSON.parse(value);
-      // Verify the parsed result is actually an array
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (error) {
-      console.warn('Failed to parse JSON array:', { value, error: error.message });
-      return []; // Return empty array - NO FALLBACK to hardcoded data
+  if (isString(value)) {
+    const parsed = safeJsonParse(value)
+    if (parsed.length === 0 && value.length > 0) {
+      console.warn(`${LOG_PREFIX} Failed to parse JSON array:`, { value });
     }
+    return parsed;
   }
 
   // Unexpected type (null, undefined, object, number, etc.)
   if (value != null) {
-    console.warn('Unexpected type for JSONB array field:', { type: typeof value, value });
+    console.warn(`${LOG_PREFIX} Unexpected type for JSONB array field:`, { type: typeof value, value });
   }
   return []; // Return empty array - NO FALLBACK
 }
 
 /**
+ * Transform photo record to URL entry
+ * @pure
+ */
+const transformPhotoRecord = (photo) => {
+  if (!photo[FIELD_NAMES.PHOTO]) return null
+  return normalizeUrl(photo[FIELD_NAMES.PHOTO])
+}
+
+/**
+ * Build photo map from data array
+ * @pure
+ */
+const buildPhotoMap = (data) =>
+  data.reduce((acc, photo) => {
+    const url = transformPhotoRecord(photo)
+    if (url) {
+      acc[photo[FIELD_NAMES.ID]] = url
+    }
+    return acc
+  }, {})
+
+/**
  * Fetch photo URLs in batch from database
+ * @effectful - makes network request
  * @param {Array<string>} photoIds - Array of photo IDs to fetch
  * @returns {Promise<Object>} Map of photo ID to photo URL
  */
 export async function fetchPhotoUrls(photoIds) {
-  console.log('🔍 fetchPhotoUrls called with', photoIds?.length || 0, 'photo IDs');
+  console.log(`${LOG_PREFIX} 🔍 fetchPhotoUrls called with`, photoIds?.length || 0, 'photo IDs');
 
-  if (!photoIds || photoIds.length === 0) {
-    console.log('⚠️ fetchPhotoUrls: No photo IDs provided, returning empty map');
+  if (!hasElements(photoIds)) {
+    console.log(`${LOG_PREFIX} ⚠️ fetchPhotoUrls: No photo IDs provided, returning empty map`);
     return {};
   }
 
-  console.log('🔍 fetchPhotoUrls: Sample IDs:', photoIds.slice(0, 3));
+  console.log(`${LOG_PREFIX} 🔍 fetchPhotoUrls: Sample IDs:`, photoIds.slice(0, 3));
 
   try {
-    console.log('🔍 fetchPhotoUrls: Querying listing_photo table...');
+    console.log(`${LOG_PREFIX} 🔍 fetchPhotoUrls: Querying listing_photo table...`);
     const { data, error } = await supabase
-      .from('listing_photo')
-      .select('_id, Photo')
-      .in('_id', photoIds);
+      .from(TABLE_NAMES.LISTING_PHOTO)
+      .select(`${FIELD_NAMES.ID}, ${FIELD_NAMES.PHOTO}`)
+      .in(FIELD_NAMES.ID, photoIds);
 
-    console.log('🔍 fetchPhotoUrls: Query completed', {
+    console.log(`${LOG_PREFIX} 🔍 fetchPhotoUrls: Query completed`, {
       dataLength: data?.length || 0,
       error: error?.message || null
     });
 
     if (error) {
-      console.error('❌ Error fetching photos:', error);
+      console.error(`${LOG_PREFIX} ❌ Error fetching photos:`, error);
       return {};
     }
 
-    if (!data || data.length === 0) {
-      console.warn('⚠️ fetchPhotoUrls: Query returned no data for', photoIds.length, 'IDs');
+    if (!hasElements(data)) {
+      console.warn(`${LOG_PREFIX} ⚠️ fetchPhotoUrls: Query returned no data for`, photoIds.length, 'IDs');
       return {};
     }
 
-    // Create a map of photo ID to URL
-    const photoMap = {};
-    data.forEach(photo => {
-      if (photo.Photo) {
-        // Add https: protocol if URL starts with //
-        let photoUrl = photo.Photo;
-        if (photoUrl.startsWith('//')) {
-          photoUrl = 'https:' + photoUrl;
-        }
-        photoMap[photo._id] = photoUrl;
-      }
-    });
-
-    console.log(`✅ Fetched ${Object.keys(photoMap).length} photo URLs from ${data.length} records`);
+    const photoMap = buildPhotoMap(data)
+    console.log(`${LOG_PREFIX} ✅ Fetched ${Object.keys(photoMap).length} photo URLs from ${data.length} records`);
     return photoMap;
   } catch (error) {
-    console.error('❌ Error in fetchPhotoUrls:', error);
+    console.error(`${LOG_PREFIX} ❌ Error in fetchPhotoUrls:`, error);
     return {};
   }
 }
 
 /**
+ * Transform user record to host entry
+ * @pure
+ */
+const transformUserToHost = (user) => {
+  const profilePhoto = user[FIELD_NAMES.PROFILE_PHOTO]
+  const normalizedPhoto = profilePhoto ? normalizeUrl(profilePhoto) : null
+
+  return Object.freeze({
+    name: user[FIELD_NAMES.FULL_NAME] || null,
+    image: normalizedPhoto,
+    verified: false,
+    userId: user[FIELD_NAMES.ID]
+  })
+}
+
+/**
+ * Build host map from user data array
+ * @pure
+ */
+const buildHostMap = (userData) =>
+  userData.reduce((acc, user) => {
+    acc[user[FIELD_NAMES.ID]] = transformUserToHost(user)
+    return acc
+  }, {})
+
+/**
  * Fetch host data in batch from database
  * After migration, hostIds are always user._id values (Host User column)
+ * @effectful - makes network request
  * @param {Array<string>} hostIds - Array of host IDs (user._id)
  * @returns {Promise<Object>} Map of host ID to host data {name, image, verified}
  */
 export async function fetchHostData(hostIds) {
-  if (!hostIds || hostIds.length === 0) {
+  if (!hasElements(hostIds)) {
     return {};
   }
-
-  const hostMap = {};
 
   try {
-    // hostIds are user._id values (Host User column contains user._id directly)
     const { data: userData, error: userError } = await supabase
-      .from('user')
-      .select('_id, "Name - Full", "Profile Photo"')
-      .in('_id', hostIds);
+      .from(TABLE_NAMES.USER)
+      .select(`${FIELD_NAMES.ID}, "${FIELD_NAMES.FULL_NAME}", "${FIELD_NAMES.PROFILE_PHOTO}"`)
+      .in(FIELD_NAMES.ID, hostIds);
 
     if (userError) {
-      console.error('❌ Error fetching user data by _id:', userError);
+      console.error(`${LOG_PREFIX} ❌ Error fetching user data by _id:`, userError);
+      return {};
     }
 
-    // Process users found by _id
-    if (userData && userData.length > 0) {
-      userData.forEach(user => {
-        let profilePhoto = user['Profile Photo'];
-        if (profilePhoto && profilePhoto.startsWith('//')) {
-          profilePhoto = 'https:' + profilePhoto;
-        }
-        hostMap[user._id] = {
-          name: user['Name - Full'] || null,
-          image: profilePhoto || null,
-          verified: false,
-          userId: user._id
-        };
-      });
+    if (!hasElements(userData)) {
+      return {};
     }
 
-    console.log(`✅ Fetched host data for ${Object.keys(hostMap).length} hosts`);
+    const hostMap = buildHostMap(userData)
+    console.log(`${LOG_PREFIX} ✅ Fetched host data for ${Object.keys(hostMap).length} hosts`);
     return hostMap;
   } catch (error) {
-    console.error('❌ Error in fetchHostData:', error);
+    console.error(`${LOG_PREFIX} ❌ Error in fetchHostData:`, error);
     return {};
   }
+}
+
+/**
+ * Extract URL from photo object
+ * @pure
+ */
+const extractPhotoUrl = (photoObj) => {
+  const rawUrl = photoObj.url || photoObj[FIELD_NAMES.PHOTO] || null
+  return rawUrl ? normalizeUrl(rawUrl) : null
+}
+
+/**
+ * Process a single photo item (object, URL string, or legacy ID)
+ * @pure
+ */
+const processPhotoItem = (photo, photoMap) => {
+  // New embedded format: photo is an object with url/Photo field
+  if (isObject(photo)) {
+    return extractPhotoUrl(photo)
+  }
+
+  // String format: could be a direct URL or a legacy ID
+  if (isString(photo)) {
+    // Check if it's already a valid URL
+    if (isValidUrl(photo)) {
+      return normalizeUrl(photo)
+    }
+
+    // Legacy format: photo is an ID string - look up in photoMap
+    return photoMap[photo] || null
+  }
+
+  return null
 }
 
 /**
@@ -160,118 +344,91 @@ export async function fetchHostData(hostIds) {
  * 2. Direct URL strings: ["https://...", "https://...", ...]
  * 3. Legacy IDs (deprecated): ["photoId1", "photoId2"] - requires photoMap
  *
+ * @pure
  * @param {Array|string} photosField - Array of photo objects/URLs/IDs or JSON string
  * @param {Object} photoMap - Map of photo IDs to URLs (only needed for legacy ID format)
  * @param {string} listingId - Listing ID for debugging purposes
  * @returns {Array<string>} Array of photo URLs (empty array if none found)
  */
 export function extractPhotos(photosField, photoMap = {}, listingId = null) {
-  // Handle double-encoded JSONB using the centralized parser
   const photos = parseJsonArray(photosField);
 
-  if (photos.length === 0) {
-    return []; // Return empty array - NO FALLBACK
+  if (!hasElements(photos)) {
+    return [];
   }
 
-  const photoUrls = [];
+  const photoUrls = photos
+    .map(photo => processPhotoItem(photo, photoMap))
+    .filter(Boolean)
 
-  for (const photo of photos) {
-    // New embedded format: photo is an object with url/Photo field
-    if (typeof photo === 'object' && photo !== null) {
-      // Extract URL from object (prefer 'url' then 'Photo')
-      let photoUrl = photo.url || photo.Photo || null;
+  if (!hasElements(photoUrls)) {
+    console.warn(`${LOG_PREFIX} ⚠️ Listing ${listingId}: NO VALID PHOTO URLS RESOLVED`);
+  }
 
-      if (photoUrl) {
-        // Add https: protocol if URL starts with //
-        if (photoUrl.startsWith('//')) {
-          photoUrl = 'https:' + photoUrl;
-        }
-        photoUrls.push(photoUrl);
-      }
-      continue;
+  return photoUrls;
+}
+
+/**
+ * Extract features text from listing as lowercase string
+ * @pure
+ */
+const extractFeaturesText = (dbListing) => {
+  const features = dbListing[FIELD_NAMES.FEATURES]
+  return isString(features) ? features.toLowerCase() : ''
+}
+
+/**
+ * Check if kitchen amenity should be added based on Kitchen Type field
+ * @pure
+ */
+const hasKitchenAmenity = (dbListing) => {
+  const kitchenType = dbListing[FIELD_NAMES.KITCHEN_TYPE]
+  return isString(kitchenType) && kitchenType.toLowerCase().includes('kitchen')
+}
+
+/**
+ * Find matching amenities from features text
+ * @pure
+ */
+const findMatchingAmenities = (featureText) => {
+  const foundNames = new Set()
+  const amenities = []
+
+  for (const [key, amenity] of Object.entries(AMENITIES_MAP)) {
+    if (featureText.includes(key) && !foundNames.has(amenity.name)) {
+      amenities.push(amenity)
+      foundNames.add(amenity.name)
     }
-
-    // String format: could be a direct URL or a legacy ID
-    if (typeof photo === 'string') {
-      // Check if it's already a valid URL (starts with http://, https://, or //)
-      if (photo.startsWith('http://') || photo.startsWith('https://') || photo.startsWith('//')) {
-        let photoUrl = photo;
-        // Add https: protocol if URL starts with //
-        if (photoUrl.startsWith('//')) {
-          photoUrl = 'https:' + photoUrl;
-        }
-        photoUrls.push(photoUrl);
-        continue;
-      }
-
-      // Legacy format: photo is an ID string - look up in photoMap
-      const url = photoMap[photo];
-      if (url) {
-        photoUrls.push(url);
-      }
-      continue;
-    }
   }
 
-  if (photoUrls.length === 0) {
-    console.warn(`⚠️ Listing ${listingId}: NO VALID PHOTO URLS RESOLVED`);
-  }
-
-  return photoUrls; // Return all actual photos
+  return { amenities, foundNames }
 }
 
 /**
  * Parse amenities from database fields and return prioritized list with icons
+ * @pure
  * @param {Object} dbListing - Raw listing from database
  * @returns {Array} Array of amenity objects with icon, name, and priority
  */
 export function parseAmenities(dbListing) {
-  // Amenities map with icons and priority (lower = higher priority)
-  const amenitiesMap = {
-    'wifi': { icon: '📶', name: 'WiFi', priority: 1 },
-    'furnished': { icon: '🛋️', name: 'Furnished', priority: 2 },
-    'pet': { icon: '🐕', name: 'Pet-Friendly', priority: 3 },
-    'dog': { icon: '🐕', name: 'Pet-Friendly', priority: 3 },
-    'cat': { icon: '🐕', name: 'Pet-Friendly', priority: 3 },
-    'washer': { icon: '🧺', name: 'Washer/Dryer', priority: 4 },
-    'dryer': { icon: '🧺', name: 'Washer/Dryer', priority: 4 },
-    'parking': { icon: '🅿️', name: 'Parking', priority: 5 },
-    'elevator': { icon: '🏢', name: 'Elevator', priority: 6 },
-    'gym': { icon: '💪', name: 'Gym', priority: 7 },
-    'doorman': { icon: '🚪', name: 'Doorman', priority: 8 },
-    'ac': { icon: '❄️', name: 'A/C', priority: 9 },
-    'air conditioning': { icon: '❄️', name: 'A/C', priority: 9 },
-    'kitchen': { icon: '🍳', name: 'Kitchen', priority: 10 },
-    'balcony': { icon: '🌿', name: 'Balcony', priority: 11 },
-    'workspace': { icon: '💻', name: 'Workspace', priority: 12 },
-    'desk': { icon: '💻', name: 'Workspace', priority: 12 }
-  };
+  const featureText = extractFeaturesText(dbListing)
+  const { amenities, foundNames } = findMatchingAmenities(featureText)
 
-  const amenities = [];
-  const foundAmenities = new Set(); // Track which amenities we've already added
-
-  // Check Features field (if it exists as a string or array)
-  const features = dbListing['Features'];
-  if (features) {
-    const featureText = typeof features === 'string' ? features.toLowerCase() : '';
-
-    for (const [key, amenity] of Object.entries(amenitiesMap)) {
-      if (featureText.includes(key) && !foundAmenities.has(amenity.name)) {
-        amenities.push(amenity);
-        foundAmenities.add(amenity.name);
-      }
-    }
+  // Add kitchen amenity if Kitchen Type field indicates it and not already found
+  if (hasKitchenAmenity(dbListing) && !foundNames.has('Kitchen')) {
+    amenities.push(AMENITIES_MAP['kitchen'])
   }
 
-  // Check Kitchen Type field - if it's "Full Kitchen", add kitchen amenity
-  const kitchenType = dbListing['Kitchen Type'];
-  if (kitchenType && kitchenType.toLowerCase().includes('kitchen') && !foundAmenities.has('Kitchen')) {
-    amenities.push(amenitiesMap['kitchen']);
-    foundAmenities.add('Kitchen');
-  }
+  return sortByPriority(amenities)
+}
 
-  // Sort by priority (lower number = higher priority)
-  amenities.sort((a, b) => a.priority - b.priority);
-
-  return amenities; // Return empty array if no amenities found - this is truthful, not a fallback
+// ─────────────────────────────────────────────────────────────
+// Exported Constants (for testing)
+// ─────────────────────────────────────────────────────────────
+export {
+  TABLE_NAMES,
+  FIELD_NAMES,
+  URL_PROTOCOL,
+  AMENITIES_MAP,
+  LOG_PREFIX
 }
