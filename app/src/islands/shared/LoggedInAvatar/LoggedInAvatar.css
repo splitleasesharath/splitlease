@@ -72,9 +72,9 @@
   width: 300px;
   max-height: 600px;
   background-color: #FFFFFF;
-  border: 1px solid #6B6B6B;
-  border-radius: 10px;
-  box-shadow: 0px 10px 20px 0px rgba(0, 0, 0, 0.1);
+  border: 1px solid #E5E5E5;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   overflow: visible;
   z-index: 10000 !important;
   display: block !important;

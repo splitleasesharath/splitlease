@@ -1,6 +1,6 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
-# Generated: 2026-01-07T23:06:33.350Z
+# Generated: 2026-01-08T12:41:15.276Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -63,6 +63,10 @@
 # /list-with-us → list-with-us.html
 /list-with-us  /_internal/list-with-us-view  200
 /list-with-us/  /_internal/list-with-us-view  200
+
+# /list-with-us-v2 → list-with-us-v2.html
+/list-with-us-v2  /_internal/list-with-us-v2-view  200
+/list-with-us-v2/  /_internal/list-with-us-v2-view  200
 
 # /why-split-lease → why-split-lease.html
 /why-split-lease  /_internal/why-split-lease-view  200

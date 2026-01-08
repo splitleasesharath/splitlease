@@ -149,6 +149,15 @@ export const routes = [
     hasDynamicSegment: false
   },
   {
+    path: '/list-with-us-v2',
+    file: 'list-with-us-v2.html',
+    aliases: ['/list-with-us-v2.html'],
+    protected: false,
+    cloudflareInternal: true,
+    internalName: 'list-with-us-v2-view',
+    hasDynamicSegment: false
+  },
+  {
     path: '/why-split-lease',
     file: 'why-split-lease.html',
     aliases: ['/why-split-lease.html'],
