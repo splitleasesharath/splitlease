@@ -279,10 +279,134 @@ export function mapDatabaseToFormData(
     governmentIdUrl: db['government ID'] || '',
   };
 
-  // Parse occupants
-  const occupants: Occupant[] = Array.isArray(db['occupants list'])
-    ? db['occupants list']
-    : [];
+  // Parse occupants - handle both array and stringified array
+  let occupants: Occupant[] = [];
+  if (Array.isArray(db['occupants list'])) {
+    occupants = db['occupants list'];
+  } else if (typeof db['occupants list'] === 'string') {
+    try {
+      const parsed = JSON.parse(db['occupants list']);
+      if (Array.isArray(parsed)) {
+        // Bubble stores occupant IDs as strings, not full objects
+        // For now, we'll treat these as empty since we don't have the actual data
+        occupants = [];
+      }
+    } catch {
+      occupants = [];
+    }
+  }
 
-  return { formData, occupants };
+  // Calculate completed steps based on filled fields
+  const completedSteps = calculateCompletedSteps(formData, occupants, employmentStatus);
+
+  // Determine last step - if submitted, user has completed all steps
+  const lastStep = db.submitted ? 7 : findLastCompletedStep(completedSteps);
+
+  return { formData, occupants, completedSteps, lastStep };
+}
+
+/**
+ * Step field requirements (mirrors STEP_FIELDS in useRentalApplicationWizardLogic)
+ */
+const STEP_FIELDS: Record<number, string[]> = {
+  1: ['fullName', 'dob', 'email', 'phone'],           // Personal Info
+  2: ['currentAddress', 'lengthResided', 'renting'],   // Address
+  3: [],                                                // Occupants (optional)
+  4: ['employmentStatus'],                              // Employment
+  5: [],                                                // Requirements (optional)
+  6: [],                                                // Documents (optional)
+  7: ['signature'],                                     // Review & Sign
+};
+
+/**
+ * Conditional required fields based on employment status
+ */
+const CONDITIONAL_REQUIRED_FIELDS: Record<string, string[]> = {
+  'full-time': ['employerName', 'employerPhone', 'jobTitle', 'monthlyIncome'],
+  'part-time': ['employerName', 'employerPhone', 'jobTitle', 'monthlyIncome'],
+  'intern': ['employerName', 'employerPhone', 'jobTitle', 'monthlyIncome'],
+  'business-owner': ['businessName', 'businessYear', 'businessState'],
+};
+
+/**
+ * Check if a step is complete based on form data
+ */
+function isStepComplete(
+  stepNumber: number,
+  formData: Partial<RentalApplicationFormData>,
+  occupants: Occupant[],
+  employmentStatus: string
+): boolean {
+  let stepFields = [...STEP_FIELDS[stepNumber]];
+
+  // Add conditional employment fields for step 4
+  if (stepNumber === 4 && employmentStatus) {
+    const conditionalFields = CONDITIONAL_REQUIRED_FIELDS[employmentStatus] || [];
+    stepFields = [...stepFields, ...conditionalFields];
+  }
+
+  // Optional steps (3, 5, 6) are considered complete if we have any related data
+  if (stepNumber === 3) {
+    // Occupants step - complete if we have occupants or explicitly no occupants
+    return true; // Always allow progression, occupants are optional
+  }
+
+  if (stepNumber === 5) {
+    // Requirements step - complete if any requirement field has a value
+    const hasAnyRequirement =
+      formData.hasPets !== '' ||
+      formData.isSmoker !== '' ||
+      formData.needsParking !== '';
+    return hasAnyRequirement || true; // Optional, so always complete
+  }
+
+  if (stepNumber === 6) {
+    // Documents step - complete if any document is uploaded
+    const hasAnyDocument =
+      !!formData.proofOfEmploymentUrl ||
+      !!formData.alternateGuaranteeUrl ||
+      !!formData.creditScoreUrl ||
+      !!formData.stateIdFrontUrl ||
+      !!formData.stateIdBackUrl ||
+      !!formData.governmentIdUrl;
+    return hasAnyDocument || true; // Optional, so always complete
+  }
+
+  // If no required fields for this step, it's complete
+  if (stepFields.length === 0) {
+    return true;
+  }
+
+  // Check all required fields have values
+  return stepFields.every(field => {
+    const value = formData[field as keyof RentalApplicationFormData];
+    return value !== undefined && value !== null && value !== '';
+  });
+}
+
+/**
+ * Calculate which steps are complete based on form data
+ */
+function calculateCompletedSteps(
+  formData: Partial<RentalApplicationFormData>,
+  occupants: Occupant[],
+  employmentStatus: string
+): number[] {
+  const completed: number[] = [];
+
+  for (let step = 1; step <= 7; step++) {
+    if (isStepComplete(step, formData, occupants, employmentStatus)) {
+      completed.push(step);
+    }
+  }
+
+  return completed;
+}
+
+/**
+ * Find the last completed step (for initial navigation)
+ */
+function findLastCompletedStep(completedSteps: number[]): number {
+  if (completedSteps.length === 0) return 1;
+  return Math.max(...completedSteps);
 }

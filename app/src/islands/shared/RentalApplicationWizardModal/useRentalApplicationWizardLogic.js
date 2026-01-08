@@ -173,10 +173,27 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
         if (result.data) {
           // Transform database fields to form fields (pass userEmail as fallback)
-          const { formData: mappedFormData, occupants: mappedOccupants } = mapDatabaseToFormData(result.data, userEmail);
+          // Also returns completedSteps and lastStep calculated from the data
+          const {
+            formData: mappedFormData,
+            occupants: mappedOccupants,
+            completedSteps: dbCompletedSteps,
+            lastStep: dbLastStep
+          } = mapDatabaseToFormData(result.data, userEmail);
 
           // Load into store (this will update the reactive state)
           loadFromDatabase(mappedFormData, mappedOccupants);
+
+          // Initialize completed steps from database data
+          if (dbCompletedSteps && dbCompletedSteps.length > 0) {
+            setCompletedSteps(dbCompletedSteps);
+          }
+
+          // Navigate to the review step (7) for submitted applications
+          // This shows the user their complete application
+          if (dbLastStep) {
+            setCurrentStep(dbLastStep);
+          }
 
           hasLoadedFromDb.current = true;
         }
