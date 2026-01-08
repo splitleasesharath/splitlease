@@ -23,8 +23,9 @@ export default function RentalApplicationWizardModal({
   onClose,
   onSuccess,
   applicationStatus = 'not_started', // 'not_started' | 'in_progress' | 'submitted'
+  userEmail = '', // Fallback email from user profile
 }) {
-  const logic = useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus });
+  const logic = useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus, userEmail });
 
   // Body scroll lock
   useEffect(() => {

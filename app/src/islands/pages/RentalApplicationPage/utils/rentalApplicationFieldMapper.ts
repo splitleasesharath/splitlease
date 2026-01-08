@@ -80,23 +80,61 @@ function extractFirstReference(value: string[] | null | undefined): string {
 }
 
 /**
+ * Normalize employment status to match frontend dropdown values
+ * Database may store "Full-time", "Part-time", etc. but frontend expects lowercase kebab-case
+ */
+function normalizeEmploymentStatus(value: string | null | undefined): string {
+  if (!value) return '';
+
+  // Normalize to lowercase and handle common variations
+  const normalized = value.toLowerCase().trim();
+
+  // Map known values to expected dropdown values
+  const statusMap: Record<string, string> = {
+    'full-time': 'full-time',
+    'full time': 'full-time',
+    'fulltime': 'full-time',
+    'part-time': 'part-time',
+    'part time': 'part-time',
+    'parttime': 'part-time',
+    'business-owner': 'business-owner',
+    'business owner': 'business-owner',
+    'self-employed': 'business-owner',
+    'selfemployed': 'business-owner',
+    'intern': 'intern',
+    'student': 'student',
+    'unemployed': 'unemployed',
+    'other': 'other',
+  };
+
+  return statusMap[normalized] || normalized;
+}
+
+/**
  * Map database record to form data
+ *
+ * @param dbRecord - The raw database record from rentalapplication table
+ * @param fallbackEmail - Optional fallback email (e.g., from user table) if rental app email is empty
  */
 export function mapDatabaseToFormData(
-  dbRecord: Record<string, unknown>
+  dbRecord: Record<string, unknown>,
+  fallbackEmail?: string
 ): {
   formData: Partial<RentalApplicationFormData>;
   occupants: Occupant[];
 } {
   const db = dbRecord as unknown as DatabaseRentalApplication;
 
+  // Normalize employment status for dropdown matching
+  const employmentStatus = normalizeEmploymentStatus(db['employment status']);
+
   // Determine monthly income based on employment status
   let monthlyIncome = '';
   let monthlyIncomeSelf = '';
 
-  if (db['employment status'] === 'full-time' || db['employment status'] === 'part-time') {
+  if (employmentStatus === 'full-time' || employmentStatus === 'part-time' || employmentStatus === 'intern') {
     monthlyIncome = numberToString(db['Monthly Income']);
-  } else if (db['employment status'] === 'business-owner' || db['employment status'] === 'self-employed') {
+  } else if (employmentStatus === 'business-owner') {
     monthlyIncomeSelf = numberToString(db['Monthly Income']);
   }
 
@@ -104,7 +142,7 @@ export function mapDatabaseToFormData(
     // Personal Information
     fullName: db.name || '',
     dob: db.DOB || '',
-    email: db.email || '',
+    email: db.email || fallbackEmail || '',
     phone: db['phone number'] || '',
 
     // Current Address
@@ -113,8 +151,8 @@ export function mapDatabaseToFormData(
     lengthResided: db['length resided'] || '',
     renting: booleanToYesNo(db.renting),
 
-    // Employment Information
-    employmentStatus: db['employment status'] || '',
+    // Employment Information (normalized to match dropdown values)
+    employmentStatus: employmentStatus,
 
     // Employed fields
     employerName: db['employer name'] || '',

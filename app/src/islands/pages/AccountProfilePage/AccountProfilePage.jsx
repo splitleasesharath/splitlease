@@ -227,6 +227,7 @@ export default function AccountProfilePage() {
             onClose={logic.handleCloseRentalWizard}
             onSuccess={logic.handleRentalWizardSuccess}
             applicationStatus={logic.rentalApplicationStatus}
+            userEmail={logic.profileData?.email || logic.profileData?.['Email'] || ''}
           />
         )}
 

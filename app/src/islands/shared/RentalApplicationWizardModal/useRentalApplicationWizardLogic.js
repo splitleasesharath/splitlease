@@ -84,7 +84,7 @@ const FILE_TYPE_MAP = {
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
-export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus = 'not_started' }) {
+export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus = 'not_started', userEmail = '' }) {
   // ============================================================================
   // STORE INTEGRATION (reuse existing localStorage store)
   // ============================================================================
@@ -172,8 +172,8 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
         }
 
         if (result.data) {
-          // Transform database fields to form fields
-          const { formData: mappedFormData, occupants: mappedOccupants } = mapDatabaseToFormData(result.data);
+          // Transform database fields to form fields (pass userEmail as fallback)
+          const { formData: mappedFormData, occupants: mappedOccupants } = mapDatabaseToFormData(result.data, userEmail);
 
           // Load into store (this will update the reactive state)
           loadFromDatabase(mappedFormData, mappedOccupants);
