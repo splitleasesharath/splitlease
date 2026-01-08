@@ -232,439 +232,207 @@
 }
 
 /* ============================================
-   STACKING STORIES SECTION - Card Deck Effect
+   STORIES SECTION - Simple Grid Layout
    ============================================ */
 
-.stacking-stories-section {
-    position: relative;
-    width: 100%;
-    height: 100vh;
-    min-height: 700px;
-    background: linear-gradient(180deg, #fafbfc 0%, #f0f2f5 100%);
-    overflow: hidden;
-}
-
-/* Progress Indicator - Left Side */
-.stories-progress {
-    position: absolute;
-    left: 48px;
-    top: 50%;
-    transform: translateY(-50%);
-    height: 300px;
-    width: 4px;
-    background: rgba(49, 19, 93, 0.1);
-    border-radius: 4px;
-    z-index: 20;
-    overflow: hidden;
-}
-
-.stories-progress-fill {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(180deg, #31135D 0%, #6B21A8 100%);
-    border-radius: 4px;
-    transform-origin: bottom center;
-    will-change: transform;
-}
-
-.stories-progress-markers {
-    position: absolute;
-    top: 0;
-    left: 20px;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    padding: 8px 0;
-}
-
-.progress-marker {
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
+.stories-section {
     background: white;
-    border: 2px solid rgba(49, 19, 93, 0.2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    padding: 100px 32px;
+}
+
+.stories-header {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.stories-eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #31135D;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    margin-bottom: 16px;
+}
+
+.stories-title {
+    font-size: clamp(32px, 5vw, 42px);
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+    letter-spacing: -0.5px;
+}
+
+/* Stories Grid */
+.stories-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+    max-width: 1100px;
+    margin: 0 auto 60px;
+}
+
+/* Individual Story Card */
+.story-card {
+    background: #fafbfc;
+    border: 1px solid #E5E7EB;
+    border-radius: 20px;
+    padding: 32px;
     transition: all 0.3s ease;
 }
 
-.progress-marker.active {
-    background: #31135D;
-    border-color: #31135D;
-    box-shadow: 0 4px 12px rgba(49, 19, 93, 0.3);
+.story-card:hover {
+    border-color: #C4B5FD;
+    box-shadow: 0 8px 24px rgba(49, 19, 93, 0.1);
 }
 
-.progress-marker .marker-number {
-    font-size: 11px;
-    font-weight: 700;
-    color: rgba(49, 19, 93, 0.4);
-    transition: color 0.3s ease;
-}
-
-.progress-marker.active .marker-number {
-    color: white;
-}
-
-/* Story Counter - Bottom Right */
-.story-counter {
-    position: absolute;
-    bottom: 48px;
-    right: 48px;
-    display: flex;
-    align-items: baseline;
-    gap: 4px;
-    z-index: 20;
-}
-
-.counter-current {
-    font-size: 48px;
-    font-weight: 700;
-    color: #31135D;
-    line-height: 1;
-}
-
-.counter-divider {
-    font-size: 24px;
-    font-weight: 400;
-    color: rgba(49, 19, 93, 0.3);
-    margin: 0 4px;
-}
-
-.counter-total {
-    font-size: 20px;
-    font-weight: 600;
-    color: rgba(49, 19, 93, 0.4);
-}
-
-/* Cards Container */
-.stacking-cards-container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 100%;
-    max-width: 1000px;
-    height: 550px;
-    padding: 0 120px;
-}
-
-/* Individual Stacking Card */
-.stacking-card {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 240px);
-    height: 100%;
-    will-change: transform, opacity, filter;
-}
-
-.stacking-card-inner {
-    display: grid;
-    grid-template-columns: 1fr 1.2fr;
-    width: 100%;
-    height: 100%;
-    background: white;
-    border-radius: 24px;
-    overflow: hidden;
-    box-shadow:
-        0 4px 6px rgba(0, 0, 0, 0.02),
-        0 12px 24px rgba(49, 19, 93, 0.08),
-        0 32px 64px rgba(49, 19, 93, 0.06);
-}
-
-/* Card Image Side */
-.stacking-card-image {
-    position: relative;
-    overflow: hidden;
-}
-
-.stacking-card-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.card-image-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        180deg,
-        transparent 50%,
-        rgba(0, 0, 0, 0.4) 100%
-    );
-}
-
-.card-savings-badge {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    padding: 10px 20px;
-    background: #10B981;
-    color: white;
-    border-radius: 500px;
-    font-size: 14px;
-    font-weight: 600;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.card-location-badge {
-    position: absolute;
-    bottom: 20px;
-    left: 20px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(8px);
-    border-radius: 500px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #111827;
-}
-
-.card-location-badge svg {
-    color: #31135D;
-}
-
-/* Card Content Side */
-.stacking-card-content {
-    padding: 40px;
-    display: flex;
-    flex-direction: column;
-    overflow-y: auto;
-}
-
-.card-header {
+.story-card-header {
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 28px;
+    margin-bottom: 20px;
 }
 
-.card-avatar {
-    width: 64px;
-    height: 64px;
+.story-avatar {
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid #31135D;
-    box-shadow: 0 4px 12px rgba(49, 19, 93, 0.15);
-    flex-shrink: 0;
+    border: 2px solid #31135D;
 }
 
-.card-person-info {
+.story-person {
     flex: 1;
 }
 
-.card-name {
-    font-size: 20px;
+.story-name {
+    font-size: 18px;
     font-weight: 700;
     color: #111827;
-    margin: 0 0 4px 0;
+    margin: 0 0 4px;
 }
 
-.card-role {
+.story-role {
     font-size: 14px;
     color: #6B7280;
-    margin: 0 0 2px 0;
+    margin: 0 0 2px;
 }
 
-.card-schedule {
+.story-schedule {
     font-size: 13px;
     color: #31135D;
     font-weight: 600;
     margin: 0;
 }
 
-/* Quote with Word Animation */
-.card-quote {
-    font-size: 22px;
-    font-weight: 600;
-    color: #31135D;
-    line-height: 1.5;
-    margin: 0 0 20px 0;
+.story-quote {
+    font-size: 16px;
+    font-weight: 500;
+    color: #374151;
+    line-height: 1.6;
+    margin: 0 0 20px;
     padding: 0;
     border: none;
 }
 
-.quote-word {
-    display: inline-block;
-    will-change: transform, opacity;
+.story-meta {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
 }
 
-.card-full-story {
-    font-size: 15px;
-    color: #4B5563;
-    line-height: 1.8;
-    margin-bottom: 28px;
-    flex-grow: 1;
+.story-savings {
+    font-size: 14px;
+    font-weight: 600;
+    color: #10B981;
 }
 
-.card-cta-button {
+.story-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #6B7280;
+}
+
+.story-location svg {
+    color: #31135D;
+}
+
+/* Stories CTA */
+.stories-cta {
+    text-align: center;
+}
+
+.stories-cta-button {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    padding: 14px 28px;
+    padding: 16px 32px;
     background: #31135D;
     color: white;
     border: none;
     border-radius: 500px;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(49, 19, 93, 0.2);
-    align-self: flex-start;
 }
 
-.card-cta-button:hover {
+.stories-cta-button:hover {
     background: #4A2F7C;
     transform: translateY(-2px);
     box-shadow: 0 8px 24px rgba(49, 19, 93, 0.3);
 }
 
-.card-cta-button svg {
+.stories-cta-button svg {
     transition: transform 0.3s ease;
 }
 
-.card-cta-button:hover svg {
+.stories-cta-button:hover svg {
     transform: translateX(4px);
 }
 
-/* Stacking Cards Responsive */
-@media (max-width: 1024px) {
-    .stories-progress {
-        left: 24px;
-        height: 200px;
+/* Stories Responsive */
+@media (max-width: 968px) {
+    .stories-section {
+        padding: 80px 24px;
     }
 
-    .stories-progress-markers {
-        left: 16px;
-    }
-
-    .progress-marker {
-        width: 24px;
-        height: 24px;
-    }
-
-    .story-counter {
-        bottom: 24px;
-        right: 24px;
-    }
-
-    .counter-current {
-        font-size: 36px;
-    }
-
-    .stacking-cards-container {
-        padding: 0 80px;
-        height: 500px;
-    }
-
-    .stacking-card {
-        width: calc(100% - 160px);
-    }
-}
-
-@media (max-width: 768px) {
-    .stacking-stories-section {
-        min-height: 100vh;
-        height: auto;
-        padding: 80px 0;
-    }
-
-    .stories-progress {
-        display: none;
-    }
-
-    .story-counter {
-        position: static;
-        display: flex;
-        justify-content: center;
-        margin-bottom: 24px;
-    }
-
-    .stacking-cards-container {
-        position: relative;
-        top: auto;
-        left: auto;
-        transform: none;
-        padding: 0 24px;
-        height: auto;
-        max-width: 600px;
-        margin: 0 auto;
-    }
-
-    .stacking-card {
-        position: relative;
-        left: auto;
-        transform: none;
-        width: 100%;
-        margin-bottom: 24px;
-    }
-
-    .stacking-card:not(:first-child) {
-        display: none;
-    }
-
-    .stacking-card-inner {
+    .stories-grid {
         grid-template-columns: 1fr;
-        height: auto;
+        gap: 24px;
     }
 
-    .stacking-card-image {
-        height: 200px;
-    }
-
-    .stacking-card-content {
+    .story-card {
         padding: 24px;
     }
 
-    .card-header {
-        margin-bottom: 20px;
-    }
-
-    .card-avatar {
-        width: 56px;
-        height: 56px;
-    }
-
-    .card-name {
-        font-size: 18px;
-    }
-
-    .card-quote {
-        font-size: 18px;
-    }
-
-    .card-full-story {
-        font-size: 14px;
+    .story-quote {
+        font-size: 15px;
     }
 }
 
 @media (max-width: 640px) {
-    .card-header {
+    .stories-header {
+        margin-bottom: 40px;
+    }
+
+    .story-card-header {
         flex-direction: column;
         text-align: center;
     }
 
-    .card-person-info {
+    .story-person {
         text-align: center;
     }
 
-    .card-quote {
+    .story-quote {
         text-align: center;
-        font-size: 16px;
     }
 
-    .card-cta-button {
-        width: 100%;
+    .story-meta {
         justify-content: center;
     }
 }
@@ -965,8 +733,8 @@
 }
 
 /* Button Focus States for Accessibility */
-.card-cta-button:focus,
 .hero-cta:focus,
+.stories-cta-button:focus,
 .success-final-cta .cta-button:focus {
     outline: 2px solid #A855F7;
     outline-offset: 2px;
@@ -977,9 +745,7 @@
 .hero-stat,
 .problem-item,
 .solution-side,
-.stacking-card,
-.stacking-stories-section,
-.quote-word {
+.story-card {
     will-change: transform, opacity;
 }
 
@@ -989,23 +755,7 @@
     .hero-stat,
     .problem-item,
     .solution-side,
-    .stacking-card,
-    .stacking-stories-section,
-    .quote-word {
+    .story-card {
         will-change: auto;
-    }
-
-    /* Show all cards stacked on reduced motion */
-    .stacking-card {
-        position: relative;
-        transform: none !important;
-        opacity: 1 !important;
-        filter: none !important;
-        margin-bottom: 24px;
-    }
-
-    .quote-word {
-        opacity: 1 !important;
-        transform: none !important;
     }
 }

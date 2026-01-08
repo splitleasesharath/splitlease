@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { useRef, useLayoutEffect } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Header from '../shared/Header.jsx';
@@ -229,220 +229,86 @@ function ProblemSolutionSection() {
 }
 
 // ============================================================================
-// INTERNAL COMPONENT: Stacking Stories Section
+// INTERNAL COMPONENT: Simple Stories Section
 // ============================================================================
 
-function StackingStoriesSection({ stories, onFindSplitLease }) {
+function StoriesSection({ stories, onFindSplitLease }) {
   const sectionRef = useRef(null);
-  const cardsContainerRef = useRef(null);
-  const cardRefs = useRef([]);
-  const progressRef = useRef(null);
-  const progressFillRef = useRef(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+  const cardsRef = useRef([]);
 
   useLayoutEffect(() => {
     const section = sectionRef.current;
-    const cardsContainer = cardsContainerRef.current;
-    const cards = cardRefs.current.filter(Boolean);
-    const progressFill = progressFillRef.current;
+    const cards = cardsRef.current.filter(Boolean);
 
-    if (!section || !cardsContainer || cards.length === 0) return;
+    if (!section || cards.length === 0) return;
 
     const ctx = gsap.context(() => {
-      const totalCards = cards.length;
-      const scrollPerCard = 100 / totalCards;
-
-      // Set initial states for all cards
-      cards.forEach((card, index) => {
-        if (index === 0) {
-          // First card starts visible
-          gsap.set(card, {
-            y: 0,
-            scale: 1,
-            opacity: 1,
-            zIndex: totalCards - index
-          });
-        } else {
-          // Other cards start below viewport
-          gsap.set(card, {
-            y: '100%',
-            scale: 0.95,
-            opacity: 0,
-            zIndex: totalCards - index
-          });
-        }
-
-        // Set quote text initial state (for word animation)
-        const quoteWords = card.querySelectorAll('.quote-word');
-        gsap.set(quoteWords, {
-          opacity: 0,
-          y: 20
-        });
-      });
-
-      // Animate first card's quote on load
-      const firstCardQuoteWords = cards[0].querySelectorAll('.quote-word');
-      gsap.to(firstCardQuoteWords, {
-        opacity: 1,
-        y: 0,
-        stagger: 0.02,
-        duration: 0.4,
+      // Cards fade in with stagger on scroll
+      gsap.from(cards, {
+        opacity: 0,
+        y: 40,
+        stagger: 0.15,
+        duration: 0.6,
         ease: 'power2.out',
-        delay: 0.3
-      });
-
-      // Main timeline with scroll trigger
-      const tl = gsap.timeline({
         scrollTrigger: {
           trigger: section,
-          start: 'top top',
-          end: `+=${totalCards * 100}%`,
-          pin: true,
-          scrub: 1,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            // Update progress bar
-            if (progressFill) {
-              gsap.set(progressFill, {
-                scaleY: self.progress
-              });
-            }
-
-            // Calculate active card index
-            const newIndex = Math.min(
-              Math.floor(self.progress * totalCards),
-              totalCards - 1
-            );
-            setActiveIndex(newIndex);
-          }
+          start: 'top 80%',
+          toggleActions: 'play none none reverse'
         }
       });
-
-      // Animate each card transition
-      cards.forEach((card, index) => {
-        if (index === 0) return; // Skip first card
-
-        const prevCard = cards[index - 1];
-        const startProgress = (index - 1) / totalCards;
-        const endProgress = index / totalCards;
-        const duration = endProgress - startProgress;
-
-        // Previous card scales down and darkens
-        tl.to(prevCard, {
-          scale: 0.92,
-          filter: 'brightness(0.7)',
-          ease: 'power2.inOut',
-          duration: duration * 0.5
-        }, startProgress);
-
-        // Current card slides up
-        tl.to(card, {
-          y: 0,
-          scale: 1,
-          opacity: 1,
-          ease: 'power2.out',
-          duration: duration * 0.8
-        }, startProgress + duration * 0.1);
-
-        // Animate quote words for current card
-        const quoteWords = card.querySelectorAll('.quote-word');
-        tl.to(quoteWords, {
-          opacity: 1,
-          y: 0,
-          stagger: 0.015,
-          ease: 'power2.out',
-          duration: duration * 0.4
-        }, startProgress + duration * 0.4);
-      });
-
     }, section);
 
     return () => ctx.revert();
   }, [stories]);
 
-  // Split quote into words for animation
-  const splitQuoteIntoWords = (quote) => {
-    return quote.split(' ').map((word, index) => (
-      <span key={index} className="quote-word">
-        {word}{' '}
-      </span>
-    ));
-  };
-
   return (
-    <section ref={sectionRef} id="stories" className="stacking-stories-section">
-      {/* Progress indicator */}
-      <div ref={progressRef} className="stories-progress">
-        <div ref={progressFillRef} className="stories-progress-fill"></div>
-        <div className="stories-progress-markers">
-          {stories.map((story, index) => (
-            <div
-              key={index}
-              className={`progress-marker ${index <= activeIndex ? 'active' : ''}`}
-            >
-              <span className="marker-number">{index + 1}</span>
-            </div>
-          ))}
-        </div>
+    <section ref={sectionRef} id="stories" className="stories-section">
+      <div className="stories-header">
+        <span className="stories-eyebrow">Guest Stories</span>
+        <h2 className="stories-title">Hear from our guests</h2>
       </div>
 
-      {/* Cards container */}
-      <div ref={cardsContainerRef} className="stacking-cards-container">
+      <div className="stories-grid">
         {stories.map((story, index) => (
           <div
             key={index}
-            ref={el => cardRefs.current[index] = el}
-            className="stacking-card"
+            ref={el => cardsRef.current[index] = el}
+            className="story-card"
           >
-            <div className="stacking-card-inner">
-              {/* Image side */}
-              <div className="stacking-card-image">
-                <img src={story.image} alt={`${story.name}'s space`} loading="lazy" />
-                <div className="card-image-overlay"></div>
-                <div className="card-savings-badge">{story.savings} saved</div>
-                <div className="card-location-badge">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="2"/>
-                    <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="2"/>
-                  </svg>
-                  {story.location}
-                </div>
+            <div className="story-card-header">
+              <img src={story.avatar} alt={story.name} className="story-avatar" loading="lazy" />
+              <div className="story-person">
+                <h3 className="story-name">{story.name}</h3>
+                <p className="story-role">{story.role}</p>
+                <p className="story-schedule">{story.schedule}</p>
               </div>
+            </div>
 
-              {/* Content side */}
-              <div className="stacking-card-content">
-                <div className="card-header">
-                  <img src={story.avatar} alt={story.name} className="card-avatar" loading="lazy" />
-                  <div className="card-person-info">
-                    <h3 className="card-name">{story.name}</h3>
-                    <p className="card-role">{story.role}</p>
-                    <p className="card-schedule">{story.schedule}</p>
-                  </div>
-                </div>
+            <blockquote className="story-quote">
+              "{story.quote}"
+            </blockquote>
 
-                <blockquote className="card-quote">
-                  "{splitQuoteIntoWords(story.quote)}"
-                </blockquote>
-
-                <p className="card-full-story">{story.fullStory}</p>
-
-                <button className="card-cta-button" onClick={onFindSplitLease}>
-                  Browse Listings
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
-              </div>
+            <div className="story-meta">
+              <span className="story-savings">{story.savings} saved</span>
+              <span className="story-location">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="2"/>
+                  <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="2"/>
+                </svg>
+                {story.location}
+              </span>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Story counter */}
-      <div className="story-counter">
-        <span className="counter-current">{String(activeIndex + 1).padStart(2, '0')}</span>
-        <span className="counter-divider">/</span>
-        <span className="counter-total">{String(stories.length).padStart(2, '0')}</span>
+      <div className="stories-cta">
+        <button className="stories-cta-button" onClick={onFindSplitLease}>
+          Find Your Space
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
       </div>
     </section>
   );
@@ -467,8 +333,8 @@ export default function GuestSuccessPage() {
       {/* Problem/Solution Section */}
       <ProblemSolutionSection />
 
-      {/* Stacking Stories Section - Card Deck Effect */}
-      <StackingStoriesSection
+      {/* Stories Section */}
+      <StoriesSection
         stories={successStories}
         onFindSplitLease={handleFindSplitLease}
       />
