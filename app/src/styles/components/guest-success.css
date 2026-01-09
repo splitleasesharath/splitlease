@@ -282,29 +282,33 @@
    ============================================ */
 
 .success-final-cta {
-    background: #31135d;
-    padding: 100px 32px;
+    background: #fafbfc;
+    padding: 80px 32px 120px;
 }
 
 .success-cta-card {
-    max-width: 700px;
+    max-width: 600px;
     margin: 0 auto;
     text-align: center;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 16px;
+    padding: 48px 40px;
 }
 
 .success-cta-title {
-    font-size: 36px;
+    font-size: 28px;
     font-weight: 700;
-    color: white;
+    color: #111827;
     line-height: 1.2;
-    margin: 0 0 16px;
+    margin: 0 0 12px;
     letter-spacing: -0.5px;
 }
 
 .success-cta-subtitle {
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.85);
-    margin: 0 0 32px;
+    font-size: 16px;
+    color: #6B7280;
+    margin: 0 0 28px;
     line-height: 1.6;
 }
 
@@ -312,34 +316,37 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 16px 40px;
-    background: white;
-    color: #31135D;
+    padding: 14px 32px;
+    background: #31135D;
+    color: white;
     border: none;
-    border-radius: 500px;
-    font-size: 16px;
+    border-radius: 8px;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    transition: background 0.2s ease;
 }
 
 .cta-button.cta-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    background: #4a1d85;
 }
 
 /* CTA Responsive */
 @media (max-width: 968px) {
     .success-final-cta {
-        padding: 80px 24px;
+        padding: 60px 24px 100px;
+    }
+
+    .success-cta-card {
+        padding: 36px 28px;
     }
 
     .success-cta-title {
-        font-size: 28px;
+        font-size: 24px;
     }
 
     .success-cta-subtitle {
-        font-size: 16px;
+        font-size: 15px;
     }
 }
 
