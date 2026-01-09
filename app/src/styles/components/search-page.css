@@ -55,7 +55,7 @@
 /* Filter Bar - Schedule + Toggle Button Row */
 .filter-bar {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
 }
 
@@ -108,13 +108,15 @@
 /* Filter Popup Wrapper */
 .filter-popup-wrapper {
   position: relative;
+  align-self: flex-start;
+  margin-top: 0;
 }
 
 /* Filter Toggle Button - Square Icon Button */
 .filter-toggle-btn-new {
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
   border: 1px solid #e5e5e5;
   background: white;
   display: flex;
@@ -134,8 +136,8 @@
 }
 
 .filter-toggle-btn-new svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   color: #6b7280;
 }
 
