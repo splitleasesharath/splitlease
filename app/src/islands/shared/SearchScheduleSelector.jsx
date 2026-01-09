@@ -35,9 +35,28 @@ const CalendarIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 36px;
+  background: #f5f3ff;
+  border: 1px solid #e0e7ff;
+  border-radius: 8px;
+  color: #6366f1;
   margin-right: 8px;
   flex-shrink: 0;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #ede9fe;
+    border-color: #c7d2fe;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  img {
+    width: 18px;
+    height: 18px;
+  }
 `;
 
 const DaysGrid = styled.div`
@@ -52,23 +71,23 @@ const DaysGrid = styled.div`
 `;
 
 const DayCell = styled.button`
-  width: 36px;
-  height: 36px;
-  min-width: 36px;
-  min-height: 36px;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: "Inter", Helvetica, Arial, sans-serif;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 16px;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0;
   cursor: ${props => props.$isDragging ? 'grabbing' : 'pointer'};
   transition: transform 0.15s ease-in-out, background 0.2s ease-in-out;
-  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   box-sizing: border-box;
 
   /* Error state styling */
@@ -85,7 +104,7 @@ const DayCell = styled.button`
 
   /* Normal selected/unselected state (no error) */
   ${props => !props.$hasError && `
-    background-color: ${props.$isSelected ? '#4B47CE' : '#b2b2b2'};
+    background-color: ${props.$isSelected ? '#4B47CE' : '#B2B2B2'};
     color: #ffffff;
   `}
 
@@ -103,15 +122,15 @@ const DayCell = styled.button`
   }
 
   @media (max-width: 768px) {
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
-  }
-
-  @media (max-width: 480px) {
     width: 32px;
     height: 32px;
     font-size: 13px;
+  }
+
+  @media (max-width: 480px) {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
   }
 `;
 
@@ -698,12 +717,12 @@ export default function SearchScheduleSelector({
     <Container className={className}>
       <SelectorRow>
         <CalendarIcon>
-          <img
-            src="https://c.animaapp.com/meh6k861XoGXNn/img/calendar-minimalistic-svgrepo-com-202-svg.svg"
-            alt="Calendar"
-            width="36"
-            height="36"
-          />
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
+            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" strokeWidth="2"/>
+            <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
         </CalendarIcon>
 
         <DaysGrid>

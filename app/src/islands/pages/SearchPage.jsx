@@ -1061,6 +1061,7 @@ export default function SearchPage() {
 
   // UI state
   const [filterPanelActive, setFilterPanelActive] = useState(false);
+  const [filterPopupOpen, setFilterPopupOpen] = useState(false);
   const [mapSectionActive, setMapSectionActive] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMapVisible, setMobileMapVisible] = useState(false);
@@ -1098,6 +1099,94 @@ export default function SearchPage() {
     if (sortBy !== 'recommended') count++;
     return count;
   }, [selectedNeighborhoods, weekPattern, priceTier, sortBy]);
+
+  // Generate active filter tags for the new filter design
+  const activeFilterTags = useMemo(() => {
+    const tags = [];
+
+    // Borough filter
+    if (selectedBorough && selectedBorough !== 'all' && selectedBorough !== '') {
+      const boroughName = boroughs.find(b => b.value === selectedBorough)?.name;
+      if (boroughName && boroughName !== 'All Boroughs') {
+        tags.push({
+          id: 'borough',
+          icon: 'map-pin',
+          label: boroughName,
+          onRemove: () => setSelectedBorough('all')
+        });
+      }
+    }
+
+    // Neighborhoods filter
+    if (selectedNeighborhoods.length > 0) {
+      const neighborhoodNames = selectedNeighborhoods
+        .map(id => neighborhoods.find(n => n.id === id)?.name)
+        .filter(Boolean)
+        .slice(0, 2);
+      const label = neighborhoodNames.length > 2
+        ? `${neighborhoodNames.join(', ')} +${selectedNeighborhoods.length - 2}`
+        : neighborhoodNames.join(', ');
+      tags.push({
+        id: 'neighborhoods',
+        icon: 'map-pin',
+        label: label || `${selectedNeighborhoods.length} neighborhoods`,
+        onRemove: () => setSelectedNeighborhoods([])
+      });
+    }
+
+    // Price filter
+    if (priceTier && priceTier !== 'all') {
+      const priceLabels = {
+        'under-200': 'Under $200',
+        '200-350': '$200-$350',
+        '350-500': '$350-$500',
+        '500-plus': '$500+'
+      };
+      tags.push({
+        id: 'price',
+        icon: 'dollar-sign',
+        label: priceLabels[priceTier] || priceTier,
+        onRemove: () => setPriceTier('all')
+      });
+    }
+
+    // Week pattern filter
+    if (weekPattern && weekPattern !== 'every-week') {
+      const patternLabels = {
+        'one-on-off': 'Every other week',
+        'two-on-off': '2 weeks on/off',
+        'one-three-off': '1 on, 3 off'
+      };
+      tags.push({
+        id: 'weekPattern',
+        icon: 'repeat',
+        label: patternLabels[weekPattern] || weekPattern,
+        onRemove: () => setWeekPattern('every-week')
+      });
+    }
+
+    return tags;
+  }, [selectedBorough, selectedNeighborhoods, priceTier, weekPattern, boroughs, neighborhoods]);
+
+  // Toggle filter popup
+  const toggleFilterPopup = useCallback(() => {
+    setFilterPopupOpen(prev => !prev);
+  }, []);
+
+  // Close filter popup
+  const closeFilterPopup = useCallback(() => {
+    setFilterPopupOpen(false);
+  }, []);
+
+  // Clear all filters
+  const clearAllFilters = useCallback(() => {
+    setSelectedBorough('all');
+    setSelectedNeighborhoods([]);
+    setPriceTier('all');
+    setWeekPattern('every-week');
+    setSortBy('recommended');
+    closeFilterPopup();
+  }, [closeFilterPopup]);
 
   // Flag to prevent URL update on initial load
   const isInitialMount = useRef(true);
@@ -2710,7 +2799,171 @@ export default function SearchPage() {
           {/* Compact Schedule Indicator - Shows when header is hidden */}
           <CompactScheduleIndicator isVisible={mobileHeaderHidden} />
 
-          {/* All filters in single horizontal flexbox container */}
+          {/* NEW FILTER SECTION - Desktop Only */}
+          <div className={`filter-section ${activeFilterTags.length > 0 ? 'has-active-filters' : ''}`}>
+            <div className="filter-bar">
+              {/* Schedule Selector */}
+              <div className="schedule-selector">
+                <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
+                  {/* AuthAwareSearchScheduleSelector will be mounted here on desktop */}
+                </div>
+              </div>
+
+              {/* Filter Toggle Button - Shows when no filters active */}
+              <div className="filter-popup-wrapper" id="topFilterWrapper">
+                <button
+                  className={`filter-toggle-btn-new ${filterPopupOpen ? 'active' : ''}`}
+                  onClick={toggleFilterPopup}
+                  aria-label="Open filters"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                  </svg>
+                  {activeFilterTags.length > 0 && (
+                    <span className="filter-badge">{activeFilterTags.length}</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Filter Tags Row - Shows when filters are active */}
+          <div className={`filter-tags-row ${activeFilterTags.length > 0 ? 'has-filters' : ''}`}>
+            <button className="results-filter-btn" onClick={toggleFilterPopup}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+              <span className="results-filter-badge">{activeFilterTags.length}</span>
+            </button>
+
+            <div className="filter-tags-single-row">
+              {activeFilterTags.map((tag) => (
+                <div key={tag.id} className="filter-tag filter-tag-sm">
+                  {tag.icon === 'map-pin' && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                  )}
+                  {tag.icon === 'dollar-sign' && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="1" x2="12" y2="23"></line>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                  )}
+                  {tag.icon === 'repeat' && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="17 1 21 5 17 9"></polyline>
+                      <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                      <polyline points="7 23 3 19 7 15"></polyline>
+                      <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                  )}
+                  {tag.label}
+                  <button className="filter-tag-remove" onClick={tag.onRemove}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Filter Popup Modal */}
+          <div className={`filter-popup ${filterPopupOpen ? 'open' : ''}`}>
+            <div className="filter-popup-header">
+              <h3 className="filter-popup-title">Filters</h3>
+              <button className="filter-popup-clear" onClick={clearAllFilters}>
+                Clear all
+              </button>
+            </div>
+
+            <div className="filter-popup-body">
+              {/* Borough Select */}
+              <div className="filter-popup-group">
+                <label className="filter-popup-label">Borough</label>
+                <select
+                  className="filter-popup-select"
+                  value={selectedBorough}
+                  onChange={(e) => setSelectedBorough(e.target.value)}
+                >
+                  {boroughs.length === 0 ? (
+                    <option value="">Loading...</option>
+                  ) : (
+                    boroughs.map(borough => (
+                      <option key={borough.id} value={borough.value}>
+                        {borough.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              {/* Week Pattern */}
+              <div className="filter-popup-group">
+                <label className="filter-popup-label">Week Pattern</label>
+                <select
+                  className="filter-popup-select"
+                  value={weekPattern}
+                  onChange={(e) => setWeekPattern(e.target.value)}
+                >
+                  <option value="every-week">Every week</option>
+                  <option value="one-on-off">One on, one off</option>
+                  <option value="two-on-off">Two on, two off</option>
+                  <option value="one-three-off">One on, three off</option>
+                </select>
+              </div>
+
+              {/* Price Range */}
+              <div className="filter-popup-group">
+                <label className="filter-popup-label">Price Range</label>
+                <select
+                  className="filter-popup-select"
+                  value={priceTier}
+                  onChange={(e) => setPriceTier(e.target.value)}
+                >
+                  <option value="all">All Prices</option>
+                  <option value="under-200">&lt; $200/night</option>
+                  <option value="200-350">$200-$350/night</option>
+                  <option value="350-500">$350-$500/night</option>
+                  <option value="500-plus">$500+/night</option>
+                </select>
+              </div>
+
+              {/* Sort By */}
+              <div className="filter-popup-group">
+                <label className="filter-popup-label">Sort By</label>
+                <select
+                  className="filter-popup-select"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                >
+                  <option value="recommended">Recommended</option>
+                  <option value="price-low">Price: Low to High</option>
+                  <option value="most-viewed">Most Viewed</option>
+                  <option value="recent">Recently Added</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="filter-popup-footer">
+              <button className="btn btn-secondary" onClick={closeFilterPopup}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={closeFilterPopup}>
+                Apply Filters
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Backdrop */}
+          {filterPopupOpen && (
+            <div className="filter-backdrop open" onClick={closeFilterPopup}></div>
+          )}
+
+          {/* All filters in single horizontal flexbox container - MOBILE ONLY */}
           <div className={`inline-filters ${filterPanelActive ? 'active' : ''}`}>
             {/* Close button for mobile filter panel */}
             {filterPanelActive && (
@@ -2721,11 +2974,6 @@ export default function SearchPage() {
                 ✕ Close Filters
               </button>
             )}
-
-            {/* Schedule Selector - First item on left (desktop only) */}
-            <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
-              {/* AuthAwareSearchScheduleSelector will be mounted here on desktop */}
-            </div>
 
             {/* Neighborhood Multi-Select - Checkbox list */}
             <NeighborhoodDropdownFilter

@@ -38,6 +38,550 @@
   position: relative;
 }
 
+/* ========================================
+   NEW FILTER SECTION - Redesigned Layout
+   ======================================== */
+
+/* Filter Section Container */
+.filter-section {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: white;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+/* Filter Bar - Schedule + Toggle Button Row */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+/* Schedule Selector Container */
+.schedule-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Calendar Icon Button - New Indigo Style */
+.calendar-icon-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f3ff;
+  border: 1px solid #e0e7ff;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #6366f1;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.calendar-icon-btn:hover {
+  background: #ede9fe;
+  border-color: #c7d2fe;
+}
+
+.calendar-icon-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* Day Pills Container */
+.day-pills {
+  display: flex;
+  gap: 6px;
+}
+
+/* Divider between schedule and filter button */
+.filter-divider {
+  width: 1px;
+  height: 36px;
+  background: #e5e5e5;
+}
+
+/* Filter Popup Wrapper */
+.filter-popup-wrapper {
+  position: relative;
+}
+
+/* Filter Toggle Button - Square Icon Button */
+.filter-toggle-btn-new {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #e5e5e5;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  flex: none;
+  padding: 0;
+}
+
+.filter-toggle-btn-new:hover,
+.filter-toggle-btn-new.active {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.filter-toggle-btn-new svg {
+  width: 20px;
+  height: 20px;
+  color: #6b7280;
+}
+
+.filter-toggle-btn-new:hover svg,
+.filter-toggle-btn-new.active svg {
+  color: #374151;
+}
+
+.filter-toggle-btn-new:active {
+  transform: scale(0.95);
+}
+
+/* Filter Badge */
+.filter-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 20px;
+  height: 20px;
+  background: var(--secondary-purple, #6D31C2);
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Check-in/out Text Row */
+.checkin-text {
+  font-size: 13px;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.checkin-text .sync-icon {
+  color: var(--secondary-purple, #6D31C2);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.checkin-text strong {
+  color: var(--secondary-purple, #6D31C2);
+  font-weight: 600;
+}
+
+/* ========================================
+   FILTER TAGS ROW - Shows Active Filters
+   ======================================== */
+
+.filter-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  background: #fafafa;
+  border-bottom: 1px solid transparent;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.25s ease,
+              padding 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.2s ease;
+}
+
+.filter-tags-row.has-filters {
+  max-height: 80px;
+  opacity: 1;
+  padding: 12px 20px;
+  border-bottom-color: #e5e7eb;
+}
+
+/* Results Filter Button (in tags row) */
+.results-filter-btn {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 8px;
+  border: 1px solid #e5e5e5;
+  background: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.results-filter-btn:hover {
+  border-color: #9ca3af;
+  background: #f9fafb;
+}
+
+.results-filter-btn svg {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+}
+
+.results-filter-btn:hover svg {
+  color: #374151;
+}
+
+.results-filter-badge {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 18px;
+  height: 18px;
+  background: var(--secondary-purple, #6D31C2);
+  color: white;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid white;
+}
+
+/* Filter Tags Container */
+.filter-tags-single-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+
+.filter-tags-single-row::-webkit-scrollbar {
+  height: 0;
+  display: none;
+}
+
+/* Filter Tag Pill */
+.filter-tag {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f0f0ff;
+  border: 1px solid #e0e0ff;
+  border-radius: 9999px;
+  font-size: 13px;
+  color: #4338ca;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  animation: tagSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.filter-tag:hover {
+  background: #e8e8ff;
+  border-color: #d0d0ff;
+}
+
+.filter-tag svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.filter-tag-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.filter-tag-sm svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Filter Tag Remove Button */
+.filter-tag-remove {
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #6366f1;
+  border-radius: 50%;
+  margin-left: 2px;
+  padding: 0;
+  transition: background 0.2s ease;
+}
+
+.filter-tag-remove:hover {
+  background: #e0e7ff;
+}
+
+.filter-tag-remove svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Stagger animation for tags */
+.filter-tag:nth-child(1) { animation-delay: 0ms; }
+.filter-tag:nth-child(2) { animation-delay: 50ms; }
+.filter-tag:nth-child(3) { animation-delay: 100ms; }
+.filter-tag:nth-child(4) { animation-delay: 150ms; }
+.filter-tag:nth-child(5) { animation-delay: 200ms; }
+
+@keyframes tagSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Hide top filter button when filters exist */
+.filter-section.has-active-filters .filter-popup-wrapper {
+  opacity: 0;
+  transform: scale(0.8);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ========================================
+   FILTER POPUP MODAL
+   ======================================== */
+
+.filter-popup {
+  position: fixed;
+  top: 140px;
+  left: 20px;
+  width: 340px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 4px 16px rgba(0,0,0,0.1);
+  border: 1px solid #e5e5e5;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-8px) scale(0.98);
+  transition: all 0.2s ease;
+}
+
+.filter-popup.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+}
+
+.filter-popup-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.filter-popup-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.filter-popup-clear {
+  font-size: 13px;
+  color: var(--secondary-purple, #6D31C2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+  padding: 0;
+}
+
+.filter-popup-clear:hover {
+  text-decoration: underline;
+}
+
+.filter-popup-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.filter-popup-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-popup-label {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.filter-popup-input {
+  padding: 12px 14px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  font-size: 14px;
+  width: 100%;
+  background: white;
+  transition: all 0.15s;
+}
+
+.filter-popup-input:focus {
+  outline: none;
+  border-color: var(--secondary-purple, #6D31C2);
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
+}
+
+.filter-popup-select {
+  padding: 12px 36px 12px 14px;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  font-size: 14px;
+  background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center;
+  appearance: none;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.15s;
+}
+
+.filter-popup-select:focus {
+  outline: none;
+  border-color: var(--secondary-purple, #6D31C2);
+  box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
+}
+
+.filter-popup-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  gap: 12px;
+}
+
+.filter-popup .btn {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.filter-popup .btn-secondary {
+  background: white;
+  border: 1px solid #e5e5e5;
+  color: #374151;
+}
+
+.filter-popup .btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+}
+
+.filter-popup .btn-primary {
+  background: var(--secondary-purple, #6D31C2);
+  border: 1px solid var(--secondary-purple, #6D31C2);
+  color: white;
+}
+
+.filter-popup .btn-primary:hover {
+  background: var(--primary-purple, #31135D);
+  border-color: var(--primary-purple, #31135D);
+}
+
+/* Filter Backdrop Overlay */
+.filter-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0,0,0,0.1);
+  z-index: 500;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+}
+
+.filter-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ========================================
+   END NEW FILTER SECTION
+   ======================================== */
+
+/* Desktop: Show new filter section, hide old inline-filters */
+@media (min-width: 769px) {
+  .filter-section {
+    display: block;
+  }
+
+  .filter-tags-row {
+    display: flex;
+  }
+
+  /* Hide old inline-filters on desktop */
+  .inline-filters {
+    display: none !important;
+  }
+}
+
+/* Mobile: Hide new filter section, show old inline-filters */
+@media (max-width: 768px) {
+  .filter-section {
+    display: none !important;
+  }
+
+  .filter-tags-row {
+    display: none !important;
+  }
+
+  .filter-popup {
+    display: none !important;
+  }
+
+  .filter-backdrop {
+    display: none !important;
+  }
+}
+
 /* Inline Filters - All filters in single horizontal container */
 .inline-filters {
   flex-shrink: 0;
