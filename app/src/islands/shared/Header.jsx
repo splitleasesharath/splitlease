@@ -496,7 +496,13 @@ export default function Header({ autoShowLogin = false }) {
                 );
                 // Check if CTA links to current page
                 const ctaHref = hostMenuConfig.cta.href?.split('?')[0].split('#')[0];
-                const showCta = !ctaHref || !currentPath.startsWith(ctaHref);
+                const ctaLinksToCurrentPage = ctaHref && currentPath.startsWith(ctaHref);
+                // Check if CTA duplicates an existing menu item (compare by href base path)
+                const ctaDuplicatesMenuItem = filteredItems.some(item => {
+                  const itemHref = item.href?.split('?')[0].split('#')[0];
+                  return itemHref && ctaHref && itemHref === ctaHref;
+                });
+                const showCta = !ctaLinksToCurrentPage && !ctaDuplicatesMenuItem;
 
                 return (
                   <>
@@ -599,7 +605,13 @@ export default function Header({ autoShowLogin = false }) {
                 );
                 // Check if CTA links to current page
                 const ctaHref = guestMenuConfig.cta.href?.split('?')[0].split('#')[0];
-                const showCta = !ctaHref || !currentPath.startsWith(ctaHref);
+                const ctaLinksToCurrentPage = ctaHref && currentPath.startsWith(ctaHref);
+                // Check if CTA duplicates an existing menu item (compare by href base path)
+                const ctaDuplicatesMenuItem = filteredItems.some(item => {
+                  const itemHref = item.href?.split('?')[0].split('#')[0];
+                  return itemHref && ctaHref && itemHref === ctaHref;
+                });
+                const showCta = !ctaLinksToCurrentPage && !ctaDuplicatesMenuItem;
 
                 return (
                   <>
