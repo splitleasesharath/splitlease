@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import './LoggedInAvatar.css';
 import { useLoggedInAvatarData, getMenuVisibility, NORMALIZED_USER_TYPES } from './useLoggedInAvatarData.js';
 import ReferralModal from '../../pages/AccountProfilePage/components/ReferralModal.jsx';
+import HeaderMessagingPanel from '../HeaderMessagingPanel';
 
 /**
  * Logged In Avatar Dropdown Component
@@ -51,6 +52,8 @@ export default function LoggedInAvatar({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showReferralModal, setShowReferralModal] = useState(false);
+  const [showMessagingPanel, setShowMessagingPanel] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 900 : false);
   const dropdownRef = useRef(null);
 
   // Fetch user data from Supabase for menu conditionals
@@ -71,6 +74,21 @@ export default function LoggedInAvatar({
   const effectiveUnreadMessagesCount = dataLoading ? (user.unreadMessagesCount || 0) : supabaseData.unreadMessagesCount;
   const effectiveFirstListingId = dataLoading ? null : supabaseData.firstListingId;
   const effectiveThreadsCount = dataLoading ? 0 : (supabaseData.threadsCount || 0);
+
+  // Handle resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 900;
+      setIsMobile(mobile);
+      // Close messaging panel if transitioning to mobile while open
+      if (mobile && showMessagingPanel) {
+        setShowMessagingPanel(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [showMessagingPanel]);
 
   // Debug logging
   useEffect(() => {
@@ -375,31 +393,56 @@ export default function LoggedInAvatar({
     <div className={`logged-in-avatar ${isSearchPage ? 'on-search-page' : ''} ${isLightHeaderPage ? 'on-light-header' : ''}`} ref={dropdownRef}>
       {/* Messaging icon - only shows when user has message threads */}
       {effectiveThreadsCount > 0 && (
-        <a
-          href="/messages"
-          className="header-messages-icon"
-          aria-label={`Messages${effectiveUnreadMessagesCount > 0 ? ` (${effectiveUnreadMessagesCount} unread)` : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onNavigate('/messages');
-          }}
-        >
-          <svg
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        <div className="header-messages-wrapper">
+          <button
+            className="header-messages-icon"
+            aria-label={`Messages${effectiveUnreadMessagesCount > 0 ? ` (${effectiveUnreadMessagesCount} unread)` : ''}`}
+            aria-expanded={showMessagingPanel}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              if (isMobile) {
+                // Mobile: Navigate to full messaging page
+                onNavigate('/messages');
+              } else {
+                // Desktop: Toggle messaging panel
+                setShowMessagingPanel(!showMessagingPanel);
+                // Close avatar dropdown if open
+                if (isOpen) setIsOpen(false);
+              }
+            }}
           >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
-          {effectiveUnreadMessagesCount > 0 && (
-            <span className="messages-badge">{effectiveUnreadMessagesCount}</span>
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+            {effectiveUnreadMessagesCount > 0 && (
+              <span className="messages-badge">
+                {effectiveUnreadMessagesCount > 99 ? '99+' : effectiveUnreadMessagesCount}
+              </span>
+            )}
+          </button>
+
+          {/* Messaging Panel - Desktop only */}
+          {showMessagingPanel && !isMobile && (
+            <HeaderMessagingPanel
+              isOpen={showMessagingPanel}
+              onClose={() => setShowMessagingPanel(false)}
+              userBubbleId={user.id}
+              userName={firstName}
+              userAvatar={user.avatarUrl}
+            />
           )}
-        </a>
+        </div>
       )}
       <button
         className="avatar-button"

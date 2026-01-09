@@ -256,6 +256,14 @@
   background: #555;
 }
 
+/* Header Messages Wrapper - Contains icon and panel */
+.logged-in-avatar .header-messages-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+}
+
 /* Header Messaging Icon */
 .logged-in-avatar .header-messages-icon {
   position: relative;
@@ -268,12 +276,25 @@
   background: rgba(255, 255, 255, 0.1);
   color: white;
   transition: all 0.2s ease;
-  margin-right: 12px;
   text-decoration: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
 }
 
 .logged-in-avatar .header-messages-icon:hover {
   background: rgba(255, 255, 255, 0.2);
+}
+
+/* Active state when panel is open */
+.logged-in-avatar .header-messages-icon[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+/* Focus state for accessibility */
+.logged-in-avatar .header-messages-icon:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
 }
 
 /* Messaging icon color on pages with light headers */
