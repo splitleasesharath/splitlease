@@ -84,6 +84,7 @@ export function EditListingDetails({ listing, editSection, focusField, onClose, 
     addPhotoUrl,
     handlePhotoUpload,
     removePhoto,
+    setCoverPhoto,
     handlePhotoDragStart,
     handlePhotoDragOver,
     handlePhotoDragLeave,
@@ -961,6 +962,26 @@ export function EditListingDetails({ listing, editSection, focusField, onClose, 
                       }}
                     />
                     <div className="eld-photo-controls">
+                      <button
+                        type="button"
+                        onClick={() => setCoverPhoto(index)}
+                        className={`eld-photo-star ${index === 0 ? 'eld-photo-star--active' : ''}`}
+                        title={index === 0 ? 'Current cover photo' : 'Set as cover photo'}
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill={index === 0 ? '#f59e0b' : 'none'}
+                          stroke={index === 0 ? '#f59e0b' : '#374151'}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                      </button>
                       <button
                         type="button"
                         onClick={() => removePhoto(index)}

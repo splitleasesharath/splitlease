@@ -930,6 +930,35 @@ export function useEditListingDetailsLogic({ listing, editSection, focusField, o
     setDragOverPhotoIndex(null);
   }, []);
 
+  /**
+   * Set a photo as the cover photo (move to first position)
+   */
+  const setCoverPhoto = useCallback(async (index) => {
+    if (index === 0) return; // Already the cover photo
+
+    const currentPhotos = Array.isArray(formData['Features - Photos'])
+      ? formData['Features - Photos']
+      : [];
+
+    // Move the selected photo to the first position
+    const updated = [...currentPhotos];
+    const [selectedPhoto] = updated.splice(index, 1);
+    updated.unshift(selectedPhoto);
+
+    handleInputChange('Features - Photos', updated);
+
+    // Autosave to database
+    try {
+      const result = await updateListing(listing._id, { 'Features - Photos': updated });
+      onSave(result);
+      showToast('Cover photo updated', 'Changes saved');
+    } catch (error) {
+      console.error('[setCoverPhoto] Error:', error);
+      showToast('Error setting cover photo', 'Please try again', 'error');
+      handleInputChange('Features - Photos', currentPhotos);
+    }
+  }, [formData, listing, handleInputChange, updateListing, onSave, showToast]);
+
   const getSectionTitle = useCallback(() => {
     switch (editSection) {
       case 'name': return 'Property Info';
@@ -1033,6 +1062,7 @@ export function useEditListingDetailsLogic({ listing, editSection, focusField, o
     addPhotoUrl,
     handlePhotoUpload,
     removePhoto,
+    setCoverPhoto,
     handlePhotoDragStart,
     handlePhotoDragOver,
     handlePhotoDragLeave,
