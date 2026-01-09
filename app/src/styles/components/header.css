@@ -169,25 +169,22 @@
     margin: 0.75rem 0.5rem;
 }
 
-/* Dropdown CTA Button - Primary action at bottom of dropdown */
+/* Dropdown CTA - Primary action at bottom of dropdown (styled as menu item) */
 .dropdown-cta {
     display: block;
     padding: 0.75rem 1rem;
-    margin: 0.25rem;
-    background: linear-gradient(135deg, #31135D 0%, #5B21B6 100%);
-    color: white;
+    color: var(--primary-color, #31135D);
     text-decoration: none;
     border-radius: 8px;
     font-weight: 600;
     font-size: 0.95rem;
-    text-align: center;
     transition: all 0.2s ease;
 }
 
 .dropdown-cta:hover {
-    background: linear-gradient(135deg, #3d1a70 0%, #6d28d9 100%);
+    background: rgba(91, 33, 182, 0.08);
+    box-shadow: 0 4px 12px rgba(91, 33, 182, 0.15);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(91, 33, 182, 0.3);
 }
 
 .nav-link {
