@@ -224,7 +224,11 @@ export default function RentalApplicationWizardModal({
               type="button"
               className="wizard-btn wizard-btn--primary"
               onClick={logic.currentStep === 7 ? logic.handleSubmit : logic.goToNextStep}
-              disabled={logic.isSubmitting || (logic.currentStep === 7 && !logic.canSubmit)}
+              disabled={
+                logic.isSubmitting ||
+                (logic.currentStep === 7 && !logic.canSubmit) ||
+                (logic.currentStep < 7 && !logic.canProceedFromCurrentStep())
+              }
             >
               {getNextButtonText()}
             </button>

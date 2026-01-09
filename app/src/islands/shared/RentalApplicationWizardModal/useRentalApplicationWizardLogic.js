@@ -512,6 +512,29 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     return completedSteps.includes(stepNumber);
   }, [completedSteps]);
 
+  // Check if current step has all required fields filled (for enabling Continue button)
+  // This is different from isStepComplete - it only checks required fields, not visited state
+  const canProceedFromCurrentStep = useCallback(() => {
+    let stepFields = [...STEP_FIELDS[currentStep]];
+
+    // Add conditional employment fields for step 4
+    if (currentStep === 4 && formData.employmentStatus) {
+      const conditionalFields = CONDITIONAL_REQUIRED_FIELDS[formData.employmentStatus] || [];
+      stepFields = [...stepFields, ...conditionalFields];
+    }
+
+    // If no required fields, can always proceed (optional steps)
+    if (stepFields.length === 0) {
+      return true;
+    }
+
+    // Check all required fields have values
+    return stepFields.every(field => {
+      const value = formData[field];
+      return value !== undefined && value !== null && value !== '';
+    });
+  }, [currentStep, formData]);
+
   // ============================================================================
   // NAVIGATION
   // ============================================================================
@@ -815,6 +838,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     goToNextStep,
     goToPreviousStep,
     isStepComplete,
+    canProceedFromCurrentStep,
 
     // Form handlers
     handleInputChange,
