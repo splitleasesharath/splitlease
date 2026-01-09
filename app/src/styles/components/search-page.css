@@ -103,6 +103,49 @@
   width: 1px;
   height: 36px;
   background: #e5e5e5;
+  flex-shrink: 0;
+}
+
+/* Check-in/Check-out Block */
+.checkin-block {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+  border: 1px solid #e0e7ff;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.checkin-block .sync-icon {
+  width: 20px;
+  height: 20px;
+  color: #6366f1;
+  flex-shrink: 0;
+}
+
+.checkin-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.checkin-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.checkin-row .label {
+  font-weight: 500;
+}
+
+.checkin-row .day {
+  font-weight: 700;
+  color: #4338ca;
 }
 
 /* Filter Popup Wrapper */
@@ -167,28 +210,6 @@
   justify-content: center;
   border: 2px solid white;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-
-/* Check-in/out Text Row */
-.checkin-text {
-  font-size: 13px;
-  color: #374151;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-}
-
-.checkin-text .sync-icon {
-  color: var(--secondary-purple, #6D31C2);
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-
-.checkin-text strong {
-  color: var(--secondary-purple, #6D31C2);
-  font-weight: 600;
 }
 
 /* ========================================

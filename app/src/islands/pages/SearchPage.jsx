@@ -1090,6 +1090,82 @@ export default function SearchPage() {
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  // Track selected days from URL for check-in/check-out display
+  const [selectedDaysForDisplay, setSelectedDaysForDisplay] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const daysParam = urlParams.get('days-selected');
+    if (daysParam) {
+      return daysParam.split(',').map(d => parseInt(d.trim(), 10)).filter(d => !isNaN(d) && d >= 0 && d <= 6);
+    }
+    return [1, 2, 3, 4, 5]; // Default: Mon-Fri
+  });
+
+  // Listen for URL changes to update selected days display
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const daysParam = urlParams.get('days-selected');
+      if (daysParam) {
+        const days = daysParam.split(',').map(d => parseInt(d.trim(), 10)).filter(d => !isNaN(d) && d >= 0 && d <= 6);
+        setSelectedDaysForDisplay(days);
+      }
+    };
+
+    // Listen for popstate (back/forward navigation)
+    window.addEventListener('popstate', handleUrlChange);
+
+    // Also listen for custom event that SearchScheduleSelector dispatches
+    window.addEventListener('daysSelected', handleUrlChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('daysSelected', handleUrlChange);
+    };
+  }, []);
+
+  // Calculate check-in and check-out day names
+  const checkInOutDays = useMemo(() => {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    if (selectedDaysForDisplay.length < 2) {
+      return { checkIn: '', checkOut: '' };
+    }
+
+    const sortedDays = [...selectedDaysForDisplay].sort((a, b) => a - b);
+    const hasSaturday = sortedDays.includes(6);
+    const hasSunday = sortedDays.includes(0);
+    const isWrapAround = hasSaturday && hasSunday && sortedDays.length < 7;
+
+    let checkInDay, checkOutDay;
+
+    if (isWrapAround) {
+      // Find the gap in the sequence
+      let gapIndex = -1;
+      for (let i = 1; i < sortedDays.length; i++) {
+        if (sortedDays[i] - sortedDays[i - 1] > 1) {
+          gapIndex = i;
+          break;
+        }
+      }
+
+      if (gapIndex !== -1) {
+        checkInDay = sortedDays[gapIndex];
+        checkOutDay = sortedDays[gapIndex - 1];
+      } else {
+        checkInDay = sortedDays[0];
+        checkOutDay = sortedDays[sortedDays.length - 1];
+      }
+    } else {
+      checkInDay = sortedDays[0];
+      checkOutDay = sortedDays[sortedDays.length - 1];
+    }
+
+    return {
+      checkIn: dayNames[checkInDay],
+      checkOut: dayNames[checkOutDay]
+    };
+  }, [selectedDaysForDisplay]);
+
   // Calculate active filter count for mobile apply button
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -2824,6 +2900,30 @@ export default function SearchPage() {
                   )}
                 </button>
               </div>
+
+              {/* Divider */}
+              <div className="filter-divider"></div>
+
+              {/* Check-in/Check-out Block */}
+              {checkInOutDays.checkIn && checkInOutDays.checkOut && (
+                <div className="checkin-block">
+                  <svg className="sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  <div className="checkin-details">
+                    <div className="checkin-row">
+                      <span className="label">Check-in:</span>
+                      <span className="day">{checkInOutDays.checkIn}</span>
+                    </div>
+                    <div className="checkin-row">
+                      <span className="label">Check-out:</span>
+                      <span className="day">{checkInOutDays.checkOut}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
