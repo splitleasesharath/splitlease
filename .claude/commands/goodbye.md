@@ -71,7 +71,7 @@ hostname
 ```bash
 powershell -Command '$env:googleDrivePath'
 ```
-→ Store output as `GDRIVE_PATH` (e.g., `C:\Users\igor\My Drive (splitleaseteam@gmail.com)\`)
+→ Store output as `GDRIVE_PATH` (e.g., `C:\Users\<username>\My Drive (splitleaseteam@gmail.com)\`)
 
 **NOTE:** Use single quotes around `'$env:...'` to prevent bash from interpreting the `$` before PowerShell receives it.
 
@@ -80,8 +80,8 @@ powershell -Command '$env:googleDrivePath'
 **Option A (recommended):** Extract from GDRIVE_PATH
 The GDRIVE_PATH typically starts with `C:\Users\{username}\...`, so you can extract USER_HOME from it:
 ```
-GDRIVE_PATH = C:\Users\igor\My Drive (splitleaseteam@gmail.com)\
-USER_HOME   = C:\Users\igor  (extract the first 3 path segments)
+GDRIVE_PATH = C:\Users\<username>\My Drive (splitleaseteam@gmail.com)\
+USER_HOME   = C:\Users\<username>  (extract the first 3 path segments)
 ```
 
 **Option B:** Direct PowerShell command (use single quotes!)
@@ -94,7 +94,7 @@ powershell -Command '$env:USERPROFILE'
 powershell -Command "\$env:USERPROFILE"
 ```
 
-→ Store output as `USER_HOME` (e.g., `C:\Users\igor`)
+→ Store output as `USER_HOME` (e.g., `C:\Users\<username>`)
 
 #### 1.5 Get Slack Webhook URL
 ```bash
@@ -109,8 +109,8 @@ printenv | grep -i tiny
 |----------|---------------|
 | `DATE` | `2025-10-15` |
 | `HOSTNAME` | `Split-Lease-1` |
-| `GDRIVE_PATH` | `C:\Users\igor\My Drive (splitleaseteam@gmail.com)\` |
-| `USER_HOME` | `C:\Users\igor` |
+| `GDRIVE_PATH` | `C:\Users\<username>\My Drive (splitleaseteam@gmail.com)\` |
+| `USER_HOME` | `C:\Users\<username>` |
 | `SLACK_URL` | `https://hooks.slack.com/services/...` |
 | `SESSION_ID` | `goodbye-command` (based on conversation topic) |
 
@@ -126,7 +126,7 @@ printenv | grep -i tiny
 ```
 **Example:**
 ```
-C:\Users\igor\My Drive (splitleaseteam@gmail.com)\_Agent Context and Tools\SL1\Claude Logs\2025-10-15_conversation_session-goodbye-command.md
+C:\Users\<username>\My Drive (splitleaseteam@gmail.com)\_Agent Context and Tools\SL1\Claude Logs\2025-10-15_conversation_session-goodbye-command.md
 ```
 
 #### Python Script Path (use forward slashes for bash compatibility)
@@ -135,7 +135,7 @@ C:\Users\igor\My Drive (splitleaseteam@gmail.com)\_Agent Context and Tools\SL1\C
 ```
 **Example:**
 ```
-C:/Users/igor/.claude/google-drive-tools/get_drive_link.py
+C:/Users/<username>/.claude/google-drive-tools/get_drive_link.py
 ```
 
 #### JSON Temp File Path
@@ -144,7 +144,7 @@ C:/Users/igor/.claude/google-drive-tools/get_drive_link.py
 ```
 **Example:**
 ```
-C:/Users/igor/.claude/condensed_summary.json
+C:/Users/<username>/.claude/condensed_summary.json
 ```
 
 ---
@@ -286,7 +286,7 @@ python "{USER_HOME}/.claude/google-drive-tools/get_drive_link.py" "{LOG_FILE_PAT
 
 **Example with literal values:**
 ```bash
-python "C:/Users/igor/.claude/google-drive-tools/get_drive_link.py" "C:/Users/igor/My Drive (splitleaseteam@gmail.com)/_Agent Context and Tools/SL1/Claude Logs/2025-10-15_conversation_session-goodbye-command.md"
+python "C:/Users/<username>/.claude/google-drive-tools/get_drive_link.py" "C:/Users/<username>/My Drive (splitleaseteam@gmail.com)/_Agent Context and Tools/SL1/Claude Logs/2025-10-15_conversation_session-goodbye-command.md"
 ```
 
 **How it works:**
@@ -312,7 +312,7 @@ python "C:/Users/igor/.claude/google-drive-tools/get_drive_link.py" "C:/Users/ig
 
 **Example:**
 ```
-C:/Users/igor/.claude/condensed_summary.json
+C:/Users/<username>/.claude/condensed_summary.json
 ```
 
 **JSON Content:**
@@ -344,7 +344,7 @@ curl -X POST -H "Content-Type: application/json" --data-binary @"{JSON_FILE_PATH
 
 **Example with literal values:**
 ```bash
-curl -X POST -H "Content-Type: application/json" --data-binary @"C:/Users/igor/.claude/condensed_summary.json" "{YOUR_SLACK_WEBHOOK_URL}"
+curl -X POST -H "Content-Type: application/json" --data-binary @"C:/Users/<username>/.claude/condensed_summary.json" "{YOUR_SLACK_WEBHOOK_URL}"
 ```
 
 **Expected Response:**
@@ -430,7 +430,7 @@ python "{USER_HOME}/.claude/google-drive-tools/get_drive_link.py" "{FULL_FILE_PA
 - **Fix Options:**
   1. Use single quotes: `powershell -Command '$env:VAR'` (prevents bash expansion)
   2. Escape the dollar sign: `powershell -Command "\$env:VAR"`
-  3. For USERPROFILE: Extract from GDRIVE_PATH (e.g., `C:\Users\igor` from `C:\Users\igor\My Drive...`)
+  3. For USERPROFILE: Extract from GDRIVE_PATH (e.g., `C:\Users\<username>` from `C:\Users\<username>\My Drive...`)
 
 ### "File not found in Google Drive"
 - Wait 5 seconds for sync (already built into workflow)
