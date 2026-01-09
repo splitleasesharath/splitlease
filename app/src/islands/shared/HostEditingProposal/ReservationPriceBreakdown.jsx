@@ -9,7 +9,10 @@ import { formatCurrency, formatDate, getDayName } from './types'
 
 /**
  * Convert day index (string or number) to day name
- * Handles both "0" (string) and 0 (number) formats from database
+ * Handles multiple formats:
+ * - Day name strings: "Sunday", "Monday", etc. → returned as-is
+ * - JavaScript 0-based index: 0-6 (Sunday=0) → converted via getDayName
+ * - Bubble 1-based index: 1-7 (Sunday=1) → converted with offset
  */
 function formatDayDisplay(dayValue) {
   if (dayValue === null || dayValue === undefined) return ''
@@ -21,7 +24,20 @@ function formatDayDisplay(dayValue) {
 
   // Convert index to day name
   const index = typeof dayValue === 'string' ? parseInt(dayValue, 10) : dayValue
-  return getDayName(index) || dayValue
+
+  // Try JS format first (0-6)
+  const jsResult = getDayName(index)
+  if (jsResult) return jsResult
+
+  // Try Bubble format (1-7) - convert to JS format by subtracting 1
+  if (index >= 1 && index <= 7) {
+    const bubbleToJs = index === 7 ? 6 : index - 1 // Bubble 7 (Sat) → JS 6, Bubble 1-6 → JS 0-5
+    const bubbleResult = getDayName(bubbleToJs)
+    if (bubbleResult) return bubbleResult
+  }
+
+  // Fallback: return original value
+  return dayValue
 }
 
 /**
