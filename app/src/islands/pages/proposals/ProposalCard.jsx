@@ -515,15 +515,15 @@ const PROGRESS_STAGES = [
 
 /**
  * Color constants for progress tracker
- * Based on Bubble documentation: Guest Proposals page Progress Bar Status Conditionals
+ * Harmonized purple color scheme matching guest proposals design
  */
 const PROGRESS_COLORS = {
-  purple: '#6D31C2',    // Completed stage
-  green: '#1F8E16',     // Current/Active stage (action needed)
-  red: '#DB2E2E',       // Cancelled/Rejected
-  lightPurple: '#B6B7E9', // Pending/Waiting state
-  gray: '#DEDEDE',      // Inactive/Future stage
-  labelGray: '#9CA3AF'  // Inactive label color
+  completed: '#31135D',   // Completed stage (Primary Purple)
+  current: '#6D31C2',     // Current/Active stage (Secondary Purple)
+  cancelled: '#dc2626',   // Cancelled/Rejected (Destructive Red)
+  pending: '#B6B7E9',     // Pending/Waiting state
+  future: '#DEDEDE',      // Inactive/Future stage
+  labelGray: '#9CA3AF'    // Inactive label color
 };
 
 /**
@@ -540,29 +540,29 @@ const PROGRESS_COLORS = {
 function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}) {
   // Terminal statuses: ALL stages turn red
   if (isTerminal) {
-    return PROGRESS_COLORS.red;
+    return PROGRESS_COLORS.cancelled;
   }
 
   const normalizedStatus = typeof status === 'string' ? status.trim() : status;
   const hasRentalApp = proposal['rental application'];
   const guestDocsFinalized = proposal['guest documents review finalized?'];
 
-  // Stage 1: Proposal Submitted - Always purple (completed) once proposal exists
+  // Stage 1: Proposal Submitted - Always completed (primary purple) once proposal exists
   if (stageIndex === 0) {
-    return PROGRESS_COLORS.purple;
+    return PROGRESS_COLORS.completed;
   }
 
   // Stage 2: Rental App Submitted
   if (stageIndex === 1) {
-    // Green when awaiting rental app - these statuses mean rental app is NOT yet submitted
+    // Current (secondary purple) when awaiting rental app - these statuses mean rental app is NOT yet submitted
     if (normalizedStatus === 'Proposal Submitted by guest - Awaiting Rental Application' ||
         normalizedStatus === 'Proposal Submitted for guest by Split Lease - Awaiting Rental Application' ||
         normalizedStatus === 'Proposal Submitted for guest by Split Lease - Pending Confirmation' ||
         normalizedStatus === 'Pending' ||
         normalizedStatus === 'Pending Confirmation') {
-      return PROGRESS_COLORS.green;
+      return PROGRESS_COLORS.current;
     }
-    // Purple when rental app has been submitted (status moved past awaiting rental app)
+    // Completed when rental app has been submitted (status moved past awaiting rental app)
     if (hasRentalApp ||
         normalizedStatus === 'Rental Application Submitted' ||
         normalizedStatus === 'Host Review' ||
@@ -571,78 +571,78 @@ function getStageColor(stageIndex, status, usualOrder, isTerminal, proposal = {}
         normalizedStatus.includes('Lease Documents') ||
         normalizedStatus.includes('Payment') ||
         normalizedStatus.includes('activated')) {
-      return PROGRESS_COLORS.purple;
+      return PROGRESS_COLORS.completed;
     }
-    return PROGRESS_COLORS.gray;
+    return PROGRESS_COLORS.future;
   }
 
   // Stage 3: Host Review
   if (stageIndex === 2) {
-    // Green when actively in host review with rental app submitted
+    // Current when actively in host review with rental app submitted
     if (normalizedStatus === 'Host Review' && hasRentalApp) {
-      return PROGRESS_COLORS.green;
+      return PROGRESS_COLORS.current;
     }
-    // Green when counteroffer awaiting review
+    // Current when counteroffer awaiting review
     if (normalizedStatus === 'Host Counteroffer Submitted / Awaiting Guest Review') {
-      return PROGRESS_COLORS.green;
+      return PROGRESS_COLORS.current;
     }
-    // Purple when host review is complete (proposal accepted or further along)
+    // Completed when host review is complete (proposal accepted or further along)
     if (normalizedStatus.includes('Accepted') ||
         normalizedStatus.includes('Drafting') ||
         normalizedStatus.includes('Lease Documents') ||
         normalizedStatus.includes('Payment') ||
         normalizedStatus.includes('activated')) {
-      return PROGRESS_COLORS.purple;
+      return PROGRESS_COLORS.completed;
     }
-    // Gray for all other cases (including awaiting rental app)
-    return PROGRESS_COLORS.gray;
+    // Future for all other cases (including awaiting rental app)
+    return PROGRESS_COLORS.future;
   }
 
   // Stage 4: Review Documents
   if (stageIndex === 3) {
-    // Green when lease documents sent for review
+    // Current when lease documents sent for review
     if (normalizedStatus === 'Lease Documents Sent for Review') {
-      return PROGRESS_COLORS.green;
+      return PROGRESS_COLORS.current;
     }
-    // Light purple when guest documents review finalized (waiting state)
+    // Pending (light purple) when guest documents review finalized (waiting state)
     if (guestDocsFinalized) {
-      return PROGRESS_COLORS.lightPurple;
+      return PROGRESS_COLORS.pending;
     }
-    // Purple when past this stage
+    // Completed when past this stage
     if (usualOrder >= 5) {
-      return PROGRESS_COLORS.purple;
+      return PROGRESS_COLORS.completed;
     }
-    return PROGRESS_COLORS.gray;
+    return PROGRESS_COLORS.future;
   }
 
   // Stage 5: Lease Documents
   if (stageIndex === 4) {
-    // Green when sent for signatures
+    // Current when sent for signatures
     if (normalizedStatus === 'Lease Documents Sent for Signatures') {
-      return PROGRESS_COLORS.green;
+      return PROGRESS_COLORS.current;
     }
-    // Purple when past this stage
+    // Completed when past this stage
     if (usualOrder >= 6) {
-      return PROGRESS_COLORS.purple;
+      return PROGRESS_COLORS.completed;
     }
-    return PROGRESS_COLORS.gray;
+    return PROGRESS_COLORS.future;
   }
 
   // Stage 6: Initial Payment
   if (stageIndex === 5) {
-    // Green when awaiting initial payment
+    // Current when awaiting initial payment
     if (normalizedStatus === 'Lease Documents Signed / Awaiting Initial payment' ||
         normalizedStatus === 'Lease Signed / Awaiting Initial Payment') {
-      return PROGRESS_COLORS.green;
+      return PROGRESS_COLORS.current;
     }
-    // Purple when lease activated
+    // Completed when lease activated
     if (isCompletedStatus(normalizedStatus)) {
-      return PROGRESS_COLORS.purple;
+      return PROGRESS_COLORS.completed;
     }
-    return PROGRESS_COLORS.gray;
+    return PROGRESS_COLORS.future;
   }
 
-  return PROGRESS_COLORS.gray;
+  return PROGRESS_COLORS.future;
 }
 
 function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, stageLabels = null, proposal = {} }) {
@@ -655,14 +655,14 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
           const stageColor = getStageColor(index, status, usualOrder, isTerminal, proposal);
           const prevStageColor = index > 0 ? getStageColor(index - 1, status, usualOrder, isTerminal, proposal) : null;
 
-          // Connector color: purple ONLY if previous dot is purple (completed)
-          // Green dot is the "current action" - line after it should be gray
-          // Everything after the green dot should be gray
-          const connectorColor = prevStageColor === PROGRESS_COLORS.purple
-            ? PROGRESS_COLORS.purple
-            : prevStageColor === PROGRESS_COLORS.red
-              ? PROGRESS_COLORS.red
-              : PROGRESS_COLORS.gray;
+          // Connector color: completed (primary purple) ONLY if previous dot is completed
+          // Current dot is the "current action" - line after it should be gray
+          // Everything after the current dot should be gray
+          const connectorColor = prevStageColor === PROGRESS_COLORS.completed
+            ? PROGRESS_COLORS.completed
+            : prevStageColor === PROGRESS_COLORS.cancelled
+              ? PROGRESS_COLORS.cancelled
+              : PROGRESS_COLORS.future;
 
           return (
             <div key={stage.id} className="progress-node-wrapper">
@@ -685,7 +685,7 @@ function InlineProgressTracker({ status, usualOrder = 0, isTerminal = false, sta
       <div className="progress-labels">
         {PROGRESS_STAGES.map((stage, index) => {
           const stageColor = getStageColor(index, status, usualOrder, isTerminal, proposal);
-          const labelColor = stageColor !== PROGRESS_COLORS.gray ? stageColor : PROGRESS_COLORS.labelGray;
+          const labelColor = stageColor !== PROGRESS_COLORS.future ? stageColor : PROGRESS_COLORS.labelGray;
 
           return (
             <div
