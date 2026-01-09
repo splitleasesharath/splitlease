@@ -389,10 +389,13 @@ export default function LoggedInAvatar({
   const isSearchPage = currentPath.includes('search');
   const isLightHeaderPage = currentPath.includes('favorite-listings');
 
+  // Hide messaging icon on the messages page (redundant since user is already there)
+  const isMessagesPage = currentPath.includes('/messages');
+
   return (
     <div className={`logged-in-avatar ${isSearchPage ? 'on-search-page' : ''} ${isLightHeaderPage ? 'on-light-header' : ''}`} ref={dropdownRef}>
-      {/* Messaging icon - only shows when user has message threads */}
-      {effectiveThreadsCount > 0 && (
+      {/* Messaging icon - only shows when user has message threads AND not on messages page */}
+      {effectiveThreadsCount > 0 && !isMessagesPage && (
         <div className="header-messages-wrapper">
           <button
             className="header-messages-icon"
