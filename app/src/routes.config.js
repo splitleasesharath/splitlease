@@ -194,12 +194,12 @@ export const routes = [
     hasDynamicSegment: false
   },
   {
-    path: '/referral',
-    file: 'referral.html',
-    aliases: ['/referral.html', '/ref'],
+    path: '/referral-invite',
+    file: 'referral-invite.html',
+    aliases: ['/referral-invite.html', '/ref', '/referral'],
     protected: false,
     cloudflareInternal: true,
-    internalName: 'referral-view',
+    internalName: 'referral-invite-view',
     hasDynamicSegment: false
   },
 

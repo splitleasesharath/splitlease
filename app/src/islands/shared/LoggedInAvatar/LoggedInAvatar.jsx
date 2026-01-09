@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import './LoggedInAvatar.css';
 import { useLoggedInAvatarData, getMenuVisibility, NORMALIZED_USER_TYPES } from './useLoggedInAvatarData.js';
+import ReferralModal from '../../pages/AccountProfilePage/components/ReferralModal.jsx';
 
 /**
  * Logged In Avatar Dropdown Component
@@ -49,6 +50,7 @@ export default function LoggedInAvatar({
   onLogout,
 }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [showReferralModal, setShowReferralModal] = useState(false);
   const dropdownRef = useRef(null);
 
   // Fetch user data from Supabase for menu conditionals
@@ -316,13 +318,13 @@ export default function LoggedInAvatar({
       });
     }
 
-    // 12. Referral - Always visible
+    // 12. Referral - Always visible, opens modal instead of navigating
     if (menuVisibility.referral) {
       items.push({
         id: 'referral',
         label: 'Referral',
         icon: '/assets/icons/gift-purple.svg',
-        path: '/referral',
+        action: () => setShowReferralModal(true),
       });
     }
 
@@ -331,7 +333,12 @@ export default function LoggedInAvatar({
 
   const handleMenuItemClick = (item) => {
     setIsOpen(false);
-    onNavigate(item.path);
+    // If item has an action, call it; otherwise navigate
+    if (item.action) {
+      item.action();
+    } else {
+      onNavigate(item.path);
+    }
   };
 
   const handleSignOut = async () => {
@@ -443,6 +450,14 @@ export default function LoggedInAvatar({
           </div>
         </div>
       )}
+
+      {/* Referral Modal */}
+      <ReferralModal
+        isOpen={showReferralModal}
+        onClose={() => setShowReferralModal(false)}
+        referralCode={user.id}
+        userType={effectiveUserType === NORMALIZED_USER_TYPES.GUEST ? 'guest' : 'host'}
+      />
     </div>
   );
 }
