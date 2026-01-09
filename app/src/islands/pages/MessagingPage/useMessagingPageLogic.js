@@ -66,6 +66,26 @@ export function useMessagingPageLogic() {
   const initialLoadDone = useRef(false);
 
   // ============================================================================
+  // CTA HANDLER HOOKS
+  // ============================================================================
+  const handleOpenModal = useCallback((modalName, context) => {
+    setActiveModal(modalName);
+    setModalContext(context);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setActiveModal(null);
+    setModalContext(null);
+  }, []);
+
+  const { handleCTAClick, getCTAButtonConfig } = useCTAHandler({
+    user,
+    selectedThread,
+    threadInfo,
+    onOpenModal: handleOpenModal,
+  });
+
+  // ============================================================================
   // AUTH CHECK ON MOUNT
   // ============================================================================
   useEffect(() => {
