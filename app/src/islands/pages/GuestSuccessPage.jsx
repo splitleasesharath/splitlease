@@ -34,7 +34,7 @@ const successStories = [
     situation: 'Splits time between Connecticut & NYC',
     schedule: 'Mon–Wed in the city',
     days: [false, true, true, true, false, false, false], // Sun, Mon, Tue, Wed, Thu, Fri, Sat
-    avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=400&h=400&fit=crop&crop=face',
+    avatar: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=400&h=400&fit=crop&crop=face',
     quote: "I kept my apartment in Greenwich when I took a role that requires three days in Manhattan. Buying a second place? Insane. Hotels every week? Exhausting and expensive. This is my city home—my clothes hang in the closet, my favorite tea is in the cabinet.",
     connection: "My host went to Yale, I went to Dartmouth. We joke that we're Ivy League roommates who've never met.",
     savings: '$26,000/year vs. hotels',
