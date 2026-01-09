@@ -50,16 +50,34 @@ import { handleAccept } from "./handlers/accept.ts";
 import { handleDecline } from "./handlers/decline.ts";
 import { handleCancel } from "./handlers/cancel.ts";
 import { handleGetThrottleStatus } from "./handlers/getThrottleStatus.ts";
+import { handleApplyHardBlock } from "./handlers/applyHardBlock.ts";
+import { handleUpdateWarningPreference } from "./handlers/updateWarningPreference.ts";
 
 // ─────────────────────────────────────────────────────────────
 // Configuration (Immutable)
 // ─────────────────────────────────────────────────────────────
 
-const ALLOWED_ACTIONS = ["create", "get", "accept", "decline", "cancel", "get_throttle_status"] as const;
+const ALLOWED_ACTIONS = [
+  "create",
+  "get",
+  "accept",
+  "decline",
+  "cancel",
+  "get_throttle_status",
+  "apply_hard_block",
+  "update_warning_preference",
+] as const;
 
 // NOTE: All actions are public until Supabase auth migration is complete
 const PUBLIC_ACTIONS: ReadonlySet<string> = new Set([
-  "create", "get", "accept", "decline", "cancel", "get_throttle_status"
+  "create",
+  "get",
+  "accept",
+  "decline",
+  "cancel",
+  "get_throttle_status",
+  "apply_hard_block",
+  "update_warning_preference",
 ]);
 
 type Action = typeof ALLOWED_ACTIONS[number];
@@ -72,6 +90,8 @@ const handlers: Readonly<Record<Action, Function>> = {
   decline: handleDecline,
   cancel: handleCancel,
   get_throttle_status: handleGetThrottleStatus,
+  apply_hard_block: handleApplyHardBlock,
+  update_warning_preference: handleUpdateWarningPreference,
 };
 
 // ─────────────────────────────────────────────────────────────

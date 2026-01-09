@@ -52,6 +52,23 @@ export interface CancelRequestInput {
 
 export interface GetThrottleStatusInput {
   userId: string;
+  leaseId?: string; // Optional: for enhanced throttle status with lease-specific data
+}
+
+export interface ApplyHardBlockInput {
+  leaseId: string;
+  userId: string;
+}
+
+export interface UpdateWarningPreferenceInput {
+  leaseId: string;
+  userId: string;
+  dontShowAgain: boolean;
+}
+
+export interface RestoreThrottleAbilityInput {
+  leaseId: string;
+  userRole: 'host' | 'guest';
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -90,6 +107,35 @@ export interface ThrottleStatusResponse {
   limit: number;
   isThrottled: boolean;
   windowResetTime: string;
+}
+
+// Enhanced throttle status response (with lease-specific throttle fields)
+export interface EnhancedThrottleStatusResponse {
+  pendingRequestCount: number;
+  throttleLevel: ThrottleLevel;
+  isBlocked: boolean;
+  showWarning: boolean;
+  otherParticipantName: string;
+  blockedUntil: string | null;
+  // Legacy fields for backward compatibility
+  requestCount: number;
+  limit: number;
+  isThrottled: boolean;
+  windowResetTime: string;
+}
+
+export interface ApplyHardBlockResponse {
+  success: boolean;
+  blockedAt: string;
+}
+
+export interface UpdateWarningPreferenceResponse {
+  success: boolean;
+}
+
+export interface RestoreThrottleAbilityResponse {
+  success: boolean;
+  restoredAt: string;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -134,6 +180,11 @@ export interface LeaseData {
   'List of Booked Dates': string[] | null;
   'Date Change Requests': string[] | null;
   'Lease Status': string | null;
+  // Throttling fields (synced from Bubble)
+  'Throttling - guest ability to create requests?': boolean | null;
+  'Throttling - host ability to create requests?': boolean | null;
+  'Throttling - guest NOT show warning popup': boolean | null;
+  'Throttling - host NOT show warning popup': boolean | null;
 }
 
 export interface UserData {
@@ -156,6 +207,14 @@ export interface UserContext {
 // Constants
 // ─────────────────────────────────────────────────────────────
 
-export const THROTTLE_LIMIT = 5; // Max requests per 24 hours
+// Throttling thresholds (two-tier system)
+export const SOFT_WARNING_THRESHOLD = 5;  // Show warning popup at 5+ pending requests
+export const HARD_BLOCK_THRESHOLD = 10;   // Block ability at 10+ pending requests
 export const THROTTLE_WINDOW_HOURS = 24;
 export const EXPIRATION_HOURS = 48;
+
+// Legacy alias for backward compatibility
+export const THROTTLE_LIMIT = SOFT_WARNING_THRESHOLD;
+
+// Throttle level type
+export type ThrottleLevel = 'none' | 'soft_warning' | 'hard_block';

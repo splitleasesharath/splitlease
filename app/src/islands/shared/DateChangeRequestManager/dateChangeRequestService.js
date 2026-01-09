@@ -287,7 +287,7 @@ export async function cancelDateChangeRequest(requestId) {
 }
 
 /**
- * Get throttle status for a user
+ * Get throttle status for a user (basic mode - backward compatible)
  * @param {string} userId - User ID
  * @returns {Promise<{status: string, data?: {requestCount: number, limit: number, isThrottled: boolean}, message?: string}>}
  */
@@ -310,6 +310,114 @@ export async function getThrottleStatus(userId) {
     };
   } catch (error) {
     console.error('API Error (get-throttle-status):', error);
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+}
+
+/**
+ * Get enhanced throttle status for a user on a specific lease
+ * Returns two-tier throttle info with lease-specific fields
+ * @param {string} leaseId - Lease ID
+ * @param {string} userId - User ID
+ * @returns {Promise<{status: string, data?: Object, message?: string}>}
+ */
+export async function getEnhancedThrottleStatus(leaseId, userId) {
+  try {
+    const { data: responseData, error } = await supabase.functions.invoke('date-change-request', {
+      body: {
+        action: 'get_throttle_status',
+        payload: { userId, leaseId },
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to get enhanced throttle status');
+    }
+
+    return {
+      status: 'success',
+      data: {
+        pendingRequestCount: responseData?.data?.pendingRequestCount,
+        throttleLevel: responseData?.data?.throttleLevel, // 'none' | 'soft_warning' | 'hard_block'
+        isBlocked: responseData?.data?.isBlocked,
+        showWarning: responseData?.data?.showWarning,
+        otherParticipantName: responseData?.data?.otherParticipantName,
+        blockedUntil: responseData?.data?.blockedUntil,
+        // Legacy fields
+        requestCount: responseData?.data?.requestCount,
+        limit: responseData?.data?.limit,
+        isThrottled: responseData?.data?.isThrottled,
+      },
+    };
+  } catch (error) {
+    console.error('API Error (get-enhanced-throttle-status):', error);
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+}
+
+/**
+ * Update warning preference ("Don't show me this again" checkbox)
+ * @param {string} leaseId - Lease ID
+ * @param {string} userId - User ID
+ * @param {boolean} dontShowAgain - Whether to suppress future warnings
+ * @returns {Promise<{status: string, message?: string}>}
+ */
+export async function updateWarningPreference(leaseId, userId, dontShowAgain) {
+  try {
+    const { data: responseData, error } = await supabase.functions.invoke('date-change-request', {
+      body: {
+        action: 'update_warning_preference',
+        payload: { leaseId, userId, dontShowAgain },
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to update warning preference');
+    }
+
+    return {
+      status: 'success',
+    };
+  } catch (error) {
+    console.error('API Error (update-warning-preference):', error);
+    return {
+      status: 'error',
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+    };
+  }
+}
+
+/**
+ * Apply hard block to a user on a lease (used when hitting 10+ requests)
+ * @param {string} leaseId - Lease ID
+ * @param {string} userId - User ID
+ * @returns {Promise<{status: string, data?: Object, message?: string}>}
+ */
+export async function applyHardBlock(leaseId, userId) {
+  try {
+    const { data: responseData, error } = await supabase.functions.invoke('date-change-request', {
+      body: {
+        action: 'apply_hard_block',
+        payload: { leaseId, userId },
+      },
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to apply hard block');
+    }
+
+    return {
+      status: 'success',
+      data: responseData?.data,
+    };
+  } catch (error) {
+    console.error('API Error (apply-hard-block):', error);
     return {
       status: 'error',
       message: error instanceof Error ? error.message : 'Unknown error occurred',
@@ -377,6 +485,9 @@ export const dateChangeRequestService = {
   decline: declineDateChangeRequest,
   cancel: cancelDateChangeRequest,
   getThrottleStatus,
+  getEnhancedThrottleStatus,
+  updateWarningPreference,
+  applyHardBlock,
   getLeaseWithDates,
   transformFromDb,
   transformToDb,

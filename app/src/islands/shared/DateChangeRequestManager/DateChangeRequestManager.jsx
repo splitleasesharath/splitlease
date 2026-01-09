@@ -14,6 +14,8 @@ import RequestTypeSelector from './RequestTypeSelector.jsx';
 import RequestDetails from './RequestDetails.jsx';
 import RequestManagement from './RequestManagement.jsx';
 import ThrottlingWarning from './ThrottlingWarning.jsx';
+import ThrottlingWarningPopup from './ThrottlingWarningPopup.jsx';
+import ThrottlingBlockPopup from './ThrottlingBlockPopup.jsx';
 import SuccessMessage from './SuccessMessage.jsx';
 import './DateChangeRequestManager.css';
 
@@ -53,6 +55,9 @@ export default function DateChangeRequestManager({
 
   // Throttling state
   const [throttleStatus, setThrottleStatus] = useState(null);
+  const [showWarningPopup, setShowWarningPopup] = useState(false);
+  const [showBlockPopup, setShowBlockPopup] = useState(false);
+  const [otherParticipantName, setOtherParticipantName] = useState('');
 
   // Existing requests state
   const [existingRequests, setExistingRequests] = useState([]);
@@ -78,12 +83,21 @@ export default function DateChangeRequestManager({
   }, [currentUser, lease]);
 
   /**
-   * Fetch throttle status for current user
+   * Fetch enhanced throttle status for current user on this lease
    */
   const fetchThrottleStatus = async (userId) => {
-    const result = await dateChangeRequestService.getThrottleStatus(userId);
+    const leaseId = lease?._id || lease?.id;
+    if (!leaseId) return;
+
+    const result = await dateChangeRequestService.getEnhancedThrottleStatus(leaseId, userId);
     if (result.status === 'success') {
       setThrottleStatus(result.data);
+      setOtherParticipantName(result.data?.otherParticipantName || 'the other party');
+
+      // If user is blocked, show the block popup immediately
+      if (result.data?.isBlocked || result.data?.throttleLevel === 'hard_block') {
+        setShowBlockPopup(true);
+      }
     }
   };
 
@@ -158,6 +172,7 @@ export default function DateChangeRequestManager({
 
   /**
    * Handle proceeding to details view
+   * Checks throttle status and shows appropriate popup if needed
    */
   const handleProceedToDetails = () => {
     const validationError = validateRequest();
@@ -165,7 +180,56 @@ export default function DateChangeRequestManager({
       setError(validationError);
       return;
     }
+
+    // Check throttle status before proceeding
+    if (throttleStatus?.throttleLevel === 'hard_block' || throttleStatus?.isBlocked) {
+      setShowBlockPopup(true);
+      return;
+    }
+
+    // Show soft warning if at 5+ requests and user hasn't dismissed warnings
+    if (throttleStatus?.showWarning) {
+      setShowWarningPopup(true);
+      return;
+    }
+
+    // No throttle issues, proceed to details
     setView('details');
+  };
+
+  /**
+   * Handle continuing after soft warning popup
+   * @param {boolean} dontShowAgain - Whether user checked "Don't show again"
+   */
+  const handleContinueAfterWarning = async (dontShowAgain) => {
+    setShowWarningPopup(false);
+
+    // Save preference if checkbox was checked
+    if (dontShowAgain) {
+      const userId = getUserId();
+      const leaseId = lease?._id || lease?.id;
+      if (userId && leaseId) {
+        await dateChangeRequestService.updateWarningPreference(leaseId, userId, true);
+      }
+    }
+
+    // Proceed to details view
+    setView('details');
+  };
+
+  /**
+   * Handle closing the warning popup (cancel)
+   */
+  const handleWarningCancel = () => {
+    setShowWarningPopup(false);
+  };
+
+  /**
+   * Handle closing the block popup
+   */
+  const handleBlockClose = () => {
+    setShowBlockPopup(false);
+    onClose(); // Close the entire modal since user is blocked
   };
 
   /**
@@ -368,7 +432,7 @@ export default function DateChangeRequestManager({
               <button
                 className="dcr-button-primary"
                 onClick={handleProceedToDetails}
-                disabled={!requestType || isLoading || throttleStatus?.isThrottled}
+                disabled={!requestType || isLoading || throttleStatus?.isBlocked}
               >
                 Continue
               </button>
@@ -413,6 +477,21 @@ export default function DateChangeRequestManager({
           />
         )}
       </div>
+
+      {/* Throttling Warning Popup (Soft Warning at 5+ requests) */}
+      <ThrottlingWarningPopup
+        isOpen={showWarningPopup}
+        onClose={handleWarningCancel}
+        onContinue={handleContinueAfterWarning}
+        otherParticipantName={otherParticipantName}
+      />
+
+      {/* Throttling Block Popup (Hard Block at 10+ requests) */}
+      <ThrottlingBlockPopup
+        isOpen={showBlockPopup}
+        onClose={handleBlockClose}
+        otherParticipantName={otherParticipantName}
+      />
     </div>
   );
 }

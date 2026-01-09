@@ -15,7 +15,7 @@ import {
   CreateDateChangeRequestInput,
   CreateDateChangeRequestResponse,
   UserContext,
-  THROTTLE_LIMIT,
+  HARD_BLOCK_THRESHOLD,
   THROTTLE_WINDOW_HOURS,
   EXPIRATION_HOURS,
 } from "../lib/types.ts";
@@ -50,16 +50,19 @@ export async function handleCreate(
   console.log(`[date-change-request:create] Validated input for lease: ${input.leaseId}`);
 
   // ================================================
-  // CHECK THROTTLE STATUS
+  // CHECK THROTTLE STATUS (Count PENDING requests only)
   // ================================================
 
   const windowStart = new Date();
   windowStart.setHours(windowStart.getHours() - THROTTLE_WINDOW_HOURS);
 
+  // Count only pending (waiting_for_answer) requests for this lease
   const { count, error: countError } = await supabase
     .from('datechangerequest')
     .select('*', { count: 'exact', head: true })
     .eq('Requested by', input.requestedById)
+    .eq('Lease', input.leaseId)
+    .eq('request status', 'waiting_for_answer')
     .gte('Created Date', windowStart.toISOString());
 
   if (countError) {
@@ -68,14 +71,17 @@ export async function handleCreate(
   }
 
   const requestCount = count || 0;
-  if (requestCount >= THROTTLE_LIMIT) {
-    throw new ValidationError(`Request limit reached. You can make ${THROTTLE_LIMIT} requests per ${THROTTLE_WINDOW_HOURS} hours.`);
+
+  // Hard block at 10+ pending requests
+  if (requestCount >= HARD_BLOCK_THRESHOLD) {
+    console.log(`[date-change-request:create] Hard block threshold reached: ${requestCount}/${HARD_BLOCK_THRESHOLD}`);
+    throw new ValidationError(`You have reached the maximum number of pending requests (${HARD_BLOCK_THRESHOLD}). Please wait for responses before creating more.`);
   }
 
-  console.log(`[date-change-request:create] Throttle check passed: ${requestCount}/${THROTTLE_LIMIT}`);
+  console.log(`[date-change-request:create] Throttle check passed: ${requestCount} pending requests`);
 
   // ================================================
-  // VERIFY LEASE EXISTS
+  // VERIFY LEASE EXISTS AND CHECK THROTTLE ABILITY
   // ================================================
 
   const { data: lease, error: leaseError } = await supabase
@@ -85,7 +91,9 @@ export async function handleCreate(
       "Guest",
       "Host",
       "Listing",
-      "Lease Status"
+      "Lease Status",
+      "Throttling - guest ability to create requests?",
+      "Throttling - host ability to create requests?"
     `)
     .eq('_id', input.leaseId)
     .single();
@@ -98,9 +106,21 @@ export async function handleCreate(
   console.log(`[date-change-request:create] Found lease, guest: ${lease.Guest}, host: ${lease.Host}`);
 
   // Verify user is a participant
-  const isParticipant = input.requestedById === lease.Guest || input.requestedById === lease.Host;
-  if (!isParticipant) {
+  const isHost = input.requestedById === lease.Host;
+  const isGuest = input.requestedById === lease.Guest;
+  if (!isHost && !isGuest) {
     throw new ValidationError('User is not a participant of this lease');
+  }
+
+  // Check if user's ability to create requests is blocked (hard block from 10+ requests)
+  const abilityField = isHost
+    ? 'Throttling - host ability to create requests?'
+    : 'Throttling - guest ability to create requests?';
+
+  // Note: null/undefined defaults to true (can create)
+  if (lease[abilityField] === false) {
+    console.log(`[date-change-request:create] User is hard blocked from creating requests`);
+    throw new ValidationError('Your ability to create date change requests has been temporarily suspended. Please try again later.');
   }
 
   // ================================================

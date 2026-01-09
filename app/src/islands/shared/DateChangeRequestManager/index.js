@@ -10,5 +10,7 @@ export { default as RequestTypeSelector } from './RequestTypeSelector.jsx';
 export { default as RequestDetails } from './RequestDetails.jsx';
 export { default as RequestManagement } from './RequestManagement.jsx';
 export { default as ThrottlingWarning } from './ThrottlingWarning.jsx';
+export { default as ThrottlingWarningPopup } from './ThrottlingWarningPopup.jsx';
+export { default as ThrottlingBlockPopup } from './ThrottlingBlockPopup.jsx';
 export { default as SuccessMessage } from './SuccessMessage.jsx';
 export * from './dateChangeRequestService.js';

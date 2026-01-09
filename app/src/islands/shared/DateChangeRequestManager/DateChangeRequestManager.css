@@ -1083,3 +1083,120 @@
     gap: 4px;
   }
 }
+
+/* ============================================
+   THROTTLING POPUP MODALS
+   ============================================ */
+
+.dcr-throttle-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+}
+
+.dcr-throttle-popup {
+  background: white;
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dcr-throttle-popup-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.dcr-throttle-icon-warning {
+  color: var(--dcr-orange-pending);
+}
+
+.dcr-throttle-icon-block {
+  color: var(--dcr-red-remove);
+}
+
+.dcr-throttle-popup-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--dcr-text-primary);
+  margin: 0 0 12px 0;
+}
+
+.dcr-throttle-popup-message {
+  font-size: 14px;
+  color: var(--dcr-gray-text);
+  line-height: 1.6;
+  margin: 0 0 20px 0;
+}
+
+.dcr-throttle-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--dcr-text-primary);
+}
+
+.dcr-throttle-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--dcr-purple-primary);
+  cursor: pointer;
+}
+
+.dcr-throttle-guideline-link {
+  display: inline-block;
+  color: var(--dcr-purple-primary);
+  font-size: 14px;
+  text-decoration: none;
+  margin-bottom: 20px;
+}
+
+.dcr-throttle-guideline-link:hover {
+  text-decoration: underline;
+}
+
+.dcr-throttle-popup-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.dcr-throttle-buttons-center {
+  justify-content: center;
+}
+
+.dcr-throttle-popup-block .dcr-throttle-popup-buttons {
+  justify-content: center;
+}
+
+/* Mobile adjustments for throttle popups */
+@media (max-width: 440px) {
+  .dcr-throttle-popup {
+    padding: 20px;
+    max-width: 100%;
+  }
+
+  .dcr-throttle-popup-buttons {
+    flex-direction: column;
+  }
+
+  .dcr-throttle-popup-buttons .dcr-button-primary,
+  .dcr-throttle-popup-buttons .dcr-button-secondary {
+    flex: none;
+    width: 100%;
+  }
+}
