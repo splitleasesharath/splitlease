@@ -340,10 +340,18 @@ export default function LoggedInAvatar({
   };
 
   const isActivePath = (itemPath) => {
-    return currentPath.includes(itemPath.replace('/', ''));
+    // Normalize paths for comparison (remove query params and hash)
+    const normalizedCurrentPath = currentPath.split('?')[0].split('#')[0];
+    const normalizedItemPath = itemPath.split('?')[0].split('#')[0];
+
+    // Check if current path matches or starts with the item path
+    return normalizedCurrentPath === normalizedItemPath ||
+           normalizedCurrentPath.startsWith(normalizedItemPath + '/');
   };
 
-  const menuItems = getMenuItems();
+  // Get menu items and filter out items linking to current page
+  const allMenuItems = getMenuItems();
+  const menuItems = allMenuItems.filter(item => !isActivePath(item.path));
 
   // Extract first name from full name
   const firstName = user.name.split(' ')[0];
@@ -413,7 +421,7 @@ export default function LoggedInAvatar({
             {menuItems.map((item) => (
               <button
                 key={item.id}
-                className={`menu-item ${isActivePath(item.path) ? 'active' : ''}`}
+                className="menu-item"
                 onClick={() => handleMenuItemClick(item)}
               >
                 <img src={item.icon} alt="" className="menu-icon" />
@@ -425,6 +433,8 @@ export default function LoggedInAvatar({
                 )}
               </button>
             ))}
+
+            <div className="menu-separator" />
 
             <button className="menu-item sign-out" onClick={handleSignOut}>
               <img src="/assets/icons/log-out-purple.svg" alt="" className="menu-icon" />
