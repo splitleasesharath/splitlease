@@ -283,61 +283,61 @@ const STATUS_BANNERS = {
   },
   'Rental Application Submitted': {
     text: 'Application Submitted!\nAwaiting host review.',
-    bgColor: '#EBF5FF',
-    borderColor: '#3B82F6',
-    textColor: '#1D4ED8'
+    bgColor: '#e0e7ff',
+    borderColor: '#5B5FCF',
+    textColor: '#5B5FCF'
   },
   'Host Counteroffer Submitted / Awaiting Guest Review': {
     text: 'Host has submitted a counteroffer.\nReview the new terms below.',
-    bgColor: '#FEF3C7',
-    borderColor: '#F59E0B',
-    textColor: '#92400E'
+    bgColor: '#f3e8ff',
+    borderColor: '#8C68EE',
+    textColor: '#8C68EE'
   },
   // usualOrder >= 3: Accepted states - text varies based on counteroffer
   'Proposal or Counteroffer Accepted / Drafting Lease Documents': {
     type: 'accepted',
     text: 'Proposal Accepted!\nSplit Lease is Drafting Lease Documents',
     // Alternative text when counteroffer: 'Host terms Accepted!\nLease Documents being prepared.'
-    bgColor: '#E1FFE1',
-    borderColor: '#1E561A',
-    textColor: '#1BA54E'
+    bgColor: '#ede9fe',
+    borderColor: '#5B21B6',
+    textColor: '#5B21B6'
   },
   'Reviewing Documents': {
     text: 'Documents Ready for Review',
-    bgColor: '#EBF5FF',
-    borderColor: '#3B82F6',
-    textColor: '#1D4ED8'
+    bgColor: '#e0e7ff',
+    borderColor: '#5B5FCF',
+    textColor: '#5B5FCF'
   },
   'Lease Documents Sent for Review': {
     text: 'Lease Documents Draft prepared.\nPlease review and comment.',
-    bgColor: '#E1FFE1',
-    borderColor: '#1E561A',
-    textColor: '#1BA54E'
+    bgColor: '#ede9fe',
+    borderColor: '#5B21B6',
+    textColor: '#5B21B6'
   },
   'Lease Documents Sent for Signatures': {
     text: 'Check your email for legally submitted documents.',
-    bgColor: '#E1FFE1',
-    borderColor: '#1E561A',
-    textColor: '#1BA54E'
+    bgColor: '#ede9fe',
+    borderColor: '#5B21B6',
+    textColor: '#5B21B6'
   },
   'Lease Documents Signed / Awaiting Initial payment': {
     text: 'Lease Documents signed.\nSubmit payment to activate your lease.',
-    bgColor: '#E1FFE1',
-    borderColor: '#1E561A',
-    textColor: '#1BA54E'
+    bgColor: '#ede9fe',
+    borderColor: '#5B21B6',
+    textColor: '#5B21B6'
   },
   // Legacy key format
   'Lease Signed / Awaiting Initial Payment': {
     text: 'Lease Signed!\nSubmit initial payment to activate.',
-    bgColor: '#E1FFE1',
-    borderColor: '#1E561A',
-    textColor: '#1BA54E'
+    bgColor: '#ede9fe',
+    borderColor: '#5B21B6',
+    textColor: '#5B21B6'
   },
   'Initial Payment Submitted / Lease activated': {
     text: 'Your lease agreement is now officially signed.\nFor details, please visit the lease section of your account.',
-    bgColor: '#E1FFE1',
-    borderColor: '#1E561A',
-    textColor: '#1BA54E'
+    bgColor: '#ede9fe',
+    borderColor: '#5B21B6',
+    textColor: '#5B21B6'
   },
   // Terminal states
   'Proposal Cancelled by Split Lease': {
@@ -370,13 +370,13 @@ const STATUS_BANNERS = {
  * Default banner config based on usualOrder (fallback when no specific config)
  */
 function getDefaultBannerConfig(status, usualOrder) {
-  // Default blue banner for active statuses with usualOrder >= 3
+  // Default CTA purple banner for active statuses with usualOrder >= 3
   if (usualOrder >= 3 && usualOrder < 99) {
     return {
       text: status,
-      bgColor: '#EBF5FF',
-      borderColor: '#3B82F6',
-      textColor: '#1D4ED8'
+      bgColor: '#e0e7ff',
+      borderColor: '#5B5FCF',
+      textColor: '#5B5FCF'
     };
   }
   return null;
