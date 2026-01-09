@@ -122,11 +122,20 @@ export default function MessagingPage() {
     isOtherUserTyping,
     typingUserName,
 
+    // CTA state
+    activeModal,
+    modalContext,
+
     // Handlers
     handleThreadSelect,
     handleMessageInputChange,
     handleSendMessage,
     handleRetry,
+
+    // CTA handlers
+    handleCTAClick,
+    getCTAButtonConfig,
+    handleCloseModal,
   } = useMessagingPageLogic();
 
   // Mobile view state: 'list' or 'conversation'

@@ -7,6 +7,9 @@
  * - Broadcasting to Realtime channel
  * - Updating thread's last message
  *
+ * Optional: When send_welcome_messages=true and a new thread is created,
+ * sends SplitBot welcome messages to both guest and host.
+ *
  * NO FALLBACK PRINCIPLE: Throws if message creation fails
  */
 
@@ -16,10 +19,20 @@ import { ValidationError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 import {
   getUserBubbleId,
+  getUserProfile,
+  getListingName,
   createMessage,
   createThread,
-  findExistingThread
+  createSplitBotMessage,
+  findExistingThread,
+  updateThreadLastMessage,
 } from '../../_shared/messagingHelpers.ts';
+import {
+  getCTAByName,
+  renderTemplate,
+  getVisibilityForRole,
+  buildTemplateContext,
+} from '../../_shared/ctaHelpers.ts';
 
 interface SendMessagePayload {
   thread_id?: string;          // Optional if creating new thread
@@ -31,6 +44,7 @@ interface SendMessagePayload {
   splitbot?: boolean;          // Optional: Is Split Bot message
   call_to_action?: string;     // Optional: CTA type
   split_bot_warning?: string;  // Optional: Warning text
+  send_welcome_messages?: boolean;  // Optional: Send SplitBot welcome when creating new thread
 }
 
 interface SendMessageResult {
@@ -39,6 +53,7 @@ interface SendMessageResult {
   thread_id: string;
   is_new_thread: boolean;
   timestamp: string;
+  welcome_messages_sent?: boolean;
 }
 
 /**

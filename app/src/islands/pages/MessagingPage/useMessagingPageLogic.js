@@ -19,6 +19,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { checkAuthStatus, validateTokenAndFetchUser, getFirstName, getAvatarUrl } from '../../../lib/auth.js';
 import { getUserId } from '../../../lib/secureStorage.js';
 import { supabase } from '../../../lib/supabase.js';
+import { useCTAHandler } from './useCTAHandler.js';
 
 export function useMessagingPageLogic() {
   // ============================================================================
@@ -54,6 +55,12 @@ export function useMessagingPageLogic() {
   const [typingUserName, setTypingUserName] = useState(null);
   const channelRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+
+  // ============================================================================
+  // CTA MODAL STATE
+  // ============================================================================
+  const [activeModal, setActiveModal] = useState(null);
+  const [modalContext, setModalContext] = useState(null);
 
   // Ref to track if initial load is complete
   const initialLoadDone = useRef(false);
@@ -436,6 +443,8 @@ export function useMessagingPageLogic() {
 
       return {
         _id: thread._id,
+        '-Host User': hostId,      // Preserve for CTA role detection
+        '-Guest User': guestId,    // Preserve for CTA role detection
         contact_name: contact?.name || 'Split Lease',
         contact_avatar: contact?.avatar,
         property_name: thread['Listing'] ? listingMap[thread['Listing']] : undefined,
@@ -651,10 +660,19 @@ export function useMessagingPageLogic() {
     isOtherUserTyping,
     typingUserName,
 
+    // CTA state
+    activeModal,
+    modalContext,
+
     // Handlers
     handleThreadSelect,
     handleMessageInputChange,
     handleSendMessage,
     handleRetry,
+
+    // CTA handlers
+    handleCTAClick,
+    getCTAButtonConfig,
+    handleCloseModal,
   };
 }
