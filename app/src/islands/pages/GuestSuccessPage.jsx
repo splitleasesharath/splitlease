@@ -109,7 +109,7 @@ function StoriesSection({ stories }) {
   return (
     <section id="stories" className="stories-section">
       <div className="stories-header">
-        <h1 className="stories-title">Find your second home</h1>
+        <h1 className="stories-title">Your schedule, your space</h1>
         <p className="stories-subtitle">
           Professionals who found a smarter way to have a place in NYC—without paying for nights they don't use.
         </p>
@@ -181,7 +181,7 @@ export default function GuestSuccessPage() {
       {/* Final CTA Section */}
       <section className="success-final-cta">
         <div className="success-cta-card">
-          <h2 className="success-cta-title">Your schedule, your space</h2>
+          <h2 className="success-cta-title">Find your second home</h2>
           <p className="success-cta-subtitle">
             Find a host whose nights away match yours.
           </p>
