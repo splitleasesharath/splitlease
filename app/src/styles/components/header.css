@@ -142,9 +142,7 @@
 }
 
 .dropdown-item:hover {
-    background: rgba(91, 33, 182, 0.08);
-    box-shadow: 0 4px 12px rgba(91, 33, 182, 0.15);
-    transform: translateY(-2px);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .dropdown-title {
@@ -182,9 +180,7 @@
 }
 
 .dropdown-cta:hover {
-    background: rgba(91, 33, 182, 0.08);
-    box-shadow: 0 4px 12px rgba(91, 33, 182, 0.15);
-    transform: translateY(-2px);
+    background: rgba(0, 0, 0, 0.05);
 }
 
 .nav-link {

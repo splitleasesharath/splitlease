@@ -489,9 +489,18 @@ export default function Header({ autoShowLogin = false }) {
               {/* Dynamic menu items based on host state */}
               {(() => {
                 const hostMenuConfig = getHostMenuConfig(hostMenuState, handleSignupClick);
+                const currentPath = window.location.pathname;
+                // Filter out items that link to the current page
+                const filteredItems = hostMenuConfig.items.filter(item =>
+                  !item.href || !currentPath.startsWith(item.href.split('?')[0].split('#')[0])
+                );
+                // Check if CTA links to current page
+                const ctaHref = hostMenuConfig.cta.href?.split('?')[0].split('#')[0];
+                const showCta = !ctaHref || !currentPath.startsWith(ctaHref);
+
                 return (
                   <>
-                    {hostMenuConfig.items.map((item) => (
+                    {filteredItems.map((item) => (
                       <a
                         key={item.id}
                         href={item.href}
@@ -509,10 +518,11 @@ export default function Header({ autoShowLogin = false }) {
                       </a>
                     ))}
 
-                    {/* Separator */}
-                    <div className="dropdown-separator" />
+                    {/* Separator - only show if CTA is visible */}
+                    {showCta && <div className="dropdown-separator" />}
 
-                    {/* Bottom CTA */}
+                    {/* Bottom CTA - hide if it links to current page */}
+                    {showCta && (
                     <a
                       href={hostMenuConfig.cta.href || '#'}
                       className="dropdown-cta"
@@ -529,6 +539,7 @@ export default function Header({ autoShowLogin = false }) {
                     >
                       {hostMenuConfig.cta.label}
                     </a>
+                    )}
                   </>
                 );
               })()}
@@ -577,9 +588,18 @@ export default function Header({ autoShowLogin = false }) {
               {/* Dynamic menu items based on guest state */}
               {(() => {
                 const guestMenuConfig = getGuestMenuConfig(guestMenuState, handleSignupClick);
+                const currentPath = window.location.pathname;
+                // Filter out items that link to the current page
+                const filteredItems = guestMenuConfig.items.filter(item =>
+                  !item.href || !currentPath.startsWith(item.href.split('?')[0].split('#')[0])
+                );
+                // Check if CTA links to current page
+                const ctaHref = guestMenuConfig.cta.href?.split('?')[0].split('#')[0];
+                const showCta = !ctaHref || !currentPath.startsWith(ctaHref);
+
                 return (
                   <>
-                    {guestMenuConfig.items.map((item) => (
+                    {filteredItems.map((item) => (
                       <a
                         key={item.id}
                         href={item.href}
@@ -597,10 +617,11 @@ export default function Header({ autoShowLogin = false }) {
                       </a>
                     ))}
 
-                    {/* Separator */}
-                    <div className="dropdown-separator" />
+                    {/* Separator - only show if CTA is visible */}
+                    {showCta && <div className="dropdown-separator" />}
 
-                    {/* Bottom CTA */}
+                    {/* Bottom CTA - hide if it links to current page */}
+                    {showCta && (
                     <a
                       href={guestMenuConfig.cta.href || '#'}
                       className="dropdown-cta"
@@ -617,6 +638,7 @@ export default function Header({ autoShowLogin = false }) {
                     >
                       {guestMenuConfig.cta.label}
                     </a>
+                    )}
                   </>
                 );
               })()}
