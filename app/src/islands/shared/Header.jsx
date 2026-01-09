@@ -6,6 +6,8 @@ import { supabase } from '../../lib/supabase.js';
 import CreateDuplicateListingModal from './CreateDuplicateListingModal/CreateDuplicateListingModal.jsx';
 import LoggedInAvatar from './LoggedInAvatar/LoggedInAvatar.jsx';
 import SignUpLoginModal from './SignUpLoginModal.jsx';
+import { useHostMenuData, getHostMenuConfig } from './Header/useHostMenuData.js';
+import { useGuestMenuData, getGuestMenuConfig } from './Header/useGuestMenuData.js';
 
 export default function Header({ autoShowLogin = false }) {
   const [mobileMenuActive, setMobileMenuActive] = useState(false);
@@ -43,6 +45,12 @@ export default function Header({ autoShowLogin = false }) {
 
   // CreateDuplicateListingModal State
   const [showListPropertyModal, setShowListPropertyModal] = useState(false);
+
+  // Dynamic menu data hooks for Host and Guest dropdowns
+  const userId = currentUser?.userId || currentUser?.id || '';
+  const isAuthenticated = !!currentUser;
+  const { state: hostMenuState } = useHostMenuData(userId, isAuthenticated);
+  const { state: guestMenuState } = useGuestMenuData(userId, isAuthenticated);
 
   // Background validation: Validate cached auth state and update with real data
   // The optimistic UI is already set synchronously in useState initializer above
@@ -478,64 +486,52 @@ export default function Header({ autoShowLogin = false }) {
               role="menu"
               aria-label="Host with Us menu"
             >
-              <a
-                href="/list-with-us"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Why List with Us</span>
-                <span className="dropdown-desc">New to Split Lease? Learn more about hosting</span>
-              </a>
-              <a
-                href="/host-success"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Success Stories</span>
-                <span className="dropdown-desc">Explore other hosts' feedback</span>
-              </a>
-              <a
-                href="/self-listing-v2"
-                className="dropdown-item"
-                role="menuitem"
-                onClick={() => {
-                  setActiveDropdown(null);
-                  setMobileMenuActive(false);
-                }}
-              >
-                <span className="dropdown-title">List Property</span>
-              </a>
-              <a
-                href="/policies"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Legal Information</span>
-                <span className="dropdown-desc">Review most important policies</span>
-              </a>
-              <a
-                href="/faq?section=hosts"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">FAQs</span>
-                <span className="dropdown-desc">Frequently Asked Questions</span>
-              </a>
-              {!currentUser && (
-              <a
-                href="#"
-                className="dropdown-item"
-                role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveDropdown(null);
-                  setMobileMenuActive(false);
-                  handleSignupClick();
-                }}
-              >
-                <span className="dropdown-title">Sign Up</span>
-              </a>
-              )}
+              {/* Dynamic menu items based on host state */}
+              {(() => {
+                const hostMenuConfig = getHostMenuConfig(hostMenuState, handleSignupClick);
+                return (
+                  <>
+                    {hostMenuConfig.items.map((item) => (
+                      <a
+                        key={item.id}
+                        href={item.href}
+                        className="dropdown-item"
+                        role="menuitem"
+                        onClick={item.action ? (e) => {
+                          e.preventDefault();
+                          setActiveDropdown(null);
+                          setMobileMenuActive(false);
+                          item.action();
+                        } : undefined}
+                      >
+                        <span className="dropdown-title">{item.title}</span>
+                        {item.desc && <span className="dropdown-desc">{item.desc}</span>}
+                      </a>
+                    ))}
+
+                    {/* Separator */}
+                    <div className="dropdown-separator" />
+
+                    {/* Bottom CTA */}
+                    <a
+                      href={hostMenuConfig.cta.href || '#'}
+                      className="dropdown-cta"
+                      role="menuitem"
+                      onClick={hostMenuConfig.cta.action ? (e) => {
+                        e.preventDefault();
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                        hostMenuConfig.cta.action();
+                      } : () => {
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                      }}
+                    >
+                      {hostMenuConfig.cta.label}
+                    </a>
+                  </>
+                );
+              })()}
             </div>
           </div>
           )}
@@ -578,53 +574,52 @@ export default function Header({ autoShowLogin = false }) {
               role="menu"
               aria-label="Stay with Us menu"
             >
-              <a
-                href={SEARCH_URL}
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Explore Rentals</span>
-                <span className="dropdown-desc">See available listings!</span>
-              </a>
-              <a
-                href="/why-split-lease"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Why Split Lease</span>
-                <span className="dropdown-desc">Learn why guests choose Split Lease</span>
-              </a>
-              <a
-                href="/guest-success"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">Success Stories</span>
-                <span className="dropdown-desc">Explore other guests' feedback</span>
-              </a>
-              <a
-                href="/faq?section=travelers"
-                className="dropdown-item"
-                role="menuitem"
-              >
-                <span className="dropdown-title">FAQs</span>
-                <span className="dropdown-desc">Frequently Asked Questions</span>
-              </a>
-              {!currentUser && (
-              <a
-                href="#"
-                className="dropdown-item"
-                role="menuitem"
-                onClick={(e) => {
-                  e.preventDefault();
-                  setActiveDropdown(null);
-                  setMobileMenuActive(false);
-                  handleSignupClick();
-                }}
-              >
-                <span className="dropdown-title">Sign Up</span>
-              </a>
-              )}
+              {/* Dynamic menu items based on guest state */}
+              {(() => {
+                const guestMenuConfig = getGuestMenuConfig(guestMenuState, handleSignupClick);
+                return (
+                  <>
+                    {guestMenuConfig.items.map((item) => (
+                      <a
+                        key={item.id}
+                        href={item.href}
+                        className="dropdown-item"
+                        role="menuitem"
+                        onClick={item.action ? (e) => {
+                          e.preventDefault();
+                          setActiveDropdown(null);
+                          setMobileMenuActive(false);
+                          item.action();
+                        } : undefined}
+                      >
+                        <span className="dropdown-title">{item.title}</span>
+                        {item.desc && <span className="dropdown-desc">{item.desc}</span>}
+                      </a>
+                    ))}
+
+                    {/* Separator */}
+                    <div className="dropdown-separator" />
+
+                    {/* Bottom CTA */}
+                    <a
+                      href={guestMenuConfig.cta.href || '#'}
+                      className="dropdown-cta"
+                      role="menuitem"
+                      onClick={guestMenuConfig.cta.action ? (e) => {
+                        e.preventDefault();
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                        guestMenuConfig.cta.action();
+                      } : () => {
+                        setActiveDropdown(null);
+                        setMobileMenuActive(false);
+                      }}
+                    >
+                      {guestMenuConfig.cta.label}
+                    </a>
+                  </>
+                );
+              })()}
             </div>
           </div>
           )}
