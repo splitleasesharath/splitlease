@@ -26,7 +26,7 @@ const SelectorRow = styled.div`
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin: 0 0 5px 0;
+  margin: 0;
 `;
 
 const CalendarIcon = styled.div`
