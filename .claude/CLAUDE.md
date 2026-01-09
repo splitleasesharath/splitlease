@@ -219,11 +219,11 @@ See: `.claude/plans/Documents/20251217091827-edit-listing-409-regression-report.
 
 ### Deprecated File Convention
 
-> **⚠️ FILE DEPRECATION RULE**: Any markdown file whose filename **starts with** `zep` or `zepped` (case-insensitive) is marked as **deprecated, outdated, or incorrect**. The contents of such files MUST be completely ignored and treated as obsolete.
+> **⚠️ FILE DEPRECATION RULE**: Any markdown file whose filename **starts with** `ZEP` or `ZEPPED` (case-insensitive) is marked as **deprecated, outdated, or incorrect**. The contents of such files MUST be completely ignored and treated as obsolete.
 >
 > Examples:
-> - `zep-old-architecture.md` → IGNORE
-> - `zepped-20241215-feature-plan.md` → IGNORE
+> - `ZEP-old-architecture.md` → IGNORE
+> - `ZEPPED-20241215-feature-plan.md` → IGNORE
 > - `ZEP_legacy_docs.md` → IGNORE
 >
 > This naming convention provides a clear signal that historical context has been superseded by newer information.
