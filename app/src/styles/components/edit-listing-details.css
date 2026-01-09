@@ -601,31 +601,46 @@
 
 .eld-photo-controls {
   position: absolute;
-  top: var(--spacing-xs, 4px);
-  right: var(--spacing-xs, 4px);
+  top: 8px;
+  right: 8px;
   display: flex;
-  gap: var(--spacing-xs, 4px);
+  gap: 6px;
+  z-index: 2;
 }
 
 .eld-photo-delete {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: rgba(255, 255, 255, 0.9);
-  border: none;
-  border-radius: var(--radius-sm, 6px);
+  width: 36px;
+  height: 36px;
+  background-color: rgba(255, 255, 255, 0.95);
+  border: 2px solid #d1d5db;
+  border-radius: 8px;
   cursor: pointer;
-  color: var(--color-error, #DC2626);
-  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+/* Ensure SVG icon is visible */
+.eld-photo-delete svg {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+  display: block;
+  flex-shrink: 0;
 }
 
 .eld-photo-delete:hover {
-  background: var(--color-error, #DC2626);
-  color: white;
-  transform: scale(1.1);
+  background-color: #fee2e2;
+  border-color: #ef4444;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.eld-photo-delete:hover svg {
+  stroke: #ef4444;
 }
 
 .eld-photo-badge {
