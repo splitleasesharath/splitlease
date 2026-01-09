@@ -183,7 +183,9 @@
 
 /* Dropdown CTA - Primary action at bottom of dropdown (styled as menu item) */
 .dropdown-cta {
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
     padding: 0.75rem 1rem;
     color: var(--primary-color, #31135D);
     text-decoration: none;
