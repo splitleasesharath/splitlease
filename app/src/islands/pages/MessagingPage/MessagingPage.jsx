@@ -226,6 +226,8 @@ export default function MessagingPage() {
                       isMobile={isMobile}
                       isOtherUserTyping={isOtherUserTyping}
                       typingUserName={typingUserName}
+                      onCTAClick={handleCTAClick}
+                      getCTAButtonConfig={getCTAButtonConfig}
                     />
                     <MessageInput
                       value={messageInput}
