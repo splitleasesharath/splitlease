@@ -83,7 +83,7 @@ function WhyItWorksSection() {
               </svg>
             </div>
             <h3 className="why-card-title">Dedicated storage space</h3>
-            <p className="why-card-text">Hosts provide closet space, drawers, bathroom shelves. Leave your things between visits. Travel with just a laptop bag.</p>
+            <p className="why-card-text">Store toiletries, a second monitor, work attire, and more. Your space is ready when you return.</p>
           </div>
           <div className="why-card">
             <div className="why-card-icon">
