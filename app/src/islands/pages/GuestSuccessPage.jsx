@@ -111,7 +111,7 @@ function StoriesSection({ stories }) {
       <div className="stories-header">
         <h1 className="stories-title">Find your second home</h1>
         <p className="stories-subtitle">
-          People like you already have one. No need to buy—just share with someone whose schedule is the opposite of yours.
+          See how others found their perfect schedule match.
         </p>
       </div>
 
