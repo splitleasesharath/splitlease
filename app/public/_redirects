@@ -1,6 +1,7 @@
 # Cloudflare Pages redirects and rewrites
 # AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY
 # Generated: 2026-01-09T19:52:59.277Z
+# Generated: 2026-01-09T17:39:51.645Z
 #
 # See: https://developers.cloudflare.com/pages/configuration/redirects/
 
@@ -84,9 +85,9 @@
 /host-guarantee  /_internal/host-guarantee-view  200
 /host-guarantee/  /_internal/host-guarantee-view  200
 
-# /referral → referral.html
-/referral  /_internal/referral-view  200
-/referral/  /_internal/referral-view  200
+# /referral-invite → referral-invite.html
+/referral-invite  /_internal/referral-invite-view  200
+/referral-invite/  /_internal/referral-invite-view  200
 
 # /guest-success → guest-success.html
 /guest-success  /_internal/guest-success-view  200

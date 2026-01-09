@@ -80,7 +80,7 @@ export function getHostMenuConfig(state, onSignupClick) {
     manageHouseManual: {
       id: 'house-manual',
       href: '/host-overview#house-manuals',
-      title: 'Create/Manage House Manual',
+      title: 'House Manual',
       desc: 'Set up or edit your property guide',
       icon: '/assets/icons/book-open-purple.svg'
     },

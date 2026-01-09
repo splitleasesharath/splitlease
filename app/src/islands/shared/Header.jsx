@@ -490,13 +490,17 @@ export default function Header({ autoShowLogin = false }) {
               {(() => {
                 const hostMenuConfig = getHostMenuConfig(hostMenuState, handleSignupClick);
                 const currentPath = window.location.pathname;
-                // Filter out items that link to the current page
-                const filteredItems = hostMenuConfig.items.filter(item =>
-                  !item.href || !currentPath.startsWith(item.href.split('?')[0].split('#')[0])
-                );
-                // Check if CTA links to current page
                 const ctaHref = hostMenuConfig.cta.href?.split('?')[0].split('#')[0];
-                const showCta = !ctaHref || !currentPath.startsWith(ctaHref);
+                // Filter out items that link to the current page OR duplicate the CTA
+                const filteredItems = hostMenuConfig.items.filter(item => {
+                  const itemHref = item.href?.split('?')[0].split('#')[0];
+                  const linksToCurrentPage = item.href && currentPath.startsWith(itemHref);
+                  const duplicatesCta = itemHref && ctaHref && itemHref === ctaHref;
+                  return !linksToCurrentPage && !duplicatesCta;
+                });
+                // Check if CTA links to current page
+                const ctaLinksToCurrentPage = ctaHref && currentPath.startsWith(ctaHref);
+                const showCta = !ctaLinksToCurrentPage;
 
                 return (
                   <>
@@ -593,13 +597,17 @@ export default function Header({ autoShowLogin = false }) {
               {(() => {
                 const guestMenuConfig = getGuestMenuConfig(guestMenuState, handleSignupClick);
                 const currentPath = window.location.pathname;
-                // Filter out items that link to the current page
-                const filteredItems = guestMenuConfig.items.filter(item =>
-                  !item.href || !currentPath.startsWith(item.href.split('?')[0].split('#')[0])
-                );
-                // Check if CTA links to current page
                 const ctaHref = guestMenuConfig.cta.href?.split('?')[0].split('#')[0];
-                const showCta = !ctaHref || !currentPath.startsWith(ctaHref);
+                // Filter out items that link to the current page OR duplicate the CTA
+                const filteredItems = guestMenuConfig.items.filter(item => {
+                  const itemHref = item.href?.split('?')[0].split('#')[0];
+                  const linksToCurrentPage = item.href && currentPath.startsWith(itemHref);
+                  const duplicatesCta = itemHref && ctaHref && itemHref === ctaHref;
+                  return !linksToCurrentPage && !duplicatesCta;
+                });
+                // Check if CTA links to current page
+                const ctaLinksToCurrentPage = ctaHref && currentPath.startsWith(ctaHref);
+                const showCta = !ctaLinksToCurrentPage;
 
                 return (
                   <>
