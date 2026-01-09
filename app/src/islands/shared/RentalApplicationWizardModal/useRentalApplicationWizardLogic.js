@@ -186,17 +186,19 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       }
     }
 
-    // Also mark previous steps as visited
+    // Mark previous steps as visited (confirmed) - but NOT the current step
+    // The current step will be marked visited when user navigates away from it
     const stepsToVisit = [];
     for (let i = 1; i < startStep; i++) {
       stepsToVisit.push(i);
     }
-    stepsToVisit.push(startStep);
 
     if (startStep > 1) {
       console.log('[RentalAppWizard] Resuming from step', startStep, 'based on loaded draft data');
       setCurrentStep(startStep);
-      setVisitedSteps(stepsToVisit);
+      if (stepsToVisit.length > 0) {
+        setVisitedSteps(stepsToVisit);
+      }
     }
 
     hasSetInitialStep.current = true;
@@ -445,12 +447,21 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   const canSubmit = progress >= 80 && formData.signature?.trim();
 
   // ============================================================================
-  // TRACK STEP VISITS - Mark step as visited when user navigates to it
+  // TRACK STEP VISITS - Mark step as "confirmed" when user LEAVES it
+  // For optional steps, checkmark appears only after user moves away (Continue/Skip/Back)
   // ============================================================================
+  const previousStepRef = useRef(currentStep);
+
   useEffect(() => {
-    if (!visitedSteps.includes(currentStep)) {
-      setVisitedSteps(prev => [...prev, currentStep]);
+    const previousStep = previousStepRef.current;
+
+    // When step changes, mark the PREVIOUS step as visited (confirmed)
+    if (previousStep !== currentStep && !visitedSteps.includes(previousStep)) {
+      setVisitedSteps(prev => [...prev, previousStep]);
     }
+
+    // Update ref for next change
+    previousStepRef.current = currentStep;
   }, [currentStep, visitedSteps]);
 
   // ============================================================================
