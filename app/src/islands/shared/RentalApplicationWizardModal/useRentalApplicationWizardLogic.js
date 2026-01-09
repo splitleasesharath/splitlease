@@ -136,6 +136,76 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   // This captures the state once when userProfileData arrives
   const emptyUserProfileFields = useRef(null);
 
+  // Track if we've already set the initial step from localStorage data
+  const hasSetInitialStep = useRef(false);
+
+  // ============================================================================
+  // CALCULATE INITIAL STEP FROM LOADED DATA (for resuming drafts)
+  // ============================================================================
+  // When form data loads from localStorage, calculate which step user should resume at
+  useEffect(() => {
+    // Skip if already set initial step or if this is a submitted application
+    // (submitted apps will set their own step from database loading)
+    if (hasSetInitialStep.current || applicationStatus === 'submitted') {
+      return;
+    }
+
+    // Check if we have any data loaded (indicating localStorage had a draft)
+    const hasLoadedData = formData.fullName || formData.email || formData.phone || formData.dob;
+    if (!hasLoadedData) {
+      return;
+    }
+
+    // Calculate which step to resume at based on completed fields
+    // Find the first incomplete step, or go to the step after the last complete one
+    const isStep1Complete = formData.fullName && formData.dob && formData.email && formData.phone;
+    const isStep2Complete = formData.currentAddress && formData.lengthResided && formData.renting;
+    const isStep4Complete = formData.employmentStatus && (
+      // Check conditional fields based on employment status
+      formData.employmentStatus === 'student' ||
+      formData.employmentStatus === 'unemployed' ||
+      formData.employmentStatus === 'other' ||
+      ((['full-time', 'part-time', 'intern'].includes(formData.employmentStatus)) &&
+        formData.employerName && formData.employerPhone && formData.jobTitle && formData.monthlyIncome) ||
+      (formData.employmentStatus === 'business-owner' &&
+        formData.businessName && formData.businessYear && formData.businessState)
+    );
+
+    // Determine starting step
+    let startStep = 1;
+    if (isStep1Complete) {
+      startStep = 2; // Go to Address
+      if (isStep2Complete) {
+        startStep = 3; // Go to Occupants
+        // Steps 3, 5, 6 are optional - check step 4
+        if (isStep4Complete) {
+          startStep = 5; // Skip to Details (step 4 is done)
+        } else {
+          startStep = 4; // Go to Work/Employment
+        }
+      }
+    }
+
+    // Also mark previous steps as visited
+    const stepsToVisit = [];
+    for (let i = 1; i < startStep; i++) {
+      stepsToVisit.push(i);
+    }
+    stepsToVisit.push(startStep);
+
+    if (startStep > 1) {
+      console.log('[RentalAppWizard] Resuming from step', startStep, 'based on loaded draft data');
+      setCurrentStep(startStep);
+      setVisitedSteps(stepsToVisit);
+    }
+
+    hasSetInitialStep.current = true;
+  }, [applicationStatus, formData.fullName, formData.dob, formData.email, formData.phone,
+      formData.currentAddress, formData.lengthResided, formData.renting,
+      formData.employmentStatus, formData.employerName, formData.employerPhone,
+      formData.jobTitle, formData.monthlyIncome, formData.businessName,
+      formData.businessYear, formData.businessState]);
+
   // ============================================================================
   // DATABASE LOADING (for submitted applications)
   // ============================================================================
