@@ -340,6 +340,12 @@
   font-size: 14px;
   line-height: 1.5;
   word-wrap: break-word;
+  color: inherit;
+}
+
+/* Ensure outgoing message text is white */
+.header-messaging-panel__messages .message-bubble--outgoing .message-bubble__text {
+  color: #FFFFFF !important;
 }
 
 .header-messaging-panel__messages .message-bubble__cta {
