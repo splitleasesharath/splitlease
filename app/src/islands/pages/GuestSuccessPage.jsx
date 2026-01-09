@@ -82,8 +82,8 @@ function WhyItWorksSection() {
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
             </div>
-            <h3 className="why-card-title">Stay with someone like you</h3>
-            <p className="why-card-text">Hosts who went to your school, work in your industry, or share your interests. Not strangers—almost-neighbors.</p>
+            <h3 className="why-card-title">Someone like you lives there</h3>
+            <p className="why-card-text">Your host went to your school, works in your industry, or shares your interests. You're not crashing with a stranger.</p>
           </div>
           <div className="why-card">
             <div className="why-card-icon">
