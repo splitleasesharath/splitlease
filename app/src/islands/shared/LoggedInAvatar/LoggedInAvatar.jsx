@@ -363,8 +363,8 @@ export default function LoggedInAvatar({
   const allMenuItems = getMenuItems();
   const menuItems = allMenuItems.filter(item => !isActivePath(item.path));
 
-  // Extract first name from full name
-  const firstName = user.name.split(' ')[0];
+  // Extract first name from full name (with defensive null check)
+  const firstName = user?.name?.split(' ')[0] || '';
 
   // Check if on a page with light header for styling
   const isSearchPage = currentPath.includes('search');
@@ -393,10 +393,10 @@ export default function LoggedInAvatar({
         aria-expanded={isOpen}
       >
         {user.avatarUrl ? (
-          <img src={user.avatarUrl} alt={user.name} className="avatar-image" />
+          <img src={user.avatarUrl} alt={user?.name || 'User avatar'} className="avatar-image" />
         ) : (
           <div className="avatar-placeholder">
-            {user.name.charAt(0).toUpperCase()}
+            {(user?.name?.charAt(0) || '?').toUpperCase()}
           </div>
         )}
         <span className="user-name-wrapper">
