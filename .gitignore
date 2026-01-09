@@ -33,6 +33,7 @@ dist/
 *.sqlite
 *.sqlite3
 !app/server/db/backup.db
+supabase-migrations/
 
 # IDE
 .vscode/
