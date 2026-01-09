@@ -275,9 +275,24 @@ function calculateTotalReservationPrice(pricePerNight, nightsCount, reservationS
 
 /**
  * Get weekly schedule period based on "Weeks offered" pattern
+ * Handles both numeric values (e.g., 2) and text patterns (e.g., "2 weeks on, 2 weeks off")
  */
 function getWeeklySchedulePeriod(weeksOffered) {
-  const pattern = (weeksOffered || 'every week').toLowerCase();
+  if (!weeksOffered || weeksOffered === 'Every week' || weeksOffered === 'every week') {
+    return 1;
+  }
+
+  // Handle numeric values (e.g., "2" means "2 weeks on, 2 weeks off")
+  const numValue = typeof weeksOffered === 'number' ? weeksOffered : parseInt(weeksOffered, 10);
+  if (!isNaN(numValue) && numValue > 0 && numValue <= 4) {
+    // For "X weeks on, X weeks off" pattern, the schedule period divisor is:
+    // 1 on 1 off: divisor = 2 (2 weeks cycle, 1 week active)
+    // 2 on 2 off: divisor = 2 (4 weeks cycle, 2 weeks active)
+    // The 4-week rent calculation divides by this to get per-active-week rate
+    return 2;
+  }
+
+  const pattern = String(weeksOffered).toLowerCase();
 
   // Check for various patterns
   if (pattern.includes('1 on 1 off') || pattern.includes('1on1off') ||
@@ -303,9 +318,25 @@ function getWeeklySchedulePeriod(weeksOffered) {
 
 /**
  * Get actual weeks during 4-week period based on pattern
+ * Handles both numeric values (e.g., 2) and text patterns (e.g., "2 weeks on, 2 weeks off")
  */
 function getActualWeeksDuring4Week(weeksOffered) {
-  const pattern = (weeksOffered || 'every week').toLowerCase();
+  if (!weeksOffered || weeksOffered === 'Every week' || weeksOffered === 'every week') {
+    return 4; // Every week = 4 weeks per 4-week period
+  }
+
+  // Handle numeric values (e.g., "2" means "2 weeks on, 2 weeks off")
+  const numValue = typeof weeksOffered === 'number' ? weeksOffered : parseInt(weeksOffered, 10);
+  if (!isNaN(numValue) && numValue > 0 && numValue <= 4) {
+    // For "X weeks on, X weeks off" pattern:
+    // 1 on 1 off: 2 actual weeks per 4-week period (cycles twice in 4 weeks)
+    // 2 on 2 off: 2 actual weeks per 4-week period (one cycle in 4 weeks)
+    // 3 on 3 off: would be ~2 weeks in 4-week period
+    // This returns the actual active weeks in a 4-week span
+    return 2; // For X on X off patterns, you get half the time
+  }
+
+  const pattern = String(weeksOffered).toLowerCase();
 
   // Check for various patterns
   if (pattern.includes('1 on 1 off') || pattern.includes('1on1off') ||

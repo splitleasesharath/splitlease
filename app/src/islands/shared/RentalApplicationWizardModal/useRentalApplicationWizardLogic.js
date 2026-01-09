@@ -7,9 +7,10 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '../../../../../lib/supabase.js';
-import { checkAuthStatus, getSessionId, getAuthToken } from '../../../../../lib/auth.js';
-import { useRentalApplicationStore } from '../../../RentalApplicationPage/store/index.ts';
+import { supabase } from '../../../lib/supabase.js';
+import { checkAuthStatus, getSessionId, getAuthToken } from '../../../lib/auth.js';
+import { useRentalApplicationStore } from '../../pages/RentalApplicationPage/store/index.ts';
+import { mapDatabaseToFormData } from '../../pages/RentalApplicationPage/utils/rentalApplicationFieldMapper.ts';
 
 // Required fields (same as RentalApplicationPage)
 const REQUIRED_FIELDS = [
@@ -51,6 +52,8 @@ const RELATIONSHIP_OPTIONS = [
   { value: 'child', label: 'Child' },
   { value: 'parent', label: 'Parent' },
   { value: 'sibling', label: 'Sibling' },
+  { value: 'brother-sister', label: 'Brother/Sister' },
+  { value: 'family-member', label: 'Family Member' },
   { value: 'roommate', label: 'Roommate' },
   { value: 'other', label: 'Other' }
 ];
@@ -83,7 +86,7 @@ const FILE_TYPE_MAP = {
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
-export function useRentalApplicationWizardLogic({ onClose, onSuccess }) {
+export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus = 'not_started', userEmail = '' }) {
   // ============================================================================
   // STORE INTEGRATION (reuse existing localStorage store)
   // ============================================================================
@@ -100,6 +103,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess }) {
     updateOccupant: storeUpdateOccupant,
     updateVerificationStatus,
     reset: resetStore,
+    loadFromDatabase,
   } = store;
 
   // ============================================================================
@@ -118,9 +122,93 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess }) {
   const [fieldValid, setFieldValid] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [isLoadingFromDb, setIsLoadingFromDb] = useState(false);
+  const [loadError, setLoadError] = useState(null);
+  const hasLoadedFromDb = useRef(false);
 
   // Address autocomplete ref
   const addressInputRef = useRef(null);
+
+  // ============================================================================
+  // DATABASE LOADING (for submitted applications)
+  // ============================================================================
+  useEffect(() => {
+    // Only fetch from database if:
+    // 1. Application is submitted (reviewing existing application)
+    // 2. Haven't already loaded from database
+    if (applicationStatus !== 'submitted' || hasLoadedFromDb.current) {
+      return;
+    }
+
+    const fetchFromDatabase = async () => {
+      setIsLoadingFromDb(true);
+      setLoadError(null);
+
+      try {
+        const token = getAuthToken();
+        const userId = getSessionId();
+
+        if (!userId) {
+          throw new Error('User not logged in');
+        }
+
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rental-application`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              action: 'get',
+              payload: { user_id: userId },
+            }),
+          }
+        );
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+          throw new Error(result.error || 'Failed to load application');
+        }
+
+        if (result.data) {
+          // Transform database fields to form fields (pass userEmail as fallback)
+          // Also returns completedSteps and lastStep calculated from the data
+          const {
+            formData: mappedFormData,
+            occupants: mappedOccupants,
+            completedSteps: dbCompletedSteps,
+            lastStep: dbLastStep
+          } = mapDatabaseToFormData(result.data, userEmail);
+
+          // Load into store (this will update the reactive state)
+          loadFromDatabase(mappedFormData, mappedOccupants);
+
+          // Initialize completed steps from database data
+          if (dbCompletedSteps && dbCompletedSteps.length > 0) {
+            setCompletedSteps(dbCompletedSteps);
+          }
+
+          // Navigate to the review step (7) for submitted applications
+          // This shows the user their complete application
+          if (dbLastStep) {
+            setCurrentStep(dbLastStep);
+          }
+
+          hasLoadedFromDb.current = true;
+        }
+      } catch (error) {
+        console.error('Error loading rental application from database:', error);
+        setLoadError(error.message || 'Failed to load your application');
+      } finally {
+        setIsLoadingFromDb(false);
+      }
+    };
+
+    fetchFromDatabase();
+  }, [applicationStatus, loadFromDatabase]);
 
   // ============================================================================
   // PROGRESS CALCULATION
@@ -150,7 +238,8 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess }) {
   // ============================================================================
   // STEP COMPLETION TRACKING
   // ============================================================================
-  const isStepComplete = useCallback((stepNumber) => {
+  // Pure function to check step completion - no state dependency to avoid loops
+  const checkStepComplete = useCallback((stepNumber) => {
     let stepFields = [...STEP_FIELDS[stepNumber]];
 
     // Add conditional employment fields for step 4
@@ -159,9 +248,10 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess }) {
       stepFields = [...stepFields, ...conditionalFields];
     }
 
-    // If no required fields, step is complete if visited
+    // Optional steps (3=Occupants, 5=Details, 6=Documents) are always complete
+    // These steps have no required fields and user can skip them
     if (stepFields.length === 0) {
-      return completedSteps.includes(stepNumber);
+      return true;
     }
 
     // Check all required fields have values
@@ -169,18 +259,28 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess }) {
       const value = formData[field];
       return value !== undefined && value !== null && value !== '';
     });
-  }, [formData, completedSteps]);
+  }, [formData]);
 
   // Update completed steps when form data changes
   useEffect(() => {
     const newCompleted = [];
     for (let step = 1; step <= TOTAL_STEPS; step++) {
-      if (isStepComplete(step)) {
+      if (checkStepComplete(step)) {
         newCompleted.push(step);
       }
     }
-    setCompletedSteps(newCompleted);
-  }, [formData, isStepComplete]);
+    // Only update if the array actually changed to prevent unnecessary re-renders
+    setCompletedSteps(prev => {
+      const isSame = prev.length === newCompleted.length &&
+        prev.every((v, i) => v === newCompleted[i]);
+      return isSame ? prev : newCompleted;
+    });
+  }, [formData, checkStepComplete]);
+
+  // Public API for checking step completion (can use completedSteps cache)
+  const isStepComplete = useCallback((stepNumber) => {
+    return completedSteps.includes(stepNumber);
+  }, [completedSteps]);
 
   // ============================================================================
   // NAVIGATION
@@ -503,6 +603,10 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess }) {
     handleSubmit,
     isSubmitting,
     submitError,
+
+    // Database loading (for review mode)
+    isLoadingFromDb,
+    loadError,
 
     // Options (for dropdowns)
     relationshipOptions: RELATIONSHIP_OPTIONS,

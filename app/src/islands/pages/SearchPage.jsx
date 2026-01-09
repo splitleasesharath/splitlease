@@ -778,6 +778,18 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
                 </span>
               )}
             </div>
+            {/* Host Profile */}
+            <div className="host-profile">
+              {listing.host?.image ? (
+                <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
+              ) : (
+                <div className="host-avatar-placeholder">?</div>
+              )}
+              <span className="host-name">
+                Hosted by {formatHostName(listing.host?.name)}
+                {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
+              </span>
+            </div>
             {/* Action Buttons */}
             <div className="action-buttons">
               <button
@@ -830,18 +842,6 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
                   </button>
                 )
               )}
-            </div>
-            {/* Host Profile - Simple text */}
-            <div className="host-profile">
-              {listing.host?.image ? (
-                <img src={listing.host.image} alt={listing.host.name} className="host-avatar" />
-              ) : (
-                <div className="host-avatar-placeholder">?</div>
-              )}
-              <span className="host-name">
-                Hosted by {formatHostName(listing.host?.name)}
-                {listing.host?.verified && <span className="verified-badge" title="Verified">✓</span>}
-              </span>
             </div>
           </div>
         </div>
@@ -2512,23 +2512,28 @@ export default function SearchPage() {
   };
 
   // Transform listing data from SearchPage format to CreateProposalFlowV2 expected format
+  // The listing object already has the correct field names from the DB transformation
   const transformListingForProposal = (listing) => {
     if (!listing) return null;
     return {
       _id: listing.id,
       Name: listing.title,
-      'Minimum Nights': 2,
-      'Maximum Nights': 7,
-      'rental type': 'Nightly',
-      'Weeks offered': listing.weeks_offered || 'Every week',
-      '💰Unit Markup': 0,
-      '💰Nightly Host Rate for 2 nights': listing['Price 2 nights selected'],
-      '💰Nightly Host Rate for 3 nights': listing['Price 3 nights selected'],
-      '💰Nightly Host Rate for 4 nights': listing['Price 4 nights selected'],
-      '💰Nightly Host Rate for 5 nights': listing['Price 5 nights selected'],
-      '💰Nightly Host Rate for 7 nights': listing['Price 7 nights selected'],
-      '💰Cleaning Cost / Maintenance Fee': 0,
-      '💰Damage Deposit': 0,
+      'Minimum Nights': listing['Minimum Nights'] || 2,
+      'Maximum Nights': listing['Maximum Nights'] || 7,
+      'rental type': listing['rental type'] || listing.rentalType || 'Nightly',
+      'Weeks offered': listing.weeks_offered || listing['Weeks offered'] || 'Every week',
+      '💰Unit Markup': listing['💰Unit Markup'] || 0,
+      // Use the correct field names that already exist on the listing object
+      '💰Nightly Host Rate for 2 nights': listing['💰Nightly Host Rate for 2 nights'],
+      '💰Nightly Host Rate for 3 nights': listing['💰Nightly Host Rate for 3 nights'],
+      '💰Nightly Host Rate for 4 nights': listing['💰Nightly Host Rate for 4 nights'],
+      '💰Nightly Host Rate for 5 nights': listing['💰Nightly Host Rate for 5 nights'],
+      '💰Nightly Host Rate for 7 nights': listing['💰Nightly Host Rate for 7 nights'],
+      // Monthly/Weekly rates for non-Nightly listings
+      '💰Monthly Host Rate': listing['💰Monthly Host Rate'],
+      '💰Weekly Host Rate': listing['💰Weekly Host Rate'],
+      '💰Cleaning Cost / Maintenance Fee': listing['💰Cleaning Cost / Maintenance Fee'] || 0,
+      '💰Damage Deposit': listing['💰Damage Deposit'] || 0,
       host: listing.host
     };
   };
@@ -2542,6 +2547,8 @@ export default function SearchPage() {
   };
 
   // Update favorites count and show toast (API call handled by FavoriteButton component)
+  // Note: FavoriteButton already handles its own visual state immediately,
+  // so we defer the parent state update to avoid blocking the UI
   const handleToggleFavorite = (listingId, listingTitle, newState) => {
     console.log('[SearchPage] handleToggleFavorite called:', {
       listingId,
@@ -2550,23 +2557,34 @@ export default function SearchPage() {
       currentFavoritesCount: favoritesCount
     });
 
-    // Update the local set to keep heart icon state in sync
-    const newFavoritedIds = new Set(favoritedListingIds);
-    if (newState) {
-      newFavoritedIds.add(listingId);
-    } else {
-      newFavoritedIds.delete(listingId);
-    }
-    setFavoritedListingIds(newFavoritedIds);
-    // Update count to match the set size
-    setFavoritesCount(newFavoritedIds.size);
-
-    // Show toast notification
+    // Show toast notification immediately (doesn't cause heavy re-renders)
     const displayName = listingTitle || 'Listing';
     if (newState) {
       showToast(`${displayName} added to favorites`, 'success');
     } else {
       showToast(`${displayName} removed from favorites`, 'info');
+    }
+
+    // Defer parent state update to avoid blocking the immediate visual feedback
+    // FavoriteButton handles its own visual state, this is just for the header badge
+    const deferredUpdate = () => {
+      setFavoritedListingIds(prev => {
+        const updated = new Set(prev);
+        if (newState) {
+          updated.add(listingId);
+        } else {
+          updated.delete(listingId);
+        }
+        setFavoritesCount(updated.size);
+        return updated;
+      });
+    };
+
+    // Use requestIdleCallback if available, otherwise setTimeout
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(deferredUpdate);
+    } else {
+      setTimeout(deferredUpdate, 0);
     }
   };
 
