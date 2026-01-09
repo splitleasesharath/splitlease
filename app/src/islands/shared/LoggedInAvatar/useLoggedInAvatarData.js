@@ -119,7 +119,8 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
     leasesCount: 0,
     favoritesCount: 0,
     unreadMessagesCount: 0,
-    suggestedProposalsCount: 0
+    suggestedProposalsCount: 0,
+    threadsCount: 0 // Count of message threads user is part of
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -147,7 +148,8 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         suggestedProposalsResult,
         junctionCountsResult,
         guestProposalsResult,
-        hostProposalsResult
+        hostProposalsResult,
+        threadsResult
       ] = await Promise.all([
         // 1. Fetch user data (type, favorites)
         supabase
@@ -219,7 +221,13 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .select('_id', { count: 'exact', head: true })
           .eq('Host User', userId)
           .or('"Deleted".is.null,"Deleted".eq.false')
-          .neq('Status', 'Proposal Cancelled by Guest')
+          .neq('Status', 'Proposal Cancelled by Guest'),
+
+        // 11. Count message threads where user is a participant (host or guest)
+        supabase
+          .from('thread')
+          .select('_id', { count: 'exact', head: true })
+          .or(`"Host User".eq.${userId},"Guest User".eq.${userId}`)
       ]);
 
       // Process user data
@@ -327,7 +335,8 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
         leasesCount: leasesResult.count || 0,
         favoritesCount,
         unreadMessagesCount: messagesResult.count || 0,
-        suggestedProposalsCount: suggestedProposalsResult.count || 0
+        suggestedProposalsCount: suggestedProposalsResult.count || 0,
+        threadsCount: threadsResult.count || 0
       };
 
       console.log('[useLoggedInAvatarData] Data fetched:', newData);

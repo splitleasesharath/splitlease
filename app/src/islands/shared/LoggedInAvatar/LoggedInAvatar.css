@@ -2,7 +2,8 @@
 
 .logged-in-avatar {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   z-index: 10001;
 }
 
@@ -69,10 +70,9 @@
   position: absolute;
   top: calc(100% + 8px);
   right: 0;
-  width: 300px;
+  width: 280px;
   max-height: 600px;
   background-color: #FFFFFF;
-  border: 1px solid #E5E5E5;
   border-radius: 12px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
   overflow: visible;
@@ -80,6 +80,7 @@
   display: block !important;
   visibility: visible !important;
   opacity: 1 !important;
+  padding: 0.5rem;
 }
 
 @keyframes dropdownFadeIn {
@@ -107,30 +108,24 @@
 .logged-in-avatar .menu-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  height: 46px;
-  padding: 0 15px;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
   background-color: #FFFFFF;
   border: none;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
   font-family: 'DM Sans', sans-serif;
-  font-size: 15px;
+  font-size: 0.95rem;
   font-weight: 500;
-  color: #000000;
+  color: var(--text-dark, #1a1a1a);
   text-align: left;
   width: 100%;
   position: relative;
 }
 
 .logged-in-avatar .menu-item:hover {
-  background-color: #CAC8C8;
-}
-
-/* Active menu item (current page) */
-.logged-in-avatar .menu-item.active {
-  border-left: 3px solid #FF6B35;
-  padding-left: 12px;
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Menu Icon (Emoji) - Scoped to LoggedInAvatar only */
@@ -147,8 +142,8 @@
 
 /* Menu Icon (SVG Image) - Scoped to LoggedInAvatar only */
 .logged-in-avatar .menu-icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   flex-shrink: 0;
   object-fit: contain;
 }
@@ -166,32 +161,40 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 25px;
-  height: 22px;
-  padding: 0 6px;
-  border-radius: 20px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 10px;
   font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
+  font-size: 0.75rem;
+  font-weight: 600;
   color: #FFFFFF;
   flex-shrink: 0;
+  background-color: var(--primary-color, #31135D);
 }
 
 .logged-in-avatar .notification-badge.purple {
-  background-color: #31135D;
+  background-color: var(--primary-color, #31135D);
 }
 
 .logged-in-avatar .notification-badge.red {
-  background-color: #FF0000;
+  background-color: var(--primary-color, #31135D);
+}
+
+/* Separator before Sign Out */
+.logged-in-avatar .menu-separator {
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(49, 19, 93, 0.15), transparent);
+  margin: 0.5rem 0;
 }
 
 /* Sign Out Special Styling - Scoped to LoggedInAvatar only */
 .logged-in-avatar .menu-item.sign-out {
-  margin-top: 8px;
+  margin-top: 0;
 }
 
 .logged-in-avatar .menu-item.sign-out:hover {
-  background-color: #CAC8C8;
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 /* Responsive adjustments - Scoped to LoggedInAvatar only */
@@ -251,4 +254,55 @@
 
 .logged-in-avatar .menu-container::-webkit-scrollbar-thumb:hover {
   background: #555;
+}
+
+/* Header Messaging Icon */
+.logged-in-avatar .header-messages-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transition: all 0.2s ease;
+  margin-right: 12px;
+  text-decoration: none;
+}
+
+.logged-in-avatar .header-messages-icon:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Messaging icon color on pages with light headers */
+.logged-in-avatar.on-search-page .header-messages-icon,
+.logged-in-avatar.on-light-header .header-messages-icon {
+  color: #31135D;
+  background: rgba(49, 19, 93, 0.1);
+}
+
+.logged-in-avatar.on-search-page .header-messages-icon:hover,
+.logged-in-avatar.on-light-header .header-messages-icon:hover {
+  background: rgba(49, 19, 93, 0.2);
+}
+
+/* Messages badge (red dot with count) */
+.logged-in-avatar .messages-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background-color: #EF4444;
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }

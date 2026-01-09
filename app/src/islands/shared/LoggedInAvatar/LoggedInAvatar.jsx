@@ -70,6 +70,7 @@ export default function LoggedInAvatar({
   const effectiveFavoritesCount = dataLoading ? (user.favoritesCount || 0) : supabaseData.favoritesCount;
   const effectiveUnreadMessagesCount = dataLoading ? (user.unreadMessagesCount || 0) : supabaseData.unreadMessagesCount;
   const effectiveFirstListingId = dataLoading ? null : supabaseData.firstListingId;
+  const effectiveThreadsCount = dataLoading ? 0 : (supabaseData.threadsCount || 0);
 
   // Debug logging
   useEffect(() => {
@@ -372,6 +373,34 @@ export default function LoggedInAvatar({
 
   return (
     <div className={`logged-in-avatar ${isSearchPage ? 'on-search-page' : ''} ${isLightHeaderPage ? 'on-light-header' : ''}`} ref={dropdownRef}>
+      {/* Messaging icon - only shows when user has message threads */}
+      {effectiveThreadsCount > 0 && (
+        <a
+          href="/messages"
+          className="header-messages-icon"
+          aria-label={`Messages${effectiveUnreadMessagesCount > 0 ? ` (${effectiveUnreadMessagesCount} unread)` : ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigate('/messages');
+          }}
+        >
+          <svg
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          </svg>
+          {effectiveUnreadMessagesCount > 0 && (
+            <span className="messages-badge">{effectiveUnreadMessagesCount}</span>
+          )}
+        </a>
+      )}
       <button
         className="avatar-button"
         onClick={(e) => {

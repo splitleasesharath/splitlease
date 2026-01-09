@@ -16,7 +16,7 @@
  */
 
 import { SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { enqueueBubbleSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
+import { enqueueBubbleSync, triggerQueueProcessing, triggerProposalMessaging } from '../../_shared/queueSync.ts';
 import { parseJsonArray } from '../../_shared/jsonUtils.ts';
 import { addUserProposal } from '../../_shared/junctionHelpers.ts';
 
@@ -663,6 +663,19 @@ export async function handleCreateMockupProposal(
       // Non-blocking - log but don't fail
       console.warn('[createMockupProposal] Queue sync failed (non-blocking):', syncError);
     }
+    // ─────────────────────────────────────────────────────────
+    // Step 11: Create messaging thread for host notification
+    // ─────────────────────────────────────────────────────────
+    console.log('[createMockupProposal] Step 11: Creating messaging thread...');
+
+    triggerProposalMessaging({
+      proposalId: proposalId,
+      guestId: guestData._id,
+      hostId: resolvedHostUserId,
+      listingId: listingId,
+      proposalStatus: 'Host Review',
+    });
+
 
     console.log('[createMockupProposal] ========== SUCCESS ==========');
     console.log('[createMockupProposal] Mockup proposal created:', proposalId);
