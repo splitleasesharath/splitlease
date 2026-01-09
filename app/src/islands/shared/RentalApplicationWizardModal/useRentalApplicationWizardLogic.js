@@ -253,9 +253,12 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       fieldsToUpdate.phone = userProfileData.phone;
     }
     if (userProfileData.dob && !formData.dob) {
-      // DOB from database may be ISO datetime, normalize to YYYY-MM-DD for date input
-      const dobValue = userProfileData.dob;
-      fieldsToUpdate.dob = dobValue.includes('T') ? dobValue.split('T')[0] : dobValue;
+      // DOB from database may be in various formats:
+      // - ISO: "1992-08-16T00:00:00.000Z"
+      // - Postgres timestamp: "1992-08-16 00:00:00+00"
+      // Normalize to YYYY-MM-DD for HTML date input
+      const dobValue = String(userProfileData.dob);
+      fieldsToUpdate.dob = dobValue.split(/[T\s]/)[0]; // Split on 'T' or space
     }
 
     // Apply pre-fill if we have any fields to update
