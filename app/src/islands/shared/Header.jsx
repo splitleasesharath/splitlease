@@ -513,8 +513,11 @@ export default function Header({ autoShowLogin = false }) {
                           item.action();
                         } : undefined}
                       >
-                        <span className="dropdown-title">{item.title}</span>
-                        {item.desc && <span className="dropdown-desc">{item.desc}</span>}
+                        {item.icon && <img src={item.icon} alt="" className="dropdown-icon" />}
+                        <div className="dropdown-content">
+                          <span className="dropdown-title">{item.title}</span>
+                          {item.desc && <span className="dropdown-desc">{item.desc}</span>}
+                        </div>
                       </a>
                     ))}
 
@@ -537,6 +540,7 @@ export default function Header({ autoShowLogin = false }) {
                         setMobileMenuActive(false);
                       }}
                     >
+                      {hostMenuConfig.cta.icon && <img src={hostMenuConfig.cta.icon} alt="" className="dropdown-icon" />}
                       {hostMenuConfig.cta.label}
                     </a>
                     )}
@@ -612,8 +616,11 @@ export default function Header({ autoShowLogin = false }) {
                           item.action();
                         } : undefined}
                       >
-                        <span className="dropdown-title">{item.title}</span>
-                        {item.desc && <span className="dropdown-desc">{item.desc}</span>}
+                        {item.icon && <img src={item.icon} alt="" className="dropdown-icon" />}
+                        <div className="dropdown-content">
+                          <span className="dropdown-title">{item.title}</span>
+                          {item.desc && <span className="dropdown-desc">{item.desc}</span>}
+                        </div>
                       </a>
                     ))}
 
@@ -636,6 +643,7 @@ export default function Header({ autoShowLogin = false }) {
                         setMobileMenuActive(false);
                       }}
                     >
+                      {guestMenuConfig.cta.icon && <img src={guestMenuConfig.cta.icon} alt="" className="dropdown-icon" />}
                       {guestMenuConfig.cta.label}
                     </a>
                     )}

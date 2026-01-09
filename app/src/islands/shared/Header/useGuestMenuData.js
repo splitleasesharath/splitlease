@@ -49,56 +49,65 @@ export function getGuestMenuConfig(state, onSignupClick) {
       id: 'explore',
       href: SEARCH_URL,
       title: 'Explore Rentals',
-      desc: 'See available listings!'
+      desc: 'See available listings!',
+      icon: '/assets/icons/list-purple.svg'
     },
     successStories: {
       id: 'success',
       href: '/guest-success',
       title: 'Success Stories',
-      desc: 'Explore other guests\' feedback'
+      desc: 'Explore other guests\' feedback',
+      icon: '/assets/icons/heart-purple.svg'
     },
     faqs: {
       id: 'faq',
       href: '/faq?section=travelers',
       title: 'FAQs',
-      desc: 'Frequently Asked Questions'
+      desc: 'Frequently Asked Questions',
+      icon: '/assets/icons/message-circle-purple.svg'
     },
     signUp: {
       id: 'signup',
       href: '#',
       title: 'Sign Up',
       desc: null,
+      icon: '/assets/icons/user-purple.svg',
       action: onSignupClick
     },
     rentalApplication: {
       id: 'rental-app',
       href: '/rental-application',
       title: 'Rental Application',
-      desc: 'Complete your rental profile'
+      desc: 'Complete your rental profile',
+      icon: '/assets/icons/clipboard-purple.svg'
     },
     rentalAppActive: {
       id: 'rental-app',
       href: '/rental-application',
       title: 'Rental App (Active)',
-      desc: 'View your rental profile'
+      desc: 'View your rental profile',
+      icon: '/assets/icons/clipboard-purple.svg'
     },
     favoriteListings: {
       id: 'favorites',
       href: '/favorite-listings',
       title: 'Favorite Listings',
-      desc: 'View your saved listings'
+      desc: 'View your saved listings',
+      icon: '/assets/icons/heart-purple.svg'
     },
     manageProposals: {
       id: 'manage-proposals',
       href: '/guest-proposals',
       title: 'Manage Proposals',
-      desc: 'Track your booking requests'
+      desc: 'Track your booking requests',
+      icon: '/assets/icons/file-text-purple.svg'
     },
     manageLeases: {
       id: 'manage-leases',
       href: '/guest-proposals#leases',
       title: 'Manage Leases',
-      desc: 'View your active leases'
+      desc: 'View your active leases',
+      icon: '/assets/icons/key-purple.svg'
     }
   };
 
@@ -110,7 +119,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.successStories,
           baseItems.faqs
         ],
-        cta: { label: 'Sign Up', action: onSignupClick }
+        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-purple.svg' }
       };
 
     case GUEST_MENU_STATES.NO_PROPOSALS_NO_APP:
@@ -122,7 +131,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.favoriteListings,
           baseItems.faqs
         ],
-        cta: { label: 'Explore Rentals', href: SEARCH_URL }
+        cta: { label: 'Explore Rentals', href: SEARCH_URL, icon: '/assets/icons/list-purple.svg' }
       };
 
     case GUEST_MENU_STATES.NO_PROPOSALS_WITH_APP:
@@ -134,7 +143,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.favoriteListings,
           baseItems.faqs
         ],
-        cta: { label: 'Explore Rentals', href: SEARCH_URL }
+        cta: { label: 'Explore Rentals', href: SEARCH_URL, icon: '/assets/icons/list-purple.svg' }
       };
 
     case GUEST_MENU_STATES.WITH_PROPOSALS:
@@ -147,7 +156,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.manageProposals,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Proposals', href: '/guest-proposals' }
+        cta: { label: 'Manage Proposals', href: '/guest-proposals', icon: '/assets/icons/file-text-purple.svg' }
       };
 
     case GUEST_MENU_STATES.WITH_SUGGESTED:
@@ -159,7 +168,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.favoriteListings,
           baseItems.faqs
         ],
-        cta: { label: 'See Suggested Proposal', href: '/guest-proposals?filter=suggested' }
+        cta: { label: 'See Suggested Proposal', href: '/guest-proposals?filter=suggested', icon: '/assets/icons/star-purple.svg' }
       };
 
     case GUEST_MENU_STATES.WITH_LEASES:
@@ -172,7 +181,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.manageLeases,
           baseItems.faqs
         ],
-        cta: { label: 'Manage Leases', href: '/guest-proposals#leases' }
+        cta: { label: 'Manage Leases', href: '/guest-proposals#leases', icon: '/assets/icons/key-purple.svg' }
       };
 
     default:
@@ -182,7 +191,7 @@ export function getGuestMenuConfig(state, onSignupClick) {
           baseItems.successStories,
           baseItems.faqs
         ],
-        cta: { label: 'Sign Up', action: onSignupClick }
+        cta: { label: 'Sign Up', action: onSignupClick, icon: '/assets/icons/user-purple.svg' }
       };
   }
 }
