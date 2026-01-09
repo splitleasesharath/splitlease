@@ -19,11 +19,15 @@
       })(window,document,'https://static.hotjar.com/c/hotjar-','.js?sv=');
     </script>
 
+    <!-- Load environment config - required for Google Maps API -->
+    <script type="module" src="/src/lib/config.js"></script>
+
     <!-- Google Maps API for Rental Application address autocomplete -->
     <script>
       // Initialize callback for Google Maps (required by the API)
       window.initMap = function() {
         console.log('🗺️ Google Maps API loaded successfully');
+        window.dispatchEvent(new Event('google-maps-loaded'));
       };
 
       // Load Google Maps API dynamically
