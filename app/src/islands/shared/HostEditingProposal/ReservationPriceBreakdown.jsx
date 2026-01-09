@@ -5,6 +5,7 @@
  * Host-focused: displays compensation only, not guest pricing.
  */
 
+import { useState } from 'react'
 import { formatCurrency, formatDate, getDayName } from './types'
 
 /**
@@ -57,6 +58,66 @@ function EditButton({ onClick, label }) {
         <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
       </svg>
     </button>
+  )
+}
+
+/**
+ * Collapsible house rules display
+ * Shows count + click to expand into full list
+ */
+function HouseRulesDisplay({ rules, originalRules, hasChanged, onEditField }) {
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  const getRuleName = (rule) => rule.name || rule.Display || rule
+  const count = rules.length
+  const originalCount = originalRules?.length || 0
+
+  if (count === 0) {
+    return (
+      <span className="hep-breakdown-row-value">
+        None specified
+        {onEditField && <EditButton onClick={() => onEditField('houseRules')} label="house rules" />}
+        {hasChanged && originalCount > 0 && (
+          <span className="hep-original-value">
+            was: {originalRules.map(getRuleName).join(', ')}
+          </span>
+        )}
+      </span>
+    )
+  }
+
+  return (
+    <span className="hep-breakdown-row-value hep-house-rules-value">
+      <span
+        className="hep-house-rules-summary"
+        onClick={() => setIsExpanded(!isExpanded)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => e.key === 'Enter' && setIsExpanded(!isExpanded)}
+      >
+        <span className="hep-house-rules-count">{count} rule{count !== 1 ? 's' : ''}</span>
+        <span className="hep-house-rules-toggle">
+          {isExpanded ? '▲ collapse' : '▼ expand'}
+        </span>
+      </span>
+      {onEditField && <EditButton onClick={() => onEditField('houseRules')} label="house rules" />}
+
+      {isExpanded && (
+        <ul className="hep-house-rules-list">
+          {rules.map((rule, idx) => (
+            <li key={rule.id || idx} className="hep-house-rules-item">
+              {getRuleName(rule)}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {hasChanged && originalRules && (
+        <span className="hep-original-value">
+          was: {originalCount > 0 ? `${originalCount} rule${originalCount !== 1 ? 's' : ''}` : 'None'}
+        </span>
+      )}
+    </span>
   )
 }
 
@@ -215,19 +276,12 @@ export function ReservationPriceBreakdown({
 
       <div className={getRowClass(hasChanged.houseRules)}>
         <span className="hep-breakdown-row-label">Your House Rules</span>
-        <span className="hep-breakdown-row-value">
-          {houseRules.length > 0
-            ? houseRules.map(rule => rule.name || rule.Display || rule).join(', ')
-            : 'None specified'}
-          {onEditField && <EditButton onClick={() => onEditField('houseRules')} label="house rules" />}
-          {hasChanged.houseRules && originalValues?.houseRules && (
-            <span className="hep-original-value">
-              was: {originalValues.houseRules.length > 0
-                ? originalValues.houseRules.map(r => r.name || r.Display || r).join(', ')
-                : 'None'}
-            </span>
-          )}
-        </span>
+        <HouseRulesDisplay
+          rules={houseRules}
+          originalRules={originalValues?.houseRules}
+          hasChanged={hasChanged.houseRules}
+          onEditField={onEditField}
+        />
       </div>
 
       <div className={getRowClass(hasChanged.nightsSelected)}>
