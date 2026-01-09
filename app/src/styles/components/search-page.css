@@ -506,6 +506,52 @@
   box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.1);
 }
 
+/* Neighborhood Multi-Select in Filter Popup */
+.filter-popup-neighborhoods {
+  max-height: 180px;
+  overflow-y: auto;
+  border: 1px solid #e5e5e5;
+  border-radius: 10px;
+  padding: 8px;
+}
+
+.neighborhood-checkbox-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.neighborhood-checkbox-item-popup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+  transition: background 0.15s ease;
+}
+
+.neighborhood-checkbox-item-popup:hover {
+  background: #f5f3ff;
+}
+
+.neighborhood-checkbox-item-popup input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--secondary-purple, #6D31C2);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.neighborhood-checkbox-item-popup span {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .filter-popup-footer {
   padding: 16px 20px;
   border-top: 1px solid #f3f4f6;

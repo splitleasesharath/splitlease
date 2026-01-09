@@ -3001,6 +3001,35 @@ export default function SearchPage() {
                 </select>
               </div>
 
+              {/* Neighborhood Multi-Select */}
+              <div className="filter-popup-group">
+                <label className="filter-popup-label">Neighborhoods</label>
+                <div className="filter-popup-neighborhoods">
+                  {neighborhoods.length === 0 ? (
+                    <div className="neighborhood-list-empty">Loading neighborhoods...</div>
+                  ) : (
+                    <div className="neighborhood-checkbox-grid">
+                      {neighborhoods.map(neighborhood => (
+                        <label key={neighborhood.id} className="neighborhood-checkbox-item-popup">
+                          <input
+                            type="checkbox"
+                            checked={selectedNeighborhoods.includes(neighborhood.id)}
+                            onChange={() => {
+                              if (selectedNeighborhoods.includes(neighborhood.id)) {
+                                setSelectedNeighborhoods(selectedNeighborhoods.filter(id => id !== neighborhood.id));
+                              } else {
+                                setSelectedNeighborhoods([...selectedNeighborhoods, neighborhood.id]);
+                              }
+                            }}
+                          />
+                          <span>{neighborhood.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Week Pattern */}
               <div className="filter-popup-group">
                 <label className="filter-popup-label">Week Pattern</label>
