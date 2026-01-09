@@ -487,6 +487,7 @@ export function useHeaderMessagingPanelLogic({
    * Handle thread selection
    */
   const handleThreadSelect = useCallback((thread) => {
+    console.log('[Panel] Thread selected:', thread._id, thread.contact_name);
     setSelectedThread(thread);
     setMessages([]);
     setThreadInfo(null);

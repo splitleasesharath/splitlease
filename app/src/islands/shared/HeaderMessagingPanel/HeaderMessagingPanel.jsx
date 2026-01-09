@@ -144,6 +144,11 @@ export default function HeaderMessagingPanel({
       role="dialog"
       aria-label="Messages"
       aria-modal="true"
+      onClick={(e) => {
+        // Stop propagation to prevent parent handlers from interfering
+        // This ensures clicks inside the panel don't trigger outside-click handlers
+        e.stopPropagation();
+      }}
     >
       {/* Header */}
       <div className="header-messaging-panel__header">

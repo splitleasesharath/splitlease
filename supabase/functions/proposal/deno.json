@@ -1,10 +1,5 @@
 {
   "imports": {
-    "@shared/": "../_shared/",
-    "@lib/": "./lib/",
-    "@actions/": "./actions/"
-  },
-  "compilerOptions": {
-    "strict": true
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2"
   }
 }
