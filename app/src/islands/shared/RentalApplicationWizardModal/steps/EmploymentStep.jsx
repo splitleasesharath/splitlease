@@ -184,21 +184,6 @@ export default function EmploymentStep({
               <span className="wizard-error">{fieldErrors.businessState}</span>
             )}
           </div>
-
-          <div className="wizard-form-group">
-            <label htmlFor="monthlyIncomeSelf" className="wizard-label">
-              Monthly Income
-            </label>
-            <input
-              type="number"
-              id="monthlyIncomeSelf"
-              className="wizard-input"
-              value={formData.monthlyIncomeSelf || ''}
-              onChange={(e) => onFieldChange('monthlyIncomeSelf', e.target.value)}
-              placeholder="Approximate monthly income"
-              min="0"
-            />
-          </div>
         </>
       )}
 
