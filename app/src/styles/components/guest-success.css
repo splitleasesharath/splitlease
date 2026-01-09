@@ -208,7 +208,7 @@
    ============================================ */
 
 .why-it-works-section {
-    background: #111827;
+    background: #F1EDF9;
     padding: 100px 32px;
 }
 
@@ -220,7 +220,7 @@
 .why-it-works-title {
     font-size: 32px;
     font-weight: 700;
-    color: white;
+    color: #111827;
     text-align: center;
     margin: 0 0 60px;
     letter-spacing: -0.5px;
@@ -238,7 +238,7 @@
 
 .why-card-icon {
     margin-bottom: 20px;
-    color: rgba(255, 255, 255, 0.9);
+    color: #31135D;
 }
 
 .why-card-icon svg {
@@ -249,13 +249,13 @@
 .why-card-title {
     font-size: 20px;
     font-weight: 600;
-    color: white;
+    color: #111827;
     margin: 0 0 12px;
 }
 
 .why-card-text {
     font-size: 15px;
-    color: rgba(255, 255, 255, 0.7);
+    color: #6B7280;
     line-height: 1.6;
     margin: 0;
 }
