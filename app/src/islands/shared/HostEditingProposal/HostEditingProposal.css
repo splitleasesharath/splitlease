@@ -1000,7 +1000,7 @@
 
 .hep-animate-collapse {
   overflow: hidden;
-  transition: max-height 300ms ease, opacity 300ms ease;
+  transition: max-height 300ms ease, opacity 300ms ease, overflow 0ms 300ms;
 }
 
 .hep-animate-collapse.collapsed {
@@ -1011,6 +1011,8 @@
 .hep-animate-collapse.expanded {
   max-height: 2000px;
   opacity: 1;
+  overflow: visible;
+  transition: max-height 300ms ease, opacity 300ms ease, overflow 0ms 0ms;
 }
 
 /* ========================================
