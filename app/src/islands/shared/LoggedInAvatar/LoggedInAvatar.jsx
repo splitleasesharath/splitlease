@@ -413,21 +413,23 @@ export default function LoggedInAvatar({
               }
             }}
           >
+            {/* Envelope/Mail icon */}
             <svg
-              width="24"
-              height="24"
+              width="32"
+              height="32"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="M22 6L12 13L2 6" />
             </svg>
             {effectiveUnreadMessagesCount > 0 && (
               <span className="messages-badge">
-                {effectiveUnreadMessagesCount > 99 ? '99+' : effectiveUnreadMessagesCount}
+                {effectiveUnreadMessagesCount > 9 ? '9+' : effectiveUnreadMessagesCount}
               </span>
             )}
           </button>
