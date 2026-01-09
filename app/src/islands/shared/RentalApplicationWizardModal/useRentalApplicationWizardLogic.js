@@ -86,7 +86,7 @@ const FILE_TYPE_MAP = {
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
-export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus = 'not_started', userEmail = '' }) {
+export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus = 'not_started', userProfileData = null }) {
   // ============================================================================
   // STORE INTEGRATION (reuse existing localStorage store)
   // ============================================================================
@@ -184,7 +184,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
             occupants: mappedOccupants,
             completedSteps: dbCompletedSteps,
             lastStep: dbLastStep
-          } = mapDatabaseToFormData(result.data, userEmail);
+          } = mapDatabaseToFormData(result.data, userProfileData?.email || '');
 
           // Load into store (this will update the reactive state)
           loadFromDatabase(mappedFormData, mappedOccupants);
@@ -216,6 +216,50 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
     fetchFromDatabase();
   }, [applicationStatus, loadFromDatabase]);
+
+  // ============================================================================
+  // PRE-FILL FROM USER PROFILE (for new applications)
+  // ============================================================================
+  const hasPrefilledFromProfile = useRef(false);
+
+  useEffect(() => {
+    // Only pre-fill for new applications that haven't been pre-filled yet
+    // Skip if application is submitted (will load from database instead)
+    // Skip if form already has data (user typed or localStorage draft exists)
+    if (
+      applicationStatus === 'submitted' ||
+      hasPrefilledFromProfile.current ||
+      !userProfileData
+    ) {
+      return;
+    }
+
+    // Build full name from first + last name
+    const fullName = [userProfileData.firstName, userProfileData.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    // Only pre-fill fields that are currently empty
+    const fieldsToUpdate = {};
+
+    if (fullName && !formData.fullName) {
+      fieldsToUpdate.fullName = fullName;
+    }
+    if (userProfileData.email && !formData.email) {
+      fieldsToUpdate.email = userProfileData.email;
+    }
+    if (userProfileData.phone && !formData.phone) {
+      fieldsToUpdate.phone = userProfileData.phone;
+    }
+
+    // Apply pre-fill if we have any fields to update
+    if (Object.keys(fieldsToUpdate).length > 0) {
+      updateFormData(fieldsToUpdate);
+    }
+
+    hasPrefilledFromProfile.current = true;
+  }, [applicationStatus, userProfileData, formData.fullName, formData.email, formData.phone, updateFormData]);
 
   // ============================================================================
   // PROGRESS CALCULATION

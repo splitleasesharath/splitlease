@@ -43,6 +43,7 @@ interface MockGuestData {
 
 interface ListingData {
   _id: string;
+  Name?: string;
   'rental type'?: string;
   'Host User'?: string;
   'Days Available (List of Days)'?: number[];
@@ -375,6 +376,7 @@ export async function handleCreateMockupProposal(
       .from('listing')
       .select(`
         _id,
+        "Name",
         "rental type",
         "Host User",
         "Days Available (List of Days)",

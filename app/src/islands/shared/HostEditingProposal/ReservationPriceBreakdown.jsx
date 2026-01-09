@@ -89,15 +89,17 @@ export function ReservationPriceBreakdown({
   const nightsCount = nightsSelected.length * weeksReservationSpan
 
   // Helper to check if a value changed
+  // For day fields, normalize both values to day names before comparing
+  // This prevents false positives when values are in different formats (e.g., 6 vs "Saturday")
   const hasChanged = {
     moveInDate: originalValues?.moveInDate
       ? formatDate(originalValues.moveInDate, 'short') !== formatDate(moveInDate, 'short')
       : false,
-    checkInDay: originalValues?.checkInDay
-      ? originalValues.checkInDay !== checkInDay
+    checkInDay: originalValues?.checkInDay !== undefined
+      ? formatDayDisplay(originalValues.checkInDay) !== formatDayDisplay(checkInDay)
       : false,
-    checkOutDay: originalValues?.checkOutDay
-      ? originalValues.checkOutDay !== checkOutDay
+    checkOutDay: originalValues?.checkOutDay !== undefined
+      ? formatDayDisplay(originalValues.checkOutDay) !== formatDayDisplay(checkOutDay)
       : false,
     reservationSpan: originalValues?.reservationSpan
       ? originalValues.reservationSpan?.value !== reservationSpan?.value
