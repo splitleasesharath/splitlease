@@ -181,9 +181,9 @@ export default function GuestSuccessPage() {
       {/* Final CTA Section */}
       <section className="success-final-cta">
         <div className="success-cta-card">
-          <h2 className="success-cta-title">Ready to find your second home?</h2>
+          <h2 className="success-cta-title">Your schedule, your space</h2>
           <p className="success-cta-subtitle">
-            Browse available spaces and connect with hosts whose schedule matches yours.
+            Find a host whose nights away match yours.
           </p>
           <button className="cta-button cta-primary" onClick={handleFindSpace}>
             Browse Listings
