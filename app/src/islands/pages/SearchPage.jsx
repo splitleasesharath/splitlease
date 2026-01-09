@@ -2973,8 +2973,8 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Filter Tags Row - Shows when filters are active */}
-          <div className={`filter-tags-row ${activeFilterTags.length > 0 ? 'has-filters' : ''}`}>
+          {/* Filter Tags Row - Shows when filters are active, hides on desktop scroll */}
+          <div className={`filter-tags-row ${activeFilterTags.length > 0 ? 'has-filters' : ''} ${desktopHeaderCollapsed ? 'filter-tags-row--collapsed' : ''}`}>
             <button className="results-filter-btn" onClick={toggleFilterPopup}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>

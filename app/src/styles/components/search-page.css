@@ -280,6 +280,16 @@
   transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
 }
 
+/* Filter tags row desktop collapsed state */
+.filter-tags-row--collapsed {
+  max-height: 0 !important;
+  padding: 0 20px !important;
+  border-bottom: none !important;
+  opacity: 0 !important;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease, opacity 0.2s ease;
+}
+
 /* Hide desktop compact indicator on mobile */
 @media (max-width: 768px) {
   .desktop-compact-indicator {
@@ -300,6 +310,13 @@
     border-bottom: 1px solid #e5e7eb;
     opacity: 1;
     overflow: visible;
+  }
+
+  .filter-tags-row--collapsed {
+    max-height: 80px !important;
+    opacity: 1 !important;
+    padding: 12px 20px !important;
+    border-bottom-color: #e5e7eb !important;
   }
 }
 
