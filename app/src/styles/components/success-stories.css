@@ -1,0 +1,368 @@
+/* ========================================
+   Success Stories Page Styles
+   Shared by Guest & Host Success Pages
+   Clean, Static, Trustworthy Design
+   ======================================== */
+
+/* ============================================
+   STORIES SECTION - Lead with testimonials
+   ============================================ */
+
+.stories-section {
+    background: #fafbfc;
+    padding: 140px 32px 100px;
+}
+
+.stories-header {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 60px;
+}
+
+.stories-title {
+    font-size: clamp(36px, 5vw, 52px);
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 20px;
+    letter-spacing: -1px;
+    line-height: 1.1;
+}
+
+.stories-subtitle {
+    font-size: 18px;
+    color: #6B7280;
+    line-height: 1.7;
+    margin: 0;
+}
+
+/* Stories Grid */
+.stories-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 32px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* Individual Story Card */
+.story-card {
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 16px;
+    padding: 32px;
+}
+
+.story-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.story-avatar {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.story-person {
+    flex: 1;
+    min-width: 0;
+}
+
+.story-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    margin: 0 0 4px;
+}
+
+.story-situation {
+    font-size: 14px;
+    color: #31135D;
+    font-weight: 600;
+    margin: 0 0 2px;
+}
+
+.story-schedule-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.story-schedule {
+    font-size: 13px;
+    color: #6B7280;
+    margin: 0;
+}
+
+.schedule-dots {
+    display: flex;
+    gap: 4px;
+}
+
+.schedule-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #E5E7EB;
+}
+
+.schedule-dot.active {
+    background: #31135D;
+}
+
+.story-quote {
+    font-size: 16px;
+    color: #374151;
+    line-height: 1.65;
+    margin: 0 0 20px;
+    padding: 0;
+    border: none;
+    font-style: normal;
+}
+
+.story-connection {
+    font-size: 14px;
+    color: #6B7280;
+    line-height: 1.5;
+    margin-bottom: 20px;
+    padding: 12px 16px;
+    background: #f9fafb;
+    border-radius: 8px;
+    border-left: 3px solid #31135D;
+}
+
+.connection-label {
+    font-weight: 600;
+    color: #31135D;
+}
+
+.story-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.story-savings {
+    font-size: 14px;
+    font-weight: 600;
+    color: #31135D;
+}
+
+.story-location {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #6B7280;
+}
+
+.story-location svg {
+    color: #9CA3AF;
+}
+
+/* Stories Responsive */
+@media (max-width: 968px) {
+    .stories-section {
+        padding: 120px 24px 80px;
+    }
+
+    .stories-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+
+    .story-card {
+        padding: 24px;
+    }
+}
+
+@media (max-width: 640px) {
+    .stories-section {
+        padding: 100px 20px 60px;
+    }
+
+    .stories-header {
+        margin-bottom: 40px;
+    }
+
+    .stories-title {
+        font-size: 28px;
+    }
+
+    .stories-subtitle {
+        font-size: 16px;
+    }
+
+    .story-quote {
+        font-size: 15px;
+    }
+}
+
+/* ============================================
+   WHY IT WORKS SECTION
+   ============================================ */
+
+.why-it-works-section {
+    background: #F1EDF9;
+    padding: 100px 32px;
+}
+
+.why-it-works-container {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.why-it-works-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+    text-align: center;
+    margin: 0 0 60px;
+    letter-spacing: -0.5px;
+}
+
+.why-it-works-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 40px;
+}
+
+.why-card {
+    text-align: center;
+}
+
+.why-card-icon {
+    margin-bottom: 20px;
+    color: #31135D;
+}
+
+.why-card-icon svg {
+    width: 32px;
+    height: 32px;
+}
+
+.why-card-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #111827;
+    margin: 0 0 12px;
+}
+
+.why-card-text {
+    font-size: 15px;
+    color: #6B7280;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Why It Works Responsive */
+@media (max-width: 968px) {
+    .why-it-works-section {
+        padding: 80px 24px;
+    }
+
+    .why-it-works-grid {
+        grid-template-columns: 1fr;
+        gap: 48px;
+    }
+
+    .why-it-works-title {
+        font-size: 28px;
+        margin-bottom: 48px;
+    }
+}
+
+/* ============================================
+   FINAL CTA SECTION
+   ============================================ */
+
+.success-final-cta {
+    background: #fafbfc;
+    padding: 80px 32px 120px;
+}
+
+.success-cta-card {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+    background: white;
+    border: 1px solid #E5E7EB;
+    border-radius: 16px;
+    padding: 48px 40px;
+}
+
+.success-cta-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: #111827;
+    line-height: 1.2;
+    margin: 0 0 12px;
+    letter-spacing: -0.5px;
+}
+
+.success-cta-subtitle {
+    font-size: 16px;
+    color: #6B7280;
+    margin: 0 0 28px;
+    line-height: 1.6;
+}
+
+.cta-button.cta-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 32px;
+    background: #31135D;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.cta-button.cta-primary:hover {
+    background: #4a1d85;
+}
+
+/* CTA Responsive */
+@media (max-width: 968px) {
+    .success-final-cta {
+        padding: 60px 24px 100px;
+    }
+
+    .success-cta-card {
+        padding: 36px 28px;
+    }
+
+    .success-cta-title {
+        font-size: 24px;
+    }
+
+    .success-cta-subtitle {
+        font-size: 15px;
+    }
+}
+
+/* ============================================
+   FOCUS STATES & ACCESSIBILITY
+   ============================================ */
+
+.cta-button:focus {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    .cta-button.cta-primary {
+        transition: none;
+    }
+}

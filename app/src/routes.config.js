@@ -289,7 +289,9 @@ export const routes = [
     protected: true,
     cloudflareInternal: true,
     internalName: 'rental-application-view',
-    hasDynamicSegment: false
+    hasDynamicSegment: false,
+    deprecated: true, // DEPRECATED: Redirects to /account-profile with ?section=rental-application&openRentalApp=true
+    redirectTo: '/account-profile' // Note: actual redirect handled in RentalApplicationPage component
   },
 
   // ===== AUTH PAGES =====

@@ -223,14 +223,19 @@ export default function LoggedInAvatar({
     }
 
     // 5. Virtual Meetings - When user HAS proposals (proposalsCount > 0)
+    //    - If user has virtual meetings: Navigate to proposals page + scroll to VM section
+    //    - If user has proposals but no VMs: Navigate to proposals page + highlight VM button
     if (menuVisibility.virtualMeetings) {
+      const hasVirtualMeetings = effectiveVirtualMeetingsCount > 0;
+      const vmQueryParam = hasVirtualMeetings ? '?scrollTo=virtual-meetings' : '?highlightVMButton=true';
+
       items.push({
         id: 'virtual-meetings',
         label: 'Virtual Meetings',
         icon: '/assets/icons/video-purple.svg',
         path: effectiveUserType === NORMALIZED_USER_TYPES.GUEST
-          ? '/guest-dashboard'
-          : '/host-overview',
+          ? `/guest-proposals${vmQueryParam}`
+          : `/host-proposals${vmQueryParam}`,
         badgeCount: effectiveVirtualMeetingsCount,
         badgeColor: 'purple',
       });
@@ -289,6 +294,7 @@ export default function LoggedInAvatar({
     }
 
     // 10. Rental Application - GUEST only
+    // Navigate to account profile with rental application section focus
     if (menuVisibility.rentalApplication) {
       items.push({
         id: 'rental-application',
@@ -296,7 +302,7 @@ export default function LoggedInAvatar({
         icon: '/assets/icons/clipboard-purple.svg',
         path: effectiveUserType === NORMALIZED_USER_TYPES.HOST
           ? '/account'
-          : '/rental-application',
+          : `/account-profile/${user.id}?section=rental-application`,
       });
     }
 

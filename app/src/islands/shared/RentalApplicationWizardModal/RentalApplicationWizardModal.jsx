@@ -22,8 +22,10 @@ export default function RentalApplicationWizardModal({
   isOpen,
   onClose,
   onSuccess,
+  applicationStatus = 'not_started', // 'not_started' | 'in_progress' | 'submitted'
+  userEmail = '', // Fallback email from user profile
 }) {
-  const logic = useRentalApplicationWizardLogic({ onClose, onSuccess });
+  const logic = useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus, userEmail });
 
   // Body scroll lock
   useEffect(() => {
@@ -168,7 +170,25 @@ export default function RentalApplicationWizardModal({
 
         {/* Content */}
         <div className="rental-wizard-content">
-          {renderStep()}
+          {logic.isLoadingFromDb ? (
+            <div className="rental-wizard-loading">
+              <div className="rental-wizard-loading__spinner" />
+              <p>Loading your application...</p>
+            </div>
+          ) : logic.loadError ? (
+            <div className="rental-wizard-error-state">
+              <p>{logic.loadError}</p>
+              <button
+                type="button"
+                className="wizard-btn wizard-btn--secondary"
+                onClick={onClose}
+              >
+                Close
+              </button>
+            </div>
+          ) : (
+            renderStep()
+          )}
         </div>
 
         {/* Footer */}

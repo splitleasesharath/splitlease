@@ -1,517 +1,161 @@
-import { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Header from '../shared/Header.jsx';
 import Footer from '../shared/Footer.jsx';
 import { SEARCH_URL } from '../../lib/constants.js';
 
-gsap.registerPlugin(ScrollTrigger);
-
 // ============================================================================
-// DATA: Success Stories
+// DATA: Success Stories - Real life situations that need a second home
 // ============================================================================
 
 const successStories = [
   {
-    name: 'Priya Sharma',
-    role: 'Senior Product Designer',
-    schedule: '12 nights/month in NYC',
-    avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=300&fit=crop',
-    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=600&h=400&fit=crop',
-    quote: "I work with NYC clients regularly and needed a consistent place to stay. Split Lease gave me the consistency I needed without the commitment I didn't. Saved $24K last year and never had a booking nightmare.",
-    fullStory: "Working remotely for a San Francisco tech company while maintaining NYC client relationships meant I was flying in 3 times a month. Hotels were eating my entire travel budget, and Airbnb was a gamble—one time I showed up to find the 'high-speed WiFi' was barely good enough for video calls. Split Lease changed everything. Same apartment in Chelsea, same desk setup, same coffee shop downstairs. My clients think I live here.",
-    savings: '$24,000/year',
-    location: 'Chelsea, Manhattan'
+    name: 'Dr. Robert Callahan',
+    situation: 'Professor with split appointment',
+    schedule: 'Tues–Thurs in NYC',
+    days: [false, true, true, true, false, false, false], // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+    avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face',
+    quote: "I teach at Columbia two days a week and live in Boston with my family. For years I did the Amtrak shuffle and crashed on colleagues' couches. Now I have my own place in Morningside Heights—my books are there, my reading chair, my coffee routine. It's my academic home.",
+    connection: "My host is a Columbia alum who works weekends. We've never met in person, but we swap book recommendations.",
+    savings: '$19,000/year vs. hotels',
+    location: 'Morningside Heights'
   },
   {
-    name: 'Marcus Chen',
-    role: 'Strategy Consultant',
-    schedule: '8 nights/month in NYC',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
-    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop',
-    quote: "Every week I'm in NYC for client meetings. Split Lease is my second home—literally. Same apartment, same key, zero hassle. It's transformed how I work and live.",
-    fullStory: "Management consulting means I'm on the road constantly. Before Split Lease, I was spending 4 hours every trip just figuring out logistics—where to stay, how to get there, whether the place would have decent workspace. Now I just show up. My suits hang in the closet, my favorite coffee mug is in the cabinet. The host and I have never even met, but we share an apartment perfectly.",
-    savings: '$18,000/year',
-    location: 'Midtown East'
-  },
-  {
-    name: 'David Martinez',
-    role: 'Father & Finance Director',
-    schedule: 'Every weekend in NYC',
-    avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=300&fit=crop',
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=600&h=400&fit=crop',
-    quote: "I live in Boston but have custody every weekend. Split Lease gave me a consistent place for my kids—their clothes, toys, and favorite books are always there. They call it 'Dad's NYC home.' Worth every penny for that stability.",
-    fullStory: "After the divorce, I moved to Boston for work but wasn't giving up weekends with my kids. Hotels were impersonal and expensive. Airbnb meant explaining to an 8-year-old why her room looked different every week. Now Emma has her own bed with her stuffed animals, and Jake has his PlayStation set up. When they walk in on Friday night, they're home.",
-    savings: '$2,100/month',
+    name: 'James McAllister',
+    situation: 'Divorced dad with weekend custody',
+    schedule: 'Every Fri–Sun in NYC',
+    days: [true, false, false, false, false, true, true], // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+    avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop&crop=face',
+    quote: "After the divorce, I moved to Connecticut for work but I wasn't giving up weekends with my kids. Hotels felt cold and temporary. Now my daughter has her own bed with her stuffed animals, my son has his Xbox set up. When they walk in Friday night, they're home—not visiting.",
+    connection: "The host is a nurse who works weekend shifts. Perfect schedule match, and she left a welcome note for my kids.",
+    savings: '$2,400/month vs. Airbnb',
     location: 'Upper West Side'
   },
   {
-    name: 'Sarah Kim',
-    role: 'MBA Student at Columbia',
-    schedule: '3 nights/week in NYC',
-    avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=300&fit=crop',
-    image: 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=600&h=400&fit=crop',
-    quote: "My program has me in NYC every Tuesday-Thursday. Split Lease saved me from drowning in hotel costs or commuting 4 hours daily. I can focus on my studies, not logistics. My textbooks and study materials stay there—it's my second dorm.",
-    fullStory: "The hybrid MBA program sounded perfect until I realized what 3 days a week in NYC actually costs. Hotels near campus? $350/night minimum. A full lease for 3 nights? Insane. Commuting from Philly? 4 hours of my life, gone. Split Lease was the answer I didn't know existed. I share a beautiful studio with a nurse who works weekends. My study corner is always ready.",
-    savings: '$15,000/year',
-    location: 'Morningside Heights'
+    name: 'Catherine Webb',
+    situation: 'Splits time between Connecticut & NYC',
+    schedule: 'Mon–Wed in the city',
+    days: [false, true, true, true, false, false, false], // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+    avatar: 'https://images.unsplash.com/photo-1598550874175-4d0ef436c909?w=400&h=400&fit=crop&crop=face',
+    quote: "I kept my apartment in Greenwich when I took a role that requires three days in Manhattan. Buying a second place? Insane. Hotels every week? Exhausting and expensive. This is my city home—my clothes hang in the closet, my favorite tea is in the cabinet.",
+    connection: "My host went to Yale, I went to Dartmouth. We joke that we're Ivy League roommates who've never met.",
+    savings: '$26,000/year vs. hotels',
+    location: 'Murray Hill'
+  },
+  {
+    name: 'Michael Thornton',
+    situation: 'Executive MBA student',
+    schedule: 'Thurs–Sat for classes',
+    days: [false, false, false, false, true, true, true], // Sun, Mon, Tue, Wed, Thu, Fri, Sat
+    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face',
+    quote: "The executive program at NYU has me in the city every weekend for two years. Hotels near campus are $350/night. A full lease for three nights a week? Wasteful. Now I have a proper study setup, my textbooks stay there, and I can actually focus on the work.",
+    connection: "Host is a Stern alum who remembers the grind. He even left his old case study notes.",
+    savings: '$21,000/year vs. hotels',
+    location: 'Greenwich Village'
   }
 ];
 
 // ============================================================================
-// INTERNAL COMPONENT: GSAP Hero Section
+// INTERNAL COMPONENT: Why It Works Section
 // ============================================================================
 
-function HeroSection() {
-  const heroRef = useRef(null);
-  const textLineTopRef = useRef(null);
-  const textLineBottomRef = useRef(null);
-  const maskRevealRef = useRef(null);
-  const revealContentRef = useRef(null);
-  const statsRef = useRef(null);
-  const statItemsRef = useRef([]);
-  const scrollIndicatorRef = useRef(null);
-
-  // Dynamic text rotation
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const scenarios = ['savings', 'results', 'flexibility'];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % scenarios.length);
-    }, 2500);
-    return () => clearInterval(interval);
-  }, [scenarios.length]);
-
-  useLayoutEffect(() => {
-    const hero = heroRef.current;
-    const textTop = textLineTopRef.current;
-    const textBottom = textLineBottomRef.current;
-    const maskReveal = maskRevealRef.current;
-    const revealContent = revealContentRef.current;
-    const stats = statsRef.current;
-    const statItems = statItemsRef.current.filter(Boolean);
-    const scrollIndicator = scrollIndicatorRef.current;
-
-    if (!hero || !textTop || !textBottom) return;
-
-    const ctx = gsap.context(() => {
-      // Set initial states
-      gsap.set(maskReveal, {
-        scaleY: 0,
-        transformOrigin: 'center center'
-      });
-      gsap.set(revealContent, {
-        opacity: 0,
-        y: 30
-      });
-      gsap.set(statItems, {
-        opacity: 0,
-        y: 60
-      });
-      gsap.set(scrollIndicator, {
-        opacity: 1
-      });
-
-      // Main timeline with scroll trigger
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: hero,
-          start: 'top top',
-          end: '+=150%',
-          pin: true,
-          scrub: 1,
-          anticipatePin: 1,
-          onUpdate: (self) => {
-            // Hide scroll indicator after 10% progress
-            if (self.progress > 0.1) {
-              gsap.to(scrollIndicator, { opacity: 0, duration: 0.3 });
-            } else {
-              gsap.to(scrollIndicator, { opacity: 1, duration: 0.3 });
-            }
-          }
-        }
-      });
-
-      // Phase 1: Split the text apart (0% - 30%)
-      tl.to(textTop, {
-        y: '-120%',
-        scale: 0.6,
-        opacity: 0.3,
-        ease: 'power2.inOut',
-        duration: 0.3
-      }, 0)
-      .to(textBottom, {
-        y: '120%',
-        scale: 0.6,
-        opacity: 0.3,
-        ease: 'power2.inOut',
-        duration: 0.3
-      }, 0);
-
-      // Phase 2: Mask reveal expands (30% - 60%)
-      tl.to(maskReveal, {
-        scaleY: 1,
-        ease: 'power3.out',
-        duration: 0.4
-      }, 0.25);
-
-      // Phase 3: Content fades in (40% - 70%)
-      tl.to(revealContent, {
-        opacity: 1,
-        y: 0,
-        ease: 'power2.out',
-        duration: 0.3
-      }, 0.35);
-
-      // Phase 4: Stats slide in with stagger (60% - 100%)
-      tl.to(statItems, {
-        opacity: 1,
-        y: 0,
-        stagger: 0.08,
-        ease: 'power2.out',
-        duration: 0.25
-      }, 0.55);
-
-      // Parallax background elements
-      gsap.to('.hero-bg-shape', {
-        y: -100,
-        ease: 'none',
-        scrollTrigger: {
-          trigger: hero,
-          start: 'top top',
-          end: 'bottom top',
-          scrub: 0.5
-        }
-      });
-
-    }, hero);
-
-    return () => ctx.revert();
-  }, []);
-
+function WhyItWorksSection() {
   return (
-    <section ref={heroRef} className="gsap-hero">
-      {/* Background shapes */}
-      <div className="hero-bg-shapes">
-        <div className="hero-bg-shape shape-1"></div>
-        <div className="hero-bg-shape shape-2"></div>
-        <div className="hero-bg-shape shape-3"></div>
-      </div>
-
-      {/* Main content container */}
-      <div className="gsap-hero-content">
-        {/* Large typography - splits apart on scroll */}
-        <div className="hero-text-container">
-          <div ref={textLineTopRef} className="hero-text-line hero-text-top">
-            <span className="hero-text-static">Real</span>
-            <span className="hero-text-highlight">guests.</span>
+    <section className="why-it-works-section">
+      <div className="why-it-works-container">
+        <h2 className="why-it-works-title">Why this works</h2>
+        <div className="why-it-works-grid">
+          <div className="why-card">
+            <div className="why-card-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </div>
+            <h3 className="why-card-title">Your space, every time</h3>
+            <p className="why-card-text">Same apartment, same key, same routine. Your things stay there. No more packing a suitcase for a two-night trip.</p>
           </div>
-          <div ref={textLineBottomRef} className="hero-text-line hero-text-bottom">
-            <span className="hero-text-static">Real</span>
-            <span className="hero-text-highlight hero-text-dynamic" key={currentIndex}>
-              {scenarios[currentIndex]}.
-            </span>
+          <div className="why-card">
+            <div className="why-card-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="3" y1="15" x2="21" y2="15"/>
+                <line x1="12" y1="9" x2="12" y2="15"/>
+              </svg>
+            </div>
+            <h3 className="why-card-title">Dedicated storage space</h3>
+            <p className="why-card-text">Store toiletries, a second monitor, work attire, and more. Your space is ready when you return.</p>
+          </div>
+          <div className="why-card">
+            <div className="why-card-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+            <h3 className="why-card-title">Fraction of the cost</h3>
+            <p className="why-card-text">Pay only for the nights you need. No wasted rent on empty apartments. No $400/night hotels draining your budget.</p>
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
 
-        {/* Mask reveal container - appears in center */}
-        <div ref={maskRevealRef} className="mask-reveal-container">
-          <div ref={revealContentRef} className="reveal-content">
-            <div className="reveal-eyebrow">Guest Stories</div>
-            <h2 className="reveal-headline">See how it works for them</h2>
-            <p className="reveal-hook">
-              Professionals, students, and parents share their experience
-              using Split Lease for recurring NYC stays.
-            </p>
-            <div className="reveal-cta">
-              <a href="#stories" className="reveal-cta-button">
-                View Stories
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+// ============================================================================
+// INTERNAL COMPONENT: Stories Section - Static, trustworthy, no animations
+// ============================================================================
+
+function StoriesSection({ stories }) {
+  return (
+    <section id="stories" className="stories-section">
+      <div className="stories-header">
+        <h1 className="stories-title">Your schedule, your space</h1>
+        <p className="stories-subtitle">
+          People who found a smarter way to have a place in NYC—without paying for nights they don't use.
+        </p>
+      </div>
+
+      <div className="stories-grid">
+        {stories.map((story, index) => (
+          <div key={index} className="story-card">
+            <div className="story-card-header">
+              <img src={story.avatar} alt={story.name} className="story-avatar" loading="lazy" />
+              <div className="story-person">
+                <h3 className="story-name">{story.name}</h3>
+                <p className="story-situation">{story.situation}</p>
+                <div className="story-schedule-row">
+                  <span className="story-schedule">{story.schedule}</span>
+                  <div className="schedule-dots">
+                    {story.days.map((active, i) => (
+                      <span key={i} className={`schedule-dot ${active ? 'active' : ''}`} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <blockquote className="story-quote">
+              "{story.quote}"
+            </blockquote>
+
+            <div className="story-connection">
+              <span className="connection-label">The match:</span> {story.connection}
+            </div>
+
+            <div className="story-meta">
+              <span className="story-savings">{story.savings}</span>
+              <span className="story-location">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="2"/>
+                  <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="2"/>
                 </svg>
-              </a>
+                {story.location}
+              </span>
             </div>
           </div>
-        </div>
-
-        {/* Stats - slide in from bottom */}
-        <div ref={statsRef} className="hero-stats-container">
-          <div
-            ref={el => statItemsRef.current[0] = el}
-            className="hero-stat-item"
-          >
-            <div className="hero-stat-value">$18K</div>
-            <div className="hero-stat-label">Avg. Annual Savings</div>
-          </div>
-          <div
-            ref={el => statItemsRef.current[1] = el}
-            className="hero-stat-item"
-          >
-            <div className="hero-stat-value">89%</div>
-            <div className="hero-stat-label">Return Rate</div>
-          </div>
-          <div
-            ref={el => statItemsRef.current[2] = el}
-            className="hero-stat-item"
-          >
-            <div className="hero-stat-value">4.9</div>
-            <div className="hero-stat-label">Avg. Rating</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Scroll indicator */}
-      <div ref={scrollIndicatorRef} className="scroll-indicator">
-        <div className="scroll-indicator-text">Scroll to explore</div>
-        <div className="scroll-indicator-line">
-          <div className="scroll-indicator-dot"></div>
-        </div>
+        ))}
       </div>
     </section>
-  );
-}
-
-// ============================================================================
-// INTERNAL COMPONENT: Problem Transition Section
-// ============================================================================
-
-function ProblemTransitionSection() {
-  const sectionRef = useRef(null);
-  const trackRef = useRef(null);
-  const painPoint1Ref = useRef(null);
-  const painPoint2Ref = useRef(null);
-  const painPoint3Ref = useRef(null);
-  const strike1Ref = useRef(null);
-  const strike2Ref = useRef(null);
-  const strike3Ref = useRef(null);
-  const solutionRef = useRef(null);
-
-  useLayoutEffect(() => {
-    const section = sectionRef.current;
-    const track = trackRef.current;
-    const painPoint1 = painPoint1Ref.current;
-    const painPoint2 = painPoint2Ref.current;
-    const painPoint3 = painPoint3Ref.current;
-    const strike1 = strike1Ref.current;
-    const strike2 = strike2Ref.current;
-    const strike3 = strike3Ref.current;
-    const solution = solutionRef.current;
-
-    if (!section || !track) return;
-
-    const ctx = gsap.context(() => {
-      // Set initial states
-      gsap.set([strike1, strike2, strike3], {
-        strokeDashoffset: 400,
-        strokeDasharray: 400
-      });
-      gsap.set(solution, {
-        opacity: 0,
-        x: 100
-      });
-      gsap.set([painPoint1, painPoint2, painPoint3], {
-        opacity: 1,
-        filter: 'blur(0px)'
-      });
-
-      // Main horizontal scroll timeline
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          start: 'top top',
-          end: '+=200%',
-          pin: true,
-          scrub: 1,
-          anticipatePin: 1
-        }
-      });
-
-      // Phase 1: Horizontal scroll to show pain points (0% - 30%)
-      tl.to(track, {
-        x: () => -(track.scrollWidth - window.innerWidth),
-        ease: 'none',
-        duration: 0.6
-      }, 0);
-
-      // Phase 2: Draw strikethrough lines (20% - 50%)
-      tl.to(strike1, {
-        strokeDashoffset: 0,
-        ease: 'power2.inOut',
-        duration: 0.15
-      }, 0.15)
-      .to(strike2, {
-        strokeDashoffset: 0,
-        ease: 'power2.inOut',
-        duration: 0.15
-      }, 0.25)
-      .to(strike3, {
-        strokeDashoffset: 0,
-        ease: 'power2.inOut',
-        duration: 0.15
-      }, 0.35);
-
-      // Phase 3: Blur out pain points (50% - 70%)
-      tl.to([painPoint1, painPoint2, painPoint3], {
-        opacity: 0.2,
-        filter: 'blur(8px)',
-        ease: 'power2.inOut',
-        duration: 0.2
-      }, 0.5);
-
-      // Phase 4: Solution slides in (60% - 100%)
-      tl.to(solution, {
-        opacity: 1,
-        x: 0,
-        ease: 'power2.out',
-        duration: 0.3
-      }, 0.6);
-
-    }, section);
-
-    return () => ctx.revert();
-  }, []);
-
-  return (
-    <section ref={sectionRef} className="problem-transition-section">
-      <div ref={trackRef} className="problem-track">
-        {/* Scene A: Pain Points */}
-        <div className="problem-scene scene-pain-points">
-          <div className="pain-point-container">
-            <div ref={painPoint1Ref} className="pain-point">
-              <span className="pain-text">Hotels are expensive</span>
-              <svg className="strike-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
-                <line
-                  ref={strike1Ref}
-                  x1="0"
-                  y1="10"
-                  x2="400"
-                  y2="10"
-                  stroke="#DC2626"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
-          </div>
-          <div className="pain-point-container">
-            <div ref={painPoint2Ref} className="pain-point">
-              <span className="pain-text">Airbnb is inconsistent</span>
-              <svg className="strike-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
-                <line
-                  ref={strike2Ref}
-                  x1="0"
-                  y1="10"
-                  x2="400"
-                  y2="10"
-                  stroke="#DC2626"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
-          </div>
-          <div className="pain-point-container">
-            <div ref={painPoint3Ref} className="pain-point">
-              <span className="pain-text">Full leases are wasteful</span>
-              <svg className="strike-svg" viewBox="0 0 400 20" preserveAspectRatio="none">
-                <line
-                  ref={strike3Ref}
-                  x1="0"
-                  y1="10"
-                  x2="400"
-                  y2="10"
-                  stroke="#DC2626"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        {/* Scene B: Solution */}
-        <div ref={solutionRef} className="problem-scene scene-solution">
-          <div className="solution-content">
-            <div className="solution-eyebrow">The Alternative</div>
-            <h2 className="solution-headline">These guests found a better way</h2>
-            <p className="solution-description">
-              Flexible, recurring rentals that fit their schedule.
-              Same space every time. No surprises.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// ============================================================================
-// INTERNAL COMPONENT: Story Card (Full-width)
-// ============================================================================
-
-function StoryCard({ story, index, onFindSplitLease }) {
-  const [isVisible, setIsVisible] = useState(false);
-  const cardRef = useRef(null);
-  const isEven = index % 2 === 0;
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setIsVisible(true);
-          }
-        });
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
-    );
-
-    if (cardRef.current) {
-      observer.observe(cardRef.current);
-    }
-
-    return () => {
-      if (cardRef.current) {
-        observer.unobserve(cardRef.current);
-      }
-    };
-  }, []);
-
-  return (
-    <div
-      ref={cardRef}
-      className={`story-feature-card ${isVisible ? 'visible' : ''} ${isEven ? 'image-left' : 'image-right'}`}
-    >
-      <div className="story-feature-image">
-        <img src={story.image} alt={`${story.name}'s space`} loading="lazy" />
-        <div className="story-savings-badge">{story.savings} saved</div>
-      </div>
-      <div className="story-feature-content">
-        <div className="story-feature-header">
-          <img src={story.avatar} alt={story.name} className="story-feature-avatar" loading="lazy" />
-          <div className="story-feature-person">
-            <h3>{story.name}</h3>
-            <p className="story-role">{story.role}</p>
-            <p className="story-schedule">{story.schedule}</p>
-          </div>
-        </div>
-        <blockquote className="story-quote">"{story.quote}"</blockquote>
-        <p className="story-full">{story.fullStory}</p>
-        <div className="story-meta">
-          <span className="story-location">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" stroke="currentColor" strokeWidth="2"/>
-              <circle cx="12" cy="9" r="2.5" stroke="currentColor" strokeWidth="2"/>
-            </svg>
-            {story.location}
-          </span>
-        </div>
-        <button className="story-cta-button" onClick={onFindSplitLease}>
-          Find Your NYC Space
-        </button>
-      </div>
-    </div>
   );
 }
 
@@ -520,7 +164,7 @@ function StoryCard({ story, index, onFindSplitLease }) {
 // ============================================================================
 
 export default function GuestSuccessPage() {
-  const handleFindSplitLease = () => {
+  const handleFindSpace = () => {
     window.location.href = SEARCH_URL;
   };
 
@@ -528,78 +172,22 @@ export default function GuestSuccessPage() {
     <>
       <Header />
 
-      {/* GSAP-Powered Hero Section */}
-      <HeroSection />
+      {/* Stories Section - Lead with testimonials first */}
+      <StoriesSection stories={successStories} />
 
-      {/* Problem Transition Section - Horizontal Scroll with Strikethrough */}
-      <ProblemTransitionSection />
+      {/* Why It Works Section */}
+      <WhyItWorksSection />
 
-      {/* Featured Stories Section - White with Outlined Bubbles */}
-      <section id="stories" className="featured-stories-section">
-        <div className="outlined-bubble outlined-bubble-1"></div>
-        <div className="outlined-bubble outlined-bubble-2"></div>
-        <div className="outlined-bubble outlined-bubble-3"></div>
-
-        <div className="featured-stories-container">
-          {successStories.map((story, index) => (
-            <StoryCard
-              key={index}
-              story={story}
-              index={index}
-              onFindSplitLease={handleFindSplitLease}
-            />
-          ))}
-        </div>
-      </section>
-
-      {/* Stats Section - Light Gray with Purple Circle Accents */}
-      <section className="success-stats-section">
-        <div className="circle-accent circle-accent-1"></div>
-        <div className="circle-accent circle-accent-2"></div>
-        <div className="circle-accent circle-accent-3"></div>
-
-        <div className="success-stats-container">
-          <div className="success-stats-header">
-            <div className="success-stats-eyebrow">By the Numbers</div>
-            <h2 className="success-stats-title">Platform Statistics</h2>
-          </div>
-          <div className="success-stats-grid">
-            <div className="success-stat-card">
-              <div className="success-stat-value">$2.4M+</div>
-              <div className="success-stat-label">Total Guest Savings</div>
-            </div>
-            <div className="success-stat-card">
-              <div className="success-stat-value">12,000+</div>
-              <div className="success-stat-label">Nights Booked</div>
-            </div>
-            <div className="success-stat-card">
-              <div className="success-stat-value">89%</div>
-              <div className="success-stat-label">Return Rate</div>
-            </div>
-            <div className="success-stat-card">
-              <div className="success-stat-value">4.9</div>
-              <div className="success-stat-label">Average Rating</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA Section - Brand Purple Hero with Gradient Circles */}
+      {/* Final CTA Section */}
       <section className="success-final-cta">
-        <div className="gradient-circle gradient-circle-1"></div>
-        <div className="gradient-circle gradient-circle-2"></div>
-        <div className="gradient-circle gradient-circle-3"></div>
-
         <div className="success-cta-card">
-          <h2 className="success-cta-title">Find your NYC space</h2>
+          <h2 className="success-cta-title">Find your second home</h2>
           <p className="success-cta-subtitle">
-            Browse available listings and start your flexible rental arrangement.
+            Find a host whose nights away match yours.
           </p>
-          <div className="success-hero-cta">
-            <button className="cta-button cta-primary" onClick={handleFindSplitLease}>
-              <span>Browse Listings</span>
-            </button>
-          </div>
+          <button className="cta-button cta-primary" onClick={handleFindSpace}>
+            Browse Listings
+          </button>
         </div>
       </section>
 

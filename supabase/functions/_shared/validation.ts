@@ -79,3 +79,18 @@ export function validatePhoneE164(phone: string, fieldName: string = 'phone'): v
     );
   }
 }
+
+/**
+ * Trim whitespace from a string value
+ * Pure function: no side effects, returns null for empty/undefined values
+ *
+ * @param value - String to trim (may be null/undefined)
+ * @returns Trimmed string, or null if empty/undefined
+ */
+export function trimString(value: string | undefined | null): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed === '' ? null : trimmed;
+}
