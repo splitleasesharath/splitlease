@@ -1422,6 +1422,32 @@ export default function ViewSplitLeasePage() {
         'Created Date': new Date().toISOString()
       });
 
+      // Create messaging thread for the proposal (non-blocking)
+      try {
+        console.log('💬 Creating proposal messaging thread...');
+        const threadResponse = await supabase.functions.invoke('messages', {
+          body: {
+            action: 'create_proposal_thread',
+            payload: {
+              proposalId: newProposalId,
+              guestId: guestId,
+              hostId: data.data?.hostId || listing.host?.userId,
+              listingId: proposalData.listingId,
+              proposalStatus: 'pending_host_review'
+            }
+          }
+        });
+
+        if (threadResponse.error) {
+          console.warn('⚠️ Thread creation failed (non-blocking):', threadResponse.error);
+        } else {
+          console.log('✅ Proposal thread created:', threadResponse.data);
+        }
+      } catch (threadError) {
+        // Non-blocking - don't fail the proposal if thread creation fails
+        console.warn('⚠️ Thread creation error (non-blocking):', threadError);
+      }
+
     } catch (error) {
       console.error('❌ Error submitting proposal:', error);
       showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
