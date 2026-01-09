@@ -1,6 +1,6 @@
 # Google Drive Tools Setup
 
-This directory contains shared Google Drive API credentials used by the goodbye-skill and other tools.
+This directory contains shared Google Drive API credentials used by various tools.
 
 ## Required Files (Not in Git)
 
@@ -24,20 +24,10 @@ OAuth 2.0 credentials from Google Cloud Console.
 Cached authentication token (auto-generated on first run).
 
 **How it's created:**
-- Automatically generated when you first run `get_drive_link.py`
+- Automatically generated when you first run a script using the API
 - Opens a browser for one-time authentication
 - Cached for future use (no browser needed for subsequent runs)
 - Expires after ~6 months of inactivity, auto-refreshes when used
-
-## First-Time Setup
-
-1. **Get credentials.json** (follow steps above)
-2. **Test authentication:**
-   ```bash
-   python .claude/skills/goodbye-skill/get_drive_link.py "path/to/test/file.md"
-   ```
-3. **Authenticate in browser** (opens automatically)
-4. **token.pickle created** - You're ready!
 
 ## Security
 
@@ -72,4 +62,4 @@ Cached authentication token (auto-generated on first run).
 ---
 
 **Version:** 1.0
-**Last Updated:** 2026-01-07
+**Last Updated:** 2026-01-09
