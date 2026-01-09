@@ -582,18 +582,31 @@ export function useAccountProfilePageLogic() {
     const section = params.get('section');
     const openRentalApp = params.get('openRentalApp');
 
-    // Handle scroll to rental application section
+    // Handle scroll to rental application section AND auto-open modal
     // Use requestAnimationFrame to scroll after next paint (faster than setTimeout)
     if (section === 'rental-application') {
       requestAnimationFrame(() => {
         const rentalAppSection = document.getElementById('rental-application-section');
         if (rentalAppSection) {
-          rentalAppSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Get element position and apply offset for fixed header (~80px)
+          const headerOffset = 100;
+          const elementPosition = rentalAppSection.getBoundingClientRect().top;
+          const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+          window.scrollTo({
+            top: offsetPosition,
+            behavior: 'smooth'
+          });
         }
       });
+      // Auto-open wizard modal when navigating to rental application section
+      setShowRentalWizardModal(true);
+      // Clean URL to prevent re-opening on refresh
+      const cleanUrl = window.location.pathname;
+      window.history.replaceState({}, '', cleanUrl);
     }
 
-    // Handle modal auto-open
+    // Handle explicit modal auto-open (legacy support for openRentalApp param)
     if (openRentalApp === 'true') {
       setShowRentalWizardModal(true);
       // Clean URL to prevent re-opening on refresh
