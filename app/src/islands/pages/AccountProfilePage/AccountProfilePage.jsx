@@ -232,6 +232,7 @@ export default function AccountProfilePage() {
               firstName: logic.profileData?.['Name - First'] || '',
               lastName: logic.profileData?.['Name - Last'] || '',
               phone: logic.profileData?.['Phone Number (as text)'] || '',
+              dob: logic.profileData?.['Date of Birth'] || '',
             }}
           />
         )}

@@ -252,6 +252,11 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     if (userProfileData.phone && !formData.phone) {
       fieldsToUpdate.phone = userProfileData.phone;
     }
+    if (userProfileData.dob && !formData.dob) {
+      // DOB from database may be ISO datetime, normalize to YYYY-MM-DD for date input
+      const dobValue = userProfileData.dob;
+      fieldsToUpdate.dob = dobValue.includes('T') ? dobValue.split('T')[0] : dobValue;
+    }
 
     // Apply pre-fill if we have any fields to update
     if (Object.keys(fieldsToUpdate).length > 0) {
@@ -259,7 +264,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     }
 
     hasPrefilledFromProfile.current = true;
-  }, [applicationStatus, userProfileData, formData.fullName, formData.email, formData.phone, updateFormData]);
+  }, [applicationStatus, userProfileData, formData.fullName, formData.email, formData.phone, formData.dob, updateFormData]);
 
   // ============================================================================
   // PROGRESS CALCULATION
