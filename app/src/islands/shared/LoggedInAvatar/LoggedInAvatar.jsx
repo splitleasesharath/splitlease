@@ -347,6 +347,9 @@ export default function LoggedInAvatar({
   };
 
   const isActivePath = (itemPath) => {
+    // Guard: if itemPath is undefined (e.g., menu items with only actions), return false
+    if (!itemPath) return false;
+
     // Normalize paths for comparison (remove query params and hash)
     const normalizedCurrentPath = currentPath.split('?')[0].split('#')[0];
     const normalizedItemPath = itemPath.split('?')[0].split('#')[0];
