@@ -125,16 +125,16 @@ export async function handleSendMessage(
   const typedPayload = payload as unknown as SendMessagePayload;
   validateRequiredFields(typedPayload, ['message_body']);
 
-  if (\!typedPayload.message_body.trim()) {
+  if (!typedPayload.message_body.trim()) {
     throw new ValidationError('Message body cannot be empty');
   }
 
-  if (\!user.email) {
+  if (!user.email) {
     throw new ValidationError('Could not find user profile. Please try logging in again.');
   }
 
   const senderBubbleId = await getUserBubbleId(supabaseAdmin, user.email);
-  if (\!senderBubbleId) {
+  if (!senderBubbleId) {
     throw new ValidationError('Could not find user profile. Please try logging in again.');
   }
 
@@ -144,8 +144,8 @@ export async function handleSendMessage(
   let isNewThread = false;
   let recipientId: string | undefined;
 
-  if (\!threadId) {
-    if (\!typedPayload.recipient_user_id) {
+  if (!threadId) {
+    if (!typedPayload.recipient_user_id) {
       throw new ValidationError('Either thread_id or recipient_user_id is required');
     }
 
@@ -159,7 +159,7 @@ export async function handleSendMessage(
       typedPayload.listing_id
     );
 
-    if (\!threadId) {
+    if (!threadId) {
       threadId = await findExistingThread(
         supabaseAdmin,
         senderBubbleId,
@@ -168,7 +168,7 @@ export async function handleSendMessage(
       );
     }
 
-    if (\!threadId) {
+    if (!threadId) {
       console.log('[sendMessage] Creating new thread...');
       threadId = await createThread(supabaseAdmin, {
         hostUserId: recipientId,
