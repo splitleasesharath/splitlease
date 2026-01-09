@@ -1342,7 +1342,7 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
           </h2>
           <button
             className="ai-signup-close-button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Close modal"
           >
             ×
