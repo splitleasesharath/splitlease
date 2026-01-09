@@ -137,12 +137,16 @@ const DayCell = styled.button`
 const InfoContainer = styled.div`
   min-height: 24px;
   max-width: 450px;
-  display: flex;
+  display: none;
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: 8px;
   margin: 5px 0 16px 0;
+
+  @media (max-width: 768px) {
+    display: flex;
+  }
 `;
 
 const InfoText = styled.p`
@@ -648,6 +652,9 @@ export default function SearchScheduleSelector({
         dayIndices: selectedDaysArray,
         urlParam: daysParam
       });
+
+      // Dispatch custom event for other components to listen to
+      window.dispatchEvent(new CustomEvent('daysSelected', { detail: { days: selectedDaysArray } }));
     } else {
       // Remove parameter if no days selected
       const url = new URL(window.location);
