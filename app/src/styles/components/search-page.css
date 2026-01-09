@@ -559,7 +559,7 @@
   gap: 12px;
 }
 
-.filter-popup .btn {
+.filter-popup-footer .btn {
   flex: 1;
   padding: 12px 16px;
   border-radius: 10px;
@@ -567,26 +567,27 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
+  text-align: center;
 }
 
-.filter-popup .btn-secondary {
+.filter-popup-footer .btn-secondary {
   background: white;
   border: 1px solid #e5e5e5;
   color: #374151;
 }
 
-.filter-popup .btn-secondary:hover {
+.filter-popup-footer .btn-secondary:hover {
   background: #f9fafb;
   border-color: #d1d5db;
 }
 
-.filter-popup .btn-primary {
+.filter-popup-footer .btn-primary {
   background: var(--secondary-purple, #6D31C2);
   border: 1px solid var(--secondary-purple, #6D31C2);
   color: white;
 }
 
-.filter-popup .btn-primary:hover {
+.filter-popup-footer .btn-primary:hover {
   background: var(--primary-purple, #31135D);
   border-color: var(--primary-purple, #31135D);
 }
