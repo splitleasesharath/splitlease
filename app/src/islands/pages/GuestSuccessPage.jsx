@@ -76,14 +76,14 @@ function WhyItWorksSection() {
           <div className="why-card">
             <div className="why-card-icon">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                <circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="3" y1="15" x2="21" y2="15"/>
+                <line x1="12" y1="9" x2="12" y2="15"/>
               </svg>
             </div>
-            <h3 className="why-card-title">Your own closet and drawer</h3>
-            <p className="why-card-text">Hosts give you dedicated storage space. Hang your clothes, leave your toiletries, keep a few books. Travel light.</p>
+            <h3 className="why-card-title">Dedicated storage space</h3>
+            <p className="why-card-text">Hosts provide closet space, drawers, bathroom shelves. Leave your things between visits. Travel with just a laptop bag.</p>
           </div>
           <div className="why-card">
             <div className="why-card-icon">
