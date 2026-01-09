@@ -111,6 +111,9 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   // ============================================================================
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState([]);
+  // Track which steps the user has actually visited (for optional steps)
+  // Step 1 is always visited on initial load
+  const [visitedSteps, setVisitedSteps] = useState([1]);
 
   // ============================================================================
   // LOCAL STATE (non-persistent)
@@ -186,6 +189,10 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
           // Load into store (this will update the reactive state)
           loadFromDatabase(mappedFormData, mappedOccupants);
 
+          // For submitted/existing applications being reviewed, mark ALL steps as visited
+          // This ensures optional steps show as completed when editing a submitted application
+          setVisitedSteps([1, 2, 3, 4, 5, 6, 7]);
+
           // Initialize completed steps from database data
           if (dbCompletedSteps && dbCompletedSteps.length > 0) {
             setCompletedSteps(dbCompletedSteps);
@@ -236,10 +243,19 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   const canSubmit = progress >= 80 && formData.signature?.trim();
 
   // ============================================================================
+  // TRACK STEP VISITS - Mark step as visited when user navigates to it
+  // ============================================================================
+  useEffect(() => {
+    if (!visitedSteps.includes(currentStep)) {
+      setVisitedSteps(prev => [...prev, currentStep]);
+    }
+  }, [currentStep, visitedSteps]);
+
+  // ============================================================================
   // STEP COMPLETION TRACKING
   // ============================================================================
-  // Pure function to check step completion - no state dependency to avoid loops
-  const checkStepComplete = useCallback((stepNumber) => {
+  // Pure function to check step completion - considers visited state for optional steps
+  const checkStepComplete = useCallback((stepNumber, visitedStepsArray) => {
     let stepFields = [...STEP_FIELDS[stepNumber]];
 
     // Add conditional employment fields for step 4
@@ -248,10 +264,11 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       stepFields = [...stepFields, ...conditionalFields];
     }
 
-    // Optional steps (3=Occupants, 5=Details, 6=Documents) are always complete
-    // These steps have no required fields and user can skip them
+    // For optional steps (3=Occupants, 5=Details, 6=Documents): only show as complete
+    // if user has actually visited them. This prevents showing checkmarks for steps
+    // the user hasn't navigated to yet on a new application.
     if (stepFields.length === 0) {
-      return true;
+      return visitedStepsArray.includes(stepNumber);
     }
 
     // Check all required fields have values
@@ -261,11 +278,11 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     });
   }, [formData]);
 
-  // Update completed steps when form data changes
+  // Update completed steps when form data or visited steps change
   useEffect(() => {
     const newCompleted = [];
     for (let step = 1; step <= TOTAL_STEPS; step++) {
-      if (checkStepComplete(step)) {
+      if (checkStepComplete(step, visitedSteps)) {
         newCompleted.push(step);
       }
     }
@@ -275,7 +292,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
         prev.every((v, i) => v === newCompleted[i]);
       return isSame ? prev : newCompleted;
     });
-  }, [formData, checkStepComplete]);
+  }, [formData, visitedSteps, checkStepComplete]);
 
   // Public API for checking step completion (can use completedSteps cache)
   const isStepComplete = useCallback((stepNumber) => {
