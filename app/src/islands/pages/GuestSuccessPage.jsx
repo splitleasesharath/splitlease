@@ -82,8 +82,8 @@ function WhyItWorksSection() {
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
             </div>
-            <h3 className="why-card-title">Leave your things behind</h3>
-            <p className="why-card-text">Your coffee mug stays in the cabinet. Your charger stays plugged in. When you come back, everything is exactly where you left it.</p>
+            <h3 className="why-card-title">Your own closet and drawer</h3>
+            <p className="why-card-text">Hosts give you dedicated storage space. Hang your clothes, leave your toiletries, keep a few books. Travel light.</p>
           </div>
           <div className="why-card">
             <div className="why-card-icon">
