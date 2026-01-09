@@ -625,22 +625,26 @@
 
 /* Virtual Meeting Request - Default state (no VM exists) */
 .btn-vm-request {
-  background-color: var(--color-primary, #6B4EFF);
+  background-color: var(--color-cta, #5B5FCF);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-vm-request:hover:not(:disabled) {
-  background-color: var(--color-primary-hover, #5840E0);
+  background-color: var(--color-cta-hover, #4B48C8);
+  box-shadow: 0 4px 12px rgba(91, 95, 207, 0.3);
 }
 
-/* Respond to VM Request - Blue (action needed from other party) */
+/* Respond to VM Request - CTA Purple (action needed from other party) */
 .btn-vm-respond {
-  background-color: #3B82F6;
+  background-color: var(--color-cta, #5B5FCF);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-vm-respond:hover:not(:disabled) {
-  background-color: #2563EB;
+  background-color: var(--color-cta-hover, #4B48C8);
+  box-shadow: 0 4px 12px rgba(91, 95, 207, 0.3);
 }
 
 /* Virtual Meeting Requested - Gray (waiting for response, disabled) */
@@ -650,176 +654,203 @@
   cursor: not-allowed;
 }
 
-/* Virtual Meeting Accepted - Green (accepted but not yet confirmed by SL) */
+/* Virtual Meeting Accepted - Light Purple (accepted but not yet confirmed by SL) */
 .btn-vm-accepted {
-  background-color: #10B981;
-  color: white;
+  background-color: var(--progress-pending, #B6B7E9);
+  color: var(--color-primary, #31135D);
   cursor: not-allowed;
 }
 
-/* Meeting Confirmed - Darker green (confirmed by SL, clickable for details) */
+/* Meeting Confirmed - Accent Purple (confirmed by SL, clickable for details) */
 .btn-vm-confirmed {
-  background-color: #059669;
+  background-color: var(--color-accent, #5B21B6);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-vm-confirmed:hover:not(:disabled) {
-  background-color: #047857;
+  background-color: var(--color-accent-hover, #4C1D95);
+  box-shadow: 0 4px 12px rgba(91, 33, 182, 0.3);
 }
 
 .btn-vm-confirmed:disabled {
-  background-color: #10B981;
+  background-color: var(--color-accent, #5B21B6);
   cursor: not-allowed;
 }
 
 /* Virtual Meeting Declined - Red outline (can request alternative times) */
 .btn-vm-declined {
   background-color: transparent;
-  color: #DB2E2E;
+  color: var(--color-destructive, #dc2626);
   font-weight: bold;
-  border: 1px solid #DB2E2E;
+  border: 2px solid var(--color-destructive, #dc2626);
+  transition: all 0.2s ease;
 }
 
 .btn-vm-declined:hover:not(:disabled) {
   background-color: #FEE2E2;
 }
 
-/* Go to Leases - Green (for completed proposals) */
+/* Go to Leases - CTA Purple (for completed proposals - navigation action) */
 .btn-go-to-leases {
-  background-color: #39873D;
+  background-color: var(--color-cta, #5B5FCF);
   color: white;
   text-decoration: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
 }
 
 .btn-go-to-leases:hover {
-  background-color: #2D6B30;
+  background-color: var(--color-cta-hover, #4B48C8);
+  box-shadow: 0 4px 12px rgba(91, 95, 207, 0.3);
 }
 
-/* Remind Split Lease - Green */
+/* Remind Split Lease - Secondary Purple */
 .btn-remind {
-  background-color: #39873D;
+  background-color: var(--color-secondary, #6D31C2);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-remind:hover {
-  background-color: #2D6B30;
+  background-color: var(--color-secondary-hover, #5B21B6);
+  box-shadow: 0 4px 12px rgba(109, 49, 194, 0.3);
 }
 
-/* Modify Proposal - Green (matches Bubble design) */
+/* Modify Proposal - Secondary Purple */
 .btn-modify-proposal {
-  background-color: #39873D;
+  background-color: var(--color-secondary, #6D31C2);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-modify-proposal:hover {
-  background-color: #2D6B30;
+  background-color: var(--color-secondary-hover, #5B21B6);
+  box-shadow: 0 4px 12px rgba(109, 49, 194, 0.3);
 }
 
-/* Cancel Proposal - Red */
+/* Cancel Proposal - Destructive Red */
 .btn-cancel-proposal {
-  background-color: #EF4444;
+  background-color: var(--color-destructive, #dc2626);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-cancel-proposal:hover {
-  background-color: #DC2626;
+  background-color: var(--color-destructive-hover, #b91c1c);
 }
 
-/* Delete Proposal - Red */
+/* Delete Proposal - Destructive Red */
 .btn-delete-proposal {
-  background-color: #EF4444;
+  background-color: var(--color-destructive, #dc2626);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-delete-proposal:hover {
-  background-color: #DC2626;
+  background-color: var(--color-destructive-hover, #b91c1c);
 }
 
-/* Accept Counteroffer - Green */
+/* Accept Counteroffer - Accent Purple (stronger confirmation) */
 .btn-accept-counteroffer {
-  background-color: #39873D;
+  background-color: var(--color-accent, #5B21B6);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-accept-counteroffer:hover {
-  background-color: #2D6B30;
+  background-color: var(--color-accent-hover, #4C1D95);
+  box-shadow: 0 4px 12px rgba(91, 33, 182, 0.3);
 }
 
-/* Interested - Green (for SL-suggested proposals) */
+/* Interested - Secondary Purple (for SL-suggested proposals) */
 .btn-interested {
-  background-color: #39873D;
+  background-color: var(--color-secondary, #6D31C2);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-interested:hover {
-  background-color: #2D6B30;
+  background-color: var(--color-secondary-hover, #5B21B6);
+  box-shadow: 0 4px 12px rgba(109, 49, 194, 0.3);
 }
 
-/* Primary Action - Green (default for guest action 1) */
+/* Primary Action - Secondary Purple (default for guest action 1) */
 .btn-primary-action {
-  background-color: #39873D;
+  background-color: var(--color-secondary, #6D31C2);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-primary-action:hover {
-  background-color: #2D6B30;
+  background-color: var(--color-secondary-hover, #5B21B6);
+  box-shadow: 0 4px 12px rgba(109, 49, 194, 0.3);
 }
 
-/* Not Interested - Gray with red border (for SL-suggested proposals) */
+/* Not Interested - Red outline (for SL-suggested proposals rejection) */
 .btn-not-interested {
-  background-color: #F3F4F6;
-  color: #DC2626;
-  border: 1px solid #DC2626;
+  background-color: white;
+  color: var(--color-destructive, #dc2626);
+  border: 2px solid var(--color-destructive, #dc2626);
+  transition: all 0.2s ease;
 }
 
 .btn-not-interested:hover {
-  background-color: #FEE2E2;
+  background-color: #fee2e2;
 }
 
-/* Review Host Terms - Yellow/Orange (for counteroffer review) */
+/* Review Host Terms - Attention Purple outline (for counteroffer review) */
 .btn-review-terms {
-  background-color: #FEF3C7;
-  color: #92400E;
-  border: 1px solid #F59E0B;
+  background-color: white;
+  color: var(--color-attention, #8C68EE);
+  border: 2px solid var(--color-attention, #8C68EE);
+  transition: all 0.2s ease;
 }
 
 .btn-review-terms:hover {
-  background-color: #FDE68A;
+  background-color: var(--color-attention, #8C68EE);
+  color: white;
+  box-shadow: 0 4px 12px rgba(140, 104, 238, 0.3);
 }
 
-/* See Details - Blue (informational) */
+/* See Details - CTA Purple outline (informational) */
 .btn-see-details {
-  background-color: #EBF5FF;
-  color: #1D4ED8;
-  border: 1px solid #3B82F6;
+  background-color: white;
+  color: var(--color-cta, #5B5FCF);
+  border: 2px solid var(--color-cta, #5B5FCF);
+  transition: all 0.2s ease;
 }
 
 .btn-see-details:hover {
-  background-color: #DBEAFE;
+  background-color: var(--color-cta, #5B5FCF);
+  color: white;
+  box-shadow: 0 4px 12px rgba(91, 95, 207, 0.3);
 }
 
-/* Verify Identity - Blue (action required) */
+/* Verify Identity - CTA Purple (action required) */
 .btn-verify-identity {
-  background-color: #3B82F6;
+  background-color: var(--color-cta, #5B5FCF);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-verify-identity:hover {
-  background-color: #2563EB;
+  background-color: var(--color-cta-hover, #4B48C8);
+  box-shadow: 0 4px 12px rgba(91, 95, 207, 0.3);
 }
 
-/* Secondary Action - Gray (default for guest action 2) */
+/* Secondary Action - Secondary Purple outline (default for guest action 2) */
 .btn-secondary-action {
-  background-color: #F3F4F6;
-  color: #374151;
-  border: 1px solid #D4D4D4;
+  background-color: white;
+  color: var(--color-secondary, #6D31C2);
+  border: 2px solid var(--color-secondary, #6D31C2);
+  transition: all 0.2s ease;
 }
 
 .btn-secondary-action:hover {
-  background-color: #E5E7EB;
+  background-color: #fcfaff;
 }
 
 /* See House Manual - Purple (non-clickable for late-stage proposals) */
@@ -835,25 +866,27 @@
   opacity: 1;
 }
 
-/* Reject Modified Terms - Red outline (for counteroffer rejection) */
+/* Reject Modified Terms - Destructive Red outline (for counteroffer rejection) */
 .btn-reject-terms {
-  background-color: #FEE2E2;
-  color: #DC2626;
-  border: 1px solid #DC2626;
+  background-color: white;
+  color: var(--color-destructive, #dc2626);
+  border: 2px solid var(--color-destructive, #dc2626);
+  transition: all 0.2s ease;
 }
 
 .btn-reject-terms:hover {
-  background-color: #FECACA;
+  background-color: #fef2f2;
 }
 
-/* Reject Proposal - Red (for SL-suggested proposals) */
+/* Reject Proposal - Destructive Red (for SL-suggested proposals) */
 .btn-reject-proposal {
-  background-color: #EF4444;
+  background-color: var(--color-destructive, #dc2626);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .btn-reject-proposal:hover {
-  background-color: #DC2626;
+  background-color: var(--color-destructive-hover, #b91c1c);
 }
 
 /* ============================================================================
