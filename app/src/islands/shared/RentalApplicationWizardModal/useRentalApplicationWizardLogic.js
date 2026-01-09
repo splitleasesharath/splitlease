@@ -238,7 +238,8 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   // ============================================================================
   // STEP COMPLETION TRACKING
   // ============================================================================
-  const isStepComplete = useCallback((stepNumber) => {
+  // Pure function to check step completion - no state dependency to avoid loops
+  const checkStepComplete = useCallback((stepNumber) => {
     let stepFields = [...STEP_FIELDS[stepNumber]];
 
     // Add conditional employment fields for step 4
@@ -247,9 +248,10 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       stepFields = [...stepFields, ...conditionalFields];
     }
 
-    // If no required fields, step is complete if visited
+    // Optional steps (3=Occupants, 5=Details, 6=Documents) are always complete
+    // These steps have no required fields and user can skip them
     if (stepFields.length === 0) {
-      return completedSteps.includes(stepNumber);
+      return true;
     }
 
     // Check all required fields have values
@@ -257,18 +259,28 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       const value = formData[field];
       return value !== undefined && value !== null && value !== '';
     });
-  }, [formData, completedSteps]);
+  }, [formData]);
 
   // Update completed steps when form data changes
   useEffect(() => {
     const newCompleted = [];
     for (let step = 1; step <= TOTAL_STEPS; step++) {
-      if (isStepComplete(step)) {
+      if (checkStepComplete(step)) {
         newCompleted.push(step);
       }
     }
-    setCompletedSteps(newCompleted);
-  }, [formData, isStepComplete]);
+    // Only update if the array actually changed to prevent unnecessary re-renders
+    setCompletedSteps(prev => {
+      const isSame = prev.length === newCompleted.length &&
+        prev.every((v, i) => v === newCompleted[i]);
+      return isSame ? prev : newCompleted;
+    });
+  }, [formData, checkStepComplete]);
+
+  // Public API for checking step completion (can use completedSteps cache)
+  const isStepComplete = useCallback((stepNumber) => {
+    return completedSteps.includes(stepNumber);
+  }, [completedSteps]);
 
   // ============================================================================
   // NAVIGATION

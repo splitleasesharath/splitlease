@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Lottie from 'lottie-react';
 import { signupUser } from '../../../lib/auth.js';
+import { sendAbandonedResearch } from '../../../lib/slackService.js';
 import Toast, { useToast } from '../Toast.jsx';
 
 /**
@@ -698,6 +699,7 @@ function TopicIndicators({ detectedTopics }) {
 
 function FreeformInput({ value, onChange }) {
   const detectedTopics = detectTopics(value);
+  const hasStartedTyping = value && value.trim().length > 0;
 
   return (
     <div className="freeform-container">
@@ -719,7 +721,7 @@ Send to (415) 555-5555 and guest@mail.com`}
         aria-label="Market research description"
       />
 
-      <TopicIndicators detectedTopics={detectedTopics} />
+      {hasStartedTyping && <TopicIndicators detectedTopics={detectedTopics} />}
 
       <div className="freeform-animation-message">
         <p className="freeform-helper-text">
@@ -1207,6 +1209,26 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
     }));
   }, [onClose, state.existingEmail]);
 
+  // Handle close with abandoned research tracking
+  const handleClose = useCallback(() => {
+    const typedText = state.formData.marketResearchText;
+
+    // If user has typed something and hasn't completed the flow, send to Slack
+    if (typedText && typedText.trim().length > 0 && state.currentSection !== 'final') {
+      // Fire and forget - don't block the close
+      sendAbandonedResearch({
+        text: typedText,
+        sessionInfo: {
+          section: state.currentSection,
+          hasEmail: !!state.formData.email,
+          hasPhone: !!state.formData.phone,
+        },
+      });
+    }
+
+    onClose();
+  }, [onClose, state.formData, state.currentSection]);
+
   const getButtonText = useCallback(() => {
     const { formData } = state;
 
@@ -1251,15 +1273,15 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
 
   // Handle escape key to close modal
   useEffect(() => {
-    const handleEscape = (e) => {
+    const handleEscapeKey = (e) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        handleClose();
       }
     };
 
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [isOpen, handleClose]);
 
   // Auto-close modal and reload page after success (to show logged-in state)
   useEffect(() => {
@@ -1295,15 +1317,11 @@ export default function AiSignupMarketReport({ isOpen, onClose, onSubmit }) {
   return (
     <div
       className="ai-signup-overlay"
-      onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
     >
-      <div
-        className="ai-signup-modal"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="ai-signup-modal">
         {/* Header */}
         <div className="ai-signup-header">
           <div className="ai-signup-icon-wrapper">
