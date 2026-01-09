@@ -346,18 +346,20 @@
   display: inline-block;
   margin-top: 10px;
   padding: 8px 14px;
-  background-color: #5B21B6;
-  color: white;
+  background-color: #5B21B6 !important;
+  color: #FFFFFF !important;
   font-size: 13px;
   font-weight: 500;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s ease;
+  text-decoration: none;
 }
 
 .header-messaging-panel__messages .message-bubble__cta:hover {
-  background-color: #7C3AED;
+  background-color: #7C3AED !important;
+  color: #FFFFFF !important;
 }
 
 .header-messaging-panel__messages .message-bubble__warning {
