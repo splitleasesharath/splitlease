@@ -217,6 +217,17 @@ See: `.claude/plans/Documents/20251217091827-edit-listing-409-regression-report.
 > - The user asks you to execute a specific plan
 > - The user explicitly asks to review the plans folder
 
+### Deprecated File Convention
+
+> **⚠️ FILE DEPRECATION RULE**: Any markdown file whose filename **starts with** `zep` or `zepped` (case-insensitive) is marked as **deprecated, outdated, or incorrect**. The contents of such files MUST be completely ignored and treated as obsolete.
+>
+> Examples:
+> - `zep-old-architecture.md` → IGNORE
+> - `zepped-20241215-feature-plan.md` → IGNORE
+> - `ZEP_legacy_docs.md` → IGNORE
+>
+> This naming convention provides a clear signal that historical context has been superseded by newer information.
+
 ---
 
 ## Task Orchestration Workflow (MANDATORY)
