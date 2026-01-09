@@ -224,10 +224,11 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .neq('Status', 'Proposal Cancelled by Guest'),
 
         // 11. Count message threads where user is a participant (host or guest)
+        //     Note: Column names have leading hyphens: "-Host User", "-Guest User"
         supabase
           .from('thread')
           .select('_id', { count: 'exact', head: true })
-          .or(`"Host User".eq.${userId},"Guest User".eq.${userId}`)
+          .or(`"-Host User".eq.${userId},"-Guest User".eq.${userId}`)
       ]);
 
       // Process user data

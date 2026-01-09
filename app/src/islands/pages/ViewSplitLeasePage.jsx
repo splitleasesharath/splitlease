@@ -1450,7 +1450,26 @@ export default function ViewSplitLeasePage() {
 
     } catch (error) {
       console.error('❌ Error submitting proposal:', error);
-      showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
+
+      // Provide user-friendly error messages for common failure cases
+      let userMessage = error.message || 'Failed to submit proposal. Please try again.';
+
+      // Network/CORS errors (Edge Function unavailable)
+      if (error.message?.includes('Failed to send a request') ||
+          error.message?.includes('Failed to fetch') ||
+          error.message?.includes('NetworkError')) {
+        userMessage = 'Unable to connect to our servers. Please check your internet connection and try again.';
+      }
+      // Timeout errors
+      else if (error.message?.includes('timeout') || error.message?.includes('Timeout')) {
+        userMessage = 'The request took too long. Please try again.';
+      }
+      // Duplicate proposal error (from Edge Function validation)
+      else if (error.message?.includes('already have an active proposal')) {
+        userMessage = error.message; // Keep the specific message
+      }
+
+      showToast(userMessage, 'error');
     } finally {
       setIsSubmittingProposal(false);
     }
