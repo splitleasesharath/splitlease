@@ -111,7 +111,7 @@ function StoriesSection({ stories }) {
       <div className="stories-header">
         <h1 className="stories-title">Find your second home</h1>
         <p className="stories-subtitle">
-          See how others found their perfect schedule match.
+          A smarter way to have a place in NYC.
         </p>
       </div>
 
