@@ -1066,6 +1066,7 @@ export default function SearchPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMapVisible, setMobileMapVisible] = useState(false);
   const [mobileHeaderHidden, setMobileHeaderHidden] = useState(false);
+  const [desktopHeaderCollapsed, setDesktopHeaderCollapsed] = useState(false);
 
   // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -1292,8 +1293,8 @@ export default function SearchPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
 
-  // Mobile header scroll hide/show effect
-  // Note: On mobile, the scrolling element is .listings-content, not window
+  // Header scroll hide/show effect for both mobile and desktop
+  // Note: The scrolling element is .listings-content for both
   useEffect(() => {
     let lastScrollY = 0;
     let ticking = false;
@@ -1305,16 +1306,25 @@ export default function SearchPage() {
           const scrollElement = e.target;
           const currentScrollY = scrollElement.scrollTop || 0;
           const isMobile = window.innerWidth <= 768;
+          const isDesktop = window.innerWidth >= 769;
 
           if (isMobile) {
-            // Hide header when scrolling down past first card (~250px)
+            // Mobile: Hide header when scrolling down past first card (~250px)
             // Show header when scrolling up
             if (currentScrollY > 250 && currentScrollY > lastScrollY) {
               setMobileHeaderHidden(true);
             } else if (currentScrollY < lastScrollY) {
               setMobileHeaderHidden(false);
             }
-          } else {
+            setDesktopHeaderCollapsed(false);
+          } else if (isDesktop) {
+            // Desktop: Collapse filter section when scrolling down (~150px)
+            // Show full filter section when scrolling up
+            if (currentScrollY > 150 && currentScrollY > lastScrollY) {
+              setDesktopHeaderCollapsed(true);
+            } else if (currentScrollY < lastScrollY) {
+              setDesktopHeaderCollapsed(false);
+            }
             setMobileHeaderHidden(false);
           }
 
@@ -2872,11 +2882,47 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Compact Schedule Indicator - Shows when header is hidden */}
+          {/* Compact Schedule Indicator - Shows when header is hidden (mobile) */}
           <CompactScheduleIndicator isVisible={mobileHeaderHidden} />
 
+          {/* Desktop Compact Schedule Indicator - Shows when filter section is collapsed */}
+          <div className={`desktop-compact-indicator ${desktopHeaderCollapsed ? 'desktop-compact-indicator--visible' : ''}`}>
+            <div className="desktop-compact-dots">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dayLetter, index) => (
+                <div
+                  key={index}
+                  className={`desktop-compact-dot ${selectedDaysForDisplay.includes(index) ? 'active' : ''}`}
+                  title={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][index]}
+                >
+                  {dayLetter}
+                </div>
+              ))}
+            </div>
+            <div className="desktop-compact-checkin">
+              {checkInOutDays.checkIn && checkInOutDays.checkOut && (
+                <>
+                  <span className="desktop-compact-label">Check-in:</span>
+                  <span className="desktop-compact-day">{checkInOutDays.checkIn.substring(0, 3)}</span>
+                  <span className="desktop-compact-separator">→</span>
+                  <span className="desktop-compact-label">Out:</span>
+                  <span className="desktop-compact-day">{checkInOutDays.checkOut.substring(0, 3)}</span>
+                </>
+              )}
+            </div>
+            {activeFilterTags.length > 0 && (
+              <div className="desktop-compact-filters">
+                <button className="desktop-compact-filter-btn" onClick={toggleFilterPopup}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                  </svg>
+                  <span>{activeFilterTags.length}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* NEW FILTER SECTION - Desktop Only */}
-          <div className={`filter-section ${activeFilterTags.length > 0 ? 'has-active-filters' : ''}`}>
+          <div className={`filter-section ${activeFilterTags.length > 0 ? 'has-active-filters' : ''} ${desktopHeaderCollapsed ? 'filter-section--collapsed' : ''}`}>
             <div className="filter-bar">
               {/* Schedule Selector */}
               <div className="schedule-selector">
@@ -3183,8 +3229,8 @@ export default function SearchPage() {
             )}
           </div>
 
-          {/* Results header with listings count and sort - hidden when mobile header is collapsed */}
-          <div className={`results-header ${mobileHeaderHidden ? 'results-header--hidden' : ''}`}>
+          {/* Results header with listings count and sort - hidden when mobile or desktop header is collapsed */}
+          <div className={`results-header ${mobileHeaderHidden ? 'results-header--hidden' : ''} ${desktopHeaderCollapsed ? 'results-header--desktop-hidden' : ''}`}>
             <span className="results-count">
               <strong>{allListings.length} listings</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
             </span>
