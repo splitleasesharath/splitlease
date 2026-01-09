@@ -132,6 +132,10 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   // Address autocomplete ref
   const addressInputRef = useRef(null);
 
+  // Track which user profile fields were originally empty (for sync-back feature)
+  // This captures the state once when userProfileData arrives
+  const emptyUserProfileFields = useRef(null);
+
   // ============================================================================
   // DATABASE LOADING (for submitted applications)
   // ============================================================================
@@ -268,6 +272,82 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
     hasPrefilledFromProfile.current = true;
   }, [applicationStatus, userProfileData, formData.fullName, formData.email, formData.phone, formData.dob, updateFormData]);
+
+  // ============================================================================
+  // SYNC-BACK TO USER TABLE - Track empty fields and sync when filled
+  // ============================================================================
+  // Capture which user profile fields were originally empty (one-time)
+  useEffect(() => {
+    if (emptyUserProfileFields.current !== null || !userProfileData) {
+      return;
+    }
+
+    // Track which fields are empty in the user profile
+    // These are candidates for sync-back when the user fills them in the rental app
+    emptyUserProfileFields.current = {
+      phone: !userProfileData.phone,
+      dob: !userProfileData.dob,
+    };
+
+    console.log('[RentalAppWizard] Empty user profile fields tracked:', emptyUserProfileFields.current);
+  }, [userProfileData]);
+
+  /**
+   * Sync filled rental application fields back to user table (if they were originally empty)
+   * Mapping:
+   *   - phone → 'Phone Number (as text)' in user table
+   *   - dob → 'Date of Birth' in user table
+   */
+  const syncFieldToUserTable = useCallback(async (fieldName, value) => {
+    // Skip if no empty fields tracked or field wasn't originally empty
+    if (!emptyUserProfileFields.current || !emptyUserProfileFields.current[fieldName]) {
+      return;
+    }
+
+    // Skip if value is empty
+    if (!value || (typeof value === 'string' && !value.trim())) {
+      return;
+    }
+
+    const userId = getSessionId();
+    if (!userId) {
+      console.warn('[RentalAppWizard] Cannot sync to user table: no user ID');
+      return;
+    }
+
+    // Map rental app field names to user table column names
+    const fieldMapping = {
+      phone: 'Phone Number (as text)',
+      dob: 'Date of Birth',
+    };
+
+    const dbColumnName = fieldMapping[fieldName];
+    if (!dbColumnName) {
+      return;
+    }
+
+    try {
+      const updateData = {
+        [dbColumnName]: value,
+        'Modified Date': new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('user')
+        .update(updateData)
+        .eq('_id', userId);
+
+      if (error) {
+        console.error('[RentalAppWizard] Failed to sync field to user table:', error);
+      } else {
+        console.log(`[RentalAppWizard] Synced ${fieldName} to user table`);
+        // Mark as synced so we don't sync again
+        emptyUserProfileFields.current[fieldName] = false;
+      }
+    } catch (err) {
+      console.error('[RentalAppWizard] Error syncing to user table:', err);
+    }
+  }, []);
 
   // ============================================================================
   // PROGRESS CALCULATION
@@ -425,10 +505,16 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     const result = validateField(fieldName, value);
     if (result.isValid) {
       setFieldValid(prev => ({ ...prev, [fieldName]: true }));
+
+      // Sync phone and dob back to user table if they were originally empty
+      // Only sync when the field is valid and has a value
+      if ((fieldName === 'phone' || fieldName === 'dob') && value) {
+        syncFieldToUserTable(fieldName, value);
+      }
     } else if (result.error) {
       setFieldErrors(prev => ({ ...prev, [fieldName]: result.error }));
     }
-  }, [formData, validateField]);
+  }, [formData, validateField, syncFieldToUserTable]);
 
   // ============================================================================
   // HANDLERS - Occupants
