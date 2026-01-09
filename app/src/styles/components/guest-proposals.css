@@ -1291,19 +1291,19 @@
 }
 
 .vm-section-badge-pending {
-  background-color: #FEF3C7;
-  color: #92400E;
+  background-color: #f3e8ff;
+  color: var(--color-attention, #8C68EE);
 }
 
 .vm-section-badge-confirmed {
-  background-color: #D1FAE5;
-  color: #065F46;
+  background-color: #ede9fe;
+  color: var(--color-accent, #5B21B6);
 }
 
 .vm-section-badge-expired {
-  background-color: #FEF3C7;
-  color: #92400E;
-  border: 1px solid #F59E0B;
+  background-color: #f3e8ff;
+  color: var(--color-attention, #8C68EE);
+  border: 1px solid var(--color-attention, #8C68EE);
 }
 
 /* ============================================================================
@@ -1325,34 +1325,40 @@
   transition: background-color 0.2s, opacity 0.2s;
 }
 
-/* Respond state - Blue (action needed) */
+/* Respond state - CTA Purple (action needed) */
 .vm-section-primary-btn--respond {
-  background-color: #3B82F6;
+  background-color: var(--color-cta, #5B5FCF);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .vm-section-primary-btn--respond:hover {
-  background-color: #2563EB;
+  background-color: var(--color-cta-hover, #4B48C8);
+  box-shadow: 0 4px 12px rgba(91, 95, 207, 0.3);
 }
 
-/* Details state - Purple */
+/* Details state - Secondary Purple */
 .vm-section-primary-btn--details {
-  background-color: var(--color-primary, #6B4EFF);
+  background-color: var(--color-secondary, #6D31C2);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .vm-section-primary-btn--details:hover {
-  background-color: var(--color-primary-hover, #5840E0);
+  background-color: var(--color-secondary-hover, #5B21B6);
+  box-shadow: 0 4px 12px rgba(109, 49, 194, 0.3);
 }
 
-/* Join state - Green */
+/* Join state - Accent Purple (confirmed action) */
 .vm-section-primary-btn--join {
-  background-color: #059669;
+  background-color: var(--color-accent, #5B21B6);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .vm-section-primary-btn--join:hover {
-  background-color: #047857;
+  background-color: var(--color-accent-hover, #4C1D95);
+  box-shadow: 0 4px 12px rgba(91, 33, 182, 0.3);
 }
 
 /* Disabled state - Gray (waiting for response) */
@@ -1367,14 +1373,16 @@
   background-color: #9CA3AF;
 }
 
-/* Expired state - Amber/Orange (request new times) */
+/* Expired state - Attention Purple (request new times) */
 .vm-section-primary-btn--expired {
-  background-color: #F59E0B;
+  background-color: var(--color-attention, #8C68EE);
   color: white;
+  transition: all 0.2s ease;
 }
 
 .vm-section-primary-btn--expired:hover {
-  background-color: #D97706;
+  background-color: var(--color-attention-hover, #7C5AD9);
+  box-shadow: 0 4px 12px rgba(140, 104, 238, 0.3);
 }
 
 /* ============================================================================
@@ -1383,8 +1391,8 @@
    ============================================================================ */
 
 .vm-section-date-pill--booked {
-  background-color: #D1FAE5;
-  color: #065F46;
+  background-color: #ede9fe;
+  color: var(--color-accent, #5B21B6);
   font-weight: 500;
 }
 
