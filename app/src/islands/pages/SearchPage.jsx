@@ -2932,20 +2932,6 @@ export default function SearchPage() {
                 </select>
               </div>
 
-              {/* Sort By */}
-              <div className="filter-popup-group">
-                <label className="filter-popup-label">Sort By</label>
-                <select
-                  className="filter-popup-select"
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                >
-                  <option value="recommended">Recommended</option>
-                  <option value="price-low">Price: Low to High</option>
-                  <option value="most-viewed">Most Viewed</option>
-                  <option value="recent">Recently Added</option>
-                </select>
-              </div>
             </div>
 
             <div className="filter-popup-footer">
@@ -3068,9 +3054,21 @@ export default function SearchPage() {
             )}
           </div>
 
-          {/* Listings count - hidden when mobile header is collapsed */}
-          <div className={`listings-count ${mobileHeaderHidden ? 'listings-count--hidden' : ''}`}>
-            <strong>{allListings.length} listings found</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
+          {/* Results header with listings count and sort - hidden when mobile header is collapsed */}
+          <div className={`results-header ${mobileHeaderHidden ? 'results-header--hidden' : ''}`}>
+            <span className="results-count">
+              <strong>{allListings.length} listings</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
+            </span>
+            <select
+              className="sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="recommended">Recommended</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="most-viewed">Most Viewed</option>
+              <option value="recent">Recently Added</option>
+            </select>
           </div>
 
           {/* Listings content */}

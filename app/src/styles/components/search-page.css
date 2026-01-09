@@ -839,9 +839,12 @@
   accent-color: var(--secondary-purple, #6D31C2);
 }
 
-/* Listings Count */
-.listings-count {
+/* Results Header with Listings Count and Sort */
+.results-header {
   flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   padding: 0.75rem 1.5rem;
   background: #f9fafb;
   border-bottom: 1px solid #e5e7eb;
@@ -849,9 +852,34 @@
   color: #374151;
 }
 
-.listings-count strong {
+.results-count strong {
   font-weight: 600;
   color: #111827;
+}
+
+.sort-select {
+  padding: 0.5rem 2rem 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: #374151;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23374151' d='M2.5 4.5L6 8l3.5-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  transition: border-color 0.2s ease;
+}
+
+.sort-select:hover {
+  border-color: #6366f1;
+}
+
+.sort-select:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.1);
 }
 
 /* Listings Content - Scrollable */
@@ -1506,8 +1534,8 @@
     transform: scale(1.1);
   }
 
-  /* Listings count - directly below schedule selector, not sticky */
-  .listings-count {
+  /* Results header - directly below schedule selector, not sticky */
+  .results-header {
     position: relative;
     top: 0;
     z-index: 10;
@@ -1518,8 +1546,8 @@
     overflow: hidden;
   }
 
-  /* Hide listings count when header is collapsed */
-  .listings-count--hidden {
+  /* Hide results header when header is collapsed */
+  .results-header--hidden {
     opacity: 0;
     max-height: 0;
     padding: 0;
