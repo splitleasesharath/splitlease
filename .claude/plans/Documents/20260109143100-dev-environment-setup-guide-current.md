@@ -211,65 +211,59 @@ Or use the browser dev tools to check Network requests.
 
 ## Part 5: Database Migration (Dev vs Prod)
 
-### Understanding Database State
+### Current Status: ✅ COMPLETED
 
-Your **dev database** is currently empty or has test data. Your **prod database** has real user data.
+Your **dev database** (`qzsmhgyojmwvtjmnrdea`) has been cloned from **prod** (`qcfifybkaddcoimjroca`), including:
+- ✅ Full schema (tables, functions, policies, indexes)
+- ✅ Production data (as of clone date: ~2026-01-09)
 
-**Options**:
+Both databases are now running **PostgreSQL 17.6.1** in the **us-east-2** region.
 
-#### Option A: Fresh Dev Database (Recommended)
+### What Was Done
 
-Start with a clean database and apply migrations:
+The production database was cloned to development using one of these methods:
+1. Supabase Dashboard: Database → Settings → Clone Database
+2. CLI-based dump and restore using `pg_dump` / `psql`
 
+**Result**: Dev database is a snapshot of production at the time of cloning.
+
+### Ongoing Maintenance
+
+Since dev is now a static copy, consider these maintenance tasks:
+
+#### Keep Schema in Sync
+
+When schema changes are made in production:
 ```bash
-supabase db reset  # Resets local DB to migrations
-```
-
-This approach ensures dev starts from a known state.
-
-#### Option B: Copy Prod Schema to Dev (No Data)
-
-To copy the schema structure (tables, functions, policies) without data:
-
-```bash
-# Link to prod temporarily
+# Pull latest schema from prod
 supabase link --project-ref qcfifybkaddcoimjroca
-
-# Pull down schema
 supabase db pull
 
-# Link back to dev
+# Apply to dev
 supabase link --project-ref qzsmhgyojmwvtjmnrdea
-
-# Push schema to dev
 supabase db push
 ```
 
-**⚠️ Warning**: This does NOT copy data, only schema.
+#### Refresh Data Periodically (Optional)
 
-#### Option C: Copy Prod Data to Dev (Use Caution)
-
-**Only do this if you need production data for testing.**
-
-1. Export from prod:
+To re-sync dev data from prod (every 2-4 weeks):
 ```bash
-# Link to prod
-supabase link --project-ref qcfifybkaddcoimjroca
+# Export from prod
+pg_dump "postgresql://postgres:<password>@db.qcfifybkaddcoimjroca.supabase.co:5432/postgres" > prod_snapshot_$(date +%Y%m%d).sql
 
-# Dump database
-pg_dump "postgresql://postgres:<password>@db.qcfifybkaddcoimjroca.supabase.co:5432/postgres" > prod_dump.sql
+# Import to dev
+psql "postgresql://postgres:<password>@db.qzsmhgyojmwvtjmnrdea.supabase.co:5432/postgres" < prod_snapshot_*.sql
 ```
 
-2. Import to dev:
+**⚠️ Data Privacy**: Dev database contains REAL USER DATA. Ensure compliance with privacy policies and restrict access appropriately.
+
+#### Reset to Clean State (If Needed)
+
+To clear dev database and start fresh:
 ```bash
-# Link to dev
 supabase link --project-ref qzsmhgyojmwvtjmnrdea
-
-# Restore
-psql "postgresql://postgres:<password>@db.qzsmhgyojmwvtjmnrdea.supabase.co:5432/postgres" < prod_dump.sql
+supabase db reset  # Resets to migrations only, removes cloned data
 ```
-
-**⚠️ Warning**: This copies REAL USER DATA. Ensure compliance with privacy policies and only use for authorized testing.
 
 ---
 
@@ -344,10 +338,12 @@ After completing the setup, verify everything works:
 
 ### Database Verification
 
-- [ ] Tables exist in dev project (check Supabase Dashboard)
-- [ ] Migrations applied successfully (`supabase migration list`)
-- [ ] Sample data loads correctly (if applicable)
+- [x] Tables exist in dev project (check Supabase Dashboard) - **Cloned from prod**
+- [x] Production schema replicated successfully - **Verified on 2026-01-09**
+- [x] Production data cloned (including users, listings, proposals)
 - [ ] RLS policies are active (check Database → Policies)
+- [ ] Test queries work against cloned data
+- [ ] Dev database is NOT being modified by production traffic
 
 ### Cloudflare Verification
 
@@ -515,14 +511,20 @@ You've successfully configured your development environment! Here's what you set
 
 ✅ **Frontend**: Uses `qzsmhgyojmwvtjmnrdea` via `app/.env`
 ✅ **Edge Functions**: Automatically use dev credentials when deployed to dev
-✅ **Database**: Dev database isolated from production
+✅ **Database**: Dev database cloned from production (schema + data as of ~2026-01-09)
 ✅ **Cloudflare**: Production builds use prod, previews use dev
 
+**Current Environment Status**:
+- **Production**: `qcfifybkaddcoimjroca` | PostgreSQL 17.6.1.011 | us-east-2 | ACTIVE_HEALTHY
+- **Development**: `qzsmhgyojmwvtjmnrdea` | PostgreSQL 17.6.1.063 | us-east-2 | ACTIVE_HEALTHY
+
 **Next Steps**:
-1. Test a full user flow (signup → login → create listing)
-2. Deploy an Edge Function and test it
-3. Verify logs in Supabase Dashboard
-4. Set up Cloudflare environment variables for preview builds
+1. Update `app/.env` to point to dev project (if not already done)
+2. Test a full user flow against cloned data (login → view listing → create proposal)
+3. Deploy Edge Functions to dev and test them
+4. Verify RLS policies are enforced correctly
+5. Set up Cloudflare environment variables for preview builds
+6. Establish a schedule for periodic data refreshes (optional)
 
 ---
 
