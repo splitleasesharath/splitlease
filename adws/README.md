@@ -99,8 +99,8 @@ uv run adw_review_iso.py 123 <adw-id>   # Review phase (requires worktree)
 uv run adw_document_iso.py 123 <adw-id> # Documentation phase (requires worktree)
 uv run adw_ship_iso.py 123 <adw-id>     # Ship phase (approve & merge PR)
 
-# Claude.ai Browser Integration (creates worktree)
-uv run adw_claude_browser_iso.py 123 "Your prompt here"  # Browser-based Claude interaction
+# Claude.ai Browser Integration (no worktree/GitHub)
+uv run adw_claude_browser.py "Your prompt here"  # Invoke Claude from Chrome
 
 # Run continuous monitoring (polls every 20 seconds)
 uv run adw_triggers/trigger_cron.py
@@ -146,40 +146,42 @@ uv run adw_patch_iso.py <issue-number> [adw-id]
 4. Implements specific changes
 5. Commits and creates PR from worktree
 
-#### adw_claude_browser_iso.py - Claude.ai Browser Integration
-Launches Claude.ai in Chrome browser and sends prompts programmatically.
+#### adw_claude_browser.py - Claude from Chrome
+Invoke Claude.ai directly from Chrome browser using Claude Code's extension.
 
 **Usage:**
 ```bash
-uv run adw_claude_browser_iso.py <issue-number> "<prompt>" [adw-id]
+uv run adw_claude_browser.py "<prompt>" [adw-id]
 ```
 
-**Example:**
+**Examples:**
 ```bash
-uv run adw_claude_browser_iso.py 123 "Analyze the performance metrics of our API endpoints"
+# Auto-generate ADW ID
+uv run adw_claude_browser.py "Explain React Server Components"
+
+# Use specific ADW ID
+uv run adw_claude_browser.py "Best practices for PostgreSQL indexing" abc12345
 ```
 
 **What it does:**
-1. Creates isolated worktree with unique ports (if adw-id not provided)
-2. Invokes `/claude_browser` slash command
-3. Uses Claude Code's native Chrome extension for browser control
-4. Navigates to https://claude.ai
-5. Sends the provided prompt to Claude via the web interface
-6. Waits for and captures Claude's response
-7. Takes screenshot of the conversation
-8. Posts results to GitHub issue
-9. Commits results and creates PR from worktree
+1. Generates unique ADW ID for isolation
+2. Uses Claude Code's Chrome extension to control browser
+3. Navigates to https://claude.ai
+4. Sends your prompt to Claude
+5. Captures response and screenshot
+6. Displays results in terminal
+7. Saves to `agents/<adw_id>/claude_browser/`
 
 **Requirements:**
-- Claude Code Chrome extension installed (https://code.claude.com/docs/en/chrome)
-- User logged into Claude.ai in Chrome browser
-- Chrome browser running and accessible
+- Claude Code Chrome extension (https://code.claude.com/docs/en/chrome)
+- Logged into Claude.ai in Chrome
+- Chrome browser running
 
 **Use Cases:**
-- Get Claude's analysis on external topics
-- Research documentation or best practices
-- Generate content using Claude.ai's web interface
-- Capture Claude's responses for issue tracking
+- Research and documentation lookup
+- Quick analysis tasks
+- Content generation
+- Testing browser automation
 
 ### Dependent Workflows (Require Existing Worktree)
 

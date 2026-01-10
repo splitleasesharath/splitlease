@@ -47,14 +47,14 @@ uv run adw_fp_audit_iso.py app/src/logic abc12345
 ### Phase 2: Implement Fixes
 
 ```bash
-# Implement Priority 1 fixes only (high-impact files)
-uv run adw_fp_implement_iso.py abc12345 --priority 1
+# Implement single chunk (most granular)
+uv run adw_fp_implement_iso.py abc12345 --chunks 1
 
-# Implement Priority 2 fixes
-uv run adw_fp_implement_iso.py abc12345 --priority 2
+# Implement range of chunks (5 at a time)
+uv run adw_fp_implement_iso.py abc12345 --chunks 1-5
 
 # Implement all remaining fixes
-uv run adw_fp_implement_iso.py abc12345 --priority all
+uv run adw_fp_implement_iso.py abc12345 --chunks all
 ```
 
 **Output:**
@@ -62,6 +62,13 @@ uv run adw_fp_implement_iso.py abc12345 --priority all
 - Updated plan with checkboxes marked
 - Implementation summary: `agents/<adw_id>/fp_implementation_summary.md`
 - Git commit with detailed changelog
+
+**Piecemeal Approach:**
+Each chunk is a **discrete, self-contained fix** that can be:
+- Implemented in 5-10 minutes
+- Tested independently
+- Committed separately
+- Fixed in any order (chunks are independent)
 
 ## What Gets Fixed
 
@@ -120,7 +127,7 @@ Next step:
   uv run adw_fp_implement_iso.py fp9k2m4x
 ```
 
-### 2. Review Plan
+### 2. Review Plan (Chunk-Based Format)
 
 ```bash
 $ cat .claude/plans/New/fp9k2m4x_fp_refactor_plan.md
@@ -130,32 +137,67 @@ $ cat .claude/plans/New/fp9k2m4x_fp_refactor_plan.md
 ADW ID: fp9k2m4x
 Date: 2026-01-10
 Total Violations: 17
+Target: agents/fp_audit_violations.json
 
-## Priority 1: High-Impact Files (Fix First)
+---
 
-### File: workflows/proposals/counterofferWorkflow.js (5 violations)
+## 🔴 CHUNK 1: Replace .push() in counterofferWorkflow.js:156
 
-**Violations:**
-1. Line 156: [MUTATING_METHOD] - Using .push() to build changes array
-   - Current: `changes.push({ field: 'price', ... })`
-   - Fix: `changes = [...changes, { field: 'price', ... }]`
-   - Rationale: Mutation makes testing harder and violates immutability
+**File:** workflows/proposals/counterofferWorkflow.js
+**Line:** 156
+**Violation:** MUTATING_METHOD - Using .push() to mutate array
+**Severity:** 🔴 High
 
-2. Line 165: [MUTATING_METHOD] - Using .push() to build changes array
-   ...
-
-**Refactoring Steps:**
-1. [ ] Replace all .push() calls with spread operator
-2. [ ] Test counteroffer workflow with unit tests
-3. [ ] Verify no regressions in proposal flow
-
-...
+**Current Code:**
+```javascript
+const changes = []
+if (priceChanged) {
+  changes.push({ field: 'price', old: originalPrice, new: newPrice })
+}
 ```
 
-### 3. Implement Fixes (Priority 1)
+**Refactored Code:**
+```javascript
+const changes = [
+  priceChanged && { field: 'price', old: originalPrice, new: newPrice }
+].filter(Boolean)
+```
+
+**Why This Matters:**
+Mutation makes testing harder. Declarative array construction is more predictable.
+
+**Testing:**
+- [ ] Run unit tests for counteroffer workflow
+- [ ] Verify proposal changes are tracked correctly
+- [ ] Check that price changes still trigger properly
+
+---
+
+## 🔴 CHUNK 2: Replace .push() in counterofferWorkflow.js:165
+
+**File:** workflows/proposals/counterofferWorkflow.js
+**Line:** 165
+**Violation:** MUTATING_METHOD
+**Severity:** 🔴 High
+
+[Full chunk details...]
+
+---
+
+[17 total chunks, each separated by `---`]
+```
+
+**Key Features:**
+- ✅ Each chunk is numbered sequentially (CHUNK 1, CHUNK 2, etc.)
+- ✅ Horizontal rules (`---`) clearly separate chunks
+- ✅ Complete before/after code (no truncation)
+- ✅ Testing checklist per chunk
+- ✅ Can be implemented in any order
+
+### 3. Implement Fixes (Chunk by Chunk)
 
 ```bash
-$ uv run adw_fp_implement_iso.py fp9k2m4x --priority 1
+$ uv run adw_fp_implement_iso.py fp9k2m4x --chunks 1
 
 =============================================================
 ADW FP IMPLEMENT (ISOLATED)
@@ -172,7 +214,7 @@ PHASE: VALIDATION
 =============================================================
 PHASE: IMPLEMENTATION
 =============================================================
-Priority: 1
+Chunk range: 1
 
 🤖 Starting Claude Code session...
 Agent output: agents/fp9k2m4x/fp_implementor/raw_output.jsonl
@@ -180,35 +222,68 @@ Agent output: agents/fp9k2m4x/fp_implementor/raw_output.jsonl
 ✅ Implementation complete
 
 Summary:
-## Files Modified
-- workflows/proposals/counterofferWorkflow.js
-- calculators/scheduling/calculateCheckInOutDays.js
-
-## Violations Fixed: 7
-
-- 5 mutation violations (replaced .push with spread)
-- 2 mutation violations (replaced .sort with toSorted)
+## Chunk 1 Complete
+- File: workflows/proposals/counterofferWorkflow.js:156
+- Replaced .push() with spread operator
+- Tests passing
 
 =============================================================
 ✅ FP IMPLEMENTATION COMPLETE
 =============================================================
 ADW ID: fp9k2m4x
-Priority: 1
-Violations fixed: 7
-Files modified: 2
+Chunks: 1
+Violations fixed: 1
+Files modified: 1
 Worktree: trees/fp9k2m4x/
 
 Next step (optional):
-  uv run adw_fp_implement_iso.py fp9k2m4x --priority 2
+  uv run adw_fp_implement_iso.py fp9k2m4x --chunks 2
+  Or continue with range: --chunks 2-6
+  Or do all remaining: --chunks all
 ```
 
-## Priority Levels
+**Iterative Workflow:**
+```bash
+# Fix chunk 1, test, commit
+uv run adw_fp_implement_iso.py fp9k2m4x --chunks 1
+cd trees/fp9k2m4x && npm test
 
-| Priority | Files | Criteria | When to Fix |
-|----------|-------|----------|-------------|
-| **1 - High Impact** | Most violations + Core logic | Affects testability, used frequently | **Fix first** |
-| **2 - Medium Impact** | Moderate violations | Improves code quality | After Priority 1 |
-| **3 - Low Impact** | Few violations | Nice to have | When time permits |
+# Fix chunks 2-5, test, commit
+uv run adw_fp_implement_iso.py fp9k2m4x --chunks 2-5
+cd trees/fp9k2m4x && npm test
+
+# Fix remaining chunks
+uv run adw_fp_implement_iso.py fp9k2m4x --chunks all
+```
+
+## Chunk-Based Refactoring
+
+### What is a Chunk?
+
+A **chunk** is a single, atomic FP violation fix:
+- Takes 5-10 minutes to implement
+- Affects specific lines in one file
+- Can be tested independently
+- Can be committed separately
+- Is independent of other chunks
+
+### Chunk Format
+
+Each chunk contains:
+- **Header**: File, line, violation type, severity
+- **Current Code**: Exact code being replaced
+- **Refactored Code**: Exact replacement code
+- **Why This Matters**: FP principle explanation
+- **Testing**: Checklist for verification
+
+### Working with Chunks
+
+| Approach | Command | Use When |
+|----------|---------|----------|
+| **Single chunk** | `--chunks 1` | Testing approach, learning, high-risk changes |
+| **Small batch** | `--chunks 1-5` | Steady progress, related fixes |
+| **Large batch** | `--chunks 1-20` | Bulk refactoring, low-risk changes |
+| **All at once** | `--chunks all` | Confident in changes, well-tested code |
 
 ## Integration with Claude Code Skills
 

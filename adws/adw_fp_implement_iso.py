@@ -74,38 +74,68 @@ def validate_prerequisites(adw_id: str) -> tuple[ADWState, Path]:
     return state, working_dir
 
 
-def implement_fp_fixes(adw_id: str, priority: str, plan_file: str, working_dir: Path) -> dict:
+def implement_fp_fixes(adw_id: str, chunk_range: str, plan_file: str, working_dir: Path) -> dict:
     """Use Claude Code with /functional-code skill to implement fixes."""
     print(f"\n{'='*60}")
     print("PHASE: IMPLEMENTATION")
     print(f"{'='*60}")
-    print(f"Priority: {priority}")
+    print(f"Chunk range: {chunk_range}")
 
-    priority_section = {
-        "1": "Priority 1: High-Impact Files",
-        "2": "Priority 2: Medium-Impact Files",
-        "3": "Priority 3: Low-Impact Files",
-        "all": "all priorities"
-    }[priority]
+    # Parse chunk range
+    if chunk_range == "all":
+        chunk_instruction = "Implement ALL chunks in sequential order"
+    elif "-" in chunk_range:
+        start, end = chunk_range.split("-")
+        chunk_instruction = f"Implement chunks {start} through {end} ONLY"
+    else:
+        chunk_instruction = f"Implement ONLY chunk {chunk_range}"
 
     # Create prompt for Claude Code
-    prompt = f"""I need you to implement the functional programming refactoring plan.
+    prompt = f"""I need you to implement the functional programming refactoring plan chunk-by-chunk.
 
 **Context:**
 - Refactoring plan: {plan_file}
-- Focus on: {priority_section}
+- Target chunks: {chunk_instruction}
 - Use /functional-code skill for FP guidance
 
 **Your Task:**
 1. Load the /functional-code skill
 2. Read the refactoring plan: {plan_file}
-3. {"Implement ONLY Priority " + priority + " fixes" if priority != "all" else "Implement ALL fixes in the plan"}
-4. For each violation:
-   - Read the file containing the violation
-   - Apply the suggested fix from the plan
-   - Verify the fix follows FP principles
-   - Test that the change doesn't break functionality
-5. Update the plan checkboxes to mark completed items
+3. {chunk_instruction}
+
+**IMPLEMENTATION WORKFLOW (Per Chunk):**
+
+For each chunk in your range:
+
+1. **Read the chunk header** to understand:
+   - File path
+   - Line number
+   - Violation type
+   - Severity
+
+2. **Read the actual source file** at the specified location
+
+3. **Locate the exact code** mentioned in "Current Code" section
+
+4. **Apply the refactoring** from "Refactored Code" section:
+   - Make ONLY the changes specified
+   - Preserve surrounding code exactly
+   - Match indentation and style
+   - Keep function signatures unchanged unless explicitly stated
+
+5. **Mark the chunk as done** by checking the testing checkboxes in the plan
+
+6. **Move to next chunk** (if in range)
+
+**CRITICAL RULES:**
+
+- ✅ Fix ONLY chunks in your assigned range
+- ✅ Work sequentially (CHUNK 1, then CHUNK 2, etc.)
+- ✅ Make changes EXACTLY as specified in "Refactored Code"
+- ✅ Update the plan file by checking off [ ] → [x] as you complete testing items
+- ❌ DO NOT make additional refactorings beyond the chunk
+- ❌ DO NOT skip chunks in your range
+- ❌ DO NOT combine multiple chunks into one change
 
 **Implementation Guidelines:**
 
@@ -227,8 +257,8 @@ Include:
 def main():
     parser = argparse.ArgumentParser(description="ADW FP Implement - Execute refactoring plan")
     parser.add_argument("adw_id", help="ADW ID from adw_fp_audit_iso.py")
-    parser.add_argument("--priority", choices=["1", "2", "3", "all"], default="1",
-                        help="Which priority level to implement (default: 1)")
+    parser.add_argument("--chunks", dest="chunk_range", default="1",
+                        help="Which chunks to implement: '1' (single), '1-5' (range), or 'all' (default: 1)")
 
     args = parser.parse_args()
 
@@ -243,7 +273,7 @@ def main():
     # Implement FP fixes
     results = implement_fp_fixes(
         args.adw_id,
-        args.priority,
+        args.chunk_range,
         state.plan_file,
         working_dir
     )
@@ -253,9 +283,9 @@ def main():
     print("PHASE: COMMIT")
     print(f"{'='*60}")
 
-    priority_label = f"Priority {args.priority}" if args.priority != "all" else "All priorities"
+    chunk_label = f"Chunk {args.chunk_range}" if args.chunk_range != "all" else "All chunks"
 
-    commit_message = f"""refactor(fp): implement FP fixes - {priority_label}
+    commit_message = f"""refactor(fp): implement FP fixes - {chunk_label}
 
 ADW ID: {args.adw_id}
 Violations fixed: {results['violations_fixed']}
@@ -288,16 +318,22 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"""
     print("✅ FP IMPLEMENTATION COMPLETE")
     print(f"{'='*60}")
     print(f"ADW ID: {args.adw_id}")
-    print(f"Priority: {args.priority}")
+    print(f"Chunks: {args.chunk_range}")
     print(f"Violations fixed: {results['violations_fixed']}")
     print(f"Files modified: {len(results['files_modified'])}")
     print(f"Worktree: {working_dir}")
 
-    if args.priority != "all":
-        remaining = {"1": ["2", "3"], "2": ["3"], "3": []}[args.priority]
-        if remaining:
-            print(f"\nNext step (optional):")
-            print(f"  uv run adw_fp_implement_iso.py {args.adw_id} --priority {remaining[0]}")
+    if args.chunk_range != "all":
+        if "-" in args.chunk_range:
+            end_chunk = int(args.chunk_range.split("-")[1])
+            next_chunk = end_chunk + 1
+        else:
+            next_chunk = int(args.chunk_range) + 1
+
+        print(f"\nNext step (optional):")
+        print(f"  uv run adw_fp_implement_iso.py {args.adw_id} --chunks {next_chunk}")
+        print(f"  Or continue with range: --chunks {next_chunk}-{next_chunk + 4}")
+        print(f"  Or do all remaining: --chunks all")
 
 
 if __name__ == "__main__":

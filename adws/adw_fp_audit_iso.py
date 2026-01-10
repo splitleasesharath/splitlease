@@ -149,54 +149,149 @@ def create_fp_refactor_plan(audit_results: dict, adw_id: str, working_dir: Path)
    - Number of violations per file
 4. Create a refactoring plan at: .claude/plans/New/{adw_id}_fp_refactor_plan.md
 
-**Plan Structure:**
+**CRITICAL PLAN STRUCTURE REQUIREMENTS:**
+
+Each violation must be a **DISCRETE, SELF-CONTAINED CHUNK** that can be fixed independently.
+
+Use this structure:
+
 ```markdown
 # Functional Programming Refactoring Plan
 
 ADW ID: {adw_id}
 Date: {datetime.now().strftime('%Y-%m-%d')}
 Total Violations: {len(violations)}
+Target: {violations_file}
 
-## Priority 1: High-Impact Files (Fix First)
+---
 
-### File: path/to/file.js ({len(violations)} violations)
+## 🔴 CHUNK 1: Replace .push() in counterofferWorkflow.js:156
 
-**Violations:**
-1. Line X: [Type] - Description
-   - Current: `code snippet`
-   - Fix: `suggested code`
-   - Rationale: Why this matters
+**File:** workflows/proposals/counterofferWorkflow.js
+**Line:** 156
+**Violation:** MUTATING_METHOD - Using .push() to mutate array
+**Severity:** 🔴 High
 
-**Refactoring Steps:**
-1. [ ] Step-by-step implementation
-2. [ ] Test changes
-3. [ ] Verify no regressions
+**Current Code:**
+```javascript
+const changes = []
+if (priceChanged) {{
+  changes.push({{ field: 'price', old: originalPrice, new: newPrice }})
+}}
+```
 
-## Priority 2: Medium-Impact Files
+**Refactored Code:**
+```javascript
+const changes = [
+  priceChanged && {{ field: 'price', old: originalPrice, new: newPrice }}
+].filter(Boolean)
+```
 
-...
+**Why This Matters:**
+Mutation makes the `changes` array harder to test and reason about. Using declarative array construction is more predictable.
 
-## Priority 3: Low-Impact Files
+**Testing:**
+- [ ] Run unit tests for counteroffer workflow
+- [ ] Verify proposal changes are tracked correctly
+- [ ] Check that price changes still trigger properly
 
-...
+---
+
+## 🔴 CHUNK 2: Replace .push() in counterofferWorkflow.js:165
+
+**File:** workflows/proposals/counterofferWorkflow.js
+**Line:** 165
+**Violation:** MUTATING_METHOD - Using .push() to mutate array
+**Severity:** 🔴 High
+
+**Current Code:**
+```javascript
+if (daysChanged) {{
+  changes.push({{ field: 'days', old: originalDays, new: newDays }})
+}}
+```
+
+**Refactored Code:**
+```javascript
+const changes = [
+  priceChanged && {{ field: 'price', old: originalPrice, new: newPrice }},
+  daysChanged && {{ field: 'days', old: originalDays, new: newDays }}
+].filter(Boolean)
+```
+
+**Why This Matters:**
+Consolidates all change tracking into a single declarative array construction.
+
+**Testing:**
+- [ ] Run unit tests for counteroffer workflow
+- [ ] Verify day changes are tracked correctly
+- [ ] Check that multiple changes work together
+
+---
+
+## 🟡 CHUNK 3: Remove console.error from extractListingCoordinates.js:46
+
+**File:** processors/listing/extractListingCoordinates.js
+**Line:** 46
+**Violation:** IO_IN_CORE - I/O operation in core business logic
+**Severity:** 🟡 Medium
+
+**Current Code:**
+```javascript
+catch (error) {{
+  console.error('Failed to parse coordinates:', error)
+  return null
+}}
+```
+
+**Refactored Code:**
+```javascript
+catch (error) {{
+  return {{ success: false, error: 'Failed to parse coordinates', details: error.message }}
+}}
+```
+
+**Why This Matters:**
+Core business logic (processors) should not perform I/O like console logging. Return error data instead and let the caller decide how to log.
+
+**Testing:**
+- [ ] Run unit tests for coordinate extraction
+- [ ] Verify error handling still works
+- [ ] Update caller to handle new error format
+
+---
+
+[Continue pattern for all {len(violations)} violations...]
 
 ## Implementation Order
 
-1. File A (highest impact)
-2. File B
-3. ...
+Work through chunks sequentially:
+1. CHUNK 1 → Test → Commit
+2. CHUNK 2 → Test → Commit
+3. CHUNK 3 → Test → Commit
+...
 
 ## References
-- Original violations: {violations_file}
-- FP principles: /functional-code skill
+- Violations JSON: {violations_file}
+- FP Principles: /functional-code skill
 ```
 
+**CRITICAL FORMATTING RULES:**
+
+1. **One chunk = One violation = One atomic fix**
+2. **Use horizontal rules (`---`) to separate chunks clearly**
+3. **Number each chunk sequentially (CHUNK 1, CHUNK 2, etc.)**
+4. **Include emoji severity indicators: 🔴 High, 🟡 Medium, 🟢 Low**
+5. **Show complete before/after code (no truncation)**
+6. **Include file path, line number, and violation type in chunk header**
+7. **Add testing checklist for each chunk**
+8. **Keep chunks independent (fixable in any order)**
+
 **Important:**
-- Be specific with line numbers and code snippets
-- Provide concrete before/after code examples
-- Explain the FP principle being violated
-- Include test verification steps
-- Use checkboxes for implementation tracking
+- Each chunk should be implementable in 5-10 minutes
+- No chunk should depend on another chunk being done first
+- Provide EXACT code, not pseudocode
+- Line numbers must match the violations JSON exactly
 """
 
     # Run Claude Code session
