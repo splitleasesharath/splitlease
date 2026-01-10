@@ -82,11 +82,18 @@ export async function handleApplyHardBlock(
     ? 'Throttling - host ability to create requests?'
     : 'Throttling - guest ability to create requests?';
 
+  const blockedAtField = isHost
+    ? 'Throttling - host blocked at'
+    : 'Throttling - guest blocked at';
+
   const blockedAt = new Date().toISOString();
 
   const { error: updateError } = await supabase
     .from('bookings_leases')
-    .update({ [abilityField]: false })
+    .update({
+      [abilityField]: false,
+      [blockedAtField]: blockedAt,
+    })
     .eq('_id', leaseId);
 
   if (updateError) {
