@@ -15,8 +15,6 @@ Example:
 """
 
 import argparse
-import json
-import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -28,128 +26,109 @@ from adw_modules.agent import prompt_claude_code
 from adw_modules.data_types import AgentPromptRequest
 
 
-def run_fp_audit(target_path: str, severity: str) -> dict:
-    """Run FP audit script and return violations."""
+def run_fp_audit_and_plan(target_path: str, severity: str, working_dir: Path) -> str:
+    """Use Claude Code agent to run FP audit AND create refactoring plan."""
     print(f"\n{'='*60}")
-    print("PHASE: FP AUDIT")
-    print(f"{'='*60}")
-    print(f"Target: {target_path}")
-    print(f"Severity filter: {severity}")
-
-    audit_script = Path(".claude/skills/functional-code/scripts/fp_audit.py")
-
-    if not audit_script.exists():
-        raise FileNotFoundError(f"FP audit script not found: {audit_script}")
-
-    # Run audit and output JSON
-    output_file = Path("agents/fp_audit_violations.json")
-    output_file.parent.mkdir(parents=True, exist_ok=True)
-
-    cmd = [
-        "python",
-        str(audit_script),
-        target_path,
-        "--output", "json",
-        "--severity", severity,
-        "--file", str(output_file)
-    ]
-
-    print(f"\nRunning: {' '.join(cmd)}")
-
-    result = subprocess.run(cmd, capture_output=True, text=True)
-
-    if result.returncode != 0:
-        print(f"❌ Audit failed: {result.stderr}")
-        sys.exit(1)
-
-    print(result.stdout)
-
-    # Load violations
-    with open(output_file, 'r') as f:
-        violations = json.load(f)
-
-    print(f"\n✅ Found {len(violations)} violations")
-
-    return {
-        "violations": violations,
-        "output_file": str(output_file)
-    }
-
-
-def create_fp_refactor_plan(audit_results: dict, working_dir: Path) -> str:
-    """Use Claude Code with /functional-code skill to create refactoring plan."""
-    print(f"\n{'='*60}")
-    print("PHASE: PLAN CREATION")
+    print("PHASE: FP AUDIT & PLAN CREATION")
     print(f"{'='*60}")
 
-    violations = audit_results["violations"]
-    violations_file = audit_results["output_file"]
-
-    # Generate timestamp for plan file
+    # Generate timestamp for output files
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    violations_file = f"agents/fp_audit_violations.json"
     plan_file = f".claude/plans/New/{timestamp}_fp_refactor_plan.md"
 
-    # Group violations by file
-    by_file = {}
-    for v in violations:
-        file_path = v["file_path"]
-        if file_path not in by_file:
-            by_file[file_path] = []
-        by_file[file_path].append(v)
-
-    # Sort files by violation count
-    sorted_files = sorted(by_file.items(), key=lambda x: len(x[1]), reverse=True)
-
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    plan_file = f".claude/plans/New/{timestamp}_fp_refactor_plan.md"
-
-    # Create prompt for Claude Code
-    prompt = f"""I need you to create a chunk-based refactoring plan to fix functional programming violations.
-
-**Context:**
-- Automated FP audit found {len(violations)} violations
-- Violations documented in: {violations_file}
-- Files ranked by violation count (highest first)
-
-**Top 5 Files Needing Refactoring:**
-"""
-
-    for i, (file_path, file_violations) in enumerate(sorted_files[:5], 1):
-        prompt += f"\n{i}. {file_path} ({len(file_violations)} violations)\n"
-
-        by_type = {}
-        for v in file_violations:
-            vtype = v["violation_type"]
-            if vtype not in by_type:
-                by_type[vtype] = []
-            by_type[vtype].append(v)
-
-        for vtype, viols in by_type.items():
-            prompt += f"   - {vtype.replace('_', ' ').title()}: {len(viols)} instances\n"
-
-    prompt += f"""
+    # Create prompt for Claude Code agent to do EVERYTHING
+    prompt = f"""I need you to audit the codebase for functional programming violations and create a chunk-based refactoring plan.
 
 **Your Task:**
-1. Load the /functional-code skill
-2. Read the violations JSON: {violations_file}
-3. Create a chunk-based refactoring plan at: {plan_file}
+
+1. **Run the FP audit script:**
+   - Use Bash tool to run: `python .claude/skills/functional-code/scripts/fp_audit.py {target_path} --output json --severity {severity} --file {violations_file}`
+   - This will generate a JSON file with all violations
+
+2. **Load the /functional-code skill** for FP guidance
+
+3. **Read the violations JSON** at: {violations_file}
+
+4. **Analyze the violations:**
+   - Group violations by file to identify high-impact files
+   - Count violations by type (MUTATING_METHOD, IO_IN_CORE, IMPERATIVE_LOOP, EXCEPTION_FOR_FLOW)
+   - Note severity levels (high, medium, low)
+   - Sort files by violation count (highest first)
+
+5. **Create a chunk-based refactoring plan** at: {plan_file}
 
 **CRITICAL: Each violation = ONE CHUNK**
 
-Use this structure:
+Use this exact structure:
 
 ```markdown
 # Functional Programming Refactoring Plan
 
 Date: {datetime.now().strftime('%Y-%m-%d')}
-Total Violations: {len(violations)}
 Target: {violations_file}
+Severity Filter: {severity}
+
+---
+
+## 🔴 CHUNK 1: [Brief description of violation]
+
+**File:** [relative path to file]
+**Line:** [line number]
+**Violation:** [VIOLATION_TYPE] - [brief explanation]
+**Severity:** 🔴 High | 🟡 Medium | 🟢 Low
+
+**Current Code:**
+```javascript
+[exact current code from the file]
+```
+
+**Refactored Code:**
+```javascript
+[exact replacement code following FP principles]
+```
+
+**Why This Matters:**
+[1-2 sentences explaining the FP principle being violated and why the fix improves the code]
+
+**Testing:**
+- [ ] [Specific test to run]
+- [ ] [Verification step]
+
+---
+
+## 🔴 CHUNK 2: [Next violation...]
+
+[Repeat for ALL violations]
+```
+
+**FORMATTING RULES:**
+1. One chunk = one violation = one atomic fix
+2. Use `---` to separate chunks clearly (horizontal rule)
+3. Number chunks sequentially (CHUNK 1, 2, 3...)
+4. Include emoji severity: 🔴 High, 🟡 Medium, 🟢 Low
+5. Show complete before/after code (no truncation, no ellipsis)
+6. Include file path, line number, violation type in header
+7. Add testing checklist per chunk (2-3 items)
+8. Keep chunks independent (can be fixed in any order)
+
+**Important Guidelines:**
+- Each chunk should take 5-10 minutes to implement
+- Provide EXACT code snippets, not pseudocode
+- Line numbers must match the violations JSON exactly
+- Show enough surrounding context to locate the code
+- For mutations like .push(), show declarative alternatives
+- For I/O in core logic, show how to return data instead
+- For imperative loops, show map/filter/reduce equivalent
+- For exceptions, show Result/Either type pattern
+
+**Example Chunk (for reference):**
 
 ---
 
 ## 🔴 CHUNK 1: Replace .push() in counterofferWorkflow.js:156
 
-**File:** workflows/proposals/counterofferWorkflow.js
+**File:** app/src/logic/workflows/proposals/counterofferWorkflow.js
 **Line:** 156
 **Violation:** MUTATING_METHOD - Using .push() to mutate array
 **Severity:** 🔴 High
@@ -160,45 +139,28 @@ const changes = []
 if (priceChanged) {{
   changes.push({{ field: 'price', old: originalPrice, new: newPrice }})
 }}
+if (datesChanged) {{
+  changes.push({{ field: 'dates', old: originalDates, new: newDates }})
+}}
 ```
 
 **Refactored Code:**
 ```javascript
 const changes = [
-  priceChanged && {{ field: 'price', old: originalPrice, new: newPrice }}
+  priceChanged && {{ field: 'price', old: originalPrice, new: newPrice }},
+  datesChanged && {{ field: 'dates', old: originalDates, new: newDates }}
 ].filter(Boolean)
 ```
 
 **Why This Matters:**
-Mutation makes testing harder. Declarative array construction is more predictable.
+Mutation makes state unpredictable and testing harder. Declarative array construction clearly shows all possible values upfront, making the code easier to reason about.
 
 **Testing:**
 - [ ] Run unit tests for counteroffer workflow
 - [ ] Verify proposal changes are tracked correctly
+- [ ] Check edge case where no changes occur (empty array)
 
 ---
-
-## 🔴 CHUNK 2: [Next violation...]
-
----
-
-[Continue for all {len(violations)} violations]
-```
-
-**FORMATTING RULES:**
-1. One chunk = one violation = one atomic fix
-2. Use `---` to separate chunks clearly
-3. Number chunks sequentially (CHUNK 1, 2, 3...)
-4. Include emoji severity: 🔴 High, 🟡 Medium, 🟢 Low
-5. Show complete before/after code (no truncation)
-6. Include file path, line number, violation type in header
-7. Add testing checklist per chunk
-8. Keep chunks independent (fixable in any order)
-
-**Important:**
-- Each chunk should take 5-10 minutes to implement
-- Provide EXACT code, not pseudocode
-- Line numbers must match the violations JSON
 """
 
     # Run Claude Code session
@@ -207,8 +169,12 @@ Mutation makes testing harder. Declarative array construction is more predictabl
 
     output_file = agent_dir / "raw_output.jsonl"
 
-    print(f"\n🤖 Starting Claude Code session...")
+    print(f"\n🤖 Starting Claude Code agent...")
     print(f"Agent output: {output_file}")
+    print(f"\nAgent will:")
+    print(f"  1. Run FP audit script on: {target_path}")
+    print(f"  2. Analyze violations (severity: {severity})")
+    print(f"  3. Create chunk-based plan at: {plan_file}")
 
     request = AgentPromptRequest(
         prompt=prompt,
@@ -223,7 +189,7 @@ Mutation makes testing harder. Declarative array construction is more predictabl
     response = prompt_claude_code(request)
 
     if not response.success:
-        print(f"❌ Claude Code session failed: {response.output}")
+        print(f"\n❌ Claude Code session failed: {response.output}")
         sys.exit(1)
 
     print(f"\n✅ Claude Code completed successfully")
@@ -256,17 +222,12 @@ def main():
     # Use current directory as working dir
     working_dir = Path.cwd()
 
-    # Run FP audit
-    audit_results = run_fp_audit(args.target_path, args.severity)
-
-    # Create refactoring plan using Claude Code
-    plan_file = create_fp_refactor_plan(audit_results, working_dir)
+    # Run FP audit and create plan using Claude Code agent
+    plan_file = run_fp_audit_and_plan(args.target_path, args.severity, working_dir)
 
     print(f"\n{'='*60}")
     print("✅ FP AUDIT COMPLETE")
     print(f"{'='*60}")
-    print(f"Violations: {len(audit_results['violations'])}")
-    print(f"Violations JSON: {audit_results['output_file']}")
     print(f"Plan: {plan_file}")
     print(f"\nNext step:")
     print(f"  uv run adw_fp_implement.py")
