@@ -355,6 +355,60 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
     fetchData();
   }, [fetchData]);
 
+  // ─────────────────────────────────────────────────────────────
+  // Real-time subscription for unread messages
+  // Updates badge instantly when new messages arrive or are read
+  // ─────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!userId) return;
+
+    console.log('[useLoggedInAvatarData] Setting up realtime subscription for messages');
+
+    // Helper to fetch current unread count
+    const fetchUnreadCount = async () => {
+      const { count, error } = await supabase
+        .from('_message')
+        .select('_id', { count: 'exact', head: true })
+        .contains('"Unread Users"', [userId]);
+
+      if (!error && count !== null) {
+        setData(prev => {
+          if (prev.unreadMessagesCount !== count) {
+            console.log('[useLoggedInAvatarData] Unread count updated:', prev.unreadMessagesCount, '->', count);
+            return { ...prev, unreadMessagesCount: count };
+          }
+          return prev;
+        });
+      }
+    };
+
+    // Subscribe to _message table changes
+    const channel = supabase
+      .channel('header-unread-messages')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: '_message',
+        },
+        (payload) => {
+          console.log('[useLoggedInAvatarData] Message change detected:', payload.eventType);
+          // Re-fetch unread count on any message change
+          // This handles: new messages, messages marked as read, messages deleted
+          fetchUnreadCount();
+        }
+      )
+      .subscribe((status) => {
+        console.log('[useLoggedInAvatarData] Realtime subscription status:', status);
+      });
+
+    return () => {
+      console.log('[useLoggedInAvatarData] Cleaning up realtime subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [userId]);
+
   return { data, loading, error, refetch: fetchData };
 }
 
