@@ -511,20 +511,31 @@ Visual: [any visual issues]
 DO NOT attempt to fix anything - just report the status accurately.
 """
 
-    # Import and run adw_claude_browser logic
-    from adw_claude_browser import run_claude_browser
-    import logging
+    # Import browser automation with dev server management
+    import subprocess
+    import sys
 
-    logger = logging.getLogger("fp_orchestrator")
+    # Call adw_claude_browser.py script which handles dev server internally
+    adw_browser_script = working_dir / "adws" / "adw_claude_browser.py"
 
     try:
-        success, output = run_claude_browser(validation_prompt, logger)
+        # Run the browser script - it handles dev server startup/cleanup internally
+        result = subprocess.run(
+            [sys.executable, "-m", "uv", "run", str(adw_browser_script), validation_prompt],
+            cwd=working_dir,
+            capture_output=True,
+            text=True,
+            timeout=600  # 10 minute timeout for browser + server startup
+        )
+
+        success = result.returncode == 0
+        output = result.stdout if success else result.stderr
 
         if not success:
             notify_failure(
                 step=f"Chunk {chunk.number} Validation",
                 error="Browser automation failed",
-                details=output
+                details=output[:500]
             )
             return False
 
@@ -545,6 +556,13 @@ DO NOT attempt to fix anything - just report the status accurately.
             print(output)
             return False
 
+    except subprocess.TimeoutExpired:
+        notify_failure(
+            step=f"Chunk {chunk.number} Validation",
+            error="Validation timed out after 10 minutes",
+            details="Browser automation took too long"
+        )
+        return False
     except Exception as e:
         notify_failure(
             step=f"Chunk {chunk.number} Validation",

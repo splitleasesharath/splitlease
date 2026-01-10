@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# dependencies = ["python-dotenv", "pydantic"]
+# dependencies = ["python-dotenv", "pydantic", "psutil"]
 # ///
 
 """
@@ -39,34 +39,24 @@ load_dotenv()
 CLAUDE_PATH = os.getenv("CLAUDE_CODE_PATH", "claude")
 
 
-def run_claude_browser(prompt: str, logger: logging.Logger) -> tuple[bool, str]:
+def run_claude_browser(prompt: str, logger: logging.Logger, dev_server_process: subprocess.Popen) -> tuple[bool, str]:
     """Execute Claude CLI with Chrome integration.
 
     Uses the validated pattern: claude --chrome --print "<prompt>"
-    Ensures dev server is running before starting browser automation.
+    Assumes dev server is already running (started before this function).
 
     Args:
         prompt: The task/prompt to send to Claude
         logger: Logger instance for debugging
+        dev_server_process: Running dev server process (not managed by this function)
 
     Returns:
         Tuple of (success, output_text)
     """
-    from pathlib import Path
-    from adw_modules.dev_server import ensure_dev_server, stop_dev_server
-
-    working_dir = Path.cwd()
-    dev_server_process = None
+    cmd = [CLAUDE_PATH, "--chrome", "--print", prompt]
+    logger.debug(f"Executing command: {' '.join(cmd)}")
 
     try:
-        # Ensure dev server is running before browser automation
-        logger.info("Checking dev server status...")
-        dev_server_process = ensure_dev_server(working_dir, logger)
-
-        # Now run the browser automation
-        cmd = [CLAUDE_PATH, "--chrome", "--print", prompt]
-        logger.debug(f"Executing command: {' '.join(cmd)}")
-
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -90,15 +80,13 @@ def run_claude_browser(prompt: str, logger: logging.Logger) -> tuple[bool, str]:
     except Exception as e:
         logger.error(f"Unexpected error executing Claude browser: {e}")
         return False, f"Error: {str(e)}"
-    finally:
-        # Clean up dev server if we started it
-        if dev_server_process:
-            logger.info("Cleaning up dev server...")
-            stop_dev_server(dev_server_process, logger)
 
 
 def main():
     """Main entry point."""
+    from pathlib import Path
+    from adw_modules.dev_server import ensure_dev_server_single_attempt, stop_dev_server
+
     # Parse command line args
     if len(sys.argv) < 2:
         print("Usage: uv run adw_claude_browser.py \"<prompt>\" [adw-id]")
@@ -133,32 +121,59 @@ def main():
     print(f"Prompt: {prompt_arg}")
     print(f"{'='*60}\n")
 
-    # Execute the Claude browser interaction
-    logger.info("Launching Claude browser session")
-    print("Launching Claude.ai in Chrome...")
-    print("Sending prompt to Claude...\n")
+    # DETERMINISTIC DEV SERVER STARTUP
+    # This happens BEFORE agent invocation, outside the agent loop
+    working_dir = Path.cwd()
+    dev_server_process = None
 
-    # Execute using validated CLI pattern
-    success, output = run_claude_browser(prompt_arg, logger)
-
-    # Display results
-    print(f"\n{'='*60}")
-    if success:
-        print("Claude browser interaction completed!")
+    try:
+        print(f"\n{'='*60}")
+        print("PRE-FLIGHT: DEV SERVER CHECK")
         print(f"{'='*60}\n")
-        print(output)
-        print(f"\n{'='*60}\n")
-        logger.info("Claude browser interaction completed successfully")
-    else:
-        print("Claude browser interaction failed!")
-        print(f"{'='*60}\n")
-        print(f"Error: {output}")
-        print(f"\n{'='*60}\n")
-        logger.error(f"Claude browser interaction failed: {output}")
-        sys.exit(1)
 
-    # Save final state
-    state.save("adw_claude_browser")
+        # Ensure dev server is running (single attempt, fail fast)
+        dev_server_process = ensure_dev_server_single_attempt(working_dir, 8000, logger)
+
+        print(f"\n{'='*60}")
+        print("AGENT INVOCATION")
+        print(f"{'='*60}\n")
+
+        # Execute the Claude browser interaction
+        logger.info("Launching Claude browser session")
+        print("Launching Claude.ai in Chrome...")
+        print("Sending prompt to Claude...\n")
+
+        # Execute using validated CLI pattern
+        success, output = run_claude_browser(prompt_arg, logger, dev_server_process)
+
+        # Display results
+        print(f"\n{'='*60}")
+        if success:
+            print("Claude browser interaction completed!")
+            print(f"{'='*60}\n")
+            print(output)
+            print(f"\n{'='*60}\n")
+            logger.info("Claude browser interaction completed successfully")
+        else:
+            print("Claude browser interaction failed!")
+            print(f"{'='*60}\n")
+            print(f"Error: {output}")
+            print(f"\n{'='*60}\n")
+            logger.error(f"Claude browser interaction failed: {output}")
+            sys.exit(1)
+
+        # Save final state
+        state.save("adw_claude_browser")
+
+    finally:
+        # Clean up dev server
+        if dev_server_process:
+            print(f"\n{'='*60}")
+            print("POST-FLIGHT: DEV SERVER CLEANUP")
+            print(f"{'='*60}\n")
+            stop_dev_server(dev_server_process, logger)
+            print("✓ Dev server stopped")
+            print(f"{'='*60}\n")
 
 
 if __name__ == "__main__":

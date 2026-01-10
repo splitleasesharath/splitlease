@@ -3,9 +3,9 @@ Dev Server Management for ADW Workflows
 
 Provides utilities to:
 - Check if dev server is running on localhost:8000
+- Kill any process blocking the port
 - Start dev server in background if not running
 - Keep dev server running throughout orchestration
-- Clean up dev server process when done
 """
 
 import subprocess
@@ -13,7 +13,7 @@ import time
 import logging
 import socket
 import os
-import signal
+import psutil
 from pathlib import Path
 from typing import Optional
 
@@ -34,6 +34,31 @@ def is_port_in_use(port: int, host: str = "localhost") -> bool:
             return True
         except (ConnectionRefusedError, OSError):
             return False
+
+
+def kill_process_on_port(port: int, logger: logging.Logger) -> bool:
+    """Kill any process using the specified port.
+
+    Args:
+        port: Port number to check
+        logger: Logger instance
+
+    Returns:
+        True if a process was killed, False if no process found
+    """
+    killed = False
+    for conn in psutil.net_connections():
+        if conn.laddr.port == port and conn.status == 'LISTEN':
+            try:
+                process = psutil.Process(conn.pid)
+                logger.info(f"Killing process {process.name()} (PID {conn.pid}) on port {port}")
+                process.kill()
+                process.wait(timeout=5)
+                killed = True
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.TimeoutExpired) as e:
+                logger.warning(f"Failed to kill process on port {port}: {e}")
+
+    return killed
 
 
 def start_dev_server(working_dir: Path, logger: logging.Logger) -> Optional[subprocess.Popen]:
@@ -146,3 +171,52 @@ def stop_dev_server(process: Optional[subprocess.Popen], logger: logging.Logger)
 
     except Exception as e:
         logger.error(f"Error stopping dev server: {e}")
+
+
+def ensure_dev_server_single_attempt(working_dir: Path, port: int, logger: logging.Logger) -> subprocess.Popen:
+    """Ensure dev server is running with a single restart attempt if needed.
+
+    This is the deterministic approach:
+    1. Check if port is available
+    2. If port is blocked, kill the process and start fresh
+    3. If port is free, just start the server
+    4. Single attempt only - fail fast if it doesn't work
+
+    Args:
+        working_dir: Project root directory
+        port: Port to run on (default: 8000)
+        logger: Logger instance
+
+    Returns:
+        Subprocess.Popen instance of the running dev server
+
+    Raises:
+        RuntimeError: If dev server fails to start
+    """
+    logger.info(f"Checking port {port}...")
+
+    # Check if port is in use
+    if is_port_in_use(port):
+        logger.warning(f"Port {port} is in use - killing existing process")
+        print(f"⚠️  Port {port} is blocked - killing existing process...")
+
+        if kill_process_on_port(port, logger):
+            print(f"✓ Killed process on port {port}")
+            # Wait a moment for port to be fully released
+            time.sleep(2)
+        else:
+            logger.warning(f"No process found on port {port} but port appears in use")
+
+    # Start dev server
+    logger.info(f"Starting dev server on port {port}...")
+    print(f"Starting bun run dev on port {port}...")
+
+    process = start_dev_server(working_dir, logger)
+
+    if process is None:
+        error_msg = f"Failed to start dev server on port {port}"
+        logger.error(error_msg)
+        raise RuntimeError(error_msg)
+
+    print(f"✓ Dev server running at http://localhost:{port}")
+    return process
