@@ -275,6 +275,7 @@
 .header-messaging-panel__messages {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   max-height: 350px;
   min-height: 200px;
@@ -314,6 +315,8 @@
 .header-messaging-panel__messages .message-bubble__content {
   padding: 10px 14px;
   border-radius: 16px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .header-messaging-panel__messages .message-bubble--incoming .message-bubble__content {
@@ -340,6 +343,8 @@
   font-size: 14px;
   line-height: 1.5;
   word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: anywhere;
   color: inherit;
 }
 
