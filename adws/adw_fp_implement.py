@@ -28,7 +28,8 @@ from datetime import datetime
 # Add adws to path for imports
 sys.path.insert(0, str(Path(__file__).parent))
 
-from adw_modules.agent import run_claude_code_session
+from adw_modules.agent import prompt_claude_code
+from adw_modules.data_types import AgentPromptRequest
 
 
 def find_latest_plan() -> Path:
@@ -107,18 +108,28 @@ Include:
     agent_dir = working_dir / "agents" / "fp_implementor"
     agent_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n🤖 Starting Claude Code session...")
-    print(f"Agent output: {agent_dir / 'raw_output.jsonl'}")
+    output_file = agent_dir / "raw_output.jsonl"
 
-    success = run_claude_code_session(
+    print(f"\n🤖 Starting Claude Code session...")
+    print(f"Agent output: {output_file}")
+
+    request = AgentPromptRequest(
         prompt=prompt,
-        agent_dir=agent_dir,
-        working_dir=working_dir
+        adw_id="fp_implement",
+        agent_name="fp_implementor",
+        model="opus",
+        output_file=str(output_file),
+        working_dir=str(working_dir),
+        dangerously_skip_permissions=True
     )
 
-    if not success:
-        print("❌ Claude Code session failed")
+    response = prompt_claude_code(request)
+
+    if not response.success:
+        print(f"❌ Claude Code session failed: {response.output}")
         sys.exit(1)
+
+    print(f"\n✅ Claude Code completed successfully")
 
     # Load implementation summary
     summary_file = working_dir / "agents" / "fp_implementation_summary.md"
