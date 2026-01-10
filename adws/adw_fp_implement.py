@@ -25,6 +25,11 @@ import sys
 from pathlib import Path
 from datetime import datetime
 
+# Add adws to path for imports
+sys.path.insert(0, str(Path(__file__).parent))
+
+from adw_modules.agent import run_claude_code_session
+
 
 def find_latest_plan() -> Path:
     """Find the most recent FP refactoring plan."""
@@ -55,10 +60,10 @@ def find_latest_plan() -> Path:
     return latest_plan
 
 
-def create_implementation_prompt(plan_file: Path) -> str:
-    """Generate prompt for Claude Code to implement fixes."""
+def implement_fp_fixes(plan_file: Path, working_dir: Path) -> dict:
+    """Use Claude Code to implement fixes from the plan."""
     print(f"\n{'='*60}")
-    print("PHASE: GENERATE PROMPT")
+    print("PHASE: IMPLEMENTATION")
     print(f"{'='*60}")
 
     prompt = f"""I need you to implement the functional programming refactoring plan.
@@ -98,14 +103,56 @@ Include:
 - Mark testing checkboxes in the plan as you complete them
 """
 
-    # Output prompt to file
-    prompt_file = Path("agents/fp_implementor_prompt.txt")
-    prompt_file.parent.mkdir(parents=True, exist_ok=True)
-    prompt_file.write_text(prompt, encoding='utf-8')
+    # Run Claude Code session
+    agent_dir = working_dir / "agents" / "fp_implementor"
+    agent_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"📝 Prompt written to: {prompt_file}")
+    print(f"\n🤖 Starting Claude Code session...")
+    print(f"Agent output: {agent_dir / 'raw_output.jsonl'}")
 
-    return str(prompt_file)
+    success = run_claude_code_session(
+        prompt=prompt,
+        agent_dir=agent_dir,
+        working_dir=working_dir
+    )
+
+    if not success:
+        print("❌ Claude Code session failed")
+        sys.exit(1)
+
+    # Load implementation summary
+    summary_file = working_dir / "agents" / "fp_implementation_summary.md"
+
+    if not summary_file.exists():
+        print("⚠️ No implementation summary created")
+        return {
+            "files_modified": [],
+            "violations_fixed": 0
+        }
+
+    summary_content = summary_file.read_text()
+
+    print(f"\n✅ Implementation complete")
+    print(f"\nSummary:\n{summary_content}")
+
+    # Parse summary (simplified)
+    files_modified = []
+    violations_fixed = 0
+
+    for line in summary_content.split('\n'):
+        if line.startswith('- ') and '.js' in line:
+            files_modified.append(line.strip('- ').strip())
+        if 'violations fixed:' in line.lower() or 'chunks completed:' in line.lower():
+            try:
+                violations_fixed = int(line.split(':')[1].strip())
+            except:
+                pass
+
+    return {
+        "files_modified": files_modified,
+        "violations_fixed": violations_fixed,
+        "summary_file": str(summary_file.relative_to(working_dir))
+    }
 
 
 def main():
@@ -113,23 +160,21 @@ def main():
     print("ADW FP IMPLEMENT")
     print(f"{'='*60}")
 
+    # Use current directory as working dir
+    working_dir = Path.cwd()
+
     # Find latest plan
     plan_file = find_latest_plan()
 
-    # Generate implementation prompt
-    prompt_file = create_implementation_prompt(plan_file)
+    # Implement fixes using Claude Code
+    results = implement_fp_fixes(plan_file, working_dir)
 
     print(f"\n{'='*60}")
-    print("✅ READY TO IMPLEMENT")
+    print("✅ FP IMPLEMENTATION COMPLETE")
     print(f"{'='*60}")
     print(f"Plan: {plan_file}")
-    print(f"Prompt: {prompt_file}")
-    print(f"\n🤖 Please run this prompt in Claude Code:")
-    print(f"\n   claude {prompt_file}")
-    print(f"\nExpected outputs:")
-    print(f"  - Modified source files with FP fixes")
-    print(f"  - agents/fp_implementation_summary.md")
-    print(f"  - Updated plan with checkboxes marked")
+    print(f"Violations fixed: {results['violations_fixed']}")
+    print(f"Files modified: {len(results['files_modified'])}")
 
 
 if __name__ == "__main__":

@@ -21,6 +21,11 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+# Add adws to path for imports
+sys.path.insert(0, str(Path(__file__).parent))
+
+from adw_modules.agent import run_claude_code_session
+
 
 def run_fp_audit(target_path: str, severity: str) -> dict:
     """Run FP audit script and return violations."""
@@ -70,7 +75,7 @@ def run_fp_audit(target_path: str, severity: str) -> dict:
     }
 
 
-def create_fp_refactor_plan(audit_results: dict) -> str:
+def create_fp_refactor_plan(audit_results: dict, working_dir: Path) -> str:
     """Use Claude Code with /functional-code skill to create refactoring plan."""
     print(f"\n{'='*60}")
     print("PHASE: PLAN CREATION")
@@ -78,6 +83,10 @@ def create_fp_refactor_plan(audit_results: dict) -> str:
 
     violations = audit_results["violations"]
     violations_file = audit_results["output_file"]
+
+    # Generate timestamp for plan file
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    plan_file = f".claude/plans/New/{timestamp}_fp_refactor_plan.md"
 
     # Group violations by file
     by_file = {}
@@ -191,15 +200,31 @@ Mutation makes testing harder. Declarative array construction is more predictabl
 - Line numbers must match the violations JSON
 """
 
-    # Output prompt to file for Claude Code to process
-    prompt_file = Path("agents/fp_planner_prompt.txt")
-    prompt_file.parent.mkdir(parents=True, exist_ok=True)
-    prompt_file.write_text(prompt, encoding='utf-8')
+    # Run Claude Code session
+    agent_dir = working_dir / "agents" / "fp_planner"
+    agent_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"\n📝 Prompt written to: {prompt_file}")
-    print(f"\n🤖 Please run this prompt in Claude Code:")
-    print(f"\n   claude {prompt_file}")
-    print(f"\nExpected output: {plan_file}")
+    print(f"\n🤖 Starting Claude Code session...")
+    print(f"Agent output: {agent_dir / 'raw_output.jsonl'}")
+
+    success = run_claude_code_session(
+        prompt=prompt,
+        agent_dir=agent_dir,
+        working_dir=working_dir
+    )
+
+    if not success:
+        print("❌ Claude Code session failed")
+        sys.exit(1)
+
+    # Verify plan was created
+    plan_path = working_dir / plan_file
+
+    if not plan_path.exists():
+        print(f"❌ Plan file not created: {plan_path}")
+        sys.exit(1)
+
+    print(f"\n✅ Plan created: {plan_file}")
 
     return plan_file
 
@@ -217,19 +242,22 @@ def main():
     print("ADW FP AUDIT")
     print(f"{'='*60}")
 
+    # Use current directory as working dir
+    working_dir = Path.cwd()
+
     # Run FP audit
     audit_results = run_fp_audit(args.target_path, args.severity)
 
-    # Create refactoring plan prompt
-    plan_file = create_fp_refactor_plan(audit_results)
+    # Create refactoring plan using Claude Code
+    plan_file = create_fp_refactor_plan(audit_results, working_dir)
 
     print(f"\n{'='*60}")
     print("✅ FP AUDIT COMPLETE")
     print(f"{'='*60}")
     print(f"Violations: {len(audit_results['violations'])}")
     print(f"Violations JSON: {audit_results['output_file']}")
-    print(f"Expected plan: {plan_file}")
-    print(f"\nNext: Run the prompt in Claude Code, then:")
+    print(f"Plan: {plan_file}")
+    print(f"\nNext step:")
     print(f"  uv run adw_fp_implement.py")
 
 
