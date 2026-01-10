@@ -3,13 +3,88 @@ name: functional-code
 description: |
   Guides writing pure, functional code following principles of immutability, explicit dependencies, and testability.
   Use when: (1) Creating new functions or business logic, (2) Refactoring code for testability, (3) Implementing data transformations,
-  (4) Handling errors in APIs or edge functions, (5) Separating pure logic from I/O operations, (6) Reviewing code for functional purity.
+  (4) Handling errors in APIs or edge functions, (5) Separating pure logic from I/O operations, (6) Reviewing code for functional purity,
+  (7) Auditing codebase for FP violations and generating actionable refactoring suggestions.
   Enforces: pure functions, immutable data, Result/Either types for errors, map/filter/reduce over loops, Functional Core/Imperative Shell pattern.
 ---
 
 # Functional Programming Guide
 
 Write code following functional programming principles for better testability, predictability, and maintainability.
+
+## Codebase Audit Mode
+
+This skill includes an automated auditor that scans your JavaScript/TypeScript codebase for FP violations and generates actionable refactoring suggestions.
+
+### Quick Start
+
+```bash
+# Run audit on entire codebase
+python .claude/skills/functional-code/scripts/fp_audit.py app/src
+
+# Filter by severity
+python .claude/skills/functional-code/scripts/fp_audit.py app/src --severity high
+
+# Generate report file
+python .claude/skills/functional-code/scripts/fp_audit.py app/src --file fp_audit_report.md
+
+# JSON output for programmatic processing
+python .claude/skills/functional-code/scripts/fp_audit.py app/src --output json --file violations.json
+```
+
+### What the Auditor Checks
+
+| Principle | Detects | Example Violation | Suggested Fix |
+|-----------|---------|-------------------|---------------|
+| **IMMUTABILITY** | `.push()`, `.sort()`, `arr[i] = x` | `arr.push(item)` | `[...arr, item]` |
+| **EFFECTS AT EDGES** | I/O in calculators/rules/processors | `await supabase.from()` in calculator | Move to workflow layer |
+| **DECLARATIVE STYLE** | `for` loops with mutation | `for (let i...) { result.push(...) }` | `arr.map(...).filter(...)` |
+| **ERRORS AS VALUES** | `throw` for validation errors | `throw new Error('Invalid email')` | `return err('Invalid email')` |
+
+### Report Format
+
+The auditor generates a structured markdown report:
+
+```markdown
+# Functional Programming Audit Report
+
+**Total Violations:** 23
+
+## Summary by Severity
+- 🔴 High: 8
+- 🟡 Medium: 12
+- 🟢 Low: 3
+
+## IMMUTABILITY
+
+### 🔴 app/src/logic/calculators/pricing.js:42
+
+**Type:** Mutating Method
+
+**Current Code:**
+```javascript
+prices.push(calculatedPrice)
+```
+
+**Suggested Fix:**
+Use spread operator: `[...prices, calculatedPrice]`
+
+**Rationale:** Mutating methods modify the original array, making code harder to test and reason about.
+```
+
+### Integration with ADW Workflows
+
+The auditor can be integrated into ADW workflows:
+
+1. **Pre-implementation**: Run audit to identify files needing refactoring
+2. **Post-implementation**: Validate new code follows FP principles
+3. **Continuous**: Schedule periodic audits to prevent FP debt accumulation
+
+### Severity Levels
+
+- **🔴 High**: Clear violation that will cause testing/maintenance issues (must fix)
+- **🟡 Medium**: Should fix for better FP adherence (recommended)
+- **🟢 Low**: Nice to have, optional improvement (when time permits)
 
 ## Core Principles (7 Rules)
 
