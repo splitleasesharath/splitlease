@@ -233,6 +233,144 @@ After making the change, confirm:
         return False
 
 
+def infer_validation_context(chunk: ChunkData) -> dict:
+    """Infer which page/component to validate and what specific tests to run.
+
+    Args:
+        chunk: Chunk being validated
+
+    Returns:
+        Dict with: page_url, page_name, specific_tests, user_flow
+    """
+    file_path = chunk.file_path.lower()
+    title_lower = chunk.title.lower()
+    code_lower = chunk.current_code.lower() + chunk.refactored_code.lower()
+
+    # Page mapping - extract page from file path
+    page_mapping = {
+        "searchpage": {"url": "/search", "name": "Search", "requires_auth": False},
+        "viewsplitleasepage": {"url": "/view-split-lease?id=1", "name": "View Listing", "requires_auth": False},
+        "accountprofilepage": {"url": "/account-profile", "name": "Account Profile", "requires_auth": True},
+        "listingdashboardpage": {"url": "/listing-dashboard", "name": "Listing Dashboard", "requires_auth": True},
+        "hostproposalspage": {"url": "/host-proposals", "name": "Host Proposals", "requires_auth": True},
+        "guestproposalspage": {"url": "/guest-proposals", "name": "Guest Proposals", "requires_auth": True},
+        "selflistingpage": {"url": "/self-listing", "name": "Create Listing", "requires_auth": True},
+        "favoritelistingspage": {"url": "/favorite-listings", "name": "Favorites", "requires_auth": True},
+        "faqpage": {"url": "/faq", "name": "FAQ", "requires_auth": False},
+        "messagespage": {"url": "/messages", "name": "Messages", "requires_auth": True},
+    }
+
+    # Determine page
+    page_info = {"url": "/", "name": "Home", "requires_auth": False}
+    for page_key, info in page_mapping.items():
+        if page_key in file_path:
+            page_info = info
+            break
+
+    # Shared components - test on multiple pages
+    shared_components = {
+        "loggedinavatar": {"url": "/account-profile", "name": "Account Profile (Avatar Menu)", "requires_auth": True},
+        "hostscheduleselector": {"url": "/self-listing", "name": "Create Listing (Schedule)", "requires_auth": True},
+        "searchscheduleselector": {"url": "/search", "name": "Search (Days Filter)", "requires_auth": False},
+        "createproposalflow": {"url": "/view-split-lease?id=1", "name": "View Listing (Proposal)", "requires_auth": False},
+        "googlemap": {"url": "/search", "name": "Search (Map View)", "requires_auth": False},
+        "pricingeditsection": {"url": "/listing-dashboard", "name": "Listing Dashboard (Pricing)", "requires_auth": True},
+    }
+
+    for component_key, info in shared_components.items():
+        if component_key in file_path:
+            page_info = info
+            break
+
+    # Infer specific tests based on code changes
+    specific_tests = []
+
+    # Day/schedule selection
+    if any(x in code_lower for x in ["day", "schedule", "calendar", "selecteddays", "availablenights"]):
+        specific_tests.extend([
+            "Click on multiple days in the calendar/schedule selector",
+            "Verify selected days are highlighted correctly",
+            "Check that day selection state updates properly",
+            "Verify no gaps appear in day selection logic"
+        ])
+
+    # Pricing/money
+    if any(x in code_lower for x in ["price", "pricing", "compensation", "rate", "deposit", "fee"]):
+        specific_tests.extend([
+            "Verify pricing displays correctly",
+            "Check for any '$NaN' or undefined prices",
+            "Verify price calculations update when inputs change",
+            "Check damage deposit and fees display"
+        ])
+
+    # Menu/navigation
+    if any(x in code_lower for x in ["menu", "menuitem", "navigation", "getmenuitems"]):
+        specific_tests.extend([
+            "Click the user avatar/menu to open dropdown",
+            "Verify all menu items render correctly",
+            "Check badge counts display properly",
+            "Test menu item navigation"
+        ])
+
+    # Forms/validation
+    if any(x in code_lower for x in ["validation", "error", "required", "errors.push"]):
+        specific_tests.extend([
+            "Submit form with empty required fields",
+            "Verify validation errors appear",
+            "Check error message text is correct",
+            "Verify errors clear when fields are filled"
+        ])
+
+    # Photo/media
+    if any(x in code_lower for x in ["photo", "image", "picture"]):
+        specific_tests.extend([
+            "Verify photos/images render correctly",
+            "Check photo gallery navigation",
+            "Verify no broken image placeholders"
+        ])
+
+    # Map/location
+    if any(x in code_lower for x in ["map", "marker", "location", "googlemap", "bounds"]):
+        specific_tests.extend([
+            "Verify map loads and renders",
+            "Check that markers appear on map",
+            "Test map interactions (zoom, pan)",
+            "Verify marker click opens info window"
+        ])
+
+    # Search/filter
+    if any(x in code_lower for x in ["search", "filter", "query"]):
+        specific_tests.extend([
+            "Type in search/filter fields",
+            "Verify results update",
+            "Check filter selections work"
+        ])
+
+    # Generic tests if no specific ones found
+    if not specific_tests:
+        specific_tests = [
+            "Verify page renders without errors",
+            "Check basic interactions work",
+            "Verify no visual regressions"
+        ]
+
+    # Infer user flow based on page
+    user_flow = []
+    if page_info["requires_auth"]:
+        user_flow.append("Login if not already authenticated")
+    user_flow.append(f"Navigate to {page_info['url']}")
+    user_flow.extend(specific_tests)
+    user_flow.append("Check browser console for errors")
+
+    return {
+        "page_url": page_info["url"],
+        "page_name": page_info["name"],
+        "requires_auth": page_info["requires_auth"],
+        "specific_tests": specific_tests,
+        "user_flow": user_flow
+    }
+
+
 def validate_with_browser(chunk: ChunkData, working_dir: Path) -> bool:
     """Validate chunk changes using browser automation.
 
@@ -243,45 +381,70 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path) -> bool:
     Returns:
         True if validation passed, False if site is broken
     """
+    # Infer validation context
+    context = infer_validation_context(chunk)
+
     notify_in_progress(
         step=f"Validating Chunk {chunk.number}",
-        details="Running browser validation"
+        details=f"Testing on {context['page_name']}",
+        metadata={
+            "page": context["page_url"],
+            "tests": len(context["specific_tests"])
+        }
     )
 
     print(f"\n{'='*60}")
     print(f"VALIDATING CHUNK {chunk.number} WITH BROWSER")
     print(f"{'='*60}")
+    print(f"Page: {context['page_name']} ({context['page_url']})")
+    print(f"Specific tests: {len(context['specific_tests'])}")
 
-    # Construct validation prompt for browser
-    # Extract the page/component name from file path
-    file_parts = Path(chunk.file_path).parts
-    page_name = "the site"
-
-    if "pages" in file_parts:
-        page_idx = file_parts.index("pages")
-        if page_idx + 1 < len(file_parts):
-            page_name = file_parts[page_idx + 1].replace("Page", "").replace(".jsx", "")
+    # Build detailed validation prompt
+    tests_list = "\n".join(f"   {i+1}. {test}" for i, test in enumerate(context["specific_tests"]))
 
     validation_prompt = f"""I just refactored code in {chunk.file_path} (line {chunk.line_number}).
 
-Please validate that the change didn't break the site:
+**Change:** {chunk.title}
 
-1. Navigate to http://localhost:8000 (dev server should be running)
-2. Navigate to the {page_name} page if applicable
-3. Check for:
-   - No console errors
-   - Page renders correctly
-   - Interactive elements work
-   - No obvious visual regressions
+**Validation Required:**
 
-Report ONLY if you find errors. If everything works, just say "VALIDATION PASSED".
+Navigate to: http://localhost:8000{context['page_url']}
 
-If you find errors, describe:
-- What broke
-- Error messages in console
-- Visual issues
+**Critical:** This refactoring affects {context['page_name']}. You MUST test the specific functionality that could break:
 
-DO NOT try to fix anything - just report the status.
+{tests_list}
+
+**Step-by-Step Validation:**
+1. Navigate to http://localhost:8000{context['page_url']}
+2. {"Login first if needed (use test credentials)" if context['requires_auth'] else "No login required"}
+3. Perform EACH of the specific tests above
+4. Monitor browser console for errors
+5. Check for visual regressions
+
+**What Changed:**
+File: {chunk.file_path}:{chunk.line_number}
+Type: Functional programming refactoring ({chunk.title})
+Risk: Medium - Array/object operations changed from imperative to declarative
+
+**Report Format:**
+
+If EVERYTHING works:
+---
+VALIDATION PASSED
+All {len(context['specific_tests'])} tests completed successfully.
+No console errors detected.
+---
+
+If ANYTHING breaks:
+---
+VALIDATION FAILED
+Test #{{}}: [which test failed]
+Error: [what broke]
+Console: [any error messages]
+Visual: [any visual issues]
+---
+
+DO NOT attempt to fix anything - just report the status accurately.
 """
 
     # Import and run adw_claude_browser logic
@@ -305,15 +468,17 @@ DO NOT try to fix anything - just report the status.
         if "VALIDATION PASSED" in output.upper():
             notify_success(
                 step=f"Chunk {chunk.number} Validation",
-                details="No errors detected"
+                details=f"All tests passed on {context['page_name']}"
             )
             return True
         else:
             notify_failure(
                 step=f"Chunk {chunk.number} Validation",
                 error="Site broken after refactoring",
-                details=output
+                details=output[:500]  # Truncate for webhook
             )
+            print(f"\n❌ VALIDATION FAILED:")
+            print(output)
             return False
 
     except Exception as e:
