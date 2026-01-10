@@ -74,23 +74,87 @@ def extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]:
 
     Returns:
         List of ChunkData objects, one per chunk
-
-    # TODO(human): Implement chunk extraction logic
-    # The plan file has chunks separated by `---` horizontal rules.
-    # Each chunk has:
-    # - Header: `## 🔴 CHUNK N: [title]`
-    # - File path: `**File:** path/to/file.js`
-    # - Line number: `**Line:** 123` or `**Lines:** 123-456`
-    # - Current code: ```javascript ... ```
-    # - Refactored code: ```javascript ... ```
-    # - Testing: - [ ] checkboxes
-    #
-    # Consider:
-    # - Should we skip chunks with all checkboxes marked `[x]`?
-    # - Should we validate chunk structure before returning?
-    # - How to handle malformed chunks?
     """
-    pass
+    import re
+
+    if not plan_file.exists():
+        raise FileNotFoundError(f"Plan file not found: {plan_file}")
+
+    content = plan_file.read_text(encoding='utf-8')
+
+    # Split on horizontal rules to get chunks
+    # Split on "---" but keep track of sections
+    sections = re.split(r'\n---+\n', content)
+
+    chunks = []
+
+    for section in sections:
+        section = section.strip()
+
+        # Skip empty sections and header/summary sections
+        if not section or not section.startswith('##'):
+            continue
+
+        # Extract chunk number and title from header
+        header_match = re.search(r'##\s+🔴\s+CHUNK\s+(\d+):\s+(.+)', section)
+        if not header_match:
+            continue
+
+        chunk_number = int(header_match.group(1))
+        chunk_title = header_match.group(2).strip()
+
+        # Extract file path
+        file_match = re.search(r'\*\*File:\*\*\s+(.+)', section)
+        if not file_match:
+            print(f"⚠️  Warning: Chunk {chunk_number} missing file path, skipping")
+            continue
+
+        file_path = file_match.group(1).strip()
+
+        # Extract line number (can be "Line:" or "Lines:")
+        line_match = re.search(r'\*\*Lines?:\*\*\s+(.+)', section)
+        line_number = line_match.group(1).strip() if line_match else None
+
+        # Extract code blocks (look for ```javascript blocks)
+        code_blocks = re.findall(r'```javascript\s*\n(.*?)\n```', section, re.DOTALL)
+
+        if len(code_blocks) < 2:
+            print(f"⚠️  Warning: Chunk {chunk_number} missing code blocks, skipping")
+            continue
+
+        current_code = code_blocks[0].strip()
+        refactored_code = code_blocks[1].strip()
+
+        # Extract testing steps (lines starting with "- [ ]")
+        testing_steps = re.findall(r'-\s+\[\s*\]\s+(.+)', section)
+
+        # Check if all tests are marked complete ([x])
+        completed_tests = re.findall(r'-\s+\[x\]\s+(.+)', section, re.IGNORECASE)
+        all_tests_complete = (
+            len(testing_steps) == 0 and
+            len(completed_tests) > 0
+        )
+
+        # Skip chunks where all tests are marked complete
+        if all_tests_complete:
+            print(f"⏭️  Skipping chunk {chunk_number} - all tests marked complete")
+            continue
+
+        # Create ChunkData object
+        chunk = ChunkData(
+            number=chunk_number,
+            title=chunk_title,
+            file_path=file_path,
+            line_number=line_number,
+            current_code=current_code,
+            refactored_code=refactored_code,
+            testing_steps=testing_steps,
+            raw_content=section
+        )
+
+        chunks.append(chunk)
+
+    return chunks
 
 
 def run_audit_phase(target_path: str, severity: str, working_dir: Path) -> Path:

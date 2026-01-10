@@ -1,4 +1,4 @@
-# FP Orchestrator - Automated Functional Programming Refactoring Workflow
+# ADW FP Audit Browser Implement - Automated Functional Programming Refactoring Workflow
 
 Fully automated workflow for refactoring JavaScript code to functional programming patterns with browser validation and Slack notifications.
 
@@ -34,10 +34,10 @@ All steps send real-time updates to Slack via webhook.
 
 ```bash
 # Audit app/src/logic and process all high-severity violations
-uv run adws/adw_fp_orchestrator.py app/src/logic --severity high
+uv run adws/adw_fp_audit_browser_implement.py app/src/logic --severity high
 
 # Or just audit a specific directory
-uv run adws/adw_fp_orchestrator.py app/src/islands/pages/SearchPage --severity all
+uv run adws/adw_fp_audit_browser_implement.py app/src/islands/pages/SearchPage --severity all
 ```
 
 ### What Happens
@@ -67,7 +67,7 @@ uv run adws/adw_fp_orchestrator.py app/src/islands/pages/SearchPage --severity a
 
 | File | Purpose |
 |------|---------|
-| `adw_fp_orchestrator.py` | Main orchestrator script |
+| `adw_fp_audit_browser_implement.py` | Main orchestrator script |
 | `adw_modules/webhook.py` | Slack notification module |
 | `adw_fp_audit.py` | FP audit (generates plan) |
 | `adw_fp_implement.py` | Implementation (unused by orchestrator) |
@@ -77,7 +77,7 @@ uv run adws/adw_fp_orchestrator.py app/src/islands/pages/SearchPage --severity a
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ adw_fp_orchestrator.py                                      │
+│ adw_fp_audit_browser_implement.py                                      │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
 │  1. run_audit_phase()                                       │
@@ -232,7 +232,7 @@ The orchestrator is **90% complete**. You need to implement **one function**:
 
 ### `extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]`
 
-**Location:** `adws/adw_fp_orchestrator.py:80`
+**Location:** `adws/adw_fp_audit_browser_implement.py:80`
 
 **Input:** Path to plan file (e.g., `.claude/plans/New/20260110142304_fp_refactor_plan.md`)
 
@@ -324,7 +324,7 @@ Once you implement `extract_chunks_from_plan()`, test the orchestrator:
 To test without running full workflow, modify the plan file to contain only 1 chunk, then:
 
 ```bash
-uv run adws/adw_fp_orchestrator.py app/src/logic --severity high
+uv run adws/adw_fp_audit_browser_implement.py app/src/logic --severity high
 ```
 
 Watch for:
@@ -340,7 +340,7 @@ Watch for:
 Once dry run works, restore the full plan and run:
 
 ```bash
-uv run adws/adw_fp_orchestrator.py app/src/logic --severity high
+uv run adws/adw_fp_audit_browser_implement.py app/src/logic --severity high
 ```
 
 This will process all 110+ chunks. Monitor Slack for progress.
@@ -373,7 +373,7 @@ This will process all 110+ chunks. Monitor Slack for progress.
 
 ## Next Steps
 
-1. **Implement `extract_chunks_from_plan()`** in `adw_fp_orchestrator.py`
+1. **Implement `extract_chunks_from_plan()`** in `adw_fp_audit_browser_implement.py`
 2. **Test with single chunk** (modify plan file to have 1 chunk)
 3. **Verify browser validation** works with specific tests
 4. **Verify webhook notifications** appear in Slack
