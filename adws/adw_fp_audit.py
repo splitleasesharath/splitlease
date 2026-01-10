@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run
 # /// script
-# dependencies = ["python-dotenv"]
+# dependencies = ["python-dotenv", "pydantic"]
 # ///
 
 """
