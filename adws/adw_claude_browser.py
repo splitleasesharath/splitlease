@@ -11,8 +11,8 @@ Usage:
 
 Workflow:
 1. Generate ADW ID (or use provided)
-2. Execute /claude_browser command with the prompt
-3. Capture Claude's response and screenshot
+2. Execute Claude CLI with Chrome integration
+3. Capture Claude's response
 4. Display results
 
 This is a SIMPLIFIED version without worktree creation - runs in current directory.
@@ -26,23 +26,62 @@ Example:
 import sys
 import os
 import logging
-from typing import Optional
+import subprocess
 from dotenv import load_dotenv
 
 from adw_modules.state import ADWState
 from adw_modules.utils import setup_logger, check_env_vars, make_adw_id
-from adw_modules.data_types import AgentTemplateRequest
-from adw_modules.agent import execute_template
 
-# Agent name constant
-AGENT_CLAUDE_BROWSER = "claude_browser"
+# Load environment variables
+load_dotenv()
+
+# Get Claude Code CLI path from environment
+CLAUDE_PATH = os.getenv("CLAUDE_CODE_PATH", "claude")
+
+
+def run_claude_browser(prompt: str, logger: logging.Logger) -> tuple[bool, str]:
+    """Execute Claude CLI with Chrome integration.
+
+    Uses the validated pattern: claude --chrome --print "<prompt>"
+
+    Args:
+        prompt: The task/prompt to send to Claude
+        logger: Logger instance for debugging
+
+    Returns:
+        Tuple of (success, output_text)
+    """
+    cmd = [CLAUDE_PATH, "--chrome", "--print", prompt]
+    logger.debug(f"Executing command: {' '.join(cmd)}")
+
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            encoding='utf-8',
+            timeout=300  # 5 minute timeout for browser operations
+        )
+
+        success = result.returncode == 0
+        output = result.stdout if success else result.stderr
+
+        logger.debug(f"Command completed with return code: {result.returncode}")
+        return success, output.strip()
+
+    except subprocess.TimeoutExpired:
+        logger.error("Claude browser command timed out after 5 minutes")
+        return False, "Error: Command timed out after 5 minutes"
+    except FileNotFoundError:
+        logger.error(f"Claude CLI not found at: {CLAUDE_PATH}")
+        return False, f"Error: Claude CLI not found. Check CLAUDE_CODE_PATH in .env"
+    except Exception as e:
+        logger.error(f"Unexpected error executing Claude browser: {e}")
+        return False, f"Error: {str(e)}"
 
 
 def main():
     """Main entry point."""
-    # Load environment variables
-    load_dotenv()
-
     # Parse command line args
     if len(sys.argv) < 2:
         print("Usage: uv run adw_claude_browser.py \"<prompt>\" [adw-id]")
@@ -73,51 +112,32 @@ def main():
     state.save("adw_claude_browser")
 
     print(f"\n{'='*60}")
-    print(f"🚀 ADW Claude Browser - ID: {adw_id}")
-    print(f"📝 Prompt: {prompt_arg}")
+    print(f"ADW Claude Browser - ID: {adw_id}")
+    print(f"Prompt: {prompt_arg}")
     print(f"{'='*60}\n")
 
     # Execute the Claude browser interaction
     logger.info("Launching Claude browser session")
-    print("🌐 Launching Claude.ai in Chrome...")
-    print("📨 Sending prompt to Claude...\n")
+    print("Launching Claude.ai in Chrome...")
+    print("Sending prompt to Claude...\n")
 
-    # Create template request for the /claude_browser command
-    request = AgentTemplateRequest(
-        agent_name=AGENT_CLAUDE_BROWSER,
-        slash_command="/claude_browser",
-        args=[prompt_arg],
-        adw_id=adw_id,
-        working_dir=None,  # Use current directory
-    )
-
-    logger.debug(
-        f"claude_browser_request: {request.model_dump_json(indent=2, by_alias=True)}"
-    )
-
-    # Execute the template
-    response = execute_template(request)
-
-    logger.debug(
-        f"claude_browser_response: {response.model_dump_json(indent=2, by_alias=True)}"
-    )
+    # Execute using validated CLI pattern
+    success, output = run_claude_browser(prompt_arg, logger)
 
     # Display results
     print(f"\n{'='*60}")
-    if response.success:
-        print("✅ Claude browser interaction completed!")
+    if success:
+        print("Claude browser interaction completed!")
         print(f"{'='*60}\n")
-        print(response.output)
-        print(f"\n{'='*60}")
-        print(f"📁 Output saved to: agents/{adw_id}/{AGENT_CLAUDE_BROWSER}/")
-        print(f"{'='*60}\n")
+        print(output)
+        print(f"\n{'='*60}\n")
         logger.info("Claude browser interaction completed successfully")
     else:
-        print("❌ Claude browser interaction failed!")
+        print("Claude browser interaction failed!")
         print(f"{'='*60}\n")
-        print(f"Error: {response.output}")
+        print(f"Error: {output}")
         print(f"\n{'='*60}\n")
-        logger.error(f"Claude browser interaction failed: {response.output}")
+        logger.error(f"Claude browser interaction failed: {output}")
         sys.exit(1)
 
     # Save final state
