@@ -43,6 +43,7 @@ def run_claude_browser(prompt: str, logger: logging.Logger) -> tuple[bool, str]:
     """Execute Claude CLI with Chrome integration.
 
     Uses the validated pattern: claude --chrome --print "<prompt>"
+    Ensures dev server is running before starting browser automation.
 
     Args:
         prompt: The task/prompt to send to Claude
@@ -51,10 +52,21 @@ def run_claude_browser(prompt: str, logger: logging.Logger) -> tuple[bool, str]:
     Returns:
         Tuple of (success, output_text)
     """
-    cmd = [CLAUDE_PATH, "--chrome", "--print", prompt]
-    logger.debug(f"Executing command: {' '.join(cmd)}")
+    from pathlib import Path
+    from adw_modules.dev_server import ensure_dev_server, stop_dev_server
+
+    working_dir = Path.cwd()
+    dev_server_process = None
 
     try:
+        # Ensure dev server is running before browser automation
+        logger.info("Checking dev server status...")
+        dev_server_process = ensure_dev_server(working_dir, logger)
+
+        # Now run the browser automation
+        cmd = [CLAUDE_PATH, "--chrome", "--print", prompt]
+        logger.debug(f"Executing command: {' '.join(cmd)}")
+
         result = subprocess.run(
             cmd,
             capture_output=True,
@@ -78,6 +90,11 @@ def run_claude_browser(prompt: str, logger: logging.Logger) -> tuple[bool, str]:
     except Exception as e:
         logger.error(f"Unexpected error executing Claude browser: {e}")
         return False, f"Error: {str(e)}"
+    finally:
+        # Clean up dev server if we started it
+        if dev_server_process:
+            logger.info("Cleaning up dev server...")
+            stop_dev_server(dev_server_process, logger)
 
 
 def main():
