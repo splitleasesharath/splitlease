@@ -1,0 +1,183 @@
+"""
+Webhook notification module for ADWs.
+
+Provides deterministic status updates to Slack via webhook.
+"""
+
+import os
+import json
+from typing import Optional, Dict, Any
+from dataclasses import dataclass
+from datetime import datetime
+import urllib.request
+import urllib.error
+
+
+@dataclass
+class WebhookMessage:
+    """Slack webhook message."""
+    status: str  # "started" | "in_progress" | "success" | "failure" | "rollback"
+    step: str  # Current step description
+    details: Optional[str] = None
+    error: Optional[str] = None
+    metadata: Optional[Dict[str, Any]] = None
+
+
+def send_slack_notification(message: WebhookMessage) -> bool:
+    """Send notification to Slack webhook.
+
+    Args:
+        message: WebhookMessage with status and details
+
+    Returns:
+        True if notification sent successfully, False otherwise
+    """
+    webhook_url = os.getenv("SHARATHPLAYGROUND")
+
+    if not webhook_url:
+        print("⚠️  SHARATHPLAYGROUND webhook not configured")
+        return False
+
+    # Format message for Slack
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+    # Status emoji mapping
+    status_emoji = {
+        "started": "🚀",
+        "in_progress": "⚙️",
+        "success": "✅",
+        "failure": "❌",
+        "rollback": "⏪"
+    }
+
+    emoji = status_emoji.get(message.status, "ℹ️")
+
+    # Build Slack blocks
+    blocks = [
+        {
+            "type": "header",
+            "text": {
+                "type": "plain_text",
+                "text": f"{emoji} FP Orchestrator: {message.status.upper()}"
+            }
+        },
+        {
+            "type": "section",
+            "fields": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Step:*\n{message.step}"
+                },
+                {
+                    "type": "mrkdwn",
+                    "text": f"*Time:*\n{timestamp}"
+                }
+            ]
+        }
+    ]
+
+    # Add details if provided
+    if message.details:
+        blocks.append({
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*Details:*\n{message.details}"
+            }
+        })
+
+    # Add error if provided
+    if message.error:
+        blocks.append({
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*Error:*\n```{message.error}```"
+            }
+        })
+
+    # Add metadata if provided
+    if message.metadata:
+        metadata_text = "\n".join(
+            f"• {key}: {value}"
+            for key, value in message.metadata.items()
+        )
+        blocks.append({
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": f"*Metadata:*\n{metadata_text}"
+            }
+        })
+
+    payload = {"blocks": blocks}
+
+    try:
+        req = urllib.request.Request(
+            webhook_url,
+            data=json.dumps(payload).encode('utf-8'),
+            headers={'Content-Type': 'application/json'}
+        )
+
+        with urllib.request.urlopen(req, timeout=10) as response:
+            if response.status == 200:
+                print(f"✅ Webhook sent: {message.status} - {message.step}")
+                return True
+            else:
+                print(f"⚠️  Webhook returned {response.status}")
+                return False
+
+    except urllib.error.URLError as e:
+        print(f"❌ Webhook failed: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Webhook error: {e}")
+        return False
+
+
+def notify_started(step: str, details: Optional[str] = None) -> bool:
+    """Send 'started' notification."""
+    return send_slack_notification(WebhookMessage(
+        status="started",
+        step=step,
+        details=details
+    ))
+
+
+def notify_in_progress(step: str, details: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None) -> bool:
+    """Send 'in_progress' notification."""
+    return send_slack_notification(WebhookMessage(
+        status="in_progress",
+        step=step,
+        details=details,
+        metadata=metadata
+    ))
+
+
+def notify_success(step: str, details: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None) -> bool:
+    """Send 'success' notification."""
+    return send_slack_notification(WebhookMessage(
+        status="success",
+        step=step,
+        details=details,
+        metadata=metadata
+    ))
+
+
+def notify_failure(step: str, error: str, details: Optional[str] = None) -> bool:
+    """Send 'failure' notification."""
+    return send_slack_notification(WebhookMessage(
+        status="failure",
+        step=step,
+        details=details,
+        error=error
+    ))
+
+
+def notify_rollback(step: str, details: Optional[str] = None) -> bool:
+    """Send 'rollback' notification."""
+    return send_slack_notification(WebhookMessage(
+        status="rollback",
+        step=step,
+        details=details
+    ))
