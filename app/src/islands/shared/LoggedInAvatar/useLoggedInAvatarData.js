@@ -186,11 +186,11 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .or(`Guest.eq.${userId},"Created By".eq.${userId}`),
 
         // 6. Count unread messages
+        //    Uses _message table with "Unread Users" array containing user IDs
         supabase
-          .from('message')
+          .from('_message')
           .select('_id', { count: 'exact', head: true })
-          .eq('Recipient', userId)
-          .eq('Read', false),
+          .contains('"Unread Users"', [userId]),
 
         // 7. Check for proposals suggested by Split Lease
         //    These are proposals created by SL agent on behalf of the guest

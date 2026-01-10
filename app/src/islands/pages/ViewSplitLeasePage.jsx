@@ -1425,15 +1425,27 @@ export default function ViewSplitLeasePage() {
       // Create messaging thread for the proposal (non-blocking)
       try {
         console.log('💬 Creating proposal messaging thread...');
+        // Use the actual status returned from the Edge Function
+        const actualProposalStatus = data.data?.status || 'Host Review';
+        const actualHostId = data.data?.hostId || listing.host?.userId;
+
+        console.log('   Thread params:', {
+          proposalId: newProposalId,
+          guestId: guestId,
+          hostId: actualHostId,
+          listingId: proposalData.listingId,
+          proposalStatus: actualProposalStatus
+        });
+
         const threadResponse = await supabase.functions.invoke('messages', {
           body: {
             action: 'create_proposal_thread',
             payload: {
               proposalId: newProposalId,
               guestId: guestId,
-              hostId: data.data?.hostId || listing.host?.userId,
+              hostId: actualHostId,
               listingId: proposalData.listingId,
-              proposalStatus: 'pending_host_review'
+              proposalStatus: actualProposalStatus
             }
           }
         });
