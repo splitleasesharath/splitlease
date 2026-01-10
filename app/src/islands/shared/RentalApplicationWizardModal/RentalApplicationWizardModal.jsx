@@ -210,7 +210,7 @@ export default function RentalApplicationWizardModal({
               </button>
             )}
 
-            {logic.currentStep < 7 && (
+            {logic.currentStep < 7 && logic.isCurrentStepOptional() && (
               <button
                 type="button"
                 className="wizard-btn wizard-btn--ghost"

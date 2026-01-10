@@ -535,6 +535,12 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     });
   }, [currentStep, formData]);
 
+  // Check if current step is optional (no required fields) - used to show/hide Skip button
+  const isCurrentStepOptional = useCallback(() => {
+    // Steps 3 (Occupants), 5 (Details), 6 (Documents) are optional
+    return STEP_FIELDS[currentStep].length === 0;
+  }, [currentStep]);
+
   // ============================================================================
   // NAVIGATION
   // ============================================================================
@@ -839,6 +845,7 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     goToPreviousStep,
     isStepComplete,
     canProceedFromCurrentStep,
+    isCurrentStepOptional,
 
     // Form handlers
     handleInputChange,
