@@ -95,8 +95,8 @@ def extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]:
         if not section or not section.startswith('##'):
             continue
 
-        # Extract chunk number and title from header
-        header_match = re.search(r'##\s+🔴\s+CHUNK\s+(\d+):\s+(.+)', section)
+        # Extract chunk number and title from header (with or without emoji)
+        header_match = re.search(r'##\s+(?:🔴\s+)?CHUNK\s+(\d+):\s+(.+)', section)
         if not header_match:
             continue
 
@@ -115,8 +115,8 @@ def extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]:
         line_match = re.search(r'\*\*Lines?:\*\*\s+(.+)', section)
         line_number = line_match.group(1).strip() if line_match else None
 
-        # Extract code blocks (look for ```javascript blocks)
-        code_blocks = re.findall(r'```javascript\s*\n(.*?)\n```', section, re.DOTALL)
+        # Extract code blocks (look for ```javascript or ```typescript blocks)
+        code_blocks = re.findall(r'```(?:javascript|typescript)\s*\n(.*?)\n```', section, re.DOTALL)
 
         if len(code_blocks) < 2:
             print(f"⚠️  Warning: Chunk {chunk_number} missing code blocks, skipping")
