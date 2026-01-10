@@ -16,86 +16,93 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.resolve(__dirname, '../public');
 
 /**
+ * Generate redirect lines for a single dynamic route
+ */
+const generateDynamicRouteLines = (route) => {
+  const basePath = getBasePath(route);
+
+  if (route.path === '/help-center/:category') {
+    return [
+      `# ${route.path} → ${route.file} (wildcard only, base handled separately)`,
+      `${basePath}/*  /_internal/${route.internalName}  200`,
+      ''
+    ];
+  }
+
+  if (route.cloudflareInternal && route.internalName) {
+    return [
+      `# ${route.path} → ${route.file}`,
+      `${basePath}  /_internal/${route.internalName}  200`,
+      `${basePath}/  /_internal/${route.internalName}  200`,
+      `${basePath}/*  /_internal/${route.internalName}  200`,
+      ''
+    ];
+  }
+
+  return [
+    `# ${route.path} → ${route.file}`,
+    `${basePath}/*  /${route.file}  200`,
+    ''
+  ];
+};
+
+/**
+ * Generate redirect lines for a single static route
+ */
+const generateStaticRouteLines = (route) => {
+  const basePath = getBasePath(route);
+
+  if (basePath === '/') {
+    return [
+      '# Homepage',
+      '/  /index.html  200',
+      '/index.html  /index.html  200',
+      ''
+    ];
+  }
+
+  if (route.cloudflareInternal && route.internalName) {
+    return [
+      `# ${basePath} → ${route.file}`,
+      `${basePath}  /_internal/${route.internalName}  200`,
+      `${basePath}/  /_internal/${route.internalName}  200`,
+      ''
+    ];
+  }
+
+  return [
+    `# ${basePath}`,
+    `${basePath}  /${route.file}  200`,
+    `${basePath}/  /${route.file}  200`,
+    `${basePath}.html  /${route.file}  200`,
+    ''
+  ];
+};
+
+/**
  * Generates Cloudflare Pages _redirects file from Route Registry
  */
 function generateRedirects() {
+  const dynamicRoutes = routes.filter(r => r.hasDynamicSegment && !r.devOnly);
+  const staticRoutes = routes.filter(r => !r.hasDynamicSegment && !r.devOnly);
+
   const lines = [
     '# Cloudflare Pages redirects and rewrites',
     '# AUTO-GENERATED from routes.config.js - DO NOT EDIT MANUALLY',
     `# Generated: ${new Date().toISOString()}`,
     '#',
     '# See: https://developers.cloudflare.com/pages/configuration/redirects/',
-    ''
+    '',
+    '# ===== DYNAMIC ROUTES (with parameters) =====',
+    '# These routes use _internal/ files to avoid Cloudflare\'s 308 redirects',
+    '',
+    ...dynamicRoutes.flatMap(generateDynamicRouteLines),
+    '# ===== STATIC PAGES =====',
+    '',
+    ...staticRoutes.flatMap(generateStaticRouteLines),
+    '# Note: Cloudflare Pages automatically serves /404.html for not found routes',
+    '# No explicit catch-all rule needed - native 404.html support handles this'
   ];
-
-  // Group routes by type for organized output
-  const dynamicRoutes = routes.filter(r => r.hasDynamicSegment && !r.devOnly);
-  const staticRoutes = routes.filter(r => !r.hasDynamicSegment && !r.devOnly);
-
-  // Dynamic routes first (more specific) - these need special handling
-  lines.push('# ===== DYNAMIC ROUTES (with parameters) =====');
-  lines.push('# These routes use _internal/ files to avoid Cloudflare\'s 308 redirects');
-  lines.push('');
-
-  for (const route of dynamicRoutes) {
-    const basePath = getBasePath(route);
-
-    // Special case: /help-center/:category only needs the wildcard rule
-    // The base /help-center is handled separately as a static route
-    if (route.path === '/help-center/:category') {
-      lines.push(`# ${route.path} → ${route.file} (wildcard only, base handled separately)`);
-      lines.push(`${basePath}/*  /_internal/${route.internalName}  200`);
-      lines.push('');
-      continue;
-    }
-
-    if (route.cloudflareInternal && route.internalName) {
-      // Use _internal/ directory to avoid Cloudflare's "pretty URL" normalization
-      // Content-Type is set via _headers file, not file extension
-      lines.push(`# ${route.path} → ${route.file}`);
-      lines.push(`${basePath}  /_internal/${route.internalName}  200`);
-      lines.push(`${basePath}/  /_internal/${route.internalName}  200`);
-      lines.push(`${basePath}/*  /_internal/${route.internalName}  200`);
-    } else {
-      // Direct rewrite to HTML file
-      lines.push(`# ${route.path} → ${route.file}`);
-      lines.push(`${basePath}/*  /${route.file}  200`);
-    }
-    lines.push('');
-  }
-
-  // Static routes
-  lines.push('# ===== STATIC PAGES =====');
-  lines.push('');
-
-  for (const route of staticRoutes) {
-    const basePath = getBasePath(route);
-
-    // Skip routes that don't need explicit redirects
-    // Cloudflare serves .html files directly
-    if (basePath === '/') {
-      lines.push('# Homepage');
-      lines.push('/  /index.html  200');
-      lines.push('/index.html  /index.html  200');
-      lines.push('');
-    } else if (route.cloudflareInternal && route.internalName) {
-      // Content-Type is set via _headers file, not file extension
-      lines.push(`# ${basePath} → ${route.file}`);
-      lines.push(`${basePath}  /_internal/${route.internalName}  200`);
-      lines.push(`${basePath}/  /_internal/${route.internalName}  200`);
-      lines.push('');
-    } else {
-      // Add rewrites for both clean URL and .html extension
-      lines.push(`# ${basePath}`);
-      lines.push(`${basePath}  /${route.file}  200`);
-      lines.push(`${basePath}/  /${route.file}  200`);
-      lines.push(`${basePath}.html  /${route.file}  200`);
-      lines.push('');
-    }
-  }
-
-  lines.push('# Note: Cloudflare Pages automatically serves /404.html for not found routes');
-  lines.push('# No explicit catch-all rule needed - native 404.html support handles this');
 
   const content = lines.join('\n');
   const outputPath = path.join(publicDir, '_redirects');
