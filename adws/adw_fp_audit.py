@@ -194,7 +194,7 @@ Mutation makes testing harder. Declarative array construction is more predictabl
     # Output prompt to file for Claude Code to process
     prompt_file = Path("agents/fp_planner_prompt.txt")
     prompt_file.parent.mkdir(parents=True, exist_ok=True)
-    prompt_file.write_text(prompt)
+    prompt_file.write_text(prompt, encoding='utf-8')
 
     print(f"\n📝 Prompt written to: {prompt_file}")
     print(f"\n🤖 Please run this prompt in Claude Code:")

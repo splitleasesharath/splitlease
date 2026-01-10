@@ -101,7 +101,7 @@ Include:
     # Output prompt to file
     prompt_file = Path("agents/fp_implementor_prompt.txt")
     prompt_file.parent.mkdir(parents=True, exist_ok=True)
-    prompt_file.write_text(prompt)
+    prompt_file.write_text(prompt, encoding='utf-8')
 
     print(f"📝 Prompt written to: {prompt_file}")
 
