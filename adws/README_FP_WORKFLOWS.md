@@ -29,39 +29,32 @@ Two-phase workflow for auditing and refactoring code to follow functional progra
 
 ```bash
 # Audit logic layer (high-severity violations only)
-uv run adw_fp_audit_iso.py app/src/logic --severity high
+uv run adw_fp_audit.py app/src/logic --severity high
 
 # Audit specific directory (all violations)
-uv run adw_fp_audit_iso.py app/src/logic/workflows --severity all
+uv run adw_fp_audit.py app/src/logic/workflows --severity all
 
-# Resume existing audit (use same ADW ID)
-uv run adw_fp_audit_iso.py app/src/logic abc12345
+# Audit with medium severity threshold
+uv run adw_fp_audit.py app/src/logic --severity medium
 ```
 
 **Output:**
-- Isolated worktree at `trees/<adw_id>/`
 - Violations JSON: `agents/fp_audit_violations.json`
-- Refactoring plan: `.claude/plans/New/<adw_id>_fp_refactor_plan.md`
-- ADWState saved: `agents/<adw_id>/adw_state.json`
+- Refactoring plan: `.claude/plans/New/<timestamp>_fp_refactor_plan.md`
+- Agent logs: `agents/fp_planner/raw_output.jsonl`
 
 ### Phase 2: Implement Fixes
 
 ```bash
-# Implement single chunk (most granular)
-uv run adw_fp_implement_iso.py abc12345 --chunks 1
-
-# Implement range of chunks (5 at a time)
-uv run adw_fp_implement_iso.py abc12345 --chunks 1-5
-
-# Implement all remaining fixes
-uv run adw_fp_implement_iso.py abc12345 --chunks all
+# Implement all fixes from the latest plan
+uv run adw_fp_implement.py
 ```
 
 **Output:**
 - Modified source files with FP fixes applied
 - Updated plan with checkboxes marked
-- Implementation summary: `agents/<adw_id>/fp_implementation_summary.md`
-- Git commit with detailed changelog
+- Implementation summary: `agents/fp_implementation_summary.md`
+- Agent logs: `agents/fp_implementor/raw_output.jsonl`
 
 **Piecemeal Approach:**
 Each chunk is a **discrete, self-contained fix** that can be:
@@ -86,58 +79,47 @@ Each chunk is a **discrete, self-contained fix** that can be:
 ### 1. Run Audit
 
 ```bash
-$ uv run adw_fp_audit_iso.py app/src/logic --severity high
+$ uv run adw_fp_audit.py app/src/logic --severity high
 
 =============================================================
-ADW FP AUDIT (ISOLATED)
-=============================================================
-Generated ADW ID: fp9k2m4x
-
-✅ Isolated worktree created:
-   Path: trees/fp9k2m4x/
-   Backend port: 9103
-   Frontend port: 9203
-
-=============================================================
-PHASE: FP AUDIT
-=============================================================
-Target: app/src/logic
-Severity filter: high
-
-✅ Found 17 violations
-
-=============================================================
-PHASE: PLAN CREATION
+ADW FP AUDIT
 =============================================================
 
-🤖 Starting Claude Code session...
-Agent output: agents/fp9k2m4x/fp_planner/raw_output.jsonl
+=============================================================
+PHASE: FP AUDIT & PLAN CREATION
+=============================================================
 
-✅ Plan created: .claude/plans/New/fp9k2m4x_fp_refactor_plan.md
+🤖 Starting Claude Code agent...
+Agent output: agents/fp_planner/raw_output.jsonl
+
+Agent will:
+  1. Run FP audit script on: app/src/logic
+  2. Analyze violations (severity: high)
+  3. Create chunk-based plan at: .claude/plans/New/20260110120000_fp_refactor_plan.md
+
+✅ Claude Code completed successfully
+
+✅ Plan created: .claude/plans/New/20260110120000_fp_refactor_plan.md
 
 =============================================================
 ✅ FP AUDIT COMPLETE
 =============================================================
-ADW ID: fp9k2m4x
-Plan: .claude/plans/New/fp9k2m4x_fp_refactor_plan.md
-Violations: 17
-Worktree: trees/fp9k2m4x/
+Plan: .claude/plans/New/20260110120000_fp_refactor_plan.md
 
 Next step:
-  uv run adw_fp_implement_iso.py fp9k2m4x
+  uv run adw_fp_implement.py
 ```
 
 ### 2. Review Plan (Chunk-Based Format)
 
 ```bash
-$ cat .claude/plans/New/fp9k2m4x_fp_refactor_plan.md
+$ cat .claude/plans/New/20260110120000_fp_refactor_plan.md
 
 # Functional Programming Refactoring Plan
 
-ADW ID: fp9k2m4x
 Date: 2026-01-10
-Total Violations: 17
 Target: agents/fp_audit_violations.json
+Severity Filter: high
 
 ---
 
@@ -194,66 +176,53 @@ Mutation makes testing harder. Declarative array construction is more predictabl
 - ✅ Testing checklist per chunk
 - ✅ Can be implemented in any order
 
-### 3. Implement Fixes (Chunk by Chunk)
+### 3. Implement Fixes
 
 ```bash
-$ uv run adw_fp_implement_iso.py fp9k2m4x --chunks 1
+$ uv run adw_fp_implement.py
 
 =============================================================
-ADW FP IMPLEMENT (ISOLATED)
+ADW FP IMPLEMENT
 =============================================================
-ADW ID: fp9k2m4x
 
 =============================================================
-PHASE: VALIDATION
+PHASE: FIND PLAN
 =============================================================
-✅ ADW ID: fp9k2m4x
-✅ Worktree: trees/fp9k2m4x/
-✅ Plan: .claude/plans/New/fp9k2m4x_fp_refactor_plan.md
+✅ Found plan: 20260110120000_fp_refactor_plan.md
+   Modified: 2026-01-10 12:00:00
 
 =============================================================
 PHASE: IMPLEMENTATION
 =============================================================
-Chunk range: 1
 
 🤖 Starting Claude Code session...
-Agent output: agents/fp9k2m4x/fp_implementor/raw_output.jsonl
+Agent output: agents/fp_implementor/raw_output.jsonl
 
 ✅ Implementation complete
 
 Summary:
-## Chunk 1 Complete
-- File: workflows/proposals/counterofferWorkflow.js:156
-- Replaced .push() with spread operator
-- Tests passing
+## Implementation Complete
+
+**Violations Fixed:** 17
+**Files Modified:** 8
+
+**Changes by Type:**
+- MUTATING_METHOD: 12 fixes
+- IO_IN_CORE: 3 fixes
+- IMPERATIVE_LOOP: 2 fixes
+
+**Modified Files:**
+- workflows/proposals/counterofferWorkflow.js
+- workflows/proposals/approvalWorkflow.js
+- calculators/pricing/calculateTotal.js
+- [... 5 more files]
 
 =============================================================
 ✅ FP IMPLEMENTATION COMPLETE
 =============================================================
-ADW ID: fp9k2m4x
-Chunks: 1
-Violations fixed: 1
-Files modified: 1
-Worktree: trees/fp9k2m4x/
-
-Next step (optional):
-  uv run adw_fp_implement_iso.py fp9k2m4x --chunks 2
-  Or continue with range: --chunks 2-6
-  Or do all remaining: --chunks all
-```
-
-**Iterative Workflow:**
-```bash
-# Fix chunk 1, test, commit
-uv run adw_fp_implement_iso.py fp9k2m4x --chunks 1
-cd trees/fp9k2m4x && npm test
-
-# Fix chunks 2-5, test, commit
-uv run adw_fp_implement_iso.py fp9k2m4x --chunks 2-5
-cd trees/fp9k2m4x && npm test
-
-# Fix remaining chunks
-uv run adw_fp_implement_iso.py fp9k2m4x --chunks all
+Plan: .claude/plans/New/20260110120000_fp_refactor_plan.md
+Violations fixed: 17
+Files modified: 8
 ```
 
 ## Chunk-Based Refactoring
@@ -278,12 +247,11 @@ Each chunk contains:
 
 ### Working with Chunks
 
-| Approach | Command | Use When |
-|----------|---------|----------|
-| **Single chunk** | `--chunks 1` | Testing approach, learning, high-risk changes |
-| **Small batch** | `--chunks 1-5` | Steady progress, related fixes |
-| **Large batch** | `--chunks 1-20` | Bulk refactoring, low-risk changes |
-| **All at once** | `--chunks all` | Confident in changes, well-tested code |
+The implementation ADW processes all chunks in the plan at once. Each chunk is still:
+- Independent and self-contained
+- Testable separately (via testing checklist)
+- Documented with before/after code
+- Explained with FP principle rationale
 
 ## Integration with Claude Code Skills
 
@@ -301,142 +269,113 @@ Both workflows leverage the `/functional-code` skill:
 
 ## Command-Line Options
 
-### adw_fp_audit_iso.py
+### adw_fp_audit.py
 
 ```
-Usage: uv run adw_fp_audit_iso.py [target_path] [--severity LEVEL] [adw-id]
+Usage: uv run adw_fp_audit.py [target_path] [--severity LEVEL]
 
 Arguments:
   target_path       Path to audit (default: app/src/logic)
-  adw-id           Resume existing ADW (optional)
 
 Options:
   --severity       Filter by severity: high, medium, all (default: high)
 ```
 
-### adw_fp_implement_iso.py
+### adw_fp_implement.py
 
 ```
-Usage: uv run adw_fp_implement_iso.py <adw-id> [--priority LEVEL]
+Usage: uv run adw_fp_implement.py
 
-Arguments:
-  adw-id           ADW ID from audit phase (required)
-
-Options:
-  --priority       Which level to implement: 1, 2, 3, all (default: 1)
+No arguments required - automatically finds latest plan in .claude/plans/New/
 ```
 
-## State Management
+## Output Files
 
-Both workflows use persistent state (`agents/<adw_id>/adw_state.json`):
-
-```json
-{
-  "adw_id": "fp9k2m4x",
-  "worktree_path": "trees/fp9k2m4x",
-  "backend_port": 9103,
-  "frontend_port": 9203,
-  "plan_file": ".claude/plans/New/fp9k2m4x_fp_refactor_plan.md"
-}
-```
-
-This enables:
-- Resuming workflows after interruption
-- Running phases independently
-- Tracking progress across multiple sessions
-
-## Worktree Isolation
-
-Each FP workflow runs in its own isolated worktree:
+The workflows generate these files in the current working directory:
 
 ```
-trees/
-└── fp9k2m4x/                    # Isolated worktree
-    ├── app/src/logic/           # Modified source files
-    ├── .claude/plans/New/       # Generated plan
-    ├── agents/fp9k2m4x/         # Agent outputs
-    │   ├── fp_planner/
-    │   │   └── raw_output.jsonl
-    │   ├── fp_implementor/
-    │   │   └── raw_output.jsonl
-    │   └── fp_implementation_summary.md
-    └── agents/fp_audit_violations.json
+project-root/
+├── .claude/plans/New/
+│   └── <timestamp>_fp_refactor_plan.md    # Generated plan
+├── agents/
+│   ├── fp_audit_violations.json           # Raw violations from audit
+│   ├── fp_planner/
+│   │   └── raw_output.jsonl               # Audit agent logs
+│   ├── fp_implementor/
+│   │   └── raw_output.jsonl               # Implementation agent logs
+│   └── fp_implementation_summary.md       # Summary of fixes applied
 ```
 
 Benefits:
-- No interference with main codebase
-- Safe experimentation
-- Easy rollback (delete worktree)
-- Parallel execution possible
+- All work happens in your current branch
+- No worktree complexity
+- Simple file-based state tracking
+- Easy to review and commit incrementally
 
 ## Best Practices
 
 ### 1. Start with High Severity
 ```bash
 # Focus on critical violations first
-uv run adw_fp_audit_iso.py app/src/logic --severity high
+uv run adw_fp_audit.py app/src/logic --severity high
 ```
 
-### 2. Implement Incrementally
-```bash
-# Fix high-impact files first
-uv run adw_fp_implement_iso.py abc12345 --priority 1
-
-# Review changes before proceeding
-git diff
-
-# Then continue with medium-impact
-uv run adw_fp_implement_iso.py abc12345 --priority 2
-```
-
-### 3. Test After Each Priority
-```bash
-# Run tests after Priority 1 fixes
-cd trees/abc12345/
-npm run test
-
-# If tests pass, proceed to Priority 2
-```
-
-### 4. Review Generated Plans
+### 2. Review the Generated Plan
 ```bash
 # Always review the plan before implementing
-cat .claude/plans/New/abc12345_fp_refactor_plan.md
+cat .claude/plans/New/<timestamp>_fp_refactor_plan.md
 
-# Adjust priorities if needed (manually edit plan)
+# Check the violations file for raw data
+cat agents/fp_audit_violations.json
+```
+
+### 3. Implement All Fixes
+```bash
+# Run implementation (processes all chunks in the plan)
+uv run adw_fp_implement.py
+```
+
+### 4. Test After Implementation
+```bash
+# Run tests to verify fixes
+npm run test
+
+# Check the summary for what was changed
+cat agents/fp_implementation_summary.md
 ```
 
 ## Troubleshooting
 
-### "No state found for ADW"
-- You need to run `adw_fp_audit_iso.py` first
-- Or provide correct ADW ID from previous run
-
-### "Worktree not found"
-- Worktree may have been deleted
-- Run audit phase again to recreate
-
 ### "Plan file not created"
-- Check Claude Code session output
-- May indicate prompt interpretation issue
-- Review agent logs in `agents/<adw_id>/fp_planner/raw_output.jsonl`
+- Check Claude Code session output in agent logs
+- Agent may have failed to run the audit script
+- Review agent logs: `agents/fp_planner/raw_output.jsonl`
+- Verify audit script exists: `.claude/skills/functional-code/scripts/fp_audit.py`
 
-### "No violations fixed"
-- Plan may not have clear instructions
-- Claude Code may not have found files
-- Check implementation summary for details
+### "No violations found"
+- Target path may not contain FP violations
+- Try different severity filter (--severity all)
+- Check that target path exists and has JavaScript/TypeScript files
+
+### "Implementation failed"
+- Check agent logs: `agents/fp_implementor/raw_output.jsonl`
+- Plan may have incorrect file paths or line numbers
+- Agent may not have found the files to modify
+
+### "No FP refactoring plans found"
+- Run `adw_fp_audit.py` first to generate a plan
+- Check `.claude/plans/New/` directory for plan files
 
 ## Cleanup
 
 ```bash
-# Remove worktree after merging changes
-git worktree remove trees/abc12345
-
-# Remove state files
-rm -rf agents/abc12345
-
 # Move completed plan to Done
-mv .claude/plans/New/abc12345_fp_refactor_plan.md .claude/plans/Done/
+mv .claude/plans/New/<timestamp>_fp_refactor_plan.md .claude/plans/Done/
+
+# Remove agent outputs (optional)
+rm -rf agents/fp_planner agents/fp_implementor
+
+# Keep violations file and summary for reference
 ```
 
 ## Related Documentation
