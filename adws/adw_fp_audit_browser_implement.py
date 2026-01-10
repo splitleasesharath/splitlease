@@ -736,6 +736,8 @@ def main():
                         help="Path to audit (default: app/src/logic)")
     parser.add_argument("--severity", choices=["high", "medium", "all"], default="high",
                         help="Severity filter (default: high)")
+    parser.add_argument("--chunks", type=str, default=None,
+                        help="Comma-separated chunk numbers to process (e.g., '1' or '1,3,5'). Default: all chunks")
 
     args = parser.parse_args()
 
@@ -761,6 +763,20 @@ def main():
 
         chunks = extract_chunks_from_plan(plan_file)
         print(f"✅ Extracted {len(chunks)} chunks")
+
+        # Filter chunks if --chunks argument provided
+        if args.chunks:
+            requested_chunks = [int(x.strip()) for x in args.chunks.split(',')]
+            chunks = [c for c in chunks if c.number in requested_chunks]
+            print(f"🔍 Filtered to {len(chunks)} chunks: {requested_chunks}")
+
+            if not chunks:
+                print(f"⚠️  No chunks matched filter: {requested_chunks}")
+                print("Available chunks:")
+                all_chunks = extract_chunks_from_plan(plan_file)
+                for c in all_chunks:
+                    print(f"  - Chunk {c.number}: {c.title}")
+                sys.exit(1)
 
         # Phase 2: Process chunks
         state = process_chunks(chunks, plan_file, working_dir)
