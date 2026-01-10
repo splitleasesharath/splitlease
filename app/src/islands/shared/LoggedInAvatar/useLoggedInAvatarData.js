@@ -186,11 +186,12 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
           .or(`Guest.eq.${userId},"Created By".eq.${userId}`),
 
         // 6. Count unread messages
-        //    Uses _message table with "Unread Users" array containing user IDs
+        //    Uses _message table with "Unread Users" JSONB array containing user IDs
+        //    Must use raw filter since .contains() doesn't work with JSONB + quoted columns
         supabase
           .from('_message')
           .select('_id', { count: 'exact', head: true })
-          .contains('"Unread Users"', [userId]),
+          .filter('Unread Users', 'cs', JSON.stringify([userId])),
 
         // 7. Check for proposals suggested by Split Lease
         //    These are proposals created by SL agent on behalf of the guest
@@ -369,7 +370,7 @@ export function useLoggedInAvatarData(userId, fallbackUserType = null) {
       const { count, error } = await supabase
         .from('_message')
         .select('_id', { count: 'exact', head: true })
-        .contains('"Unread Users"', [userId]);
+        .filter('Unread Users', 'cs', JSON.stringify([userId]));
 
       if (!error && count !== null) {
         setData(prev => {
