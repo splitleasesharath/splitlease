@@ -5,7 +5,6 @@ Deploy Supabase Edge Functions to the development project. Can deploy all functi
 ## Purpose
 
 Deploy Edge Functions to the development Supabase project while ensuring:
-- Cannot run on main branch (blocked by branch guard)
 - All local function changes are committed before deployment
 - Functions are deployed to development Supabase project
 - Changes are pushed to GitHub
@@ -14,7 +13,6 @@ Deploy Edge Functions to the development Supabase project while ensuring:
 
 PROJECT_ROOT: /splitlease (git root directory)
 SUPABASE_PROJECT_REF: qzsmhgyojmwvtjmnrdea (development: splitlease-backend-dev)
-BRANCH_RESTRICTION: NOT main/master
 FUNCTIONS_DIR: supabase/functions
 
 ## Arguments
@@ -23,13 +21,6 @@ FUNCTIONS_DIR: supabase/functions
 - **`<function-name>`**: Deploy only the specified function (e.g., `auth-user`, `proposal`, `listing`)
 
 ## Instructions
-
-### Pre-Deployment: Branch Check
-
-0. Verify current branch:
-   - This command should NOT run on main/master branch
-   - If on main branch, fail with error message
-   - Suggest using `/functions` for production deployment
 
 ### Pre-Deployment: Commit All Changes
 
@@ -83,13 +74,13 @@ FUNCTIONS_DIR: supabase/functions
 ## Environment
 
 - Deploys to development Supabase project: `qzsmhgyojmwvtjmnrdea`
-- BLOCKED on main/master branches
+- Can run on any branch
 - Functions use development environment variables
 
 ## Report
 
 Provide a summary with:
-1. Branch check status
+1. Current branch
 2. Functions deployed (all or specific function name)
 3. Deployment status (success or failure)
 4. GitHub push status (if applicable)
@@ -97,7 +88,7 @@ Provide a summary with:
 Example output (all functions):
 ```
 Development Functions Deployment Summary:
-✓ Branch guard passed (on: feature/new-feature)
+✓ Current branch: feature/new-feature
 ✓ No uncommitted changes
 ✓ Deployed all functions to development (qzsmhgyojmwvtjmnrdea)
   - auth-user
@@ -113,18 +104,10 @@ Development Functions Deployment Summary:
 Example output (single function with changes):
 ```
 Development Functions Deployment Summary:
-✓ Branch guard passed (on: feature/update-auth)
+✓ Current branch: main
 ✓ Committed function changes
 ✓ Deployed 'auth-user' function to development (qzsmhgyojmwvtjmnrdea)
-✓ Pushed 1 commit to GitHub (branch: feature/update-auth)
-```
-
-If blocked on main branch:
-```
-Development Functions Deployment Failed:
-✗ Cannot deploy to development from main branch
-→ Switch to a development branch first
-→ Or use /functions to deploy to production
+✓ Pushed 1 commit to GitHub (branch: main)
 ```
 
 ## Testing Notes

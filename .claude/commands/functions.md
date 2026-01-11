@@ -5,7 +5,6 @@ Deploy Supabase Edge Functions to the production project. Can deploy all functio
 ## Purpose
 
 Deploy Edge Functions to the production Supabase project while ensuring:
-- Can ONLY run on main branch (blocked by branch guard on other branches)
 - All local function changes are committed before deployment
 - Functions are deployed to production Supabase project
 - Changes are pushed to GitHub
@@ -14,7 +13,6 @@ Deploy Edge Functions to the production Supabase project while ensuring:
 
 PROJECT_ROOT: /splitlease (git root directory)
 SUPABASE_PROJECT_REF: qcfifybkaddcoimjroca (production: splitlease-backend-live)
-BRANCH_RESTRICTION: ONLY main/master
 FUNCTIONS_DIR: supabase/functions
 
 ## Arguments
@@ -23,13 +21,6 @@ FUNCTIONS_DIR: supabase/functions
 - **`<function-name>`**: Deploy only the specified function (e.g., `auth-user`, `proposal`, `listing`)
 
 ## Instructions
-
-### Pre-Deployment: Branch Check
-
-0. Verify current branch:
-   - This command should ONLY run on main/master branch
-   - If on a different branch, fail with error message
-   - Suggest using `/functions-dev` for development deployment
 
 ### Pre-Deployment: Commit All Changes
 
@@ -74,7 +65,7 @@ FUNCTIONS_DIR: supabase/functions
 ### Post-Deployment: Push to GitHub
 
 5. Push commits to GitHub (if changes were committed):
-   - Run `git push origin main` to push main branch
+   - Run `git push origin $(git branch --show-current)` to push current branch
    - Verify push succeeds
    - If push fails (e.g., rejected, no upstream):
      - Report the error to the user
@@ -83,13 +74,13 @@ FUNCTIONS_DIR: supabase/functions
 ## Environment
 
 - Deploys to production Supabase project: `qcfifybkaddcoimjroca`
-- ONLY allowed on main/master branches
+- Can run on any branch
 - Functions use production environment variables
 
 ## Report
 
 Provide a summary with:
-1. Branch check status
+1. Current branch
 2. Functions deployed (all or specific function name)
 3. Deployment status (success or failure)
 4. GitHub push status (if applicable)
@@ -97,7 +88,7 @@ Provide a summary with:
 Example output (all functions):
 ```
 Production Functions Deployment Summary:
-✓ Branch guard passed (on: main)
+✓ Current branch: main
 ✓ No uncommitted changes
 ✓ Deployed all functions to production (qcfifybkaddcoimjroca)
   - auth-user
@@ -113,17 +104,10 @@ Production Functions Deployment Summary:
 Example output (single function with changes):
 ```
 Production Functions Deployment Summary:
-✓ Branch guard passed (on: main)
+✓ Current branch: feature/update-auth
 ✓ Committed function changes
 ✓ Deployed 'proposal' function to production (qcfifybkaddcoimjroca)
-✓ Pushed 1 commit to GitHub (branch: main)
-```
-
-If blocked on non-main branch:
-```
-Production Functions Deployment Failed:
-✗ Cannot deploy to production from development branch
-→ Merge to main first, or use /functions-dev for development deployment
+✓ Pushed 1 commit to GitHub (branch: feature/update-auth)
 ```
 
 ## Safety Notes
