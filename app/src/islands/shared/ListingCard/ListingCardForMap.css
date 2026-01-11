@@ -479,7 +479,7 @@
 
 .listing-card-send-message-btn {
   flex: 1;
-  background-color: #31135D;
+  background-color: #6D31C2;
   color: white;
   border: none;
   border-radius: 6px;
@@ -492,7 +492,7 @@
 }
 
 .listing-card-send-message-btn:hover {
-  background-color: #1f0b38;
+  background-color: #5a28a3;
 }
 
 .listing-card-send-message-btn:active {
