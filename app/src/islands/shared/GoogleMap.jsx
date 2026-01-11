@@ -927,7 +927,7 @@ const GoogleMap = forwardRef(({
         cursor: pointer;
         transition: background-color 0.2s ease;
         transform: translate(-50%, -50%);
-        z-index: ${color === '#4B47CE' ? '1002' : '1001'};
+        z-index: ${color === '#5B21B6' ? '1002' : '1001'};
         will-change: transform;
         pointer-events: auto;
         display: block;

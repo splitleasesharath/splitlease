@@ -288,7 +288,7 @@ export const DATABASE = {
 export const COLORS = {
   PRIMARY: '#31135d',      // Deep purple
   PRIMARY_HOVER: '#1f0b38', // Darker purple
-  SECONDARY: '#4B47CE',     // Blue - used for search result markers (matches schedule selector)
+  SECONDARY: '#5B21B6',     // Purple - used for search result markers
   ACCENT: '#4A90E2',        // Blue
   MUTED: '#9CA3AF',         // Grey - used for all active listing markers
   SUCCESS: '#00C851',       // Green
