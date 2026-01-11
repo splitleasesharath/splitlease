@@ -51,8 +51,8 @@ export function isScheduleContiguous({ selectedDayIndices }) {
     }
   }
 
-  // Sort the selected days
-  const sorted = [...selectedDayIndices].sort((a, b) => a - b)
+  // Sort the selected days (immutable)
+  const sorted = selectedDayIndices.toSorted((a, b) => a - b)
 
   // If 6 or more days selected, it's contiguous (only 1 gap or no gaps)
   if (sorted.length >= 6) {
