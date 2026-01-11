@@ -22,6 +22,7 @@ Example:
 """
 
 import sys
+import subprocess
 from pathlib import Path
 from datetime import datetime
 
@@ -166,6 +167,55 @@ Include:
     }
 
 
+def commit_changes(results: dict, plan_file: Path) -> None:
+    """Commit the refactored changes to git."""
+    print(f"\n{'='*60}")
+    print("PHASE: GIT COMMIT")
+    print(f"{'='*60}")
+
+    if not results['files_modified']:
+        print("⚠️ No files modified, skipping commit")
+        return
+
+    # Stage all modified files
+    try:
+        subprocess.run(["git", "add", "."], check=True, capture_output=True, text=True)
+        print(f"✅ Staged changes")
+    except subprocess.CalledProcessError as e:
+        print(f"❌ Failed to stage changes: {e.stderr}")
+        sys.exit(1)
+
+    # Create commit message
+    violations_fixed = results['violations_fixed']
+    files_count = len(results['files_modified'])
+
+    commit_message = f"""refactor(fp): implement FP refactoring from {plan_file.name}
+
+Fixed {violations_fixed} FP violations across {files_count} file(s)
+
+Plan: {plan_file.name}
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"""
+
+    # Commit the changes
+    try:
+        subprocess.run(
+            ["git", "commit", "-m", commit_message],
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        print(f"✅ Committed changes")
+        print(f"\nCommit message:")
+        print(commit_message)
+    except subprocess.CalledProcessError as e:
+        if "nothing to commit" in e.stdout or "nothing to commit" in e.stderr:
+            print("⚠️ No changes to commit")
+        else:
+            print(f"❌ Failed to commit: {e.stderr}")
+            sys.exit(1)
+
+
 def main():
     print(f"\n{'='*60}")
     print("ADW FP IMPLEMENT")
@@ -179,6 +229,9 @@ def main():
 
     # Implement fixes using Claude Code
     results = implement_fp_fixes(plan_file, working_dir)
+
+    # Commit changes to git
+    commit_changes(results, plan_file)
 
     print(f"\n{'='*60}")
     print("✅ FP IMPLEMENTATION COMPLETE")
