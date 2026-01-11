@@ -1716,6 +1716,33 @@ export default function SearchPage() {
         return;
       }
 
+      // When "all" boroughs is selected, clear neighborhoods and load all
+      if (selectedBorough === 'all') {
+        console.log('[DEBUG] All boroughs selected - loading all neighborhoods');
+        try {
+          const { data, error } = await supabase
+            .schema('reference_table')
+            .from('zat_geo_hood_mediumlevel')
+            .select('_id, Display, "Geo-Borough"')
+            .order('Display', { ascending: true });
+
+          if (error) throw error;
+
+          const formattedNeighborhoods = data.map(n => ({
+            id: n._id,
+            name: n.Display,
+            value: n._id
+          }));
+
+          setNeighborhoods(formattedNeighborhoods);
+          setSelectedNeighborhoods([]); // Clear neighborhood selection when switching to all boroughs
+          console.log('[DEBUG] Loaded all neighborhoods:', formattedNeighborhoods.length);
+        } catch (error) {
+          console.error('Failed to load all neighborhoods:', error);
+        }
+        return;
+      }
+
       const borough = boroughs.find(b => b.value === selectedBorough);
       if (!borough) {
         console.warn('[DEBUG] Borough not found for value:', selectedBorough);
@@ -1818,9 +1845,6 @@ export default function SearchPage() {
     setError(null);
 
     try {
-      const borough = boroughs.find(b => b.value === selectedBorough);
-      if (!borough) throw new Error('Borough not found');
-
       // Build query
       // CRITICAL FIX: Use Complete=true instead of Active=true to match Bubble's filter logic
       // Bubble shows listings where Complete=true AND (Active=true OR Active IS NULL)
@@ -1831,9 +1855,16 @@ export default function SearchPage() {
         .select('*')
         .eq('"Complete"', true)
         .or('"Active".eq.true,"Active".is.null')
-        .eq('"Location - Borough"', borough.id)
         .or('"Location - Address".not.is.null,"Location - slightly different address".not.is.null')
         .not('"Features - Photos"', 'is', null);
+
+      // Apply borough filter (skip if "all" is selected)
+      if (selectedBorough && selectedBorough !== 'all') {
+        const borough = boroughs.find(b => b.value === selectedBorough);
+        if (borough) {
+          query = query.eq('"Location - Borough"', borough.id);
+        }
+      }
 
       // Apply week pattern filter
       if (weekPattern !== 'every-week') {
@@ -3077,11 +3108,14 @@ export default function SearchPage() {
                   {boroughs.length === 0 ? (
                     <option value="">Loading...</option>
                   ) : (
-                    boroughs.map(borough => (
-                      <option key={borough.id} value={borough.value}>
-                        {borough.name}
-                      </option>
-                    ))
+                    <>
+                      <option value="all">All Boroughs</option>
+                      {boroughs.map(borough => (
+                        <option key={borough.id} value={borough.value}>
+                          {borough.name}
+                        </option>
+                      ))}
+                    </>
                   )}
                 </select>
               </div>
@@ -3197,11 +3231,14 @@ export default function SearchPage() {
                 {boroughs.length === 0 ? (
                   <option value="">Loading...</option>
                 ) : (
-                  boroughs.map(borough => (
-                    <option key={borough.id} value={borough.value}>
-                      {borough.name}
-                    </option>
-                  ))
+                  <>
+                    <option value="all">All Boroughs</option>
+                    {boroughs.map(borough => (
+                      <option key={borough.id} value={borough.value}>
+                        {borough.name}
+                      </option>
+                    ))}
+                  </>
                 )}
               </select>
             </div>
@@ -3271,7 +3308,7 @@ export default function SearchPage() {
           {/* Results header with listings count and sort - hidden when mobile or desktop header is collapsed */}
           <div className={`results-header ${mobileHeaderHidden ? 'results-header--hidden' : ''} ${desktopHeaderCollapsed ? 'results-header--desktop-hidden' : ''}`}>
             <span className="results-count">
-              <strong>{allListings.length} listings</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
+              <strong>{allListings.length} listings</strong> in {selectedBorough === 'all' ? 'NYC' : (boroughs.find(b => b.value === selectedBorough)?.name || 'NYC')}
             </span>
             <select
               className="sort-select"
