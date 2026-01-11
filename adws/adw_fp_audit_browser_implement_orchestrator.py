@@ -421,12 +421,13 @@ def infer_validation_context(chunk: ChunkData) -> dict:
     }
 
 
-def validate_with_browser(chunk: ChunkData, working_dir: Path, port: int = 8000) -> bool:
+def validate_with_browser(chunk: ChunkData, working_dir: Path, logger, port: int = 8000) -> bool:
     """Validate chunk changes using browser automation.
 
     Args:
         chunk: Chunk that was just implemented
         working_dir: Working directory
+        logger: RunLogger instance for logging validation details
         port: Dev server port (default: 8000)
 
     Returns:
@@ -551,6 +552,10 @@ Report status only. Do not fix anything.
             print(f"STDOUT: {result.stdout[:500]}")
             print(f"STDERR: {result.stderr[:500]}")
 
+            logger.log(f"Browser script exit code: {result.returncode}", to_stdout=False)
+            logger.log(f"STDOUT: {result.stdout[:500]}", to_stdout=False)
+            logger.log(f"STDERR: {result.stderr[:500]}", to_stdout=False)
+
             notify_failure(
                 step=f"Chunk {chunk.number} browser automation failed",
                 error=f"Exit code {result.returncode}: {output[:100]}"
@@ -573,10 +578,16 @@ Report status only. Do not fix anything.
             )
             print(f"\nVALIDATION OUTPUT:")
             print(output)
+
+            logger.log("Validation failed - detailed output:", to_stdout=False)
+            logger.log(output, to_stdout=False)
+
             return False
 
     except subprocess.TimeoutExpired:
         print(f"⏱️ Browser validation timed out after 10 minutes")
+        logger.log("Browser validation timed out after 10 minutes", to_stdout=False)
+
         notify_failure(
             step=f"Chunk {chunk.number} validation timed out",
             error="Browser took >10 minutes"
@@ -584,6 +595,8 @@ Report status only. Do not fix anything.
         return False
     except Exception as e:
         print(f"💥 Browser validation crashed: {e}")
+        logger.log(f"Browser validation crashed: {e}", to_stdout=False)
+
         notify_failure(
             step=f"Chunk {chunk.number} validation crashed",
             error=str(e)[:100]
@@ -721,7 +734,7 @@ def process_chunks(chunks: List[ChunkData], plan_file: Path, working_dir: Path, 
 
         # Step 2: Validate with browser
         logger.log(f"Validating Chunk {chunk.number} with browser", to_stdout=False)
-        validation_passed = validate_with_browser(chunk, working_dir)
+        validation_passed = validate_with_browser(chunk, working_dir, logger)
 
         # Step 3: Commit or rollback
         if validation_passed:
