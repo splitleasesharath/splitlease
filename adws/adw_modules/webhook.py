@@ -8,7 +8,6 @@ import os
 import json
 from typing import Optional, Dict, Any
 from dataclasses import dataclass
-from datetime import datetime
 import urllib.request
 import urllib.error
 
@@ -38,9 +37,6 @@ def send_slack_notification(message: WebhookMessage) -> bool:
         print("⚠️  SHARATHPLAYGROUND webhook not configured")
         return False
 
-    # Format message for Slack
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
     # Status emoji mapping
     status_emoji = {
         "started": "🚀",
@@ -52,65 +48,16 @@ def send_slack_notification(message: WebhookMessage) -> bool:
 
     emoji = status_emoji.get(message.status, "ℹ️")
 
-    # Build Slack blocks
-    blocks = [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_text",
-                "text": f"{emoji} FP Orchestrator: {message.status.upper()}"
-            }
-        },
-        {
-            "type": "section",
-            "fields": [
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Step:*\n{message.step}"
-                },
-                {
-                    "type": "mrkdwn",
-                    "text": f"*Time:*\n{timestamp}"
-                }
-            ]
-        }
-    ]
+    # Build single-line message
+    text = f"{emoji} {message.step}"
 
-    # Add details if provided
-    if message.details:
-        blocks.append({
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"*Details:*\n{message.details}"
-            }
-        })
+    # Add error snippet on same line if failure
+    if message.error and message.status == "failure":
+        # Truncate error to first 100 chars, remove newlines
+        error_snippet = message.error[:100].replace("\n", " ")
+        text += f" - {error_snippet}"
 
-    # Add error if provided
-    if message.error:
-        blocks.append({
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"*Error:*\n```{message.error}```"
-            }
-        })
-
-    # Add metadata if provided
-    if message.metadata:
-        metadata_text = "\n".join(
-            f"• {key}: {value}"
-            for key, value in message.metadata.items()
-        )
-        blocks.append({
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": f"*Metadata:*\n{metadata_text}"
-            }
-        })
-
-    payload = {"blocks": blocks}
+    payload = {"text": text}
 
     try:
         req = urllib.request.Request(
@@ -121,7 +68,7 @@ def send_slack_notification(message: WebhookMessage) -> bool:
 
         with urllib.request.urlopen(req, timeout=10) as response:
             if response.status == 200:
-                print(f"✅ Webhook sent: {message.status} - {message.step}")
+                print(f"✅ Webhook sent: {text}")
                 return True
             else:
                 print(f"⚠️  Webhook returned {response.status}")
