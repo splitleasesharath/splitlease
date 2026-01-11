@@ -106,28 +106,41 @@ Severity Filter: {severity}
 [Repeat for ALL violations]
 ```
 
-**FORMATTING RULES:**
-1. One chunk = one violation = one atomic fix
-2. Use `~~~~~` (5 tildes) to separate chunks clearly
-3. Number chunks sequentially (CHUNK 1, 2, 3...)
-4. Use severity labels: High, Medium, Low
-5. Show complete before/after code (no truncation, no ellipsis)
-6. Include file path, line number, violation type in header
+**CRITICAL FORMATTING RULES:**
+
+1. **One chunk = one violation = one atomic fix**
+2. **Use horizontal rules (EXACTLY `~~~~~` - five tildes) to separate chunks**
+3. **Number chunks sequentially (CHUNK 1, 2, 3...)**
+4. **Use severity labels: High, Medium, Low**
+5. **MANDATORY: Each chunk MUST have TWO complete code blocks:**
+   - **Current Code:** (full code before refactoring)
+   - **Refactored Code:** (full code after refactoring)
+   - DO NOT provide text guidance instead of the second code block
+   - DO NOT truncate code - show the complete function/section
+   - Both blocks must use ```javascript or ```typescript fences
+6. **Include file path, line number, violation type in header**
 7. **MUST include Expected Affected Pages** - analyze which pages import/use this code:
    - For page components (islands/pages/*): use that page's URL
    - For shared components: list all pages that import it
    - For logic files: analyze imports and list Expected Affected pages
    - If uncertain or affects many pages: use "AUTO"
-8. Add testing checklist per chunk (2-3 items)
-9. Keep chunks independent (can be fixed in any order)
+8. **Add testing checklist per chunk (2-3 items)**
+9. **Keep chunks independent (can be fixed in any order)**
+
+**ABSOLUTELY CRITICAL - CODE BLOCK REQUIREMENT:**
+Every single chunk MUST contain:
+- First code block (Current Code) - full code snippet with surrounding context
+- Second code block (Refactored Code) - full refactored version
+- If you provide guidance text instead of the refactored code, the orchestrator will skip the chunk
+- Both code blocks must be fenced with ```javascript or ```typescript
 
 **Important Guidelines:**
 - Each chunk should take 5-10 minutes to implement
-- Provide EXACT code snippets, not pseudocode
+- Provide EXACT code in BOTH blocks, not pseudocode or descriptions
 - Line numbers must match the violations JSON exactly
 - Show enough surrounding context to locate the code
-- For mutations like .push(), show declarative alternatives
-- For I/O in core logic, show how to return data instead
+- For mutations like .push(), show declarative alternatives (.concat, spread, etc.)
+- For I/O in core logic, show how to return data instead (Result type)
 - For imperative loops, show map/filter/reduce equivalent
 - For exceptions, show Result/Either type pattern
 
