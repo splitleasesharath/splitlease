@@ -154,8 +154,13 @@ const GoogleMap = forwardRef(({
 
   // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
-    // Highlight marker without zooming or panning, and show card at fixed position
+    // Highlight marker: pan to center on it (no zoom change), pulse, and show card
     highlightListing(listingId) {
+      if (!googleMapRef.current || !mapLoaded) {
+        console.error('Map not initialized yet');
+        return;
+      }
+
       // Find the listing in either filtered or all listings
       const listing = filteredListings.find(l => l.id === listingId) ||
                      listings.find(l => l.id === listingId);
@@ -164,6 +169,17 @@ const GoogleMap = forwardRef(({
         console.error('Listing not found:', listingId);
         return;
       }
+
+      const coords = listing.coordinates;
+      if (!coords || !coords.lat || !coords.lng) {
+        console.error('Invalid coordinates for listing:', listingId);
+        return;
+      }
+
+      const map = googleMapRef.current;
+
+      // Pan to center on the listing (without changing zoom)
+      map.panTo({ lat: coords.lat, lng: coords.lng });
 
       const marker = markersRef.current.find(m => m.listingId === listingId);
       if (marker && marker.div) {
@@ -177,8 +193,10 @@ const GoogleMap = forwardRef(({
           marker.div.classList.remove('pulse');
         }, 3000);
 
-        // Show the listing card at a fixed position (top-center of map)
-        showListingCardAtFixedPosition(listing);
+        // Show listing card after pan completes
+        setTimeout(() => {
+          handlePinClick(listing, marker.div);
+        }, 400);
       }
     },
     zoomToListing(listingId) {
@@ -474,41 +492,6 @@ const GoogleMap = forwardRef(({
       onMarkerClick(listing);
     }
   }, [onMarkerClick]);
-
-  /**
-   * Show listing card at a fixed position (top-center of map)
-   * Used when hovering over listing cards - marker may be off-screen
-   */
-  const showListingCardAtFixedPosition = useCallback(async (listing) => {
-    const mapContainer = mapRef.current;
-    if (!mapContainer) {
-      console.error('❌ showListingCardAtFixedPosition: Map container ref not available');
-      return;
-    }
-
-    const mapRect = mapContainer.getBoundingClientRect();
-
-    // Position card at top-center of map
-    const cardLeft = mapRect.width / 2;
-    const cardTop = 20; // 20px from top
-
-    setCardPosition({ x: cardLeft, y: cardTop });
-    setCardVisible(true);
-
-    // Check if listing already has images
-    let detailedListing;
-    if (listing.images && listing.images.length > 0) {
-      detailedListing = listing;
-    } else {
-      detailedListing = await fetchDetailedListingData(listing.id);
-    }
-
-    if (detailedListing && detailedListing.images && detailedListing.images.length > 0) {
-      setSelectedListingForCard(detailedListing);
-    } else {
-      setCardVisible(false);
-    }
-  }, []);
 
   // Initialize Google Map when API is loaded
   useEffect(() => {
