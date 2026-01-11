@@ -670,6 +670,7 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onOpenContactModa
   return (
     <a
       className="listing-card"
+      data-listing-id={listingId}
       href={listingId ? `/view-split-lease/${listingId}` : '#'}
       target="_blank"
       rel="noopener noreferrer"
@@ -2411,6 +2412,33 @@ export default function SearchPage() {
     setIsAIResearchModalOpen(false);
   };
 
+  // Scroll to listing card when marker is clicked
+  const scrollToListingCard = (listing) => {
+    const listingId = listing.id || listing._id;
+    const listingsContent = document.querySelector('.listings-content');
+    const listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
+
+    if (listingsContent && listingCard) {
+      // Scroll the listing into view within the listings container
+      const containerRect = listingsContent.getBoundingClientRect();
+      const cardRect = listingCard.getBoundingClientRect();
+
+      // Calculate scroll position to center the card in the container
+      const scrollTop = listingCard.offsetTop - listingsContent.offsetTop - (containerRect.height / 2) + (cardRect.height / 2);
+
+      listingsContent.scrollTo({
+        top: Math.max(0, scrollTop),
+        behavior: 'smooth'
+      });
+
+      // Add a brief highlight effect to the card
+      listingCard.classList.add('listing-card--highlighted');
+      setTimeout(() => {
+        listingCard.classList.remove('listing-card--highlighted');
+      }, 2000);
+    }
+  };
+
   // Create Proposal modal handlers
   const handleOpenCreateProposalModal = (listing) => {
     // Get default schedule from URL params or use default weekdays
@@ -3431,6 +3459,7 @@ export default function SearchPage() {
             selectedBorough={selectedBorough}
             onMarkerClick={(listing) => {
               console.log('Marker clicked:', listing.title);
+              scrollToListingCard(listing);
             }}
             onMessageClick={(listing) => {
               console.log('[SearchPage] Map card message clicked for:', listing?.id);
@@ -3556,6 +3585,9 @@ export default function SearchPage() {
               selectedBorough={selectedBorough}
               onMarkerClick={(listing) => {
                 console.log('Marker clicked:', listing.title);
+                // Close mobile map and scroll to listing
+                setIsMobileMapVisible(false);
+                setTimeout(() => scrollToListingCard(listing), 300);
               }}
               onMessageClick={(listing) => {
                 console.log('[SearchPage] Mobile map card message clicked for:', listing?.id);
