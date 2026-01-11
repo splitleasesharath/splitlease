@@ -1,7 +1,7 @@
 /**
  * BasicInfoCard.jsx
  *
- * Basic information form card: First name, Last name, Job title.
+ * Basic information form card: First name, Last name, Date of birth, Job title.
  * Editor view only (public view shows name in sidebar).
  */
 
@@ -12,6 +12,7 @@ export default function BasicInfoCard({
   firstName,
   lastName,
   jobTitle,
+  dateOfBirth = '',
   errors = {},
   onFieldChange
 }) {
@@ -50,18 +51,34 @@ export default function BasicInfoCard({
         </div>
       </div>
 
-      <div className="profile-form-group">
-        <label className="profile-form-label" htmlFor="jobTitle">
-          Job Title
-        </label>
-        <input
-          id="jobTitle"
-          type="text"
-          className="profile-form-input"
-          value={jobTitle}
-          onChange={(e) => onFieldChange('jobTitle', e.target.value)}
-          placeholder="e.g., Software Engineer, Marketing Manager"
-        />
+      <div className="profile-form-row">
+        <div className="profile-form-group">
+          <label className="profile-form-label" htmlFor="dateOfBirth">
+            Date of Birth
+          </label>
+          <input
+            id="dateOfBirth"
+            type="date"
+            className="profile-form-input"
+            value={dateOfBirth}
+            onChange={(e) => onFieldChange('dateOfBirth', e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+          />
+        </div>
+
+        <div className="profile-form-group">
+          <label className="profile-form-label" htmlFor="jobTitle">
+            Job Title
+          </label>
+          <input
+            id="jobTitle"
+            type="text"
+            className="profile-form-input"
+            value={jobTitle}
+            onChange={(e) => onFieldChange('jobTitle', e.target.value)}
+            placeholder="e.g., Software Engineer, Marketing Manager"
+          />
+        </div>
       </div>
     </ProfileCard>
   );

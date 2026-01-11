@@ -191,6 +191,7 @@ export function useAccountProfilePageLogic() {
     firstName: '',
     lastName: '',
     jobTitle: '',
+    dateOfBirth: '', // ISO date string (YYYY-MM-DD)
     bio: '',
     needForSpace: '',
     specialNeeds: '',
@@ -383,10 +384,15 @@ export function useAccountProfilePageLogic() {
 
       // Initialize form data from profile
       // Database columns use 'Name - First', 'Name - Last' naming convention
+      // Date of Birth is stored as timestamp, convert to YYYY-MM-DD for date input
+      const dobTimestamp = userData['Date of Birth'];
+      const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
+
       setFormData({
         firstName: userData['Name - First'] || '',
         lastName: userData['Name - Last'] || '',
         jobTitle: userData['Job Title'] || '',
+        dateOfBirth,
         bio: userData['About Me / Bio'] || '',
         needForSpace: userData['need for Space'] || '',
         specialNeeds: userData['special needs'] || '',
@@ -774,12 +780,19 @@ export function useAccountProfilePageLogic() {
       const lastName = formData.lastName.trim();
       const fullName = [firstName, lastName].filter(Boolean).join(' ') || null;
 
+      // Convert date of birth from YYYY-MM-DD to ISO timestamp for database
+      // Only include if value exists to avoid overwriting with null
+      const dateOfBirthISO = formData.dateOfBirth
+        ? new Date(formData.dateOfBirth + 'T00:00:00Z').toISOString()
+        : null;
+
       // Database columns use 'Name - First', 'Name - Last', 'Name - Full' naming convention
       const updateData = {
         'Name - First': firstName,
         'Name - Last': lastName,
         'Name - Full': fullName,
         'Job Title': formData.jobTitle.trim(),
+        'Date of Birth': dateOfBirthISO,
         'About Me / Bio': formData.bio.trim(),
         'need for Space': formData.needForSpace.trim(),
         'special needs': formData.specialNeeds.trim(),
@@ -818,10 +831,15 @@ export function useAccountProfilePageLogic() {
   const handleCancel = useCallback(() => {
     if (profileData) {
       // Database columns use 'Name - First', 'Name - Last' naming convention
+      // Date of Birth stored as timestamp, convert to YYYY-MM-DD
+      const dobTimestamp = profileData['Date of Birth'];
+      const dateOfBirth = dobTimestamp ? dobTimestamp.split('T')[0] : '';
+
       setFormData({
         firstName: profileData['Name - First'] || '',
         lastName: profileData['Name - Last'] || '',
         jobTitle: profileData['Job Title'] || '',
+        dateOfBirth,
         bio: profileData['About Me / Bio'] || '',
         needForSpace: profileData['need for Space'] || '',
         specialNeeds: profileData['special needs'] || '',

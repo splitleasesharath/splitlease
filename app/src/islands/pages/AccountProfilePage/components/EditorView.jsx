@@ -54,6 +54,7 @@ export default function EditorView({
         firstName={formData.firstName}
         lastName={formData.lastName}
         jobTitle={formData.jobTitle}
+        dateOfBirth={formData.dateOfBirth}
         errors={formErrors}
         onFieldChange={onFieldChange}
       />
