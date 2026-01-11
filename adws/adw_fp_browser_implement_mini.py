@@ -92,7 +92,7 @@ def process_chunks_mini(chunks: list, plan_file: Path, working_dir: Path, logger
 
         # Step 2: Validate with browser
         logger.log(f"Validating Chunk {chunk.number} with browser", to_stdout=False)
-        validation_passed = validate_with_browser(chunk, working_dir)
+        validation_passed = validate_with_browser(chunk, working_dir, logger)
 
         # Step 3: Commit or rollback
         if validation_passed:
