@@ -7,7 +7,8 @@
     "start": "cd app && bun install --frozen-lockfile && bun run build",
     "dev": "cd app && bun install && bun run dev",
     "preview": "cd app && bun run preview",
-    "deploy": "cd app && wrangler pages deploy dist --project-name splitlease",
+    "deploy": "node app/scripts/check-branch.js --require-main && cd app && wrangler pages deploy dist --project-name splitlease",
+    "deploy:dev": "node app/scripts/check-branch.js --block-main && cd app && bun run build:dev && wrangler pages deploy dist --project-name splitlease --branch development",
     "lint": "cd app && bun run lint",
     "lint:fix": "cd app && bun run lint:fix",
     "lint:check": "cd app && bun run lint:check"

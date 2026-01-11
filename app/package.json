@@ -9,8 +9,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview --port 8000",
-    "deploy": "wrangler pages deploy dist --project-name splitlease",
-    "deploy:dev": "bun run build:dev && wrangler pages deploy dist --project-name splitlease --branch development",
+    "deploy": "node scripts/check-branch.js --require-main && wrangler pages deploy dist --project-name splitlease",
+    "deploy:dev": "node scripts/check-branch.js --block-main && bun run build:dev && wrangler pages deploy dist --project-name splitlease --branch development",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "lint:check": "eslint src/ --max-warnings 0"
