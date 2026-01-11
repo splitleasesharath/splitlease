@@ -103,16 +103,16 @@ def main():
     # Support reading prompt from file if argument starts with @
     if prompt_arg.startswith('@'):
         prompt_file_path = prompt_arg[1:]  # Remove @ prefix
-        print(f"📄 Reading prompt from file: {prompt_file_path}")
+        print(f"Reading prompt from file: {prompt_file_path}")
         try:
             with open(prompt_file_path, 'r', encoding='utf-8') as f:
                 prompt_arg = f.read()
-            print(f"✅ Prompt loaded: {len(prompt_arg)} characters")
+            print(f"Prompt loaded: {len(prompt_arg)} characters")
         except FileNotFoundError:
-            print(f"❌ Prompt file not found: {prompt_file_path}")
+            print(f"ERROR: Prompt file not found: {prompt_file_path}")
             sys.exit(1)
         except Exception as e:
-            print(f"❌ Error reading prompt file: {e}")
+            print(f"ERROR: Error reading prompt file: {e}")
             sys.exit(1)
 
     adw_id = sys.argv[2] if len(sys.argv) > 2 else make_adw_id()
