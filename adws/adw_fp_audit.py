@@ -78,7 +78,7 @@ Severity Filter: {severity}
 **Violation:** [VIOLATION_TYPE] - [brief explanation]
 **Severity:** 🔴 High | 🟡 Medium | 🟢 Low
 
-**Affected Pages:** [comma-separated list of page URLs, e.g., "/search, /view-split-lease" OR "AUTO" if uncertain]
+**Expected Affected Pages:** [comma-separated list of page URLs, e.g., "/search, /view-split-lease" OR "AUTO" if uncertain]
 
 **Current Code:**
 ```javascript
@@ -111,10 +111,10 @@ Severity Filter: {severity}
 4. Include emoji severity: 🔴 High, 🟡 Medium, 🟢 Low
 5. Show complete before/after code (no truncation, no ellipsis)
 6. Include file path, line number, violation type in header
-7. **MUST include Affected Pages** - analyze which pages import/use this code:
+7. **MUST include Expected Affected Pages** - analyze which pages import/use this code:
    - For page components (islands/pages/*): use that page's URL
    - For shared components: list all pages that import it
-   - For logic files: analyze imports and list affected pages
+   - For logic files: analyze imports and list Expected Affected pages
    - If uncertain or affects many pages: use "AUTO"
 8. Add testing checklist per chunk (2-3 items)
 9. Keep chunks independent (can be fixed in any order)
@@ -140,7 +140,7 @@ Severity Filter: {severity}
 **Violation:** MUTATING_METHOD - Using .push() to mutate array
 **Severity:** 🔴 High
 
-**Affected Pages:** /host-proposals, /guest-proposals
+**Expected Affected Pages:** /host-proposals, /guest-proposals
 
 **Current Code:**
 ```javascript
