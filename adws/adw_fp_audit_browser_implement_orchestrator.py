@@ -627,6 +627,23 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 """
 
     try:
+        # Check if file was actually modified
+        status_result = subprocess.run(
+            ["git", "status", "--porcelain", chunk.file_path],
+            cwd=working_dir,
+            capture_output=True,
+            text=True
+        )
+
+        if not status_result.stdout.strip():
+            # No changes - skip commit but return success
+            print(f"  ⚠️  No changes detected for {chunk.file_path} - chunk may already be implemented")
+            notify_success(
+                step=f"Chunk {chunk.number} - no changes needed (already implemented)",
+                details=None
+            )
+            return True
+
         # Stage changes
         subprocess.run(
             ["git", "add", chunk.file_path],
