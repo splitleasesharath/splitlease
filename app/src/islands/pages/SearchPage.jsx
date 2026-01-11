@@ -925,7 +925,7 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             }}
             onCardHover={(listing) => {
               if (mapRef.current) {
-                mapRef.current.zoomToListing(listing.id);
+                mapRef.current.highlightListing(listing.id);
               }
             }}
             onOpenContactModal={onOpenContactModal}

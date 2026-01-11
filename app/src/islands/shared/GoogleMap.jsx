@@ -154,6 +154,21 @@ const GoogleMap = forwardRef(({
 
   // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
+    // Highlight marker without zooming or panning
+    highlightListing(listingId) {
+      const marker = markersRef.current.find(m => m.listingId === listingId);
+      if (marker && marker.div) {
+        // Remove pulse from all other markers first
+        markersRef.current.forEach(m => {
+          if (m.div) m.div.classList.remove('pulse');
+        });
+        // Add pulse animation to this marker
+        marker.div.classList.add('pulse');
+        setTimeout(() => {
+          marker.div.classList.remove('pulse');
+        }, 3000);
+      }
+    },
     zoomToListing(listingId) {
       if (!googleMapRef.current || !mapLoaded) {
         console.error('Map not initialized yet');
