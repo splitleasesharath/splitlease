@@ -397,6 +397,12 @@ const GoogleMap = forwardRef(({
       skipParentCallback
     });
 
+    // Call parent callback FIRST (before any async operations) so scroll/highlight happens immediately
+    if (onMarkerClick && !skipParentCallback) {
+      console.log('📜 handlePinClick: Calling onMarkerClick to scroll to listing card');
+      onMarkerClick(listing);
+    }
+
     // Calculate card position relative to map container
     const mapContainer = mapRef.current;
     if (!mapContainer) {
@@ -512,11 +518,6 @@ const GoogleMap = forwardRef(({
       setCardVisible(false);
     }
     console.log('✅ handlePinClick: Selected listing state updated');
-
-    // Call parent callback only if not skipped (skip when called from hover highlight)
-    if (onMarkerClick && !skipParentCallback) {
-      onMarkerClick(listing);
-    }
   }, [onMarkerClick]);
 
   // Keep ref updated with latest handlePinClick so event listeners always use current version
