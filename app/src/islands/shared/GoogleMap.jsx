@@ -193,9 +193,9 @@ const GoogleMap = forwardRef(({
           marker.div.classList.remove('pulse');
         }, 3000);
 
-        // Show listing card after pan completes
+        // Show listing card after pan completes (skip parent callback to prevent scroll)
         setTimeout(() => {
-          handlePinClick(listing, marker.div);
+          handlePinClick(listing, marker.div, { skipParentCallback: true });
         }, 400);
       }
     },
@@ -364,11 +364,17 @@ const GoogleMap = forwardRef(({
   /**
    * React callback to handle pin clicks properly within React's state management
    * This ensures state updates trigger re-renders correctly
+   * @param {Object} listing - The listing data
+   * @param {HTMLElement} priceTag - The price tag DOM element
+   * @param {Object} options - Optional settings
+   * @param {boolean} options.skipParentCallback - If true, don't call onMarkerClick (used for hover highlights)
    */
-  const handlePinClick = useCallback(async (listing, priceTag) => {
+  const handlePinClick = useCallback(async (listing, priceTag, options = {}) => {
+    const { skipParentCallback = false } = options;
     console.log('🖱️ handlePinClick (React callback): Pin clicked:', {
       listingId: listing.id,
-      listingTitle: listing.title
+      listingTitle: listing.title,
+      skipParentCallback
     });
 
     // Calculate card position relative to map container
@@ -487,8 +493,8 @@ const GoogleMap = forwardRef(({
     }
     console.log('✅ handlePinClick: Selected listing state updated');
 
-    // Call parent callback
-    if (onMarkerClick) {
+    // Call parent callback only if not skipped (skip when called from hover highlight)
+    if (onMarkerClick && !skipParentCallback) {
       onMarkerClick(listing);
     }
   }, [onMarkerClick]);
