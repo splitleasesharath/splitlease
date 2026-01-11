@@ -452,16 +452,12 @@ export function findRouteForUrl(url) {
  * Used by vite.config.js for multi-page builds
  */
 export function buildRollupInputs(publicDir) {
-  const inputs = {};
-
-  for (const route of routes) {
-    if (route.devOnly) continue; // Skip dev-only routes in production build
+  return routes.reduce((acc, route) => {
+    if (route.devOnly) return acc; // Skip dev-only routes in production build
 
     const name = route.file.replace('.html', '');
-    inputs[name] = `${publicDir}/${route.file}`;
-  }
-
-  return inputs;
+    return { ...acc, [name]: `${publicDir}/${route.file}` };
+  }, {});
 }
 
 export default routes;
