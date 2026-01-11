@@ -448,7 +448,15 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path) -> bool:
             context["additional_pages"] = page_urls[1:]
     else:
         # Fallback to inference when affected_pages is AUTO or missing
-        context = infer_validation_context(chunk)        }
+        context = infer_validation_context(chunk)
+
+    notify_in_progress(
+        step=f"Validating Chunk {chunk.number}",
+        details=f"Testing on {context['page_name']}",
+        metadata={
+            "page": context["page_url"],
+            "tests": len(context["specific_tests"])
+        }
     )
 
     print(f"\n{'='*60}")
