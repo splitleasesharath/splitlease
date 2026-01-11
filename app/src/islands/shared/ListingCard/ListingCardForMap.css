@@ -385,7 +385,7 @@
 }
 
 .listing-card-title:hover {
-  color: #6C63FF;
+  color: #31135D;
 }
 
 .listing-card-price-section {
@@ -397,7 +397,7 @@
   font-family: 'Lato', sans-serif;
   font-weight: 700;
   font-size: 18px;
-  color: #000000;
+  color: #31135D;
   white-space: nowrap;
 }
 
@@ -425,7 +425,7 @@
 }
 
 .listing-card-location:hover {
-  color: #6C63FF;
+  color: #31135D;
 }
 
 .listing-card-features-row {
@@ -461,8 +461,8 @@
 .listing-card-view-details-btn {
   flex: 1;
   background-color: transparent;
-  color: #6C63FF;
-  border: 1px solid #6C63FF;
+  color: #31135D;
+  border: 1px solid #31135D;
   border-radius: 6px;
   padding: 8px 12px;
   font-family: 'Lato', sans-serif;
@@ -473,13 +473,13 @@
 }
 
 .listing-card-view-details-btn:hover {
-  background-color: #6C63FF;
+  background-color: #31135D;
   color: white;
 }
 
 .listing-card-send-message-btn {
   flex: 1;
-  background-color: #6C63FF;
+  background-color: #31135D;
   color: white;
   border: none;
   border-radius: 6px;
@@ -492,7 +492,7 @@
 }
 
 .listing-card-send-message-btn:hover {
-  background-color: #5a52e0;
+  background-color: #1f0b38;
 }
 
 .listing-card-send-message-btn:active {
