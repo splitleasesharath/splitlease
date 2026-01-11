@@ -320,6 +320,27 @@ export function useHeaderMessagingPanelLogic({
         }
       }
 
+      // Fetch unread message counts per thread for this user
+      // Uses JSONB containment operator to check if user is in Unread Users array
+      const threadIds = threadsData.map((t) => t._id);
+      let unreadCountMap = {};
+      if (threadIds.length > 0) {
+        const { data: unreadData } = await supabase
+          .from('_message')
+          .select('"Associated Thread/Conversation"')
+          .in('"Associated Thread/Conversation"', threadIds)
+          .filter('Unread Users', 'cs', JSON.stringify([bubbleId]));
+
+        if (unreadData) {
+          // Count occurrences of each thread ID
+          unreadCountMap = unreadData.reduce((acc, msg) => {
+            const threadId = msg['Associated Thread/Conversation'];
+            acc[threadId] = (acc[threadId] || 0) + 1;
+            return acc;
+          }, {});
+        }
+      }
+
       // Transform threads to UI format
       const transformedThreads = threadsData.map((thread) => {
         const hostId = thread['-Host User'];
@@ -361,7 +382,7 @@ export function useHeaderMessagingPanelLogic({
           property_name: thread['Listing'] ? listingMap[thread['Listing']] : undefined,
           last_message_preview: thread['~Last Message'] || 'No messages yet',
           last_message_time: lastMessageTime,
-          unread_count: 0, // TODO: Implement unread count
+          unread_count: unreadCountMap[thread._id] || 0,
           is_with_splitbot: false,
         };
       });
