@@ -2,21 +2,18 @@
  * Listing Full Submission Handler
  * Priority: CRITICAL
  *
- * STANDARDIZED FLOW (Supabase-first with queue-based Bubble sync):
+ * STANDARDIZED FLOW (Supabase-only):
  * 1. Validate listing exists in Supabase
  * 2. Update listing in Supabase with all form data
  * 3. Attach user to listing (via user_email or user_id)
- * 4. Queue UPDATE to Bubble (Data API) for async processing
+ * 4. Create mockup proposal for first-time hosts
  * 5. Return updated listing data
  *
- * This flow matches the proposal and auth-user patterns for uniformity.
- *
- * NO FALLBACK PRINCIPLE: Supabase update must succeed, Bubble sync is queued
+ * NO FALLBACK PRINCIPLE: Supabase is the source of truth
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { validateRequiredFields } from '../../_shared/validation.ts';
-import { enqueueBubbleSync, triggerQueueProcessing } from '../../_shared/queueSync.ts';
 import { parseJsonArray } from '../../_shared/jsonUtils.ts';
 import { handleCreateMockupProposal } from './createMockupProposal.ts';
 import { getGeoByZipCode } from '../../_shared/geoLookup.ts';
@@ -288,7 +285,7 @@ export async function handleSubmit(
 
   try {
     // Step 1: Verify listing exists
-    console.log('[listing:submit] Step 1/5: Verifying listing exists...');
+    console.log('[listing:submit] Step 1/4: Verifying listing exists...');
     const { data: existingListing, error: fetchError } = await supabase
       .from('listing')
       .select('_id, Name, Status')
@@ -303,7 +300,7 @@ export async function handleSubmit(
     console.log('[listing:submit] ✅ Step 1 complete - Listing exists:', existingListing.Name);
 
     // Step 2: Look up user
-    console.log('[listing:submit] Step 2/5: Looking up user...');
+    console.log('[listing:submit] Step 2/4: Looking up user...');
     const { data: userData } = await supabase
       .from('user')
       .select('_id')
@@ -320,7 +317,7 @@ export async function handleSubmit(
     }
 
     // Step 2b: Look up borough and hood from zip code
-    console.log('[listing:submit] Step 2b/5: Looking up borough/hood from zip code...');
+    console.log('[listing:submit] Step 2b/4: Looking up borough/hood from zip code...');
     let boroughId: string | null = null;
     let hoodId: string | null = null;
 
@@ -340,7 +337,7 @@ export async function handleSubmit(
     }
 
     // Step 3: Update listing in Supabase
-    console.log('[listing:submit] Step 3/5: Updating listing in Supabase...');
+    console.log('[listing:submit] Step 3/4: Updating listing in Supabase...');
     const now = new Date().toISOString();
 
     // Map frontend fields to Supabase columns
@@ -381,38 +378,10 @@ export async function handleSubmit(
 
     console.log('[listing:submit] ✅ Step 3 complete - Listing updated in Supabase');
 
-    // Step 4: Queue Bubble sync (UPDATE operation)
-    console.log('[listing:submit] Step 4/5: Queueing Bubble sync...');
-    try {
-      await enqueueBubbleSync(supabase, {
-        correlationId: `listing_submit:${listing_id}:${Date.now()}`,
-        items: [{
-          sequence: 1,
-          table: 'listing',
-          recordId: listing_id,
-          operation: 'UPDATE',
-          bubbleId: listing_id,  // The _id is the bubble_id
-          payload: {
-            ...updateData,
-            _id: listing_id,
-          },
-        }]
-      });
-
-      console.log('[listing:submit] ✅ Step 4 complete - Bubble sync queued');
-
-      // Trigger queue processing (fire-and-forget)
-      // pg_cron will also process the queue as a fallback
-      triggerQueueProcessing();
-    } catch (syncError) {
-      // Log but don't fail - sync can be retried via pg_cron
-      console.error('[listing:submit] ⚠️ Step 4 warning - Queue error (non-blocking):', syncError);
-    }
-
-    // Step 5: Check if first listing and create mockup proposal
+    // Step 4: Check if first listing and create mockup proposal
     if (userId) {
       try {
-        console.log('[listing:submit] Step 5/5: Checking for first listing...');
+        console.log('[listing:submit] Step 4/4: Checking for first listing...');
 
         // Get user's listings count directly from user table
         const { data: hostUserData } = await supabase
@@ -432,16 +401,16 @@ export async function handleSubmit(
             hostEmail: user_email,
           });
 
-          console.log('[listing:submit] ✅ Step 5 complete - Mockup proposal created');
+          console.log('[listing:submit] ✅ Step 4 complete - Mockup proposal created');
         } else {
-          console.log(`[listing:submit] ⏭️ Step 5 skipped - Not first listing (count: ${listings.length})`);
+          console.log(`[listing:submit] ⏭️ Step 4 skipped - Not first listing (count: ${listings.length})`);
         }
       } catch (mockupError) {
         // Non-blocking - log but don't fail listing submission
         console.warn('[listing:submit] ⚠️ Mockup proposal creation failed (non-blocking):', mockupError);
       }
     } else {
-      console.log('[listing:submit] ⏭️ Step 5 skipped - User not found');
+      console.log('[listing:submit] ⏭️ Step 4 skipped - User not found');
     }
 
     console.log('[listing:submit] ========== SUCCESS ==========');
