@@ -35,7 +35,7 @@ from datetime import datetime
 sys.path.insert(0, str(Path(__file__).parent))
 
 from adw_modules.webhook import notify_success, notify_failure, notify_in_progress
-from adw_modules.run_logger import create_run_logger
+from adw_modules.run_logger import RunLogger
 
 # Import chunk processing functions from the full orchestrator
 from adw_fp_audit_browser_implement_orchestrator import (
@@ -136,10 +136,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Initialize logger
-    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    logger = create_run_logger("fp_mini_orchestrator", timestamp)
-
     print(f"\n{'='*60}")
     print("ADW FP MINI ORCHESTRATOR")
     print(f"{'='*60}")
@@ -147,18 +143,23 @@ def main():
     if args.chunks:
         print(f"Chunks filter: {args.chunks}")
 
-    logger.log(f"Plan file: {args.plan_file}", to_stdout=False)
-    if args.chunks:
-        logger.log(f"Chunks filter: {args.chunks}", to_stdout=False)
-
     # Convert plan file to absolute path
     plan_file = Path(args.plan_file).resolve()
 
     # Derive working_dir from plan file path
     # Plan file is at: <working_dir>/.claude/plans/New/<filename>
-    # So working_dir is 3 levels up from the plan file
-    working_dir = plan_file.parent.parent.parent
+    # Levels: <filename> -> New -> plans -> .claude -> <working_dir>
+    # So working_dir is 4 levels up from the plan file
+    working_dir = plan_file.parent.parent.parent.parent
 
+    # Initialize logger AFTER deriving working_dir so it uses correct path
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    log_dir = working_dir / "adws" / "adw_run_logs"
+    logger = RunLogger(log_dir, "fp_mini_orchestrator", timestamp)
+
+    logger.log(f"Plan file: {args.plan_file}", to_stdout=False)
+    if args.chunks:
+        logger.log(f"Chunks filter: {args.chunks}", to_stdout=False)
     logger.log(f"Derived working_dir: {working_dir}", to_stdout=False)
 
     # Validate plan file exists
