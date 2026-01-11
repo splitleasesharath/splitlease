@@ -28,7 +28,7 @@ export function isContiguousSelection(selectedDays) {
   if (selectedDays.length === 1) return true;
 
   // Sort the selected days
-  const sorted = [...selectedDays].sort((a, b) => a - b);
+  const sorted = selectedDays.toSorted((a, b) => a - b);
 
   // If 6 or more days selected, it's contiguous
   if (sorted.length >= 6) return true;
