@@ -935,9 +935,16 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
               }
             }}
             onCardLeave={() => {
-              if (mapRef.current) {
-                mapRef.current.stopPulse();
+              // Delay stopPulse to allow hovering to map without losing pulse
+              if (pulseTimeoutRef.current) {
+                clearTimeout(pulseTimeoutRef.current);
               }
+              pulseTimeoutRef.current = setTimeout(() => {
+                if (mapRef.current) {
+                  mapRef.current.stopPulse();
+                }
+                pulseTimeoutRef.current = null;
+              }, 150); // Short delay to allow transition to map
             }}
             onOpenContactModal={onOpenContactModal}
             onOpenInfoModal={onOpenInfoModal}
@@ -1062,6 +1069,7 @@ export default function SearchPage() {
   const fetchInProgressRef = useRef(false); // Track if fetch is already in progress
   const lastFetchParamsRef = useRef(null); // Track last fetch parameters to prevent duplicates
   const menuRef = useRef(null); // Ref for hamburger menu dropdown
+  const pulseTimeoutRef = useRef(null); // Track delayed stopPulse for hover transition to map
 
   // Parse URL parameters for initial filter state
   const urlFilters = parseUrlToFilters();
@@ -3445,7 +3453,22 @@ export default function SearchPage() {
         </section>
 
         {/* RIGHT COLUMN: Map with integrated header */}
-        <section className="map-column">
+        <section
+          className="map-column"
+          onMouseEnter={() => {
+            // Cancel pending stopPulse when hovering to map - keep pulse alive
+            if (pulseTimeoutRef.current) {
+              clearTimeout(pulseTimeoutRef.current);
+              pulseTimeoutRef.current = null;
+            }
+          }}
+          onMouseLeave={() => {
+            // Stop pulse when leaving map area entirely
+            if (mapRef.current) {
+              mapRef.current.stopPulse();
+            }
+          }}
+        >
           {/* Integrated Logo and Hamburger Menu */}
           <div className="map-header">
             <a href="/" className="map-logo">
