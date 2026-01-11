@@ -508,7 +508,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
+function PropertyCard({ listing, onLocationClick, onCardHover, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
   const mobilePriceInfoTriggerRef = useRef(null);
@@ -675,6 +675,11 @@ function PropertyCard({ listing, onLocationClick, onOpenContactModal, onOpenInfo
       rel="noopener noreferrer"
       style={{ textDecoration: 'none', color: 'inherit' }}
       onClick={handleCardClick}
+      onMouseEnter={() => {
+        if (onCardHover) {
+          onCardHover(listing);
+        }
+      }}
     >
       {/* Image Section */}
       {hasImages && (
@@ -914,6 +919,11 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             key={listing.id}
             listing={listing}
             onLocationClick={(listing) => {
+              if (mapRef.current) {
+                mapRef.current.zoomToListing(listing.id);
+              }
+            }}
+            onCardHover={(listing) => {
               if (mapRef.current) {
                 mapRef.current.zoomToListing(listing.id);
               }
