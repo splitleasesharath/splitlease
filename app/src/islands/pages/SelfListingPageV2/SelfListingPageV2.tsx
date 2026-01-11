@@ -323,7 +323,8 @@ export function SelfListingPageV2() {
       }
 
       // User is logged in - check their type
-      const userData = await validateTokenAndFetchUser();
+      // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
       const userType = userData?.userType;
 
       console.log('🔐 SelfListingPageV2: User type:', userType);
@@ -396,7 +397,8 @@ export function SelfListingPageV2() {
 
       if (loggedIn) {
         try {
-          const userData = await validateTokenAndFetchUser();
+          // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+          const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
           if (userData?.phoneNumber) {
             setUserPhoneNumber(userData.phoneNumber);
             setPhoneNumber(userData.phoneNumber);
@@ -953,7 +955,8 @@ export function SelfListingPageV2() {
   const handleSubmit = async () => {
     // Use validateTokenAndFetchUser to match Header's auth check behavior
     // This ensures consistency - if Header shows logged out, we show the modal
-    const userData = await validateTokenAndFetchUser();
+    // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+    const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
     const loggedIn = !!userData;
     setIsLoggedIn(loggedIn);
 

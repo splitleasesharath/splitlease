@@ -908,7 +908,8 @@ export default function ViewSplitLeasePage() {
         // Check auth status and fetch user data if logged in
         const isLoggedIn = await checkAuthStatus();
         if (isLoggedIn) {
-          const userData = await validateTokenAndFetchUser();
+          // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+          const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
           if (userData) {
             setLoggedInUserData(userData);
             console.log('👤 ViewSplitLeasePage: User data loaded:', userData.firstName);
@@ -1518,8 +1519,9 @@ export default function ViewSplitLeasePage() {
     setShowAuthModal(false);
 
     // Update the logged-in user data
+    // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
     try {
-      const userData = await validateTokenAndFetchUser();
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
       if (userData) {
         setLoggedInUserData(userData);
         console.log('👤 User data updated after auth:', userData.firstName);
