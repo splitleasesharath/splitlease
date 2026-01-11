@@ -190,7 +190,20 @@ const GoogleMap = forwardRef(({
         });
         // Add pulse animation to this marker (continues until hover ends)
         marker.div.classList.add('pulse');
-        // Note: Card popup is NOT shown on hover - only pulse animation
+
+        // If a map card is already visible, update it to show the hovered listing
+        if (cardVisible && selectedListingForCard) {
+          // Calculate card position for the new marker
+          const mapContainer = mapRef.current;
+          if (mapContainer && marker.div) {
+            const mapRect = mapContainer.getBoundingClientRect();
+            const markerRect = marker.div.getBoundingClientRect();
+            const x = markerRect.left - mapRect.left + markerRect.width / 2;
+            const y = markerRect.top - mapRect.top - 10;
+            setCardPosition({ x, y });
+          }
+          setSelectedListingForCard(listing);
+        }
       }
     },
     // Stop pulsing all markers (called when hover ends)
