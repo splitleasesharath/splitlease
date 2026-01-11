@@ -2454,15 +2454,17 @@ export default function SearchPage() {
   };
 
   // Scroll to listing card when marker is clicked
+  // Ensures the listing is loaded (lazy-loading) before scrolling
   const scrollToListingCard = (listing) => {
     const listingId = listing.id || listing._id;
     console.log('[scrollToListingCard] Looking for listing:', listingId);
 
-    const listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
-    console.log('[scrollToListingCard] Found card:', listingCard);
+    // First check if the listing card already exists in the DOM
+    let listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
+    console.log('[scrollToListingCard] Initial card search result:', listingCard);
 
     if (listingCard) {
-      // Use scrollIntoView for reliable scrolling
+      // Card exists, scroll to it
       listingCard.scrollIntoView({
         behavior: 'smooth',
         block: 'center'
@@ -2474,7 +2476,40 @@ export default function SearchPage() {
         listingCard.classList.remove('listing-card--highlighted');
       }, 2000);
     } else {
-      console.warn('[scrollToListingCard] Card not found for listing:', listingId);
+      // Card not in DOM - might not be lazy-loaded yet
+      // Find the listing's position in allListings and load up to that point
+      const listingIndex = allListings.findIndex(l => (l.id || l._id) === listingId);
+      console.log('[scrollToListingCard] Listing index in allListings:', listingIndex);
+
+      if (listingIndex >= 0) {
+        // Load listings up to and including the clicked one
+        const needToLoad = listingIndex + 1;
+        if (needToLoad > loadedCount) {
+          console.log('[scrollToListingCard] Loading more listings to show card. Need:', needToLoad, 'Currently loaded:', loadedCount);
+          setDisplayedListings(allListings.slice(0, needToLoad));
+          setLoadedCount(needToLoad);
+
+          // Wait for React to render the new cards, then scroll
+          setTimeout(() => {
+            const newListingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
+            console.log('[scrollToListingCard] After load, found card:', newListingCard);
+
+            if (newListingCard) {
+              newListingCard.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
+              });
+
+              newListingCard.classList.add('listing-card--highlighted');
+              setTimeout(() => {
+                newListingCard.classList.remove('listing-card--highlighted');
+              }, 2000);
+            }
+          }, 100); // Small delay to allow React to render
+        }
+      } else {
+        console.warn('[scrollToListingCard] Listing not found in allListings:', listingId);
+      }
     }
   };
 
