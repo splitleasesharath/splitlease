@@ -493,57 +493,51 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path) -> bool:
     if "additional_pages" in context:
         print(f"Note: Also affects {', '.join(context['additional_pages'])}")
 
-    # Build detailed validation prompt
-    tests_list = "\n".join(f"   {i+1}. {test}" for i, test in enumerate(context["specific_tests"]))
+    # Build validation actions list (starting from step 3)
+    actions_list = "\n".join(f"{i+3}. {test}" for i, test in enumerate(context["specific_tests"]))
 
-    # Build affected pages note
-    affected_pages_note = ""
+    # Build additional pages note if applicable
+    additional_pages_section = ""
     if "additional_pages" in context:
-        affected_pages_note = f"\n\n**Note:** This change also affects: {', '.join(context['additional_pages'])}. We're testing {context['page_url']} as the primary validation page."
+        other_pages = ", ".join(context['additional_pages'])
+        additional_pages_section = f"\n\n**Also affects:** {other_pages}"
 
-    validation_prompt = f"""I just refactored code in {chunk.file_path} (line {chunk.line_number}).
+    # Build auth instruction
+    auth_step = "2. Log in with test credentials" if context['requires_auth'] else "2. (No login required)"
 
-**Change:** {chunk.title}
+    # Calculate final step number
+    final_step = len(context['specific_tests']) + 3
 
-**Validation Required:**
+    validation_prompt = f"""**Refactoring:** {chunk.title}
+**File:** {chunk.file_path}:{chunk.line_number}{additional_pages_section}
 
-Navigate to: http://localhost:8000{context['page_url']}
+**Test Page:**
+http://localhost:8000{context['page_url']}
 
-**Critical:** This refactoring affects {context['page_name']}. You MUST test the specific functionality that could break:{affected_pages_note}
-
-{tests_list}
-
-**Step-by-Step Validation:**
+**Actions:**
 1. Navigate to http://localhost:8000{context['page_url']}
-2. {"Login first if needed (use test credentials)" if context['requires_auth'] else "No login required"}
-3. Perform EACH of the specific tests above
-4. Monitor browser console for errors
-5. Check for visual regressions
+{auth_step}
+{actions_list}
+{final_step}. Check browser console for errors
 
-**What Changed:**
-File: {chunk.file_path}:{chunk.line_number}
-Type: Functional programming refactoring ({chunk.title})
-Risk: Medium - Array/object operations changed from imperative to declarative
+**Report:**
 
-**Report Format:**
-
-If EVERYTHING works:
+Success format:
 ---
 VALIDATION PASSED
-All {len(context['specific_tests'])} tests completed successfully.
-No console errors detected.
+All tests completed successfully.
+No console errors.
 ---
 
-If ANYTHING breaks:
+Failure format:
 ---
 VALIDATION FAILED
-Test #{{}}: [which test failed]
+Test: [which action failed]
 Error: [what broke]
-Console: [any error messages]
-Visual: [any visual issues]
+Console: [error messages if any]
 ---
 
-DO NOT attempt to fix anything - just report the status accurately.
+Report status only. Do not fix anything.
 """
 
     # Import browser automation with dev server management
