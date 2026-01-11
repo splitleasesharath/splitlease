@@ -2415,20 +2415,16 @@ export default function SearchPage() {
   // Scroll to listing card when marker is clicked
   const scrollToListingCard = (listing) => {
     const listingId = listing.id || listing._id;
-    const listingsContent = document.querySelector('.listings-content');
+    console.log('[scrollToListingCard] Looking for listing:', listingId);
+
     const listingCard = document.querySelector(`[data-listing-id="${listingId}"]`);
+    console.log('[scrollToListingCard] Found card:', listingCard);
 
-    if (listingsContent && listingCard) {
-      // Scroll the listing into view within the listings container
-      const containerRect = listingsContent.getBoundingClientRect();
-      const cardRect = listingCard.getBoundingClientRect();
-
-      // Calculate scroll position to center the card in the container
-      const scrollTop = listingCard.offsetTop - listingsContent.offsetTop - (containerRect.height / 2) + (cardRect.height / 2);
-
-      listingsContent.scrollTo({
-        top: Math.max(0, scrollTop),
-        behavior: 'smooth'
+    if (listingCard) {
+      // Use scrollIntoView for reliable scrolling
+      listingCard.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
       });
 
       // Add a brief highlight effect to the card
@@ -2436,6 +2432,8 @@ export default function SearchPage() {
       setTimeout(() => {
         listingCard.classList.remove('listing-card--highlighted');
       }, 2000);
+    } else {
+      console.warn('[scrollToListingCard] Card not found for listing:', listingId);
     }
   };
 
