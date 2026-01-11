@@ -227,6 +227,62 @@ export async function triggerQueueProcessing(
 }
 
 /**
+ * Trigger proposal messaging thread creation (fire and forget)
+ *
+ * This calls the messages Edge Function to create a thread and SplitBot messages
+ * for a proposal. Used for mockup proposals to notify the host.
+ */
+export interface TriggerProposalMessagingParams {
+  proposalId: string;
+  guestId: string;
+  hostId: string;
+  listingId: string;
+  proposalStatus: string;
+}
+
+export async function triggerProposalMessaging(
+  params: TriggerProposalMessagingParams
+): Promise<void> {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.warn('[QueueSync] Missing env vars for messaging trigger');
+    return;
+  }
+
+  try {
+    console.log('[QueueSync] Triggering proposal messaging...');
+
+    const messagesPayload = {
+      action: 'create_proposal_thread',
+      payload: params,
+    };
+
+    // Fire and forget - don't await the response
+    fetch(`${supabaseUrl}/functions/v1/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${serviceRoleKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(messagesPayload),
+    }).then((response) => {
+      if (response.ok) {
+        console.log('[QueueSync] Messaging thread creation triggered');
+      } else {
+        console.warn('[QueueSync] Messaging trigger returned:', response.status);
+      }
+    }).catch((err) => {
+      console.warn('[QueueSync] Messaging trigger failed (non-blocking):', err.message);
+    });
+  } catch (err) {
+    // Non-blocking - log and continue
+    console.warn('[QueueSync] Failed to trigger messaging (non-blocking):', err);
+  }
+}
+
+/**
  * Helper to enqueue an atomic signup operation
  *
  * This creates a SIGNUP_ATOMIC entry that the bubble_sync handler

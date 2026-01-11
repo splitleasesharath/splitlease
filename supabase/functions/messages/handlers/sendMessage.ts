@@ -7,6 +7,9 @@
  * - Broadcasting to Realtime channel
  * - Updating thread's last message
  *
+ * Optional: When send_welcome_messages=true and a new thread is created,
+ * sends SplitBot welcome messages to both guest and host.
+ *
  * NO FALLBACK PRINCIPLE: Throws if message creation fails
  */
 
@@ -16,21 +19,30 @@ import { ValidationError } from '../../_shared/errors.ts';
 import { validateRequiredFields } from '../../_shared/validation.ts';
 import {
   getUserBubbleId,
+  getUserProfile,
+  getListingName,
   createMessage,
   createThread,
-  findExistingThread
+  createSplitBotMessage,
+  findExistingThread,
+  updateThreadLastMessage,
 } from '../../_shared/messagingHelpers.ts';
+import {
+  getCTAByName,
+  renderTemplate,
+  getVisibilityForRole,
+  buildTemplateContext,
+} from '../../_shared/ctaHelpers.ts';
 
 interface SendMessagePayload {
-  thread_id?: string;          // Optional if creating new thread
-  message_body: string;        // Required: Message content
-  // For new thread creation:
-  recipient_user_id?: string;  // Required if no thread_id
-  listing_id?: string;         // Optional: Associated listing
-  // Message options:
-  splitbot?: boolean;          // Optional: Is Split Bot message
-  call_to_action?: string;     // Optional: CTA type
-  split_bot_warning?: string;  // Optional: Warning text
+  thread_id?: string;
+  message_body: string;
+  recipient_user_id?: string;
+  listing_id?: string;
+  splitbot?: boolean;
+  call_to_action?: string;
+  split_bot_warning?: string;
+  send_welcome_messages?: boolean;
 }
 
 interface SendMessageResult {
@@ -39,30 +51,84 @@ interface SendMessageResult {
   thread_id: string;
   is_new_thread: boolean;
   timestamp: string;
+  welcome_messages_sent?: boolean;
 }
 
-/**
- * Handle send_message action - NATIVE SUPABASE
- * No longer calls Bubble workflows - all operations are Supabase-native
- */
+async function sendInquiryWelcomeMessages(
+  supabase: SupabaseClient,
+  threadId: string,
+  guestId: string,
+  hostId: string,
+  listingId?: string
+): Promise<void> {
+  console.log('[sendMessage] Sending welcome messages for new inquiry thread');
+
+  const [guestProfile, hostProfile, listingName] = await Promise.all([
+    getUserProfile(supabase, guestId),
+    getUserProfile(supabase, hostId),
+    listingId ? getListingName(supabase, listingId) : Promise.resolve(null),
+  ]);
+
+  const templateContext = buildTemplateContext(
+    hostProfile?.firstName,
+    guestProfile?.firstName,
+    listingName || undefined
+  );
+
+  const [guestCTA, hostCTA] = await Promise.all([
+    getCTAByName(supabase, 'new_inquiry_guest_view'),
+    getCTAByName(supabase, 'new_inquiry_host_view'),
+  ]);
+
+  if (guestCTA?.message) {
+    const guestVisibility = getVisibilityForRole('guest');
+    const renderedMessage = renderTemplate(guestCTA.message, templateContext);
+    await createSplitBotMessage(supabase, {
+      threadId,
+      messageBody: renderedMessage,
+      callToAction: guestCTA.display,
+      visibleToHost: guestVisibility.visibleToHost,
+      visibleToGuest: guestVisibility.visibleToGuest,
+      recipientUserId: guestId,
+    });
+    console.log('[sendMessage] Sent guest welcome message');
+  }
+
+  if (hostCTA?.message) {
+    const hostVisibility = getVisibilityForRole('host');
+    const renderedMessage = renderTemplate(hostCTA.message, templateContext);
+    await createSplitBotMessage(supabase, {
+      threadId,
+      messageBody: renderedMessage,
+      callToAction: hostCTA.display,
+      visibleToHost: hostVisibility.visibleToHost,
+      visibleToGuest: hostVisibility.visibleToGuest,
+      recipientUserId: hostId,
+    });
+    console.log('[sendMessage] Sent host welcome message');
+  }
+
+  const lastMessagePreview = guestCTA?.message
+    ? renderTemplate(guestCTA.message, templateContext)
+    : 'New conversation started';
+  await updateThreadLastMessage(supabase, threadId, lastMessagePreview);
+}
+
 export async function handleSendMessage(
   supabaseAdmin: SupabaseClient,
   payload: Record<string, unknown>,
   user: User
 ): Promise<SendMessageResult> {
-  console.log('[sendMessage] ========== SEND MESSAGE (NATIVE) ==========');
+  console.log('[sendMessage] ========== SEND MESSAGE (NATIVE) ===========');
   console.log('[sendMessage] User:', user.email);
 
-  // Validate required fields
   const typedPayload = payload as unknown as SendMessagePayload;
   validateRequiredFields(typedPayload, ['message_body']);
 
-  // Validate message body is not empty
   if (!typedPayload.message_body.trim()) {
     throw new ValidationError('Message body cannot be empty');
   }
 
-  // Get sender's Bubble ID
   if (!user.email) {
     throw new ValidationError('Could not find user profile. Please try logging in again.');
   }
@@ -76,36 +142,33 @@ export async function handleSendMessage(
 
   let threadId = typedPayload.thread_id;
   let isNewThread = false;
+  let recipientId: string | undefined;
 
-  // If no thread_id, we need to create or find a thread
   if (!threadId) {
     if (!typedPayload.recipient_user_id) {
       throw new ValidationError('Either thread_id or recipient_user_id is required');
     }
 
-    const recipientId = typedPayload.recipient_user_id;
+    recipientId = typedPayload.recipient_user_id;
     console.log('[sendMessage] Looking for existing thread with recipient:', recipientId);
 
-    // Check for existing thread (sender as guest, recipient as host)
     threadId = await findExistingThread(
       supabaseAdmin,
-      recipientId,  // host
-      senderBubbleId,  // guest
+      recipientId,
+      senderBubbleId,
       typedPayload.listing_id
     );
 
     if (!threadId) {
-      // Also check reverse (sender as host, recipient as guest)
       threadId = await findExistingThread(
         supabaseAdmin,
-        senderBubbleId,  // host
-        recipientId,  // guest
+        senderBubbleId,
+        recipientId,
         typedPayload.listing_id
       );
     }
 
     if (!threadId) {
-      // Create new thread (assume recipient is host, sender is guest)
       console.log('[sendMessage] Creating new thread...');
       threadId = await createThread(supabaseAdmin, {
         hostUserId: recipientId,
@@ -120,7 +183,6 @@ export async function handleSendMessage(
     }
   }
 
-  // Create the message (triggers broadcast automatically via database trigger)
   console.log('[sendMessage] Creating message in thread:', threadId);
   const messageId = await createMessage(supabaseAdmin, {
     threadId,
@@ -132,7 +194,24 @@ export async function handleSendMessage(
   });
 
   console.log('[sendMessage] Message created:', messageId);
-  console.log('[sendMessage] ========== SEND COMPLETE (NATIVE) ==========');
+
+  let welcomeMessagesSent = false;
+  if (isNewThread && typedPayload.send_welcome_messages && recipientId) {
+    try {
+      await sendInquiryWelcomeMessages(
+        supabaseAdmin,
+        threadId,
+        senderBubbleId,
+        recipientId,
+        typedPayload.listing_id
+      );
+      welcomeMessagesSent = true;
+    } catch (welcomeError) {
+      console.warn('[sendMessage] Welcome messages failed (non-blocking):', welcomeError);
+    }
+  }
+
+  console.log('[sendMessage] ========== SEND COMPLETE (NATIVE) ===========');
 
   return {
     success: true,
@@ -140,5 +219,6 @@ export async function handleSendMessage(
     thread_id: threadId,
     is_new_thread: isNewThread,
     timestamp: new Date().toISOString(),
+    welcome_messages_sent: welcomeMessagesSent,
   };
 }

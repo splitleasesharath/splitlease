@@ -23,9 +23,9 @@ export default function RentalApplicationWizardModal({
   onClose,
   onSuccess,
   applicationStatus = 'not_started', // 'not_started' | 'in_progress' | 'submitted'
-  userEmail = '', // Fallback email from user profile
+  userProfileData = null, // { email, firstName, lastName, phone } from user table
 }) {
-  const logic = useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus, userEmail });
+  const logic = useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus, userProfileData });
 
   // Body scroll lock
   useEffect(() => {
@@ -210,7 +210,7 @@ export default function RentalApplicationWizardModal({
               </button>
             )}
 
-            {logic.currentStep < 7 && (
+            {logic.currentStep < 7 && logic.isCurrentStepOptional() && (
               <button
                 type="button"
                 className="wizard-btn wizard-btn--ghost"
@@ -224,7 +224,11 @@ export default function RentalApplicationWizardModal({
               type="button"
               className="wizard-btn wizard-btn--primary"
               onClick={logic.currentStep === 7 ? logic.handleSubmit : logic.goToNextStep}
-              disabled={logic.isSubmitting || (logic.currentStep === 7 && !logic.canSubmit)}
+              disabled={
+                logic.isSubmitting ||
+                (logic.currentStep === 7 && !logic.canSubmit) ||
+                (logic.currentStep < 7 && !logic.canProceedFromCurrentStep())
+              }
             >
               {getNextButtonText()}
             </button>

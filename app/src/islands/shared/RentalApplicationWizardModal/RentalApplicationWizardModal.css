@@ -744,6 +744,43 @@
 }
 
 /* ============================================================================
+   GOOGLE PLACES AUTOCOMPLETE DROPDOWN
+   The .pac-container is rendered at document.body level, not inside the modal.
+   Must override z-index to appear above the modal overlay (z-index: 10000).
+   ============================================================================ */
+
+.pac-container {
+  z-index: 10002 !important; /* Above modal overlay (10000) */
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  font-family: inherit;
+}
+
+.pac-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.pac-item:hover {
+  background-color: #F3F0FF;
+}
+
+.pac-item-selected {
+  background-color: #F3F0FF;
+}
+
+.pac-icon {
+  margin-top: 2px;
+}
+
+.pac-matched {
+  font-weight: 600;
+}
+
+/* ============================================================================
    MOBILE RESPONSIVE
    ============================================================================ */
 

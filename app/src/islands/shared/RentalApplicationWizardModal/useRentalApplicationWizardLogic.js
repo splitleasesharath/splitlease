@@ -86,7 +86,7 @@ const FILE_TYPE_MAP = {
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
 
-export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus = 'not_started', userEmail = '' }) {
+export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicationStatus = 'not_started', userProfileData = null }) {
   // ============================================================================
   // STORE INTEGRATION (reuse existing localStorage store)
   // ============================================================================
@@ -111,6 +111,9 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   // ============================================================================
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState([]);
+  // Track which steps the user has actually visited (for optional steps)
+  // Step 1 is always visited on initial load
+  const [visitedSteps, setVisitedSteps] = useState([1]);
 
   // ============================================================================
   // LOCAL STATE (non-persistent)
@@ -128,6 +131,82 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
   // Address autocomplete ref
   const addressInputRef = useRef(null);
+
+  // Track which user profile fields were originally empty (for sync-back feature)
+  // This captures the state once when userProfileData arrives
+  const emptyUserProfileFields = useRef(null);
+
+  // Track if we've already set the initial step from localStorage data
+  const hasSetInitialStep = useRef(false);
+
+  // ============================================================================
+  // CALCULATE INITIAL STEP FROM LOADED DATA (for resuming drafts)
+  // ============================================================================
+  // When form data loads from localStorage, calculate which step user should resume at
+  useEffect(() => {
+    // Skip if already set initial step or if this is a submitted application
+    // (submitted apps will set their own step from database loading)
+    if (hasSetInitialStep.current || applicationStatus === 'submitted') {
+      return;
+    }
+
+    // Check if we have any data loaded (indicating localStorage had a draft)
+    const hasLoadedData = formData.fullName || formData.email || formData.phone || formData.dob;
+    if (!hasLoadedData) {
+      return;
+    }
+
+    // Calculate which step to resume at based on completed fields
+    // Find the first incomplete step, or go to the step after the last complete one
+    const isStep1Complete = formData.fullName && formData.dob && formData.email && formData.phone;
+    const isStep2Complete = formData.currentAddress && formData.lengthResided && formData.renting;
+    const isStep4Complete = formData.employmentStatus && (
+      // Check conditional fields based on employment status
+      formData.employmentStatus === 'student' ||
+      formData.employmentStatus === 'unemployed' ||
+      formData.employmentStatus === 'other' ||
+      ((['full-time', 'part-time', 'intern'].includes(formData.employmentStatus)) &&
+        formData.employerName && formData.employerPhone && formData.jobTitle && formData.monthlyIncome) ||
+      (formData.employmentStatus === 'business-owner' &&
+        formData.businessName && formData.businessYear && formData.businessState)
+    );
+
+    // Determine starting step
+    let startStep = 1;
+    if (isStep1Complete) {
+      startStep = 2; // Go to Address
+      if (isStep2Complete) {
+        startStep = 3; // Go to Occupants
+        // Steps 3, 5, 6 are optional - check step 4
+        if (isStep4Complete) {
+          startStep = 5; // Skip to Details (step 4 is done)
+        } else {
+          startStep = 4; // Go to Work/Employment
+        }
+      }
+    }
+
+    // Mark previous steps as visited (confirmed) - but NOT the current step
+    // The current step will be marked visited when user navigates away from it
+    const stepsToVisit = [];
+    for (let i = 1; i < startStep; i++) {
+      stepsToVisit.push(i);
+    }
+
+    if (startStep > 1) {
+      console.log('[RentalAppWizard] Resuming from step', startStep, 'based on loaded draft data');
+      setCurrentStep(startStep);
+      if (stepsToVisit.length > 0) {
+        setVisitedSteps(stepsToVisit);
+      }
+    }
+
+    hasSetInitialStep.current = true;
+  }, [applicationStatus, formData.fullName, formData.dob, formData.email, formData.phone,
+      formData.currentAddress, formData.lengthResided, formData.renting,
+      formData.employmentStatus, formData.employerName, formData.employerPhone,
+      formData.jobTitle, formData.monthlyIncome, formData.businessName,
+      formData.businessYear, formData.businessState]);
 
   // ============================================================================
   // DATABASE LOADING (for submitted applications)
@@ -181,10 +260,14 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
             occupants: mappedOccupants,
             completedSteps: dbCompletedSteps,
             lastStep: dbLastStep
-          } = mapDatabaseToFormData(result.data, userEmail);
+          } = mapDatabaseToFormData(result.data, userProfileData?.email || '');
 
           // Load into store (this will update the reactive state)
           loadFromDatabase(mappedFormData, mappedOccupants);
+
+          // For submitted/existing applications being reviewed, mark ALL steps as visited
+          // This ensures optional steps show as completed when editing a submitted application
+          setVisitedSteps([1, 2, 3, 4, 5, 6, 7]);
 
           // Initialize completed steps from database data
           if (dbCompletedSteps && dbCompletedSteps.length > 0) {
@@ -209,6 +292,134 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
 
     fetchFromDatabase();
   }, [applicationStatus, loadFromDatabase]);
+
+  // ============================================================================
+  // PRE-FILL FROM USER PROFILE (for new applications)
+  // ============================================================================
+  const hasPrefilledFromProfile = useRef(false);
+
+  useEffect(() => {
+    // Only pre-fill for new applications that haven't been pre-filled yet
+    // Skip if application is submitted (will load from database instead)
+    // Skip if form already has data (user typed or localStorage draft exists)
+    if (
+      applicationStatus === 'submitted' ||
+      hasPrefilledFromProfile.current ||
+      !userProfileData
+    ) {
+      return;
+    }
+
+    // Build full name from first + last name
+    const fullName = [userProfileData.firstName, userProfileData.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    // Only pre-fill fields that are currently empty
+    const fieldsToUpdate = {};
+
+    if (fullName && !formData.fullName) {
+      fieldsToUpdate.fullName = fullName;
+    }
+    if (userProfileData.email && !formData.email) {
+      fieldsToUpdate.email = userProfileData.email;
+    }
+    if (userProfileData.phone && !formData.phone) {
+      fieldsToUpdate.phone = userProfileData.phone;
+    }
+    if (userProfileData.dob && !formData.dob) {
+      // DOB from database may be in various formats:
+      // - ISO: "1992-08-16T00:00:00.000Z"
+      // - Postgres timestamp: "1992-08-16 00:00:00+00"
+      // Normalize to YYYY-MM-DD for HTML date input
+      const dobValue = String(userProfileData.dob);
+      fieldsToUpdate.dob = dobValue.split(/[T\s]/)[0]; // Split on 'T' or space
+    }
+
+    // Apply pre-fill if we have any fields to update
+    if (Object.keys(fieldsToUpdate).length > 0) {
+      updateFormData(fieldsToUpdate);
+    }
+
+    hasPrefilledFromProfile.current = true;
+  }, [applicationStatus, userProfileData, formData.fullName, formData.email, formData.phone, formData.dob, updateFormData]);
+
+  // ============================================================================
+  // SYNC-BACK TO USER TABLE - Track empty fields and sync when filled
+  // ============================================================================
+  // Capture which user profile fields were originally empty (one-time)
+  useEffect(() => {
+    if (emptyUserProfileFields.current !== null || !userProfileData) {
+      return;
+    }
+
+    // Track which fields are empty in the user profile
+    // These are candidates for sync-back when the user fills them in the rental app
+    emptyUserProfileFields.current = {
+      phone: !userProfileData.phone,
+      dob: !userProfileData.dob,
+    };
+
+    console.log('[RentalAppWizard] Empty user profile fields tracked:', emptyUserProfileFields.current);
+  }, [userProfileData]);
+
+  /**
+   * Sync filled rental application fields back to user table (if they were originally empty)
+   * Mapping:
+   *   - phone → 'Phone Number (as text)' in user table
+   *   - dob → 'Date of Birth' in user table
+   */
+  const syncFieldToUserTable = useCallback(async (fieldName, value) => {
+    // Skip if no empty fields tracked or field wasn't originally empty
+    if (!emptyUserProfileFields.current || !emptyUserProfileFields.current[fieldName]) {
+      return;
+    }
+
+    // Skip if value is empty
+    if (!value || (typeof value === 'string' && !value.trim())) {
+      return;
+    }
+
+    const userId = getSessionId();
+    if (!userId) {
+      console.warn('[RentalAppWizard] Cannot sync to user table: no user ID');
+      return;
+    }
+
+    // Map rental app field names to user table column names
+    const fieldMapping = {
+      phone: 'Phone Number (as text)',
+      dob: 'Date of Birth',
+    };
+
+    const dbColumnName = fieldMapping[fieldName];
+    if (!dbColumnName) {
+      return;
+    }
+
+    try {
+      const updateData = {
+        [dbColumnName]: value,
+        'Modified Date': new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from('user')
+        .update(updateData)
+        .eq('_id', userId);
+
+      if (error) {
+        console.error('[RentalAppWizard] Failed to sync field to user table:', error);
+      } else {
+        console.log(`[RentalAppWizard] Synced ${fieldName} to user table`);
+        // Mark as synced so we don't sync again
+        emptyUserProfileFields.current[fieldName] = false;
+      }
+    } catch (err) {
+      console.error('[RentalAppWizard] Error syncing to user table:', err);
+    }
+  }, []);
 
   // ============================================================================
   // PROGRESS CALCULATION
@@ -236,10 +447,28 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
   const canSubmit = progress >= 80 && formData.signature?.trim();
 
   // ============================================================================
+  // TRACK STEP VISITS - Mark step as "confirmed" when user LEAVES it
+  // For optional steps, checkmark appears only after user moves away (Continue/Skip/Back)
+  // ============================================================================
+  const previousStepRef = useRef(currentStep);
+
+  useEffect(() => {
+    const previousStep = previousStepRef.current;
+
+    // When step changes, mark the PREVIOUS step as visited (confirmed)
+    if (previousStep !== currentStep && !visitedSteps.includes(previousStep)) {
+      setVisitedSteps(prev => [...prev, previousStep]);
+    }
+
+    // Update ref for next change
+    previousStepRef.current = currentStep;
+  }, [currentStep, visitedSteps]);
+
+  // ============================================================================
   // STEP COMPLETION TRACKING
   // ============================================================================
-  // Pure function to check step completion - no state dependency to avoid loops
-  const checkStepComplete = useCallback((stepNumber) => {
+  // Pure function to check step completion - considers visited state for optional steps
+  const checkStepComplete = useCallback((stepNumber, visitedStepsArray) => {
     let stepFields = [...STEP_FIELDS[stepNumber]];
 
     // Add conditional employment fields for step 4
@@ -248,10 +477,11 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
       stepFields = [...stepFields, ...conditionalFields];
     }
 
-    // Optional steps (3=Occupants, 5=Details, 6=Documents) are always complete
-    // These steps have no required fields and user can skip them
+    // For optional steps (3=Occupants, 5=Details, 6=Documents): only show as complete
+    // if user has actually visited them. This prevents showing checkmarks for steps
+    // the user hasn't navigated to yet on a new application.
     if (stepFields.length === 0) {
-      return true;
+      return visitedStepsArray.includes(stepNumber);
     }
 
     // Check all required fields have values
@@ -261,11 +491,11 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     });
   }, [formData]);
 
-  // Update completed steps when form data changes
+  // Update completed steps when form data or visited steps change
   useEffect(() => {
     const newCompleted = [];
     for (let step = 1; step <= TOTAL_STEPS; step++) {
-      if (checkStepComplete(step)) {
+      if (checkStepComplete(step, visitedSteps)) {
         newCompleted.push(step);
       }
     }
@@ -275,12 +505,41 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
         prev.every((v, i) => v === newCompleted[i]);
       return isSame ? prev : newCompleted;
     });
-  }, [formData, checkStepComplete]);
+  }, [formData, visitedSteps, checkStepComplete]);
 
   // Public API for checking step completion (can use completedSteps cache)
   const isStepComplete = useCallback((stepNumber) => {
     return completedSteps.includes(stepNumber);
   }, [completedSteps]);
+
+  // Check if current step has all required fields filled (for enabling Continue button)
+  // This is different from isStepComplete - it only checks required fields, not visited state
+  const canProceedFromCurrentStep = useCallback(() => {
+    let stepFields = [...STEP_FIELDS[currentStep]];
+
+    // Add conditional employment fields for step 4
+    if (currentStep === 4 && formData.employmentStatus) {
+      const conditionalFields = CONDITIONAL_REQUIRED_FIELDS[formData.employmentStatus] || [];
+      stepFields = [...stepFields, ...conditionalFields];
+    }
+
+    // If no required fields, can always proceed (optional steps)
+    if (stepFields.length === 0) {
+      return true;
+    }
+
+    // Check all required fields have values
+    return stepFields.every(field => {
+      const value = formData[field];
+      return value !== undefined && value !== null && value !== '';
+    });
+  }, [currentStep, formData]);
+
+  // Check if current step is optional (no required fields) - used to show/hide Skip button
+  const isCurrentStepOptional = useCallback(() => {
+    // Steps 3 (Occupants), 5 (Details), 6 (Documents) are optional
+    return STEP_FIELDS[currentStep].length === 0;
+  }, [currentStep]);
 
   // ============================================================================
   // NAVIGATION
@@ -356,10 +615,16 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     const result = validateField(fieldName, value);
     if (result.isValid) {
       setFieldValid(prev => ({ ...prev, [fieldName]: true }));
+
+      // Sync phone and dob back to user table if they were originally empty
+      // Only sync when the field is valid and has a value
+      if ((fieldName === 'phone' || fieldName === 'dob') && value) {
+        syncFieldToUserTable(fieldName, value);
+      }
     } else if (result.error) {
       setFieldErrors(prev => ({ ...prev, [fieldName]: result.error }));
     }
-  }, [formData, validateField]);
+  }, [formData, validateField, syncFieldToUserTable]);
 
   // ============================================================================
   // HANDLERS - Occupants
@@ -579,6 +844,8 @@ export function useRentalApplicationWizardLogic({ onClose, onSuccess, applicatio
     goToNextStep,
     goToPreviousStep,
     isStepComplete,
+    canProceedFromCurrentStep,
+    isCurrentStepOptional,
 
     // Form handlers
     handleInputChange,

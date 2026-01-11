@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import './LoggedInAvatar.css';
 import { useLoggedInAvatarData, getMenuVisibility, NORMALIZED_USER_TYPES } from './useLoggedInAvatarData.js';
 import ReferralModal from '../../pages/AccountProfilePage/components/ReferralModal.jsx';
+import HeaderMessagingPanel from '../HeaderMessagingPanel';
 
 /**
  * Logged In Avatar Dropdown Component
@@ -51,6 +52,8 @@ export default function LoggedInAvatar({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [showReferralModal, setShowReferralModal] = useState(false);
+  const [showMessagingPanel, setShowMessagingPanel] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 900 : false);
   const dropdownRef = useRef(null);
 
   // Fetch user data from Supabase for menu conditionals
@@ -70,6 +73,22 @@ export default function LoggedInAvatar({
   const effectiveFavoritesCount = dataLoading ? (user.favoritesCount || 0) : supabaseData.favoritesCount;
   const effectiveUnreadMessagesCount = dataLoading ? (user.unreadMessagesCount || 0) : supabaseData.unreadMessagesCount;
   const effectiveFirstListingId = dataLoading ? null : supabaseData.firstListingId;
+  const effectiveThreadsCount = dataLoading ? 0 : (supabaseData.threadsCount || 0);
+
+  // Handle resize for mobile detection
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth < 900;
+      setIsMobile(mobile);
+      // Close messaging panel if transitioning to mobile while open
+      if (mobile && showMessagingPanel) {
+        setShowMessagingPanel(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [showMessagingPanel]);
 
   // Debug logging
   useEffect(() => {
@@ -347,7 +366,7 @@ export default function LoggedInAvatar({
   };
 
   const isActivePath = (itemPath) => {
-    // Guard: if itemPath is undefined (e.g., menu items with only actions), return false
+    // Items without a path (e.g., Referral modal) are never "active"
     if (!itemPath) return false;
 
     // Normalize paths for comparison (remove query params and hash)
@@ -370,8 +389,66 @@ export default function LoggedInAvatar({
   const isSearchPage = currentPath.includes('search');
   const isLightHeaderPage = currentPath.includes('favorite-listings');
 
+  // Hide messaging icon on the messages page (redundant since user is already there)
+  const isMessagesPage = currentPath.includes('/messages');
+
   return (
     <div className={`logged-in-avatar ${isSearchPage ? 'on-search-page' : ''} ${isLightHeaderPage ? 'on-light-header' : ''}`} ref={dropdownRef}>
+      {/* Messaging icon - only shows when user has message threads AND not on messages page */}
+      {effectiveThreadsCount > 0 && !isMessagesPage && (
+        <div className="header-messages-wrapper">
+          <button
+            className="header-messages-icon"
+            aria-label={`Messages${effectiveUnreadMessagesCount > 0 ? ` (${effectiveUnreadMessagesCount} unread)` : ''}`}
+            aria-expanded={showMessagingPanel}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              if (isMobile) {
+                // Mobile: Navigate to full messaging page
+                onNavigate('/messages');
+              } else {
+                // Desktop: Toggle messaging panel
+                setShowMessagingPanel(!showMessagingPanel);
+                // Close avatar dropdown if open
+                if (isOpen) setIsOpen(false);
+              }
+            }}
+          >
+            {/* Envelope/Mail icon */}
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <rect x="2" y="4" width="20" height="16" rx="2" />
+              <path d="M22 6L12 13L2 6" />
+            </svg>
+            {effectiveUnreadMessagesCount > 0 && (
+              <span className="messages-badge">
+                {effectiveUnreadMessagesCount > 9 ? '9+' : effectiveUnreadMessagesCount}
+              </span>
+            )}
+          </button>
+
+          {/* Messaging Panel - Desktop only */}
+          {showMessagingPanel && !isMobile && (
+            <HeaderMessagingPanel
+              isOpen={showMessagingPanel}
+              onClose={() => setShowMessagingPanel(false)}
+              userBubbleId={user.id}
+              userName={firstName}
+              userAvatar={user.avatarUrl}
+            />
+          )}
+        </div>
+      )}
       <button
         className="avatar-button"
         onClick={(e) => {

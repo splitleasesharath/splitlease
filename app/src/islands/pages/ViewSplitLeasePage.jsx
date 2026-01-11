@@ -1422,9 +1422,66 @@ export default function ViewSplitLeasePage() {
         'Created Date': new Date().toISOString()
       });
 
+      // Create messaging thread for the proposal (non-blocking)
+      try {
+        console.log('💬 Creating proposal messaging thread...');
+        // Use the actual status returned from the Edge Function
+        const actualProposalStatus = data.data?.status || 'Host Review';
+        const actualHostId = data.data?.hostId || listing.host?.userId;
+
+        console.log('   Thread params:', {
+          proposalId: newProposalId,
+          guestId: guestId,
+          hostId: actualHostId,
+          listingId: proposalData.listingId,
+          proposalStatus: actualProposalStatus
+        });
+
+        const threadResponse = await supabase.functions.invoke('messages', {
+          body: {
+            action: 'create_proposal_thread',
+            payload: {
+              proposalId: newProposalId,
+              guestId: guestId,
+              hostId: actualHostId,
+              listingId: proposalData.listingId,
+              proposalStatus: actualProposalStatus
+            }
+          }
+        });
+
+        if (threadResponse.error) {
+          console.warn('⚠️ Thread creation failed (non-blocking):', threadResponse.error);
+        } else {
+          console.log('✅ Proposal thread created:', threadResponse.data);
+        }
+      } catch (threadError) {
+        // Non-blocking - don't fail the proposal if thread creation fails
+        console.warn('⚠️ Thread creation error (non-blocking):', threadError);
+      }
+
     } catch (error) {
       console.error('❌ Error submitting proposal:', error);
-      showToast(error.message || 'Failed to submit proposal. Please try again.', 'error');
+
+      // Provide user-friendly error messages for common failure cases
+      let userMessage = error.message || 'Failed to submit proposal. Please try again.';
+
+      // Network/CORS errors (Edge Function unavailable)
+      if (error.message?.includes('Failed to send a request') ||
+          error.message?.includes('Failed to fetch') ||
+          error.message?.includes('NetworkError')) {
+        userMessage = 'Unable to connect to our servers. Please check your internet connection and try again.';
+      }
+      // Timeout errors
+      else if (error.message?.includes('timeout') || error.message?.includes('Timeout')) {
+        userMessage = 'The request took too long. Please try again.';
+      }
+      // Duplicate proposal error (from Edge Function validation)
+      else if (error.message?.includes('already have an active proposal')) {
+        userMessage = error.message; // Keep the specific message
+      }
+
+      showToast(userMessage, 'error');
     } finally {
       setIsSubmittingProposal(false);
     }
