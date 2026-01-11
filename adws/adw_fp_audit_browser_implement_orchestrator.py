@@ -37,6 +37,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from adw_modules.webhook import notify_success, notify_failure, notify_in_progress
 from adw_modules.agent import prompt_claude_code
 from adw_modules.data_types import AgentPromptRequest
+from adw_modules.run_logger import create_run_logger
 
 
 @dataclass
@@ -663,13 +664,14 @@ def rollback_chunk(chunk: ChunkData, working_dir: Path) -> bool:
         return False
 
 
-def process_chunks(chunks: List[ChunkData], plan_file: Path, working_dir: Path) -> OrchestratorState:
+def process_chunks(chunks: List[ChunkData], plan_file: Path, working_dir: Path, logger) -> OrchestratorState:
     """Process all chunks in sequence.
 
     Args:
         chunks: List of chunks to process
         plan_file: Path to plan file
         working_dir: Working directory
+        logger: RunLogger instance for logging
 
     Returns:
         Final orchestrator state
@@ -691,30 +693,42 @@ def process_chunks(chunks: List[ChunkData], plan_file: Path, working_dir: Path) 
         print(f"CHUNK {chunk.number}/{len(chunks)}")
         print(f"{'-'*60}")
 
+        logger.log(f"Starting Chunk {chunk.number}/{len(chunks)}: {chunk.title}", to_stdout=False)
+        logger.log(f"File: {chunk.file_path}:{chunk.line_number}", to_stdout=False)
+
         # Step 1: Implement chunk
         if not implement_chunk(chunk, plan_file, working_dir):
             print(f"  Chunk {chunk.number} implementation failed, skipping")
+            logger.log(f"Chunk {chunk.number} implementation FAILED - skipping", to_stdout=False)
             state.skipped_chunks += 1
             continue
 
+        logger.log(f"Chunk {chunk.number} implementation succeeded", to_stdout=False)
+
         # Step 2: Validate with browser
+        logger.log(f"Validating Chunk {chunk.number} with browser", to_stdout=False)
         validation_passed = validate_with_browser(chunk, working_dir)
 
         # Step 3: Commit or rollback
         if validation_passed:
+            logger.log(f"Chunk {chunk.number} validation PASSED", to_stdout=False)
             if commit_chunk(chunk, working_dir):
                 state.completed_chunks += 1
                 print(f" Chunk {chunk.number} COMPLETED")
+                logger.log(f"Chunk {chunk.number} COMPLETED - committed to git", to_stdout=False)
             else:
                 # Commit failed - try to rollback
                 rollback_chunk(chunk, working_dir)
                 state.failed_chunks += 1
                 print(f" Chunk {chunk.number} FAILED (commit error)")
+                logger.log(f"Chunk {chunk.number} FAILED - commit error, rolled back", to_stdout=False)
         else:
             # Validation failed - rollback
+            logger.log(f"Chunk {chunk.number} validation FAILED - rolling back", to_stdout=False)
             rollback_chunk(chunk, working_dir)
             state.skipped_chunks += 1
             print(f"  Chunk {chunk.number} SKIPPED (validation failed)")
+            logger.log(f"Chunk {chunk.number} SKIPPED - validation failed", to_stdout=False)
 
     return state
 
@@ -730,40 +744,60 @@ def main():
 
     args = parser.parse_args()
 
+    # Initialize logger
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    logger = create_run_logger("fp_orchestrator", timestamp)
+
     print(f"\n{'='*60}")
     print("ADW FP ORCHESTRATOR")
     print(f"{'='*60}")
+
+    logger.log(f"Target: {args.target_path}", to_stdout=False)
+    logger.log(f"Severity: {args.severity}", to_stdout=False)
+    if args.chunks:
+        logger.log(f"Chunks filter: {args.chunks}", to_stdout=False)
 
     working_dir = Path.cwd()
 
     try:
         # Phase 1: Run audit and generate plan
+        logger.log_section("PHASE 1: FP AUDIT", to_stdout=False)
         plan_file = run_audit_phase(args.target_path, args.severity, working_dir)
+        logger.log(f"Plan created: {plan_file}", to_stdout=False)
 
         # Extract chunks from plan
         print(f"\n{'='*60}")
         print("EXTRACTING CHUNKS FROM PLAN")
         print(f"{'='*60}")
 
+        logger.log_section("EXTRACTING CHUNKS FROM PLAN", to_stdout=False)
         chunks = extract_chunks_from_plan(plan_file)
         print(f" Extracted {len(chunks)} chunks")
+        logger.log(f"Extracted {len(chunks)} chunks", to_stdout=False)
 
         # Filter chunks if --chunks argument provided
         if args.chunks:
             requested_chunks = [int(x.strip()) for x in args.chunks.split(',')]
             chunks = [c for c in chunks if c.number in requested_chunks]
             print(f" Filtered to {len(chunks)} chunks: {requested_chunks}")
+            logger.log(f"Filtered to {len(chunks)} chunks: {requested_chunks}", to_stdout=False)
 
             if not chunks:
                 print(f"  No chunks matched filter: {requested_chunks}")
+                logger.log(f"No chunks matched filter: {requested_chunks}", to_stdout=False)
                 print("Available chunks:")
                 all_chunks = extract_chunks_from_plan(plan_file)
                 for c in all_chunks:
-                    print(f"  - Chunk {c.number}: {c.title}")
+                    chunk_info = f"Chunk {c.number}: {c.title}"
+                    print(f"  - {chunk_info}")
+                    logger.log(chunk_info, to_stdout=False)
+                logger.finalize()
                 sys.exit(1)
 
         # Phase 2: Process chunks
-        state = process_chunks(chunks, plan_file, working_dir)
+        logger.log_section("PHASE 2: CHUNK PROCESSING", to_stdout=False)
+        logger.log(f"Processing {len(chunks)} chunks", to_stdout=False)
+        state = process_chunks(chunks, plan_file, working_dir, logger)
 
         # Final summary
         print(f"\n{'='*60}")
@@ -774,10 +808,20 @@ def main():
         print(f"Skipped: {state.skipped_chunks}")
         print(f"Failed: {state.failed_chunks}")
 
+        logger.log_summary(
+            total_chunks=state.total_chunks,
+            completed=state.completed_chunks,
+            skipped=state.skipped_chunks,
+            failed=state.failed_chunks,
+            plan_file=str(state.plan_file)
+        )
+
         notify_success(
             step=f"Orchestrator complete: {state.completed_chunks}/{state.total_chunks} chunks refactored, {state.failed_chunks} failed",
             details=None
         )
+
+        logger.finalize()
 
     except Exception as e:
         notify_failure(
@@ -785,6 +829,8 @@ def main():
             error=str(e)[:100]
         )
         print(f"\nOrchestrator failed: {e}")
+        logger.log_error(e, context="Main orchestrator loop")
+        logger.finalize()
         sys.exit(1)
 
 
