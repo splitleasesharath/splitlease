@@ -178,7 +178,7 @@ def run_audit_phase(target_path: str, severity: str, working_dir: Path) -> Path:
         plan_file = run_fp_audit_and_plan(target_path, severity, working_dir)
 
         notify_success(
-            step=f"Audit found {len(open(working_dir / plan_file).readlines())} violations → Plan generated",
+            step="FP Audit complete → Plan generated",
             details=None
         )
 
