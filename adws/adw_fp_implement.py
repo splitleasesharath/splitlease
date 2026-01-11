@@ -230,8 +230,9 @@ def main():
     # Implement fixes using Claude Code
     results = implement_fp_fixes(plan_file, working_dir)
 
-    # Commit changes to git
-    commit_changes(results, plan_file)
+    # NOTE: Git commits are now handled by the orchestrator
+    # If running standalone, uncomment the line below to auto-commit:
+    # commit_changes(results, plan_file)
 
     print(f"\n{'='*60}")
     print("FP IMPLEMENTATION COMPLETE")
