@@ -115,8 +115,9 @@ export function useHostOverviewPageLogic() {
   // ============================================================================
 
   const fetchUserData = useCallback(async () => {
+    // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
     try {
-      const userData = await validateTokenAndFetchUser();
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
       if (userData) {
         setUser({
           id: userData.userId || userData._id || userData.id,

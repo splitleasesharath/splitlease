@@ -10,6 +10,12 @@ A flexible rental marketplace for NYC properties enabling split scheduling, repe
 
 ---
 
+## Environment
+
+> **FYI**: This project runs on **Windows 11** through **PowerShell**. Some commands may be executed via bash from within PowerShell, but the underlying system is always Windows. Path separators, environment variables, and command syntax should account for this Windows environment.
+
+---
+
 ## Commands
 
 ```bash
@@ -168,6 +174,7 @@ The database stores days natively in this format. No conversion needed.
 - Test edit flows with listings that have null FK values (legacy data)
 - **Informational text triggers**: When adding a `?` icon to open informational text modals, make the accompanying text label clickable too (not just the `?`). Wrap both the text and `?` in a single clickable container.
 - **ALWAYS invoke `/fp-rater` skill after creating or updating code files** - Output the FP rating table at the bottom of your response (table only, no explanations)
+- **ALWAYS invoke `/goodbye-automated` skill after completing each task or prompt** - This ensures proper conversation logging and Slack notification. This is MANDATORY for all task completions.
 
 ### DON'T
 - Expose API keys in frontend code

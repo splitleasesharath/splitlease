@@ -12,6 +12,18 @@ import MessageBubble from './MessageBubble.jsx';
 import ThreadHeader from './ThreadHeader.jsx';
 import TypingIndicator from './TypingIndicator.jsx';
 
+/**
+ * @param {object} props
+ * @param {object[]} props.messages - Array of message objects
+ * @param {object} props.threadInfo - Thread info (contact_name, property_name, proposal_id, etc.)
+ * @param {boolean} props.isLoading - Whether messages are loading
+ * @param {function} props.onBack - Handler for mobile back button
+ * @param {boolean} props.isMobile - Whether in mobile view
+ * @param {boolean} props.isOtherUserTyping - Whether other user is typing
+ * @param {string} props.typingUserName - Name of user who is typing
+ * @param {function} props.onCTAClick - Handler for CTA button clicks
+ * @param {function} props.getCTAButtonConfig - Get CTA button config
+ */
 export default function MessageThread({
   messages,
   threadInfo,
@@ -19,9 +31,18 @@ export default function MessageThread({
   onBack,
   isMobile,
   isOtherUserTyping,
-  typingUserName
+  typingUserName,
+  onCTAClick,
+  getCTAButtonConfig
 }) {
   const messagesEndRef = useRef(null);
+
+  // Build message context from thread info
+  const messageContext = {
+    proposalId: threadInfo?.proposal_id,
+    listingId: threadInfo?.listing_id,
+    leaseId: threadInfo?.lease_id,
+  };
 
   // Auto-scroll to bottom when messages change or typing indicator appears
   useEffect(() => {
@@ -56,6 +77,9 @@ export default function MessageThread({
               <MessageBubble
                 key={message._id || index}
                 message={message}
+                onCTAClick={onCTAClick}
+                getCTAButtonConfig={getCTAButtonConfig}
+                messageContext={messageContext}
               />
             ))}
             {/* Typing Indicator */}

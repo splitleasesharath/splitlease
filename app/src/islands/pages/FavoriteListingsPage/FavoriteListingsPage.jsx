@@ -1184,8 +1184,9 @@ const FavoriteListingsPage = () => {
     setIsLoggedIn(true);
 
     // Update user data after successful auth
+    // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
     try {
-      const userData = await validateTokenAndFetchUser();
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
       const sessionId = getSessionId();
 
       if (userData) {

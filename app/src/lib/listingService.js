@@ -407,15 +407,35 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
     fetchError = result.error;
   }
 
-  if (fetchError || !userData) {
+  // Handle case where user exists in Supabase Auth but not in legacy user table
+  // This happens for users who signed up via native Supabase Auth (not legacy Bubble)
+  let hostUserId = userData?._id;
+  let hostEmail = userData?.email;
+  let listings = userData?.Listings || [];
+
+  if (!userData && isSupabaseUUID) {
+    // User not in legacy table - use Supabase Auth data directly
+    console.log('[ListingService] User not in legacy user table, using Supabase Auth session data');
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (session?.user) {
+      // For Supabase Auth users, use the UUID as the host user ID
+      // The Edge Function will handle this appropriately
+      hostUserId = session.user.id;
+      hostEmail = session.user.email;
+      // Since this is a new Supabase Auth user not in legacy table, this is definitely their first listing
+      listings = [listingId];
+      console.log('[ListingService] ✅ Using Supabase Auth data for mockup proposal:', hostUserId);
+    } else {
+      console.warn('[ListingService] ⚠️ No Supabase Auth session found for mockup proposal');
+      return;
+    }
+  } else if (fetchError || !userData) {
     console.warn('[ListingService] ⚠️ Could not fetch user for mockup proposal check:', fetchError?.message);
     return;
+  } else {
+    console.log('[ListingService] ✅ Found user for mockup check with Bubble _id:', userData._id);
   }
-
-  console.log('[ListingService] ✅ Found user for mockup check with Bubble _id:', userData._id);
-
-  const listings = userData.Listings || [];
-  const userEmail = userData.email;
 
   // Only create mockup proposal for first listing
   if (listings.length !== 1) {
@@ -423,7 +443,7 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
     return;
   }
 
-  if (!userEmail) {
+  if (!hostEmail) {
     console.warn('[ListingService] ⚠️ Missing email for mockup proposal');
     return;
   }
@@ -434,7 +454,7 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
   // Call the listing edge function with createMockupProposal action
-  // IMPORTANT: Use userData._id (Bubble-compatible ID), not userId (may be Supabase UUID)
+  // Uses hostUserId and hostEmail variables set above (from legacy table or Supabase Auth)
   const response = await fetch(`${supabaseUrl}/functions/v1/listing`, {
     method: 'POST',
     headers: {
@@ -444,8 +464,8 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
       action: 'createMockupProposal',
       payload: {
         listingId: listingId,
-        hostUserId: userData._id,
-        hostEmail: userEmail,
+        hostUserId: hostUserId,
+        hostEmail: hostEmail,
       },
     }),
   });

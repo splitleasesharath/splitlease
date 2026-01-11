@@ -399,17 +399,52 @@ export async function createProposalThread(
 /**
  * Find or create a thread for a proposal
  * Returns { threadId, isNew }
+ *
+ * Logic:
+ * 1. First check if thread already exists for this proposal
+ * 2. If not, check if thread exists for same listing+guest (from ContactHost)
+ * 3. If found, update that thread with the proposal ID
+ * 4. If nothing found, create a new thread
  */
 export async function findOrCreateProposalThread(
   supabase: SupabaseClient,
   params: CreateProposalThreadParams
 ): Promise<{ threadId: string; isNew: boolean }> {
   // First, check if thread already exists for this proposal
-  const existingThreadId = await findThreadByProposal(supabase, params.proposalId);
+  const existingThreadByProposal = await findThreadByProposal(supabase, params.proposalId);
 
-  if (existingThreadId) {
-    console.log('[messagingHelpers] Found existing thread for proposal:', existingThreadId);
-    return { threadId: existingThreadId, isNew: false };
+  if (existingThreadByProposal) {
+    console.log('[messagingHelpers] Found existing thread for proposal:', existingThreadByProposal);
+    return { threadId: existingThreadByProposal, isNew: false };
+  }
+
+  // Second, check if thread exists for the same listing+guest (from ContactHost flow)
+  const existingThreadByListing = await findExistingThread(
+    supabase,
+    params.hostUserId,
+    params.guestUserId,
+    params.listingId
+  );
+
+  if (existingThreadByListing) {
+    console.log('[messagingHelpers] Found existing thread for listing+guest, updating with proposal:', existingThreadByListing);
+
+    // Update the existing thread to link it to this proposal
+    const { error: updateError } = await supabase
+      .from('thread')
+      .update({
+        "Proposal": params.proposalId,
+        "Modified Date": new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq('_id', existingThreadByListing);
+
+    if (updateError) {
+      console.error('[messagingHelpers] Failed to update thread with proposal:', updateError);
+      // Continue anyway - thread exists, just won't be linked
+    }
+
+    return { threadId: existingThreadByListing, isNew: false };
   }
 
   // Create new thread

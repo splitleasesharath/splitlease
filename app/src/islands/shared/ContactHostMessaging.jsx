@@ -135,7 +135,8 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
             payload: {
               recipient_user_id: listing.host.userId,
               listing_id: listing.id,
-              message_body: formData.message.trim()
+              message_body: formData.message.trim(),
+              send_welcome_messages: true  // Send SplitBot welcome messages when creating new thread
             }
           }
         });
@@ -159,7 +160,8 @@ export default function ContactHostMessaging({ isOpen, onClose, listing, onLogin
         console.log('[ContactHostMessaging] Message sent successfully', {
           thread_id: data.data?.thread_id,
           message_id: data.data?.message_id,
-          is_new_thread: data.data?.is_new_thread
+          is_new_thread: data.data?.is_new_thread,
+          welcome_messages_sent: data.data?.welcome_messages_sent
         });
       } else {
         // Guest user: send via guest inquiry
