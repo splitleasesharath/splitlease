@@ -91,12 +91,28 @@ def main():
     # Parse command line args
     if len(sys.argv) < 2:
         print("Usage: uv run adw_claude_browser.py \"<prompt>\" [adw-id]")
+        print("       uv run adw_claude_browser.py \"@prompt_file.txt\" [adw-id]")
         print("\nExamples:")
         print('  uv run adw_claude_browser.py "Analyze our API performance"')
         print('  uv run adw_claude_browser.py "Explain React hooks" abc12345')
+        print('  uv run adw_claude_browser.py "@/tmp/prompt.txt" abc12345')
         sys.exit(1)
 
     prompt_arg = sys.argv[1]
+
+    # Support reading prompt from file if argument starts with @
+    if prompt_arg.startswith('@'):
+        prompt_file_path = prompt_arg[1:]  # Remove @ prefix
+        try:
+            with open(prompt_file_path, 'r', encoding='utf-8') as f:
+                prompt_arg = f.read()
+        except FileNotFoundError:
+            print(f"❌ Prompt file not found: {prompt_file_path}")
+            sys.exit(1)
+        except Exception as e:
+            print(f"❌ Error reading prompt file: {e}")
+            sys.exit(1)
+
     adw_id = sys.argv[2] if len(sys.argv) > 2 else make_adw_id()
 
     # Set up loggers (both old-style and new run logger)

@@ -533,6 +533,7 @@ Report status only. Do not fix anything.
     # Import browser automation with dev server management
     import subprocess
     import sys
+    import tempfile
 
     # Call adw_claude_browser.py script which handles dev server internally
     adw_browser_script = working_dir / "adws" / "adw_claude_browser.py"
@@ -546,15 +547,28 @@ Report status only. Do not fix anything.
         logger.log(f"Invoking browser script: {adw_browser_script}", to_stdout=False)
         logger.log(f"Full test URL: {full_url}", to_stdout=False)
 
-        result = subprocess.run(
-            ["uv", "run", str(adw_browser_script), validation_prompt],
-            cwd=working_dir,
-            capture_output=True,
-            text=True,
-            timeout=600,  # 10 minute timeout for browser + server startup
-            encoding='utf-8',
-            errors='replace'  # Handle encoding errors gracefully
-        )
+        # Write prompt to temporary file to avoid Windows command-line length limits
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as tmp:
+            tmp.write(validation_prompt)
+            prompt_file = tmp.name
+
+        try:
+            result = subprocess.run(
+                ["uv", "run", str(adw_browser_script), f"@{prompt_file}"],
+                cwd=working_dir,
+                capture_output=True,
+                text=True,
+                timeout=600,  # 10 minute timeout for browser + server startup
+                encoding='utf-8',
+                errors='replace'  # Handle encoding errors gracefully
+            )
+        finally:
+            # Clean up temp file
+            import os
+            try:
+                os.unlink(prompt_file)
+            except:
+                pass
 
         success = result.returncode == 0
         output = result.stdout if success else result.stderr
