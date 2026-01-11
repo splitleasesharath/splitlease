@@ -3,24 +3,6 @@
  *
  * Exposes Vite environment variables to window.ENV so they can be accessed
  * by inline <script> tags in HTML files where import.meta.env is not available.
- *
- * CRITICAL: import.meta.env only works in ES modules, not in inline scripts.
- * This file creates a bridge by setting window.ENV that inline scripts can use.
- *
- * DEPLOYMENT (Cloudflare Pages):
- *   Set these environment variables in your Cloudflare Pages dashboard:
- *   - VITE_GOOGLE_MAPS_API_KEY
- *   - VITE_SUPABASE_URL
- *   - VITE_SUPABASE_ANON_KEY
- *
- *   Vite will replace import.meta.env references at build time with actual values.
- *
- * Usage in HTML:
- *   <script type="module" src="/src/lib/config.js"></script>
- *   <script>
- *     // Can now access environment variables
- *     const apiKey = window.ENV?.GOOGLE_MAPS_API_KEY;
- *   </script>
  */
 
 // Expose environment variables to global window object
@@ -35,8 +17,8 @@ window.ENV = {
   // Hotjar
   HOTJAR_SITE_ID: import.meta.env.VITE_HOTJAR_SITE_ID,
 
-  // Environment detection
-  ENVIRONMENT: (function() {
+  // Environment identifier (from VITE_ENVIRONMENT or auto-detected)
+  ENVIRONMENT: import.meta.env.VITE_ENVIRONMENT || (function() {
     if (window.location.hostname === 'localhost' ||
         window.location.hostname === '127.0.0.1' ||
         window.location.hostname === '') {
@@ -50,15 +32,19 @@ window.ENV = {
     }
 
     return 'production';
-  })()
+  })(),
+
+  // Supabase project identifier (extracted from URL for debugging)
+  SUPABASE_PROJECT_ID: import.meta.env.VITE_SUPABASE_URL?.split('//')[1]?.split('.')[0] || 'unknown'
 };
 
 // Log configuration loaded (useful for debugging)
-console.log('✅ Environment configuration loaded');
+console.log('Environment configuration loaded');
 console.log('  Environment:', window.ENV.ENVIRONMENT);
+console.log('  Supabase Project:', window.ENV.SUPABASE_PROJECT_ID);
+console.log('  Supabase URL:', window.ENV.SUPABASE_URL || 'NOT SET');
 console.log('  Google Maps API Key:', window.ENV.GOOGLE_MAPS_API_KEY ?
   window.ENV.GOOGLE_MAPS_API_KEY.substring(0, 20) + '...' : 'NOT SET');
-console.log('  Supabase URL:', window.ENV.SUPABASE_URL || 'NOT SET');
 
 // Dispatch event to notify that config is ready
 window.dispatchEvent(new Event('env-config-loaded'));

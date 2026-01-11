@@ -10,6 +10,12 @@ A flexible rental marketplace for NYC properties enabling split scheduling, repe
 
 ---
 
+## Environment
+
+> **FYI**: This project runs on **Windows 11** through **PowerShell**. Some commands may be executed via bash from within PowerShell, but the underlying system is always Windows. Path separators, environment variables, and command syntax should account for this Windows environment.
+
+---
+
 ## Commands
 
 ```bash

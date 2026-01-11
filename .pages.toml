@@ -5,6 +5,29 @@
 # - Build command: npm run build
 # - Build output: dist
 # - Build watch paths: **/*
+#
+# ============================================================================
+# ENVIRONMENT VARIABLES (Set in Cloudflare Pages Dashboard)
+# ============================================================================
+# Go to: Pages project > Settings > Environment variables
+#
+# PRODUCTION ENVIRONMENT (main branch):
+#   VITE_SUPABASE_URL = https://qcfifybkaddcoimjroca.supabase.co
+#   VITE_SUPABASE_ANON_KEY = <live-anon-key>
+#   VITE_GOOGLE_MAPS_API_KEY = <google-maps-key>
+#   VITE_HOTJAR_SITE_ID = 6581463
+#   VITE_ENVIRONMENT = production
+#
+# PREVIEW ENVIRONMENT (all other branches):
+#   VITE_SUPABASE_URL = https://qzsmhgyojmwvtjmnrdea.supabase.co
+#   VITE_SUPABASE_ANON_KEY = <dev-anon-key>
+#   VITE_GOOGLE_MAPS_API_KEY = <google-maps-key>
+#   VITE_HOTJAR_SITE_ID = 6581463
+#   VITE_ENVIRONMENT = preview
+#
+# Note: Vite requires the VITE_ prefix for client-side variables.
+# Variables without the prefix are only available during build.
+# ============================================================================
 
 [build]
 command = "npm run build"
