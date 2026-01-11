@@ -477,11 +477,20 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path, logger, port: int
         print(f"Note: Also affects {', '.join(context['additional_pages'])}")
 
     # Log validation details
+    logger.log_section("BROWSER VALIDATION CONTEXT", to_stdout=False)
     logger.log(f"Testing page: {context['page_name']}", to_stdout=False)
     logger.log(f"URL: http://localhost:{port}{context['page_url']}", to_stdout=False)
+    logger.log(f"Requires auth: {context['requires_auth']}", to_stdout=False)
     logger.log(f"Specific tests: {len(context['specific_tests'])}", to_stdout=False)
+
+    for i, test in enumerate(context['specific_tests'], 1):
+        logger.log(f"  Test {i}: {test}", to_stdout=False)
+
     if "additional_pages" in context:
         logger.log(f"Additional affected pages: {', '.join(context['additional_pages'])}", to_stdout=False)
+
+    if "user_flow" in context:
+        logger.log(f"User flow description: {context['user_flow']}", to_stdout=False)
 
     # Build validation actions list (starting from step 3)
     actions_list = "\n".join(f"{i+3}. {test}" for i, test in enumerate(context["specific_tests"]))
@@ -530,6 +539,11 @@ Console: [error messages if any]
 Report status only. Do not fix anything.
 """
 
+    # Log the full validation prompt being sent
+    logger.log_section("VALIDATION PROMPT", to_stdout=False)
+    logger.log(validation_prompt, to_stdout=False)
+    logger.log_separator(to_stdout=False)
+
     # Import browser automation with dev server management
     import subprocess
     import sys
@@ -544,15 +558,26 @@ Report status only. Do not fix anything.
         full_url = f"http://localhost:{port}{context['page_url']}"
         print(f"📋 Executing browser validation script...")
         print(f"🌐 Testing URL: {full_url}")
-        logger.log(f"Invoking browser script: {adw_browser_script}", to_stdout=False)
+
+        logger.log_section("BROWSER SCRIPT EXECUTION", to_stdout=False)
+        logger.log(f"Browser script path: {adw_browser_script}", to_stdout=False)
         logger.log(f"Full test URL: {full_url}", to_stdout=False)
 
         # Write prompt to temporary file to avoid Windows command-line length limits
+        logger.log(f"Creating temporary prompt file...", to_stdout=False)
         with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False, encoding='utf-8') as tmp:
             tmp.write(validation_prompt)
             prompt_file = tmp.name
 
+        logger.log(f"Prompt file created: {prompt_file}", to_stdout=False)
+        logger.log(f"Prompt length: {len(validation_prompt)} characters", to_stdout=False)
+        logger.log(f"Prompt preview (first 200 chars): {validation_prompt[:200]}", to_stdout=False)
+
         try:
+            logger.log(f"Starting subprocess: uv run {adw_browser_script} @{prompt_file}", to_stdout=False)
+            logger.log(f"Working directory: {working_dir}", to_stdout=False)
+            logger.log(f"Timeout: 600 seconds", to_stdout=False)
+
             result = subprocess.run(
                 ["uv", "run", str(adw_browser_script), f"@{prompt_file}"],
                 cwd=working_dir,
@@ -562,13 +587,18 @@ Report status only. Do not fix anything.
                 encoding='utf-8',
                 errors='replace'  # Handle encoding errors gracefully
             )
+
+            logger.log(f"Subprocess completed with return code: {result.returncode}", to_stdout=False)
+            logger.log(f"STDOUT length: {len(result.stdout)} characters", to_stdout=False)
+            logger.log(f"STDERR length: {len(result.stderr)} characters", to_stdout=False)
         finally:
             # Clean up temp file
             import os
             try:
                 os.unlink(prompt_file)
-            except:
-                pass
+                logger.log(f"Temp file cleaned up: {prompt_file}", to_stdout=False)
+            except Exception as cleanup_err:
+                logger.log(f"Failed to cleanup temp file: {cleanup_err}", to_stdout=False)
 
         success = result.returncode == 0
         output = result.stdout if success else result.stderr
@@ -580,8 +610,10 @@ Report status only. Do not fix anything.
             print(f"STDERR: {result.stderr[:500]}")
 
             logger.log(f"Browser script exit code: {result.returncode}", to_stdout=False)
-            logger.log(f"STDOUT: {result.stdout[:500]}", to_stdout=False)
-            logger.log(f"STDERR: {result.stderr[:500]}", to_stdout=False)
+            logger.log(f"FULL STDOUT:", to_stdout=False)
+            logger.log(result.stdout, to_stdout=False)
+            logger.log(f"FULL STDERR:", to_stdout=False)
+            logger.log(result.stderr, to_stdout=False)
 
             notify_failure(
                 step=f"Chunk {chunk.number} browser automation failed",
@@ -590,8 +622,15 @@ Report status only. Do not fix anything.
             return False
 
         # Check if validation passed
+        logger.log(f"Checking validation result in output...", to_stdout=False)
+        logger.log(f"Output preview (first 500 chars): {output[:500]}", to_stdout=False)
+
         if "VALIDATION PASSED" in output.upper():
             print(f"✅ Validation passed!")
+            logger.log("✅ Validation PASSED", to_stdout=False)
+            logger.log(f"Full validation output:", to_stdout=False)
+            logger.log(output, to_stdout=False)
+
             notify_success(
                 step=f"Chunk {chunk.number} passed all tests",
                 details=None
@@ -599,6 +638,8 @@ Report status only. Do not fix anything.
             return True
         else:
             print(f"❌ Validation failed - site may be broken")
+            logger.log("❌ Validation FAILED - site may be broken", to_stdout=False)
+
             notify_failure(
                 step=f"Chunk {chunk.number} broke the site",
                 error=output[:100]
@@ -606,14 +647,15 @@ Report status only. Do not fix anything.
             print(f"\nVALIDATION OUTPUT:")
             print(output)
 
-            logger.log("Validation failed - detailed output:", to_stdout=False)
+            logger.log("Full validation failure output:", to_stdout=False)
             logger.log(output, to_stdout=False)
 
             return False
 
     except subprocess.TimeoutExpired:
         print(f"⏱️ Browser validation timed out after 10 minutes")
-        logger.log("Browser validation timed out after 10 minutes", to_stdout=False)
+        logger.log("⏱️ Browser validation timed out after 10 minutes", to_stdout=False)
+        logger.log("This may indicate browser script is stuck or waiting for user input", to_stdout=False)
 
         notify_failure(
             step=f"Chunk {chunk.number} validation timed out",

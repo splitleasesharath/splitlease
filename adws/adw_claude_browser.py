@@ -103,9 +103,11 @@ def main():
     # Support reading prompt from file if argument starts with @
     if prompt_arg.startswith('@'):
         prompt_file_path = prompt_arg[1:]  # Remove @ prefix
+        print(f"📄 Reading prompt from file: {prompt_file_path}")
         try:
             with open(prompt_file_path, 'r', encoding='utf-8') as f:
                 prompt_arg = f.read()
+            print(f"✅ Prompt loaded: {len(prompt_arg)} characters")
         except FileNotFoundError:
             print(f"❌ Prompt file not found: {prompt_file_path}")
             sys.exit(1)
@@ -118,7 +120,8 @@ def main():
     # Set up loggers (both old-style and new run logger)
     logger = setup_logger(adw_id, "adw_claude_browser")
     logger.info(f"ADW Claude Browser starting - ID: {adw_id}")
-    logger.info(f"Prompt: {prompt_arg}")
+    logger.info(f"Prompt length: {len(prompt_arg)} characters")
+    logger.info(f"Prompt preview: {prompt_arg[:200]}")
 
     # Create run logger for orchestration tracking
     from datetime import datetime
@@ -140,11 +143,15 @@ def main():
 
     print(f"\n{'='*60}")
     print(f"ADW Claude Browser - ID: {adw_id}")
-    print(f"Prompt: {prompt_arg}")
+    print(f"Prompt preview: {prompt_arg[:100]}...")
     print(f"{'='*60}\n")
 
     run_logger.log(f"ADW ID: {adw_id}", to_stdout=False)
-    run_logger.log(f"Prompt: {prompt_arg[:100]}...", to_stdout=False)
+    run_logger.log(f"Prompt length: {len(prompt_arg)} characters", to_stdout=False)
+    run_logger.log(f"Prompt preview (first 200 chars): {prompt_arg[:200]}", to_stdout=False)
+    run_logger.log_section("FULL PROMPT", to_stdout=False)
+    run_logger.log(prompt_arg, to_stdout=False)
+    run_logger.log_separator(to_stdout=False)
 
     # DETERMINISTIC DEV SERVER STARTUP
     # This happens BEFORE agent invocation, outside the agent loop
