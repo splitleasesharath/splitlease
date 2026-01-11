@@ -111,13 +111,13 @@
   /* Content section - reduced padding and gap */
   .listing-card-content {
     padding: 8px;
-    gap: 4px;
+    gap: 2px;
   }
 
   /* Header row - reduced spacing */
   .listing-card-header-row {
     gap: 6px;
-    margin-bottom: 1px;
+    margin-bottom: 0;
   }
 
   /* Title - slightly smaller */
@@ -144,7 +144,7 @@
   /* Features row - tighter spacing */
   .listing-card-features-row {
     gap: 8px;
-    margin-top: 1px;
+    margin-top: 0;
   }
 
   .listing-card-feature-item {
@@ -154,13 +154,13 @@
 
   /* Divider - reduced margin */
   .listing-card-divider {
-    margin: 5px 0;
+    margin: 4px 0;
   }
 
   /* Action row - tighter spacing */
   .listing-card-action-row {
     gap: 6px;
-    margin-top: 2px;
+    margin-top: 0;
   }
 
   /* Action buttons - smaller */
@@ -356,10 +356,10 @@
 
 /* Content Section */
 .listing-card-content {
-  padding: 12px;
+  padding: 10px 12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
 }
 
 .listing-card-header-row {
@@ -367,7 +367,7 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 8px;
-  margin-bottom: 2px;
+  margin-bottom: 0;
 }
 
 .listing-card-title {
@@ -404,9 +404,9 @@
 .listing-card-price-subtext {
   font-family: 'Lato', sans-serif;
   font-weight: 300;
-  font-size: 11px;
+  font-size: 10px;
   color: #666;
-  margin-top: -2px;
+  margin-top: -3px;
 }
 
 .listing-card-location {
@@ -431,9 +431,9 @@
 .listing-card-features-row {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
-  margin-top: 2px;
+  margin-top: 0;
 }
 
 .listing-card-feature-item {
@@ -449,13 +449,13 @@
 .listing-card-divider {
   height: 1px;
   background: #E0E0E0;
-  margin: 8px 0;
+  margin: 6px 0;
 }
 
 .listing-card-action-row {
   display: flex;
   gap: 8px;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 .listing-card-view-details-btn {
