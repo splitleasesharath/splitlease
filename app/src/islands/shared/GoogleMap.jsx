@@ -188,13 +188,16 @@ const GoogleMap = forwardRef(({
         markersRef.current.forEach(m => {
           if (m.div) m.div.classList.remove('pulse');
         });
-        // Add pulse animation to this marker
+        // Add pulse animation to this marker (continues until hover ends)
         marker.div.classList.add('pulse');
-        setTimeout(() => {
-          marker.div.classList.remove('pulse');
-        }, 3000);
         // Note: Card popup is NOT shown on hover - only pulse animation
       }
+    },
+    // Stop pulsing all markers (called when hover ends)
+    stopPulse() {
+      markersRef.current.forEach(m => {
+        if (m.div) m.div.classList.remove('pulse');
+      });
     },
     zoomToListing(listingId) {
       if (!googleMapRef.current || !mapLoaded) {

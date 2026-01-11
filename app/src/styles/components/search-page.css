@@ -2225,7 +2225,7 @@
 
 /* Marker Pulse Animation (triggered when zooming to listing) */
 .pulse {
-  animation: markerPulse 1.5s ease-in-out 2;
+  animation: markerPulse 1.5s ease-in-out infinite;
   background: #4B47CE !important;
   z-index: 9999 !important;
 }

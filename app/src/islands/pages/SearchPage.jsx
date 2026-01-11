@@ -508,7 +508,7 @@ function FilterPanel({
 /**
  * PropertyCard - Individual listing card
  */
-function PropertyCard({ listing, onLocationClick, onCardHover, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
+function PropertyCard({ listing, onLocationClick, onCardHover, onCardLeave, onOpenContactModal, onOpenInfoModal, isLoggedIn, isFavorited, userId, onToggleFavorite, onRequireAuth, showCreateProposalButton, onOpenCreateProposalModal, proposalForListing, selectedNightsCount }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const priceInfoTriggerRef = useRef(null);
   const mobilePriceInfoTriggerRef = useRef(null);
@@ -679,6 +679,11 @@ function PropertyCard({ listing, onLocationClick, onCardHover, onOpenContactModa
       onMouseEnter={() => {
         if (onCardHover) {
           onCardHover(listing);
+        }
+      }}
+      onMouseLeave={() => {
+        if (onCardLeave) {
+          onCardLeave();
         }
       }}
     >
@@ -927,6 +932,11 @@ function ListingsGrid({ listings, onLoadMore, hasMore, isLoading, onOpenContactM
             onCardHover={(listing) => {
               if (mapRef.current) {
                 mapRef.current.highlightListing(listing.id);
+              }
+            }}
+            onCardLeave={() => {
+              if (mapRef.current) {
+                mapRef.current.stopPulse();
               }
             }}
             onOpenContactModal={onOpenContactModal}
