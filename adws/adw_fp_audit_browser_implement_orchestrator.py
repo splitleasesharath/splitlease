@@ -507,43 +507,43 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path, logger, port: int
     # Calculate final step number
     final_step = len(context['specific_tests']) + 3
 
-    validation_prompt = f"""I want you to validate that the functional programming refactoring for "{chunk.title}" did not break the application.
+    validation_prompt = f"""I want you to visually inspect simultaneously http://localhost:{port}{context['page_url']} and https://www.split.lease{context['page_url']} and identify any differences you can find between these two pages.
 
 **Context:**
-- Refactored file: {chunk.file_path}:{chunk.line_number}
-- Changed: {chunk.title}{additional_pages_section}
+This is a functional programming refactoring validation for "{chunk.title}".
+- Refactored file: {chunk.file_path}:{chunk.line_number}{additional_pages_section}
 
 **Your Task:**
-Navigate to http://localhost:{port}{context['page_url']} and verify the page still works correctly.
-
-**Validation Steps:**
-1. Navigate to http://localhost:{port}{context['page_url']}
-{auth_step}
-{actions_list}
-{final_step}. Check browser console for errors
+Compare the localhost (development) version against the live production site and report any differences in:
+- Visual appearance (layout, styling, spacing, colors)
+- Interactive elements (buttons, forms, dropdowns, etc.)
+- Functionality (does everything work the same way?)
+- Console errors (are there new errors in localhost that don't appear in production?)
 
 **Expected Outcome:**
-The page should function identically to before the refactoring. All interactive elements should work, and there should be no console errors.
+The two pages should be functionally identical. The refactoring should not have introduced any visual or functional differences.
 
 **Report Format:**
 
-If everything works:
+If pages are identical:
 ---
 VALIDATION PASSED
-✓ All tests completed successfully
-✓ No console errors detected
-✓ Page functionality intact
+✓ No visual differences detected
+✓ All interactive elements behave identically
+✓ No new console errors in localhost
+✓ Pages are functionally equivalent
 ---
 
-If something is broken:
+If differences found:
 ---
 VALIDATION FAILED
-Test: [which specific action failed]
-Error: [detailed description of what broke]
-Console: [any error messages from console]
+Differences detected:
+- [List specific differences you observed]
+- [Any console errors unique to localhost]
+- [Any functional behavior changes]
 ---
 
-IMPORTANT: Only report the validation status. Do NOT attempt to fix any issues you find.
+IMPORTANT: Only report differences. Do NOT attempt to fix any issues you find.
 """
 
     # Log the full validation prompt being sent
