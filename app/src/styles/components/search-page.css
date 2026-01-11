@@ -2227,6 +2227,7 @@
 .pulse {
   animation: markerPulse 1.5s ease-in-out 2;
   background: #4B47CE !important;
+  z-index: 9999 !important;
 }
 
 @keyframes markerPulse {
