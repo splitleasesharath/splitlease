@@ -34,7 +34,7 @@ def run_fp_audit_and_plan(target_path: str, severity: str, working_dir: Path) ->
 
     # Generate timestamp for output files
     timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-    violations_file = f"agents/fp_audit_violations.json"
+    violations_file = f"agents/{timestamp}_fp_audit_violations.json"
     plan_file = f".claude/plans/New/{timestamp}_fp_refactor_plan.md"
 
     # Create prompt for Claude Code agent to do EVERYTHING
