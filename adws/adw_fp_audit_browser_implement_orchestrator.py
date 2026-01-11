@@ -13,9 +13,9 @@ will scan the codebase for FP violations and generate a plan broken into chunks.
 
 2. For each chunk in the plan:
    a. Implement the chunk (adw_fp_implement.py with chunk filter)
-   b. Since no change in behavior is expected. We then validate with browser (claude chrome extension) (adw_claude_browser.py)
-   c. If browservalidation passes → change was good so we git commit
-   d. If validation fails → git reset --hard, skip to next FP chunk (since the change was bad)
+   b. Validate in browser with adw_claude_browser.py (expected no behavior change)
+   c. If browser validation passes -> git commit
+   d. If validation fails -> git reset --hard and skip to the next FP chunk
 3. Send status updates to SHARATHPLAYGROUND webhook (slack)
 
 Usage: uv run adw_fp_orchestrator.py [target_path] [--severity high|medium|all]
@@ -92,8 +92,8 @@ def extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]:
         if not section or not section.startswith('##'):
             continue
 
-        # Extract chunk number and title from header (with or without emoji)
-        header_match = re.search(r'##\s+(?:🔴\s+)?CHUNK\s+(\d+):\s+(.+)', section)
+        # Extract chunk number and title from header
+        header_match = re.search(r'##\s+CHUNK\s+(\d+):\s+(.+)', section)
         if not header_match:
             continue
 
@@ -103,7 +103,7 @@ def extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]:
         # Extract file path
         file_match = re.search(r'\*\*File:\*\*\s+(.+)', section)
         if not file_match:
-            print(f"⚠️  Warning: Chunk {chunk_number} missing file path, skipping")
+            print(f"  Warning: Chunk {chunk_number} missing file path, skipping")
             continue
 
         file_path = file_match.group(1).strip()
@@ -120,7 +120,7 @@ def extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]:
         code_blocks = re.findall(r'```(?:javascript|typescript)\s*\n(.*?)\n```', section, re.DOTALL)
 
         if len(code_blocks) < 2:
-            print(f"⚠️  Warning: Chunk {chunk_number} missing code blocks, skipping")
+            print(f"  Warning: Chunk {chunk_number} missing code blocks, skipping")
             continue
 
         current_code = code_blocks[0].strip()
@@ -138,7 +138,7 @@ def extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]:
 
         # Skip chunks where all tests are marked complete
         if all_tests_complete:
-            print(f"⏭️  Skipping chunk {chunk_number} - all tests marked complete")
+            print(f"  Skipping chunk {chunk_number} - all tests marked complete")
             continue
 
         # Create ChunkData object
@@ -181,7 +181,7 @@ def run_audit_phase(target_path: str, severity: str, working_dir: Path) -> Path:
         plan_file = run_fp_audit_and_plan(target_path, severity, working_dir)
 
         notify_success(
-            step="FP Audit complete → Plan generated",
+            step="FP Audit complete -> Plan generated",
             details=None
         )
 
@@ -558,7 +558,7 @@ Report status only. Do not fix anything.
                 step=f"Chunk {chunk.number} broke the site",
                 error=output[:100]
             )
-            print(f"\n❌ VALIDATION FAILED:")
+            print(f"\nVALIDATION FAILED:")
             print(output)
             return False
 
@@ -651,7 +651,7 @@ def rollback_chunk(chunk: ChunkData, working_dir: Path) -> bool:
             capture_output=True
         )
 
-        print(f"✅ Rolled back chunk {chunk.number}")
+        print(f" Rolled back chunk {chunk.number}")
         return True
 
     except subprocess.CalledProcessError as e:
@@ -687,13 +687,13 @@ def process_chunks(chunks: List[ChunkData], plan_file: Path, working_dir: Path) 
     for chunk in chunks:
         state.current_chunk = chunk.number
 
-        print(f"\n{'─'*60}")
+        print(f"\n{'-'*60}")
         print(f"CHUNK {chunk.number}/{len(chunks)}")
-        print(f"{'─'*60}")
+        print(f"{'-'*60}")
 
         # Step 1: Implement chunk
         if not implement_chunk(chunk, plan_file, working_dir):
-            print(f"⚠️  Chunk {chunk.number} implementation failed, skipping")
+            print(f"  Chunk {chunk.number} implementation failed, skipping")
             state.skipped_chunks += 1
             continue
 
@@ -704,17 +704,17 @@ def process_chunks(chunks: List[ChunkData], plan_file: Path, working_dir: Path) 
         if validation_passed:
             if commit_chunk(chunk, working_dir):
                 state.completed_chunks += 1
-                print(f"✅ Chunk {chunk.number} COMPLETED")
+                print(f" Chunk {chunk.number} COMPLETED")
             else:
                 # Commit failed - try to rollback
                 rollback_chunk(chunk, working_dir)
                 state.failed_chunks += 1
-                print(f"❌ Chunk {chunk.number} FAILED (commit error)")
+                print(f" Chunk {chunk.number} FAILED (commit error)")
         else:
             # Validation failed - rollback
             rollback_chunk(chunk, working_dir)
             state.skipped_chunks += 1
-            print(f"⏭️  Chunk {chunk.number} SKIPPED (validation failed)")
+            print(f"  Chunk {chunk.number} SKIPPED (validation failed)")
 
     return state
 
@@ -746,16 +746,16 @@ def main():
         print(f"{'='*60}")
 
         chunks = extract_chunks_from_plan(plan_file)
-        print(f"✅ Extracted {len(chunks)} chunks")
+        print(f" Extracted {len(chunks)} chunks")
 
         # Filter chunks if --chunks argument provided
         if args.chunks:
             requested_chunks = [int(x.strip()) for x in args.chunks.split(',')]
             chunks = [c for c in chunks if c.number in requested_chunks]
-            print(f"🔍 Filtered to {len(chunks)} chunks: {requested_chunks}")
+            print(f" Filtered to {len(chunks)} chunks: {requested_chunks}")
 
             if not chunks:
-                print(f"⚠️  No chunks matched filter: {requested_chunks}")
+                print(f"  No chunks matched filter: {requested_chunks}")
                 print("Available chunks:")
                 all_chunks = extract_chunks_from_plan(plan_file)
                 for c in all_chunks:
@@ -767,7 +767,7 @@ def main():
 
         # Final summary
         print(f"\n{'='*60}")
-        print("✅ FP ORCHESTRATOR COMPLETE")
+        print("FP ORCHESTRATOR COMPLETE")
         print(f"{'='*60}")
         print(f"Total chunks: {state.total_chunks}")
         print(f"Completed: {state.completed_chunks}")
@@ -784,7 +784,7 @@ def main():
             step="Orchestrator crashed",
             error=str(e)[:100]
         )
-        print(f"\n❌ Orchestrator failed: {e}")
+        print(f"\nOrchestrator failed: {e}")
         sys.exit(1)
 
 

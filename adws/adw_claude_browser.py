@@ -172,7 +172,7 @@ def main():
             print("POST-FLIGHT: DEV SERVER CLEANUP")
             print(f"{'='*60}\n")
             stop_dev_server(dev_server_process, logger)
-            print("✓ Dev server stopped")
+            print("Dev server stopped")
             print(f"{'='*60}\n")
 
 

@@ -42,21 +42,21 @@ def find_latest_plan() -> Path:
     plans_dir = Path(".claude/plans/New")
 
     if not plans_dir.exists():
-        print(f"❌ Plans directory not found: {plans_dir}")
+        print(f"Plans directory not found: {plans_dir}")
         sys.exit(1)
 
     # Find all FP refactor plans
     fp_plans = list(plans_dir.glob("*_fp_refactor_plan.md"))
 
     if not fp_plans:
-        print("❌ No FP refactoring plans found in .claude/plans/New/")
+        print("No FP refactoring plans found in .claude/plans/New/")
         print("Run adw_fp_audit.py first to generate a plan")
         sys.exit(1)
 
     # Sort by modification time, get most recent
     latest_plan = max(fp_plans, key=lambda p: p.stat().st_mtime)
 
-    print(f"✅ Found plan: {latest_plan.name}")
+    print(f"Found plan: {latest_plan.name}")
     print(f"   Modified: {datetime.fromtimestamp(latest_plan.stat().st_mtime).strftime('%Y-%m-%d %H:%M:%S')}")
 
     return latest_plan
@@ -111,7 +111,7 @@ Include:
 
     output_file = agent_dir / "raw_output.jsonl"
 
-    print(f"\n🤖 Starting Claude Code session...")
+    print(f"\nStarting Claude Code session...")
     print(f"Agent output: {output_file}")
 
     request = AgentPromptRequest(
@@ -127,16 +127,16 @@ Include:
     response = prompt_claude_code(request)
 
     if not response.success:
-        print(f"❌ Claude Code session failed: {response.output}")
+        print(f"Claude Code session failed: {response.output}")
         sys.exit(1)
 
-    print(f"\n✅ Claude Code completed successfully")
+    print(f"\nClaude Code completed successfully")
 
     # Load implementation summary
     summary_file = working_dir / "agents" / "fp_implementation_summary.md"
 
     if not summary_file.exists():
-        print("⚠️ No implementation summary created")
+        print("No implementation summary created")
         return {
             "files_modified": [],
             "violations_fixed": 0
@@ -144,7 +144,7 @@ Include:
 
     summary_content = summary_file.read_text()
 
-    print(f"\n✅ Implementation complete")
+    print(f"\nImplementation complete")
     print(f"\nSummary:\n{summary_content}")
 
     # Parse summary (simplified)
@@ -174,15 +174,15 @@ def commit_changes(results: dict, plan_file: Path) -> None:
     print(f"{'='*60}")
 
     if not results['files_modified']:
-        print("⚠️ No files modified, skipping commit")
+        print("No files modified, skipping commit")
         return
 
     # Stage all modified files
     try:
         subprocess.run(["git", "add", "."], check=True, capture_output=True, text=True)
-        print(f"✅ Staged changes")
+        print(f"Staged changes")
     except subprocess.CalledProcessError as e:
-        print(f"❌ Failed to stage changes: {e.stderr}")
+        print(f"Failed to stage changes: {e.stderr}")
         sys.exit(1)
 
     # Create commit message
@@ -205,14 +205,14 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"""
             capture_output=True,
             text=True
         )
-        print(f"✅ Committed changes")
+        print(f"Committed changes")
         print(f"\nCommit message:")
         print(commit_message)
     except subprocess.CalledProcessError as e:
         if "nothing to commit" in e.stdout or "nothing to commit" in e.stderr:
-            print("⚠️ No changes to commit")
+            print("No changes to commit")
         else:
-            print(f"❌ Failed to commit: {e.stderr}")
+            print(f"Failed to commit: {e.stderr}")
             sys.exit(1)
 
 
@@ -234,7 +234,7 @@ def main():
     commit_changes(results, plan_file)
 
     print(f"\n{'='*60}")
-    print("✅ FP IMPLEMENTATION COMPLETE")
+    print("FP IMPLEMENTATION COMPLETE")
     print(f"{'='*60}")
     print(f"Plan: {plan_file}")
     print(f"Violations fixed: {results['violations_fixed']}")
