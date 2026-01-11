@@ -86,6 +86,7 @@ def main():
     """Main entry point."""
     from pathlib import Path
     from adw_modules.dev_server import ensure_dev_server_single_attempt, stop_dev_server
+    from adw_modules.run_logger import create_run_logger
 
     # Parse command line args
     if len(sys.argv) < 2:
@@ -98,10 +99,15 @@ def main():
     prompt_arg = sys.argv[1]
     adw_id = sys.argv[2] if len(sys.argv) > 2 else make_adw_id()
 
-    # Set up logger
+    # Set up loggers (both old-style and new run logger)
     logger = setup_logger(adw_id, "adw_claude_browser")
     logger.info(f"ADW Claude Browser starting - ID: {adw_id}")
     logger.info(f"Prompt: {prompt_arg}")
+
+    # Create run logger for orchestration tracking
+    from datetime import datetime
+    timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+    run_logger = create_run_logger("browser_validation", timestamp)
 
     # Validate environment
     check_env_vars(logger)
@@ -121,27 +127,38 @@ def main():
     print(f"Prompt: {prompt_arg}")
     print(f"{'='*60}\n")
 
+    run_logger.log(f"ADW ID: {adw_id}", to_stdout=False)
+    run_logger.log(f"Prompt: {prompt_arg[:100]}...", to_stdout=False)
+
     # DETERMINISTIC DEV SERVER STARTUP
     # This happens BEFORE agent invocation, outside the agent loop
     working_dir = Path.cwd()
     dev_server_process = None
+    port = 8000  # Hardcoded port for deterministic behavior
 
     try:
         print(f"\n{'='*60}")
         print("PRE-FLIGHT: DEV SERVER CHECK")
         print(f"{'='*60}\n")
 
-        # Ensure dev server is running (single attempt, fail fast)
-        dev_server_process = ensure_dev_server_single_attempt(working_dir, 8000, logger)
+        run_logger.log_section("PRE-FLIGHT: DEV SERVER CHECK", to_stdout=False)
+        run_logger.log(f"Target port: {port}", to_stdout=False)
+
+        # Ensure dev server is running (deterministic port cleanup)
+        dev_server_process = ensure_dev_server_single_attempt(working_dir, port, logger)
+
+        run_logger.log(f"Dev server started successfully on port {port}", to_stdout=False)
 
         print(f"\n{'='*60}")
         print("AGENT INVOCATION")
         print(f"{'='*60}\n")
 
         # Execute the Claude browser interaction
+        run_logger.log_section("AGENT INVOCATION", to_stdout=False)
         logger.info("Launching Claude browser session")
         print("Launching Claude.ai in Chrome...")
         print("Sending prompt to Claude...\n")
+        run_logger.log("Launching Claude browser session", to_stdout=False)
 
         # Execute using validated CLI pattern
         success, output = run_claude_browser(prompt_arg, logger, dev_server_process)
@@ -154,16 +171,29 @@ def main():
             print(output)
             print(f"\n{'='*60}\n")
             logger.info("Claude browser interaction completed successfully")
+            run_logger.log("✅ Browser validation PASSED", to_stdout=False)
+            run_logger.log(f"Output length: {len(output)} chars", to_stdout=False)
         else:
             print("Claude browser interaction failed!")
             print(f"{'='*60}\n")
             print(f"Error: {output}")
             print(f"\n{'='*60}\n")
             logger.error(f"Claude browser interaction failed: {output}")
+            run_logger.log_error(
+                Exception(output),
+                context="Claude browser interaction"
+            )
+            run_logger.finalize()
             sys.exit(1)
 
         # Save final state
         state.save("adw_claude_browser")
+        run_logger.finalize()
+
+    except Exception as e:
+        run_logger.log_error(e, context="Main browser workflow")
+        run_logger.finalize()
+        raise
 
     finally:
         # Clean up dev server
@@ -171,9 +201,11 @@ def main():
             print(f"\n{'='*60}")
             print("POST-FLIGHT: DEV SERVER CLEANUP")
             print(f"{'='*60}\n")
+            run_logger.log_section("POST-FLIGHT: DEV SERVER CLEANUP", to_stdout=False)
             stop_dev_server(dev_server_process, logger)
             print("Dev server stopped")
             print(f"{'='*60}\n")
+            run_logger.log("Dev server stopped", to_stdout=False)
 
 
 if __name__ == "__main__":

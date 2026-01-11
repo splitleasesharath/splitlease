@@ -420,12 +420,13 @@ def infer_validation_context(chunk: ChunkData) -> dict:
     }
 
 
-def validate_with_browser(chunk: ChunkData, working_dir: Path) -> bool:
+def validate_with_browser(chunk: ChunkData, working_dir: Path, port: int = 8000) -> bool:
     """Validate chunk changes using browser automation.
 
     Args:
         chunk: Chunk that was just implemented
         working_dir: Working directory
+        port: Dev server port (default: 8000)
 
     Returns:
         True if validation passed, False if site is broken
@@ -492,10 +493,10 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path) -> bool:
 **File:** {chunk.file_path}:{chunk.line_number}{additional_pages_section}
 
 **Test Page:**
-http://localhost:8000{context['page_url']}
+http://localhost:{port}{context['page_url']}
 
 **Actions:**
-1. Navigate to http://localhost:8000{context['page_url']}
+1. Navigate to http://localhost:{port}{context['page_url']}
 {auth_step}
 {actions_list}
 {final_step}. Check browser console for errors
@@ -529,47 +530,59 @@ Report status only. Do not fix anything.
 
     try:
         # Run the browser script - it handles dev server startup/cleanup internally
+        print(f"📋 Executing browser validation script...")
         result = subprocess.run(
             [sys.executable, "-m", "uv", "run", str(adw_browser_script), validation_prompt],
             cwd=working_dir,
             capture_output=True,
             text=True,
-            timeout=600  # 10 minute timeout for browser + server startup
+            timeout=600,  # 10 minute timeout for browser + server startup
+            encoding='utf-8',
+            errors='replace'  # Handle encoding errors gracefully
         )
 
         success = result.returncode == 0
         output = result.stdout if success else result.stderr
 
         if not success:
+            # Log detailed error information
+            print(f"\n❌ Browser script failed with exit code {result.returncode}")
+            print(f"STDOUT: {result.stdout[:500]}")
+            print(f"STDERR: {result.stderr[:500]}")
+
             notify_failure(
                 step=f"Chunk {chunk.number} browser automation failed",
-                error=output[:100]
+                error=f"Exit code {result.returncode}: {output[:100]}"
             )
             return False
 
         # Check if validation passed
         if "VALIDATION PASSED" in output.upper():
+            print(f"✅ Validation passed!")
             notify_success(
                 step=f"Chunk {chunk.number} passed all tests",
                 details=None
             )
             return True
         else:
+            print(f"❌ Validation failed - site may be broken")
             notify_failure(
                 step=f"Chunk {chunk.number} broke the site",
                 error=output[:100]
             )
-            print(f"\nVALIDATION FAILED:")
+            print(f"\nVALIDATION OUTPUT:")
             print(output)
             return False
 
     except subprocess.TimeoutExpired:
+        print(f"⏱️ Browser validation timed out after 10 minutes")
         notify_failure(
             step=f"Chunk {chunk.number} validation timed out",
             error="Browser took >10 minutes"
         )
         return False
     except Exception as e:
+        print(f"💥 Browser validation crashed: {e}")
         notify_failure(
             step=f"Chunk {chunk.number} validation crashed",
             error=str(e)[:100]
