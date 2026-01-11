@@ -1,7 +1,16 @@
 node_modules/
 dist/
+
+# Environment files with sensitive data
 .env
 .env.local
+.env.production
+.env.production.local
+.env.development.local
+
+# Keep .env.example tracked for documentation
+# .env.development can be tracked if it only contains dev credentials
+
 *.log
 .DS_Store
 ../input

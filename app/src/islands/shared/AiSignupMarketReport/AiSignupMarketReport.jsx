@@ -212,7 +212,10 @@ function autoCorrectEmail(email) {
 async function queueProfileParsing(data) {
   console.log('[AiSignupMarketReport] Queuing profile parsing (async)...');
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (!supabaseUrl) {
+    throw new Error('VITE_SUPABASE_URL is required');
+  }
   const edgeFunctionUrl = `${supabaseUrl}/functions/v1/ai-parse-profile`;
 
   try {
@@ -355,7 +358,10 @@ async function submitSignup(data) {
   console.log('[AiSignupMarketReport] Step 2: Submitting market research...');
 
   // Get Supabase URL from environment
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (!supabaseUrl) {
+    throw new Error('VITE_SUPABASE_URL is required');
+  }
   const edgeFunctionUrl = `${supabaseUrl}/functions/v1/ai-signup-guest`;
 
   console.log('[AiSignupMarketReport] Edge Function URL:', edgeFunctionUrl);
@@ -472,7 +478,10 @@ async function parseProfileWithAI(data) {
   console.log('[AiSignupMarketReport] Email:', data.email);
   console.log('[AiSignupMarketReport] Text length:', data.text_inputted.length);
 
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://qcfifybkaddcoimjroca.supabase.co';
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  if (!supabaseUrl) {
+    throw new Error('VITE_SUPABASE_URL is required');
+  }
   const edgeFunctionUrl = `${supabaseUrl}/functions/v1/bubble-proxy`;
 
   try {
