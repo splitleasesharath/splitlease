@@ -539,10 +539,12 @@ Report status only. Do not fix anything.
 
     try:
         # Run the browser script - it handles dev server startup/cleanup internally
+        # Note: context['page_url'] is actually a path (e.g., '/search'), not a full URL
+        full_url = f"http://localhost:{port}{context['page_url']}"
         print(f"📋 Executing browser validation script...")
-        print(f"🌐 Testing URL: http://localhost:{port}{context['page_url']}")
+        print(f"🌐 Testing URL: {full_url}")
         logger.log(f"Invoking browser script: {adw_browser_script}", to_stdout=False)
-        logger.log(f"Full test URL: http://localhost:{port}{context['page_url']}", to_stdout=False)
+        logger.log(f"Full test URL: {full_url}", to_stdout=False)
 
         result = subprocess.run(
             ["uv", "run", str(adw_browser_script), validation_prompt],
