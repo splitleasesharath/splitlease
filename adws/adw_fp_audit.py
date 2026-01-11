@@ -38,7 +38,9 @@ def run_fp_audit_and_plan(target_path: str, severity: str, working_dir: Path) ->
     plan_file = f".claude/plans/New/{timestamp}_fp_refactor_plan.md"
 
     # Create prompt for Claude Code agent to do EVERYTHING
-    prompt = f"""I need you to audit the codebase for functional programming violations and create a chunk-based refactoring plan.
+    prompt = f"""/ralph-loop:ralph-loop
+
+I need you to audit the codebase for functional programming violations and create a chunk-based refactoring plan.
 
 **Your Task:**
 
@@ -71,12 +73,12 @@ Severity Filter: {severity}
 
 ~~~~~
 
-## 🔴 CHUNK 1: [Brief description of violation]
+## CHUNK 1: [Brief description of violation]
 
 **File:** [relative path to file]
 **Line:** [line number]
 **Violation:** [VIOLATION_TYPE] - [brief explanation]
-**Severity:** 🔴 High | 🟡 Medium | 🟢 Low
+**Severity:** High | Medium | Low
 
 **Expected Affected Pages:** [comma-separated list of page URLs, e.g., "/search, /view-split-lease" OR "AUTO" if uncertain]
 
@@ -99,7 +101,7 @@ Severity Filter: {severity}
 
 ~~~~~
 
-## 🔴 CHUNK 2: [Next violation...]
+## CHUNK 2: [Next violation...]
 
 [Repeat for ALL violations]
 ```
@@ -108,7 +110,7 @@ Severity Filter: {severity}
 1. One chunk = one violation = one atomic fix
 2. Use `~~~~~` (5 tildes) to separate chunks clearly
 3. Number chunks sequentially (CHUNK 1, 2, 3...)
-4. Include emoji severity: 🔴 High, 🟡 Medium, 🟢 Low
+4. Use severity labels: High, Medium, Low
 5. Show complete before/after code (no truncation, no ellipsis)
 6. Include file path, line number, violation type in header
 7. **MUST include Expected Affected Pages** - analyze which pages import/use this code:
@@ -133,12 +135,12 @@ Severity Filter: {severity}
 
 ~~~~~
 
-## 🔴 CHUNK 1: Replace .push() in counterofferWorkflow.js:156
+## CHUNK 1: Replace .push() in counterofferWorkflow.js:156
 
 **File:** app/src/logic/workflows/proposals/counterofferWorkflow.js
 **Line:** 156
 **Violation:** MUTATING_METHOD - Using .push() to mutate array
-**Severity:** 🔴 High
+**Severity:** High
 
 **Expected Affected Pages:** /host-proposals, /guest-proposals
 
@@ -178,7 +180,7 @@ Mutation makes state unpredictable and testing harder. Declarative array constru
 
     output_file = agent_dir / "raw_output.jsonl"
 
-    print(f"\n🤖 Starting Claude Code agent...")
+    print(f"\nStarting Claude Code agent...")
     print(f"Agent output: {output_file}")
     print(f"\nAgent will:")
     print(f"  1. Run FP audit script on: {target_path}")
@@ -198,19 +200,19 @@ Mutation makes state unpredictable and testing harder. Declarative array constru
     response = prompt_claude_code(request)
 
     if not response.success:
-        print(f"\n❌ Claude Code session failed: {response.output}")
+        print(f"\nClaude Code session failed: {response.output}")
         sys.exit(1)
 
-    print(f"\n✅ Claude Code completed successfully")
+    print(f"\nClaude Code completed successfully")
 
     # Verify plan was created
     plan_path = working_dir / plan_file
 
     if not plan_path.exists():
-        print(f"❌ Plan file not created: {plan_path}")
+        print(f"Plan file not created: {plan_path}")
         sys.exit(1)
 
-    print(f"\n✅ Plan created: {plan_file}")
+    print(f"\nPlan created: {plan_file}")
 
     return plan_file
 
@@ -235,7 +237,7 @@ def main():
     plan_file = run_fp_audit_and_plan(args.target_path, args.severity, working_dir)
 
     print(f"\n{'='*60}")
-    print("✅ FP AUDIT COMPLETE")
+    print("FP AUDIT COMPLETE")
     print(f"{'='*60}")
     print(f"Plan: {plan_file}")
     print(f"\nNext step:")
