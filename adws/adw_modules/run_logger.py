@@ -63,26 +63,28 @@ class RunLogger:
         if to_stdout:
             print(message)
 
-    def log_separator(self, char: str = '=', length: int = 60):
+    def log_separator(self, char: str = '=', length: int = 60, to_stdout: bool = True):
         """Log a separator line.
 
         Args:
             char: Character to use for separator
             length: Length of separator line
+            to_stdout: Whether to also print to stdout (default: True)
         """
-        self.log(char * length)
+        self.log(char * length, to_stdout=to_stdout)
 
-    def log_section(self, title: str, char: str = '=', length: int = 60):
+    def log_section(self, title: str, char: str = '=', length: int = 60, to_stdout: bool = True):
         """Log a section header.
 
         Args:
             title: Section title
             char: Character to use for separator
             length: Length of separator line
+            to_stdout: Whether to also print to stdout (default: True)
         """
-        self.log_separator(char, length)
-        self.log(title)
-        self.log_separator(char, length)
+        self.log_separator(char, length, to_stdout=to_stdout)
+        self.log(title, to_stdout=to_stdout)
+        self.log_separator(char, length, to_stdout=to_stdout)
 
     def log_error(self, error: Exception, context: Optional[str] = None):
         """Log an error with context.
