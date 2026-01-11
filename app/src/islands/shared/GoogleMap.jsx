@@ -154,7 +154,7 @@ const GoogleMap = forwardRef(({
 
   // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
-    // Highlight marker without zooming or panning, and show card
+    // Highlight marker without zooming or panning, and show card at fixed position
     highlightListing(listingId) {
       // Find the listing in either filtered or all listings
       const listing = filteredListings.find(l => l.id === listingId) ||
@@ -177,8 +177,8 @@ const GoogleMap = forwardRef(({
           marker.div.classList.remove('pulse');
         }, 3000);
 
-        // Show the listing card
-        handlePinClick(listing, marker.div);
+        // Show the listing card at a fixed position (top-center of map)
+        showListingCardAtFixedPosition(listing);
       }
     },
     zoomToListing(listingId) {
@@ -474,6 +474,41 @@ const GoogleMap = forwardRef(({
       onMarkerClick(listing);
     }
   }, [onMarkerClick]);
+
+  /**
+   * Show listing card at a fixed position (top-center of map)
+   * Used when hovering over listing cards - marker may be off-screen
+   */
+  const showListingCardAtFixedPosition = useCallback(async (listing) => {
+    const mapContainer = mapRef.current;
+    if (!mapContainer) {
+      console.error('❌ showListingCardAtFixedPosition: Map container ref not available');
+      return;
+    }
+
+    const mapRect = mapContainer.getBoundingClientRect();
+
+    // Position card at top-center of map
+    const cardLeft = mapRect.width / 2;
+    const cardTop = 20; // 20px from top
+
+    setCardPosition({ x: cardLeft, y: cardTop });
+    setCardVisible(true);
+
+    // Check if listing already has images
+    let detailedListing;
+    if (listing.images && listing.images.length > 0) {
+      detailedListing = listing;
+    } else {
+      detailedListing = await fetchDetailedListingData(listing.id);
+    }
+
+    if (detailedListing && detailedListing.images && detailedListing.images.length > 0) {
+      setSelectedListingForCard(detailedListing);
+    } else {
+      setCardVisible(false);
+    }
+  }, []);
 
   // Initialize Google Map when API is loaded
   useEffect(() => {
