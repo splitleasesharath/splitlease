@@ -31,13 +31,7 @@ from datetime import datetime
 # Add adws to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from adw_modules.webhook import (
-    notify_started,
-    notify_in_progress,
-    notify_success,
-    notify_failure,
-    notify_rollback
-)
+from adw_modules.webhook import notify_success, notify_failure
 from adw_modules.agent import prompt_claude_code
 from adw_modules.data_types import AgentPromptRequest
 
@@ -172,13 +166,7 @@ def run_audit_phase(target_path: str, severity: str, working_dir: Path) -> Path:
 
     Returns:
         Path to generated plan file
-    """
-    notify_started(
-        step="FP Audit",
-        details=f"Auditing {target_path} for {severity} severity violations"
-    )
-
-    print(f"\n{'='*60}")
+    """    print(f"\n{'='*60}")
     print("PHASE 1: FP AUDIT")
     print(f"{'='*60}")
 
@@ -189,18 +177,16 @@ def run_audit_phase(target_path: str, severity: str, working_dir: Path) -> Path:
         plan_file = run_fp_audit_and_plan(target_path, severity, working_dir)
 
         notify_success(
-            step="FP Audit",
-            details=f"Plan generated: {plan_file}",
-            metadata={"target": target_path, "severity": severity}
+            step=f"Audit found {len(open(working_dir / plan_file).readlines())} violations → Plan generated",
+            details=None
         )
 
         return working_dir / plan_file
 
     except Exception as e:
         notify_failure(
-            step="FP Audit",
-            error=str(e),
-            details=f"Failed to generate plan for {target_path}"
+            step=f"Audit crashed on {target_path}",
+            error=str(e)[:100]
         )
         raise
 
@@ -215,17 +201,7 @@ def implement_chunk(chunk: ChunkData, plan_file: Path, working_dir: Path) -> boo
 
     Returns:
         True if implementation succeeded, False otherwise
-    """
-    notify_in_progress(
-        step=f"Implementing Chunk {chunk.number}",
-        details=chunk.title,
-        metadata={
-            "file": chunk.file_path,
-            "line": chunk.line_number
-        }
-    )
-
-    print(f"\n{'='*60}")
+    """    print(f"\n{'='*60}")
     print(f"IMPLEMENTING CHUNK {chunk.number}: {chunk.title}")
     print(f"{'='*60}")
     print(f"File: {chunk.file_path}")
@@ -281,23 +257,21 @@ After making the change, confirm:
 
         if not response.success:
             notify_failure(
-                step=f"Chunk {chunk.number} Implementation",
-                error=response.output,
-                details=chunk.title
+                step=f"Chunk {chunk.number} refactoring failed",
+                error=response.output[:100]
             )
             return False
 
         notify_success(
-            step=f"Chunk {chunk.number} Implementation",
-            details=f"Code refactored in {chunk.file_path}"
+            step=f"Chunk {chunk.number} refactored in {chunk.file_path}",
+            details=None
         )
         return True
 
     except Exception as e:
         notify_failure(
-            step=f"Chunk {chunk.number} Implementation",
-            error=str(e),
-            details=chunk.title
+            step=f"Chunk {chunk.number} refactoring crashed",
+            error=str(e)[:100]
         )
         return False
 
@@ -474,15 +448,7 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path) -> bool:
             context["additional_pages"] = page_urls[1:]
     else:
         # Fallback to inference when affected_pages is AUTO or missing
-        context = infer_validation_context(chunk)
-
-    notify_in_progress(
-        step=f"Validating Chunk {chunk.number}",
-        details=f"Testing on {context['page_name']}",
-        metadata={
-            "page": context["page_url"],
-            "tests": len(context["specific_tests"])
-        }
+        context = infer_validation_context(chunk)        }
     )
 
     print(f"\n{'='*60}")
@@ -562,24 +528,22 @@ Report status only. Do not fix anything.
 
         if not success:
             notify_failure(
-                step=f"Chunk {chunk.number} Validation",
-                error="Browser automation failed",
-                details=output[:500]
+                step=f"Chunk {chunk.number} browser automation failed",
+                error=output[:100]
             )
             return False
 
         # Check if validation passed
         if "VALIDATION PASSED" in output.upper():
             notify_success(
-                step=f"Chunk {chunk.number} Validation",
-                details=f"All tests passed on {context['page_name']}"
+                step=f"Chunk {chunk.number} passed all tests",
+                details=None
             )
             return True
         else:
             notify_failure(
-                step=f"Chunk {chunk.number} Validation",
-                error="Site broken after refactoring",
-                details=output[:500]  # Truncate for webhook
+                step=f"Chunk {chunk.number} broke the site",
+                error=output[:100]
             )
             print(f"\n❌ VALIDATION FAILED:")
             print(output)
@@ -587,16 +551,14 @@ Report status only. Do not fix anything.
 
     except subprocess.TimeoutExpired:
         notify_failure(
-            step=f"Chunk {chunk.number} Validation",
-            error="Validation timed out after 10 minutes",
-            details="Browser automation took too long"
+            step=f"Chunk {chunk.number} validation timed out",
+            error="Browser took >10 minutes"
         )
         return False
     except Exception as e:
         notify_failure(
-            step=f"Chunk {chunk.number} Validation",
-            error=str(e),
-            details="Validation error"
+            step=f"Chunk {chunk.number} validation crashed",
+            error=str(e)[:100]
         )
         return False
 
@@ -611,14 +573,7 @@ def commit_chunk(chunk: ChunkData, working_dir: Path) -> bool:
     Returns:
         True if commit succeeded
     """
-    import subprocess
-
-    notify_in_progress(
-        step=f"Committing Chunk {chunk.number}",
-        details=chunk.title
-    )
-
-    commit_message = f"""refactor(fp): {chunk.title}
+    import subprocess    commit_message = f"""refactor(fp): {chunk.title}
 
 Chunk {chunk.number} - {chunk.file_path}:{chunk.line_number}
 
@@ -646,16 +601,16 @@ Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
         )
 
         notify_success(
-            step=f"Chunk {chunk.number} Committed",
-            details=f"Changes saved to git history"
+            step=f"Chunk {chunk.number} committed to git",
+            details=None
         )
         return True
 
     except subprocess.CalledProcessError as e:
+        error_msg = e.stderr.decode() if e.stderr else str(e)
         notify_failure(
-            step=f"Chunk {chunk.number} Commit",
-            error=e.stderr.decode() if e.stderr else str(e),
-            details="Git commit failed"
+            step=f"Chunk {chunk.number} git commit failed",
+            error=error_msg[:100]
         )
         return False
 
@@ -670,14 +625,7 @@ def rollback_chunk(chunk: ChunkData, working_dir: Path) -> bool:
     Returns:
         True if rollback succeeded
     """
-    import subprocess
-
-    notify_rollback(
-        step=f"Rolling back Chunk {chunk.number}",
-        details=f"Validation failed - reverting {chunk.file_path}"
-    )
-
-    try:
+    import subprocess    try:
         # Hard reset to discard changes
         subprocess.run(
             ["git", "reset", "--hard", "HEAD"],
@@ -712,11 +660,6 @@ def process_chunks(chunks: List[ChunkData], plan_file: Path, working_dir: Path) 
     state = OrchestratorState(
         plan_file=plan_file,
         total_chunks=len(chunks)
-    )
-
-    notify_started(
-        step="Chunk Processing",
-        details=f"Processing {len(chunks)} chunks sequentially"
     )
 
     print(f"\n{'='*60}")
@@ -774,14 +717,7 @@ def main():
     print("ADW FP ORCHESTRATOR")
     print(f"{'='*60}")
 
-    working_dir = Path.cwd()
-
-    notify_started(
-        step="FP Orchestrator Started",
-        details=f"Target: {args.target_path}, Severity: {args.severity}"
-    )
-
-    try:
+    working_dir = Path.cwd()    try:
         # Phase 1: Run audit and generate plan
         plan_file = run_audit_phase(args.target_path, args.severity, working_dir)
 
@@ -820,20 +756,14 @@ def main():
         print(f"Failed: {state.failed_chunks}")
 
         notify_success(
-            step="FP Orchestrator Complete",
-            details=f"{state.completed_chunks}/{state.total_chunks} chunks applied",
-            metadata={
-                "completed": state.completed_chunks,
-                "skipped": state.skipped_chunks,
-                "failed": state.failed_chunks
-            }
+            step=f"Orchestrator complete: {state.completed_chunks}/{state.total_chunks} chunks refactored, {state.failed_chunks} failed",
+            details=None
         )
 
     except Exception as e:
         notify_failure(
-            step="FP Orchestrator",
-            error=str(e),
-            details="Orchestrator failed"
+            step="Orchestrator crashed",
+            error=str(e)[:100]
         )
         print(f"\n❌ Orchestrator failed: {e}")
         sys.exit(1)
