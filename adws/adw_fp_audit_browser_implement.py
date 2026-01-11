@@ -52,6 +52,7 @@ class ChunkData:
     current_code: str
     refactored_code: str
     testing_steps: List[str]
+    affected_pages: Optional[str]  # Comma-separated URLs or "AUTO"
     raw_content: str  # Full chunk markdown for reference
 
 
@@ -82,9 +83,8 @@ def extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]:
 
     content = plan_file.read_text(encoding='utf-8')
 
-    # Split on horizontal rules to get chunks
-    # Split on "---" but keep track of sections
-    sections = re.split(r'\n---+\n', content)
+    # Split on ~~~~~ delimiter (5 or more tildes)
+    sections = re.split(r'\n~{5,}\n', content)
 
     chunks = []
 
@@ -114,6 +114,10 @@ def extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]:
         # Extract line number (can be "Line:" or "Lines:")
         line_match = re.search(r'\*\*Lines?:\*\*\s+(.+)', section)
         line_number = line_match.group(1).strip() if line_match else None
+
+        # Extract affected pages
+        affected_pages_match = re.search(r'\*\*Affected Pages:\*\*\s+(.+)', section)
+        affected_pages = affected_pages_match.group(1).strip() if affected_pages_match else None
 
         # Extract code blocks (look for ```javascript or ```typescript blocks)
         code_blocks = re.findall(r'```(?:javascript|typescript)\s*\n(.*?)\n```', section, re.DOTALL)
@@ -149,6 +153,7 @@ def extract_chunks_from_plan(plan_file: Path) -> List[ChunkData]:
             current_code=current_code,
             refactored_code=refactored_code,
             testing_steps=testing_steps,
+            affected_pages=affected_pages,
             raw_content=section
         )
 
@@ -445,8 +450,31 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path) -> bool:
     Returns:
         True if validation passed, False if site is broken
     """
-    # Infer validation context
-    context = infer_validation_context(chunk)
+    # Determine which page(s) to test
+    # Priority: affected_pages from plan > inferred from file path
+    if chunk.affected_pages and chunk.affected_pages.upper() != "AUTO":
+        # Parse comma-separated URLs from plan
+        page_urls = [url.strip() for url in chunk.affected_pages.split(',')]
+        primary_page = page_urls[0]  # Test the first page
+
+        # Still use inference to get specific tests and user flow
+        inferred_context = infer_validation_context(chunk)
+
+        # Build context using explicit page but inferred tests
+        context = {
+            "page_url": primary_page,
+            "page_name": f"{primary_page} (from plan)",
+            "requires_auth": primary_page not in ["/", "/search", "/faq", "/view-split-lease"],
+            "specific_tests": inferred_context["specific_tests"],  # Reuse inferred tests
+            "user_flow": inferred_context["user_flow"]  # Reuse inferred flow
+        }
+
+        # If multiple pages affected, note in context
+        if len(page_urls) > 1:
+            context["additional_pages"] = page_urls[1:]
+    else:
+        # Fallback to inference when affected_pages is AUTO or missing
+        context = infer_validation_context(chunk)
 
     notify_in_progress(
         step=f"Validating Chunk {chunk.number}",
@@ -462,9 +490,16 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path) -> bool:
     print(f"{'='*60}")
     print(f"Page: {context['page_name']} ({context['page_url']})")
     print(f"Specific tests: {len(context['specific_tests'])}")
+    if "additional_pages" in context:
+        print(f"Note: Also affects {', '.join(context['additional_pages'])}")
 
     # Build detailed validation prompt
     tests_list = "\n".join(f"   {i+1}. {test}" for i, test in enumerate(context["specific_tests"]))
+
+    # Build affected pages note
+    affected_pages_note = ""
+    if "additional_pages" in context:
+        affected_pages_note = f"\n\n**Note:** This change also affects: {', '.join(context['additional_pages'])}. We're testing {context['page_url']} as the primary validation page."
 
     validation_prompt = f"""I just refactored code in {chunk.file_path} (line {chunk.line_number}).
 
@@ -474,7 +509,7 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path) -> bool:
 
 Navigate to: http://localhost:8000{context['page_url']}
 
-**Critical:** This refactoring affects {context['page_name']}. You MUST test the specific functionality that could break:
+**Critical:** This refactoring affects {context['page_name']}. You MUST test the specific functionality that could break:{affected_pages_note}
 
 {tests_list}
 
