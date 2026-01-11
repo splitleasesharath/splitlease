@@ -345,6 +345,14 @@ export const routes = [
     hasDynamicSegment: false
   },
   {
+    path: '/_internal/create-suggested-proposal',
+    file: 'create-suggested-proposal.html',
+    aliases: ['/_internal/create-suggested-proposal.html'],
+    protected: false,
+    cloudflareInternal: false,
+    hasDynamicSegment: false
+  },
+  {
     path: '/_email-sms-unit',
     file: '_email-sms-unit.html',
     aliases: ['/_email-sms-unit.html'],
