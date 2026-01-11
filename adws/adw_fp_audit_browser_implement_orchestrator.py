@@ -476,6 +476,13 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path, logger, port: int
     if "additional_pages" in context:
         print(f"Note: Also affects {', '.join(context['additional_pages'])}")
 
+    # Log validation details
+    logger.log(f"Testing page: {context['page_name']}", to_stdout=False)
+    logger.log(f"URL: http://localhost:{port}{context['page_url']}", to_stdout=False)
+    logger.log(f"Specific tests: {len(context['specific_tests'])}", to_stdout=False)
+    if "additional_pages" in context:
+        logger.log(f"Additional affected pages: {', '.join(context['additional_pages'])}", to_stdout=False)
+
     # Build validation actions list (starting from step 3)
     actions_list = "\n".join(f"{i+3}. {test}" for i, test in enumerate(context["specific_tests"]))
 
@@ -533,6 +540,10 @@ Report status only. Do not fix anything.
     try:
         # Run the browser script - it handles dev server startup/cleanup internally
         print(f"📋 Executing browser validation script...")
+        print(f"🌐 Testing URL: http://localhost:{port}{context['page_url']}")
+        logger.log(f"Invoking browser script: {adw_browser_script}", to_stdout=False)
+        logger.log(f"Full test URL: http://localhost:{port}{context['page_url']}", to_stdout=False)
+
         result = subprocess.run(
             ["uv", "run", str(adw_browser_script), validation_prompt],
             cwd=working_dir,
