@@ -166,7 +166,8 @@ def run_audit_phase(target_path: str, severity: str, working_dir: Path) -> Path:
 
     Returns:
         Path to generated plan file
-    """    print(f"\n{'='*60}")
+    """
+    print(f"\n{'='*60}")
     print("PHASE 1: FP AUDIT")
     print(f"{'='*60}")
 
@@ -201,7 +202,8 @@ def implement_chunk(chunk: ChunkData, plan_file: Path, working_dir: Path) -> boo
 
     Returns:
         True if implementation succeeded, False otherwise
-    """    print(f"\n{'='*60}")
+    """
+    print(f"\n{'='*60}")
     print(f"IMPLEMENTING CHUNK {chunk.number}: {chunk.title}")
     print(f"{'='*60}")
     print(f"File: {chunk.file_path}")
@@ -581,7 +583,9 @@ def commit_chunk(chunk: ChunkData, working_dir: Path) -> bool:
     Returns:
         True if commit succeeded
     """
-    import subprocess    commit_message = f"""refactor(fp): {chunk.title}
+    import subprocess
+
+    commit_message = f"""refactor(fp): {chunk.title}
 
 Chunk {chunk.number} - {chunk.file_path}:{chunk.line_number}
 
@@ -633,7 +637,9 @@ def rollback_chunk(chunk: ChunkData, working_dir: Path) -> bool:
     Returns:
         True if rollback succeeded
     """
-    import subprocess    try:
+    import subprocess
+
+    try:
         # Hard reset to discard changes
         subprocess.run(
             ["git", "reset", "--hard", "HEAD"],
@@ -725,7 +731,9 @@ def main():
     print("ADW FP ORCHESTRATOR")
     print(f"{'='*60}")
 
-    working_dir = Path.cwd()    try:
+    working_dir = Path.cwd()
+
+    try:
         # Phase 1: Run audit and generate plan
         plan_file = run_audit_phase(args.target_path, args.severity, working_dir)
 
