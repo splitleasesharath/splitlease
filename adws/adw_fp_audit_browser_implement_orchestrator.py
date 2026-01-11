@@ -237,6 +237,7 @@ def implement_chunk(chunk: ChunkData, plan_file: Path, working_dir: Path) -> boo
 3. Replace it with the refactored code EXACTLY as shown
 4. Do NOT make any other changes to the file
 5. Do NOT implement any other chunks
+6. Do NOT commit to git - the orchestrator will handle commits after validation
 
 **Verification:**
 After making the change, confirm:
