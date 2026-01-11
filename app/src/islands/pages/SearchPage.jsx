@@ -1204,7 +1204,8 @@ export default function SearchPage() {
 
         if (authenticated) {
           // Validate token and get user data
-          const userData = await validateTokenAndFetchUser();
+          // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
+          const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
           if (userData) {
             const userId = getUserId();
             setCurrentUser({
@@ -2480,8 +2481,9 @@ export default function SearchPage() {
     setShowAuthModalForProposal(false);
 
     // Update the logged-in user data
+    // CRITICAL: Use clearOnFailure: false to preserve session if Edge Function fails
     try {
-      const userData = await validateTokenAndFetchUser();
+      const userData = await validateTokenAndFetchUser({ clearOnFailure: false });
       if (userData) {
         setLoggedInUserData({
           ...userData,
