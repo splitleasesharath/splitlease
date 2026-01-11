@@ -507,36 +507,43 @@ def validate_with_browser(chunk: ChunkData, working_dir: Path, logger, port: int
     # Calculate final step number
     final_step = len(context['specific_tests']) + 3
 
-    validation_prompt = f"""**Refactoring:** {chunk.title}
-**File:** {chunk.file_path}:{chunk.line_number}{additional_pages_section}
+    validation_prompt = f"""I want you to validate that the functional programming refactoring for "{chunk.title}" did not break the application.
 
-**Test Page:**
-http://localhost:{port}{context['page_url']}
+**Context:**
+- Refactored file: {chunk.file_path}:{chunk.line_number}
+- Changed: {chunk.title}{additional_pages_section}
 
-**Actions:**
+**Your Task:**
+Navigate to http://localhost:{port}{context['page_url']} and verify the page still works correctly.
+
+**Validation Steps:**
 1. Navigate to http://localhost:{port}{context['page_url']}
 {auth_step}
 {actions_list}
 {final_step}. Check browser console for errors
 
-**Report:**
+**Expected Outcome:**
+The page should function identically to before the refactoring. All interactive elements should work, and there should be no console errors.
 
-Success format:
+**Report Format:**
+
+If everything works:
 ---
 VALIDATION PASSED
-All tests completed successfully.
-No console errors.
+✓ All tests completed successfully
+✓ No console errors detected
+✓ Page functionality intact
 ---
 
-Failure format:
+If something is broken:
 ---
 VALIDATION FAILED
-Test: [which action failed]
-Error: [what broke]
-Console: [error messages if any]
+Test: [which specific action failed]
+Error: [detailed description of what broke]
+Console: [any error messages from console]
 ---
 
-Report status only. Do not fix anything.
+IMPORTANT: Only report the validation status. Do NOT attempt to fix any issues you find.
 """
 
     # Log the full validation prompt being sent
