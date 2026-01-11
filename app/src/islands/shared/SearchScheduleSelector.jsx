@@ -35,27 +35,13 @@ const CalendarIcon = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f3ff;
-  border: 1px solid #e0e7ff;
-  border-radius: 8px;
-  color: #6366f1;
   margin-right: 8px;
   flex-shrink: 0;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #ede9fe;
-    border-color: #c7d2fe;
-  }
-
-  svg {
-    width: 19px;
-    height: 19px;
-  }
 
   img {
-    width: 19px;
-    height: 19px;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
   }
 `;
 
