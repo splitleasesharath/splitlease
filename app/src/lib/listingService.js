@@ -389,7 +389,7 @@ async function triggerMockupProposalIfFirstListing(userId, listingId) {
     const result = await supabase
       .from('user')
       .select('_id, email, Listings')
-      .or(`email.eq.${sessionEmail},email as text.eq.${sessionEmail}`)
+      .eq('email', sessionEmail)
       .maybeSingle();
 
     userData = result.data;
