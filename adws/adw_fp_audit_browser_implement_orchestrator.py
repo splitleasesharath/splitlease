@@ -534,7 +534,7 @@ Report status only. Do not fix anything.
         # Run the browser script - it handles dev server startup/cleanup internally
         print(f"📋 Executing browser validation script...")
         result = subprocess.run(
-            [sys.executable, "-m", "uv", "run", str(adw_browser_script), validation_prompt],
+            ["uv", "run", str(adw_browser_script), validation_prompt],
             cwd=working_dir,
             capture_output=True,
             text=True,

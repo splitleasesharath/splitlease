@@ -151,8 +151,15 @@ def main():
     if args.chunks:
         logger.log(f"Chunks filter: {args.chunks}", to_stdout=False)
 
-    working_dir = Path.cwd()
-    plan_file = working_dir / args.plan_file
+    # Convert plan file to absolute path
+    plan_file = Path(args.plan_file).resolve()
+
+    # Derive working_dir from plan file path
+    # Plan file is at: <working_dir>/.claude/plans/New/<filename>
+    # So working_dir is 3 levels up from the plan file
+    working_dir = plan_file.parent.parent.parent
+
+    logger.log(f"Derived working_dir: {working_dir}", to_stdout=False)
 
     # Validate plan file exists
     if not plan_file.exists():
@@ -165,7 +172,9 @@ def main():
         sys.exit(1)
 
     print(f"✅ Plan file found: {plan_file.name}")
+    print(f"✅ Working directory: {working_dir}")
     logger.log(f"Plan file validated: {plan_file.name}", to_stdout=False)
+    logger.log(f"Working directory: {working_dir}", to_stdout=False)
 
     try:
         # Extract chunks from plan
