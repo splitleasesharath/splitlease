@@ -313,8 +313,8 @@
 
 /* Highlight effect when scrolling to card from map marker click */
 .listing-card--highlighted {
-    border-color: var(--secondary-purple, #6D31C2) !important;
-    box-shadow: 0 0 0 3px rgba(109, 49, 194, 0.3), 0 4px 12px rgba(109, 49, 194, 0.2) !important;
+    border-color: rgba(75, 71, 206, 0.4) !important;
+    box-shadow: 0 0 0 2px rgba(75, 71, 206, 0.15) !important;
     animation: listing-highlight-pulse 0.5s ease-out;
 }
 
