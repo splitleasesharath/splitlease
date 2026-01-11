@@ -5,15 +5,18 @@
 
 """
 ADW FP Orchestrator - Full FP Refactoring Workflow Automation
+(FP means Functional Programming)
 
 Orchestrates the complete FP refactoring process:
-1. Run FP audit (adw_fp_audit.py)
+1. Run FP audit python script (adw_fp_audit.py). The FP audit script
+will scan the codebase for FP violations and generate a plan broken into chunks.
+
 2. For each chunk in the plan:
    a. Implement the chunk (adw_fp_implement.py with chunk filter)
-   b. Validate with browser (adw_claude_browser.py)
-   c. If validation passes → git commit
-   d. If validation fails → git reset --hard, skip to next chunk
-3. Send status updates to SHARATHPLAYGROUND webhook
+   b. Since no change in behavior is expected. We then validate with browser (claude chrome extension) (adw_claude_browser.py)
+   c. If browservalidation passes → change was good so we git commit
+   d. If validation fails → git reset --hard, skip to next FP chunk (since the change was bad)
+3. Send status updates to SHARATHPLAYGROUND webhook (slack)
 
 Usage: uv run adw_fp_orchestrator.py [target_path] [--severity high|medium|all]
 
@@ -31,7 +34,7 @@ from datetime import datetime
 # Add adws to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from adw_modules.webhook import notify_success, notify_failure
+from adw_modules.webhook import notify_success, notify_failure, notify_in_progress
 from adw_modules.agent import prompt_claude_code
 from adw_modules.data_types import AgentPromptRequest
 
