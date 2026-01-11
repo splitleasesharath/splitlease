@@ -154,8 +154,17 @@ const GoogleMap = forwardRef(({
 
   // Expose methods to parent via ref
   useImperativeHandle(ref, () => ({
-    // Highlight marker without zooming or panning
+    // Highlight marker without zooming or panning, and show card
     highlightListing(listingId) {
+      // Find the listing in either filtered or all listings
+      const listing = filteredListings.find(l => l.id === listingId) ||
+                     listings.find(l => l.id === listingId);
+
+      if (!listing) {
+        console.error('Listing not found:', listingId);
+        return;
+      }
+
       const marker = markersRef.current.find(m => m.listingId === listingId);
       if (marker && marker.div) {
         // Remove pulse from all other markers first
@@ -167,6 +176,9 @@ const GoogleMap = forwardRef(({
         setTimeout(() => {
           marker.div.classList.remove('pulse');
         }, 3000);
+
+        // Show the listing card
+        handlePinClick(listing, marker.div);
       }
     },
     zoomToListing(listingId) {
