@@ -193,11 +193,7 @@ const GoogleMap = forwardRef(({
         setTimeout(() => {
           marker.div.classList.remove('pulse');
         }, 3000);
-
-        // Show listing card after pan completes (skip parent callback to prevent scroll)
-        setTimeout(() => {
-          handlePinClick(listing, marker.div, { skipParentCallback: true });
-        }, 400);
+        // Note: Card popup is NOT shown on hover - only pulse animation
       }
     },
     zoomToListing(listingId) {
