@@ -145,6 +145,7 @@ const GoogleMap = forwardRef(({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [showAllListings, setShowAllListings] = useState(true);
   const lastMarkersUpdateRef = useRef(null); // Track last marker update to prevent duplicates
+  const handlePinClickRef = useRef(null); // Ref to always have latest handlePinClick
 
   // Listing card state
   const [selectedListingForCard, setSelectedListingForCard] = useState(null);
@@ -498,6 +499,9 @@ const GoogleMap = forwardRef(({
       onMarkerClick(listing);
     }
   }, [onMarkerClick]);
+
+  // Keep ref updated with latest handlePinClick so event listeners always use current version
+  handlePinClickRef.current = handlePinClick;
 
   // Initialize Google Map when API is loaded
   useEffect(() => {
@@ -941,10 +945,12 @@ const GoogleMap = forwardRef(({
       // TODO: Re-implement hover effects after fixing positioning bug
       // Previous implementation was overwriting transform position from draw()
 
-      // Use React callback for proper state management
+      // Use ref to always call latest handlePinClick (avoids stale closure issue)
       priceTag.addEventListener('click', (e) => {
         e.stopPropagation(); // Prevent event from bubbling to map container
-        handlePinClick(listing, priceTag);
+        if (handlePinClickRef.current) {
+          handlePinClickRef.current(listing, priceTag);
+        }
       });
 
       this.div = priceTag;
