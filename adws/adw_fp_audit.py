@@ -69,7 +69,7 @@ Date: {datetime.now().strftime('%Y-%m-%d')}
 Target: {violations_file}
 Severity Filter: {severity}
 
----
+~~~~~
 
 ## 🔴 CHUNK 1: [Brief description of violation]
 
@@ -77,6 +77,8 @@ Severity Filter: {severity}
 **Line:** [line number]
 **Violation:** [VIOLATION_TYPE] - [brief explanation]
 **Severity:** 🔴 High | 🟡 Medium | 🟢 Low
+
+**Affected Pages:** [comma-separated list of page URLs, e.g., "/search, /view-split-lease" OR "AUTO" if uncertain]
 
 **Current Code:**
 ```javascript
@@ -95,7 +97,7 @@ Severity Filter: {severity}
 - [ ] [Specific test to run]
 - [ ] [Verification step]
 
----
+~~~~~
 
 ## 🔴 CHUNK 2: [Next violation...]
 
@@ -104,13 +106,18 @@ Severity Filter: {severity}
 
 **FORMATTING RULES:**
 1. One chunk = one violation = one atomic fix
-2. Use `---` to separate chunks clearly (horizontal rule)
+2. Use `~~~~~` (5 tildes) to separate chunks clearly
 3. Number chunks sequentially (CHUNK 1, 2, 3...)
 4. Include emoji severity: 🔴 High, 🟡 Medium, 🟢 Low
 5. Show complete before/after code (no truncation, no ellipsis)
 6. Include file path, line number, violation type in header
-7. Add testing checklist per chunk (2-3 items)
-8. Keep chunks independent (can be fixed in any order)
+7. **MUST include Affected Pages** - analyze which pages import/use this code:
+   - For page components (islands/pages/*): use that page's URL
+   - For shared components: list all pages that import it
+   - For logic files: analyze imports and list affected pages
+   - If uncertain or affects many pages: use "AUTO"
+8. Add testing checklist per chunk (2-3 items)
+9. Keep chunks independent (can be fixed in any order)
 
 **Important Guidelines:**
 - Each chunk should take 5-10 minutes to implement
@@ -124,7 +131,7 @@ Severity Filter: {severity}
 
 **Example Chunk (for reference):**
 
----
+~~~~~
 
 ## 🔴 CHUNK 1: Replace .push() in counterofferWorkflow.js:156
 
@@ -132,6 +139,8 @@ Severity Filter: {severity}
 **Line:** 156
 **Violation:** MUTATING_METHOD - Using .push() to mutate array
 **Severity:** 🔴 High
+
+**Affected Pages:** /host-proposals, /guest-proposals
 
 **Current Code:**
 ```javascript
@@ -160,7 +169,7 @@ Mutation makes state unpredictable and testing harder. Declarative array constru
 - [ ] Verify proposal changes are tracked correctly
 - [ ] Check edge case where no changes occur (empty array)
 
----
+~~~~~
 """
 
     # Run Claude Code session
