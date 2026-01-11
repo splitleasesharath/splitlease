@@ -1061,10 +1061,12 @@ export default function SearchPage() {
 
   // UI state
   const [filterPanelActive, setFilterPanelActive] = useState(false);
+  const [filterPopupOpen, setFilterPopupOpen] = useState(false);
   const [mapSectionActive, setMapSectionActive] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileMapVisible, setMobileMapVisible] = useState(false);
   const [mobileHeaderHidden, setMobileHeaderHidden] = useState(false);
+  const [desktopHeaderCollapsed, setDesktopHeaderCollapsed] = useState(false);
 
   // Auth state
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -1089,6 +1091,82 @@ export default function SearchPage() {
   // Toast notification state
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
 
+  // Track selected days from URL for check-in/check-out display
+  const [selectedDaysForDisplay, setSelectedDaysForDisplay] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const daysParam = urlParams.get('days-selected');
+    if (daysParam) {
+      return daysParam.split(',').map(d => parseInt(d.trim(), 10)).filter(d => !isNaN(d) && d >= 0 && d <= 6);
+    }
+    return [1, 2, 3, 4, 5]; // Default: Mon-Fri
+  });
+
+  // Listen for URL changes to update selected days display
+  useEffect(() => {
+    const handleUrlChange = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const daysParam = urlParams.get('days-selected');
+      if (daysParam) {
+        const days = daysParam.split(',').map(d => parseInt(d.trim(), 10)).filter(d => !isNaN(d) && d >= 0 && d <= 6);
+        setSelectedDaysForDisplay(days);
+      }
+    };
+
+    // Listen for popstate (back/forward navigation)
+    window.addEventListener('popstate', handleUrlChange);
+
+    // Also listen for custom event that SearchScheduleSelector dispatches
+    window.addEventListener('daysSelected', handleUrlChange);
+
+    return () => {
+      window.removeEventListener('popstate', handleUrlChange);
+      window.removeEventListener('daysSelected', handleUrlChange);
+    };
+  }, []);
+
+  // Calculate check-in and check-out day names
+  const checkInOutDays = useMemo(() => {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    if (selectedDaysForDisplay.length < 2) {
+      return { checkIn: '', checkOut: '' };
+    }
+
+    const sortedDays = [...selectedDaysForDisplay].sort((a, b) => a - b);
+    const hasSaturday = sortedDays.includes(6);
+    const hasSunday = sortedDays.includes(0);
+    const isWrapAround = hasSaturday && hasSunday && sortedDays.length < 7;
+
+    let checkInDay, checkOutDay;
+
+    if (isWrapAround) {
+      // Find the gap in the sequence
+      let gapIndex = -1;
+      for (let i = 1; i < sortedDays.length; i++) {
+        if (sortedDays[i] - sortedDays[i - 1] > 1) {
+          gapIndex = i;
+          break;
+        }
+      }
+
+      if (gapIndex !== -1) {
+        checkInDay = sortedDays[gapIndex];
+        checkOutDay = sortedDays[gapIndex - 1];
+      } else {
+        checkInDay = sortedDays[0];
+        checkOutDay = sortedDays[sortedDays.length - 1];
+      }
+    } else {
+      checkInDay = sortedDays[0];
+      checkOutDay = sortedDays[sortedDays.length - 1];
+    }
+
+    return {
+      checkIn: dayNames[checkInDay],
+      checkOut: dayNames[checkOutDay]
+    };
+  }, [selectedDaysForDisplay]);
+
   // Calculate active filter count for mobile apply button
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -1098,6 +1176,94 @@ export default function SearchPage() {
     if (sortBy !== 'recommended') count++;
     return count;
   }, [selectedNeighborhoods, weekPattern, priceTier, sortBy]);
+
+  // Generate active filter tags for the new filter design
+  const activeFilterTags = useMemo(() => {
+    const tags = [];
+
+    // Borough filter
+    if (selectedBorough && selectedBorough !== 'all' && selectedBorough !== '') {
+      const boroughName = boroughs.find(b => b.value === selectedBorough)?.name;
+      if (boroughName && boroughName !== 'All Boroughs') {
+        tags.push({
+          id: 'borough',
+          icon: 'map-pin',
+          label: boroughName,
+          onRemove: () => setSelectedBorough('all')
+        });
+      }
+    }
+
+    // Neighborhoods filter
+    if (selectedNeighborhoods.length > 0) {
+      const neighborhoodNames = selectedNeighborhoods
+        .map(id => neighborhoods.find(n => n.id === id)?.name)
+        .filter(Boolean)
+        .slice(0, 2);
+      const label = neighborhoodNames.length > 2
+        ? `${neighborhoodNames.join(', ')} +${selectedNeighborhoods.length - 2}`
+        : neighborhoodNames.join(', ');
+      tags.push({
+        id: 'neighborhoods',
+        icon: 'map-pin',
+        label: label || `${selectedNeighborhoods.length} neighborhoods`,
+        onRemove: () => setSelectedNeighborhoods([])
+      });
+    }
+
+    // Price filter
+    if (priceTier && priceTier !== 'all') {
+      const priceLabels = {
+        'under-200': 'Under $200',
+        '200-350': '$200-$350',
+        '350-500': '$350-$500',
+        '500-plus': '$500+'
+      };
+      tags.push({
+        id: 'price',
+        icon: 'dollar-sign',
+        label: priceLabels[priceTier] || priceTier,
+        onRemove: () => setPriceTier('all')
+      });
+    }
+
+    // Week pattern filter
+    if (weekPattern && weekPattern !== 'every-week') {
+      const patternLabels = {
+        'one-on-off': 'Every other week',
+        'two-on-off': '2 weeks on/off',
+        'one-three-off': '1 on, 3 off'
+      };
+      tags.push({
+        id: 'weekPattern',
+        icon: 'repeat',
+        label: patternLabels[weekPattern] || weekPattern,
+        onRemove: () => setWeekPattern('every-week')
+      });
+    }
+
+    return tags;
+  }, [selectedBorough, selectedNeighborhoods, priceTier, weekPattern, boroughs, neighborhoods]);
+
+  // Toggle filter popup
+  const toggleFilterPopup = useCallback(() => {
+    setFilterPopupOpen(prev => !prev);
+  }, []);
+
+  // Close filter popup
+  const closeFilterPopup = useCallback(() => {
+    setFilterPopupOpen(false);
+  }, []);
+
+  // Clear all filters
+  const clearAllFilters = useCallback(() => {
+    setSelectedBorough('all');
+    setSelectedNeighborhoods([]);
+    setPriceTier('all');
+    setWeekPattern('every-week');
+    setSortBy('recommended');
+    closeFilterPopup();
+  }, [closeFilterPopup]);
 
   // Flag to prevent URL update on initial load
   const isInitialMount = useRef(true);
@@ -1127,8 +1293,8 @@ export default function SearchPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
 
-  // Mobile header scroll hide/show effect
-  // Note: On mobile, the scrolling element is .listings-content, not window
+  // Header scroll hide/show effect for both mobile and desktop
+  // Note: The scrolling element is .listings-content for both
   useEffect(() => {
     let lastScrollY = 0;
     let ticking = false;
@@ -1140,16 +1306,25 @@ export default function SearchPage() {
           const scrollElement = e.target;
           const currentScrollY = scrollElement.scrollTop || 0;
           const isMobile = window.innerWidth <= 768;
+          const isDesktop = window.innerWidth >= 769;
 
           if (isMobile) {
-            // Hide header when scrolling down past first card (~250px)
+            // Mobile: Hide header when scrolling down past first card (~250px)
             // Show header when scrolling up
             if (currentScrollY > 250 && currentScrollY > lastScrollY) {
               setMobileHeaderHidden(true);
             } else if (currentScrollY < lastScrollY) {
               setMobileHeaderHidden(false);
             }
-          } else {
+            setDesktopHeaderCollapsed(false);
+          } else if (isDesktop) {
+            // Desktop: Collapse filter section when scrolling down (~150px)
+            // Show full filter section when scrolling up
+            if (currentScrollY > 150 && currentScrollY > lastScrollY) {
+              setDesktopHeaderCollapsed(true);
+            } else if (currentScrollY < lastScrollY) {
+              setDesktopHeaderCollapsed(false);
+            }
             setMobileHeaderHidden(false);
           }
 
@@ -2709,10 +2884,250 @@ export default function SearchPage() {
             </div>
           </div>
 
-          {/* Compact Schedule Indicator - Shows when header is hidden */}
+          {/* Compact Schedule Indicator - Shows when header is hidden (mobile) */}
           <CompactScheduleIndicator isVisible={mobileHeaderHidden} />
 
-          {/* All filters in single horizontal flexbox container */}
+          {/* Desktop Compact Schedule Indicator - Shows when filter section is collapsed */}
+          <div className={`desktop-compact-indicator ${desktopHeaderCollapsed ? 'desktop-compact-indicator--visible' : ''}`}>
+            <div className="desktop-compact-dots">
+              {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((dayLetter, index) => (
+                <div
+                  key={index}
+                  className={`desktop-compact-dot ${selectedDaysForDisplay.includes(index) ? 'active' : ''}`}
+                  title={['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][index]}
+                >
+                  {dayLetter}
+                </div>
+              ))}
+            </div>
+            <div className="desktop-compact-checkin">
+              {checkInOutDays.checkIn && checkInOutDays.checkOut && (
+                <>
+                  <span className="desktop-compact-label">Check-in:</span>
+                  <span className="desktop-compact-day">{checkInOutDays.checkIn.substring(0, 3)}</span>
+                  <span className="desktop-compact-separator">→</span>
+                  <span className="desktop-compact-label">Out:</span>
+                  <span className="desktop-compact-day">{checkInOutDays.checkOut.substring(0, 3)}</span>
+                </>
+              )}
+            </div>
+            {activeFilterTags.length > 0 && (
+              <div className="desktop-compact-filters">
+                <button className="desktop-compact-filter-btn" onClick={toggleFilterPopup}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                  </svg>
+                  <span>{activeFilterTags.length}</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* NEW FILTER SECTION - Desktop Only */}
+          <div className={`filter-section ${activeFilterTags.length > 0 ? 'has-active-filters' : ''} ${desktopHeaderCollapsed ? 'filter-section--collapsed' : ''}`}>
+            <div className="filter-bar">
+              {/* Schedule Selector */}
+              <div className="schedule-selector">
+                <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
+                  {/* AuthAwareSearchScheduleSelector will be mounted here on desktop */}
+                </div>
+              </div>
+
+              {/* Filter Toggle Button - Shows when no filters active */}
+              <div className="filter-popup-wrapper" id="topFilterWrapper">
+                <button
+                  className={`filter-toggle-btn-new ${filterPopupOpen ? 'active' : ''}`}
+                  onClick={toggleFilterPopup}
+                  aria-label="Open filters"
+                >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                  </svg>
+                  {activeFilterTags.length > 0 && (
+                    <span className="filter-badge">{activeFilterTags.length}</span>
+                  )}
+                </button>
+              </div>
+
+              {/* Divider */}
+              <div className="filter-divider"></div>
+
+              {/* Check-in/Check-out Block */}
+              {checkInOutDays.checkIn && checkInOutDays.checkOut && (
+                <div className="checkin-block">
+                  <svg className="sync-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                  </svg>
+                  <div className="checkin-details">
+                    <div className="checkin-row">
+                      <span className="label">Check-in:</span>
+                      <span className="day">{checkInOutDays.checkIn}</span>
+                    </div>
+                    <div className="checkin-row">
+                      <span className="label">Check-out:</span>
+                      <span className="day">{checkInOutDays.checkOut}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Filter Tags Row - Shows when filters are active, hides on desktop scroll */}
+          <div className={`filter-tags-row ${activeFilterTags.length > 0 ? 'has-filters' : ''} ${desktopHeaderCollapsed ? 'filter-tags-row--collapsed' : ''}`}>
+            <button className="results-filter-btn" onClick={toggleFilterPopup}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+              </svg>
+              <span className="results-filter-badge">{activeFilterTags.length}</span>
+            </button>
+
+            <div className="filter-tags-single-row">
+              {activeFilterTags.map((tag) => (
+                <div key={tag.id} className="filter-tag filter-tag-sm">
+                  {tag.icon === 'map-pin' && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                      <circle cx="12" cy="10" r="3"></circle>
+                    </svg>
+                  )}
+                  {tag.icon === 'dollar-sign' && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="1" x2="12" y2="23"></line>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    </svg>
+                  )}
+                  {tag.icon === 'repeat' && (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="17 1 21 5 17 9"></polyline>
+                      <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                      <polyline points="7 23 3 19 7 15"></polyline>
+                      <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                  )}
+                  {tag.label}
+                  <button className="filter-tag-remove" onClick={tag.onRemove}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Filter Popup Modal */}
+          <div className={`filter-popup ${filterPopupOpen ? 'open' : ''}`}>
+            <div className="filter-popup-header">
+              <h3 className="filter-popup-title">Filters</h3>
+              <button className="filter-popup-clear" onClick={clearAllFilters}>
+                Clear all
+              </button>
+            </div>
+
+            <div className="filter-popup-body">
+              {/* Row 1: Borough, Week Pattern, Price Range */}
+              {/* Borough Select */}
+              <div className="filter-popup-group">
+                <label className="filter-popup-label">Borough</label>
+                <select
+                  className="filter-popup-select"
+                  value={selectedBorough}
+                  onChange={(e) => setSelectedBorough(e.target.value)}
+                >
+                  {boroughs.length === 0 ? (
+                    <option value="">Loading...</option>
+                  ) : (
+                    boroughs.map(borough => (
+                      <option key={borough.id} value={borough.value}>
+                        {borough.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </div>
+
+              {/* Week Pattern */}
+              <div className="filter-popup-group">
+                <label className="filter-popup-label">Week Pattern</label>
+                <select
+                  className="filter-popup-select"
+                  value={weekPattern}
+                  onChange={(e) => setWeekPattern(e.target.value)}
+                >
+                  <option value="every-week">Every week</option>
+                  <option value="one-on-off">One on, one off</option>
+                  <option value="two-on-off">Two on, two off</option>
+                  <option value="one-three-off">One on, three off</option>
+                </select>
+              </div>
+
+              {/* Price Range */}
+              <div className="filter-popup-group">
+                <label className="filter-popup-label">Price Range</label>
+                <select
+                  className="filter-popup-select"
+                  value={priceTier}
+                  onChange={(e) => setPriceTier(e.target.value)}
+                >
+                  <option value="all">All Prices</option>
+                  <option value="under-200">&lt; $200/night</option>
+                  <option value="200-350">$200-$350/night</option>
+                  <option value="350-500">$350-$500/night</option>
+                  <option value="500-plus">$500+/night</option>
+                </select>
+              </div>
+
+              {/* Row 2: Neighborhoods - spans full width */}
+              <div className="filter-popup-group filter-popup-group--full-width">
+                <label className="filter-popup-label">Neighborhoods</label>
+                <div className="filter-popup-neighborhoods">
+                  {neighborhoods.length === 0 ? (
+                    <div className="neighborhood-list-empty">Loading neighborhoods...</div>
+                  ) : (
+                    <div className="neighborhood-checkbox-grid">
+                      {neighborhoods.map(neighborhood => (
+                        <label key={neighborhood.id} className="neighborhood-checkbox-item-popup">
+                          <input
+                            type="checkbox"
+                            checked={selectedNeighborhoods.includes(neighborhood.id)}
+                            onChange={() => {
+                              if (selectedNeighborhoods.includes(neighborhood.id)) {
+                                setSelectedNeighborhoods(selectedNeighborhoods.filter(id => id !== neighborhood.id));
+                              } else {
+                                setSelectedNeighborhoods([...selectedNeighborhoods, neighborhood.id]);
+                              }
+                            }}
+                          />
+                          <span>{neighborhood.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+
+            <div className="filter-popup-footer">
+              <button className="btn btn-secondary" onClick={closeFilterPopup}>
+                Cancel
+              </button>
+              <button className="btn btn-primary" onClick={closeFilterPopup}>
+                Apply Filters
+              </button>
+            </div>
+          </div>
+
+          {/* Filter Backdrop */}
+          {filterPopupOpen && (
+            <div className="filter-backdrop open" onClick={closeFilterPopup}></div>
+          )}
+
+          {/* All filters in single horizontal flexbox container - MOBILE ONLY */}
           <div className={`inline-filters ${filterPanelActive ? 'active' : ''}`}>
             {/* Close button for mobile filter panel */}
             {filterPanelActive && (
@@ -2723,11 +3138,6 @@ export default function SearchPage() {
                 ✕ Close Filters
               </button>
             )}
-
-            {/* Schedule Selector - First item on left (desktop only) */}
-            <div className="filter-group schedule-selector-group" id="schedule-selector-mount-point">
-              {/* AuthAwareSearchScheduleSelector will be mounted here on desktop */}
-            </div>
 
             {/* Neighborhood Multi-Select - Checkbox list */}
             <NeighborhoodDropdownFilter
@@ -2822,9 +3232,21 @@ export default function SearchPage() {
             )}
           </div>
 
-          {/* Listings count - hidden when mobile header is collapsed */}
-          <div className={`listings-count ${mobileHeaderHidden ? 'listings-count--hidden' : ''}`}>
-            <strong>{allListings.length} listings found</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
+          {/* Results header with listings count and sort - hidden when mobile or desktop header is collapsed */}
+          <div className={`results-header ${mobileHeaderHidden ? 'results-header--hidden' : ''} ${desktopHeaderCollapsed ? 'results-header--desktop-hidden' : ''}`}>
+            <span className="results-count">
+              <strong>{allListings.length} listings</strong> in {boroughs.find(b => b.value === selectedBorough)?.name || 'NYC'}
+            </span>
+            <select
+              className="sort-select"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="recommended">Recommended</option>
+              <option value="price-low">Price: Low to High</option>
+              <option value="most-viewed">Most Viewed</option>
+              <option value="recent">Recently Added</option>
+            </select>
           </div>
 
           {/* Listings content */}
