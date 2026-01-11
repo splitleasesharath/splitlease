@@ -26,6 +26,7 @@ export default function EditorView({
   goodGuestReasonsList,
   storageItemsList,
   transportationOptions,
+  showDateOfBirthField = false,
   onFieldChange,
   onDayToggle,
   onChipToggle,
@@ -55,6 +56,7 @@ export default function EditorView({
         lastName={formData.lastName}
         jobTitle={formData.jobTitle}
         dateOfBirth={formData.dateOfBirth}
+        showDateOfBirthField={showDateOfBirthField}
         errors={formErrors}
         onFieldChange={onFieldChange}
       />

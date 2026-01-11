@@ -326,6 +326,16 @@ export function useAccountProfilePageLogic() {
     return formData.jobTitle || profileData?.['Job Title'] || '';
   }, [formData.jobTitle, profileData]);
 
+  /**
+   * Determine if Date of Birth field should be shown.
+   * Only show when the user has NO date of birth in the database
+   * (typically OAuth signups via LinkedIn/Google where DOB isn't collected).
+   * Once the user saves a DOB, this field will be hidden on subsequent visits.
+   */
+  const showDateOfBirthField = useMemo(() => {
+    return !profileData?.['Date of Birth'];
+  }, [profileData]);
+
   // ============================================================================
   // DATA FETCHING
   // ============================================================================
@@ -1096,6 +1106,7 @@ export function useAccountProfilePageLogic() {
     verifications,
     profileStrength,
     nextActions,
+    showDateOfBirthField,
 
     // Form state
     formData,

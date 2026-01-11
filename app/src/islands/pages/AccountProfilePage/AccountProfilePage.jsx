@@ -143,6 +143,7 @@ export default function AccountProfilePage() {
                 goodGuestReasonsList={logic.goodGuestReasonsList}
                 storageItemsList={logic.storageItemsList}
                 transportationOptions={logic.transportationOptions}
+                showDateOfBirthField={logic.showDateOfBirthField}
                 onFieldChange={logic.handleFieldChange}
                 onDayToggle={logic.handleDayToggle}
                 onChipToggle={logic.handleChipToggle}

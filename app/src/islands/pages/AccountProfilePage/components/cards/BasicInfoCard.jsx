@@ -1,8 +1,13 @@
 /**
  * BasicInfoCard.jsx
  *
- * Basic information form card: First name, Last name, Date of birth, Job title.
+ * Basic information form card: First name, Last name, Job title, and conditionally Date of Birth.
  * Editor view only (public view shows name in sidebar).
+ *
+ * Date of Birth is only shown when:
+ * - User signed up via OAuth (LinkedIn/Google) where DOB isn't collected during signup
+ * - The Date of Birth field is empty in the database
+ * Once filled and saved, the DOB field is hidden on subsequent visits.
  */
 
 import React from 'react';
@@ -13,6 +18,7 @@ export default function BasicInfoCard({
   lastName,
   jobTitle,
   dateOfBirth = '',
+  showDateOfBirthField = false,
   errors = {},
   onFieldChange
 }) {
@@ -52,19 +58,22 @@ export default function BasicInfoCard({
       </div>
 
       <div className="profile-form-row">
-        <div className="profile-form-group">
-          <label className="profile-form-label" htmlFor="dateOfBirth">
-            Date of Birth
-          </label>
-          <input
-            id="dateOfBirth"
-            type="date"
-            className="profile-form-input"
-            value={dateOfBirth}
-            onChange={(e) => onFieldChange('dateOfBirth', e.target.value)}
-            max={new Date().toISOString().split('T')[0]}
-          />
-        </div>
+        {/* Date of Birth - Only shown when user has no DOB in database (OAuth signups) */}
+        {showDateOfBirthField && (
+          <div className="profile-form-group">
+            <label className="profile-form-label" htmlFor="dateOfBirth">
+              Date of Birth
+            </label>
+            <input
+              id="dateOfBirth"
+              type="date"
+              className="profile-form-input"
+              value={dateOfBirth}
+              onChange={(e) => onFieldChange('dateOfBirth', e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+        )}
 
         <div className="profile-form-group">
           <label className="profile-form-label" htmlFor="jobTitle">
