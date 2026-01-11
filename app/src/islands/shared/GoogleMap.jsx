@@ -198,8 +198,15 @@ const GoogleMap = forwardRef(({
           if (mapContainer && marker.div) {
             const mapRect = mapContainer.getBoundingClientRect();
             const markerRect = marker.div.getBoundingClientRect();
+
+            // Card dimensions (matching ListingCardForMap)
+            const cardHeight = 300; // Approximate card height
+            const arrowHeight = 10;
+            const gapFromPin = 5;
+
             const x = markerRect.left - mapRect.left + markerRect.width / 2;
-            const y = markerRect.top - mapRect.top - 10;
+            // Position card so its bottom (including arrow) is above the marker
+            const y = markerRect.top - mapRect.top - cardHeight - arrowHeight - gapFromPin;
             setCardPosition({ x, y });
           }
           setSelectedListingForCard(listing);
@@ -405,9 +412,9 @@ const GoogleMap = forwardRef(({
     const pinCenterX = priceTagRect.left - mapRect.left + (priceTagRect.width / 2);
     const pinTop = priceTagRect.top - mapRect.top;
 
-    // Card dimensions (matching ListingCardForMap)
-    const cardWidth = 340;
-    const cardHeight = 340; // Approximate height
+    // Card dimensions (matching ListingCardForMap - updated for compact layout)
+    const cardWidth = 300;
+    const cardHeight = 300; // Approximate height after compact layout updates
     const arrowHeight = 10;
     const gapFromPin = 5;
     const margin = 20;
